@@ -73,7 +73,7 @@ class ExperimentManager():
                     print self.ants[i].state
 
                 self.make_log(regions, indexes)
-                print "FAIL"
+                print "FAIL!!!"
                 print r
 
                 while True:

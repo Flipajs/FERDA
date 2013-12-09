@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9c9b6735-c027-4899-8186-a8bf1e1c3bc0" name="Default" comment="" />
+    <list default="true" id="9c9b6735-c027-4899-8186-a8bf1e1c3bc0" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
+    </list>
     <ignored path="ants.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path="dist/" />
@@ -48,7 +50,7 @@
           <file leaf-file-name="experiment_manager.py" pinned="false" current="true" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/experiment_manager.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="56" column="17" selection-start="1660" selection-end="1660" vertical-scroll-proportion="0.44224924" vertical-offset="591" max-vertical-offset="2304">
+                <state line="75" column="30" selection-start="2479" selection-end="2479" vertical-scroll-proportion="0.9179331" vertical-offset="620" max-vertical-offset="2304">
                   <folding />
                 </state>
               </provider>
@@ -539,9 +541,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="64" y="-4" width="1857" height="1205" extended-state="7" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
-      <window_info id="Changes" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32962963" sideWeight="0.49973047" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32962963" sideWeight="0.49973047" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32848838" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32777777" sideWeight="0.49973047" order="1" side_tool="false" content_ui="tabs" />
@@ -721,7 +723,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/experiment_manager.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="56" column="17" selection-start="1660" selection-end="1660" vertical-scroll-proportion="0.44224924" vertical-offset="591" max-vertical-offset="2304">
+        <state line="75" column="30" selection-start="2479" selection-end="2479" vertical-scroll-proportion="0.9179331" vertical-offset="620" max-vertical-offset="2304">
           <folding />
         </state>
       </provider>
