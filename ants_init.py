@@ -1,0 +1,117 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file 'ants_init.ui'
+#
+# Created: Fri Nov 22 18:09:47 2013
+#      by: PyQt4 UI code generator 4.9.1
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt4 import QtCore, QtGui
+
+try:
+    _fromUtf8 = QtCore.QString.fromUtf8
+except AttributeError:
+    _fromUtf8 = lambda s: s
+
+class Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName(_fromUtf8("Dialog"))
+        Dialog.resize(392, 650)
+        self.arena_group = QtGui.QGroupBox(Dialog)
+        self.arena_group.setGeometry(QtCore.QRect(10, 10, 251, 111))
+        self.arena_group.setMinimumSize(QtCore.QSize(251, 111))
+        self.arena_group.setAutoFillBackground(False)
+        self.arena_group.setFlat(False)
+        self.arena_group.setCheckable(False)
+        self.arena_group.setObjectName(_fromUtf8("arena_group"))
+        self.label_3 = QtGui.QLabel(self.arena_group)
+        self.label_3.setGeometry(QtCore.QRect(10, 90, 58, 17))
+        self.label_3.setObjectName(_fromUtf8("label_3"))
+        self.arena_x_scrollbar = QtGui.QScrollBar(self.arena_group)
+        self.arena_x_scrollbar.setGeometry(QtCore.QRect(79, 31, 160, 16))
+        self.arena_x_scrollbar.setSizeIncrement(QtCore.QSize(5, 5))
+        self.arena_x_scrollbar.setMaximum(2000)
+        self.arena_x_scrollbar.setPageStep(30)
+        self.arena_x_scrollbar.setProperty("value", 404)
+        self.arena_x_scrollbar.setOrientation(QtCore.Qt.Horizontal)
+        self.arena_x_scrollbar.setInvertedAppearance(False)
+        self.arena_x_scrollbar.setObjectName(_fromUtf8("arena_x_scrollbar"))
+        self.arena_y_scrollbar = QtGui.QScrollBar(self.arena_group)
+        self.arena_y_scrollbar.setGeometry(QtCore.QRect(79, 61, 160, 16))
+        self.arena_y_scrollbar.setMaximum(2000)
+        self.arena_y_scrollbar.setProperty("value", 386)
+        self.arena_y_scrollbar.setOrientation(QtCore.Qt.Horizontal)
+        self.arena_y_scrollbar.setObjectName(_fromUtf8("arena_y_scrollbar"))
+        self.label = QtGui.QLabel(self.arena_group)
+        self.label.setGeometry(QtCore.QRect(9, 31, 58, 17))
+        self.label.setObjectName(_fromUtf8("label"))
+        self.label_2 = QtGui.QLabel(self.arena_group)
+        self.label_2.setGeometry(QtCore.QRect(9, 61, 58, 17))
+        self.label_2.setObjectName(_fromUtf8("label_2"))
+        self.arena_r_scrollbar = QtGui.QScrollBar(self.arena_group)
+        self.arena_r_scrollbar.setGeometry(QtCore.QRect(79, 91, 160, 16))
+        self.arena_r_scrollbar.setMaximum(1000)
+        self.arena_r_scrollbar.setPageStep(3)
+        self.arena_r_scrollbar.setProperty("value", 383)
+        self.arena_r_scrollbar.setOrientation(QtCore.Qt.Horizontal)
+        self.arena_r_scrollbar.setObjectName(_fromUtf8("arena_r_scrollbar"))
+        self.ants_group = QtGui.QGroupBox(Dialog)
+        self.ants_group.setGeometry(QtCore.QRect(10, 130, 281, 51))
+        self.ants_group.setObjectName(_fromUtf8("ants_group"))
+        self.label_4 = QtGui.QLabel(self.ants_group)
+        self.label_4.setGeometry(QtCore.QRect(15, 25, 101, 17))
+        self.label_4.setObjectName(_fromUtf8("label_4"))
+        self.ant_number_spin_box = QtGui.QSpinBox(self.ants_group)
+        self.ant_number_spin_box.setGeometry(QtCore.QRect(120, 20, 61, 27))
+        self.ant_number_spin_box.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.ant_number_spin_box.setKeyboardTracking(False)
+        self.ant_number_spin_box.setMinimum(1)
+        self.ant_number_spin_box.setMaximum(30)
+        self.ant_number_spin_box.setProperty("value", 15)
+        self.ant_number_spin_box.setObjectName(_fromUtf8("ant_number_spin_box"))
+        self.continue_button = QtGui.QPushButton(self.ants_group)
+        self.continue_button.setGeometry(QtCore.QRect(190, 20, 87, 27))
+        self.continue_button.setObjectName(_fromUtf8("continue_button"))
+        self.label_x = QtGui.QLabel(Dialog)
+        self.label_x.setGeometry(QtCore.QRect(260, 40, 58, 17))
+        self.label_x.setObjectName(_fromUtf8("label_x"))
+        self.label_y = QtGui.QLabel(Dialog)
+        self.label_y.setGeometry(QtCore.QRect(260, 70, 58, 17))
+        self.label_y.setObjectName(_fromUtf8("label_y"))
+        self.label_r = QtGui.QLabel(Dialog)
+        self.label_r.setGeometry(QtCore.QRect(260, 100, 58, 17))
+        self.label_r.setObjectName(_fromUtf8("label_r"))
+        self.ants_selection_group = QtGui.QGroupBox(Dialog)
+        self.ants_selection_group.setEnabled(False)
+        self.ants_selection_group.setGeometry(QtCore.QRect(10, 180, 371, 581))
+        self.ants_selection_group.setObjectName(_fromUtf8("ants_selection_group"))
+        self.verticalLayoutWidget = QtGui.QWidget(self.ants_selection_group)
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(0, 30, 371, 411))
+        self.verticalLayoutWidget.setObjectName(_fromUtf8("verticalLayoutWidget"))
+        self.ants_selection_layout = QtGui.QVBoxLayout(self.verticalLayoutWidget)
+        self.ants_selection_layout.setSpacing(0)
+        self.ants_selection_layout.setMargin(0)
+        self.ants_selection_layout.setObjectName(_fromUtf8("ants_selection_layout"))
+        self.start_button = QtGui.QPushButton(Dialog)
+        self.start_button.setGeometry(QtCore.QRect(290, 620, 87, 20))
+        self.start_button.setObjectName(_fromUtf8("start_button"))
+
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        Dialog.setWindowTitle(QtGui.QApplication.translate("Dialog", "experiment settings", None, QtGui.QApplication.UnicodeUTF8))
+        self.arena_group.setTitle(QtGui.QApplication.translate("Dialog", "Arena", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_3.setText(QtGui.QApplication.translate("Dialog", "arena r", None, QtGui.QApplication.UnicodeUTF8))
+        self.label.setText(QtGui.QApplication.translate("Dialog", "arena X", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_2.setText(QtGui.QApplication.translate("Dialog", "arena Y", None, QtGui.QApplication.UnicodeUTF8))
+        self.ants_group.setTitle(QtGui.QApplication.translate("Dialog", "Ants", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_4.setText(QtGui.QApplication.translate("Dialog", "Number of ants:", None, QtGui.QApplication.UnicodeUTF8))
+        self.continue_button.setText(QtGui.QApplication.translate("Dialog", "continue", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_x.setText(QtGui.QApplication.translate("Dialog", "0", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_y.setText(QtGui.QApplication.translate("Dialog", "0", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_r.setText(QtGui.QApplication.translate("Dialog", "0", None, QtGui.QApplication.UnicodeUTF8))
+        self.ants_selection_group.setTitle(QtGui.QApplication.translate("Dialog", "Ants selection", None, QtGui.QApplication.UnicodeUTF8))
+        self.start_button.setText(QtGui.QApplication.translate("Dialog", "start", None, QtGui.QApplication.UnicodeUTF8))
+

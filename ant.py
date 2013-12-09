@@ -1,0 +1,162 @@
+__author__ = 'flip'
+
+import utils
+from collections import deque
+import copy
+
+ant_names = ["Arnold", "Bob", "Cenek", "Dusan", "Emil", "Ferda", "Gustav", "Hugo", "Igor", "Julius", "Kamil",
+                 "Ludek", "Milos", "Narcis", "Oliver", "Prokop", "Quido", "Rene", "Servac", "Tadeas", "1", "2",
+                 "3", "4", "5", "6", "7", "8", "9", "10"]
+
+ant_colors = [(145, 95, 22), (54, 38, 227), (0, 191, 255), (204, 102, 153), (117, 149, 105),
+                  (0, 182, 141), (255, 255, 0), (32, 83, 78), (0, 238, 256), (128, 127, 0),
+                  (190, 140, 238), (32, 39, 89), (99, 49, 222), (139, 0, 0), (0, 0, 139),
+                  (60, 192, 3), (0, 79, 255), (128, 128, 128), (255, 255, 255), (0, 0, 0),
+                  (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0),
+                  (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)]
+
+class AntState():
+    position = utils.Point(0, 0)
+    theta = 0
+    a = 0
+    b = 0
+    axis_rate = 0
+    area = -1
+    size = utils.Size(0, 0)
+    mser_id = -1
+    info = None
+    lost = False
+    lost_time = 0
+
+    def __init__(self):
+        pass
+
+
+class Ant():
+    def __init__(self, id):
+        self.id = id
+        self.area_weighted = -1
+        self.name = ant_names[id]
+        self.color = ant_colors[id]
+        self.state = AntState()
+        self.history = deque()
+        pass
+
+    def velocity(self, history_depth):
+        if len(self.history) == 0:
+            return utils.Point(0, 0)
+
+        pos_ti = self.state.position
+        velocity = utils.Point(0, 0)
+        counter = 0
+
+        for i in range(history_depth):
+            if i > len(self.history):
+                break
+
+            pos_ti_minus1 = self.history[i]
+            velocity += pos_ti - pos_ti_minus1.position
+            counter += 1
+
+            pos_ti = pos_ti_minus1.position
+
+        velocity.x /= counter
+        velocity.y /= counter
+
+        return velocity
+
+    def predicted_position(self, history_depth):
+        return self.state.position + self.velocity(history_depth)
+
+    #returns stability (1 - #losts/history_depth)
+    def stability(self, history_depth):
+        if len(self.history) <= history_depth:
+            return 0
+
+        counter = 0
+        for i in range(history_depth):
+            if not self.history[i].lost:
+                counter += 1
+
+        return counter / history_depth
+
+    def buffer_history(self, first_frame = 0, last_frame = -1):
+        if last_frame > len(self.history):
+            last_frame = -1
+        if last_frame == -1:
+            last_frame = len(self.history)
+
+        history_len = last_frame - first_frame
+        x = [0] * history_len
+        y = [0] * history_len
+        a = [0] * history_len
+        b = [0] * history_len
+        theta = [0] * history_len
+        for i in range(first_frame, last_frame):
+            state = self.history[i]
+            pos = state.position.int_tuple()
+            x[i] = pos[0]
+            y[i] = pos[1]
+            a[i] = state.a
+            b[i] = state.b
+
+            theta[i] = state.theta
+
+        a = {'x': x,
+             'y': y,
+             'theta': theta,
+             'a': a,
+             'b': b,
+             'id': self.id,
+             'moviename': '...',
+             'firstframe': first_frame,
+             'arena': {'x': 0, 'y': 0, 'r': 0},
+             'off': 0,
+             'nframes': history_len,
+             'endframe': last_frame,
+             'timestamps': [0],
+             'matname': '...',
+             'x_mm': x,
+             'y_mm': y,
+             'a_mm': a,
+             'b_mm': b,
+             'pxpermm': 0,
+             'fps': 0,
+        }
+
+        return a
+
+
+
+
+def set_ant_state(ant, mser_id, region, add_history=True):
+    if ant.state.area > 0 and add_history:
+        ant.history.appendleft(copy.copy(ant.state))
+
+    area_weight = 0.01
+    ant.state.mser_id = mser_id
+    ant.state.area = region["area"]
+    if ant.area_weighted < 0:
+        ant.area_weighted = region["area"]
+    else:
+        ant.area_weighted = ant.area_weighted*(1-area_weight) + region["area"] * area_weight
+
+    ant.state.position = utils.Point(region["cx"], region["cy"])
+    ant.state.axis_rate, ant.state.a, ant.state.b = utils.mser_main_axis_rate(region["sxy"], region["sxx"], region["syy"])
+    ant.state.theta = utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
+    ant.state.info = ""
+    ant.state.lost = False
+    ant.state.lost_time = 0
+
+
+def set_ant_state_undefined(ant, mser_id):
+    if ant.state.area > 0:
+        ant.history.appendleft(ant.state)
+
+    if mser_id == -1:
+        ant.state.info = "NASM"
+        #TODO> depends on if lost in colission mode
+        ant.state.position += ant.velocity(1)
+        ant.state.mser_id = mser_id
+        ant.state.lost = True
+        ant.state.lost_time += 1
