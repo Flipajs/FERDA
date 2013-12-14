@@ -19,7 +19,7 @@ class MserOperations():
         self.mser = cyMser.PyMser()
         self.params = params
 
-    def process_image(self, img):
+    def process_image(self, img, intensity_threshold=256):
         print img.shape
         if img.shape[2] > 1:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -30,7 +30,7 @@ class MserOperations():
 
 
         t0 = time()
-        self.mser.process_image(gray)
+        self.mser.process_image(gray, intensity_threshold)
         t1 = time()
         print 'msers takes %f' %(t1-t0)
 

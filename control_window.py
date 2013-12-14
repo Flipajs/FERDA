@@ -26,6 +26,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.frame = 1
 
         self.init_ui()
+        self.setWindowIcon(QtGui.QIcon('ferda.ico'))
 
     def __del__(self):
         self.is_running = False

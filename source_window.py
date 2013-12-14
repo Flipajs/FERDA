@@ -16,6 +16,7 @@ class SourceWindow(QtGui.QWidget, ants_main.Ui_Dialog):
         self.init_ui()
 
         self.params = experimentParams.Params()
+        self.setWindowIcon(QtGui.QIcon('ferda.ico'))
 
     def init_ui(self):
         self.choose_video_button.clicked.connect(self.show_file_dialog)

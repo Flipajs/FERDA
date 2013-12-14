@@ -84,7 +84,7 @@ def mser_theta(sxy, sxx, syy):
     return 0.5*math.atan(2 * sxy / (sxx - syy))
 
 def imshow(title, img, adjust_size = False):
-    ratio = 1
+    ratio = 0.5
     if adjust_size:
         img = cv2.resize(img, (int(img.shape[1]*ratio), int(img.shape[0]*ratio)))
 

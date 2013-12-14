@@ -26,6 +26,7 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         self.img = None
 
         self.init_ui()
+        self.setWindowIcon(QtGui.QIcon('ferda.ico'))
 
         self.collection_rows = 10
         self.collection_cols = 10

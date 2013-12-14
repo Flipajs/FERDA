@@ -1,6 +1,8 @@
+import math
+
 __author__ = 'flip'
 
-import utils
+import utils as my_utils
 from collections import deque
 import copy
 
@@ -16,13 +18,16 @@ ant_colors = [(145, 95, 22), (54, 38, 227), (0, 191, 255), (204, 102, 153), (117
                   (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)]
 
 class AntState():
-    position = utils.Point(0, 0)
+    position = my_utils.Point(0, 0)
     theta = 0
+    orientation = 0 #if 1... means theta + 180
+    head = my_utils.Point(0, 0)
+    back = my_utils.Point(0, 0)
     a = 0
     b = 0
     axis_rate = 0
     area = -1
-    size = utils.Size(0, 0)
+    size = my_utils.Size(0, 0)
     mser_id = -1
     info = None
     lost = False
@@ -44,10 +49,10 @@ class Ant():
 
     def velocity(self, history_depth):
         if len(self.history) == 0:
-            return utils.Point(0, 0)
+            return my_utils.Point(0, 0)
 
         pos_ti = self.state.position
-        velocity = utils.Point(0, 0)
+        velocity = my_utils.Point(0, 0)
         counter = 0
 
         for i in range(history_depth):
@@ -79,6 +84,52 @@ class Ant():
                 counter += 1
 
         return counter / history_depth
+
+    def estimate_orientation(self, region):
+        c = self.state.position
+        theta = self.state.theta
+
+        best_head = my_utils.Point(c.x, c.y)
+        best_head_val = c.x
+        best_back = my_utils.Point(c.x, c.y)
+        best_back_val = c.x
+
+        wide = True
+        if theta > 45 < 135:
+            wide = False
+            best_head_val = c.y
+            best_back_val = c.y
+
+        for r in region["rle"]:
+            h = r["line"]
+            l = r["col1"]
+            r = r["col2"]
+
+            alpha = math.asin((h-c.y) / math.sqrt(pow(l - c.x, 2) + pow(h - c.y, 2)))
+            beta = math.asin((h-c.y) / math.sqrt(pow(r - c.x, 2) + pow(h - c.y, 2)))
+
+            pos = l + round(beta/(beta+alpha) * (r - l))
+            if pos < l > r:
+                continue
+
+            comp = h
+            if wide:
+                comp = pos
+                
+            if comp > best_head_val:
+                best_head_val = comp
+                best_head = my_utils.Point(pos, h)
+
+            if comp < best_back_val:
+                best_back_val = comp
+                best_back = my_utils.Point(pos, h)
+
+        self.state.head = best_head
+        self.state.back = best_back
+
+        self.state.orientation = 1
+        if my_utils.e_distance(c, best_head) > my_utils.e_distance(c, best_back):
+            self.state.orientation = 0
 
     def buffer_history(self, first_frame = 0, last_frame = -1):
         if last_frame > len(self.history):
@@ -141,12 +192,13 @@ def set_ant_state(ant, mser_id, region, add_history=True):
     else:
         ant.area_weighted = ant.area_weighted*(1-area_weight) + region["area"] * area_weight
 
-    ant.state.position = utils.Point(region["cx"], region["cy"])
-    ant.state.axis_rate, ant.state.a, ant.state.b = utils.mser_main_axis_rate(region["sxy"], region["sxx"], region["syy"])
-    ant.state.theta = utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
+    ant.state.position = my_utils.Point(region["cx"], region["cy"])
+    ant.state.axis_rate, ant.state.a, ant.state.b = my_utils.mser_main_axis_rate(region["sxy"], region["sxx"], region["syy"])
+    ant.state.theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
     ant.state.info = ""
     ant.state.lost = False
     ant.state.lost_time = 0
+    #ant.estimate_orientation(region)
 
 
 def set_ant_state_undefined(ant, mser_id):

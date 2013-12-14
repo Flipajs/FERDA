@@ -46,10 +46,8 @@ class ExperimentManager():
         mask[idx] = self.img_[idx]
 
         self.params.arena
-        regions, indexes = self.mser_operations.process_image(mask)
+        regions, indexes = self.mser_operations.process_image(mask, 100)
         result = score.max_weight_matching(self.ants, regions)
-
-        print result
 
         for i in range(self.ant_number):
             if result[i] < 0:
@@ -57,13 +55,17 @@ class ExperimentManager():
             else:
                 ant.set_ant_state(self.ants[i], result[i], regions[result[i]])
 
-        img_cpy = self.img_.copy()
-        img_vis = visualize.draw_ants(self.img_, self.ants, regions, True)
+        img_copy = self.img_.copy()
+        img_vis = visualize.draw_ants(img_copy, self.ants, regions, True)
         #draw_dangerous_areas(I)
         my_utils.imshow("ant track result", img_vis, True)
         if self.params.show_mser_collections:
-            collection = visualize.draw_region_collection(img_cpy, regions, self.params)
-            my_utils.imshow("collection", collection)
+            collection = visualize.draw_region_collection(img_copy, regions, self.params)
+            my_utils.imshow("mser collection", collection)
+
+        img_copy = self.img_.copy()
+        collection = visualize.draw_ants_collection(img_copy, self.ants)
+        my_utils.imshow("ants collection", collection)
 
         if self.use_gt:
             r = self.ground_truth.check_gt(self.ants, False)
@@ -73,7 +75,7 @@ class ExperimentManager():
                     print self.ants[i].state
 
                 self.make_log(regions, indexes)
-                print "FAIL!!!"
+                print "FAIL!"
                 print r
 
                 while True:

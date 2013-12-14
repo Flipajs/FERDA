@@ -13,7 +13,7 @@ class Params():
         self.max_axis_ratio_diff = 1
         self.max_area_diff = 0.5
 
-        self.show_mser_collections = False
+        self.show_mser_collections = True
         #self.ant_number = 15
         #self.arena = utils.RotatedRect(utils.Point(405+self.border, 386+self.border), utils.Size(763, 763), 0)
         #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/ants/NoPlasterNoLid800.avi"
