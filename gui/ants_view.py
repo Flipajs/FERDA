@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ants_view.ui'
 #
-# Created: Mon Dec  9 14:40:11 2013
+# Created: Thu Jan  9 02:34:07 2014
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,9 +17,9 @@ except AttributeError:
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName(_fromUtf8("Dialog"))
-        Dialog.resize(342, 225)
+        Dialog.resize(342, 367)
         self.groupBox = QtGui.QGroupBox(Dialog)
-        self.groupBox.setGeometry(QtCore.QRect(10, 100, 321, 101))
+        self.groupBox.setGeometry(QtCore.QRect(10, 260, 321, 101))
         self.groupBox.setObjectName(_fromUtf8("groupBox"))
         self.b_choose_path = QtGui.QPushButton(self.groupBox)
         self.b_choose_path.setGeometry(QtCore.QRect(10, 30, 100, 27))
@@ -48,6 +48,17 @@ class Ui_Dialog(object):
         self.l_frame = QtGui.QLabel(self.groupBox_2)
         self.l_frame.setGeometry(QtCore.QRect(264, 0, 58, 17))
         self.l_frame.setObjectName(_fromUtf8("l_frame"))
+        self.groupBox_3 = QtGui.QGroupBox(Dialog)
+        self.groupBox_3.setGeometry(QtCore.QRect(9, 89, 321, 101))
+        self.groupBox_3.setObjectName(_fromUtf8("groupBox_3"))
+        self.ch_mser_collection = QtGui.QCheckBox(self.groupBox_3)
+        self.ch_mser_collection.setGeometry(QtCore.QRect(10, 20, 201, 22))
+        self.ch_mser_collection.setChecked(False)
+        self.ch_mser_collection.setObjectName(_fromUtf8("ch_mser_collection"))
+        self.ch_ants_collection = QtGui.QCheckBox(self.groupBox_3)
+        self.ch_ants_collection.setGeometry(QtCore.QRect(10, 40, 161, 22))
+        self.ch_ants_collection.setChecked(True)
+        self.ch_ants_collection.setObjectName(_fromUtf8("ch_ants_collection"))
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -64,4 +75,7 @@ class Ui_Dialog(object):
         self.b_stap_by_step.setText(QtGui.QApplication.translate("Dialog", "step by step", None, QtGui.QApplication.UnicodeUTF8))
         self.label_2.setText(QtGui.QApplication.translate("Dialog", "frame:", None, QtGui.QApplication.UnicodeUTF8))
         self.l_frame.setText(QtGui.QApplication.translate("Dialog", "1", None, QtGui.QApplication.UnicodeUTF8))
+        self.groupBox_3.setTitle(QtGui.QApplication.translate("Dialog", "Display", None, QtGui.QApplication.UnicodeUTF8))
+        self.ch_mser_collection.setText(QtGui.QApplication.translate("Dialog", "msers collection", None, QtGui.QApplication.UnicodeUTF8))
+        self.ch_ants_collection.setText(QtGui.QApplication.translate("Dialog", "ants collection", None, QtGui.QApplication.UnicodeUTF8))
 

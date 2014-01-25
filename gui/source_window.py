@@ -1,11 +1,11 @@
+from gui import ants_main, init_window
+
 __author__ = 'flip'
 
 import sys
 import os
 from PyQt4 import QtGui
-import ants_main
 import experimentParams
-import init_window
 
 
 class SourceWindow(QtGui.QWidget, ants_main.Ui_Dialog):
@@ -16,7 +16,7 @@ class SourceWindow(QtGui.QWidget, ants_main.Ui_Dialog):
         self.init_ui()
 
         self.params = experimentParams.Params()
-        self.setWindowIcon(QtGui.QIcon('ferda.ico'))
+        self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
 
     def init_ui(self):
         self.choose_video_button.clicked.connect(self.show_file_dialog)

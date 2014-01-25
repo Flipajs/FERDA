@@ -1,7 +1,8 @@
+from gui import ants_init, control_window
+
 __author__ = 'flip'
 
-from PyQt4 import QtGui, QtCore, Qt
-import ants_init
+from PyQt4 import QtGui
 import mserOperations
 import ant
 import utils as my_utils
@@ -9,7 +10,6 @@ import lifeCycle
 from numpy import *
 import cv2
 import visualize
-import control_window
 
 
 class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):

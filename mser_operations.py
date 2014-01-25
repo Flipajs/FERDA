@@ -1,6 +1,7 @@
 __author__ = 'flip'
 
-
+import sys
+sys.path.append('libs')
 import cyMser
 import cv2
 import visualize
