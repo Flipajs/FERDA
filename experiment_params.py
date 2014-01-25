@@ -16,16 +16,16 @@ class Params():
         self.show_mser_collection = False
         self.show_ants_collection = True
         self.show_assignment_problem = True
-
         #self.ant_number = 15
         #self.arena = utils.RotatedRect(utils.Point(405+self.border, 386+self.border), utils.Size(763, 763), 0)
         #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/ants/NoPlasterNoLid800.avi"
-        #self.predefined_vals = 1
+        #self.predefined_vals = 'NoPlasterNoLid'
 
         self.ant_number = 8
         self.arena = utils.RotatedRect(utils.Point(593+self.border, 570+self.border), utils.Size(344*2, 344*2), 0)
-        self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.avi"
-        self.predefined_vals = 2
+        self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
+        self.predefined_vals = 'eight'
+
 
         #self.ant_number = 8
         #self.arena = utils.RotatedRect(utils.Point(593+self.border, 570+self.border), utils.Size(344*2, 344*2), 0)

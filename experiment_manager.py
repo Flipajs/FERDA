@@ -3,7 +3,7 @@ __author__ = 'flip'
 import ant
 import numpy
 import cv2
-import mserOperations
+import mser_operations
 import score
 import visualize
 import gt
@@ -30,7 +30,7 @@ class ExperimentManager():
             self.ground_truth = gt.GroundTruth('fixed_out.txt', self)
             self.ground_truth.match_gt(self.ants)
 
-        self.mser_operations = mserOperations.MserOperations(params)
+        self.mser_operations = mser_operations.MserOperations(params)
         self.count_ant_params()
 
         self.img_ = None
@@ -59,13 +59,17 @@ class ExperimentManager():
         img_vis = visualize.draw_ants(img_copy, self.ants, regions, True)
         #draw_dangerous_areas(I)
         my_utils.imshow("ant track result", img_vis, True)
-        if self.params.show_mser_collections:
+        if self.params.show_mser_collection:
             collection = visualize.draw_region_collection(img_copy, regions, self.params)
             my_utils.imshow("mser collection", collection)
 
-        img_copy = self.img_.copy()
-        collection = visualize.draw_ants_collection(img_copy, self.ants)
-        my_utils.imshow("ants collection", collection)
+        if self.params.show_ants_collection:
+            img_copy = self.img_.copy()
+            collection = visualize.draw_ants_collection(img_copy, self.ants)
+            my_utils.imshow("ants collection", collection)
+        else:
+            cv2.destroyWindow("ants collection")
+
 
         if self.use_gt:
             r = self.ground_truth.check_gt(self.ants, False)

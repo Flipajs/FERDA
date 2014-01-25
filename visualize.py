@@ -121,7 +121,6 @@ def draw_ants_collection(img, ants, cell_size = 70):
         if i > 0:
            cv2.line(collection, (0, i*cell_size), (c_width - 1, i*cell_size), line_color, 1)
 
-#cv::putText(img, "text", textOrg, fontFace, fontScale, Scalar::all(255), thickness,8);
         w = cell_size + color_stripe_width
         w2 = w + 135
         h = i*(cell_size)
@@ -138,3 +137,5 @@ def draw_ants_collection(img, ants, cell_size = 70):
 
     cv2.line(collection, (color_stripe_width - 1, 0), (color_stripe_width - 1, c_height - 1), line_color, 1)
     return collection
+
+#def draw_assignment_problem(ants, regions)

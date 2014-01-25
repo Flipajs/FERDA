@@ -5,7 +5,7 @@ __author__ = 'flip'
 import sys
 import os
 from PyQt4 import QtGui
-import experimentParams
+import experiment_params
 
 
 class SourceWindow(QtGui.QWidget, ants_main.Ui_Dialog):
@@ -15,7 +15,7 @@ class SourceWindow(QtGui.QWidget, ants_main.Ui_Dialog):
 
         self.init_ui()
 
-        self.params = experimentParams.Params()
+        self.params = experiment_params.Params()
         self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
 
     def init_ui(self):

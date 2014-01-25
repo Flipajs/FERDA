@@ -3,7 +3,7 @@ from gui import ants_init, control_window
 __author__ = 'flip'
 
 from PyQt4 import QtGui
-import mserOperations
+import mser_operations
 import ant
 import utils as my_utils
 import lifeCycle
@@ -65,8 +65,8 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         self.arena_group.setEnabled(False)
 
         img_ = self.img.copy()
-        mser_operations = mserOperations.MserOperations(self.params)
-        self.regions, indexes = mser_operations.process_image(img_)
+        mser_op = mser_operations.MserOperations(self.params)
+        self.regions, indexes = mser_op.process_image(img_)
 
         for i in range(self.params.ant_number):
             a = ant.Ant(i)
@@ -142,11 +142,10 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         p.exec_()
 
     def predefined_ant_values(self):
-        if self.params.predefined_vals == 1:
+        if self.params.predefined_vals == 'NoPlasterNoLid800':
             arr = [2, 8, 10, 39, 14, 18, 24, 46, 36, 26, 5, 30, 33, 42, 50]
-        elif self.params.predefined_vals == 2:
-            #arr = [0, 4, 8, 12, 17, 22, 27, 31]
-            arr = [0, 6, 9, 13, 18, 22, 28, 31]
+        elif self.params.predefined_vals == 'eight':
+            arr = [0, 4, 7, 11, 16, 21, 26, 29]
         else:
             return
 
