@@ -21,7 +21,6 @@ class MserOperations():
         self.params = params
 
     def process_image(self, img, intensity_threshold=256):
-        print img.shape
         if img.shape[2] > 1:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         else:
@@ -31,19 +30,36 @@ class MserOperations():
 
 
         t0 = time()
-        self.mser.process_image(gray, intensity_threshold)
+
+        thresh = 256
+        if self.params.dynamic_intensity_threshold:
+            thresh = self.params.intensity_threshold
+            thresh += self.params.dynamic_intensity_threshold_increase * self.params.intensity_threshold
+            if thresh > 256:
+                thresh = 256
+            print "THRESHOLD: ", thresh
+
+
+        self.mser.process_image(gray, thresh)
         t1 = time()
+        self.params.mser_times += (t1-t0)
+        self.params.frame += 1
         print 'msers takes %f' %(t1-t0)
+
+        if self.params.frame == 500:
+            print 'in 100 frames msers takes %f' %(self.params.mser_times)
+
 
         regions = self.mser.get_regions()
 
         arena_indexes = self.arena_filter(regions)
+
         area_indexes = self.area_filter(regions, arena_indexes)
         axis_indexes = self.axis_filter(regions, area_indexes)
 
         visualize.draw_selected_regions(img, regions, axis_indexes, (128, 255, 0))
-        newx, newy = 600, 600
-        new_img = cv2.resize(img, (newx, newy))
+        #newx, newy = 600, 600
+        #new_img = cv2.resize(img, (newx, newy))
 
         return regions, axis_indexes
 
@@ -64,23 +80,35 @@ class MserOperations():
 
         for i in range(len(indexes)):
             ri = regions[indexes[i]]
-            d_area = abs(ri["area"] - self.params.avg_ant_area) / float(self.params.avg_ant_area)
-            if d_area > self.params.max_area_diff:
+            d_area = ri["area"] / float(self.params.avg_ant_area)
+            if d_area < self.params.max_area_diff:
                 ri["flags"] = "max_area_diff_kill"
                 continue
+            else:
+                d_area = float(ri["area"]) / float(self.params.avg_ant_area)
+                if d_area > 1 + self.params.max_area_diff:
+                    ri["flags"] = "max_area_diff_kill"
+                    continue
 
-            add = True
-            for j in range(0, len(indexes)):
-                rj = regions[indexes[j]]
-                if my_utils.e_distance(my_utils.Point(ri['cx'], ri['cy']), my_utils.Point(rj['cx'], rj['cy'])) < 5:
-                    #if ri['area'] > rj['area']:
-                    if abs(ri['area'] - self.params.avg_ant_area) > abs(rj['area'] - self.params.avg_ant_area):
-                        add = False
-                        ri["flags"] = "better_mser_nearby_kill"
-                        break
 
-            if add:
-                filtered_indexes.append(indexes[i])
+            #d_area = abs(ri["area"] - self.params.avg_ant_area) / float(self.params.avg_ant_area)
+            #if d_area > self.params.max_area_diff:
+            #    ri["flags"] = "max_area_diff_kill"
+            #    continue
+
+            #add = True
+            #for j in range(0, len(indexes)):
+            #    rj = regions[indexes[j]]
+            #    if my_utils.e_distance(my_utils.Point(ri['cx'], ri['cy']), my_utils.Point(rj['cx'], rj['cy'])) < 5:
+            #        #if ri['area'] > rj['area']:
+            #        if abs(ri['area'] - self.params.avg_ant_area) > abs(rj['area'] - self.params.avg_ant_area):
+            #            add = False
+            #            ri["flags"] = "better_mser_nearby_kill"
+            #            break
+
+            #if add:
+
+            filtered_indexes.append(indexes[i])
 
         return filtered_indexes
 

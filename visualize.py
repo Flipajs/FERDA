@@ -68,6 +68,9 @@ def draw_region_collection(img, regions, params, cols=10, rows=10, cell_size=50)
     for i in range(len(regions)):
         img_[border:-border, border:-border] = img.copy()
         r = regions[i]
+        if r["cx"] == inf or r["cy"] == inf:
+            continue
+
         c = (0, 255, 0)
 
         if r["flags"] == "arena_kill":
@@ -133,6 +136,8 @@ def draw_ants_collection(img, ants, cell_size = 70):
         cv2.putText(collection, "[" + str(a.state.position.x)[0:6] + ", " + str(a.state.position.y)[0:6] + "]", (w + 3, h2+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
         cv2.putText(collection, "theta: " + str(a.state.theta*180/3.14)[0:6], (w + 3, h3+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
         cv2.putText(collection, "area: " + str(a.state.area), (w + 3, h4+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
+        cv2.putText(collection, "[" + str(a.state.a)[0:6] + ", " + str(a.state.b)[0:6] + "]", (w2, h2+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
+        cv2.putText(collection, str(a.state.a / a.state.b)[0:6], (w2, h3+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
 
 
     cv2.line(collection, (color_stripe_width - 1, 0), (color_stripe_width - 1, c_height - 1), line_color, 1)

@@ -143,9 +143,11 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
 
     def predefined_ant_values(self):
         if self.params.predefined_vals == 'NoPlasterNoLid800':
-            arr = [2, 8, 10, 39, 14, 18, 24, 46, 36, 26, 5, 30, 33, 42, 50]
+            arr = [2, 5, 7, 9, 13, 16, 21, 24, 28, 31, 33, 36, 39, 43, 46]
         elif self.params.predefined_vals == 'eight':
             arr = [0, 4, 7, 11, 16, 21, 26, 29]
+        elif self.params.predefined_vals == 'Camera2':
+            arr = [1, 4, 8, 14, 19, 25, 30, 37, 43, 23, 35]
         else:
             return
 

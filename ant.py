@@ -196,6 +196,12 @@ def set_ant_state(ant, mser_id, region, add_history=True):
     ant.state.axis_rate, ant.state.a, ant.state.b = my_utils.mser_main_axis_rate(region["sxy"], region["sxx"], region["syy"])
     ant.state.theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
     ant.state.info = ""
+
+    #so the big jumpes will not appears
+    if ant.state.lost:
+        ant.history[0].position.x = ant.state.position.x
+        ant.history[0].position.y = ant.state.position.y
+
     ant.state.lost = False
     ant.state.lost_time = 0
     #ant.estimate_orientation(region)
@@ -205,7 +211,7 @@ def set_ant_state_undefined(ant, mser_id):
     if ant.state.area > 0:
         ant.history.appendleft(ant.state)
 
-    if mser_id == -1:
+    if mser_id < 0:
         ant.state.info = "NASM"
         #TODO> depends on if lost in colission mode
         ant.state.position += ant.velocity(1)

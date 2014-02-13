@@ -12,7 +12,6 @@ class LifeCycle():
 
     def next_img(self):
         f, self.img = self.capture.read()
-        print "But python can still print to stdout..."
 
         if not f:
             print "No more frames > lifeCycle.py"

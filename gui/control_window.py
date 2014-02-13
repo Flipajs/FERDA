@@ -39,6 +39,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.b_choose_path.clicked.connect(self.show_file_dialog)
         self.b_save_file.clicked.connect(self.save_data)
         self.ch_ants_collection.clicked.connect(self.show_ants_collection_changed)
+        self.ch_mser_collection.clicked.connect(self.show_mser_collection_changed)
         self.show()
 
     def step_by_step(self):
@@ -78,6 +79,9 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
     def show_ants_collection_changed(self):
         self.experiment.params.show_ants_collection = self.ch_ants_collection.isChecked()
+
+    def show_mser_collection_changed(self):
+        self.experiment.params.show_mser_collection = self.ch_mser_collection.isChecked()
 
     def save_data(self):
         path = self.out_directory
