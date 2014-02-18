@@ -42,6 +42,11 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.ch_mser_collection.clicked.connect(self.show_mser_collection_changed)
         self.show()
 
+        self.ch_ants_collection.setChecked(self.params.show_ants_collection)
+        self.ch_mser_collection.setChecked(self.params.show_mser_collection)
+
+        self.imshow_decreasing_factor.valueChanged.connect(self.imshow_decreasing_factor_changed)
+
     def step_by_step(self):
         self.is_running = True
         self.wait_for_button_press = True
@@ -98,6 +103,9 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         path += name
 
         sio.savemat(path, mdict={'antrack': data}, oned_as='row')
+
+    def imshow_decreasing_factor_changed(self):
+        self.params.imshow_decreasing_factor = self.imshow_decreasing_factor.value()
 
 def main():
     app = QtGui.QApplication(sys.argv)

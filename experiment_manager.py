@@ -9,8 +9,6 @@ import visualize
 import gt
 import utils as my_utils
 
-#TODO> mravenec vybira regions
-#TODO> MSER if > 254 nepridavej do grafu
 # kdyz hrozi kolize, mnohem ostrejsi pravidla na fit...
 # jinak muze byt clovek celkem benevolentni...
 
@@ -35,88 +33,22 @@ class ExperimentManager():
 
     def process_frame(self, img, wait_for_button_press):
         self.img_ = img.copy()
-
-        mask = numpy.ones((numpy.shape(img)[0], numpy.shape(img)[1], 1), dtype=numpy.uint8)*255
-        cv2.circle(mask, self.params.arena.center.int_tuple(), self.params.arena.size.width/2, 0, -1)
-        ##res = cv2.bitwise_and(self.img_, self.img_, mask=mask)
-        #res = cv2.bitwise_or(self.img_, self.img_, mask=mask)
-        idx = (mask==0)
-        mask[idx] = self.img_[idx]
+        mask = self.mask_img(img)
 
         regions, indexes = self.mser_operations.process_image(mask, self.params.intensity_threshold)
 
-        if self.params.frame > 588:
-            print "test"
-
-        if self.params.frame == 13:
-            print "test2"
-
-        regions_occupied = []
-
-        for i in indexes:
-            regions_occupied.append(regions[i])
-
-        #regions = regions2
-        result = score.max_weight_matching(self.ants, regions_occupied, self.params)
+        result = score.max_weight_matching(self.ants, regions, indexes, self.params)
 
         for i in range(self.ant_number):
             if result[i] < 0:
                 ant.set_ant_state_undefined(self.ants[i], result[i])
             else:
                 if self.params.dynamic_intensity_threshold:
-                    self.adjust_dynamic_intensity_threshold(regions_occupied[result[i]])
+                    self.adjust_dynamic_intensity_threshold(regions[result[i]])
 
-                ant.set_ant_state(self.ants[i], result[i], regions_occupied[result[i]])
+                ant.set_ant_state(self.ants[i], result[i], regions[result[i]])
 
-        #if self.params.frame < 600:
-        #    return
-
-        img_copy = self.img_.copy()
-        img_vis = visualize.draw_ants(img_copy, self.ants, regions_occupied, True)
-        #draw_dangerous_areas(I)
-        my_utils.imshow("ant track result", img_vis, True)
-        if self.params.show_mser_collection:
-            img_copy = self.img_.copy()
-            collection = visualize.draw_region_collection(img_copy, regions, self.params)
-            my_utils.imshow("mser collection", collection)
-
-        if self.params.show_ants_collection:
-            img_copy = self.img_.copy()
-            collection = visualize.draw_ants_collection(img_copy, self.ants)
-            my_utils.imshow("ants collection", collection)
-        else:
-            cv2.destroyWindow("ants collection")
-
-        if self.use_gt:
-            r = self.ground_truth.check_gt(self.ants, True)
-            if r.count(0) > 0:
-                broken_idx = [i for i in range(len(r)) if r[i] == 0]
-                for i in broken_idx:
-                    print self.ants[i].state
-
-                self.make_log(regions, indexes)
-                #print "FAIL!"
-                #print r
-
-                #while True:
-                #    k = cv2.waitKey(0)
-                #    if k == 'n':
-                #        break
-
-            print self.ground_truth.stats()
-
-        if wait_for_button_press:
-            while True:
-                k = cv2.waitKey(0)
-                if k == 32:
-                    break
-        else:
-            cv2.waitKey(5)
-
-    def make_log(self, regions, indexes):
-        self.ants
-        #print regions
-        print indexes
+        self.display_results(regions, indexes, wait_for_button_press)
 
     def count_ant_params(self):
         avg_area = 0
@@ -160,3 +92,47 @@ class ExperimentManager():
         new_val = self.params.intensity_threshold * (1-weight)
         new_val += weight * region["maxI"]
         self.params.intensity_threshold = new_val
+
+    def mask_img(self, img):
+        mask = numpy.ones((numpy.shape(img)[0], numpy.shape(img)[1], 1), dtype=numpy.uint8)*255
+        cv2.circle(mask, self.params.arena.center.int_tuple(), self.params.arena.size.width/2, 0, -1)
+        idx = (mask == 0)
+        mask[idx] = self.img_[idx]
+
+        return mask
+
+    def display_results(self, regions, indexes, wait_for_button_press):
+        img_copy = self.img_.copy()
+        img_vis = visualize.draw_ants(img_copy, self.ants, regions, True)
+        #draw_dangerous_areas(I)
+        my_utils.imshow("ant track result", img_vis, self.params.imshow_decreasing_factor)
+        if self.params.show_mser_collection:
+            img_copy = self.img_.copy()
+            collection = visualize.draw_region_collection(img_copy, regions, self.params)
+            my_utils.imshow("mser collection", collection)
+        else:
+            cv2.destroyWindow("mser collection")
+
+        if self.params.show_ants_collection:
+            img_copy = self.img_.copy()
+            collection = visualize.draw_ants_collection(img_copy, self.ants)
+            my_utils.imshow("ants collection", collection)
+        else:
+            cv2.destroyWindow("ants collection")
+
+        if self.use_gt:
+            r = self.ground_truth.check_gt(self.ants, True)
+            if r.count(0) > 0:
+                broken_idx = [i for i in range(len(r)) if r[i] == 0]
+                for i in broken_idx:
+                    print self.ants[i].state
+
+            print self.ground_truth.stats()
+
+        if wait_for_button_press:
+            while True:
+                k = cv2.waitKey(0)
+                if k == 32:
+                    break
+        else:
+            cv2.waitKey(5)

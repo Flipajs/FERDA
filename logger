@@ -1,0 +1,24 @@
+__author__ = 'flip'
+
+import pickle
+
+class Logger():
+    def __init__(self, experiment):
+        self.exp = experiment
+
+    def log(self):
+        s = []
+        s = self.sequence_info(s)
+        s = self.ants_info(s)
+
+    #def log_verbose(self):
+
+    def ants_info(self, s):
+        for i in range(self.exp.params.ant_number):
+            a = self.exp.ants[i]
+            s["a"+str(i)] = a.state
+
+
+    def sequence_info(self, s):
+        s["frame"] = self.exp.params.frame
+        return s
