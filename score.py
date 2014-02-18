@@ -103,12 +103,12 @@ def axis_change_prob(ant, region):
 def axis_a_change_prob(a_a, r_a):
     u = 0
     s = 0.4765*3
-    #max_val = mlab.normpdf(u, u, s)
-    max_val = log_normpdf(u, u, s)
+    max_val = mlab.normpdf(u, u, s)
+    #max_val = log_normpdf(u, u, s)
 
     x = r_a - a_a
-    #val = mlab.normpdf(x, u, s) / max_val
-    val = log_normpdf(x, u, s) / abs(max_val)
+    val = mlab.normpdf(x, u, s) / max_val
+    #val = log_normpdf(x, u, s) / abs(max_val)
 
     return val
 
@@ -116,12 +116,12 @@ def axis_a_change_prob(a_a, r_a):
 def axis_b_change_prob(a_b, r_b):
     u = 0
     s = 0.1676*3
-    #max_val = mlab.normpdf(u, u, s)
-    max_val = log_normpdf(u, u, s)
+    max_val = mlab.normpdf(u, u, s)
+    #max_val = log_normpdf(u, u, s)
 
     x = r_b - a_b
-    #val = mlab.normpdf(x, u, s) / max_val
-    val = log_normpdf(x, u, s) / abs(max_val)
+    val = mlab.normpdf(x, u, s) / max_val
+    #val = log_normpdf(x, u, s) / abs(max_val)
 
     return val
 
@@ -129,8 +129,8 @@ def axis_b_change_prob(a_b, r_b):
 def theta_change_prob(ant, region):
     u = 0
     s = 0.1619*3
-    #max_val = mlab.normpdf(u, u, s)
-    max_val = log_normpdf(u, u, s)
+    max_val = mlab.normpdf(u, u, s)
+    #max_val = log_normpdf(u, u, s)
 
     theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
     x = theta - ant.state.theta
@@ -144,8 +144,8 @@ def theta_change_prob(ant, region):
     if ant.state.lost:
         x /= ((math.log(ant.state.lost_time) + 2) / 2)
 
-    #val = mlab.normpdf(x, u, s) / max_val
-    val = log_normpdf(x, u, s) / abs(max_val)
+    val = mlab.normpdf(x, u, s) / max_val
+    #val = log_normpdf(x, u, s) / abs(max_val)
 
     return val
 
@@ -153,15 +153,15 @@ def theta_change_prob(ant, region):
 def position_prob(ant, region):
     u = 0
     s = 4.5669*2
-    #max_val = mlab.normpdf(u, u, s)
-    max_val = log_normpdf(u, u, s)
+    max_val = mlab.normpdf(u, u, s)
+    #max_val = log_normpdf(u, u, s)
     x = pred_distance_score(ant, region)
 
     if ant.state.lost:
         x /= (math.log(ant.state.lost_time) + 1)
 
-    #val = mlab.normpdf(x, u, s) / max_val
-    val = log_normpdf(x, u, s) / abs(max_val)
+    val = mlab.normpdf(x, u, s) / max_val
+    #val = log_normpdf(x, u, s) / abs(max_val)
     return val
 
 
@@ -170,20 +170,14 @@ def count_node_weight(ant, region, params):
     theta_p = theta_change_prob(ant, region)
     position_p = position_prob(ant, region)
 
-    if axis_p > 0 or theta_p > 0 or position_p > 0:
-        print "P > 0"
-
-    #prob = axis_p * theta_p * position_p
-    #prob = math.log(axis_p) + math.log(theta_p) + math.log(position_p)
-
-    prob = -1 / (axis_p + theta_p + position_p)
+    prob = axis_p * theta_p * position_p
 
     if ant.state.lost:
         if prob > params.undefined_threshold:
             #this ensure that this valu will be higher than weight of undefined state
             #prob = np.nextafter(params.undefined_threshold, 1)
             #prob = params.undefined_threshold*2
-            prob *= 0.1
+            prob *= 0.01
             #prob -= 4
             print "LOST", prob
 

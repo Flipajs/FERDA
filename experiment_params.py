@@ -15,7 +15,7 @@ class Params():
         self.max_area_diff = 0.6
 
         #TODO> WTF factor ~ INF
-        self.undefined_threshold = 0.08
+        self.undefined_threshold = 0.0001
 
         self.mser_times = 0
         self.frame = 0

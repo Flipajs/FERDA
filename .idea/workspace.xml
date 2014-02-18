@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9c9b6735-c027-4899-8186-a8bf1e1c3bc0" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_params.py" afterPath="$PROJECT_DIR$/experiment_params.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/score.py" afterPath="$PROJECT_DIR$/score.py" />
     </list>
     <ignored path="ants.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -32,7 +33,7 @@
           <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/experiment_manager.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="14" column="0" selection-start="249" selection-end="249" vertical-scroll-proportion="0.0" vertical-offset="252" max-vertical-offset="2574">
+                <state line="14" column="0" selection-start="249" selection-end="249" vertical-scroll-proportion="0.0" vertical-offset="252" max-vertical-offset="2448">
                   <folding />
                 </state>
               </provider>
@@ -59,7 +60,7 @@
           <file leaf-file-name="score.py" pinned="false" current="true" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/score.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="131" column="32" selection-start="3368" selection-end="3368" vertical-scroll-proportion="0.3369735" vertical-offset="2142" max-vertical-offset="3528">
+                <state line="167" column="43" selection-start="4248" selection-end="4248" vertical-scroll-proportion="0.35413417" vertical-offset="2779" max-vertical-offset="3420">
                   <folding>
                     <element signature="e#21#32#0" expanded="true" />
                   </folding>
@@ -106,7 +107,7 @@
           <file leaf-file-name="experiment_params.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/experiment_params.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="17" column="39" selection-start="387" selection-end="387" vertical-scroll-proportion="0.0" vertical-offset="349" max-vertical-offset="990">
+                <state line="17" column="41" selection-start="389" selection-end="389" vertical-scroll-proportion="0.0" vertical-offset="331" max-vertical-offset="972">
                   <folding />
                 </state>
               </provider>
@@ -620,11 +621,6 @@
           <line>80</line>
           <option name="timeStamp" value="67" />
         </line-breakpoint>
-        <line-breakpoint enabled="true" type="python-line">
-          <url>file://$PROJECT_DIR$/score.py</url>
-          <line>173</line>
-          <option name="timeStamp" value="141" />
-        </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
@@ -688,20 +684,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="14" column="0" selection-start="249" selection-end="249" vertical-scroll-proportion="0.0" vertical-offset="252" max-vertical-offset="2574">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gui/source_window.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="23" column="19" selection-start="586" selection-end="586" vertical-scroll-proportion="0.0" vertical-offset="162" max-vertical-offset="972">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/utils.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="83" column="42" selection-start="1664" selection-end="1664" vertical-scroll-proportion="0.0" vertical-offset="1038" max-vertical-offset="1710">
@@ -718,7 +700,21 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/experiment_params.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="17" column="39" selection-start="387" selection-end="387" vertical-scroll-proportion="0.0" vertical-offset="349" max-vertical-offset="990">
+        <state line="17" column="41" selection-start="389" selection-end="389" vertical-scroll-proportion="0.0" vertical-offset="331" max-vertical-offset="972">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gui/source_window.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="23" column="19" selection-start="586" selection-end="586" vertical-scroll-proportion="0.0" vertical-offset="162" max-vertical-offset="972">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="14" column="0" selection-start="249" selection-end="249" vertical-scroll-proportion="0.0" vertical-offset="252" max-vertical-offset="2574">
           <folding />
         </state>
       </provider>
@@ -732,7 +728,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/score.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="131" column="32" selection-start="3368" selection-end="3368" vertical-scroll-proportion="0.3369735" vertical-offset="2142" max-vertical-offset="3528">
+        <state line="167" column="43" selection-start="4248" selection-end="4248" vertical-scroll-proportion="0.35413417" vertical-offset="2779" max-vertical-offset="3420">
           <folding>
             <element signature="e#21#32#0" expanded="true" />
           </folding>
