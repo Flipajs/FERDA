@@ -5,7 +5,7 @@ __author__ = 'flip'
 from PyQt4 import QtGui
 import mser_operations
 import ant
-import utils as my_utils
+import my_utils
 import lifeCycle
 from numpy import *
 import cv2

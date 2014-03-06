@@ -1,7 +1,7 @@
 __author__ = 'flip'
 
 import cv2
-import utils
+import my_utils
 
 
 class Params():
@@ -30,12 +30,12 @@ class Params():
         self.imshow_decreasing_factor = 0.5
 
         self.ant_number = 15
-        self.arena = utils.RotatedRect(utils.Point(405+self.border, 386+self.border), utils.Size(763, 763), 0)
+        self.arena = my_utils.RotatedRect(my_utils.Point(405+self.border, 386+self.border), my_utils.Size(763, 763), 0)
         self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
         self.predefined_vals = 'NoPlasterNoLid800'
 
         #self.ant_number = 8
-        #self.arena = utils.RotatedRect(utils.Point(593+self.border, 570+self.border), utils.Size(344*2, 344*2), 0)
+        #self.arena = my_utils.RotatedRect(my_utils.Point(593+self.border, 570+self.border), my_utils.Size(344*2, 344*2), 0)
         #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
         #self.predefined_vals = 'eight'
 

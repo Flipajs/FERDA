@@ -81,7 +81,15 @@ def e_distance(p1, p2):
 
 
 def mser_theta(sxy, sxx, syy):
-    return 0.5*math.atan(2 * sxy / (sxx - syy))
+    theta = 0.5*math.atan2(2*sxy, (sxx - syy))
+    #it must be reversed around X because in image is top left corner [0, 0] and it is not very intuitive
+    theta = -theta
+    if theta < 0:
+        theta += math.pi
+
+    return theta
+
+    #return 0.5*math.atan(2 * sxy / (sxx - syy))
 
 def imshow(title, img, imshow_decreasing_factor = 1):
     img = cv2.resize(img, (int(img.shape[1]*imshow_decreasing_factor),

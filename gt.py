@@ -1,6 +1,6 @@
 __author__ = 'flip'
 
-import utils
+import my_utils
 
 class GroundTruth:
     def __init__(self, gt_file, experiment):
@@ -38,7 +38,7 @@ class GroundTruth:
         for i in range(len(ants)):
             g = self.next_ant()
             for a_idx in range(len(ants)):
-                if utils.e_distance(ants[a_idx].state.position, utils.Point(g[0], g[1])) < self.gt_precission:
+                if my_utils.e_distance(ants[a_idx].state.position, my_utils.Point(g[0], g[1])) < self.gt_precission:
                     self.gt_map[i] = a_idx
                     break
 
@@ -55,11 +55,11 @@ class GroundTruth:
                     if j == i:
                         continue
                     test_a = ants[self.gt_map[j]].state.position
-                    if utils.e_distance(a.state.position, test_a) < 35:
+                    if my_utils.e_distance(a.state.position, test_a) < 35:
                         closed_interaction = True
 
                 if a.state.lost_time > 50 and repair:
-                    self.fix_error(a, utils.Point(g[0], g[1]), g[2])
+                    self.fix_error(a, my_utils.Point(g[0], g[1]), g[2])
 
                     if not closed_interaction:
                         self.lost_error += 1
@@ -71,8 +71,8 @@ class GroundTruth:
                     else:
                         self.lost_counter += 1
             else:
-                print utils.e_distance(a.state.position, utils.Point(g[0], g[1]))
-                if utils.e_distance(a.state.position, utils.Point(g[0], g[1])) < self.gt_precission:
+                print my_utils.e_distance(a.state.position, my_utils.Point(g[0], g[1]))
+                if my_utils.e_distance(a.state.position, my_utils.Point(g[0], g[1])) < self.gt_precission:
                     r[i] = 1
                     self.right_counter += 1
                 else:
@@ -80,7 +80,7 @@ class GroundTruth:
                     self.error_counter += 1
                     print a.state.position.x, a.state.position.y, g[0], g[1], a.state.area, a.state.axis_rate,
                     if repair:
-                        self.fix_error(a, utils.Point(g[0], g[1]), g[2])
+                        self.fix_error(a, my_utils.Point(g[0], g[1]), g[2])
 
         return r
 

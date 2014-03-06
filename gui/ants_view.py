@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ants_view.ui'
 #
-# Created: Tue Feb 18 07:03:36 2014
+# Created: Tue Feb 25 15:57:40 2014
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -38,7 +38,7 @@ class Ui_Dialog(object):
         self.l_frame.setGeometry(QtCore.QRect(280, 0, 58, 17))
         self.l_frame.setObjectName(_fromUtf8("l_frame"))
         self.tabWidget = QtGui.QTabWidget(Dialog)
-        self.tabWidget.setGeometry(QtCore.QRect(0, 92, 350, 209))
+        self.tabWidget.setGeometry(QtCore.QRect(0, 90, 350, 209))
         self.tabWidget.setObjectName(_fromUtf8("tabWidget"))
         self.tab = QtGui.QWidget()
         self.tab.setObjectName(_fromUtf8("tab"))
@@ -71,6 +71,22 @@ class Ui_Dialog(object):
         self.ch_log_verbose.setGeometry(QtCore.QRect(10, 30, 161, 22))
         self.ch_log_verbose.setChecked(False)
         self.ch_log_verbose.setObjectName(_fromUtf8("ch_log_verbose"))
+        self.b_log_save_regions = QtGui.QPushButton(self.tab_2)
+        self.b_log_save_regions.setGeometry(QtCore.QRect(10, 71, 100, 27))
+        self.b_log_save_regions.setObjectName(_fromUtf8("b_log_save_regions"))
+        self.b_log_save_regions_collection = QtGui.QPushButton(self.tab_2)
+        self.b_log_save_regions_collection.setGeometry(QtCore.QRect(110, 71, 150, 27))
+        self.b_log_save_regions_collection.setObjectName(_fromUtf8("b_log_save_regions_collection"))
+        self.label_5 = QtGui.QLabel(self.tab_2)
+        self.label_5.setGeometry(QtCore.QRect(11, 56, 70, 17))
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_5.setFont(font)
+        self.label_5.setObjectName(_fromUtf8("label_5"))
+        self.b_log_save_frame = QtGui.QPushButton(self.tab_2)
+        self.b_log_save_frame.setGeometry(QtCore.QRect(10, 98, 100, 27))
+        self.b_log_save_frame.setObjectName(_fromUtf8("b_log_save_frame"))
         self.tabWidget.addTab(self.tab_2, _fromUtf8(""))
         self.tab_4 = QtGui.QWidget()
         self.tab_4.setObjectName(_fromUtf8("tab_4"))
@@ -112,6 +128,10 @@ class Ui_Dialog(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QtGui.QApplication.translate("Dialog", "display", None, QtGui.QApplication.UnicodeUTF8))
         self.ch_log_each_frame.setText(QtGui.QApplication.translate("Dialog", "each frame", None, QtGui.QApplication.UnicodeUTF8))
         self.ch_log_verbose.setText(QtGui.QApplication.translate("Dialog", "verbose", None, QtGui.QApplication.UnicodeUTF8))
+        self.b_log_save_regions.setText(QtGui.QApplication.translate("Dialog", "regions info", None, QtGui.QApplication.UnicodeUTF8))
+        self.b_log_save_regions_collection.setText(QtGui.QApplication.translate("Dialog", "regions collection", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_5.setText(QtGui.QApplication.translate("Dialog", "save:", None, QtGui.QApplication.UnicodeUTF8))
+        self.b_log_save_frame.setText(QtGui.QApplication.translate("Dialog", "frame", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QtGui.QApplication.translate("Dialog", "log", None, QtGui.QApplication.UnicodeUTF8))
         self.b_save_file.setText(QtGui.QApplication.translate("Dialog", "save", None, QtGui.QApplication.UnicodeUTF8))
         self.b_choose_path.setText(QtGui.QApplication.translate("Dialog", "choose path", None, QtGui.QApplication.UnicodeUTF8))

@@ -42,6 +42,10 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.ch_mser_collection.clicked.connect(self.show_mser_collection_changed)
         self.show()
 
+        self.b_log_save_regions.clicked.connect(self.log_save_regions)
+        self.b_log_save_regions_collection.clicked.connect(self.log_save_regions_collection)
+        self.b_log_save_frame.clicked.connect(self.log_save_frame)
+
         self.ch_ants_collection.setChecked(self.params.show_ants_collection)
         self.ch_mser_collection.setChecked(self.params.show_mser_collection)
 
@@ -106,6 +110,16 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
     def imshow_decreasing_factor_changed(self):
         self.params.imshow_decreasing_factor = self.imshow_decreasing_factor.value()
+
+    def log_save_regions(self):
+        self.experiment.log_regions()
+
+    def log_save_regions_collection(self):
+        self.experiment.log_regions_collection()
+
+    def log_save_frame(self):
+        self.experiment.log_frame()
+
 
 def main():
     app = QtGui.QApplication(sys.argv)

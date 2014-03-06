@@ -5,9 +5,10 @@ sys.path.append('libs')
 import cyMser
 import cv2
 import visualize
-import utils as my_utils
+import my_utils as my_utils
 from time import time
 from numpy import *
+import pickle
 
 
 #mser flags>
@@ -57,7 +58,17 @@ class MserOperations():
         area_indexes = self.area_filter(regions, arena_indexes)
         axis_indexes = self.axis_filter(regions, area_indexes)
 
-        visualize.draw_selected_regions(img, regions, axis_indexes, (128, 255, 0))
+        #visualize.draw_selected_regions(img, regions, axis_indexes, (128, 255, 0))
+
+
+        #if 200 < self.params.frame < 230:
+        #collection = visualize.draw_region_collection(img, regions, self.params)
+        #cv2.imwrite("out/collection.png", collection)
+        #afile = open(r'out/test.pkl', 'wb')
+        #pickle.dump(regions, afile)
+        #afile.close()
+
+
         #newx, newy = 600, 600
         #new_img = cv2.resize(img, (newx, newy))
 

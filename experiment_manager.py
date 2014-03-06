@@ -7,7 +7,9 @@ import mser_operations
 import score
 import visualize
 import gt
-import utils as my_utils
+import my_utils as my_utils
+import pickle
+
 
 # kdyz hrozi kolize, mnohem ostrejsi pravidla na fit...
 # jinak muze byt clovek celkem benevolentni...
@@ -21,6 +23,7 @@ class ExperimentManager():
         self.ants = ants
 
         self.use_gt = False
+        self.regions = []
 
         if self.use_gt:
             self.ground_truth = gt.GroundTruth('fixed_out.txt', self)
@@ -35,20 +38,23 @@ class ExperimentManager():
         self.img_ = img.copy()
         mask = self.mask_img(img)
 
-        regions, indexes = self.mser_operations.process_image(mask, self.params.intensity_threshold)
+        self.regions, indexes = self.mser_operations.process_image(mask, self.params.intensity_threshold)
 
-        result = score.max_weight_matching(self.ants, regions, indexes, self.params)
+        result = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
 
         for i in range(self.ant_number):
             if result[i] < 0:
                 ant.set_ant_state_undefined(self.ants[i], result[i])
             else:
                 if self.params.dynamic_intensity_threshold:
-                    self.adjust_dynamic_intensity_threshold(regions[result[i]])
+                    self.adjust_dynamic_intensity_threshold(self.regions[result[i]])
 
-                ant.set_ant_state(self.ants[i], result[i], regions[result[i]])
+                ant.set_ant_state(self.ants[i], result[i], self.regions[result[i]])
 
-        self.display_results(regions, indexes, wait_for_button_press)
+        #if 200 < self.params.frame < 220:
+        #    self.save_ants_info(regions)
+
+        self.display_results(self.regions, indexes, wait_for_button_press)
 
     def count_ant_params(self):
         avg_area = 0
@@ -136,3 +142,34 @@ class ExperimentManager():
                     break
         else:
             cv2.waitKey(5)
+
+    def save_ants_info(self, regions):
+        img_copy = self.img_.copy()
+
+        collection = visualize.draw_region_collection(img_copy, regions, self.params)
+        cv2.imwrite("out/collection_"+str(self.params.frame)+".png", collection)
+        afile = open(r'out/regions_'+str(self.params.frame)+'pkl', 'wb')
+        pickle.dump(regions, afile)
+        afile.close()
+
+        ants = [None]*self.params.ant_number
+        for i in range(self.params.ant_number):
+            ants[i] = self.ants[i].state
+
+        afile = open(r'out/ants_'+str(self.params.frame)+'.pkl', 'wb')
+        pickle.dump(ants, afile)
+        afile.close()
+
+    def log_regions_collection(self):
+        img_copy = self.img_.copy()
+
+        collection = visualize.draw_region_collection(img_copy, self.regions, self.params)
+        cv2.imwrite("out/collisions/collection_"+str(self.params.frame)+".png", collection)
+
+    def log_regions(self):
+        afile = open(r'out/collisions/regions_'+str(self.params.frame)+'pkl', 'wb')
+        pickle.dump(self.regions, afile)
+        afile.close()
+
+    def log_frame(self):
+        cv2.imwrite("out/frames/frame"+str(self.params.frame)+".png", self.img_)

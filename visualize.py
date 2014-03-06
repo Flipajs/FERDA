@@ -1,7 +1,7 @@
 __author__ = 'flip'
 
 import cv2
-import utils as my_utils
+import my_utils as my_utils
 from numpy import *
 
 

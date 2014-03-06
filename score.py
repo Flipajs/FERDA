@@ -2,9 +2,8 @@ __author__ = 'flip'
 
 import math
 import networkx as nx
-import numpy as np
 import matplotlib.mlab as mlab
-import utils as my_utils
+import my_utils as my_utils
 
 def pred_distance_score(a, region):
     x = a.predicted_position(1).x - region["cx"]
@@ -128,7 +127,7 @@ def axis_b_change_prob(a_b, r_b):
 
 def theta_change_prob(ant, region):
     u = 0
-    s = 0.1619*3
+    s = 0.1619*5
     max_val = mlab.normpdf(u, u, s)
     #max_val = log_normpdf(u, u, s)
 
@@ -166,11 +165,14 @@ def position_prob(ant, region):
 
 
 def count_node_weight(ant, region, params):
+    #tohle je spatne...
     axis_p = axis_change_prob(ant, region)
+
     theta_p = theta_change_prob(ant, region)
     position_p = position_prob(ant, region)
 
-    prob = axis_p * theta_p * position_p
+    #prob = axis_p * theta_p * position_p
+    prob = theta_p * position_p
 
     if ant.state.lost:
         if prob > params.undefined_threshold:
