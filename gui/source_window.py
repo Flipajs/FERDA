@@ -12,8 +12,8 @@ class SourceWindow(QtGui.QWidget, ants_main.Ui_Dialog):
     def __init__(self):
         super(SourceWindow, self).__init__()
         self.setupUi(self)
-
         self.init_ui()
+        self.window().setGeometry(0, 0, self.window().width(), self.window().height())
 
         self.params = experiment_params.Params()
         self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
@@ -37,13 +37,3 @@ class SourceWindow(QtGui.QWidget, ants_main.Ui_Dialog):
         p = init_window.InitWindow(self.params)
         p.show()
         p.exec_()
-
-
-def main():
-    app = QtGui.QApplication(sys.argv)
-    ex = SourceWindow()
-
-    sys.exit(app.exec_())
-
-if __name__ == '__main__':
-    main()

@@ -8,20 +8,20 @@ from matplotlib.patches import Ellipse
 import matplotlib.pyplot as plt
 import math
 import time
-
+import my_utils
 
 def get_points(region):
     points = []
     for r in region['rle']:
         for c in range(r['col1'], r['col2'] + 1):
-            points.append([r['line'], c])
+            points.append([c, r['line']])
 
     return points
 
 
 def get_trans_matrix(ellipse):
-    e = float(ellipse.width)
-    f = float(ellipse.height)
+    e = float(ellipse.width)/2
+    f = float(ellipse.height)/2
     th = ellipse.angle * math.pi / 180
 
     scale = np.array([[1 / e, 0], [0, 1 / f]])
@@ -39,7 +39,7 @@ def point_transformation(trans_matrix, ellipse_middle, pt):
 
     return pt2
 
-##CASE 1
+
 #def load_data():
 #    file10 = open('../out/collisions/regions_139pkl', 'rb')
 #    regions10 = pickle.load(file10)
@@ -57,7 +57,7 @@ def point_transformation(trans_matrix, ellipse_middle, pt):
 #    e = 25.
 #    f = 12.
 #    theta = 70 * math.pi / 180
-#    middle = np.array([20, 435])
+#    middle = np.array([435, 20])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
@@ -67,7 +67,7 @@ def point_transformation(trans_matrix, ellipse_middle, pt):
 #    e = 25.
 #    f = 12.
 #    theta = 45 * math.pi / 180
-#    middle = np.array([23, 450])
+#    middle = np.array([450, 23])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
@@ -90,7 +90,7 @@ def point_transformation(trans_matrix, ellipse_middle, pt):
 #    e = 25.
 #    f = 12.
 #    theta = 30 * math.pi / 180
-#    middle = np.array([600, 100])
+#    middle = np.array([100, 590])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
@@ -100,43 +100,44 @@ def point_transformation(trans_matrix, ellipse_middle, pt):
 #    e = 25.
 #    f = 12.
 #    theta = 45 * math.pi / 180
-#    middle = np.array([609, 106])
+#    middle = np.array([106, 609])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
 
 
-def load_data():
-    file10 = open('../out/collisions/regions_29pkl', 'rb')
-    regions10 = pickle.load(file10)
-    file10.close()
+#def load_data():
+#    file10 = open('../out/collisions/regions_29pkl', 'rb')
+#    regions10 = pickle.load(file10)
+#    file10.close()
+#
+#    mser = regions10[0]
+#
+#    data = get_points(mser)
+#    data = np.array(data)
+#
+#    return data
+#
+#
+#def ellipse_1():
+#    e = 25.
+#    f = 12.
+#    theta = 30 * math.pi / 180
+#    middle = np.array([725, 210])
+#    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
+#
+#    return ell
+#
+#
+#def ellipse_2():
+#    e = 25.
+#    f = 12.
+#    theta = 0 * math.pi / 180
+#    middle = np.array([730, 225])
+#    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
+#
+#    return ell
 
-    mser = regions10[0]
-
-    data = get_points(mser)
-    data = np.array(data)
-
-    return data
-
-
-def ellipse_1():
-    e = 25.
-    f = 12.
-    theta = 30 * math.pi / 180
-    middle = np.array([210, 725])
-    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
-
-    return ell
-
-
-def ellipse_2():
-    e = 25.
-    f = 12.
-    theta = 0 * math.pi / 180
-    middle = np.array([225, 730])
-    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
-
-    return ell
 
 #def load_data():
 #    file10 = open('../out/collisions/regions_102pkl', 'rb')
@@ -155,7 +156,7 @@ def ellipse_2():
 #    e = 25.
 #    f = 12.
 #    theta = 100 * math.pi / 180
-#    middle = np.array([18, 362])
+#    middle = np.array([362, 18])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
@@ -165,7 +166,7 @@ def ellipse_2():
 #    e = 25.
 #    f = 12.
 #    theta = 80 * math.pi / 180
-#    middle = np.array([29, 340])
+#    middle = np.array([340, 29])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
@@ -188,7 +189,7 @@ def ellipse_2():
 #    e = 25.
 #    f = 12.
 #    theta = 70 * math.pi / 180
-#    middle = np.array([12, 434])
+#    middle = np.array([434, 12])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
@@ -198,7 +199,7 @@ def ellipse_2():
 #    e = 25.
 #    f = 12.
 #    theta = 140 * math.pi / 180
-#    middle = np.array([13, 450])
+#    middle = np.array([450, 13])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
@@ -221,7 +222,7 @@ def ellipse_2():
 #    e = 25.
 #    f = 12.
 #    theta = 70 * math.pi / 180
-#    middle = np.array([12, 434])
+#    middle = np.array([434, 12])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
@@ -231,7 +232,7 @@ def ellipse_2():
 #    e = 25.
 #    f = 12.
 #    theta = 140 * math.pi / 180
-#    middle = np.array([13, 450])
+#    middle = np.array([450, 13])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
@@ -251,55 +252,55 @@ def ellipse_2():
 #
 #
 #def ellipse_1():
-#    e = 25.
-#    f = 12.
+#    e = 10.
+#    f = 4.
 #    theta = 70 * math.pi / 180
-#    middle = np.array([14, 456])
-#    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
+#    middle = np.array([456, 14])
+#    ell = Ellipse(xy=middle, width=e*2, height=f*2, angle=(theta * 180 / math.pi))
 #
 #    return ell
 #
 #
 #def ellipse_2():
-#    e = 25.
-#    f = 12.
+#    e = 10.
+#    f = 4.
 #    theta = 140 * math.pi / 180
-#    middle = np.array([16, 465])
-#    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
+#    middle = np.array([465, 16])
+#    ell = Ellipse(xy=middle, width=e*2, height=f*2, angle=(theta * 180 / math.pi))
 #
 #    return ell
 
-#def load_data():
-#    file10 = open('../out/collisions/regions_210pkl', 'rb')
-#    regions10 = pickle.load(file10)
-#    file10.close()
-#
-#    mser = regions10[8]
-#
-#    data = get_points(mser)
-#    data = np.array(data)
-#
-#    return data
-#
-#
-#def ellipse_1():
-#    e = 25.
-#    f = 12.
-#    theta = 20 * math.pi / 180
-#    middle = np.array([427, 800])
-#    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
-#
-#    return ell
-#
-#
-#def ellipse_2():
-#    e = 25.
-#    f = 12.
-#    theta = 90 * math.pi / 180
-#    middle = np.array([415, 798])
-#    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
-#
-#    return ell
+def load_data():
+    file10 = open('../out/collisions/regions_210pkl', 'rb')
+    regions10 = pickle.load(file10)
+    file10.close()
+
+    mser = regions10[8]
+
+    data = get_points(mser)
+    data = np.array(data)
+
+    return data
+
+
+def ellipse_1():
+    e = 25.
+    f = 12.
+    theta = 20 * math.pi / 180
+    middle = np.array([800, 427])
+    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
+
+    return ell
+
+
+def ellipse_2():
+    e = 25.
+    f = 12.
+    theta = 90 * math.pi / 180
+    middle = np.array([798, 415])
+    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
+
+    return ell
 
 #def load_data():
 #    file10 = open('../out/collisions/regions_161pkl', 'rb')
@@ -318,7 +319,7 @@ def ellipse_2():
 #    e = 25.
 #    f = 12.
 #    theta = 90 * math.pi / 180
-#    middle = np.array([14, 456])
+#    middle = np.array([456, 14])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
@@ -328,7 +329,7 @@ def ellipse_2():
 #    e = 25.
 #    f = 12.
 #    theta = 0 * math.pi / 180
-#    middle = np.array([16, 464])
+#    middle = np.array([464, 16])
 #    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 #
 #    return ell
@@ -440,10 +441,51 @@ def update_theta_med(data, ell):
     ell.angle = theta_new * 180 / math.pi
 
 
+def update_theta_moments(data, ell):
+    u00 = len(data[:, 0])
+
+    m11 = 0
+    m10 = 0
+    m01 = 0
+    m20 = 0
+    m02 = 0
+
+    for pt in data:
+        m11 += pt[0] * pt[1]
+        m10 += pt[0]
+        m01 += pt[1]
+        m20 += pt[0]*pt[0]
+        m02 += pt[1]*pt[1]
+
+
+    cx = m10/float(u00)
+    cy = m01/float(u00)
+
+    u11 = m11 - cx*m01
+    u20 = m20 - cx*m10
+    u02 = m02 - cy*m01
+
+    u11 /= float(u00)
+    u20 /= float(u00)
+    u02 /= float(u00)
+
+    #theta = my_utils.mser_theta(u11, u20, u02)
+    theta = 0.5*math.atan2(2*u11, (u20 - u02))
+
+    ell.angle = theta * 180 / math.pi
+    ell.center = [cx, cy]
+
+
 def test_end(ell1, ell2, old_c1, old_c2, old_t1, old_t2):
-    if ell1.center[0] == old_c1[0] and ell1.center[1] == old_c1[1] and ell2.center[0] == old_c2[0] and ell2.center[1] == old_c2[1]:
-        eps = 1
-        if abs(ell1.angle - old_t1) < eps and abs(ell2.angle - old_t2) < eps:
+    center_eps = 1
+    theta_eps = 5
+    dx1 = abs(ell1.center[0] - old_c1[0])
+    dy1 = abs(ell1.center[1] - old_c1[1])
+    dx2 = abs(ell2.center[0] - old_c2[0])
+    dy2 = abs(ell2.center[1] - old_c2[1])
+
+    if dx1 < center_eps and dy1 < center_eps and dx2 < center_eps and dy2 < center_eps:
+        if abs(ell1.angle - old_t1) < theta_eps and abs(ell2.angle - old_t2) < theta_eps:
             return True
 
     return False
@@ -464,17 +506,14 @@ def k_ellipse(data, ell1, ell2):
         l1 = np.where(labels == 1)
         l2 = np.where(labels == 2)
 
-        update_centre(data[l1], ell1)
-        update_centre(data[l2], ell2)
-        #update_theta(data[l1], ell1)
-        #update_theta(data[l2], ell2)
-        update_theta_med(data[l1], ell1)
-        update_theta_med(data[l2], ell2)
+        print "BEFORE reweighting"
+        visualize(data, l1, l2, ell1, ell2)
+
+        update_theta_moments(data[l1], ell1)
+        update_theta_moments(data[l2], ell2)
 
         if test_end(ell1, ell2, old_c1, old_c2, old_t1, old_t2):
             print "FINISHED: "
-        #    visualize(data, l1, l2, ell1, ell2, noellipse=True)
-        #else:
 
         visualize(data, l1, l2, ell1, ell2)
 
@@ -510,8 +549,10 @@ def visualize_init(data, ell1, ell2):
     plt.plot(epts2[:, 0], epts2[:, 1], 'g', linewidth=3)
     plt.plot(ell2.center[0], ell2.center[1], 'rx', mew=2)
 
+    plt.gca().invert_yaxis()
     show()
     plt.waitforbuttonpress()
+
 
 def visualize(data, l1, l2, ell1, ell2, noellipse=False):
     plt.close()
@@ -535,6 +576,7 @@ def visualize(data, l1, l2, ell1, ell2, noellipse=False):
         #draw_ellipse(ell1, ax)
         #draw_ellipse(ell2, ax)
 
+    plt.gca().invert_yaxis()
     show()
     plt.waitforbuttonpress()
 
@@ -571,6 +613,22 @@ def main():
     data = load_data()
     ell1 = ellipse_1()
     ell2 = ellipse_2()
+
+    #fig = figure()
+    #update_theta_moments(data, ell1)
+    #ax = fig.add_subplot(111, aspect='equal')
+    #plt.plot(data[:, 0], data[:, 1], 'ko')
+    #
+    #epts1 = get_ellipse_coords(a=ell1.width/2, b=ell1.height/2, x=ell1.center[0], y=ell1.center[1], angle=ell1.angle, k=1./8)
+    #plt.gca().invert_yaxis()
+    #plt.plot(epts1[:, 0], epts1[:, 1], 'y', linewidth=3)
+    #
+    #
+    #print "angle: ", ell1.angle
+    #plt.plot(data[:, 0], data[:, 1], 'o')
+    #plt.axis('equal')
+    #plt.show()
+
 
     start = time.time()
     k_ellipse(data, ell1, ell2)

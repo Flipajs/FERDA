@@ -3,6 +3,7 @@ __author__ = 'flip'
 import ant
 import numpy
 import cv2
+import cv
 import mser_operations
 import score
 import visualize
@@ -112,6 +113,8 @@ class ExperimentManager():
         img_vis = visualize.draw_ants(img_copy, self.ants, regions, True)
         #draw_dangerous_areas(I)
         my_utils.imshow("ant track result", img_vis, self.params.imshow_decreasing_factor)
+        if self.params.frame == 2:
+            cv.MoveWindow("ant track result", 350, 0)
         if self.params.show_mser_collection:
             img_copy = self.img_.copy()
             collection = visualize.draw_region_collection(img_copy, regions, self.params)

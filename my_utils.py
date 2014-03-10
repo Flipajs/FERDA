@@ -88,7 +88,6 @@ def mser_theta(sxy, sxx, syy):
         theta += math.pi
 
     return theta
-
     #return 0.5*math.atan(2 * sxy / (sxx - syy))
 
 def imshow(title, img, imshow_decreasing_factor = 1):

@@ -25,7 +25,8 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.frame = 1
 
         self.init_ui()
-        self.setWindowIcon(QtGui.QIcon('ferda.ico'))
+        self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
+        self.window().setGeometry(0, 0, self.window().width(), self.window().height())
 
     def closeEvent(self, event):
         self.is_running = False

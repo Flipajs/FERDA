@@ -6,8 +6,9 @@ from PyQt4 import QtGui
 import mser_operations
 import ant
 import my_utils
-import lifeCycle
+import video_manager
 from numpy import *
+import cv
 import cv2
 import visualize
 
@@ -18,7 +19,7 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         self.setupUi(self)
 
         self.params = params
-        self.life_cycle = lifeCycle.LifeCycle(self.params.video_file_name)
+        self.life_cycle = video_manager.VideoManager(self.params.video_file_name)
 
         self.ants = []
         self.regions = None
@@ -26,7 +27,8 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         self.img = None
 
         self.init_ui()
-        self.setWindowIcon(QtGui.QIcon('ferda.ico'))
+        self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
+        self.window().setGeometry(0, 0, self.window().width(), self.window().height())
 
         self.collection_rows = 10
         self.collection_cols = 10
@@ -112,6 +114,8 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         cv2.circle(img_, self.params.arena.center.int_tuple(), 3, (255, 255, 0), -1)
 
         my_utils.imshow("arena selection", img_, True)
+        x = self.window().width() + self.window().x() + 1
+        cv.MoveWindow("arena selection", x, 0)
 
     def assign_ant(self, id, val):
         if val == -1:
@@ -132,6 +136,8 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         img = visualize.draw_ants(img_, self.ants, self.regions, True)
 
         my_utils.imshow("ants selection", img, True)
+        x = self.window().width() + self.window().x() + 1
+        cv.MoveWindow("ants selection", x, 0)
 
     def start(self):
         cv2.destroyWindow("ants selection")
