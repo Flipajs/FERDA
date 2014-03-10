@@ -4,12 +4,14 @@ import ant
 import numpy
 import cv2
 import cv
+import copy
 import mser_operations
 import score
 import visualize
 import gt
 import my_utils as my_utils
 import pickle
+from collections import deque
 
 
 # kdyz hrozi kolize, mnohem ostrejsi pravidla na fit...
@@ -25,6 +27,7 @@ class ExperimentManager():
 
         self.use_gt = False
         self.regions = []
+        self.history = 0
 
         if self.use_gt:
             self.ground_truth = gt.GroundTruth('fixed_out.txt', self)
@@ -34,28 +37,43 @@ class ExperimentManager():
         self.count_ant_params()
 
         self.img_ = None
+        self.dynamic_intensity_threshold = deque()
 
-    def process_frame(self, img, wait_for_button_press):
+    def process_frame(self, img, forward=False):
         self.img_ = img.copy()
         mask = self.mask_img(img)
 
-        self.regions, indexes = self.mser_operations.process_image(mask, self.params.intensity_threshold)
+        print "pre: ", self.history
+        if forward:
+            self.params.frame += 1
+            self.history -= 1
+        else:
+            self.history += 1
+            print "history ", self.history
+            self.params.frame -= 1
 
-        result = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
+        intensity_threshold = self.params.intensity_threshold
+        if self.history > 0:
+            intensity_threshold = self.dynamic_intensity_threshold[self.history-1]
 
-        for i in range(self.ant_number):
-            if result[i] < 0:
-                ant.set_ant_state_undefined(self.ants[i], result[i])
-            else:
-                if self.params.dynamic_intensity_threshold:
-                    self.adjust_dynamic_intensity_threshold(self.regions[result[i]])
+        self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold)
+        if forward and self.history < 0:
+            self.history = 0
+            result = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
 
-                ant.set_ant_state(self.ants[i], result[i], self.regions[result[i]])
+            max_i = 0
+            for i in range(self.ant_number):
+                if result[i] < 0:
+                    ant.set_ant_state_undefined(self.ants[i], result[i])
+                else:
+                    if self.regions[result[i]]["maxI"] > max_i:
+                        max_i = self.regions[result[i]]["maxI"]
+                    ant.set_ant_state(self.ants[i], result[i], self.regions[result[i]])
 
-        #if 200 < self.params.frame < 220:
-        #    self.save_ants_info(regions)
+            if self.params.dynamic_intensity_threshold:
+                self.adjust_dynamic_intensity_threshold(max_i)
 
-        self.display_results(self.regions, indexes, wait_for_button_press)
+        self.display_results(self.regions, self.history)
 
     def count_ant_params(self):
         avg_area = 0
@@ -94,10 +112,11 @@ class ExperimentManager():
 
         return data
 
-    def adjust_dynamic_intensity_threshold(self, region):
-        weight = 1.0/(self.params.dynamic_intensity_threshold_history * self.params.ant_number)
+    def adjust_dynamic_intensity_threshold(self, max_i):
+        self.dynamic_intensity_threshold.appendleft(copy.copy(self.params.intensity_threshold))
+        weight = 1.0/self.params.dynamic_intensity_threshold_history
         new_val = self.params.intensity_threshold * (1-weight)
-        new_val += weight * region["maxI"]
+        new_val += weight * max_i
         self.params.intensity_threshold = new_val
 
     def mask_img(self, img):
@@ -108,13 +127,13 @@ class ExperimentManager():
 
         return mask
 
-    def display_results(self, regions, indexes, wait_for_button_press):
+    def display_results(self, regions, history=0):
         img_copy = self.img_.copy()
-        img_vis = visualize.draw_ants(img_copy, self.ants, regions, True)
+        img_vis = visualize.draw_ants(img_copy, self.ants, regions, True, history)
         #draw_dangerous_areas(I)
         my_utils.imshow("ant track result", img_vis, self.params.imshow_decreasing_factor)
-        if self.params.frame == 2:
-            cv.MoveWindow("ant track result", 350, 0)
+        if self.params.frame == 1:
+            cv.MoveWindow("ant track result", 400, 0)
         if self.params.show_mser_collection:
             img_copy = self.img_.copy()
             collection = visualize.draw_region_collection(img_copy, regions, self.params)
@@ -137,14 +156,6 @@ class ExperimentManager():
                     print self.ants[i].state
 
             print self.ground_truth.stats()
-
-        if wait_for_button_press:
-            while True:
-                k = cv2.waitKey(0)
-                if k == 32:
-                    break
-        else:
-            cv2.waitKey(5)
 
     def save_ants_info(self, regions):
         img_copy = self.img_.copy()

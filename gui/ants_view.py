@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ants_view.ui'
 #
-# Created: Tue Feb 25 15:57:40 2014
+# Created: Mon Mar 10 21:21:21 2014
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -22,11 +22,11 @@ class Ui_Dialog(object):
         self.groupBox_2.setGeometry(QtCore.QRect(10, 10, 320, 80))
         self.groupBox_2.setObjectName(_fromUtf8("groupBox_2"))
         self.b_play = QtGui.QPushButton(self.groupBox_2)
-        self.b_play.setGeometry(QtCore.QRect(10, 30, 90, 27))
+        self.b_play.setGeometry(QtCore.QRect(0, 20, 90, 27))
         self.b_play.setObjectName(_fromUtf8("b_play"))
-        self.b_stap_by_step = QtGui.QPushButton(self.groupBox_2)
-        self.b_stap_by_step.setGeometry(QtCore.QRect(110, 30, 101, 27))
-        self.b_stap_by_step.setObjectName(_fromUtf8("b_stap_by_step"))
+        self.b_backwards = QtGui.QPushButton(self.groupBox_2)
+        self.b_backwards.setGeometry(QtCore.QRect(110, 20, 101, 27))
+        self.b_backwards.setObjectName(_fromUtf8("b_backwards"))
         self.label_2 = QtGui.QLabel(self.groupBox_2)
         self.label_2.setGeometry(QtCore.QRect(216, 0, 61, 17))
         font = QtGui.QFont()
@@ -37,6 +37,9 @@ class Ui_Dialog(object):
         self.l_frame = QtGui.QLabel(self.groupBox_2)
         self.l_frame.setGeometry(QtCore.QRect(280, 0, 58, 17))
         self.l_frame.setObjectName(_fromUtf8("l_frame"))
+        self.b_forwards = QtGui.QPushButton(self.groupBox_2)
+        self.b_forwards.setGeometry(QtCore.QRect(210, 20, 98, 27))
+        self.b_forwards.setObjectName(_fromUtf8("b_forwards"))
         self.tabWidget = QtGui.QTabWidget(Dialog)
         self.tabWidget.setGeometry(QtCore.QRect(0, 90, 350, 209))
         self.tabWidget.setObjectName(_fromUtf8("tabWidget"))
@@ -119,9 +122,10 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(QtGui.QApplication.translate("Dialog", "experiment controls", None, QtGui.QApplication.UnicodeUTF8))
         self.groupBox_2.setTitle(QtGui.QApplication.translate("Dialog", "Controls", None, QtGui.QApplication.UnicodeUTF8))
         self.b_play.setText(QtGui.QApplication.translate("Dialog", "play", None, QtGui.QApplication.UnicodeUTF8))
-        self.b_stap_by_step.setText(QtGui.QApplication.translate("Dialog", "step by step", None, QtGui.QApplication.UnicodeUTF8))
+        self.b_backwards.setText(QtGui.QApplication.translate("Dialog", "< backwards", None, QtGui.QApplication.UnicodeUTF8))
         self.label_2.setText(QtGui.QApplication.translate("Dialog", "frame #:", None, QtGui.QApplication.UnicodeUTF8))
         self.l_frame.setText(QtGui.QApplication.translate("Dialog", "1", None, QtGui.QApplication.UnicodeUTF8))
+        self.b_forwards.setText(QtGui.QApplication.translate("Dialog", "forwards >", None, QtGui.QApplication.UnicodeUTF8))
         self.ch_mser_collection.setText(QtGui.QApplication.translate("Dialog", "msers collection", None, QtGui.QApplication.UnicodeUTF8))
         self.ch_ants_collection.setText(QtGui.QApplication.translate("Dialog", "ants collection", None, QtGui.QApplication.UnicodeUTF8))
         self.label_4.setText(QtGui.QApplication.translate("Dialog", "imshow reduction factor:", None, QtGui.QApplication.UnicodeUTF8))

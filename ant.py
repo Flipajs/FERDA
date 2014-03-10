@@ -178,8 +178,6 @@ class Ant():
         return a
 
 
-
-
 def set_ant_state(ant, mser_id, region, add_history=True):
     if ant.state.area > 0 and add_history:
         ant.history.appendleft(copy.copy(ant.state))
@@ -197,7 +195,7 @@ def set_ant_state(ant, mser_id, region, add_history=True):
     ant.state.theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
     ant.state.info = ""
 
-    #so the big jumpes will not appears
+    #so the big jumps will not appears
     if ant.state.lost:
         ant.history[0].position.x = ant.state.position.x
         ant.history[0].position.y = ant.state.position.y

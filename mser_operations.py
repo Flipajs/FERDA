@@ -32,19 +32,14 @@ class MserOperations():
 
         t0 = time()
 
-        thresh = 256
-        if self.params.dynamic_intensity_threshold:
-            thresh = self.params.intensity_threshold
-            thresh += self.params.dynamic_intensity_threshold_increase * self.params.intensity_threshold
-            if thresh > 256:
-                thresh = 256
-            print "THRESHOLD: ", thresh
+        if intensity_threshold > 256:
+            intensity_threshold = 256
+        print "THRESHOLD: ", intensity_threshold
 
 
-        self.mser.process_image(gray, thresh)
+        self.mser.process_image(gray, intensity_threshold)
         t1 = time()
         self.params.mser_times += (t1-t0)
-        self.params.frame += 1
         print 'msers takes %f' %(t1-t0)
 
         if self.params.frame == 500:

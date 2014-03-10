@@ -20,11 +20,11 @@ def draw_selected_regions(img, regions, indexes, color):
         draw_region(img, regions[indexes[i]], color)
 
 
-def draw_ants(img, ants, regions, filled):
+def draw_ants(img, ants, regions, filled, history=0):
     for i in range(len(ants)):
         c = ants[i].color
 
-        for j in range(len(ants[i].history)):
+        for j in range(history, len(ants[i].history)):
             if j > 50:
                 break
 
@@ -34,10 +34,14 @@ def draw_ants(img, ants, regions, filled):
 
             cv2.circle(img, ants[i].history[j].position.int_tuple(), path_strength, c, -1)
 
-        if ants[i].state.mser_id < 0:
+        mser_id = ants[i].state.mser_id
+        if history > 0:
+            mser_id = ants[i].history[history-1].mser_id
+
+        if mser_id < 0:
             continue
 
-        reg = regions[ants[i].state.mser_id]
+        reg = regions[mser_id]
 
         for j in range(len(reg["rle"])):
             a = reg["rle"][j]
@@ -138,6 +142,8 @@ def draw_ants_collection(img, ants, cell_size = 70):
         cv2.putText(collection, "area: " + str(a.state.area), (w + 3, h4+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
         cv2.putText(collection, "[" + str(a.state.a)[0:6] + ", " + str(a.state.b)[0:6] + "]", (w2, h2+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
         cv2.putText(collection, str(a.state.a / a.state.b)[0:6], (w2, h3+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
+        cv2.putText(collection, str(a.state.mser_id), (w2, h4+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
+
 
 
     cv2.line(collection, (color_stripe_width - 1, 0), (color_stripe_width - 1, c_height - 1), line_color, 1)
