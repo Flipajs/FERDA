@@ -2,11 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fa249b41-4065-4670-8381-5619991dcf2a" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/head_estimator.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/mean-ant.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ant.py" afterPath="$PROJECT_DIR$/ant.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/ants_view.py" afterPath="$PROJECT_DIR$/gui/ants_view.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/control_window.py" afterPath="$PROJECT_DIR$/gui/control_window.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gt.py" afterPath="$PROJECT_DIR$/gt.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/mser_main_axis_projection.py" afterPath="$PROJECT_DIR$/scripts/mser_main_axis_projection.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mser_operations.py" afterPath="$PROJECT_DIR$/mser_operations.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/my_utils.py" afterPath="$PROJECT_DIR$/my_utils.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/score.py" afterPath="$PROJECT_DIR$/score.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/visualize.py" afterPath="$PROJECT_DIR$/visualize.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
@@ -33,19 +37,19 @@
     <splitter split-orientation="horizontal" split-proportion="0.5">
       <split-first>
         <leaf>
-          <file leaf-file-name="init_window.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/gui/init_window.py">
+          <file leaf-file-name="score.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/score.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="145" column="23" selection-start="5253" selection-end="5253" vertical-scroll-proportion="0.0" vertical-offset="1250" max-vertical-offset="3222">
+                <state line="94" column="57" selection-start="2576" selection-end="2576" vertical-scroll-proportion="0.0" vertical-offset="1446" max-vertical-offset="3402">
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="experiment_manager.py" pinned="false" current="true" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+          <file leaf-file-name="visualize.py" pinned="false" current="true" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/visualize.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="48" column="29" selection-start="1125" selection-end="1125" vertical-scroll-proportion="-0.6297376" vertical-offset="1296" max-vertical-offset="3492">
+                <state line="72" column="56" selection-start="2110" selection-end="2110" vertical-scroll-proportion="0.88262194" vertical-offset="717" max-vertical-offset="3006">
                   <folding>
                     <element signature="e#21#31#0" expanded="true" />
                   </folding>
@@ -53,56 +57,40 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="score.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/score.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="153" column="16" selection-start="3895" selection-end="3895" vertical-scroll-proportion="0.0" vertical-offset="2754" max-vertical-offset="3456">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="visualize.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/visualize.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="37" column="23" selection-start="959" selection-end="959" vertical-scroll-proportion="0.0" vertical-offset="666" max-vertical-offset="2826">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
           <file leaf-file-name="mser_operations.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/mser_operations.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="4" column="13" selection-start="69" selection-end="69" vertical-scroll-proportion="0.0" vertical-offset="756" max-vertical-offset="2880">
+                <state line="118" column="31" selection-start="3576" selection-end="3576" vertical-scroll-proportion="0.0" vertical-offset="1986" max-vertical-offset="2880">
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="experiment_params.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/experiment_params.py">
+          <file leaf-file-name="gt.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/gt.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="5" column="0" selection-start="49" selection-end="49" vertical-scroll-proportion="0.0" vertical-offset="90" max-vertical-offset="990">
+                <state line="80" column="110" selection-start="2782" selection-end="2782" vertical-scroll-proportion="0.0" vertical-offset="1248" max-vertical-offset="1944">
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="video_manager.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/video_manager.py">
+          <file leaf-file-name="linalg.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file:///usr/local/lib/python2.7/dist-packages/numpy/linalg/linalg.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="53" column="42" selection-start="1471" selection-end="1475" vertical-scroll-proportion="0.0" vertical-offset="458" max-vertical-offset="1206">
+                <state line="2055" column="0" selection-start="64188" selection-end="64188" vertical-scroll-proportion="0.0" vertical-offset="36774" max-vertical-offset="38322">
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="control_window.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/gui/control_window.py">
+          <file leaf-file-name="convex_hull.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/scripts/convex_hull.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="16" column="26" selection-start="373" selection-end="373" vertical-scroll-proportion="0.0" vertical-offset="1716" max-vertical-offset="3132">
-                  <folding />
+                <state line="1" column="0" selection-start="23" selection-end="23" vertical-scroll-proportion="0.0" vertical-offset="162" max-vertical-offset="2034">
+                  <folding>
+                    <element signature="e#23#36#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -110,8 +98,28 @@
           <file leaf-file-name="my_utils.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/my_utils.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="75" column="0" selection-start="1503" selection-end="1503" vertical-scroll-proportion="0.0" vertical-offset="1350" max-vertical-offset="1854">
+                <state line="71" column="24" selection-start="1414" selection-end="1414" vertical-scroll-proportion="0.0" vertical-offset="929" max-vertical-offset="1836">
                   <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="mser_main_axis_projection.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/scripts/mser_main_axis_projection.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="118" column="55" selection-start="2864" selection-end="2864" vertical-scroll-proportion="0.0" vertical-offset="1868" max-vertical-offset="2952">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="101" column="20" selection-start="2964" selection-end="3062" vertical-scroll-proportion="0.0" vertical-offset="1356" max-vertical-offset="4086">
+                  <folding>
+                    <element signature="e#21#32#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -123,8 +131,37 @@
           <file leaf-file-name="ant.py" pinned="false" current="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/ant.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="186" column="35" selection-start="5431" selection-end="5431" vertical-scroll-proportion="0.33572453" vertical-offset="3114" max-vertical-offset="4032">
+                <state line="20" column="29" selection-start="968" selection-end="968" vertical-scroll-proportion="0.5091938" vertical-offset="0" max-vertical-offset="4374">
                   <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="kmeans.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/scripts/kmeans.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="638" column="0" selection-start="14766" selection-end="14766" vertical-scroll-proportion="-155.0" vertical-offset="7155" max-vertical-offset="11502">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="bb.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/scripts/bb.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="9" column="0" selection-start="176" selection-end="201" vertical-scroll-proportion="-6.0" vertical-offset="0" max-vertical-offset="3204">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="head_estimator.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/head_estimator.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="66" column="23" selection-start="1571" selection-end="1571" vertical-scroll-proportion="0.0" vertical-offset="1566" max-vertical-offset="2286">
+                  <folding>
+                    <element signature="e#24#42#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -149,25 +186,28 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/gui/source_window.py" />
-        <option value="$PROJECT_DIR$/gui/init_window.py" />
         <option value="$PROJECT_DIR$/scripts/kmeans.py" />
         <option value="$PROJECT_DIR$/scripts/video_seek.py" />
         <option value="$PROJECT_DIR$/video_manager.py" />
         <option value="$PROJECT_DIR$/controller.py" />
-        <option value="$PROJECT_DIR$/ant.py" />
-        <option value="$PROJECT_DIR$/mser_operations.py" />
-        <option value="$PROJECT_DIR$/score.py" />
         <option value="$PROJECT_DIR$/experiment_params.py" />
-        <option value="$PROJECT_DIR$/visualize.py" />
-        <option value="$PROJECT_DIR$/experiment_manager.py" />
         <option value="$PROJECT_DIR$/gui/control_window.py" />
+        <option value="$PROJECT_DIR$/head_estimator.py" />
+        <option value="$PROJECT_DIR$/scripts/mean-ant.py" />
+        <option value="$PROJECT_DIR$/gt.py" />
+        <option value="$PROJECT_DIR$/mser_operations.py" />
+        <option value="$PROJECT_DIR$/my_utils.py" />
+        <option value="$PROJECT_DIR$/score.py" />
+        <option value="$PROJECT_DIR$/scripts/mser_main_axis_projection.py" />
+        <option value="$PROJECT_DIR$/experiment_manager.py" />
+        <option value="$PROJECT_DIR$/ant.py" />
+        <option value="$PROJECT_DIR$/visualize.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="65" />
-    <option name="y" value="24" />
+    <option name="x" value="1985" />
+    <option name="y" value="-1824" />
     <option name="width" value="1855" />
     <option name="height" value="1056" />
   </component>
@@ -227,6 +267,20 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="scripts" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ants" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ants" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="matlab" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -312,6 +366,44 @@
       <RunnerSettings RunnerId="PyDebugRunner" />
       <RunnerSettings RunnerId="PythonRunner" />
       <ConfigurationWrapper RunnerId="PyDebugRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="mean-ant" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/scripts" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ants" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/mean-ant.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PyDebugRunner" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PyDebugRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="mser_main_axis_projection" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/scripts" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ants" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/mser_main_axis_projection.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PythonRunner" />
       <ConfigurationWrapper RunnerId="PythonRunner" />
       <method />
     </configuration>
@@ -436,16 +528,20 @@
       <option name="USE_PATTERN" value="false" />
       <method />
     </configuration>
-    <list size="3">
+    <list size="5">
       <item index="0" class="java.lang.String" itemvalue="Python.main" />
       <item index="1" class="java.lang.String" itemvalue="Python.kmeans" />
       <item index="2" class="java.lang.String" itemvalue="Python.video_seek" />
+      <item index="3" class="java.lang.String" itemvalue="Python.mean-ant" />
+      <item index="4" class="java.lang.String" itemvalue="Python.mser_main_axis_projection" />
     </list>
     <recent_temporary>
-      <list size="3">
+      <list size="5">
         <item index="0" class="java.lang.String" itemvalue="Python.main" />
-        <item index="1" class="java.lang.String" itemvalue="Python.kmeans" />
-        <item index="2" class="java.lang.String" itemvalue="Python.video_seek" />
+        <item index="1" class="java.lang.String" itemvalue="Python.mean-ant" />
+        <item index="2" class="java.lang.String" itemvalue="Python.mser_main_axis_projection" />
+        <item index="3" class="java.lang.String" itemvalue="Python.kmeans" />
+        <item index="4" class="java.lang.String" itemvalue="Python.video_seek" />
       </list>
     </recent_temporary>
   </component>
@@ -476,23 +572,23 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="65" y="24" width="1855" height="1056" extended-state="6" />
+    <frame x="1985" y="-1824" width="1855" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32916668" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24959569" sideWeight="0.778125" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24959569" sideWeight="0.67083335" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39895833" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23020834" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.21979167" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32916668" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
@@ -510,114 +606,139 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="python-line">
-          <url>file://$PROJECT_DIR$/ant.py</url>
-          <line>208</line>
-          <option name="timeStamp" value="2" />
+          <url>file://$PROJECT_DIR$/scripts/mean-ant.py</url>
+          <line>93</line>
+          <option name="timeStamp" value="8" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/experiment_manager.py</url>
+          <line>104</line>
+          <option name="timeStamp" value="10" />
         </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="3" />
+      <option name="time" value="11" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/cv2/cv.py">
+    <entry file="file:///usr/lib/pymodules/python2.7/matplotlib/pyplot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="1798" column="4" selection-start="58384" selection-end="58384" vertical-scroll-proportion="0.17446809" vertical-offset="32241" max-vertical-offset="41886" />
+        <state line="2368" column="4" selection-start="71823" selection-end="71823" vertical-scroll-proportion="0.0" vertical-offset="42012" max-vertical-offset="55368">
+          <folding />
+        </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/scripts/kmeans.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="266" column="32" selection-start="5479" selection-end="5479" vertical-scroll-proportion="0.0" vertical-offset="4646" max-vertical-offset="11502" />
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/qt.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="5467" column="8" selection-start="145200" selection-end="145200" vertical-scroll-proportion="0.18802229" vertical-offset="98271" max-vertical-offset="521676" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/my_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="75" column="0" selection-start="1503" selection-end="1503" vertical-scroll-proportion="0.0" vertical-offset="1064" max-vertical-offset="1836">
+        <state line="638" column="0" selection-start="14766" selection-end="14766" vertical-scroll-proportion="-155.0" vertical-offset="7155" max-vertical-offset="11502">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/source_window.spec">
+    <entry file="file:///usr/local/lib/python2.7/dist-packages/scipy/ndimage/interpolation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="718" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gui/source_window.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="15" column="8" selection-start="316" selection-end="394" vertical-scroll-proportion="0.41095892" vertical-offset="0" max-vertical-offset="792" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/video_seek.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="71" column="0" selection-start="1948" selection-end="1948" vertical-scroll-proportion="0.4409222" vertical-offset="972" max-vertical-offset="1692" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gui/init_window.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="145" column="23" selection-start="5253" selection-end="5253" vertical-scroll-proportion="0.0" vertical-offset="1250" max-vertical-offset="3222">
+        <state line="560" column="4" selection-start="21565" selection-end="21565" vertical-scroll-proportion="0.09212481" vertical-offset="9892" max-vertical-offset="12348">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/video_manager.py">
+    <entry file="file://$PROJECT_DIR$/scripts/mean-ant.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="53" column="42" selection-start="1471" selection-end="1475" vertical-scroll-proportion="0.0" vertical-offset="458" max-vertical-offset="1206">
+        <state line="101" column="0" selection-start="2338" selection-end="2338" vertical-scroll-proportion="1.615156" vertical-offset="731" max-vertical-offset="3564">
+          <folding>
+            <element signature="e#24#35#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/lib/python2.7/dist-packages/numpy/linalg/linalg.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="2055" column="0" selection-start="64188" selection-end="64188" vertical-scroll-proportion="0.0" vertical-offset="36774" max-vertical-offset="38322">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scripts/convex_hull.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="1" column="0" selection-start="23" selection-end="23" vertical-scroll-proportion="0.0" vertical-offset="162" max-vertical-offset="2034">
+          <folding>
+            <element signature="e#23#36#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="80" column="110" selection-start="2782" selection-end="2782" vertical-scroll-proportion="0.0" vertical-offset="1248" max-vertical-offset="1944">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/score.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="153" column="16" selection-start="3895" selection-end="3895" vertical-scroll-proportion="0.0" vertical-offset="2376" max-vertical-offset="3402">
+        <state line="94" column="57" selection-start="2576" selection-end="2576" vertical-scroll-proportion="0.0" vertical-offset="1446" max-vertical-offset="3402">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mser_operations.py">
+    <entry file="file://$PROJECT_DIR$/scripts/mser_main_axis_projection.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="4" column="13" selection-start="69" selection-end="69" vertical-scroll-proportion="0.0" vertical-offset="756" max-vertical-offset="2880">
+        <state line="118" column="55" selection-start="2864" selection-end="2864" vertical-scroll-proportion="0.0" vertical-offset="1868" max-vertical-offset="2952">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/my_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="71" column="24" selection-start="1414" selection-end="1414" vertical-scroll-proportion="0.0" vertical-offset="929" max-vertical-offset="1836">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/experiment_params.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="5" column="0" selection-start="49" selection-end="49" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="972">
+        <state line="5" column="0" selection-start="49" selection-end="49" vertical-scroll-proportion="-0.0067114094" vertical-offset="78" max-vertical-offset="972">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/visualize.py">
+    <entry file="file://$PROJECT_DIR$/mser_operations.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="37" column="23" selection-start="959" selection-end="959" vertical-scroll-proportion="0.0" vertical-offset="550" max-vertical-offset="2790">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ant.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="186" column="35" selection-start="5431" selection-end="5431" vertical-scroll-proportion="0.33572453" vertical-offset="3114" max-vertical-offset="4032">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gui/control_window.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="16" column="26" selection-start="373" selection-end="373" vertical-scroll-proportion="0.0" vertical-offset="1716" max-vertical-offset="3132">
+        <state line="118" column="31" selection-start="3576" selection-end="3576" vertical-scroll-proportion="0.0" vertical-offset="1986" max-vertical-offset="2880">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/experiment_manager.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="48" column="29" selection-start="1125" selection-end="1125" vertical-scroll-proportion="-0.6297376" vertical-offset="1296" max-vertical-offset="3492">
+        <state line="101" column="20" selection-start="2964" selection-end="3062" vertical-scroll-proportion="0.0" vertical-offset="1356" max-vertical-offset="4086">
+          <folding>
+            <element signature="e#21#32#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/head_estimator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="66" column="23" selection-start="1571" selection-end="1571" vertical-scroll-proportion="0.0" vertical-offset="918" max-vertical-offset="2286">
+          <folding>
+            <element signature="e#24#42#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ant.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="20" column="29" selection-start="968" selection-end="968" vertical-scroll-proportion="0.5091938" vertical-offset="0" max-vertical-offset="4374">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/visualize.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="72" column="56" selection-start="2110" selection-end="2110" vertical-scroll-proportion="0.88262194" vertical-offset="717" max-vertical-offset="3006">
           <folding>
             <element signature="e#21#31#0" expanded="true" />
           </folding>

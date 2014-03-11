@@ -65,7 +65,7 @@ class RotatedRect():
         self.angle = angle
 
 
-def mser_main_axis_rate(sxy, sxx, syy):
+def mser_main_axis_ratio(sxy, sxx, syy):
     la = (sxx + syy) / 2
     lb = math.sqrt(4 * sxy * sxy + (sxx - syy) * (sxx - syy)) / 2
 

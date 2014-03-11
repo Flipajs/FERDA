@@ -25,7 +25,7 @@ class AntState():
     back = my_utils.Point(0, 0)
     a = 0
     b = 0
-    axis_rate = 0
+    axis_ratio = 0
     area = -1
     size = my_utils.Size(0, 0)
     mser_id = -1
@@ -178,6 +178,24 @@ class Ant():
         return a
 
 
+def count_head_tail(ant):
+    ast = ant.state
+    b_ = math.sqrt(ast.area / (ast.axis_ratio * math.pi))
+    a_ = b_ * ast.axis_ratio
+
+    ant.state.a = a_
+    ant.state.b = b_
+
+    x = a_ * math.cos(ast.theta)
+    y = a_ * math.sin(ast.theta)
+
+    ant.state.head.x = ast.position.x + x
+    ant.state.head.y = ast.position.y + y
+
+    ant.state.back.x = ast.position.x - x
+    ant.state.back.y = ast.position.y - y
+
+
 def set_ant_state(ant, mser_id, region, add_history=True):
     if ant.state.area > 0 and add_history:
         ant.history.appendleft(copy.copy(ant.state))
@@ -191,7 +209,7 @@ def set_ant_state(ant, mser_id, region, add_history=True):
         ant.area_weighted = ant.area_weighted*(1-area_weight) + region["area"] * area_weight
 
     ant.state.position = my_utils.Point(region["cx"], region["cy"])
-    ant.state.axis_rate, ant.state.a, ant.state.b = my_utils.mser_main_axis_rate(region["sxy"], region["sxx"], region["syy"])
+    ant.state.axis_ratio, ant.state.a, ant.state.b = my_utils.mser_main_axis_ratio(region["sxy"], region["sxx"], region["syy"])
     ant.state.theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
     ant.state.info = ""
 
@@ -202,12 +220,13 @@ def set_ant_state(ant, mser_id, region, add_history=True):
 
     ant.state.lost = False
     ant.state.lost_time = 0
+    count_head_tail(ant)
     #ant.estimate_orientation(region)
 
 
 def set_ant_state_undefined(ant, mser_id):
     if ant.state.area > 0:
-        ant.history.appendleft(ant.state)
+        ant.history.appendleft(copy.copy(ant.state))
 
     if mser_id < 0:
         ant.state.info = "NASM"

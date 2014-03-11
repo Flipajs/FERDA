@@ -30,7 +30,6 @@ for id in ids:
             a[:, i] = [c-ant1['cx'], -(rle['line']-ant1['cy'])]
             i += 1
 
-
     U, s, V = np.linalg.svd(a, full_matrices=False)
 
     s2 = np.array([[s[0], 0], [0, 0]])
@@ -117,7 +116,7 @@ for id in ids:
     main_y = main_axis[1]
 
 
-    r, lambda1, lambda2 = my_utils.mser_main_axis_rate(ant1['sxy'], ant1['sxx'], ant1['syy'])
+    r, lambda1, lambda2 = my_utils.mser_main_axis_ratio(ant1['sxy'], ant1['sxx'], ant1['syy'])
     print 'Main axis (svd): ', main_axis, m_a_r
     print 'Lambdas (moments): ', lambda1, lambda2, r
 

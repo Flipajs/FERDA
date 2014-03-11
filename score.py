@@ -92,7 +92,7 @@ def log_normpdf(x, u, s):
     return a - b
 
 def axis_change_prob(ant, region):
-    _, region_a, region_b = my_utils.mser_main_axis_rate(region["sxy"], region["sxx"], region["syy"])
+    _, region_a, region_b = my_utils.mser_main_axis_ratio(region["sxy"], region["sxx"], region["syy"])
     a = axis_a_change_prob(ant.state.a, region_a)
     b = axis_b_change_prob(ant.state.b, region_b)
 

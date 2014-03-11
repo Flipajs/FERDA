@@ -123,7 +123,7 @@ class MserOperations():
         for i in range(0, len(filtered_indexes)):
             ri = regions[filtered_indexes[i]]
 
-            ratio, a, b = my_utils.mser_main_axis_rate(ri['sxy'], ri['sxx'], ri['syy'])
+            ratio, a, b = my_utils.mser_main_axis_ratio(ri['sxy'], ri['sxx'], ri['syy'])
             if abs(ratio - self.params.avg_ant_axis_ratio) < self.params.max_axis_ratio_diff:
                 indexes.append(filtered_indexes[i])
             else:
@@ -136,7 +136,7 @@ class MserOperations():
         for i in range(0, len(filtered_indexes)):
             ri = regions[filtered_indexes[i]]
 
-            ratio = my_utils.mser_main_axis_rate(ri['sxy'], ri['sxx'], ri['syy'])
+            ratio = my_utils.mser_main_axis_ratio(ri['sxy'], ri['sxx'], ri['syy'])
             if abs(ratio - self.params.avg_ant_axis_ratio) < self.params.max_axis_ratio_diff:
                 add = True
 

@@ -78,7 +78,7 @@ class GroundTruth:
                 else:
                     r[i] = 0
                     self.error_counter += 1
-                    print a.state.position.x, a.state.position.y, g[0], g[1], a.state.area, a.state.axis_rate,
+                    print a.state.position.x, a.state.position.y, g[0], g[1], a.state.area, a.state.axis_ratio,
                     if repair:
                         self.fix_error(a, my_utils.Point(g[0], g[1]), g[2])
 

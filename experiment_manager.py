@@ -1,7 +1,8 @@
 __author__ = 'flip'
 
+import math
 import ant
-import numpy
+import numpy as np
 import cv2
 import cv
 import copy
@@ -43,6 +44,7 @@ class ExperimentManager():
         self.img_ = img.copy()
         mask = self.mask_img(img)
 
+
         print "pre: ", self.history
         if forward:
             self.params.frame += 1
@@ -54,10 +56,11 @@ class ExperimentManager():
 
         intensity_threshold = self.params.intensity_threshold
         if self.history > 0:
-            intensity_threshold = self.dynamic_intensity_threshold[self.history-1]
+            intensity_threshold = self.dynamic_intensity_threshold[self.history]
 
         self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold)
         if forward and self.history < 0:
+            print "fwd + detect"
             self.history = 0
             result = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
 
@@ -73,11 +76,39 @@ class ExperimentManager():
             if self.params.dynamic_intensity_threshold:
                 self.adjust_dynamic_intensity_threshold(max_i)
 
-        self.display_results(self.regions, self.history)
+            collissions = self.collission_detection()
+
+        self.display_results(self.regions, collissions, self.history)
+
+    def collission_detection(self):
+        thresh = 70
+
+        collisions = []
+        for i in range(len(self.ants)):
+            a1 = self.ants[i]
+            for j in range(i+1, len(self.ants)):
+                a2 = self.ants[j]
+
+                a1cx = a1.state.position.x
+                a1cy = a1.state.position.y
+                a2cx = a2.state.position.x
+                a2cy = a2.state.position.y
+
+                x = a1cx - a2cx
+                y = a1cy - a2cy
+
+                dist = math.sqrt(x*x + y*y)
+                if dist < thresh:
+                    #print a1.state.back.x, a1.state.back.y
+                    #print a1.state.head.x, a1.state.head.y
+
+                    collisions.append((i, j, dist))
+
+        return collisions
 
     def count_ant_params(self):
         avg_area = 0
-        avg_axis_rate = 0
+        avg_axis_ratio = 0
         avg_axis_a = 0
         avg_axis_b = 0
         counter = 0
@@ -86,14 +117,14 @@ class ExperimentManager():
                 continue
 
             avg_area += a.state.area
-            avg_axis_rate += a.state.axis_rate
+            avg_axis_ratio += a.state.axis_ratio
             avg_axis_a += a.state.a
             avg_axis_b += a.state.b
             counter += 1
 
         if counter > 0:
             self.params.avg_ant_area = avg_area / counter
-            self.params.avg_ant_axis_ratio = avg_axis_rate / counter
+            self.params.avg_ant_axis_ratio = avg_axis_ratio / counter
             self.params.avg_ant_axis_a = avg_axis_a / counter
             self.params.avg_ant_axis_b = avg_axis_b / counter
         else:
@@ -120,15 +151,17 @@ class ExperimentManager():
         self.params.intensity_threshold = new_val
 
     def mask_img(self, img):
-        mask = numpy.ones((numpy.shape(img)[0], numpy.shape(img)[1], 1), dtype=numpy.uint8)*255
+        mask = np.ones((np.shape(img)[0], np.shape(img)[1], 1), dtype=np.uint8)*255
         cv2.circle(mask, self.params.arena.center.int_tuple(), self.params.arena.size.width/2, 0, -1)
         idx = (mask == 0)
         mask[idx] = self.img_[idx]
 
         return mask
 
-    def display_results(self, regions, history=0):
+    def display_results(self, regions, collissions, history=0):
         img_copy = self.img_.copy()
+
+        img_copy = visualize.draw_collission_risks(img_copy, self.ants, collissions)
         img_vis = visualize.draw_ants(img_copy, self.ants, regions, True, history)
         #draw_dangerous_areas(I)
         my_utils.imshow("ant track result", img_vis, self.params.imshow_decreasing_factor)
@@ -143,7 +176,7 @@ class ExperimentManager():
 
         if self.params.show_ants_collection:
             img_copy = self.img_.copy()
-            collection = visualize.draw_ants_collection(img_copy, self.ants)
+            collection = visualize.draw_ants_collection(img_copy, self.ants, history=history)
             my_utils.imshow("ants collection", collection)
         else:
             cv2.destroyWindow("ants collection")
