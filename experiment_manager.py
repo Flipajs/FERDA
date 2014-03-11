@@ -89,10 +89,10 @@ class ExperimentManager():
             for j in range(i+1, len(self.ants)):
                 a2 = self.ants[j]
 
-                a1cx = a1.state.position[0]
-                a1cy = a1.state.position[1]
-                a2cx = a2.state.position[0]
-                a2cy = a2.state.position[1]
+                a1cx = a1.state.position.x
+                a1cy = a1.state.position.y
+                a2cx = a2.state.position.x
+                a2cy = a2.state.position.y
 
                 x = a1cx - a2cx
                 y = a1cy - a2cy

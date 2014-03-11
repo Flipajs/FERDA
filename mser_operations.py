@@ -75,7 +75,7 @@ class MserOperations():
             reg = regions[i]
             reg["flags"] = "arena_kill"
 
-            if my_utils.is_inside_ellipse(self.params.arena, (reg['cx'], reg['cy'])):
+            if my_utils.is_inside_ellipse(self.params.arena, my_utils.Point(reg['cx'], reg['cy'])):
                 indexes.append(i)
                 reg["flags"] = None
 
@@ -142,7 +142,7 @@ class MserOperations():
 
                 for j in range(0, len(filtered_indexes)):
                     rj = regions[filtered_indexes[j]]
-                    if my_utils.e_distance((ri['cx'], ri['cy']), (rj['cx'], rj['cy'])) < 5:
+                    if my_utils.e_distance(my_utils.Point(ri['cx'], ri['cy']), my_utils.Point(rj['cx'], rj['cy'])) < 5:
                         if ri['area'] > rj['area']:
                             add = False
                             break

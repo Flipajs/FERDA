@@ -32,7 +32,7 @@ def draw_ants(img, ants, regions, filled, history=0):
             if j < 15:
                 path_strength = 2
 
-            cv2.circle(img, ants[i].history[j].position, path_strength, c, -1)
+            cv2.circle(img, ants[i].history[j].position.int_tuple(), path_strength, c, -1)
 
         mser_id = ants[i].state.mser_id
         if history > 0:
@@ -53,7 +53,7 @@ def draw_ants(img, ants, regions, filled, history=0):
                 cv2.circle(img, (a["col2"], a["line"]), 0, c, -1)
 
         if history == 0:
-            cv2.line(img, int(tuple(ants[i].state.position)), int(tuple(ants[i].predicted_position(1))), (255, 255, 255), 1)
+            cv2.line(img, ants[i].state.position.int_tuple(), ants[i].predicted_position(1).int_tuple(), (255, 255, 255), 1)
 
         #c = (0, 0, 0)
         #if ants[i].state.orientation:
@@ -120,8 +120,8 @@ def draw_ants_collection(img, ants, cell_size=70, history=0):
         if history > 0:
             a = ants[i].history[history]
 
-        y = a.position[1]
-        x = a.position[0]
+        y = a.position.y
+        x = a.position.x
         c = img_[border + y - cell_size / 2:border + y + cell_size / 2, border + x - cell_size / 2:border + x + cell_size / 2].copy()
         collection[i * cell_size:(i + 1)*cell_size, color_stripe_width:cell_size+color_stripe_width, :] = c
         collection[i * cell_size:(i + 1)*cell_size, 0:color_stripe_width, :] = ants[i].color
@@ -138,7 +138,7 @@ def draw_ants_collection(img, ants, cell_size=70, history=0):
         h3 = 47
         h4 = 64
         cv2.putText(collection, ants[i].name, (w + 3, h1+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
-        cv2.putText(collection, "[" + str(a.position[0])[0:6] + ", " + str(a.position[1])[0:6] + "]", (w + 3, h2+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
+        cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
         cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
         cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
         cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
@@ -154,8 +154,8 @@ def draw_collission_risks(img, ants, collissions):
         a1 = ants[c[0]]
         a2 = ants[c[1]]
 
-        p1 = (int(a1.state.position[0]), int(a1.state.position[1]))
-        p2 = (int(a2.state.position[0]), int(a2.state.position[1]))
+        p1 = (int(a1.state.position.x), int(a1.state.position.y))
+        p2 = (int(a2.state.position.x), int(a2.state.position.y))
         cv2.line(img, p1, p2, (0, 0, 255), 1)
 
 

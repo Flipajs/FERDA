@@ -2,13 +2,17 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fa249b41-4065-4670-8381-5619991dcf2a" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/head_estimator.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/mean-ant.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ant.py" afterPath="$PROJECT_DIR$/ant.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gt.py" afterPath="$PROJECT_DIR$/gt.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/mser_main_axis_projection.py" afterPath="$PROJECT_DIR$/scripts/mser_main_axis_projection.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mser_operations.py" afterPath="$PROJECT_DIR$/mser_operations.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/my_utils.py" afterPath="$PROJECT_DIR$/my_utils.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/score.py" afterPath="$PROJECT_DIR$/score.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/visualize.py" afterPath="$PROJECT_DIR$/visualize.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="ants.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -36,7 +40,7 @@
           <file leaf-file-name="score.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/score.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="175" column="21" selection-start="4454" selection-end="4454" vertical-scroll-proportion="0.0" vertical-offset="2829" max-vertical-offset="3420">
+                <state line="94" column="57" selection-start="2576" selection-end="2576" vertical-scroll-proportion="0.0" vertical-offset="1446" max-vertical-offset="3402">
                   <folding />
                 </state>
               </provider>
@@ -45,7 +49,7 @@
           <file leaf-file-name="visualize.py" pinned="false" current="true" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/visualize.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="53" column="0" selection-start="1413" selection-end="1413" vertical-scroll-proportion="0.6749634" vertical-offset="493" max-vertical-offset="3006">
+                <state line="72" column="56" selection-start="2110" selection-end="2110" vertical-scroll-proportion="0.88262194" vertical-offset="717" max-vertical-offset="3006">
                   <folding>
                     <element signature="e#21#31#0" expanded="true" />
                   </folding>
@@ -56,7 +60,7 @@
           <file leaf-file-name="mser_operations.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/mser_operations.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="144" column="65" selection-start="4616" selection-end="4616" vertical-scroll-proportion="0.0" vertical-offset="2302" max-vertical-offset="2880">
+                <state line="118" column="31" selection-start="3576" selection-end="3576" vertical-scroll-proportion="0.0" vertical-offset="1986" max-vertical-offset="2880">
                   <folding />
                 </state>
               </provider>
@@ -65,7 +69,7 @@
           <file leaf-file-name="gt.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/gt.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="61" column="38" selection-start="1856" selection-end="1856" vertical-scroll-proportion="0.0" vertical-offset="906" max-vertical-offset="1944">
+                <state line="80" column="110" selection-start="2782" selection-end="2782" vertical-scroll-proportion="0.0" vertical-offset="1248" max-vertical-offset="1944">
                   <folding />
                 </state>
               </provider>
@@ -94,7 +98,7 @@
           <file leaf-file-name="my_utils.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/my_utils.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="28" column="12" selection-start="539" selection-end="539" vertical-scroll-proportion="0.0" vertical-offset="289" max-vertical-offset="1854">
+                <state line="71" column="24" selection-start="1414" selection-end="1414" vertical-scroll-proportion="0.0" vertical-offset="929" max-vertical-offset="1836">
                   <folding />
                 </state>
               </provider>
@@ -112,7 +116,7 @@
           <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/experiment_manager.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="94" column="42" selection-start="2801" selection-end="2801" vertical-scroll-proportion="0.0" vertical-offset="1495" max-vertical-offset="4086">
+                <state line="101" column="20" selection-start="2964" selection-end="3062" vertical-scroll-proportion="0.0" vertical-offset="1356" max-vertical-offset="4086">
                   <folding>
                     <element signature="e#21#32#0" expanded="true" />
                   </folding>
@@ -127,7 +131,7 @@
           <file leaf-file-name="ant.py" pinned="false" current="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/ant.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="54" column="25" selection-start="1654" selection-end="1654" vertical-scroll-proportion="0.44257274" vertical-offset="683" max-vertical-offset="4464">
+                <state line="20" column="29" selection-start="968" selection-end="968" vertical-scroll-proportion="0.5091938" vertical-offset="0" max-vertical-offset="4374">
                   <folding />
                 </state>
               </provider>
@@ -154,19 +158,10 @@
           <file leaf-file-name="head_estimator.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/head_estimator.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="68" column="4" selection-start="1577" selection-end="1577" vertical-scroll-proportion="0.0" vertical-offset="1019" max-vertical-offset="2286">
+                <state line="66" column="23" selection-start="1571" selection-end="1571" vertical-scroll-proportion="0.0" vertical-offset="1566" max-vertical-offset="2286">
                   <folding>
                     <element signature="e#24#42#0" expanded="true" />
                   </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="experiment_params.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/experiment_params.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="37" column="52" selection-start="1169" selection-end="1169" vertical-scroll-proportion="0.0" vertical-offset="54" max-vertical-offset="972">
-                  <folding />
                 </state>
               </provider>
             </entry>
@@ -199,12 +194,12 @@
         <option value="$PROJECT_DIR$/gui/control_window.py" />
         <option value="$PROJECT_DIR$/head_estimator.py" />
         <option value="$PROJECT_DIR$/scripts/mean-ant.py" />
+        <option value="$PROJECT_DIR$/gt.py" />
+        <option value="$PROJECT_DIR$/mser_operations.py" />
+        <option value="$PROJECT_DIR$/my_utils.py" />
+        <option value="$PROJECT_DIR$/score.py" />
         <option value="$PROJECT_DIR$/scripts/mser_main_axis_projection.py" />
         <option value="$PROJECT_DIR$/experiment_manager.py" />
-        <option value="$PROJECT_DIR$/score.py" />
-        <option value="$PROJECT_DIR$/gt.py" />
-        <option value="$PROJECT_DIR$/my_utils.py" />
-        <option value="$PROJECT_DIR$/mser_operations.py" />
         <option value="$PROJECT_DIR$/ant.py" />
         <option value="$PROJECT_DIR$/visualize.py" />
       </list>
@@ -674,6 +669,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/gt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="80" column="110" selection-start="2782" selection-end="2782" vertical-scroll-proportion="0.0" vertical-offset="1248" max-vertical-offset="1944">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/score.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="94" column="57" selection-start="2576" selection-end="2576" vertical-scroll-proportion="0.0" vertical-offset="1446" max-vertical-offset="3402">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/scripts/mser_main_axis_projection.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="118" column="55" selection-start="2864" selection-end="2864" vertical-scroll-proportion="0.0" vertical-offset="1868" max-vertical-offset="2952">
@@ -681,69 +690,55 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+    <entry file="file://$PROJECT_DIR$/my_utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="94" column="42" selection-start="2801" selection-end="2801" vertical-scroll-proportion="0.0" vertical-offset="1495" max-vertical-offset="4086">
-          <folding>
-            <element signature="e#21#32#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/score.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="175" column="21" selection-start="4454" selection-end="4454" vertical-scroll-proportion="0.0" vertical-offset="2829" max-vertical-offset="3420">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/head_estimator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="68" column="4" selection-start="1577" selection-end="1577" vertical-scroll-proportion="0.0" vertical-offset="1019" max-vertical-offset="2286">
-          <folding>
-            <element signature="e#24#42#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gt.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="61" column="38" selection-start="1856" selection-end="1856" vertical-scroll-proportion="0.0" vertical-offset="906" max-vertical-offset="1944">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mser_operations.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="144" column="65" selection-start="4616" selection-end="4616" vertical-scroll-proportion="0.0" vertical-offset="2302" max-vertical-offset="2880">
+        <state line="71" column="24" selection-start="1414" selection-end="1414" vertical-scroll-proportion="0.0" vertical-offset="929" max-vertical-offset="1836">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/experiment_params.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="37" column="52" selection-start="1169" selection-end="1169" vertical-scroll-proportion="0.0" vertical-offset="54" max-vertical-offset="972">
+        <state line="5" column="0" selection-start="49" selection-end="49" vertical-scroll-proportion="-0.0067114094" vertical-offset="78" max-vertical-offset="972">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/my_utils.py">
+    <entry file="file://$PROJECT_DIR$/mser_operations.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="28" column="12" selection-start="539" selection-end="539" vertical-scroll-proportion="0.0" vertical-offset="289" max-vertical-offset="1854">
+        <state line="118" column="31" selection-start="3576" selection-end="3576" vertical-scroll-proportion="0.0" vertical-offset="1986" max-vertical-offset="2880">
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="101" column="20" selection-start="2964" selection-end="3062" vertical-scroll-proportion="0.0" vertical-offset="1356" max-vertical-offset="4086">
+          <folding>
+            <element signature="e#21#32#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/head_estimator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="66" column="23" selection-start="1571" selection-end="1571" vertical-scroll-proportion="0.0" vertical-offset="918" max-vertical-offset="2286">
+          <folding>
+            <element signature="e#24#42#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ant.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="54" column="25" selection-start="1654" selection-end="1654" vertical-scroll-proportion="0.44257274" vertical-offset="683" max-vertical-offset="4464">
+        <state line="20" column="29" selection-start="968" selection-end="968" vertical-scroll-proportion="0.5091938" vertical-offset="0" max-vertical-offset="4374">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/visualize.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="53" column="0" selection-start="1413" selection-end="1413" vertical-scroll-proportion="0.6749634" vertical-offset="493" max-vertical-offset="3006">
+        <state line="72" column="56" selection-start="2110" selection-end="2110" vertical-scroll-proportion="0.88262194" vertical-offset="717" max-vertical-offset="3006">
           <folding>
             <element signature="e#21#31#0" expanded="true" />
           </folding>

@@ -9,10 +9,10 @@ def is_inside_ellipse(el, point):
     ry = el.size.height / 2
 
     f = math.sqrt(rx * rx - ry * ry)
-    x1 = point[0] - el.center.x - f
-    x2 = point[1] - el.center.y
-    x3 = point[0] - el.center.x + f
-    x4 = point[1] - el.center.y
+    x1 = point.x - el.center.x - f
+    x2 = point.y - el.center.y
+    x3 = point.x - el.center.x + f
+    x4 = point.y - el.center.y
 
     return math.sqrt(x1 * x1 + x2 * x2) + math.sqrt(x3 * x3 + x4 * x4) < 2 * rx
 
@@ -76,9 +76,8 @@ def mser_main_axis_ratio(sxy, sxx, syy):
 
 
 def e_distance(p1, p2):
-    x = p1[0] - p2[0]
-    y = p1[1] - p2[1]
-    return math.sqrt(x * x + y * y)
+    p = p1 - p2
+    return math.sqrt(p.x * p.x + p.y * p.y)
 
 
 def mser_theta(sxy, sxx, syy):

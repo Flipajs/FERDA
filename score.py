@@ -6,9 +6,8 @@ import matplotlib.mlab as mlab
 import my_utils as my_utils
 
 def pred_distance_score(a, region):
-    pred = a.predicted_position(1)
-    x = pred[0] - region["cx"]
-    y = pred[1] - region["cy"]
+    x = a.predicted_position(1).x - region["cx"]
+    y = a.predicted_position(1).y - region["cy"]
 
     return math.sqrt(x*x + y*y)
 

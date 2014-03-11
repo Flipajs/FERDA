@@ -18,11 +18,11 @@ ant_colors = [(145, 95, 22), (54, 38, 227), (0, 191, 255), (204, 102, 153), (117
                   (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)]
 
 class AntState():
-    position = [0, 0]
+    position = my_utils.Point(0, 0)
     theta = 0
     orientation = 0 #if 1... means theta + 180
-    head = [0, 0]
-    back = [0, 0]
+    head = my_utils.Point(0, 0)
+    back = my_utils.Point(0, 0)
     a = 0
     b = 0
     axis_ratio = 0
@@ -49,10 +49,10 @@ class Ant():
 
     def velocity(self, history_depth):
         if len(self.history) == 0:
-            return (0, 0)
+            return my_utils.Point(0, 0)
 
         pos_ti = self.state.position
-        velocity = [0, 0]
+        velocity = my_utils.Point(0, 0)
         counter = 0
 
         for i in range(history_depth):
@@ -60,21 +60,18 @@ class Ant():
                 break
 
             pos_ti_minus1 = self.history[i]
-            velocity[0] += pos_ti[0] - pos_ti_minus1.position[0]
-            velocity[1] += pos_ti[1] - pos_ti_minus1.position[1]
-
+            velocity += pos_ti - pos_ti_minus1.position
             counter += 1
 
             pos_ti = pos_ti_minus1.position
 
-        velocity[0] /= counter
-        velocity[1] /= counter
+        velocity.x /= counter
+        velocity.y /= counter
 
         return velocity
 
     def predicted_position(self, history_depth):
-        pred = self.velocity(history_depth)
-        return [self.state.position[0] + pred[0], self.state.position[0] + pred[1]]
+        return self.state.position + self.velocity(history_depth)
 
     #returns stability (1 - #losts/history_depth)
     def stability(self, history_depth):
@@ -92,24 +89,24 @@ class Ant():
         c = self.state.position
         theta = self.state.theta
 
-        best_head = (c[0], c[1])
-        best_head_val = c[0]
-        best_back = (c[0], c[1])
-        best_back_val = c[0]
+        best_head = my_utils.Point(c.x, c.y)
+        best_head_val = c.x
+        best_back = my_utils.Point(c.x, c.y)
+        best_back_val = c.x
 
         wide = True
         if theta > 45 < 135:
             wide = False
-            best_head_val = c[1]
-            best_back_val = c[1]
+            best_head_val = c.y
+            best_back_val = c.y
 
         for r in region["rle"]:
             h = r["line"]
             l = r["col1"]
             r = r["col2"]
 
-            alpha = math.asin((h-c[1]) / math.sqrt(pow(l - c[0], 2) + pow(h - c[1], 2)))
-            beta = math.asin((h-c[1]) / math.sqrt(pow(r - c[0], 2) + pow(h - c[1], 2)))
+            alpha = math.asin((h-c.y) / math.sqrt(pow(l - c.x, 2) + pow(h - c.y, 2)))
+            beta = math.asin((h-c.y) / math.sqrt(pow(r - c.x, 2) + pow(h - c.y, 2)))
 
             pos = l + round(beta/(beta+alpha) * (r - l))
             if pos < l > r:
@@ -121,11 +118,11 @@ class Ant():
                 
             if comp > best_head_val:
                 best_head_val = comp
-                best_head = (pos, h)
+                best_head = my_utils.Point(pos, h)
 
             if comp < best_back_val:
                 best_back_val = comp
-                best_back = (pos, h)
+                best_back = my_utils.Point(pos, h)
 
         self.state.head = best_head
         self.state.back = best_back
@@ -148,7 +145,7 @@ class Ant():
         theta = [0] * history_len
         for i in range(first_frame, last_frame):
             state = self.history[i]
-            pos = state.position
+            pos = state.position.int_tuple()
             x[i] = pos[0]
             y[i] = pos[1]
             a[i] = state.a
@@ -192,11 +189,11 @@ def count_head_tail(ant):
     x = a_ * math.cos(ast.theta)
     y = a_ * math.sin(ast.theta)
 
-    ant.state.head[0] = ast.position[0] + x
-    ant.state.head[1] = ast.position[1] + y
+    ant.state.head.x = ast.position.x + x
+    ant.state.head.y = ast.position.y + y
 
-    ant.state.back[0] = ast.position[0] - x
-    ant.state.back[1] = ast.position[1] - y
+    ant.state.back.x = ast.position.x - x
+    ant.state.back.y = ast.position.y - y
 
 
 def set_ant_state(ant, mser_id, region, add_history=True):
@@ -211,15 +208,15 @@ def set_ant_state(ant, mser_id, region, add_history=True):
     else:
         ant.area_weighted = ant.area_weighted*(1-area_weight) + region["area"] * area_weight
 
-    ant.state.position = [region["cx"], region["cy"]]
+    ant.state.position = my_utils.Point(region["cx"], region["cy"])
     ant.state.axis_ratio, ant.state.a, ant.state.b = my_utils.mser_main_axis_ratio(region["sxy"], region["sxx"], region["syy"])
     ant.state.theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
     ant.state.info = ""
 
     #so the big jumps will not appears
     if ant.state.lost:
-        ant.history[0].position[0] = ant.state.position[0]
-        ant.history[0].position[1] = ant.state.position[1]
+        ant.history[0].position.x = ant.state.position.x
+        ant.history[0].position.y = ant.state.position.y
 
     ant.state.lost = False
     ant.state.lost_time = 0
@@ -234,9 +231,7 @@ def set_ant_state_undefined(ant, mser_id):
     if mser_id < 0:
         ant.state.info = "NASM"
         #TODO> depends on if lost in colission mode
-        vel = ant.velocity(1)
-        ant.state.position[0] += vel[0]
-        ant.state.position[1] += vel[1]
+        ant.state.position += ant.velocity(1)
         ant.state.mser_id = mser_id
         ant.state.lost = True
         ant.state.lost_time += 1
