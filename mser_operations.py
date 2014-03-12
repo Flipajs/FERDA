@@ -42,13 +42,12 @@ class MserOperations():
 
         regions = self.mser.get_regions()
 
-        groups = self.get_region_groups(regions)
-        print len(groups), groups
-
         arena_indexes = self.arena_filter(regions)
 
         if collisions:
-            regions = self.solve_merged(regions, arena_indexes, collisions)
+            groups, groups_avg_pos = self.get_region_groups(regions, arena_indexes)
+            print len(groups), groups, groups_avg_pos
+            regions = self.solve_merged(regions, groups, groups_avg_pos, collisions)
 
 
         axis_indexes = self.axis_filter(regions, arena_indexes)
@@ -57,40 +56,83 @@ class MserOperations():
 
         return regions, area_indexes
 
-    def get_region_groups(self, regions):
+    def get_region_groups(self, regions, indexes):
         prev = -1
         groups = []
+        groups_avg_pos = []
         i = -1
-        for ridx in range(len(regions)):
+        for ridx in indexes:
             r = regions[ridx]
             print ridx, r["minI"], r["maxI"], r["area"]
             if r["label"] > prev:
                 prev = r["label"]
                 groups.append([ridx])
+                groups_avg_pos.append([r["cx"], r["cy"]])
                 i += 1
             else:
                 groups[i].append(ridx)
+                groups_avg_pos[i][0] += r["cx"]
+                groups_avg_pos[i][1] += r["cy"]
 
-        return groups
+        for i in range(len(groups)):
+            groups_avg_pos[i][0] /= len(groups[i])
+            groups_avg_pos[i][1] /= len(groups[i])
 
-    def solve_merged(self, regions, arena_indexes, collisions):
-        #TODO
-        for i in arena_indexes:
 
-            r = regions[i]
-            if 0.7 < r['area'] / float(2 * self.params.avg_ant_area) < 1.4:
-                near_collision, c = self.is_near_collision(r, collisions)
-                if near_collision:
-                    print "SPLIT reg_id: ", i, c
+        return groups, groups_avg_pos
+
+    def collision_groups_idx(self, collisions):
+        ant_groups = {}
+        for c in collisions:
+            if ant_groups.has_key(c[0]):
+                ant_groups[c[0]].append(c[1])
+            else:
+                ant_groups[c[0]] = [c[0]]
+
+
+
+        return ant_groups
+
+    def solve_merged(self, regions, groups, groups_avg_pos, collisions):
+        cg_ants_idx = self.collision_groups_idx(collisions)
+        cg_groups_idx = {}
+
+        for i in range(len(groups_avg_pos)):
+            g_p = groups_avg_pos[i]
+
+            near_collision, c = self.is_near_collision(g_p[0], g_p[1], collisions)
+            if near_collision:
+                if cg_groups_idx.has_key(c[0]):
+                    cg_groups_idx[c[0]].append(i)
+                else:
+                    cg_groups_idx[c[0]] = [i]
+
+        #
+        #
+        #for g in groups:
+        #    for i in g:
+        #        r = regions[i]
+        #        #if 0.85 < r['area'] / float(2 * self.params.avg_ant_area):
+        #        near_collision, c = self.is_near_collision(r, collisions)
+        #        if near_collision:
+        #            #if i > 0:
+        #            #    p1 = my_utils.Point(regions[i-1]['cx'], regions[i-1]['cy'])
+        #            #    p2 = my_utils.Point(regions[i]['cx'], regions[i]['cy'])
+        #            #
+        #            #    if my_utils.e_distance(p1, p2) < eps:
+        #            #        continue
+        #
+        #            print "SPLIT reg_id: ", i, g
+        #            continue
 
         return regions
 
-    def is_near_collision(self, r, collision):
+    def is_near_collision(self, cx, cy, collision):
         #TODO
-        thresh = 30
+        thresh = 50
         for c in collision:
             #middle of collision
-            if my_utils.e_distance(c[4], my_utils.Point(r['cx'], r['cy'])) < thresh:
+            if my_utils.e_distance(c[4], my_utils.Point(cx, cy)) < thresh:
                 return True, c
 
         return False, None
