@@ -21,23 +21,26 @@ def max_weight_matching(ants, regions, regions_idx, params):
     ants_groups_preferences = graph_add_edges(graph, ants, regions, groups, params)
 
     result = nx.max_weight_matching(graph, True)
-    region_idxs = interpret_results_of_max_weighted_matching(result, ants, ants_groups_preferences)
+    region_idxs, costs = interpret_results_of_max_weighted_matching(result, ants, ants_groups_preferences, graph)
 
-    return region_idxs
+    return region_idxs, costs
 
 
-def interpret_results_of_max_weighted_matching(result, ants, ants_groups_preferences):
+def interpret_results_of_max_weighted_matching(result, ants, ants_groups_preferences, graph):
     region_idxs = [None]*len(ants)
+    costs = [None]*len(ants)
 
     for a in ants:
         node = result['a'+str(a.id)]
         if node[0] == 'u':
             region_idxs[a.id] = -1
+            costs[a.id] = -1
         else:
             idx = int(node[1:])
             region_idxs[a.id] = ants_groups_preferences[a.id][idx]
+            costs[a.id] = graph.get_edge_data('a'+str(a.id), node)['weight']
 
-    return region_idxs
+    return region_idxs, costs
 
 
 def graph_add_ants(G, ants):

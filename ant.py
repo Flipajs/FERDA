@@ -32,6 +32,9 @@ class AntState():
     info = None
     lost = False
     lost_time = 0
+    collision_predicted = False
+    collisions = []
+    score = 0
 
     def __init__(self):
         pass
@@ -186,22 +189,21 @@ def count_head_tail(ant):
     ant.state.a = a_
     ant.state.b = b_
 
-    x = a_ * math.cos(ast.theta)
-    y = a_ * math.sin(ast.theta)
+    #invert the y axis...
+    x = a_ * math.cos(-ast.theta)
+    y = a_ * math.sin(-ast.theta)
 
-    ant.state.head.x = ast.position.x + x
-    ant.state.head.y = ast.position.y + y
-
-    ant.state.back.x = ast.position.x - x
-    ant.state.back.y = ast.position.y - y
+    ant.state.head = my_utils.Point(ast.position.x + x, ast.position.y + y)
+    ant.state.back = my_utils.Point(ast.position.x - x, ast.position.y - y)
 
 
-def set_ant_state(ant, mser_id, region, add_history=True):
+def set_ant_state(ant, mser_id, region, add_history=True, cost=0):
     if ant.state.area > 0 and add_history:
         ant.history.appendleft(copy.copy(ant.state))
 
     area_weight = 0.01
     ant.state.mser_id = mser_id
+    ant.state.score = cost
     ant.state.area = region["area"]
     if ant.area_weighted < 0:
         ant.area_weighted = region["area"]
@@ -230,6 +232,7 @@ def set_ant_state_undefined(ant, mser_id):
 
     if mser_id < 0:
         ant.state.info = "NASM"
+        ant.state.score = -1
         #TODO> depends on if lost in colission mode
         ant.state.position += ant.velocity(1)
         ant.state.mser_id = mser_id

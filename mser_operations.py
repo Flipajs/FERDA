@@ -21,14 +21,12 @@ class MserOperations():
         self.mser = cyMser.PyMser()
         self.params = params
 
-    def process_image(self, img, intensity_threshold=256):
+    def process_image(self, img, intensity_threshold=256, collisions=None):
         if img.shape[2] > 1:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         else:
             gray = img[:, :, 0]
             gray.shape
-            #gray = img
-
 
         t0 = time()
 
@@ -42,32 +40,60 @@ class MserOperations():
         self.params.mser_times += (t1-t0)
         print 'msers takes %f' %(t1-t0)
 
-        if self.params.frame == 500:
-            print 'in 100 frames msers takes %f' %(self.params.mser_times)
-
-
         regions = self.mser.get_regions()
+
+        groups = self.get_region_groups(regions)
+        print len(groups), groups
 
         arena_indexes = self.arena_filter(regions)
 
-        area_indexes = self.area_filter(regions, arena_indexes)
-        axis_indexes = self.axis_filter(regions, area_indexes)
-
-        #visualize.draw_selected_regions(img, regions, axis_indexes, (128, 255, 0))
+        if collisions:
+            regions = self.solve_merged(regions, arena_indexes, collisions)
 
 
-        #if 200 < self.params.frame < 230:
-        #collection = visualize.draw_region_collection(img, regions, self.params)
-        #cv2.imwrite("out/collection.png", collection)
-        #afile = open(r'out/test.pkl', 'wb')
-        #pickle.dump(regions, afile)
-        #afile.close()
+        axis_indexes = self.axis_filter(regions, arena_indexes)
+        area_indexes = self.area_filter(regions, axis_indexes)
 
 
-        #newx, newy = 600, 600
-        #new_img = cv2.resize(img, (newx, newy))
+        return regions, area_indexes
 
-        return regions, axis_indexes
+    def get_region_groups(self, regions):
+        prev = -1
+        groups = []
+        i = -1
+        for ridx in range(len(regions)):
+            r = regions[ridx]
+            print ridx, r["minI"], r["maxI"], r["area"]
+            if r["label"] > prev:
+                prev = r["label"]
+                groups.append([ridx])
+                i += 1
+            else:
+                groups[i].append(ridx)
+
+        return groups
+
+    def solve_merged(self, regions, arena_indexes, collisions):
+        #TODO
+        for i in arena_indexes:
+
+            r = regions[i]
+            if 0.7 < r['area'] / float(2 * self.params.avg_ant_area) < 1.4:
+                near_collision, c = self.is_near_collision(r, collisions)
+                if near_collision:
+                    print "SPLIT reg_id: ", i, c
+
+        return regions
+
+    def is_near_collision(self, r, collision):
+        #TODO
+        thresh = 30
+        for c in collision:
+            #middle of collision
+            if my_utils.e_distance(c[4], my_utils.Point(r['cx'], r['cy'])) < thresh:
+                return True, c
+
+        return False, None
 
     def arena_filter(self, regions):
         indexes = []

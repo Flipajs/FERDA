@@ -28,9 +28,9 @@ def draw_ants(img, ants, regions, filled, history=0):
             if j > 50:
                 break
 
-            path_strength = 1
+            path_strength = 0
             if j < 15:
-                path_strength = 2
+                path_strength = 1
 
             cv2.circle(img, ants[i].history[j].position.int_tuple(), path_strength, c, -1)
 
@@ -43,14 +43,14 @@ def draw_ants(img, ants, regions, filled, history=0):
 
         reg = regions[mser_id]
 
-        for j in range(len(reg["rle"])):
-            a = reg["rle"][j]
-
-            if filled:
-                cv2.line(img, (a["col1"], a["line"]), (a["col2"], a["line"]), c, 1)
-            else:
-                cv2.circle(img, (a["col1"], a["line"]), 0, c, -1)
-                cv2.circle(img, (a["col2"], a["line"]), 0, c, -1)
+        #for j in range(len(reg["rle"])):
+        #    a = reg["rle"][j]
+        #
+        #    if filled:
+        #        cv2.line(img, (a["col1"], a["line"]), (a["col2"], a["line"]), c, 1)
+        #    else:
+        #        cv2.circle(img, (a["col1"], a["line"]), 0, c, -1)
+        #        cv2.circle(img, (a["col2"], a["line"]), 0, c, -1)
 
         if history == 0:
             cv2.line(img, ants[i].state.position.int_tuple(), ants[i].predicted_position(1).int_tuple(), (255, 255, 255), 1)
@@ -59,9 +59,16 @@ def draw_ants(img, ants, regions, filled, history=0):
         #if ants[i].state.orientation:
         #    c = (255, 255, 255)
 
-        print i, ants[i].state.head.int_tuple()
-        cv2.circle(img, ants[i].state.head.int_tuple(), 3, c, -1)
-        cv2.circle(img, ants[i].state.back.int_tuple(), 3, c, -1)
+        a = ants[i].state
+        if history > 0:
+            a = ants[i].history[history-1]
+
+        cv2.circle(img, a.position.int_tuple(), 3, (255,255,255), -1)
+        cv2.circle(img, a.head.int_tuple(), 2, (255,255,255), -1)
+        cv2.circle(img, a.back.int_tuple(), 2, (255,255,255), -1)
+        cv2.circle(img, a.head.int_tuple(), 1, c, -1)
+        cv2.circle(img, a.back.int_tuple(), 1, c, -1)
+        cv2.circle(img, a.position.int_tuple(), 2, c, -1)
 
     return img
 
@@ -103,8 +110,8 @@ def draw_region_collection(img, regions, params, cols=10, rows=10, cell_size=50)
     return collection
 
 
-def draw_ants_collection(img, ants, cell_size=70, history=0):
-    c_width = 5*cell_size
+def draw_ants_collection(img, ants, cell_size=60, history=0):
+    c_width = 6*cell_size
     c_height = len(ants) * cell_size
     collection = zeros((c_height, c_width, 3), dtype=uint8)
     border = cell_size
@@ -118,12 +125,17 @@ def draw_ants_collection(img, ants, cell_size=70, history=0):
     for i in range(len(ants)):
         a = ants[i].state
         if history > 0:
-            a = ants[i].history[history]
+            a = ants[i].history[history-1]
 
         y = a.position.y
         x = a.position.x
         c = img_[border + y - cell_size / 2:border + y + cell_size / 2, border + x - cell_size / 2:border + x + cell_size / 2].copy()
-        collection[i * cell_size:(i + 1)*cell_size, color_stripe_width:cell_size+color_stripe_width, :] = c
+
+        if a.lost:
+            collection[i * cell_size:(i + 1)*cell_size, color_stripe_width:cell_size+color_stripe_width, :] = c*0.5
+        else:
+            collection[i * cell_size:(i + 1)*cell_size, color_stripe_width:cell_size+color_stripe_width, :] = c
+
         collection[i * cell_size:(i + 1)*cell_size, 0:color_stripe_width, :] = ants[i].color
 
         if i > 0:
@@ -132,31 +144,49 @@ def draw_ants_collection(img, ants, cell_size=70, history=0):
         w = cell_size + color_stripe_width
         w2 = w + 135
         h = i*(cell_size)
-        font_scale = 0.85
-        h1 = 15
-        h2 = 32
-        h3 = 47
-        h4 = 64
-        cv2.putText(collection, ants[i].name, (w + 3, h1+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
-        cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
-        cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
-        cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
-        cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
-        cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
-        cv2.putText(collection, str(a.mser_id), (w2, h4+h), cv2.FONT_HERSHEY_PLAIN, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
+        font_scale = 0.80
+        font = cv2.FONT_HERSHEY_PLAIN
+        thick = 1
+        h1 = 11
+        h2 = 26
+        h3 = 40
+        h4 = 53
+        cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
+        cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
 
     cv2.line(collection, (color_stripe_width - 1, 0), (color_stripe_width - 1, c_height - 1), line_color, 1)
     return collection
 
 
-def draw_collission_risks(img, ants, collissions):
-    for c in collissions:
-        a1 = ants[c[0]]
-        a2 = ants[c[1]]
+def draw_collision_risks(img, ants, collisions, history):
+    for c in collisions:
+        a1 = ants[c[0]].state
+        a2 = ants[c[1]].state
+        if history > 0:
+            a1 = ants[c[0]].history[history-1]
+            a2 = ants[c[1]].history[history-1]
 
-        p1 = (int(a1.state.position.x), int(a1.state.position.y))
-        p2 = (int(a2.state.position.x), int(a2.state.position.y))
-        cv2.line(img, p1, p2, (0, 0, 255), 1)
+        if c[3] % 3 == 0:
+            p2 = a2.head
+        elif c[3] % 3 == 1:
+            p2 = a2.position
+        else:
+            p2 = a2.back
+
+        if c[3] < 3:
+            p1 = a1.head
+        elif c[3] < 6:
+            p1 = a1.position
+        else:
+            p1 = a1.back
+
+        cv2.line(img, p1.int_tuple(), p2.int_tuple(), (0, 0, 255), 1)
 
 
     return img

@@ -29,6 +29,7 @@ class ExperimentManager():
         self.use_gt = False
         self.regions = []
         self.history = 0
+        self.collisions = []
 
         if self.use_gt:
             self.ground_truth = gt.GroundTruth('fixed_out.txt', self)
@@ -58,11 +59,20 @@ class ExperimentManager():
         if self.history > 0:
             intensity_threshold = self.dynamic_intensity_threshold[self.history]
 
-        self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold)
+        if self.history > 0:
+            self.collisions = self.collision_detection(self.history+1)
+
+        self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold, self.collisions)
+
         if forward and self.history < 0:
             print "fwd + detect"
             self.history = 0
-            result = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
+            result, costs = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
+
+            #result = np.array(result)
+            #
+            #lost = result < 0
+            #result = process_lost(lost)
 
             max_i = 0
             for i in range(self.ant_number):
@@ -71,40 +81,91 @@ class ExperimentManager():
                 else:
                     if self.regions[result[i]]["maxI"] > max_i:
                         max_i = self.regions[result[i]]["maxI"]
-                    ant.set_ant_state(self.ants[i], result[i], self.regions[result[i]])
+                    ant.set_ant_state(self.ants[i], result[i], self.regions[result[i]], cost=costs[i])
 
             if self.params.dynamic_intensity_threshold:
                 self.adjust_dynamic_intensity_threshold(max_i)
 
-            collissions = self.collission_detection()
 
-        self.display_results(self.regions, collissions, self.history)
+        self.collisions = self.collision_detection(self.history)
+        #if self.params.frame < 26:
+        #    return
 
-    def collission_detection(self):
-        thresh = 70
+        self.display_results(self.regions, self.collisions, self.history)
+
+    def collision_detection(self, history=0):
+        thresh1 = 70
+        thresh2 = 20
 
         collisions = []
         for i in range(len(self.ants)):
-            a1 = self.ants[i]
+            a1 = self.ants[i].state
+            a1.collision_predicted = False
+            a1.collisions = []
+            if history > 0:
+                a1 = self.ants[i].history[history-1]
             for j in range(i+1, len(self.ants)):
-                a2 = self.ants[j]
+                a2 = self.ants[j].state
+                if history > 0:
+                    a2 = self.ants[j].history[history-1]
 
-                a1cx = a1.state.position.x
-                a1cy = a1.state.position.y
-                a2cx = a2.state.position.x
-                a2cy = a2.state.position.y
+                dist = my_utils.e_distance(a1.position, a2.position)
+                if dist < thresh1:
+                    dists = [0]*9
+                    dists[0] = my_utils.e_distance(a1.head, a2.head)
+                    dists[1] = my_utils.e_distance(a1.head, a2.position)
+                    dists[2] = my_utils.e_distance(a1.head, a2.back)
+                    dists[3] = my_utils.e_distance(a1.position, a2.head)
+                    dists[4] = dist
+                    dists[5] = my_utils.e_distance(a1.position, a2.back)
+                    dists[6] = my_utils.e_distance(a1.back, a2.head)
+                    dists[7] = my_utils.e_distance(a1.back, a2.position)
+                    dists[8] = my_utils.e_distance(a1.back, a2.back)
 
-                x = a1cx - a2cx
-                y = a1cy - a2cy
+                    min_i = np.argmin(np.array(dists))
+                    if dists[min_i] < thresh2:
+                        self.ants[i].state.collision_predicted = True
+                        self.ants[i].state.collisions.append((j, dists[min_i], min_i))
+                        self.ants[j].state.collision_predicted = True
+                        self.ants[j].state.collisions.append((i, dists[min_i], min_i))
 
-                dist = math.sqrt(x*x + y*y)
-                if dist < thresh:
-                    #print a1.state.back.x, a1.state.back.y
-                    #print a1.state.head.x, a1.state.head.y
+                        p1 = a1.head
+                        if min_i % 3 == 1:
+                            p1 = a1.position
+                        elif min_i % 3 == 2:
+                            p1 = a1.back
 
-                    collisions.append((i, j, dist))
+                        if min_i < 3:
+                            p2 = a2.head
+                        elif min_i < 6:
+                            p2 = a2.position
+                        elif min_i < 9:
+                            p2 = a2.back
+
+                        coll_middle = p1+p2
+                        coll_middle.x /= 2
+                        coll_middle.y /= 2
+
+                        collisions.append((i, j, dists[min_i], min_i, coll_middle))
 
         return collisions
+
+    def process_lost(self, lost):
+        for i in range(len(self.ants)):
+            if lost[i]:
+                a = self.ants[i]
+                if a.collision_predicted:
+                    partners = self.find_collision_partners(i, lost)
+
+
+    def find_collision_partners(self, a_idx, lost):
+        partners = []
+        for c in self.ants[a_idx].state.collisions:
+            if lost[c[0]]:
+                partners.append(c[0])
+
+        return partners
+
 
     def count_ant_params(self):
         avg_area = 0
@@ -161,7 +222,7 @@ class ExperimentManager():
     def display_results(self, regions, collissions, history=0):
         img_copy = self.img_.copy()
 
-        img_copy = visualize.draw_collission_risks(img_copy, self.ants, collissions)
+        img_copy = visualize.draw_collision_risks(img_copy, self.ants, collissions, history)
         img_vis = visualize.draw_ants(img_copy, self.ants, regions, True, history)
         #draw_dangerous_areas(I)
         my_utils.imshow("ant track result", img_vis, self.params.imshow_decreasing_factor)
