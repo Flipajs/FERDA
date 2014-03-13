@@ -88,7 +88,9 @@ def draw_region_collection(img, regions, params, cols=10, rows=10, cell_size=50)
 
         if r["flags"] == "arena_kill":
             c = (0, 0, 255)
-        elif r["flags"] == "max_area_diff_kill":
+        elif r["flags"] == "max_area_diff_kill_small":
+            c = (0, 100, 200)
+        elif r["flags"] == "max_area_diff_kill_big":
             c = (0, 128, 255)
         elif r["flags"] == "better_mser_nearby_kill":
             c = (200, 255, 0)
@@ -106,6 +108,53 @@ def draw_region_collection(img, regions, params, cols=10, rows=10, cell_size=50)
 
         cv2.putText(img_small, str(i), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
         collection[row * cell_size:(row + 1) * cell_size, col * cell_size:(col + 1) * cell_size, :] = img_small
+
+    return collection
+
+
+def draw_region_group_collection(img, regions, groups, params, cell_size=50):
+    rows = len(groups)
+    cols = 0
+    for g in groups:
+        if len(g) > cols:
+            cols = len(g)
+    num_strip = 20
+    collection = zeros((rows * cell_size, cols * cell_size + num_strip, 3), dtype=uint8)
+    border = cell_size
+
+    img_ = zeros((shape(img)[0] + 2 * border, shape(img)[1] + 2 * border, 3), dtype=uint8)
+    for row in range(len(groups)):
+        cv2.putText(collection, str(row), (3, 30 + cell_size*row), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+        for col in range(len(groups[row])):
+            img_[border:-border, border:-border] = img.copy()
+            r = regions[groups[row][col]]
+            if r["cx"] == inf or r["cy"] == inf:
+                continue
+
+            c = (0, 255, 0)
+
+            if r["flags"] == "arena_kill":
+                c = (0, 0, 255)
+            elif r["flags"] == "max_area_diff_kill_small":
+                c = (0, 100, 200)
+            elif r["flags"] == "max_area_diff_kill_big":
+                c = (0, 128, 255)
+            elif r["flags"] == "better_mser_nearby_kill":
+                c = (200, 255, 0)
+            elif r["flags"] == "axis_kill":
+                c = (200, 0, 255)
+
+            draw_region(img_[border:-border, border:-border], r, c)
+
+            #row = i / cols
+            #col = i % cols
+
+            img_small = img_[border + r[
+                "cy"] - cell_size / 2:border + r["cy"] + cell_size / 2, border + r["cx"] - cell_size / 2:border + r[
+                "cx"] + cell_size / 2].copy()
+
+            cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+            collection[row * cell_size:(row + 1) * cell_size, num_strip + col * cell_size:num_strip + (col + 1) * cell_size, :] = img_small
 
     return collection
 

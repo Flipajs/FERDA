@@ -21,7 +21,7 @@ class MserOperations():
         self.mser = cyMser.PyMser()
         self.params = params
 
-    def process_image(self, img, intensity_threshold=256, collisions=None):
+    def process_image(self, img, intensity_threshold=256):
         if img.shape[2] > 1:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         else:
@@ -44,98 +44,11 @@ class MserOperations():
 
         arena_indexes = self.arena_filter(regions)
 
-        if collisions:
-            groups, groups_avg_pos = self.get_region_groups(regions, arena_indexes)
-            print len(groups), groups, groups_avg_pos
-            regions = self.solve_merged(regions, groups, groups_avg_pos, collisions)
+        area_indexes = self.area_filter(regions, arena_indexes)
+        axis_indexes = self.axis_filter(regions, area_indexes)
 
 
-        axis_indexes = self.axis_filter(regions, arena_indexes)
-        area_indexes = self.area_filter(regions, axis_indexes)
-
-
-        return regions, area_indexes
-
-    def get_region_groups(self, regions, indexes):
-        prev = -1
-        groups = []
-        groups_avg_pos = []
-        i = -1
-        for ridx in indexes:
-            r = regions[ridx]
-            print ridx, r["minI"], r["maxI"], r["area"]
-            if r["label"] > prev:
-                prev = r["label"]
-                groups.append([ridx])
-                groups_avg_pos.append([r["cx"], r["cy"]])
-                i += 1
-            else:
-                groups[i].append(ridx)
-                groups_avg_pos[i][0] += r["cx"]
-                groups_avg_pos[i][1] += r["cy"]
-
-        for i in range(len(groups)):
-            groups_avg_pos[i][0] /= len(groups[i])
-            groups_avg_pos[i][1] /= len(groups[i])
-
-
-        return groups, groups_avg_pos
-
-    def collision_groups_idx(self, collisions):
-        ant_groups = {}
-        for c in collisions:
-            if ant_groups.has_key(c[0]):
-                ant_groups[c[0]].append(c[1])
-            else:
-                ant_groups[c[0]] = [c[0]]
-
-
-
-        return ant_groups
-
-    def solve_merged(self, regions, groups, groups_avg_pos, collisions):
-        cg_ants_idx = self.collision_groups_idx(collisions)
-        cg_groups_idx = {}
-
-        for i in range(len(groups_avg_pos)):
-            g_p = groups_avg_pos[i]
-
-            near_collision, c = self.is_near_collision(g_p[0], g_p[1], collisions)
-            if near_collision:
-                if cg_groups_idx.has_key(c[0]):
-                    cg_groups_idx[c[0]].append(i)
-                else:
-                    cg_groups_idx[c[0]] = [i]
-
-        #
-        #
-        #for g in groups:
-        #    for i in g:
-        #        r = regions[i]
-        #        #if 0.85 < r['area'] / float(2 * self.params.avg_ant_area):
-        #        near_collision, c = self.is_near_collision(r, collisions)
-        #        if near_collision:
-        #            #if i > 0:
-        #            #    p1 = my_utils.Point(regions[i-1]['cx'], regions[i-1]['cy'])
-        #            #    p2 = my_utils.Point(regions[i]['cx'], regions[i]['cy'])
-        #            #
-        #            #    if my_utils.e_distance(p1, p2) < eps:
-        #            #        continue
-        #
-        #            print "SPLIT reg_id: ", i, g
-        #            continue
-
-        return regions
-
-    def is_near_collision(self, cx, cy, collision):
-        #TODO
-        thresh = 50
-        for c in collision:
-            #middle of collision
-            if my_utils.e_distance(c[4], my_utils.Point(cx, cy)) < thresh:
-                return True, c
-
-        return False, None
+        return regions, axis_indexes
 
     def arena_filter(self, regions):
         indexes = []
@@ -156,12 +69,12 @@ class MserOperations():
             ri = regions[indexes[i]]
             d_area = ri["area"] / float(self.params.avg_ant_area)
             if d_area < self.params.max_area_diff:
-                ri["flags"] = "max_area_diff_kill"
+                ri["flags"] = "max_area_diff_kill_small"
                 continue
             else:
                 d_area = float(ri["area"]) / float(self.params.avg_ant_area)
                 if d_area > 1 + self.params.max_area_diff:
-                    ri["flags"] = "max_area_diff_kill"
+                    ri["flags"] = "max_area_diff_kill_big"
                     continue
 
 

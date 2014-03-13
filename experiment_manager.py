@@ -12,6 +12,7 @@ import visualize
 import gt
 import my_utils as my_utils
 import pickle
+import solve_merged
 from collections import deque
 
 
@@ -40,6 +41,8 @@ class ExperimentManager():
 
         self.img_ = None
         self.dynamic_intensity_threshold = deque()
+        self.groups = []
+        self.groups_avg_pos = []
 
     def process_frame(self, img, forward=False):
         self.img_ = img.copy()
@@ -62,17 +65,15 @@ class ExperimentManager():
         if self.history > 0:
             self.collisions = self.collision_detection(self.history+1)
 
-        self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold, self.collisions)
+        self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold)
+        self.groups, self.groups_avg_pos = self.get_region_groups(self.regions)
 
         if forward and self.history < 0:
             print "fwd + detect"
             self.history = 0
-            result, costs = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
+            self.solve_collisions(self.regions, self.groups, self.groups_avg_pos, indexes)
 
-            #result = np.array(result)
-            #
-            #lost = result < 0
-            #result = process_lost(lost)
+            result, costs = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
 
             max_i = 0
             for i in range(self.ant_number):
@@ -92,6 +93,128 @@ class ExperimentManager():
         #    return
 
         self.display_results(self.regions, self.collisions, self.history)
+
+    def solve_collisions(self, regions, groups, groups_avg_pos, indexes):
+        cg_ants_idx = self.collision_groups_idx(self.collisions)
+        cg_region_groups_idx = {}
+
+        for i in range(len(groups_avg_pos)):
+            g_p = groups_avg_pos[i]
+
+            near_collision, c = self.is_near_collision(g_p[0], g_p[1], self.collisions)
+            if near_collision:
+                if cg_region_groups_idx.has_key(c[0]):
+                    cg_region_groups_idx[c[0]].append(i)
+                else:
+                    cg_region_groups_idx[c[0]] = [i]
+
+        print cg_ants_idx
+        print cg_region_groups_idx
+        print groups
+
+        g_to_be_splitted = []
+        for key in cg_ants_idx:
+            result = self.solve_cg(cg_ants_idx[key], cg_region_groups_idx[key], groups_avg_pos)
+            if len(result) > 0:
+
+                print "SOLVING MERGED: "
+                labels, ell1, ell2 = solve_merged.solve_merged(regions[result[0][0]], self.ants, result[0][1])
+                print labels
+                print ell1
+                print ell2
+                print "angle: ", ell1.angle * 180 / math.pi, ell2.angle * 180 / math.pi
+                g_to_be_splitted.append(result)
+
+
+        print "to be splitted: ", g_to_be_splitted
+
+        return regions
+
+    def solve_cg(self, ants_idx, groups_idx, groups_avg_pos):
+        ant_votes = [[] for i in range(len(groups_idx))]
+
+
+        for a in ants_idx:
+            vals = [0]*len(groups_idx)
+            for i in range(len(groups_idx)):
+                g_p = groups_avg_pos[groups_idx[i]]
+                vals[i] = my_utils.e_distance(self.ants[a].predicted_position(1), my_utils.Point(g_p[0], g_p[1]))
+
+            id = np.argmin(np.array(vals))
+
+            ant_votes[id].append(a)
+
+        to_be_splitted = []
+        for i in range(len(groups_idx)):
+            if len(ant_votes[i]) > 1:
+                to_be_splitted.append([groups_idx[i], ant_votes[i]])
+        
+        return to_be_splitted
+
+    def is_near_collision(self, cx, cy, collision):
+        thresh = 70
+        for c in collision:
+            #middle of collision
+            if my_utils.e_distance(c[4], my_utils.Point(cx, cy)) < thresh:
+                return True, c
+
+        return False, None
+
+    def collision_groups_idx(self, collisions):
+        print collisions
+        ant_groups = {}
+        for c in collisions:
+            if ant_groups.has_key(c[0]):
+                ant_groups[c[0]].append(c[1])
+            else:
+                write0 = True
+                write0_key = -1
+                write1 = True
+                for key in ant_groups:
+                    if c[0] in ant_groups[key]:
+                        write0 = False
+                        write0_key = key
+                    if c[1] in ant_groups[key]:
+                        write1 = False
+                        write1_key = key
+
+                if write0 and write1:
+                    ant_groups[c[0]] = [c[0], c[1]]
+                elif write0:
+                    ant_groups[write1_key].append(c[0])
+                elif write1:
+                    ant_groups[write0_key].append(c[1])
+
+        return ant_groups
+
+    def get_region_groups(self, regions):
+        prev = -1
+        groups = []
+        groups_avg_pos = []
+        i = -1
+        for ridx in range(len(regions)):
+            r = regions[ridx]
+            if r["flags"] == "arena_kill":
+                continue
+            if r["flags"] == "max_area_diff_kill_small":
+                continue
+
+            if r["label"] > prev:
+                prev = r["label"]
+                groups.append([ridx])
+                groups_avg_pos.append([r["cx"], r["cy"]])
+                i += 1
+            else:
+                groups[i].append(ridx)
+                groups_avg_pos[i][0] += r["cx"]
+                groups_avg_pos[i][1] += r["cy"]
+
+        for i in range(len(groups)):
+            groups_avg_pos[i][0] /= len(groups[i])
+            groups_avg_pos[i][1] /= len(groups[i])
+
+
+        return groups, groups_avg_pos
 
     def collision_detection(self, history=0):
         thresh1 = 70
@@ -230,7 +353,8 @@ class ExperimentManager():
             cv.MoveWindow("ant track result", 400, 0)
         if self.params.show_mser_collection:
             img_copy = self.img_.copy()
-            collection = visualize.draw_region_collection(img_copy, regions, self.params)
+            #collection = visualize.draw_region_collection(img_copy, regions, self.params)
+            collection = visualize.draw_region_group_collection(img_copy, regions, self.groups, self.params)
             my_utils.imshow("mser collection", collection)
         else:
             cv2.destroyWindow("mser collection")
