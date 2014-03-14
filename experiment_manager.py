@@ -26,8 +26,9 @@ class ExperimentManager():
         self.params = params
 
         self.ants = ants
+        self.number_of_splits = 0
 
-        self.use_gt = False
+        self.use_gt = True
         self.regions = []
         self.history = 0
         self.collisions = []
@@ -48,8 +49,6 @@ class ExperimentManager():
         self.img_ = img.copy()
         mask = self.mask_img(img)
 
-
-        print "pre: ", self.history
         if forward:
             self.params.frame += 1
             self.history -= 1
@@ -58,21 +57,29 @@ class ExperimentManager():
             print "history ", self.history
             self.params.frame -= 1
 
+        print " "
+        print "FRAME: ", self.params.frame
+
         intensity_threshold = self.params.intensity_threshold
         if self.history > 0:
             intensity_threshold = self.dynamic_intensity_threshold[self.history]
 
-        if self.history > 0:
+        if not forward:
             self.collisions = self.collision_detection(self.history+1)
 
         self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold)
         self.groups, self.groups_avg_pos = self.get_region_groups(self.regions)
 
-        if forward and self.history < 0:
-            print "fwd + detect"
-            self.history = 0
-            self.solve_collisions(self.regions, self.groups, self.groups_avg_pos, indexes)
+        self.solve_collisions(self.regions, self.groups, self.groups_avg_pos, indexes)
 
+        if self.params.show_mser_collection:
+            img_copy = self.img_.copy()
+            collection = visualize.draw_region_group_collection(img_copy, self.regions, self.groups, self.params)
+            my_utils.imshow("mser collection", collection)
+        else:
+            cv2.destroyWindow("mser collection")
+
+        if forward and self.history < 0:
             result, costs = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
 
             max_i = 0
@@ -89,50 +96,83 @@ class ExperimentManager():
 
 
         self.collisions = self.collision_detection(self.history)
-        #if self.params.frame < 26:
-        #    return
-
         self.display_results(self.regions, self.collisions, self.history)
+
+        print "#SPLITTED: ", self.number_of_splits
+
+        if forward and self.history < 0:
+            self.history = 0
 
     def solve_collisions(self, regions, groups, groups_avg_pos, indexes):
         cg_ants_idx = self.collision_groups_idx(self.collisions)
+
         cg_region_groups_idx = {}
+        for key in cg_ants_idx:
+            cg_region_groups_idx[key] = []
 
         for i in range(len(groups_avg_pos)):
             g_p = groups_avg_pos[i]
 
             near_collision, c = self.is_near_collision(g_p[0], g_p[1], self.collisions)
             if near_collision:
-                if cg_region_groups_idx.has_key(c[0]):
-                    cg_region_groups_idx[c[0]].append(i)
-                else:
-                    cg_region_groups_idx[c[0]] = [i]
+                for key in cg_ants_idx:
+                    if c[0] in cg_ants_idx[key]:
+                        cg_region_groups_idx[key].append(i)
 
-        print cg_ants_idx
-        print cg_region_groups_idx
-        print groups
+        print "collisions: ", self.collisions
+        print "cg_ants_idx: ", cg_ants_idx
+        print "cg_region_groups_idx: ", cg_region_groups_idx
 
-        g_to_be_splitted = []
         for key in cg_ants_idx:
             result = self.solve_cg(cg_ants_idx[key], cg_region_groups_idx[key], groups_avg_pos)
-            if len(result) > 0:
+            if result:
+                print "result: ", result
+            for r in result:
+                region_id = self.choose_region_from_group(regions, r[0], r[1])
+                if len(result) > 0:
+                    self.number_of_splits += 1
+                    print "SPLITTING mser_id: ", region_id
+                    new_regions = solve_merged.solve_merged(regions[region_id], self.ants, r[1])
 
-                print "SOLVING MERGED: "
-                labels, ell1, ell2 = solve_merged.solve_merged(regions[result[0][0]], self.ants, result[0][1])
-                print labels
-                print ell1
-                print ell2
-                print "angle: ", ell1.angle * 180 / math.pi, ell2.angle * 180 / math.pi
-                g_to_be_splitted.append(result)
+                    regions = self.add_new_regions(regions, indexes, new_regions)
 
+        return regions
 
-        print "to be splitted: ", g_to_be_splitted
+    def choose_region_from_group(self, regions, g, ants):
+        num_a = len(ants)
+        best = -1
+        best_val = float('inf')
+        for r_idx in self.groups[g]:
+            r = regions[r_idx]
+            score = abs(1 - r['area'] / (num_a * self.params.avg_ant_area))
+            if score < best_val:
+                best_val = score
+                best = r_idx
+
+        return best
+
+    def add_new_regions(self, regions, indexes, new_regions):
+        num = len(new_regions)
+        i = 1
+        for r in new_regions:
+            r['label'] = regions[len(regions)-2]['label'] + 1
+
+            self.groups.append([len(regions)])
+            self.groups_avg_pos.append([r['cx'], r['cy']])
+            indexes.append(len(regions))
+            regions.append(r)
+
+            i += 1
 
         return regions
 
     def solve_cg(self, ants_idx, groups_idx, groups_avg_pos):
-        ant_votes = [[] for i in range(len(groups_idx))]
+        #there is nothing to solve...
+        if len(ants_idx) <= len(groups_idx):
+            print "nothing to solve..."
+            return []
 
+        ant_votes = [[] for i in range(len(groups_idx))]
 
         for a in ants_idx:
             vals = [0]*len(groups_idx)
@@ -152,16 +192,22 @@ class ExperimentManager():
         return to_be_splitted
 
     def is_near_collision(self, cx, cy, collision):
-        thresh = 70
+        thresh = 50
+        min_c = None
+        min = float('inf')
+        found = False
         for c in collision:
             #middle of collision
-            if my_utils.e_distance(c[4], my_utils.Point(cx, cy)) < thresh:
-                return True, c
+            dist = my_utils.e_distance(c[4], my_utils.Point(cx, cy))
+            if dist < thresh:
+                if min > dist:
+                    min = dist
+                    min_c = c
+                found = True
 
-        return False, None
+        return found, min_c
 
     def collision_groups_idx(self, collisions):
-        print collisions
         ant_groups = {}
         for c in collisions:
             if ant_groups.has_key(c[0]):
@@ -222,8 +268,10 @@ class ExperimentManager():
 
         collisions = []
         for i in range(len(self.ants)):
+            self.ants[i].state.collision_predicted = False
+
+        for i in range(len(self.ants)):
             a1 = self.ants[i].state
-            a1.collision_predicted = False
             a1.collisions = []
             if history > 0:
                 a1 = self.ants[i].history[history-1]
@@ -348,16 +396,12 @@ class ExperimentManager():
         img_copy = visualize.draw_collision_risks(img_copy, self.ants, collissions, history)
         img_vis = visualize.draw_ants(img_copy, self.ants, regions, True, history)
         #draw_dangerous_areas(I)
+        if history > 0:
+            cv2.rectangle(img_vis, (0, 0), (50, 50), (255, 0, 255), -1)
+
         my_utils.imshow("ant track result", img_vis, self.params.imshow_decreasing_factor)
         if self.params.frame == 1:
             cv.MoveWindow("ant track result", 400, 0)
-        if self.params.show_mser_collection:
-            img_copy = self.img_.copy()
-            #collection = visualize.draw_region_collection(img_copy, regions, self.params)
-            collection = visualize.draw_region_group_collection(img_copy, regions, self.groups, self.params)
-            my_utils.imshow("mser collection", collection)
-        else:
-            cv2.destroyWindow("mser collection")
 
         if self.params.show_ants_collection:
             img_copy = self.img_.copy()
@@ -366,14 +410,16 @@ class ExperimentManager():
         else:
             cv2.destroyWindow("ants collection")
 
-        if self.use_gt:
+        if self.use_gt and history < 0:
             r = self.ground_truth.check_gt(self.ants, True)
-            if r.count(0) > 0:
-                broken_idx = [i for i in range(len(r)) if r[i] == 0]
-                for i in broken_idx:
-                    print self.ants[i].state
+            #if r.count(0) > 0:
+            #    broken_idx = [i for i in range(len(r)) if r[i] == 0]
+            #    for i in broken_idx:
+            #        print "Ant ID: ", self.ants[i].id
+            #
+            #    cv2.waitKey()
 
-            print self.ground_truth.stats()
+            self.ground_truth.display_stats()
 
     def save_ants_info(self, regions):
         img_copy = self.img_.copy()

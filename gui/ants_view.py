@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ants_view.ui'
 #
-# Created: Mon Mar 10 21:21:21 2014
+# Created: Thu Mar 13 17:32:17 2014
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -40,6 +40,10 @@ class Ui_Dialog(object):
         self.b_forwards = QtGui.QPushButton(self.groupBox_2)
         self.b_forwards.setGeometry(QtCore.QRect(210, 20, 98, 27))
         self.b_forwards.setObjectName(_fromUtf8("b_forwards"))
+        self.sb_stop_at_frame = QtGui.QSpinBox(self.groupBox_2)
+        self.sb_stop_at_frame.setGeometry(QtCore.QRect(30, 50, 60, 27))
+        self.sb_stop_at_frame.setMaximum(999999999)
+        self.sb_stop_at_frame.setObjectName(_fromUtf8("sb_stop_at_frame"))
         self.tabWidget = QtGui.QTabWidget(Dialog)
         self.tabWidget.setGeometry(QtCore.QRect(0, 90, 350, 209))
         self.tabWidget.setObjectName(_fromUtf8("tabWidget"))

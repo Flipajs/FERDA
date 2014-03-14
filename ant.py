@@ -76,6 +76,14 @@ class Ant():
     def predicted_position(self, history_depth):
         return self.state.position + self.velocity(history_depth)
 
+    def predicted_position_collision(self):
+        p = self.state.position
+        vel = self.velocity(1)
+        p.x += vel.x / 2
+        p.y += vel.y / 2
+
+        return p
+
     #returns stability (1 - #losts/history_depth)
     def stability(self, history_depth):
         if len(self.history) <= history_depth:

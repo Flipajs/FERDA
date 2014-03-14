@@ -284,20 +284,20 @@ def load_data():
 
 
 def ellipse_1():
-    e = 25.
-    f = 12.
-    theta = 20 * math.pi / 180
-    middle = np.array([800, 427])
+    e = 20.
+    f = 10.
+    theta = 101 * math.pi / 180
+    middle = np.array([802, 443])
     ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 
     return ell
 
 
 def ellipse_2():
-    e = 25.
-    f = 12.
-    theta = 90 * math.pi / 180
-    middle = np.array([798, 415])
+    e = 20.
+    f = 10.
+    theta = 125 * math.pi / 180
+    middle = np.array([799, 415])
     ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 
     return ell

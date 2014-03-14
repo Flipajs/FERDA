@@ -127,14 +127,18 @@ def axis_b_change_prob(a_b, r_b):
 
     return val
 
-
 def theta_change_prob(ant, region):
     u = 0
     s = 0.1619*5
     max_val = mlab.normpdf(u, u, s)
     #max_val = log_normpdf(u, u, s)
 
-    theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
+    if 'splitted' in region:
+        if region['splitted']:
+            theta = region['theta']
+    else:
+        theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
+
     x = theta - ant.state.theta
 
     #this solve the jump between phi and -phi
@@ -169,7 +173,7 @@ def position_prob(ant, region):
 
 def count_node_weight(ant, region, params):
     #tohle je spatne...
-    axis_p = axis_change_prob(ant, region)
+    #axis_p = axis_change_prob(ant, region)
 
     theta_p = theta_change_prob(ant, region)
     position_p = position_prob(ant, region)
@@ -184,7 +188,5 @@ def count_node_weight(ant, region, params):
             #prob = params.undefined_threshold*2
             prob *= 0.01
             #prob -= 4
-            print "LOST", prob
-
 
     return prob

@@ -32,13 +32,13 @@ class MserOperations():
 
         if intensity_threshold > 256:
             intensity_threshold = 256
-        print "THRESHOLD: ", intensity_threshold
+        print "THRESHOLD MSERS: ", intensity_threshold
 
 
         self.mser.process_image(gray, intensity_threshold)
         t1 = time()
         self.params.mser_times += (t1-t0)
-        print 'msers takes %f' %(t1-t0)
+        #print 'msers takes %f' %(t1-t0)
 
         regions = self.mser.get_regions()
 

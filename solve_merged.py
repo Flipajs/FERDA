@@ -1,5 +1,6 @@
 __author__ = 'flipajs'
 
+import pickle
 import numpy as np
 from numpy.random import rand
 from pylab import figure, show
@@ -18,11 +19,12 @@ def get_points(region):
 
 
 def get_trans_matrix(ellipse):
-    e = float(ellipse.width)/2
-    f = float(ellipse.height)/2
+    e = float(ellipse.width)
+    f = float(ellipse.height)
     th = ellipse.angle * math.pi / 180
 
     scale = np.array([[1 / e, 0], [0, 1 / f]])
+    #clokwise...
     rot = np.array([[math.cos(th), math.sin(th)], [-math.sin(th), math.cos(th)]])
 
     t_matrix = np.dot(scale, rot)
@@ -33,7 +35,7 @@ def get_trans_matrix(ellipse):
 def point_transformation(trans_matrix, ellipse_middle, pt):
     pt2 = np.array(pt - ellipse_middle)
     pt2 = np.dot(trans_matrix, pt2.reshape(2, 1))
-    pt2 = pt2.reshape(2) + ellipse_middle
+    pt2 = pt2.reshape(2)
 
     return pt2
 
@@ -47,27 +49,30 @@ def draw_ellipse(ell, pl):
 
 def point_score(ell, t_mat, pt):
     pt2 = point_transformation(t_mat, ell.center, pt)
-    return np.linalg.norm(pt2 - ell.center)
+
+    return np.linalg.norm(pt2)
+    #return np.linalg.norm(pt2 - ell.center)
 
 
-def label(data, ell1, ell2):
+def label(data, ellipses):
     labels = np.array([0]*len(data[:, 0]))
 
-    t_mat1 = get_trans_matrix(ell1)
-    t_mat2 = get_trans_matrix(ell2)
+    t_mat = []
+    for e in ellipses:
+        t_mat.append(get_trans_matrix(e))
 
     i = 0
     for pt in data:
-        pt1 = point_transformation(t_mat1, ell1.center, pt)
-        pt2 = point_transformation(t_mat2, ell2.center, pt)
+        #pts = [0]*len(ellipses)
+        #for j in range(len(ellipses)):
+        #    pts[j] = point_transformation(t_mat[j], ellipses[j].center, pt)
 
-        s1 = point_score(ell1, t_mat1, pt1)
-        s2 = point_score(ell2, t_mat2, pt2)
+        scores = [0]*len(ellipses)
+        for j in range(len(ellipses)):
+            scores[j] = point_score(ellipses[j], t_mat[j], pt)
 
-        if s1 < s2:
-            labels[i] = 1
-        else:
-            labels[i] = 2
+        min_s = np.argmin(scores)
+        labels[i] = min_s+1
 
         i += 1
 
@@ -146,6 +151,10 @@ def update_theta_med(data, ell):
 def update_theta_moments(data, ell):
     u00 = len(data[:, 0])
 
+    if u00 == 0:
+        print "U00 is zero"
+        return 0, 0, 0
+
     m11 = 0
     m10 = 0
     m01 = 0
@@ -177,61 +186,69 @@ def update_theta_moments(data, ell):
     ell.angle = theta * 180 / math.pi
     ell.center = [cx, cy]
 
+    return u11, u20, u02
 
-def test_end(ell1, ell2, old_c1, old_c2, old_t1, old_t2):
+def test_end(ellipses, old_c, old_t):
     center_eps = 1
     theta_eps = 5
-    dx1 = abs(ell1.center[0] - old_c1[0])
-    dy1 = abs(ell1.center[1] - old_c1[1])
-    dx2 = abs(ell2.center[0] - old_c2[0])
-    dy2 = abs(ell2.center[1] - old_c2[1])
 
-    if dx1 < center_eps and dy1 < center_eps and dx2 < center_eps and dy2 < center_eps:
-        if abs(ell1.angle - old_t1) < theta_eps and abs(ell2.angle - old_t2) < theta_eps:
-            return True
+    for i in range(len(ellipses)):
+        dx = abs(ellipses[i].center[0] - old_c[i][0])
+        dy = abs(ellipses[i].center[1] - old_c[i][1])
+        if dx > center_eps or dy > center_eps:
+            return False
+        if abs(ellipses[i].angle - old_t[i]) > theta_eps:
+            return False
 
-    return False
+    return True
 
 
-def k_ellipse(data, ell1, ell2):
-    old_c1 = ell1.center
-    old_c2 = ell2.center
-    old_t1 = ell1.angle
-    old_t2 = ell2.angle
+def k_ellipse(data, ellipses):
+    old_c = [0]*len(ellipses)
+    old_t = [0]*len(ellipses)
 
-    visualize_init(data, ell1, ell2)
+    for i in range(len(ellipses)):
+        old_c[i] = ellipses[i].center
+        old_t[i] = ellipses[i].angle
+
+    #visualize_init(data, ellipses)
 
     labels = []
+    moments = [[0, 0, 0] for i in range(len(ellipses))]
+    iter = 0
     while True:
-        print old_c1, old_c2, old_t1, old_t2
+        print "old centers: ", old_c
+        print "old_thetas: ", old_t
 
-        labels = label(data, ell1, ell2)
-        l1 = np.where(labels == 1)
-        l2 = np.where(labels == 2)
+        if iter > 15:
+            print "too much iterations in solve_merged... KILLED"
+            return [], [], []
 
-        print "BEFORE reweighting"
-        visualize(data, l1, l2, ell1, ell2)
+        labels = label(data, ellipses)
 
-        update_theta_moments(data[l1], ell1)
-        update_theta_moments(data[l2], ell2)
+        #visualize(data, ellipses, labels)
 
-        if test_end(ell1, ell2, old_c1, old_c2, old_t1, old_t2):
+        for i in range(len(ellipses)):
+            l = np.where(labels == i+1)
+
+            moments[i] = list(update_theta_moments(data[l], ellipses[i]))
+
+        #visualize(data, ellipses, labels)
+        if test_end(ellipses, old_c, old_t):
             print "FINISHED: "
-
-        visualize(data, l1, l2, ell1, ell2)
-
-        if test_end(ell1, ell2, old_c1, old_c2, old_t1, old_t2):
             break
 
-        old_c1 = ell1.center
-        old_c2 = ell2.center
-        old_t1 = ell1.angle
-        old_t2 = ell2.angle
+        for i in range(len(ellipses)):
+            old_c[i] = ellipses[i].center
+            old_t[i] = ellipses[i].angle
 
-    return labels, ell1, ell2
+        iter += 1
+
+    return labels, ellipses, moments
 
 
-def visualize_init(data, ell1, ell2):
+def visualize_init(data, ellipses):
+
     plt.close()
     plt.ion()
     fig = figure()
@@ -246,43 +263,43 @@ def visualize_init(data, ell1, ell2):
     #draw_ellipse(ell1, ax)
     #draw_ellipse(ell2, ax)
 
-    epts1 = get_ellipse_coords(a=ell1.width/2, b=ell1.height/2, x=ell1.center[0], y=ell1.center[1], angle=-ell1.angle, k=1./8)
-    epts2 = get_ellipse_coords(a=ell2.width/2, b=ell2.height/2, x=ell2.center[0], y=ell2.center[1], angle=-ell2.angle, k=1./8)
-    plt.plot(epts1[:, 0], epts1[:, 1], 'y', linewidth=3)
-    plt.plot(ell1.center[0], ell1.center[1], 'rx', mew=2)
-
-    plt.plot(epts2[:, 0], epts2[:, 1], 'g', linewidth=3)
-    plt.plot(ell2.center[0], ell2.center[1], 'rx', mew=2)
+    for e in ellipses:
+        epts = get_ellipse_coords(a=e.width/2, b=e.height/2, x=e.center[0], y=e.center[1], angle=-e.angle, k=1./8)
+        plt.plot(epts[:, 0], epts[:, 1], 'y', linewidth=3)
+        plt.plot(e.center[0], e.center[1], 'rx', mew=2)
 
     plt.gca().invert_yaxis()
     show()
     plt.waitforbuttonpress()
 
 
-def visualize(data, l1, l2, ell1, ell2, noellipse=False):
+def visualize(data, ellipses, labels, noellipse=False):
+
     plt.close()
     fig = figure()
     ax = fig.add_subplot(111, aspect='equal')
-    plt.plot(data[l1, 0], data[l1, 1], 'yo')
-    plt.plot(data[l2, 0], data[l2, 1], 'go')
+
+    colors = ['y', 'g', 'r', 'c', 'k']
+    colorsm = ['yo', 'go', 'ro', 'bo', 'co', 'ko']
+    for i in range(len(ellipses)):
+        l = np.where(labels == i+1)
+        plt.plot(data[l, 0], data[l, 1], colorsm[i])
 
     plt.axis('equal')
     a, b, c, d = plt.axis()
     border = 5
     plt.axis((a-border, b+border, c-border, d+border))
 
-    epts1 = get_ellipse_coords(a=ell1.width/2, b=ell1.height/2, x=ell1.center[0], y=ell1.center[1], angle=-ell1.angle, k=1./8)
-    epts2 = get_ellipse_coords(a=ell2.width/2, b=ell2.height/2, x=ell2.center[0], y=ell2.center[1], angle=-ell2.angle, k=1./8)
     if not noellipse:
-        plt.plot(epts1[:, 0], epts1[:, 1], 'y', linewidth=3)
-        plt.plot(ell1.center[0], ell1.center[1], 'rx', mew=2)
-        plt.plot(epts2[:, 0], epts2[:, 1], 'g', linewidth=3)
-        plt.plot(ell2.center[0], ell2.center[1], 'rx', mew=2)
-        #draw_ellipse(ell1, ax)
-        #draw_ellipse(ell2, ax)
+        for i in range(len(ellipses)):
+            e = ellipses[i]
+            epts = get_ellipse_coords(a=e.width/2, b=e.height/2, x=e.center[0], y=e.center[1], angle=-e.angle, k=1./8)
+            plt.plot(epts[:, 0], epts[:, 1], colors[i], linewidth=3)
+            plt.plot(e.center[0], e.center[1], 'rx', mew=2)
 
     plt.gca().invert_yaxis()
     show()
+
     plt.waitforbuttonpress()
 
 
@@ -321,23 +338,93 @@ def solve_merged(region, ants, ants_idx):
 
     for id in ants_idx:
         a = ants[id]
-        middle = np.array([a.state.position.x, a.state.position.y])
+        pred = a.predicted_position(1)
+        middle = np.array([pred.x, pred.y])
         theta = a.state.theta
         theta = -(theta - math.pi)
+        theta = theta * 180 / math.pi
+        theta = theta % 180
 
-        ell = Ellipse(xy=middle, width=20, height=10, angle=(theta * 180 / math.pi))
+        ell = Ellipse(xy=middle, width=40, height=10, angle=theta)
         ellipses.append(ell)
 
     if len(ellipses) > 2:
-        print "MORE ELLIPSES THEN 2!!!"
+        print "MORE ANTS THEN 2!!!"
 
-    ell1 = ellipses[0]
-    ell2 = ellipses[1]
-    labels, ell1, ell2 = k_ellipse(data, ell1, ell2)
-    ell1.angle = -(ell1.angle - 180)
-    ell1.angle = (ell1.angle * math.pi) / 180
+    labels, ellipses, moments = k_ellipse(data, ellipses)
 
-    ell2.angle = -(ell2.angle - 180)
-    ell2.angle = (ell2.angle * math.pi) / 180
+    i = 1
+    regions = []
+    for e in ellipses:
+        r = {}
+        r['splitted'] = True
+        l = np.where(labels == i)
+        r['points'] = data[l]
+        r['area'] = len(r['points'])
 
-    return labels, ell1, ell2
+        if r['area'] == 0:
+            print "zero area"
+            continue
+
+        r['cx'] = e.center[0]
+        r['cy'] = e.center[1]
+        r['maxI'] = region['maxI']
+        theta = -(e.angle - 180)
+        theta = (theta * math.pi) / 180
+        theta = theta % math.pi
+
+        r['theta'] = theta
+        r['flags'] = ''
+        r['sxy'] = moments[i-1][0]
+        r['sxx'] = moments[i-1][1]
+        r['syy'] = moments[i-1][2]
+        regions.append(r)
+
+        i += 1
+
+    return regions
+
+
+def load_data():
+    file10 = open('out/collisions/regions_139pkl', 'rb')
+    regions10 = pickle.load(file10)
+    file10.close()
+
+    mser = regions10[3]
+
+    data = get_points(mser)
+    data = np.array(data)
+
+    return data
+
+
+def ellipse_1():
+    e = 40.
+    f = 10.
+    theta = 70 * math.pi / 180
+    middle = np.array([435, 20])
+    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
+
+    return ell
+
+
+def ellipse_2():
+    e = 40.
+    f = 10.
+    theta = 45 * math.pi / 180
+    middle = np.array([450, 23])
+    ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
+
+    return ell
+
+def main():
+    data = load_data()
+    ell1 = ellipse_1()
+    ell2 = ellipse_2()
+    ellipses = [ell1, ell2]
+
+    k_ellipse(data, ellipses)
+
+
+if __name__ == '__main__':
+    main()

@@ -81,6 +81,13 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
     def run(self):
         if self.is_running:
             while self.is_running:
+                val = self.sb_stop_at_frame.value()
+                if self.experiment.params.frame >= val and val != 0:
+                    self.b_play.setText('play')
+                    self.is_running = False
+                    self.controls()
+                    return
+
                 if self.forward:
                     img = self.video_manager.next_img()
                 else:
@@ -103,7 +110,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
                     return
 
                 self.experiment.process_frame(img, self.forward)
-                print "FRAME> ", self.params.frame
+                print "------------------------"
 
                 self.l_frame.setText(str(self.params.frame))
                 self.controls()

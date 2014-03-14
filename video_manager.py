@@ -33,7 +33,7 @@ class VideoManager():
 
     def next_img(self):
         #continue reading new frames
-        print self.dec_pos(self.buffer_pos)
+        #print self.dec_pos(self.buffer_pos)
         if self.dec_pos(self.buffer_pos) == self.view_pos:
             f, self.buffer[self.buffer_pos] = self.capture.read()
             if not f:

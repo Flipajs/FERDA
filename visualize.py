@@ -6,8 +6,13 @@ from numpy import *
 
 
 def draw_region(img, region, color):
-    for r in region["rle"]:
-        cv2.line(img, (r["col1"], r["line"]), (r["col2"], r["line"]), color, 1)
+    if 'splitted' in region:
+        color = (200, 200, 0)
+        for pt in region["points"]:
+            cv2.line(img, (pt[0], pt[1]), (pt[0], pt[1]), color, 1)
+    else:
+        for r in region["rle"]:
+            cv2.line(img, (r["col1"], r["line"]), (r["col2"], r["line"]), color, 1)
 
 
 def draw_all_regions(img, regions):
@@ -180,7 +185,20 @@ def draw_ants_collection(img, ants, cell_size=60, history=0):
         x = a.position.x
         c = img_[border + y - cell_size / 2:border + y + cell_size / 2, border + x - cell_size / 2:border + x + cell_size / 2].copy()
 
+        color = [255, 255, 255]
+
+        if a.collision_predicted:
+            color[0] = 0
+            color[1] = 128
+
+            c[:, :, 1] += 17
+            c[:, :, 2] += 35
+
         if a.lost:
+            color[0] = round(color[0] * 0.7)
+            color[1] = round(color[1] * 0.7)
+            color[2] = round(color[2] * 0.7)
+
             collection[i * cell_size:(i + 1)*cell_size, color_stripe_width:cell_size+color_stripe_width, :] = c*0.5
         else:
             collection[i * cell_size:(i + 1)*cell_size, color_stripe_width:cell_size+color_stripe_width, :] = c
@@ -191,6 +209,7 @@ def draw_ants_collection(img, ants, cell_size=60, history=0):
            cv2.line(collection, (0, i*cell_size), (c_width - 1, i*cell_size), line_color, 1)
 
         w = cell_size + color_stripe_width
+        color = tuple(color)
         w2 = w + 135
         h = i*(cell_size)
         font_scale = 0.80
@@ -200,14 +219,14 @@ def draw_ants_collection(img, ants, cell_size=60, history=0):
         h2 = 26
         h3 = 40
         h4 = 53
-        cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, (255, 255, 255), thickness=1, linetype=cv2.CV_AA)
-        cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, (255, 255, 255), thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, thickness=1, linetype=cv2.CV_AA)
+        cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
+        cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
 
     cv2.line(collection, (color_stripe_width - 1, 0), (color_stripe_width - 1, c_height - 1), line_color, 1)
     return collection
