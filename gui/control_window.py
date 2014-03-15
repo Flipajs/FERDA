@@ -9,6 +9,7 @@ import cv2
 import experiment_manager
 import scipy.io as sio
 import video_manager
+import pickle
 
 
 class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
@@ -110,6 +111,10 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
                     return
 
                 self.experiment.process_frame(img, self.forward)
+
+                if self.params.frame == 3:
+                    self.save_state()
+
                 print "------------------------"
 
                 self.l_frame.setText(str(self.params.frame))
@@ -127,6 +132,11 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
                     break
         else:
             cv2.waitKey(5)
+
+    def save_state(self):
+        afile = open(r'out/states/frame-'+str(self.params.frame)+'.pkl', 'wb')
+        pickle.dump(self.experiment, afile)
+        afile.close()
 
     def show_file_dialog(self):
         self.out_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select directory"))

@@ -14,6 +14,7 @@ class GroundTruth:
         self.frame = 0
         self.gt_map = []
         self.gt_precission = 15
+        self.lost_threshold = 80
         self.blinks = 0
         self.losts = 0
         self.swaps = 0
@@ -60,14 +61,21 @@ class GroundTruth:
             a = ants[self.gt_map[i]]
             if not a.state.lost:
                 if not a.state.collision_predicted:
-                    if self.is_swapped(a, gt):
+                    swapped, swap_a_id, swap_g_id = self.is_swapped(a, gt)
+                    if swapped:
                         self.swaps += 1
                         if repair:
                             self.fix_error(a, [g[0], g[1]], g[2])
-                        r[i] = -3
+                            swap_g = gt[swap_g_id]
+                            self.fix_error(ants[swap_a_id], (swap_g[0], swap_g[1]), swap_g[2])
 
-                    elif self.is_lost(a.state.position, [g[0], g[1]]):
+                        r[i] = -3
+                        r[swap_a_id] = -3
+                        continue
+
+                elif self.is_lost(a.state.position, [g[0], g[1]]):
                         self.losts += 1
+                        self.fix_error(a, [g[0], g[1]], g[2])
                         r[i] = -2
             else:
                 self.blinks += 1
@@ -85,13 +93,13 @@ class GroundTruth:
                 nearest_dist = dist
                 nearest_id = i
 
-        return ant.id != self.gt_map[nearest_id]
+        return ant.id != self.gt_map[nearest_id], self.gt_map[nearest_id], nearest_id
 
 
     def is_lost(self, a_p, g_p):
         g_p = my_utils.Point(g_p[0], g_p[1])
 
-        return my_utils.e_distance(a_p, g_p) > self.gt_precission
+        return my_utils.e_distance(a_p, g_p) > self.lost_threshold
 
     #def check_gt(self, ants, repair=True):
     #    self.next_frame()

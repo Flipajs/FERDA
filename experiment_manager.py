@@ -28,13 +28,13 @@ class ExperimentManager():
         self.ants = ants
         self.number_of_splits = 0
 
-        self.use_gt = True
+        self.use_gt = params.use_gt
         self.regions = []
         self.history = 0
         self.collisions = []
 
         if self.use_gt:
-            self.ground_truth = gt.GroundTruth('fixed_out.txt', self)
+            self.ground_truth = gt.GroundTruth('../data/eight/fixed_out.txt', self)
             self.ground_truth.match_gt(self.ants)
 
         self.mser_operations = mser_operations.MserOperations(params)
@@ -176,6 +176,9 @@ class ExperimentManager():
 
         for a in ants_idx:
             vals = [0]*len(groups_idx)
+            if len(vals) == 0:
+                continue
+
             for i in range(len(groups_idx)):
                 g_p = groups_avg_pos[groups_idx[i]]
                 vals[i] = my_utils.e_distance(self.ants[a].predicted_position(1), my_utils.Point(g_p[0], g_p[1]))
