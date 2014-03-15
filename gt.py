@@ -29,6 +29,13 @@ class GroundTruth:
 
         return map(float, a[1:])
 
+    def rewind_gt(self, frame, num_ants):
+        for i in range(frame):
+            print i
+            self.next_frame()
+            for i in range(num_ants):
+                self.next_ant()
+
     def match_gt(self, ants):
         self.gt_map = [None]*len(ants)
 

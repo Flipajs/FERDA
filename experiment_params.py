@@ -21,6 +21,7 @@ class Params():
         self.frame = 0
 
         self.use_gt = True
+        self.fast_start = True
 
         self.intensity_threshold = 200
         self.dynamic_intensity_threshold = True

@@ -35,6 +35,9 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         self.collection_cell_size = 50
 
         self.id_counter = 0
+        if self.params.fast_start:
+            self.init_ants_selection()
+            self.start()
 
     def init_ui(self):
         self.img = self.life_cycle.next_img()

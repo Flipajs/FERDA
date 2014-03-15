@@ -8,8 +8,9 @@ import experiment_params
 import cv2
 import experiment_manager
 import scipy.io as sio
-import video_manager
+import ntpath
 import pickle
+import video_manager
 
 
 class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
@@ -18,17 +19,18 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.setupUi(self)
 
         self.video_manager = video_manager
-        self.mser_operations = None
         self.params = params
         self.is_running = False
         self.experiment = experiment_manager.ExperimentManager(self.params, ants)
         self.out_directory = ""
+        self.out_state_directory = "out/states"
         self.wait_for_button_press = False
         self.forward = True
 
         self.window().setGeometry(0, 0, self.window().width(), self.window().height())
         self.init_ui()
-        self.setWindowIcon(QtGui.QIcon('ferda.ico'))
+        self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
+
 
     def closeEvent(self, event):
         self.is_running = False
@@ -37,13 +39,18 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         sys.exit(1)
 
     def init_ui(self):
+        self.i_state_name.setText(ntpath.basename(self.params.video_file_name))
+
         self.b_play.clicked.connect(self.play)
         self.b_forwards.clicked.connect(self.step_forwards)
         self.b_backwards.clicked.connect(self.step_backwards)
         self.b_choose_path.clicked.connect(self.show_file_dialog)
         self.b_save_file.clicked.connect(self.save_data)
+        self.b_choose_path_state.clicked.connect(self.show_file_dialog_state)
+        self.b_save_state.clicked.connect(self.save_state)
         self.ch_ants_collection.clicked.connect(self.show_ants_collection_changed)
         self.ch_mser_collection.clicked.connect(self.show_mser_collection_changed)
+        self.b_load_state.clicked.connect(self.load_state)
         self.show()
 
         self.b_log_save_regions.clicked.connect(self.log_save_regions)
@@ -112,9 +119,6 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
                 self.experiment.process_frame(img, self.forward)
 
-                if self.params.frame == 3:
-                    self.save_state()
-
                 print "------------------------"
 
                 self.l_frame.setText(str(self.params.frame))
@@ -134,12 +138,79 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
             cv2.waitKey(5)
 
     def save_state(self):
-        afile = open(r'out/states/frame-'+str(self.params.frame)+'.pkl', 'wb')
-        pickle.dump(self.experiment, afile)
+        print "SAVING....."
+        path = self.out_state_directory
+        print path
+        out_name = self.i_state_name.text()
+        frame = self.params.frame
+
+        #self.params
+        pfile = open(path+'/'+out_name+'-'+str(frame)+'-params.pkl', 'wb')
+        pickle.dump(self.experiment.params, pfile)
+        pfile.close()
+        print "PARAMS SAVED"
+
+        #self.ants
+        afile = open(path+'/'+out_name+'-'+str(frame)+'-ants.pkl', 'wb')
+        pickle.dump(self.experiment.ants, afile)
         afile.close()
+        print "ANTS SAVED"
+        print "DONE"
+
+    def load_state(self):
+        print "LOADING..."
+        fname = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', self.out_state_directory)
+
+        ants = []
+        params = []
+        for f in fname:
+            if str(f).find('-ants.pkl') > 0:
+                pfile = open(f, 'rb')
+                ants = pickle.load(pfile)
+                pfile.close()
+                print "ANTS LOADED"
+            elif str(f).find('-params.pkl') > 0:
+                pfile = open(f, 'rb')
+                params = pickle.load(pfile)
+                pfile.close()
+                print "PARAMS LOADED"
+            else:
+                print "SOMETHING GOES WRONG, missing some files!"
+                return
+
+
+        self.experiment.ants = ants
+
+        self.params = params
+        self.experiment.params = params
+        self.experiment.collisions = self.experiment.collision_detection()
+
+        #if self.params.use_gt:
+        self.experiment.ground_truth.rewind_gt(params.frame, params.ant_number)
+
+        self.prepare_video_source(params.frame)
+
+
+        print "DONE"
+
+        return
+
+    def prepare_video_source(self, frame):
+        self.video_manager = video_manager.VideoManager(self.params.video_file_name)
+        for i in range(self.params.frame + 1):
+            sys.stdout.write('\rvideo rewind ' + str(i) + '/' + str(self.params.frame))
+            sys.stdout.flush() # important
+
+            self.video_manager.next_img()
+
+        print ""
+        return
 
     def show_file_dialog(self):
         self.out_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select directory"))
+
+    def show_file_dialog_state(self):
+        self.out_state_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select directory"))
 
     def show_ants_collection_changed(self):
         self.experiment.params.show_ants_collection = self.ch_ants_collection.isChecked()
@@ -159,7 +230,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         if len(name) == 0:
             name = 'undefined'
 
-        path += name
+        path += name+'.mat'
 
         sio.savemat(path, mdict={'antrack': data}, oned_as='row')
 
