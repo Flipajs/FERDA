@@ -59,7 +59,7 @@ class MserOperations():
                 indexes.append(i)
                 reg["flags"] = None
 
-            if reg["minI"] > 100:
+            if reg["minI"] > 75:
                 reg["flags"] = "minI_kill"
 
         return indexes

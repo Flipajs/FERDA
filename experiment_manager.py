@@ -74,13 +74,13 @@ class ExperimentManager():
 
         self.solve_collisions(self.regions, self.groups, self.groups_avg_pos, indexes)
 
-        if self.params.show_mser_collection:
-            img_copy = self.img_.copy()
-            collection = visualize.draw_region_group_collection(img_copy, self.regions, self.groups, self.params)
-            my_utils.imshow("mser collection", collection)
-            cv2.waitKey(150)
-        else:
-            cv2.destroyWindow("mser collection")
+        #if self.params.show_mser_collection:
+        #    img_copy = self.img_.copy()
+        #    collection = visualize.draw_region_group_collection(img_copy, self.regions, self.groups, self.params)
+        #    my_utils.imshow("mser collection", collection)
+        #    cv2.waitKey(150)
+        #else:
+        #    cv2.destroyWindow("mser collection")
 
         if forward and self.history < 0:
             result, costs = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
@@ -189,9 +189,8 @@ class ExperimentManager():
 
 
     def is_antlike_region(self, region):
-
         val = score.ab_area_prob(region, self.params)
-        if val > 0.01:
+        if val > 0.4:
             return True
         else:
             return False
@@ -212,24 +211,37 @@ class ExperimentManager():
         #there is nothing to solve...
         num_antlike = self.count_antlike_regions(groups_idx)
 
-        if len(ants_idx) <= num_antlike:
-            print "nothing to solve..."
+        #if len(ants_idx) <= num_antlike:
+        if num_antlike == len(groups_idx):
+            print "nothing to solve... #A: ", len(ants_idx), " num_antlike: ", num_antlike
             return []
 
         ant_votes = [[] for i in range(len(groups_idx))]
 
         for a in ants_idx:
-            vals = [0]*len(groups_idx)
+            vals = [float('inf')]*len(groups_idx)
             if len(vals) == 0:
                 continue
 
             for i in range(len(groups_idx)):
-                g_p = groups_avg_pos[groups_idx[i]]
-                vals[i] = my_utils.e_distance(self.ants[a].predicted_position(1), my_utils.Point(g_p[0], g_p[1]))
+                for r_id in self.groups[groups_idx[i]]:
+                    r_p = my_utils.Point(self.regions[r_id]['cx'], self.regions[r_id]['cy'])
+
+                    if self.regions[r_id]['area'] < self.params.avg_ant_area:
+                        ab_a_score = score.ab_area_prob(self.regions[r_id], self.params)
+                        if ab_a_score < 0.1:
+                            continue
+
+                    val = my_utils.e_distance(self.ants[a].predicted_position(1), r_p)
+                    if val < vals[i]:
+                        vals[i] = val
+
 
             id = np.argmin(np.array(vals))
+            if vals[id] != float('inf'):
+                ant_votes[id].append(a)
 
-            ant_votes[id].append(a)
+        print "ant_votes: ", ant_votes
 
         to_be_splitted = []
         for i in range(len(groups_idx)):
@@ -542,7 +554,7 @@ class ExperimentManager():
                 else:
                     print "ID: " + str(i) + " [" + str(int(r['cx'])) + ", " + str(int(r['cy'])) + "] " \
                         "area: " + str(r['area']) + " label: " + str(r['label']) + \
-                      " axis_ratio: " + str(axis_ratio) + " minI: " + str(r['minI']) + " maxI: " + str(r['maxI'])
+                      " axis_ratio: " + str(axis_ratio) + " minI: " + str(r['minI']) + " maxI: " + str(r['maxI']) + " margin: " + str(r['margin'])
 
                 count += 1
 

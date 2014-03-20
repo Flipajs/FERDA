@@ -121,8 +121,8 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
                 self.experiment.process_frame(img, self.forward)
 
-                #if self.params.frame % 100 == 0:
-                #    self.save_state()
+                if self.params.frame % 100 == 0:
+                    self.save_state()
 
                 print "------------------------"
 

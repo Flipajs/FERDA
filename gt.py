@@ -88,7 +88,6 @@ class GroundTruth:
                         self.fix_error(a, [g[0], g[1]], g[2])
                         r[i] = -2
             else:
-                cv2.waitKey(0)
                 self.blinks += 1
                 r[i] = -1
 

@@ -141,6 +141,7 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
 
         best_id = -1
         vals = [0]*len(groups[row])
+        margins = [0]*len(groups[row])
         for col in range(len(groups[row])):
             r = regions[groups[row][col]]
             ratio, _, _ = my_utils.mser_main_axis_ratio(r['sxy'], r['sxx'], r['syy'])
@@ -154,11 +155,15 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
                 if x_id < params.ab_area_xmax and y_id < params.ab_area_ymax:
                     vals[col] = params.ab_area_hist[y_id][x_id] / params.ab_area_max
 
+
+            margins[col] = r['margin']
+
             #vals[col] =
             #vals[col] = score.area_prob(r['area'], params.avg_ant_area)
             #vals[col] *= score.axis_ratio_prob(ratio, params.avg_ant_axis_ratio)
 
         best_id = argmax(array(vals))
+        best_margin_id = argmax(array(margins))
         if vals[best_id] <= 0:
             best_id = -1
 
@@ -175,6 +180,10 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
             if col == best_id:
                 counter += 1
                 c = (200, 255, 0)
+
+
+            if best_margin_id == col and margins[best_margin_id] != 0:
+                c = (0, 138, 212)
 
             #if r["flags"] == "arena_kill":
             #    c = (0, 0, 255)
@@ -197,8 +206,10 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
                 "cx"] + cell_size / 2].copy()
 
             cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
-            if col == best_id:
-                cv2.putText(img_small, str(vals[best_id]), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+            #if col == best_id:
+            cv2.putText(img_small, str(vals[col]*100)[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(r['area']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(r['margin']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
             collection[(row + row_p) * cell_size:((row + row_p) + 1) * cell_size, num_strip + (col + col_p) * cell_size:num_strip + ((col + col_p) + 1) * cell_size, :] = img_small
 
     print "COUNTER: ", counter
