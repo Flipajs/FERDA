@@ -3,7 +3,7 @@ __author__ = 'flip'
 import cv2
 import my_utils as my_utils
 from numpy import *
-
+import score
 
 def draw_region(img, region, color):
     if 'splitted' in region:
@@ -118,19 +118,53 @@ def draw_region_collection(img, regions, params, cols=10, rows=10, cell_size=50)
 
 
 def draw_region_group_collection(img, regions, groups, params, cell_size=50):
-    rows = len(groups)
+    rows = int(math.ceil(len(groups) / 2.))
     cols = 0
     for g in groups:
         if len(g) > cols:
             cols = len(g)
     num_strip = 20
-    collection = zeros((rows * cell_size, cols * cell_size + num_strip, 3), dtype=uint8)
+    collection = zeros((rows * cell_size, 2*(cols * cell_size) + num_strip + cell_size, 3), dtype=uint8)
     border = cell_size
 
+    col_p = 0
+    row_p = 0
+
     img_ = zeros((shape(img)[0] + 2 * border, shape(img)[1] + 2 * border, 3), dtype=uint8)
+    counter = 0
     for row in range(len(groups)):
-        cv2.putText(collection, str(row), (3, 30 + cell_size*row), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+        if row >= rows:
+                row_p = -rows
+                col_p = cols+1
+
+        cv2.putText(collection, str(row), (3 + cell_size*col_p, 30 + cell_size*(row+row_p)), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+
+        best_id = -1
+        vals = [0]*len(groups[row])
         for col in range(len(groups[row])):
+            r = regions[groups[row][col]]
+            ratio, _, _ = my_utils.mser_main_axis_ratio(r['sxy'], r['sxx'], r['syy'])
+            a = (r['area'] / float(params.avg_ant_area)) - params.ab_area_xstart
+            ab = (ratio / params.avg_ant_axis_ratio) - params.ab_area_ystart
+
+            x_id = int(math.floor(a / params.ab_area_step))
+            y_id = int(math.floor(ab / params.ab_area_step))
+
+            if x_id > 0 and y_id > 0:
+                if x_id < params.ab_area_xmax and y_id < params.ab_area_ymax:
+                    vals[col] = params.ab_area_hist[y_id][x_id] / params.ab_area_max
+
+            #vals[col] =
+            #vals[col] = score.area_prob(r['area'], params.avg_ant_area)
+            #vals[col] *= score.axis_ratio_prob(ratio, params.avg_ant_axis_ratio)
+
+        best_id = argmax(array(vals))
+        if vals[best_id] <= 0:
+            best_id = -1
+
+
+        for col in range(len(groups[row])):
+
             img_[border:-border, border:-border] = img.copy()
             r = regions[groups[row][col]]
             if r["cx"] == inf or r["cy"] == inf:
@@ -138,16 +172,20 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=50):
 
             c = (0, 255, 0)
 
-            if r["flags"] == "arena_kill":
-                c = (0, 0, 255)
-            elif r["flags"] == "max_area_diff_kill_small":
-                c = (0, 100, 200)
-            elif r["flags"] == "max_area_diff_kill_big":
-                c = (0, 128, 255)
-            elif r["flags"] == "better_mser_nearby_kill":
+            if col == best_id:
+                counter += 1
                 c = (200, 255, 0)
-            elif r["flags"] == "axis_kill":
-                c = (200, 0, 255)
+
+            #if r["flags"] == "arena_kill":
+            #    c = (0, 0, 255)
+            #elif r["flags"] == "max_area_diff_kill_small":
+            #    c = (0, 100, 200)
+            #elif r["flags"] == "max_area_diff_kill_big":
+            #    c = (0, 128, 255)
+            #elif r["flags"] == "better_mser_nearby_kill":
+            #    c = (200, 255, 0)
+            #elif r["flags"] == "axis_kill":
+            #    c = (200, 0, 255)
 
             draw_region(img_[border:-border, border:-border], r, c)
 
@@ -159,7 +197,11 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=50):
                 "cx"] + cell_size / 2].copy()
 
             cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
-            collection[row * cell_size:(row + 1) * cell_size, num_strip + col * cell_size:num_strip + (col + 1) * cell_size, :] = img_small
+            if col == best_id:
+                cv2.putText(img_small, str(vals[best_id]), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+            collection[(row + row_p) * cell_size:((row + row_p) + 1) * cell_size, num_strip + (col + col_p) * cell_size:num_strip + ((col + col_p) + 1) * cell_size, :] = img_small
+
+    print "COUNTER: ", counter
 
     return collection
 

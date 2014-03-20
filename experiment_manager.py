@@ -12,8 +12,10 @@ import visualize
 import gt
 import my_utils as my_utils
 import pickle
+import sys
 import solve_merged
 from collections import deque
+import matplotlib.pyplot as plt
 
 
 # kdyz hrozi kolize, mnohem ostrejsi pravidla na fit...
@@ -34,7 +36,7 @@ class ExperimentManager():
         self.collisions = []
 
         if self.use_gt:
-            self.ground_truth = gt.GroundTruth('../data/eight/fixed_out.txt', self)
+            self.ground_truth = gt.GroundTruth(params.gt_path, self)
             self.ground_truth.match_gt(self.ants)
 
         self.mser_operations = mser_operations.MserOperations(params)
@@ -72,12 +74,12 @@ class ExperimentManager():
 
         self.solve_collisions(self.regions, self.groups, self.groups_avg_pos, indexes)
 
-        if self.params.show_mser_collection:
-            img_copy = self.img_.copy()
-            collection = visualize.draw_region_group_collection(img_copy, self.regions, self.groups, self.params)
-            my_utils.imshow("mser collection", collection)
-        else:
-            cv2.destroyWindow("mser collection")
+        #if self.params.show_mser_collection:
+        #    img_copy = self.img_.copy()
+        #    collection = visualize.draw_region_group_collection(img_copy, self.regions, self.groups, self.params)
+        #    my_utils.imshow("mser collection", collection)
+        #else:
+        #    cv2.destroyWindow("mser collection")
 
         if forward and self.history < 0:
             result, costs = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
@@ -95,13 +97,24 @@ class ExperimentManager():
                 self.adjust_dynamic_intensity_threshold(max_i)
 
 
+
         self.collisions = self.collision_detection(self.history)
         self.display_results(self.regions, self.collisions, self.history)
+        #cv2.waitKey(150)
+        if self.params.print_mser_info:
+            vals = self.print_mser_info(self.regions)
+            #plt.ion()
+            #plt.plot(vals[:, 1], vals[:, 0], 'bo')
+            #plt.show()
+            #plt.waitforbuttonpress()
+            #plt.close()
 
         print "#SPLITTED: ", self.number_of_splits
 
         if forward and self.history < 0:
             self.history = 0
+
+
 
     def solve_collisions(self, regions, groups, groups_avg_pos, indexes):
         cg_ants_idx = self.collision_groups_idx(self.collisions)
@@ -123,6 +136,8 @@ class ExperimentManager():
         print "cg_ants_idx: ", cg_ants_idx
         print "cg_region_groups_idx: ", cg_region_groups_idx
 
+        print "avg_area ", self.params.avg_ant_area
+
         for key in cg_ants_idx:
             result = self.solve_cg(cg_ants_idx[key], cg_region_groups_idx[key], groups_avg_pos)
             if result:
@@ -142,9 +157,14 @@ class ExperimentManager():
         num_a = len(ants)
         best = -1
         best_val = float('inf')
+
+        a_area = 0
+        for a in ants:
+            a_area += self.ants[a].state.area
+
         for r_idx in self.groups[g]:
             r = regions[r_idx]
-            score = abs(1 - r['area'] / (num_a * self.params.avg_ant_area))
+            score = abs(1 - r['area'] / float(a_area))
             if score < best_val:
                 best_val = score
                 best = r_idx
@@ -166,9 +186,32 @@ class ExperimentManager():
 
         return regions
 
+
+    def is_antlike_region(self, region):
+
+        val = score.ab_area_prob(region, self.params)
+        if val > 0.8:
+            return True
+        else:
+            return False
+
+    def count_antlike_regions(self, groups_idx):
+        antlike_num = 0
+        for g_idx in groups_idx:
+            for r_id in self.groups[g_idx]:
+                r = self.regions[r_id]
+                if self.is_antlike_region(r):
+                    antlike_num += 1
+                    break
+
+
+        return antlike_num
+
     def solve_cg(self, ants_idx, groups_idx, groups_avg_pos):
         #there is nothing to solve...
-        if len(ants_idx) <= len(groups_idx):
+        num_antlike = self.count_antlike_regions(groups_idx)
+
+        if len(ants_idx) <= num_antlike:
             print "nothing to solve..."
             return []
 
@@ -413,6 +456,13 @@ class ExperimentManager():
         else:
             cv2.destroyWindow("ants collection")
 
+        if self.params.show_mser_collection:
+            img_copy = self.img_.copy()
+            collection = visualize.draw_region_group_collection(img_copy, self.regions, self.groups, self.params)
+            my_utils.imshow("mser collection", collection)
+        else:
+            cv2.destroyWindow("mser collection")
+
         if self.use_gt and history < 0:
             r = self.ground_truth.check_gt(self.ants, True)
             #if r.count(0) > 0:
@@ -444,13 +494,66 @@ class ExperimentManager():
     def log_regions_collection(self):
         img_copy = self.img_.copy()
 
-        collection = visualize.draw_region_collection(img_copy, self.regions, self.params)
-        cv2.imwrite("out/collisions/collection_"+str(self.params.frame)+".png", collection)
+        #collection = visualize.draw_region_collection(img_copy, self.regions, self.params)
+        collection = visualize.draw_region_group_collection(img_copy, self.regions, self.groups, self.params)
+        cv2.imwrite("out/collection_"+str(self.params.frame)+".png", collection)
 
     def log_regions(self):
-        afile = open(r'out/collisions/regions_'+str(self.params.frame)+'pkl', 'wb')
+        afile = open(r'out/regions_'+str(self.params.frame)+'.pkl', 'wb')
         pickle.dump(self.regions, afile)
         afile.close()
 
     def log_frame(self):
-        cv2.imwrite("out/frames/frame"+str(self.params.frame)+".png", self.img_)
+        cv2.imwrite("out/frame"+str(self.params.frame)+".png", self.img_)
+
+    def print_mser_info(self, regions):
+        print "MSER INFO: "
+        count = 0
+        vals = np.zeros((len(regions), 2))
+        for row in range(len(self.groups)):
+            for col in range(len(self.groups[row])):
+                if count % 10 == 0:
+                    print ""
+                i = self.groups[row][col]
+                r = regions[i]
+                #r0, c0, r1, c1 = self.region_size(regions[i]['rle'])
+                area_p = score.area_prob(r['area'], self.params.avg_ant_area)
+                axis_ratio, _, _ = my_utils.mser_main_axis_ratio(r["sxy"], r["sxx"], r["syy"])
+                axis_p = score.axis_ratio_prob(axis_ratio, self.params.avg_ant_axis_ratio)
+                ab = axis_ratio / self.params.avg_ant_axis_ratio
+                a = r['area'] / float(self.params.avg_ant_area)
+
+                vals[count, 0] = ab
+                vals[count, 1] = a
+
+                #print "ID: " + str(i) + " [" + str(int(r['cx'])) + ", " + str(int(r['cy'])) + "] " \
+                #        "area: " + str(r['area']) + " area_p: " + str(area_p) + " label: " + str(r['label']) + \
+                #      " r_size: " + str(r0) + " " + str(c0) + " " + str(r1) + " " + str(c1) + \
+                #      " axis_ratio: " + str(axis_ratio) + " axis_p: " + str(axis_p) + " " + str(ab) + " " + str(a) + " " + str(r['margin'])
+
+                print "ID: " + str(i) + " [" + str(int(r['cx'])) + ", " + str(int(r['cy'])) + "] " \
+                        "area: " + str(r['area']) + " area_p: " + str(area_p) + " label: " + str(r['label']) + \
+                      " axis_ratio: " + str(axis_ratio) + " axis_p: " + str(axis_p) + " " + str(ab) + " " + str(a)
+
+                count += 1
+
+        print "..........."
+        print self.params.avg_ant_axis_ratio
+
+        return vals
+
+
+    def region_size(self, rle):
+        row_start = rle[0]['line']
+        col_start = sys.maxint
+        col_end = 0
+
+        for l in rle:
+            if l['col1'] < col_start:
+                col_start = l['col1']
+            if l['col2'] > col_end:
+                col_end = l['col2']
+
+        row_end = l['line']
+
+        return row_start, col_start, row_end, col_end

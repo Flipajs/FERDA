@@ -50,7 +50,9 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.b_save_state.clicked.connect(self.save_state)
         self.ch_ants_collection.clicked.connect(self.show_ants_collection_changed)
         self.ch_mser_collection.clicked.connect(self.show_mser_collection_changed)
+        self.ch_print_mser_info.clicked.connect(self.print_mser_info_changed)
         self.b_load_state.clicked.connect(self.load_state)
+        self.b_log_all.clicked.connect(self.log_all)
         self.show()
 
         self.b_log_save_regions.clicked.connect(self.log_save_regions)
@@ -118,6 +120,9 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
                     return
 
                 self.experiment.process_frame(img, self.forward)
+
+                #if self.params.frame % 100 == 0:
+                #    self.save_state()
 
                 print "------------------------"
 
@@ -218,6 +223,9 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
     def show_mser_collection_changed(self):
         self.experiment.params.show_mser_collection = self.ch_mser_collection.isChecked()
 
+    def print_mser_info_changed(self):
+        self.params.print_mser_info = self.ch_print_mser_info.isChecked()
+
     def save_data(self):
         path = self.out_directory
 
@@ -244,6 +252,11 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.experiment.log_regions_collection()
 
     def log_save_frame(self):
+        self.experiment.log_frame()
+
+    def log_all(self):
+        self.experiment.log_regions()
+        self.experiment.log_regions_collection()
         self.experiment.log_frame()
 
 

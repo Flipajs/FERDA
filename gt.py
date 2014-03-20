@@ -1,6 +1,7 @@
 __author__ = 'flip'
 
 import my_utils
+import cv2
 
 class GroundTruth:
     def __init__(self, gt_file, experiment):
@@ -18,6 +19,7 @@ class GroundTruth:
         self.blinks = 0
         self.losts = 0
         self.swaps = 0
+        self.problematic_frames = []
         self.exp = experiment
 
     def next_frame(self):
@@ -31,7 +33,6 @@ class GroundTruth:
 
     def rewind_gt(self, frame, num_ants):
         for i in range(frame):
-            print i
             self.next_frame()
             for i in range(num_ants):
                 self.next_ant()
@@ -70,6 +71,7 @@ class GroundTruth:
                 if not a.state.collision_predicted:
                     swapped, swap_a_id, swap_g_id = self.is_swapped(a, gt)
                     if swapped:
+                        self.problematic_frames.append(self.exp.params.frame)
                         self.swaps += 1
                         if repair:
                             self.fix_error(a, [g[0], g[1]], g[2])
@@ -81,10 +83,12 @@ class GroundTruth:
                         continue
 
                 elif self.is_lost(a.state.position, [g[0], g[1]]):
+                        self.problematic_frames.append(self.exp.params.frame)
                         self.losts += 1
                         self.fix_error(a, [g[0], g[1]], g[2])
                         r[i] = -2
             else:
+                cv2.waitKey(0)
                 self.blinks += 1
                 r[i] = -1
 
@@ -167,6 +171,7 @@ class GroundTruth:
         print "#BLINKS: ", self.blinks
         print "#LOSTS: ", self.losts
         print "#SWAP: ", self.swaps
+        print self.problematic_frames
 
     def stats(self):
         all = self.error_counter/2 + self.lost_counter + self.right_counter + self.lost_in_closed_interactions + self.lost_error_in_closed_interactions

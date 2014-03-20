@@ -44,11 +44,10 @@ class MserOperations():
 
         arena_indexes = self.arena_filter(regions)
 
-        area_indexes = self.area_filter(regions, arena_indexes)
-        axis_indexes = self.axis_filter(regions, area_indexes)
+        #area_indexes = self.area_filter(regions, arena_indexes)
+        #axis_indexes = self.axis_filter(regions, arena_indexes)
 
-
-        return regions, axis_indexes
+        return regions, arena_indexes
 
     def arena_filter(self, regions):
         indexes = []

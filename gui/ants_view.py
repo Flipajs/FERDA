@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ants_view.ui'
 #
-# Created: Sat Mar 15 12:07:48 2014
+# Created: Wed Mar 19 00:12:08 2014
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -28,14 +28,14 @@ class Ui_Dialog(object):
         self.b_backwards.setGeometry(QtCore.QRect(110, 20, 101, 27))
         self.b_backwards.setObjectName(_fromUtf8("b_backwards"))
         self.label_2 = QtGui.QLabel(self.groupBox_2)
-        self.label_2.setGeometry(QtCore.QRect(218, 0, 61, 17))
+        self.label_2.setGeometry(QtCore.QRect(212, 0, 61, 17))
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         self.label_2.setFont(font)
         self.label_2.setObjectName(_fromUtf8("label_2"))
         self.l_frame = QtGui.QLabel(self.groupBox_2)
-        self.l_frame.setGeometry(QtCore.QRect(275, 0, 31, 17))
+        self.l_frame.setGeometry(QtCore.QRect(274, 0, 33, 17))
         self.l_frame.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.l_frame.setObjectName(_fromUtf8("l_frame"))
         self.b_forwards = QtGui.QPushButton(self.groupBox_2)
@@ -66,15 +66,19 @@ class Ui_Dialog(object):
         self.ch_ants_collection.setChecked(True)
         self.ch_ants_collection.setObjectName(_fromUtf8("ch_ants_collection"))
         self.imshow_decreasing_factor = QtGui.QDoubleSpinBox(self.tab)
-        self.imshow_decreasing_factor.setGeometry(QtCore.QRect(160, 49, 60, 27))
+        self.imshow_decreasing_factor.setGeometry(QtCore.QRect(110, 49, 60, 27))
         self.imshow_decreasing_factor.setMinimum(0.25)
         self.imshow_decreasing_factor.setMaximum(1.0)
         self.imshow_decreasing_factor.setSingleStep(0.05)
         self.imshow_decreasing_factor.setProperty("value", 0.5)
         self.imshow_decreasing_factor.setObjectName(_fromUtf8("imshow_decreasing_factor"))
         self.label_4 = QtGui.QLabel(self.tab)
-        self.label_4.setGeometry(QtCore.QRect(14, 54, 151, 17))
+        self.label_4.setGeometry(QtCore.QRect(14, 54, 91, 17))
         self.label_4.setObjectName(_fromUtf8("label_4"))
+        self.ch_print_mser_info = QtGui.QCheckBox(self.tab)
+        self.ch_print_mser_info.setGeometry(QtCore.QRect(180, 10, 161, 22))
+        self.ch_print_mser_info.setChecked(True)
+        self.ch_print_mser_info.setObjectName(_fromUtf8("ch_print_mser_info"))
         self.tabWidget.addTab(self.tab, _fromUtf8(""))
         self.tab_2 = QtGui.QWidget()
         self.tab_2.setObjectName(_fromUtf8("tab_2"))
@@ -102,6 +106,9 @@ class Ui_Dialog(object):
         self.b_log_save_frame = QtGui.QPushButton(self.tab_2)
         self.b_log_save_frame.setGeometry(QtCore.QRect(10, 98, 100, 27))
         self.b_log_save_frame.setObjectName(_fromUtf8("b_log_save_frame"))
+        self.b_log_all = QtGui.QPushButton(self.tab_2)
+        self.b_log_all.setGeometry(QtCore.QRect(110, 98, 98, 27))
+        self.b_log_all.setObjectName(_fromUtf8("b_log_all"))
         self.tabWidget.addTab(self.tab_2, _fromUtf8(""))
         self.tab_4 = QtGui.QWidget()
         self.tab_4.setObjectName(_fromUtf8("tab_4"))
@@ -156,7 +163,7 @@ class Ui_Dialog(object):
         self.tabWidget.addTab(self.tab_4, _fromUtf8(""))
 
         self.retranslateUi(Dialog)
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):
@@ -171,6 +178,7 @@ class Ui_Dialog(object):
         self.ch_mser_collection.setText(QtGui.QApplication.translate("Dialog", "msers collection", None, QtGui.QApplication.UnicodeUTF8))
         self.ch_ants_collection.setText(QtGui.QApplication.translate("Dialog", "ants collection", None, QtGui.QApplication.UnicodeUTF8))
         self.label_4.setText(QtGui.QApplication.translate("Dialog", "img size (%)", None, QtGui.QApplication.UnicodeUTF8))
+        self.ch_print_mser_info.setText(QtGui.QApplication.translate("Dialog", "print mser info", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QtGui.QApplication.translate("Dialog", "display", None, QtGui.QApplication.UnicodeUTF8))
         self.ch_log_each_frame.setText(QtGui.QApplication.translate("Dialog", "each frame", None, QtGui.QApplication.UnicodeUTF8))
         self.ch_log_verbose.setText(QtGui.QApplication.translate("Dialog", "verbose", None, QtGui.QApplication.UnicodeUTF8))
@@ -178,6 +186,7 @@ class Ui_Dialog(object):
         self.b_log_save_regions_collection.setText(QtGui.QApplication.translate("Dialog", "regions collection", None, QtGui.QApplication.UnicodeUTF8))
         self.label_5.setText(QtGui.QApplication.translate("Dialog", "save:", None, QtGui.QApplication.UnicodeUTF8))
         self.b_log_save_frame.setText(QtGui.QApplication.translate("Dialog", "frame", None, QtGui.QApplication.UnicodeUTF8))
+        self.b_log_all.setText(QtGui.QApplication.translate("Dialog", "all", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QtGui.QApplication.translate("Dialog", "log", None, QtGui.QApplication.UnicodeUTF8))
         self.b_save_file.setText(QtGui.QApplication.translate("Dialog", "save", None, QtGui.QApplication.UnicodeUTF8))
         self.b_choose_path.setText(QtGui.QApplication.translate("Dialog", "choose path", None, QtGui.QApplication.UnicodeUTF8))

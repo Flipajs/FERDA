@@ -67,7 +67,10 @@ def prepare_and_add_region_groups(graph, regions, regions_idx):
 
 
 def graph_add_edges(graph, ants, regions, groups, params):
-    ants_groups_preferences = [[-1]*len(groups)]*len(ants)
+    #BUG:
+    #ants_groups_preferences = [[-1]*len(groups)]*len(ants)
+
+    ants_groups_preferences = [[-1]*len(groups) for i in range(len(ants))]
 
     thresh = params.undefined_threshold
     for a in ants:
@@ -76,6 +79,7 @@ def graph_add_edges(graph, ants, regions, groups, params):
             max = thresh
             max_id = -1
             for ridx in groups[g]:
+                th = my_utils.mser_theta(regions[ridx]['sxy'], regions[ridx]['sxx'], regions[ridx]['syy'])
                 w = count_node_weight(a, regions[ridx], params)
                 if w > max:
                     max = w
@@ -84,6 +88,7 @@ def graph_add_edges(graph, ants, regions, groups, params):
             if max_id > -1:
                 ants_groups_preferences[a.id][g] = max_id
                 graph.add_edge('a'+str(a.id), 'g'+str(g), weight=max)
+
 
     return ants_groups_preferences
 
@@ -142,10 +147,10 @@ def theta_change_prob(ant, region):
     x = theta - ant.state.theta
 
     #this solve the jump between phi and -phi
-    if x > math.pi:
-        x = -(x - 2*math.pi)
-    elif x < -math.pi:
-        x = -(x + 2*math.pi)
+    if x > math.pi/2:
+        x = -(x - math.pi)
+    elif x < -math.pi/2:
+        x = -(x + math.pi)
 
     if ant.state.lost:
         x /= ((math.log(ant.state.lost_time) + 2) / 2)
@@ -170,6 +175,44 @@ def position_prob(ant, region):
     #val = log_normpdf(x, u, s) / abs(max_val)
     return val
 
+def area_prob(area, avg_area):
+    a_1_3 = avg_area / 3.
+    a_3 = 3 * avg_area
+    if area < a_1_3:
+        return 0
+    elif area < avg_area:
+        return math.log(area - a_1_3 + 1) / math.log((2/3.) * avg_area + 1)
+    elif area < a_3:
+        return math.log(a_3 + 1 - area) / math.log(2 * avg_area + 1)
+    else:
+        return 0
+
+
+def axis_ratio_prob(ratio, avg_ratio):
+    upper = 8.
+    if ratio < 1:
+        return 0
+    elif ratio < avg_ratio:
+        return math.log(ratio + 1) / math.log(avg_ratio + 1)
+    elif ratio < upper:
+        return math.log(upper + 1 - ratio) / math.log(upper - avg_ratio + 1)
+    else:
+        return 0
+
+def ab_area_prob(region, params):
+    ratio, _, _ = my_utils.mser_main_axis_ratio(region['sxy'], region['sxx'], region['syy'])
+    a = (region['area'] / float(params.avg_ant_area)) - params.ab_area_xstart
+    ab = (ratio / params.avg_ant_axis_ratio) - params.ab_area_ystart
+
+    x_id = int(math.floor(a / params.ab_area_step))
+    y_id = int(math.floor(ab / params.ab_area_step))
+
+    val = 0
+    if x_id > 0 and y_id > 0:
+        if x_id < params.ab_area_xmax and y_id < params.ab_area_ymax:
+            val = params.ab_area_hist[y_id][x_id] / params.ab_area_max
+
+    return val
 
 def count_node_weight(ant, region, params):
     #tohle je spatne...
@@ -177,9 +220,11 @@ def count_node_weight(ant, region, params):
 
     theta_p = theta_change_prob(ant, region)
     position_p = position_prob(ant, region)
+    ab_area_p = ab_area_prob(region, params)
+    #area_p = area_prob(region['area'], ant.state.area)
 
     #prob = axis_p * theta_p * position_p
-    prob = theta_p * position_p
+    prob = theta_p * position_p * ab_area_p
 
     if ant.state.lost:
         if prob > params.undefined_threshold:
@@ -188,5 +233,7 @@ def count_node_weight(ant, region, params):
             #prob = params.undefined_threshold*2
             prob *= 0.01
             #prob -= 4
+
+    #print "Th: ", theta_p, "P: ", position_p, "A: ", area_p, "PROD: ", prob
 
     return prob
