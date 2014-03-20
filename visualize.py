@@ -117,7 +117,7 @@ def draw_region_collection(img, regions, params, cols=10, rows=10, cell_size=50)
     return collection
 
 
-def draw_region_group_collection(img, regions, groups, params, cell_size=50):
+def draw_region_group_collection(img, regions, groups, params, cell_size=70):
     rows = int(math.ceil(len(groups) / 2.))
     cols = 0
     for g in groups:

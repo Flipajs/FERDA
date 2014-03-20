@@ -74,12 +74,13 @@ class ExperimentManager():
 
         self.solve_collisions(self.regions, self.groups, self.groups_avg_pos, indexes)
 
-        #if self.params.show_mser_collection:
-        #    img_copy = self.img_.copy()
-        #    collection = visualize.draw_region_group_collection(img_copy, self.regions, self.groups, self.params)
-        #    my_utils.imshow("mser collection", collection)
-        #else:
-        #    cv2.destroyWindow("mser collection")
+        if self.params.show_mser_collection:
+            img_copy = self.img_.copy()
+            collection = visualize.draw_region_group_collection(img_copy, self.regions, self.groups, self.params)
+            my_utils.imshow("mser collection", collection)
+            cv2.waitKey(150)
+        else:
+            cv2.destroyWindow("mser collection")
 
         if forward and self.history < 0:
             result, costs = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
@@ -190,7 +191,7 @@ class ExperimentManager():
     def is_antlike_region(self, region):
 
         val = score.ab_area_prob(region, self.params)
-        if val > 0.8:
+        if val > 0.01:
             return True
         else:
             return False
@@ -289,6 +290,8 @@ class ExperimentManager():
             if r["flags"] == "arena_kill":
                 continue
             if r["flags"] == "max_area_diff_kill_small":
+                continue
+            if r["flags"] == "minI_kill":
                 continue
 
             if r["label"] > prev:
@@ -531,9 +534,15 @@ class ExperimentManager():
                 #      " r_size: " + str(r0) + " " + str(c0) + " " + str(r1) + " " + str(c1) + \
                 #      " axis_ratio: " + str(axis_ratio) + " axis_p: " + str(axis_p) + " " + str(ab) + " " + str(a) + " " + str(r['margin'])
 
-                print "ID: " + str(i) + " [" + str(int(r['cx'])) + ", " + str(int(r['cy'])) + "] " \
-                        "area: " + str(r['area']) + " area_p: " + str(area_p) + " label: " + str(r['label']) + \
-                      " axis_ratio: " + str(axis_ratio) + " axis_p: " + str(axis_p) + " " + str(ab) + " " + str(a)
+                if 'splitted' in r:
+                    if r['splitted']:
+                        print "ID: " + str(i) + " [" + str(int(r['cx'])) + ", " + str(int(r['cy'])) + "] " \
+                        "area: " + str(r['area']) + " label: " + str(r['label']) + \
+                      " axis_ratio: " + str(axis_ratio) + " "
+                else:
+                    print "ID: " + str(i) + " [" + str(int(r['cx'])) + ", " + str(int(r['cy'])) + "] " \
+                        "area: " + str(r['area']) + " label: " + str(r['label']) + \
+                      " axis_ratio: " + str(axis_ratio) + " minI: " + str(r['minI']) + " maxI: " + str(r['maxI'])
 
                 count += 1
 

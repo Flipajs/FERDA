@@ -59,6 +59,9 @@ class MserOperations():
                 indexes.append(i)
                 reg["flags"] = None
 
+            if reg["minI"] > 100:
+                reg["flags"] = "minI_kill"
+
         return indexes
 
     def area_filter(self, regions, indexes):

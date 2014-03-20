@@ -268,14 +268,12 @@ for frame in n_regions_vals:
 
 #my_hist += 1
 
-print my_hist.max()
 
 from scipy import misc
 lena = misc.lena()
 #blurred_lena = ndimage.gaussian_filter(lena, sigma=3)
 very_blurred = ndimage.gaussian_filter(my_hist, sigma=1)
-for line in very_blurred:
-    print line
+print very_blurred.max()
 
 afile = open('../out/ab/ab_area_hist_blurred.pkl', 'wb')
 e_regions_labels = pickle.dump(very_blurred, afile)
