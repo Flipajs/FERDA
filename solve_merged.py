@@ -211,7 +211,7 @@ def k_ellipse(data, ellipses):
         old_c[i] = ellipses[i].center
         old_t[i] = ellipses[i].angle
 
-    visualize_init(data, ellipses)
+    #visualize_init(data, ellipses)
 
     labels = []
     moments = [[0, 0, 0] for i in range(len(ellipses))]
@@ -233,7 +233,7 @@ def k_ellipse(data, ellipses):
 
             moments[i] = list(update_theta_moments(data[l], ellipses[i]))
 
-        visualize(data, ellipses, labels)
+        #visualize(data, ellipses, labels)
         if test_end(ellipses, old_c, old_t):
             print "FINISHED: "
             break
@@ -387,7 +387,7 @@ def solve_merged(region, ants, ants_idx):
 
 
 def load_data():
-    file10 = open('out/regions_660.pkl', 'rb')
+    file10 = open('out/regions_670.pkl', 'rb')
     regions10 = pickle.load(file10)
     file10.close()
 
@@ -402,8 +402,8 @@ def load_data():
 def ellipse_1():
     e = 40.
     f = 10.
-    theta = 20 * math.pi / 180
-    middle = np.array([788, 368])
+    theta = 178 * math.pi / 180
+    middle = np.array([796, 382])
     ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 
     return ell
@@ -412,8 +412,8 @@ def ellipse_1():
 def ellipse_2():
     e = 40.
     f = 10.
-    theta = 65 * math.pi / 180
-    middle = np.array([798, 395])
+    theta = 0 * math.pi / 180
+    middle = np.array([787, 374])
     ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 
     return ell
@@ -421,8 +421,8 @@ def ellipse_2():
 def ellipse_3():
     e = 40.
     f = 10.
-    theta = 75 * math.pi / 180
-    middle = np.array([824, 390])
+    theta = 58 * math.pi / 180
+    middle = np.array([813, 363])
     ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 
     return ell
@@ -430,8 +430,8 @@ def ellipse_3():
 def ellipse_4():
     e = 40.
     f = 10.
-    theta = 25 * math.pi / 180
-    middle = np.array([820, 360])
+    theta = 5 * math.pi / 180
+    middle = np.array([817, 406])
     ell = Ellipse(xy=middle, width=e, height=f, angle=(theta * 180 / math.pi))
 
     return ell

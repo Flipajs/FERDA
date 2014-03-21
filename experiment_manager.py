@@ -143,14 +143,24 @@ class ExperimentManager():
             result = self.solve_cg(cg_ants_idx[key], cg_region_groups_idx[key], groups_avg_pos)
             if result:
                 print "result: ", result
+
             for r in result:
-                region_id = self.choose_region_from_group(regions, r[0], r[1])
+                region_id = r[0]
                 if len(result) > 0:
                     self.number_of_splits += 1
                     print "SPLITTING mser_id: ", region_id
                     new_regions = solve_merged.solve_merged(regions[region_id], self.ants, r[1])
 
                     regions = self.add_new_regions(regions, indexes, new_regions)
+
+            #for r in result:
+            #    region_id = self.choose_region_from_group(regions, r[0], r[1])
+            #    if len(result) > 0:
+            #        self.number_of_splits += 1
+            #        print "SPLITTING mser_id: ", region_id
+            #        new_regions = solve_merged.solve_merged(regions[region_id], self.ants, r[1])
+            #
+            #        regions = self.add_new_regions(regions, indexes, new_regions)
 
         return regions
 
@@ -216,39 +226,73 @@ class ExperimentManager():
             print "nothing to solve... #A: ", len(ants_idx), " num_antlike: ", num_antlike
             return []
 
-        ant_votes = [[] for i in range(len(groups_idx))]
-
-        for a in ants_idx:
-            vals = [float('inf')]*len(groups_idx)
-            if len(vals) == 0:
-                continue
-
-            for i in range(len(groups_idx)):
-                for r_id in self.groups[groups_idx[i]]:
-                    r_p = my_utils.Point(self.regions[r_id]['cx'], self.regions[r_id]['cy'])
-
-                    if self.regions[r_id]['area'] < self.params.avg_ant_area:
-                        ab_a_score = score.ab_area_prob(self.regions[r_id], self.params)
-                        if ab_a_score < 0.1:
-                            continue
-
-                    val = my_utils.e_distance(self.ants[a].predicted_position(1), r_p)
-                    if val < vals[i]:
-                        vals[i] = val
-
-
-            id = np.argmin(np.array(vals))
-            if vals[id] != float('inf'):
-                ant_votes[id].append(a)
-
-        print "ant_votes: ", ant_votes
 
         to_be_splitted = []
-        for i in range(len(groups_idx)):
-            if len(ant_votes[i]) > 1:
-                to_be_splitted.append([groups_idx[i], ant_votes[i]])
-        
+
+        for g_id in groups_idx:
+            best_margin = -1
+            best_margin_id = -1
+            for r_id in self.groups[g_id]:
+                if self.regions[r_id]['margin'] > best_margin:
+                    best_margin = self.regions[r_id]['margin']
+                    best_margin_id = r_id
+
+
+            if best_margin > 10:
+                r = self.regions[best_margin_id]
+                approx_num = int(round(r['area'] / float(self.params.avg_ant_area)))
+                if approx_num > len(ants_idx):
+                    approx_num = len(ants_idx)
+
+                if approx_num > 1:
+                    vals = []
+                    r_p = my_utils.Point(r['cx'], r['cy'])
+                    for a_id in ants_idx:
+                        dist = my_utils.e_distance(self.ants[a_id].predicted_position(1), r_p)
+                        vals.append([a_id, dist])
+
+                    vals.sort(key = lambda x:x[1])
+                    ids = []
+                    for i in range(approx_num):
+                        ids.append(vals[i][0])
+
+                    to_be_splitted.append([best_margin_id, ids])
+
         return to_be_splitted
+
+        #ant_votes = [[] for i in range(len(groups_idx))]
+        #
+        #for a in ants_idx:
+        #    vals = [float('inf')]*len(groups_idx)
+        #    if len(vals) == 0:
+        #        continue
+        #
+        #    for i in range(len(groups_idx)):
+        #        for r_id in self.groups[groups_idx[i]]:
+        #            r_p = my_utils.Point(self.regions[r_id]['cx'], self.regions[r_id]['cy'])
+        #
+        #            if self.regions[r_id]['area'] < self.params.avg_ant_area:
+        #                ab_a_score = score.ab_area_prob(self.regions[r_id], self.params)
+        #                if ab_a_score < 0.1:
+        #                    continue
+        #
+        #            val = my_utils.e_distance(self.ants[a].predicted_position(1), r_p)
+        #            if val < vals[i]:
+        #                vals[i] = val
+        #
+        #
+        #    id = np.argmin(np.array(vals))
+        #    if vals[id] != float('inf'):
+        #        ant_votes[id].append(a)
+        #
+        #print "ant_votes: ", ant_votes
+        #
+        #to_be_splitted = []
+        #for i in range(len(groups_idx)):
+        #    if len(ant_votes[i]) > 1:
+        #        to_be_splitted.append([groups_idx[i], ant_votes[i]])
+        #
+        #return to_be_splitted
 
     def is_near_collision(self, cx, cy, collision):
         thresh = 50
