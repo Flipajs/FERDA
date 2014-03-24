@@ -83,7 +83,7 @@ class ExperimentManager():
         #    cv2.destroyWindow("mser collection")
 
         if forward and self.history < 0:
-            result, costs = score.max_weight_matching(self.ants, self.regions, indexes, self.params)
+            result, costs = score.max_weight_matching(self.ants, self.regions, self.groups, self.params)
 
             max_i = 0
             for i in range(self.ant_number):
@@ -142,7 +142,10 @@ class ExperimentManager():
         for key in cg_ants_idx:
             result = self.solve_cg(cg_ants_idx[key], cg_region_groups_idx[key], groups_avg_pos)
             if result:
-                print "result: ", result
+                print "seolve_cg result: ", result
+            else:
+                print "solve_cg result: NONE"
+
 
             for r in result:
                 region_id = r[0]
@@ -200,7 +203,7 @@ class ExperimentManager():
 
     def is_antlike_region(self, region):
         val = score.ab_area_prob(region, self.params)
-        if val > 0.4:
+        if val > 0.4 and region['margin'] > 18:
             return True
         else:
             return False

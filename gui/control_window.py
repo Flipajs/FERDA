@@ -121,8 +121,8 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
                 self.experiment.process_frame(img, self.forward)
 
-                if self.params.frame % 100 == 0:
-                    self.save_state()
+                #if self.params.frame % 100 == 0:
+                #    self.save_state()
 
                 print "------------------------"
 
@@ -190,8 +190,8 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.experiment.params = params
         self.experiment.collisions = self.experiment.collision_detection()
 
-        #if self.params.use_gt:
-        self.experiment.ground_truth.rewind_gt(params.frame, params.ant_number)
+        if self.params.use_gt:
+            self.experiment.ground_truth.rewind_gt(params.frame, params.ant_number)
 
         self.prepare_video_source(params.frame)
 

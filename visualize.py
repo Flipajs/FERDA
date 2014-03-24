@@ -5,14 +5,21 @@ import my_utils as my_utils
 from numpy import *
 import score
 
-def draw_region(img, region, color):
+def draw_region(img, region, color, contour=False):
     if 'splitted' in region:
-        color = (200, 200, 0)
+        color = (220, 100, 0)
         for pt in region["points"]:
-            cv2.line(img, (pt[0], pt[1]), (pt[0], pt[1]), color, 1)
+            if contour:
+                cv2.circle(img, (pt[0], pt[1]), 0, color, -1)
+            else:
+                cv2.line(img, (pt[0], pt[1]), (pt[0], pt[1]), color, 1)
     else:
         for r in region["rle"]:
-            cv2.line(img, (r["col1"], r["line"]), (r["col2"], r["line"]), color, 1)
+            if contour:
+                cv2.circle(img, (r['col1'], r['line']), 0, color, -1)
+                cv2.circle(img, (r['col2'], r['line']), 0, color, -1)
+            else:
+                cv2.line(img, (r["col1"], r["line"]), (r["col2"], r["line"]), color, 1)
 
 
 def draw_all_regions(img, regions):
@@ -196,7 +203,7 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
             #elif r["flags"] == "axis_kill":
             #    c = (200, 0, 255)
 
-            draw_region(img_[border:-border, border:-border], r, c)
+            draw_region(img_[border:-border, border:-border], r, c, contour=True)
 
             #row = i / cols
             #col = i % cols

@@ -88,8 +88,14 @@ class GroundTruth:
                         self.fix_error(a, [g[0], g[1]], g[2])
                         r[i] = -2
             else:
-                self.blinks += 1
-                r[i] = -1
+                if self.is_lost(a.state.position, [g[0], g[1]]):
+                    self.problematic_frames.append(self.exp.params.frame)
+                    self.losts += 1
+                    self.fix_error(a, [g[0], g[1]], g[2])
+                    r[i] = -2
+                else:
+                    self.blinks += 1
+                    r[i] = -1
 
     def is_swapped(self, ant, gt):
         nearest_dist = float('inf')

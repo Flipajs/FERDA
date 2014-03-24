@@ -12,11 +12,11 @@ def pred_distance_score(a, region):
     return math.sqrt(x*x + y*y)
 
 
-def max_weight_matching(ants, regions, regions_idx, params):
+def max_weight_matching(ants, regions, groups, params):
     graph = nx.Graph()
 
     graph_add_ants(graph, ants)
-    groups = prepare_and_add_region_groups(graph, regions, regions_idx)
+    #groups = prepare_and_add_region_groups(graph, regions, regions_idx)
     
     ants_groups_preferences = graph_add_edges(graph, ants, regions, groups, params)
 
@@ -138,11 +138,7 @@ def theta_change_prob(ant, region):
     max_val = mlab.normpdf(u, u, s)
     #max_val = log_normpdf(u, u, s)
 
-    if 'splitted' in region:
-        if region['splitted']:
-            theta = region['theta']
-    else:
-        theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
+    theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
 
     x = theta - ant.state.theta
 
@@ -174,6 +170,22 @@ def position_prob(ant, region):
     val = mlab.normpdf(x, u, s) / max_val
     #val = log_normpdf(x, u, s) / abs(max_val)
     return val
+
+
+def position_prob_collision(ant, region):
+    u = 0
+    s = 4.5669*2
+    max_val = mlab.normpdf(u, u, s)
+    p_x = ant.state.position.x - region['cx']
+    p_y = ant.state.position.y - region['cy']
+    x = math.sqrt(p_x*p_x + p_y*p_y)
+
+    if ant.state.lost:
+        x /= (math.log(ant.state.lost_time) + 1)
+
+    val = mlab.normpdf(x, u, s) / max_val
+    return val
+
 
 def area_prob(area, avg_area):
     a_1_3 = avg_area / 3.
@@ -219,7 +231,11 @@ def count_node_weight(ant, region, params):
     #axis_p = axis_change_prob(ant, region)
 
     theta_p = theta_change_prob(ant, region)
+    #if len(ant.state.collisions) > 0:
+    #    position_p = position_prob_collision(ant, region)
+    #else:
     position_p = position_prob(ant, region)
+
     ab_area_p = ab_area_prob(region, params)
     #area_p = area_prob(region['area'], ant.state.area)
 
