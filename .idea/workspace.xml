@@ -2,13 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fa249b41-4065-4670-8381-5619991dcf2a" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/margin.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/control_window.py" afterPath="$PROJECT_DIR$/gui/control_window.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_params.py" afterPath="$PROJECT_DIR$/experiment_params.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gt.py" afterPath="$PROJECT_DIR$/gt.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/score.py" afterPath="$PROJECT_DIR$/score.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/visualize.py" afterPath="$PROJECT_DIR$/visualize.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="ants.iws" />
@@ -44,10 +38,8 @@
       <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/experiment_manager.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="147" column="0" selection-start="4689" selection-end="4689" vertical-scroll-proportion="0.0" vertical-offset="1855" max-vertical-offset="9255">
-              <folding>
-                <marker date="1395676670050" expanded="true" signature="18157:18383" placeholder="..." />
-              </folding>
+            <state line="147" column="0" selection-start="4689" selection-end="4689" vertical-scroll-proportion="0.0" vertical-offset="2205" max-vertical-offset="9480">
+              <folding />
             </state>
           </provider>
         </entry>
@@ -70,10 +62,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="score.py" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="score.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/score.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="240" column="0" selection-start="6558" selection-end="6558" vertical-scroll-proportion="0.6637681" vertical-offset="3326" max-vertical-offset="3855">
+            <state line="240" column="0" selection-start="6558" selection-end="6558" vertical-scroll-proportion="0.0" vertical-offset="3600" max-vertical-offset="3900">
               <folding />
             </state>
           </provider>
@@ -82,7 +74,7 @@
       <file leaf-file-name="my_utils.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/my_utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="35" column="0" selection-start="681" selection-end="681" vertical-scroll-proportion="0.0" vertical-offset="395" max-vertical-offset="1530">
+            <state line="35" column="0" selection-start="681" selection-end="681" vertical-scroll-proportion="0.0" vertical-offset="525" max-vertical-offset="1545">
               <folding />
             </state>
           </provider>
@@ -91,7 +83,7 @@
       <file leaf-file-name="area_ab.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/scripts/area_ab.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="166" column="56" selection-start="6750" selection-end="6750" vertical-scroll-proportion="0.0" vertical-offset="2250" max-vertical-offset="4815">
+            <state line="166" column="56" selection-start="6750" selection-end="6750" vertical-scroll-proportion="0.0" vertical-offset="2490" max-vertical-offset="4905">
               <folding />
             </state>
           </provider>
@@ -101,9 +93,7 @@
         <entry file="file://$PROJECT_DIR$/visualize.py">
           <provider selected="true" editor-type-id="text-editor">
             <state line="258" column="44" selection-start="8981" selection-end="8981" vertical-scroll-proportion="0.0" vertical-offset="3812" max-vertical-offset="4875">
-              <folding>
-                <element signature="e#21#31#0" expanded="true" />
-              </folding>
+              <folding />
             </state>
           </provider>
         </entry>
@@ -111,19 +101,17 @@
       <file leaf-file-name="experiment_params.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/experiment_params.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="46" column="21" selection-start="1241" selection-end="1241" vertical-scroll-proportion="0.0" vertical-offset="568" max-vertical-offset="1080">
+            <state line="58" column="51" selection-start="1963" selection-end="1963" vertical-scroll-proportion="0.0" vertical-offset="149" max-vertical-offset="1080">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="gt.py" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="gt.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/gt.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="114" column="4" selection-start="3492" selection-end="3492" vertical-scroll-proportion="0.0" vertical-offset="1600" max-vertical-offset="2865">
-              <folding>
-                <element signature="e#21#36#0" expanded="true" />
-              </folding>
+            <state line="114" column="4" selection-start="3492" selection-end="3492" vertical-scroll-proportion="0.5442177" vertical-offset="1215" max-vertical-offset="2850">
+              <folding />
             </state>
           </provider>
         </entry>
@@ -158,18 +146,18 @@
         <option value="$PROJECT_DIR$/scripts/margin.py" />
         <option value="$PROJECT_DIR$/gui/control_window.py" />
         <option value="$PROJECT_DIR$/visualize.py" />
-        <option value="$PROJECT_DIR$/experiment_params.py" />
         <option value="$PROJECT_DIR$/gt.py" />
         <option value="$PROJECT_DIR$/experiment_manager.py" />
         <option value="$PROJECT_DIR$/score.py" />
+        <option value="$PROJECT_DIR$/experiment_params.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
     <option name="x" value="65" />
-    <option name="y" value="-744" />
-    <option name="width" value="1301" />
-    <option name="height" value="744" />
+    <option name="y" value="-1824" />
+    <option name="width" value="1855" />
+    <option name="height" value="1056" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -215,34 +203,6 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ants" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ants" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scripts" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ants" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ants" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="gui" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
         </subPane>
       </pane>
       <pane id="Scope" />
@@ -250,11 +210,11 @@
   </component>
   <component name="PropertiesComponent">
     <property name="options.splitter.main.proportions" value="0.3" />
-    <property name="recentsLimit" value="5" />
     <property name="options.lastSelected" value="editor" />
+    <property name="recentsLimit" value="5" />
     <property name="FullScreen" value="false" />
-    <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
+    <property name="options.splitter.details.proportions" value="0.2" />
   </component>
   <component name="PyConsoleOptionsProvider">
     <option name="myPythonConsoleState">
@@ -539,18 +499,18 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="65" y="-744" width="1301" height="744" extended-state="6" />
+    <frame x="65" y="-1824" width="1855" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32985386" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24972677" sideWeight="0.6181818" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.28683385" sideWeight="0.6388443" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2" sideWeight="0.7593583" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3739968" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="8" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3611557" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.240625" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -575,9 +535,9 @@
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24972677" sideWeight="0.6181818" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2" sideWeight="0.6245989" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2812834" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2812834" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
     </layout-to-restore>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -606,16 +566,12 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/mser_operations.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="62" column="29" selection-start="1590" selection-end="1590" vertical-scroll-proportion="0.0" vertical-offset="450" max-vertical-offset="2145">
-          <folding />
-        </state>
+        <state line="62" column="29" selection-start="1590" selection-end="1590" vertical-scroll-proportion="0.0" vertical-offset="450" max-vertical-offset="2145" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/scripts/mser_size.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="61" column="29" selection-start="1828" selection-end="1828" vertical-scroll-proportion="0.0" vertical-offset="143" max-vertical-offset="555">
-          <folding />
-        </state>
+        <state line="61" column="29" selection-start="1828" selection-end="1828" vertical-scroll-proportion="0.0" vertical-offset="143" max-vertical-offset="555" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/scripts/mean-ant.py">
@@ -627,27 +583,17 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/scripts/margin.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="157" column="27" selection-start="4202" selection-end="4216" vertical-scroll-proportion="3.5753012" vertical-offset="1168" max-vertical-offset="2895">
-          <folding>
-            <element signature="e#24#37#0" expanded="false" />
-          </folding>
-        </state>
+        <state line="157" column="27" selection-start="4202" selection-end="4216" vertical-scroll-proportion="3.5753012" vertical-offset="1168" max-vertical-offset="2895" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/solve_merged.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="53" column="40" selection-start="1268" selection-end="1268" vertical-scroll-proportion="0.0" vertical-offset="538" max-vertical-offset="6840">
-          <folding>
-            <element signature="e#24#37#0" expanded="true" />
-          </folding>
-        </state>
+        <state line="53" column="40" selection-start="1268" selection-end="1268" vertical-scroll-proportion="0.0" vertical-offset="538" max-vertical-offset="6840" />
       </provider>
     </entry>
     <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/cv2/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="890" column="4" selection-start="19522" selection-end="19522" vertical-scroll-proportion="0.0" vertical-offset="13240" max-vertical-offset="26940">
-          <folding />
-        </state>
+        <state line="890" column="4" selection-start="19522" selection-end="19522" vertical-scroll-proportion="0.0" vertical-offset="13240" max-vertical-offset="26940" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/video_manager.py">
@@ -667,31 +613,13 @@
     <entry file="file://$PROJECT_DIR$/visualize.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="258" column="44" selection-start="8981" selection-end="8981" vertical-scroll-proportion="0.0" vertical-offset="3812" max-vertical-offset="4875">
-          <folding>
-            <element signature="e#21#31#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/gui/control_window.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="189" column="14" selection-start="6215" selection-end="6215" vertical-scroll-proportion="0.0" vertical-offset="2768" max-vertical-offset="4125">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gt.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="114" column="4" selection-start="3492" selection-end="3492" vertical-scroll-proportion="0.0" vertical-offset="1600" max-vertical-offset="2865">
-          <folding>
-            <element signature="e#21#36#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/experiment_params.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="46" column="21" selection-start="1241" selection-end="1241" vertical-scroll-proportion="0.0" vertical-offset="568" max-vertical-offset="1080">
           <folding />
         </state>
       </provider>
@@ -713,15 +641,27 @@
     <entry file="file://$PROJECT_DIR$/experiment_manager.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="147" column="0" selection-start="4689" selection-end="4689" vertical-scroll-proportion="0.0" vertical-offset="1855" max-vertical-offset="9255">
-          <folding>
-            <marker date="1395676670050" expanded="true" signature="18157:18383" placeholder="..." />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/score.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="240" column="0" selection-start="6558" selection-end="6558" vertical-scroll-proportion="0.6637681" vertical-offset="3326" max-vertical-offset="3855">
+        <state line="240" column="0" selection-start="6558" selection-end="6558" vertical-scroll-proportion="0.0" vertical-offset="3326" max-vertical-offset="3855">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiment_params.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="58" column="51" selection-start="1963" selection-end="1963" vertical-scroll-proportion="0.0" vertical-offset="149" max-vertical-offset="1080">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="114" column="4" selection-start="3492" selection-end="3492" vertical-scroll-proportion="0.5442177" vertical-offset="1215" max-vertical-offset="2850">
           <folding />
         </state>
       </provider>
