@@ -95,3 +95,13 @@ def imshow(title, img, imshow_decreasing_factor = 1):
                            int(img.shape[0]*imshow_decreasing_factor)))
 
     cv2.imshow(title, img)
+
+def best_margin(regions, r_ids):
+    best_margin = -1
+    best_margin_id = -1
+    for r_id in r_ids:
+        if regions[r_id]['margin'] > best_margin:
+            best_margin = regions[r_id]['margin']
+            best_margin_id = r_id
+
+    return best_margin, best_margin_id

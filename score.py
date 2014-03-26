@@ -16,8 +16,6 @@ def max_weight_matching(ants, regions, groups, params):
     graph = nx.Graph()
 
     graph_add_ants(graph, ants)
-    #groups = prepare_and_add_region_groups(graph, regions, regions_idx)
-    
     ants_groups_preferences = graph_add_edges(graph, ants, regions, groups, params)
 
     result = nx.max_weight_matching(graph, True)
@@ -67,30 +65,21 @@ def prepare_and_add_region_groups(graph, regions, regions_idx):
 
 
 def graph_add_edges(graph, ants, regions, groups, params):
-    #BUG:
-    #ants_groups_preferences = [[-1]*len(groups)]*len(ants)
-
     ants_groups_preferences = [[-1]*len(groups) for i in range(len(ants))]
 
     thresh = params.undefined_threshold
     for a in ants:
         graph.add_edge('a'+str(a.id), 'u'+str(a.id), weight=thresh)
         for g in range(len(groups)):
-            max = thresh
-            max_id = -1
-            for ridx in groups[g]:
-                th = my_utils.mser_theta(regions[ridx]['sxy'], regions[ridx]['sxx'], regions[ridx]['syy'])
-                w = count_node_weight(a, regions[ridx], params)
-                if w > max:
-                    max = w
-                    max_id = ridx
+            margin, region_id = my_utils.best_margin(regions, groups[g])
+            w = count_node_weight(a, regions[region_id], params)
 
-            if max_id > -1:
-                ants_groups_preferences[a.id][g] = max_id
-                graph.add_edge('a'+str(a.id), 'g'+str(g), weight=max)
-
+            if w > thresh:
+                ants_groups_preferences[a.id][g] = region_id
+                graph.add_edge('a'+str(a.id), 'g'+str(g), weight=w)
 
     return ants_groups_preferences
+
 
 
 def log_normpdf(x, u, s):

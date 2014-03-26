@@ -56,7 +56,10 @@ class ExperimentManager():
         self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold)
         self.groups, self.groups_avg_pos = self.get_region_groups(self.regions)
 
-        self.solve_collisions(self.regions, self.groups, self.groups_avg_pos, indexes)
+        unassigned_ants_idx = range(self.params.ant_number)
+        unassigned_groups_idx = range(len(self.groups))
+
+        self.solve_collisions(indexes)
 
         if forward and self.history < 0:
             result, costs = score.max_weight_matching(self.ants, self.regions, self.groups, self.params)
@@ -108,15 +111,15 @@ class ExperimentManager():
         print " "
         print "FRAME: ", self.params.frame
 
-    def solve_collisions(self, regions, groups, groups_avg_pos, indexes):
+    def solve_collisions(self, indexes):
         cg_ants_idx = self.collision_groups_idx(self.collisions)
 
         cg_region_groups_idx = {}
         for key in cg_ants_idx:
             cg_region_groups_idx[key] = []
 
-        for i in range(len(groups_avg_pos)):
-            g_p = groups_avg_pos[i]
+        for i in range(len(self.groups_avg_pos)):
+            g_p = self.groups_avg_pos[i]
 
             near_collision, c = self.is_near_collision(g_p[0], g_p[1], self.collisions)
             if near_collision:
@@ -131,7 +134,7 @@ class ExperimentManager():
         print "avg_area ", self.params.avg_ant_area
 
         for key in cg_ants_idx:
-            result = self.solve_cg(cg_ants_idx[key], cg_region_groups_idx[key], groups_avg_pos)
+            result = self.solve_cg(cg_ants_idx[key], cg_region_groups_idx[key], self.groups_avg_pos)
             if result:
                 print "seolve_cg result: ", result
             else:
@@ -143,11 +146,10 @@ class ExperimentManager():
                 if len(result) > 0:
                     self.number_of_splits += 1
                     print "SPLITTING mser_id: ", region_id
-                    new_regions = solve_merged.solve_merged(regions[region_id], self.ants, r[1])
+                    new_regions = solve_merged.solve_merged(self.regions[region_id], self.ants, r[1])
 
-                    regions = self.add_new_regions(regions, indexes, new_regions)
+                    self.add_new_regions(self.regions, indexes, new_regions)
 
-        return regions
 
     def choose_region_from_group(self, regions, g, ants):
         num_a = len(ants)
@@ -203,7 +205,6 @@ class ExperimentManager():
         return antlike_num
 
     def solve_cg(self, ants_idx, groups_idx, groups_avg_pos):
-        #there is nothing to solve...
         num_antlike = self.count_antlike_regions(groups_idx)
 
         #if len(ants_idx) <= num_antlike:
@@ -211,20 +212,13 @@ class ExperimentManager():
             print "nothing to solve... #A: ", len(ants_idx), " num_antlike: ", num_antlike
             return []
 
-
         to_be_splitted = []
 
         for g_id in groups_idx:
-            best_margin = -1
-            best_margin_id = -1
-            for r_id in self.groups[g_id]:
-                if self.regions[r_id]['margin'] > best_margin:
-                    best_margin = self.regions[r_id]['margin']
-                    best_margin_id = r_id
+            margin, region_id = my_utils.best_margin(self.regions, self.groups[g_id])
 
-
-            if best_margin > 10:
-                r = self.regions[best_margin_id]
+            if margin > 10:
+                r = self.regions[region_id]
                 approx_num = int(round(r['area'] / float(self.params.avg_ant_area)))
                 if approx_num > len(ants_idx):
                     approx_num = len(ants_idx)
@@ -241,7 +235,7 @@ class ExperimentManager():
                     for i in range(approx_num):
                         ids.append(vals[i][0])
 
-                    to_be_splitted.append([best_margin_id, ids])
+                    to_be_splitted.append([region_id, ids])
 
         return to_be_splitted
 

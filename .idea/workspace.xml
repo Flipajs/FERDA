@@ -2,17 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fa249b41-4065-4670-8381-5619991dcf2a" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/collisions.py" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/logger" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/mat_name.mat" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/control_window.py" afterPath="$PROJECT_DIR$/gui/control_window.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_params.py" afterPath="$PROJECT_DIR$/experiment_params.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gt.py" afterPath="$PROJECT_DIR$/gt.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mser_operations.py" afterPath="$PROJECT_DIR$/mser_operations.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/my_utils.py" afterPath="$PROJECT_DIR$/my_utils.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/score.py" afterPath="$PROJECT_DIR$/score.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/visualize.py" afterPath="$PROJECT_DIR$/visualize.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="ants.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -37,10 +30,10 @@
     <splitter split-orientation="horizontal" split-proportion="0.5">
       <split-first>
         <leaf>
-          <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="true">
+          <file leaf-file-name="experiment_manager.py" pinned="false" current="true" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/experiment_manager.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="76" column="0" selection-start="2223" selection-end="2223" vertical-scroll-proportion="0.8604651" vertical-offset="585" max-vertical-offset="7245">
+                <state line="55" column="21" selection-start="1367" selection-end="1367" vertical-scroll-proportion="0.66976744" vertical-offset="393" max-vertical-offset="7155">
                   <folding>
                     <element signature="e#21#32#0" expanded="true" />
                   </folding>
@@ -51,7 +44,7 @@
           <file leaf-file-name="mser_operations.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/mser_operations.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="2" column="10" selection-start="31" selection-end="31" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2040">
+                <state line="49" column="45" selection-start="1188" selection-end="1188" vertical-scroll-proportion="0.0" vertical-offset="315" max-vertical-offset="2115">
                   <folding />
                 </state>
               </provider>
@@ -128,10 +121,19 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="score.py" pinned="false" current="true" current-in-tab="true">
+          <file leaf-file-name="score.py" pinned="false" current="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/score.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="68" column="4" selection-start="1812" selection-end="1812" vertical-scroll-proportion="0.13153961" vertical-offset="887" max-vertical-offset="3855">
+                <state line="73" column="70" selection-start="2099" selection-end="2099" vertical-scroll-proportion="0.24364723" vertical-offset="887" max-vertical-offset="3690">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="my_utils.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/my_utils.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="101" column="0" selection-start="2210" selection-end="2210" vertical-scroll-proportion="0.0" vertical-offset="996" max-vertical-offset="1665">
                   <folding />
                 </state>
               </provider>
@@ -157,22 +159,22 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/scripts/ab_find_msers.py" />
         <option value="$PROJECT_DIR$/scripts/mser_size.py" />
         <option value="$PROJECT_DIR$/scripts/area_ab.py" />
         <option value="$PROJECT_DIR$/solve_merged.py" />
         <option value="$PROJECT_DIR$/scripts/mean-ant.py" />
         <option value="$PROJECT_DIR$/scripts/margin.py" />
         <option value="$PROJECT_DIR$/gt.py" />
-        <option value="$PROJECT_DIR$/score.py" />
         <option value="$PROJECT_DIR$/experiment_params.py" />
         <option value="$PROJECT_DIR$/visualize.py" />
         <option value="$PROJECT_DIR$/collisions.py" />
-        <option value="$PROJECT_DIR$/experiment_manager.py" />
         <option value="$PROJECT_DIR$/logger" />
         <option value="$PROJECT_DIR$/gui/control_window.py" />
-        <option value="$PROJECT_DIR$/mser_operations.py" />
         <option value="$PROJECT_DIR$/logger.py" />
+        <option value="$PROJECT_DIR$/my_utils.py" />
+        <option value="$PROJECT_DIR$/score.py" />
+        <option value="$PROJECT_DIR$/mser_operations.py" />
+        <option value="$PROJECT_DIR$/experiment_manager.py" />
       </list>
     </option>
   </component>
@@ -587,13 +589,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/scripts/area_ab.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="166" column="56" selection-start="6750" selection-end="6750" vertical-scroll-proportion="0.0" vertical-offset="2250" max-vertical-offset="4815">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/ant.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="34" column="23" selection-start="1256" selection-end="1275" vertical-scroll-proportion="0.0" vertical-offset="315" max-vertical-offset="3810">
@@ -659,13 +654,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mser_operations.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="2" column="10" selection-start="31" selection-end="31" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2040">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/collisions.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="6" column="16" selection-start="118" selection-end="118" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1020">
@@ -689,19 +677,33 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+    <entry file="file://$PROJECT_DIR$/my_utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="76" column="0" selection-start="2223" selection-end="2223" vertical-scroll-proportion="0.8604651" vertical-offset="585" max-vertical-offset="7245">
-          <folding>
-            <element signature="e#21#32#0" expanded="true" />
-          </folding>
+        <state line="101" column="0" selection-start="2210" selection-end="2210" vertical-scroll-proportion="0.0" vertical-offset="996" max-vertical-offset="1665">
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/score.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="68" column="4" selection-start="1812" selection-end="1812" vertical-scroll-proportion="0.13153961" vertical-offset="887" max-vertical-offset="3855">
+        <state line="73" column="70" selection-start="2099" selection-end="2099" vertical-scroll-proportion="0.24364723" vertical-offset="887" max-vertical-offset="3690">
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mser_operations.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="49" column="45" selection-start="1188" selection-end="1188" vertical-scroll-proportion="0.0" vertical-offset="315" max-vertical-offset="2115">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="55" column="21" selection-start="1367" selection-end="1367" vertical-scroll-proportion="0.66976744" vertical-offset="393" max-vertical-offset="7155">
+          <folding>
+            <element signature="e#21#32#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

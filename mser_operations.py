@@ -4,7 +4,7 @@ import sys
 sys.path.append('libs')
 import cyMser
 import cv2
-import my_utils as my_utils
+import my_utils
 from time import time
 from numpy import *
 
@@ -47,9 +47,14 @@ class MserOperations():
 
         return regions, arena_indexes
 
+    def margin_filter(self, regions, groups, indexes, min_margin):
+        indexes = []
+        for i in range(len(indexes)):
+            margin, region_id = my_utils.best_margin(regions, )
+
     def arena_filter(self, regions):
         indexes = []
-        for i in range(0, len(regions)):
+        for i in range(len(regions)):
             reg = regions[i]
             reg["flags"] = "arena_kill"
 
