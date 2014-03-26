@@ -77,6 +77,8 @@ class GroundTruth:
                             self.fix_error(a, [g[0], g[1]], g[2])
                             swap_g = gt[swap_g_id]
                             self.fix_error(ants[swap_a_id], (swap_g[0], swap_g[1]), swap_g[2])
+                        else:
+                            self.swap_gt_map(i, swap_a_id)
 
                         r[i] = -3
                         r[swap_a_id] = -3
@@ -85,17 +87,29 @@ class GroundTruth:
                 elif self.is_lost(a.state.position, [g[0], g[1]]):
                         self.problematic_frames.append(self.exp.params.frame)
                         self.losts += 1
-                        self.fix_error(a, [g[0], g[1]], g[2])
+                        if repair:
+                            self.fix_error(a, [g[0], g[1]], g[2])
                         r[i] = -2
             else:
                 if self.is_lost(a.state.position, [g[0], g[1]]):
                     self.problematic_frames.append(self.exp.params.frame)
                     self.losts += 1
-                    self.fix_error(a, [g[0], g[1]], g[2])
+                    if repair:
+                        self.fix_error(a, [g[0], g[1]], g[2])
                     r[i] = -2
                 else:
                     self.blinks += 1
                     r[i] = -1
+
+
+
+    def swap_gt_map(self, a1_gt_id, a2_id):
+        new_idx = self.gt_map.index(a2_id)
+        prev_val = self.gt_map[a1_gt_id]
+        self.gt_map[a1_gt_id] = a2_id
+        self.gt_map[new_idx] = prev_val
+
+
 
     def is_swapped(self, ant, gt):
         nearest_dist = float('inf')

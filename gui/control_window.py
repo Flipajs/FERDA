@@ -11,6 +11,7 @@ import scipy.io as sio
 import ntpath
 import pickle
 import video_manager
+import logger
 
 
 class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
@@ -22,6 +23,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.params = params
         self.is_running = False
         self.experiment = experiment_manager.ExperimentManager(self.params, ants)
+        self.logger = logger.Logger(self.experiment)
         self.out_directory = ""
         self.out_state_directory = "out/states"
         self.wait_for_button_press = False
@@ -246,18 +248,18 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.params.imshow_decreasing_factor = self.imshow_decreasing_factor.value()
 
     def log_save_regions(self):
-        self.experiment.log_regions()
+        self.logger.log_regions()
 
     def log_save_regions_collection(self):
-        self.experiment.log_regions_collection()
+        self.logger.log_regions_collection()
 
     def log_save_frame(self):
-        self.experiment.log_frame()
+        self.logger.log_frame()
 
     def log_all(self):
-        self.experiment.log_regions()
-        self.experiment.log_regions_collection()
-        self.experiment.log_frame()
+        self.logger.log_regions()
+        self.logger.log_regions_collection()
+        self.logger.log_frame()
 
 
 def main():

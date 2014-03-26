@@ -14,13 +14,9 @@ import my_utils as my_utils
 import pickle
 import sys
 import solve_merged
+import collisions
 from collections import deque
 import matplotlib.pyplot as plt
-
-
-# kdyz hrozi kolize, mnohem ostrejsi pravidla na fit...
-# jinak muze byt clovek celkem benevolentni...
-
 
 class ExperimentManager():
     def __init__(self, params, ants):
@@ -51,6 +47,56 @@ class ExperimentManager():
         self.img_ = img.copy()
         mask = self.mask_img(img)
 
+        self.history_frame_counters(forward)
+        intensity_threshold = self.get_intensity_threshold()
+
+        if not forward:
+            self.collisions = collisions.collision_detection(self.ants, self.history+1)
+
+        self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold)
+        self.groups, self.groups_avg_pos = self.get_region_groups(self.regions)
+
+        self.solve_collisions(self.regions, self.groups, self.groups_avg_pos, indexes)
+
+        if forward and self.history < 0:
+            result, costs = score.max_weight_matching(self.ants, self.regions, self.groups, self.params)
+            self.update_ants_and_intensity_threshold(result, costs)
+
+        self.collisions = collisions.collision_detection(self.ants, self.history)
+
+        self.print_and_display_results()
+
+        if forward and self.history < 0:
+            self.history = 0
+
+    def print_and_display_results(self):
+        self.display_results(self.regions, self.collisions, self.history)
+
+        if self.params.print_mser_info:
+            self.print_mser_info(self.regions)
+
+        print "#SPLITTED: ", self.number_of_splits
+
+    def update_ants_and_intensity_threshold(self, result, costs):
+        max_i = 0
+        for i in range(self.ant_number):
+            if result[i] < 0:
+                ant.set_ant_state_undefined(self.ants[i], result[i])
+            else:
+                if self.regions[result[i]]["maxI"] > max_i:
+                    max_i = self.regions[result[i]]["maxI"]
+                ant.set_ant_state(self.ants[i], result[i], self.regions[result[i]], cost=costs[i])
+
+        if self.params.dynamic_intensity_threshold:
+                self.adjust_dynamic_intensity_threshold(max_i)
+
+    def get_intensity_threshold(self):
+        if self.history > 0:
+            return self.dynamic_intensity_threshold[self.history]
+
+        return self.params.intensity_threshold
+
+    def history_frame_counters(self, forward):
         if forward:
             self.params.frame += 1
             self.history -= 1
@@ -61,61 +107,6 @@ class ExperimentManager():
 
         print " "
         print "FRAME: ", self.params.frame
-
-        intensity_threshold = self.params.intensity_threshold
-        if self.history > 0:
-            intensity_threshold = self.dynamic_intensity_threshold[self.history]
-
-        if not forward:
-            self.collisions = self.collision_detection(self.history+1)
-
-        self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold)
-        self.groups, self.groups_avg_pos = self.get_region_groups(self.regions)
-
-        self.solve_collisions(self.regions, self.groups, self.groups_avg_pos, indexes)
-
-        #if self.params.show_mser_collection:
-        #    img_copy = self.img_.copy()
-        #    collection = visualize.draw_region_group_collection(img_copy, self.regions, self.groups, self.params)
-        #    my_utils.imshow("mser collection", collection)
-        #    cv2.waitKey(150)
-        #else:
-        #    cv2.destroyWindow("mser collection")
-
-        if forward and self.history < 0:
-            result, costs = score.max_weight_matching(self.ants, self.regions, self.groups, self.params)
-
-            max_i = 0
-            for i in range(self.ant_number):
-                if result[i] < 0:
-                    ant.set_ant_state_undefined(self.ants[i], result[i])
-                else:
-                    if self.regions[result[i]]["maxI"] > max_i:
-                        max_i = self.regions[result[i]]["maxI"]
-                    ant.set_ant_state(self.ants[i], result[i], self.regions[result[i]], cost=costs[i])
-
-            if self.params.dynamic_intensity_threshold:
-                self.adjust_dynamic_intensity_threshold(max_i)
-
-
-
-        self.collisions = self.collision_detection(self.history)
-        self.display_results(self.regions, self.collisions, self.history)
-        #cv2.waitKey(150)
-        if self.params.print_mser_info:
-            vals = self.print_mser_info(self.regions)
-            #plt.ion()
-            #plt.plot(vals[:, 1], vals[:, 0], 'bo')
-            #plt.show()
-            #plt.waitforbuttonpress()
-            #plt.close()
-
-        print "#SPLITTED: ", self.number_of_splits
-
-        if forward and self.history < 0:
-            self.history = 0
-
-
 
     def solve_collisions(self, regions, groups, groups_avg_pos, indexes):
         cg_ants_idx = self.collision_groups_idx(self.collisions)
@@ -155,15 +146,6 @@ class ExperimentManager():
                     new_regions = solve_merged.solve_merged(regions[region_id], self.ants, r[1])
 
                     regions = self.add_new_regions(regions, indexes, new_regions)
-
-            #for r in result:
-            #    region_id = self.choose_region_from_group(regions, r[0], r[1])
-            #    if len(result) > 0:
-            #        self.number_of_splits += 1
-            #        print "SPLITTING mser_id: ", region_id
-            #        new_regions = solve_merged.solve_merged(regions[region_id], self.ants, r[1])
-            #
-            #        regions = self.add_new_regions(regions, indexes, new_regions)
 
         return regions
 
@@ -263,40 +245,6 @@ class ExperimentManager():
 
         return to_be_splitted
 
-        #ant_votes = [[] for i in range(len(groups_idx))]
-        #
-        #for a in ants_idx:
-        #    vals = [float('inf')]*len(groups_idx)
-        #    if len(vals) == 0:
-        #        continue
-        #
-        #    for i in range(len(groups_idx)):
-        #        for r_id in self.groups[groups_idx[i]]:
-        #            r_p = my_utils.Point(self.regions[r_id]['cx'], self.regions[r_id]['cy'])
-        #
-        #            if self.regions[r_id]['area'] < self.params.avg_ant_area:
-        #                ab_a_score = score.ab_area_prob(self.regions[r_id], self.params)
-        #                if ab_a_score < 0.1:
-        #                    continue
-        #
-        #            val = my_utils.e_distance(self.ants[a].predicted_position(1), r_p)
-        #            if val < vals[i]:
-        #                vals[i] = val
-        #
-        #
-        #    id = np.argmin(np.array(vals))
-        #    if vals[id] != float('inf'):
-        #        ant_votes[id].append(a)
-        #
-        #print "ant_votes: ", ant_votes
-        #
-        #to_be_splitted = []
-        #for i in range(len(groups_idx)):
-        #    if len(ant_votes[i]) > 1:
-        #        to_be_splitted.append([groups_idx[i], ant_votes[i]])
-        #
-        #return to_be_splitted
-
     def is_near_collision(self, cx, cy, collision):
         thresh = 50
         min_c = None
@@ -369,65 +317,6 @@ class ExperimentManager():
 
 
         return groups, groups_avg_pos
-
-    def collision_detection(self, history=0):
-        thresh1 = 70
-        thresh2 = 20
-
-        collisions = []
-        for i in range(len(self.ants)):
-            self.ants[i].state.collision_predicted = False
-
-        for i in range(len(self.ants)):
-            a1 = self.ants[i].state
-            a1.collisions = []
-            if history > 0:
-                a1 = self.ants[i].history[history-1]
-            for j in range(i+1, len(self.ants)):
-                a2 = self.ants[j].state
-                if history > 0:
-                    a2 = self.ants[j].history[history-1]
-
-                dist = my_utils.e_distance(a1.position, a2.position)
-                if dist < thresh1:
-                    dists = [0]*9
-                    dists[0] = my_utils.e_distance(a1.head, a2.head)
-                    dists[1] = my_utils.e_distance(a1.head, a2.position)
-                    dists[2] = my_utils.e_distance(a1.head, a2.back)
-                    dists[3] = my_utils.e_distance(a1.position, a2.head)
-                    dists[4] = dist
-                    dists[5] = my_utils.e_distance(a1.position, a2.back)
-                    dists[6] = my_utils.e_distance(a1.back, a2.head)
-                    dists[7] = my_utils.e_distance(a1.back, a2.position)
-                    dists[8] = my_utils.e_distance(a1.back, a2.back)
-
-                    min_i = np.argmin(np.array(dists))
-                    if dists[min_i] < thresh2:
-                        self.ants[i].state.collision_predicted = True
-                        self.ants[i].state.collisions.append((j, dists[min_i], min_i))
-                        self.ants[j].state.collision_predicted = True
-                        self.ants[j].state.collisions.append((i, dists[min_i], min_i))
-
-                        p1 = a1.head
-                        if min_i % 3 == 1:
-                            p1 = a1.position
-                        elif min_i % 3 == 2:
-                            p1 = a1.back
-
-                        if min_i < 3:
-                            p2 = a2.head
-                        elif min_i < 6:
-                            p2 = a2.position
-                        elif min_i < 9:
-                            p2 = a2.back
-
-                        coll_middle = p1+p2
-                        coll_middle.x /= 2
-                        coll_middle.y /= 2
-
-                        collisions.append((i, j, dists[min_i], min_i, coll_middle))
-
-        return collisions
 
     def process_lost(self, lost):
         for i in range(len(self.ants)):
@@ -526,13 +415,7 @@ class ExperimentManager():
             cv2.destroyWindow("mser collection")
 
         if self.use_gt and history < 0:
-            r = self.ground_truth.check_gt(self.ants, True)
-            #if r.count(0) > 0:
-            #    broken_idx = [i for i in range(len(r)) if r[i] == 0]
-            #    for i in broken_idx:
-            #        print "Ant ID: ", self.ants[i].id
-            #
-            #    cv2.waitKey()
+            r = self.ground_truth.check_gt(self.ants, self.params.gt_repair)
 
             self.ground_truth.display_stats()
 
@@ -553,21 +436,6 @@ class ExperimentManager():
         pickle.dump(ants, afile)
         afile.close()
 
-    def log_regions_collection(self):
-        img_copy = self.img_.copy()
-
-        #collection = visualize.draw_region_collection(img_copy, self.regions, self.params)
-        collection = visualize.draw_region_group_collection(img_copy, self.regions, self.groups, self.params)
-        cv2.imwrite("out/collection_"+str(self.params.frame)+".png", collection)
-
-    def log_regions(self):
-        afile = open(r'out/regions_'+str(self.params.frame)+'.pkl', 'wb')
-        pickle.dump(self.regions, afile)
-        afile.close()
-
-    def log_frame(self):
-        cv2.imwrite("out/frame"+str(self.params.frame)+".png", self.img_)
-
     def print_mser_info(self, regions):
         print "MSER INFO: "
         count = 0
@@ -578,7 +446,6 @@ class ExperimentManager():
                     print ""
                 i = self.groups[row][col]
                 r = regions[i]
-                #r0, c0, r1, c1 = self.region_size(regions[i]['rle'])
                 area_p = score.area_prob(r['area'], self.params.avg_ant_area)
                 axis_ratio, _, _ = my_utils.mser_main_axis_ratio(r["sxy"], r["sxx"], r["syy"])
                 axis_p = score.axis_ratio_prob(axis_ratio, self.params.avg_ant_axis_ratio)
@@ -609,19 +476,3 @@ class ExperimentManager():
         print self.params.avg_ant_axis_ratio
 
         return vals
-
-
-    def region_size(self, rle):
-        row_start = rle[0]['line']
-        col_start = sys.maxint
-        col_end = 0
-
-        for l in rle:
-            if l['col1'] < col_start:
-                col_start = l['col1']
-            if l['col2'] > col_end:
-                col_end = l['col2']
-
-        row_end = l['line']
-
-        return row_start, col_start, row_end, col_end

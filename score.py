@@ -231,10 +231,10 @@ def count_node_weight(ant, region, params):
     #axis_p = axis_change_prob(ant, region)
 
     theta_p = theta_change_prob(ant, region)
-    #if len(ant.state.collisions) > 0:
-    #    position_p = position_prob_collision(ant, region)
-    #else:
-    position_p = position_prob(ant, region)
+    if len(ant.state.collisions) > 0:
+        position_p = position_prob_collision(ant, region)
+    else:
+        position_p = position_prob(ant, region)
 
     ab_area_p = ab_area_prob(region, params)
     #area_p = area_prob(region['area'], ant.state.area)

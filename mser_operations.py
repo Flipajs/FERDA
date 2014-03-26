@@ -4,11 +4,9 @@ import sys
 sys.path.append('libs')
 import cyMser
 import cv2
-import visualize
 import my_utils as my_utils
 from time import time
 from numpy import *
-import pickle
 
 
 #mser flags>
@@ -26,13 +24,13 @@ class MserOperations():
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         else:
             gray = img[:, :, 0]
-            gray.shape
 
         t0 = time()
 
         if intensity_threshold > 256:
             intensity_threshold = 256
-        print "THRESHOLD MSERS: ", intensity_threshold
+
+        print "INTENSITY THRESHOLD, MSER ALGORITHM: ", intensity_threshold
 
 
         self.mser.process_image(gray, intensity_threshold)
@@ -79,24 +77,6 @@ class MserOperations():
                     ri["flags"] = "max_area_diff_kill_big"
                     continue
 
-
-            #d_area = abs(ri["area"] - self.params.avg_ant_area) / float(self.params.avg_ant_area)
-            #if d_area > self.params.max_area_diff:
-            #    ri["flags"] = "max_area_diff_kill"
-            #    continue
-
-            #add = True
-            #for j in range(0, len(indexes)):
-            #    rj = regions[indexes[j]]
-            #    if my_utils.e_distance(my_utils.Point(ri['cx'], ri['cy']), my_utils.Point(rj['cx'], rj['cy'])) < 5:
-            #        #if ri['area'] > rj['area']:
-            #        if abs(ri['area'] - self.params.avg_ant_area) > abs(rj['area'] - self.params.avg_ant_area):
-            #            add = False
-            #            ri["flags"] = "better_mser_nearby_kill"
-            #            break
-
-            #if add:
-
             filtered_indexes.append(indexes[i])
 
         return filtered_indexes
@@ -134,5 +114,18 @@ class MserOperations():
                     indexes.append(filtered_indexes[i])
         return indexes
 
-    #def ant_orientation(self, mser):
-    #    theta = my_utils.mser_theta(mser["sxy"], mser["sxx"], mser["syy"])
+
+def region_size(self, rle):
+    row_start = rle[0]['line']
+    col_start = sys.maxint
+    col_end = 0
+
+    for l in rle:
+        if l['col1'] < col_start:
+            col_start = l['col1']
+        if l['col2'] > col_end:
+            col_end = l['col2']
+
+    row_end = l['line']
+
+    return row_start, col_start, row_end, col_end

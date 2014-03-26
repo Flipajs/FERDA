@@ -279,14 +279,15 @@ def draw_ants_collection(img, ants, cell_size=60, history=0):
         h2 = 26
         h3 = 40
         h4 = 53
-        cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, thickness=1, linetype=cv2.CV_AA)
-        cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
-        cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thickness=thick, linetype=cv2.CV_AA)
+
+        cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
+        cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
+        cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
+        cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
+        cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
+        cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
+        cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
+        cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
 
     cv2.line(collection, (color_stripe_width - 1, 0), (color_stripe_width - 1, c_height - 1), line_color, 1)
     return collection
