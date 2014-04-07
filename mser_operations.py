@@ -32,7 +32,7 @@ class MserOperations():
 
         print "INTENSITY THRESHOLD, MSER ALGORITHM: ", intensity_threshold
 
-
+        self.mser.set_min_margin(self.params.min_margin)
         self.mser.process_image(gray, intensity_threshold)
         t1 = time()
         self.params.mser_times += (t1-t0)
@@ -40,17 +40,11 @@ class MserOperations():
 
         regions = self.mser.get_regions()
 
-        arena_indexes = self.arena_filter(regions)
+        self.arena_filter(regions)
+        groups = get_region_groups(regions)
+        ids = margin_filter(regions, groups, self.params.min_margin)
 
-        #area_indexes = self.area_filter(regions, arena_indexes)
-        #axis_indexes = self.axis_filter(regions, arena_indexes)
-
-        return regions, arena_indexes
-
-    def margin_filter(self, regions, groups, indexes, min_margin):
-        indexes = []
-        for i in range(len(indexes)):
-            margin, region_id = my_utils.best_margin(regions, )
+        return regions, ids
 
     def arena_filter(self, regions):
         indexes = []
@@ -134,3 +128,64 @@ def region_size(self, rle):
     row_end = l['line']
 
     return row_start, col_start, row_end, col_end
+
+
+def get_region_groups(regions):
+    prev = -1
+    groups = []
+    i = -1
+    for ridx in range(len(regions)):
+        r = regions[ridx]
+        if r["flags"] == "arena_kill":
+            continue
+        if r["flags"] == "minI_kill":
+            continue
+
+        if r["label"] > prev:
+            prev = r["label"]
+            groups.append([ridx])
+            i += 1
+        else:
+            groups[i].append(ridx)
+
+    return groups
+
+def get_region_groups2(regions):
+    prev = -1
+    groups = []
+    groups_avg_pos = []
+    i = -1
+    for ridx in range(len(regions)):
+        r = regions[ridx]
+        if r["flags"] == "arena_kill":
+            continue
+        if r["flags"] == "max_area_diff_kill_small":
+            continue
+        if r["flags"] == "minI_kill":
+            continue
+
+        if r["label"] > prev:
+            prev = r["label"]
+            groups.append([ridx])
+            groups_avg_pos.append([r["cx"], r["cy"]])
+            i += 1
+        else:
+            groups[i].append(ridx)
+            groups_avg_pos[i][0] += r["cx"]
+            groups_avg_pos[i][1] += r["cy"]
+
+    for i in range(len(groups)):
+        groups_avg_pos[i][0] /= len(groups[i])
+        groups_avg_pos[i][1] /= len(groups[i])
+
+
+    return groups, groups_avg_pos
+
+def margin_filter(regions, groups, min_margin):
+    ids = []
+    for g in groups:
+        margin, region_id = my_utils.best_margin(regions, g)
+        if margin > min_margin:
+            ids.append(region_id)
+
+    return ids

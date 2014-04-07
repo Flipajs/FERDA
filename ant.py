@@ -142,48 +142,60 @@ class Ant():
         if my_utils.e_distance(c, best_head) > my_utils.e_distance(c, best_back):
             self.state.orientation = 0
 
-    def buffer_history(self, first_frame = 0, last_frame = -1):
+    def buffer_history(self, first_frame=0, last_frame=-1):
         if last_frame > len(self.history):
             last_frame = -1
         if last_frame == -1:
             last_frame = len(self.history)
 
-        history_len = last_frame - first_frame
-        x = [0] * history_len
-        y = [0] * history_len
-        a = [0] * history_len
-        b = [0] * history_len
-        theta = [0] * history_len
-        for i in range(first_frame, last_frame):
+        history_len = last_frame - first_frame + 1
+        x = [0.] * history_len
+        y = [0.] * history_len
+        a = [0.] * history_len
+        b = [0.] * history_len
+        theta = [0.] * history_len
+
+        state = self.state
+        pos = state.position.int_tuple()
+        x[last_frame] = float(pos[0])
+        y[last_frame] = float(pos[1])
+        a[last_frame] = float(state.a)
+        b[last_frame] = float(state.b)
+
+        theta[last_frame] = float(state.theta)
+
+        i = last_frame
+        for j in range(first_frame, last_frame):
+            i -= 1
             state = self.history[i]
             pos = state.position.int_tuple()
-            x[i] = pos[0]
-            y[i] = pos[1]
-            a[i] = state.a
-            b[i] = state.b
+            x[i] = float(pos[0])
+            y[i] = float(pos[1])
+            a[i] = float(state.a)
+            b[i] = float(state.b)
 
-            theta[i] = state.theta
+            theta[i] = float(state.theta)
 
         a = {'x': x,
              'y': y,
              'theta': theta,
              'a': a,
              'b': b,
-             'id': self.id,
+             'id': float(self.id),
              'moviename': '...',
-             'firstframe': first_frame,
-             'arena': {'x': 0, 'y': 0, 'r': 0},
-             'off': 0,
-             'nframes': history_len,
-             'endframe': last_frame,
+             'firstframe': float(first_frame+1),
+             'arena': {'x': [], 'y': [], 'r': []},
+             'off': float(0),
+             'nframes': float(history_len),
+             'endframe': float(last_frame+1),
              'timestamps': [0],
              'matname': '...',
              'x_mm': x,
              'y_mm': y,
              'a_mm': a,
              'b_mm': b,
-             'pxpermm': 0,
-             'fps': 0,
+             'pxpermm': 7.97674721146402,
+             'fps': float(20),
         }
 
         return a

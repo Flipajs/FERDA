@@ -12,6 +12,7 @@ import ntpath
 import pickle
 import video_manager
 import logger
+import collisions
 
 
 class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
@@ -190,7 +191,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
         self.params = params
         self.experiment.params = params
-        self.experiment.collisions = self.experiment.collision_detection()
+        self.experiment.collisions = collisions.collision_detection(self.experiment.ants, self.experiment.history)
 
         if self.params.use_gt:
             self.experiment.ground_truth.rewind_gt(params.frame, params.ant_number)
@@ -242,7 +243,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
         path += name+'.mat'
 
-        sio.savemat(path, mdict={'antrack': data}, oned_as='row')
+        sio.savemat(path, {'Ferda': data})
 
     def imshow_decreasing_factor_changed(self):
         self.params.imshow_decreasing_factor = self.imshow_decreasing_factor.value()

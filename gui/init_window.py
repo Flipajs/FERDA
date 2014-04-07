@@ -84,6 +84,7 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         self.predefined_ant_values()
 
         img_ = self.img.copy()
+        #img_ = visualize.draw_region_group_collection(img_, self.regions, self.groups, self.params, )
         img_ = visualize.draw_region_collection(img_, self.regions, self.params)
 
         my_utils.imshow("collection", img_)
@@ -152,9 +153,15 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
 
     def predefined_ant_values(self):
         if self.params.predefined_vals == 'NoPlasterNoLid800':
-            arr = [2, 5, 7, 9, 13, 16, 21, 24, 28, 31, 33, 36, 39, 43, 46]
+            #min_margin:10
+            #arr = [2, 5, 7, 9, 13, 16, 21, 24, 28, 31, 33, 36, 39, 43, 46]
+            #min_margin:5
+            arr = [4, 7, 9, 11, 17, 22, 26, 32, 36, 41, 43, 49, 53, 57, 64]
         elif self.params.predefined_vals == 'eight':
-            arr = [0, 4, 7, 11, 16, 21, 26, 29]
+            #min_margin:10
+            #arr = [0, 4, 7, 11, 16, 21, 26, 29]
+            #min_margin:5
+            arr = [1, 9, 16, 24, 31, 39, 46, 52]
         elif self.params.predefined_vals == 'Camera2':
             arr = [1, 4, 8, 14, 19, 25, 30, 37, 43, 23, 35]
         else:

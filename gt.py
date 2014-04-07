@@ -1,6 +1,7 @@
 __author__ = 'flip'
 
 import my_utils
+import logger
 import cv2
 
 class GroundTruth:
@@ -11,6 +12,7 @@ class GroundTruth:
         except IOError:
             print "Could not open file! Please close Excel!"
 
+        self.logger = logger.Logger(experiment)
         self.f.readline()
         self.frame = 0
         self.gt_map = []
@@ -20,6 +22,7 @@ class GroundTruth:
         self.losts = 0
         self.swaps = 0
         self.problematic_frames = []
+        self.blink_frames = []
         self.exp = experiment
 
     def next_frame(self):
@@ -98,18 +101,19 @@ class GroundTruth:
                         self.fix_error(a, [g[0], g[1]], g[2])
                     r[i] = -2
                 else:
+                    self.blink_frames.append(self.exp.params.frame)
                     self.blinks += 1
+                    self.logger.log_frame()
+                    self.logger.log_regions_collection()
+                    self.logger.log_frame()
+                    self.logger.log_frame_results()
                     r[i] = -1
-
-
 
     def swap_gt_map(self, a1_gt_id, a2_id):
         new_idx = self.gt_map.index(a2_id)
         prev_val = self.gt_map[a1_gt_id]
         self.gt_map[a1_gt_id] = a2_id
         self.gt_map[new_idx] = prev_val
-
-
 
     def is_swapped(self, ant, gt):
         nearest_dist = float('inf')
@@ -191,6 +195,7 @@ class GroundTruth:
         print "#LOSTS: ", self.losts
         print "#SWAP: ", self.swaps
         print self.problematic_frames
+        print self.blink_frames
 
     def stats(self):
         all = self.error_counter/2 + self.lost_counter + self.right_counter + self.lost_in_closed_interactions + self.lost_error_in_closed_interactions

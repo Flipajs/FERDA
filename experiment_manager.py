@@ -54,15 +54,13 @@ class ExperimentManager():
             self.collisions = collisions.collision_detection(self.ants, self.history+1)
 
         self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold)
-        self.groups, self.groups_avg_pos = self.get_region_groups(self.regions)
-
-        unassigned_ants_idx = range(self.params.ant_number)
-        unassigned_groups_idx = range(len(self.groups))
+        self.groups, self.groups_avg_pos = mser_operations.get_region_groups2(self.regions)
 
         self.solve_collisions(indexes)
 
         if forward and self.history < 0:
             result, costs = score.max_weight_matching(self.ants, self.regions, self.groups, self.params)
+            result, costs = self.solve_lost(self.ants, self.regions, indexes, result, costs)
             self.update_ants_and_intensity_threshold(result, costs)
 
         self.collisions = collisions.collision_detection(self.ants, self.history)
@@ -71,6 +69,31 @@ class ExperimentManager():
 
         if forward and self.history < 0:
             self.history = 0
+
+    def solve_lost(self, ants, regions, indexes, result, costs):
+        lost_ants = []
+        for i in range(self.params.ant_number):
+            if result[i] < 0:
+                lost_ants.append(i)
+
+        if len(lost_ants) == 0:
+            return result, costs
+
+        free_regions = []
+        for id in indexes:
+            if id not in result:
+                free_regions.append(id)
+
+        l_result, l_costs = score.max_weight_matching_lost(ants, lost_ants, regions, free_regions, self.params)
+
+        print "### SOLVE_LOST: l_result: ", l_result
+
+        for id in range(len(lost_ants)):
+            result[lost_ants[id]] = l_result[id]
+            costs[lost_ants[id]] = l_costs[id]
+
+        return result, costs
+
 
     def print_and_display_results(self):
         self.display_results(self.regions, self.collisions, self.history)
@@ -281,37 +304,6 @@ class ExperimentManager():
 
         return ant_groups
 
-    def get_region_groups(self, regions):
-        prev = -1
-        groups = []
-        groups_avg_pos = []
-        i = -1
-        for ridx in range(len(regions)):
-            r = regions[ridx]
-            if r["flags"] == "arena_kill":
-                continue
-            if r["flags"] == "max_area_diff_kill_small":
-                continue
-            if r["flags"] == "minI_kill":
-                continue
-
-            if r["label"] > prev:
-                prev = r["label"]
-                groups.append([ridx])
-                groups_avg_pos.append([r["cx"], r["cy"]])
-                i += 1
-            else:
-                groups[i].append(ridx)
-                groups_avg_pos[i][0] += r["cx"]
-                groups_avg_pos[i][1] += r["cy"]
-
-        for i in range(len(groups)):
-            groups_avg_pos[i][0] /= len(groups[i])
-            groups_avg_pos[i][1] /= len(groups[i])
-
-
-        return groups, groups_avg_pos
-
     def process_lost(self, lost):
         for i in range(len(self.ants)):
             if lost[i]:
@@ -361,7 +353,7 @@ class ExperimentManager():
         for i in range(self.ant_number):
             a = self.ants[i]
             vals = a.buffer_history()
-            vals['moveiname'] = self.params.video_file_name
+            vals['moviename'] = self.params.video_file_name
             data[i] = vals
 
         return data

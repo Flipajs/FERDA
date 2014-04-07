@@ -24,6 +24,45 @@ def max_weight_matching(ants, regions, groups, params):
     return region_idxs, costs
 
 
+def max_weight_matching_lost(ants, lost_ants, regions, free_regions, params):
+    graph = nx.Graph()
+
+    for a_id in lost_ants:
+        graph.add_node('a'+str(a_id))
+        graph.add_node('u'+str(a_id))
+
+        graph.add_edge('a'+str(a_id), 'u'+str(a_id), weight=params.weighted_matching_lost_edge_cost)
+
+        for r_id in free_regions:
+            if ab_area_prob(regions[r_id], params) < 0.5:
+                continue
+
+            w = count_lost_node_weight(ants[a_id], regions[r_id], params)
+            graph.add_edge('a'+str(a_id), 'g'+str(r_id), weight=w)
+
+        result = nx.max_weight_matching(graph, True)
+
+
+    region_ids = [None]*len(lost_ants)
+    costs = [None]*len(lost_ants)
+
+    for id in range(len(lost_ants)):
+        node = result['a'+str(lost_ants[id])]
+        if node[0] == 'u':
+            region_ids[id] = -1
+            costs[id] = -1
+        else:
+            region_ids[id] = int(node[1:])
+            costs[id] = graph.get_edge_data('a'+str(lost_ants[id]), node)['weight']
+
+    return region_ids, costs
+
+
+def count_lost_node_weight(a, r, params):
+    r_p = my_utils.Point(r['cx'], r['cy'])
+    return my_utils.e_distance(a.state.position, r_p)
+
+
 def interpret_results_of_max_weighted_matching(result, ants, ants_groups_preferences, graph):
     region_idxs = [None]*len(ants)
     costs = [None]*len(ants)
@@ -79,7 +118,6 @@ def graph_add_edges(graph, ants, regions, groups, params):
                 graph.add_edge('a'+str(a.id), 'g'+str(g), weight=w)
 
     return ants_groups_preferences
-
 
 
 def log_normpdf(x, u, s):

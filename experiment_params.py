@@ -14,9 +14,12 @@ class Params():
         self.avg_ant_axis_ratio = 4.2
         self.max_axis_ratio_diff = 2
         self.max_area_diff = 0.6
+        self.min_margin = 5
 
         #TODO> WTF factor ~ INF
         self.undefined_threshold = 0.000001
+
+        self.weighted_matching_lost_edge_cost = 0.0001
 
         self.mser_times = 0
         self.frame = 0
@@ -47,20 +50,20 @@ class Params():
         self.ab_area_hist = pickle.load(afile)
         afile.close()
 
-        #self.ant_number = 15
-        #self.arena = my_utils.RotatedRect(my_utils.Point(405+self.border, 386+self.border), my_utils.Size(766, 766), 0)
-        #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
-        #self.predefined_vals = 'NoPlasterNoLid800'
-        #self.gt_path = '../data/NoPlasterNoLid800/fixed_out.txt'
+        self.ant_number = 15
+        self.arena = my_utils.RotatedRect(my_utils.Point(405+self.border, 386+self.border), my_utils.Size(760, 760), 0)
+        self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
+        self.predefined_vals = 'NoPlasterNoLid800'
+        self.gt_path = '../data/NoPlasterNoLid800/fixed_out.txt'
 
-        self.ant_number = 8
-        self.arena = my_utils.RotatedRect(my_utils.Point(593+self.border, 570+self.border), my_utils.Size(344*2, 344*2), 0)
-        self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
-        self.predefined_vals = 'eight'
-        self.gt_path = '../data/eight/fixed_out.txt'
+        #self.ant_number = 8
+        #self.arena = my_utils.RotatedRect(my_utils.Point(593+self.border, 570+self.border), my_utils.Size(344*2, 344*2), 0)
+        #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
+        #self.predefined_vals = 'eight'
+        #self.gt_path = '../data/eight/fixed_out.txt'
 
         #self.ant_number = 11
-        #self.arena = utils.RotatedRect(utils.Point(665+self.border, 504+self.border), utils.Size(491*2, 491*2), 0)
+        #self.arena = my_utils.RotatedRect(my_utils.Point(665+self.border, 504+self.border), my_utils.Size(491*2, 491*2), 0)
         #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/Camera 2.m4v"
         #self.predefined_vals = 'Camera2'
 
