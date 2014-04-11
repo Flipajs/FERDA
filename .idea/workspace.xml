@@ -2,17 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fa249b41-4065-4670-8381-5619991dcf2a" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/ants_stats.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/gt_ctrax_ferda.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libs/cyMser.so" afterPath="$PROJECT_DIR$/libs/cyMser.so" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ant.py" afterPath="$PROJECT_DIR$/ant.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/ants_view.py" afterPath="$PROJECT_DIR$/gui/ants_view.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/area_ab.py" afterPath="$PROJECT_DIR$/scripts/area_ab.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/control_window.py" afterPath="$PROJECT_DIR$/gui/control_window.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_params.py" afterPath="$PROJECT_DIR$/experiment_params.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gt.py" afterPath="$PROJECT_DIR$/gt.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/init_window.py" afterPath="$PROJECT_DIR$/gui/init_window.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/logger.py" afterPath="$PROJECT_DIR$/logger.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mser_operations.py" afterPath="$PROJECT_DIR$/mser_operations.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/my_utils.py" afterPath="$PROJECT_DIR$/my_utils.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/score.py" afterPath="$PROJECT_DIR$/score.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/visualize.py" afterPath="$PROJECT_DIR$/visualize.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
@@ -38,19 +35,10 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/experiment_manager.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="7035">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="control_window.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/gui/control_window.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="133" column="0" selection-start="4521" selection-end="4521" vertical-scroll-proportion="0.0" vertical-offset="1530" max-vertical-offset="4170">
+            <state line="257" column="20" selection-start="8373" selection-end="8373" vertical-scroll-proportion="0.0" vertical-offset="3613" max-vertical-offset="4275">
               <folding />
             </state>
           </provider>
@@ -59,7 +47,36 @@
       <file leaf-file-name="experiment_params.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/experiment_params.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="27" column="30" selection-start="603" selection-end="603" vertical-scroll-proportion="0.0" vertical-offset="405" max-vertical-offset="1170">
+            <state line="66" column="50" selection-start="1993" selection-end="1993" vertical-scroll-proportion="0.0" vertical-offset="855" max-vertical-offset="1305">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="logger.py" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/logger.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="27" column="0" selection-start="788" selection-end="788" vertical-scroll-proportion="0.6954315" vertical-offset="101" max-vertical-offset="495">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="score.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/score.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="294" column="41" selection-start="8243" selection-end="8243" vertical-scroll-proportion="0.0" vertical-offset="4181" max-vertical-offset="4620">
+              <folding>
+                <element signature="e#21#32#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="area_ab.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/scripts/area_ab.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="222" column="20" selection-start="6741" selection-end="6741" vertical-scroll-proportion="0.0" vertical-offset="3240" max-vertical-offset="7155">
               <folding />
             </state>
           </provider>
@@ -68,61 +85,43 @@
       <file leaf-file-name="gt.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/gt.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="58" column="37" selection-start="1506" selection-end="1506" vertical-scroll-proportion="0.0" vertical-offset="720" max-vertical-offset="3120">
+            <state line="108" column="51" selection-start="3527" selection-end="3527" vertical-scroll-proportion="0.0" vertical-offset="1418" max-vertical-offset="3135">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="gt_ctrax_ferda.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scripts/gt_ctrax_ferda.py">
+      <file leaf-file-name="main.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="96" column="0" selection-start="2131" selection-end="2131" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2160">
+            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="195">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ants_stats.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scripts/ants_stats.py">
+      <file leaf-file-name="source_window.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/gui/source_window.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="81" column="14" selection-start="2465" selection-end="2465" vertical-scroll-proportion="0.0" vertical-offset="133" max-vertical-offset="1305">
+            <state line="1" column="0" selection-start="39" selection-end="39" vertical-scroll-proportion="0.0" vertical-offset="15" max-vertical-offset="690">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="mean-ant.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scripts/mean-ant.py">
+      <file leaf-file-name="init_window.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/gui/init_window.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="108" column="16" selection-start="2378" selection-end="2462" vertical-scroll-proportion="0.0" vertical-offset="1507" max-vertical-offset="2970">
+            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2835">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="kmeans.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scripts/kmeans.py">
+      <file leaf-file-name="visualize.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/visualize.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="533" column="4" selection-start="11318" selection-end="11356" vertical-scroll-proportion="0.0" vertical-offset="7995" max-vertical-offset="9705">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="score.py" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/score.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="201" column="12" selection-start="5378" selection-end="5386" vertical-scroll-proportion="-0.05102041" vertical-offset="3015" max-vertical-offset="4260">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="logger.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/logger.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="21" column="0" selection-start="639" selection-end="639" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="495">
+            <state line="130" column="20" selection-start="4361" selection-end="4361" vertical-scroll-proportion="0.0" vertical-offset="1950" max-vertical-offset="4920">
               <folding />
             </state>
           </provider>
@@ -146,30 +145,30 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/scripts/margin.py" />
         <option value="$PROJECT_DIR$/collisions.py" />
         <option value="$PROJECT_DIR$/logger" />
-        <option value="$PROJECT_DIR$/my_utils.py" />
-        <option value="$PROJECT_DIR$/score.py" />
-        <option value="$PROJECT_DIR$/experiment_manager.py" />
-        <option value="$PROJECT_DIR$/ant.py" />
-        <option value="$PROJECT_DIR$/visualize.py" />
         <option value="$PROJECT_DIR$/gui/init_window.py" />
-        <option value="$PROJECT_DIR$/mser_operations.py" />
-        <option value="$PROJECT_DIR$/logger.py" />
-        <option value="$PROJECT_DIR$/gui/control_window.py" />
         <option value="$PROJECT_DIR$/scripts/gt_ctrax_ferda.py" />
         <option value="$PROJECT_DIR$/scripts/ants_stats.py" />
-        <option value="$PROJECT_DIR$/experiment_params.py" />
+        <option value="$PROJECT_DIR$/ant.py" />
+        <option value="$PROJECT_DIR$/my_utils.py" />
+        <option value="$PROJECT_DIR$/mser_operations.py" />
+        <option value="$PROJECT_DIR$/gui/control_window.py" />
+        <option value="$PROJECT_DIR$/experiment_manager.py" />
+        <option value="$PROJECT_DIR$/visualize.py" />
+        <option value="$PROJECT_DIR$/scripts/area_ab.py" />
+        <option value="$PROJECT_DIR$/score.py" />
         <option value="$PROJECT_DIR$/gt.py" />
+        <option value="$PROJECT_DIR$/logger.py" />
+        <option value="$PROJECT_DIR$/experiment_params.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="65" />
-    <option name="y" value="-1824" />
-    <option name="width" value="1855" />
-    <option name="height" value="1056" />
+    <option name="x" value="-1301" />
+    <option name="y" value="24" />
+    <option name="width" value="1301" />
+    <option name="height" value="744" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -197,7 +196,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -230,28 +228,16 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ants" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ants" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="gui" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="options.splitter.main.proportions" value="0.3" />
     <property name="recentsLimit" value="5" />
     <property name="options.lastSelected" value="editor" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="FullScreen" value="false" />
     <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
@@ -261,7 +247,7 @@
       <PyConsoleSettings />
     </option>
   </component>
-  <component name="RunManager" selected="Python.ants_stats">
+  <component name="RunManager" selected="Python.main">
     <configuration default="false" name="main" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -279,24 +265,6 @@
       <RunnerSettings RunnerId="PyDebugRunner" />
       <RunnerSettings RunnerId="PythonRunner" />
       <ConfigurationWrapper RunnerId="PyDebugRunner" />
-      <ConfigurationWrapper RunnerId="PythonRunner" />
-      <method />
-    </configuration>
-    <configuration default="false" name="solve_merged" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="ants" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/solve_merged.py" />
-      <option name="PARAMETERS" value="" />
-      <RunnerSettings RunnerId="PythonRunner" />
       <ConfigurationWrapper RunnerId="PythonRunner" />
       <method />
     </configuration>
@@ -349,6 +317,26 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ants" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/ants_stats.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PyDebugRunner" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PyDebugRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="area_ab" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/scripts" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ants" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/area_ab.py" />
       <option name="PARAMETERS" value="" />
       <RunnerSettings RunnerId="PyDebugRunner" />
       <RunnerSettings RunnerId="PythonRunner" />
@@ -479,18 +467,18 @@
     </configuration>
     <list size="5">
       <item index="0" class="java.lang.String" itemvalue="Python.main" />
-      <item index="1" class="java.lang.String" itemvalue="Python.solve_merged" />
-      <item index="2" class="java.lang.String" itemvalue="Python.margin" />
-      <item index="3" class="java.lang.String" itemvalue="Python.gt_ctrax_ferda" />
-      <item index="4" class="java.lang.String" itemvalue="Python.ants_stats" />
+      <item index="1" class="java.lang.String" itemvalue="Python.margin" />
+      <item index="2" class="java.lang.String" itemvalue="Python.gt_ctrax_ferda" />
+      <item index="3" class="java.lang.String" itemvalue="Python.ants_stats" />
+      <item index="4" class="java.lang.String" itemvalue="Python.area_ab" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.ants_stats" />
-        <item index="1" class="java.lang.String" itemvalue="Python.main" />
-        <item index="2" class="java.lang.String" itemvalue="Python.gt_ctrax_ferda" />
-        <item index="3" class="java.lang.String" itemvalue="Python.margin" />
-        <item index="4" class="java.lang.String" itemvalue="Python.solve_merged" />
+        <item index="0" class="java.lang.String" itemvalue="Python.main" />
+        <item index="1" class="java.lang.String" itemvalue="Python.area_ab" />
+        <item index="2" class="java.lang.String" itemvalue="Python.ants_stats" />
+        <item index="3" class="java.lang.String" itemvalue="Python.gt_ctrax_ferda" />
+        <item index="4" class="java.lang.String" itemvalue="Python.margin" />
       </list>
     </recent_temporary>
   </component>
@@ -541,18 +529,18 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="65" y="-1824" width="1855" height="1056" extended-state="6" />
+    <frame x="-1301" y="24" width="1301" height="744" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32985386" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24972677" sideWeight="0.6181818" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23169398" sideWeight="0.6171123" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37239164" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23169398" sideWeight="0.3828877" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.15282132" sideWeight="0.717496" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3691814" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.14541388" sideWeight="0.6369048" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="8" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26145834" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.28250402" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -602,106 +590,114 @@
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="162" />
+      <option name="time" value="164" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/cv2/__init__.py">
+    <entry file="file://$PROJECT_DIR$/scripts/ab_find_msers.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="1369" column="4" selection-start="36471" selection-end="36471" vertical-scroll-proportion="0.38958707" vertical-offset="20318" max-vertical-offset="34065" />
+        <state line="15" column="13" selection-start="347" selection-end="347" vertical-scroll-proportion="0.27704486" vertical-offset="0" max-vertical-offset="758" />
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/__builtin__.py">
+    <entry file="file://$PROJECT_DIR$/ant.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="31" column="0" selection-start="1170" selection-end="1170" vertical-scroll-proportion="0.3313253" vertical-offset="355" max-vertical-offset="76080" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/my_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="92" column="4" selection-start="1910" selection-end="1910" vertical-scroll-proportion="0.0" vertical-offset="1255" max-vertical-offset="1665" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gui/init_window.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="148" column="19" selection-start="5431" selection-end="5431" vertical-scroll-proportion="0.0" vertical-offset="1921" max-vertical-offset="2835" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/visualize.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="55" column="30" selection-start="1596" selection-end="1596" vertical-scroll-proportion="0.0" vertical-offset="566" max-vertical-offset="4845" />
+        <state line="207" column="0" selection-start="5980" selection-end="5980" vertical-scroll-proportion="0.0" vertical-offset="2880" max-vertical-offset="3990" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/mser_operations.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="140" column="37" selection-start="4171" selection-end="4171" vertical-scroll-proportion="0.0" vertical-offset="1815" max-vertical-offset="2940" />
+        <state line="21" column="8" selection-start="356" selection-end="356" vertical-scroll-proportion="-7.0882354" vertical-offset="74" max-vertical-offset="2940" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/gui/control_window.py">
+    <entry file="file://$PROJECT_DIR$/my_utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="133" column="0" selection-start="4521" selection-end="4521" vertical-scroll-proportion="0.0" vertical-offset="1530" max-vertical-offset="4170">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/kmeans.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="533" column="4" selection-start="11318" selection-end="11356" vertical-scroll-proportion="0.0" vertical-offset="7995" max-vertical-offset="9705">
+        <state line="114" column="17" selection-start="2565" selection-end="2565" vertical-scroll-proportion="0.0" vertical-offset="1027" max-vertical-offset="1785">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/experiment_manager.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="6795">
+        <state line="63" column="50" selection-start="1862" selection-end="1862" vertical-scroll-proportion="0.0" vertical-offset="450" max-vertical-offset="6915">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/mean-ant.py">
+    <entry file="file://$PROJECT_DIR$/visualize.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="108" column="16" selection-start="2378" selection-end="2462" vertical-scroll-proportion="0.0" vertical-offset="1507" max-vertical-offset="2970">
+        <state line="130" column="20" selection-start="4361" selection-end="4361" vertical-scroll-proportion="0.0" vertical-offset="1440" max-vertical-offset="4920">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/ants_stats.py">
+    <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="81" column="14" selection-start="2465" selection-end="2465" vertical-scroll-proportion="0.0" vertical-offset="133" max-vertical-offset="1305">
+        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="662">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/experiment_params.py">
+    <entry file="file://$PROJECT_DIR$/gui/source_window.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="27" column="30" selection-start="603" selection-end="603" vertical-scroll-proportion="0.0" vertical-offset="225" max-vertical-offset="1140">
+        <state line="1" column="0" selection-start="39" selection-end="39" vertical-scroll-proportion="0.0" vertical-offset="139" max-vertical-offset="690">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/gt.py">
+    <entry file="file://$PROJECT_DIR$/gui/init_window.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="58" column="37" selection-start="1506" selection-end="1506" vertical-scroll-proportion="0.0" vertical-offset="720" max-vertical-offset="3120">
+        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2835">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/gt_ctrax_ferda.py">
+    <entry file="file://$PROJECT_DIR$/gui/control_window.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="96" column="0" selection-start="2131" selection-end="2131" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2160">
+        <state line="257" column="20" selection-start="8373" selection-end="8373" vertical-scroll-proportion="0.0" vertical-offset="3613" max-vertical-offset="4275">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/logger.py">
+    <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/math.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="21" column="0" selection-start="639" selection-end="639" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="495">
+        <state line="248" column="4" selection-start="5127" selection-end="5127" vertical-scroll-proportion="0.33248731" vertical-offset="3589" max-vertical-offset="5310">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/score.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="201" column="12" selection-start="5378" selection-end="5386" vertical-scroll-proportion="-0.05102041" vertical-offset="3015" max-vertical-offset="4260">
+        <state line="294" column="41" selection-start="8243" selection-end="8243" vertical-scroll-proportion="0.0" vertical-offset="4181" max-vertical-offset="4620">
+          <folding>
+            <element signature="e#21#32#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="108" column="51" selection-start="3527" selection-end="3527" vertical-scroll-proportion="0.0" vertical-offset="1418" max-vertical-offset="3135">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scripts/area_ab.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="222" column="20" selection-start="6741" selection-end="6741" vertical-scroll-proportion="0.0" vertical-offset="3240" max-vertical-offset="7155">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiment_params.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="66" column="50" selection-start="1993" selection-end="1993" vertical-scroll-proportion="0.0" vertical-offset="855" max-vertical-offset="1305">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="27" column="0" selection-start="788" selection-end="788" vertical-scroll-proportion="0.6954315" vertical-offset="101" max-vertical-offset="495">
           <folding />
         </state>
       </provider>

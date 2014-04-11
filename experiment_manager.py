@@ -65,6 +65,13 @@ class ExperimentManager():
 
         self.collisions = collisions.collision_detection(self.ants, self.history)
 
+
+        sum = 0
+        for a in self.ants:
+            sum += a.state.a
+
+        print "AVG A: ", sum / float(len(self.ants))
+
         self.print_and_display_results()
 
         if forward and self.history < 0:
@@ -96,10 +103,16 @@ class ExperimentManager():
 
 
     def print_and_display_results(self):
-        self.display_results(self.regions, self.collisions, self.history)
+        if self.params.show_image:
+            self.display_results(self.regions, self.collisions, self.history)
 
         if self.params.print_mser_info:
             self.print_mser_info(self.regions)
+
+        if self.use_gt and self.history < 0:
+            r = self.ground_truth.check_gt(self.ants, self.params.gt_repair)
+
+            self.ground_truth.display_stats()
 
         print "#SPLITTED: ", self.number_of_splits
 
@@ -399,11 +412,6 @@ class ExperimentManager():
             my_utils.imshow("mser collection", collection)
         else:
             cv2.destroyWindow("mser collection")
-
-        if self.use_gt and history < 0:
-            r = self.ground_truth.check_gt(self.ants, self.params.gt_repair)
-
-            self.ground_truth.display_stats()
 
     def save_ants_info(self, regions):
         img_copy = self.img_.copy()

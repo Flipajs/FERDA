@@ -119,6 +119,7 @@ def draw_region_collection(img, regions, params, cols=15, rows=10, cell_size=50)
             "cx"] + cell_size / 2].copy()
 
         cv2.putText(img_small, str(i), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+        cv2.putText(img_small, str(r["margin"]), (3, 20), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
         collection[row * cell_size:(row + 1) * cell_size, col * cell_size:(col + 1) * cell_size, :] = img_small
 
     return collection
@@ -130,6 +131,7 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
     for g in groups:
         if len(g) > cols:
             cols = len(g)
+
     num_strip = 20
     collection = zeros((rows * cell_size, 2*(cols * cell_size) + num_strip + cell_size, 3), dtype=uint8)
     border = cell_size
@@ -219,7 +221,7 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
             cv2.putText(img_small, str(r['margin']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
             collection[(row + row_p) * cell_size:((row + row_p) + 1) * cell_size, num_strip + (col + col_p) * cell_size:num_strip + ((col + col_p) + 1) * cell_size, :] = img_small
 
-    print "COUNTER: ", counter
+    #print "COUNTER: ", counter
 
     return collection
 

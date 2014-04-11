@@ -1,227 +1,369 @@
 __author__ = 'flipajs'
 
+import sys
+sys.path.append('../libs')
 import pickle
 import math
 import score
 import my_utils
 import matplotlib.pyplot as plt
 import numpy as np
+import mser_operations
+import visualize
 from scipy import ndimage
+import cv2
+from numpy import *
 
-#eight = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 78, 91, 98, 111, 115, 116, 117, 183, 184, 185, 186, 187, 188, 189, 223, 224, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250]
-#nolid = [53, 57, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 85, 109, 126, 136, 137, 140, 141, 142, 143, 145, 146, 147, 148, 149, 150, 151, 153, 161, 179, 180, 181, 182, 185, 186, 187, 188, 189, 190, 191, 192, 194, 195, 196, 197, 198, 199, 200]
+eight = range(1, 101)
+noplast = range(1, 101)
+
+def draw_region_group_collection(img, regions, groups, labels, cell_size=70):
+    rows = int(math.ceil(len(groups) / 2.))
+    cols = 0
+    for g in groups:
+        if len(g) > cols:
+            cols = len(g)
+
+    num_strip = 20
+    collection = zeros((rows * cell_size, 2*(cols * cell_size) + num_strip + cell_size, 3), dtype=uint8)
+    border = cell_size
+
+    col_p = 0
+    row_p = 0
+
+    img_ = zeros((shape(img)[0] + 2 * border, shape(img)[1] + 2 * border, 3), dtype=uint8)
+    r_id = 0
+
+    for row in range(len(groups)):
+        if row >= rows:
+                row_p = -rows
+                col_p = cols+1
+
+        cv2.putText(collection, str(row), (3 + cell_size*col_p, 30 + cell_size*(row+row_p)), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+
+        margins = [0]*len(groups[row])
+        for col in range(len(groups[row])):
+            r = regions[groups[row][col]]
+            ratio, _, _ = my_utils.mser_main_axis_ratio(r['sxy'], r['sxx'], r['syy'])
+
+            margins[col] = r['margin']
+
+        for col in range(len(groups[row])):
+            img_[border:-border, border:-border] = img.copy()
+            r = regions[groups[row][col]]
+            if r["cx"] == inf or r["cy"] == inf:
+                continue
+
+            c = (0, 255, 0)
+
+            cont = True
+            if labels[r_id] == 1:
+                c = (0, 0, 212)
+                cont = False
+
+            if labels[r_id] > 1:
+                c = (255, 255, 0)
+                cont = False
+
+            visualize.draw_region(img_[border:-border, border:-border], r, c, contour=cont)
+
+            img_small = img_[border + r[
+                "cy"] - cell_size / 2:border + r["cy"] + cell_size / 2, border + r["cx"] - cell_size / 2:border + r[
+                "cx"] + cell_size / 2].copy()
+
+            cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(r['area']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(r['margin']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            collection[(row + row_p) * cell_size:((row + row_p) + 1) * cell_size, num_strip + (col + col_p) * cell_size:num_strip + ((col + col_p) + 1) * cell_size, :] = img_small
+
+            r_id += 1
+
+    return collection
+
+def correction_eight(regions_labels, regions_idx):
+    #1:100 .. checked
+
+
+    #regions_labels[regions_idx['e2']][] = 1
+
+    return regions_labels
+
+def correction_noplast(regions_labels, regions_idx):
+    regions_labels[regions_idx['n8']][10] = 0
+    regions_labels[regions_idx['n8']][11] = 1
+
+    regions_labels[regions_idx['n9']][15] = 0
+    regions_labels[regions_idx['n9']][16] = 1
+
+    regions_labels[regions_idx['n28']][2] = 2
+    regions_labels[regions_idx['n28']][78] = 0
+
+    regions_labels[regions_idx['n29']][2] = 2
+    regions_labels[regions_idx['n29']][75] = 0
+
+    regions_labels[regions_idx['n30']][2] = 2
+    regions_labels[regions_idx['n30']][74] = 0
+
+    regions_labels[regions_idx['n43']][0] = 0 #rozteklej
+
+    regions_labels[regions_idx['n44']][1] = 0 #rozteklej
+
+    regions_labels[regions_idx['n45']][8] = 0 #rozteklej
+
+    regions_labels[regions_idx['n46']][8] = 0 #rozteklej
+
+    regions_labels[regions_idx['n47']][8] = 0 #rozteklej
+
+    regions_labels[regions_idx['n48']][12] = 0 #rozteklej
+
+    regions_labels[regions_idx['n49']][9] = 0 #rozteklej
+
+    regions_labels[regions_idx['n50']][8] = 0 #rozteklej
+
+    regions_labels[regions_idx['n51']][19] = 0 #rozteklej
+
+    regions_labels[regions_idx['n52']][9] = 0 #rozteklej
+
+    regions_labels[regions_idx['n53']][75] = 0
+
+    regions_labels[regions_idx['n54']][39] = 0 #rozteklej
+
+    regions_labels[regions_idx['n55']][24] = 0 #rozteklej
+
+    regions_labels[regions_idx['n56']][17] = 0 #rozteklej
+
+    regions_labels[regions_idx['n57']][18] = 0 #rozteklej
+
+    regions_labels[regions_idx['n58']][14] = 0 #rozteklej
+
+    regions_labels[regions_idx['n59']][18] = 0 #rozteklej
+
+    regions_labels[regions_idx['n60']][20] = 0 #rozteklej
+    regions_labels[regions_idx['n60']][22] = 2
+    regions_labels[regions_idx['n60']][61] = 0
+
+    regions_labels[regions_idx['n61']][36] = 0 #rozteklej
+
+    regions_labels[regions_idx['n62']][17] = 0 #rozteklej
+
+    regions_labels[regions_idx['n63']][8] = 0 #rozteklej
+    regions_labels[regions_idx['n63']][21] = 2
+
+    regions_labels[regions_idx['n64']][16] = 2
+    regions_labels[regions_idx['n64']][19] = 0 #rozteklej
+
+    regions_labels[regions_idx['n65']][36] = 0 #rozteklej
+
+    regions_labels[regions_idx['n66']][21] = 0 #rozteklej
+
+    regions_labels[regions_idx['n67']][22] = 0 #rozteklej
+
+    regions_labels[regions_idx['n68']][71] = 0
+
+    regions_labels[regions_idx['n71']][17] = 0 #rozteklej
+
+    regions_labels[regions_idx['n72']][12] = 0 #rozteklej
+
+    regions_labels[regions_idx['n73']][1] = 2
+    regions_labels[regions_idx['n73']][36] = 0 #rozteklej
+
+    regions_labels[regions_idx['n74']][2] = 2
+    regions_labels[regions_idx['n74']][23] = 0 #rozteklej
+    regions_labels[regions_idx['n74']][79] = 0
+
+    regions_labels[regions_idx['n75']][2] = 2
+    regions_labels[regions_idx['n75']][43] = 0 #rozteklej
+
+    regions_labels[regions_idx['n76']][36] = 0 #rozteklej
+
+    regions_labels[regions_idx['n77']][6] = 0 #rozteklej
+
+    regions_labels[regions_idx['n78']][18] = 0 #rozteklej
+
+    regions_labels[regions_idx['n79']][5] = 0 #rozteklej
+
+    regions_labels[regions_idx['n80']][8] = 0 #rozteklej
+
+    regions_labels[regions_idx['n81']][21] = 0 #rozteklej
+
+    regions_labels[regions_idx['n82']][14] = 0 #rozteklej
+
+    regions_labels[regions_idx['n83']][24] = 0 #rozteklej
+
+    regions_labels[regions_idx['n84']][21] = 0 #rozteklej
+
+    regions_labels[regions_idx['n85']][25] = 0 #rozteklej
+
+    regions_labels[regions_idx['n86']][27] = 0 #rozteklej
+
+    regions_labels[regions_idx['n100']][10] = 2
+
+    #1..100 checked
+
+    return regions_labels
+
+def prepare_data(name, frames):
+    regions_idx = {}
+    regions_labels = []
+    regions_vals = []
+
+    counter = 0
+    if name == 'eight':
+        avg_a = 244
+        avg_ab = 4.25897163403
+        ant_num = 8
+    elif name == 'noplast':
+        avg_ab = 4.16476763396
+        avg_a = 117
+        ant_num = 15
+
+    for id in frames:
+        file = open('../out/'+name+'_dump/regions/regions_'+str(id)+'.pkl', 'rb')
+        regions = pickle.load(file)
+        file.close()
+
+        groups = mser_operations.get_region_groups(regions)
+        groups_max_margin_id = [0] * len(groups)
+        groups_max_margin = [0] * len(groups)
+        group_vals = [0] * len(groups)
+
+        for i in range(len(groups)):
+            g = groups[i]
+            groups_max_margin[i], groups_max_margin_id[i] = my_utils.best_margin(regions, g)
+
+        regions_idx[name[0]+str(id)] = counter
+        regions_labels.append([0]*len(regions))
+        regions_vals.append([])
+
+        sorted_ids = np.argsort(np.array(groups_max_margin))[::-1]
+
+        c = 0
+        for id in sorted_ids:
+            regions_labels[counter][groups_max_margin_id[id]] = 1
+            c += 1
+            if c == ant_num:
+                break
+
+        i = 0
+        for r in regions:
+            ratio, a, b = my_utils.mser_main_axis_ratio(r['sxy'], r['sxx'], r['syy'])
+            a, b = my_utils.count_head_tail(r['area'], a, b)
+            regions_vals[counter].append([r['area'], a, b])
+
+        counter += 1
+
+    return regions_idx, regions_vals, regions_labels
+
+
+def log_hist(hist):
+    for i in range(hist.shape[0]):
+        for j in range(hist.shape[1]):
+            hist[i][j] = math.log(hist[i][j]+1)
+
+    return hist
+
 #
+#e_regions_idx, e_regions_vals, e_regions_labels = prepare_data('eight', eight)
+#n_regions_idx, n_regions_vals, n_regions_labels = prepare_data('noplast', noplast)
 #
-#def correction_eight(regions_labels, regions_idx):
-#    regions_labels[regions_idx['e5']][15] = 1
-#    regions_labels[regions_idx['e6']][12] = 1
-#    regions_labels[regions_idx['e7']][27] = 1
-#    regions_labels[regions_idx['e8']][16] = 1
-#    regions_labels[regions_idx['e9']][19] = 1
-#    regions_labels[regions_idx['e10']][27] = 1
-#    regions_labels[regions_idx['e11']][27] = 1
-#    regions_labels[regions_idx['e12']][26] = 1
-#    regions_labels[regions_idx['e13']][27] = 1
-#    regions_labels[regions_idx['e17']][0] = 1
-#    regions_labels[regions_idx['e78']][0] = 1
-#    regions_labels[regions_idx['e91']][0] = 1
-#    regions_labels[regions_idx['e98']][0] = 1
-#    regions_labels[regions_idx['e111']][0] = 1
-#    regions_labels[regions_idx['e115']][13] = 1
-#    regions_labels[regions_idx['e116']][4] = 1
-#    regions_labels[regions_idx['e117']][5] = 1
-#    regions_labels[regions_idx['e183']][12] = 1
-#    regions_labels[regions_idx['e184']][12] = 1
-#    regions_labels[regions_idx['e185']][16] = 1
-#    regions_labels[regions_idx['e186']][18] = 1
-#    regions_labels[regions_idx['e187']][19] = 1
-#    regions_labels[regions_idx['e188']][18] = 1
-#    regions_labels[regions_idx['e189']][22] = 1
-#    regions_labels[regions_idx['e223']][24] = 1
-#    regions_labels[regions_idx['e224']][18] = 1
-#    regions_labels[regions_idx['e235']][17] = 1
-#    regions_labels[regions_idx['e236']][13] = 1
-#    regions_labels[regions_idx['e237']][16] = 1
-#    regions_labels[regions_idx['e238']][12] = 1
-#    regions_labels[regions_idx['e239']][10] = 1
-#    regions_labels[regions_idx['e240']][9] = 1
-#    regions_labels[regions_idx['e241']][16] = 1
-#    regions_labels[regions_idx['e242']][23] = 1
-#    regions_labels[regions_idx['e243']][22] = 1
-#    regions_labels[regions_idx['e244']][23] = 1
-#    regions_labels[regions_idx['e245']][24] = 1
-#    regions_labels[regions_idx['e246']][24] = 1
-#    regions_labels[regions_idx['e247']][25] = 1
-#    regions_labels[regions_idx['e248']][26] = 1
-#    regions_labels[regions_idx['e249']][16] = 1
-#    regions_labels[regions_idx['e250']][20] = 1
+#preview = True
 #
-#    return regions_labels
+#e_regions_labels = correction_eight(e_regions_labels, e_regions_idx)
+#n_regions_labels = correction_noplast(n_regions_labels, n_regions_idx)
 #
-#def correction_nolid(regions_labels, regions_idx):
-#    regions_labels[regions_idx['n53']][42] = 1
-#    regions_labels[regions_idx['n57']][13] = 1
-#    regions_labels[regions_idx['n68']][39] = 1
-#    regions_labels[regions_idx['n69']][20] = 1
-#    regions_labels[regions_idx['n70']][35] = 1
-#    regions_labels[regions_idx['n71']][26] = 1
-#
-#    regions_labels[regions_idx['n72']][31] = 1
-#    regions_labels[regions_idx['n73']][28] = 1
-#    regions_labels[regions_idx['n74']][32] = 1
-#    regions_labels[regions_idx['n75']][0] = 1
-#    regions_labels[regions_idx['n75']][38] = 1
-#    regions_labels[regions_idx['n76']][41] = 1
-#
-#    regions_labels[regions_idx['n77']][44] = 1
-#    regions_labels[regions_idx['n78']][11] = 1
-#    regions_labels[regions_idx['n78']][45] = 1
-#    regions_labels[regions_idx['n85']][38] = 1
-#    regions_labels[regions_idx['n109']][1] = 1
-#    regions_labels[regions_idx['n126']][51] = 1
-#
-#    regions_labels[regions_idx['n136']][13] = 1
-#    regions_labels[regions_idx['n136']][22] = 1
-#    regions_labels[regions_idx['n137']][2] = 1
-#    regions_labels[regions_idx['n137']][47] = 1
-#    regions_labels[regions_idx['n140']][10] = 1
-#    regions_labels[regions_idx['n140']][49] = 1
-#
-#    regions_labels[regions_idx['n141']][10] = 1
-#    regions_labels[regions_idx['n141']][46] = 1
-#    regions_labels[regions_idx['n142']][0] = 1
-#    regions_labels[regions_idx['n142']][13] = 1
-#    regions_labels[regions_idx['n142']][20] = 1
-#    regions_labels[regions_idx['n143']][36] = 1
-#
-#    regions_labels[regions_idx['n146']][59] = 1
-#    regions_labels[regions_idx['n146']][60] = 1
-#    regions_labels[regions_idx['n147']][56] = 1
-#    regions_labels[regions_idx['n147']][57] = 1
-#    regions_labels[regions_idx['n148']][60] = 1
-#    regions_labels[regions_idx['n148']][61] = 1
-#
-#    regions_labels[regions_idx['n149']][53] = 1
-#    regions_labels[regions_idx['n149']][54] = 1
-#    regions_labels[regions_idx['n150']][53] = 1
-#    regions_labels[regions_idx['n150']][54] = 1
-#    regions_labels[regions_idx['n151']][52] = 1
-#    regions_labels[regions_idx['n151']][53] = 1
-#
-#    regions_labels[regions_idx['n153']][36] = 1
-#    regions_labels[regions_idx['n161']][40] = 1
-#    regions_labels[regions_idx['n179']][36] = 1
-#    regions_labels[regions_idx['n180']][37] = 1
-#    regions_labels[regions_idx['n180']][0] = 1
-#    regions_labels[regions_idx['n181']][38] = 1
-#
-#    regions_labels[regions_idx['n182']][36] = 1
-#    regions_labels[regions_idx['n185']][0] = 1
-#    regions_labels[regions_idx['n186']][5] = 1
-#    regions_labels[regions_idx['n187']][2] = 1
-#    regions_labels[regions_idx['n188']][4] = 1
-#    regions_labels[regions_idx['n189']][6] = 1
-#
-#    regions_labels[regions_idx['n190']][5] = 1
-#    regions_labels[regions_idx['n191']][25] = 1
-#    regions_labels[regions_idx['n192']][11] = 1
-#    regions_labels[regions_idx['n194']][9] = 1
-#    regions_labels[regions_idx['n195']][4] = 1
-#    regions_labels[regions_idx['n196']][0] = 1
-#
-#    regions_labels[regions_idx['n197']][2] = 1
-#    regions_labels[regions_idx['n198']][2] = 1
-#    regions_labels[regions_idx['n199']][3] = 1
-#    regions_labels[regions_idx['n200']][8] = 1
-#
-#    return regions_labels
-#
-#def prepare_data(name, frames):
-#    regions_idx = {}
-#    regions_labels = []
-#    regions_vals = []
-#
+#if preview:
+#    name = 'eight'
 #    counter = 0
-#    if name == 'eight':
-#        avg_a = 244
-#        avg_ab = 4.25897163403
-#    elif name == 'nolid':
-#        avg_ab = 4.16476763396
-#        avg_a = 122
+#    start_from = 101
+#    for id in eight:
+#        print "ID: ", id
+#        if counter < start_from-1:
+#            counter += 1
+#            continue
 #
-#    for id in frames:
-#        file = open('../out/ab/'+name+'/regions_'+str(id)+'.pkl', 'rb')
+#        img = cv2.imread('../out/'+name+'_dump/frames/frame'+str(id)+'.png')
+#
+#        file = open('../out/'+name+'_dump/regions/regions_'+str(id)+'.pkl', 'rb')
 #        regions = pickle.load(file)
 #        file.close()
 #
-#        regions_idx[name[0]+str(id)] = counter
+#        groups = mser_operations.get_region_groups(regions)
 #
-#        regions_labels.append([0]*len(regions))
-#        regions_vals.append([])
+#        collection = draw_region_group_collection(img, regions, groups, e_regions_labels[counter])
 #
-#        i = 0
-#        for r in regions:
-#            ratio, _, _ = my_utils.mser_main_axis_ratio(r['sxy'], r['sxx'], r['syy'])
-#
-#            val = score.area_prob(r['area'], avg_a)
-#            val *= score.axis_ratio_prob(ratio, avg_ab)
-#
-#            regions_vals[counter].append([r['area'] / float(avg_a), ratio / avg_ab])
-#
-#            if val >= 0.8:
-#                regions_labels[counter][i] = 1
-#
-#            i += 1
+#        cv2.imshow("collection", collection)
+#        cv2.waitKey(0)
 #
 #        counter += 1
 #
-#    return regions_idx, regions_vals, regions_labels
+#    name = 'noplast'
+#    counter = 0
+#    start_from = 101
+#    for id in eight:
+#        print "ID: ", id
+#        if counter < start_from-1:
+#            counter += 1
+#            continue
 #
+#        img = cv2.imread('../out/'+name+'_dump/frames/frame'+str(id)+'.png')
 #
-#e_regions_idx, e_regions_vals, e_regions_labels = prepare_data('eight', eight)
-#n_regions_idx, n_regions_vals, n_regions_labels = prepare_data('nolid', nolid)
+#        file = open('../out/'+name+'_dump/regions/regions_'+str(id)+'.pkl', 'rb')
+#        regions = pickle.load(file)
+#        file.close()
 #
-#e_regions_labels = correction_eight(e_regions_labels, e_regions_idx)
-#n_regions_labels = correction_nolid(n_regions_labels, n_regions_idx)
+#        groups = mser_operations.get_region_groups(regions)
 #
-#afile = open('../out/ab/eight-labels.pkl', 'wb')
+#        collection = draw_region_group_collection(img, regions, groups, n_regions_labels[counter])
+#
+#        cv2.imshow("collection", collection)
+#
+#        w = True
+#        while w:
+#            key = cv2.waitKey(1)
+#            if key == 110 or key == 32:
+#                w = False
+#
+#        counter += 1
+#
+#afile = open('../out/ab_margin/eight-labels.pkl', 'wb')
 #pickle.dump(e_regions_labels, afile)
 #afile.close()
 #
-#afile = open('../out/ab/eight-values.pkl', 'wb')
+#afile = open('../out/ab_margin/eight-values.pkl', 'wb')
 #pickle.dump(e_regions_vals, afile)
 #afile.close()
 #
-#afile = open('../out/ab/eight-idx.pkl', 'wb')
+#afile = open('../out/ab_margin/eight-idx.pkl', 'wb')
 #pickle.dump(e_regions_idx, afile)
 #afile.close()
 #
-#afile = open('../out/ab/nolid-labels.pkl', 'wb')
+#afile = open('../out/ab_margin/noplaster-labels.pkl', 'wb')
 #pickle.dump(n_regions_labels, afile)
 #afile.close()
 #
-#afile = open('../out/ab/nolid-values.pkl', 'wb')
+#afile = open('../out/ab_margin/noplaster-values.pkl', 'wb')
 #pickle.dump(n_regions_vals, afile)
 #afile.close()
 #
-#afile = open('../out/ab/nolid-idx.pkl', 'wb')
+#afile = open('../out/ab_margin/noplaster-idx.pkl', 'wb')
 #pickle.dump(n_regions_idx, afile)
 #afile.close()
 
 
-afile = open('../out/ab/eight-labels.pkl', 'rb')
+
+afile = open('../out/ab_margin/eight-labels.pkl', 'rb')
 e_regions_labels = pickle.load(afile)
 afile.close()
 
-afile = open('../out/ab/eight-values.pkl', 'rb')
+afile = open('../out/ab_margin/eight-values.pkl', 'rb')
 e_regions_vals = pickle.load(afile)
 afile.close()
 
-afile = open('../out/ab/nolid-labels.pkl', 'rb')
+afile = open('../out/ab_margin/noplaster-labels.pkl', 'rb')
 n_regions_labels = pickle.load(afile)
 afile.close()
 
-afile = open('../out/ab/nolid-values.pkl', 'rb')
+afile = open('../out/ab_margin/noplaster-values.pkl', 'rb')
 n_regions_vals = pickle.load(afile)
 afile.close()
 
@@ -233,12 +375,19 @@ frame_i = 0
 x_start = 0.2
 y_start = 0.2
 step = 0.05
+
+plt.figure()
+
 for frame in e_regions_vals:
     reg_i = 0
     for reg in frame:
         if e_regions_labels[frame_i][reg_i] == 1:
-            x_id = int(math.floor((reg[0] - x_start) / step))
-            y_id = int(math.floor((reg[1] - y_start) / step))
+            area = reg[0] / float(244)
+            a = reg[1] / float(17.97)
+
+            plt.plot(area, a, 'cx')
+            x_id = int(math.floor((area - x_start) / step))
+            y_id = int(math.floor((a - y_start) / step))
 
             if x_id > 0 and y_id > 0:
                 if x_id < max_x and y_id < max_y:
@@ -252,10 +401,12 @@ for frame in n_regions_vals:
     reg_i = 0
     for reg in frame:
         if n_regions_labels[frame_i][reg_i] == 1:
-            plt.plot(reg[0], reg[1], 'mx')
+            area = reg[0] / float(117)
+            a = reg[1] / float(12.7)
 
-            x_id = int(math.floor((reg[0] - x_start) / step))
-            y_id = int(math.floor((reg[1] - y_start) / step))
+            plt.plot(area, a, 'mx')
+            x_id = int(math.floor((area - x_start) / step))
+            y_id = int(math.floor((a - y_start) / step))
 
             if x_id > 0 and y_id > 0:
                 if x_id < max_x and y_id < max_y:
@@ -266,14 +417,13 @@ for frame in n_regions_vals:
     frame_i += 1
 
 
-#my_hist += 1
+plt.grid()
 
+log_hist(my_hist)
 
-from scipy import misc
-lena = misc.lena()
-#blurred_lena = ndimage.gaussian_filter(lena, sigma=3)
-very_blurred = ndimage.gaussian_filter(my_hist, sigma=1)
-print very_blurred.max()
+very_blurred = ndimage.gaussian_filter(my_hist, sigma=2)
+very_blurred = very_blurred / very_blurred.max()
+print "MAX: ", very_blurred.max()
 
 afile = open('../out/ab/ab_area_hist_blurred.pkl', 'wb')
 e_regions_labels = pickle.dump(very_blurred, afile)
@@ -282,7 +432,7 @@ afile.close()
 fig = plt.figure()
 ax = fig.add_subplot(1,1,1)
 ax.set_aspect('equal')
-plt.imshow(very_blurred, interpolation='nearest', cmap=plt.cm.bone_r)
+plt.imshow(very_blurred, interpolation='nearest', cmap=plt.cm.bone)
 plt.colorbar()
 plt.gca().invert_yaxis()
 plt.grid()

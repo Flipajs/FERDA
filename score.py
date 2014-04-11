@@ -253,6 +253,21 @@ def ab_area_prob(region, params):
 
     return val
 
+def a_area_prob(region, params):
+    _, a, _ = my_utils.mser_main_axis_ratio(region['sxy'], region['sxx'], region['syy'])
+    area = (region['area'] / float(params.avg_ant_area)) - params.a_area_xstart
+    a = (a / params.avg_ant_axis_a) - params.a_area_ystart
+
+    x_id = int(math.floor(area / params.a_area_step))
+    y_id = int(math.floor(a / params.a_area_step))
+
+    val = 0
+    if x_id > 0 and y_id > 0:
+        if x_id < params.a_area_xmax and y_id < params.a_area_ymax:
+            val = params.a_area_hist[y_id][x_id]
+
+    return val
+
 def count_node_weight(ant, region, params):
     #tohle je spatne...
     #axis_p = axis_change_prob(ant, region)
@@ -263,11 +278,17 @@ def count_node_weight(ant, region, params):
     else:
         position_p = position_prob(ant, region)
 
-    ab_area_p = ab_area_prob(region, params)
+    #if len(ant.state.collisions) > 0:
+    #    ab_area_p = 1
+    #else:
+    #ab_area_p = ab_area_prob(region, params)
+
+    a_area_p = ab_area_prob(region, params)
+
     #area_p = area_prob(region['area'], ant.state.area)
 
     #prob = axis_p * theta_p * position_p
-    prob = theta_p * position_p * ab_area_p
+    prob = theta_p * position_p * a_area_p
 
     if ant.state.lost:
         if prob > params.undefined_threshold:

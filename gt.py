@@ -105,8 +105,9 @@ class GroundTruth:
                     self.blinks += 1
                     self.logger.log_frame()
                     self.logger.log_regions_collection()
-                    self.logger.log_frame()
+                    self.logger.log_regions()
                     self.logger.log_frame_results()
+
                     r[i] = -1
 
     def swap_gt_map(self, a1_gt_id, a2_id):

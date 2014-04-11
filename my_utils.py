@@ -105,3 +105,11 @@ def best_margin(regions, r_ids):
             best_margin_id = r_id
 
     return best_margin, best_margin_id
+
+
+def count_head_tail(area, a, b):
+    axis_ratio = a / float(b)
+    b_ = math.sqrt(area / (axis_ratio * math.pi))
+    a_ = b_ * axis_ratio
+
+    return a_, b_

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ants_view.ui'
 #
-# Created: Wed Mar 19 00:12:08 2014
+# Created: Mon Apr  7 17:40:54 2014
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -77,8 +77,12 @@ class Ui_Dialog(object):
         self.label_4.setObjectName(_fromUtf8("label_4"))
         self.ch_print_mser_info = QtGui.QCheckBox(self.tab)
         self.ch_print_mser_info.setGeometry(QtCore.QRect(180, 10, 161, 22))
-        self.ch_print_mser_info.setChecked(True)
+        self.ch_print_mser_info.setChecked(False)
         self.ch_print_mser_info.setObjectName(_fromUtf8("ch_print_mser_info"))
+        self.ch_imshow = QtGui.QCheckBox(self.tab)
+        self.ch_imshow.setGeometry(QtCore.QRect(180, 30, 161, 22))
+        self.ch_imshow.setChecked(True)
+        self.ch_imshow.setObjectName(_fromUtf8("ch_imshow"))
         self.tabWidget.addTab(self.tab, _fromUtf8(""))
         self.tab_2 = QtGui.QWidget()
         self.tab_2.setObjectName(_fromUtf8("tab_2"))
@@ -179,6 +183,7 @@ class Ui_Dialog(object):
         self.ch_ants_collection.setText(QtGui.QApplication.translate("Dialog", "ants collection", None, QtGui.QApplication.UnicodeUTF8))
         self.label_4.setText(QtGui.QApplication.translate("Dialog", "img size (%)", None, QtGui.QApplication.UnicodeUTF8))
         self.ch_print_mser_info.setText(QtGui.QApplication.translate("Dialog", "print mser info", None, QtGui.QApplication.UnicodeUTF8))
+        self.ch_imshow.setText(QtGui.QApplication.translate("Dialog", "imshow", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QtGui.QApplication.translate("Dialog", "display", None, QtGui.QApplication.UnicodeUTF8))
         self.ch_log_each_frame.setText(QtGui.QApplication.translate("Dialog", "each frame", None, QtGui.QApplication.UnicodeUTF8))
         self.ch_log_verbose.setText(QtGui.QApplication.translate("Dialog", "verbose", None, QtGui.QApplication.UnicodeUTF8))

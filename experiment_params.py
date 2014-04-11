@@ -26,7 +26,7 @@ class Params():
 
         self.use_gt = True
         self.gt_repair = False
-        self.fast_start = True
+        self.fast_start = False
 
         self.intensity_threshold = 200
         self.dynamic_intensity_threshold = True
@@ -35,8 +35,9 @@ class Params():
 
         self.show_mser_collection = False
         self.show_ants_collection = True
+        self.show_image = True
         self.imshow_decreasing_factor = 0.5
-        self.print_mser_info = True
+        self.print_mser_info = False
         self.print_matching = True
 
         self.ab_area_xstart = 0.2
@@ -50,8 +51,18 @@ class Params():
         self.ab_area_hist = pickle.load(afile)
         afile.close()
 
+        afile = open('data/a_area_hist_blurred.pkl', 'rb')
+        self.a_area_hist = pickle.load(afile)
+        afile.close()
+
+        self.a_area_xstart = 0.2
+        self.a_area_ystart = 0.2
+        self.a_area_xmax = 41
+        self.a_area_ymax = 26
+        self.a_area_step = 0.05
+
         self.ant_number = 15
-        self.arena = my_utils.RotatedRect(my_utils.Point(405+self.border, 386+self.border), my_utils.Size(760, 760), 0)
+        self.arena = my_utils.RotatedRect(my_utils.Point(404+self.border, 386+self.border), my_utils.Size(758, 758), 0)
         self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
         self.predefined_vals = 'NoPlasterNoLid800'
         self.gt_path = '../data/NoPlasterNoLid800/fixed_out.txt'
