@@ -4,12 +4,18 @@ import math
 import networkx as nx
 import matplotlib.mlab as mlab
 import my_utils as my_utils
+import numpy as np
 
-def pred_distance_score(a, region):
-    x = a.predicted_position(1).x - region["cx"]
-    y = a.predicted_position(1).y - region["cy"]
+def pred_distance_score(a, region, params):
+    pred = a.predicted_position(1)
+    if my_utils.e_distance(pred, params.arena.center) > (params.arena.size.width / 2) - params.avg_ant_axis_b:
+        p = my_utils.get_circle_line_intersection(params, a.state.position, pred)
+        return math.sqrt((p.x - region["cx"])**2 + (p.y - region["cy"])**2)
+    else:
+        x = pred.x - region["cx"]
+        y = pred.y - region["cy"]
 
-    return math.sqrt(x*x + y*y)
+        return math.sqrt(x*x + y*y)
 
 
 def max_weight_matching(ants, regions, groups, params):
@@ -184,12 +190,12 @@ def theta_change_prob(ant, region):
     return val
 
 
-def position_prob(ant, region):
+def position_prob(ant, region, params):
     u = 0
     s = 4.5669*2
     max_val = mlab.normpdf(u, u, s)
     #max_val = log_normpdf(u, u, s)
-    x = pred_distance_score(ant, region)
+    x = pred_distance_score(ant, region, params)
 
     if ant.state.lost:
         x /= (math.log(ant.state.lost_time) + 1)
@@ -254,7 +260,9 @@ def ab_area_prob(region, params):
     return val
 
 def a_area_prob(region, params):
-    _, a, _ = my_utils.mser_main_axis_ratio(region['sxy'], region['sxx'], region['syy'])
+    _, a, b = my_utils.mser_main_axis_ratio(region['sxy'], region['sxx'], region['syy'])
+    a, b = my_utils.count_head_tail(region['area'], a, b)
+
     area = (region['area'] / float(params.avg_ant_area)) - params.a_area_xstart
     a = (a / params.avg_ant_axis_a) - params.a_area_ystart
 
@@ -276,14 +284,15 @@ def count_node_weight(ant, region, params):
     if len(ant.state.collisions) > 0:
         position_p = position_prob_collision(ant, region)
     else:
-        position_p = position_prob(ant, region)
+        position_p = position_prob(ant, region, params)
 
     #if len(ant.state.collisions) > 0:
     #    ab_area_p = 1
     #else:
     #ab_area_p = ab_area_prob(region, params)
 
-    a_area_p = ab_area_prob(region, params)
+    #a_area_p = a_area_prob(region, params)
+    a_area_p = a_area_prob(region, params)
 
     #area_p = area_prob(region['area'], ant.state.area)
 

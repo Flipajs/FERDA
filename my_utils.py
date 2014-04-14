@@ -113,3 +113,38 @@ def count_head_tail(area, a, b):
     a_ = b_ * axis_ratio
 
     return a_, b_
+
+
+def get_circle_line_intersection(params, c, p):
+    m = Point(params.arena.center.x, params.arena.center.y) #circle middle
+    r = params.arena.size.width / 2 #circle radius
+    x = Point(0, 0)
+
+    a_ = c.x**2 - 2*p.x*c.x + p.x**2
+    a_ += c.y**2 - 2*p.y*c.y + p.y**2
+
+    b_ = 2*c.x*p.x - 2*c.x*m.x - 2*p.x**2 + 2*p.x*m.x
+    b_ += 2*c.y*p.y - 2*c.y*m.y - 2*p.y**2 + 2*p.y*m.y
+
+    c_ = p.x**2 - 2*p.x*m.x + m.x**2
+    c_ += p.y**2 - 2*p.y*m.y + m.y**2
+    c_ -= r**2
+
+
+    if a_ == 0:
+        return p
+
+    d_ = math.sqrt(b_**2 - 4*a_*c_)
+    alpha1 = (-b_ + d_) / (2*a_)
+    alpha2 = (-b_ - d_) / (2*a_)
+
+    alpha = 0
+    if 0 <= alpha1 <= 1:
+        alpha = alpha1
+    elif 0 <= alpha2 <= 1:
+        alpha = alpha2
+
+    x.x = alpha * c.x + (1 - alpha) * p.x
+    x.y = alpha * c.y + (1 - alpha) * p.y
+
+    return x

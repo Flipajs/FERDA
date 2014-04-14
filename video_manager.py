@@ -58,5 +58,18 @@ class VideoManager():
             self.view_pos = view_dec
             return self.buffer[self.view_pos]
 
+    def get_prev_img(self):
+        view_dec = self.dec_pos(self.view_pos)
+        if view_dec == self.buffer_pos:
+            print "No more frames in buffer"
+            return None
+        elif self.buffer[view_dec] is None:
+            print "No more frames in buffer"
+            return None
+        else:
+            ret = self.buffer[view_dec]
+            return ret
+
+
     def img(self):
         return self.buffer[self.view_pos]

@@ -19,9 +19,10 @@ from collections import deque
 import matplotlib.pyplot as plt
 
 class ExperimentManager():
-    def __init__(self, params, ants):
+    def __init__(self, params, ants, video_manager):
         self.ant_number = params.ant_number
         self.params = params
+        self.video_manager = video_manager
 
         self.ants = ants
         self.number_of_splits = 0
@@ -39,6 +40,7 @@ class ExperimentManager():
         self.count_ant_params()
 
         self.img_ = None
+        self.prev_img_ = None
         self.dynamic_intensity_threshold = deque()
         self.groups = []
         self.groups_avg_pos = []
@@ -61,6 +63,12 @@ class ExperimentManager():
         if forward and self.history < 0:
             result, costs = score.max_weight_matching(self.ants, self.regions, self.groups, self.params)
             result, costs = self.solve_lost(self.ants, self.regions, indexes, result, costs)
+
+        img_assignment_problem = visualize.draw_assignment_problem(self.video_manager.get_prev_img(), self.img_, self.ants, self.regions, self.groups, self.params)
+        cv2.imshow("assignment problem", img_assignment_problem)
+        cv2.waitKey(1)
+
+        if forward and self.history < 0:
             self.update_ants_and_intensity_threshold(result, costs)
 
         self.collisions = collisions.collision_detection(self.ants, self.history)

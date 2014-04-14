@@ -23,7 +23,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.video_manager = video_manager
         self.params = params
         self.is_running = False
-        self.experiment = experiment_manager.ExperimentManager(self.params, ants)
+        self.experiment = experiment_manager.ExperimentManager(self.params, ants, video_manager)
         self.logger = logger.Logger(self.experiment)
         self.out_directory = ""
         self.out_state_directory = "out/states"

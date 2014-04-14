@@ -2,6 +2,7 @@ __author__ = 'flip'
 
 import my_utils
 import logger
+import math
 import cv2
 
 class GroundTruth:
@@ -24,6 +25,8 @@ class GroundTruth:
         self.problematic_frames = []
         self.blink_frames = []
         self.exp = experiment
+        self.square_error_sum = 0
+        self.square_error_last = 0
 
     def next_frame(self):
         self.f.readline()
@@ -67,9 +70,14 @@ class GroundTruth:
             g = self.next_ant()
             gt.append(g)
 
+        self.square_error_last = 0
         for i in range(len(ants)):
             g = gt[i]
             a = ants[self.gt_map[i]]
+
+            self.square_error_last += (g[0] - a.state.position.x)**2 + (g[1] - a.state.position.y)**2
+            self.square_error_sum += self.square_error_last
+
             if not a.state.lost:
                 if not a.state.collision_predicted:
                     swapped, swap_a_id, swap_g_id = self.is_swapped(a, gt)
@@ -195,6 +203,8 @@ class GroundTruth:
         print "#BLINKS: ", self.blinks
         print "#LOSTS: ", self.losts
         print "#SWAP: ", self.swaps
+        print "SQ_dError: ", self.square_error_sum / self.exp.params.frame
+        print "+SQ_dError: ", self.square_error_last
         print self.problematic_frames
         print self.blink_frames
 
