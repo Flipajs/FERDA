@@ -294,6 +294,10 @@ def count_node_weight(ant, region, params):
     #a_area_p = a_area_prob(region, params)
     a_area_p = a_area_prob(region, params)
 
+    if "splitted" in region:
+        if a_area_p < 0.5 and theta_p * position_p > 0.8:
+            a_area_p = 0.5
+
     #area_p = area_prob(region['area'], ant.state.area)
 
     #prob = axis_p * theta_p * position_p

@@ -338,8 +338,10 @@ def solve_merged(region, ants, ants_idx):
 
     for id in ants_idx:
         a = ants[id]
-        pred = a.predicted_position(1)
-        middle = np.array([pred.x, pred.y])
+        #pred = a.predicted_position(1)
+        #middle = np.array([pred.x, pred.y])
+
+        middle = np.array([a.state.position.x, a.state.position.y])
         theta = a.state.theta
         theta = -(theta - math.pi)
         theta = theta * 180 / math.pi

@@ -64,26 +64,24 @@ class ExperimentManager():
             result, costs = score.max_weight_matching(self.ants, self.regions, self.groups, self.params)
             result, costs = self.solve_lost(self.ants, self.regions, indexes, result, costs)
 
-        img_assignment_problem = visualize.draw_assignment_problem(self.video_manager.get_prev_img(), self.img_, self.ants, self.regions, self.groups, self.params)
-        cv2.imshow("assignment problem", img_assignment_problem)
-        cv2.waitKey(1)
+        if self.params.show_assignment_problem:
+            img_assignment_problem = visualize.draw_assignment_problem(self.video_manager.get_prev_img(), self.img_, self.ants, self.regions, self.groups, self.params)
+            cv2.imshow("assignment problem", img_assignment_problem)
+            cv2.waitKey(1)
 
         if forward and self.history < 0:
             self.update_ants_and_intensity_threshold(result, costs)
 
         self.collisions = collisions.collision_detection(self.ants, self.history)
 
-
-        sum = 0
-        for a in self.ants:
-            sum += a.state.a
-
-        print "AVG A: ", sum / float(len(self.ants))
-
         self.print_and_display_results()
 
         if forward and self.history < 0:
             self.history = 0
+
+        if self.params.frame == 100:
+            print "MSER TIMES: ", self.params.mser_times
+
 
     def solve_lost(self, ants, regions, indexes, result, costs):
         lost_ants = []

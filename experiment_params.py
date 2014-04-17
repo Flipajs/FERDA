@@ -28,7 +28,7 @@ class Params():
         self.gt_repair = False
         self.fast_start = True
 
-        self.intensity_threshold = 200
+        self.intensity_threshold = 100
         self.dynamic_intensity_threshold = True
         self.dynamic_intensity_threshold_history = 5
         self.dynamic_intensity_threshold_increase = 0.0
@@ -36,6 +36,7 @@ class Params():
         self.show_mser_collection = False
         self.show_ants_collection = True
         self.show_image = True
+        self.show_assignment_problem = True
         self.imshow_decreasing_factor = 0.5
         self.print_mser_info = False
         self.print_matching = True

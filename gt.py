@@ -115,6 +115,7 @@ class GroundTruth:
                     self.logger.log_regions_collection()
                     self.logger.log_regions()
                     self.logger.log_frame_results()
+                    self.logger.log_assignment_problem()
 
                     r[i] = -1
 

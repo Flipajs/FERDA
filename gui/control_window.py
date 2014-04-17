@@ -55,8 +55,10 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.ch_mser_collection.clicked.connect(self.show_mser_collection_changed)
         self.ch_print_mser_info.clicked.connect(self.print_mser_info_changed)
         self.ch_imshow.clicked.connect(self.imshow)
+        self.ch_assignment_problem.clicked.connect(self.show_assignment_problem)
         self.b_load_state.clicked.connect(self.load_state)
         self.b_log_all.clicked.connect(self.log_all)
+        self.b_log_assignment_problem.clicked.connect(self.logger.log_assignment_problem)
         self.show()
 
         self.b_log_save_regions.clicked.connect(self.log_save_regions)
@@ -201,6 +203,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
             self.experiment.ground_truth.rewind_gt(params.frame, params.ant_number)
 
         self.prepare_video_source(params.frame)
+        self.experiment.video_manager = self.video_manager
 
 
         print "DONE"
@@ -229,6 +232,9 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
     def show_mser_collection_changed(self):
         self.experiment.params.show_mser_collection = self.ch_mser_collection.isChecked()
+
+    def show_assignment_problem(self):
+        self.experiment.params.show_assignment_problem = self.ch_assignment_problem.isChecked()
 
     def print_mser_info_changed(self):
         self.params.print_mser_info = self.ch_print_mser_info.isChecked()

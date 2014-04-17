@@ -1,7 +1,7 @@
 __author__ = 'flip'
 
 import cv2
-import my_utils as my_utils
+import my_utils
 from numpy import *
 import score
 
@@ -66,6 +66,9 @@ def draw_ants(img, ants, regions, filled, history=0):
 
         if history == 0:
             cv2.line(img, ants[i].state.position.int_tuple(), ants[i].predicted_position(1).int_tuple(), (255, 255, 255), 1)
+
+        if len(ants[0].history) > 0:
+            cv2.line(img, ants[i].history[0].position.int_tuple(), ants[i].state.position.int_tuple(), (0, 255, 255), 2)
 
         #c = (0, 0, 0)
         #if ants[i].state.orientation:
@@ -153,16 +156,7 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
         margins = [0]*len(groups[row])
         for col in range(len(groups[row])):
             r = regions[groups[row][col]]
-            ratio, _, _ = my_utils.mser_main_axis_ratio(r['sxy'], r['sxx'], r['syy'])
-            a = (r['area'] / float(params.avg_ant_area)) - params.ab_area_xstart
-            ab = (ratio / params.avg_ant_axis_ratio) - params.ab_area_ystart
-
-            x_id = int(math.floor(a / params.ab_area_step))
-            y_id = int(math.floor(ab / params.ab_area_step))
-
-            if x_id > 0 and y_id > 0:
-                if x_id < params.ab_area_xmax and y_id < params.ab_area_ymax:
-                    vals[col] = params.ab_area_hist[y_id][x_id] / params.ab_area_max
+            vals[col] = score.a_area_prob(r, params)
 
 
             margins[col] = r['margin']
@@ -214,11 +208,17 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
                 "cy"] - cell_size / 2:border + r["cy"] + cell_size / 2, border + r["cx"] - cell_size / 2:border + r[
                 "cx"] + cell_size / 2].copy()
 
+
+            _, a, b = my_utils.mser_main_axis_ratio(r["sxy"], r["sxx"], r["syy"])
+            a, b = my_utils.count_head_tail(r["area"], a, b)
+
+
             cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
             #if col == best_id:
             cv2.putText(img_small, str(vals[col]*100)[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-            cv2.putText(img_small, str(r['area']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-            cv2.putText(img_small, str(r['margin']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(r['area']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(a)[0:5], (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(r['margin']), (3, 65), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
             collection[(row + row_p) * cell_size:((row + row_p) + 1) * cell_size, num_strip + (col + col_p) * cell_size:num_strip + ((col + col_p) + 1) * cell_size, :] = img_small
 
     #print "COUNTER: ", counter
@@ -241,9 +241,9 @@ def draw_assignment_problem(prev_img, img, ants, regions, groups, params, cell_s
             _, region_id = my_utils.best_margin(regions, groups[s[i]])
             best_regions_id[a_id][i] = region_id
 
-    print best_regions_id
+    color_stripe_width = 7
 
-    c_width = cell_size + (num_best + 1) * cell_size
+    c_width = color_stripe_width + cell_size + (num_best) * cell_size * 2
     c_height = len(ants) * cell_size
     collection = zeros((c_height, c_width, 3), dtype=uint8)
     border = cell_size
@@ -251,7 +251,6 @@ def draw_assignment_problem(prev_img, img, ants, regions, groups, params, cell_s
 
     line_color = (53, 53, 53)
 
-    color_stripe_width = 7
 
     for i in range(len(ants)):
         img_[border:-border, border:-border] = prev_img.copy()
@@ -265,21 +264,7 @@ def draw_assignment_problem(prev_img, img, ants, regions, groups, params, cell_s
 
         color = [255, 255, 255]
 
-        if a.collision_predicted:
-            color[0] = 0
-            color[1] = 128
-
-            c[:, :, 1] += 17
-            c[:, :, 2] += 35
-
-        if a.lost:
-            color[0] = round(color[0] * 0.7)
-            color[1] = round(color[1] * 0.7)
-            color[2] = round(color[2] * 0.7)
-
-            collection[i * cell_size:(i + 1)*cell_size, color_stripe_width:cell_size+color_stripe_width, :] = c*0.5
-        else:
-            collection[i * cell_size:(i + 1)*cell_size, color_stripe_width:cell_size+color_stripe_width, :] = c
+        collection[i * cell_size:(i + 1)*cell_size, color_stripe_width:cell_size+color_stripe_width, :] = c
 
         collection[i * cell_size:(i + 1)*cell_size, 0:color_stripe_width, :] = ants[i].color
 
@@ -304,28 +289,28 @@ def draw_assignment_problem(prev_img, img, ants, regions, groups, params, cell_s
         for best_id in range(num_best):
             r = regions[best_regions_id[i][best_id]]
             img_[border:-border, border:-border] = img.copy()
-            draw_region(img_[border:-border, border:-border], r, (180, 0, 0), contour=False)
+            draw_region(img_[border:-border, border:-border], r, (180, 100, 0), contour=False)
             img_small = img_[border + r[
                 "cy"] - cell_size / 2:border + r["cy"] + cell_size / 2, border + r["cx"] - cell_size / 2:border + r[
                 "cx"] + cell_size / 2].copy()
 
-            collection[i * cell_size:(i + 1)*cell_size, color_stripe_width + cell_size * (best_id + 1):color_stripe_width + cell_size * (best_id + 2), :] = img_small
+            collection[i * cell_size:(i + 1)*cell_size, color_stripe_width + cell_size * (2 * (best_id + 1) - 1):color_stripe_width + cell_size * (2 * (best_id + 1)), :] = img_small
 
             sc = score.count_node_weight(ants[i], r, params)
             s_sc =  "%.9f" % (sc*100)
-            cv2.putText(collection, s_sc[0:6], (10 + color_stripe_width + cell_size * (best_id + 1), i * cell_size + 12), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
+            cv2.putText(collection, s_sc[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 12), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
 
             th = score.theta_change_prob(ants[i], r)
-            s_th =  "%.9f" % (th*100)
-            cv2.putText(collection, s_th[0:6], (10 + color_stripe_width + cell_size * (best_id + 1), i * cell_size + 25), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
+            s_th =  "t %.9f" % (th*100)
+            cv2.putText(collection, s_th[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 25), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
 
             po = score.position_prob(ants[i], r, params)
-            s_po =  "%.9f" % (po*100)
-            cv2.putText(collection, s_po[0:6], (10 + color_stripe_width + cell_size * (best_id + 1), i * cell_size + 37), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
+            s_po =  "p %.9f" % (po*100)
+            cv2.putText(collection, s_po[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 37), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
 
             ab = score.a_area_prob(r, params)
-            s_ab =  "%.9f" % (ab*100)
-            cv2.putText(collection, s_ab[0:6], (10 + color_stripe_width + cell_size * (best_id + 1), i * cell_size + 50), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
+            s_ab =  "a %.9f" % (ab*100)
+            cv2.putText(collection, s_ab[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 50), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
 
 
         #cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
@@ -338,6 +323,7 @@ def draw_assignment_problem(prev_img, img, ants, regions, groups, params, cell_s
         #cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
 
     cv2.line(collection, (color_stripe_width - 1, 0), (color_stripe_width - 1, c_height - 1), line_color, 1)
+    cv2.line(collection, (color_stripe_width + cell_size - 1, 0), (color_stripe_width + cell_size - 1, c_height - 1), line_color, 1)
     return collection
 
 
