@@ -73,6 +73,10 @@ def label(data, ellipses):
 
         min_s = np.argmin(scores)
         labels[i] = min_s+1
+        #if scores[min_s] <= 1.2:
+        #    labels[i] = min_s+1
+        #else:
+        #    labels[i] = -1
 
         i += 1
 
@@ -331,10 +335,10 @@ def get_ellipse_coords(a=0.0, b=0.0, x=0.0, y=0.0, angle=0.0, k=2):
     return pts
 
 
-def solve_merged(region, ants, ants_idx):
+def solve_merged(data, ants, ants_idx, maxI):
     ellipses = []
-    data = get_points(region)
-    data = np.array(data)
+    #data = get_points(region)
+    #data = np.array(data)
 
     for id in ants_idx:
         a = ants[id]
@@ -348,6 +352,7 @@ def solve_merged(region, ants, ants_idx):
         theta = theta % 180
 
         ell = Ellipse(xy=middle, width=40, height=10, angle=theta)
+
         ellipses.append(ell)
 
     if len(ellipses) > 2:
@@ -370,7 +375,7 @@ def solve_merged(region, ants, ants_idx):
 
         r['cx'] = e.center[0]
         r['cy'] = e.center[1]
-        r['maxI'] = region['maxI']
+        r['maxI'] = maxI
         theta = -(e.angle - 180)
         theta = (theta * math.pi) / 180
         theta = theta % math.pi

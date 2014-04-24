@@ -188,9 +188,30 @@ class ExperimentManager():
                 if len(result) > 0:
                     self.number_of_splits += 1
                     print "SPLITTING mser_id: ", region_id
-                    new_regions = solve_merged.solve_merged(self.regions[region_id], self.ants, r[1])
+                    data = self.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
+                    new_regions = solve_merged.solve_merged(data, self.ants, r[1], self.regions[region_id]['maxI'])
 
                     self.add_new_regions(self.regions, indexes, new_regions)
+
+
+    def prepare_region_for_splitting(self, region, img, reduce_factor):
+        #pxs = [[0, 0, 0] for i in range(region['area'])] #x y intensity
+        pxs = np.zeros((region['area'], 3), dtype=np.int)
+
+        i = 0
+        for rle in region['rle']:
+            for c in range(rle['col1'], rle['col2'] + 1):
+                pxs[i][0] = c
+                pxs[i][1] = rle['line']
+                pxs[i][2] = img[rle['line']][c][0]
+                i += 1
+
+        #pxs = np.array(pxs)
+        pxs = pxs[pxs[:,2].argsort()]
+
+        crop = region['area'] - region['area'] * reduce_factor - 1
+        return pxs[0:crop, 0:2]
+
 
 
     def choose_region_from_group(self, regions, g, ants):
