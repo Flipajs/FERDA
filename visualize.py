@@ -13,6 +13,13 @@ def draw_region(img, region, color, contour=False):
                 cv2.circle(img, (pt[0], pt[1]), 0, color, -1)
             else:
                 cv2.line(img, (pt[0], pt[1]), (pt[0], pt[1]), color, 1)
+    elif "contour" in region:
+        color = (220, 0, 255)
+        for pt in region["points"]:
+            if contour:
+                cv2.circle(img, (int(pt[0]), int(pt[1])), 0, color, -1)
+            else:
+                cv2.line(img, (int(pt[0]), int(pt[1])), (int(pt[0]), int(pt[1])), color, 1)
     else:
         for r in region["rle"]:
             if contour:

@@ -17,7 +17,7 @@ def get_points(region):
     return points
 
 
-def get_contour(region):
+def get_contour(region, data=None):
     min_c = 100000
     max_c = 0
     min_r = region['rle'][0]['line']
@@ -34,11 +34,18 @@ def get_contour(region):
 
     img = np.zeros((rows+1, cols+1, 1), dtype=np.uint8)
 
-    for r in region['rle']:
-        row = r['line'] - min_r
-        col1 = r['col1'] - min_c
-        col2 = r['col2'] - min_c
-        img[row][col1:col2+1] = 255
+    if data == None:
+        for r in region['rle']:
+            row = r['line'] - min_r
+            col1 = r['col1'] - min_c
+            col2 = r['col2'] - min_c
+            img[row][col1:col2+1] = 255
+    else:
+        for pt in data:
+            row = pt[1] - min_r
+            col1 = pt[0] - min_c
+            #col2 = r['col2'] - min_c
+            img[row][col1] = 255
 
 
     #cv2.imshow("img", img)
@@ -76,30 +83,6 @@ def count_theta(region):
     theta = 0.5*math.atan2(2*region['sxy'], (region['sxx'] - region['syy']))
 
     return theta
-
-
-def load_ants():
-    file = open('../out/noplast_errors/regions/136.pkl', 'rb')
-    regions = pickle.load(file)
-    file.close()
-
-    r1 = regions[20]
-    r2 = regions[32]
-    cont1, img1, img_c1, min_r1, min_c1 = get_contour(r1)
-    cont2, img2, img_c2, min_r2, min_c2 = get_contour(r2)
-
-    th1 = count_theta(r1)
-    #print "TH1: ", th1,  th1*57
-    th2 = count_theta(r2)
-    #print "TH2: ", th2, th2*57
-
-
-    ant1 = {'id': 0, 'x': r1['cx'], 'y': r1['cy'], 'theta': th1, 'cont': cont1, 'min_y': min_r1, 'min_x': min_c1}
-    ant2 = {'id': 1, 'x': r2['cx'], 'y': r2['cy'], 'theta': th2, 'cont': cont2, 'min_y': min_r2, 'min_x': min_c2}
-
-    ants = [ant1, ant2]
-
-    return ants
 
 
 def e_dist(p1, p2):
@@ -176,12 +159,17 @@ def ant_boundary_cover(region, ant):
     return pairs, s
 
 
-def draw_situation(region, ants):
-    img = np.zeros((1280, 1024, 3), dtype=np.uint8)
+def draw_situation(region, ants, fill=False):
+    img = np.zeros((1024, 1280, 3), dtype=np.uint8)
 
-    for a in ants:
-        for pt in a['cont']:
-            img[pt[1]][pt[0]][2] = 255
+    if fill:
+        for a in ants:
+            for pt in a['points']:
+                img[pt[1]][pt[0]][2] = 255
+    else:
+        for a in ants:
+            for pt in a['cont']:
+                img[pt[1]][pt[0]][2] = 255
 
     for pt in region['cont']:
         img[pt[1]][pt[0]][1] = 255
@@ -228,28 +216,47 @@ def trans_ant(ant, t, rot):
         ant['cont'][i][0] = pt2[0][0] + t[0]
         ant['cont'][i][1] = pt2[1][0] + t[1]
 
-    ant['x'] += t[0]
-    ant['y'] += t[1]
+    pt2 = np.array([ant['x'], ant['y']])
+    pt2 = np.dot(rot, pt2.reshape(2, 1))
+    ant['x'] = pt2[0][0] + t[0]
+    ant['y'] = pt2[1][0] + t[1]
+
+    pt2 = np.array([ant['head_end'].x, ant['head_end'].y])
+    pt2 = np.dot(rot, pt2.reshape(2, 1))
+    ant['head_end'].x = pt2[0][0] + t[0]
+    ant['head_end'].y = pt2[1][0] + t[1]
+    
+    pt2 = np.array([ant['back_end'].x, ant['back_end'].y])
+    pt2 = np.dot(rot, pt2.reshape(2, 1))
+    ant['back_end'].x = pt2[0][0] + t[0]
+    ant['back_end'].y = pt2[1][0] + t[1]
 
     return True
 
 
-def opt_ant(rpts, apts, a):
+def opt_ant(rpts, apts, a, i):
     x = []
     y = []
 
-    p = np.array([0, 0])
-    q = np.array([0, 0])
+    if i < 5:
+        weight = 50.
+    else:
+        weight = 1.
+
+    w_sum = 0
+
+    p = np.array([0., 0.])
+    q = np.array([0., 0.])
     for pts in apts:
-        x.append(pts[0])
-        y.append(pts[1])
-        p += pts[0]
-        q += pts[1]
+        x.append([float(i) for i in pts[0]])
+        y.append([float(i) for i in pts[1]])
+        p += np.multiply(pts[0], weight)
+        q += np.multiply(pts[1], weight)
 
     for pts in rpts:
         if pts[2] == a['id']:
-            x.append(pts[0])
-            y.append(pts[1])
+            x.append([float(i) for i in pts[0]])
+            y.append([float(i) for i in pts[1]])
             p += pts[0]
             q += pts[1]
 
@@ -257,16 +264,23 @@ def opt_ant(rpts, apts, a):
     x = np.array(x)
     y = np.array(y)
 
-    p /= float(x.shape[0])
-    q /= float(y.shape[0])
+
+    p /= float(len(apts) * weight + len(rpts))
+    q /= float(len(apts) * weight + len(rpts))
 
     #centering
     for i in range(x.shape[0]):
         x[i] -= p
         y[i] -= q
 
+    w = np.array([1.] * x.shape[0])
 
-    s = np.dot(x.transpose(), y)
+    w[0:len(apts)] = weight
+
+    W = np.diag(w)
+
+    s = np.dot(x.transpose(), W)
+    s = np.dot(s, y)
 
     U, _, V = np.linalg.svd(s)
 
@@ -284,15 +298,16 @@ def opt_ant(rpts, apts, a):
     return t, R
 
 
-def iteration(region, ants):
+def iteration(region, ants, i):
     #rpts, rscore = region_boundary_cover(region, ants)
-    rpts, rscore = region_boundary_cover(region, ants)
     ascores = 0
+    rscore = 0
     for a in ants:
+        rpts, rscore = region_boundary_cover(region, ants)
         apts, s = ant_boundary_cover(region, a)
         ascores += s
 
-        trans, rot = opt_ant(rpts, apts, a)
+        trans, rot = opt_ant(rpts, apts, a, i)
         trans_ant(a, trans, rot)
 
         #print "trans: ", trans
@@ -300,20 +315,52 @@ def iteration(region, ants):
     return rscore, ascores
 
 
-def prepare_ants(ants):
+def prepare_ants(ant_ids, ants):
     out = []
-    for a in ants:
-        r = a.region
+    for a_id in ant_ids:
+        a = ants[a_id]
+        r = a.state.region
 
-        cont, img, img_c, min_r, min_c = get_contour(r)
+        #if "rle" not in r:
+        #    continue
 
-        th = count_theta(r)
+        if a.state.contour == None:
+            cont, _, _, min_r, min_c = get_contour(r)
+        else:
+            cont = a.state.contour
 
+        th = a.state.theta
 
-        ant = {'id': 0, 'x': r['cx'], 'y': r['cy'], 'theta': th, 'cont': cont, 'min_y': min_r, 'min_x': min_c}
+        ant = {'id': 0, 'x': a.state.position.x, 'y': a.state.position.y, 'theta': th, 'cont': cont}
+        ant['head_start'] = my_utils.Point(a.state.head.x, a.state.head.y)
+        ant['back_start'] = my_utils.Point(a.state.back.x, a.state.back.y)
+
+        ant['head_end'] = my_utils.Point(a.state.head.x, a.state.head.y)
+        ant['back_end'] = my_utils.Point(a.state.back.x, a.state.back.y)
+
+        ant['x_old'] = a.state.position.x
+        ant['y_old'] = a.state.position.y
+
+        ant['area'] = r['area']
+        ant['maxI'] = r['maxI']
+        ant['sxy'] = r['sxy']
+        ant['sxx'] = r['sxx']
+        ant['syy'] = r['syy']
+        if "points" not in r:
+            ant['points'] = get_points(r)
+        else:
+            ant['points'] = r['points']
+
         out.append(ant)
 
     return out
+
+
+def prepare_region(exp_region, points):
+    cont, img, img_cont, min_r, min_c = get_contour(exp_region, points)
+
+    region = {'cont': cont, 'y_min': min_r, 'x_min': min_c, 'img': img, 'img_cont': img_cont}
+    return region
 
 
 def test_convergence(history):
@@ -326,49 +373,119 @@ def test_convergence(history):
     return False
 
 
-def solve(region, exp_ants, max_iterations=30, debug=False):
-    ants = prepare_ants(exp_ants)
+def trans_region_points(ants):
+    for a in ants:
+        x = a['back_start'].x
+        y = a['back_start'].y
+
+        xx = a['head_start'].x - x
+        yy = a['head_start'].y - y
+
+        th1 = math.atan2(yy, xx)
+        
+        x = a['back_end'].x
+        y = a['back_end'].y
+
+        xx = a['head_end'].x - x
+        yy = a['head_end'].y - y
+
+        th2 = math.atan2(yy, xx)
+
+        th = th2-th1
+
+        th2 = -th2
+        if th2 < 0:
+            th2 += math.pi
+
+        a['theta'] = th2
+        t = [a['x'] - a['x_old'], a['y'] - a['y_old']]
+        print th * 57.3, th2 * 57.3
+        print t
+
+        rot = [[math.cos(th), -math.sin(th)], [math.sin(th), math.cos(th)]]
+        for i in range(len(a['points'])):
+            pt = a['points'][i]
+            pt2 = np.array([pt[0] - a['x_old'], pt[1] - a['y_old']])
+            pt2 = np.dot(rot, pt2.reshape(2, 1))
+
+            a['points'][i][0] = pt2[0][0] + a['x_old'] + t[0]
+            a['points'][i][1] = pt2[1][0] + a['y_old'] + t[1]
+
+
+
+def solve(exp_region, points, ants_ids, exp_ants, frame, max_iterations=30, debug=False):
+    run = True
+
+    if run:
+        ants = prepare_ants(ants_ids, exp_ants)
+        region = prepare_region(exp_region, points)
+
+        if len(region['cont']) > 300:
+            print "too big region"
+            return []
+
+
+        pack = [ants, region]
+
+        afile = open("out/split_by_cont/"+str(frame)+".pkl", "wb")
+        pickle.dump(pack, afile)
+        afile.close()
+    else:
+        afile = open("../out/split_by_cont/"+str(frame)+".pkl", "rb")
+        pack = pickle.load(afile)
+        afile.close()
+        ants = pack[0]
+        region = pack[1]
 
     history = []
+
+    if debug and run:
+        im = draw_situation(region, ants)
+        cv2.imshow('test', im)
+        cv2.imwrite('out/split_by_cont/'+str(frame)+'_a.jpg', im)
+
+    if not run:
+        im = draw_situation(region, ants)
+        cv2.imshow('test', im)
+        cv2.waitKey(0)
+
+    done = False
     for i in range(max_iterations):
-        rscore, ascore = iteration(region, ants)
+        if not run:
+            im = draw_situation(region, ants)
+            cv2.imshow('test', im)
+            cv2.waitKey(0)
+
+        rscore, ascore = iteration(region, ants, i)
         history.append([rscore, ascore])
         print i, rscore, ascore
         if test_convergence(history):
-            im = draw_situation(region, ants)
-            cv2.imshow("s", im)
-            cv2.waitKey(0)
+            done = True
             break
+
+
+    trans_region_points(ants)
+    im = draw_situation(region, ants, fill=True)
+    if run and debug:
+        if not done:
+            cv2.imwrite('out/split_by_cont/'+str(frame)+'_e.jpg', im)
+        else:
+            cv2.imwrite('out/split_by_cont/'+str(frame)+'_en.jpg', im)
+
+    if not run:
+        im = draw_situation(region, ants, fill=True)
+        cv2.imshow('test', im)
+        cv2.waitKey(0)
+
+
+    #im = draw_situation(region, ants)
+    #cv2.imshow("test", im)
 
     return ants
 
 
 def main():
-    region = load_region()
-    ants = load_ants()
-
-    move_ant(ants[0], 20, 5, 1)
-    move_ant(ants[1], 100, -11, -0.35)
-
-    #move_ant(ants[0], 0, 0, 0)
-    #move_ant(ants[1], 1, -1, -0.35)
-
-    #move_ant(ants[0], -200, 490, 1)
-    #move_ant(ants[1], -210, 490, -0.35)
-
-    solve(region, ants)
-
-    #start = time.time()
-    #for i in range(50):
-    #    im = draw_situation(region, ants)
-    #    cv2.imshow("s", im)
-    #    cv2.waitKey(0)
-    #    rscore, ascore = iteration(region, ants)
-    #    print i, rscore, ascore
-    #
-    #
-    #end = time.time()
-    #print end - start
+    solve(None, None, None, 209, debug=True)
 
     return
 

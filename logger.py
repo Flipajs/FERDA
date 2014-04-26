@@ -8,7 +8,7 @@ import mser_operations
 class Logger():
     def __init__(self, experiment):
         self.exp = experiment
-        self.dir = 'noplast_errors/'
+        self.dir = 'eight_errors/'
 
     def log_regions_collection(self):
         img_copy = self.exp.img_.copy()

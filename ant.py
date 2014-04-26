@@ -36,6 +36,9 @@ class AntState():
     collisions = []
     score = 0
 
+    region = None
+    contour = None
+
     def __init__(self):
         pass
 
@@ -232,8 +235,16 @@ def set_ant_state(ant, mser_id, region, add_history=True, cost=0):
 
     ant.state.position = my_utils.Point(region["cx"], region["cy"])
     ant.state.axis_ratio, ant.state.a, ant.state.b = my_utils.mser_main_axis_ratio(region["sxy"], region["sxx"], region["syy"])
-    ant.state.theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
+    #ant.state.theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
+    ant.state.theta = region["theta"]
     ant.state.info = ""
+
+    if "cont" not in region:
+        ant.state.contour = None
+    else:
+        ant.state.contour = region['cont']
+
+    ant.state.region = region
 
     #so the big jumps will not appears
     if ant.state.lost:

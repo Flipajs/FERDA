@@ -131,7 +131,7 @@ def get_circle_line_intersection(params, c, p):
     c_ -= r**2
 
 
-    if a_ == 0:
+    if a_ == 0 or b_**2 - 4*a_*c_ < 0:
         return p
 
     d_ = math.sqrt(b_**2 - 4*a_*c_)

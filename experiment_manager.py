@@ -16,6 +16,7 @@ import sys
 import solve_merged
 import collisions
 from collections import deque
+import split_by_contours
 import matplotlib.pyplot as plt
 
 class ExperimentManager():
@@ -82,7 +83,6 @@ class ExperimentManager():
         if self.params.frame == 100:
             print "MSER TIMES: ", self.params.mser_times
 
-
     def solve_lost(self, ants, regions, indexes, result, costs):
         lost_ants = []
         for i in range(self.params.ant_number):
@@ -106,7 +106,6 @@ class ExperimentManager():
             costs[lost_ants[id]] = l_costs[id]
 
         return result, costs
-
 
     def print_and_display_results(self):
         if self.params.show_image:
@@ -188,31 +187,15 @@ class ExperimentManager():
                 if len(result) > 0:
                     self.number_of_splits += 1
                     print "SPLITTING mser_id: ", region_id
-                    data = self.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
-                    new_regions = solve_merged.solve_merged(data, self.ants, r[1], self.regions[region_id]['maxI'])
 
-                    self.add_new_regions(self.regions, indexes, new_regions)
+                    points = mser_operations.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
+                    split_results = split_by_contours.solve(self.regions[region_id], points, r[1], self.ants, self.params.frame, debug=True)
+                    self.add_new_contours(self.regions, indexes, split_results)
 
-
-    def prepare_region_for_splitting(self, region, img, reduce_factor):
-        #pxs = [[0, 0, 0] for i in range(region['area'])] #x y intensity
-        pxs = np.zeros((region['area'], 3), dtype=np.int)
-
-        i = 0
-        for rle in region['rle']:
-            for c in range(rle['col1'], rle['col2'] + 1):
-                pxs[i][0] = c
-                pxs[i][1] = rle['line']
-                pxs[i][2] = img[rle['line']][c][0]
-                i += 1
-
-        #pxs = np.array(pxs)
-        pxs = pxs[pxs[:,2].argsort()]
-
-        crop = region['area'] - region['area'] * reduce_factor - 1
-        return pxs[0:crop, 0:2]
-
-
+                    #data = self.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
+                    #new_regions = solve_merged.solve_merged(data, self.ants, r[1], self.regions[region_id]['maxI'])
+                    #
+                    #self.add_new_regions(self.regions, indexes, new_regions)
 
     def choose_region_from_group(self, regions, g, ants):
         num_a = len(ants)
@@ -232,6 +215,30 @@ class ExperimentManager():
 
         return best
 
+    def add_new_contours(self, regions, indexes, new_contours):
+        num = len(new_contours)
+        i = 1
+        for r in new_contours:
+            r['label'] = regions[len(regions)-2]['label'] + 1
+            r['contour'] = True
+
+            r['margin'] = 0
+            r['cx'] = r['x']
+            r['cy'] = r['y']
+
+            r['flags'] = ''
+
+            self.groups.append([len(regions)])
+            self.groups_avg_pos.append([r['cx'], r['cy']])
+            indexes.append(len(regions))
+            regions.append(r)
+
+            print "ADDED"
+
+            i += 1
+
+        return regions
+
     def add_new_regions(self, regions, indexes, new_regions):
         num = len(new_regions)
         i = 1
@@ -246,7 +253,6 @@ class ExperimentManager():
             i += 1
 
         return regions
-
 
     def is_antlike_region(self, region):
         val = score.ab_area_prob(region, self.params)
@@ -351,7 +357,6 @@ class ExperimentManager():
                 if a.collision_predicted:
                     partners = self.find_collision_partners(i, lost)
 
-
     def find_collision_partners(self, a_idx, lost):
         partners = []
         for c in self.ants[a_idx].state.collisions:
@@ -359,7 +364,6 @@ class ExperimentManager():
                 partners.append(c[0])
 
         return partners
-
 
     def count_ant_params(self):
         avg_area = 0

@@ -41,10 +41,15 @@ class MserOperations():
         regions = self.mser.get_regions()
 
         self.arena_filter(regions)
+        self.count_thetas(regions)
         groups = get_region_groups(regions)
         ids = margin_filter(regions, groups, self.params.min_margin)
 
         return regions, ids
+
+    def count_thetas(self, regions):
+        for r in regions:
+            r['theta'] = my_utils.mser_theta(r["sxy"], r["sxx"], r["syy"])
 
     def arena_filter(self, regions):
         indexes = []
@@ -189,3 +194,21 @@ def margin_filter(regions, groups, min_margin):
             ids.append(region_id)
 
     return ids
+
+def prepare_region_for_splitting(region, img, reduce_factor):
+    #pxs = [[0, 0, 0] for i in range(region['area'])] #x y intensity
+    pxs = zeros((region['area'], 3), dtype=int)
+
+    i = 0
+    for rle in region['rle']:
+        for c in range(rle['col1'], rle['col2'] + 1):
+            pxs[i][0] = c
+            pxs[i][1] = rle['line']
+            pxs[i][2] = img[rle['line']][c][0]
+            i += 1
+
+    #pxs = np.array(pxs)
+    pxs = pxs[pxs[:,2].argsort()]
+
+    crop = region['area'] - region['area'] * reduce_factor - 1
+    return pxs[0:crop, 0:2]

@@ -171,7 +171,8 @@ def theta_change_prob(ant, region):
     max_val = mlab.normpdf(u, u, s)
     #max_val = log_normpdf(u, u, s)
 
-    theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
+    #theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
+    theta = region["theta"]
 
     x = theta - ant.state.theta
 
