@@ -224,7 +224,7 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
             #if col == best_id:
             cv2.putText(img_small, str(vals[col]*100)[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
             cv2.putText(img_small, str(r['area']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-            cv2.putText(img_small, str(a)[0:5], (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(r['maxI']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
             cv2.putText(img_small, str(r['margin']), (3, 65), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
             collection[(row + row_p) * cell_size:((row + row_p) + 1) * cell_size, num_strip + (col + col_p) * cell_size:num_strip + ((col + col_p) + 1) * cell_size, :] = img_small
 

@@ -309,6 +309,7 @@ class ExperimentManager():
         return to_be_splitted
 
     def is_near_collision(self, cx, cy, collision):
+        #TODO: near collision threshold
         thresh = 50
         min_c = None
         min = float('inf')
