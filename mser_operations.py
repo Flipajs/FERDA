@@ -18,6 +18,8 @@ class MserOperations():
     def __init__(self, params):
         self.mser = cyMser.PyMser()
         self.params = params
+        self.msers_last_time = 0
+        self.msers_sum_time = 0
 
     def process_image(self, img, intensity_threshold=256):
         if img.shape[2] > 1:
@@ -30,26 +32,64 @@ class MserOperations():
         if intensity_threshold > 256:
             intensity_threshold = 256
 
-        print "INTENSITY THRESHOLD, MSER ALGORITHM: ", intensity_threshold
-
         self.mser.set_min_margin(self.params.min_margin)
         self.mser.process_image(gray, intensity_threshold)
+
         t1 = time()
-        self.params.mser_times += (t1-t0)
-        #print 'msers takes %f' %(t1-t0)
+        self.msers_last_time = (t1-t0)
+        self.msers_sum_time += (t1-t0)
 
         regions = self.mser.get_regions()
 
         self.arena_filter(regions)
-        self.count_thetas(regions)
+        regions = self.prepare_regions(regions)
         groups = get_region_groups(regions)
         ids = margin_filter(regions, groups, self.params.min_margin)
 
         return regions, ids
 
+    def prepare_regions(self, regions):
+        regions = self.count_thetas(regions)
+        regions = self.count_axis(regions)
+        regions = self.count_roi_corners(regions)
+
+        return regions
     def count_thetas(self, regions):
         for r in regions:
             r['theta'] = my_utils.mser_theta(r["sxy"], r["sxx"], r["syy"])
+
+        return regions
+
+    def count_axis(self, regions):
+        for r in regions:
+            axis_ratio, a, b = my_utils.mser_main_axis_ratio(r["sxy"], r["sxx"], r["syy"])
+            b_ = math.sqrt(r['area'] / (axis_ratio * math.pi))
+            a_ = b_ * axis_ratio
+            r['a'] = a_
+            r['b'] = b_
+
+        return regions
+
+    def count_roi_corners(self, regions):
+        for i in range(len(regions)):
+            min_c = sys.maxint
+            min_r = sys.maxint
+            max_c = 0
+            max_r = 0
+            for r in regions[i]['rle']:
+                if r['line'] < min_r:
+                    min_r = r['line']
+                if r['line'] > max_r:
+                    max_r = r['line']
+                if r['col1'] < min_c:
+                    min_c = r['col1']
+                if r['col2'] > max_c:
+                    max_c = r['col2']
+
+            regions[i]['roi_tl'] = [min_c, min_r]
+            regions[i]['roi_br'] = [max_c, max_r]
+
+        return regions
 
     def arena_filter(self, regions):
         indexes = []
@@ -61,8 +101,8 @@ class MserOperations():
                 indexes.append(i)
                 reg["flags"] = None
 
-            if reg["minI"] > 75:
-                reg["flags"] = "minI_kill"
+            #if reg["minI"] > 75:
+            #    reg["flags"] = "minI_kill"
 
         return indexes
 
@@ -155,6 +195,7 @@ def get_region_groups(regions):
 
     return groups
 
+
 def get_region_groups2(regions):
     prev = -1
     groups = []
@@ -186,6 +227,7 @@ def get_region_groups2(regions):
 
     return groups, groups_avg_pos
 
+
 def margin_filter(regions, groups, min_margin):
     ids = []
     for g in groups:
@@ -194,6 +236,7 @@ def margin_filter(regions, groups, min_margin):
             ids.append(region_id)
 
     return ids
+
 
 def prepare_region_for_splitting(region, img, reduce_factor):
     #pxs = [[0, 0, 0] for i in range(region['area'])] #x y intensity
@@ -212,3 +255,38 @@ def prepare_region_for_splitting(region, img, reduce_factor):
 
     crop = region['area'] - region['area'] * reduce_factor - 1
     return pxs[0:crop, 0:2]
+
+
+def region_roi_img(region):
+    rows = region['roi_br'][1] - region['roi_tl'][1]
+    cols = region['roi_br'][0] - region['roi_tl'][0]
+
+    img = zeros((rows+1, cols+1, 1), dtype=uint8)
+
+    for r in region['rle']:
+        row = r['line'] - region['roi_tl'][1]
+        col1 = r['col1'] - region['roi_tl'][0]
+        col2 = r['col2'] - region['roi_tl'][0]
+        img[row][col1:col2+1] = 255
+
+    return img
+
+
+def is_child_of(child, parent):
+    if child['area'] > parent['area']:
+        return False
+
+    if child['roi_tl'][0] >= parent['roi_tl'][0] and child['roi_tl'][1] >= parent['roi_tl'][1] and\
+                    child['roi_br'][0] <= parent['roi_br'][0] and child['roi_br'][1] <= parent['roi_br'][1]:
+        img = region_roi_img(parent)
+        for r in child['rle']:
+            row = r['line'] - parent['roi_tl'][1]
+            col1 = r['col1'] - parent['roi_tl'][0]
+            col2 = r['col2'] - parent['roi_tl'][0]
+
+            if img[row][col1] == 0 or img[row][col2] == 0:
+                return False
+
+        return True
+    else:
+        return False    # full intersection is impossible

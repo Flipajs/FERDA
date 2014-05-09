@@ -12,12 +12,14 @@ import visualize
 import gt
 import my_utils as my_utils
 import pickle
+import scipy.ndimage
 import sys
 import solve_merged
 import collisions
 from collections import deque
 import split_by_contours
 import matplotlib.pyplot as plt
+import networkx as nx
 
 class ExperimentManager():
     def __init__(self, params, ants, video_manager):
@@ -41,10 +43,12 @@ class ExperimentManager():
         self.count_ant_params()
 
         self.img_ = None
+        self.img_sub_ = None
         self.prev_img_ = None
         self.dynamic_intensity_threshold = deque()
         self.groups = []
         self.groups_avg_pos = []
+        self.chosen_regions_indexes = []
 
     def process_frame(self, img, forward=False):
         self.img_ = img.copy()
@@ -54,26 +58,30 @@ class ExperimentManager():
         intensity_threshold = self.get_intensity_threshold()
 
         if not forward:
-            self.collisions = collisions.collision_detection(self.ants, self.history+1)
+            self.collisions = collisions.collision_detection(self.ants, self.params, self.history+1)
 
-        self.regions, indexes = self.mser_operations.process_image(mask, intensity_threshold)
+        self.regions, self.chosen_regions_indexes = self.mser_operations.process_image(mask, intensity_threshold)
         self.groups, self.groups_avg_pos = mser_operations.get_region_groups2(self.regions)
+        #self.max_margin_regions = self.get_max_margin_regions()
 
-        self.solve_collisions(indexes)
-
+        self.chosen_regions_indexes = self.filter_out_children(self.chosen_regions_indexes)
+        self.chosen_regions_indexes = self.chosen_regions_indexes
+        self.solve_splitting(self.chosen_regions_indexes)
+        #self.solve_collisions(indexes)
+        print "INDEXES: ", self.chosen_regions_indexes
         if forward and self.history < 0:
-            result, costs = score.max_weight_matching(self.ants, self.regions, self.groups, self.params)
-            result, costs = self.solve_lost(self.ants, self.regions, indexes, result, costs)
+            result, costs = score.max_weight_matching(self.ants, self.regions, self.chosen_regions_indexes, self.params)
+            result, costs = self.solve_lost(self.ants, self.regions, self.chosen_regions_indexes, result, costs)
 
         if self.params.show_assignment_problem:
-            img_assignment_problem = visualize.draw_assignment_problem(self.video_manager.get_prev_img(), self.img_, self.ants, self.regions, self.groups, self.params)
+            img_assignment_problem = visualize.draw_assignment_problem(self.video_manager.get_prev_img(), self.img_, self.ants, self.regions, self.chosen_regions_indexes, self.params)
             cv2.imshow("assignment problem", img_assignment_problem)
             cv2.waitKey(1)
 
         if forward and self.history < 0:
             self.update_ants_and_intensity_threshold(result, costs)
 
-        self.collisions = collisions.collision_detection(self.ants, self.history)
+        self.collisions = collisions.collision_detection(self.ants, self.params, self.history)
 
         self.print_and_display_results()
 
@@ -82,6 +90,105 @@ class ExperimentManager():
 
         if self.params.frame == 100:
             print "MSER TIMES: ", self.params.mser_times
+
+    def filter_out_children(self, indexes):
+        ids = []
+        for r_id in indexes:
+            is_child = False
+            for parent_id in indexes:
+                if r_id == parent_id:
+                    continue
+
+                if mser_operations.is_child_of(self.regions[r_id], self.regions[parent_id]):
+                    is_child = True
+                    continue
+            if not is_child:
+                ids.append(r_id)
+
+        return ids
+
+    def prepare_graph(self, region_ids):
+        graph = nx.Graph()
+        thresh = 0.001
+
+        for a in self.ants:
+            graph.add_node('a'+str(a.id))
+            graph.add_node('u'+str(a.id))
+            graph.add_edge('a'+str(a.id), 'u'+str(a.id), weight=thresh)
+
+        for r_id in region_ids:
+            r = self.regions[r_id]
+
+            a_area = r['area'] / float(self.params.avg_ant_area)
+
+            for i in range(1, int(math.ceil(a_area))+1):
+                graph.add_node('r'+str(r_id)+'-'+str(i))
+
+                for a in self.ants:
+                    pos_p = score.position_prob_without_prediction(a, self.regions[r_id], self.params)
+
+                    area_p = 1
+                    if i > a_area:
+                        area_p = 1 + a_area - math.ceil(a_area)
+
+                    if area_p < 0:
+                        continue
+
+                    val = pos_p*area_p
+                    if val > thresh:
+                        graph.add_edge('a'+str(a.id), 'r'+str(r_id)+'-'+str(i), weight=val)
+
+        return graph
+
+    def get_max_margin_regions(self):
+        ids = []
+        for g in self.groups:
+            _, id = my_utils.best_margin(self.regions, g)
+            ids.append(id)
+
+        return ids
+
+    def solve_graph(self, graph):
+        result = nx.max_weight_matching(graph, True)
+
+        region_ids = {}
+        costs = {}
+        for a in self.ants:
+            node = result['a'+str(a.id)]
+            if node[0] == 'u':
+                region_ids[a.id] = -1
+                costs[a.id] = -1
+            else:
+                r_id, r_number = node[1:].split('-')
+                region_ids[a.id] = int(r_id)
+                costs[a.id] = graph.get_edge_data('a'+str(a.id), node)['weight']
+
+        return region_ids, costs
+
+    def split(self, region_id, ant_ids, indexes):
+        points = mser_operations.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
+        split_results = split_by_contours.solve(self.regions[region_id], points, ant_ids, self.ants, self.params.frame, self.img_.shape, debug=True)
+
+        self.add_new_contours(self.regions, indexes, split_results)
+        self.regions[region_id]['used_for_splitting'] = True
+
+    def solve_splitting(self, indexes):
+        graph = self.prepare_graph(indexes)
+        ant_region_assignment, costs = self.solve_graph(graph)
+
+        print "ASSIGNMENT: ", ant_region_assignment
+        print "COSTS: ", costs
+        for r_id in indexes:
+            ant_ids = []
+            for a in self.ants:
+                if ant_region_assignment[a.id] == r_id:
+                    ant_ids.append(a.id)
+
+            if len(ant_ids) > 1:
+                print "SPLITTING: ", r_id, ant_ids
+                self.split(r_id, ant_ids, indexes)
+
+        return indexes
 
     def solve_lost(self, ants, regions, indexes, result, costs):
         lost_ants = []
@@ -181,16 +288,38 @@ class ExperimentManager():
             else:
                 print "solve_cg result: NONE"
 
-
+            #result = self.solve_to_be_split(cg_ants_idx[key], cg_region_groups_idx[key])
             for r in result:
                 region_id = r[0]
-                if len(result) > 0:
+                ant_ids = r[1]
+
+                if self.regions[region_id]['area'] < (self.params.avg_ant_area / 2.):
+                    continue
+
+                if len(ant_ids) > 1:
                     self.number_of_splits += 1
                     print "SPLITTING mser_id: ", region_id
 
                     points = mser_operations.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
-                    split_results = split_by_contours.solve(self.regions[region_id], points, r[1], self.ants, self.params.frame, debug=True)
+                    split_results = split_by_contours.solve(self.regions[region_id], points, r[1], self.ants, self.params.frame, self.img_.shape, debug=True)
                     self.add_new_contours(self.regions, indexes, split_results)
+                    self.regions[region_id]['used_for_splitting'] = True
+
+                    #data = mser_operations.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
+                    #new_regions = solve_merged.solve_merged(data, self.ants, r[1], self.regions[region_id]['maxI'])
+                    #
+                    #self.add_new_regions(self.regions, indexes, new_regions)
+
+
+            #for r in result:
+            #    region_id = r[0]
+            #    if len(result) > 0:
+            #        self.number_of_splits += 1
+            #        print "SPLITTING mser_id: ", region_id
+            #
+            #        points = mser_operations.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
+            #        split_results = split_by_contours.solve(self.regions[region_id], points, r[1], self.ants, self.params.frame, debug=True)
+            #        self.add_new_contours(self.regions, indexes, split_results)
 
                     #data = self.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
                     #new_regions = solve_merged.solve_merged(data, self.ants, r[1], self.regions[region_id]['maxI'])
@@ -261,6 +390,13 @@ class ExperimentManager():
         else:
             return False
 
+    def is_antlike_region2(self, region):
+        val = score.a_area_prob(region, self.params)
+        if val > 0.4 and region['margin'] > 18:
+            return True
+        else:
+            return False
+
     def count_antlike_regions(self, groups_idx):
         antlike_num = 0
         for g_idx in groups_idx:
@@ -272,6 +408,100 @@ class ExperimentManager():
 
 
         return antlike_num
+
+    def count_antlike_regions2(self, groups_idx):
+        antlike_num = 0
+        for g_idx in groups_idx:
+            for r_id in self.groups[g_idx]:
+                r = self.regions[r_id]
+                if self.is_antlike_region2(r):
+                    antlike_num += 1
+                    break
+
+
+        return antlike_num
+
+    def collision_assign_ants_to_regions(self, a_ids, r_ids, r_ant_size):
+        pairs = []
+        for r_i in range(len(r_ids)):
+            r_id = r_ids[r_i]
+            r = self.regions[r_id]
+            vals = [0] * len(a_ids)
+            for i in range(len(a_ids)):
+                a = self.ants[a_ids[i]]
+                vals[i] = my_utils.e_distance(a.state.position, my_utils.Point(r['cx'], r['cy']))
+
+            ids = np.argsort(np.array(vals))
+
+            best_ants = []
+            m = min(int(math.floor(r_ant_size[r_i])), len(a_ids))
+            for i in range(m):
+                best_ants.append(a_ids[ids[i]])
+
+            pairs.append([r_id, best_ants])
+
+        return pairs
+
+    def solve_to_be_split(self, ants_idx, groups_idx):
+        num_antlike = self.count_antlike_regions2(groups_idx)
+        if num_antlike >= len(ants_idx):
+            print "Nothing to solve"
+            return []
+
+        ants_num = len(ants_idx)
+        regions_ant_size_ratio = []
+        regions_idx = []
+
+        split_pairs = []
+        for g_id in groups_idx:
+            margin, region_id = my_utils.best_margin(self.regions, self.groups[g_id])
+            regions_idx.append(region_id)
+            r = self.regions[region_id]
+            a = r['area'] / float(self.params.avg_ant_area)
+            regions_ant_size_ratio.append(a)
+
+        region_ant_size = 0
+        for a in regions_ant_size_ratio:
+            if a < 1 and a > 0.3:
+                region_ant_size += 1
+            else:
+                region_ant_size += math.floor(a)
+
+        print "ants: ", ants_idx, "regions: ", regions_idx, "ras: ", region_ant_size
+
+        increase = 0
+        while ants_num > region_ant_size + increase:
+            best_id = -1
+            best_val = 1000
+            for i in range(len(groups_idx)):
+                val = math.ceil(regions_ant_size_ratio[i]) - regions_ant_size_ratio[i]
+                if val < best_val:
+                    best_val = val
+                    best_id = i
+
+            increase += 1
+
+            regions_ant_size_ratio[best_id] = math.floor(regions_ant_size_ratio[best_id] + 1)
+
+        #decrease = 0
+        #while ants_num < region_ant_size - decrease:
+        #    best_id = -1
+        #    best_val = 1000
+        #    for i in range(len(groups_idx)):
+        #        val = regions_ant_size_ratio[i] - math.floor(regions_ant_size_ratio[i])
+        #        if val < best_val:
+        #            best_id = i
+        #            best_val = val
+        #
+        #    decrease += 1
+        #    regions_ant_size_ratio[best_id] = math.ceil(regions_ant_size_ratio[best_id] - 1)
+
+        #if increase > 1 or decrease > 1:
+        #    print "SOMETHING STRANGE HAPPEND in experiment_manager.solve_to_be_split"
+        #    print "regions: ", regions_idx, " ants: ", ants_idx
+        #    return []
+
+        return self.collision_assign_ants_to_regions(ants_idx, regions_idx, regions_ant_size_ratio)
 
     def solve_cg(self, ants_idx, groups_idx, groups_avg_pos):
         num_antlike = self.count_antlike_regions(groups_idx)
@@ -288,11 +518,11 @@ class ExperimentManager():
 
             if margin > 10:
                 r = self.regions[region_id]
-                approx_num = int(round(r['area'] / float(self.params.avg_ant_area)))
+                approx_num = r['area'] / float(self.params.avg_ant_area)
                 if approx_num > len(ants_idx):
                     approx_num = len(ants_idx)
 
-                if approx_num > 1:
+                if approx_num > 1.2:
                     vals = []
                     r_p = my_utils.Point(r['cx'], r['cy'])
                     for a_id in ants_idx:
@@ -301,7 +531,7 @@ class ExperimentManager():
 
                     vals.sort(key = lambda x:x[1])
                     ids = []
-                    for i in range(approx_num):
+                    for i in range(int(approx_num)):
                         ids.append(vals[i][0])
 
                     to_be_splitted.append([region_id, ids])
@@ -410,12 +640,56 @@ class ExperimentManager():
         new_val += weight * max_i
         self.params.intensity_threshold = new_val
 
+    def add_notches(self, img):
+        notch_length = 3
+        steps = 250
+        step = (2 * math.pi) / float(steps)
+        angle = 0
+        ox = self.params.arena.center.x
+        oy = self.params.arena.center.y
+
+        px = ox + self.params.arena.size.width / 2
+        py = oy
+
+        px2 = px - notch_length
+
+        for i in range(steps):
+            x = round(math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy) + ox)
+            y = round(math.sin(angle) * (px - ox) - math.cos(angle) * (py - oy) + oy)
+
+            x2 = round(math.cos(angle) * (px2 - ox) - math.sin(angle) * (py - oy) + ox)
+            y2 = round(math.sin(angle) * (px2 - ox) - math.cos(angle) * (py - oy) + oy)
+
+            cv2.line(img, (int(x), int(y)), (int(x2), int(y2)), (255, 255, 255), 1)
+
+            angle += step
+        #
+        #cv2.imshow("TEST", img)
+        #cv2.waitKey(0)
+
+    def bg_subtraction(self, img):
+        bg = scipy.ndimage.gaussian_filter(self.params.bg, sigma=1)
+        bg = np.asarray(bg, dtype=np.int32)
+        img = np.subtract(bg, img)
+
+        img = np.absolute(img)
+        img = np.invert(img)
+
+        #img = np.asarray(img, dtype=np.uint8)
+        return img
+
     def mask_img(self, img):
+        img = self.bg_subtraction(img)
+
         mask = np.ones((np.shape(img)[0], np.shape(img)[1], 1), dtype=np.uint8)*255
         cv2.circle(mask, self.params.arena.center.int_tuple(), self.params.arena.size.width/2, 0, -1)
         idx = (mask == 0)
-        mask[idx] = self.img_[idx]
+        mask[idx] = img[idx]
 
+        #self.add_notches(mask)
+
+        cv2.imshow("mask", mask)
+        self.img_sub_ = mask
         return mask
 
     def display_results(self, regions, collissions, history=0):

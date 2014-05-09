@@ -1,9 +1,12 @@
+import mser_operations
+
 __author__ = 'flip'
 
 import cv2
 import my_utils
 from numpy import *
 import score
+import mser_operations
 
 def draw_region(img, region, color, contour=False):
     if 'splitted' in region:
@@ -165,12 +168,8 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
             r = regions[groups[row][col]]
             vals[col] = score.a_area_prob(r, params)
 
-
             margins[col] = r['margin']
 
-            #vals[col] =
-            #vals[col] = score.area_prob(r['area'], params.avg_ant_area)
-            #vals[col] *= score.axis_ratio_prob(ratio, params.avg_ant_axis_ratio)
 
         best_id = argmax(array(vals))
         best_margin_id = argmax(array(margins))
@@ -187,29 +186,11 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
 
             c = (0, 255, 0)
 
-            if col == best_id:
-                counter += 1
-                c = (200, 255, 0)
-
-
             if best_margin_id == col and margins[best_margin_id] != 0:
                 c = (0, 138, 212)
 
-            #if r["flags"] == "arena_kill":
-            #    c = (0, 0, 255)
-            #elif r["flags"] == "max_area_diff_kill_small":
-            #    c = (0, 100, 200)
-            #elif r["flags"] == "max_area_diff_kill_big":
-            #    c = (0, 128, 255)
-            #elif r["flags"] == "better_mser_nearby_kill":
-            #    c = (200, 255, 0)
-            #elif r["flags"] == "axis_kill":
-            #    c = (200, 0, 255)
-
             draw_region(img_[border:-border, border:-border], r, c, contour=True)
 
-            #row = i / cols
-            #col = i % cols
 
             img_small = img_[border + r[
                 "cy"] - cell_size / 2:border + r["cy"] + cell_size / 2, border + r["cx"] - cell_size / 2:border + r[
@@ -219,12 +200,12 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
             _, a, b = my_utils.mser_main_axis_ratio(r["sxy"], r["sxx"], r["syy"])
             a, b = my_utils.count_head_tail(r["area"], a, b)
 
-
             cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
             #if col == best_id:
-            cv2.putText(img_small, str(vals[col]*100)[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(r['a'])[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(r['area']/(r['a']*2))[0:5], (35, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 0), 1, cv2.CV_AA)
             cv2.putText(img_small, str(r['area']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-            cv2.putText(img_small, str(r['maxI']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(r['maxI']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 255), 1, cv2.CV_AA)
             cv2.putText(img_small, str(r['margin']), (3, 65), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
             collection[(row + row_p) * cell_size:((row + row_p) + 1) * cell_size, num_strip + (col + col_p) * cell_size:num_strip + ((col + col_p) + 1) * cell_size, :] = img_small
 
@@ -232,21 +213,22 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
 
     return collection
 
-def draw_assignment_problem(prev_img, img, ants, regions, groups, params, cell_size=60, history=0):
+def draw_assignment_problem(prev_img, img, ants, regions, indexes, params, cell_size=60, history=0):
     num_best = 3
     best_regions_id = [[-1 for x in range(num_best)] for x in range(len(ants))]
     #best_regions_id = [len(ants)][num_best]
 
     for a_id in range(len(ants)):
-        help = [0] * len(groups)
-        for g_id in range(len(groups)):
-            _, region_id = my_utils.best_margin(regions, groups[g_id])
-            help[g_id] = score.count_node_weight(ants[a_id], regions[region_id], params)
+        help = [0] * len(indexes)
+        for i in range(len(indexes)):
+            #_, region_id = my_utils.best_margin(regions, indexes[i])
+
+            help[i] = score.count_node_weight(ants[a_id], regions[indexes[i]], params)
 
         s = argsort(array(help))[::-1]
         for i in range(num_best):
-            _, region_id = my_utils.best_margin(regions, groups[s[i]])
-            best_regions_id[a_id][i] = region_id
+            #_, region_id = my_utils.best_margin(regions, groups[s[i]])
+            best_regions_id[a_id][i] = indexes[s[i]]
 
     color_stripe_width = 7
 

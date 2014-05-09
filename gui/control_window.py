@@ -126,8 +126,11 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
                     return
 
                 self.experiment.process_frame(img, self.forward)
+                self.display_informations()
 
                 #self.logger.log_regions_collection()
+
+                self.log_all()
 
 
                 #if self.params.frame % 100 == 0:
@@ -137,6 +140,11 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
                 self.l_frame.setText(str(self.params.frame))
                 self.controls()
+
+    def display_informations(self):
+        self.l_avg_a_area.setText(str(self.params.avg_ant_area)[0:5])
+        self.l_avg_a_a.setText(str(self.params.avg_ant_axis_a)[0:5])
+        self.l_mser_thresh.setText(str(self.params.intensity_threshold)[0:5])
 
     def controls(self):
         if self.wait_for_button_press:
@@ -274,6 +282,8 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.logger.log_regions()
         self.logger.log_regions_collection()
         self.logger.log_frame()
+        self.logger.log_frame_results()
+        self.logger.log_assignment_problem()
 
 
 def main():

@@ -3,8 +3,9 @@ __author__ = 'flipajs'
 import my_utils
 import numpy as np
 
-def collision_detection(ants, history=0):
+def collision_detection(ants, params, history=0):
     thresh1 = 70
+    #TODO: avg speed... + nejaky vztah s main_axis_a
     thresh2 = 20
 
     collisions = []

@@ -234,7 +234,10 @@ def set_ant_state(ant, mser_id, region, add_history=True, cost=0):
         ant.area_weighted = ant.area_weighted*(1-area_weight) + region["area"] * area_weight
 
     ant.state.position = my_utils.Point(region["cx"], region["cy"])
-    ant.state.axis_ratio, ant.state.a, ant.state.b = my_utils.mser_main_axis_ratio(region["sxy"], region["sxx"], region["syy"])
+    ant.state.a = region['a']
+    ant.state.b = region['b']
+    ant.state.axis_ratio = region['a'] / region['b']
+    #ant.state.axis_ratio, ant.state.a, ant.state.b = my_utils.mser_main_axis_ratio(region["sxy"], region["sxx"], region["syy"])
     #ant.state.theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
     ant.state.theta = region["theta"]
     ant.state.info = ""

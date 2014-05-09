@@ -20,14 +20,27 @@ def get_points(region):
 def get_contour(region, data=None):
     min_c = 100000
     max_c = 0
-    min_r = region['rle'][0]['line']
-    max_r = region['rle'][-1]['line']
+    min_r = 100000
+    max_r = 0
 
-    for r in region['rle']:
-        if min_c > r['col1']:
-            min_c = r['col1']
-        if max_c < r['col2']:
-            max_c = r['col2']
+    if data == None:
+        min_r = region['rle'][0]['line']
+        max_r = region['rle'][-1]['line']
+        for r in region['rle']:
+            if min_c > r['col1']:
+                min_c = r['col1']
+            if max_c < r['col2']:
+                max_c = r['col2']
+    else:
+        for pt in data:
+            if min_c > pt[0]:
+                min_c = pt[0]
+            if max_c < pt[0]:
+                max_c = pt[0]
+            if min_r > pt[1]:
+                min_r = pt[1]
+            if max_r < pt[1]:
+                max_r = pt[1]
 
     rows = max_r - min_r
     cols = max_c - min_c
@@ -53,7 +66,11 @@ def get_contour(region, data=None):
     ret,thresh = cv2.threshold(img, 127, 255, 0)
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
-    cnt = contours[0]
+    cnt = []
+
+    for c in contours:
+        for pt in c:
+            cnt.append(pt)
 
     img_cont = np.zeros((rows+1, cols+1, 1), dtype=np.uint8)
     pts = []
@@ -244,12 +261,16 @@ def opt_ant(rpts, apts, a, i):
         weight = 1.
 
     w_sum = 0
+    w = []
 
     p = np.array([0., 0.])
     q = np.array([0., 0.])
     for pts in apts:
         x.append([float(i) for i in pts[0]])
         y.append([float(i) for i in pts[1]])
+        weight = np.linalg.norm(np.array(pts[0]) - np.array(pts[1])) * 2
+        w_sum += weight
+        w.append(weight)
         p += np.multiply(pts[0], weight)
         q += np.multiply(pts[1], weight)
 
@@ -257,27 +278,32 @@ def opt_ant(rpts, apts, a, i):
         if pts[2] == a['id']:
             x.append([float(i) for i in pts[0]])
             y.append([float(i) for i in pts[1]])
-            p += pts[0]
-            q += pts[1]
+            weight = np.linalg.norm(np.array(pts[0]) - np.array(pts[1]))
+            w_sum += weight
+            w.append(weight)
+            p += np.multiply(pts[0], weight)
+            q += np.multiply(pts[1], weight)
 
 
     x = np.array(x)
     y = np.array(y)
 
 
-    p /= float(len(apts) * weight + len(rpts))
-    q /= float(len(apts) * weight + len(rpts))
+    #p /= float(len(apts) * weight + len(rpts))
+    #q /= float(len(apts) * weight + len(rpts))
+    p /= w_sum
+    q /= w_sum
 
     #centering
     for i in range(x.shape[0]):
         x[i] -= p
         y[i] -= q
 
-    w = np.array([1.] * x.shape[0])
+    #w = np.array([1.] * x.shape[0])
 
-    w[0:len(apts)] = weight
+    #w[0:len(apts)] = weight
 
-    W = np.diag(w)
+    W = np.diag(np.array(w))
 
     s = np.dot(x.transpose(), W)
     s = np.dot(s, y)
@@ -331,7 +357,7 @@ def prepare_ants(ant_ids, ants):
 
         th = a.state.theta
 
-        ant = {'id': 0, 'x': a.state.position.x, 'y': a.state.position.y, 'theta': th, 'cont': cont}
+        ant = {'id': a_id, 'x': a.state.position.x, 'y': a.state.position.y, 'theta': th, 'cont': cont}
         ant['head_start'] = my_utils.Point(a.state.head.x, a.state.head.y)
         ant['back_start'] = my_utils.Point(a.state.back.x, a.state.back.y)
 
@@ -340,6 +366,9 @@ def prepare_ants(ant_ids, ants):
 
         ant['x_old'] = a.state.position.x
         ant['y_old'] = a.state.position.y
+
+        ant['a'] = r['a']
+        ant['b'] = r['b']
 
         ant['area'] = r['area']
         ant['maxI'] = r['maxI']
@@ -364,10 +393,11 @@ def prepare_region(exp_region, points):
 
 
 def test_convergence(history):
+    thresh = 0.5
     if len(history) < 2:
         return False
 
-    if abs(history[-2][0] - history[-1][0]) < 0.01 and abs(history[-2][1] - history[-1][1]) < 0.01:
+    if abs(history[-2][0] - history[-1][0]) < thresh and abs(history[-2][1] - history[-1][1]) < thresh:
         return True
 
     return False
@@ -412,26 +442,51 @@ def trans_region_points(ants):
             a['points'][i][1] = pt2[1][0] + a['y_old'] + t[1]
 
 
+def count_overlaps(ants, img_shape):
+    img = np.zeros((img_shape[0], img_shape[1], 1), dtype=np.uint8)
 
-def solve(exp_region, points, ants_ids, exp_ants, frame, max_iterations=30, debug=False):
-    run = True
+    for a in ants:
+        for pt in a['points']:
+            img[pt[1]][pt[0]] += 1
+
+    for a in ants:
+        counter = 0
+        for pt in a['points']:
+            if img[pt[1]][pt[0]] > 1:
+                counter += 1
+
+        a['overlap'] = counter / float(a['area'])
+
+
+def count_crossovers(ants, region):
+    for a_id in range(len(ants)):
+        counter = 0
+        for pt in ants[a_id]['points']:
+            if not is_inside_region([int(pt[0]), int(pt[1])], region):
+                counter += 1
+
+        ants[a_id]['crossover'] = counter / float(ants[a_id]['area'])
+
+
+def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iterations=30, debug=False):
+    run = False
 
     if run:
         ants = prepare_ants(ants_ids, exp_ants)
         region = prepare_region(exp_region, points)
 
-        if len(region['cont']) > 300:
-            print "too big region"
-            return []
+        #if len(region['cont']) > 300:
+        #    print "too big region"
+        #    return []
 
 
         pack = [ants, region]
 
-        afile = open("out/split_by_cont/"+str(frame)+".pkl", "wb")
+        afile = open("out/split_by_cont/"+str(frame)+"_"+str(ants_ids[0])+".pkl", "wb")
         pickle.dump(pack, afile)
         afile.close()
     else:
-        afile = open("../out/split_by_cont/"+str(frame)+".pkl", "rb")
+        afile = open("../out/split_by_cont/1143_2.pkl", "rb")
         pack = pickle.load(afile)
         afile.close()
         ants = pack[0]
@@ -442,7 +497,7 @@ def solve(exp_region, points, ants_ids, exp_ants, frame, max_iterations=30, debu
     if debug and run:
         im = draw_situation(region, ants)
         cv2.imshow('test', im)
-        cv2.imwrite('out/split_by_cont/'+str(frame)+'_a.jpg', im)
+        cv2.imwrite('out/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.jpg', im)
 
     if not run:
         im = draw_situation(region, ants)
@@ -465,12 +520,15 @@ def solve(exp_region, points, ants_ids, exp_ants, frame, max_iterations=30, debu
 
 
     trans_region_points(ants)
+    count_overlaps(ants, img_shape)
+    count_crossovers(ants, region)
+
     im = draw_situation(region, ants, fill=True)
     if run and debug:
         if not done:
-            cv2.imwrite('out/split_by_cont/'+str(frame)+'_e.jpg', im)
+            cv2.imwrite('out/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_e.jpg', im)
         else:
-            cv2.imwrite('out/split_by_cont/'+str(frame)+'_en.jpg', im)
+            cv2.imwrite('out/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_en.jpg', im)
 
     if not run:
         im = draw_situation(region, ants, fill=True)
@@ -485,7 +543,7 @@ def solve(exp_region, points, ants_ids, exp_ants, frame, max_iterations=30, debu
 
 
 def main():
-    solve(None, None, None, 209, debug=True)
+    solve(None, None, None, None, 659, (1024, 1280), debug=True)
 
     return
 

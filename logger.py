@@ -22,7 +22,7 @@ class Logger():
         afile.close()
 
     def log_frame(self):
-        cv2.imwrite("out/"+self.dir+"/frames/"+str(self.exp.params.frame)+".png", self.exp.img_)
+        cv2.imwrite("out/"+self.dir+"/frames/"+str(self.exp.params.frame)+".png", self.exp.img_sub_)
 
     def log_frame_results(self):
         img_copy = self.exp.img_.copy()
@@ -35,7 +35,7 @@ class Logger():
         img = self.exp.img_.copy()
         ants = self.exp.ants
         regions = self.exp.regions
-        groups = mser_operations.get_region_groups(self.exp.regions)
+        groups = self.exp.chosen_regions_indexes
         params = self.exp.params
 
         img_vis = visualize.draw_assignment_problem(prev_img, img, ants, regions, groups, params)
