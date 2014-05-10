@@ -24,9 +24,9 @@ class Params():
         self.mser_times = 0
         self.frame = 0
 
-        self.use_gt = True
+        self.use_gt = False
         self.gt_repair = False
-        self.fast_start = True
+        self.fast_start = False
 
         self.intensity_threshold = 200
         self.dynamic_intensity_threshold = True
@@ -62,6 +62,20 @@ class Params():
         self.a_area_ymax = 26
         self.a_area_step = 0.05
 
+        #self.ant_number = 5
+        #self.arena = my_utils.RotatedRect(my_utils.Point(983+self.border, 577+self.border), my_utils.Size(476*2, 476*2), 0)
+        #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/idTracker/Messor_structor_5mayorworkers.mp4"
+        #self.predefined_vals = 'messor1'
+        ##self.gt_path = '../data/eight/fixed_out.txt'
+        #self.bg = None
+
+        self.ant_number = 10
+        self.arena = my_utils.RotatedRect(my_utils.Point(510+self.border, 507+self.border), my_utils.Size(480*2, 480*2), 0)
+        self.video_file_name = "/home/flipajs/Downloads/movie20071009_163231_frames0001to0100_huffyuv.avi"
+        self.predefined_vals = 'octomilky'
+        #self.gt_path = '../data/eight/fixed_out.txt'
+        self.bg = None
+
         #self.ant_number = 15
         #self.arena = my_utils.RotatedRect(my_utils.Point(403+self.border, 387+self.border), my_utils.Size(767, 767), 0)
         #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
@@ -69,12 +83,12 @@ class Params():
         #self.gt_path = '../data/NoPlasterNoLid800/fixed_out.txt'
         #self.bg = cv2.imread('data/noplast_bg.png')
 
-        self.ant_number = 8
-        self.arena = my_utils.RotatedRect(my_utils.Point(593+self.border, 570+self.border), my_utils.Size(344*2, 344*2), 0)
-        self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
-        self.predefined_vals = 'eight'
-        self.gt_path = '../data/eight/fixed_out.txt'
-        self.bg = cv2.imread('data/eight_bg.png')
+        #self.ant_number = 8
+        #self.arena = my_utils.RotatedRect(my_utils.Point(593+self.border, 570+self.border), my_utils.Size(344*2, 344*2), 0)
+        #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
+        #self.predefined_vals = 'eight'
+        #self.gt_path = '../data/eight/fixed_out.txt'
+        #self.bg = cv2.imread('data/eight_bg.png')
 
         #self.ant_number = 11
         #self.arena = my_utils.RotatedRect(my_utils.Point(665+self.border, 504+self.border), my_utils.Size(491*2, 491*2), 0)

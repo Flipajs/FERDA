@@ -328,15 +328,26 @@ def iteration(region, ants, i):
     #rpts, rscore = region_boundary_cover(region, ants)
     ascores = 0
     rscore = 0
+
+    chosen_ant = None
+    worst_apts = None
+    worts_s = -1
     for a in ants:
-        rpts, rscore = region_boundary_cover(region, ants)
         apts, s = ant_boundary_cover(region, a)
-        ascores += s
+        if s > worts_s:
+            worts_s = s
+            worst_apts = apts
+            chosen_ant = a
 
-        trans, rot = opt_ant(rpts, apts, a, i)
-        trans_ant(a, trans, rot)
+    #for a in ants:
+    rpts, rscore = region_boundary_cover(region, ants)
+    apts, s = ant_boundary_cover(region, chosen_ant)
+    ascores += s
 
-        #print "trans: ", trans
+    trans, rot = opt_ant(rpts, apts, chosen_ant, i)
+    trans_ant(chosen_ant, trans, rot)
+
+    #print "trans: ", trans
 
     return rscore, ascores
 
@@ -469,7 +480,7 @@ def count_crossovers(ants, region):
 
 
 def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iterations=30, debug=False):
-    run = False
+    run = True
 
     if run:
         ants = prepare_ants(ants_ids, exp_ants)
@@ -486,7 +497,7 @@ def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iteratio
         pickle.dump(pack, afile)
         afile.close()
     else:
-        afile = open("../out/split_by_cont/1143_2.pkl", "rb")
+        afile = open("../out/split_by_cont/1144_2.pkl", "rb")
         pack = pickle.load(afile)
         afile.close()
         ants = pack[0]

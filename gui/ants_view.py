@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ants_view.ui'
 #
-# Created: Mon Apr 14 17:28:50 2014
+# Created: Sat May 10 14:50:32 2014
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -59,11 +59,12 @@ class Ui_Dialog(object):
         self.tab.setObjectName(_fromUtf8("tab"))
         self.ch_mser_collection = QtGui.QCheckBox(self.tab)
         self.ch_mser_collection.setGeometry(QtCore.QRect(10, 10, 201, 22))
-        self.ch_mser_collection.setChecked(False)
+        self.ch_mser_collection.setChecked(True)
         self.ch_mser_collection.setObjectName(_fromUtf8("ch_mser_collection"))
         self.ch_ants_collection = QtGui.QCheckBox(self.tab)
+        self.ch_ants_collection.setEnabled(True)
         self.ch_ants_collection.setGeometry(QtCore.QRect(10, 30, 161, 22))
-        self.ch_ants_collection.setChecked(True)
+        self.ch_ants_collection.setChecked(False)
         self.ch_ants_collection.setObjectName(_fromUtf8("ch_ants_collection"))
         self.imshow_decreasing_factor = QtGui.QDoubleSpinBox(self.tab)
         self.imshow_decreasing_factor.setGeometry(QtCore.QRect(110, 80, 60, 27))

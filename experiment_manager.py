@@ -679,7 +679,10 @@ class ExperimentManager():
         return img
 
     def mask_img(self, img):
-        img = self.bg_subtraction(img)
+        if self.params.bg is not None:
+            img = self.bg_subtraction(img)
+
+        img = np.invert(img)
 
         mask = np.ones((np.shape(img)[0], np.shape(img)[1], 1), dtype=np.uint8)*255
         cv2.circle(mask, self.params.arena.center.int_tuple(), self.params.arena.size.width/2, 0, -1)

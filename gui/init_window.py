@@ -47,9 +47,10 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         #self.arena_y_scrollbar.setValue(self.params.arena.center.y)
         #r = min(self.params.arena.center.x, self.params.arena.center.y)-5
 
-        self.ant_number_spin_box.setValue(self.params.ant_number)
-        self.arena_x_scrollbar.setValue(self.params.arena.center.x)
-        self.arena_y_scrollbar.setValue(self.params.arena.center.y)
+        if self.params.fast_start:
+            self.ant_number_spin_box.setValue(self.params.ant_number)
+            self.arena_x_scrollbar.setValue(self.params.arena.center.x)
+            self.arena_y_scrollbar.setValue(self.params.arena.center.y)
 
         self.ant_number_spin_box.valueChanged.connect(self.update_changes)
         self.arena_r_scrollbar.valueChanged.connect(self.update_changes)
@@ -57,7 +58,8 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         self.arena_y_scrollbar.valueChanged.connect(self.update_changes)
 
         #after to invoke update_changes...
-        self.arena_r_scrollbar.setValue(self.params.arena.size.width/2)
+        if self.params.fast_start:
+            self.arena_r_scrollbar.setValue(self.params.arena.size.width/2)
 
         self.continue_button.clicked.connect(self.init_ants_selection)
 
@@ -70,6 +72,7 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         self.arena_group.setEnabled(False)
 
         img_ = self.img.copy()
+        img_ = invert(img_)
         mser_op = mser_operations.MserOperations(self.params)
         self.regions, indexes = mser_op.process_image(img_)
 
@@ -164,6 +167,8 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
             arr = [1, 9, 16, 24, 31, 39, 46, 52]
         elif self.params.predefined_vals == 'Camera2':
             arr = [1, 4, 8, 14, 19, 25, 30, 37, 43, 23, 35]
+        elif self.params.predefined_vals == 'messor1':
+            arr = [2, 6, 11, 16, 20]
         else:
             return
 

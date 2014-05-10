@@ -99,6 +99,9 @@ def draw_ants(img, ants, regions, filled, history=0):
 
 
 def draw_region_collection(img, regions, params, cols=15, rows=10, cell_size=50):
+    if len(regions) > rows*cols:
+        rows = math.ceil(len(regions) / float(cols))
+
     collection = zeros((rows * cell_size, cols * cell_size, 3), dtype=uint8)
     border = cell_size
 

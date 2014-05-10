@@ -130,7 +130,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
                 #self.logger.log_regions_collection()
 
-                self.log_all()
+                #self.log_all()
 
 
                 #if self.params.frame % 100 == 0:
