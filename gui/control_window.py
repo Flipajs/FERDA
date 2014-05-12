@@ -39,7 +39,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.is_running = False
         cv2.destroyAllWindows()
 
-        sys.exit(1)
+        sys.exit(0)
 
     def init_ui(self):
         self.i_state_name.setText(ntpath.basename(self.params.video_file_name))

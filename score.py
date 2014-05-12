@@ -5,6 +5,7 @@ import networkx as nx
 import matplotlib.mlab as mlab
 import my_utils as my_utils
 import numpy as np
+import time
 
 def pred_distance_score(a, region, params):
     pred = a.predicted_position(1)
@@ -20,10 +21,18 @@ def pred_distance_score(a, region, params):
 def max_weight_matching(ants, regions, indexes, params):
     graph = nx.Graph()
 
+    start = time.time()
     graph_add_ants(graph, ants)
+    print "ants: ", time.time() - start
+    start = time.time()
     graph_add_edges(graph, ants, regions, indexes, params)
+    print "edges: ", time.time() - start
 
+    print "nodes: ", len(graph.nodes())
+    print "edges: ", len(graph.edges())
+    start = time.time()
     result = nx.max_weight_matching(graph, True)
+    print "result: ", time.time() - start
     region_idxs, costs = interpret_results_of_max_weighted_matching(result, ants, graph)
 
     return region_idxs, costs
@@ -45,7 +54,7 @@ def max_weight_matching_lost(ants, lost_ants, regions, free_regions, params):
             w = count_lost_node_weight(ants[a_id], regions[r_id], params)
             graph.add_edge('a'+str(a_id), 'g'+str(r_id), weight=w)
 
-        result = nx.max_weight_matching(graph, True)
+    result = nx.max_weight_matching(graph, True)
 
 
     region_ids = [None]*len(lost_ants)
@@ -291,23 +300,19 @@ def a_area_prob(region, params):
 def count_node_weight(ant, region, params):
     #region byl rozdelen... vznikaly by duplikaty
     if "used_for_splitting" in region:
+        print "XXXXXXXXXXXXXXXX USED FOR SPLITTING"
         return 0
 
-    #tohle je spatne...
-    #axis_p = axis_change_prob(ant, region)
-
-    theta_p = theta_change_prob(ant, region)
     if len(ant.state.collisions) > 0:
         position_p = position_prob_collision(ant, region, params)
     else:
         position_p = position_prob(ant, region, params)
 
-    #if len(ant.state.collisions) > 0:
-    #    ab_area_p = 1
-    #else:
-    #ab_area_p = ab_area_prob(region, params)
+    if params.undefined_threshold > position_p:
+        return 0
 
-    #a_area_p = a_area_prob(region, params)
+    theta_p = theta_change_prob(ant, region)
+
     a_area_p = a_area_prob(region, params)
 
     if "splitted" in region:

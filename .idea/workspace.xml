@@ -2,11 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b9f8cf9a-3ad6-4a1a-9ce6-2711247eb2c0" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/ants_view.py" afterPath="$PROJECT_DIR$/gui/ants_view.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ant.py" afterPath="$PROJECT_DIR$/ant.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/ants_init.py" afterPath="$PROJECT_DIR$/gui/ants_init.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/bg_model.py" afterPath="$PROJECT_DIR$/scripts/bg_model.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/control_window.py" afterPath="$PROJECT_DIR$/gui/control_window.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_params.py" afterPath="$PROJECT_DIR$/experiment_params.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/init_window.py" afterPath="$PROJECT_DIR$/gui/init_window.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/my_utils.py" afterPath="$PROJECT_DIR$/my_utils.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/score.py" afterPath="$PROJECT_DIR$/score.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/split_by_contours.py" afterPath="$PROJECT_DIR$/split_by_contours.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/visualize.py" afterPath="$PROJECT_DIR$/visualize.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
@@ -31,98 +36,148 @@
     <favorites_list name="ants" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file leaf-file-name="split_by_contours.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/split_by_contours.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="29" column="0" selection-start="540" selection-end="540" vertical-scroll-proportion="0.0" vertical-offset="435" max-vertical-offset="8505">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="contour_fitting.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scripts/contour_fitting.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="197" column="11" selection-start="4450" selection-end="4450" vertical-scroll-proportion="0.0" vertical-offset="2955" max-vertical-offset="3495">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="logger.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/logger.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="27" column="27" selection-start="877" selection-end="877" vertical-scroll-proportion="0.0" vertical-offset="405" max-vertical-offset="705">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="source_window.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/gui/source_window.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="4" column="10" selection-start="71" selection-end="71" vertical-scroll-proportion="0.0" vertical-offset="60" max-vertical-offset="690">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="mser_operations.py" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/mser_operations.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="31" column="37" selection-start="663" selection-end="663" vertical-scroll-proportion="0.69875777" vertical-offset="108" max-vertical-offset="5346">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="visualize.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/visualize.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="113" column="0" selection-start="3709" selection-end="3709" vertical-scroll-proportion="0.0" vertical-offset="1695" max-vertical-offset="6315">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="control_window.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/gui/control_window.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="121" column="25" selection-start="4301" selection-end="4301" vertical-scroll-proportion="0.0" vertical-offset="1815" max-vertical-offset="4515">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="experiment_params.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/experiment_params.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="37" column="30" selection-start="948" selection-end="948" vertical-scroll-proportion="0.0" vertical-offset="555" max-vertical-offset="1590">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/experiment_manager.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="689" column="28" selection-start="23632" selection-end="23632" vertical-scroll-proportion="0.0" vertical-offset="10335" max-vertical-offset="11790">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="init_window.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/gui/init_window.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="81" column="0" selection-start="2705" selection-end="2705" vertical-scroll-proportion="0.0" vertical-offset="1215" max-vertical-offset="2910">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+    <splitter split-orientation="horizontal" split-proportion="0.5">
+      <split-first>
+        <leaf>
+          <file leaf-file-name="split_by_contours.py" pinned="false" current="true" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/split_by_contours.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="484" column="11" selection-start="11600" selection-end="11600" vertical-scroll-proportion="0.5248447" vertical-offset="8266" max-vertical-offset="10098">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="source_window.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/gui/source_window.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="3" column="0" selection-start="60" selection-end="60" vertical-scroll-proportion="0.0" vertical-offset="184" max-vertical-offset="828">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="mser_operations.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/mser_operations.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="167" column="33" selection-start="5138" selection-end="5138" vertical-scroll-proportion="0.0" vertical-offset="2652" max-vertical-offset="5346">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="visualize.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/visualize.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="280" column="0" selection-start="10291" selection-end="10291" vertical-scroll-proportion="0.0" vertical-offset="4758" max-vertical-offset="8100">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="ant.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/ant.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="222" column="4" selection-start="6315" selection-end="6315" vertical-scroll-proportion="0.0" vertical-offset="3732" max-vertical-offset="5040">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="experiment_params.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/experiment_params.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="30" column="30" selection-start="672" selection-end="672" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2016">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="bg_model.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/scripts/bg_model.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="25" column="0" selection-start="510" selection-end="510" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="612">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="174" column="27" selection-start="5596" selection-end="5596" vertical-scroll-proportion="0.0" vertical-offset="2886" max-vertical-offset="14220">
+                  <folding>
+                    <element signature="e#21#32#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="my_utils.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/my_utils.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="179" column="28" selection-start="4103" selection-end="4103" vertical-scroll-proportion="0.0" vertical-offset="2704" max-vertical-offset="3402">
+                  <folding>
+                    <element signature="e#21#32#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-first>
+      <split-second>
+        <leaf>
+          <file leaf-file-name="init_window.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/gui/init_window.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="110" column="0" selection-start="3660" selection-end="3660" vertical-scroll-proportion="0.0" vertical-offset="1703" max-vertical-offset="6552">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="ants_init.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/gui/ants_init.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="97" column="13" selection-start="5270" selection-end="5270" vertical-scroll-proportion="0.0" vertical-offset="1528" max-vertical-offset="3222">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="score.py" pinned="false" current="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/score.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="319" column="26" selection-start="8964" selection-end="8964" vertical-scroll-proportion="0.55267173" vertical-offset="5380" max-vertical-offset="6210">
+                  <folding>
+                    <element signature="e#21#32#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="video_manager.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/video_manager.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="33" column="8" selection-start="765" selection-end="765" vertical-scroll-proportion="0.0" vertical-offset="372" max-vertical-offset="1440">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="control_window.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/gui/control_window.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="10" column="13" selection-start="181" selection-end="181" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="5418">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-second>
+    </splitter>
   </component>
   <component name="FindManager">
     <FindUsagesManager>
@@ -141,27 +196,27 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/solve_merged.py" />
         <option value="$PROJECT_DIR$/scripts/split_by_contours.py" />
-        <option value="$PROJECT_DIR$/my_utils.py" />
-        <option value="$PROJECT_DIR$/ant.py" />
-        <option value="$PROJECT_DIR$/scripts/bg_model.py" />
-        <option value="$PROJECT_DIR$/score.py" />
         <option value="$PROJECT_DIR$/collisions.py" />
         <option value="$PROJECT_DIR$/scripts/contour_fitting.py" />
         <option value="$PROJECT_DIR$/logger.py" />
-        <option value="$PROJECT_DIR$/split_by_contours.py" />
-        <option value="$PROJECT_DIR$/gui/control_window.py" />
-        <option value="$PROJECT_DIR$/experiment_manager.py" />
-        <option value="$PROJECT_DIR$/experiment_params.py" />
-        <option value="$PROJECT_DIR$/gui/init_window.py" />
-        <option value="$PROJECT_DIR$/visualize.py" />
         <option value="$PROJECT_DIR$/mser_operations.py" />
+        <option value="$PROJECT_DIR$/my_utils.py" />
+        <option value="$PROJECT_DIR$/ant.py" />
+        <option value="$PROJECT_DIR$/visualize.py" />
+        <option value="$PROJECT_DIR$/scripts/bg_model.py" />
+        <option value="$PROJECT_DIR$/gui/init_window.py" />
+        <option value="$PROJECT_DIR$/experiment_params.py" />
+        <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/gui/control_window.py" />
+        <option value="$PROJECT_DIR$/score.py" />
+        <option value="$PROJECT_DIR$/experiment_manager.py" />
+        <option value="$PROJECT_DIR$/split_by_contours.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-1871" />
+    <option name="x" value="49" />
     <option name="y" value="-1824" />
     <option name="width" value="1871" />
     <option name="height" value="1056" />
@@ -207,6 +262,20 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="ants" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ants" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ants" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="scripts" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -278,7 +347,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python.split_by_contours">
     <configuration default="false" name="main" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -507,8 +576,8 @@
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.main" />
-        <item index="1" class="java.lang.String" itemvalue="Python.split_by_contours" />
+        <item index="0" class="java.lang.String" itemvalue="Python.split_by_contours" />
+        <item index="1" class="java.lang.String" itemvalue="Python.main" />
         <item index="2" class="java.lang.String" itemvalue="Python.contour_fitting" />
         <item index="3" class="java.lang.String" itemvalue="Python.bg_model" />
         <item index="4" class="java.lang.String" itemvalue="Python.circle_line_intersection" />
@@ -542,17 +611,17 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-1871" y="-1824" width="1871" height="1056" extended-state="6" />
+    <frame x="49" y="-1824" width="1871" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32905295" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24972677" sideWeight="0.73368984" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19122426" sideWeight="0.74545455" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37891442" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19398907" sideWeight="0.7326203" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.25454545" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24972677" sideWeight="0.73368984" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19122426" sideWeight="0.74545455" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3614973" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19398907" sideWeight="0.7326203" order="1" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25454545" sideWeight="0.5005417" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.25454545" sideWeight="0.49945828" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -608,106 +677,126 @@
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="102" />
+      <option name="time" value="107" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/mser_operations.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="167" column="33" selection-start="5138" selection-end="5138" vertical-scroll-proportion="0.0" vertical-offset="2976" max-vertical-offset="5346">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gui/ants_init.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="97" column="13" selection-start="5270" selection-end="5270" vertical-scroll-proportion="0.0" vertical-offset="1528" max-vertical-offset="3042">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ant.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="222" column="4" selection-start="6315" selection-end="6315" vertical-scroll-proportion="0.0" vertical-offset="3732" max-vertical-offset="5040">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/scripts/bg_model.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="5" column="0" selection-start="75" selection-end="75" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="525" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/score.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="219" column="4" selection-start="5815" selection-end="5815" vertical-scroll-proportion="0.0" vertical-offset="3014" max-vertical-offset="5040" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/contour_fitting.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="197" column="11" selection-start="4450" selection-end="4450" vertical-scroll-proportion="0.0" vertical-offset="2326" max-vertical-offset="3495">
+        <state line="25" column="0" selection-start="510" selection-end="510" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="612">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.spec">
+    <entry file="file://$PROJECT_DIR$/visualize.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1002" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/init_window.spec">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1002" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/split_by_contours.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="29" column="0" selection-start="540" selection-end="540" vertical-scroll-proportion="0.0" vertical-offset="435" max-vertical-offset="8505">
+        <state line="280" column="0" selection-start="10291" selection-end="10291" vertical-scroll-proportion="0.0" vertical-offset="4758" max-vertical-offset="8100">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/logger.py">
+    <entry file="file://$PROJECT_DIR$/gui/source_window.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="27" column="27" selection-start="877" selection-end="877" vertical-scroll-proportion="0.0" vertical-offset="96" max-vertical-offset="792">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="689" column="28" selection-start="23632" selection-end="23632" vertical-scroll-proportion="0.0" vertical-offset="10335" max-vertical-offset="11790">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/experiment_params.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="37" column="30" selection-start="948" selection-end="948" vertical-scroll-proportion="0.0" vertical-offset="414" max-vertical-offset="1872">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gui/control_window.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="121" column="25" selection-start="4301" selection-end="4301" vertical-scroll-proportion="0.0" vertical-offset="1815" max-vertical-offset="4515">
+        <state line="3" column="0" selection-start="60" selection-end="60" vertical-scroll-proportion="0.0" vertical-offset="184" max-vertical-offset="828">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/gui/init_window.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="81" column="0" selection-start="2705" selection-end="2705" vertical-scroll-proportion="0.0" vertical-offset="1215" max-vertical-offset="2910">
+        <state line="110" column="0" selection-start="3660" selection-end="3660" vertical-scroll-proportion="0.0" vertical-offset="1703" max-vertical-offset="6552">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/sys.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="186" column="4" selection-start="7059" selection-end="7059" vertical-scroll-proportion="0.33280507" vertical-offset="3138" max-vertical-offset="8388">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="7" column="21" selection-start="157" selection-end="157" vertical-scroll-proportion="0.16605166" vertical-offset="0" max-vertical-offset="542" />
+        <state line="8" column="21" selection-start="152" selection-end="152" vertical-scroll-proportion="0.24161074" vertical-offset="0" max-vertical-offset="596">
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/visualize.py">
+    <entry file="file://$PROJECT_DIR$/gui/control_window.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="113" column="0" selection-start="3709" selection-end="3709" vertical-scroll-proportion="0.0" vertical-offset="1695" max-vertical-offset="6315">
+        <state line="10" column="13" selection-start="181" selection-end="181" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="5418">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/PyQt4/QtGui.py">
+    <entry file="file://$PROJECT_DIR$/my_utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="700272" />
+        <state line="179" column="28" selection-start="4103" selection-end="4103" vertical-scroll-proportion="0.0" vertical-offset="2704" max-vertical-offset="3402">
+          <folding>
+            <element signature="e#21#32#0" expanded="true" />
+          </folding>
+        </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/gui/source_window.py">
+    <entry file="file://$PROJECT_DIR$/experiment_params.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="4" column="10" selection-start="71" selection-end="71" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="828">
+        <state line="30" column="30" selection-start="672" selection-end="672" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2016">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mser_operations.py">
+    <entry file="file://$PROJECT_DIR$/score.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="31" column="37" selection-start="663" selection-end="663" vertical-scroll-proportion="0.69875777" vertical-offset="108" max-vertical-offset="5346">
+        <state line="319" column="26" selection-start="8964" selection-end="8964" vertical-scroll-proportion="0.55267173" vertical-offset="5380" max-vertical-offset="6210">
+          <folding>
+            <element signature="e#21#32#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/lib/pymodules/python2.7/networkx/algorithms/matching.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="24" column="4" selection-start="638" selection-end="638" vertical-scroll-proportion="0.33280507" vertical-offset="222" max-vertical-offset="14328">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="174" column="27" selection-start="5596" selection-end="5596" vertical-scroll-proportion="0.0" vertical-offset="2886" max-vertical-offset="14220">
+          <folding>
+            <element signature="e#21#32#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/split_by_contours.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="484" column="11" selection-start="11600" selection-end="11600" vertical-scroll-proportion="0.5248447" vertical-offset="8266" max-vertical-offset="10098">
           <folding />
         </state>
       </provider>

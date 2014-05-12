@@ -2,6 +2,8 @@ __author__ = 'flip'
 
 import math
 import cv2
+import numpy as np
+import scipy.ndimage
 
 
 def is_inside_ellipse(el, point):
@@ -148,3 +150,35 @@ def get_circle_line_intersection(params, c, p):
     x.y = alpha * c.y + (1 - alpha) * p.y
 
     return x
+
+
+def mask_out_arena(img, arena):
+    mask = np.ones((np.shape(img)[0], np.shape(img)[1], 1), dtype=np.uint8)*255
+    cv2.circle(mask, arena.center.int_tuple(), arena.size.width/2, 0, -1)
+    idx = (mask == 0)
+    mask[idx] = img[idx]
+
+    return mask
+
+
+def bg_subtraction(img, params):
+    bg = scipy.ndimage.gaussian_filter(params.bg, sigma=1)
+    bg = np.asarray(bg, dtype=np.int32)
+    img = np.subtract(bg, img)
+
+    img = np.absolute(img)
+    img = np.invert(img)
+
+    return img
+
+
+def prepare_image(img, params):
+    if params.bg is not None:
+        img = bg_subtraction(img, params)
+
+    if params.inverted_image:
+        img = np.invert(img)
+
+    img = mask_out_arena(img, params.arena)
+
+    return img

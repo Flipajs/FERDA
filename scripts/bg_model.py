@@ -8,8 +8,9 @@ vid = video_manager.VideoManager("/home/flipajs/Dropbox/PycharmProjects/data/eig
 #vid = video_manager.VideoManager("/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v")
 
 bg = None
-i = 0
+i = -1
 while True:
+    i += 1
     img = vid.next_img()
 
     if img is None:

@@ -176,8 +176,8 @@ def ant_boundary_cover(region, ant):
     return pairs, s
 
 
-def draw_situation(region, ants, fill=False):
-    img = np.zeros((1024, 1280, 3), dtype=np.uint8)
+def draw_situation(region, ants, img_shape, fill=False):
+    img = np.zeros((img_shape[0], img_shape[1], 3), dtype=np.uint8)
 
     if fill:
         for a in ants:
@@ -480,7 +480,7 @@ def count_crossovers(ants, region):
 
 
 def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iterations=30, debug=False):
-    run = True
+    run = False
 
     if run:
         ants = prepare_ants(ants_ids, exp_ants)
@@ -506,19 +506,19 @@ def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iteratio
     history = []
 
     if debug and run:
-        im = draw_situation(region, ants)
+        im = draw_situation(region, ants, img_shape)
         cv2.imshow('test', im)
         cv2.imwrite('out/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.jpg', im)
 
     if not run:
-        im = draw_situation(region, ants)
+        im = draw_situation(region, ants, img_shape)
         cv2.imshow('test', im)
         cv2.waitKey(0)
 
     done = False
     for i in range(max_iterations):
         if not run:
-            im = draw_situation(region, ants)
+            im = draw_situation(region, ants, img_shape)
             cv2.imshow('test', im)
             cv2.waitKey(0)
 
@@ -534,7 +534,7 @@ def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iteratio
     count_overlaps(ants, img_shape)
     count_crossovers(ants, region)
 
-    im = draw_situation(region, ants, fill=True)
+    im = draw_situation(region, ants, img_shape, fill=True)
     if run and debug:
         if not done:
             cv2.imwrite('out/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_e.jpg', im)
@@ -542,7 +542,7 @@ def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iteratio
             cv2.imwrite('out/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_en.jpg', im)
 
     if not run:
-        im = draw_situation(region, ants, fill=True)
+        im = draw_situation(region, ants, img_shape, fill=True)
         cv2.imshow('test', im)
         cv2.waitKey(0)
 

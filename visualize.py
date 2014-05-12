@@ -65,35 +65,36 @@ def draw_ants(img, ants, regions, filled, history=0):
 
         reg = regions[mser_id]
 
-        #for j in range(len(reg["rle"])):
-        #    a = reg["rle"][j]
-        #
-        #    if filled:
-        #        cv2.line(img, (a["col1"], a["line"]), (a["col2"], a["line"]), c, 1)
-        #    else:
-        #        cv2.circle(img, (a["col1"], a["line"]), 0, c, -1)
-        #        cv2.circle(img, (a["col2"], a["line"]), 0, c, -1)
+        if filled:
+            for j in range(len(reg["rle"])):
+                a = reg["rle"][j]
 
-        if history == 0:
-            cv2.line(img, ants[i].state.position.int_tuple(), ants[i].predicted_position(1).int_tuple(), (255, 255, 255), 1)
+                if filled:
+                    cv2.line(img, (a["col1"], a["line"]), (a["col2"], a["line"]), c, 1)
+                else:
+                    cv2.circle(img, (a["col1"], a["line"]), 0, c, -1)
+                    cv2.circle(img, (a["col2"], a["line"]), 0, c, -1)
+        else:
+            if history == 0:
+                cv2.line(img, ants[i].state.position.int_tuple(), ants[i].predicted_position(1).int_tuple(), (255, 255, 255), 1)
 
-        if len(ants[0].history) > 0:
-            cv2.line(img, ants[i].history[0].position.int_tuple(), ants[i].state.position.int_tuple(), (0, 255, 255), 2)
+            if len(ants[0].history) > 0:
+                cv2.line(img, ants[i].history[0].position.int_tuple(), ants[i].state.position.int_tuple(), (0, 255, 255), 2)
 
-        #c = (0, 0, 0)
-        #if ants[i].state.orientation:
-        #    c = (255, 255, 255)
+            #c = (0, 0, 0)
+            #if ants[i].state.orientation:
+            #    c = (255, 255, 255)
 
-        a = ants[i].state
-        if history > 0:
-            a = ants[i].history[history-1]
+            a = ants[i].state
+            if history > 0:
+                a = ants[i].history[history-1]
 
-        cv2.circle(img, a.position.int_tuple(), 3, (255,255,255), -1)
-        cv2.circle(img, a.head.int_tuple(), 2, (255,255,255), -1)
-        cv2.circle(img, a.back.int_tuple(), 2, (255,255,255), -1)
-        cv2.circle(img, a.head.int_tuple(), 1, c, -1)
-        cv2.circle(img, a.back.int_tuple(), 1, c, -1)
-        cv2.circle(img, a.position.int_tuple(), 2, c, -1)
+            cv2.circle(img, a.position.int_tuple(), 3, (255,255,255), -1)
+            cv2.circle(img, a.head.int_tuple(), 2, (255,255,255), -1)
+            cv2.circle(img, a.back.int_tuple(), 2, (255,255,255), -1)
+            cv2.circle(img, a.head.int_tuple(), 1, c, -1)
+            cv2.circle(img, a.back.int_tuple(), 1, c, -1)
+            cv2.circle(img, a.position.int_tuple(), 2, c, -1)
 
     return img
 
@@ -140,6 +141,40 @@ def draw_region_collection(img, regions, params, cols=15, rows=10, cell_size=50)
 
     return collection
 
+def draw_region_best_margins_collection(img, regions, indexes, ants, cols=5, cell_size=70):
+    rows = int(math.ceil(len(indexes) / cols)) + 1
+
+    collection = zeros((rows * cell_size, (cols * cell_size), 3), dtype=uint8)
+    border = cell_size
+
+    img_ = zeros((shape(img)[0] + 2 * border, shape(img)[1] + 2 * border, 3), dtype=uint8)
+
+    for row in range(rows):
+        for col in range(cols):
+            index = row*cols + col
+            if index >= len(indexes):
+                break
+
+            img_[border:-border, border:-border] = img.copy()
+            r = regions[indexes[index]]
+            if r["cx"] == inf or r["cy"] == inf:
+                continue
+
+            c = (230, 230, 230)
+            for a in ants:
+                if a.state.mser_id == indexes[index]:
+                    c = a.color
+
+            draw_region(img_[border:-border, border:-border], r, c, contour=False)
+
+
+            img_small = img_[border + r["cy"] - cell_size / 2:border + r["cy"] + cell_size / 2, border + r["cx"] - cell_size / 2:border + r["cx"] + cell_size / 2].copy()
+
+            cv2.putText(img_small, str(indexes[row*cols + col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+            collection[(row) * cell_size:((row) + 1) * cell_size, (col) * cell_size:((col) + 1) * cell_size, :] = img_small
+
+    return collection
+
 
 def draw_region_group_collection(img, regions, groups, params, cell_size=70):
     rows = int(math.ceil(len(groups) / 2.))
@@ -165,19 +200,13 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
         cv2.putText(collection, str(row), (3 + cell_size*col_p, 30 + cell_size*(row+row_p)), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
 
         best_id = -1
-        vals = [0]*len(groups[row])
         margins = [0]*len(groups[row])
         for col in range(len(groups[row])):
             r = regions[groups[row][col]]
-            vals[col] = score.a_area_prob(r, params)
 
             margins[col] = r['margin']
 
-
-        best_id = argmax(array(vals))
         best_margin_id = argmax(array(margins))
-        if vals[best_id] <= 0:
-            best_id = -1
 
 
         for col in range(len(groups[row])):

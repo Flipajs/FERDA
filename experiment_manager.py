@@ -12,7 +12,6 @@ import visualize
 import gt
 import my_utils as my_utils
 import pickle
-import scipy.ndimage
 import sys
 import solve_merged
 import collisions
@@ -20,6 +19,7 @@ from collections import deque
 import split_by_contours
 import matplotlib.pyplot as plt
 import networkx as nx
+import time
 
 class ExperimentManager():
     def __init__(self, params, ants, video_manager):
@@ -51,27 +51,49 @@ class ExperimentManager():
         self.chosen_regions_indexes = []
 
     def process_frame(self, img, forward=False):
+        start = time.time()
         self.img_ = img.copy()
-        mask = self.mask_img(img)
+        mask = my_utils.prepare_image(img, self.params)
+        self.img_sub_ = mask
+        end = time.time()
+        print "time image: ", end - start
+
 
         self.history_frame_counters(forward)
         intensity_threshold = self.get_intensity_threshold()
 
         if not forward:
+            start = time.time()
             self.collisions = collisions.collision_detection(self.ants, self.params, self.history+1)
+            end = time.time()
+            print "time collisions: ", end - start
 
+        start = time.time()
         self.regions, self.chosen_regions_indexes = self.mser_operations.process_image(mask, intensity_threshold)
         self.groups, self.groups_avg_pos = mser_operations.get_region_groups2(self.regions)
         #self.max_margin_regions = self.get_max_margin_regions()
 
         self.chosen_regions_indexes = self.filter_out_children(self.chosen_regions_indexes)
-        self.chosen_regions_indexes = self.chosen_regions_indexes
+        end = time.time()
+        print "timemsers etc. ", end - start
+
+        start = time.time()
         self.solve_splitting(self.chosen_regions_indexes)
+        end = time.time()
+        print "time splitting: ", end - start
+
         #self.solve_collisions(indexes)
         print "INDEXES: ", self.chosen_regions_indexes
         if forward and self.history < 0:
+            start = time.time()
             result, costs = score.max_weight_matching(self.ants, self.regions, self.chosen_regions_indexes, self.params)
+            end = time.time()
+            print "time graph1. ", end - start
+            start = time.time()
             result, costs = self.solve_lost(self.ants, self.regions, self.chosen_regions_indexes, result, costs)
+            end = time.time()
+            print "time graph2. ", end - start
+
 
         if self.params.show_assignment_problem:
             img_assignment_problem = visualize.draw_assignment_problem(self.video_manager.get_prev_img(), self.img_, self.ants, self.regions, self.chosen_regions_indexes, self.params)
@@ -131,9 +153,6 @@ class ExperimentManager():
                     if i > a_area:
                         area_p = 1 + a_area - math.ceil(a_area)
 
-                    if area_p < 0:
-                        continue
-
                     val = pos_p*area_p
                     if val > thresh:
                         graph.add_edge('a'+str(a.id), 'r'+str(r_id)+'-'+str(i), weight=val)
@@ -176,8 +195,8 @@ class ExperimentManager():
         graph = self.prepare_graph(indexes)
         ant_region_assignment, costs = self.solve_graph(graph)
 
-        print "ASSIGNMENT: ", ant_region_assignment
-        print "COSTS: ", costs
+        #print "ASSIGNMENT: ", ant_region_assignment
+        #print "COSTS: ", costs
         for r_id in indexes:
             ant_ids = []
             for a in self.ants:
@@ -620,8 +639,8 @@ class ExperimentManager():
         else:
             print "zero ant assigned... in Experiment_manager.py"
 
-        print "AVG ANT AREA> ", self.params.avg_ant_area
-        print "AVG ANT AXIS RATIO> ", self.params.avg_ant_axis_ratio
+        #print "AVG ANT AREA> ", self.params.avg_ant_area
+        #print "AVG ANT AXIS RATIO> ", self.params.avg_ant_axis_ratio
 
     def ants_history_data(self):
         data = [None] * self.ant_number
@@ -667,39 +686,24 @@ class ExperimentManager():
         #cv2.imshow("TEST", img)
         #cv2.waitKey(0)
 
-    def bg_subtraction(self, img):
-        bg = scipy.ndimage.gaussian_filter(self.params.bg, sigma=1)
-        bg = np.asarray(bg, dtype=np.int32)
-        img = np.subtract(bg, img)
-
-        img = np.absolute(img)
-        img = np.invert(img)
-
-        #img = np.asarray(img, dtype=np.uint8)
-        return img
-
-    def mask_img(self, img):
-        if self.params.bg is not None:
-            img = self.bg_subtraction(img)
-
-        img = np.invert(img)
-
-        mask = np.ones((np.shape(img)[0], np.shape(img)[1], 1), dtype=np.uint8)*255
-        cv2.circle(mask, self.params.arena.center.int_tuple(), self.params.arena.size.width/2, 0, -1)
-        idx = (mask == 0)
-        mask[idx] = img[idx]
-
-        #self.add_notches(mask)
-
-        cv2.imshow("mask", mask)
-        self.img_sub_ = mask
-        return mask
+    #def mask_img(self, img):
+    #    if self.params.bg is not None:
+    #        img = self.bg_subtraction(img)
+    #
+    #    img = np.invert(img)
+    #    img = my_utils.mask_out_arena(img, self.params.arena)
+    #
+    #    #self.add_notches(mask)
+    #
+    #    cv2.imshow("mask", img)
+    #    self.img_sub_ = img
+    #    return img
 
     def display_results(self, regions, collissions, history=0):
         img_copy = self.img_.copy()
 
         img_copy = visualize.draw_collision_risks(img_copy, self.ants, collissions, history)
-        img_vis = visualize.draw_ants(img_copy, self.ants, regions, True, history)
+        img_vis = visualize.draw_ants(img_copy, self.ants, regions, False, history)
         #draw_dangerous_areas(I)
         if history > 0:
             cv2.rectangle(img_vis, (0, 0), (50, 50), (255, 0, 255), -1)
