@@ -186,7 +186,7 @@ class ExperimentManager():
 
     def split(self, region_id, ant_ids, indexes):
         points = mser_operations.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
-        split_results = split_by_contours.solve(self.regions[region_id], points, ant_ids, self.ants, self.params.frame, self.img_.shape, debug=True)
+        split_results = split_by_contours.solve(self.regions[region_id], points, ant_ids, self.ants, self.params, self.img_.shape, debug=True)
 
         self.add_new_contours(self.regions, indexes, split_results)
         self.regions[region_id]['used_for_splitting'] = True
@@ -649,6 +649,31 @@ class ExperimentManager():
             vals = a.buffer_history()
             vals['moviename'] = self.params.video_file_name
             data[i] = vals
+
+        return data
+
+    def results_xy_vector(self):
+        data = {}
+        d = 2
+
+        for i in range(0, self.params.frame):
+            vals = []
+            #vals = np.zeros((self.params.ant_number, 2))
+            for a_id in range(self.params.ant_number):
+                state = self.ants[a_id].history[self.params.frame - i - 1]
+                vals.append(np.array([state.position.x, state.position.y]))
+                #vals[a_id][0] = state.position.x
+                #vals[a_id][1] = state.position.y
+
+            data[i] = vals
+
+        vals = []
+        for a_id in range(self.params.ant_number):
+            vals.append(np.array([self.ants[a_id].state.position.x, self.ants[a_id].state.position.y]))
+            #vals[a_id][0] = self.ants[a_id].state.position.x
+            #vals[a_id][1] = self.ants[a_id].state.position.y
+
+        data[i+1] = vals
 
         return data
 

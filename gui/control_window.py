@@ -130,7 +130,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
                 #self.logger.log_regions_collection()
 
-                #self.log_all()
+                self.log_all()
 
 
                 #if self.params.frame % 100 == 0:
@@ -261,6 +261,12 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
         if len(name) == 0:
             name = 'undefined'
+
+        xy = self.experiment.results_xy_vector()
+        print xy
+        afile = open(path+'name.arr', "wb")
+        pickle.dump(xy, afile)
+        afile.close()
 
         path += name+'.mat'
 

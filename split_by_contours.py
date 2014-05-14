@@ -6,6 +6,7 @@ import cv2
 import sys
 import math
 import my_utils
+import os
 import time
 
 def get_points(region):
@@ -329,23 +330,46 @@ def iteration(region, ants, i):
     ascores = 0
     rscore = 0
 
-    chosen_ant = None
-    worst_apts = None
-    worts_s = -1
+    apts_list = []
+    ant_scores = np.zeros(len(ants))
+
+    i = 0
     for a in ants:
-        apts, s = ant_boundary_cover(region, a)
-        if s > worts_s:
-            worts_s = s
-            worst_apts = apts
-            chosen_ant = a
+        apts, ant_scores[i] = ant_boundary_cover(region, a)
+        apts_list.append(apts)
+        i += 1
+
+    #reverse order
+    indexes = np.argsort(ant_scores[::-1])
+
+    for id in indexes:
+        a = ants[id]
+        ascores += ant_scores[id]
+
+        rpts, rscore = region_boundary_cover(region, ants)
+
+        trans, rot = opt_ant(rpts, apts_list[id], a, i)
+        trans_ant(a, trans, rot)
+
+    #
+    #chosen_ant = None
+    #worst_apts = None
+    #worts_s = -1
+    #for a in ants:
+    #    apts, s = ant_boundary_cover(region, a)
+    #    if s > worts_s:
+    #        worts_s = s
+    #        worst_apts = apts
+    #        chosen_ant = a
 
     #for a in ants:
-    rpts, rscore = region_boundary_cover(region, ants)
-    apts, s = ant_boundary_cover(region, chosen_ant)
-    ascores += s
-
-    trans, rot = opt_ant(rpts, apts, chosen_ant, i)
-    trans_ant(chosen_ant, trans, rot)
+    #a = ants[1]
+    #rpts, rscore = region_boundary_cover(region, ants)
+    #apts, s = ant_boundary_cover(region, a)
+    #ascores += s
+    #
+    #trans, rot = opt_ant(rpts, apts, a, i)
+    #trans_ant(a, trans, rot)
 
     #print "trans: ", trans
 
@@ -404,11 +428,14 @@ def prepare_region(exp_region, points):
 
 
 def test_convergence(history):
-    thresh = 0.5
+    thresh = 1
     if len(history) < 2:
         return False
 
     if abs(history[-2][0] - history[-1][0]) < thresh and abs(history[-2][1] - history[-1][1]) < thresh:
+        return True
+
+    if history[-2][0] + history[-2][1] < history[-1][0] + history[-1][1]:
         return True
 
     return False
@@ -479,10 +506,24 @@ def count_crossovers(ants, region):
         ants[a_id]['crossover'] = counter / float(ants[a_id]['area'])
 
 
-def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iterations=30, debug=False):
+#def ant_iteration(region, ant):
+#    apts, _ = ant_boundary_cover(region, ants)
+#    rpts, rscore = region_boundary_cover(region, ants)
+#
+#    trans, rot = opt_ant(rpts, apts, chosen_ant, i)
+#    trans_ant(chosen_ant, trans, rot)
+#
+#    #print "trans: ", trans
+#
+#    return rscore
+
+def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterations=30, debug=False):
     run = False
+    if params is not None:
+        run = True
 
     if run:
+        frame = params.frame
         ants = prepare_ants(ants_ids, exp_ants)
         region = prepare_region(exp_region, points)
 
@@ -493,11 +534,12 @@ def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iteratio
 
         pack = [ants, region]
 
-        afile = open("out/split_by_cont/"+str(frame)+"_"+str(ants_ids[0])+".pkl", "wb")
+        afile = open(params.dumpdir+"/split_by_cont/"+str(frame)+"_"+str(ants_ids[0])+".pkl", "wb")
         pickle.dump(pack, afile)
         afile.close()
     else:
-        afile = open("../out/split_by_cont/1144_2.pkl", "rb")
+        dir = os.path.expanduser('~/dump/eight')
+        afile = open(dir+"/split_by_cont/721_3.pkl", "rb")
         pack = pickle.load(afile)
         afile.close()
         ants = pack[0]
@@ -508,7 +550,7 @@ def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iteratio
     if debug and run:
         im = draw_situation(region, ants, img_shape)
         cv2.imshow('test', im)
-        cv2.imwrite('out/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.jpg', im)
+        cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.jpg', im)
 
     if not run:
         im = draw_situation(region, ants, img_shape)
@@ -537,9 +579,9 @@ def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iteratio
     im = draw_situation(region, ants, img_shape, fill=True)
     if run and debug:
         if not done:
-            cv2.imwrite('out/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_e.jpg', im)
+            cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_e.jpg', im)
         else:
-            cv2.imwrite('out/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_en.jpg', im)
+            cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_en.jpg', im)
 
     if not run:
         im = draw_situation(region, ants, img_shape, fill=True)
@@ -554,7 +596,7 @@ def solve(exp_region, points, ants_ids, exp_ants, frame, img_shape, max_iteratio
 
 
 def main():
-    solve(None, None, None, None, 659, (1024, 1280), debug=True)
+    solve(None, None, None, None, None, (1024, 1280), debug=True)
 
     return
 

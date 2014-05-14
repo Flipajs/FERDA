@@ -3,6 +3,7 @@ __author__ = 'flip'
 import cv2
 import my_utils
 import pickle
+import os
 
 
 class Params():
@@ -26,9 +27,9 @@ class Params():
         self.mser_times = 0
         self.frame = 0
 
-        self.use_gt = False
+        self.use_gt = True
         self.gt_repair = False
-        self.fast_start = True
+        self.fast_start = False
 
         self.intensity_threshold = 200
         self.dynamic_intensity_threshold = True
@@ -84,19 +85,21 @@ class Params():
         ##self.gt_path = '../data/eight/fixed_out.txt'
         #self.bg = None
 
-        self.ant_number = 15
-        self.arena = my_utils.RotatedRect(my_utils.Point(403+self.border, 387+self.border), my_utils.Size(767, 767), 0)
-        self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
-        self.predefined_vals = 'NoPlasterNoLid800'
-        self.gt_path = '../data/NoPlasterNoLid800/fixed_out.txt'
-        self.bg = cv2.imread('data/noplast_bg.png')
+        #self.ant_number = 15
+        #self.arena = my_utils.RotatedRect(my_utils.Point(403+self.border, 387+self.border), my_utils.Size(767, 767), 0)
+        #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
+        #self.predefined_vals = 'NoPlasterNoLid800'
+        #self.gt_path = '../data/NoPlasterNoLid800/fixed_out.txt'
+        #self.bg = cv2.imread('data/noplast_bg.png')
+        #self.dumpdir = os.path.expanduser('~/dump/noplast')
 
-        #self.ant_number = 8
-        #self.arena = my_utils.RotatedRect(my_utils.Point(593+self.border, 570+self.border), my_utils.Size(344*2, 344*2), 0)
-        #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
-        #self.predefined_vals = 'eight'
-        #self.gt_path = '../data/eight/fixed_out.txt'
-        #self.bg = cv2.imread('data/eight_bg.png')
+        self.ant_number = 8
+        self.arena = my_utils.RotatedRect(my_utils.Point(593+self.border, 570+self.border), my_utils.Size(344*2, 344*2), 0)
+        self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
+        self.predefined_vals = 'eight'
+        self.gt_path = '../data/eight/fixed_out.txt'
+        self.bg = cv2.imread('data/eight_bg.png')
+        self.dumpdir = os.path.expanduser('~/dump/eight')
 
         #self.ant_number = 11
         #self.arena = my_utils.RotatedRect(my_utils.Point(665+self.border, 504+self.border), my_utils.Size(491*2, 491*2), 0)
