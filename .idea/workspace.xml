@@ -2,18 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b9f8cf9a-3ad6-4a1a-9ce6-2711247eb2c0" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mat_name.mat" afterPath="$PROJECT_DIR$/mat_name.mat" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/contour_fitting.py" afterPath="$PROJECT_DIR$/scripts/contour_fitting.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/control_window.py" afterPath="$PROJECT_DIR$/gui/control_window.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libs/clearmetrics/eight_ctrax.py" afterPath="$PROJECT_DIR$/libs/clearmetrics/eight_ctrax.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libs/clearmetrics/eight_ferda.py" afterPath="$PROJECT_DIR$/libs/clearmetrics/eight_ferda.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libs/clearmetrics/eight_gt.py" afterPath="$PROJECT_DIR$/libs/clearmetrics/eight_gt.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libs/clearmetrics/eight_idtracker.py" afterPath="$PROJECT_DIR$/libs/clearmetrics/eight_idtracker.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_params.py" afterPath="$PROJECT_DIR$/experiment_params.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/init_window.py" afterPath="$PROJECT_DIR$/gui/init_window.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/logger.py" afterPath="$PROJECT_DIR$/logger.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libs/clearmetrics/noplast_ctrax.py" afterPath="$PROJECT_DIR$/libs/clearmetrics/noplast_ctrax.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libs/clearmetrics/noplast_ferda.py" afterPath="$PROJECT_DIR$/libs/clearmetrics/noplast_ferda.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libs/clearmetrics/noplast_gt.py" afterPath="$PROJECT_DIR$/libs/clearmetrics/noplast_gt.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/score.py" afterPath="$PROJECT_DIR$/score.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/split_by_contours.py" afterPath="$PROJECT_DIR$/split_by_contours.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
@@ -40,49 +35,47 @@
     <splitter split-orientation="horizontal" split-proportion="0.5">
       <split-first>
         <leaf>
-          <file leaf-file-name="split_by_contours.py" pinned="false" current="false" current-in-tab="false">
+          <file leaf-file-name="split_by_contours.py" pinned="false" current="true" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/split_by_contours.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="550" column="44" selection-start="13258" selection-end="13258" vertical-scroll-proportion="0.0" vertical-offset="2853" max-vertical-offset="4770">
-                  <folding>
-                    <element signature="e#24#37#0" expanded="true" />
-                    <element signature="e#158#308#0" expanded="false" />
-                    <element signature="e#351#1981#0" expanded="false" />
-                    <element signature="e#2007#2297#0" expanded="false" />
-                    <element signature="e#2329#2419#0" expanded="false" />
-                    <element signature="e#2446#2503#0" expanded="false" />
-                    <element signature="e#2548#2850#0" expanded="false" />
-                    <element signature="e#3140#3433#0" expanded="false" />
-                    <element signature="e#3481#3675#0" expanded="false" />
-                    <element signature="e#4018#4387#0" expanded="false" />
-                    <element signature="e#4425#5045#0" expanded="false" />
-                    <element signature="e#5080#5931#0" expanded="false" />
-                    <element signature="e#5969#7475#0" expanded="false" />
-                    <element signature="e#8664#9828#0" expanded="false" />
-                    <element signature="e#9875#10055#0" expanded="false" />
-                    <element signature="e#10425#11386#0" expanded="false" />
-                    <element signature="e#11811#12074#0" expanded="false" />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="noplast_gt.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/libs/clearmetrics/noplast_gt.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="2298" column="76" selection-start="244534" selection-end="244534" vertical-scroll-proportion="0.0" vertical-offset="81302" max-vertical-offset="203868">
+                <state line="443" column="4" selection-start="10445" selection-end="10445" vertical-scroll-proportion="0.1539735" vertical-offset="7737" max-vertical-offset="18252">
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="experiment_params.py" pinned="false" current="true" current-in-tab="true">
+          <file leaf-file-name="my_utils.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/my_utils.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="130" column="31" selection-start="3020" selection-end="3020" vertical-scroll-proportion="0.0" vertical-offset="2340" max-vertical-offset="3402">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="circle_line_intersection.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/scripts/circle_line_intersection.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="774">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="contour_fitting.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/scripts/contour_fitting.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="230" column="22" selection-start="5398" selection-end="5398" vertical-scroll-proportion="0.0" vertical-offset="3044" max-vertical-offset="4806">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="experiment_params.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/experiment_params.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="104" column="37" selection-start="3806" selection-end="3806" vertical-scroll-proportion="0.6125828" vertical-offset="1502" max-vertical-offset="2106">
-                  <folding>
-                    <element signature="e#21#31#0" expanded="true" />
-                  </folding>
+                <state line="87" column="29" selection-start="2821" selection-end="2821" vertical-scroll-proportion="0.0" vertical-offset="1418" max-vertical-offset="2052">
+                  <folding />
                 </state>
               </provider>
             </entry>
@@ -90,16 +83,34 @@
           <file leaf-file-name="logger.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/logger.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="32" column="37" selection-start="1116" selection-end="1116" vertical-scroll-proportion="0.0" vertical-offset="139" max-vertical-offset="792">
+                <state line="20" column="16" selection-start="635" selection-end="635" vertical-scroll-proportion="0.0" vertical-offset="360" max-vertical-offset="846">
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="noplast_ctrax.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/libs/clearmetrics/noplast_ctrax.py">
+          <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/experiment_manager.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="24" column="58" selection-start="2221" selection-end="2221" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="267948">
+                <state line="148" column="35" selection-start="4912" selection-end="4912" vertical-scroll-proportion="0.0" vertical-offset="1458" max-vertical-offset="14832">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="mser_operations.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/mser_operations.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="240" column="4" selection-start="6810" selection-end="6810" vertical-scroll-proportion="0.0" vertical-offset="4320" max-vertical-offset="5346">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="gt.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/gt.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="93" column="33" selection-start="2769" selection-end="2769" vertical-scroll-proportion="0.0" vertical-offset="1674" max-vertical-offset="3996">
                   <folding />
                 </state>
               </provider>
@@ -109,19 +120,19 @@
       </split-first>
       <split-second>
         <leaf>
-          <file leaf-file-name="init_window.py" pinned="false" current="false" current-in-tab="true">
+          <file leaf-file-name="init_window.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/gui/init_window.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="253" column="0" selection-start="8633" selection-end="8633" vertical-scroll-proportion="2.3359873" vertical-offset="3087" max-vertical-offset="6552">
+                <state line="174" column="0" selection-start="5589" selection-end="5589" vertical-scroll-proportion="0.0" vertical-offset="2955" max-vertical-offset="6570">
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="ants_init.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/gui/ants_init.py">
+          <file leaf-file-name="main.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/main.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="97" column="13" selection-start="5270" selection-end="5270" vertical-scroll-proportion="0.0" vertical-offset="1746" max-vertical-offset="3222">
+                <state line="6" column="0" selection-start="100" selection-end="100" vertical-scroll-proportion="0.0" vertical-offset="108" max-vertical-offset="252">
                   <folding />
                 </state>
               </provider>
@@ -130,7 +141,7 @@
           <file leaf-file-name="score.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/score.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="294" column="42" selection-start="8229" selection-end="8229" vertical-scroll-proportion="0.0" vertical-offset="5202" max-vertical-offset="6120">
+                <state line="11" column="35" selection-start="260" selection-end="260" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="6048">
                   <folding />
                 </state>
               </provider>
@@ -139,16 +150,25 @@
           <file leaf-file-name="video_manager.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/video_manager.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="33" column="8" selection-start="765" selection-end="765" vertical-scroll-proportion="0.0" vertical-offset="594" max-vertical-offset="1440">
+                <state line="24" column="0" selection-start="587" selection-end="587" vertical-scroll-proportion="0.0" vertical-offset="432" max-vertical-offset="1440">
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="control_window.py" pinned="false" current="false" current-in-tab="false">
+          <file leaf-file-name="control_window.py" pinned="false" current="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/gui/control_window.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="133" column="0" selection-start="4656" selection-end="4656" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="5526">
+                <state line="140" column="49" selection-start="4945" selection-end="4945" vertical-scroll-proportion="0.24044587" vertical-offset="2369" max-vertical-offset="5616">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="ant.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/ant.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="55" column="8" selection-start="1645" selection-end="1645" vertical-scroll-proportion="0.0" vertical-offset="681" max-vertical-offset="5040">
                   <folding />
                 </state>
               </provider>
@@ -175,28 +195,28 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/scripts/bg_model.py" />
         <option value="$PROJECT_DIR$/main.py" />
-        <option value="$PROJECT_DIR$/score.py" />
         <option value="$PROJECT_DIR$/logger.py" />
-        <option value="$PROJECT_DIR$/gui/init_window.py" />
-        <option value="$PROJECT_DIR$/split_by_contours.py" />
         <option value="$PROJECT_DIR$/libs/clearmetrics/noplast_ctrax.py" />
         <option value="$PROJECT_DIR$/libs/clearmetrics/noplast_gt.py" />
-        <option value="$PROJECT_DIR$/experiment_manager.py" />
         <option value="$PROJECT_DIR$/libs/clearmetrics/eight_ctrax.py" />
         <option value="$PROJECT_DIR$/libs/clearmetrics/eight_gt.py" />
         <option value="$PROJECT_DIR$/libs/clearmetrics/eight_idtracker.py" />
         <option value="$PROJECT_DIR$/libs/clearmetrics/eight_ferda.py" />
         <option value="$PROJECT_DIR$/libs/clearmetrics/noplast_ferda.py" />
+        <option value="$PROJECT_DIR$/gui/init_window.py" />
         <option value="$PROJECT_DIR$/gui/control_window.py" />
+        <option value="$PROJECT_DIR$/scripts/contour_fitting.py" />
+        <option value="$PROJECT_DIR$/experiment_manager.py" />
+        <option value="$PROJECT_DIR$/score.py" />
         <option value="$PROJECT_DIR$/experiment_params.py" />
+        <option value="$PROJECT_DIR$/split_by_contours.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
     <option name="x" value="49" />
-    <option name="y" value="-1824" />
+    <option name="y" value="24" />
     <option name="width" value="1871" />
     <option name="height" value="1056" />
   </component>
@@ -255,25 +275,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="libs" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ants" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ants" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="libs" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="clearmetrics" />
+              <option name="myItemId" value="scripts" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -316,43 +318,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main">
-    <configuration default="false" name="eight_gt" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/libs/clearmetrics" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="ants" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/libs/clearmetrics/eight_gt.py" />
-      <option name="PARAMETERS" value="" />
-      <RunnerSettings RunnerId="PythonRunner" />
-      <ConfigurationWrapper RunnerId="PythonRunner" />
-      <method />
-    </configuration>
-    <configuration default="false" name="eight_idtracker" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/libs/clearmetrics" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="ants" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/libs/clearmetrics/eight_idtracker.py" />
-      <option name="PARAMETERS" value="" />
-      <RunnerSettings RunnerId="PythonRunner" />
-      <ConfigurationWrapper RunnerId="PythonRunner" />
-      <method />
-    </configuration>
+  <component name="RunManager" selected="Python.split_by_contours">
     <configuration default="false" name="eight_ferda" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -402,6 +368,46 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ants" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PyDebugRunner" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PyDebugRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="split_by_contours" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ants" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/split_by_contours.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PyDebugRunner" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PyDebugRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="contour_fitting" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/scripts" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ants" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/contour_fitting.py" />
       <option name="PARAMETERS" value="" />
       <RunnerSettings RunnerId="PythonRunner" />
       <ConfigurationWrapper RunnerId="PythonRunner" />
@@ -529,19 +535,19 @@
       <method />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.eight_gt" />
-      <item index="1" class="java.lang.String" itemvalue="Python.eight_idtracker" />
-      <item index="2" class="java.lang.String" itemvalue="Python.eight_ferda" />
-      <item index="3" class="java.lang.String" itemvalue="Python.noplast_ferda" />
-      <item index="4" class="java.lang.String" itemvalue="Python.main" />
+      <item index="0" class="java.lang.String" itemvalue="Python.eight_ferda" />
+      <item index="1" class="java.lang.String" itemvalue="Python.noplast_ferda" />
+      <item index="2" class="java.lang.String" itemvalue="Python.main" />
+      <item index="3" class="java.lang.String" itemvalue="Python.split_by_contours" />
+      <item index="4" class="java.lang.String" itemvalue="Python.contour_fitting" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.main" />
-        <item index="1" class="java.lang.String" itemvalue="Python.noplast_ferda" />
-        <item index="2" class="java.lang.String" itemvalue="Python.eight_ferda" />
-        <item index="3" class="java.lang.String" itemvalue="Python.eight_idtracker" />
-        <item index="4" class="java.lang.String" itemvalue="Python.eight_gt" />
+        <item index="0" class="java.lang.String" itemvalue="Python.split_by_contours" />
+        <item index="1" class="java.lang.String" itemvalue="Python.main" />
+        <item index="2" class="java.lang.String" itemvalue="Python.contour_fitting" />
+        <item index="3" class="java.lang.String" itemvalue="Python.noplast_ferda" />
+        <item index="4" class="java.lang.String" itemvalue="Python.eight_ferda" />
       </list>
     </recent_temporary>
   </component>
@@ -572,14 +578,14 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="49" y="-1824" width="1871" height="1056" extended-state="6" />
+    <frame x="49" y="24" width="1871" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32905295" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24918744" sideWeight="0.73368984" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.13217768" sideWeight="0.71657753" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19934994" sideWeight="0.71657753" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.13217768" sideWeight="0.71657753" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3614973" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19398907" sideWeight="0.7326203" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25454545" sideWeight="0.5005417" order="7" side_tool="true" content_ui="tabs" />
@@ -626,157 +632,120 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="python-line">
           <url>file://$PROJECT_DIR$/scripts/contour_fitting.py</url>
-          <line>90</line>
+          <line>119</line>
           <option name="timeStamp" value="97" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="python-line">
-          <url>file://$PROJECT_DIR$/scripts/contour_fitting.py</url>
-          <line>192</line>
-          <option name="timeStamp" value="98" />
         </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="109" />
+      <option name="time" value="119" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/scripts/kmeans.py">
+    <entry file="file://$PROJECT_DIR$/my_utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="11502">
+        <state line="130" column="31" selection-start="3020" selection-end="3020" vertical-scroll-proportion="0.0" vertical-offset="2067" max-vertical-offset="3348">
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libs/clearmetrics/test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="11" column="32" selection-start="249" selection-end="249" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="810">
-          <folding>
-            <element signature="e#0#19#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libs/clearmetrics/test_noplaster.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="3" column="22" selection-start="81" selection-end="81" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="594">
-          <folding>
-            <element signature="e#0#19#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/split_by_contours.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="550" column="44" selection-start="13258" selection-end="13258" vertical-scroll-proportion="0.0" vertical-offset="2853" max-vertical-offset="4770">
-          <folding>
-            <element signature="e#24#37#0" expanded="true" />
-            <element signature="e#158#308#0" expanded="false" />
-            <element signature="e#351#1981#0" expanded="false" />
-            <element signature="e#2007#2297#0" expanded="false" />
-            <element signature="e#2329#2419#0" expanded="false" />
-            <element signature="e#2446#2503#0" expanded="false" />
-            <element signature="e#2548#2850#0" expanded="false" />
-            <element signature="e#3140#3433#0" expanded="false" />
-            <element signature="e#3481#3675#0" expanded="false" />
-            <element signature="e#4018#4387#0" expanded="false" />
-            <element signature="e#4425#5045#0" expanded="false" />
-            <element signature="e#5080#5931#0" expanded="false" />
-            <element signature="e#5969#7475#0" expanded="false" />
-            <element signature="e#8664#9828#0" expanded="false" />
-            <element signature="e#9875#10055#0" expanded="false" />
-            <element signature="e#10425#11386#0" expanded="false" />
-            <element signature="e#11811#12074#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/libs/clearmetrics/noplast_gt.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="2298" column="76" selection-start="244534" selection-end="244534" vertical-scroll-proportion="0.0" vertical-offset="81302" max-vertical-offset="203868">
+        <state line="2298" column="76" selection-start="244534" selection-end="244534" vertical-scroll-proportion="0.0" vertical-offset="81302" max-vertical-offset="203868" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="93" column="33" selection-start="2769" selection-end="2769" vertical-scroll-proportion="0.0" vertical-offset="1674" max-vertical-offset="3996">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/libs/clearmetrics/noplast_ctrax.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="24" column="58" selection-start="2221" selection-end="2221" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="267948">
+        <state line="24" column="58" selection-start="2221" selection-end="2221" vertical-scroll-proportion="0.0" vertical-offset="432" max-vertical-offset="267948" />
+      </provider>
+    </entry>
+    <entry file="file:///usr/lib/pymodules/python2.7/matplotlib/colors.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="391" column="0" selection-start="14260" selection-end="14260" vertical-scroll-proportion="0.33277026" vertical-offset="6769" max-vertical-offset="26766" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scripts/circle_line_intersection.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="774">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/libs/clearmetrics/noplast_ferda.py">
+    <entry file="file://$PROJECT_DIR$/mser_operations.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="2263" column="31" selection-start="214808" selection-end="214808" vertical-scroll-proportion="-282.7426" vertical-offset="203311" max-vertical-offset="203886">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libs/clearmetrics/eight_idtracker.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="4151" column="120" selection-start="386723" selection-end="386723" vertical-scroll-proportion="72.19366" vertical-offset="31474" max-vertical-offset="74826">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libs/clearmetrics/eight_gt.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="1499" column="79" selection-start="168151" selection-end="168151" vertical-scroll-proportion="0.4490818" vertical-offset="26713" max-vertical-offset="81504">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libs/clearmetrics/eight_ferda.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="1512" column="24" selection-start="169246" selection-end="169246" vertical-scroll-proportion="-1.1435726" vertical-offset="27901" max-vertical-offset="81504">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libs/clearmetrics/eight_ctrax.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="1515" column="53" selection-start="125821" selection-end="125821" vertical-scroll-proportion="1.7412354" vertical-offset="26227" max-vertical-offset="108612">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="649" column="50" selection-start="22164" selection-end="22164" vertical-scroll-proportion="0.24540901" vertical-offset="11535" max-vertical-offset="14670">
-          <folding>
-            <element signature="e#21#32#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gui/control_window.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="133" column="0" selection-start="4656" selection-end="4656" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="5526">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/logger.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="32" column="37" selection-start="1116" selection-end="1116" vertical-scroll-proportion="0.0" vertical-offset="139" max-vertical-offset="792">
+        <state line="240" column="4" selection-start="6810" selection-end="6810" vertical-scroll-proportion="0.0" vertical-offset="452" max-vertical-offset="1062">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/gui/init_window.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="253" column="0" selection-start="8633" selection-end="8633" vertical-scroll-proportion="2.3359873" vertical-offset="3087" max-vertical-offset="6552">
+        <state line="174" column="0" selection-start="5589" selection-end="5589" vertical-scroll-proportion="0.0" vertical-offset="2955" max-vertical-offset="6570">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ant.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="55" column="8" selection-start="1645" selection-end="1645" vertical-scroll-proportion="0.0" vertical-offset="681" max-vertical-offset="5040">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/video_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="24" column="0" selection-start="587" selection-end="587" vertical-scroll-proportion="0.0" vertical-offset="432" max-vertical-offset="1440">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/score.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="11" column="35" selection-start="260" selection-end="260" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="6048">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="148" column="35" selection-start="4912" selection-end="4912" vertical-scroll-proportion="0.0" vertical-offset="1458" max-vertical-offset="14832">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scripts/contour_fitting.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="230" column="22" selection-start="5398" selection-end="5398" vertical-scroll-proportion="0.0" vertical-offset="3188" max-vertical-offset="4950">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gui/control_window.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="140" column="49" selection-start="4945" selection-end="4945" vertical-scroll-proportion="0.24044587" vertical-offset="2369" max-vertical-offset="5616">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/experiment_params.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="104" column="37" selection-start="3806" selection-end="3806" vertical-scroll-proportion="0.6125828" vertical-offset="1502" max-vertical-offset="2106">
-          <folding>
-            <element signature="e#21#31#0" expanded="true" />
-          </folding>
+        <state line="87" column="29" selection-start="2821" selection-end="2821" vertical-scroll-proportion="0.0" vertical-offset="1418" max-vertical-offset="2052">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/split_by_contours.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="443" column="4" selection-start="10445" selection-end="10445" vertical-scroll-proportion="0.1539735" vertical-offset="7737" max-vertical-offset="18252">
+          <folding />
         </state>
       </provider>
     </entry>

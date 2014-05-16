@@ -130,7 +130,12 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
                 #self.logger.log_regions_collection()
 
-                self.log_all()
+                #self.log_all()
+                self.logger.log_regions()
+                self.logger.log_regions_collection()
+                #self.logger.log_frame()
+                self.logger.log_frame_results()
+                self.logger.log_assignment_problem()
 
 
                 #if self.params.frame % 100 == 0:

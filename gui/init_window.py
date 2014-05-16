@@ -256,12 +256,13 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         self.params.arena.size = my_utils.Size(r * 2, r * 2)
         self.params.ant_number = self.ant_number_spin_box.value()
 
-        img_ = self.img.copy()
-        cv2.circle(img_, self.params.arena.center.int_tuple(), r, (255, 255, 0), 1)
-        cv2.circle(img_, self.params.arena.center.int_tuple(), 3, (255, 255, 0), -1)
+        if not self.params.fast_start:
+            img_ = self.img.copy()
+            cv2.circle(img_, self.params.arena.center.int_tuple(), r, (255, 255, 0), 1)
+            cv2.circle(img_, self.params.arena.center.int_tuple(), 3, (255, 255, 0), -1)
 
-        img = my_utils.mask_out_arena(img_, self.params.arena)
-        my_utils.imshow("arena selection", img, 1)
+            img = my_utils.mask_out_arena(img_, self.params.arena)
+            my_utils.imshow("arena selection", img, 1)
 
     def assign_ant(self, id, val):
         if val == -1:

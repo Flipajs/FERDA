@@ -78,7 +78,7 @@ class ExperimentManager():
         print "timemsers etc. ", end - start
 
         start = time.time()
-        self.solve_splitting(self.chosen_regions_indexes)
+        assignment, costs, unassigned_ants, unassigned_regions = self.solve_splitting(self.chosen_regions_indexes)
         end = time.time()
         print "time splitting: ", end - start
 
@@ -86,11 +86,11 @@ class ExperimentManager():
         print "INDEXES: ", self.chosen_regions_indexes
         if forward and self.history < 0:
             start = time.time()
-            result, costs = score.max_weight_matching(self.ants, self.regions, self.chosen_regions_indexes, self.params)
+            assignment, costs = score.max_weight_matching(self.ants, self.regions, unassigned_ants, unassigned_regions, assignment, costs, self.params)
             end = time.time()
             print "time graph1. ", end - start
             start = time.time()
-            result, costs = self.solve_lost(self.ants, self.regions, self.chosen_regions_indexes, result, costs)
+            result, costs = self.solve_lost(self.ants, self.regions, self.chosen_regions_indexes, assignment, costs)
             end = time.time()
             print "time graph2. ", end - start
 
@@ -147,13 +147,24 @@ class ExperimentManager():
                 graph.add_node('r'+str(r_id)+'-'+str(i))
 
                 for a in self.ants:
-                    pos_p = score.position_prob_without_prediction(a, self.regions[r_id], self.params)
+                    if a.state.collision_predicted:
+                        pos_p = score.position_prob_without_prediction(a, r, self.params)
+                    else:
+                        pos_p = score.position_prob(a, r, self.params)
 
                     area_p = 1
                     if i > a_area:
                         area_p = 1 + a_area - math.ceil(a_area)
 
-                    val = pos_p*area_p
+                    if i == 1:
+                        theta_p = score.theta_change_prob(a, r)
+                        antlike_p = score.a_area_prob(r, self.params)
+
+                        val = pos_p * area_p + theta_p * antlike_p * pos_p
+
+                    else:
+                        val = pos_p * area_p
+
                     if val > thresh:
                         graph.add_edge('a'+str(a.id), 'r'+str(r_id)+'-'+str(i), weight=val)
 
@@ -188,15 +199,18 @@ class ExperimentManager():
         points = mser_operations.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
         split_results = split_by_contours.solve(self.regions[region_id], points, ant_ids, self.ants, self.params, self.img_.shape, debug=True)
 
-        self.add_new_contours(self.regions, indexes, split_results)
-        self.regions[region_id]['used_for_splitting'] = True
+        return split_results
 
     def solve_splitting(self, indexes):
         graph = self.prepare_graph(indexes)
         ant_region_assignment, costs = self.solve_graph(graph)
 
-        #print "ASSIGNMENT: ", ant_region_assignment
-        #print "COSTS: ", costs
+        print "ASSIGNMENT: ", ant_region_assignment
+        print "COSTS: ", costs
+        assignment = [-1] * len(self.ants)
+
+        unassigned_ants = []
+        unassigned_regions = []
         for r_id in indexes:
             ant_ids = []
             for a in self.ants:
@@ -205,9 +219,23 @@ class ExperimentManager():
 
             if len(ant_ids) > 1:
                 print "SPLITTING: ", r_id, ant_ids
-                self.split(r_id, ant_ids, indexes)
+                split_results = self.split(r_id, ant_ids, indexes)
+                for a_id in ant_ids:
+                    unassigned_ants.append(a_id)
 
-        return indexes
+                self.add_new_contours(self.regions, unassigned_regions, split_results)
+                self.regions[r_id]['used_for_splitting'] = True
+
+            elif len(ant_ids) == 1:
+                assignment[ant_ids[0]] = r_id
+            else:
+                unassigned_regions.append(r_id)
+
+        for a in self.ants:
+            if assignment[a.id] == -1:
+                unassigned_ants.append(a.id)
+
+        return assignment, costs, unassigned_ants, unassigned_regions
 
     def solve_lost(self, ants, regions, indexes, result, costs):
         lost_ants = []

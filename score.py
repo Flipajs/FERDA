@@ -18,14 +18,14 @@ def pred_distance_score(a, region, params):
 
         return math.sqrt(x*x + y*y)
 
-def max_weight_matching(ants, regions, indexes, params):
+def max_weight_matching(ants, regions, unassigned_a, unassigned_r, assignment, costs, params):
     graph = nx.Graph()
 
     start = time.time()
-    graph_add_ants(graph, ants)
+    graph_add_ants(graph, unassigned_a)
     print "ants: ", time.time() - start
     start = time.time()
-    graph_add_edges(graph, ants, regions, indexes, params)
+    graph_add_edges(graph, ants, regions, unassigned_a, unassigned_r, params)
     print "edges: ", time.time() - start
 
     print "nodes: ", len(graph.nodes())
@@ -33,9 +33,9 @@ def max_weight_matching(ants, regions, indexes, params):
     start = time.time()
     result = nx.max_weight_matching(graph, True)
     print "result: ", time.time() - start
-    region_idxs, costs = interpret_results_of_max_weighted_matching(result, ants, graph)
+    assignment, costs = interpret_results_of_max_weighted_matching(result, unassigned_a, assignment, costs, graph)
 
-    return region_idxs, costs
+    return assignment, costs
 
 
 def max_weight_matching_lost(ants, lost_ants, regions, free_regions, params):
@@ -77,27 +77,24 @@ def count_lost_node_weight(a, r, params):
     return my_utils.e_distance(a.state.position, r_p)
 
 
-def interpret_results_of_max_weighted_matching(result, ants, graph):
-    region_idxs = [None]*len(ants)
-    costs = [None]*len(ants)
-
-    for a in ants:
-        node = result['a'+str(a.id)]
+def interpret_results_of_max_weighted_matching(result, unassigned_a, assignment, costs, graph):
+    for a_id in unassigned_a:
+        node = result['a'+str(a_id)]
         if node[0] == 'u':
-            region_idxs[a.id] = -1
-            costs[a.id] = -1
+            assignment[a_id] = -1
+            costs[a_id] = -1
         else:
             idx = int(node[1:])
-            region_idxs[a.id] = idx
-            costs[a.id] = graph.get_edge_data('a'+str(a.id), node)['weight']
+            assignment[a_id] = idx
+            costs[a_id] = graph.get_edge_data('a'+str(a_id), node)['weight']
 
-    return region_idxs, costs
+    return assignment, costs
 
 
-def graph_add_ants(G, ants):
-    for aidx in range(len(ants)):
-        G.add_node('a'+str(aidx))
-        G.add_node('u'+str(aidx))
+def graph_add_ants(G, unassigned_ants):
+    for a_id in unassigned_ants:
+        G.add_node('a'+str(a_id))
+        G.add_node('u'+str(a_id))
 
 
 def prepare_and_add_region_groups(graph, regions, regions_idx):
@@ -117,15 +114,15 @@ def prepare_and_add_region_groups(graph, regions, regions_idx):
     return groups
 
 
-def graph_add_edges(graph, ants, regions, indexes, params):
+def graph_add_edges(graph, ants, regions, unassigned_a, unassigned_r, params):
     thresh = params.undefined_threshold
-    for a in ants:
-        graph.add_edge('a'+str(a.id), 'u'+str(a.id), weight=thresh)
-        for r_id in indexes:
-            w = count_node_weight(a, regions[r_id], params)
+    for a_id in unassigned_a:
+        graph.add_edge('a'+str(a_id), 'u'+str(a_id), weight=thresh)
+        for r_id in unassigned_r:
+            w = count_node_weight(ants[a_id], regions[r_id], params)
 
             if w > thresh:
-                graph.add_edge('a'+str(a.id), 'r'+str(r_id), weight=w)
+                graph.add_edge('a'+str(a_id), 'r'+str(r_id), weight=w)
 
 
 def log_normpdf(x, u, s):
@@ -202,8 +199,8 @@ def position_prob(ant, region, params):
     #max_val = log_normpdf(u, u, s)
     x = pred_distance_score(ant, region, params)
 
-    if ant.state.lost:
-        x /= (math.log(ant.state.lost_time) + 1)
+    #if ant.state.lost:
+    #    x /= (math.log(ant.state.lost_time) + 1)
 
     val = mlab.normpdf(x, u, s) / max_val
     #val = log_normpdf(x, u, s) / abs(max_val)
@@ -300,7 +297,6 @@ def a_area_prob(region, params):
 def count_node_weight(ant, region, params):
     #region byl rozdelen... vznikaly by duplikaty
     if "used_for_splitting" in region:
-        print "XXXXXXXXXXXXXXXX USED FOR SPLITTING"
         return 0
 
     if len(ant.state.collisions) > 0:
@@ -327,13 +323,13 @@ def count_node_weight(ant, region, params):
     if "cont" in region:
         prob *= 1.1-region['overlap'] #1.1 to give chance for complete overlap...
 
-    if ant.state.lost:
-        if prob > params.undefined_threshold:
-            #this ensure that this valu will be higher than weight of undefined state
-            #prob = np.nextafter(params.undefined_threshold, 1)
-            #prob = params.undefined_threshold*2
-            prob *= 0.01
-            #prob -= 4
+    #if ant.state.lost:
+    #    if prob > params.undefined_threshold:
+    #        #this ensure that this valu will be higher than weight of undefined state
+    #        #prob = np.nextafter(params.undefined_threshold, 1)
+    #        #prob = params.undefined_threshold*2
+    #        prob *= 0.01
+    #        #prob -= 4
 
     #print "Th: ", theta_p, "P: ", position_p, "A: ", area_p, "PROD: ", prob
 

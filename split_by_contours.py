@@ -8,6 +8,10 @@ import math
 import my_utils
 import os
 import time
+import matplotlib.pyplot as plt
+
+dist_thresh = 4
+in_debug = True
 
 def get_points(region):
     points = []
@@ -112,13 +116,14 @@ def nearest_p_on_ant_bound(pt, ants):
     best_ant = -1
     best = [-1, -1]
 
-    for a in ants:
+    for a_id in range(len(ants)):
+        a = ants[a_id]
         for apt in a['cont']:
             d = e_dist(apt, pt)
             if d < best_dist:
                 best = apt
                 best_dist = d
-                best_ant = a['id']
+                best_ant = a_id
 
     return best, best_dist, best_ant
 
@@ -176,23 +181,83 @@ def ant_boundary_cover(region, ant):
 
     return pairs, s
 
+def ant_boundary_cover2(region, ant):
+    s = 0
+    pairs = []
+    for apt in ant['cont']:
+        #if not is_inside_region(apt, region):
+        pt, dist = nearest_p_on_region_bound(apt, region)
+        pairs.append([apt, pt])
+        s += dist
+
+    return pairs, s
+
 
 def draw_situation(region, ants, img_shape, fill=False):
     img = np.zeros((img_shape[0], img_shape[1], 3), dtype=np.uint8)
 
     if fill:
-        for a in ants:
+        for a_id in range(len(ants)):
+            a = ants[a_id]
+            c = 50*a_id
             for pt in a['points']:
-                img[pt[1]][pt[0]][2] = 255
+                img[pt[1]][pt[0]][2] = 255-c
+                img[pt[1]][pt[0]][1] = c
     else:
-        for a in ants:
+        for a_id in range(len(ants)):
+            a = ants[a_id]
+            c = 50*a_id
             for pt in a['cont']:
-                img[pt[1]][pt[0]][2] = 255
+                img[pt[1]][pt[0]][2] = 255-c
+                img[pt[1]][pt[0]][1] = c
 
     for pt in region['cont']:
+        img[pt[1]][pt[0]][0] = 255
         img[pt[1]][pt[0]][1] = 255
+        img[pt[1]][pt[0]][2] = 255
 
     return img
+
+
+def plot_situation(region, ants):
+    if in_debug:
+        plt.close()
+    #plt.ion()
+    plt.ioff()
+
+    x = np.zeros(len(region['cont']))
+    y = np.zeros(len(region['cont']))
+
+    i = 0
+    for pt in region['cont']:
+        x[i] = pt[0]
+        y[i] = pt[1]
+        i += 1
+
+    plt.scatter(x, y, color='black', s=25)
+
+    colors = ['red', 'green', 'blue', 'yellow', 'cyan']
+    for a_id in range(len(ants)):
+        a = ants[a_id]
+        x = np.zeros(len(a['cont']))
+        y = np.zeros(len(a['cont']))
+
+        i = 0
+        for pt in a['cont']:
+            x[i] = pt[0]
+            y[i] = pt[1]
+            i += 1
+
+        plt.scatter(x, y, color=colors[a_id], s=15, edgecolor='black')
+
+
+
+
+    plt.axis('equal')
+    if in_debug:
+        plt.ion()
+        plt.show()
+        plt.waitforbuttonpress(0)
 
 
 def move_ant(ant, tx, ty, th):
@@ -249,17 +314,21 @@ def trans_ant(ant, t, rot):
     ant['back_end'].x = pt2[0][0] + t[0]
     ant['back_end'].y = pt2[1][0] + t[1]
 
+
+    help = np.dot(rot, np.array([1, 0]).reshape(2, 1))
+    ant['theta'] = math.atan2(help[1], help[0])
+
+
     return True
 
 
-def opt_ant(rpts, apts, a, i):
+def opt_ant(rpts, apts, a_id, i, weights=None):
     x = []
     y = []
 
-    if i < 5:
-        weight = 50.
-    else:
-        weight = 1.
+    dist_weight = True
+    if i < 3:
+        dist_weight = False
 
     w_sum = 0
     w = []
@@ -275,16 +344,29 @@ def opt_ant(rpts, apts, a, i):
         p += np.multiply(pts[0], weight)
         q += np.multiply(pts[1], weight)
 
+    j = 0
     for pts in rpts:
-        if pts[2] == a['id']:
+        if pts[2] == a_id:
             x.append([float(i) for i in pts[0]])
             y.append([float(i) for i in pts[1]])
-            weight = np.linalg.norm(np.array(pts[0]) - np.array(pts[1]))
+            #if weights is not None:
+            #    weight = weights[j]
+            #else:
+            #    weight = 1
+            if dist_weight:
+                weight = np.linalg.norm(np.array(pts[0]) - np.array(pts[1]))
+            else:
+                weight = 1
+
             w_sum += weight
             w.append(weight)
             p += np.multiply(pts[0], weight)
             q += np.multiply(pts[1], weight)
+        j += 1
 
+    if len(x) + len(y) == 0:
+        print "In OPT_ANT returned zero t and I rot"
+        return np.array([0, 0]), np.array([[1, 0], [0, 1]])
 
     x = np.array(x)
     y = np.array(y)
@@ -325,6 +407,40 @@ def opt_ant(rpts, apts, a, i):
     return t, R
 
 
+def region_2_ant_plus_weights(region, ants):
+    s = 0
+    thresh = 3
+    val = 1 / float(len(ants))
+    pairs = []
+    weights = []
+    for pt in region['cont']:
+        dists = np.ones(len(ants))*1000
+        best_pts = np.zeros((len(ants), 2))
+
+        for a_id in range(len(ants)):
+            a = ants[a_id]
+            for apt in a['cont']:
+                d = e_dist(apt, pt)
+                if d < dists[a_id]:
+                    dists[a_id] = d
+                    best_pts[a_id][0] = apt[0]
+                    best_pts[a_id][1] = apt[1]
+
+        min_id = np.argmin(dists)
+        s += dists[min_id]
+        if dists[min_id] < thresh:
+            apt = [best_pts[min_id][0], best_pts[min_id][1]]
+            pairs.append([apt, pt, min_id])
+            weights.append(1)
+        else:
+            for a_id in range(len(ants)):
+                apt = [best_pts[a_id][0], best_pts[a_id][1]]
+                pairs.append([apt, pt, a_id])
+                weights.append(val)
+
+    return pairs, weights, s
+
+
 def iteration(region, ants, i):
     #rpts, rscore = region_boundary_cover(region, ants)
     ascores = 0
@@ -347,8 +463,9 @@ def iteration(region, ants, i):
         ascores += ant_scores[id]
 
         rpts, rscore = region_boundary_cover(region, ants)
+        #rpts, weights, rscore = region_2_ant_plus_weights(region, ants)
 
-        trans, rot = opt_ant(rpts, apts_list[id], a, i)
+        trans, rot = opt_ant(rpts, apts_list[id], id, i)
         trans_ant(a, trans, rot)
 
     #
@@ -435,8 +552,8 @@ def test_convergence(history):
     if abs(history[-2][0] - history[-1][0]) < thresh and abs(history[-2][1] - history[-1][1]) < thresh:
         return True
 
-    if history[-2][0] + history[-2][1] < history[-1][0] + history[-1][1]:
-        return True
+    #if history[-2][0] + history[-2][1] < history[-1][0] + history[-1][1]:
+    #    return True
 
     return False
 
@@ -506,21 +623,273 @@ def count_crossovers(ants, region):
         ants[a_id]['crossover'] = counter / float(ants[a_id]['area'])
 
 
-#def ant_iteration(region, ant):
-#    apts, _ = ant_boundary_cover(region, ants)
-#    rpts, rscore = region_boundary_cover(region, ants)
-#
-#    trans, rot = opt_ant(rpts, apts, chosen_ant, i)
-#    trans_ant(chosen_ant, trans, rot)
-#
-#    #print "trans: ", trans
-#
-#    return rscore
+def get_ant_stability(ant, region):
+    score = 0
+    for apt in ant['cont']:
+        pt, d = nearest_p_on_region_bound(apt, region)
+        if d < dist_thresh:
+            score += 1
+        elif is_inside_region(apt, region):
+            score += 0
+        else:
+            score -= 1
+
+    return score / float(len(ant['cont']))
+
+
+def new_alg(ants, region):
+    stable_thresh = 0.75
+
+    stable = np.ones(len(ants)) * [False]
+    scores = np.zeros(len(ants))
+
+    stable_num = 0
+    for a_id in range(len(ants)):
+        a = ants[a_id]
+        s = get_ant_stability(a, region)
+        scores[a_id] = s
+        print a_id, "stability: ", s
+        if s > stable_thresh:
+            stable[a_id] = True
+            stable_num += 1
+
+    if stable_num == 0:
+        return
+
+    #kdyz jsou oba moc dobri, ale region to nevyvetluje, pak je mozne, ze maji velky prekryv a jeden se proste vybere a pusti se na nej nevysvetlena oblast.
+
+    indexes = np.argsort(scores)
+    ascores = 0
+
+    converged = np.ones(len(ants)) * [False]
+    hist = np.zeros((len(ants), 3))
+    for a_id in range(len(ants)):
+        hist[a_id][0] = ants[a_id]['x']
+        hist[a_id][0] = ants[a_id]['y']
+        hist[a_id][0] = 1000 #... ants['theta'] asi jeste neexistuje
+
+    for i in range(7):
+        changed = False
+        print i
+        for id in indexes:
+            if converged[id]:
+                continue
+            if stable[id]:
+                continue
+
+            changed = True
+
+            a = ants[id]
+            apts, s = ant_boundary_cover(region, a)
+            ascores += s
+
+            rpts, rscore = region_boundary_cover2(region, ants, stable, 20)
+
+            trans, rot = opt_ant(rpts, apts, id, i)
+            trans_ant(a, trans, rot)
+
+            if test_position_convergence(a, hist[a_id]):
+                converged[a_id] = True
+
+            hist[a_id][0] = a['x']
+            hist[a_id][1] = a['y']
+            hist[a_id][2] = a['theta']
+            print a['x'], a['y'], a['theta']
+
+            if in_debug:
+                plot_situation(region, ants)
+
+        if not changed:
+            break
+
+def region_contour_nearest(region, ants, max_dist=10):
+    s = 0
+    pairs = []
+    for pt in region['cont']:
+        apt, dist, best_ant = region_2_ant_pt_assignment2(pt, ants, max_dist)
+        if best_ant != -1:
+            pairs.append([apt, pt, best_ant])
+            s += dist
+
+
+    #x1 = []
+    #y1 = []
+    #x2 = []
+    #y2 = []
+    #
+    #i = 0
+    #for pt_pair in pairs:
+    #    if pt_pair[2] != 1:
+    #        continue
+    #
+    #    x1.append(pt_pair[0][0])
+    #    y1.append(pt_pair[0][1])
+    #
+    #    x2.append(pt_pair[1][0])
+    #    y2.append(pt_pair[1][1])
+    #    i += 1
+    #
+    #plt.close()
+    #plt.scatter(x1, y1, color='green', s=15, edgecolor='black')
+    #plt.scatter(x2, y2, color='yellow', s=15, edgecolor='black')
+    #
+    #
+    #plt.axis('equal')
+    #plt.show()
+    #plt.waitforbuttonpress(0)
+
+    return pairs, s
+
+
+def init(ants, region):
+    ascores = 0
+    rscore = 0
+
+    apts_list = []
+    ant_scores = np.zeros(len(ants))
+
+    i = 0
+    for a in ants:
+        apts, ant_scores[i] = ant_boundary_cover(region, a)
+        apts_list.append(apts)
+        i += 1
+
+    #reverse order
+    indexes = np.argsort(ant_scores[::-1])
+
+    for id in indexes:
+        a = ants[id]
+        ascores += ant_scores[id]
+        #rpts, rscore = region_contour_nearest(region, ants, max_dist=7)
+        rpts, rscore = region_boundary_cover(region, ants)
+
+        trans, rot = opt_ant(rpts, apts_list[id], id, i)
+        trans_ant(a, trans, rot)
+
+def test_position_convergence(a, history):
+    thresh = 0.5
+    thresh_th = 1
+    x = history[0] - a['x']
+    y = history[1] - a['y']
+    th = abs(history[2] - a['theta'])
+    if th > math.pi:
+        th = th - math.pi
+
+    if abs(x) < thresh and abs(y) < thresh and th*57 < thresh_th:
+        return True
+
+    return False
+
+
+def region_boundary_cover2(region, ants, stable, max_dist=4):
+    s = 0
+    pairs = []
+    for pt in region['cont']:
+        apt, dist, best_ant = region_2_ant_pt_assignment(pt, ants, stable, max_dist)
+        if best_ant != -1:
+            pairs.append([apt, pt, best_ant])
+            s += dist
+
+
+    #x1 = []
+    #y1 = []
+    #x2 = []
+    #y2 = []
+    #
+    #i = 0
+    #for pt_pair in pairs:
+    #    if pt_pair[2] != 1:
+    #        continue
+    #
+    #    x1.append(pt_pair[0][0])
+    #    y1.append(pt_pair[0][1])
+    #
+    #    x2.append(pt_pair[1][0])
+    #    y2.append(pt_pair[1][1])
+    #    i += 1
+    #
+    #plt.close()
+    #plt.scatter(x1, y1, color='green', s=15, edgecolor='black')
+    #plt.scatter(x2, y2, color='yellow', s=15, edgecolor='black')
+    #
+    #
+    #plt.axis('equal')
+    #plt.show()
+    #plt.waitforbuttonpress(0)
+
+    return pairs, s
+
+
+def region_2_ant_pt_assignment(pt, ants, stable, max_dist):
+    best_dist = max_dist
+    best_ant = -1
+    best = [-1, -1]
+
+    for a_id in range(len(ants)):
+        a = ants[a_id]
+        for apt in a['cont']:
+            d = e_dist(apt, pt)
+            if d < best_dist and (not stable[a_id] or d < dist_thresh):
+                best = apt
+                best_dist = d
+                best_ant = a_id
+
+
+
+    return best, best_dist, best_ant
+
+
+def region_2_ant_pt_assignment2(pt, ants, max_dist):
+    best_dist = sys.maxint
+    best_ant = -1
+    best = [-1, -1]
+
+    for a_id in range(len(ants)):
+        a = ants[a_id]
+        for apt in a['cont']:
+            d = e_dist(apt, pt)
+            if d < max_dist:
+                best = apt
+                best_dist = d
+                best_ant = a_id
+
+
+
+    return best, best_dist, best_ant
+
+def get_contour_weights(region):
+    step = 2
+    c = np.array(region['cont'])
+    l = len(c)
+    max_dist = math.sqrt(32)
+
+    x1 = []
+    y1 = []
+
+    weights = np.zeros(l)
+    for i in range(l):
+        pt1 = c[(i-2) % l]
+        pt2 = c[(i+2) % l]
+
+        d = np.linalg.norm(pt1 - pt2)
+        weights[i] = d/max_dist
+
+        x1.append(c[i][0])
+        y1.append(c[i][1])
+
+    plt.close()
+    plt.scatter(x1, y1, color=weights, s=35, edgecolor='black', cmap=plt.cm.jet)
+    plt.show()
+    plt.waitforbuttonpress(0)
+
+    return weights
 
 def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterations=30, debug=False):
+    global in_debug
     run = False
     if params is not None:
         run = True
+        in_debug = False
 
     if run:
         frame = params.frame
@@ -539,30 +908,68 @@ def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterati
         afile.close()
     else:
         dir = os.path.expanduser('~/dump/eight')
-        afile = open(dir+"/split_by_cont/721_3.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/695_0.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/1143_1.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/209_3.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/703_0.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/704_0.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/672_5.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/690_0.pkl", "rb")
+        afile = open(dir+"/split_by_cont/691_0.pkl", "rb")
         pack = pickle.load(afile)
         afile.close()
         ants = pack[0]
         region = pack[1]
 
+        #afile = open(dir+"/regions/695.pkl", "rb")
+        ##afile = open(dir+"/regions/1143.pkl", "rb")
+        #afile = open(dir+"/regions/209.pkl", "rb")
+        ##afile = open(dir+"/regions/703.pkl", "rb")
+        #
+        #regions = pickle.load(afile)
+        #afile.close()
+        #
+        #region = regions[1]
+        ##region = regions[12]
+        ##region = regions[11]
+        ##region = regions[2]
+        #points = get_points(region)
+        #
+        #region = prepare_region(exp_region, points)
+
     history = []
 
     if debug and run:
+        fig = plt.figure()
+        plot_situation(region, ants)
+        plt.savefig(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.png')
+        plt.close(fig)
         im = draw_situation(region, ants, img_shape)
         cv2.imshow('test', im)
         cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.jpg', im)
 
-    if not run:
-        im = draw_situation(region, ants, img_shape)
-        cv2.imshow('test', im)
-        cv2.waitKey(0)
+    #if not run:
+    #    plot_situation(region, ants)
+    #    #new_alg(ants, region)
+    #    #im = draw_situation(region, ants, img_shape)
+    #    #cv2.imshow('test', im)
+    #    #cv2.waitKey(0)
+
+    #get_contour_weights(region)
+
+    #init(ants, region)
+    #iteration(region, ants, 0)
+    plot_situation(region, ants)
+    new_alg(ants, region)
 
     done = False
     for i in range(max_iterations):
         if not run:
-            im = draw_situation(region, ants, img_shape)
-            cv2.imshow('test', im)
-            cv2.waitKey(0)
+            plot_situation(region, ants)
+
+            #im = draw_situation(region, ants, img_shape)
+            #cv2.imshow('test', im)
+            #cv2.waitKey(0)
 
         rscore, ascore = iteration(region, ants, i)
         history.append([rscore, ascore])
@@ -578,10 +985,16 @@ def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterati
 
     im = draw_situation(region, ants, img_shape, fill=True)
     if run and debug:
+        fig = plt.figure()
+        plot_situation(region, ants)
         if not done:
             cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_e.jpg', im)
+            plt.savefig(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_e.png')
         else:
             cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_en.jpg', im)
+            plt.savefig(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_en.png')
+
+        plt.close(fig)
 
     if not run:
         im = draw_situation(region, ants, img_shape, fill=True)

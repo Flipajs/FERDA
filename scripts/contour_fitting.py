@@ -7,14 +7,43 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import os
+import split_by_contours
 
 
 def load_data():
-    afile = open("../out/split_by_cont_eight/28_2.pkl", "rb")
+    dir = os.path.expanduser('~/dump/eight')
+    afile = open(dir+"/split_by_cont/695_0.pkl", "rb")
+    #afile = open(dir+"/split_by_cont/1143_1.pkl", "rb")
+    #afile = open(dir+"/split_by_cont/209_3.pkl", "rb")
+    #afile = open(dir+"/split_by_cont/703_0.pkl", "rb")
     pack = pickle.load(afile)
     afile.close()
     ants = pack[0]
     region = pack[1]
+
+    afile = open(dir+"/regions/695.pkl", "rb")
+    #afile = open(dir+"/regions/1143.pkl", "rb")
+    #afile = open(dir+"/regions/209.pkl", "rb")
+    #afile = open(dir+"/regions/703.pkl", "rb")
+
+    regions = pickle.load(afile)
+    afile.close()
+
+    region = regions[1]
+    #region = regions[12]
+    #region = regions[11]
+    #region = regions[2]
+    points = split_by_contours.get_points(region)
+
+    region = split_by_contours.prepare_region(None, points)
+
+    #
+    #afile = open("../out/split_by_cont_eight/28_2.pkl", "rb")
+    #pack = pickle.load(afile)
+    #afile.close()
+    #ants = pack[0]
+    #region = pack[1]
 
     return ants, region
 
@@ -178,12 +207,24 @@ def main():
 
     for i in range(len(cont)):
         a, b, c = get_trio(cont, i, step)
+
         vals[i] = get_trio_angle(a, b, c)
+
+        center_of_gravity = (b+c) / 2.
+        if not split_by_contours.is_inside_region(center_of_gravity, region):
+            vals[i] += math.pi
+
         x[i] = cont[i][0]
         y[i] = cont[i][1]
 
+    #plt.scatter(cont[:, 0], cont[:, 1], c=vals, s=45, cmap=plt.cm.jet)
+    #plt.axis('equal')
+    #plt.show()
+    #
+    #return
+
     ids = np.argsort(vals)
-    ra_id = ids[0]
+    ra_id = ids[2]
     rpts = get_sub_contour(cont, ra_id, step)
 
 
@@ -198,7 +239,7 @@ def main():
     print end - start
 
 
-    a = ants[0]
+    a = ants[1]
 
 
     acont = np.array(a['cont'])
@@ -209,11 +250,12 @@ def main():
     #plt.scatter(acont[:, 0], acont[:, 1], color='red', s=45, edgecolor='black')
     #plt.scatter(cont[:, 0], cont[:, 1], color='yellow', s=15, edgecolor='black')
 
+    plt.scatter(cont[:, 0], cont[:, 1], color='black', s=45)
     plt.scatter(rpts[:, 0], rpts[:, 1], color='red', s=45, edgecolor='black')
     plt.scatter(pts2[:, 0], pts2[:, 1], color='yellow', s=15, edgecolor='black')
 
     trans, rot_mat = find_translation_and_rotation(pts2, rpts)
-    acont = trans_pts(pts2, trans, rot_mat)
+    acont = trans_pts(acont, trans, rot_mat)
 
 
     plt.scatter(acont[:, 0], acont[:, 1], color='green', s=35, edgecolor='black')
