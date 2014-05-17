@@ -2,15 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b9f8cf9a-3ad6-4a1a-9ce6-2711247eb2c0" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mat_name.mat" afterPath="$PROJECT_DIR$/mat_name.mat" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/contour_fitting.py" afterPath="$PROJECT_DIR$/scripts/contour_fitting.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/control_window.py" afterPath="$PROJECT_DIR$/gui/control_window.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_params.py" afterPath="$PROJECT_DIR$/experiment_params.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/init_window.py" afterPath="$PROJECT_DIR$/gui/init_window.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/score.py" afterPath="$PROJECT_DIR$/score.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/split_by_contours.py" afterPath="$PROJECT_DIR$/split_by_contours.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="ants.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -38,7 +30,18 @@
           <file leaf-file-name="split_by_contours.py" pinned="false" current="true" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/split_by_contours.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="443" column="4" selection-start="10445" selection-end="10445" vertical-scroll-proportion="0.1539735" vertical-offset="7737" max-vertical-offset="18252">
+                <state line="902" column="20" selection-start="21616" selection-end="21616" vertical-scroll-proportion="0.3923841" vertical-offset="15999" max-vertical-offset="19026">
+                  <folding>
+                    <element signature="e#24#37#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="__init__.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/cv2/__init__.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="1329" column="4" selection-start="34252" selection-end="34252" vertical-scroll-proportion="0.0" vertical-offset="23667" max-vertical-offset="40878">
                   <folding />
                 </state>
               </provider>
@@ -92,7 +95,7 @@
           <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/experiment_manager.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="148" column="35" selection-start="4912" selection-end="4912" vertical-scroll-proportion="0.0" vertical-offset="1458" max-vertical-offset="14832">
+                <state line="198" column="102" selection-start="6558" selection-end="6627" vertical-scroll-proportion="0.0" vertical-offset="2844" max-vertical-offset="14832">
                   <folding />
                 </state>
               </provider>
@@ -215,7 +218,7 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="49" />
+    <option name="x" value="1969" />
     <option name="y" value="24" />
     <option name="width" value="1871" />
     <option name="height" value="1056" />
@@ -578,13 +581,13 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="49" y="24" width="1871" height="1056" extended-state="6" />
+    <frame x="1969" y="24" width="1871" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32905295" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19934994" sideWeight="0.71657753" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.12026002" sideWeight="0.71657753" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.13217768" sideWeight="0.71657753" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3614973" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19398907" sideWeight="0.7326203" order="1" side_tool="true" content_ui="tabs" />
@@ -643,18 +646,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/my_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="130" column="31" selection-start="3020" selection-end="3020" vertical-scroll-proportion="0.0" vertical-offset="2067" max-vertical-offset="3348">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libs/clearmetrics/noplast_gt.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="2298" column="76" selection-start="244534" selection-end="244534" vertical-scroll-proportion="0.0" vertical-offset="81302" max-vertical-offset="203868" />
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/gt.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="93" column="33" selection-start="2769" selection-end="2769" vertical-scroll-proportion="0.0" vertical-offset="1674" max-vertical-offset="3996">
@@ -714,13 +705,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="148" column="35" selection-start="4912" selection-end="4912" vertical-scroll-proportion="0.0" vertical-offset="1458" max-vertical-offset="14832">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/scripts/contour_fitting.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="230" column="22" selection-start="5398" selection-end="5398" vertical-scroll-proportion="0.0" vertical-offset="3188" max-vertical-offset="4950">
@@ -742,10 +726,33 @@
         </state>
       </provider>
     </entry>
+    <entry file="file:///usr/lib/python2.7/lib-tk/Tkinter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="913" column="0" selection-start="36119" selection-end="36119" vertical-scroll-proportion="0.3806706" vertical-offset="16241" max-vertical-offset="67356">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="198" column="102" selection-start="6558" selection-end="6627" vertical-scroll-proportion="0.0" vertical-offset="3006" max-vertical-offset="14832">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/cv2/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="1329" column="4" selection-start="34252" selection-end="34252" vertical-scroll-proportion="0.0" vertical-offset="23721" max-vertical-offset="40878">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/split_by_contours.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="443" column="4" selection-start="10445" selection-end="10445" vertical-scroll-proportion="0.1539735" vertical-offset="7737" max-vertical-offset="18252">
-          <folding />
+        <state line="902" column="20" selection-start="21616" selection-end="21616" vertical-scroll-proportion="0.3923841" vertical-offset="15999" max-vertical-offset="19026">
+          <folding>
+            <element signature="e#24#37#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
