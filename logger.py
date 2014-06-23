@@ -16,13 +16,21 @@ class Logger():
         collection = visualize.draw_region_group_collection(img_copy, self.exp.regions, self.exp.groups, self.exp.params)
         cv2.imwrite(self.dir+"/collections/"+str(self.exp.params.frame)+".png", collection)
 
+        img_copy = self.exp.img_.copy()
+
+        collection = visualize.draw_region_group_collection2(img_copy, self.exp.regions, self.exp.groups, self.exp.params)
+        cv2.imwrite(self.dir+"/collections/"+str(self.exp.params.frame)+"_.png", collection)
+
     def log_regions(self):
         afile = open(self.dir+"/regions/"+str(self.exp.params.frame)+".pkl", "wb")
         pickle.dump(self.exp.regions, afile)
         afile.close()
 
     def log_frame(self):
-        cv2.imwrite(self.dir+"/frames/"+str(self.exp.params.frame)+".png", self.exp.img_sub_)
+        cv2.imwrite(self.dir+"/frames/"+str(self.exp.params.frame)+".png", self.exp.img_)
+
+    def log_frame_subtracted(self):
+        cv2.imwrite(self.dir+"/frames_sub/"+str(self.exp.params.frame)+".png", self.exp.img_sub)
 
     def log_frame_results(self):
         img_copy = self.exp.img_.copy()

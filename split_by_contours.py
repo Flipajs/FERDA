@@ -16,6 +16,7 @@ dist_thresh = 4
 in_debug = True
 
 cont_weight = None
+bounds = None
 
 def get_points(region):
     points = []
@@ -54,7 +55,7 @@ def get_contour(region, data=None):
     rows = max_r - min_r
     cols = max_c - min_c
 
-    img = np.zeros((rows+1, cols+1, 1), dtype=np.uint8)
+    img = np.zeros((rows+1, cols+1), dtype=np.uint8)
 
     if data == None:
         for r in region['rle']:
@@ -77,12 +78,11 @@ def get_contour(region, data=None):
 
     cnt = []
 
-    #for c in contours:
-    c = contours[0]
-    for pt in c:
-        cnt.append(pt)
+    for c in contours:
+        for pt in c:
+            cnt.append(pt)
 
-    img_cont = np.zeros((rows+1, cols+1, 1), dtype=np.uint8)
+    img_cont = np.zeros((rows+1, cols+1), dtype=np.uint8)
     pts = []
     for p in cnt:
         img_cont[p[0][1]][p[0][0]] = 255
@@ -98,6 +98,21 @@ def e_dist(p1, p2):
     return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
 
+def nearest_p_on_ant_bound_new(pt, ants):
+    best_dist = 1000000-1 #value lower than returned from nearest_pt
+    best_ant = -1
+    best = [-1, -1]
+
+    for a_id in range(len(ants)):
+        apt, d = nearest_pt_transform(ants[a_id], pt[0], pt[1])
+
+        if d < best_dist:
+            best = apt
+            best_dist = d
+            best_ant = a_id
+
+    return best, best_dist, best_ant
+
 def nearest_p_on_ant_bound(pt, ants):
     best_dist = sys.maxint
     best_ant = -1
@@ -105,6 +120,8 @@ def nearest_p_on_ant_bound(pt, ants):
 
     for a_id in range(len(ants)):
         a = ants[a_id]
+
+
         for apt in a['cont']:
             d = e_dist(apt, pt)
             if d < best_dist:
@@ -128,8 +145,8 @@ def nearest_p_on_region_bound(apt, region):
 
 
 def is_inside_region(apt, r):
-    x = apt[0] - r['x_min']
-    y = apt[1] - r['y_min']
+    x = apt[0] - r['min_c']
+    y = apt[1] - r['min_r']
     if x < 0:
         return False
     if x >= r['img'].shape[1]:
@@ -150,9 +167,16 @@ def region_boundary_cover(region, ants):
     s = 0
     pairs = []
     for pt in region['cont']:
-        apt, dist, best_ant = nearest_p_on_ant_bound(pt, ants)
-        pairs.append([apt, pt, best_ant])
-        s += dist
+        #apt, dist, best_ant = nearest_p_on_ant_bound(pt, ants)
+        #print pt
+        #print apt, dist, best_ant
+        apt, dist, best_ant = nearest_p_on_ant_bound_new(pt, ants)
+        #print apt, dist, best_ant
+
+
+        if dist < 1000000-1:
+            pairs.append([apt, pt, best_ant])
+            s += dist
 
     return pairs, s
 
@@ -162,9 +186,14 @@ def ant_boundary_cover(region, ant):
     pairs = []
     for apt in ant['cont']:
         if not is_inside_region(apt, region):
-            pt, dist = nearest_p_on_region_bound(apt, region)
-            pairs.append([apt, pt])
-            s += dist
+            pt, dist = nearest_pt(region, apt[0], apt[1])
+            #print apt
+            #print "nearest: ", pt, dist
+            #pt, dist = nearest_p_on_region_bound(apt, region)
+            #print "orig: ", pt, dist
+            if dist < 100000:
+                pairs.append([apt, pt])
+                s += dist
 
     return pairs, s
 
@@ -215,15 +244,26 @@ def plot_situation(region, ants):
     x = np.zeros(len(region['cont']))
     y = np.zeros(len(region['cont']))
 
+    rx = np.zeros(len(region['cont']))
+    ry = np.zeros(len(region['cont']))
     i = 0
     for pt in region['cont']:
         x[i] = pt[0]
         y[i] = pt[1]
+
         i += 1
 
-    plt.scatter(x, y, color='black', s=25)
 
-    colors = ['red', 'green', 'blue', 'yellow', 'cyan']
+
+    fig = plt.figure(figsize=(4, 6.5))
+    #fig.set_figheight(3)
+    #plt.xlim(715, 795)
+    #plt.ylim(280, 370)
+    reg = plt.scatter(x, y, color='#777777', s=35, edgecolor='k')
+    #plt.scatter(rx, ry, color='purple', s=15)
+
+    colors = ['magenta', 'cyan', 'yellow', 'blue', 'cyan']
+    legends = []
     for a_id in range(len(ants)):
         a = ants[a_id]
         x = np.zeros(len(a['cont']))
@@ -235,15 +275,26 @@ def plot_situation(region, ants):
             y[i] = pt[1]
             i += 1
 
-        plt.scatter(x, y, color=colors[a_id], s=15, edgecolor='black')
+        leg = plt.scatter(x, y, color=colors[a_id], s=35, edgecolor='black')
+        legends.append(leg)
 
 
 
 
-    plt.axis('equal')
     if in_debug:
+        #plt.legend((reg, legends[0], legends[1], legends[2]), ('Region points', 'Ant1 points', 'Ant2 points', 'Ant3 points'), scatterpoints=1,
+        #   loc='top right',
+        #   ncol=4,
+        #   fontsize=13)
+
+        #fig.set_figheight(3)
+        #plt.grid()
         plt.ion()
         plt.show()
+        #plt.axis([720, 790, 280, 365])
+        #plt.axis('equal')
+        #plt.xlim()
+        #plt.ylim()
         plt.waitforbuttonpress(0)
 
 
@@ -278,6 +329,7 @@ def trans_ant(ant, t, rot):
     #ant['min_x'] += t[0]
     #ant['min_y'] += t[1]
 
+    img_cont = np.zeros((ant['img_cont'].shape[0], ant['img_cont'].shape[1]), dtype=np.uint8)
     for i in range(len(ant['cont'])):
         pt = ant['cont'][i]
         pt2 = np.array([pt[0], pt[1]])
@@ -295,7 +347,7 @@ def trans_ant(ant, t, rot):
     pt2 = np.dot(rot, pt2.reshape(2, 1))
     ant['head_end'].x = pt2[0][0] + t[0]
     ant['head_end'].y = pt2[1][0] + t[1]
-    
+
     pt2 = np.array([ant['back_end'].x, ant['back_end'].y])
     pt2 = np.dot(rot, pt2.reshape(2, 1))
     ant['back_end'].x = pt2[0][0] + t[0]
@@ -305,6 +357,15 @@ def trans_ant(ant, t, rot):
     help = np.dot(rot, np.array([1, 0]).reshape(2, 1))
     ant['theta'] = math.atan2(help[1], help[0])
 
+
+    #for transformation to original ant distance_map
+    t, th = get_t_for_points2(ant)
+    rot = [[math.cos(th), -math.sin(th)], [math.sin(th), math.cos(th)]]
+
+    ant['global_t'][0] = t[0]
+    ant['global_t'][1] = t[1]
+
+    ant['global_rot'] = rot
 
     return True
 
@@ -336,15 +397,16 @@ def opt_ant(rpts, apts, a_id, i):
         if pts[2] == a_id:
             x.append([float(i) for i in pts[0]])
             y.append([float(i) for i in pts[1]])
-            if len(pts) > 3:
-                weight = pts[3]
+            #if len(pts) > 3:
+            #    weight = pts[3]
+            #else:
+
+            weight = 1
+
+            if dist_weight:
+                weight = np.linalg.norm(np.array(pts[0]) - np.array(pts[1]))
             else:
                 weight = 1
-
-            #if dist_weight:
-            #    weight = np.linalg.norm(np.array(pts[0]) - np.array(pts[1]))
-            #else:
-            #    weight = 1
 
             w_sum += weight
             w.append(weight)
@@ -358,6 +420,8 @@ def opt_ant(rpts, apts, a_id, i):
 
     x = np.array(x)
     y = np.array(y)
+
+
 
     #p /= float(len(apts) * weight + len(rpts))
     #q /= float(len(apts) * weight + len(rpts))
@@ -470,8 +534,11 @@ def iteration(region, ants, i):
         a = ants[id]
         ascores += ant_scores[id]
 
-        #rpts, rscore = region_boundary_cover(region, ants)
-        rpts, rscore = region_2_ant_plus_weights(region, ants)
+        rpts, rscore = region_boundary_cover(region, ants)
+        #rpts, rscore = region_2_ant_plus_weights(region, ants)
+
+        #print rpts
+        #plt.waitforbuttonpress(0)
 
         trans, rot = opt_ant(rpts, apts_list[id], id, i)
         trans_ant(a, trans, rot)
@@ -511,30 +578,44 @@ def prepare_ants(ant_ids, ants):
         #    continue
 
         if a.state.contour == None:
-            cont, _, _, min_r, min_c = get_contour(r)
+            cont, img, img_cont, min_r, min_c = get_contour(r)
         else:
             cont = a.state.contour
+            img = a.state.region['img']
+            min_c = sys.maxint
+            max_c = 0
+            min_r = sys.maxint
+            max_r = 0
+
+            for pt in cont:
+                p = [round(pt[0]), round(pt[1])]
+                if min_c > p[0]:
+                    min_c = p[0]
+                if max_c < p[0]:
+                    max_c = p[0]
+                if min_r > p[1]:
+                    min_r = p[1]
+                if max_r < p[1]:
+                    max_r = p[1]
+
+            img_cont = np.zeros((max_r - min_r + 1, max_c - min_c + 1), dtype=np.uint8)
+            for pt in cont:
+                img_cont[int(round(pt[1])) - min_r][int(round(pt[0])) - min_c] = 255
 
         th = a.state.theta
 
-        ant = {'id': a_id, 'x': a.state.position.x, 'y': a.state.position.y, 'theta': th, 'cont': cont}
-        ant['head_start'] = my_utils.Point(a.state.head.x, a.state.head.y)
-        ant['back_start'] = my_utils.Point(a.state.back.x, a.state.back.y)
+        ant = {'id': a_id, 'x': a.state.position.x, 'y': a.state.position.y, 'theta': th, 'cont': cont,
+               'min_r': min_r, 'min_c': min_c,
+               'img': img, 'img_cont': img_cont,
+               'head_start': my_utils.Point(a.state.head.x, a.state.head.y),
+               'back_start': my_utils.Point(a.state.back.x, a.state.back.y),
+               'head_end': my_utils.Point(a.state.head.x, a.state.head.y),
+               'back_end': my_utils.Point(a.state.back.x, a.state.back.y), 'x_old': a.state.position.x,
+               'y_old': a.state.position.y, 'a': r['a'], 'b': r['b'], 'area': r['area'], 'maxI': r['maxI'],
+               'sxy': r['sxy'], 'sxx': r['sxx'], 'syy': r['syy'],
+               'global_t': [0, 0],
+               'global_rot': np.array([[1, 0], [0, 1]])}
 
-        ant['head_end'] = my_utils.Point(a.state.head.x, a.state.head.y)
-        ant['back_end'] = my_utils.Point(a.state.back.x, a.state.back.y)
-
-        ant['x_old'] = a.state.position.x
-        ant['y_old'] = a.state.position.y
-
-        ant['a'] = r['a']
-        ant['b'] = r['b']
-
-        ant['area'] = r['area']
-        ant['maxI'] = r['maxI']
-        ant['sxy'] = r['sxy']
-        ant['sxx'] = r['sxx']
-        ant['syy'] = r['syy']
         if "points" not in r:
             ant['points'] = get_points(r)
         else:
@@ -548,7 +629,7 @@ def prepare_ants(ant_ids, ants):
 def prepare_region(exp_region, points):
     cont, img, img_cont, min_r, min_c = get_contour(exp_region, points)
 
-    region = {'cont': cont, 'y_min': min_r, 'x_min': min_c, 'img': img, 'img_cont': img_cont}
+    region = {'cont': cont, 'min_r': min_r, 'min_c': min_c, 'img': img, 'img_cont': img_cont}
     return region
 
 
@@ -566,36 +647,73 @@ def test_convergence(history):
     return False
 
 
+def get_t_for_points(a):
+    x = a['back_start'].x
+    y = a['back_start'].y
+
+    xx = a['head_start'].x - x
+    yy = a['head_start'].y - y
+
+    th1 = math.atan2(yy, xx)
+
+    x = a['back_end'].x
+    y = a['back_end'].y
+
+    xx = a['head_end'].x - x
+    yy = a['head_end'].y - y
+
+    th2 = math.atan2(yy, xx)
+
+    th = th2-th1
+
+    th2 = -th2
+    if th2 < 0:
+        th2 += math.pi
+
+    a['theta'] = th2
+    t = [a['x'] - a['x_old'], a['y'] - a['y_old']]
+    #print th * 57.3, th2 * 57.3
+    #print t
+
+    rot = [[math.cos(th), -math.sin(th)], [math.sin(th), math.cos(th)]]
+
+    return t, rot
+
+
+def get_t_for_points2(a):
+    x = a['back_start'].x
+    y = a['back_start'].y
+
+    xx = a['head_start'].x - x
+    yy = a['head_start'].y - y
+
+    th1 = math.atan2(yy, xx)
+
+    x = a['back_end'].x
+    y = a['back_end'].y
+
+    xx = a['head_end'].x - x
+    yy = a['head_end'].y - y
+
+    th2 = math.atan2(yy, xx)
+
+    th = th2-th1
+
+    th2 = -th2
+    if th2 < 0:
+        th2 += math.pi
+
+    a['theta'] = th2
+    t = [a['x'] - a['x_old'], a['y'] - a['y_old']]
+
+    return t, th
+
+
+
 def trans_region_points(ants):
     for a in ants:
-        x = a['back_start'].x
-        y = a['back_start'].y
+        t, rot = get_t_for_points(a)
 
-        xx = a['head_start'].x - x
-        yy = a['head_start'].y - y
-
-        th1 = math.atan2(yy, xx)
-        
-        x = a['back_end'].x
-        y = a['back_end'].y
-
-        xx = a['head_end'].x - x
-        yy = a['head_end'].y - y
-
-        th2 = math.atan2(yy, xx)
-
-        th = th2-th1
-
-        th2 = -th2
-        if th2 < 0:
-            th2 += math.pi
-
-        a['theta'] = th2
-        t = [a['x'] - a['x_old'], a['y'] - a['y_old']]
-        print th * 57.3, th2 * 57.3
-        print t
-
-        rot = [[math.cos(th), -math.sin(th)], [math.sin(th), math.cos(th)]]
         for i in range(len(a['points'])):
             pt = a['points'][i]
             pt2 = np.array([pt[0] - a['x_old'], pt[1] - a['y_old']])
@@ -634,7 +752,7 @@ def count_crossovers(ants, region):
 def get_ant_stability(ant, region):
     score = 0
     for apt in ant['cont']:
-        pt, d = nearest_p_on_region_bound(apt, region)
+        pt, d = nearest_pt(region, apt[0], apt[1])
         if d < dist_thresh:
             score += 1
         elif is_inside_region(apt, region):
@@ -645,7 +763,7 @@ def get_ant_stability(ant, region):
     return score / float(len(ant['cont']))
 
 
-def new_alg(ants, region):
+def move_unsettled(ants, region, params):
     stable_thresh = 0.75
 
     stable = np.ones(len(ants)) * [False]
@@ -656,7 +774,7 @@ def new_alg(ants, region):
         a = ants[a_id]
         s = get_ant_stability(a, region)
         scores[a_id] = s
-        print a_id, "stability: ", s
+        #print a_id, "stability: ", s
         if s > stable_thresh:
             stable[a_id] = True
             stable_num += 1
@@ -665,6 +783,9 @@ def new_alg(ants, region):
         return
 
     #kdyz jsou oba moc dobri, ale region to nevyvetluje, pak je mozne, ze maji velky prekryv a jeden se proste vybere a pusti se na nej nevysvetlena oblast.
+    #if stable_num == len(ants):
+    #    stable[0] = False
+    #    scores[0] = 0.74
 
     indexes = np.argsort(scores)
     ascores = 0
@@ -676,9 +797,10 @@ def new_alg(ants, region):
         hist[a_id][0] = ants[a_id]['y']
         hist[a_id][0] = 1000 #... ants['theta'] asi jeste neexistuje
 
-    for i in range(7):
+    #for i in range(7):
+    for i in range(5):
         changed = False
-        print i
+        #print i
         for id in indexes:
             if converged[id]:
                 continue
@@ -691,18 +813,20 @@ def new_alg(ants, region):
             apts, s = ant_boundary_cover(region, a)
             ascores += s
 
+            #TODO
+            #max_dist = params.avg_ant_axis_a
             rpts, rscore = region_boundary_cover2(region, ants, stable, 20)
 
             trans, rot = opt_ant(rpts, apts, id, i)
             trans_ant(a, trans, rot)
 
-            if test_position_convergence(a, hist[a_id]):
-                converged[a_id] = True
+            if test_position_convergence(a, hist[id]):
+                converged[id] = True
 
-            hist[a_id][0] = a['x']
-            hist[a_id][1] = a['y']
-            hist[a_id][2] = a['theta']
-            print a['x'], a['y'], a['theta']
+            hist[id][0] = a['x']
+            hist[id][1] = a['y']
+            hist[id][2] = a['theta']
+            #print a['x'], a['y'], a['theta']
 
             if in_debug:
                 plot_situation(region, ants)
@@ -774,9 +898,10 @@ def init(ants, region):
         trans, rot = opt_ant(rpts, apts_list[id], id, i)
         trans_ant(a, trans, rot)
 
+
 def test_position_convergence(a, history):
-    thresh = 0.5
-    thresh_th = 1
+    thresh = 1
+    thresh_th = 3
     x = history[0] - a['x']
     y = history[1] - a['y']
     th = abs(history[2] - a['theta'])
@@ -835,15 +960,40 @@ def region_2_ant_pt_assignment(pt, ants, stable, max_dist):
 
     for a_id in range(len(ants)):
         a = ants[a_id]
-        for apt in a['cont']:
-            d = e_dist(apt, pt)
-            if d < best_dist and (not stable[a_id] or d < dist_thresh):
-                best = apt
-                best_dist = d
-                best_ant = a_id
 
+        apt, d = nearest_pt_transform(a, pt[0], pt[1])
+        #d = e_dist(apt, pt)
+        if d < best_dist and (not stable[a_id] or d < dist_thresh):
+            best = apt
+            best_dist = d
+            best_ant = a_id
 
+    #for a_id in range(len(ants)):
+    #    a = ants[a_id]
+    #    for apt in a['cont']:
+    #        d = e_dist(apt, pt)
+    #        if d < best_dist and (not stable[a_id] or d < dist_thresh):
+    #            best = apt
+    #            best_dist = d
+    #            best_ant = a_id
+    #
+    #return best, best_dist, best_ant
 
+    #best_dist = max_dist
+    #best_ant = -1
+    #best = [-1, -1]
+    #
+    #for a_id in range(len(ants)):
+    #    a = ants[a_id]
+    #    for apt in a['cont']:
+    #        d = e_dist(apt, pt)
+    #        if d < best_dist and (not stable[a_id] or d < dist_thresh):
+    #            best = apt
+    #            best_dist = d
+    #            best_ant = a_id
+    #
+    #
+    #
     return best, best_dist, best_ant
 
 
@@ -895,79 +1045,209 @@ def get_contour_weights(region):
 
     return weights
 
-def distance_map_test(r):
-    #img = r['img_cont'].reshape(35, 38)
-    img = r['img_cont']
-    img = img.reshape(img.shape[0], img.shape[1])
-    img = np.invert(img)
-    #print img.shape
 
-    #ndimage.distance_transform_edt()
-    #input = np.array([[255, 255, 255, 255, 255],
-    #         [255, 255, 255, 255, 255],
-    #         [255, 255, 0, 0, 255],
-    #         [255, 255, 255, 255, 255],
-    #         [255, 255, 255, 255, 255]], dtype='uint8')
+def nearest_pt(o, x, y):
+    x = round(x)
+    y = round(y)
+    if x < bounds['min_c_minus_margin'] or x >= bounds['max_c_plus_margin'] or y < bounds['min_r_minus_margin'] or y >= bounds['max_r_plus_margin']:
+        new_x = x
+        new_y = y
+        if new_x < bounds['min_c_minus_margin']:
+            new_x = bounds['min_c_minus_margin']
+        if new_x > bounds['max_c_plus_margin']:
+            new_x = bounds['max_c_plus_margin']
+
+        if new_y < bounds['min_r_minus_margin']:
+            new_y = bounds['min_r_minus_margin']
+        if new_y > bounds['max_r_plus_margin']:
+            new_y = bounds['max_r_plus_margin']
+
+        d = math.sqrt((x-new_x)**2 + (y-new_y)**2)
+        #print "OUT OF BOUNDS", x, y
+        return [new_x, new_y], d
+
+    r = y - bounds['min_r_minus_margin']
+    c = x - bounds['min_c_minus_margin']
+
+    d = o['dist_map'][r, c]
+    pt = o['dist_map_labels'][:, r, c]
+
+    nearest = [pt[1] + bounds['min_c_minus_margin'], pt[0] + bounds['min_r_minus_margin']]
+    return nearest, d
+
+
+def nearest_pt_transform(o, x, y):
+    t = np.array(o['global_t'])
+    rot = np.array(o['global_rot'])
+
+    ox = np.array([float(o['x']), float(o['y'])])
+    ox_old = np.array([float(o['x_old']), float(o['y_old'])])
+
+    pt = np.array([float(x), float(y)])
+    pt -= ox
+    pt = np.dot(rot.T, pt.reshape(2, 1))
+    pt = pt.reshape(2)
+    pt += ox
+    pt -= t
+
+    nearest, d = nearest_pt(o, pt[0], pt[1])
+
+    pt = np.array(nearest)
+    pt = np.array([float(pt[0]), float(pt[1])])
+    pt -= ox_old
+    pt = np.dot(rot, pt.reshape(2, 1))
+    pt = pt.reshape(2)
+    pt += ox_old
+    pt += t
+
+    #pt = np.array([x, y])
+    #pt -= ox
+    #pt = np.dot(rot.T, pt.reshape(2, 1))
+    #pt = pt.reshape(2)
+    #pt += ox
+    #pt -= t
     #
-    #print input
-    edt, inds = ndimage.distance_transform_edt(img, return_indices=True)
-    print edt.shape
-    plt.imshow(edt)
-    plt.gray()
-    plt.show()
+    #nearest, d = nearest_pt(o, pt[0], pt[1])
+    #
+    #pt = np.array(nearest)
+    #pt -= ox
+    #pt = np.dot(rot, pt.reshape(2, 1))
+    #pt = pt.reshape(2)
+    #pt += ox
+    #pt += t
 
-def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterations=30, debug=False):
+    nearest = [pt[0], pt[1]]
+
+    #pt2 = np.array([x - o['x'], y - o['y']])
+    #pt2 = np.dot(o['global_rot'], pt2.reshape(2, 1))
+    #
+    #new_x = pt2[0][0] + o['x_old'] + o['global_t'][0]
+    #new_y = pt2[1][0] + o['y_old'] + o['global_t'][1]
+    #
+    #nearest, d = nearest_pt(o, new_x, new_y)
+    #
+    #nearest[0] -= o['x_old']
+    #nearest[1] -= o['y_old']
+    #
+    #nearest = np.dot(np.array(o['global_rot']).T, np.array(nearest).reshape(2, 1))
+    #nearest = [nearest[0][0] + o['x_old'] + t[0], nearest[1][0] + o['y_old'] + t[1]]
+
+    return nearest, d
+
+
+def count_distance_maps(o, bounds):
+    img = np.zeros((bounds['max_r'] - bounds['min_r'] + 2 * bounds['margin'],
+                    bounds['max_c'] - bounds['min_c'] + 2 * bounds['margin']), dtype='uint8')
+
+    r = o['min_r'] - bounds['min_r'] + bounds['margin']
+    c = o['min_c'] - bounds['min_c'] + bounds['margin']
+    img[r:r+o['img_cont'].shape[0], c:c+o['img_cont'].shape[1]] = o['img_cont']
+    img = np.invert(img)
+
+    o['dist_map'], o['dist_map_labels'] = ndimage.distance_transform_edt(img, return_indices=True)
+
+
+def prepare_distance_maps(r, ants):
+    min_rs = [r['min_r']]
+    min_cs = [r['min_c']]
+    max_rs = [r['min_r'] + r['img_cont'].shape[0]]
+    max_cs = [r['min_c'] + r['img_cont'].shape[1]]
+
+    for a in ants:
+        min_rs.append(a['min_r'])
+        min_cs.append(a['min_c'])
+        max_rs.append(a['min_r'] + a['img_cont'].shape[0])
+        max_cs.append(a['min_c'] + a['img_cont'].shape[1])
+
+    global bounds
+    margin = 5
+    bounds = {'min_r': np.min(min_rs), 'min_c': np.min(min_cs),
+              'max_r': np.max(max_rs), 'max_c': np.max(max_cs),
+              'min_r_minus_margin': np.min(min_rs) - margin,
+              'min_c_minus_margin': np.min(min_cs) - margin,
+              'max_r_plus_margin': np.max(max_rs) + margin,
+              'max_c_plus_margin': np.max(max_cs) + margin,
+              'margin': margin}
+
+    count_distance_maps(r, bounds)
+    for a in ants:
+        count_distance_maps(a, bounds)
+
+
+#def distance_map_test(r):
+#    img = r['img_cont']
+#    img = img.reshape(img.shape[0], img.shape[1])
+#    img = np.invert(img)
+#
+#    start = time.time()
+#    edt, inds = ndimage.distance_transform_edt(img, return_indices=True)
+#    #edt, inds = cv2.distanceTransformWithLabels(img, cv.CV_DIST_L2, 3, labels=True)
+#    print "TIME: ", time.time() - start
+#    print edt.shape
+#
+#    pt, d = nearest_pt(edt, inds, [0, 0])
+#    print pt, d
+
+#def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterations=30, debug=False):
+def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterations=10, debug=False):
     global in_debug
     run = False
     if params is not None:
         run = True
         in_debug = False
 
+    debug = False
+    in_debug = False
+
     if run:
         frame = params.frame
         ants = prepare_ants(ants_ids, exp_ants)
         region = prepare_region(exp_region, points)
 
-        #if len(region['cont']) > 300:
-        #    print "too big region"
-        #    return []
+        prepare_distance_maps(region, ants)
 
+        pack = [ants, region, bounds]
 
-        pack = [ants, region]
-
-        afile = open(params.dumpdir+"/split_by_cont/"+str(frame)+"_"+str(ants_ids[0])+".pkl", "wb")
-        pickle.dump(pack, afile)
-        afile.close()
+        if debug:
+            afile = open(params.dumpdir+"/split_by_cont/"+str(frame)+"_"+str(ants_ids[0])+".pkl", "wb")
+            pickle.dump(pack, afile)
+            afile.close()
     else:
         dir = os.path.expanduser('~/dump/eight')
+        afile = open(dir+"/split_by_cont/209_1.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/60_4.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/452_0.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/727_0.pkl", "rb")
         #afile = open(dir+"/split_by_cont/695_0.pkl", "rb")
         #afile = open(dir+"/split_by_cont/1143_1.pkl", "rb")
-        afile = open(dir+"/split_by_cont/209_3.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/209_3.pkl", "rb")
         #afile = open(dir+"/split_by_cont/703_0.pkl", "rb")
         #afile = open(dir+"/split_by_cont/704_0.pkl", "rb")
-        #afile = open(dir+"/split_by_cont/672_5.pkl", "rb")
+        #afile = open(dir+"/split_by_cont/673_1.pkl", "rb")
         #afile = open(dir+"/split_by_cont/690_0.pkl", "rb")
         #afile = open(dir+"/split_by_cont/691_0.pkl", "rb")
         pack = pickle.load(afile)
         afile.close()
         ants = pack[0]
         region = pack[1]
+        global bounds
+        bounds = pack[2]
 
         #afile = open(dir+"/regions/695.pkl", "rb")
         ##afile = open(dir+"/regions/1143.pkl", "rb")
-        afile = open(dir+"/regions/209.pkl", "rb")
+        #afile = open(dir+"/regions/209.pkl", "rb")
         ##afile = open(dir+"/regions/703.pkl", "rb")
         #
-        regions = pickle.load(afile)
-        afile.close()
+        #regions = pickle.load(afile)
+        #afile.close()
         #
         #region = regions[1]
         ##region = regions[12]
-        region = regions[11]
+        #region = regions[11]
         ##region = regions[2]
-        points = get_points(region)
+        #points = get_points(region)
         #
-        region = prepare_region(exp_region, points)
+        #region = prepare_region(exp_region, points)
 
     history = []
 
@@ -976,13 +1256,13 @@ def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterati
         plot_situation(region, ants)
         plt.savefig(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.png')
         plt.close(fig)
-        im = draw_situation(region, ants, img_shape)
-        cv2.imshow('test', im)
-        cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.jpg', im)
+        #im = draw_situation(region, ants, img_shape)
+        #cv2.imshow('test', im)
+        #cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.jpg', im)
 
     #if not run:
     #    plot_situation(region, ants)
-    #    #new_alg(ants, region)
+    #    #move_unsettled(ants, region)
     #    #im = draw_situation(region, ants, img_shape)
     #    #cv2.imshow('test', im)
     #    #cv2.waitKey(0)
@@ -990,12 +1270,16 @@ def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterati
     #global cont_weight
     #cont_weight = get_contour_weights(region)
 
-    distance_map_test(region)
-    return
+    #distance_map_test(region)
+    #return
+
     #init(ants, region)
     #iteration(region, ants, 0)
     #plot_situation(region, ants)
-    #new_alg(ants, region)
+
+    #plot_situation(region, ants)
+    #plot_situation(region, ants)
+    move_unsettled(ants, region, params)
 
     done = False
     for i in range(max_iterations):
@@ -1008,33 +1292,33 @@ def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterati
 
         rscore, ascore = iteration(region, ants, i)
         history.append([rscore, ascore])
-        print i, rscore, ascore
-        #if test_convergence(history):
-        #    done = True
-        #    break
+        #print i, rscore, ascore, rscore+ascore
+        if test_convergence(history):
+            done = True
+            break
 
 
     trans_region_points(ants)
     count_overlaps(ants, img_shape)
     count_crossovers(ants, region)
 
-    im = draw_situation(region, ants, img_shape, fill=True)
+    #im = draw_situation(region, ants, img_shape, fill=True)
     if run and debug:
         fig = plt.figure()
         plot_situation(region, ants)
         if not done:
-            cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_e.jpg', im)
+            #cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_e.jpg', im)
             plt.savefig(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_e.png')
         else:
-            cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_en.jpg', im)
+            #cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_en.jpg', im)
             plt.savefig(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_en.png')
 
         plt.close(fig)
 
-    if not run:
-        im = draw_situation(region, ants, img_shape, fill=True)
-        cv2.imshow('test', im)
-        cv2.waitKey(0)
+    #if not run:
+    #    im = draw_situation(region, ants, img_shape, fill=True)
+        #cv2.imshow('test', im)
+        #cv2.waitKey(0)
 
 
     #im = draw_situation(region, ants)

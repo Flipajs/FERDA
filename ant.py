@@ -34,7 +34,7 @@ class AntState():
     lost_time = 0
     collision_predicted = False
     collisions = []
-    score = 0
+    score = 2
 
     region = None
     contour = None
@@ -42,6 +42,32 @@ class AntState():
     def __init__(self):
         pass
 
+class AntStateReduced():
+    position = my_utils.Point(0, 0)
+    theta = 0
+    head = my_utils.Point(0, 0)
+    back = my_utils.Point(0, 0)
+    a = 0
+    b = 0
+    area = -1
+    lost = False
+    lost_time = 0
+    collision_predicted = False
+    score = 2
+
+    def __init__(self, state):
+        self.position = my_utils.Point(state.position.x, state.position.y)
+        self.theta = state.theta
+        self.head = state.head
+        self.back = state.back
+        self.a = state.a
+        self.b = state.b
+        self.area = state.area
+        self.lost = state.lost
+        self.lost_time = state.lost_time
+
+        self.collision_predicted = state.collision_predicted
+        self.score = state.score
 
 class Ant():
     def __init__(self, id):
@@ -222,7 +248,9 @@ def count_head_tail(ant):
 
 def set_ant_state(ant, mser_id, region, add_history=True, cost=0):
     if ant.state.area > 0 and add_history:
-        ant.history.appendleft(copy.copy(ant.state))
+        ant_state_reduced = AntStateReduced(ant.state)
+        ant.history.appendleft(ant_state_reduced)
+        #ant.history.appendleft(copy.copy(ant.state))
 
     area_weight = 0.01
     ant.state.mser_id = mser_id
@@ -262,7 +290,9 @@ def set_ant_state(ant, mser_id, region, add_history=True, cost=0):
 
 def set_ant_state_undefined(ant, mser_id):
     if ant.state.area > 0:
-        ant.history.appendleft(copy.copy(ant.state))
+        ant_state_reduced = AntStateReduced(ant.state)
+        ant.history.appendleft(ant_state_reduced)
+        #ant.history.appendleft(copy.copy(ant.state))
 
     if mser_id < 0:
         ant.state.info = "NASM"

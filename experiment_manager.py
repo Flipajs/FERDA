@@ -56,7 +56,7 @@ class ExperimentManager():
         mask = my_utils.prepare_image(img, self.params)
         self.img_sub_ = mask
         end = time.time()
-        print "time image: ", end - start
+        #print "time image: ", end - start
 
 
         self.history_frame_counters(forward)
@@ -66,7 +66,7 @@ class ExperimentManager():
             start = time.time()
             self.collisions = collisions.collision_detection(self.ants, self.params, self.history+1)
             end = time.time()
-            print "time collisions: ", end - start
+            #print "time collisions: ", end - start
 
         start = time.time()
         self.regions, self.chosen_regions_indexes = self.mser_operations.process_image(mask, intensity_threshold)
@@ -75,24 +75,24 @@ class ExperimentManager():
 
         self.chosen_regions_indexes = self.filter_out_children(self.chosen_regions_indexes)
         end = time.time()
-        print "timemsers etc. ", end - start
+        #print "timemsers etc. ", end - start
 
         start = time.time()
         assignment, costs, unassigned_ants, unassigned_regions = self.solve_splitting(self.chosen_regions_indexes)
         end = time.time()
-        print "time splitting: ", end - start
+        #print "time splitting: ", end - start
 
         #self.solve_collisions(indexes)
-        print "INDEXES: ", self.chosen_regions_indexes
+        #print "INDEXES: ", self.chosen_regions_indexes
         if forward and self.history < 0:
             start = time.time()
             assignment, costs = score.max_weight_matching(self.ants, self.regions, unassigned_ants, unassigned_regions, assignment, costs, self.params)
             end = time.time()
-            print "time graph1. ", end - start
+            #print "time graph1. ", end - start
             start = time.time()
             result, costs = self.solve_lost(self.ants, self.regions, self.chosen_regions_indexes, assignment, costs)
             end = time.time()
-            print "time graph2. ", end - start
+            #print "time graph2. ", end - start
 
 
         if self.params.show_assignment_problem:
@@ -205,8 +205,8 @@ class ExperimentManager():
         graph = self.prepare_graph(indexes)
         ant_region_assignment, costs = self.solve_graph(graph)
 
-        print "ASSIGNMENT: ", ant_region_assignment
-        print "COSTS: ", costs
+        #print "ASSIGNMENT: ", ant_region_assignment
+        #print "COSTS: ", costs
         assignment = [-1] * len(self.ants)
 
         unassigned_ants = []
@@ -218,7 +218,7 @@ class ExperimentManager():
                     ant_ids.append(a.id)
 
             if len(ant_ids) > 1:
-                print "SPLITTING: ", r_id, ant_ids
+                #print "SPLITTING: ", r_id, ant_ids
                 split_results = self.split(r_id, ant_ids, indexes)
                 for a_id in ant_ids:
                     unassigned_ants.append(a_id)
@@ -253,7 +253,7 @@ class ExperimentManager():
 
         l_result, l_costs = score.max_weight_matching_lost(ants, lost_ants, regions, free_regions, self.params)
 
-        print "### SOLVE_LOST: l_result: ", l_result
+        #print "### SOLVE_LOST: l_result: ", l_result
 
         for id in range(len(lost_ants)):
             result[lost_ants[id]] = l_result[id]
@@ -273,7 +273,7 @@ class ExperimentManager():
 
             self.ground_truth.display_stats()
 
-        print "#SPLITTED: ", self.number_of_splits
+        #print "#SPLITTED: ", self.number_of_splits
 
     def update_ants_and_intensity_threshold(self, result, costs):
         max_i = 0
@@ -303,8 +303,8 @@ class ExperimentManager():
             print "history ", self.history
             self.params.frame -= 1
 
-        print " "
-        print "FRAME: ", self.params.frame
+        #print " "
+        #print "FRAME: ", self.params.frame
 
     def solve_collisions(self, indexes):
         cg_ants_idx = self.collision_groups_idx(self.collisions)
@@ -322,18 +322,18 @@ class ExperimentManager():
                     if c[0] in cg_ants_idx[key]:
                         cg_region_groups_idx[key].append(i)
 
-        print "collisions: ", self.collisions
-        print "cg_ants_idx: ", cg_ants_idx
-        print "cg_region_groups_idx: ", cg_region_groups_idx
+        #print "collisions: ", self.collisions
+        #print "cg_ants_idx: ", cg_ants_idx
+        #print "cg_region_groups_idx: ", cg_region_groups_idx
 
-        print "avg_area ", self.params.avg_ant_area
+        #print "avg_area ", self.params.avg_ant_area
 
         for key in cg_ants_idx:
             result = self.solve_cg(cg_ants_idx[key], cg_region_groups_idx[key], self.groups_avg_pos)
-            if result:
-                print "seolve_cg result: ", result
-            else:
-                print "solve_cg result: NONE"
+            #if result:
+            #    print "seolve_cg result: ", result
+            #else:
+            #    print "solve_cg result: NONE"
 
             #result = self.solve_to_be_split(cg_ants_idx[key], cg_region_groups_idx[key])
             for r in result:
@@ -345,7 +345,7 @@ class ExperimentManager():
 
                 if len(ant_ids) > 1:
                     self.number_of_splits += 1
-                    print "SPLITTING mser_id: ", region_id
+                    #print "SPLITTING mser_id: ", region_id
 
                     points = mser_operations.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
                     split_results = split_by_contours.solve(self.regions[region_id], points, r[1], self.ants, self.params.frame, self.img_.shape, debug=True)
@@ -409,7 +409,7 @@ class ExperimentManager():
             indexes.append(len(regions))
             regions.append(r)
 
-            print "ADDED"
+            #print "ADDED"
 
             i += 1
 
@@ -492,7 +492,7 @@ class ExperimentManager():
     def solve_to_be_split(self, ants_idx, groups_idx):
         num_antlike = self.count_antlike_regions2(groups_idx)
         if num_antlike >= len(ants_idx):
-            print "Nothing to solve"
+            #print "Nothing to solve"
             return []
 
         ants_num = len(ants_idx)
@@ -514,7 +514,7 @@ class ExperimentManager():
             else:
                 region_ant_size += math.floor(a)
 
-        print "ants: ", ants_idx, "regions: ", regions_idx, "ras: ", region_ant_size
+        #print "ants: ", ants_idx, "regions: ", regions_idx, "ras: ", region_ant_size
 
         increase = 0
         while ants_num > region_ant_size + increase:
@@ -555,7 +555,7 @@ class ExperimentManager():
 
         #if len(ants_idx) <= num_antlike:
         if num_antlike == len(groups_idx):
-            print "nothing to solve... #A: ", len(ants_idx), " num_antlike: ", num_antlike
+            #print "nothing to solve... #A: ", len(ants_idx), " num_antlike: ", num_antlike
             return []
 
         to_be_splitted = []
@@ -664,8 +664,8 @@ class ExperimentManager():
             self.params.avg_ant_axis_ratio = avg_axis_ratio / counter
             self.params.avg_ant_axis_a = avg_axis_a / counter
             self.params.avg_ant_axis_b = avg_axis_b / counter
-        else:
-            print "zero ant assigned... in Experiment_manager.py"
+        #else:
+            #print "zero ant assigned... in Experiment_manager.py"
 
         #print "AVG ANT AREA> ", self.params.avg_ant_area
         #print "AVG ANT AXIS RATIO> ", self.params.avg_ant_axis_ratio
@@ -684,26 +684,34 @@ class ExperimentManager():
         data = {}
         d = 2
 
+        certainty = {}
+
         for i in range(0, self.params.frame):
             vals = []
+            cvals = []
             #vals = np.zeros((self.params.ant_number, 2))
             for a_id in range(self.params.ant_number):
                 state = self.ants[a_id].history[self.params.frame - i - 1]
                 vals.append(np.array([state.position.x, state.position.y]))
+                cvals.append(state.score)
                 #vals[a_id][0] = state.position.x
                 #vals[a_id][1] = state.position.y
 
             data[i] = vals
+            certainty[i] = cvals
 
         vals = []
+        cvals = []
         for a_id in range(self.params.ant_number):
             vals.append(np.array([self.ants[a_id].state.position.x, self.ants[a_id].state.position.y]))
+            cvals.append(state.score)
             #vals[a_id][0] = self.ants[a_id].state.position.x
             #vals[a_id][1] = self.ants[a_id].state.position.y
 
         data[i+1] = vals
+        certainty[i+1] = cvals
 
-        return data
+        return data, certainty
 
     def adjust_dynamic_intensity_threshold(self, max_i):
         self.dynamic_intensity_threshold.appendleft(copy.copy(self.params.intensity_threshold))

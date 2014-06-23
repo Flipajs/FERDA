@@ -46,15 +46,19 @@ def draw_ants(img, ants, regions, filled, history=0):
     for i in range(len(ants)):
         c = ants[i].color
 
-        for j in range(history, len(ants[i].history)):
-            if j > 50:
-                break
-
-            path_strength = 0
+        radius = 1
+        for j in range(history+1, min(len(ants[i].history), 250)):
+            path_strength = radius-2
+            if path_strength < 0:
+                path_strength = 0
             if j < 15:
-                path_strength = 1
+                path_strength = radius-1
+                if path_strength < 1:
+                    path_strength = 1
+
 
             cv2.circle(img, ants[i].history[j].position.int_tuple(), path_strength, c, -1)
+
 
         mser_id = ants[i].state.mser_id
         if history > 0:
@@ -75,11 +79,11 @@ def draw_ants(img, ants, regions, filled, history=0):
                     cv2.circle(img, (a["col1"], a["line"]), 0, c, -1)
                     cv2.circle(img, (a["col2"], a["line"]), 0, c, -1)
         else:
-            if history == 0:
-                cv2.line(img, ants[i].state.position.int_tuple(), ants[i].predicted_position(1).int_tuple(), (255, 255, 255), 1)
+            #if history == 0:
+            #    cv2.line(img, ants[i].state.position.int_tuple(), ants[i].predicted_position(1).int_tuple(), (255, 255, 255), 1)
 
-            if len(ants[0].history) > 0:
-                cv2.line(img, ants[i].history[0].position.int_tuple(), ants[i].state.position.int_tuple(), (0, 255, 255), 2)
+            #if len(ants[0].history) > 0:
+            #    cv2.line(img, ants[i].history[0].position.int_tuple(), ants[i].state.position.int_tuple(), (0, 255, 255), 2)
 
             #c = (0, 0, 0)
             #if ants[i].state.orientation:
@@ -89,12 +93,12 @@ def draw_ants(img, ants, regions, filled, history=0):
             if history > 0:
                 a = ants[i].history[history-1]
 
-            cv2.circle(img, a.position.int_tuple(), 3, (255,255,255), -1)
-            cv2.circle(img, a.head.int_tuple(), 2, (255,255,255), -1)
-            cv2.circle(img, a.back.int_tuple(), 2, (255,255,255), -1)
-            cv2.circle(img, a.head.int_tuple(), 1, c, -1)
-            cv2.circle(img, a.back.int_tuple(), 1, c, -1)
-            cv2.circle(img, a.position.int_tuple(), 2, c, -1)
+            cv2.circle(img, a.position.int_tuple(), radius+2, (255,255,255), -1)
+            cv2.circle(img, a.head.int_tuple(), radius+1, (255,255,255), -1)
+            cv2.circle(img, a.back.int_tuple(), radius+1, (255,255,255), -1)
+            cv2.circle(img, a.head.int_tuple(), radius, c, -1)
+            cv2.circle(img, a.back.int_tuple(), radius, c, -1)
+            cv2.circle(img, a.position.int_tuple(), radius+1, c, -1)
 
     return img
 
@@ -221,7 +225,7 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
             if best_margin_id == col and margins[best_margin_id] != 0:
                 c = (0, 138, 212)
 
-            draw_region(img_[border:-border, border:-border], r, c, contour=True)
+            draw_region(img_[border:-border, border:-border], r, c)
 
 
             img_small = img_[border + r[
@@ -232,13 +236,83 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
             _, a, b = my_utils.mser_main_axis_ratio(r["sxy"], r["sxx"], r["syy"])
             a, b = my_utils.count_head_tail(r["area"], a, b)
 
-            cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
             #if col == best_id:
-            cv2.putText(img_small, str(r['a'])[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-            cv2.putText(img_small, str(r['area']/(r['a']*2))[0:5], (35, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 0), 1, cv2.CV_AA)
-            cv2.putText(img_small, str(r['area']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-            cv2.putText(img_small, str(r['maxI']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 255), 1, cv2.CV_AA)
-            cv2.putText(img_small, str(r['margin']), (3, 65), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(r['a'])[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(r['area']/(r['a']*2))[0:5], (35, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 0), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(r['area']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(r['maxI']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 255), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(r['margin']), (3, 65), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            collection[(row + row_p) * cell_size:((row + row_p) + 1) * cell_size, num_strip + (col + col_p) * cell_size:num_strip + ((col + col_p) + 1) * cell_size, :] = img_small
+
+    #print "COUNTER: ", counter
+
+    return collection
+
+def draw_region_group_collection2(img, regions, groups, params, cell_size=70):
+    rows = int(math.ceil(len(groups) / 2.))
+    cols = 0
+    for g in groups:
+        if len(g) > cols:
+            cols = len(g)
+
+    num_strip = 20
+    collection = zeros((rows * cell_size, 2*(cols * cell_size) + num_strip + cell_size, 3), dtype=uint8)
+    border = cell_size
+
+    col_p = 0
+    row_p = 0
+
+    img_ = zeros((shape(img)[0] + 2 * border, shape(img)[1] + 2 * border, 3), dtype=uint8)
+    counter = 0
+    for row in range(len(groups)):
+        if row >= rows:
+                row_p = -rows
+                col_p = cols+1
+
+        cv2.putText(collection, str(row), (3 + cell_size*col_p, 30 + cell_size*(row+row_p)), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+
+        best_id = -1
+        margins = [0]*len(groups[row])
+        for col in range(len(groups[row])):
+            r = regions[groups[row][col]]
+
+            margins[col] = r['margin']
+
+        best_margin_id = argmax(array(margins))
+
+
+        for col in range(len(groups[row])):
+
+            img_[border:-border, border:-border] = img.copy()
+            r = regions[groups[row][col]]
+            if r["cx"] == inf or r["cy"] == inf:
+                continue
+
+            c = (0, 255, 0)
+
+            #if best_margin_id == col and margins[best_margin_id] != 0:
+            #    c = (0, 138, 212)
+
+            draw_region(img_[border:-border, border:-border], r, c)
+
+
+            img_small = img_[border + r[
+                "cy"] - cell_size / 2:border + r["cy"] + cell_size / 2, border + r["cx"] - cell_size / 2:border + r[
+                "cx"] + cell_size / 2].copy()
+
+
+            _, a, b = my_utils.mser_main_axis_ratio(r["sxy"], r["sxx"], r["syy"])
+            a, b = my_utils.count_head_tail(r["area"], a, b)
+
+            #cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+            #if col == best_id:
+            #cv2.putText(img_small, str(r['a'])[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(r['area']/(r['a']*2))[0:5], (35, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 0), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(r['area']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(r['maxI']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 255), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(r['margin']), (3, 65), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(r['margin']), (3, 15), cv2.FONT_HERSHEY_PLAIN, 0.8, (0, 0, 0), 1, cv2.CV_AA)
             collection[(row + row_p) * cell_size:((row + row_p) + 1) * cell_size, num_strip + (col + col_p) * cell_size:num_strip + ((col + col_p) + 1) * cell_size, :] = img_small
 
     #print "COUNTER: ", counter

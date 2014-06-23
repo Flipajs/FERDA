@@ -13,6 +13,7 @@ import cv2
 import visualize
 import experiment_params
 import os
+import scipy.ndimage
 
 
 class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
@@ -112,14 +113,14 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
             if img is None:
                 break
 
-            if i > 1000:
+            if i > 1500:
                 break
 
             if i % 50 != 0:
                 continue
 
             if bg is not None:
-                self.b_count_bg_model.setText('processing... '+str(i/10)+' / 100')
+                self.b_count_bg_model.setText('processing... '+str(i/15)+' / 100')
                 bg = np.maximum(bg, img)
                 cv2.imshow("bg model", bg)
                 cv2.waitKey(20)
@@ -128,7 +129,10 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
 
         self.video_manager = video_manager.VideoManager(self.params.video_file_name)
         self.video_manager.next_img()
+        bg = scipy.ndimage.gaussian_filter(bg, sigma=1)
         self.bg = bg
+
+
         self.b_count_bg_model.setText('done')
 
         self.b_use_model.setEnabled(True)
@@ -140,9 +144,9 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
 
     def invert_image(self):
         self.params.inverted_image = self.ch_invert_image.isChecked()
-        self.img = np.invert(self.img)
+        img = np.invert(self.img)
 
-        gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         cv2.imshow("preview", gray)
 
     def video_continue(self):
@@ -175,6 +179,7 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         img_ = self.img.copy()
 
         mask = my_utils.prepare_image(img_, self.params)
+        cv2.imshow("AAA", mask)
 
         mser_op = mser_operations.MserOperations(self.params)
         self.regions, self.chosen_regions_indexes = mser_op.process_image(mask)

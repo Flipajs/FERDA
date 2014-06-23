@@ -4,6 +4,7 @@ import cv2
 import my_utils
 import pickle
 import os
+import scipy.ndimage
 
 
 class Params():
@@ -15,19 +16,20 @@ class Params():
         self.avg_ant_axis_ratio = 4.2
         self.max_axis_ratio_diff = 2
         self.max_area_diff = 0.6
+        #mser min margin
         self.min_margin = 5
 
         self.inverted_image = False
 
         #TODO> WTF factor ~ INF
-        self.undefined_threshold = 0.000001
-
-        self.weighted_matching_lost_edge_cost = 0.0001
+        #self.undefined_threshold = 0.000001
+        self.undefined_threshold = 0.001
+        self.weighted_matching_lost_edge_cost = 0.001
 
         self.mser_times = 0
         self.frame = 0
 
-        self.use_gt = True
+        self.use_gt = False
         self.gt_repair = False
         self.fast_start = True
 
@@ -39,17 +41,17 @@ class Params():
         self.show_mser_collection = False
         self.show_ants_collection = True
         self.show_image = True
-        self.show_assignment_problem = True
+        self.show_assignment_problem = False
         self.imshow_decreasing_factor = 0.5
         self.print_mser_info = False
         self.print_matching = True
 
-        self.ab_area_xstart = 0.2
-        self.ab_area_ystart = 0.2
-        self.ab_area_xmax = 41
-        self.ab_area_ymax = 26
-        self.ab_area_step = 0.05
-        self.ab_area_max = 43.0
+        #self.ab_area_xstart = 0.2
+        #self.ab_area_ystart = 0.2
+        #self.ab_area_xmax = 41
+        #self.ab_area_ymax = 26
+        #self.ab_area_step = 0.05
+        #self.ab_area_max = 43.0
 
         afile = open('data/ab_area_hist_blurred.pkl', 'rb')
         self.ab_area_hist = pickle.load(afile)
@@ -66,16 +68,19 @@ class Params():
         self.a_area_step = 0.05
 
         self.ant_number = 0
-        self.arena = my_utils.RotatedRect(my_utils.Point(100+self.border, 100+self.border), my_utils.Size(100, 100), 0)
+        self.arena = my_utils.RotatedRect(my_utils.Point(986+self.border, 579+self.border), my_utils.Size(486, 486), 0)
         self.video_file_name = ''
         self.predefined_vals = ''
         self.bg = None
-
+        self.dumpdir = '/out'
+        #self.dumpdir = os.path.expanduser('~/dump/Ferda')
+        #self.dumpdir = os.path.expanduser('~/dump/drosophyla')
+        #
         #self.ant_number = 5
         #self.arena = my_utils.RotatedRect(my_utils.Point(983+self.border, 577+self.border), my_utils.Size(476*2, 476*2), 0)
         #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/idTracker/Messor_structor_5mayorworkers.mp4"
         #self.predefined_vals = 'messor1'
-        ##self.gt_path = '../data/eight/fixed_out.txt'
+        #self.dumpdir = os.path.expanduser('~/dump/mesors')
         #self.bg = None
 
         #self.ant_number = 10
@@ -91,6 +96,7 @@ class Params():
         #self.predefined_vals = 'NoPlasterNoLid800'
         #self.gt_path = '../data/NoPlasterNoLid800/fixed_out.txt'
         #self.bg = cv2.imread('data/noplast_bg.png')
+        #self.bg = scipy.ndimage.gaussian_filter(self.bg, sigma=1)
         #self.dumpdir = os.path.expanduser('~/dump/noplast')
 
         self.ant_number = 8

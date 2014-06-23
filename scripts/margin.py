@@ -50,8 +50,8 @@ def prepare_data(name, frames):
     return regions_idx, regions_vals, regions_labels
 
 
-#e_regions_idx, e_regions_vals, e_regions_labels = prepare_data('eight', eight)
-#n_regions_idx, n_regions_vals, n_regions_labels = prepare_data('nolid', nolid)
+e_regions_idx, e_regions_vals, e_regions_labels = prepare_data('eight', eight)
+n_regions_idx, n_regions_vals, n_regions_labels = prepare_data('nolid', nolid)
 #
 #
 #afile = open('../out/margin/eight-labels.pkl', 'wb')
@@ -79,22 +79,24 @@ def prepare_data(name, frames):
 #afile.close()
 
 
-afile = open('../out/margin/eight-labels.pkl', 'rb')
-e_regions_labels = pickle.load(afile)
-afile.close()
+#afile = open('../out/margin/eight-labels.pkl', 'rb')
+#e_regions_labels = pickle.load(afile)
+#afile.close()
+#
+#afile = open('../out/margin/eight-values.pkl', 'rb')
+#e_regions_vals = pickle.load(afile)
+#afile.close()
+#
+#afile = open('../out/margin/nolid-labels.pkl', 'rb')
+#n_regions_labels = pickle.load(afile)
+#afile.close()
+#
+#afile = open('../out/margin/nolid-values.pkl', 'rb')
+#n_regions_vals = pickle.load(afile)
+#afile.close()
 
-afile = open('../out/margin/eight-values.pkl', 'rb')
-e_regions_vals = pickle.load(afile)
-afile.close()
 
-afile = open('../out/margin/nolid-labels.pkl', 'rb')
-n_regions_labels = pickle.load(afile)
-afile.close()
-
-afile = open('../out/margin/nolid-values.pkl', 'rb')
-n_regions_vals = pickle.load(afile)
-afile.close()
-
+#e_region_ prepare_data('eight', eight)
 max_x = 41
 max_y = 26
 my_hist = np.zeros((max_y, max_x))
@@ -140,10 +142,10 @@ for frame in n_regions_vals:
 
 very_blurred = ndimage.gaussian_filter(my_hist, sigma=1)
 print very_blurred.max()
-
-afile = open('../out/margin/ab_area_hist_blurred.pkl', 'wb')
-e_regions_labels = pickle.dump(very_blurred, afile)
-afile.close()
+#
+#afile = open('../out/margin/ab_area_hist_blurred.pkl', 'wb')
+#e_regions_labels = pickle.dump(very_blurred, afile)
+#afile.close()
 
 fig = plt.figure()
 ax = fig.add_subplot(1,1,1)

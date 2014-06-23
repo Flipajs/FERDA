@@ -378,6 +378,8 @@ step = 0.05
 
 plt.figure()
 
+areas = []
+aa = []
 for frame in e_regions_vals:
     reg_i = 0
     for reg in frame:
@@ -385,7 +387,8 @@ for frame in e_regions_vals:
             area = reg[0] / float(244)
             a = reg[1] / float(17.97)
 
-            plt.plot(area, a, 'cx')
+            areas.append(area)
+            aa.append(a)
             x_id = int(math.floor((area - x_start) / step))
             y_id = int(math.floor((a - y_start) / step))
 
@@ -396,7 +399,12 @@ for frame in e_regions_vals:
         reg_i += 1
     frame_i += 1
 
+
+plt.plot(areas, aa, 'cx', label='ist-eight')
+
 frame_i = 0
+areas = []
+aa = []
 for frame in n_regions_vals:
     reg_i = 0
     for reg in frame:
@@ -404,7 +412,8 @@ for frame in n_regions_vals:
             area = reg[0] / float(117)
             a = reg[1] / float(12.7)
 
-            plt.plot(area, a, 'mx')
+            areas.append(area)
+            aa.append(a)
             x_id = int(math.floor((area - x_start) / step))
             y_id = int(math.floor((a - y_start) / step))
 
@@ -416,7 +425,18 @@ for frame in n_regions_vals:
 
     frame_i += 1
 
+plt.hold(True)
+plt.plot(areas, aa, 'mx', label='ist-fifteen')
 
+plt.legend(loc='bottom center', shadow=True, fontsize=13)
+
+#plt.legend((eight_l, noplast_l), ('ist-eight', 'ist-fifteen'),
+#           loc='top right',
+#           ncol=2,
+#           fontsize=13)
+
+plt.ylabel('main axis / avg main axis')
+plt.xlabel('area / avg area')
 plt.grid()
 
 log_hist(my_hist)
@@ -435,7 +455,13 @@ ax.set_aspect('equal')
 plt.imshow(very_blurred, interpolation='nearest', cmap=plt.cm.bone)
 plt.colorbar()
 plt.gca().invert_yaxis()
-plt.grid()
+ylabels=[0, 0.2, 0.5, 0.75, 1.0, 1.25]
+ax.set_yticklabels(ylabels)
+xlabels=[0, 0.2, 0.7, 1.2, 1.7, 2.2]
+ax.set_xticklabels(xlabels)
+plt.grid(c='white')
+plt.ylabel('main axis / avg main axis')
+plt.xlabel('area / avg area')
 plt.show()
 
 #frame_i = 0

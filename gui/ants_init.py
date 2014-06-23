@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ants_init.ui'
 #
-# Created: Sun May 11 14:17:40 2014
+# Created: Mon May 26 09:53:23 2014
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -72,7 +72,7 @@ class Ui_Dialog(object):
         self.b_continue_arena.setObjectName(_fromUtf8("b_continue_arena"))
         self.ants_group = QtGui.QGroupBox(Dialog)
         self.ants_group.setEnabled(False)
-        self.ants_group.setGeometry(QtCore.QRect(10, 370, 271, 101))
+        self.ants_group.setGeometry(QtCore.QRect(10, 370, 271, 231))
         self.ants_group.setObjectName(_fromUtf8("ants_group"))
         self.label_4 = QtGui.QLabel(self.ants_group)
         self.label_4.setGeometry(QtCore.QRect(15, 25, 121, 17))
@@ -88,6 +88,11 @@ class Ui_Dialog(object):
         self.b_continue_ants = QtGui.QPushButton(self.ants_group)
         self.b_continue_ants.setGeometry(QtCore.QRect(100, 50, 161, 27))
         self.b_continue_ants.setObjectName(_fromUtf8("b_continue_ants"))
+        self.label_6 = QtGui.QLabel(self.ants_group)
+        self.label_6.setGeometry(QtCore.QRect(15, 90, 241, 141))
+        self.label_6.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
+        self.label_6.setWordWrap(True)
+        self.label_6.setObjectName(_fromUtf8("label_6"))
         self.ants_selection_group = QtGui.QGroupBox(Dialog)
         self.ants_selection_group.setEnabled(False)
         self.ants_selection_group.setGeometry(QtCore.QRect(290, 0, 141, 611))
@@ -159,6 +164,7 @@ class Ui_Dialog(object):
         self.ants_group.setTitle(QtGui.QApplication.translate("Dialog", "Ants", None, QtGui.QApplication.UnicodeUTF8))
         self.label_4.setText(QtGui.QApplication.translate("Dialog", "Number of ants:", None, QtGui.QApplication.UnicodeUTF8))
         self.b_continue_ants.setText(QtGui.QApplication.translate("Dialog", "confirm and continue", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_6.setText(QtGui.QApplication.translate("Dialog", "Now assign ants to the regions.  Assignment can be done by clicking on button in ant sellection and then by clicking on region in image collection window. When ant is assigned to the region, the region in window collections changes the color.", None, QtGui.QApplication.UnicodeUTF8))
         self.ants_selection_group.setTitle(QtGui.QApplication.translate("Dialog", "Ants selection", None, QtGui.QApplication.UnicodeUTF8))
         self.start_button.setText(QtGui.QApplication.translate("Dialog", "confirm and start", None, QtGui.QApplication.UnicodeUTF8))
         self.video_group.setTitle(QtGui.QApplication.translate("Dialog", "Video source", None, QtGui.QApplication.UnicodeUTF8))

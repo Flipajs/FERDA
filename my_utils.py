@@ -162,7 +162,8 @@ def mask_out_arena(img, arena):
 
 
 def bg_subtraction(img, params):
-    bg = scipy.ndimage.gaussian_filter(params.bg, sigma=1)
+    bg = params.bg
+    #bg = scipy.ndimage.gaussian_filter(params.bg, sigma=1)
     bg = np.asarray(bg, dtype=np.int32)
     img = np.subtract(bg, img)
 

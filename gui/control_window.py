@@ -6,6 +6,7 @@ import sys
 from PyQt4 import QtGui
 import experiment_params
 import cv2
+import cv
 import experiment_manager
 import scipy.io as sio
 import ntpath
@@ -13,6 +14,8 @@ import pickle
 import video_manager
 import logger
 import collisions
+import time
+import visualize
 
 
 class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
@@ -33,6 +36,18 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.window().setGeometry(0, 0, self.window().width(), self.window().height())
         self.init_ui()
         self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
+
+
+        self.results2video = True
+
+        if self.results2video:
+            width = 1920
+            height = 1080
+            self.vid_writer = cv2.VideoWriter(filename="ferda_messors.avi",  #Provide a file to write the video to
+                #fourcc=cv.CV_FOURCC('i','Y', 'U', 'V'),            #Use whichever codec works for you...
+                fourcc=cv2.cv.CV_FOURCC('M','J','P','G'),
+                fps=30,                                        #How many frames do you want to display per second in your video?
+                frameSize=(width, height))
 
 
     def closeEvent(self, event):
@@ -70,6 +85,8 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
         self.imshow_decreasing_factor.valueChanged.connect(self.imshow_decreasing_factor_changed)
 
+        self.ch_assignment_problem.setChecked(False)
+
     def step_forwards(self):
         self.is_running = True
         self.wait_for_button_press = True
@@ -97,6 +114,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
     def run(self):
         if self.is_running:
             while self.is_running:
+
                 val = self.sb_stop_at_frame.value()
                 if self.experiment.params.frame >= val and val != 0:
                     self.b_play.setText('play')
@@ -125,23 +143,37 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
                         self.run()
                     return
 
+
+                start = time.time()
                 self.experiment.process_frame(img, self.forward)
+
+                #print time.time() - start, "SECONDS", "self.experiment.process_frame()"
+
                 self.display_informations()
+
+                if self.results2video:
+                    img_copy = self.experiment.img_.copy()
+
+                    img_vis = visualize.draw_ants(img_copy, self.experiment.ants, self.experiment.regions, False, self.experiment.history)
+                    self.vid_writer.write(img_vis)
 
                 #self.logger.log_regions_collection()
 
                 #self.log_all()
-                self.logger.log_regions()
-                self.logger.log_regions_collection()
-                #self.logger.log_frame()
-                self.logger.log_frame_results()
-                self.logger.log_assignment_problem()
-
+                #self.logger.log_regions()
+                #self.logger.log_regions_collection()
 
                 #if self.params.frame % 100 == 0:
+                #self.logger.log_frame()
+                #self.logger.log_frame_results()
+
+                #self.logger.log_assignment_problem()
+
+
+                #if self.params.frame % 1000 == 0:
                 #    self.save_state()
 
-                print "------------------------"
+                #print "------------------------"
 
                 self.l_frame.setText(str(self.params.frame))
                 self.controls()
@@ -267,10 +299,14 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         if len(name) == 0:
             name = 'undefined'
 
-        xy = self.experiment.results_xy_vector()
-        print xy
-        afile = open(path+'name.arr', "wb")
+        xy, certainty = self.experiment.results_xy_vector()
+        #print xy
+        afile = open(path+name+'_xy.arr', "wb")
         pickle.dump(xy, afile)
+        afile.close()
+
+        afile = open(path+name+'_certainty.arr', "wb")
+        pickle.dump(certainty, afile)
         afile.close()
 
         path += name+'.mat'

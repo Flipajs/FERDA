@@ -7,8 +7,8 @@ import my_utils as my_utils
 import numpy as np
 import time
 
-def pred_distance_score(a, region, params):
-    pred = a.predicted_position(1)
+def pred_distance_score(a, region, params, history_depth=1):
+    pred = a.predicted_position(history_depth)
     if my_utils.e_distance(pred, params.arena.center) > (params.arena.size.width / 2) - params.avg_ant_axis_b:
         p = my_utils.get_circle_line_intersection(params, a.state.position, pred)
         return math.sqrt((p.x - region["cx"])**2 + (p.y - region["cy"])**2)
@@ -23,16 +23,16 @@ def max_weight_matching(ants, regions, unassigned_a, unassigned_r, assignment, c
 
     start = time.time()
     graph_add_ants(graph, unassigned_a)
-    print "ants: ", time.time() - start
+    #print "ants: ", time.time() - start
     start = time.time()
     graph_add_edges(graph, ants, regions, unassigned_a, unassigned_r, params)
-    print "edges: ", time.time() - start
+    #print "edges: ", time.time() - start
 
-    print "nodes: ", len(graph.nodes())
-    print "edges: ", len(graph.edges())
+    #print "nodes: ", len(graph.nodes())
+    #print "edges: ", len(graph.edges())
     start = time.time()
     result = nx.max_weight_matching(graph, True)
-    print "result: ", time.time() - start
+    #print "result: ", time.time() - start
     assignment, costs = interpret_results_of_max_weighted_matching(result, unassigned_a, assignment, costs, graph)
 
     return assignment, costs
@@ -48,7 +48,7 @@ def max_weight_matching_lost(ants, lost_ants, regions, free_regions, params):
         graph.add_edge('a'+str(a_id), 'u'+str(a_id), weight=params.weighted_matching_lost_edge_cost)
 
         for r_id in free_regions:
-            if ab_area_prob(regions[r_id], params) < 0.5:
+            if a_area_prob(regions[r_id], params) < 0.5:
                 continue
 
             w = count_lost_node_weight(ants[a_id], regions[r_id], params)
@@ -299,8 +299,41 @@ def count_node_weight(ant, region, params):
     if "used_for_splitting" in region:
         return 0
 
-    if len(ant.state.collisions) > 0:
+    #if len(ant.state.collisions) > 0:
+    if ant.state.collision_predicted:
         position_p = position_prob_collision(ant, region, params)
+        #history_depth = 4
+        #if len(ant.history) <= history_depth:
+        #    position_p = position_prob_collision(ant, region, params)
+        #else:
+        #    u = 0
+        #    #s = 4.5669*2
+        #    s = params.avg_ant_axis_a
+        #    max_val = mlab.normpdf(u, u, s)
+        #    #max_val = log_normpdf(u, u, s)
+        #    pred = ant.predicted_position(history_depth)
+        #    x = math.sqrt((region['cx'] - pred.x)**2 + (region['cy'] - pred.y)**2)
+        #    x /= 5
+        #
+        #    position_p = mlab.normpdf(x, u, s) / max_val
+
+        #position_p = position_prob_collision(ant, region, params)
+        #
+        ##going backward test
+        #h_depth = 4
+        #if params.undefined_threshold < position_p and len(ant.history) > h_depth:
+        #    p0 = [region['cx'], region['cy']]
+        #
+        #    p1 = ant.state.position
+        #    pn = ant.history[h_depth].position
+        #
+        #    d1 = math.sqrt((p0[0] - pn.x)**2 + (p0[1] - pn.y)**2)
+        #    d2 = math.sqrt((p1.x - pn.x)**2 + (p1.y - pn.y)**2)
+        #    print "backward test", ant.id, p0, p1.x, p1.y, pn.x, pn.y, d1, d2, position_p
+        #    if d1 < d2:
+        #        k = 0.05
+        #        position_p *= math.exp(-k*(d2-d1))
+        #        print position_p
     else:
         position_p = position_prob(ant, region, params)
 

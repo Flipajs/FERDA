@@ -2,7 +2,29 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b9f8cf9a-3ad6-4a1a-9ce6-2711247eb2c0" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/clearmetrics/__init__.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/trajectories_data/__init__.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/certainty.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/crop_sequence.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/plot_methods_on_frame.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/plot_results.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libs/cyMser.so" afterPath="$PROJECT_DIR$/libs/cyMser.so" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/ab_find_msers.py" afterPath="$PROJECT_DIR$/scripts/ab_find_msers.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ant.py" afterPath="$PROJECT_DIR$/ant.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/ants_init.py" afterPath="$PROJECT_DIR$/gui/ants_init.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/area_ab.py" afterPath="$PROJECT_DIR$/scripts/area_ab.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/control_window.py" afterPath="$PROJECT_DIR$/gui/control_window.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_params.py" afterPath="$PROJECT_DIR$/experiment_params.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/init_window.py" afterPath="$PROJECT_DIR$/gui/init_window.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/logger.py" afterPath="$PROJECT_DIR$/logger.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.spec" afterPath="$PROJECT_DIR$/main.spec" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/margin.py" afterPath="$PROJECT_DIR$/scripts/margin.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/my_utils.py" afterPath="$PROJECT_DIR$/my_utils.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/score.py" afterPath="$PROJECT_DIR$/score.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/split_by_contours.py" afterPath="$PROJECT_DIR$/split_by_contours.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/visualize.py" afterPath="$PROJECT_DIR$/visualize.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="ants.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -24,162 +46,100 @@
     <favorites_list name="ants" />
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.5">
-      <split-first>
-        <leaf>
-          <file leaf-file-name="split_by_contours.py" pinned="false" current="true" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/split_by_contours.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="902" column="20" selection-start="21616" selection-end="21616" vertical-scroll-proportion="0.3923841" vertical-offset="15999" max-vertical-offset="19026">
-                  <folding>
-                    <element signature="e#24#37#0" expanded="true" />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="__init__.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/cv2/__init__.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="1329" column="4" selection-start="34252" selection-end="34252" vertical-scroll-proportion="0.0" vertical-offset="23667" max-vertical-offset="40878">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="my_utils.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/my_utils.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="130" column="31" selection-start="3020" selection-end="3020" vertical-scroll-proportion="0.0" vertical-offset="2340" max-vertical-offset="3402">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="circle_line_intersection.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/scripts/circle_line_intersection.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="774">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="contour_fitting.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/scripts/contour_fitting.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="230" column="22" selection-start="5398" selection-end="5398" vertical-scroll-proportion="0.0" vertical-offset="3044" max-vertical-offset="4806">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="experiment_params.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/experiment_params.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="87" column="29" selection-start="2821" selection-end="2821" vertical-scroll-proportion="0.0" vertical-offset="1418" max-vertical-offset="2052">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="logger.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/logger.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="20" column="16" selection-start="635" selection-end="635" vertical-scroll-proportion="0.0" vertical-offset="360" max-vertical-offset="846">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/experiment_manager.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="198" column="102" selection-start="6558" selection-end="6627" vertical-scroll-proportion="0.0" vertical-offset="2844" max-vertical-offset="14832">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="mser_operations.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/mser_operations.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="240" column="4" selection-start="6810" selection-end="6810" vertical-scroll-proportion="0.0" vertical-offset="4320" max-vertical-offset="5346">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="gt.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/gt.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="93" column="33" selection-start="2769" selection-end="2769" vertical-scroll-proportion="0.0" vertical-offset="1674" max-vertical-offset="3996">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-        </leaf>
-      </split-first>
-      <split-second>
-        <leaf>
-          <file leaf-file-name="init_window.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/gui/init_window.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="174" column="0" selection-start="5589" selection-end="5589" vertical-scroll-proportion="0.0" vertical-offset="2955" max-vertical-offset="6570">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="main.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/main.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="6" column="0" selection-start="100" selection-end="100" vertical-scroll-proportion="0.0" vertical-offset="108" max-vertical-offset="252">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="score.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/score.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="11" column="35" selection-start="260" selection-end="260" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="6048">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="video_manager.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/video_manager.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="24" column="0" selection-start="587" selection-end="587" vertical-scroll-proportion="0.0" vertical-offset="432" max-vertical-offset="1440">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="control_window.py" pinned="false" current="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/gui/control_window.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="140" column="49" selection-start="4945" selection-end="4945" vertical-scroll-proportion="0.24044587" vertical-offset="2369" max-vertical-offset="5616">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="ant.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/ant.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="55" column="8" selection-start="1645" selection-end="1645" vertical-scroll-proportion="0.0" vertical-offset="681" max-vertical-offset="5040">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-        </leaf>
-      </split-second>
-    </splitter>
+    <leaf>
+      <file leaf-file-name="experiment_params.py" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/experiment_params.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="23" column="31" selection-start="485" selection-end="485" vertical-scroll-proportion="-0.12631579" vertical-offset="414" max-vertical-offset="2142">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="my_utils.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/my_utils.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="164" column="18" selection-start="3757" selection-end="3757" vertical-scroll-proportion="0.0" vertical-offset="2825" max-vertical-offset="3420">
+              <folding>
+                <element signature="e#21#32#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="mser_operations.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mser_operations.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="67" column="23" selection-start="1824" selection-end="1824" vertical-scroll-proportion="0.0" vertical-offset="879" max-vertical-offset="5346">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="control_window.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/gui/control_window.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="41" column="0" selection-start="1084" selection-end="1084" vertical-scroll-proportion="0.0" vertical-offset="504" max-vertical-offset="6264">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="visualize.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/visualize.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="492" column="0" selection-start="20444" selection-end="20444" vertical-scroll-proportion="0.0" vertical-offset="8494" max-vertical-offset="9432">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="logger.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/logger.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="38" column="90" selection-start="1236" selection-end="1465" vertical-scroll-proportion="0.0" vertical-offset="684" max-vertical-offset="990">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="crop_sequence.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/scripts/crop_sequence.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="38" column="10" selection-start="559" selection-end="559" vertical-scroll-proportion="0.0" vertical-offset="684" max-vertical-offset="2520">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="experiment_manager.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/experiment_manager.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="378" column="20" selection-start="13606" selection-end="13606" vertical-scroll-proportion="0.0" vertical-offset="6804" max-vertical-offset="15318">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="source_window.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/gui/source_window.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="26" column="0" selection-start="733" selection-end="733" vertical-scroll-proportion="0.0" vertical-offset="468" max-vertical-offset="828">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="split_by_contours.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/split_by_contours.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="1201" column="11" selection-start="30220" selection-end="30220" vertical-scroll-proportion="0.0" vertical-offset="21618" max-vertical-offset="24138">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
   </component>
   <component name="FindManager">
     <FindUsagesManager>
@@ -198,30 +158,29 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/main.py" />
-        <option value="$PROJECT_DIR$/logger.py" />
-        <option value="$PROJECT_DIR$/libs/clearmetrics/noplast_ctrax.py" />
-        <option value="$PROJECT_DIR$/libs/clearmetrics/noplast_gt.py" />
-        <option value="$PROJECT_DIR$/libs/clearmetrics/eight_ctrax.py" />
-        <option value="$PROJECT_DIR$/libs/clearmetrics/eight_gt.py" />
-        <option value="$PROJECT_DIR$/libs/clearmetrics/eight_idtracker.py" />
-        <option value="$PROJECT_DIR$/libs/clearmetrics/eight_ferda.py" />
-        <option value="$PROJECT_DIR$/libs/clearmetrics/noplast_ferda.py" />
         <option value="$PROJECT_DIR$/gui/init_window.py" />
-        <option value="$PROJECT_DIR$/gui/control_window.py" />
-        <option value="$PROJECT_DIR$/scripts/contour_fitting.py" />
-        <option value="$PROJECT_DIR$/experiment_manager.py" />
+        <option value="$PROJECT_DIR$/scripts/trajectories_data/noplast_gt.py" />
+        <option value="$PROJECT_DIR$/scripts/trajectories_data/noplast_ctrax.py" />
+        <option value="$PROJECT_DIR$/scripts/trajectories_data/noplast_ktrack.py" />
+        <option value="$PROJECT_DIR$/scripts/trajectories_data/messor_gt.py" />
+        <option value="$PROJECT_DIR$/scripts/clearmetrics/clearmetrics.py" />
+        <option value="$PROJECT_DIR$/scripts/plot_results.py" />
+        <option value="$PROJECT_DIR$/scripts/certainty.py" />
+        <option value="$PROJECT_DIR$/scripts/plot_methods_on_frame.py" />
+        <option value="$PROJECT_DIR$/scripts/crop_sequence.py" />
         <option value="$PROJECT_DIR$/score.py" />
-        <option value="$PROJECT_DIR$/experiment_params.py" />
+        <option value="$PROJECT_DIR$/experiment_manager.py" />
+        <option value="$PROJECT_DIR$/visualize.py" />
+        <option value="$PROJECT_DIR$/gui/control_window.py" />
         <option value="$PROJECT_DIR$/split_by_contours.py" />
+        <option value="$PROJECT_DIR$/experiment_params.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="1969" />
-    <option name="y" value="24" />
-    <option name="width" value="1871" />
-    <option name="height" value="1056" />
+    <option name="y" value="-772" />
+    <option name="width" value="1366" />
+    <option name="height" value="772" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -249,7 +208,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -282,8 +240,41 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ants" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ants" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="scripts" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trajectories_data" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ants" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ants" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="gui" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -321,43 +312,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.split_by_contours">
-    <configuration default="false" name="eight_ferda" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/libs/clearmetrics" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="ants" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/libs/clearmetrics/eight_ferda.py" />
-      <option name="PARAMETERS" value="" />
-      <RunnerSettings RunnerId="PythonRunner" />
-      <ConfigurationWrapper RunnerId="PythonRunner" />
-      <method />
-    </configuration>
-    <configuration default="false" name="noplast_ferda" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/libs/clearmetrics" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="ants" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/libs/clearmetrics/noplast_ferda.py" />
-      <option name="PARAMETERS" value="" />
-      <RunnerSettings RunnerId="PythonRunner" />
-      <ConfigurationWrapper RunnerId="PythonRunner" />
-      <method />
-    </configuration>
+  <component name="RunManager" selected="Python.main">
     <configuration default="false" name="main" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -378,27 +333,7 @@
       <ConfigurationWrapper RunnerId="PythonRunner" />
       <method />
     </configuration>
-    <configuration default="false" name="split_by_contours" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="ants" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/split_by_contours.py" />
-      <option name="PARAMETERS" value="" />
-      <RunnerSettings RunnerId="PyDebugRunner" />
-      <RunnerSettings RunnerId="PythonRunner" />
-      <ConfigurationWrapper RunnerId="PyDebugRunner" />
-      <ConfigurationWrapper RunnerId="PythonRunner" />
-      <method />
-    </configuration>
-    <configuration default="false" name="contour_fitting" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration default="false" name="crop_sequence" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -410,7 +345,65 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ants" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/contour_fitting.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/crop_sequence.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PyDebugRunner" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PyDebugRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="plot_results" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/scripts" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ants" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/plot_results.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PyDebugRunner" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PyDebugRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="certainty" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/scripts" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ants" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/certainty.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="my_utils" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ants" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/my_utils.py" />
       <option name="PARAMETERS" value="" />
       <RunnerSettings RunnerId="PythonRunner" />
       <ConfigurationWrapper RunnerId="PythonRunner" />
@@ -537,20 +530,41 @@
       <option name="USE_PATTERN" value="false" />
       <method />
     </configuration>
-    <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.eight_ferda" />
-      <item index="1" class="java.lang.String" itemvalue="Python.noplast_ferda" />
-      <item index="2" class="java.lang.String" itemvalue="Python.main" />
-      <item index="3" class="java.lang.String" itemvalue="Python.split_by_contours" />
-      <item index="4" class="java.lang.String" itemvalue="Python.contour_fitting" />
+    <configuration default="false" name="plot_methods_on_frame" type="PythonConfigurationType" factoryName="Python">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/scripts" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ants" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/plot_methods_on_frame.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PyDebugRunner" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PyDebugRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <list size="6">
+      <item index="0" class="java.lang.String" itemvalue="Python.plot_methods_on_frame" />
+      <item index="1" class="java.lang.String" itemvalue="Python.main" />
+      <item index="2" class="java.lang.String" itemvalue="Python.crop_sequence" />
+      <item index="3" class="java.lang.String" itemvalue="Python.plot_results" />
+      <item index="4" class="java.lang.String" itemvalue="Python.certainty" />
+      <item index="5" class="java.lang.String" itemvalue="Python.my_utils" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.split_by_contours" />
-        <item index="1" class="java.lang.String" itemvalue="Python.main" />
-        <item index="2" class="java.lang.String" itemvalue="Python.contour_fitting" />
-        <item index="3" class="java.lang.String" itemvalue="Python.noplast_ferda" />
-        <item index="4" class="java.lang.String" itemvalue="Python.eight_ferda" />
+        <item index="0" class="java.lang.String" itemvalue="Python.main" />
+        <item index="1" class="java.lang.String" itemvalue="Python.my_utils" />
+        <item index="2" class="java.lang.String" itemvalue="Python.crop_sequence" />
+        <item index="3" class="java.lang.String" itemvalue="Python.certainty" />
+        <item index="4" class="java.lang.String" itemvalue="Python.plot_results" />
       </list>
     </recent_temporary>
   </component>
@@ -581,23 +595,23 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1969" y="24" width="1871" height="1056" extended-state="6" />
+    <frame x="0" y="-772" width="1366" height="772" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32905295" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32744783" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.12026002" sideWeight="0.71657753" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.13217768" sideWeight="0.71657753" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3614973" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19398907" sideWeight="0.7326203" order="1" side_tool="true" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.12026002" sideWeight="0.8213904" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.15510812" sideWeight="0.7383628" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4117647" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.15709643" sideWeight="0.4673797" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25454545" sideWeight="0.5005417" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.28342247" sideWeight="0.49945828" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26163724" sideWeight="0.49945828" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32905295" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
@@ -607,19 +621,19 @@
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32905295" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.38181818" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19398907" sideWeight="0.36791444" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3614973" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19398907" sideWeight="0.7326203" order="0" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25454545" sideWeight="0.5005417" order="9" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.12026002" sideWeight="0.71657753" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19398907" sideWeight="0.36363637" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.13217768" sideWeight="0.63850266" order="1" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.26737967" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.28342247" sideWeight="0.49945828" order="2" side_tool="false" content_ui="tabs" />
     </layout-to-restore>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -642,117 +656,111 @@
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="119" />
+      <option name="time" value="162" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/gt.py">
+    <entry file="file://$PROJECT_DIR$/split_by_contours.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="93" column="33" selection-start="2769" selection-end="2769" vertical-scroll-proportion="0.0" vertical-offset="1674" max-vertical-offset="3996">
+        <state line="1201" column="11" selection-start="30220" selection-end="30220" vertical-scroll-proportion="0.0" vertical-offset="21618" max-vertical-offset="24138">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/libs/clearmetrics/noplast_ctrax.py">
+    <entry file="file://$PROJECT_DIR$/scripts/certainty.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="24" column="58" selection-start="2221" selection-end="2221" vertical-scroll-proportion="0.0" vertical-offset="432" max-vertical-offset="267948" />
+        <state line="35" column="43" selection-start="899" selection-end="899" vertical-scroll-proportion="0.0" vertical-offset="172" max-vertical-offset="954" />
       </provider>
     </entry>
-    <entry file="file:///usr/lib/pymodules/python2.7/matplotlib/colors.py">
+    <entry file="file://$PROJECT_DIR$/scripts/plot_methods_on_frame.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="391" column="0" selection-start="14260" selection-end="14260" vertical-scroll-proportion="0.33277026" vertical-offset="6769" max-vertical-offset="26766" />
+        <state line="46" column="49" selection-start="1348" selection-end="1348" vertical-scroll-proportion="0.0" vertical-offset="594" max-vertical-offset="3006" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/circle_line_intersection.py">
+    <entry file="file://$PROJECT_DIR$/scripts/plot_results.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="774">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mser_operations.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="240" column="4" selection-start="6810" selection-end="6810" vertical-scroll-proportion="0.0" vertical-offset="452" max-vertical-offset="1062">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gui/init_window.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="174" column="0" selection-start="5589" selection-end="5589" vertical-scroll-proportion="0.0" vertical-offset="2955" max-vertical-offset="6570">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ant.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="55" column="8" selection-start="1645" selection-end="1645" vertical-scroll-proportion="0.0" vertical-offset="681" max-vertical-offset="5040">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/video_manager.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="24" column="0" selection-start="587" selection-end="587" vertical-scroll-proportion="0.0" vertical-offset="432" max-vertical-offset="1440">
-          <folding />
-        </state>
+        <state line="150" column="24" selection-start="6468" selection-end="6468" vertical-scroll-proportion="0.0" vertical-offset="2430" max-vertical-offset="5400" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/score.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="11" column="35" selection-start="260" selection-end="260" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="6048">
-          <folding />
-        </state>
+        <state line="35" column="4" selection-start="1210" selection-end="1210" vertical-scroll-proportion="0.0" vertical-offset="221" max-vertical-offset="6642" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/contour_fitting.py">
+    <entry file="file://$PROJECT_DIR$/gui/init_window.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="230" column="22" selection-start="5398" selection-end="5398" vertical-scroll-proportion="0.0" vertical-offset="3188" max-vertical-offset="4950">
+        <state line="249" column="0" selection-start="8462" selection-end="8462" vertical-scroll-proportion="0.0" vertical-offset="4329" max-vertical-offset="6660" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="38" column="90" selection-start="1236" selection-end="1465" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="936">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/gui/control_window.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="140" column="49" selection-start="4945" selection-end="4945" vertical-scroll-proportion="0.24044587" vertical-offset="2369" max-vertical-offset="5616">
+        <state line="41" column="0" selection-start="1084" selection-end="1084" vertical-scroll-proportion="0.0" vertical-offset="504" max-vertical-offset="6264">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/experiment_params.py">
+    <entry file="file://$PROJECT_DIR$/gui/source_window.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="87" column="29" selection-start="2821" selection-end="2821" vertical-scroll-proportion="0.0" vertical-offset="1418" max-vertical-offset="2052">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/lib/python2.7/lib-tk/Tkinter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="913" column="0" selection-start="36119" selection-end="36119" vertical-scroll-proportion="0.3806706" vertical-offset="16241" max-vertical-offset="67356">
+        <state line="26" column="0" selection-start="733" selection-end="733" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="828">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/experiment_manager.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="198" column="102" selection-start="6558" selection-end="6627" vertical-scroll-proportion="0.0" vertical-offset="3006" max-vertical-offset="14832">
+        <state line="378" column="20" selection-start="13606" selection-end="13606" vertical-scroll-proportion="0.0" vertical-offset="6322" max-vertical-offset="14976">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/.PyCharm30/system/python_stubs/-1247972723/cv2/__init__.py">
+    <entry file="file://$PROJECT_DIR$/visualize.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="1329" column="4" selection-start="34252" selection-end="34252" vertical-scroll-proportion="0.0" vertical-offset="23721" max-vertical-offset="40878">
+        <state line="492" column="0" selection-start="20444" selection-end="20444" vertical-scroll-proportion="0.0" vertical-offset="8494" max-vertical-offset="9432">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scripts/crop_sequence.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="38" column="10" selection-start="559" selection-end="559" vertical-scroll-proportion="0.0" vertical-offset="216" max-vertical-offset="2466">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mser_operations.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="67" column="23" selection-start="1824" selection-end="1824" vertical-scroll-proportion="0.0" vertical-offset="879" max-vertical-offset="5346">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/split_by_contours.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="902" column="20" selection-start="21616" selection-end="21616" vertical-scroll-proportion="0.3923841" vertical-offset="15999" max-vertical-offset="19026">
+        <state line="1201" column="11" selection-start="30220" selection-end="30220" vertical-scroll-proportion="0.0" vertical-offset="20376" max-vertical-offset="23958">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/my_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="164" column="18" selection-start="3757" selection-end="3757" vertical-scroll-proportion="0.0" vertical-offset="2825" max-vertical-offset="3420">
           <folding>
-            <element signature="e#24#37#0" expanded="true" />
+            <element signature="e#21#32#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiment_params.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="23" column="31" selection-start="485" selection-end="485" vertical-scroll-proportion="-0.12631579" vertical-offset="414" max-vertical-offset="2142">
+          <folding />
         </state>
       </provider>
     </entry>
