@@ -57,10 +57,10 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
             self.arena_x_scrollbar.setValue(self.params.arena.center.x)
             self.arena_y_scrollbar.setValue(self.params.arena.center.y)
 
-        self.ant_number_spin_box.valueChanged.connect(self.update_changes)
-        self.arena_r_scrollbar.valueChanged.connect(self.update_changes)
-        self.arena_x_scrollbar.valueChanged.connect(self.update_changes)
-        self.arena_y_scrollbar.valueChanged.connect(self.update_changes)
+        self.ant_number_spin_box.valueChanged.connect(self.update_ant_number)
+        self.arena_r_scrollbar.valueChanged.connect(self.update_arena_changes)
+        self.arena_x_scrollbar.valueChanged.connect(self.update_arena_changes)
+        self.arena_y_scrollbar.valueChanged.connect(self.update_arena_changes)
 
         self.b_choose_video.clicked.connect(self.show_file_dialog)
         self.b_load_video.clicked.connect(self.load_video)
@@ -144,7 +144,10 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
 
     def invert_image(self):
         self.params.inverted_image = self.ch_invert_image.isChecked()
-        img = np.invert(self.img)
+        img = self.img.copy()
+
+        if self.params.inverted_image:
+            img = np.invert(img)
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         cv2.imshow("preview", gray)
@@ -158,7 +161,8 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         x = self.window().width() + self.window().x() + 1
         cv.MoveWindow("arena selection", x, 0)
 
-        self.update_changes()
+        self.update_arena_changes()
+        self.tabWidget.setCurrentIndex(1)
         self.b_continue_arena.setFocus()
 
     def continue_arena(self):
@@ -168,7 +172,8 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         my_utils.imshow("1st frame", self.img, True)
         x = self.window().width() + self.window().x() + 1
         cv.MoveWindow("1st frame", x, 0)
-        self.b_continue_ants.setFocus()
+        self.tabWidget.setCurrentIndex(2)
+        self.ant_number_spin_box.setFocus()
 
     def continue_ants(self):
         self.ants_group.setDisabled(True)
@@ -248,7 +253,7 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
             my_utils.imshow("collection", img_)
             cv2.setMouseCallback('collection', self.select_regions_cb)
 
-    def update_changes(self):
+    def update_arena_changes(self):
         x = self.arena_x_scrollbar.value()
         y = self.arena_y_scrollbar.value()
         r = self.arena_r_scrollbar.value()
@@ -259,7 +264,6 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
 
         self.params.arena.center = my_utils.Point(x, y)
         self.params.arena.size = my_utils.Size(r * 2, r * 2)
-        self.params.ant_number = self.ant_number_spin_box.value()
 
         if not self.params.fast_start:
             img_ = self.img.copy()
@@ -268,6 +272,9 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
 
             img = my_utils.mask_out_arena(img_, self.params.arena)
             my_utils.imshow("arena selection", img, 1)
+
+    def update_ant_number(self):
+        self.params.ant_number = self.ant_number_spin_box.value()
 
     def assign_ant(self, id, val):
         if val == -1:

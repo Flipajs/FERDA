@@ -31,7 +31,7 @@ class Params():
 
         self.use_gt = False
         self.gt_repair = False
-        self.fast_start = True
+        self.fast_start = False
 
         self.intensity_threshold = 200
         self.dynamic_intensity_threshold = True
