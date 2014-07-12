@@ -184,7 +184,7 @@ class InitWindow(QtGui.QDialog, ants_init.Ui_Dialog):
         img_ = self.img.copy()
 
         mask = my_utils.prepare_image(img_, self.params)
-        cv2.imshow("AAA", mask)
+        #cv2.imshow("AAA", mask)
 
         mser_op = mser_operations.MserOperations(self.params)
         self.regions, self.chosen_regions_indexes = mser_op.process_image(mask)

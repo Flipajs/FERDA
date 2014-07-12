@@ -180,18 +180,25 @@ class Ant():
         history_len = last_frame - first_frame + 1
         x = [0.] * history_len
         y = [0.] * history_len
-        a = [0.] * history_len
-        b = [0.] * history_len
+        #a = [0.] * history_len
+        #b = [0.] * history_len
         theta = [0.] * history_len
+        head_x = [0.] * history_len
+        head_y = [0.] * history_len
+        back_x = [0.] * history_len
+        back_y = [0.] * history_len
 
         state = self.state
         pos = state.position.int_tuple()
         x[last_frame] = float(pos[0])
         y[last_frame] = float(pos[1])
-        a[last_frame] = float(state.a)
-        b[last_frame] = float(state.b)
-
+        #a[last_frame] = float(state.a)
+        #b[last_frame] = float(state.b)
         theta[last_frame] = float(state.theta)
+        head_x[last_frame] = float(state.head.x)
+        head_y[last_frame] = float(state.head.y)
+        back_x[last_frame] = float(state.back.x)
+        back_y[last_frame] = float(state.head.y)
 
         i = last_frame
         for j in range(first_frame, last_frame):
@@ -200,31 +207,24 @@ class Ant():
             pos = state.position.int_tuple()
             x[i] = float(pos[0])
             y[i] = float(pos[1])
-            a[i] = float(state.a)
-            b[i] = float(state.b)
+            #a[i] = float(state.a)
+            #b[i] = float(state.b)
 
             theta[i] = float(state.theta)
+
+            head_x[i] = float(state.head.x)
+            head_y[i] = float(state.head.y)
+            back_x[i] = float(state.back.x)
+            back_y[i] = float(state.back.y)
+
 
         a = {'x': x,
              'y': y,
              'theta': theta,
-             'a': a,
-             'b': b,
-             'id': float(self.id),
-             'moviename': '...',
-             'firstframe': float(first_frame+1),
-             'arena': {'x': [], 'y': [], 'r': []},
-             'off': float(0),
-             'nframes': float(history_len),
-             'endframe': float(last_frame+1),
-             'timestamps': [0],
-             'matname': '...',
-             'x_mm': x,
-             'y_mm': y,
-             'a_mm': a,
-             'b_mm': b,
-             'pxpermm': 7.97674721146402,
-             'fps': float(20),
+             'head_x': head_x,
+             'head_y': head_y,
+             'back_x': back_x,
+             'back_y': back_y,
         }
 
         return a

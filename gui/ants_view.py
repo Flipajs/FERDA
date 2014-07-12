@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ants_view.ui'
 #
-# Created: Thu Jun 26 18:48:46 2014
+# Created: Thu Jun 26 19:05:21 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -37,14 +37,14 @@ class Ui_Dialog(object):
         self.b_backwards.setGeometry(QtCore.QRect(110, 20, 101, 27))
         self.b_backwards.setObjectName(_fromUtf8("b_backwards"))
         self.label_2 = QtGui.QLabel(self.groupBox_2)
-        self.label_2.setGeometry(QtCore.QRect(212, 0, 61, 17))
+        self.label_2.setGeometry(QtCore.QRect(180, 0, 61, 17))
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         self.label_2.setFont(font)
         self.label_2.setObjectName(_fromUtf8("label_2"))
         self.l_frame = QtGui.QLabel(self.groupBox_2)
-        self.l_frame.setGeometry(QtCore.QRect(274, 0, 33, 17))
+        self.l_frame.setGeometry(QtCore.QRect(246, 0, 61, 20))
         self.l_frame.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.l_frame.setObjectName(_fromUtf8("l_frame"))
         self.b_forwards = QtGui.QPushButton(self.groupBox_2)
@@ -141,9 +141,9 @@ class Ui_Dialog(object):
         self.tabWidget.addTab(self.tab_2, _fromUtf8(""))
         self.tab_4 = QtGui.QWidget()
         self.tab_4.setObjectName(_fromUtf8("tab_4"))
-        self.b_save_file = QtGui.QPushButton(self.tab_4)
-        self.b_save_file.setGeometry(QtCore.QRect(280, 30, 61, 27))
-        self.b_save_file.setObjectName(_fromUtf8("b_save_file"))
+        self.b_save_mat = QtGui.QPushButton(self.tab_4)
+        self.b_save_mat.setGeometry(QtCore.QRect(280, 30, 61, 27))
+        self.b_save_mat.setObjectName(_fromUtf8("b_save_mat"))
         self.b_choose_path = QtGui.QPushButton(self.tab_4)
         self.b_choose_path.setGeometry(QtCore.QRect(8, 30, 100, 27))
         self.b_choose_path.setObjectName(_fromUtf8("b_choose_path"))
@@ -228,7 +228,7 @@ class Ui_Dialog(object):
         self.tabWidget.addTab(self.info, _fromUtf8(""))
 
         self.retranslateUi(Dialog)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):
@@ -256,7 +256,7 @@ class Ui_Dialog(object):
         self.b_log_all.setText(_translate("Dialog", "all", None))
         self.b_log_assignment_problem.setText(_translate("Dialog", "assignment problem", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("Dialog", "log", None))
-        self.b_save_file.setText(_translate("Dialog", "save", None))
+        self.b_save_mat.setText(_translate("Dialog", "save", None))
         self.b_choose_path.setText(_translate("Dialog", "choose path", None))
         self.label.setText(_translate("Dialog", ".mat", None))
         self.i_file_name.setText(_translate("Dialog", "mat_name", None))
