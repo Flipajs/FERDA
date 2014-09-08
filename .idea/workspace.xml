@@ -480,7 +480,11 @@
       <created>1410178540745</created>
       <updated>1410178540745</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="on new machine backup commit">
+      <created>1410178650482</created>
+      <updated>1410178650482</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TodoView" selected-index="4">
