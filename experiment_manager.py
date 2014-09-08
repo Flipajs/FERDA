@@ -110,8 +110,8 @@ class ExperimentManager():
         if forward and self.history < 0:
             self.history = 0
 
-        if self.params.frame == 100:
-            print "MSER TIMES: ", self.params.mser_times
+        #if self.params.frame == 100:
+        #    print "MSER TIMES: ", self.params.mser_times
 
     def filter_out_children(self, indexes):
         ids = []
@@ -209,6 +209,11 @@ class ExperimentManager():
         #print "COSTS: ", costs
         assignment = [-1] * len(self.ants)
 
+        for a in self.ants:
+            a.state.in_collision = False
+            a.state.in_collision_with = []
+
+
         unassigned_ants = []
         unassigned_regions = []
         for r_id in indexes:
@@ -221,6 +226,8 @@ class ExperimentManager():
                 #print "SPLITTING: ", r_id, ant_ids
                 split_results = self.split(r_id, ant_ids, indexes)
                 for a_id in ant_ids:
+                    self.ants[a_id].state.in_collision = True
+                    self.ants[a_id].state.in_collision_with = ant_ids
                     unassigned_ants.append(a_id)
 
                 self.add_new_contours(self.regions, unassigned_regions, split_results)
@@ -682,36 +689,52 @@ class ExperimentManager():
 
     def results_xy_vector(self):
         data = {}
-        d = 2
-
-        certainty = {}
 
         for i in range(0, self.params.frame):
-            vals = []
-            cvals = []
-            #vals = np.zeros((self.params.ant_number, 2))
+            vals = {}
             for a_id in range(self.params.ant_number):
+                a_frame = {}
                 state = self.ants[a_id].history[self.params.frame - i - 1]
-                vals.append(np.array([state.position.x, state.position.y]))
-                cvals.append(state.score)
-                #vals[a_id][0] = state.position.x
-                #vals[a_id][1] = state.position.y
+
+                a_frame['cx'] = state.position.x
+                a_frame['cy'] = state.position.y
+                a_frame['hx'] = state.head.x
+                a_frame['hy'] = state.head.y
+                a_frame['bx'] = state.back.x
+                a_frame['by'] = state.back.y
+                a_frame['certainty'] = state.score
+
+                a_frame['lost'] = state.lost
+                a_frame['in_collision'] = state.in_collision
+                a_frame['in_collision_with'] = state.in_collision_with
+
+                vals[a_id] = a_frame
 
             data[i] = vals
-            certainty[i] = cvals
 
-        vals = []
-        cvals = []
+        vals = {}
+
         for a_id in range(self.params.ant_number):
-            vals.append(np.array([self.ants[a_id].state.position.x, self.ants[a_id].state.position.y]))
-            cvals.append(state.score)
-            #vals[a_id][0] = self.ants[a_id].state.position.x
-            #vals[a_id][1] = self.ants[a_id].state.position.y
+            a_frame = {}
+            state = self.ants[a_id].state
+
+            a_frame['cx'] = state.position.x
+            a_frame['cy'] = state.position.y
+            a_frame['hx'] = state.head.x
+            a_frame['hy'] = state.head.y
+            a_frame['bx'] = state.back.x
+            a_frame['by'] = state.back.y
+            a_frame['certainty'] = state.score
+
+            a_frame['lost'] = state.lost
+            a_frame['in_collision'] = state.in_collision
+            a_frame['in_collision_with'] = state.in_collision_with
+
+            vals[a_id] = a_frame
 
         data[i+1] = vals
-        certainty[i+1] = cvals
 
-        return data, certainty
+        return data
 
     def adjust_dynamic_intensity_threshold(self, max_i):
         self.dynamic_intensity_threshold.appendleft(copy.copy(self.params.intensity_threshold))

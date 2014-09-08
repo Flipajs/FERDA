@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'img_controls.ui'
 #
-# Created: Sat Jul 12 11:51:30 2014
+# Created: Mon Jul 14 10:52:04 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,12 +26,15 @@ except AttributeError:
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
-        MainWindow.resize(1000, 628)
+        MainWindow.resize(967, 628)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
-        self.pushButton = QtGui.QPushButton(self.centralwidget)
-        self.pushButton.setGeometry(QtCore.QRect(50, 40, 98, 27))
-        self.pushButton.setObjectName(_fromUtf8("pushButton"))
+        self.viewPositions = QtGui.QPushButton(self.centralwidget)
+        self.viewPositions.setGeometry(QtCore.QRect(0, 0, 98, 27))
+        self.viewPositions.setObjectName(_fromUtf8("viewPositions"))
+        self.positionsLabel = QtGui.QLabel(self.centralwidget)
+        self.positionsLabel.setGeometry(QtCore.QRect(0, 30, 91, 281))
+        self.positionsLabel.setObjectName(_fromUtf8("positionsLabel"))
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
@@ -39,5 +42,6 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
-        self.pushButton.setText(_translate("MainWindow", "PushButton", None))
+        self.viewPositions.setText(_translate("MainWindow", "view positions", None))
+        self.positionsLabel.setText(_translate("MainWindow", "TextLabel", None))
 

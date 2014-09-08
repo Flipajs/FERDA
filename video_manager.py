@@ -70,6 +70,15 @@ class VideoManager():
             ret = self.buffer[view_dec]
             return ret
 
+    def seek_frame(self, frame_number):
+        self.capture.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, frame_number)
+
+        f, img = self.capture.read()
+        if not f:
+            print "Problem seeking for frame in video_manager.py"
+            return None
+
+        return img
 
     def img(self):
         return self.buffer[self.view_pos]

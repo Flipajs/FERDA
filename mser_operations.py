@@ -1,8 +1,7 @@
 __author__ = 'flip'
 
 import sys
-sys.path.append('libs')
-import cyMser
+from libs import cyMser
 import cv2
 import my_utils
 from time import time
@@ -31,6 +30,8 @@ class MserOperations():
 
         if intensity_threshold > 256:
             intensity_threshold = 256
+
+        intensity_threshold = 256
 
         self.mser.set_min_margin(self.params.min_margin)
         self.mser.process_image(gray, intensity_threshold)

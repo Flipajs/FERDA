@@ -31,7 +31,12 @@ class Params():
 
         self.use_gt = False
         self.gt_repair = False
-        self.fast_start = False
+        self.fast_start = True
+
+        self.auto_run = True
+        self.run_to_the_end = True
+        self.save_and_exit_when_finished = True
+
 
         self.intensity_threshold = 200
         self.dynamic_intensity_threshold = True
@@ -39,7 +44,7 @@ class Params():
         self.dynamic_intensity_threshold_increase = 0.0
 
         self.show_mser_collection = False
-        self.show_ants_collection = True
+        self.show_ants_collection = False
         self.show_image = True
         self.show_assignment_problem = False
         self.imshow_decreasing_factor = 0.5
@@ -72,7 +77,7 @@ class Params():
         self.video_file_name = ''
         self.predefined_vals = ''
         self.bg = None
-        self.dumpdir = '/out'
+        self.dumpdir = os.path.expanduser('~/dump/collision_editor')
         #self.dumpdir = os.path.expanduser('~/dump/Ferda')
         #self.dumpdir = os.path.expanduser('~/dump/drosophyla')
         #
@@ -96,16 +101,21 @@ class Params():
         #self.predefined_vals = 'NoPlasterNoLid800'
         #self.gt_path = '../data/NoPlasterNoLid800/fixed_out.txt'
         #self.bg = cv2.imread('data/noplast_bg.png')
-        #self.bg = scipy.ndimage.gaussian_filter(self.bg, sigma=1)
+        #self.bg = scipy.ndimage.gaussian_filte
+        #
+        # r(self.bg, sigma=1)
         #self.dumpdir = os.path.expanduser('~/dump/noplast')
 
         self.ant_number = 8
         self.arena = my_utils.RotatedRect(my_utils.Point(593+self.border, 570+self.border), my_utils.Size(344*2, 344*2), 0)
         self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
         self.predefined_vals = 'eight'
-        self.gt_path = '../data/eight/fixed_out.txt'
+        #self.gt_path = '../data/eight/fixed_out.txt'
         self.bg = cv2.imread('data/eight_bg.png')
-        self.dumpdir = os.path.expanduser('~/dump/eight')
+
+        #self.dumpdir = os.path.expanduser('~/dump/eight')
+
+        #self.bg2 = cv2.imread('data/eight_bg.png')
 
         #self.ant_number = 11
         #self.arena = my_utils.RotatedRect(my_utils.Point(665+self.border, 504+self.border), my_utils.Size(491*2, 491*2), 0)

@@ -393,29 +393,29 @@ def draw_assignment_problem(prev_img, img, ants, regions, indexes, params, cell_
 
             sc = score.count_node_weight(ants[i], r, params)
             s_sc =  "%.9f" % (sc*100)
-            cv2.putText(collection, s_sc[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 12), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
+            cv2.putText(collection, s_sc[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 12), font, font_scale, color, 1, cv2.CV_AA)
 
             th = score.theta_change_prob(ants[i], r)
             s_th =  "t %.9f" % (th*100)
-            cv2.putText(collection, s_th[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 25), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
+            cv2.putText(collection, s_th[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 25), font, font_scale, color, 1, cv2.CV_AA)
 
             po = score.position_prob(ants[i], r, params)
             s_po =  "p %.9f" % (po*100)
-            cv2.putText(collection, s_po[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 37), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
+            cv2.putText(collection, s_po[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 37), font, font_scale, color, 1, cv2.CV_AA)
 
             ab = score.a_area_prob(r, params)
             s_ab =  "a %.9f" % (ab*100)
-            cv2.putText(collection, s_ab[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 50), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
+            cv2.putText(collection, s_ab[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 50), font, font_scale, color, 1, cv2.CV_AA)
 
 
-        #cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
-        #cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        #cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        #cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        #cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        #cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        #cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        #cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
+        #cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, 1, cv2.CV_AA)
+        #cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, color, thick, cv2.CV_AA)
+        #cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, color, thick, cv2.CV_AA)
+        #cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, color, thick, cv2.CV_AA)
+        #cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, color, thick, cv2.CV_AA)
+        #cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, color, thick, cv2.CV_AA)
+        #cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, color, thick, cv2.CV_AA)
+        #cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thick, cv2.CV_AA)
 
     cv2.line(collection, (color_stripe_width - 1, 0), (color_stripe_width - 1, c_height - 1), line_color, 1)
     cv2.line(collection, (color_stripe_width + cell_size - 1, 0), (color_stripe_width + cell_size - 1, c_height - 1), line_color, 1)
@@ -478,14 +478,18 @@ def draw_ants_collection(img, ants, cell_size=60, history=0):
         h3 = 40
         h4 = 53
 
-        cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, thickness=1, lineType=cv2.CV_AA)
-        cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
-        cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thickness=thick, lineType=cv2.CV_AA)
+        cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, 1, cv2.CV_AA)
+        cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, color, thick, cv2.CV_AA)
+        cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, color, thick, cv2.CV_AA)
+        cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, color, thick, cv2.CV_AA)
+        cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, color, thick, cv2.CV_AA)
+        cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, color, thick, cv2.CV_AA)
+        if a.b > 0:
+            cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, color, thick, cv2.CV_AA)
+        else:
+            cv2.putText(collection, str(0), (w2, h3+h), font, font_scale, color, thick, cv2.CV_AA)
+
+        cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thick, cv2.CV_AA)
 
     cv2.line(collection, (color_stripe_width - 1, 0), (color_stripe_width - 1, c_height - 1), line_color, 1)
     return collection

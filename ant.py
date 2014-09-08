@@ -5,6 +5,8 @@ __author__ = 'flip'
 import my_utils as my_utils
 from collections import deque
 import copy
+import numpy as np
+import matplotlib.cm as cm
 
 ant_names = ["Arnold", "Bob", "Cenek", "Dusan", "Emil", "Ferda", "Gustav", "Hugo", "Igor", "Julius", "Kamil",
                  "Ludek", "Milos", "Narcis", "Oliver", "Prokop", "Quido", "Rene", "Servac", "Tadeas", "1", "2",
@@ -16,6 +18,11 @@ ant_colors = [(145, 95, 22), (54, 38, 227), (0, 191, 255), (204, 102, 153), (117
                   (60, 192, 3), (0, 79, 255), (128, 128, 128), (255, 255, 255), (0, 0, 0),
                   (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0),
                   (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)]
+
+def get_color(id, ant_num):
+    colors = cm.rainbow(np.linspace(0, 1, ant_num))
+    return (int(colors[id][0] * 255), int(colors[id][1] * 255), int(colors[id][2] * 255))
+
 
 class AntState():
     position = my_utils.Point(0, 0)
@@ -35,6 +42,8 @@ class AntState():
     collision_predicted = False
     collisions = []
     score = 2
+    in_collision = False
+    in_collision_with = []
 
     region = None
     contour = None
@@ -54,6 +63,8 @@ class AntStateReduced():
     lost_time = 0
     collision_predicted = False
     score = 2
+    in_collision = False
+    in_collision_with = []
 
     def __init__(self, state):
         self.position = my_utils.Point(state.position.x, state.position.y)
@@ -73,8 +84,13 @@ class Ant():
     def __init__(self, id):
         self.id = id
         self.area_weighted = -1
-        self.name = ant_names[id]
-        self.color = ant_colors[id]
+        if id < 15:
+            self.name = ant_names[id]
+        else:
+            self.name = str(id)
+
+        self.color = None
+
         self.state = AntState()
         self.history = deque()
         pass

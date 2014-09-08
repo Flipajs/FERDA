@@ -3,7 +3,7 @@ from gui import ants_view
 __author__ = 'flip'
 
 import sys
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import experiment_params
 import cv2
 import cv
@@ -18,7 +18,7 @@ import time
 import visualize
 
 
-class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
+class ControlWindow(QtGui.QMainWindow, ants_view.Ui_Dialog):
     def __init__(self, params, ants, video_manager):
         super(ControlWindow, self).__init__()
         self.setupUi(self)
@@ -43,18 +43,40 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         if self.results2video:
             width = 1920
             height = 1080
-            self.vid_writer = cv2.VideoWriter(filename="ferda_messors.avi",  #Provide a file to write the video to
+            self.vid_writer = cv2.VideoWriter(filename="ferda_output.avi",  #Provide a file to write the video to
                 #fourcc=cv.CV_FOURCC('i','Y', 'U', 'V'),            #Use whichever codec works for you...
                 fourcc=cv2.cv.CV_FOURCC('M','J','P','G'),
                 fps=30,                                        #How many frames do you want to display per second in your video?
                 frameSize=(width, height))
 
+        self.settings = QtCore.QSettings("FERDA")
+        auto_run = self.settings.value(
+            'auto_run', self.params.auto_run, bool
+        )
+
+        if auto_run:
+            self.is_running = True
+            self.play()
+
+    #def __delete__(self, instance):
+        #cv2.destroyAllWindows()
 
     def closeEvent(self, event):
         self.is_running = False
-        cv2.destroyAllWindows()
+        #cv2.dest
+        #event.accept()
 
-        sys.exit(0)
+        #if self.is_running:
+        #    self.is_running = False
+        #    #cv2.destroyAllWindows()
+        #
+        #    self.closeEvent(event)
+        #else:
+        #    event.accept()
+        #cv2.destroyAllWindows()
+
+
+        #sys.exit(0)
 
     def init_ui(self):
         self.i_state_name.setText(ntpath.basename(self.params.video_file_name))
@@ -63,7 +85,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.b_forwards.clicked.connect(self.step_forwards)
         self.b_backwards.clicked.connect(self.step_backwards)
         self.b_choose_path.clicked.connect(self.show_file_dialog)
-        self.b_save_file.clicked.connect(self.save_data)
+        self.b_save_mat.clicked.connect(self.save_data)
         self.b_choose_path_state.clicked.connect(self.show_file_dialog_state)
         self.b_save_state.clicked.connect(self.save_state)
         self.ch_ants_collection.clicked.connect(self.show_ants_collection_changed)
@@ -86,6 +108,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         self.imshow_decreasing_factor.valueChanged.connect(self.imshow_decreasing_factor_changed)
 
         self.ch_assignment_problem.setChecked(False)
+
 
     def step_forwards(self):
         self.is_running = True
@@ -114,12 +137,14 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
     def run(self):
         if self.is_running:
             while self.is_running:
-
                 val = self.sb_stop_at_frame.value()
-                if self.experiment.params.frame >= val and val != 0:
+                if self.experiment.params.frame >= val and val != 0 \
+                    or self.experiment.params.frame > 20:
                     self.b_play.setText('play')
                     self.is_running = False
-                    self.controls()
+                    #self.controls()
+
+                    self.close()
                     return
 
                 if self.forward:
@@ -136,6 +161,15 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
                 if img is None:
                     self.b_play.setText('play')
                     if self.forward:
+                        save_and_exit_when_finished = self.settings.value(
+                            'save_and_exit_when_finished',
+                            self.params.save_and_exit_when_finished,
+                            bool
+                        )
+
+                        if save_and_exit_when_finished:
+                            print "SAVING"
+
                         print "End of video file!"
                     else:
                         print "End of history buffer!"
@@ -177,6 +211,7 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
 
                 self.l_frame.setText(str(self.params.frame))
                 self.controls()
+
 
     def display_informations(self):
         self.l_avg_a_area.setText(str(self.params.avg_ant_area)[0:5])
@@ -287,6 +322,21 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
     def imshow(self):
         self.params.show_image = self.ch_imshow.isChecked()
 
+    def save_mat(self):
+        path = self.out_directory
+
+        data = self.experiment.ants_history_data()
+        if len(path) > 0:
+            path += '/'
+
+        name = str(self.i_file_name.text())
+
+        if len(name) == 0:
+            name = 'undefined'
+
+        path += name+'.mat'
+        sio.savemat(path, {'Ferda': data})
+
     def save_data(self):
         path = self.out_directory
 
@@ -299,14 +349,10 @@ class ControlWindow(QtGui.QDialog, ants_view.Ui_Dialog):
         if len(name) == 0:
             name = 'undefined'
 
-        xy, certainty = self.experiment.results_xy_vector()
-        #print xy
-        afile = open(path+name+'_xy.arr', "wb")
-        pickle.dump(xy, afile)
-        afile.close()
-
-        afile = open(path+name+'_certainty.arr', "wb")
-        pickle.dump(certainty, afile)
+        results = self.experiment.results_xy_vector()
+        results['info'] = {'ant_number': self.experiment.params.ant_number, 'video_file_name': self.experiment.params.video_file_name}
+        afile = open(path+name+'_results.arr', "wb")
+        pickle.dump(results, afile)
         afile.close()
 
         path += name+'.mat'

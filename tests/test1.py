@@ -1,3 +1,4 @@
+__author__ = 'flipajs'
 import sys
 from PyQt4 import QtGui
 from gui.init_window import init_window

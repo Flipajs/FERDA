@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ants_view.ui'
 #
-# Created: Thu Jun 26 19:05:21 2014
+# Created: Mon Sep  1 13:11:40 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -87,6 +87,7 @@ class Ui_Dialog(object):
         self.label_4.setGeometry(QtCore.QRect(14, 85, 91, 17))
         self.label_4.setObjectName(_fromUtf8("label_4"))
         self.ch_print_mser_info = QtGui.QCheckBox(self.tab)
+        self.ch_print_mser_info.setEnabled(False)
         self.ch_print_mser_info.setGeometry(QtCore.QRect(180, 10, 161, 22))
         self.ch_print_mser_info.setChecked(False)
         self.ch_print_mser_info.setObjectName(_fromUtf8("ch_print_mser_info"))
@@ -95,11 +96,13 @@ class Ui_Dialog(object):
         self.ch_imshow.setChecked(True)
         self.ch_imshow.setObjectName(_fromUtf8("ch_imshow"))
         self.ch_assignment_problem = QtGui.QCheckBox(self.tab)
+        self.ch_assignment_problem.setEnabled(False)
         self.ch_assignment_problem.setGeometry(QtCore.QRect(10, 50, 161, 22))
         self.ch_assignment_problem.setChecked(False)
         self.ch_assignment_problem.setObjectName(_fromUtf8("ch_assignment_problem"))
         self.tabWidget.addTab(self.tab, _fromUtf8(""))
         self.tab_2 = QtGui.QWidget()
+        self.tab_2.setEnabled(True)
         self.tab_2.setObjectName(_fromUtf8("tab_2"))
         self.ch_log_each_frame = QtGui.QCheckBox(self.tab_2)
         self.ch_log_each_frame.setEnabled(False)
@@ -112,11 +115,11 @@ class Ui_Dialog(object):
         self.ch_log_verbose.setChecked(False)
         self.ch_log_verbose.setObjectName(_fromUtf8("ch_log_verbose"))
         self.b_log_save_regions = QtGui.QPushButton(self.tab_2)
-        self.b_log_save_regions.setEnabled(False)
+        self.b_log_save_regions.setEnabled(True)
         self.b_log_save_regions.setGeometry(QtCore.QRect(10, 71, 100, 27))
         self.b_log_save_regions.setObjectName(_fromUtf8("b_log_save_regions"))
         self.b_log_save_regions_collection = QtGui.QPushButton(self.tab_2)
-        self.b_log_save_regions_collection.setEnabled(False)
+        self.b_log_save_regions_collection.setEnabled(True)
         self.b_log_save_regions_collection.setGeometry(QtCore.QRect(110, 71, 150, 27))
         self.b_log_save_regions_collection.setObjectName(_fromUtf8("b_log_save_regions_collection"))
         self.label_5 = QtGui.QLabel(self.tab_2)
@@ -127,15 +130,15 @@ class Ui_Dialog(object):
         self.label_5.setFont(font)
         self.label_5.setObjectName(_fromUtf8("label_5"))
         self.b_log_save_frame = QtGui.QPushButton(self.tab_2)
-        self.b_log_save_frame.setEnabled(False)
+        self.b_log_save_frame.setEnabled(True)
         self.b_log_save_frame.setGeometry(QtCore.QRect(10, 98, 100, 27))
         self.b_log_save_frame.setObjectName(_fromUtf8("b_log_save_frame"))
         self.b_log_all = QtGui.QPushButton(self.tab_2)
-        self.b_log_all.setEnabled(False)
+        self.b_log_all.setEnabled(True)
         self.b_log_all.setGeometry(QtCore.QRect(110, 140, 98, 27))
         self.b_log_all.setObjectName(_fromUtf8("b_log_all"))
         self.b_log_assignment_problem = QtGui.QPushButton(self.tab_2)
-        self.b_log_assignment_problem.setEnabled(False)
+        self.b_log_assignment_problem.setEnabled(True)
         self.b_log_assignment_problem.setGeometry(QtCore.QRect(110, 99, 150, 27))
         self.b_log_assignment_problem.setObjectName(_fromUtf8("b_log_assignment_problem"))
         self.tabWidget.addTab(self.tab_2, _fromUtf8(""))
@@ -228,7 +231,7 @@ class Ui_Dialog(object):
         self.tabWidget.addTab(self.info, _fromUtf8(""))
 
         self.retranslateUi(Dialog)
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):

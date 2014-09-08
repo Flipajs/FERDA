@@ -168,6 +168,7 @@ def bg_subtraction(img, params):
     img = np.subtract(bg, img)
 
     img = np.absolute(img)
+
     img = np.invert(img)
 
     return img
