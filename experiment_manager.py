@@ -4,7 +4,6 @@ import math
 import ant
 import numpy as np
 import cv2
-import cv
 import copy
 import mser_operations
 import score
@@ -794,7 +793,7 @@ class ExperimentManager():
 
         my_utils.imshow("ant track result", img_vis, self.params.imshow_decreasing_factor)
         if self.params.frame == 1:
-            cv.MoveWindow("ant track result", 400, 0)
+            cv2.moveWindow("ant track result", 400, 0)
 
         if self.params.show_ants_collection:
             img_copy = self.img_.copy()

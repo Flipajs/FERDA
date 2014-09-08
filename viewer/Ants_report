@@ -1,0 +1,41 @@
+Correction tool
+
+Fungující části:
+	otevírání videa
+	otevírání dat
+	ukládání dat
+	automatické ukládání dat (implicitně do Autosave.arr, po prvním uložení do onoho souboru)
+	otevírání uložených změn
+	ukládání uložených změn
+	historie (undo/redo)
+	nastavení téměř čehokoli (a jednoduché přidávání dalších prvků, viz také QSettings)
+	párování bodů (které z konců mravence patří k sobě)
+	detekce hlav (rozhodně více úspěchů než neúspěchů)
+	prohlížení historie
+	prohazování mravenců
+	oprava detekované hlavy
+	detekce možných chyb různými testy + jejich docela snadné přidávání
+	pohyb v detekovaných chybách tam i zpět
+	pohyb ve videu pomocí čísla frameu či pomocí slideru
+	nastavení rychlosti videa
+	nastavení klávesových zkratek
+	ctrl + posun umožňuje posouvat celého mravence jen za střed, ctrl + hlava/zadeček otáčí druhý z této dvojice kolem středu
+	opravování na základě skupin
+	zobrazení na základě skupin
+	prohlížení chyb v pořadí swapy -> ostatní
+
+Části s problémy:
+	Seek frame stále zlobí. Z toho, co jsem vyčetl, za to může chybná spolupráce mezi OpenCV a videokodeky. Verze, která to měla zlepšit, podle mého zlobí proto, že špatné výsledky může vracet i get(CV_CAP_PROP_POS_FRAMES). Napsal jsem k tomu test(test.py), ale náhrada za scrollování frame po framu byla nechutně pomalá. Napadá mne leda rozsekat na začátku video na obrázky a pak používat ty.
+
+Nepřidané části:
+	mravenec již jednou upravený se bere jako jistý (půjde ale dobře přidat do IdentityManageru ve funkcích save a load)
+
+Backround corrector
+
+Fungující části:
+	otevírání, ukládání obrázku
+	označení části, kterou chci opravit, a poté části, ze které chci zkopírovat pozadí
+	nastavení
+
+Nepřidané části:
+	automatické vypočítání podle okolí (nevím, jak na to)

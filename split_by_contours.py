@@ -2,7 +2,6 @@ __author__ = 'flipajs'
 
 import pickle
 import numpy as np
-import cv
 import cv2
 import sys
 import math

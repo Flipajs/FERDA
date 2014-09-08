@@ -6,7 +6,6 @@ import sys
 from PyQt4 import QtGui, QtCore
 import experiment_params
 import cv2
-import cv
 import experiment_manager
 import scipy.io as sio
 import ntpath
@@ -45,7 +44,7 @@ class ControlWindow(QtGui.QMainWindow, ants_view.Ui_Dialog):
             height = 1080
             self.vid_writer = cv2.VideoWriter(filename="ferda_output.avi",  #Provide a file to write the video to
                 #fourcc=cv.CV_FOURCC('i','Y', 'U', 'V'),            #Use whichever codec works for you...
-                fourcc=cv2.cv.CV_FOURCC('M','J','P','G'),
+                fourcc=cv2.VideoWriter_fourcc('M','J','P','G'),
                 fps=30,                                        #How many frames do you want to display per second in your video?
                 frameSize=(width, height))
 
@@ -139,7 +138,7 @@ class ControlWindow(QtGui.QMainWindow, ants_view.Ui_Dialog):
             while self.is_running:
                 val = self.sb_stop_at_frame.value()
                 if self.experiment.params.frame >= val and val != 0 \
-                    or self.experiment.params.frame > 20:
+                    or self.experiment.params.frame > 50:
                     self.b_play.setText('play')
                     self.is_running = False
                     #self.controls()

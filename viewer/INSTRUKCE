@@ -1,0 +1,22 @@
+UKOLY:
+DONE (-:> pochvalit se za doposud odvedenou praci =)
+
+DONE    > pamatovat si provedene upravy
+
+DONE    > pridat moznost ulozit rozpracovany soubor s upravami (original by mel zustat jenom pro cteni) a ten prubezne ukladat (autosave).
+
+DONE    > pripravit si seznam zmen ktere probehly a pridat moznost vratit upravy.
+
+> zbytek kdyztak probereme osobne.
+
+DONE    > Pridat nastroj SWAP ktery ve zvolenem framu prohodi dve zvolene identity ve vsech nasledujicich framech zbytku sekvence...
+
+DONE    > Pridat funkci ktera vykresli historii mravence v predchozich framech. Prozatim asi stacej barevne tecky ktere maji zvysujici se pruhlednost cim jdou hloubeji do historie.
+
+DONE    > Navazat undo/redo na klavesove zkratky asi klasiku ctrl+z ctrl+shift+z
+
+DONE    > Frame SEEK (DEBIAN)
+
+> agregovat data (prumerna/min/max rychlost, delka, kolize)
+
+DONE    > opacity 0.85
