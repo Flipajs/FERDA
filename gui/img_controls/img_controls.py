@@ -3,7 +3,7 @@ __author__ = 'flipajs'
 from gui.img_controls import img_controls_qt, utils
 from random import randint, shuffle
 import os, time, math
-from PyQt4 import QtCore, QtGui, QtOpenGL
+from PyQt4 import QtCore, QtGui
 import ImageQt
 import cv2
 from my_view import *

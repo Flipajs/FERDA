@@ -31,11 +31,11 @@ class Params():
 
         self.use_gt = False
         self.gt_repair = False
-        self.fast_start = True
+        self.fast_start = False
 
-        self.auto_run = True
-        self.run_to_the_end = True
-        self.save_and_exit_when_finished = True
+        self.auto_run = False
+        self.run_to_the_end = False
+        self.save_and_exit_when_finished = False
 
 
         self.intensity_threshold = 200
@@ -58,11 +58,11 @@ class Params():
         #self.ab_area_step = 0.05
         #self.ab_area_max = 43.0
 
-        afile = open('data/ab_area_hist_blurred.pkl', 'rb')
+        afile = open('../data/ab_area_hist_blurred.pkl', 'rb')
         self.ab_area_hist = pickle.load(afile)
         afile.close()
 
-        afile = open('data/a_area_hist_blurred.pkl', 'rb')
+        afile = open('../data/a_area_hist_blurred.pkl', 'rb')
         self.a_area_hist = pickle.load(afile)
         afile.close()
 
@@ -95,23 +95,21 @@ class Params():
         ##self.gt_path = '../data/eight/fixed_out.txt'
         #self.bg = None
 
-        #self.ant_number = 15
-        #self.arena = my_utils.RotatedRect(my_utils.Point(403+self.border, 387+self.border), my_utils.Size(767, 767), 0)
-        #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
-        #self.predefined_vals = 'NoPlasterNoLid800'
-        #self.gt_path = '../data/NoPlasterNoLid800/fixed_out.txt'
-        #self.bg = cv2.imread('data/noplast_bg.png')
-        #self.bg = scipy.ndimage.gaussian_filte
-        #
-        # r(self.bg, sigma=1)
-        #self.dumpdir = os.path.expanduser('~/dump/noplast')
+        self.ant_number = 15
+        self.arena = my_utils.RotatedRect(my_utils.Point(403+self.border, 387+self.border), my_utils.Size(767, 767), 0)
+        self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
+        self.predefined_vals = 'NoPlasterNoLid800'
+        self.gt_path = '../data/NoPlasterNoLid800/fixed_out.txt'
+        self.bg = cv2.imread('../data/noplast_bg.png')
+        self.bg = scipy.ndimage.gaussian_filter(self.bg, sigma=1)
+        # self.dumpdir = os.path.expanduser('~/dump/noplast')
 
-        self.ant_number = 8
-        self.arena = my_utils.RotatedRect(my_utils.Point(593+self.border, 570+self.border), my_utils.Size(344*2, 344*2), 0)
-        self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
-        self.predefined_vals = 'eight'
-        #self.gt_path = '../data/eight/fixed_out.txt'
-        self.bg = cv2.imread('data/eight_bg.png')
+        # self.ant_number = 8
+        # self.arena = my_utils.RotatedRect(my_utils.Point(593+self.border, 570+self.border), my_utils.Size(344*2, 344*2), 0)
+        # self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
+        # self.predefined_vals = 'eight'
+        # #self.gt_path = '../data/eight/fixed_out.txt'
+        # self.bg = cv2.imread('data/eight_bg.png')
 
         #self.dumpdir = os.path.expanduser('~/dump/eight')
 

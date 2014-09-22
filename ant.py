@@ -79,6 +79,8 @@ class AntStateReduced():
 
         self.collision_predicted = state.collision_predicted
         self.score = state.score
+        self.in_collision = state.in_collision
+        self.in_collision_with = state.in_collision_with
 
 class Ant():
     def __init__(self, id):

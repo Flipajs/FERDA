@@ -1,6 +1,7 @@
 __author__ = 'flip'
 
 import cv2
+import os
 
 
 class VideoManager():

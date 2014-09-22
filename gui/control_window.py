@@ -32,9 +32,13 @@ class ControlWindow(QtGui.QMainWindow, ants_view.Ui_Dialog):
         self.wait_for_button_press = False
         self.forward = True
 
-        self.window().setGeometry(0, 0, self.window().width(), self.window().height())
+        self.exit_callback = None
+
         self.init_ui()
-        self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
+        # self.show()
+        # self.window().show()
+        # self.window().setGeometry(0, 0, self.window().width(), self.window().height())
+        # self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
 
 
         self.results2video = True
@@ -57,8 +61,12 @@ class ControlWindow(QtGui.QMainWindow, ants_view.Ui_Dialog):
             self.is_running = True
             self.play()
 
+
     #def __delete__(self, instance):
         #cv2.destroyAllWindows()
+
+    def set_exit_callback(self, callback):
+        self.exit_callback = callback
 
     def closeEvent(self, event):
         self.is_running = False
@@ -95,7 +103,6 @@ class ControlWindow(QtGui.QMainWindow, ants_view.Ui_Dialog):
         self.b_load_state.clicked.connect(self.load_state)
         self.b_log_all.clicked.connect(self.log_all)
         self.b_log_assignment_problem.clicked.connect(self.logger.log_assignment_problem)
-        self.show()
 
         self.b_log_save_regions.clicked.connect(self.log_save_regions)
         self.b_log_save_regions_collection.clicked.connect(self.log_save_regions_collection)
@@ -137,12 +144,17 @@ class ControlWindow(QtGui.QMainWindow, ants_view.Ui_Dialog):
         if self.is_running:
             while self.is_running:
                 val = self.sb_stop_at_frame.value()
-                if self.experiment.params.frame >= val and val != 0 \
-                    or self.experiment.params.frame > 50:
+                if self.experiment.params.frame >= val and val != 0:
                     self.b_play.setText('play')
                     self.is_running = False
                     #self.controls()
 
+                    if self.exit_callback is not None:
+                        cv2.destroyAllWindows()
+                        self.exit_callback()
+
+
+                    print "EXITING"
                     self.close()
                     return
 

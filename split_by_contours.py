@@ -73,7 +73,7 @@ def get_contour(region, data=None):
     #cv2.imshow("img", img)
 
     ret,thresh = cv2.threshold(img, 127, 255, 0)
-    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    _, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
     cnt = []
 

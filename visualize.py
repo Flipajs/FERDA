@@ -139,8 +139,8 @@ def draw_region_collection(img, regions, params, cols=15, rows=10, cell_size=50)
             "cy"] - cell_size / 2:border + r["cy"] + cell_size / 2, border + r["cx"] - cell_size / 2:border + r[
             "cx"] + cell_size / 2].copy()
 
-        cv2.putText(img_small, str(i), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
-        cv2.putText(img_small, str(r["margin"]), (3, 20), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+        cv2.putText(img_small, str(i), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.putText(img_small, str(r["margin"]), (3, 20), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.LINE_AA)
         collection[row * cell_size:(row + 1) * cell_size, col * cell_size:(col + 1) * cell_size, :] = img_small
 
     return collection
@@ -174,7 +174,7 @@ def draw_region_best_margins_collection(img, regions, indexes, ants, cols=5, cel
 
             img_small = img_[border + r["cy"] - cell_size / 2:border + r["cy"] + cell_size / 2, border + r["cx"] - cell_size / 2:border + r["cx"] + cell_size / 2].copy()
 
-            cv2.putText(img_small, str(indexes[row*cols + col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(indexes[row*cols + col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.LINE_AA)
             collection[(row) * cell_size:((row) + 1) * cell_size, (col) * cell_size:((col) + 1) * cell_size, :] = img_small
 
     return collection
@@ -201,7 +201,7 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
                 row_p = -rows
                 col_p = cols+1
 
-        cv2.putText(collection, str(row), (3 + cell_size*col_p, 30 + cell_size*(row+row_p)), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+        cv2.putText(collection, str(row), (3 + cell_size*col_p, 30 + cell_size*(row+row_p)), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.LINE_AA)
 
         best_id = -1
         margins = [0]*len(groups[row])
@@ -236,13 +236,13 @@ def draw_region_group_collection(img, regions, groups, params, cell_size=70):
             _, a, b = my_utils.mser_main_axis_ratio(r["sxy"], r["sxx"], r["syy"])
             a, b = my_utils.count_head_tail(r["area"], a, b)
 
-            #cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.LINE_AA)
             #if col == best_id:
-            #cv2.putText(img_small, str(r['a'])[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-            #cv2.putText(img_small, str(r['area']/(r['a']*2))[0:5], (35, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 0), 1, cv2.CV_AA)
-            #cv2.putText(img_small, str(r['area']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-            #cv2.putText(img_small, str(r['maxI']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 255), 1, cv2.CV_AA)
-            #cv2.putText(img_small, str(r['margin']), (3, 65), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(r['a'])[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.LINE_AA)
+            #cv2.putText(img_small, str(r['area']/(r['a']*2))[0:5], (35, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 0), 1, cv2.LINE_AA)
+            #cv2.putText(img_small, str(r['area']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.LINE_AA)
+            #cv2.putText(img_small, str(r['maxI']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 255), 1, cv2.LINE_AA)
+            #cv2.putText(img_small, str(r['margin']), (3, 65), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.LINE_AA)
             collection[(row + row_p) * cell_size:((row + row_p) + 1) * cell_size, num_strip + (col + col_p) * cell_size:num_strip + ((col + col_p) + 1) * cell_size, :] = img_small
 
     #print "COUNTER: ", counter
@@ -270,7 +270,7 @@ def draw_region_group_collection2(img, regions, groups, params, cell_size=70):
                 row_p = -rows
                 col_p = cols+1
 
-        cv2.putText(collection, str(row), (3 + cell_size*col_p, 30 + cell_size*(row+row_p)), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+        cv2.putText(collection, str(row), (3 + cell_size*col_p, 30 + cell_size*(row+row_p)), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.LINE_AA)
 
         best_id = -1
         margins = [0]*len(groups[row])
@@ -305,14 +305,14 @@ def draw_region_group_collection2(img, regions, groups, params, cell_size=70):
             _, a, b = my_utils.mser_main_axis_ratio(r["sxy"], r["sxx"], r["syy"])
             a, b = my_utils.count_head_tail(r["area"], a, b)
 
-            #cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(groups[row][col]), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.LINE_AA)
             #if col == best_id:
-            #cv2.putText(img_small, str(r['a'])[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-            #cv2.putText(img_small, str(r['area']/(r['a']*2))[0:5], (35, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 0), 1, cv2.CV_AA)
-            #cv2.putText(img_small, str(r['area']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-            #cv2.putText(img_small, str(r['maxI']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 255), 1, cv2.CV_AA)
-            #cv2.putText(img_small, str(r['margin']), (3, 65), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-            cv2.putText(img_small, str(r['margin']), (3, 15), cv2.FONT_HERSHEY_PLAIN, 0.8, (0, 0, 0), 1, cv2.CV_AA)
+            #cv2.putText(img_small, str(r['a'])[0:5], (3, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.LINE_AA)
+            #cv2.putText(img_small, str(r['area']/(r['a']*2))[0:5], (35, 35), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 0), 1, cv2.LINE_AA)
+            #cv2.putText(img_small, str(r['area']), (3, 55), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.LINE_AA)
+            #cv2.putText(img_small, str(r['maxI']), (3, 45), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 255), 1, cv2.LINE_AA)
+            #cv2.putText(img_small, str(r['margin']), (3, 65), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.putText(img_small, str(r['margin']), (3, 15), cv2.FONT_HERSHEY_PLAIN, 0.8, (0, 0, 0), 1, cv2.LINE_AA)
             collection[(row + row_p) * cell_size:((row + row_p) + 1) * cell_size, num_strip + (col + col_p) * cell_size:num_strip + ((col + col_p) + 1) * cell_size, :] = img_small
 
     #print "COUNTER: ", counter
@@ -393,29 +393,29 @@ def draw_assignment_problem(prev_img, img, ants, regions, indexes, params, cell_
 
             sc = score.count_node_weight(ants[i], r, params)
             s_sc =  "%.9f" % (sc*100)
-            cv2.putText(collection, s_sc[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 12), font, font_scale, color, 1, cv2.CV_AA)
+            cv2.putText(collection, s_sc[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 12), font, font_scale, color, 1, cv2.LINE_AA)
 
             th = score.theta_change_prob(ants[i], r)
             s_th =  "t %.9f" % (th*100)
-            cv2.putText(collection, s_th[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 25), font, font_scale, color, 1, cv2.CV_AA)
+            cv2.putText(collection, s_th[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 25), font, font_scale, color, 1, cv2.LINE_AA)
 
             po = score.position_prob(ants[i], r, params)
             s_po =  "p %.9f" % (po*100)
-            cv2.putText(collection, s_po[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 37), font, font_scale, color, 1, cv2.CV_AA)
+            cv2.putText(collection, s_po[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 37), font, font_scale, color, 1, cv2.LINE_AA)
 
             ab = score.a_area_prob(r, params)
             s_ab =  "a %.9f" % (ab*100)
-            cv2.putText(collection, s_ab[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 50), font, font_scale, color, 1, cv2.CV_AA)
+            cv2.putText(collection, s_ab[0:7], (3 + color_stripe_width + cell_size * (2 * (best_id + 1)), i * cell_size + 50), font, font_scale, color, 1, cv2.LINE_AA)
 
 
-        #cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, 1, cv2.CV_AA)
-        #cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, color, thick, cv2.CV_AA)
-        #cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, color, thick, cv2.CV_AA)
-        #cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, color, thick, cv2.CV_AA)
-        #cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, color, thick, cv2.CV_AA)
-        #cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, color, thick, cv2.CV_AA)
-        #cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, color, thick, cv2.CV_AA)
-        #cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thick, cv2.CV_AA)
+        #cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, 1, cv2.LINE_AA)
+        #cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, color, thick, cv2.LINE_AA)
+        #cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, color, thick, cv2.LINE_AA)
+        #cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, color, thick, cv2.LINE_AA)
+        #cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, color, thick, cv2.LINE_AA)
+        #cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, color, thick, cv2.LINE_AA)
+        #cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, color, thick, cv2.LINE_AA)
+        #cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thick, cv2.LINE_AA)
 
     cv2.line(collection, (color_stripe_width - 1, 0), (color_stripe_width - 1, c_height - 1), line_color, 1)
     cv2.line(collection, (color_stripe_width + cell_size - 1, 0), (color_stripe_width + cell_size - 1, c_height - 1), line_color, 1)
@@ -478,18 +478,18 @@ def draw_ants_collection(img, ants, cell_size=60, history=0):
         h3 = 40
         h4 = 53
 
-        cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, 1, cv2.CV_AA)
-        cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, color, thick, cv2.CV_AA)
-        cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, color, thick, cv2.CV_AA)
-        cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, color, thick, cv2.CV_AA)
-        cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, color, thick, cv2.CV_AA)
-        cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, color, thick, cv2.CV_AA)
+        cv2.putText(collection, ants[i].name, (w + 3, h1+h), font, font_scale, color, 1, cv2.LINE_AA)
+        cv2.putText(collection, "[" + str(a.position.x)[0:6] + ", " + str(a.position.y)[0:6] + "]", (w + 3, h2+h), font, font_scale, color, thick, cv2.LINE_AA)
+        cv2.putText(collection, "theta: " + str(a.theta*180/3.14)[0:6], (w + 3, h3+h), font, font_scale, color, thick, cv2.LINE_AA)
+        cv2.putText(collection, "area: " + str(a.area), (w + 3, h4+h), font, font_scale, color, thick, cv2.LINE_AA)
+        cv2.putText(collection, "p: " + str(a.score)[0:6], (w2, h1+h), font, font_scale, color, thick, cv2.LINE_AA)
+        cv2.putText(collection, "[" + str(a.a)[0:6] + ", " + str(a.b)[0:6] + "]", (w2, h2+h), font, font_scale, color, thick, cv2.LINE_AA)
         if a.b > 0:
-            cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, color, thick, cv2.CV_AA)
+            cv2.putText(collection, str(a.a / a.b)[0:6], (w2, h3+h), font, font_scale, color, thick, cv2.LINE_AA)
         else:
-            cv2.putText(collection, str(0), (w2, h3+h), font, font_scale, color, thick, cv2.CV_AA)
+            cv2.putText(collection, str(0), (w2, h3+h), font, font_scale, color, thick, cv2.LINE_AA)
 
-        cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thick, cv2.CV_AA)
+        cv2.putText(collection, str(a.mser_id), (w2, h4+h), font, font_scale, color, thick, cv2.LINE_AA)
 
     cv2.line(collection, (color_stripe_width - 1, 0), (color_stripe_width - 1, c_height - 1), line_color, 1)
     return collection

@@ -9,7 +9,7 @@
 
 from PyQt4 import QtCore, QtGui
 
-from gui.img_controls.components import VideoSlider
+from viewer.gui.img_controls.components import VideoSlider
 
 
 try:

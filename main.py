@@ -6,7 +6,4 @@ from gui.init_window import init_window
 app = QtGui.QApplication(sys.argv)
 ex = init_window.InitWindow()
 
-#sys.exit(app.exec_())
-#app.exec_()
-app.deleteLater()
-sys.exit()
+sys.exit(app.exec_())

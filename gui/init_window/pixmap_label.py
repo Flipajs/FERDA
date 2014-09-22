@@ -51,7 +51,7 @@ class PixmapLabel(QtGui.QLabel):
         img_small = img_[border + r["cy"] - cell_size / 2:border + r["cy"] + cell_size / 2, border + r["cx"] - cell_size / 2:border + r["cx"] + cell_size / 2].copy()
 
         if self.ant_number > 0:
-            cv2.putText(img_small, str(self.ant_number), (3, 12), cv2.FONT_HERSHEY_PLAIN, 0.75, (0, 0, 0), 1, cv2.CV_AA)
+            cv2.putText(img_small, str(self.ant_number), (3, 12), cv2.FONT_HERSHEY_PLAIN, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
 
         img_q = ImageQt.QImage(img_small.data, img_small.shape[1], img_small.shape[0], img_small.shape[1]*3, 13)
         pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
@@ -126,3 +126,45 @@ class PixmapLabel(QtGui.QLabel):
 
 
         self.update_graphics_view()
+
+    def add_ant(self):
+        i = self.window_p.actual_focus
+        if i < 0:
+            i = 0
+            while i < len(self.ant_assignment):
+                if not self.ant_assignment[i]:
+                    break
+                i += 1
+
+        if i >= len(self.ant_assignment):
+            return
+
+        self.ant_assignment[i].append(self.r_id)
+
+        self.ant_number += 1
+
+        pix_map = self.get_pixmap(ant.get_color(i, len(self.ant_assignment)))
+
+        # button = self.window_p.object_init_layout.itemAt(i).widget()
+        # button_val = int(button.text())
+        # if button_val > -1:
+        #     j = 0
+        #     for r_id in self.window_p.chosen_regions_indexes:
+        #         if r_id == button_val:
+        #             break
+        #
+        #         j += 1
+        #
+        #     self.ant_assignment[i].remove(button_val)
+        #
+        #     r, c, _, _ = self.window_p.init_mser_grid.getItemPosition(j)
+        #     prev_pix_map = self.window_p.init_mser_grid.itemAtPosition(r, c).widget()
+        #
+        #     prev_pix_map_ = prev_pix_map.get_pixmap(self.default_c)
+        #     prev_pix_map.update_pixmap(prev_pix_map_)
+        #     prev_pix_map.ant_number -= 1
+
+        self.window_p.object_init_layout.itemAt(i).widget().setText(str(self.r_id))
+        self.update_pixmap(pix_map)
+
+        self.window_p.assign_ant(i, self.r_id)

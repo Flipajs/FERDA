@@ -10,12 +10,12 @@ import default_settings
 from PyQt4 import QtCore, QtGui
 import cv2
 
-from gui.img_controls import img_controls_qt, utils, markers
+from viewer.gui.img_controls import img_controls_qt, utils, markers
 from my_view import *
-import video_manager
+from viewer import video_manager
 import visualization_utils
-from identity_manager import IdentityManager
-from gui.img_controls.dialogs import SettingsDialog
+from viewer.identity_manager import IdentityManager
+from viewer.gui.img_controls.dialogs import SettingsDialog
 
 
 try:
@@ -64,7 +64,8 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.set_fault_utils_visibility(False)
 
         # DEBUG COMMANDS
-        self.identity_manager = IdentityManager('data/noplast_2262_results.arr')
+        # self.identity_manager = IdentityManager('data/noplast2262-new_results.arr')
+        self.identity_manager = IdentityManager('/home/flipajs/Desktop/ferda-webcam1_3194_results.arr')
         self.delete_history_markers()
         self.delete_forward_markers()
         self.init_identity_markers(self.identity_manager.ant_num, self.identity_manager.group_num)
@@ -188,7 +189,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.timer.setInterval(1000 / self.frame_rate)
         self.fpsLabel.setText(str(self.frame_rate) + ' fps')
         self.speedSlider.setMinimum(1)
-        self.speedSlider.setMaximum(60)
+        self.speedSlider.setMaximum(120)
 
     def init_video_slider(self):
         """Initiates slider used to control position in video"""
@@ -215,7 +216,8 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
     def load_video_debug(self):
         """Loads fixed video. Used for debug."""
-        self.video = video_manager.VideoManager('src/NoPlasterNoLid800.m4v')
+        # self.video = video_manager.VideoManager('/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v')
+        self.video = video_manager.VideoManager('/home/flipajs/my_video-16.mkv')
         image = self.video.next_img()
         self.pixMap = utils.cvimg2qtpixmap(image)
         utils.view_add_bg_image(self.graphics_view, self.pixMap)
@@ -458,7 +460,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
     def open_video(self):
         """Method of openVideo button. Shows dialog to select file and calls self.load_video"""
-        filename = QtGui.QFileDialog.getOpenFileName(self, "Open video", "", "Video files (*.m4v);;All files (*.*)")
+        filename = QtGui.QFileDialog.getOpenFileName(self, "Open video", "", "Video files (*.avi *.mp4 *.mkv);;All files (*.*)")
         if filename != "":
             self.load_video(filename)
 

@@ -8,7 +8,7 @@ import video_manager
 
 
 def video_example():
-    video = video_manager.VideoManager('../../data/eight/eight.m4v')
+    video = video_manager.VideoManager('/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v')
 
     # self.capture = cv2.cv.CreateFileCapture('src/eight.m4v')
     #

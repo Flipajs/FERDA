@@ -232,28 +232,5 @@ def main():
 
     analyse_results(results, results2)
 
-    #for key in results:
-    #    if results[key] != results2[key]:
-    #        print key, "FAIL"
-    #    else:
-    #        print key, "OK"
-    #
-    #print results
-    #print results2
-    #
-    #results = get_stable_results('noplast')
-    #results2 = get_stable_results('noplast', old=True)
-    #
-    #for key in results:
-    #    if results[key] != results2[key]:
-    #        print key, "FAIL"
-    #    else:
-    #        print key, "OK"
-    #
-    #print results
-    #print results2
-
-    #analyse_results('eight')
-
 if __name__ == '__main__':
     main()
