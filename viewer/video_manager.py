@@ -93,6 +93,7 @@ class VideoManager():
             if pos == frame_number:
                 return image
             elif pos > frame_number:
+                print "DECREASING"
                 position_to_set -= 1
                 self.capture.set(cv2.CAP_PROP_POS_FRAMES, position_to_set)
                 pos = -1
