@@ -9,7 +9,6 @@ from gui import ferda_window
 #
 # sys.exit(app.exec_())
 
-#TEST
 
 app = QtGui.QApplication(sys.argv)
 ex = ferda_window.FerdaControls()
