@@ -5,8 +5,9 @@ from viewer import video_manager
 
 # vid_file = '/home/flipajs/Dropbox/PycharmProjects/ants/scripts/my_output_videofile12.mp4'
 orig_file = '/home/flipajs/my_video-16.mkv'
-vid_file = '/home/flipajs/Dropbox/PycharmProjects/ants/scripts/my_output_videofile12.mp4'
+# vid_file = '/home/flipajs/Dropbox/PycharmProjects/ants/scripts/my_output_videofile12.mp4'
 # vid_file = '/home/flipajs/my_video-16-new3.avi'
+vid_file = '/home/flipajs/my_video-16-DIVX.avi'
 vid1 = video_manager.VideoManager(orig_file)
 vid2 = video_manager.VideoManager(vid_file)
 

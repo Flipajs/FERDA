@@ -5,9 +5,10 @@ import subprocess as sp
 import numpy as np
 import ffmpeg_writer
 
-path = '/home/flipajs/'
-name = 'my_video-16'
-ext = '.mkv'
+# path = '/home/flipajs/'
+path = '/media/flipajs/Seagate Expansion Drive/'
+name = 'Camera 1'
+ext = '.avi'
 capture = cv2.VideoCapture(path+name+ext)
 
 
@@ -19,19 +20,20 @@ file_name = path+name+'-5'+ext
 
 
 
-video_writer = ffmpeg_writer.VideoSink(img.shape)
+# video_writer = ffmpeg_writer.VideoSink(img.shape)
 
 
 # video_writer = moviepy.FFMPEG_VideoWriter(file_name, [width, height], 30)
 #
-# vid_writer = cv2.VideoWriter(filename=path+name+"-new5.avi",  #Provide a file to write the video to
-#                                 # fourcc=cv2.VideoWriter_fourcc('I', 'Y', 'U', 'V'),            #Use whichever codec works for you...
-#                                 # fourcc=cv2.VideoWriter_fourcc('M','J','P','G'),
-#                                 # fourcc=cv2.VideoWriter_fourcc('H','2','6','4'),
-#                                 # fourcc=cv2.VideoWriter_fourcc('I','2','6','3'),
-#                                 fourcc=cv2.VideoWriter_fourcc('D','I','V','X'),
-#                                 fps=30,                                        #How many frames do you want to display per second in your video?
-#                                 frameSize=(width, height))
+vid_writer = cv2.VideoWriter(filename=path+name+"-DIVX.avi",  #Provide a file to write the video to
+                                # fourcc=cv2.VideoWriter_fourcc('I', 'Y', 'U', 'V'),            #Use whichever codec works for you...
+                                # fourcc=cv2.VideoWriter_fourcc('M','J','P','G'),
+                                # fourcc=cv2.VideoWriter_fourcc('H','2','6','4'),
+                                # fourcc=cv2.VideoWriter_fourcc('I','2','6','3'),
+                                fourcc=cv2.VideoWriter_fourcc('D','I','V','X'),
+                                # fourcc=cv2.VideoWriter_fourcc('H','F','Y','U'),
+                                fps=30,                                        #How many frames do you want to display per second in your video?
+                                frameSize=(width, height))
 
 
 #
@@ -57,9 +59,9 @@ while True:
         print "END of video"
         break
 
-    video_writer.run(img)
+    # video_writer.run(img)
     # video_writer.write_frame(img)
-    # vid_writer.write(img)
+    vid_writer.write(img)
 
     # pipe.proc.stdin.write(img.tostring())
     #
@@ -67,11 +69,10 @@ while True:
     # cv2.waitKey(0)
     f, img = capture.read()
 
-    # if frame % 1000 == 0:
-    #     break
-    #     print frame
+    if frame % 1000 == 0:
+        print frame
 
     frame += 1
 
 
-video_writer.close()
+# video_writer.close()

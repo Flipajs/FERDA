@@ -31,7 +31,7 @@ class Params():
 
         self.use_gt = False
         self.gt_repair = False
-        self.fast_start = False
+        self.fast_start = True
 
         self.auto_run = False
         self.run_to_the_end = False
@@ -45,7 +45,7 @@ class Params():
 
         self.show_mser_collection = False
         self.show_ants_collection = False
-        self.show_image = True
+        self.show_image = False
         self.show_assignment_problem = False
         self.imshow_decreasing_factor = 0.5
         self.print_mser_info = False
@@ -58,11 +58,11 @@ class Params():
         #self.ab_area_step = 0.05
         #self.ab_area_max = 43.0
 
-        afile = open('../data/ab_area_hist_blurred.pkl', 'rb')
+        afile = open('data/ab_area_hist_blurred.pkl', 'rb')
         self.ab_area_hist = pickle.load(afile)
         afile.close()
 
-        afile = open('../data/a_area_hist_blurred.pkl', 'rb')
+        afile = open('data/a_area_hist_blurred.pkl', 'rb')
         self.a_area_hist = pickle.load(afile)
         afile.close()
 
@@ -99,8 +99,8 @@ class Params():
         self.arena = my_utils.RotatedRect(my_utils.Point(403+self.border, 387+self.border), my_utils.Size(767, 767), 0)
         self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
         self.predefined_vals = 'NoPlasterNoLid800'
-        self.gt_path = '../data/NoPlasterNoLid800/fixed_out.txt'
-        self.bg = cv2.imread('../data/noplast_bg.png')
+        self.gt_path = 'data/NoPlasterNoLid800/fixed_out.txt'
+        self.bg = cv2.imread('data/noplast_bg.png')
         self.bg = scipy.ndimage.gaussian_filter(self.bg, sigma=1)
         # self.dumpdir = os.path.expanduser('~/dump/noplast')
 
