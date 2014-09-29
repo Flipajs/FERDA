@@ -45,7 +45,7 @@ class Params():
 
         self.show_mser_collection = False
         self.show_ants_collection = False
-        self.show_image = True
+        self.show_image = False
         self.show_assignment_problem = False
         self.imshow_decreasing_factor = 0.5
         self.print_mser_info = False
