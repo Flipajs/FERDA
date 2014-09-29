@@ -62,7 +62,7 @@ while True:
     # video_writer.run(img)
     # video_writer.write_frame(img)
     vid_writer.write(img)
-
+    cv2.imwrite(path+"img_test/"+name+frame+".png")
     # pipe.proc.stdin.write(img.tostring())
     #
     # cv2.imshow("TEST", img)

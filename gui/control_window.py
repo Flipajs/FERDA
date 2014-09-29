@@ -15,9 +15,10 @@ import logger
 import collisions
 import time
 import visualize
+import cv_compatibility
 
 
-class ControlWindow(QtGui.QMainWindow, ants_view.Ui_Dialog):
+class ControlWindow(QtGui.QWidget, ants_view.Ui_Dialog):
     def __init__(self, params, ants, video_manager):
         super(ControlWindow, self).__init__()
         self.setupUi(self)
@@ -48,7 +49,7 @@ class ControlWindow(QtGui.QMainWindow, ants_view.Ui_Dialog):
             height = 1080
             self.vid_writer = cv2.VideoWriter(filename="ferda_output.avi",  #Provide a file to write the video to
                 #fourcc=cv.CV_FOURCC('i','Y', 'U', 'V'),            #Use whichever codec works for you...
-                fourcc=cv2.VideoWriter_fourcc('M','J','P','G'),
+                fourcc=cv_compatibility.cv_vidWriter('M','J','P','G'),
                 fps=30,                                        #How many frames do you want to display per second in your video?
                 frameSize=(width, height))
 
