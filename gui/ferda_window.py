@@ -31,8 +31,11 @@ class FerdaControls(QtGui.QMainWindow, ferda_window_qt.Ui_MainWindow):
 
     def closeEvent(self, event):
         print "exiting"
+
         if self.control_widget is not None:
-            self.control_widget.is_running = False
+            self.control_widget.close()
+
+        event.accept()
 
     def start_ferda(self):
         self.control_widget = control_window.ControlWindow(self.init_widget.params, self.init_widget.ants, self.init_widget.video_manager)

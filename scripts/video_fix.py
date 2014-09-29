@@ -7,7 +7,7 @@ import ffmpeg_writer
 
 # path = '/home/flipajs/'
 path = '/media/flipajs/Seagate Expansion Drive/'
-name = 'Camera 1'
+name = 'bigLenses_colormarks1'
 ext = '.avi'
 capture = cv2.VideoCapture(path+name+ext)
 
@@ -62,7 +62,7 @@ while True:
     # video_writer.run(img)
     # video_writer.write_frame(img)
     vid_writer.write(img)
-    cv2.imwrite(path+"img_test/"+name+frame+".png")
+    cv2.imwrite(path+"img_test/"+name+str(frame)+".png", img)
     # pipe.proc.stdin.write(img.tostring())
     #
     # cv2.imshow("TEST", img)

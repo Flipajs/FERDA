@@ -63,8 +63,9 @@ class ControlWindow(QtGui.QWidget, ants_view.Ui_Dialog):
             self.play()
 
 
-    #def __delete__(self, instance):
-        #cv2.destroyAllWindows()
+    def __delete__(self, instance):
+        print "EXITING control_window"
+        cv2.destroyAllWindows()
 
     def set_exit_callback(self, callback):
         self.exit_callback = callback

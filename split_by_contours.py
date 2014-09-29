@@ -10,6 +10,7 @@ import os
 import time
 import matplotlib.pyplot as plt
 from scipy import ndimage
+import cv_compatibility
 
 dist_thresh = 4
 in_debug = True
@@ -73,7 +74,10 @@ def get_contour(region, data=None):
     #cv2.imshow("img", img)
 
     ret,thresh = cv2.threshold(img, 127, 255, 0)
-    _, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    try:
+        _, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    except:
+        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
     cnt = []
 

@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b9f8cf9a-3ad6-4a1a-9ce6-2711247eb2c0" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/cv_compatibility.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/Ants_description.txt" afterPath="$PROJECT_DIR$/viewer/Ants_description.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/Ants_report" afterPath="$PROJECT_DIR$/viewer/Ants_report" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/background_corrector/background_corrector.py" afterPath="$PROJECT_DIR$/viewer/background_corrector/background_corrector.py" />
@@ -12,10 +11,13 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/default_settings.py" afterPath="$PROJECT_DIR$/default_settings.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/dialogs.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/dialogs.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_params.py" afterPath="$PROJECT_DIR$/experiment_params.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/ferda_window.py" afterPath="$PROJECT_DIR$/gui/ferda_window.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/identity_manager.py" afterPath="$PROJECT_DIR$/viewer/identity_manager.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/background_corrector/image_view.py" afterPath="$PROJECT_DIR$/viewer/background_corrector/image_view.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/markers.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/markers.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/background_corrector/settingsdialog.py" afterPath="$PROJECT_DIR$/viewer/background_corrector/settingsdialog.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/split_by_contours.py" afterPath="$PROJECT_DIR$/split_by_contours.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/tests.py" afterPath="$PROJECT_DIR$/viewer/tests.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/video_fix.py" afterPath="$PROJECT_DIR$/scripts/video_fix.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
@@ -40,112 +42,132 @@
     <favorites_list name="ants" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file leaf-file-name="video_fix.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scripts/video_fix.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="188" max-vertical-offset="1494">
-              <caret line="70" column="0" selection-start-line="70" selection-start-column="0" selection-end-line="70" selection-end-column="0" />
-              <folding>
-                <element signature="e#24#34#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="video_test.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scripts/video_test.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="594">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="main.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/main.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="504">
-              <caret line="4" column="8" selection-start-line="4" selection-start-column="8" selection-end-line="4" selection-end-column="8" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="experiment_params.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/experiment_params.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2286">
-              <caret line="41" column="47" selection-start-line="41" selection-start-column="47" selection-end-line="41" selection-end-column="47" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ferda_window.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/gui/ferda_window.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="54" max-vertical-offset="1062">
-              <caret line="34" column="50" selection-start-line="34" selection-start-column="50" selection-end-line="34" selection-end-column="50" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="control_window.py" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/gui/control_window.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.9848024" vertical-offset="270" max-vertical-offset="7308">
-              <caret line="51" column="52" selection-start-line="51" selection-start-column="40" selection-end-line="51" selection-end-column="52" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="cv_compatibility.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/cv_compatibility.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="234">
-              <caret line="7" column="35" selection-start-line="7" selection-start-column="35" selection-end-line="7" selection-end-column="35" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="init_window.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/gui/init_window/init_window.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="8262">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="visualization_utils.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/visualization_utils.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="486">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding>
-                <element signature="e#0#18#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="visualize.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/visualize.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-22.885714" vertical-offset="1755" max-vertical-offset="9504">
-              <caret line="142" column="106" selection-start-line="142" selection-start-column="102" selection-end-line="142" selection-end-column="106" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+    <splitter split-orientation="horizontal" split-proportion="0.5">
+      <split-first>
+        <leaf>
+          <file leaf-file-name="video_fix.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/scripts/video_fix.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.0" vertical-offset="836" max-vertical-offset="1494">
+                  <caret line="72" column="19" selection-start-line="72" selection-start-column="19" selection-end-line="72" selection-end-column="19" />
+                  <folding>
+                    <element signature="e#24#34#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="video_test.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/scripts/video_test.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="594">
+                  <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="main.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/main.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="270">
+                  <caret line="5" column="24" selection-start-line="5" selection-start-column="24" selection-end-line="5" selection-end-column="24" />
+                  <folding>
+                    <element signature="e#0#10#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="video_manager.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/viewer/video_manager.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.0" vertical-offset="1350" max-vertical-offset="2322">
+                  <caret line="92" column="33" selection-start-line="92" selection-start-column="33" selection-end-line="92" selection-end-column="33" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="split_by_contours.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/split_by_contours.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="-6.857143" vertical-offset="1182" max-vertical-offset="24192">
+                  <caret line="79" column="8" selection-start-line="79" selection-start-column="8" selection-end-line="79" selection-end-column="8" />
+                  <folding>
+                    <element signature="e#24#37#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="experiment_params.py" pinned="false" current="true" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/experiment_params.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.33277312" vertical-offset="324" max-vertical-offset="2286">
+                  <caret line="33" column="31" selection-start-line="33" selection-start-column="31" selection-end-line="33" selection-end-column="31" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="ferda_window.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/gui/ferda_window.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1116">
+                  <caret line="33" column="0" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="control_window.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/gui/control_window.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.0" vertical-offset="1054" max-vertical-offset="7326">
+                  <caret line="79" column="37" selection-start-line="79" selection-start-column="37" selection-end-line="79" selection-end-column="37" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="cv_compatibility.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/cv_compatibility.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="234">
+                  <caret line="2" column="10" selection-start-line="2" selection-start-column="10" selection-end-line="2" selection-end-column="10" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="init_window.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/gui/init_window/init_window.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="8262">
+                  <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-first>
+      <split-second>
+        <leaf>
+          <file leaf-file-name="cv_compatibility.py" pinned="false" current="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/cv_compatibility.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.19148937" vertical-offset="0" max-vertical-offset="658">
+                  <caret line="7" column="35" selection-start-line="7" selection-start-column="35" selection-end-line="7" selection-end-column="35" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-second>
+    </splitter>
   </component>
   <component name="FindManager">
     <FindUsagesManager>
@@ -185,7 +207,6 @@
         <option value="$PROJECT_DIR$/gui/init_window/init_window.py" />
         <option value="$PROJECT_DIR$/ant.py" />
         <option value="$PROJECT_DIR$/my_utils.py" />
-        <option value="$PROJECT_DIR$/split_by_contours.py" />
         <option value="$PROJECT_DIR$/image_controls.py" />
         <option value="$PROJECT_DIR$/run_viewer.py" />
         <option value="$PROJECT_DIR$/viewer/gui/img_controls/img_controls_qt.py" />
@@ -197,12 +218,13 @@
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/test_file.py" />
         <option value="$PROJECT_DIR$/gui/init_window/pixmap_label.py" />
-        <option value="$PROJECT_DIR$/gui/ferda_window.py" />
         <option value="$PROJECT_DIR$/main.py" />
-        <option value="$PROJECT_DIR$/experiment_params.py" />
-        <option value="$PROJECT_DIR$/scripts/video_fix.py" />
-        <option value="$PROJECT_DIR$/cv_compatibility.py" />
         <option value="$PROJECT_DIR$/gui/control_window.py" />
+        <option value="$PROJECT_DIR$/gui/ferda_window.py" />
+        <option value="$PROJECT_DIR$/scripts/video_fix.py" />
+        <option value="$PROJECT_DIR$/split_by_contours.py" />
+        <option value="$PROJECT_DIR$/cv_compatibility.py" />
+        <option value="$PROJECT_DIR$/experiment_params.py" />
       </list>
     </option>
   </component>
@@ -246,6 +268,60 @@
               <option name="myItemType" value="" />
             </PATH_ELEMENT>
             <PATH_ELEMENT USER_OBJECT="ants">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT USER_OBJECT="Root">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="ants">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="viewer">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT USER_OBJECT="Root">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="ants">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="viewer">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="gui">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT USER_OBJECT="Root">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="ants">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="viewer">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="gui">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT USER_OBJECT="img_controls">
               <option name="myItemId" value="" />
               <option name="myItemType" value="" />
             </PATH_ELEMENT>
@@ -368,7 +444,7 @@
       <recent name="$PROJECT_DIR$/gui/img_controls" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python.video_fix">
     <configuration default="false" name="video_fix" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -616,9 +692,9 @@
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.main" />
-        <item index="1" class="java.lang.String" itemvalue="Python.ferda_window" />
-        <item index="2" class="java.lang.String" itemvalue="Python.video_fix" />
+        <item index="0" class="java.lang.String" itemvalue="Python.video_fix" />
+        <item index="1" class="java.lang.String" itemvalue="Python.main" />
+        <item index="2" class="java.lang.String" itemvalue="Python.ferda_window" />
         <item index="3" class="java.lang.String" itemvalue="Python.video_test" />
         <item index="4" class="java.lang.String" itemvalue="Python.run_viewer" />
       </list>
@@ -714,7 +790,11 @@
       <created>1412005296196</created>
       <updated>1412005296196</updated>
     </task>
-    <option name="localTasksCounter" value="21" />
+    <task id="LOCAL-00021" summary="8.9.2014, test">
+      <created>1412005919245</created>
+      <updated>1412005919245</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -749,8 +829,8 @@
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.15" sideWeight="0.75961536" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.40807176" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.21083455" sideWeight="0.23798077" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4185351" sideWeight="0.5014641" order="10" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.37511355" sideWeight="0.49853587" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37511355" sideWeight="0.5015625" order="10" side_tool="true" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.37511355" sideWeight="0.4984375" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32890996" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -795,7 +875,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="python-line">
           <url>file://$PROJECT_DIR$/gui/control_window.py</url>
-          <line>365</line>
+          <line>366</line>
           <option name="timeStamp" value="176" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="python-line">
@@ -823,11 +903,16 @@
           <line>93</line>
           <option name="timeStamp" value="221" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/gui/ferda_window.py</url>
+          <line>34</line>
+          <option name="timeStamp" value="222" />
+        </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="222" />
+      <option name="time" value="223" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
@@ -1006,13 +1091,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/split_by_contours.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="19123" max-vertical-offset="24120">
-          <caret line="1086" column="40" selection-start-line="1086" selection-start-column="40" selection-end-line="1086" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/experiment_manager.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="270" max-vertical-offset="15390">
@@ -1070,14 +1148,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="3943" max-vertical-offset="17838">
           <caret line="237" column="30" selection-start-line="237" selection-start-column="12" selection-end-line="237" selection-end-column="30" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/viewer/video_manager.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1800" max-vertical-offset="2340">
-          <caret line="100" column="42" selection-start-line="100" selection-start-column="42" selection-end-line="100" selection-end-column="42" />
           <folding />
         </state>
       </provider>
@@ -1148,34 +1218,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="504">
-          <caret line="4" column="8" selection-start-line="4" selection-start-column="8" selection-end-line="4" selection-end-column="8" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gui/ferda_window.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="54" max-vertical-offset="1062">
-          <caret line="34" column="50" selection-start-line="34" selection-start-column="50" selection-end-line="34" selection-end-column="50" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/gui/init_window/init_window.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="8262">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/experiment_params.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2286">
-          <caret line="41" column="47" selection-start-line="41" selection-start-column="47" selection-end-line="41" selection-end-column="47" />
           <folding />
         </state>
       </provider>
@@ -1188,12 +1234,56 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="270">
+          <caret line="5" column="24" selection-start-line="5" selection-start-column="24" selection-end-line="5" selection-end-column="24" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gui/control_window.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1054" max-vertical-offset="7326">
+          <caret line="79" column="37" selection-start-line="79" selection-start-column="37" selection-end-line="79" selection-end-column="37" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gui/ferda_window.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1116">
+          <caret line="33" column="0" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/scripts/video_fix.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="188" max-vertical-offset="1494">
-          <caret line="70" column="0" selection-start-line="70" selection-start-column="0" selection-end-line="70" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="836" max-vertical-offset="1494">
+          <caret line="72" column="19" selection-start-line="72" selection-start-column="19" selection-end-line="72" selection-end-column="19" />
           <folding>
             <element signature="e#24#34#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/viewer/video_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1350" max-vertical-offset="2322">
+          <caret line="92" column="33" selection-start-line="92" selection-start-column="33" selection-end-line="92" selection-end-column="33" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/split_by_contours.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-6.857143" vertical-offset="1182" max-vertical-offset="24192">
+          <caret line="79" column="8" selection-start-line="79" selection-start-column="8" selection-end-line="79" selection-end-column="8" />
+          <folding>
+            <element signature="e#24#37#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1201,15 +1291,15 @@
     <entry file="file://$PROJECT_DIR$/cv_compatibility.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="234">
-          <caret line="7" column="35" selection-start-line="7" selection-start-column="35" selection-end-line="7" selection-end-column="35" />
+          <caret line="2" column="10" selection-start-line="2" selection-start-column="10" selection-end-line="2" selection-end-column="10" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/gui/control_window.py">
+    <entry file="file://$PROJECT_DIR$/experiment_params.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.9848024" vertical-offset="270" max-vertical-offset="7308">
-          <caret line="51" column="52" selection-start-line="51" selection-start-column="40" selection-end-line="51" selection-end-column="52" />
+        <state vertical-scroll-proportion="0.33277312" vertical-offset="324" max-vertical-offset="2286">
+          <caret line="33" column="31" selection-start-line="33" selection-start-column="31" selection-end-line="33" selection-end-column="31" />
           <folding />
         </state>
       </provider>
