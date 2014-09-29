@@ -30,6 +30,7 @@ class FerdaControls(QtGui.QMainWindow, ferda_window_qt.Ui_MainWindow):
         self.show()
 
     def closeEvent(self, event):
+        print "exiting"
         if self.control_widget is not None:
             self.control_widget.is_running = False
 

@@ -31,7 +31,7 @@ class Params():
 
         self.use_gt = False
         self.gt_repair = False
-        self.fast_start = True
+        self.fast_start = False
 
         self.auto_run = False
         self.run_to_the_end = False
@@ -45,7 +45,7 @@ class Params():
 
         self.show_mser_collection = False
         self.show_ants_collection = False
-        self.show_image = False
+        self.show_image = True
         self.show_assignment_problem = False
         self.imshow_decreasing_factor = 0.5
         self.print_mser_info = False
