@@ -8,6 +8,12 @@ import cv2
 from numpy import *
 
 
+try:
+    cv_line_type = cv2.LINE_AA
+except:
+    cv_line_type = cv2.CV_AA
+
+
 class PixmapLabel(QtGui.QLabel):
     def __init__(self, window_p, img, region, r_id, update_graphics_view, ant_assignment):
         super(PixmapLabel, self).__init__()
@@ -51,7 +57,7 @@ class PixmapLabel(QtGui.QLabel):
         img_small = img_[border + r["cy"] - cell_size / 2:border + r["cy"] + cell_size / 2, border + r["cx"] - cell_size / 2:border + r["cx"] + cell_size / 2].copy()
 
         if self.ant_number > 0:
-            cv2.putText(img_small, str(self.ant_number), (3, 12), cv2.FONT_HERSHEY_PLAIN, 0.75, (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.putText(img_small, str(self.ant_number), (3, 12), cv2.FONT_HERSHEY_PLAIN, 0.75, (0, 0, 0), 1, cv_line_type)
 
         img_q = ImageQt.QImage(img_small.data, img_small.shape[1], img_small.shape[0], img_small.shape[1]*3, 13)
         pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
