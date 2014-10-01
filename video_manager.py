@@ -82,3 +82,6 @@ class VideoManager():
 
     def img(self):
         return self.buffer[self.view_pos]
+
+    def total_frame_count(self):
+        return self.capture.get(cv2.CAP_PROP_FRAME_COUNT)

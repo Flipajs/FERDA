@@ -25,12 +25,13 @@ file_name = path+name+'-5'+ext
 
 # video_writer = moviepy.FFMPEG_VideoWriter(file_name, [width, height], 30)
 #
-vid_writer = cv2.VideoWriter(filename=path+name+"-DIVX.avi",  #Provide a file to write the video to
+vid_writer = cv2.VideoWriter(filename=path+name+"-ASLC.avi",  #Provide a file to write the video to
                                 # fourcc=cv2.VideoWriter_fourcc('I', 'Y', 'U', 'V'),            #Use whichever codec works for you...
                                 # fourcc=cv2.VideoWriter_fourcc('M','J','P','G'),
                                 # fourcc=cv2.VideoWriter_fourcc('H','2','6','4'),
                                 # fourcc=cv2.VideoWriter_fourcc('I','2','6','3'),
                                 fourcc=cv2.VideoWriter_fourcc('D','I','V','X'),
+                                # fourcc=cv2.VideoWriter_fourcc('Z','L','I','B'),
                                 # fourcc=cv2.VideoWriter_fourcc('H','F','Y','U'),
                                 fps=30,                                        #How many frames do you want to display per second in your video?
                                 frameSize=(width, height))
@@ -54,6 +55,8 @@ vid_writer = cv2.VideoWriter(filename=path+name+"-DIVX.avi",  #Provide a file to
 # # pipe = sp.Popen(command, stdin=sp.PIPE, stderr=sp.PIPE)
 #
 frame = 1
+frames  = capture.get(cv2.CAP_PROP_FRAME_COUNT)
+
 while True:
     if not f:
         print "END of video"
@@ -62,15 +65,20 @@ while True:
     # video_writer.run(img)
     # video_writer.write_frame(img)
     vid_writer.write(img)
-    cv2.imwrite(path+"img_test/"+name+str(frame)+".png", img)
+
+    cv2.imwrite(path+'imgs/'+str(frame)+'.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), 75])
+    cv2.imwrite(path+'imgs/'+str(frame)+'.png', img, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+
     # pipe.proc.stdin.write(img.tostring())
     #
     # cv2.imshow("TEST", img)
     # cv2.waitKey(0)
     f, img = capture.read()
 
-    if frame % 1000 == 0:
-        print frame
+    if frame % 10 == 0:
+        s = "%.2f" % ((frame/frames) * 100) + " %"
+        print 'Processing: {0}\r'.format(s),
+        # print frame, "%.2f" % ((frame/frames) * 100) + " % \r"
 
     frame += 1
 
