@@ -15,7 +15,6 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/markers.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/markers.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/background_corrector/settingsdialog.py" afterPath="$PROJECT_DIR$/viewer/background_corrector/settingsdialog.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/tests.py" afterPath="$PROJECT_DIR$/viewer/tests.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/video_manager.py" afterPath="$PROJECT_DIR$/viewer/video_manager.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/video_test.py" afterPath="$PROJECT_DIR$/scripts/video_test.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
@@ -62,11 +61,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="video_test.py" pinned="false" current="false" current-in-tab="false">
+          <file leaf-file-name="video_test.py" pinned="false" current="true" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/scripts/video_test.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="990">
-                  <caret line="16" column="77" selection-start-line="16" selection-start-column="77" selection-end-line="16" selection-end-column="77" />
+                <state vertical-scroll-proportion="0.36231884" vertical-offset="351" max-vertical-offset="972">
+                  <caret line="32" column="38" selection-start-line="32" selection-start-column="38" selection-end-line="32" selection-end-column="38" />
                   <folding>
                     <element signature="e#24#34#0" expanded="true" />
                   </folding>
@@ -77,17 +76,17 @@
           <file leaf-file-name="main.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/main.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.0" vertical-offset="90" max-vertical-offset="270">
+                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="234">
                   <caret line="5" column="24" selection-start-line="5" selection-start-column="24" selection-end-line="5" selection-end-column="24" />
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="video_manager.py" pinned="false" current="true" current-in-tab="true">
+          <file leaf-file-name="video_manager.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/viewer/video_manager.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.7295492" vertical-offset="2515" max-vertical-offset="3114">
+                <state vertical-scroll-proportion="-12.485714" vertical-offset="2515" max-vertical-offset="3114">
                   <caret line="164" column="31" selection-start-line="164" selection-start-column="31" selection-end-line="164" selection-end-column="31" />
                   <folding>
                     <element signature="e#21#31#0" expanded="true" />
@@ -134,7 +133,7 @@
             <entry file="file://$PROJECT_DIR$/cv_compatibility.py">
               <provider selected="true" editor-type-id="text-editor">
                 <state vertical-scroll-proportion="0.73748106" vertical-offset="0" max-vertical-offset="659">
-                  <caret line="27" column="57" selection-start-line="27" selection-start-column="57" selection-end-line="27" selection-end-column="57" />
+                  <caret line="27" column="40" selection-start-line="27" selection-start-column="40" selection-end-line="27" selection-end-column="40" />
                   <folding />
                 </state>
               </provider>
@@ -198,9 +197,9 @@
         <option value="$PROJECT_DIR$/experiment_params.py" />
         <option value="$PROJECT_DIR$/video_manager.py" />
         <option value="$PROJECT_DIR$/scripts/video_fix.py" />
+        <option value="$PROJECT_DIR$/viewer/video_manager.py" />
         <option value="$PROJECT_DIR$/scripts/video_test.py" />
         <option value="$PROJECT_DIR$/cv_compatibility.py" />
-        <option value="$PROJECT_DIR$/viewer/video_manager.py" />
       </list>
     </option>
   </component>
@@ -779,7 +778,11 @@
       <created>1412175296970</created>
       <updated>1412175296970</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="8.9.2014, opencv compatibility fix in video_manager.py">
+      <created>1412175935698</created>
+      <updated>1412175935698</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -815,7 +818,7 @@
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.40781108" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.21083455" sideWeight="0.23798077" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37511355" sideWeight="0.5015625" order="10" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.37420526" sideWeight="0.4984375" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.37420526" sideWeight="0.4984375" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32890996" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -1207,14 +1210,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="270">
-          <caret line="5" column="24" selection-start-line="5" selection-start-column="24" selection-end-line="5" selection-end-column="24" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/gui/ferda_window.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1116">
@@ -1247,20 +1242,28 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/video_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="990">
-          <caret line="16" column="77" selection-start-line="16" selection-start-column="77" selection-end-line="16" selection-end-column="77" />
-          <folding>
-            <element signature="e#24#34#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/video_manager.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1656">
           <caret line="38" column="21" selection-start-line="38" selection-start-column="21" selection-end-line="38" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/viewer/video_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-12.485714" vertical-offset="2515" max-vertical-offset="3114">
+          <caret line="164" column="31" selection-start-line="164" selection-start-column="31" selection-end-line="164" selection-end-column="31" />
+          <folding>
+            <element signature="e#21#31#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="270">
+          <caret line="5" column="24" selection-start-line="5" selection-start-column="24" selection-end-line="5" selection-end-column="24" />
           <folding />
         </state>
       </provider>
@@ -1273,12 +1276,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/viewer/video_manager.py">
+    <entry file="file://$PROJECT_DIR$/scripts/video_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.7295492" vertical-offset="2515" max-vertical-offset="3114">
-          <caret line="164" column="31" selection-start-line="164" selection-start-column="31" selection-end-line="164" selection-end-column="31" />
+        <state vertical-scroll-proportion="0.36231884" vertical-offset="351" max-vertical-offset="972">
+          <caret line="32" column="38" selection-start-line="32" selection-start-column="38" selection-end-line="32" selection-end-column="38" />
           <folding>
-            <element signature="e#21#31#0" expanded="true" />
+            <element signature="e#24#34#0" expanded="true" />
           </folding>
         </state>
       </provider>

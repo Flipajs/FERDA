@@ -14,7 +14,6 @@ orig_file = '/media/flipajs/Seagate Expansion Drive/bigLenses_colormarks1.avi'
 # vid_file = '/home/flipajs/my_video-16-DIVX.avi'
 # vid_file = '/media/flipajs/Seagate Expansion Drive/smallLense_colony1.avi'
 vid_file = '/media/flipajs/Seagate Expansion Drive/blc1_15g1.mkv'
-vid_file = '/media/flipajs/Seagate Expansion Drive/bigLenses_colormarks1.avi'
 # vid_file = '/home/flipajs/out5_20.mkv'
 
 vid1 = video_manager.VideoManager(orig_file)
@@ -39,7 +38,7 @@ while True:
         s = np.sum(np.sum(np.sum(res)))
         m = np.amax(res)
 
-        print s, m
+        print s, s/(res.shape[0]*res.shape[1]*3), m
 
         if s != 0:
             print "PROBLEM ", frame
