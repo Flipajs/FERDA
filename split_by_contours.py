@@ -1050,6 +1050,8 @@ def get_contour_weights(region):
 
 
 def nearest_pt(o, x, y):
+    global bounds;
+
     x = round(x)
     y = round(y)
     if x < bounds['min_c_minus_margin'] or x >= bounds['max_c_plus_margin'] or y < bounds['min_r_minus_margin'] or y >= bounds['max_r_plus_margin']:
@@ -1138,7 +1140,8 @@ def nearest_pt_transform(o, x, y):
     return nearest, d
 
 
-def count_distance_maps(o, bounds):
+def count_distance_maps(o):
+    global bounds;
     img = np.zeros((bounds['max_r'] - bounds['min_r'] + 2 * bounds['margin'],
                     bounds['max_c'] - bounds['min_c'] + 2 * bounds['margin']), dtype='uint8')
 
@@ -1172,9 +1175,9 @@ def prepare_distance_maps(r, ants):
               'max_c_plus_margin': np.max(max_cs) + margin,
               'margin': margin}
 
-    count_distance_maps(r, bounds)
+    count_distance_maps(r)
     for a in ants:
-        count_distance_maps(a, bounds)
+        count_distance_maps(a)
 
 
 #def distance_map_test(r):
@@ -1191,9 +1194,32 @@ def prepare_distance_maps(r, ants):
 #    pt, d = nearest_pt(edt, inds, [0, 0])
 #    print pt, d
 
+
+def save_input(frame, exp_region, points, ants, params):
+    path = params.dumpdir
+    try:
+        os.makedirs(path+str(frame))
+    except:
+        pass
+
+
+    cont, img, img_cont, min_r, min_c = get_contour(exp_region, points)
+    cv2.imwrite(path+str(frame)+"/region.png", img)
+    cv2.imwrite(path+str(frame)+"/region_cont.png", img_cont)
+    cv2.imwrite(path+str(frame)+"/frame.png", params._img)
+    cv2.imwrite(path+str(frame)+"/frame_crop.png", params._img[min_r:min_r+img.shape[0], min_c:min_c+img.shape[1], :])
+
+    for a in ants:
+        cv2.imwrite(path+str(frame)+"/ant_"+str(a['id'])+".png", a['img'])
+        cv2.imwrite(path+str(frame)+"/ant_"+str(a['id'])+"_cont.png", a['img_cont'])
+
+
 #def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterations=30, debug=False):
 def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterations=10, debug=False):
     global in_debug
+    global bounds
+
+
     run = False
     if params is not None:
         run = True
@@ -1205,6 +1231,7 @@ def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterati
     if run:
         frame = params.frame
         ants = prepare_ants(ants_ids, exp_ants)
+        # save_input(params.frame, exp_region, points, ants, params)
         region = prepare_region(exp_region, points)
 
         prepare_distance_maps(region, ants)
@@ -1233,7 +1260,7 @@ def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterati
         afile.close()
         ants = pack[0]
         region = pack[1]
-        global bounds
+
         bounds = pack[2]
 
         #afile = open(dir+"/regions/695.pkl", "rb")

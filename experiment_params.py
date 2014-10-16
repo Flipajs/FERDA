@@ -77,7 +77,9 @@ class Params():
         self.video_file_name = ''
         self.predefined_vals = ''
         self.bg = None
-        self.dumpdir = os.path.expanduser('~/dump/collision_editor')
+        self.dumpdir = os.path.expanduser('/home/flipajs/~dump/')
+
+
         #self.dumpdir = os.path.expanduser('~/dump/Ferda')
         #self.dumpdir = os.path.expanduser('~/dump/drosophyla')
         #
@@ -102,6 +104,7 @@ class Params():
         self.gt_path = 'data/NoPlasterNoLid800/fixed_out.txt'
         self.bg = cv2.imread('data/noplast_bg.png')
         self.bg = scipy.ndimage.gaussian_filter(self.bg, sigma=1)
+        self.dumpdir = os.path.expanduser('/home/flipajs/~dump/noplast/')
         # self.dumpdir = os.path.expanduser('~/dump/noplast')
 
         # self.ant_number = 8
@@ -110,8 +113,8 @@ class Params():
         # self.predefined_vals = 'eight'
         # #self.gt_path = '../data/eight/fixed_out.txt'
         # self.bg = cv2.imread('data/eight_bg.png')
-
-        #self.dumpdir = os.path.expanduser('~/dump/eight')
+        #
+        # self.dumpdir = os.path.expanduser('/home/flipajs/~dump/eight')
 
         #self.bg2 = cv2.imread('data/eight_bg.png')
 

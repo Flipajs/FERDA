@@ -20,6 +20,7 @@ from spin_box import *
 from gui.img_controls import my_view, utils
 from arena_mark import *
 from arena_circle import *
+from viewer.background_corrector import background_corrector_core
 
 
 import ImageQt
@@ -32,8 +33,9 @@ except AttributeError:
         return s
 
 class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
-    def __init__(self):
+    def __init__(self, main_window):
         super(InitWindow, self).__init__()
+        self.main_window = main_window
         self.setupUi(self)
 
         self.params = experiment_params.Params()
@@ -67,6 +69,7 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
         self.c_center = None
         self.c_radius = None
 
+
         self.show()
 
         self.scene_objects = {}
@@ -79,11 +82,18 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
 
         self.close_callback = None
 
+        self.b_model_fix_tool.setEnabled(True)
+
+        self.spin_bg_num_steps.setValue(1)
+        self.spin_bg_step_length.setValue(10)
+        self.dialog = None
+
         if self.params.fast_start:
             self.load_video()
+            self.count_bg_model()
             self.ant_number_spin_box.setValue(self.params.ant_number)
             self.continue_ants()
-            # self.start()
+            self.start()
 
     def set_close_callback(self, callback):
         self.close_callback = callback
@@ -95,6 +105,8 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
         self.b_count_bg_model.clicked.connect(self.count_bg_model)
         self.b_use_model.clicked.connect(self.use_model)
 
+        self.b_model_fix_tool.clicked.connect(self.show_bg_fix)
+
         self.b_video_continue.clicked.connect(self.without_model)
 
         self.b_continue_arena.clicked.connect(self.continue_arena)
@@ -103,13 +115,29 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
         self.start_button.clicked.connect(self.start)
 
     def show_file_dialog(self):
-        print "TEST"
         self.params.video_file_name = str(QtGui.QFileDialog.getOpenFileName(self, "Select video file"))
         drive, path = os.path.splitdrive(self.params.video_file_name)
         path, filename = os.path.split(path)
         self.file_name_label.setText(filename)
         self.b_load_video.setEnabled(True)
         self.b_load_video.setFocus()
+
+    def show_bg_fix(self):
+        self.dialog = background_corrector_core.BackgroundCorrector(self.bg, self.bg_fix_finish_callback)
+        self.main_window.central_widget.addWidget(self.dialog)
+        self.main_window.central_widget.setCurrentWidget(self.dialog)
+
+    def bg_fix_finish_callback(self):
+        self.bg = self.dialog.image
+        self.main_window.central_widget.removeWidget(self.dialog)
+        self.dialog = None
+
+        self.pixmap_bg = utils.cvimg2qtpixmap(self.bg)
+
+        if self.bg_img_item is not None:
+            self.scene.removeItem(self.bg_img_item)
+
+        self.bg_img_item = self.scene.addPixmap(self.pixmap_bg)
 
     def load_video(self):
         self.video_manager = video_manager.VideoManager(self.params.video_file_name)
@@ -176,10 +204,17 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
         bg = scipy.ndimage.gaussian_filter(bg, sigma=1)
         self.bg = bg
 
+        self.pixmap_bg = utils.cvimg2qtpixmap(bg)
+
+        if self.bg_img_item is not None:
+            self.scene.removeItem(self.bg_img_item)
+
+        self.bg_img_item = self.scene.addPixmap(self.pixmap_bg)
 
         self.b_count_bg_model.setText('done')
 
         self.b_use_model.setEnabled(True)
+        self.b_model_fix_tool.setEnabled(True)
         return
 
     def use_model(self):

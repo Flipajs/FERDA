@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ants_init.ui'
 #
-# Created: Mon Jul 28 18:32:40 2014
+# Created: Wed Oct 15 16:59:27 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -34,7 +34,7 @@ class Ui_Dialog(object):
         self.tab_viedo_source = QtGui.QWidget()
         self.tab_viedo_source.setObjectName(_fromUtf8("tab_viedo_source"))
         self.video_group = QtGui.QGroupBox(self.tab_viedo_source)
-        self.video_group.setGeometry(QtCore.QRect(10, 10, 271, 291))
+        self.video_group.setGeometry(QtCore.QRect(10, 10, 271, 321))
         self.video_group.setMinimumSize(QtCore.QSize(251, 111))
         self.video_group.setAutoFillBackground(False)
         self.video_group.setFlat(False)
@@ -57,7 +57,7 @@ class Ui_Dialog(object):
         self.b_load_video.setObjectName(_fromUtf8("b_load_video"))
         self.b_video_continue = QtGui.QPushButton(self.video_group)
         self.b_video_continue.setEnabled(False)
-        self.b_video_continue.setGeometry(QtCore.QRect(134, 250, 120, 27))
+        self.b_video_continue.setGeometry(QtCore.QRect(134, 280, 120, 27))
         self.b_video_continue.setObjectName(_fromUtf8("b_video_continue"))
         self.label_5 = QtGui.QLabel(self.video_group)
         self.label_5.setGeometry(QtCore.QRect(5, 80, 258, 20))
@@ -71,7 +71,7 @@ class Ui_Dialog(object):
         self.b_count_bg_model.setObjectName(_fromUtf8("b_count_bg_model"))
         self.b_use_model = QtGui.QPushButton(self.video_group)
         self.b_use_model.setEnabled(False)
-        self.b_use_model.setGeometry(QtCore.QRect(4, 250, 120, 27))
+        self.b_use_model.setGeometry(QtCore.QRect(4, 280, 120, 27))
         self.b_use_model.setObjectName(_fromUtf8("b_use_model"))
         self.spin_bg_num_steps = QtGui.QSpinBox(self.video_group)
         self.spin_bg_num_steps.setGeometry(QtCore.QRect(190, 190, 60, 27))
@@ -93,6 +93,10 @@ class Ui_Dialog(object):
         self.spin_bg_step_length.setMaximum(10000)
         self.spin_bg_step_length.setProperty("value", 50)
         self.spin_bg_step_length.setObjectName(_fromUtf8("spin_bg_step_length"))
+        self.b_model_fix_tool = QtGui.QPushButton(self.video_group)
+        self.b_model_fix_tool.setEnabled(False)
+        self.b_model_fix_tool.setGeometry(QtCore.QRect(3, 250, 250, 27))
+        self.b_model_fix_tool.setObjectName(_fromUtf8("b_model_fix_tool"))
         self.tabWidget.addTab(self.tab_viedo_source, _fromUtf8(""))
         self.tab_arena = QtGui.QWidget()
         self.tab_arena.setObjectName(_fromUtf8("tab_arena"))
@@ -179,7 +183,7 @@ class Ui_Dialog(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName(_fromUtf8("scrollArea"))
         self.scrollAreaWidgetContents = QtGui.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 295, 260))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 98, 28))
         self.scrollAreaWidgetContents.setObjectName(_fromUtf8("scrollAreaWidgetContents"))
         self.verticalLayout = QtGui.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout.setMargin(0)
@@ -195,7 +199,7 @@ class Ui_Dialog(object):
         self.scrollArea_2.setWidgetResizable(True)
         self.scrollArea_2.setObjectName(_fromUtf8("scrollArea_2"))
         self.scrollAreaWidgetContents_2 = QtGui.QWidget()
-        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 295, 260))
+        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 98, 28))
         self.scrollAreaWidgetContents_2.setObjectName(_fromUtf8("scrollAreaWidgetContents_2"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.scrollAreaWidgetContents_2)
         self.verticalLayout_2.setSpacing(0)
@@ -230,6 +234,7 @@ class Ui_Dialog(object):
         self.b_use_model.setText(_translate("Dialog", "use model", None))
         self.label_7.setText(_translate("Dialog", "num of steps:", None))
         self.label_8.setText(_translate("Dialog", "step length:", None))
+        self.b_model_fix_tool.setText(_translate("Dialog", "model fix tool", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_viedo_source), _translate("Dialog", "Video source", None))
         self.arena_group.setTitle(_translate("Dialog", "Arena", None))
         self.b_continue_arena.setText(_translate("Dialog", "confirm and continue", None))

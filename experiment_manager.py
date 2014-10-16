@@ -57,6 +57,7 @@ class ExperimentManager():
         end = time.time()
         #print "time image: ", end - start
 
+        self.params._img = img
 
         self.history_frame_counters(forward)
         intensity_threshold = self.get_intensity_threshold()

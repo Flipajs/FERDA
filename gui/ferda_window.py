@@ -17,7 +17,7 @@ class FerdaControls(QtGui.QMainWindow, ferda_window_qt.Ui_MainWindow):
         self.central_widget = QtGui.QStackedWidget()
         self.setCentralWidget(self.central_widget)
 
-        self.init_widget = init_window.InitWindow()
+        self.init_widget = init_window.InitWindow(self)
         self.init_widget.set_close_callback(self.start_ferda)
         self.central_widget.addWidget(self.init_widget)
 
@@ -50,6 +50,7 @@ class FerdaControls(QtGui.QMainWindow, ferda_window_qt.Ui_MainWindow):
         h = 299
 
         self.setGeometry(QtCore.QRect(x, y, w, h))
+
 
     def control_widget_exit(self):
         self.close()
