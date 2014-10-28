@@ -19,6 +19,7 @@ import split_by_contours
 import matplotlib.pyplot as plt
 import networkx as nx
 import time
+from utils import ant_crop_saver
 
 class ExperimentManager():
     def __init__(self, params, ants, video_manager):
@@ -48,6 +49,7 @@ class ExperimentManager():
         self.groups = []
         self.groups_avg_pos = []
         self.chosen_regions_indexes = []
+        self.crop_saver = ant_crop_saver.CropSaver()
 
     def process_frame(self, img, forward=False):
         start = time.time()
@@ -56,6 +58,7 @@ class ExperimentManager():
         self.img_sub_ = mask
         end = time.time()
         #print "time image: ", end - start
+
 
         self.params._img = img
 
@@ -106,6 +109,11 @@ class ExperimentManager():
         self.collisions = collisions.collision_detection(self.ants, self.params, self.history)
 
         self.print_and_display_results()
+
+        if self.crop_saver.crop_size == -1:
+            self.crop_saver.estimate_crop_size(self.ants)
+
+        self.crop_saver.save(self.ants, img, self.params.frame)
 
         if forward and self.history < 0:
             self.history = 0

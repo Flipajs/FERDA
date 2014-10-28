@@ -16,6 +16,8 @@ from viewer import video_manager
 import visualization_utils
 from viewer.identity_manager import IdentityManager
 from viewer.gui.img_controls.dialogs import SettingsDialog
+from gui.img_sequence import img_sequence_widget
+from gui.plot import plot_widget
 
 
 try:
@@ -29,9 +31,40 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
     def __init__(self):
 
         super(ImgControls, self).__init__()
+        self.graphics_view_old_w = 0
+        self.graphics_view_old_h = 0
         self.setupUi(self)
+        self.graphics_view_old_w = self.video_widget.width()
+        self.graphics_view_old_h = self.video_widget.height()
+
+        self.lines_layout.addWidget(self.informationLabel)
+        # self.informationLabel.setMinimumHeight(40)
+
         self.scene = QtGui.QGraphicsScene()
-        self.graphics_view = MyView(self.centralwidget)
+
+        graphics_view_widget = QtGui.QWidget()
+        self.graphics_view = MyView(graphics_view_widget)
+
+        self.splitter1 = QtGui.QSplitter(QtCore.Qt.Horizontal)
+        self.splitter1.addWidget(self.video_widget)
+
+
+
+        #self.main_line_layout.addWidget(self.video_widget)
+        self.video_layout.addWidget(self.graphics_view)
+        self.video_layout.addWidget(self.video_control_widget)
+
+        self.video_control_layout.addWidget(self.videoSlider)
+        self.video_control_layout.addWidget(self.video_control_buttons_widget)
+
+        self.video_control_buttons_layout.addWidget(self.fpsLabel)
+        self.video_control_buttons_layout.addWidget(self.speedSlider)
+        self.video_control_buttons_layout.addWidget(self.backward)
+        self.video_control_buttons_layout.addWidget(self.playPause)
+        self.video_control_buttons_layout.addWidget(self.showFrame)
+        self.video_control_buttons_layout.addWidget(self.frameEdit)
+        self.video_control_buttons_layout.addWidget(self.forward)
+
         self.pixMap = None
         self.video = None
         self.items = []
@@ -65,16 +98,36 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
         # DEBUG COMMANDS
         # self.identity_manager = IdentityManager('data/noplast2262-new_results.arr')
-        self.identity_manager = IdentityManager('/home/flipajs/Desktop/ferda-webcam1_3194_results.arr')
-        self.delete_history_markers()
-        self.delete_forward_markers()
-        self.init_identity_markers(self.identity_manager.ant_num, self.identity_manager.group_num)
+        # self.identity_manager = IdentityManager('/home/flipajs/Desktop/ferda-webcam1_3194_results.arr')
+        # self.identity_manager = IdentityManager('/home/flipajs/Downloads/c_bigLense_colormarks3.arr')
+        # self.identity_manager = IdentityManager('/home/flipajs/Downloads/corrected_021014.arr.cng')
+
+        # self.delete_history_markers()
+        # self.delete_forward_markers()
+        # self.init_identity_markers(self.identity_manager.ant_num, self.identity_manager.group_num)
         self.load_video_debug()
         # print tests.test_seek(self.video)
         # END OF DEBUG COMMANDS
 
+        self.sequence_view = img_sequence_widget.ImgSequenceWidget(self.video)
+
+        self.splitter1.addWidget(self.sequence_view)
+        self.main_line_layout.addWidget(self.splitter1)
+
+        # self.sequence_view.setMinimumWidth(350)
+        self.add_controls_2_scene()
+
+        self.plot_widget = plot_widget.PlotWidget()
+        self.bottom_line_layout.addWidget(self.plot_widget)
+
         self.update()
         self.show()
+        self.sequence_view.update_sequence(100, 100)
+
+    def add_controls_2_scene(self):
+        el = QtGui.QGraphicsEllipseItem(10, 10, 10, 10)
+        el.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
+        self.scene.addItem(el)
 
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""
@@ -149,14 +202,17 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         spacing = 3
         button_height = 3*settings.value('bottom_panel_height', default_settings.get_default('bottom_panel_height'), int)/4
         video_slider_gap = 0
-        self.showFrame.setGeometry(QtCore.QRect(w - 1 * button_width, h - button_height + spacing, button_width - spacing, button_height - spacing))
-        self.frameEdit.setGeometry(QtCore.QRect(w - 2 * button_width, h - button_height + spacing, button_width - spacing, button_height - spacing))
-        self.forward.setGeometry(QtCore.QRect(w - 3 * button_width, h - button_height + spacing, button_width - spacing, button_height - spacing))
-        self.playPause.setGeometry(QtCore.QRect(w - 4 * button_width, h - button_height + spacing, button_width - spacing, button_height - spacing))
-        self.backward.setGeometry(QtCore.QRect(w - 5 * button_width, h - button_height + spacing, button_width - spacing, button_height - spacing))
-        self.speedSlider.setGeometry(QtCore.QRect(w - 8 * button_width, h - button_height + spacing, 3 * (button_width - spacing), button_height - spacing))
-        self.fpsLabel.setGeometry(QtCore.QRect(w - 9 * button_width, h - button_height + spacing + 5, button_width - spacing, button_height - spacing))
-        self.videoSlider.setGeometry(QtCore.QRect(settings.value('side_panel_width', default_settings.get_default('side_panel_width'), int) + video_slider_gap, h - settings.value('bottom_panel_height', default_settings.get_default('bottom_panel_height'), int) + spacing, w - settings.value('side_panel_width', default_settings.get_default('side_panel_width'), int) - 2 * video_slider_gap, settings.value('bottom_panel_height', default_settings.get_default('bottom_panel_height'), int) - button_height - spacing))
+
+
+        # self.showFrame.setGeometry(QtCore.QRect(w - 1 * button_width, h - button_height + spacing, button_width - spacing, button_height - spacing))
+        # self.frameEdit.setGeometry(QtCore.QRect(w - 2 * button_width, h - button_height + spacing, button_width - spacing, button_height - spacing))
+        # self.forward.setGeometry(QtCore.QRect(w - 3 * button_width, h - button_height + spacing, button_width - spacing, button_height - spacing))
+        # self.playPause.setGeometry(QtCore.QRect(w - 4 * button_width, h - button_height + spacing, button_width - spacing, button_height - spacing))
+        # self.backward.setGeometry(QtCore.QRect(w - 5 * button_width, h - button_height + spacing, button_width - spacing, button_height - spacing))
+        # self.speedSlider.setGeometry(QtCore.QRect(w - 8 * button_width, h - button_height + spacing, 3 * (button_width - spacing), button_height - spacing))
+        # self.fpsLabel.setGeometry(QtCore.QRect(w - 9 * button_width, h - button_height + spacing + 5, button_width - spacing, button_height - spacing))
+        # self.videoSlider.setGeometry(QtCore.QRect(settings.value('side_panel_width', default_settings.get_default('side_panel_width'), int) + video_slider_gap, h - settings.value('bottom_panel_height', default_settings.get_default('bottom_panel_height'), int) + spacing, w - settings.value('side_panel_width', default_settings.get_default('side_panel_width'), int) - 2 * video_slider_gap, settings.value('bottom_panel_height', default_settings.get_default('bottom_panel_height'), int) - button_height - spacing))
+        # self.videoSlider.setGeometry()
 
     def position_side_panel(self, side_panel_width):
         """Sets correct positions to all components on left side of the window"""
@@ -164,24 +220,44 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         h = self.height()
         spacing = 3
         button_height = 30
-        self.openData.setGeometry(QtCore.QRect(0, 0*button_height, side_panel_width, button_height - spacing))
-        self.openVideo.setGeometry(QtCore.QRect(0, 1*button_height, side_panel_width, button_height - spacing))
-        self.saveData.setGeometry(QtCore.QRect(0, 2 * button_height, side_panel_width, button_height - spacing))
-        self.settingsButton.setGeometry(QtCore.QRect(0, 3 * button_height, side_panel_width, button_height - spacing))
-        self.loadChanges.setGeometry(QtCore.QRect(0, 5 * button_height, side_panel_width, button_height - spacing))
-        self.saveChangesToFile.setGeometry(QtCore.QRect(0, 6 * button_height, side_panel_width, button_height - spacing))
-        self.undoChange.setGeometry(QtCore.QRect(0, 8 * button_height, side_panel_width, button_height - spacing))
-        self.redoChange.setGeometry(QtCore.QRect(0, 9 * button_height, side_panel_width, button_height - spacing))
-        self.showHistory.setGeometry(QtCore.QRect(0, 10 * button_height, side_panel_width, button_height - spacing))
-        self.swapAnts.setGeometry(QtCore.QRect(0, 11 * button_height, side_panel_width, button_height - spacing))
-        self.swapTailHead.setGeometry(QtCore.QRect(0, 12 * button_height, side_panel_width, button_height - spacing))
-        self.showFaults.setGeometry(QtCore.QRect(0, 14 * button_height, side_panel_width, button_height - spacing))
-        self.nextFault.setGeometry(QtCore.QRect(0, 16 * button_height, side_panel_width, button_height - spacing))
-        self.previousFault.setGeometry(QtCore.QRect(0, 17 * button_height, side_panel_width, button_height - spacing))
-        self.toggleHighlight.setGeometry(QtCore.QRect(0, 18 * button_height, side_panel_width, button_height - spacing))
-        self.faultNumLabel.setGeometry(QtCore.QRect(0, 19 * button_height, side_panel_width, button_height - spacing))
-        self.faultLabel.setGeometry(QtCore.QRect(0, 20 * button_height, side_panel_width, button_height - spacing))
-        self.cancelButton.setGeometry(QtCore.QRect(0, 21 * button_height, side_panel_width, button_height - spacing))
+
+        self.menu_panel_layout.addWidget(self.openData)
+        self.menu_panel_layout.addWidget(self.openVideo)
+        self.menu_panel_layout.addWidget(self.saveData)
+        self.menu_panel_layout.addWidget(self.settingsButton)
+        self.menu_panel_layout.addWidget(self.loadChanges)
+        self.menu_panel_layout.addWidget(self.saveChangesToFile)
+        self.menu_panel_layout.addWidget(self.undoChange)
+        self.menu_panel_layout.addWidget(self.redoChange)
+        self.menu_panel_layout.addWidget(self.showHistory)
+        self.menu_panel_layout.addWidget(self.swapAnts)
+        self.menu_panel_layout.addWidget(self.swapTailHead)
+        self.menu_panel_layout.addWidget(self.showFaults)
+        self.menu_panel_layout.addWidget(self.nextFault)
+        self.menu_panel_layout.addWidget(self.previousFault)
+        self.menu_panel_layout.addWidget(self.toggleHighlight)
+        self.menu_panel_layout.addWidget(self.faultNumLabel)
+        self.menu_panel_layout.addWidget(self.faultLabel)
+        self.menu_panel_layout.addWidget(self.cancelButton)
+
+        # self.openData.setGeometry(QtCore.QRect(0, 0*button_height, side_panel_width, button_height - spacing))
+        # self.openVideo.setGeometry(QtCore.QRect(0, 1*button_height, side_panel_width, button_height - spacing))
+        # self.saveData.setGeometry(QtCore.QRect(0, 2 * button_height, side_panel_width, button_height - spacing))
+        # self.settingsButton.setGeometry(QtCore.QRect(0, 3 * button_height, side_panel_width, button_height - spacing))
+        # self.loadChanges.setGeometry(QtCore.QRect(0, 5 * button_height, side_panel_width, button_height - spacing))
+        # self.saveChangesToFile.setGeometry(QtCore.QRect(0, 6 * button_height, side_panel_width, button_height - spacing))
+        # self.undoChange.setGeometry(QtCore.QRect(0, 8 * button_height, side_panel_width, button_height - spacing))
+        # self.redoChange.setGeometry(QtCore.QRect(0, 9 * button_height, side_panel_width, button_height - spacing))
+        # self.showHistory.setGeometry(QtCore.QRect(0, 10 * button_height, side_panel_width, button_height - spacing))
+        # self.swapAnts.setGeometry(QtCore.QRect(0, 11 * button_height, side_panel_width, button_height - spacing))
+        # self.swapTailHead.setGeometry(QtCore.QRect(0, 12 * button_height, side_panel_width, button_height - spacing))
+        # self.showFaults.setGeometry(QtCore.QRect(0, 14 * button_height, side_panel_width, button_height - spacing))
+        # self.nextFault.setGeometry(QtCore.QRect(0, 16 * button_height, side_panel_width, button_height - spacing))
+        # self.previousFault.setGeometry(QtCore.QRect(0, 17 * button_height, side_panel_width, button_height - spacing))
+        # self.toggleHighlight.setGeometry(QtCore.QRect(0, 18 * button_height, side_panel_width, button_height - spacing))
+        # self.faultNumLabel.setGeometry(QtCore.QRect(0, 19 * button_height, side_panel_width, button_height - spacing))
+        # self.faultLabel.setGeometry(QtCore.QRect(0, 20 * button_height, side_panel_width, button_height - spacing))
+        # self.cancelButton.setGeometry(QtCore.QRect(0, 21 * button_height, side_panel_width, button_height - spacing))
 
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""
@@ -197,6 +273,30 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.videoSlider.setTickInterval(1)
 
     def resizeEvent(self, QEvent):
+        if self.graphics_view_old_w > 0:
+
+            m11 = self.graphics_view.transform().m11()
+            m22 = self.graphics_view.transform().m22()
+            # scale = min(m11 * (self.video_widget.width() / float(1024)),
+            #             m22 * (self.video_widget.height() / float(1024)))
+
+            scale = min((self.video_widget.width() / float(self.graphics_view_old_w)),
+                        (self.video_widget.height() / float(self.graphics_view_old_h)))
+
+            scale = self.video_widget.width() / float(self.graphics_view_old_w)
+            print scale
+
+            self.graphics_view_old_w = self.video_widget.width()
+            self.graphics_view_old_h = self.video_widget.height()
+
+            self.graphics_view.scale(scale, scale)
+
+            # self.graphics_view.zoom(scale, QPointF(512, 512))
+
+
+        # self.graphics_view.scale(1.01, 1.01)
+        # self.graphics_view.centerOn(QPointF(512, 512))
+        return
         self.graphics_view_full()
 
     def graphics_view_full(self):
@@ -213,11 +313,14 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.graphics_view_full()
         self.graphics_view.setObjectName(_fromUtf8("graphics_view"))
         self.graphics_view.setScene(self.scene)
+        val = 2000
+        # self.graphics_view.setSceneRect(-val, -val, 2*val, 2*val)
 
     def load_video_debug(self):
         """Loads fixed video. Used for debug."""
         # self.video = video_manager.VideoManager('/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v')
-        self.video = video_manager.VideoManager('/home/flipajs/my_video-16.mkv')
+        # self.video = video_manager.VideoManager('/home/flipajs/my_video-16_c.mkv')
+        self.video = video_manager.VideoManager('/home/flipajs/Downloads/c_bigLense_colormarks3.avi')
         image = self.video.next_img()
         self.pixMap = utils.cvimg2qtpixmap(image)
         utils.view_add_bg_image(self.graphics_view, self.pixMap)
@@ -226,7 +329,12 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.update_frame_number()
         if self.identity_manager is not None:
             self.position_identity_markers()
-        self.frame_rate = int(self.video.fps())
+
+        try:
+            self.frame_rate = int(self.video.fps())
+        except:
+            self.frame_rate = 30
+
         self.speedSlider.setValue(self.frame_rate)
         self.videoSlider.setMaximum(self.video.total_frame_count())
         self.videoSlider.setValue(self.video.frame_number())
@@ -415,7 +523,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
     def change_frame(self, position):
         """Changes current frame to position given. If there is no such position, calls self.out_of_frames"""
         if self.video is not None:
-            img = self.video.seek_frame(position)
+            img = self.video.seek_frame_hybrid(position)
             if img is not None:
                 if self.pixMapItem is not None:
                     self.scene.removeItem(self.pixMapItem)
@@ -475,7 +583,11 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         filename = str(filename.toAscii())
         filename = os.path.normpath(filename)
         self.video = video_manager.VideoManager(filename)
-        self.frame_rate = int(self.video.fps())
+        try:
+            self.frame_rate = int(self.video.fps())
+        except:
+            self.frame_rate = 30
+
         self.speedSlider.setValue(self.frame_rate)
         self.videoSlider.setMaximum(self.video.total_frame_count())
         self.videoSlider.setValue(self.video.frame_number())

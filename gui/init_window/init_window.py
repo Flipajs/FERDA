@@ -93,7 +93,7 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
             self.count_bg_model()
             self.ant_number_spin_box.setValue(self.params.ant_number)
             self.continue_ants()
-            self.start()
+            # self.start()
 
     def set_close_callback(self, callback):
         self.close_callback = callback

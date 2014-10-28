@@ -4,6 +4,7 @@ import cv2
 import os
 import numpy as np
 import cv_compatibility
+import math
 
 
 class VideoManager():
@@ -114,7 +115,9 @@ class VideoManager():
         # ms = (frame * 1000) / int(fps)
         return ms
 
-    def seek_frame2(self, frame_number):
+    def seek_frame_hybrid(self, frame_number):
+        step = 30
+
         if frame_number < 0 or frame_number >= self.total_frame_count():
             return None
 
@@ -124,22 +127,48 @@ class VideoManager():
         self.buffer = [None]*self.buffer_length
 
         self.position = frame_number
-        f_ms = 1000/self.fps()
-        position_to_set = self.get_ms(self.fps(), frame_number)
-        ms = self.get_ms(self.fps(), frame_number)
-        pos = -1
 
-        self.capture.set(cv_compatibility.cv_CAP_PROP_POS_MSEC, ms)
-        while pos < ms:
-            pos = self.capture.get(cv_compatibility.cv_CAP_PROP_POS_MSEC)
+        frame_rest = frame_number % step
+        key_frame_number = frame_number - step
+
+        image = None
+        self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
+        ret, image = self.capture.read()
+
+        return image
+
+        for i in range(frame_rest+1):
             ret, image = self.capture.read()
-            if np.allclose(pos, ms):
-                return image
-            elif pos > ms:
-                print "DECREASING"
-                position_to_set -= f_ms
-                self.capture.set(cv_compatibility.cv_CAP_PROP_POS_MSEC, position_to_set)
-                pos = -(1000)/self.fps()
+
+        return image
+
+
+    # def seek_frame2(self, frame_number):
+    #     if frame_number < 0 or frame_number >= self.total_frame_count():
+    #         return None
+    #
+    #     #Reset buffer as buffered images are now from other part of the video
+    #     self.buffer_pos = 0
+    #     self.view_pos = self.buffer_length-1
+    #     self.buffer = [None]*self.buffer_length
+    #
+    #     self.position = frame_number
+    #     f_ms = 1000/self.fps()
+    #     position_to_set = self.get_ms(self.fps(), frame_number)
+    #     ms = self.get_ms(self.fps(), frame_number)
+    #     pos = -1
+    #
+    #     self.capture.set(cv_compatibility.cv_CAP_PROP_POS_MSEC, ms)
+    #     while pos < ms:
+    #         pos = self.capture.get(cv_compatibility.cv_CAP_PROP_POS_MSEC)
+    #         ret, image = self.capture.read()
+    #         if np.allclose(pos, ms):
+    #             return image
+    #         elif pos > ms:
+    #             print "DECREASING"
+    #             position_to_set -= f_ms
+    #             self.capture.set(cv_compatibility.cv_CAP_PROP_POS_MSEC, position_to_set)
+    #             pos = -(1000)/self.fps()
 
         # Original not-always-working solution:
         # self.capture.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, frame_number)

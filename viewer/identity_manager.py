@@ -386,7 +386,7 @@ class IdentityManager():
                         for key in ['cx', 'cy', 'hx', 'hy', 'bx', 'by']:
                             if changelistitem[1]['change_data'][ant_id][key] is not None:
                                 self.results[changelistitem[0]][ant_id][key] = changelistitem[1]['change_data'][ant_id][key]
-                elif changelistitem['cause'] == 'swap':
+                elif changelistitem[1]['cause'] == 'swap':
                     self.swap_from_frame(changelistitem[0], changelistitem[1]['change_data'][0], changelistitem[1]['change_data'][1])
             self.previously_loaded_changes.extend(changelist)
 
