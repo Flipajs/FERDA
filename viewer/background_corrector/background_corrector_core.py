@@ -56,6 +56,7 @@ class BackgroundCorrector(QtGui.QMainWindow):
         self.toolbar.addAction(self.finish_action)
         self.toolbar.addAction(self.cancel_action)
         self.toolbar.addAction(self.undo_action)
+        self.toolbar.addAction(self.save_action)
 
         self.init_actions()
 

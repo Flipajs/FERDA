@@ -8,7 +8,7 @@ class CropSaver():
     def __init__(self):
         self.out_path = '/home/flipajs/~dump/crop/'
         self.crop_size = -1
-        self.increase_factor = 1.5
+        self.increase_factor = 1.8
 
     def estimate_crop_size(self, ants, increase_factor = -1):
         max_a = 0
@@ -25,9 +25,11 @@ class CropSaver():
         else:
             max_a *= self.increase_factor
 
-        print max_a
-
         self.crop_size = int(math.ceil(max_a))
+        if self.crop_size%2 == 1:
+            self.crop_size += 1
+
+        print self.crop_size
 
     def save(self, ants, img, frame_num):
         border = self.crop_size
@@ -48,3 +50,19 @@ class CropSaver():
 
 
         cv2.imwrite(self.out_path+str(frame_num)+".png", collection)
+
+    def visualize(self, ants, img, frame_num):
+        img_ = img.copy()
+
+        for ant_id in range(len(ants)):
+            ant = ants[ant_id]
+
+            x = ant.state.position.x
+            y = ant.state.position.y
+
+            cv2.rectangle(img_, (int(x - self.crop_size / 2), int(y - self.crop_size / 2)),
+                          (int(x + self.crop_size / 2), int(y + self.crop_size / 2)), (255, 0, 0), 0)
+
+
+        cv2.imshow("ant_crops", img_)
+        cv2.imwrite(self.out_path+str(frame_num)+"_crops.png", img_)

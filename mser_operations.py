@@ -26,6 +26,7 @@ class MserOperations():
         else:
             gray = img[:, :, 0]
 
+        cv2.imshow("before msers", gray)
         t0 = time()
 
         if intensity_threshold > 256:
@@ -34,6 +35,7 @@ class MserOperations():
         intensity_threshold = 256
 
         self.mser.set_min_margin(self.params.min_margin)
+        self.mser.set_max_area(0.005)
         self.mser.process_image(gray, intensity_threshold)
 
         t1 = time()
@@ -41,6 +43,7 @@ class MserOperations():
         self.msers_sum_time += (t1-t0)
 
         regions = self.mser.get_regions()
+        print len(regions)
 
         self.arena_filter(regions)
         regions = self.prepare_regions(regions)

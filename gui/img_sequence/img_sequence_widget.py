@@ -36,11 +36,12 @@ class ImgSequenceWidget(QtGui.QWidget):
 
         # self.setLayout(self.grid)
 
-        img = self.video.seek_frame(100)
+        # img = self.video.seek_frame(100)
         self.update()
         self.show()
 
     def update_sequence(self, frame, length, width=-1, height=-1):
+        return
         gui = QtGui.QApplication.processEvents
 
         i = 1

@@ -105,7 +105,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         # self.delete_history_markers()
         # self.delete_forward_markers()
         # self.init_identity_markers(self.identity_manager.ant_num, self.identity_manager.group_num)
-        self.load_video_debug()
+        # self.load_video_debug()
         # print tests.test_seek(self.video)
         # END OF DEBUG COMMANDS
 

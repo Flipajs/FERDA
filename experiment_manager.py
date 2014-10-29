@@ -114,6 +114,9 @@ class ExperimentManager():
             self.crop_saver.estimate_crop_size(self.ants)
 
         self.crop_saver.save(self.ants, img, self.params.frame)
+        self.crop_saver.visualize(self.ants, img, self.params.frame)
+
+        cv2.imshow("bg", self.params.bg)
 
         if forward and self.history < 0:
             self.history = 0
