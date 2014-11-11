@@ -1,4 +1,4 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 from gui.init_window.arena_circle import *
 
 

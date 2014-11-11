@@ -1,4 +1,4 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 from PyQt4 import QtGui
 from numpy import arange, sin, pi, cos
@@ -18,12 +18,23 @@ class PlotWidget(QtGui.QWidget):
         y = sin(2*pi*x)
         y2 = cos(2*pi*x)
         self.b4.process_data(y, x)
-        self.b4.add_data(y2, x)
 
         self.main_layout.addWidget(self.b4)
 
         self.update()
         self.show()
+
+    def new_data(self, x, y):
+        self.b4.process_data(x, y)
+
+    def add_data(self, x, y, c=None):
+        self.b4.add_data(x, y, c)
+
+    def grid(self, status=True):
+        self.b4.turn_grid(status)
+
+    def set_onclick_callback(self, method):
+        self.b4.onclick_callback = method
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

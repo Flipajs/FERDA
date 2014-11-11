@@ -1,4 +1,4 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 import my_utils
 import numpy as np

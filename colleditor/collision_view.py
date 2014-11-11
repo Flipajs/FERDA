@@ -1,4 +1,4 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 from gui.img_controls.my_view import MyView
 from PyQt4.QtCore import *

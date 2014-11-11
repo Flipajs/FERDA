@@ -1,4 +1,4 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 import sys, os
 from tests import auto_run_ferda

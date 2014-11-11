@@ -1,4 +1,4 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 import matplotlib.pyplot as plt
 import numpy as np
 from trajectories_data import eight_idtracker, eight_ctrax, eight_ktrack, eight_gt, messor_gt, messor_idtracker, noplast_ctrax, noplast_gt, noplast_ktrack

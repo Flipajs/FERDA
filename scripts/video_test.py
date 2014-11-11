@@ -1,6 +1,6 @@
 from utils import video_manager
 
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 import numpy as np
 
@@ -64,7 +64,7 @@ while True:
     frame += 1
 
 
-# __author__ = 'flipajs'
+# __author__ = 'filip@naiser.cz'
 #
 # import cv2
 # import numpy as np

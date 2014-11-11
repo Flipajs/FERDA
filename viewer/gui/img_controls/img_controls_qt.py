@@ -11,6 +11,21 @@ from PyQt4 import QtCore, QtGui
 
 from viewer.gui.img_controls.components import VideoSlider
 
+class SelectAllLineEdit(QtGui.QLineEdit):
+    def __init__(self, parent=None):
+        super(SelectAllLineEdit, self).__init__(parent)
+        self.readyToEdit = True
+
+    def mousePressEvent(self, e, Parent=None):
+        super(SelectAllLineEdit, self).mousePressEvent(e) #required to deselect on 2e click
+        if self.readyToEdit:
+            self.selectAll()
+            self.readyToEdit = False
+
+    def focusOutEvent(self, e):
+        super(SelectAllLineEdit, self).focusOutEvent(e) #required to remove cursor on focusOut
+        self.deselect()
+        self.readyToEdit = True
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -145,6 +160,12 @@ class Ui_MainWindow(object):
         self.sequenceButton = QtGui.QPushButton(self.centralwidget)
         self.sequenceButton.setObjectName(_fromUtf8("sequence"))
 
+        self.showMSERsButton = QtGui.QPushButton(self.centralwidget)
+        self.showMSERsButton.setObjectName(_fromUtf8("show msers"))
+
+        self.showCertaintyButton = QtGui.QPushButton(self.centralwidget)
+        self.showCertaintyButton.setObjectName(_fromUtf8("show certainty"))
+
         self.speedSlider = QtGui.QSlider(self.centralwidget)
         self.speedSlider.setObjectName(_fromUtf8("speedSlider"))
         self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
@@ -158,7 +179,7 @@ class Ui_MainWindow(object):
         self.forward = QtGui.QPushButton(self.centralwidget)
         self.forward.setObjectName(_fromUtf8("forward"))
 
-        self.frameEdit = QtGui.QLineEdit(self.centralwidget)
+        self.frameEdit = SelectAllLineEdit(self.centralwidget)
         self.frameEdit.setObjectName(_fromUtf8("frameEdit"))
 
         self.showFrame = QtGui.QPushButton(self.centralwidget)
@@ -206,6 +227,8 @@ class Ui_MainWindow(object):
         self.settingsButton.setText(_translate("MainWindow", "settings", None))
         self.previousFault.setText(_translate("MainWindow", "previous fault", None))
         self.sequenceButton.setText(_translate("MainWindow", "sequence", None))
+        self.showMSERsButton.setText(_translate("MainWindow", "show MSERs", None))
+        self.showCertaintyButton.setText(_translate("MainWindow", "plot certainty", None))
 
     def assign_icons(self):
         self.forward.setIcon(QtGui.QIcon(QtGui.QPixmap('src/forward.png')))

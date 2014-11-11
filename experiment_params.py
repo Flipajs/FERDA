@@ -97,14 +97,14 @@ class Params():
         ##self.gt_path = '../data/eight/fixed_out.txt'
         #self.bg = None
 
-        self.ant_number = 15
-        self.arena = my_utils.RotatedRect(my_utils.Point(403+self.border, 387+self.border), my_utils.Size(767, 767), 0)
-        self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
-        self.predefined_vals = 'NoPlasterNoLid800'
-        self.gt_path = 'data/NoPlasterNoLid800/fixed_out.txt'
-        self.bg = cv2.imread('data/noplast_bg.png')
-        self.bg = scipy.ndimage.gaussian_filter(self.bg, sigma=1)
-        self.dumpdir = os.path.expanduser('/home/flipajs/~dump/noplast/')
+        # self.ant_number = 15
+        # self.arena = my_utils.RotatedRect(my_utils.Point(403+self.border, 387+self.border), my_utils.Size(767, 767), 0)
+        # self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
+        # self.predefined_vals = 'NoPlasterNoLid800'
+        # self.gt_path = 'data/NoPlasterNoLid800/fixed_out.txt'
+        # self.bg = cv2.imread('data/noplast_bg.png')
+        # self.bg = scipy.ndimage.gaussian_filter(self.bg, sigma=1)
+        # self.dumpdir = os.path.expanduser('/home/flipajs/~dump/noplast/')
         # self.dumpdir = os.path.expanduser('~/dump/noplast')
 
         # self.ant_number = 8

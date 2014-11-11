@@ -1,10 +1,9 @@
+import cv_compatibility
 from utils.ferda_compressed_video_manager import FerdaCompressedVideoManager
 
 __author__ = 'filip@naiser.cz'
 
 import cv2
-import cv_compatibility
-import ferda_compressed_video_manager
 
 
 class VideoManager():
@@ -92,26 +91,32 @@ class VideoManager():
 
     def seek_frame(self, frame_number):
         if frame_number < 0 or frame_number >= self.total_frame_count():
-            return None
+            raise Exception("Frame_number is invalid")
 
         # Reset buffer as buffered images are now from other part of the video
         self.buffer_position_ = 0
         self.view_position_ = self.buffer_length_ - 1
         self.buffer_ = [None] * self.buffer_length_
 
-        self.position_ = frame_number
-        position_to_set = frame_number
-        pos = -1
         self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
-        while pos < frame_number:
-            pos = self.capture.get(cv_compatibility.cv_CAP_PROP_POS_FRAMES)
-            ret, image = self.capture.read()
-            if pos == frame_number:
-                return image
-            elif pos > frame_number:
-                position_to_set -= 1
-                self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, position_to_set)
-                pos = -1
+
+        #because in move2_next it will be increased by one as usual
+        self.position_ = frame_number - 1
+
+        return self.move2_next()
+
+        # position_to_set = frame_number
+        # pos = -1
+        # self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
+        # while pos < frame_number:
+        #     pos = self.capture.get(cv_compatibility.cv_CAP_PROP_POS_FRAMES)
+        #     ret, image = self.capture.read()
+        #     if pos == frame_number:
+        #         return image
+        #     elif pos > frame_number:
+        #         position_to_set -= 1
+        #         self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, position_to_set)
+        #         pos = -1
 
     def img(self):
         return self.buffer_[self.view_position_]

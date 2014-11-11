@@ -1,4 +1,4 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 def __bootstrap__():
    global __bootstrap__, __loader__, __file__

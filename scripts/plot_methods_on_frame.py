@@ -1,4 +1,4 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 from clearmetrics import clearmetrics
 from trajectories_data import eight_ctrax, eight_gt, eight_idtracker, eight_ktrack

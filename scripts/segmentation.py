@@ -1,15 +1,15 @@
 from utils import video_manager
 
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 import cv2
 import numpy as np
 from scipy import ndimage
 
-path = '/home/flipajs/segmentation/'
-orig_file = '/home/flipajs/segmentation/camera1_test2.avi'
+path = '/media/flipajs/Seagate Expansion Drive/IST - videos/compressed/smallLense_colony1/'
+orig_file = '/media/flipajs/Seagate Expansion Drive/IST - videos/smallLense_colony1.avi'
 dilation_iter_num = 15
-thresh = 20
+thresh = 25
 
 vid = video_manager.VideoManager(orig_file)
 

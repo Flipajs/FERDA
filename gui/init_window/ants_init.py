@@ -76,7 +76,7 @@ class Ui_Dialog(object):
         self.spin_bg_num_steps = QtGui.QSpinBox(self.video_group)
         self.spin_bg_num_steps.setGeometry(QtCore.QRect(190, 190, 60, 27))
         self.spin_bg_num_steps.setMinimum(1)
-        self.spin_bg_num_steps.setMaximum(100)
+        self.spin_bg_num_steps.setMaximum(1000)
         self.spin_bg_num_steps.setProperty("value", 20)
         self.spin_bg_num_steps.setObjectName(_fromUtf8("spin_bg_num_steps"))
         self.label_7 = QtGui.QLabel(self.video_group)

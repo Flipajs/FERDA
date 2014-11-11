@@ -26,7 +26,7 @@ class MserOperations():
         else:
             gray = img[:, :, 0]
 
-        cv2.imshow("before msers", gray)
+        # cv2.imshow("before msers", gray)
         t0 = time()
 
         if intensity_threshold > 256:
@@ -199,19 +199,20 @@ def get_region_groups(regions):
     return groups
 
 
-def get_region_groups2(regions):
+def get_region_groups2(regions, check_flags=True):
     prev = -1
     groups = []
     groups_avg_pos = []
     i = -1
     for ridx in range(len(regions)):
         r = regions[ridx]
-        if r["flags"] == "arena_kill":
-            continue
-        if r["flags"] == "max_area_diff_kill_small":
-            continue
-        if r["flags"] == "minI_kill":
-            continue
+        if check_flags:
+            if r["flags"] == "arena_kill":
+                continue
+            if r["flags"] == "max_area_diff_kill_small":
+                continue
+            if r["flags"] == "minI_kill":
+                continue
 
         if r["label"] > prev:
             prev = r["label"]
@@ -226,7 +227,6 @@ def get_region_groups2(regions):
     for i in range(len(groups)):
         groups_avg_pos[i][0] /= len(groups[i])
         groups_avg_pos[i][1] /= len(groups[i])
-
 
     return groups, groups_avg_pos
 
@@ -293,3 +293,20 @@ def is_child_of(child, parent):
         return True
     else:
         return False    # full intersection is impossible
+
+
+def filter_out_children(regions, indexes):
+    ids = []
+    for r_id in indexes:
+        is_child = False
+        for parent_id in indexes:
+            if r_id == parent_id:
+                continue
+
+            if is_child_of(regions[r_id], regions[parent_id]):
+                is_child = True
+                continue
+        if not is_child:
+            ids.append(r_id)
+
+    return ids

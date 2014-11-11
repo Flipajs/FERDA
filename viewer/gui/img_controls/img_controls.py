@@ -1,4 +1,4 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 import os
 import re
@@ -12,7 +12,13 @@ from viewer.identity_manager import IdentityManager
 from viewer.gui.img_controls.dialogs import SettingsDialog
 from gui.img_sequence import img_sequence_widget
 
+import visualize
 from utils import video_manager
+import mser_operations, experiment_params
+import cv2
+from numpy import arange, sin, pi, cos
+from gui.plot import plot_widget
+import my_utils
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -88,7 +94,8 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         # DEBUG COMMANDS
         # self.identity_manager = IdentityManager('data/noplast2262-new_results.arr')
         # self.identity_manager = IdentityManager('/home/flipajs/Desktop/ferda-webcam1_3194_results.arr')
-        self.identity_manager = IdentityManager('/home/flipajs/Downloads/c_bigLense_colormarks3.arr')
+        # self.identity_manager = IdentityManager('/home/flipajs/Downloads/c_bigLense_colormarks3.arr')
+        self.identity_manager = IdentityManager('/home/flipajs/Downloads/c_bigLense_colormarks3_trim.arr')
         # self.identity_manager = IdentityManager('/home/flipajs/Downloads/corrected_021014.arr.cng')
 
         self.delete_history_markers()
@@ -105,9 +112,12 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
         # self.sequence_view.setMinimumWidth(350)
 
-        # self.plot_widget = plot_widget.PlotWidget()
-        # self.bottom_line_layout.addWidget(self.plot_widget)
-        # self.plot_widget.setFixedHeight(100)
+        self.plot_widget = plot_widget.PlotWidget()
+        self.bottom_line_layout.addWidget(self.plot_widget)
+        self.plot_widget.setFixedHeight(200)
+        self.plot_widget.set_onclick_callback(self.plot_clicked)
+
+        self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
 
         self.update()
         self.showMaximized()
@@ -139,6 +149,8 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.settingsButton.clicked.connect(self.show_settings_dialog)
         self.previousFault.clicked.connect(self.previous_fault)
         self.sequenceButton.clicked.connect(self.show_sequence)
+        self.showMSERsButton.clicked.connect(self.show_MSERs)
+        self.showCertaintyButton.clicked.connect(self.show_certainty)
 
     def init_settable_buttons(self):
         """Adds those buttons which have user settable shortcuts into self.settable_buttons"""
@@ -224,6 +236,8 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.menu_panel_layout.addWidget(self.faultLabel)
         self.menu_panel_layout.addWidget(self.cancelButton)
         self.menu_panel_layout.addWidget(self.sequenceButton)
+        self.menu_panel_layout.addWidget(self.showMSERsButton)
+        self.menu_panel_layout.addWidget(self.showCertaintyButton)
 
 
     def init_speed_slider(self):
@@ -341,6 +355,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
                 self.delete_forward_markers()
                 if self.identity_manager is not None:
                     self.position_identity_markers()
+
 
     def play_pause(self):
         """Method of playPause button."""
@@ -1099,6 +1114,9 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         frame = self.video.frame_number()
 
         selected_ants = self.get_selected_ants_id()
+        if len(selected_ants) < 1:
+            return
+
         ant_id = selected_ants[0]
 
         if frame in self.identity_manager.changes_for_frames:
@@ -1108,3 +1126,62 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.video.seek_frame(frame)
 
         return
+
+    def match_msers_with_identities(self, regions):
+        print "regions len: ", len(regions)
+
+        for r in regions:
+            print r['cx'], r['cy']
+
+
+    def show_MSERs(self):
+        img = self.video.img()
+        params = experiment_params.Params()
+        # mask = my_utils.prepare_image(img, params)
+        regions, idx = mser_operations.MserOperations(params).process_image(img)
+        chosen_regions_indexes = mser_operations.filter_out_children(regions, idx)
+
+        self.match_msers_with_identities([regions[i] for i in chosen_regions_indexes])
+
+
+        groups, groups_avg_pos = mser_operations.get_region_groups2(regions, check_flags=False)
+
+        msers2 = visualize.draw_region_group_collection(img, regions, groups, params)
+        # msers2 = visualize.draw_region_group_collection2(img, regions, groups, params)
+        msers = visualize.draw_region_collection(img, regions, params, cell_size=100)
+
+        cv2.imshow("msers", msers)
+        cv2.imshow("msers2", msers2)
+
+    def show_certainty(self):
+        frame = self.video.frame_number()
+        selected_ants = self.get_selected_ants_id()
+
+        if len(selected_ants) < 1:
+            return
+
+        ant_id = selected_ants[0]
+
+        size = 300
+        prefix = int(size*0.1)
+
+        if prefix > frame:
+            prefix = frame
+
+        certainty = [0]*(size+prefix)
+
+        for i in range(size+prefix):
+            certainty[i] = self.identity_manager.get_positions(frame-prefix+i, ant_id)['certainty']
+
+        # +1 so user see frame #1, not 0
+        self.plot_widget.new_data(range(frame-prefix+1, frame+size+1), certainty)
+        self.plot_widget.add_data(frame+1, certainty[prefix], 'r')
+        self.plot_widget.grid(True)
+
+    def plot_clicked(self, x, y):
+        print x, y
+        #-1 because frames in plot are displayed starting from 1
+        frame = int(round(x-1))
+
+        self.change_frame(frame)
+        self.show_certainty()

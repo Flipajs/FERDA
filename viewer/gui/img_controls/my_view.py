@@ -1,6 +1,6 @@
 from PyQt4 import Qt
 
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 #from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import *

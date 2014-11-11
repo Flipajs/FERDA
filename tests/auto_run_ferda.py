@@ -1,4 +1,4 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 import sys
 from gui.init_window import init_window
 from PyQt4 import QtCore, QtGui

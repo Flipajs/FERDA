@@ -1,6 +1,6 @@
 from reportlab.graphics.barcode.widgets import _BarcodeWidget
 
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 import pickle
 import numpy as np

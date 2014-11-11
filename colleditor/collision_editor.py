@@ -1,6 +1,6 @@
 import sys
 
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 from PyQt4 import QtGui, QtCore
 from collision_view import CollisionView

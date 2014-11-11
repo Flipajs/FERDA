@@ -1,6 +1,6 @@
 from utils import video_manager
 
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 import scipy.io as sio
 import matplotlib.pyplot as plt

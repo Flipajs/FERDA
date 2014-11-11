@@ -75,6 +75,7 @@ class IdentityManager():
             res = self.results[frame_num][ant_num]
         else:
             res = None
+
         return res
 
     def get_group(self, ant_num):

@@ -1,4 +1,4 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 from gui.img_controls import img_controls_qt, utils
 from random import randint, shuffle

@@ -71,7 +71,7 @@ class ExperimentManager():
         self.groups, self.groups_avg_pos = mser_operations.get_region_groups2(self.regions)
         #self.max_margin_regions = self.get_max_margin_regions()
 
-        self.chosen_regions_indexes = self.filter_out_children(self.chosen_regions_indexes)
+        self.chosen_regions_indexes = mser_operations.filter_out_children(self.regions, self.chosen_regions_indexes)
         end = time.time()
         #print "timemsers etc. ", end - start
 
@@ -116,22 +116,6 @@ class ExperimentManager():
 
         #if self.params.frame == 100:
         #    print "MSER TIMES: ", self.params.mser_times
-
-    def filter_out_children(self, indexes):
-        ids = []
-        for r_id in indexes:
-            is_child = False
-            for parent_id in indexes:
-                if r_id == parent_id:
-                    continue
-
-                if mser_operations.is_child_of(self.regions[r_id], self.regions[parent_id]):
-                    is_child = True
-                    continue
-            if not is_child:
-                ids.append(r_id)
-
-        return ids
 
     def prepare_graph(self, region_ids):
         graph = nx.Graph()

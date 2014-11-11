@@ -1,6 +1,7 @@
 __author__ = 'flip'
 
 from utils import video_manager
+import utils.misc
 from gui import control_window
 from gui.init_window import ants_init
 from PyQt4 import QtCore
@@ -50,7 +51,7 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
         self.bg_img_item = None
 
         self.init_ui()
-        self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
+        # self.setWindowIcon(QtGui.QIcon('../imgs/ferda.ico'))
 
         self.collection_rows = 10
         self.collection_cols = 10
@@ -174,39 +175,74 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
 
         self.b_count_bg_model.setText('processing... 0 / 100')
         bg = None
-        i = -1
+        i = 0
 
-        max_frame = self.spin_bg_num_steps.value() * self.spin_bg_step_length.value()
+        step = self.spin_bg_step_length.value()
+        max_frame = step * self.spin_bg_num_steps.value()
 
-        while True:
-            i += 1
-            img = self.video_manager.move2_next()
+        #we can try to use frame seek
+        try:
+            while True:
+                img = self.video_manager.seek_frame(i)
 
-            if self.params.inverted_image:
-                img = np.invert(img)
+                if self.params.inverted_image:
+                    img = np.invert(img)
 
-            if img is None:
-                break
+                if img is None:
+                    break
 
-            if i > max_frame:
-                break
+                if i > max_frame:
+                    break
 
-            if i % self.spin_bg_step_length.value() != 0:
-                continue
+                if bg is not None:
+                    self.b_count_bg_model.setText('processing... '+str(int(i/(max_frame/100.)))+' / 100')
+                    bg = np.maximum(bg, img)
 
-            if bg is not None:
-                self.b_count_bg_model.setText('processing... '+str(int(i/(max_frame/100.)))+' / 100')
-                bg = np.maximum(bg, img)
+                    self.pixmap_bg = utils.cvimg2qtpixmap(bg)
 
-                self.pixmap_bg = utils.cvimg2qtpixmap(bg)
+                    if self.bg_img_item is not None:
+                        self.scene.removeItem(self.bg_img_item)
 
-                if self.bg_img_item is not None:
-                    self.scene.removeItem(self.bg_img_item)
+                    self.bg_img_item = self.scene.addPixmap(self.pixmap_bg)
+                    gui()
+                else:
+                    bg = img
 
-                self.bg_img_item = self.scene.addPixmap(self.pixmap_bg)
-                gui()
-            else:
-                bg = img
+                i += step
+
+        except Exception as e:
+            utils.misc.print_exception(e)
+
+            i = -1
+            while True:
+                i += 1
+                img = self.video_manager.move2_next()
+
+                if self.params.inverted_image:
+                    img = np.invert(img)
+
+                if img is None:
+                    break
+
+                if i > max_frame:
+                    break
+
+                if i % step != 0:
+                    continue
+
+                if bg is not None:
+                    self.b_count_bg_model.setText('processing... '+str(int(i/(max_frame/100.)))+' / 100')
+                    bg = np.maximum(bg, img)
+
+                    self.pixmap_bg = utils.cvimg2qtpixmap(bg)
+
+                    if self.bg_img_item is not None:
+                        self.scene.removeItem(self.bg_img_item)
+
+                    self.bg_img_item = self.scene.addPixmap(self.pixmap_bg)
+                    gui()
+                else:
+                    bg = img
 
         self.video_manager.reset()
         self.video_manager.move2_next()

@@ -1,5 +1,5 @@
 from gui import ants_view
-from utils import video_manager
+from utils import cv_compatibility
 
 __author__ = 'flip'
 
@@ -15,7 +15,6 @@ import logger
 import collisions
 import time
 import visualize
-import cv_compatibility
 
 
 class ControlWindow(QtGui.QWidget, ants_view.Ui_Dialog):
@@ -39,7 +38,7 @@ class ControlWindow(QtGui.QWidget, ants_view.Ui_Dialog):
         # self.show()
         # self.window().show()
         # self.window().setGeometry(0, 0, self.window().width(), self.window().height())
-        # self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
+        self.setWindowIcon(QtGui.QIcon('../imgs/ferda.ico'))
 
 
         self.results2video = True

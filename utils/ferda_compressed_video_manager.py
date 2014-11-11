@@ -1,10 +1,8 @@
-import os
-import sys
+import cv_compatibility
 
 __author__ = 'filip@naiser.cz'
 
 import cv2
-import cv_compatibility
 import utils.misc
 
 class FerdaCompressedVideoManager():

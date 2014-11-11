@@ -1,16 +1,17 @@
-__author__ = 'flipajs'
+__author__ = 'filip@naiser.cz'
 
 import pickle
 import numpy as np
-import cv2
 import sys
 import math
-import my_utils
 import os
-import time
-import matplotlib.pyplot as plt
 from scipy import ndimage
-import cv_compatibility
+
+import cv2
+import matplotlib.pyplot as plt
+
+import my_utils
+
 
 dist_thresh = 4
 in_debug = True
