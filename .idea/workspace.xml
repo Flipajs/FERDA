@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b9f8cf9a-3ad6-4a1a-9ce6-2711247eb2c0" name="Default" comment="FerdaCompressedVideoManager, bugs fixed.">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/changelog" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/eight_ferda_stable_split_dmaps2.mat" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/eight_ferda_stable_split_dmaps2_certainty.arr" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/eight_ferda_stable_split_dmaps2_xy.arr" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/gt.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/noplast_ferda_stable_split_19xx.arr" afterPath="" />
+    <list default="true" id="b9f8cf9a-3ad6-4a1a-9ce6-2711247eb2c0" name="Default" comment="cleanup">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/Ants_description.txt" afterPath="$PROJECT_DIR$/viewer/Ants_description.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/Ants_report" afterPath="$PROJECT_DIR$/viewer/Ants_report" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/background_corrector/background_corrector.py" afterPath="$PROJECT_DIR$/viewer/background_corrector/background_corrector.py" />
@@ -15,14 +9,11 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/components.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/components.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/default_settings.py" afterPath="$PROJECT_DIR$/default_settings.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/dialogs.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/dialogs.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_params.py" afterPath="$PROJECT_DIR$/experiment_params.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/identity_manager.py" afterPath="$PROJECT_DIR$/viewer/identity_manager.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/background_corrector/image_view.py" afterPath="$PROJECT_DIR$/viewer/background_corrector/image_view.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/markers.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/markers.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/background_corrector/settingsdialog.py" afterPath="$PROJECT_DIR$/viewer/background_corrector/settingsdialog.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/tests.py" afterPath="$PROJECT_DIR$/viewer/tests.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/vcs.xml" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path=".idea/" />
@@ -853,7 +844,11 @@
       <created>1415695863301</created>
       <updated>1415695863301</updated>
     </task>
-    <option name="localTasksCounter" value="35" />
+    <task id="LOCAL-00035" summary="cleanup">
+      <created>1415696403854</created>
+      <updated>1415696403854</updated>
+    </task>
+    <option name="localTasksCounter" value="36" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -929,7 +924,8 @@
     <MESSAGE value="added scripts/segmentation.py. Supportive code for ant videos file compression." />
     <MESSAGE value="Added support for Ferda Compression video files (FerdaCompressedVideoManager), added smart function get_auto_video_manager(file_paths) into video_manager.py to auto switch between VideoManager and FerdaCompressionVideoManager based on file_paths dimension. Usage of VideoManager has been replaced by this function in init_window and also in correction_tool." />
     <MESSAGE value="FerdaCompressedVideoManager, bugs fixed." />
-    <option name="LAST_COMMIT_MESSAGE" value="FerdaCompressedVideoManager, bugs fixed." />
+    <MESSAGE value="cleanup" />
+    <option name="LAST_COMMIT_MESSAGE" value="cleanup" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
