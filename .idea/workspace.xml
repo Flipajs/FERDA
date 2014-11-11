@@ -102,7 +102,7 @@
           <file leaf-file-name="workspace.xml" pinned="false" current="true" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.49001816" vertical-offset="360" max-vertical-offset="24768">
+                <state vertical-scroll-proportion="0.49001816" vertical-offset="360" max-vertical-offset="24840">
                   <caret line="35" column="21" selection-start-line="35" selection-start-column="21" selection-end-line="35" selection-end-column="21" />
                   <folding />
                 </state>
@@ -840,7 +840,11 @@
       <created>1415693409250</created>
       <updated>1415693409250</updated>
     </task>
-    <option name="localTasksCounter" value="32" />
+    <task id="LOCAL-00032" summary="FerdaCompressedVideoManager, bugs fixed.">
+      <created>1415694565364</created>
+      <updated>1415694565364</updated>
+    </task>
+    <option name="localTasksCounter" value="33" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
