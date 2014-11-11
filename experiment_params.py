@@ -19,6 +19,8 @@ class Params():
         #mser min margin
         self.min_margin = 5
 
+        self.allow_frame_seek = True
+
         self.inverted_image = False
 
         #TODO> WTF factor ~ INF

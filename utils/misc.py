@@ -1,3 +1,6 @@
+import os
+import sys
+
 __author__ = 'flipajs'
 import pickle
 import numpy as np
@@ -28,3 +31,9 @@ def float2str(d, precision):
 
     str_ = "{:."+str(precision)+"f}"
     return str_.format(d)
+
+
+def print_exception(e):
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    f_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    print e.message, "\nin: " + f_name + " on line: " + str(exc_tb.tb_lineno)

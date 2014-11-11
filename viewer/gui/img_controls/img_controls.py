@@ -1,24 +1,18 @@
-# coding=utf8
 __author__ = 'flipajs'
 
 import os
 import re
-import copy
-import pickle
-import default_settings
-
 from PyQt4 import QtCore, QtGui
-import cv2
 
-from viewer.gui.img_controls import img_controls_qt, utils, markers
+import default_settings
+from viewer.gui.img_controls import img_controls_qt, img_control_utils, markers
 from my_view import *
-from viewer import video_manager
 import visualization_utils
 from viewer.identity_manager import IdentityManager
 from viewer.gui.img_controls.dialogs import SettingsDialog
 from gui.img_sequence import img_sequence_widget
-from gui.plot import plot_widget
 
+from utils import video_manager
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -29,16 +23,12 @@ except AttributeError:
 
 class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
     def __init__(self):
-
         super(ImgControls, self).__init__()
-        self.graphics_view_old_w = 0
-        self.graphics_view_old_h = 0
         self.setupUi(self)
         self.graphics_view_old_w = self.video_widget.width()
         self.graphics_view_old_h = self.video_widget.height()
 
         self.lines_layout.addWidget(self.informationLabel)
-        # self.informationLabel.setMinimumHeight(40)
 
         self.scene = QtGui.QGraphicsScene()
 
@@ -48,8 +38,6 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.splitter1 = QtGui.QSplitter(QtCore.Qt.Horizontal)
         self.splitter1.addWidget(self.video_widget)
 
-
-
         #self.main_line_layout.addWidget(self.video_widget)
         self.video_layout.addWidget(self.graphics_view)
         self.video_layout.addWidget(self.video_control_widget)
@@ -57,13 +45,13 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.video_control_layout.addWidget(self.videoSlider)
         self.video_control_layout.addWidget(self.video_control_buttons_widget)
 
-        self.video_control_buttons_layout.addWidget(self.fpsLabel)
         self.video_control_buttons_layout.addWidget(self.speedSlider)
+        self.video_control_buttons_layout.addWidget(self.fpsLabel)
         self.video_control_buttons_layout.addWidget(self.backward)
         self.video_control_buttons_layout.addWidget(self.playPause)
+        self.video_control_buttons_layout.addWidget(self.forward)
         self.video_control_buttons_layout.addWidget(self.showFrame)
         self.video_control_buttons_layout.addWidget(self.frameEdit)
-        self.video_control_buttons_layout.addWidget(self.forward)
 
         self.pixMap = None
         self.video = None
@@ -96,16 +84,17 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.connect_GUI()
         self.set_fault_utils_visibility(False)
 
+
         # DEBUG COMMANDS
         # self.identity_manager = IdentityManager('data/noplast2262-new_results.arr')
         # self.identity_manager = IdentityManager('/home/flipajs/Desktop/ferda-webcam1_3194_results.arr')
-        # self.identity_manager = IdentityManager('/home/flipajs/Downloads/c_bigLense_colormarks3.arr')
+        self.identity_manager = IdentityManager('/home/flipajs/Downloads/c_bigLense_colormarks3.arr')
         # self.identity_manager = IdentityManager('/home/flipajs/Downloads/corrected_021014.arr.cng')
 
-        # self.delete_history_markers()
-        # self.delete_forward_markers()
-        # self.init_identity_markers(self.identity_manager.ant_num, self.identity_manager.group_num)
-        # self.load_video_debug()
+        self.delete_history_markers()
+        self.delete_forward_markers()
+        self.init_identity_markers(self.identity_manager.ant_num, self.identity_manager.group_num)
+        self.load_video_debug()
         # print tests.test_seek(self.video)
         # END OF DEBUG COMMANDS
 
@@ -115,19 +104,13 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.main_line_layout.addWidget(self.splitter1)
 
         # self.sequence_view.setMinimumWidth(350)
-        self.add_controls_2_scene()
 
-        self.plot_widget = plot_widget.PlotWidget()
-        self.bottom_line_layout.addWidget(self.plot_widget)
+        # self.plot_widget = plot_widget.PlotWidget()
+        # self.bottom_line_layout.addWidget(self.plot_widget)
+        # self.plot_widget.setFixedHeight(100)
 
         self.update()
-        self.show()
-        self.sequence_view.update_sequence(100, 100)
-
-    def add_controls_2_scene(self):
-        el = QtGui.QGraphicsEllipseItem(10, 10, 10, 10)
-        el.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
-        self.scene.addItem(el)
+        self.showMaximized()
 
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""
@@ -155,6 +138,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.swapTailHead.clicked.connect(self.swap_tail_head)
         self.settingsButton.clicked.connect(self.show_settings_dialog)
         self.previousFault.clicked.connect(self.previous_fault)
+        self.sequenceButton.clicked.connect(self.show_sequence)
 
     def init_settable_buttons(self):
         """Adds those buttons which have user settable shortcuts into self.settable_buttons"""
@@ -239,25 +223,8 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.menu_panel_layout.addWidget(self.faultNumLabel)
         self.menu_panel_layout.addWidget(self.faultLabel)
         self.menu_panel_layout.addWidget(self.cancelButton)
+        self.menu_panel_layout.addWidget(self.sequenceButton)
 
-        # self.openData.setGeometry(QtCore.QRect(0, 0*button_height, side_panel_width, button_height - spacing))
-        # self.openVideo.setGeometry(QtCore.QRect(0, 1*button_height, side_panel_width, button_height - spacing))
-        # self.saveData.setGeometry(QtCore.QRect(0, 2 * button_height, side_panel_width, button_height - spacing))
-        # self.settingsButton.setGeometry(QtCore.QRect(0, 3 * button_height, side_panel_width, button_height - spacing))
-        # self.loadChanges.setGeometry(QtCore.QRect(0, 5 * button_height, side_panel_width, button_height - spacing))
-        # self.saveChangesToFile.setGeometry(QtCore.QRect(0, 6 * button_height, side_panel_width, button_height - spacing))
-        # self.undoChange.setGeometry(QtCore.QRect(0, 8 * button_height, side_panel_width, button_height - spacing))
-        # self.redoChange.setGeometry(QtCore.QRect(0, 9 * button_height, side_panel_width, button_height - spacing))
-        # self.showHistory.setGeometry(QtCore.QRect(0, 10 * button_height, side_panel_width, button_height - spacing))
-        # self.swapAnts.setGeometry(QtCore.QRect(0, 11 * button_height, side_panel_width, button_height - spacing))
-        # self.swapTailHead.setGeometry(QtCore.QRect(0, 12 * button_height, side_panel_width, button_height - spacing))
-        # self.showFaults.setGeometry(QtCore.QRect(0, 14 * button_height, side_panel_width, button_height - spacing))
-        # self.nextFault.setGeometry(QtCore.QRect(0, 16 * button_height, side_panel_width, button_height - spacing))
-        # self.previousFault.setGeometry(QtCore.QRect(0, 17 * button_height, side_panel_width, button_height - spacing))
-        # self.toggleHighlight.setGeometry(QtCore.QRect(0, 18 * button_height, side_panel_width, button_height - spacing))
-        # self.faultNumLabel.setGeometry(QtCore.QRect(0, 19 * button_height, side_panel_width, button_height - spacing))
-        # self.faultLabel.setGeometry(QtCore.QRect(0, 20 * button_height, side_panel_width, button_height - spacing))
-        # self.cancelButton.setGeometry(QtCore.QRect(0, 21 * button_height, side_panel_width, button_height - spacing))
 
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""
@@ -284,12 +251,12 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
                         (self.video_widget.height() / float(self.graphics_view_old_h)))
 
             scale = self.video_widget.width() / float(self.graphics_view_old_w)
-            print scale
+            # print scale
 
             self.graphics_view_old_w = self.video_widget.width()
             self.graphics_view_old_h = self.video_widget.height()
 
-            self.graphics_view.scale(scale, scale)
+            # self.graphics_view.scale(scale, scale)
 
             # self.graphics_view.zoom(scale, QPointF(512, 512))
 
@@ -320,10 +287,10 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         """Loads fixed video. Used for debug."""
         # self.video = video_manager.VideoManager('/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v')
         # self.video = video_manager.VideoManager('/home/flipajs/my_video-16_c.mkv')
-        self.video = video_manager.VideoManager('/home/flipajs/Downloads/c_bigLense_colormarks3.avi')
-        image = self.video.next_img()
-        self.pixMap = utils.cvimg2qtpixmap(image)
-        utils.view_add_bg_image(self.graphics_view, self.pixMap)
+        self.video = video_manager.VideoManager('/home/flipajs/Downloads/c_bigLense_colormarks3_corrected.avi')
+        image = self.video.move2_next()
+        self.pixMap = img_control_utils.cvimg2qtpixmap(image)
+        img_control_utils.view_add_bg_image(self.graphics_view, self.pixMap)
         item = self.scene.addPixmap(self.pixMap)
         self.pixMapItem = item
         self.update_frame_number()
@@ -342,12 +309,12 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
     def load_next_frame(self):
         """Loads next frame of the video and displays it. If there is no next frame, calls self.out_of_frames"""
         if self.video is not None:
-            img = self.video.next_img()
+            img = self.video.move2_next()
             if not img is None:
                 if self.pixMapItem is not None:
                     self.scene.removeItem(self.pixMapItem)
-                self.pixMap = utils.cvimg2qtpixmap(img)
-                utils.view_add_bg_image(self.graphics_view, self.pixMap)
+                self.pixMap = img_control_utils.cvimg2qtpixmap(img)
+                img_control_utils.view_add_bg_image(self.graphics_view, self.pixMap)
                 item = self.scene.addPixmap(self.pixMap)
                 self.pixMapItem = item
                 self.update_frame_number()
@@ -361,12 +328,12 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
     def load_previous_frame(self):
         """Loads previous frame of the video if there is such and displays it"""
         if self.video is not None:
-            img = self.video.prev_img()
+            img = self.video.move2_prev()
             if not img is None:
                 if self.pixMapItem is not None:
                     self.scene.removeItem(self.pixMapItem)
-                self.pixMap = utils.cvimg2qtpixmap(img)
-                utils.view_add_bg_image(self.graphics_view, self.pixMap)
+                self.pixMap = img_control_utils.cvimg2qtpixmap(img)
+                img_control_utils.view_add_bg_image(self.graphics_view, self.pixMap)
                 item = self.scene.addPixmap(self.pixMap)
                 self.pixMapItem = item
                 self.update_frame_number()
@@ -523,12 +490,12 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
     def change_frame(self, position):
         """Changes current frame to position given. If there is no such position, calls self.out_of_frames"""
         if self.video is not None:
-            img = self.video.seek_frame_hybrid(position)
+            img = self.video.seek_frame(position)
             if img is not None:
                 if self.pixMapItem is not None:
                     self.scene.removeItem(self.pixMapItem)
-                self.pixMap = utils.cvimg2qtpixmap(img)
-                utils.view_add_bg_image(self.graphics_view, self.pixMap)
+                self.pixMap = img_control_utils.cvimg2qtpixmap(img)
+                img_control_utils.view_add_bg_image(self.graphics_view, self.pixMap)
                 item = self.scene.addPixmap(self.pixMap)
                 self.pixMapItem = item
                 self.update_frame_number()
@@ -568,21 +535,26 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
     def open_video(self):
         """Method of openVideo button. Shows dialog to select file and calls self.load_video"""
-        filename = QtGui.QFileDialog.getOpenFileName(self, "Open video", "", "Video files (*.avi *.mp4 *.mkv);;All files (*.*)")
-        if filename != "":
-            self.load_video(filename)
+        file_names = QtGui.QFileDialog.getOpenFileNames(self, "Open video", "", "Video files (*.avi *.mp4 *.mkv);;All files (*.*)")
 
-    def load_video(self, filename):
+        files = []
+        for f in file_names:
+            files.append(str(f))
+
+        self.load_video(files)
+
+    def load_video(self, file_names):
         """Loads video from given filename. Sets values of all components involved accordingly"""
         self.stop_showing_faults()
 
-        codec = QTextCodec.codecForName('utf8')
-        QTextCodec.setCodecForLocale(codec)
-        QTextCodec.setCodecForCStrings(codec)
-        QTextCodec.setCodecForTr(codec)
-        filename = str(filename.toAscii())
-        filename = os.path.normpath(filename)
-        self.video = video_manager.VideoManager(filename)
+        # codec = QTextCodec.codecForName('utf8')
+        # QTextCodec.setCodecForLocale(codec)
+        # QTextCodec.setCodecForCStrings(codec)
+        # QTextCodec.setCodecForTr(codec)
+        # filename = str(filename.toAscii())
+        # filename = os.path.normpath(filename)
+
+        self.video = video_manager.get_auto_video_manager(file_names)
         try:
             self.frame_rate = int(self.video.fps())
         except:
@@ -638,10 +610,12 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
                     changed = True
                 if changed:
                     changes[ant_id] = ant_change
-            self.identity_manager.write_change(self.video.frame_number(), 'movement', changes)
-            self.change_count += 1
-            if self.change_count == settings.value('autosave_count', default_settings.get_default('autosave_count'), int):
-                self.identity_manager.save(self.autosave_filepath)
+
+            if len(changes):
+                self.identity_manager.write_change(self.video.frame_number(), 'movement', changes)
+                self.change_count += 1
+                if self.change_count == settings.value('autosave_count', default_settings.get_default('autosave_count'), int):
+                    self.identity_manager.save(self.autosave_filepath)
 
 
     def undo_change(self):
@@ -655,6 +629,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         if self.identity_manager is not None and self.video is not None:
             self.identity_manager.redo_change(self.video.frame_number())
             self.position_identity_markers()
+
 
     def add_forward_markers(self, depth, ant_id):
         """Adds markers indicating future positions of the ant given. Number of markers = depth. If 'markers_shown_history'
@@ -671,7 +646,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
                     r, g, b = visualization_utils.get_color(self.identity_manager.get_group(ant_id), self.identity_manager.group_num)
 
                 size = settings.value('center_marker_size', default_settings.get_default('center_marker_size'), int)
-                item = utils.add_circle(7, QColor(r, g, b))
+                item = img_control_utils.add_circle(7, QColor(r, g, b))
                 item.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
                 item.setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
                 item.setOpacity(visualization_utils.get_opacity(i, depth))
@@ -683,7 +658,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
                 if settings.value('markers_shown_history', default_settings.get_default('markers_shown_history'), str) == 'all':
                     size = settings.value('head_marker_size', default_settings.get_default('head_marker_size'), int)
-                    item = utils.add_circle(10, QColor(r, g, b))
+                    item = img_control_utils.add_circle(10, QColor(r, g, b))
                     item.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
                     item.setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
                     item.setOpacity(visualization_utils.get_opacity(i, depth))
@@ -694,7 +669,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
                     self.forward_markers[ant_id].append(item)
 
                     size = settings.value('tail_marker_size', default_settings.get_default('tail_marker_size'), int)
-                    item = utils.add_circle(10, QColor(r, g, b))
+                    item = img_control_utils.add_circle(10, QColor(r, g, b))
                     item.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
                     item.setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
                     item.setOpacity(visualization_utils.get_opacity(i, depth))
@@ -719,7 +694,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
                     r, g, b = visualization_utils.get_color(self.identity_manager.get_group(ant_id), self.identity_manager.group_num)
 
                 size = settings.value('center_marker_size', default_settings.get_default('center_marker_size'), int)
-                item = utils.add_circle(7, QColor(r, g, b))
+                item = img_control_utils.add_circle(7, QColor(r, g, b))
                 item.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
                 item.setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
                 item.setOpacity(visualization_utils.get_opacity(i, depth))
@@ -731,7 +706,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
                 if settings.value('markers_shown_history', default_settings.get_default('markers_shown_history'), str) == 'all':
                     size = settings.value('head_marker_size', default_settings.get_default('head_marker_size'), int)
-                    item = utils.add_circle(10, QColor(r, g, b))
+                    item = img_control_utils.add_circle(10, QColor(r, g, b))
                     item.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
                     item.setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
                     item.setOpacity(visualization_utils.get_opacity(i, depth))
@@ -742,7 +717,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
                     self.history_markers[ant_id].append(item)
 
                     size = settings.value('tail_marker_size', default_settings.get_default('tail_marker_size'), int)
-                    item = utils.add_circle(10, QColor(r, g, b))
+                    item = img_control_utils.add_circle(10, QColor(r, g, b))
                     item.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
                     item.setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
                     item.setOpacity(visualization_utils.get_opacity(i, depth))
@@ -768,6 +743,15 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
                     else:
                         self.add_history_markers(settings.value('history_depth', default_settings.get_default('history_depth'), int), marker.antId)
                     break
+
+    def get_selected_ants_id(self):
+        selected = []
+        for marker_list in self.identity_markers:
+            for marker in marker_list:
+                if marker.isSelected():
+                    selected.append(marker.antId)
+
+        return selected
 
     def show_forward_positions(self):
         """Iterates through all markers and shows future of those selected"""
@@ -1110,3 +1094,17 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         center = QPointF(float(max_x + min_x) / 2, float(max_y + min_y)/2)
         scale = min(self.graphics_view.width() / float(max_x - min_x), self.graphics_view.height() / float(max_y - min_y))
         self.graphics_view.zoom(min(scale, max_zoom), center)
+
+    def show_sequence(self):
+        frame = self.video.frame_number()
+
+        selected_ants = self.get_selected_ants_id()
+        ant_id = selected_ants[0]
+
+        if frame in self.identity_manager.changes_for_frames:
+            print self.identity_manager.changes_for_frames[frame]
+
+        self.sequence_view.update_sequence(frame, 50, self.identity_manager, ant_id)
+        self.video.seek_frame(frame)
+
+        return

@@ -1,13 +1,12 @@
 __author__ = 'flip'
 
-from PyQt4.uic.Compiler.qtproxies import QtGui
+from utils import video_manager
 from gui import control_window
 from gui.init_window import ants_init
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtCore
 import mser_operations
 import ant
 import my_utils
-import video_manager
 import numpy as np
 import cv2
 import visualize
@@ -115,10 +114,19 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
         self.start_button.clicked.connect(self.start)
 
     def show_file_dialog(self):
-        self.params.video_file_name = str(QtGui.QFileDialog.getOpenFileName(self, "Select video file"))
-        drive, path = os.path.splitdrive(self.params.video_file_name)
-        path, filename = os.path.split(path)
-        self.file_name_label.setText(filename)
+        file_names = QtGui.QFileDialog.getOpenFileNames(self, "Select video file")
+
+        names_str = ""
+
+        self.params.video_file_name = []
+        for f in file_names:
+            self.params.video_file_name.append(str(f))
+            _, path = os.path.splitdrive(str(f))
+            _, name = os.path.split(path)
+
+            names_str += name+" "
+
+        self.file_name_label.setText(names_str)
         self.b_load_video.setEnabled(True)
         self.b_load_video.setFocus()
 
@@ -140,8 +148,9 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
         self.bg_img_item = self.scene.addPixmap(self.pixmap_bg)
 
     def load_video(self):
-        self.video_manager = video_manager.VideoManager(self.params.video_file_name)
-        self.img = self.video_manager.next_img()
+
+        self.video_manager = video_manager.get_auto_video_manager(self.params.video_file_name)
+        self.img = self.video_manager.move2_next()
 
         if self.img is not None:
             self.b_choose_video.setDisabled(True)
@@ -171,7 +180,7 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
 
         while True:
             i += 1
-            img = self.video_manager.next_img()
+            img = self.video_manager.move2_next()
 
             if self.params.inverted_image:
                 img = np.invert(img)
@@ -199,8 +208,8 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
             else:
                 bg = img
 
-        self.video_manager = video_manager.VideoManager(self.params.video_file_name)
-        self.video_manager.next_img()
+        self.video_manager.reset()
+        self.video_manager.move2_next()
         bg = scipy.ndimage.gaussian_filter(bg, sigma=1)
         self.bg = bg
 

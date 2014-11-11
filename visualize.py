@@ -524,3 +524,4 @@ def draw_collision_risks(img, ants, collisions, history):
 
 
     return img
+

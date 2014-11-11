@@ -1,10 +1,12 @@
 __author__ = 'flipajs'
-from PyQt4 import QtGui, QtCore
-import sys
-from viewer import video_manager
-import cv2
+from PyQt4 import QtGui
 import ImageQt
-import numpy as np
+from numpy import *
+
+import cv2
+
+import visualization_utils
+
 
 class ImgSequenceWidget(QtGui.QWidget):
     def __init__(self, video_manager):
@@ -40,15 +42,60 @@ class ImgSequenceWidget(QtGui.QWidget):
         self.update()
         self.show()
 
-    def update_sequence(self, frame, length, width=-1, height=-1):
-        return
+    def get_changes(self, frame, id_manager, ant_id):
+        changes = {}
+        keys = ['hx', 'hy', 'cy', 'cx', 'bx', 'by']
+
+        for k in keys: changes[k] = 0
+
+        if frame in id_manager.changes_for_frames:
+            for c in id_manager.changes_for_frames[frame]:
+                if ant_id in c['change_data']:
+                    chan = c['change_data'][ant_id]
+                    orig = c['old_data'][ant_id]
+
+                    for k in keys:
+                        if orig[k] and chan[k]:
+                                changes[k] += orig[k] - chan[k]
+
+        return changes
+
+    def draw_ants(self, img, frame, id_manager, changed_ant_id, changes):
+        for a_id in range(id_manager.ant_num):
+            r, g, b = visualization_utils.get_color(a_id, id_manager.ant_num)
+            pos = id_manager.get_positions(frame, a_id)
+
+            keys = ['hx', 'hy', 'cx', 'cy', 'bx', 'by']
+            values = {}
+            for k in keys: values[k] = pos[k]
+
+            if a_id == changed_ant_id:
+                for k in keys: values[k] -= changes[k]
+
+            for i in range(3):
+                cv2.circle(img, (int(values[keys[2*i]]), int(values[keys[2*i+1]])), 3, (b, g, r), -1)
+
+
+    def update_sequence(self, frame, length, id_manager, ant_id, width=200, height=200):
         gui = QtGui.QApplication.processEvents
+
+        changes = self.get_changes(frame, id_manager, ant_id)
 
         i = 1
         j = 1
-        img = self.video.seek_frame(frame)
-        for f in range(frame, frame+length):
-            crop = img[450:850, 600:1000, :].copy()
+
+        #first frame is not visualized, that is the reason for frame+1
+        img = self.video.seek_frame(frame+1)
+        for f in range(frame+1, frame+length):
+            self.draw_ants(img, f, id_manager, ant_id, changes)
+            img_ = zeros((shape(img)[0] + 2 * height, shape(img)[1] + 2 * width, 3), dtype=uint8)
+            img_[height:-height, width:-width] = img.copy()
+
+            pos = id_manager.get_positions(f, ant_id)
+            x = pos['cx'] + width/2
+            y = pos['cy'] + height/2
+
+            crop = img_[y:y+height, x:x+width, :].copy()
 
             img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1]*3, 13)
             pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
@@ -56,8 +103,8 @@ class ImgSequenceWidget(QtGui.QWidget):
             item = QtGui.QLabel()
 
             item.setScaledContents(True)
-            item.setFixedWidth(pix_map.width()/4)
-            item.setFixedHeight(pix_map.height()/4)
+            item.setFixedWidth(pix_map.width())
+            item.setFixedHeight(pix_map.height())
             item.setPixmap(pix_map)
 
             self.grid.addWidget(item, j, i)
@@ -69,7 +116,7 @@ class ImgSequenceWidget(QtGui.QWidget):
             if j < 10:
                 gui()
 
-            img = self.video.next_img()
+            img = self.video.move2_next()
 
 
 if __name__ == "__main__":

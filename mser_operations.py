@@ -43,7 +43,6 @@ class MserOperations():
         self.msers_sum_time += (t1-t0)
 
         regions = self.mser.get_regions()
-        print len(regions)
 
         self.arena_filter(regions)
         regions = self.prepare_regions(regions)

@@ -1,4 +1,5 @@
 from gui import ants_view
+from utils import video_manager
 
 __author__ = 'flip'
 
@@ -10,7 +11,6 @@ import experiment_manager
 import scipy.io as sio
 import ntpath
 import pickle
-import video_manager
 import logger
 import collisions
 import time
@@ -88,7 +88,11 @@ class ControlWindow(QtGui.QWidget, ants_view.Ui_Dialog):
         #sys.exit(0)
 
     def init_ui(self):
-        self.i_state_name.setText(ntpath.basename(self.params.video_file_name))
+        if isinstance(self.params.video_file_name, list):
+            self.i_state_name.setText(ntpath.basename(self.params.video_file_name[0]))
+        else:
+            self.i_state_name.setText(ntpath.basename(self.params.video_file_name))
+
 
         self.b_play.clicked.connect(self.play)
         self.b_forwards.clicked.connect(self.step_forwards)
@@ -161,7 +165,7 @@ class ControlWindow(QtGui.QWidget, ants_view.Ui_Dialog):
                     return
 
                 if self.forward:
-                    img = self.video_manager.next_img()
+                    img = self.video_manager.move2_next()
                 else:
                     if self.params.frame == 1:
                         print "This is frame #1, there is no more previous frames."
@@ -169,7 +173,7 @@ class ControlWindow(QtGui.QWidget, ants_view.Ui_Dialog):
                         self.run()
                         return
 
-                    img = self.video_manager.prev_img()
+                    img = self.video_manager.move2_prev()
 
                 if img is None:
                     self.b_play.setText('play')
@@ -298,20 +302,24 @@ class ControlWindow(QtGui.QWidget, ants_view.Ui_Dialog):
         self.prepare_video_source(params.frame)
         self.experiment.video_manager = self.video_manager
 
-
         print "DONE"
 
         return
 
     def prepare_video_source(self, frame):
-        self.video_manager = video_manager.VideoManager(self.params.video_file_name)
-        for i in range(self.params.frame + 1):
-            sys.stdout.write('\rvideo rewind ' + str(i) + '/' + str(self.params.frame))
-            sys.stdout.flush() # important
+        self.video_manager.reset()
 
-            self.video_manager.next_img()
+        if self.params.allow_frame_seek:
+            self.video_manager.seek_frame(frame)
+        else:  # slower one, but works even if frame seek is not available
+            for i in range(self.params.frame + 1):
+                sys.stdout.write('\rvideo rewind ' + str(i) + '/' + str(self.params.frame))
+                sys.stdout.flush()
+
+                self.video_manager.move2_next()
 
         print ""
+
         return
 
     def show_file_dialog(self):

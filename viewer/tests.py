@@ -8,8 +8,8 @@ def test_seek(video):
 		frame_one = video.seek_frame(frame_number)
 		video.reset()
 		for i in range(frame_number):
-			video.next_img()
-		frame_two = video.next_img()
+			video.move2_next()
+		frame_two = video.move2_next()
 		if not numpy.array_equal(frame_one, frame_two):
 			video.reset()
 			return False

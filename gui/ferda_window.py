@@ -1,13 +1,12 @@
 __author__ = 'flipajs'
 
-import cv2
-from gui.img_controls import img_controls
 import sys
 from PyQt4 import QtGui, QtCore
-import video_manager
+
 from gui import ferda_window_qt
 from gui.init_window import init_window
 from gui import control_window
+
 
 class FerdaControls(QtGui.QMainWindow, ferda_window_qt.Ui_MainWindow):
     def __init__(self):

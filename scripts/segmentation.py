@@ -1,11 +1,10 @@
+from utils import video_manager
+
 __author__ = 'flipajs'
 
 import cv2
-import os
 import numpy as np
 from scipy import ndimage
-import my_utils
-from viewer import video_manager
 
 
 path = '/home/flipajs/segmentation/'
@@ -22,7 +21,7 @@ frame = 0
 while(True):
     print frame
 
-    img = vid.next_img()
+    img = vid.move2_next()
     if img is None:
         break
 

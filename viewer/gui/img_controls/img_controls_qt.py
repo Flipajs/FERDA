@@ -142,6 +142,9 @@ class Ui_MainWindow(object):
         self.settingsButton = QtGui.QPushButton(self.centralwidget)
         self.settingsButton.setObjectName(_fromUtf8("settings"))
 
+        self.sequenceButton = QtGui.QPushButton(self.centralwidget)
+        self.sequenceButton.setObjectName(_fromUtf8("sequence"))
+
         self.speedSlider = QtGui.QSlider(self.centralwidget)
         self.speedSlider.setObjectName(_fromUtf8("speedSlider"))
         self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
@@ -202,6 +205,7 @@ class Ui_MainWindow(object):
         self.swapTailHead.setText(_translate("MainWindow", "swap tail and head", None))
         self.settingsButton.setText(_translate("MainWindow", "settings", None))
         self.previousFault.setText(_translate("MainWindow", "previous fault", None))
+        self.sequenceButton.setText(_translate("MainWindow", "sequence", None))
 
     def assign_icons(self):
         self.forward.setIcon(QtGui.QIcon(QtGui.QPixmap('src/forward.png')))

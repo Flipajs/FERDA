@@ -1,8 +1,8 @@
+from utils import video_manager
+
 __author__ = 'flipajs'
 
-import cv2
 import numpy as np
-from viewer import video_manager
 
 # vid_file = '/home/flipajs/Dropbox/PycharmProjects/ants/scripts/my_output_videofile12.mp4'
 # orig_file = '/home/flipajs/my_video-16.mkv'
@@ -34,13 +34,13 @@ while True:
     # if img is None:
     #     break
 
-    img10_r = vid18_r.next_img()
+    img10_r = vid18_r.move2_next()
 
     if frame % 13 == 0 or frame % 27 == 0:
         print frame
 
         vid10 = video_manager.VideoManager(vid_file18)
-        img10 = vid10.seek_frame_hybrid(frame)
+        img10 = vid10.seek_frame(frame)
 
 
 
