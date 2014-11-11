@@ -6,7 +6,6 @@ import cv2
 import numpy as np
 from scipy import ndimage
 
-
 path = '/home/flipajs/segmentation/'
 orig_file = '/home/flipajs/segmentation/camera1_test2.avi'
 dilation_iter_num = 15
