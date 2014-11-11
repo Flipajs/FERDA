@@ -1,6 +1,5 @@
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
-from copy import deepcopy
 
 default_settings = {
     'blur_distance': 10,
