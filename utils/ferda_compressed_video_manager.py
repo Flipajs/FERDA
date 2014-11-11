@@ -125,9 +125,10 @@ class FerdaCompressedVideoManager():
         self.capture_compressed_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
         self.capture_lossless_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
 
-        self.position_ = frame_number
+        #because in move2_next it will be increased by one
+        self.position_ = frame_number - 1
 
-        return self.next_frame()
+        return self.move2_next()
 
     def reset(self):
         self.position_ = -1
@@ -137,7 +138,7 @@ class FerdaCompressedVideoManager():
 
         self.capture_init_()
 
-    def frame(self):
+    def frame_number(self):
         return self.position_
 
     def img(self):

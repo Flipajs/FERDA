@@ -1,45 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b9f8cf9a-3ad6-4a1a-9ce6-2711247eb2c0" name="Default" comment="Added support for Ferda Compression video files (FerdaCompressedVideoManager), added smart function into video_manager.py to auto switch between VideoManager and FerdaCompressionVideoManager based on file_paths dimension. Usage of VideoManager has been replaced by">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/utils/ferda_compressed_video_manager.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/utils/video_manager.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/viewer/~video_manager.py" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/ferda_messors.avi" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/scripts/bg_model.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/video_manager.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/viewer/video_manager.py" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/utils.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/img_control_utils.py" />
+    <list default="true" id="b9f8cf9a-3ad6-4a1a-9ce6-2711247eb2c0" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/Ants_description.txt" afterPath="$PROJECT_DIR$/viewer/Ants_description.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/Ants_report" afterPath="$PROJECT_DIR$/viewer/Ants_report" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/background_corrector/background_corrector.py" afterPath="$PROJECT_DIR$/viewer/background_corrector/background_corrector.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/background_corrector/background_corrector_core.py" afterPath="$PROJECT_DIR$/viewer/background_corrector/background_corrector_core.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/components.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/components.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/control_window.py" afterPath="$PROJECT_DIR$/gui/control_window.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/default_settings.py" afterPath="$PROJECT_DIR$/default_settings.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/dialogs.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/dialogs.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_manager.py" afterPath="$PROJECT_DIR$/experiment_manager.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/experiment_params.py" afterPath="$PROJECT_DIR$/experiment_params.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/ferda_window.py" afterPath="$PROJECT_DIR$/gui/ferda_window.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/dictionaries/flipajs.xml" afterPath="$PROJECT_DIR$/.idea/dictionaries/flipajs.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/gt_ctrax_ferda.py" afterPath="$PROJECT_DIR$/scripts/gt_ctrax_ferda.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/utils/ferda_compressed_video_manager.py" afterPath="$PROJECT_DIR$/utils/ferda_compressed_video_manager.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/identity_manager.py" afterPath="$PROJECT_DIR$/viewer/identity_manager.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/image_controls.py" afterPath="$PROJECT_DIR$/viewer/image_controls.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/background_corrector/image_view.py" afterPath="$PROJECT_DIR$/viewer/background_corrector/image_view.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/img_controls.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/img_controls.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/img_controls_qt.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/img_controls_qt.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/img_sequence/img_sequence_widget.py" afterPath="$PROJECT_DIR$/gui/img_sequence/img_sequence_widget.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gui/init_window/init_window.py" afterPath="$PROJECT_DIR$/gui/init_window/init_window.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/markers.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/markers.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/utils/misc.py" afterPath="$PROJECT_DIR$/utils/misc.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mser_operations.py" afterPath="$PROJECT_DIR$/mser_operations.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/gui/img_controls/my_view.py" afterPath="$PROJECT_DIR$/viewer/gui/img_controls/my_view.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run_viewer.py" afterPath="$PROJECT_DIR$/run_viewer.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/segmentation.py" afterPath="$PROJECT_DIR$/scripts/segmentation.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/background_corrector/settingsdialog.py" afterPath="$PROJECT_DIR$/viewer/background_corrector/settingsdialog.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viewer/tests.py" afterPath="$PROJECT_DIR$/viewer/tests.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/video_test.py" afterPath="$PROJECT_DIR$/scripts/video_test.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/visualize.py" afterPath="$PROJECT_DIR$/visualize.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="ants.iws" />
@@ -68,8 +43,8 @@
           <file leaf-file-name="img_controls.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/viewer/gui/img_controls/img_controls.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="-0.028571429" vertical-offset="9341" max-vertical-offset="20070">
-                  <caret line="519" column="42" selection-start-line="519" selection-start-column="42" selection-end-line="519" selection-end-column="42" />
+                <state vertical-scroll-proportion="-4.9714284" vertical-offset="6360" max-vertical-offset="20070">
+                  <caret line="363" column="0" selection-start-line="363" selection-start-column="0" selection-end-line="363" selection-end-column="0" />
                   <folding>
                     <element signature="e#24#33#0" expanded="true" />
                   </folding>
@@ -80,8 +55,8 @@
           <file leaf-file-name="img_control_utils.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/viewer/gui/img_controls/img_control_utils.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.0" vertical-offset="234" max-vertical-offset="1044">
-                  <caret line="13" column="0" selection-start-line="13" selection-start-column="0" selection-end-line="13" selection-end-column="0" />
+                <state vertical-scroll-proportion="0.0" vertical-offset="188" max-vertical-offset="990">
+                  <caret line="24" column="0" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
                   <folding />
                 </state>
               </provider>
@@ -119,11 +94,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="ferda_compressed_video_manager.py" pinned="false" current="false" current-in-tab="false">
+          <file leaf-file-name="ferda_compressed_video_manager.py" pinned="false" current="true" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/utils/ferda_compressed_video_manager.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.0" vertical-offset="1433" max-vertical-offset="3510">
-                  <caret line="117" column="29" selection-start-line="117" selection-start-column="29" selection-end-line="117" selection-end-column="29" />
+                <state vertical-scroll-proportion="0.52474105" vertical-offset="1956" max-vertical-offset="3528">
+                  <caret line="134" column="33" selection-start-line="134" selection-start-column="33" selection-end-line="134" selection-end-column="33" />
                   <folding>
                     <element signature="e#0#9#0" expanded="true" />
                   </folding>
@@ -131,11 +106,21 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="mser_operations.py" pinned="false" current="false" current-in-tab="true">
+          <file leaf-file-name="solve_merged.py" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/solve_merged.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.0" vertical-offset="2268" max-vertical-offset="8208">
+                  <caret line="47" column="0" selection-start-line="47" selection-start-column="0" selection-end-line="47" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="mser_operations.py" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/mser_operations.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.19642857" vertical-offset="0" max-vertical-offset="5310">
-                  <caret line="16" column="31" selection-start-line="16" selection-start-column="31" selection-end-line="16" selection-end-column="31" />
+                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="5310">
+                  <caret line="30" column="0" selection-start-line="30" selection-start-column="0" selection-end-line="30" selection-end-column="0" />
                   <folding />
                 </state>
               </provider>
@@ -156,16 +141,6 @@
               <provider selected="true" editor-type-id="text-editor">
                 <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1224">
                   <caret line="14" column="20" selection-start-line="14" selection-start-column="20" selection-end-line="14" selection-end-column="20" />
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="run_viewer.py" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/run_viewer.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="360">
-                  <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
                   <folding />
                 </state>
               </provider>
@@ -215,11 +190,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="video_manager.py" pinned="false" current="true" current-in-tab="true">
+          <file leaf-file-name="video_manager.py" pinned="false" current="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/utils/video_manager.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.89285713" vertical-offset="2538" max-vertical-offset="3546">
-                  <caret line="191" column="27" selection-start-line="191" selection-start-column="27" selection-end-line="191" selection-end-column="27" />
+                <state vertical-scroll-proportion="0.352518" vertical-offset="1848" max-vertical-offset="3546">
+                  <caret line="119" column="29" selection-start-line="119" selection-start-column="29" selection-end-line="119" selection-end-column="29" />
                   <folding />
                 </state>
               </provider>
@@ -342,11 +317,11 @@
         <option value="$PROJECT_DIR$/gui/init_window/init_window.py" />
         <option value="$PROJECT_DIR$/viewer/image_controls.py" />
         <option value="$PROJECT_DIR$/viewer/gui/img_controls/img_controls.py" />
-        <option value="$PROJECT_DIR$/utils/ferda_compressed_video_manager.py" />
         <option value="$PROJECT_DIR$/gui/control_window.py" />
         <option value="$PROJECT_DIR$/experiment_manager.py" />
         <option value="$PROJECT_DIR$/mser_operations.py" />
         <option value="$PROJECT_DIR$/utils/video_manager.py" />
+        <option value="$PROJECT_DIR$/utils/ferda_compressed_video_manager.py" />
       </list>
     </option>
   </component>
@@ -552,7 +527,7 @@
       <recent name="$PROJECT_DIR$/gui/init_window" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python.run_viewer">
     <configuration default="false" name="run_viewer" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -802,10 +777,10 @@
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.main" />
-        <item index="1" class="java.lang.String" itemvalue="Python.ferda_compressed_video_manager" />
-        <item index="2" class="java.lang.String" itemvalue="Python.video_manager" />
-        <item index="3" class="java.lang.String" itemvalue="Python.run_viewer" />
+        <item index="0" class="java.lang.String" itemvalue="Python.run_viewer" />
+        <item index="1" class="java.lang.String" itemvalue="Python.main" />
+        <item index="2" class="java.lang.String" itemvalue="Python.ferda_compressed_video_manager" />
+        <item index="3" class="java.lang.String" itemvalue="Python.video_manager" />
         <item index="4" class="java.lang.String" itemvalue="Python.segmentation" />
       </list>
     </recent_temporary>
@@ -932,7 +907,11 @@
       <created>1414611656395</created>
       <updated>1414611656396</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="Added support for Ferda Compression video files (FerdaCompressedVideoManager), added smart function get_auto_video_manager(file_paths) into video_manager.py to auto switch between VideoManager and FerdaCompressionVideoManager based on file_paths dimension. Usage of VideoManager has been replaced by this function in init_window and also in correction_tool.">
+      <created>1415692287240</created>
+      <updated>1415692287240</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -959,6 +938,7 @@
     <frame x="0" y="24" width="1920" height="1176" extended-state="6" />
     <editor active="true" />
     <layout>
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4150772" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3258595" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32884902" sideWeight="0.49947917" order="6" side_tool="false" content_ui="tabs" />
@@ -968,12 +948,11 @@
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.40781108" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.21083455" sideWeight="0.23798077" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37369207" sideWeight="0.5015625" order="10" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.12624887" sideWeight="0.4984375" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.12624887" sideWeight="0.4984375" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32890996" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="SVN Repositories" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32970026" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
@@ -1006,7 +985,8 @@
     <MESSAGE value="Added background fixing tool in initialization." />
     <MESSAGE value="Frame seek changed for frame_seek_hybrd in img_controls." />
     <MESSAGE value="added scripts/segmentation.py. Supportive code for ant videos file compression." />
-    <option name="LAST_COMMIT_MESSAGE" value="added scripts/segmentation.py. Supportive code for ant videos file compression." />
+    <MESSAGE value="Added support for Ferda Compression video files (FerdaCompressedVideoManager), added smart function get_auto_video_manager(file_paths) into video_manager.py to auto switch between VideoManager and FerdaCompressionVideoManager based on file_paths dimension. Usage of VideoManager has been replaced by this function in init_window and also in correction_tool." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added support for Ferda Compression video files (FerdaCompressedVideoManager), added smart function get_auto_video_manager(file_paths) into video_manager.py to auto switch between VideoManager and FerdaCompressionVideoManager based on file_paths dimension. Usage of VideoManager has been replaced by this function in init_window and also in correction_tool." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1036,21 +1016,19 @@
           <line>614</line>
           <option name="timeStamp" value="236" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/utils/ferda_compressed_video_manager.py</url>
+          <line>121</line>
+          <option name="timeStamp" value="242" />
+        </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="242" />
+      <option name="time" value="243" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file:///usr/lib/python2.7/copy.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="2362" max-vertical-offset="7866">
-          <caret line="144" column="4" selection-start-line="144" selection-start-column="4" selection-end-line="144" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/gui/init_window/pixmap_label.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="1116" max-vertical-offset="3258">
@@ -1249,14 +1227,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/viewer/gui/img_controls/img_control_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1044">
-          <caret line="13" column="0" selection-start-line="13" selection-start-column="0" selection-end-line="13" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/run_viewer.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="882">
@@ -1361,16 +1331,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/viewer/gui/img_controls/img_controls.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-0.028571429" vertical-offset="9341" max-vertical-offset="20070">
-          <caret line="519" column="42" selection-start-line="519" selection-start-column="42" selection-end-line="519" selection-end-column="42" />
-          <folding>
-            <element signature="e#24#33#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/gui/init_window/init_window.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-7.9428573" vertical-offset="2458" max-vertical-offset="9450">
@@ -1405,29 +1365,55 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/utils/ferda_compressed_video_manager.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1433" max-vertical-offset="3510">
-          <caret line="117" column="29" selection-start-line="117" selection-start-column="29" selection-end-line="117" selection-end-column="29" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/mser_operations.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.19642857" vertical-offset="0" max-vertical-offset="5310">
-          <caret line="16" column="31" selection-start-line="16" selection-start-column="31" selection-end-line="16" selection-end-column="31" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="5310">
+          <caret line="30" column="0" selection-start-line="30" selection-start-column="0" selection-end-line="30" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/utils/video_manager.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.89285713" vertical-offset="2538" max-vertical-offset="3546">
-          <caret line="191" column="27" selection-start-line="191" selection-start-column="27" selection-end-line="191" selection-end-column="27" />
+        <state vertical-scroll-proportion="0.352518" vertical-offset="1848" max-vertical-offset="3546">
+          <caret line="119" column="29" selection-start-line="119" selection-start-column="29" selection-end-line="119" selection-end-column="29" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/solve_merged.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="2268" max-vertical-offset="8208">
+          <caret line="47" column="0" selection-start-line="47" selection-start-column="0" selection-end-line="47" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/viewer/gui/img_controls/img_control_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="188" max-vertical-offset="990">
+          <caret line="24" column="0" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/viewer/gui/img_controls/img_controls.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-4.9714284" vertical-offset="6360" max-vertical-offset="20070">
+          <caret line="363" column="0" selection-start-line="363" selection-start-column="0" selection-end-line="363" selection-end-column="0" />
+          <folding>
+            <element signature="e#24#33#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/ferda_compressed_video_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.52474105" vertical-offset="1956" max-vertical-offset="3528">
+          <caret line="134" column="33" selection-start-line="134" selection-start-column="33" selection-end-line="134" selection-end-column="33" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
