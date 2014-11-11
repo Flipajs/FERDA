@@ -31,8 +31,6 @@ class Params():
         self.mser_times = 0
         self.frame = 0
 
-        self.use_gt = False
-        self.gt_repair = False
         self.fast_start = False
 
         self.auto_run = False

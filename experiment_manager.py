@@ -8,7 +8,6 @@ import copy
 import mser_operations
 import score
 import visualize
-import gt
 import my_utils as my_utils
 import pickle
 import sys
@@ -34,10 +33,6 @@ class ExperimentManager():
         self.regions = []
         self.history = 0
         self.collisions = []
-
-        if self.use_gt:
-            self.ground_truth = gt.GroundTruth(params.gt_path, self)
-            self.ground_truth.match_gt(self.ants)
 
         self.mser_operations = mser_operations.MserOperations(params)
         self.count_ant_params()
@@ -283,11 +278,6 @@ class ExperimentManager():
 
         if self.params.print_mser_info:
             self.print_mser_info(self.regions)
-
-        if self.use_gt and self.history < 0:
-            r = self.ground_truth.check_gt(self.ants, self.params.gt_repair)
-
-            self.ground_truth.display_stats()
 
         #print "#SPLITTED: ", self.number_of_splits
 
