@@ -1,7 +1,8 @@
-/dist/
-/build/
-/matlab/
-/out/
-/.idea/
-/.idea/workspace.xml
+matlab/
+out/
+.idea/
 *.pyc
+autosave.arr
+ferda_drosophyla.avi
+ferda_output.avi
+mat_name.mat
