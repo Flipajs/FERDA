@@ -3,4 +3,5 @@
 /matlab/
 /out/
 /.idea/
+/.idea/workspace.xml
 *.pyc
