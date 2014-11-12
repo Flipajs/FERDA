@@ -32,6 +32,7 @@ class Params():
         self.frame = 0
 
         self.fast_start = False
+        self.test = True
 
         self.auto_run = False
         self.run_to_the_end = False
