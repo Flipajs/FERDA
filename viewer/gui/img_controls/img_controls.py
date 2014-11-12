@@ -1127,21 +1127,35 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
         return
 
-    def match_msers_with_identities(self, regions):
-        print "regions len: ", len(regions)
+    def match_msers_with_identities(self, regions, idx):
+        rest = []
+        eps = 3
+        for r_id in idx:
+            r = regions[r_id]
+            used = False
+            for a_id in range(self.identity_manager.ant_num):
+                res = self.identity_manager.get_positions(self.video.frame_number(), a_id)
+                if abs(res['cx'] - r['cx']) < eps and abs(res['cy'] - r['cy']) < eps:
+                    used = True
+                    break
 
-        for r in regions:
-            print r['cx'], r['cy']
+            if not used:
+                rest.append(r_id)
+
+        "Rest: "
+        for r_id in rest:
+            r = regions[r_id]
+            print r_id, r['cx'], r['cy'], r['area']
 
 
     def show_MSERs(self):
         img = self.video.img()
         params = experiment_params.Params()
         # mask = my_utils.prepare_image(img, params)
-        regions, idx = mser_operations.MserOperations(params).process_image(img)
-        chosen_regions_indexes = mser_operations.filter_out_children(regions, idx)
+        regions, idx = mser_operations.MserOperations(params).process_image(img, ignore_arena=True)
+        # chosen_regions_indexes = mser_operations.filter_out_children(regions, idx)
 
-        self.match_msers_with_identities([regions[i] for i in chosen_regions_indexes])
+        self.match_msers_with_identities(regions, idx)
 
 
         groups, groups_avg_pos = mser_operations.get_region_groups2(regions, check_flags=False)

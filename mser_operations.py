@@ -20,7 +20,7 @@ class MserOperations():
         self.msers_last_time = 0
         self.msers_sum_time = 0
 
-    def process_image(self, img, intensity_threshold=256):
+    def process_image(self, img, intensity_threshold=256, ignore_arena=False):
         if img.shape[2] > 1:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         else:
@@ -44,7 +44,7 @@ class MserOperations():
 
         regions = self.mser.get_regions()
 
-        self.arena_filter(regions)
+        self.arena_filter(regions, ignore_arena)
         regions = self.prepare_regions(regions)
         groups = get_region_groups(regions)
         ids = margin_filter(regions, groups, self.params.min_margin)
@@ -94,7 +94,13 @@ class MserOperations():
 
         return regions
 
-    def arena_filter(self, regions):
+    def arena_filter(self, regions, ignore_arena=False):
+        if ignore_arena:
+            for i in range(len(regions)):
+                regions[i]['flags'] = None
+
+            return range(len(regions))
+
         indexes = []
         for i in range(len(regions)):
             reg = regions[i]

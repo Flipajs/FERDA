@@ -143,7 +143,8 @@ def draw_region_collection(img, regions, params, cols=15, rows=10, cell_size=50)
             "cx"] + cell_size / 2].copy()
 
         cv2.putText(img_small, str(r['label']), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (255, 255, 255), 1, cv2.LINE_AA)
-        cv2.putText(img_small, str(r['parent_label']), (3, 20), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(img_small, str(i), (3, 20), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(img_small, str(r['parent_label']), (3, 30), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.LINE_AA)
         collection[row * cell_size:(row + 1) * cell_size, col * cell_size:(col + 1) * cell_size, :] = img_small
 
     return collection
