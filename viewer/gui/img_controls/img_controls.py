@@ -110,9 +110,9 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
             # print tests.test_seek(self.video)
             # END OF DEBUG COMMANDS
 
-        self.sequence_view = img_sequence_widget.ImgSequenceWidget(self.video)
+            self.sequence_view = img_sequence_widget.ImgSequenceWidget(self.video)
+            self.splitter1.addWidget(self.sequence_view)
 
-        self.splitter1.addWidget(self.sequence_view)
         self.main_line_layout.addWidget(self.splitter1)
 
         # self.sequence_view.setMinimumWidth(350)
@@ -586,6 +586,8 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.load_next_frame()
 
         self.sequence_view = img_sequence_widget.ImgSequenceWidget(self.video)
+        self.splitter1.addWidget(self.sequence_view)
+
 
     # def marker_changed(self, ant_id):
     # 	if self.identity_manager is not None and self.video is not None:
