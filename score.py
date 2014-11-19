@@ -1,4 +1,4 @@
-__author__ = 'flip'
+__author__ = 'flip@naiser.cz'
 
 import math
 import networkx as nx

@@ -5,14 +5,15 @@ import my_utils
 import pickle
 import os
 import scipy.ndimage
+from utils.misc import is_flipajs_pc
 
 
 class Params():
     def __init__(self):
         self.border = 0
         self.avg_ant_area = 120
-        self.avg_ant_axis_a = 0
-        self.avg_ant_axis_b = 0
+        self.avg_ant_axis_a = 1
+        self.avg_ant_axis_b = 1
         self.avg_ant_axis_ratio = 4.2
         self.max_axis_ratio_diff = 2
         self.max_area_diff = 0.6
@@ -31,7 +32,7 @@ class Params():
         self.mser_times = 0
         self.frame = 0
 
-        self.fast_start = False
+        self.fast_start = False and is_flipajs_pc()
         self.test = True
 
         self.auto_run = False
@@ -79,6 +80,9 @@ class Params():
         self.predefined_vals = ''
         self.bg = None
         self.dumpdir = os.path.expanduser('/home/flipajs/~dump/')
+
+
+
 
 
         #self.dumpdir = os.path.expanduser('~/dump/Ferda')

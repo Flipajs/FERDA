@@ -19,6 +19,9 @@ import cv2
 from numpy import arange, sin, pi, cos
 from gui.plot import plot_widget
 import my_utils
+from core.assignment import assignment
+from ant import Ant, set_ant_state
+from utils.misc import is_flipajs_pc
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -90,20 +93,23 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.connect_GUI()
         self.set_fault_utils_visibility(False)
 
+        self.fast_start = True
 
-        # DEBUG COMMANDS
-        # self.identity_manager = IdentityManager('data/noplast2262-new_results.arr')
-        # self.identity_manager = IdentityManager('/home/flipajs/Desktop/ferda-webcam1_3194_results.arr')
-        # self.identity_manager = IdentityManager('/home/flipajs/Downloads/c_bigLense_colormarks3.arr')
-        self.identity_manager = IdentityManager('/home/flipajs/Downloads/c_bigLense_colormarks3_trim.arr')
-        # self.identity_manager = IdentityManager('/home/flipajs/Downloads/corrected_021014.arr.cng')
 
-        self.delete_history_markers()
-        self.delete_forward_markers()
-        self.init_identity_markers(self.identity_manager.ant_num, self.identity_manager.group_num)
-        self.load_video_debug()
-        # print tests.test_seek(self.video)
-        # END OF DEBUG COMMANDS
+        if self.fast_start and is_flipajs_pc():
+            # DEBUG COMMANDS
+            # self.identity_manager = IdentityManager('data/noplast2262-new_results.arr')
+            # self.identity_manager = IdentityManager('/home/flipajs/Desktop/ferda-webcam1_3194_results.arr')
+            # self.identity_manager = IdentityManager('/home/flipajs/Downloads/c_bigLense_colormarks3.arr')
+            self.identity_manager = IdentityManager('/home/flipajs/Downloads/c_bigLense_colormarks3_trim.arr')
+            # self.identity_manager = IdentityManager('/home/flipajs/Downloads/corrected_021014.arr.cng')
+
+            self.delete_history_markers()
+            self.delete_forward_markers()
+            self.init_identity_markers(self.identity_manager.ant_num, self.identity_manager.group_num)
+            self.load_video_debug()
+            # print tests.test_seek(self.video)
+            # END OF DEBUG COMMANDS
 
         self.sequence_view = img_sequence_widget.ImgSequenceWidget(self.video)
 
@@ -1110,6 +1116,36 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         scale = min(self.graphics_view.width() / float(max_x - min_x), self.graphics_view.height() / float(max_y - min_y))
         self.graphics_view.zoom(min(scale, max_zoom), center)
 
+    def re_track(self, ant_id, frame, length):
+        vid = self.video.get_manager_copy()
+        vid.seek_frame(frame)
+
+        params = experiment_params.Params()
+
+        new_trajectory = []
+        score_functions = ['distance_score']
+        expression = '$0'
+
+        res = self.identity_manager.get_positions(frame, ant_id)
+        ant = Ant(ant_id)
+        ant.state.position.x = res['cx']
+        ant.state.position.y = res['cy']
+
+        for i in range(frame, frame+length):
+            img = vid.move2_next()
+            regions, idx = mser_operations.MserOperations(params).process_image(img, ignore_arena=True)
+
+            r_id = assignment.ant2region_assignment(ant, regions, params, score_functions, expression, idx)
+
+            set_ant_state(ant, r_id, regions[r_id], False)
+
+            t = {'cx': ant.state.position.x, 'cy': ant.state.position.y, 'hx': ant.state.head.x, 'hy': ant.state.head.y,
+                 'bx': ant.state.back.x, 'by': ant.state.back.y}
+
+            new_trajectory.append(t)
+
+        return new_trajectory
+
     def show_sequence(self):
         frame = self.video.frame_number()
 
@@ -1119,22 +1155,34 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
         ant_id = selected_ants[0]
 
-        if frame in self.identity_manager.changes_for_frames:
-            print self.identity_manager.changes_for_frames[frame]
+        # self.sequence_view.update_sequence(frame, 50, self.identity_manager, ant_id)
 
-        self.sequence_view.update_sequence(frame, 50, self.identity_manager, ant_id)
+        # new_data = {}
+        # keys = ['hx', 'hy', 'cx', 'cy', 'bx', 'by']
+        # for i in range(30):
+        #     new_data[i] = {}
+        #     for k in keys:
+        #         new_data[i][k] = 5*i + 200
+
+        new_data = self.re_track(ant_id, frame, 10)
+
+        #+1 because in re-tracking, there is first frame skipped
+        self.sequence_view.visualize_new_data(frame+1, self.identity_manager, new_data)
+
         self.video.seek_frame(frame)
 
         return
 
-    def match_msers_with_identities(self, regions, idx):
+    def match_msers_with_identities(self, regions, idx, frame=None):
         rest = []
         eps = 3
+        if frame is None:
+            frame = self.video.frame_number()
         for r_id in idx:
             r = regions[r_id]
             used = False
             for a_id in range(self.identity_manager.ant_num):
-                res = self.identity_manager.get_positions(self.video.frame_number(), a_id)
+                res = self.identity_manager.get_positions(frame, a_id)
                 if abs(res['cx'] - r['cx']) < eps and abs(res['cy'] - r['cy']) < eps:
                     used = True
                     break
@@ -1154,9 +1202,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         # mask = my_utils.prepare_image(img, params)
         regions, idx = mser_operations.MserOperations(params).process_image(img, ignore_arena=True)
         # chosen_regions_indexes = mser_operations.filter_out_children(regions, idx)
-
         self.match_msers_with_identities(regions, idx)
-
 
         groups, groups_avg_pos = mser_operations.get_region_groups2(regions, check_flags=False)
 

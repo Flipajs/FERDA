@@ -5,6 +5,7 @@ __author__ = 'filip@naiser.cz'
 import cv2
 import utils.misc
 
+
 class FerdaCompressedVideoManager():
     """
     this class arranges easy operations with FERDA compressed video files.
@@ -84,10 +85,10 @@ class FerdaCompressedVideoManager():
         self.capture_lossless_ = cv2.VideoCapture(self.lossless_file_)
 
         if not self.capture_compressed_.isOpened():
-            raise Exception("Cannot open compressed video! Path: "+self.compressed_file_)
+            raise Exception("Cannot open compressed video! Path: " + self.compressed_file_)
 
         if not self.capture_lossless_.isOpened():
-            raise Exception("Cannot open lossless video! Path: "+self.lossless_file_)
+            raise Exception("Cannot open lossless video! Path: " + self.lossless_file_)
 
     def move2_next(self):
         """
@@ -96,14 +97,14 @@ class FerdaCompressedVideoManager():
 
         f, self.lossless_img_ = self.capture_lossless_.read()
         if not f:
-            raise Exception("No more frames ("+str(self.position_)+") in file: "+self.lossless_file_)
+            raise Exception("No more frames (" + str(self.position_) + ") in file: " + self.lossless_file_)
 
         f, self.compressed_img_ = self.capture_compressed_.read()
         if not f:
-            raise Exception("No more frames ("+str(self.position_)+") in file: "+self.lossless_file_)
+            raise Exception("No more frames (" + str(self.position_) + ") in file: " + self.lossless_file_)
 
         l = self.lossless_img_
-        mask = (l[:,:,0] != self.r_) & (l[:,:,1] != self.g_) & (l[:,:,2] != self.b_)
+        mask = (l[:, :, 0] != self.r_) & (l[:, :, 1] != self.g_) & (l[:, :, 2] != self.b_)
 
         self.combined_img_ = self.compressed_img_.copy()
         self.combined_img_[:, :, :][mask] = self.lossless_img_[:, :, :][mask]
@@ -123,7 +124,7 @@ class FerdaCompressedVideoManager():
         self.capture_compressed_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
         self.capture_lossless_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
 
-        #because in move2_next it will be increased by one
+        # because in move2_next it will be increased by one
         self.position_ = frame_number - 1
 
         return self.move2_next()
@@ -154,6 +155,16 @@ class FerdaCompressedVideoManager():
     def fps(self):
         return self.capture_compressed_.get(cv_compatibility.cv_CAP_PROP_FPS)
 
+    def get_manager_copy(self):
+        """
+        returns copy of FerdaCompressedVideoManager, might be useful in cases of asynchronous operations (mainly seeking) on video
+        while you want to maintain right position in original one.
+        """
+        vid = FerdaCompressedVideoManager(self.compressed_file_, self.lossless_file_, self.r_, self.g_, self.b_)
+        vid.seek_frame(self.frame_number())
+
+        return vid
+
 
 if __name__ == "__main__":
     compressed = "/home/flipajs/segmentation/camera1_test3_c25_f.avi"
@@ -172,7 +183,7 @@ if __name__ == "__main__":
             if i % 23 == 0 or i % 7 == 0:
                 vid2 = FerdaCompressedVideoManager(compressed, lossless)
                 img_seek = vid2.seek_frame(i)
-                if sum(sum(sum(img_seek-img))) > 0:
+                if sum(sum(sum(img_seek - img))) > 0:
                     print "problem"
 
             img_compressed = vid.compressed_img()

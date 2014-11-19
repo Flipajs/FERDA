@@ -100,7 +100,7 @@ class VideoManager():
 
         self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
 
-        #because in move2_next it will be increased by one as usual
+        # because in move2_next it will be increased by one as usual
         self.position_ = frame_number - 1
 
         return self.move2_next()
@@ -146,13 +146,23 @@ class VideoManager():
         # view_dec = self.dec_pos(self.view_pos)
         # if view_dec == self.buffer_pos:
         # print "No more frames in buffer"
-        #         return None
+        # return None
         #     elif self.buffer[view_dec] is None:
         #         print "No more frames in buffer"
         #         return None
         #     else:
         #         self.view_pos = view_dec
         #         return self.buffer[self.view_pos]
+
+    def get_manager_copy(self):
+        """
+        returns copy of VideoManager, might be useful in cases of asynchronous operations (mainly seeking) on video
+        while you want to maintain right position in original one.
+        """
+        vid = VideoManager(self.video_path)
+        vid.seek_frame(self.frame_number())
+
+        return vid
 
 
 def get_auto_video_manager(file_paths):
