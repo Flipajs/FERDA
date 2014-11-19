@@ -39,6 +39,9 @@ def print_exception(e):
     print e.message, "\nin: " + f_name + " on line: " + str(exc_tb.tb_lineno)
 
 def is_flipajs_pc():
+    """
+    This function test whether FERDA is runned on Flipajs pc. It can be used for fast start of program (e.g. loading predefined video etc.) and for
+    """
     p = os.path.realpath(__file__)
 
     if '/home/flipajs/Dropbox/PycharmProjects/ants/' in p:

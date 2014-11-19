@@ -29,7 +29,6 @@ class ExperimentManager():
         self.ants = ants
         self.number_of_splits = 0
 
-        self.use_gt = params.use_gt
         self.regions = []
         self.history = 0
         self.collisions = []
