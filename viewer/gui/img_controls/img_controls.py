@@ -1223,6 +1223,8 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         ant_id = selected_ants[0]
 
         size = 300
+        # this will prevent indexing results which does not exists.
+        size = min(self.identity_manager.get_max_frame() - frame + 1, size)
         prefix = int(size*0.1)
 
         if prefix > frame:
@@ -1230,8 +1232,13 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
         certainty = [0]*(size+prefix)
 
+        # to_frame = min(self.identity_manager.get_max_frame(), size+prefix)
         for i in range(size+prefix):
-            certainty[i] = self.identity_manager.get_positions(frame-prefix+i, ant_id)['certainty']
+            r = self.identity_manager.get_positions(frame-prefix+i, ant_id)
+            if r:
+                certainty[i] = r['certainty']
+            else: # if there are frame drops in results (for some strange reason).
+                certainty[i] = -1
 
         # +1 so user see frame #1, not 0
         self.plot_widget.new_data(range(frame-prefix+1, frame+size+1), certainty)

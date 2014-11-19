@@ -34,6 +34,8 @@ class IdentityManager():
         self.info = None
         self.previously_loaded_changes = []
 
+        self.max_frame = -1;
+
         self.load_results(filepath)
 
         self.find_max_certainty()
@@ -68,6 +70,11 @@ class IdentityManager():
         self.results = results
         self.max_speeds = [None]*self.ant_num
         self.avg_lengths = [None]*self.ant_num
+
+        self.max_frame = max(self.results.keys())
+
+    def get_max_frame(self):
+        return self.max_frame
 
     def get_positions(self, frame_num, ant_num):
         """Returns positions of given ant in given frame"""
