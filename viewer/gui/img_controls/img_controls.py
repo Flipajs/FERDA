@@ -95,7 +95,6 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
         self.fast_start = True
 
-
         if self.fast_start and is_flipajs_pc():
             # DEBUG COMMANDS
             # self.identity_manager = IdentityManager('data/noplast2262-new_results.arr')
@@ -585,6 +584,8 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.videoSlider.setMaximum(self.video.total_frame_count())
         self.videoSlider.setValue(self.video.frame_number())
         self.load_next_frame()
+
+        self.sequence_view = img_sequence_widget.ImgSequenceWidget(self.video)
 
     # def marker_changed(self, ant_id):
     # 	if self.identity_manager is not None and self.video is not None:
@@ -1164,7 +1165,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         #     for k in keys:
         #         new_data[i][k] = 5*i + 200
 
-        new_data = self.re_track(ant_id, frame, 10)
+        new_data = self.re_track(ant_id, frame, 20)
 
         #+1 because in re-tracking, there is first frame skipped
         self.sequence_view.visualize_new_data(frame+1, self.identity_manager, new_data)
