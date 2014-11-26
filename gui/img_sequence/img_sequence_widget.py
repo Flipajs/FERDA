@@ -1,5 +1,5 @@
 __author__ = 'filip@naiser.cz'
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import ImageQt
 from numpy import *
 
@@ -7,6 +7,20 @@ import cv2
 from utils import video_manager
 
 import visualization_utils
+
+
+class SelectableImageQLabel(QtGui.QLabel):
+    def __init__(self, parent=None, selected_callback=None, frame=-1):
+        QtGui.QLabel.__init__(self, parent)
+        self.frame_number = frame
+        self.selected_callback = selected_callback
+
+    def mouseReleaseEvent(self, ev):
+        self.setStyleSheet("border: 2px dashed black;")
+        self.selected_callback(self, self.frame_number)
+
+    def deselect(self):
+        self.setStyleSheet("border: 0px;")
 
 
 class ImgSequenceWidget(QtGui.QWidget):
@@ -37,11 +51,87 @@ class ImgSequenceWidget(QtGui.QWidget):
         self.setLayout(self.main_layout)
         self.main_layout.addWidget(self.scrollArea_2)
 
-        # self.setLayout(self.grid)
+        self.selected = None
+        self.selected_frame = -1
 
-        # img = self.video.seek_frame(100)
+        self.scrollArea_2.verticalScrollBar().valueChanged.connect(self.scroll_changed)
+
+        # store these values so it is possible to add new data when asked for.
+        self.grid_i = -1
+        self.grid_j = -1
+        self.frame = None
+        self.local_vid = None
+        self.id_manager = None
+        self.ant_id = -1
+        self.im_height_ = -1
+        self.im_width_ = -1
+        self.changes = None
+
         self.update()
         self.show()
+
+
+    def scroll_changed(self):
+        s = self.scrollArea_2.verticalScrollBar()
+        val = s.value() / float(s.maximum())
+        print "Scrolling", val
+
+        length = 10
+        if val > 0.8:
+            gui = QtGui.QApplication.processEvents
+
+            img = self.local_vid.seek_frame(self.frame + 1)
+            for f in range(self.frame + 1, self.frame + length):
+                self.draw_ants(img, f, self.id_manager)
+
+                pos = self.id_manager.get_positions(f, self.ant_id)
+
+                keys = ['hx', 'hy', 'cy', 'cx', 'bx', 'by']
+                for k in keys:
+                    pos[k] -= self.changes[k]
+
+
+                self.draw_data(img, pos)
+
+
+                img_ = zeros((shape(img)[0] + 2 * self.im_height_, shape(img)[1] + 2 * self.im_width_, 3), dtype=uint8)
+                img_[self.im_height_:-self.im_height_, self.im_width_:-self.im_width_] = img.copy()
+
+                x = pos['cx'] + self.im_width_ / 2
+                y = pos['cy'] + self.im_height_ / 2
+
+                crop = img_[y:y + self.im_height_, x:x + self.im_width_, :].copy()
+
+                img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
+                pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
+
+                item = QtGui.QLabel()
+
+                item.setScaledContents(True)
+                item.setFixedself.im_width_(pix_map.self.im_width_())
+                item.setFixedself.im_height_(pix_map.self.im_height_())
+                item.setPixmap(pix_map)
+
+                self.grid.addWidget(item, self.grid_j, self.grid_i)
+                self.grid_i += 1
+                if self.grid_i % 4 == 0:
+                    self.grid_i = 1
+                    self.grid_j += 1
+
+                if self.grid_j < 10:
+                    gui()
+
+                img = self.local_vid.move2_next()
+
+            gui()
+
+
+    def selected_callback(self, selected, frame):
+        if self.selected:
+            self.selected.deselect()
+
+        self.selected = selected
+        self.selected_frame = frame
 
     def get_changes(self, frame, id_manager, ant_id):
         changes = {}
@@ -78,12 +168,18 @@ class ImgSequenceWidget(QtGui.QWidget):
     def visualize_new_data(self, frame, id_manager, new_data, width=200, height=200):
         gui = QtGui.QApplication.processEvents
 
-        i = 1
-        j = 1
+        self.local_vid = self.video.get_manager_copy()
+        self.frame = frame
+        self.id_manager = id_manager
+        self.im_width_ = width
+        self.im_height_ = height
+
+        self.grid_i = 1
+        self.grid_j = 1
 
         length = len(new_data)
 
-        img = self.video.seek_frame(frame)
+        img = self.local_vid.seek_frame(frame)
         for f in range(frame, frame + length):
             self.draw_ants(img, f, id_manager)
             self.draw_data(img, new_data[f-frame])
@@ -99,58 +195,68 @@ class ImgSequenceWidget(QtGui.QWidget):
             img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
             pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
 
-            item = QtGui.QLabel()
+            item = SelectableImageQLabel(self, self.selected_callback, f)
 
             item.setScaledContents(True)
             item.setFixedWidth(pix_map.width())
             item.setFixedHeight(pix_map.height())
             item.setPixmap(pix_map)
 
-            self.grid.addWidget(item, j, i)
-            i += 1
-            if i % 4 == 0:
-                i = 1
-                j += 1
+            self.grid.addWidget(item, self.grid_j, self.grid_i)
+            self.grid_i += 1
+            if self.grid_i % 4 == 0:
+                self.grid_i = 1
+                self.grid_j += 1
 
-            if j < 10:
+            if self.grid_j < 10:
                 gui()
 
-            img = self.video.move2_next()
+            img = self.local_vid.move2_next()
+
+        self.frame = frame
 
     def update_sequence(self, frame, length, id_manager, ant_id, width=200, height=200):
+        #storing these values so they can be used when it is asked for more self.frames
+
         # obtaining copy of video solves multiple calling of this method (calling from gui is asynchronous,
-        # thus wrong frame number might be read during another call of this method.
-        local_vid = self.video.get_manager_copy()
+        # thus wrong self.frame number might be read during another call of this method.
+        self.local_vid = self.video.get_manager_copy()
+        self.frame = frame
+        self.id_manager = id_manager
+        self.ant_id = ant_id
+        self.im_width_ = width
+        self.im_height_ = height
+        
 
         gui = QtGui.QApplication.processEvents
 
-        changes = self.get_changes(frame, id_manager, ant_id)
+        self.changes = self.get_changes(self.frame, self.id_manager, self.ant_id)
 
-        i = 1
-        j = 1
+        self.grid_i = 1
+        self.grid_j = 1
 
-        #first frame is not visualized, that is the reason for frame+1
-        img = local_vid.seek_frame(frame + 1)
-        for f in range(frame + 1, frame + length):
-            self.draw_ants(img, f, id_manager)
+        #first self.frame is not visualized, that is the reason for self.frame+1
+        img = self.local_vid.seek_frame(self.frame + 1)
+        for f in range(self.frame + 1, self.frame + length):
+            self.draw_ants(img, f, self.id_manager)
 
-            pos = id_manager.get_positions(f, ant_id)
+            pos = self.id_manager.get_positions(f, self.ant_id)
 
             keys = ['hx', 'hy', 'cy', 'cx', 'bx', 'by']
             for k in keys:
-                pos[k] -= changes[k]
+                pos[k] -= self.changes[k]
 
 
             self.draw_data(img, pos)
 
 
-            img_ = zeros((shape(img)[0] + 2 * height, shape(img)[1] + 2 * width, 3), dtype=uint8)
-            img_[height:-height, width:-width] = img.copy()
+            img_ = zeros((shape(img)[0] + 2 * self.im_height_, shape(img)[1] + 2 * self.im_width_, 3), dtype=uint8)
+            img_[self.im_height_:-self.im_height_, self.im_width_:-self.im_width_] = img.copy()
 
-            x = pos['cx'] + width / 2
-            y = pos['cy'] + height / 2
+            x = pos['cx'] + self.im_width_ / 2
+            y = pos['cy'] + self.im_height_ / 2
 
-            crop = img_[y:y + height, x:x + width, :].copy()
+            crop = img_[y:y + self.im_height_, x:x + self.im_width_, :].copy()
 
             img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
             pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
@@ -158,20 +264,22 @@ class ImgSequenceWidget(QtGui.QWidget):
             item = QtGui.QLabel()
 
             item.setScaledContents(True)
-            item.setFixedWidth(pix_map.width())
-            item.setFixedHeight(pix_map.height())
+            item.setFixedself.im_width_(pix_map.self.im_width_())
+            item.setFixedself.im_height_(pix_map.self.im_height_())
             item.setPixmap(pix_map)
 
-            self.grid.addWidget(item, j, i)
-            i += 1
-            if i % 4 == 0:
-                i = 1
-                j += 1
+            self.grid.addWidget(item, self.grid_j, self.grid_i)
+            self.grid_i += 1
+            if self.grid_i % 4 == 0:
+                self.grid_i = 1
+                self.grid_j += 1
 
-            if j < 10:
+            if self.grid_j < 10:
                 gui()
 
-            img = local_vid.move2_next()
+            img = self.local_vid.move2_next()
+
+        self.frame = self.frame + length
 
 
 if __name__ == "__main__":
