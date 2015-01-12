@@ -6,8 +6,8 @@ import cv2
 import numpy as np
 from scipy import ndimage
 
-path = '/media/flipajs/Seagate Expansion Drive/IST - videos/compressed/smallLense_colony1/'
-orig_file = '/media/flipajs/Seagate Expansion Drive/IST - videos/smallLense_colony1.avi'
+path = '/media/flipajs/Seagate Expansion Drive/IST - videos/compressed/bigLenses_colormarks1_test/'
+orig_file = '/media/flipajs/Seagate Expansion Drive/IST - videos/bigLenses_colormarks1.avi'
 dilation_iter_num = 15
 thresh = 25
 
@@ -48,7 +48,7 @@ while(True):
     img_bw = ndimage.binary_dilation(img_bw, iterations=dilation_iter_num).astype(img_bw.dtype)
 
     idx = img_bw[:,:] < 1
-    img_orig[idx] = 255
+    # img_orig[idx] = 255
 
     num = str(frame)
     while len(num) < 7:

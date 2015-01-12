@@ -24,6 +24,8 @@ class Params():
 
         self.inverted_image = False
 
+        self.skip_big_regions = True
+
         #TODO> WTF factor ~ INF
         #self.undefined_threshold = 0.000001
         self.undefined_threshold = 0.001

@@ -51,7 +51,7 @@ def get_bg(video_file=None, step=100, max_frame=1000):
             if i > max_frame:
                 break
 
-            if i % step != 0:
+                if i % step != 0:
                 continue
 
             if bg is not None:

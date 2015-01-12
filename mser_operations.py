@@ -48,6 +48,8 @@ class MserOperations():
         regions = self.prepare_regions(regions)
         groups = get_region_groups(regions)
         ids = margin_filter(regions, groups, self.params.min_margin)
+        if self.params.skip_big_regions:
+            ids = self.area_filter(regions, ids)
 
         return regions, ids
 

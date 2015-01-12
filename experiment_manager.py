@@ -49,6 +49,12 @@ class ExperimentManager():
         start = time.time()
         self.img_ = img.copy()
         mask = my_utils.prepare_image(img, self.params)
+
+        cv2.imwrite("/media/flipajs/Seagate Expansion Drive/IST - videos/S/blc1-framesc/"+str(self.params.frame)+".png", self.img_)
+
+        cv2.imshow("before MSER img", mask)
+        cv2.waitKey(1)
+
         self.img_sub_ = mask
         end = time.time()
         #print "time image: ", end - start
