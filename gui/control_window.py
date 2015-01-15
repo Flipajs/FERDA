@@ -35,6 +35,8 @@ class ControlWindow(QtGui.QWidget, ants_view.Ui_Dialog):
         self.exit_callback = None
 
         self.init_ui()
+
+        self.tab_2.setEnabled(False)
         # self.show()
         # self.window().show()
         # self.window().setGeometry(0, 0, self.window().width(), self.window().height())
@@ -42,6 +44,7 @@ class ControlWindow(QtGui.QWidget, ants_view.Ui_Dialog):
 
 
         self.results2video = True
+
 
         if self.results2video:
             width = 1920
