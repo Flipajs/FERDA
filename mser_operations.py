@@ -119,20 +119,25 @@ class MserOperations():
 
     def area_filter(self, regions, indexes):
         filtered_indexes = []
+        MY_THRESH = 300
 
         for i in range(len(indexes)):
             ri = regions[indexes[i]]
-            d_area = ri["area"] / float(self.params.avg_ant_area)
-            if d_area < self.params.max_area_diff:
-                ri["flags"] = "max_area_diff_kill_small"
-                continue
-            else:
-                d_area = float(ri["area"]) / float(self.params.avg_ant_area)
-                if d_area > 1 + self.params.max_area_diff:
-                    ri["flags"] = "max_area_diff_kill_big"
-                    continue
+            if ri['area'] < MY_THRESH:
+                filtered_indexes.append(indexes[i])
 
-            filtered_indexes.append(indexes[i])
+            #
+            # d_area = ri["area"] / float(self.params.avg_ant_area)
+            # if d_area < self.params.max_area_diff:
+            #     ri["flags"] = "max_area_diff_kill_small"
+            #     continue
+            # else:
+            #     d_area = float(ri["area"]) / float(self.params.avg_ant_area)
+            #     if d_area > 1 + self.params.max_area_diff:
+            #         ri["flags"] = "max_area_diff_kill_big"
+            #         continue
+            #
+            # filtered_indexes.append(indexes[i])
 
         return filtered_indexes
 
