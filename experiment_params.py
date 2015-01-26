@@ -29,9 +29,12 @@ class Params():
         # -300 will skipp all regions with area < 300
         self.skip_big_regions_thresh = 500
 
+        # if > -1 then it is threshold for min intensity. Everything higher then this threshold will be skipped
+        self.skip_high_intensity_regions = 100
+
         #TODO> WTF factor ~ INF
         #self.undefined_threshold = 0.000001
-        self.undefined_threshold = 0.001
+        self.undefined_threshold = 0.01
         self.weighted_matching_lost_edge_cost = 0.001
 
         self.mser_times = 0

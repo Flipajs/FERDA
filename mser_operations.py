@@ -51,6 +51,9 @@ class MserOperations():
         if self.params.skip_big_regions:
             ids = self.area_filter(regions, ids)
 
+        if self.params.skip_big_regions_thresh > -1:
+            ids = self.intensity_filter(regions, ids)
+
         return regions, ids
 
     def prepare_regions(self, regions):
@@ -116,6 +119,16 @@ class MserOperations():
             #    reg["flags"] = "minI_kill"
 
         return indexes
+
+    def intensity_filter(self, regions, indexes):
+        filtered_indexes = []
+
+        for i in range(len(indexes)):
+            ri = regions[indexes[i]]
+            if ri['minI'] < self.params.skip_high_intensity_regions:
+                filtered_indexes.append(indexes[i])
+
+        return filtered_indexes
 
     def area_filter(self, regions, indexes):
         filtered_indexes = []

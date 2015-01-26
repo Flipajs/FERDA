@@ -183,7 +183,7 @@ def theta_change_prob(ant, region):
         x = -(x + math.pi)
 
     if ant.state.lost:
-        x /= ((math.log(ant.state.lost_time) + 2) / 2)
+        x /= ((math.log(max(ant.state.lost_time, 20)) + 2) / 2)
 
     val = mlab.normpdf(x, u, s) / max_val
     #val = log_normpdf(x, u, s) / abs(max_val)
