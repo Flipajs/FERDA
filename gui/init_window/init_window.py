@@ -396,6 +396,7 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
             a = ant.Ant(i)
             a.color = ant.get_color(i, self.params.ant_number)
             self.ants.append(a)
+            ant.set_ant_state(self.ants[i], -1, None, True, -1)
             s = QtGui.QSpinBox()
             s.setMinimum(0)
             s.setMaximum(len(self.regions))
@@ -490,7 +491,10 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
 
     def assign_ant(self, id, val):
         if val == -1:
-            self.ants[id].state.mser_id = -1
+            # self.ants[id].state.mser_id = -1
+
+            #sets mser_id = -1
+            ant.set_ant_state(self.ants[id], val, None, True, -1)
             return
 
         ant.set_ant_state(self.ants[id], val, self.regions[val], False, 2)

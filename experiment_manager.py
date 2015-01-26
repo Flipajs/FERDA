@@ -659,8 +659,8 @@ class ExperimentManager():
             self.params.avg_ant_axis_ratio = avg_axis_ratio / counter
             self.params.avg_ant_axis_a = avg_axis_a / counter
             self.params.avg_ant_axis_b = avg_axis_b / counter
-        #else:
-            #print "zero ant assigned... in Experiment_manager.py"
+        else:
+            print "zero ant assigned during initialization... Problem occurred in Experiment_manager.py"
 
         #print "AVG ANT AREA> ", self.params.avg_ant_area
         #print "AVG ANT AXIS RATIO> ", self.params.avg_ant_axis_ratio

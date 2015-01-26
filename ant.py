@@ -273,7 +273,8 @@ def count_head_tail(ant):
 
 
 def set_ant_state(ant, mser_id, region, add_history=True, cost=0):
-    if ant.state.area > 0 and add_history:
+    # if ant.state.area > 0 and add_history:
+    if add_history:
         ant_state_reduced = AntStateReduced(ant.state)
         ant.history.appendleft(ant_state_reduced)
         #ant.history.appendleft(copy.copy(ant.state))
@@ -281,36 +282,41 @@ def set_ant_state(ant, mser_id, region, add_history=True, cost=0):
     area_weight = 0.01
     ant.state.mser_id = mser_id
     ant.state.score = cost
-    ant.state.area = region["area"]
-    if ant.area_weighted < 0:
-        ant.area_weighted = region["area"]
-    else:
-        ant.area_weighted = ant.area_weighted*(1-area_weight) + region["area"] * area_weight
 
-    ant.state.position = my_utils.Point(region["cx"], region["cy"])
-    ant.state.a = region['a']
-    ant.state.b = region['b']
-    ant.state.axis_ratio = region['a'] / region['b']
-    #ant.state.axis_ratio, ant.state.a, ant.state.b = my_utils.mser_main_axis_ratio(region["sxy"], region["sxx"], region["syy"])
-    #ant.state.theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
-    ant.state.theta = region["theta"]
-    ant.state.info = ""
+    if mser_id > -1:
+        ant.state.area = region["area"]
+        if ant.area_weighted < 0:
+            ant.area_weighted = region["area"]
+        else:
+            ant.area_weighted = ant.area_weighted*(1-area_weight) + region["area"] * area_weight
 
-    if "cont" not in region:
-        ant.state.contour = None
-    else:
-        ant.state.contour = region['cont']
+        ant.state.position = my_utils.Point(region["cx"], region["cy"])
+        ant.state.a = region['a']
+        ant.state.b = region['b']
+        ant.state.axis_ratio = region['a'] / region['b']
+        #ant.state.axis_ratio, ant.state.a, ant.state.b = my_utils.mser_main_axis_ratio(region["sxy"], region["sxx"], region["syy"])
+        #ant.state.theta = my_utils.mser_theta(region["sxy"], region["sxx"], region["syy"])
+        ant.state.theta = region["theta"]
+        ant.state.info = ""
 
-    ant.state.region = region
+        if "cont" not in region:
+            ant.state.contour = None
+        else:
+            ant.state.contour = region['cont']
 
-    #so the big jumps will not appears
-    if ant.state.lost:
-        ant.history[0].position.x = ant.state.position.x
-        ant.history[0].position.y = ant.state.position.y
+        ant.state.region = region
 
-    ant.state.lost = False
-    ant.state.lost_time = 0
-    count_head_tail(ant)
+        #so the big jumps will not appears
+        if ant.state.lost:
+            ant.history[0].position.x = ant.state.position.x
+            ant.history[0].position.y = ant.state.position.y
+
+        ant.state.lost = False
+        ant.state.lost_time = 0
+        count_head_tail(ant)
+    # else:
+
+
     #ant.estimate_orientation(region)
 
 
