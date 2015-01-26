@@ -250,6 +250,7 @@ class Ant():
              'back_x': back_x,
              'back_y': back_y,
              'score': score,
+             'area': area,
         }
 
         return a
