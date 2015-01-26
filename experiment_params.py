@@ -25,6 +25,8 @@ class Params():
         self.inverted_image = False
 
         self.skip_big_regions = False
+        # 300 will skip all regions with area < 300
+        # -300 will skipp all regions with area > 300
         self.skip_big_regions_thresh = 300
 
         #TODO> WTF factor ~ INF

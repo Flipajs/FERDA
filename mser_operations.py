@@ -122,9 +122,12 @@ class MserOperations():
 
         for i in range(len(indexes)):
             ri = regions[indexes[i]]
-            if ri['area'] < self.params.skip_big_regions_thresh:
-                filtered_indexes.append(indexes[i])
-
+            if sef.params.skip_big_regions > 0:
+                if ri['area'] < self.params.skip_big_regions_thresh:
+                    filtered_indexes.append(indexes[i])
+            else:
+                if ri['area'] > -self.params.skip_big_regions_thresh:
+                    filtered_indexes.append(indexes[i])
             #
             # d_area = ri["area"] / float(self.params.avg_ant_area)
             # if d_area < self.params.max_area_diff:
