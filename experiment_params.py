@@ -24,7 +24,7 @@ class Params():
 
         self.inverted_image = False
 
-        self.skip_big_regions = True
+        self.skip_big_regions = False
 
         #TODO> WTF factor ~ INF
         #self.undefined_threshold = 0.000001
@@ -76,7 +76,7 @@ class Params():
         self.a_area_ymax = 26
         self.a_area_step = 0.05
 
-        self.ant_number = 0
+        self.ant_number = 5
         self.arena = my_utils.RotatedRect(my_utils.Point(986+self.border, 579+self.border), my_utils.Size(486, 486), 0)
         self.video_file_name = ''
         self.predefined_vals = ''

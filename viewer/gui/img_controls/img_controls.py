@@ -1157,6 +1157,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
             return
 
         ant_id = selected_ants[0]
+        print "SELECTED ANT ID: ", ant_id
 
         # self.sequence_view.update_sequence(frame, 50, self.identity_manager, ant_id)
 
@@ -1170,7 +1171,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         new_data = self.re_track(ant_id, frame, 20)
 
         #+1 because in re-tracking, there is first frame skipped
-        self.sequence_view.visualize_new_data(frame+1, self.identity_manager, new_data)
+        self.sequence_view.visualize_new_data(frame+1, ant_id, self.identity_manager, new_data)
 
         # self.video.seek_frame(frame)
 

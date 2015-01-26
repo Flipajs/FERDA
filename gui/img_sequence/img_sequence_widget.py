@@ -30,31 +30,39 @@ class ImgSequenceWidget(QtGui.QWidget):
         self.crop_width = 100
         self.crop_height = 100
 
-        self.verticalLayoutWidget_2 = QtGui.QWidget()
-        self.scrollArea_2 = QtGui.QScrollArea()
-        self.scrollArea_2.setWidgetResizable(True)
+        self.main_layout = QtGui.QVBoxLayout()
+        self.setLayout(self.main_layout)
 
-        self.scrollAreaWidgetContents_2 = QtGui.QWidget()
+        self.scroll_area = QtGui.QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
 
-        self.verticalLayout_2 = QtGui.QVBoxLayout(self.scrollAreaWidgetContents_2)
-        self.verticalLayout_2.setSpacing(0)
-        self.verticalLayout_2.setMargin(0)
+        self.scroll_area_content = QtGui.QWidget()
+
+        self.scroll_area_content_vlayout = QtGui.QVBoxLayout(self.scroll_area_content)
+        self.scroll_area_content_vlayout.setSpacing(0)
+        self.scroll_area_content_vlayout.setMargin(0)
 
         self.grid = QtGui.QGridLayout()
         self.grid.setSizeConstraint(QtGui.QLayout.SetNoConstraint)
         self.grid.setSpacing(1)
 
-        self.verticalLayout_2.addLayout(self.grid)
-        self.scrollArea_2.setWidget(self.scrollAreaWidgetContents_2)
+        self.scroll_area_content_vlayout.addLayout(self.grid)
+        self.scroll_area.setWidget(self.scroll_area_content)
 
-        self.main_layout = QtGui.QVBoxLayout()
-        self.setLayout(self.main_layout)
-        self.main_layout.addWidget(self.scrollArea_2)
+        self.main_layout.addWidget(self.scroll_area)
+
+        # apply button
+        self.apply_new_positions_button = QtGui.QPushButton()
+        self.apply_new_positions_button.setText('apply changes selected included')
+        self.apply_new_positions_button.clicked.connect(self.apply_new_positions_clicked)
+
+        self.main_layout.addWidget(self.apply_new_positions_button)
 
         self.selected = None
         self.selected_frame = -1
 
-        self.scrollArea_2.verticalScrollBar().valueChanged.connect(self.scroll_changed)
+        self.scroll_area.verticalScrollBar().valueChanged.connect(self.scroll_changed)
+
 
         # store these values so it is possible to add new data when asked for.
         self.grid_i = -1
@@ -66,18 +74,22 @@ class ImgSequenceWidget(QtGui.QWidget):
         self.im_height_ = -1
         self.im_width_ = -1
         self.changes = None
+        self.new_data = None
 
         self.update()
         self.show()
 
 
     def scroll_changed(self):
-        s = self.scrollArea_2.verticalScrollBar()
+        s = self.scroll_area.verticalScrollBar()
         val = s.value() / float(s.maximum())
         print "Scrolling", val
 
-        length = 10
+        length = 30
         if val > 0.8:
+            #TODO: add scroll_callback
+            # prepare grid with blank images (so there is no blinking during rewriting or adding more rows...
+
             gui = QtGui.QApplication.processEvents
 
             img = self.local_vid.seek_frame(self.frame + 1)
@@ -88,7 +100,7 @@ class ImgSequenceWidget(QtGui.QWidget):
 
                 keys = ['hx', 'hy', 'cy', 'cx', 'bx', 'by']
                 for k in keys:
-                    pos[k] -= self.changes[k]
+                    pos[k] -= self.new_data[k]
 
 
                 self.draw_data(img, pos)
@@ -165,9 +177,14 @@ class ImgSequenceWidget(QtGui.QWidget):
         for i in range(3):
             cv2.circle(img, (int(data[keys[2 * i]]), int(data[keys[2 * i + 1]])), 3, (b, g, r), -1)
 
-    def visualize_new_data(self, frame, id_manager, new_data, width=200, height=200):
+    def visualize_new_data(self, frame, ant_id, id_manager, new_data, width=200, height=200):
         gui = QtGui.QApplication.processEvents
 
+        #store this for case of apply changes button click
+        self.new_data = new_data
+        self.ant_id = ant_id
+
+        self.selected = None
         self.local_vid = self.video.get_manager_copy()
         self.frame = frame
         self.id_manager = id_manager
@@ -213,7 +230,6 @@ class ImgSequenceWidget(QtGui.QWidget):
 
             img = self.local_vid.move2_next()
 
-        self.frame = frame
 
     def update_sequence(self, frame, length, id_manager, ant_id, width=200, height=200):
         #storing these values so they can be used when it is asked for more self.frames
@@ -281,6 +297,17 @@ class ImgSequenceWidget(QtGui.QWidget):
 
         self.frame = self.frame + length
 
+    def apply_new_positions_clicked(self):
+        if not self.selected:
+            return
+
+        for i in range(self.frame, self.selected_frame+1):
+            p = self.id_manager.get_positions(i, self.ant_id)
+
+            for k in self.new_data[i-self.frame]:
+                p[k] = self.new_data[i-self.frame][k]
+
+        print self.selected_frame
 
 if __name__ == "__main__":
     print "TEST"
