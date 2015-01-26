@@ -122,7 +122,7 @@ class MserOperations():
 
         for i in range(len(indexes)):
             ri = regions[indexes[i]]
-            if sef.params.skip_big_regions > 0:
+            if self.params.skip_big_regions > 0:
                 if ri['area'] < self.params.skip_big_regions_thresh:
                     filtered_indexes.append(indexes[i])
             else:
