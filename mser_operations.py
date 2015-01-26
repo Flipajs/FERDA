@@ -119,11 +119,10 @@ class MserOperations():
 
     def area_filter(self, regions, indexes):
         filtered_indexes = []
-        MY_THRESH = 300
 
         for i in range(len(indexes)):
             ri = regions[indexes[i]]
-            if ri['area'] < MY_THRESH:
+            if ri['area'] < self.params.skip_big_regions_thresh:
                 filtered_indexes.append(indexes[i])
 
             #

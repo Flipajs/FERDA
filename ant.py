@@ -206,6 +206,7 @@ class Ant():
         back_x = [0.] * history_len
         back_y = [0.] * history_len
         score = [0.] * history_len
+        area = [0.] * history_len
 
         state = self.state
         pos = state.position.int_tuple()
@@ -219,6 +220,7 @@ class Ant():
         back_x[last_frame] = float(state.back.x)
         back_y[last_frame] = float(state.head.y)
         score[last_frame] = float(state.score)
+        area[last_frame] = float(state.area)
 
         i = last_frame
         for j in range(first_frame, last_frame):
@@ -237,6 +239,7 @@ class Ant():
             back_x[i] = float(state.back.x)
             back_y[i] = float(state.back.y)
             score[i] = float(state.score)
+            area[i] = float(state.area)
 
 
         a = {'x': x,
