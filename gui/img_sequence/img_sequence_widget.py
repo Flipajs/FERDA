@@ -177,6 +177,9 @@ class ImgSequenceWidget(QtGui.QWidget):
         for i in range(3):
             cv2.circle(img, (int(data[keys[2 * i]]), int(data[keys[2 * i + 1]])), 3, (b, g, r), -1)
 
+    def add_frame(self, frame, ant_id, id_manager, new_data, width=200, heigth=200):
+        return
+
     def visualize_new_data(self, frame, ant_id, id_manager, new_data, width=200, height=200):
         gui = QtGui.QApplication.processEvents
 
@@ -225,7 +228,7 @@ class ImgSequenceWidget(QtGui.QWidget):
                 self.grid_i = 1
                 self.grid_j += 1
 
-            if self.grid_j < 10:
+            if self.grid_j < 20:
                 gui()
 
             img = self.local_vid.move2_next()
