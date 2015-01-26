@@ -320,8 +320,8 @@ def set_ant_state(ant, mser_id, region, add_history=True, cost=0):
     #ant.estimate_orientation(region)
 
 
-def set_ant_state_undefined(ant, mser_id):
-    if ant.state.area > 0:
+def set_ant_state_undefined(ant, mser_id, add_history=True):
+    if add_history > 0:
         ant_state_reduced = AntStateReduced(ant.state)
         ant.history.appendleft(ant_state_reduced)
         #ant.history.appendleft(copy.copy(ant.state))

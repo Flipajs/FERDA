@@ -396,7 +396,7 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
             a = ant.Ant(i)
             a.color = ant.get_color(i, self.params.ant_number)
             self.ants.append(a)
-            ant.set_ant_state(self.ants[i], -1, None, True, -1)
+            # ant.set_ant_state(self.ants[i], -1, None, True, -1)
             s = QtGui.QSpinBox()
             s.setMinimum(0)
             s.setMaximum(len(self.regions))
