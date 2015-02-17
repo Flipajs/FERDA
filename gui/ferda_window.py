@@ -3,6 +3,7 @@ __author__ = 'filip@naiser.cz'
 import sys
 from PyQt4 import QtGui, QtCore
 
+from gui.settings.dialogs import SettingsDialog
 from gui import ferda_window_qt
 from gui.init_window import init_window
 from gui import control_window
@@ -22,6 +23,29 @@ class FerdaControls(QtGui.QMainWindow, ferda_window_qt.Ui_MainWindow):
 
         self.control_widget = None
         self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
+
+        self.menu_bar = self.menuBar()
+        self.toolbar = self.addToolBar('')
+
+        self.settings_action = QtGui.QAction('&Settings', self.centralWidget())
+        self.settings_action.triggered.connect(self.show_settings)
+
+        self.new_project_action = QtGui.QAction("New project", self.centralWidget())
+
+        self.load_project_action = QtGui.QAction("Load project", self.centralWidget())
+        # self.load_project_action.triggered.connect(self.show_load_project_dialog)
+
+        self.show_correction_tool_action = QtGui.QAction("Correction tool", self.centralWidget())
+        # self.settings_action.triggered.connect(self.show_correction_tool)
+
+        self.file_menu = self.menu_bar.addMenu('&File')
+        self.file_menu.addAction(self.settings_action)
+        self.file_menu.addAction(self.new_project_action)
+        self.file_menu.addAction(self.load_project_action)
+
+        # self.toolbar.addAction(self.settings_action)
+        # self.toolbar.addAction(self.load_project_action)
+        # self.toolbar.addAction(self.show_correction_tool_action)
 
         # self.centralWidget().layout().add
         # self.layout().addWidget(w)
@@ -51,6 +75,9 @@ class FerdaControls(QtGui.QMainWindow, ferda_window_qt.Ui_MainWindow):
 
         self.setGeometry(QtCore.QRect(x, y, w, h))
 
+    def show_settings(self):
+        dialog = SettingsDialog(self)
+        dialog.exec_()
 
     def control_widget_exit(self):
         self.close()

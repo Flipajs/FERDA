@@ -211,7 +211,7 @@ class InitWindow(QtGui.QWidget, ants_init.Ui_Dialog):
                 i += step
 
         except Exception as e:
-            utils.misc.print_exception(e)
+            misc.print_exception(e)
 
             i = -1
             while True:

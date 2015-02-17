@@ -1,6 +1,7 @@
 from PyQt4 import QtGui, QtCore
 
-"""A rather clumsy implementation of default settings. All settings are stored as a String:value pair"""
+"""A rather clumsy implementation of default settings. All settings are stored as a String:value pair
+"""
 
 default_settings = {
     'length_tolerance': 2,

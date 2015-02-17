@@ -19,7 +19,7 @@ def get_bg(video_file=None, step=100, max_frame=1000):
     vid = video_manager.VideoManager(video_file)
 
     # we can try to use frame seek
-    try:
+    try:-keyint_min
         while True:
             img = vid.seek_frame(i)
 

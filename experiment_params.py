@@ -35,7 +35,7 @@ class Params():
         #TODO> WTF factor ~ INF
         #self.undefined_threshold = 0.000001
         self.undefined_threshold = 0.01
-        self.weighted_matching_lost_edge_cost = 0.001
+        self.weighted_matching_lost_edge_cost = 0.01
 
         self.mser_times = 0
         self.frame = 0
@@ -88,55 +88,3 @@ class Params():
         self.predefined_vals = ''
         self.bg = None
         self.dumpdir = os.path.expanduser('/home/flipajs/~dump/')
-
-
-
-
-
-        #self.dumpdir = os.path.expanduser('~/dump/Ferda')
-        #self.dumpdir = os.path.expanduser('~/dump/drosophyla')
-        #
-        #self.ant_number = 5
-        #self.arena = my_utils.RotatedRect(my_utils.Point(983+self.border, 577+self.border), my_utils.Size(476*2, 476*2), 0)
-        #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/idTracker/Messor_structor_5mayorworkers.mp4"
-        #self.predefined_vals = 'messor1'
-        #self.dumpdir = os.path.expanduser('~/dump/mesors')
-        #self.bg = None
-
-        #self.ant_number = 10
-        #self.arena = my_utils.RotatedRect(my_utils.Point(510+self.border, 507+self.border), my_utils.Size(480*2, 480*2), 0)
-        #self.video_file_name = "/home/flipajs/Downloads/movie20071009_163231_frames0001to0100_huffyuv.avi"
-        #self.predefined_vals = 'octomilky'
-        ##self.gt_path = '../data/eight/fixed_out.txt'
-        #self.bg = None
-
-        # self.ant_number = 15
-        # self.arena = my_utils.RotatedRect(my_utils.Point(403+self.border, 387+self.border), my_utils.Size(767, 767), 0)
-        # self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v"
-        # self.predefined_vals = 'NoPlasterNoLid800'
-        # self.gt_path = 'data/NoPlasterNoLid800/fixed_out.txt'
-        # self.bg = cv2.imread('data/noplast_bg.png')
-        # self.bg = scipy.ndimage.gaussian_filter(self.bg, sigma=1)
-        # self.dumpdir = os.path.expanduser('/home/flipajs/~dump/noplast/')
-        # self.dumpdir = os.path.expanduser('~/dump/noplast')
-
-        # self.ant_number = 8
-        # self.arena = my_utils.RotatedRect(my_utils.Point(593+self.border, 570+self.border), my_utils.Size(344*2, 344*2), 0)
-        # self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/eight/eight.m4v"
-        # self.predefined_vals = 'eight'
-        # #self.gt_path = '../data/eight/fixed_out.txt'
-        # self.bg = cv2.imread('data/eight_bg.png')
-        #
-        # self.dumpdir = os.path.expanduser('/home/flipajs/~dump/eight')
-
-        #self.bg2 = cv2.imread('data/eight_bg.png')
-
-        #self.ant_number = 11
-        #self.arena = my_utils.RotatedRect(my_utils.Point(665+self.border, 504+self.border), my_utils.Size(491*2, 491*2), 0)
-        #self.video_file_name = "/home/flipajs/Dropbox/PycharmProjects/data/Camera 2.m4v"
-        #self.predefined_vals = 'Camera2'
-
-        #self.ant_number = 8
-        #self.arena = utils.RotatedRect(utils.Point(593+self.border, 570+self.border), utils.Size(344*2, 344*2), 0)
-        #self.video_file_name = ''
-        #self.predefined_vals = -1

@@ -1,9 +1,19 @@
-import cv_compatibility
-from utils.ferda_compressed_video_manager import FerdaCompressedVideoManager
-
 __author__ = 'filip@naiser.cz'
 
 import cv2
+import cv_compatibility
+from utils.ferda_compressed_video_manager import FerdaCompressedVideoManager
+
+
+class VideoType:
+    """Enum type to easily distinguish between ordinary video (one video file) and Ferda compressed, which is
+    composed from 2 files. Highly compressed full video and segmented second one.
+    """
+    ORDINARY = 1
+    FERDA_COMPRESSED = 2
+
+    def __init__(self):
+        pass
 
 
 class VideoManager():

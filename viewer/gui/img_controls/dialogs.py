@@ -66,7 +66,6 @@ class SettingsDialog(QtGui.QDialog):
         super(SettingsDialog, self).done(p_int)
 
 
-
 class AppearanceTab(QtGui.QWidget):
 
     def __init__(self, parent=None):
@@ -282,6 +281,7 @@ class FaultTestTab(QtGui.QWidget):
         self.lost_checkbox.setChecked(default_settings.get_default('lost_test'))
         self.collision_checkbox.setChecked(default_settings.get_default('collision_test'))
         self.overlap_checkbox.setChecked(default_settings.get_default('overlap_test'))
+
 
 class ControlsTab(QtGui.QWidget):
 
