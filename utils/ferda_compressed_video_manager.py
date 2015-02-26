@@ -4,6 +4,7 @@ __author__ = 'filip@naiser.cz'
 
 import cv2
 import utils.misc
+from random import randint
 
 
 class FerdaCompressedVideoManager():
@@ -142,6 +143,12 @@ class FerdaCompressedVideoManager():
 
     def img(self):
         return self.combined_img_
+
+    def random_frame(self):
+        frame_num = self.capture_lossless_.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
+        random_f = randint(0, frame_num)
+
+        return self.seek_frame(random_f)
 
     def compressed_img(self):
         return self.compressed_img_
