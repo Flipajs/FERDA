@@ -38,6 +38,7 @@ def print_exception(e):
     f_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
     print e.message, "\nin: " + f_name + " on line: " + str(exc_tb.tb_lineno)
 
+
 def is_flipajs_pc():
     """
     This function test whether FERDA is runned on Flipajs pc. It can be used for fast start of program (e.g. loading predefined video etc.) and for

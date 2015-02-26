@@ -3,6 +3,7 @@ __author__ = 'filip@naiser.cz'
 import cv2
 import cv_compatibility
 from utils.ferda_compressed_video_manager import FerdaCompressedVideoManager
+from random import randint
 
 
 class VideoType:
@@ -131,6 +132,13 @@ class VideoManager():
 
     def img(self):
         return self.buffer_[self.view_position_]
+
+    def random_frame(self):
+        frame_num = self.capture.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
+        random_f = randint(0, frame_num)
+
+        return self.seek_frame(random_f)
+
 
     def frame_number(self):
         return self.position_
