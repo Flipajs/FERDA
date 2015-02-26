@@ -56,6 +56,9 @@ class Region():
     def centroid(self):
         return np.copy(self.centroid_)
 
+    def set_centroid(self, centroid):
+        self.centroid_ = centroid
+
 
 
 if __name__ == '__main__':

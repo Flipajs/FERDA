@@ -15,13 +15,14 @@ def get_safe_selection(img, y, x, height, width, fill_color=(0,0,0)):
     if len(img.shape) > 2:
         channels = img.shape[2]
 
-    h_ = img.shape[0] - (height + y - border)
-    w_ = img.shape[1] - (width + x - border)
+    h_ = img.shape[0] - (height + y)
+    w_ = img.shape[1] - (width + x)
 
-    border = max(border, max(max(h_, w_), 0))
+    border = max(border, max(max(-h_, -w_), 0))
 
     if border > 0:
         img_ = np.zeros((img.shape[0] + 2 * border, img.shape[1] + 2 * border, channels), dtype=img.dtype)
+        img_ += fill_color
         img_[border:-border, border:-border] = img
         crop = np.ones((height, width, channels), dtype=img.dtype)
         if channels < 3:

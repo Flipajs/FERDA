@@ -31,3 +31,7 @@ class Mser():
         regions = [Region(dr) for dr in regions]
 
         return regions
+
+
+    def set_max_area(self, max_area):
+        self.mser.set_max_area(max_area)
