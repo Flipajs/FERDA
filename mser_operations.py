@@ -51,7 +51,7 @@ class MserOperations():
         if self.params.skip_big_regions:
             ids = self.area_filter(regions, ids)
 
-        if self.params.skip_big_regions_thresh > -1:
+        if self.params.skip_high_intensity_regions > -1:
             ids = self.intensity_filter(regions, ids)
 
         return regions, ids

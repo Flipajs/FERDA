@@ -3,7 +3,7 @@ __author__ = 'filip@naiser.cz'
 import sys
 from PyQt4 import QtGui, QtCore
 
-from gui.settings.dialogs import SettingsDialog
+# from gui.settings.dialogs import SettingsDialog
 from gui import ferda_window_qt
 from gui.init_window import init_window
 from gui import control_window

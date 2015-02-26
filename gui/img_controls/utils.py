@@ -1,12 +1,13 @@
 __author__ = 'filip@naiser.cz'
 
 from PyQt4 import QtGui, QtCore
-import ImageQt
+from PyQt4.QtGui import QImage
+# import ImageQt
 import math
 
 
 def cvimg2qtpixmap(img):
-    img_q = ImageQt.QImage(img.data, img.shape[1], img.shape[0], img.shape[1]*3, 13)
+    img_q = QImage(img.data, img.shape[1], img.shape[0], img.shape[1]*3, 13)
     pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
 
     return pix_map

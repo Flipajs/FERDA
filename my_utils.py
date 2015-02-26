@@ -152,10 +152,15 @@ def get_circle_line_intersection(params, c, p):
     return x
 
 
-def mask_out_arena(img, arena):
-    mask = np.ones((np.shape(img)[0], np.shape(img)[1], 1), dtype=np.uint8)*255
+def mask_out_arena(img, arena, rgb=False):
+    if rgb:
+        mask = np.ones(img.shape, dtype=np.uint8)*255
+    else:
+        mask = np.ones((np.shape(img)[0], np.shape(img)[1], 1), dtype=np.uint8)*255
+
     cv2.circle(mask, arena.center.int_tuple(), arena.size.width/2, 0, -1)
     idx = (mask == 0)
+
     mask[idx] = img[idx]
 
     return mask

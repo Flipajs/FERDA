@@ -82,6 +82,7 @@ class ExperimentManager():
 
         start = time.time()
         assignment, costs, unassigned_ants, unassigned_regions = self.solve_splitting(self.chosen_regions_indexes)
+
         end = time.time()
         #print "time splitting: ", end - start
 
@@ -190,7 +191,14 @@ class ExperimentManager():
 
     def split(self, region_id, ant_ids, indexes):
         points = mser_operations.prepare_region_for_splitting(self.regions[region_id], self.img_, 0.1)
+
+        merged = {'region': self.regions[region_id], 'ants': [self.ants[id] for id in ant_ids]}
+        path = '/Volumes/Seagate Expansion Drive/regions-merged/'+str(self.params.frame)+'.pkl'
+        with open(path, 'wb') as f:
+            pickle.dump(merged, f)
+
         split_results = split_by_contours.solve(self.regions[region_id], points, ant_ids, self.ants, self.params, self.img_.shape, debug=True)
+
 
         return split_results
 

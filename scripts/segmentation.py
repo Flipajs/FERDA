@@ -8,12 +8,17 @@ from scipy import ndimage
 
 path = '/media/flipajs/Seagate Expansion Drive/IST - videos/compressed/bigLenses_colormarks1_test/'
 orig_file = '/media/flipajs/Seagate Expansion Drive/IST - videos/bigLenses_colormarks1.avi'
+
+path = '/Volumes/Seagate Expansion Drive/IST - videos/tests/segmentation/'
+orig_file = '/Volumes/Seagate Expansion Drive/IST - videos/tests/output.avi'
+
+
 dilation_iter_num = 15
 thresh = 25
 
 vid = video_manager.VideoManager(orig_file)
 
-bg = cv2.imread(path+'bg.png')
+bg = cv2.imread(path+'bg.jpg')
 bg_gray = gray = cv2.cvtColor(bg, cv2.COLOR_BGR2GRAY)
 
 frame = 0
@@ -48,7 +53,7 @@ while(True):
     img_bw = ndimage.binary_dilation(img_bw, iterations=dilation_iter_num).astype(img_bw.dtype)
 
     idx = img_bw[:,:] < 1
-    # img_orig[idx] = 255
+    img_orig[idx] = 255
 
     num = str(frame)
     while len(num) < 7:

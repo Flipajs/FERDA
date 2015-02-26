@@ -19,7 +19,7 @@ def get_bg(video_file=None, step=100, max_frame=1000):
     vid = video_manager.VideoManager(video_file)
 
     # we can try to use frame seek
-    try:-keyint_min
+    try:
         while True:
             img = vid.seek_frame(i)
 
@@ -52,7 +52,7 @@ def get_bg(video_file=None, step=100, max_frame=1000):
                 break
 
                 if i % step != 0:
-                continue
+                    continue
 
             if bg is not None:
                 print 'processing... ' + str(int(i / (max_frame / 100.))) + ' / 100'
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     # change here for your usage, after the computation of BG estimation, there will be dialog with bg correction
     # tool displayed.
 
-    path = '/home/flipajs/Downloads/c_bigLense_colormarks3_corrected.avi'
+    path = '/Users/fnaiser/Documents/output.avi'
     step = 50
     max_frame = 1000
     get_bg(path, step, max_frame)

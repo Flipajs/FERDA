@@ -23,7 +23,7 @@ from arena_circle import *
 from viewer.background_corrector import background_corrector_core
 from utils import misc
 
-import ImageQt
+from PIL import ImageQt
 
 
 try:

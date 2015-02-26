@@ -24,13 +24,13 @@ class Params():
 
         self.inverted_image = False
 
-        self.skip_big_regions = True
+        self.skip_big_regions = False
         # 300 will skip all regions with area > 300
         # -300 will skipp all regions with area < 300
         self.skip_big_regions_thresh = 500
 
         # if > -1 then it is threshold for min intensity. Everything higher then this threshold will be skipped
-        self.skip_high_intensity_regions = 100
+        self.skip_high_intensity_regions = -1
 
         #TODO> WTF factor ~ INF
         #self.undefined_threshold = 0.000001
