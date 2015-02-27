@@ -3,7 +3,7 @@ __author__ = 'fnaiser'
 import numpy as np
 
 
-def get_safe_selection(img, y, x, height, width, fill_color=(0,0,0)):
+def get_safe_selection(img, y, x, height, width, fill_color=(255,255,255)):
     y = int(y)
     x = int(x)
     height = int(height)
@@ -15,6 +15,9 @@ def get_safe_selection(img, y, x, height, width, fill_color=(0,0,0)):
     if len(img.shape) > 2:
         channels = img.shape[2]
 
+    if len(fill_color) != channels:
+        fill_color = 255
+
     h_ = img.shape[0] - (height + y)
     w_ = img.shape[1] - (width + x)
 
@@ -25,9 +28,6 @@ def get_safe_selection(img, y, x, height, width, fill_color=(0,0,0)):
         img_ += fill_color
         img_[border:-border, border:-border] = img
         crop = np.ones((height, width, channels), dtype=img.dtype)
-        if channels < 3:
-            fill_color = fill_color[0]
-
         crop *= fill_color
 
         y += border

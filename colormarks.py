@@ -58,11 +58,18 @@ collection_cell_size = 100
 NEIGH_SQUARE_SIZE = 10
 FAST_START = True
 CROP_SIZE = 200
-MSER_MAX_SIZE = 500
-MSER_MIN_SIZE = 10
+MSER_MAX_SIZE = 200
+MSER_MIN_SIZE = 5
+MSER_MIN_MARGIN = 5
+
+#255*3 + 1
+#*3 is normalazing I to [0..1/3] as the GBR components are
+#*2 is lowering the weight of intensity to half
+I_NORM = 766 * 3 * 2
 
 output_folder = '/Users/fnaiser/Documents/colormarktests'
 video_file = '/Users/fnaiser/Documents/Camera 1_biglense2.avi'
+
 
 def get_color_around(im, pos, radius):
     c = np.zeros((1, 3), dtype=np.double)
@@ -80,16 +87,34 @@ def get_color_around(im, pos, radius):
     return [c[0, 0], c[0, 1], c[0, 2]]
 
 
-def ibg_transformation(im):
-    ibg = np.asarray(im.copy(), dtype=np.double)
+def igr_transformation(im):
+    """
+    this function takes image in BRG format and returns image in IGR space
+    [R+G+B, G / (R + G + B), R / (R + G + B)]
+    """
 
-    # +1 for case of 0
-    ibg[:, :, 0] = np.sum(ibg, axis=2) + 1
+    # channels from cv2 -> numpy array are in order BGR
+    igr = np.asarray(im.copy(), dtype=np.double)
+    # +1 to avoid dividing by zero in future
+    igr[:, :, 0] = np.sum(igr, axis=2) + 1
 
-    ibg[:, :, 1] = ibg[:, :, 1] / (ibg[:, :, 0])
-    ibg[:, :, 2] = ibg[:, :, 2] / (ibg[:, :, 0])
+    igr[:, :, 1] = igr[:, :, 1] / (igr[:, :, 0])
+    igr[:, :, 2] = igr[:, :, 2] / (igr[:, :, 0])
+    igr[:, :, 0] = im[:, :, 0] / (igr[:, :, 0])
 
-    return ibg
+    return igr
+
+def igbr_transformation(im):
+    igbr = np.zeros((im.shape[0], im.shape[1], 4), dtype=np.double)
+
+    igbr[:,:,0] = np.sum(im,axis=2) + 1
+    igbr[:, :, 1] = im[:,:,0] / igbr[:,:,0]
+    igbr[:,:,2] = im[:,:,1] / igbr[:,:,0]
+    igbr[:,:,3] = im[:,:,2] / igbr[:,:,0]
+
+    igbr[:,:,0] = igbr[:,:,0] / I_NORM
+
+    return igbr
 
 
 def on_mouse(event, x, y, flag, param):
@@ -135,18 +160,17 @@ def on_mouse_scaled(event, x, y, flag, param):
 
         h_ = CROP_SIZE
         w_ = CROP_SIZE
-        x, y = np.array(clicked_pos) - np.array([CROP_SIZE/2, CROP_SIZE/2])
+        x, y = np.array(clicked_pos) - np.array([CROP_SIZE / 2, CROP_SIZE / 2])
 
         crop_im = utils.img.get_safe_selection(im, y, x, h_, w_)
         crop_ibg = utils.img.get_safe_selection(ibg_norm, y, x, h_, w_)
 
-
         colormark, cmark_i, neigh_i, d_map = get_colormark(crop_im, crop_ibg, i_max, ant_colors[ant_id, :])
+
+        cv2.imshow('dmap', d_map)
         if not colormark:
             print "No MSER found"
             return
-
-        cv2.imshow('dmap', d_map)
 
         init_regions[ant_id] = colormark
         init_scores[ant_id] = [cmark_i, neigh_i]
@@ -176,7 +200,7 @@ def init(path):
     vid = video_manager.get_auto_video_manager(path)
     im = vid.move2_next()
 
-    mser = Mser(max_area=0.001, min_area=MSER_MIN_SIZE, min_margin=2)
+    mser = Mser(max_area=0.1, min_area=MSER_MIN_SIZE, min_margin=MSER_MIN_MARGIN)
 
     cv2.cv.NamedWindow('img', cv2.cv.CV_WINDOW_AUTOSIZE)
     cv2.cv.SetMouseCallback('img', on_mouse, param=5)
@@ -193,7 +217,7 @@ def init(path):
         # this will take last 8 bits from integer so it is number between 0 - 255
         k = cv2.waitKey(0) & 255
         if k == 32:
-            print 'color for ant '+str(ant_id)+' was selected'
+            print 'color for ant ' + str(ant_id) + ' was selected'
             ant_id += 1
 
         # r, R - random frame
@@ -205,39 +229,47 @@ def init(path):
         if k == 98 or k == 66:
             if ant_id > 0:
                 ant_id -= 1
-                print 'moving backward in assignment, Ant id: '+str(ant_id)
-
+                print 'moving backward in assignment, Ant id: ' + str(ant_id)
 
     cv2.destroyWindow('color')
     cv2.destroyWindow('crop')
 
 
-def color2ibg(color, i_max):
+def color2irg(color, i_max):
+    # color comes in BGR format
     color = np.array(color, dtype=np.float)
-    s = np.sum(color)
-    c = np.array([s, color[1] / s, color[2] / s])
+    s = np.sum(color) + 1
+    c = np.array([color[0] / s, color[1] / s, color[2] / s])
     c[0] /= i_max
+
+    c = np.array([s/I_NORM, color[0]/s, color[1]/s, color[2]/s])
 
     return c
 
 
 def normalized_ibg(im):
-    ibg = ibg_transformation(im)
-    i_max = np.max(ibg[:, :, 0]) + 1
-    ibg[:, :, 0] /= i_max
+    # ibg = igr_transformation(im)
+    # i_max = np.max(ibg[:, :, 0]) + 1
+    # ibg[:, :, 0] /= i_max
+    #
+    # return ibg, i_max
 
-    return ibg, i_max
+
+    igbr = igbr_transformation(im)
+    return igbr, 1
+
 
 def darkest_neighbour_square(im, pt, square_size):
     squares = []
-    start = [pt[0]-square_size-(square_size/2), pt[1]-square_size-(square_size/2)]
+    start = [pt[0] - square_size - (square_size / 2), pt[1] - square_size - (square_size / 2)]
 
     for i in range(3):
         for j in range(3):
             if i == 1 and j == 1:
                 continue
 
-            crop = utils.img.get_safe_selection(im, start[0]+square_size*i, start[1] + square_size*j, square_size, square_size, fill_color=(255, 255, 255))
+            crop = utils.img.get_safe_selection(im, start[0] + square_size * i, start[1] + square_size * j, square_size,
+                                                square_size, fill_color=(255, 255, 255))
             crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
             s = np.sum(crop_gray)
 
@@ -264,19 +296,19 @@ def darkest_neighbour_square(im, pt, square_size):
         position = 'bottom-right'
 
     # return position, squares[id]
-    return squares[id] / square_size**2
+    return squares[id] / square_size ** 2
 
 
 def get_colormark(im, ibg_norm, i_max, c):
     global mser
 
-    c_ibg = color2ibg(c, i_max)
+    c_ibg = color2irg(c, i_max)
 
     dist_im = np.linalg.norm(ibg_norm - c_ibg, axis=2)
     dist_im /= np.max(dist_im)
     dist_im = np.asarray(dist_im * 255, dtype=np.uint8)
 
-    mser.set_max_area(500 / float(im.shape[0]*im.shape[1]))
+    mser.set_max_area(MSER_MAX_SIZE / float(im.shape[0] * im.shape[1]))
     regions = mser.process_image(dist_im)
     groups = mser_operations.get_region_groups(regions)
     ids = mser_operations.margin_filter(regions, groups)
@@ -293,8 +325,8 @@ def get_colormark(im, ibg_norm, i_max, c):
 
     # dump_i = 0
     # for id in order:
-    #     if dump_i == 5:
-    #         break
+    # if dump_i == 5:
+    # break
     #
     #     r = regions[id]
     #
@@ -327,7 +359,7 @@ def visualize(img, frame_i, collection, colormark, fill_color=np.array([255, 0, 
 
     img = np.copy(img)
     pts = colormark.pts()
-    img[pts[:,0], pts[:,1], :] = fill_color
+    img[pts[:, 0], pts[:, 1], :] = fill_color
     crop = utils.img.get_safe_selection(img, c[0] - cell_half, c[1] - cell_half, collection_cell_size,
                                         collection_cell_size)
 
@@ -354,10 +386,12 @@ if __name__ == "__main__":
         init_regions = settings['init_regions']
         init_scores = settings['init_scores']
         init_positions = settings['init_positions']
-        mser = Mser(max_area=0.001, min_area=MSER_MIN_SIZE, min_margin=2)
+        mser = Mser(max_area=0.1, min_area=MSER_MIN_SIZE, min_margin=MSER_MIN_MARGIN)
     else:
         init(video_file)
-        settings = {'ant_number': ant_number, 'ant_colors': ant_colors, 'init_regions': init_regions, 'neigh_square_size': NEIGH_SQUARE_SIZE, 'init_scores': init_scores, 'init_positions': init_positions}
+        settings = {'ant_number': ant_number, 'ant_colors': ant_colors, 'init_regions': init_regions,
+                    'neigh_square_size': NEIGH_SQUARE_SIZE, 'init_scores': init_scores,
+                    'init_positions': init_positions}
         with open(output_folder + '/settings.pkl', 'wb') as f:
             pickle.dump(settings, f)
 
@@ -410,7 +444,9 @@ if __name__ == "__main__":
         im = vid.move2_next()
 
         cv2.imwrite(output_folder + '/imgs/' + str(frame_i) + '.png', im)
+
         ibg_norm, i_max = normalized_ibg(im)
+        i_max = 1
 
         id_in_collection = frame_i % (collection_cols * collection_rows)
         collection_id = frame_i / (collection_cols * collection_rows)
@@ -446,8 +482,7 @@ if __name__ == "__main__":
 
             frame_cmarks.append(c)
             frame_scores.append([cmark_i, neigh_i])
-            cv2.imwrite(output_folder + '/dmap/id'+str(ant_id)+'/'+str(frame_i)+'.png', dist_map)
-
+            cv2.imwrite(output_folder + '/dmap/id' + str(ant_id) + '/' + str(frame_i) + '.png', dist_map)
 
         regions[frame_i] = np.array(frame_cmarks)
         scores[frame_i] = np.array(frame_scores)
@@ -456,8 +491,7 @@ if __name__ == "__main__":
         # while True:
         # k = cv2.waitKey(5)
         # if k == 32:
-        #         break
+        # break
 
         frame_i += 1
         im = vid.move2_next()
-        ibg = ibg_transformation(im)
