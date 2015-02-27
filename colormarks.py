@@ -190,17 +190,19 @@ def init(path):
     init_positions = [None for i in range(ant_number)]
 
     while ant_id < ant_number:
-        k = cv2.waitKey(0)
+        # this will take last 8 bits from integer so it is number between 0 - 255
+        k = cv2.waitKey(0) & 255
         if k == 32:
             print 'color for ant '+str(ant_id)+' was selected'
             ant_id += 1
 
-        if k == 110:
+        # r, R - random frame
+        if k == 114 or k == 82:
             im = vid.random_frame()
             cv2.imshow('img', im)
 
-        # b - go back in assignment
-        if k == 98:
+        # b, B - go back in assignment
+        if k == 98 or k == 66:
             if ant_id > 0:
                 ant_id -= 1
                 print 'moving backward in assignment, Ant id: '+str(ant_id)
