@@ -11,7 +11,7 @@ def __bootstrap__():
     if platform.system() == 'Darwin':
         __file__ = pkg_resources.resource_filename(__name__, 'cyMser_64_OSX.so')
     elif platform.system() == 'Linux':
-        __file__ = pkg_resources.resource_filename(__name__, 'cyMser_debian.so')
+        __file__ = pkg_resources.resource_filename(__name__, 'cyMser_ubuntu.so')
 
     __loader__ = None;
     del __bootstrap__, __loader__
