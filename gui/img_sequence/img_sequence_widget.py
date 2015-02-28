@@ -3,8 +3,11 @@ from PyQt4 import QtGui, QtCore
 from PIL import ImageQt
 from numpy import *
 
+import sys
 import cv2
 from utils import video_manager
+from viewer.identity_manager import IdentityManager
+from random import randint
 
 import visualization_utils
 
@@ -312,14 +315,24 @@ class ImgSequenceWidget(QtGui.QWidget):
 
         print self.selected_frame
 
+def give_me_data(frame, ant_id):
+    x = randint(0, 800)
+    y = randint(0, 100)
+
+    t = {'cx': x, 'cy': y, 'hx': x, 'hy': y-20, 'bx': x, 'by': y+20}
+
+    return t
+
+
 if __name__ == "__main__":
     print "TEST"
-    # app = QtGui.QApplication(sys.argv)
-    #
-    # vid = video_manager.VideoManager('/home/flipajs/my_video-16_c.mkv')
-    # ex = ImgSequenceWidget(vid)
-    # ex.update_sequence(100, 500)
-    #
-    # app.exec_()
-    # app.deleteLater()
-    # sys.exit()
+    app = QtGui.QApplication(sys.argv)
+
+    vid = video_manager.VideoManager('/Volumes/Seagate Expansion Drive/IST - videos/share/c_bigLense_colormarks3_corrected.avi')
+    id_manager = IdentityManager('/Volumes/Seagate Expansion Drive/IST - videos/share/c_bigLense_colormarks3.arr')
+    ex = ImgSequenceWidget(vid, give_me_data)
+    ex.visualize_new_data(10, 1, id_manager)
+
+    app.exec_()
+    app.deleteLater()
+    sys.exit()
