@@ -7,4 +7,4 @@ ex = ferda_window.FerdaControls()
 
 app.exec_()
 app.deleteLater()
-sys.exit()/home/tomas
+sys.exit()
