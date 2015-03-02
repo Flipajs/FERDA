@@ -11,12 +11,11 @@ class Project:
     def __init__(self):
         self.name = ''
         self.description = ''
-        self.video_type = VideoType.ORDINARY
         self.video_paths = []
-        self.project_folder = ''
+        self.working_directory = ''
 
     def save(self):
-        with open(self.project_folder+'/'+self.name+'.pkl', 'wb') as f:
+        with open(self.working_directory+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(self.__dict__, f, 2)
 
     def load(self, path):
@@ -30,7 +29,7 @@ if __name__ == "__main__":
     p = Project()
     p.name = 'test'
     p.a = 20
-    p.project_folder = '/home/flipajs/test'
+    p.working_directory = '/home/flipajs/test'
 
     p.save()
 

@@ -147,7 +147,7 @@ class VideoManager():
         return self.capture.get(cv_compatibility.cv_CAP_PROP_FPS)
 
     def total_frame_count(self):
-        return self.capture.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT)
+        return int(self.capture.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT))
 
     def reset(self):
         """

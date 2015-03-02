@@ -1,7 +1,8 @@
 __author__ = 'fnaiser'
 
 import numpy as np
-
+from PIL import ImageQt
+from PyQt4 import QtGui
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255,255,255)):
     y = int(y)
@@ -37,6 +38,12 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255,255,255)):
         crop = np.copy(img[y:y+height, x:x+height, :])
 
     return crop
+
+def get_pixmap_from_np_bgr(np_image):
+    img_q = ImageQt.QImage(np_image.data, np_image.shape[1], np_image.shape[0], np_image.shape[1] * 3, 13)
+    pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
+
+    return pix_map
 
 
 def get_contour(pts):

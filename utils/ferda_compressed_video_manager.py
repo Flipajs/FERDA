@@ -157,7 +157,7 @@ class FerdaCompressedVideoManager():
         return self.lossless_img_
 
     def total_frame_count(self):
-        return self.capture_compressed_.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT)
+        return int(self.capture_compressed_.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT))
 
     def fps(self):
         return self.capture_compressed_.get(cv_compatibility.cv_CAP_PROP_FPS)
