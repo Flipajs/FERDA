@@ -8,7 +8,9 @@ from gui import ferda_window_qt
 from gui.init_window import init_window
 from gui import control_window
 from gui.project import project_widget, new_project_widget
+from gui.main_tab_widget import MainTabWidget
 import core.project
+
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -18,9 +20,9 @@ class MainWindow(QtGui.QMainWindow):
         # IMPORTANT CLASSES INSTANCES
         self.project = None
 
-
         # INIT WIDGETS
         self.new_project_widget = None
+        self.main_tab_widget = None
 
         self.central_widget = QtGui.QStackedWidget()
         self.setCentralWidget(self.central_widget)
@@ -72,6 +74,11 @@ class MainWindow(QtGui.QMainWindow):
             if isinstance(values, core.project.Project):
                 self.project = values
                 self.statusBar().showMessage("The project was successfully loaded.")
+                self.setWindowTitle('FERDA - '+self.project.name)
+
+                self.main_tab_widget = MainTabWidget(self.widget_control)
+                self.central_widget.addWidget(self.main_tab_widget)
+                self.central_widget.setCurrentWidget(self.main_tab_widget)
             else:
                 self.statusBar().showMessage("Something went wrong during project loading!")
 
@@ -80,6 +87,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.project = values
                 self.project.save()
                 self.statusBar().showMessage("The project was successfully created.")
+                self.setWindowTitle('FERDA - '+self.project.name)
             else:
                 self.statusBar().showMessage("Something went wrong during project creation!")
 
