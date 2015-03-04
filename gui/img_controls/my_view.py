@@ -10,6 +10,8 @@ from PyQt4.QtCore import *
 
 
 class MyView(QGraphicsView, object):
+    areaSelected = pyqtSignal("PyQt_PyObject", "PyQt_PyObject")
+
     def __init__(self, parent=None):
         super(MyView, self).__init__(parent)
         self.setMouseTracking(True)
@@ -21,14 +23,18 @@ class MyView(QGraphicsView, object):
         self._isPanning = False
         self._mousePressed = False
         self._drag_pos = None
+        self.selection_point_one = None
+        self.selection_point_two = None
 
     def mousePressEvent(self,  event):
         if event.button() == Qt.RightButton:
             self.setCursor(Qt.ClosedHandCursor)
             self._drag_pos = event.pos()
             self._isPanning = True
+            self.selection_point_one = event.pos()
             event.accept()
         else:
+            self.selection_point_one = event.pos()
             super(MyView, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -47,6 +53,18 @@ class MyView(QGraphicsView, object):
             self.setCursor(Qt.ArrowCursor)
             self._isPanning = False
         super(MyView, self).mouseReleaseEvent(event)
+
+        if self.selection_point_one is not None:
+            self.selection_point_two = event.pos()
+            if self.selection_point_one.x() > self.selection_point_two.x():
+                tmp = self.selection_point_one.x()
+                self.selection_point_one.setX(self.selection_point_two.x())
+                self.selection_point_two.setX(tmp)
+            if self.selection_point_one.y() > self.selection_point_two.y():
+                tmp = self.selection_point_one.y()
+                self.selection_point_one.setY(self.selection_point_two.y())
+                self.selection_point_two.setY(tmp)
+            self.areaSelected.emit(self.selection_point_one, self.selection_point_two)
 
     def mouseDoubleClickEvent(self, event):
         pass

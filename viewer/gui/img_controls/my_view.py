@@ -91,9 +91,4 @@ class MyView(QGraphicsView, object):
 
     def zoom(self, factor, center_point):
         self.scale(factor, factor)
-        # self.centerOn(QPointF(512, 512))
         self.centerOn(center_point)
-
-    # def resizeEvent(self, evt=None):
-    #     # self.centerOn(QPointF(0, 0))
-    #     # self.emit(SIGNAL("resize)"))

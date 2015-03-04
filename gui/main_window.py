@@ -59,6 +59,7 @@ class MainWindow(QtGui.QMainWindow):
         self.file_menu.addAction(self.load_project_action)
 
         self.update()
+        self.showFullScreen()
         self.show()
 
     def closeEvent(self, event):

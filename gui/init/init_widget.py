@@ -26,11 +26,13 @@ class InitWidget(QtGui.QWidget):
         self.tabs.addTab(self.what_tab, "What")
         self.tabs.addTab(self.how_tab, "How")
         self.tabs.setTabEnabled(1, False)
-        self.tabs.setTabEnabled(1, False)
+        self.tabs.setTabEnabled(2, False)
 
         self.vbox.addWidget(self.tabs)
 
     def widget_control(self, state, values=None):
         if state == 'init_where_finished':
-            self.tabs.setCurrentIndex(2)
+            self.tabs.setTabEnabled(1, True)
+            self.tabs.setCurrentIndex(1)
+            self.tabs.setTabEnabled(0, False)
         return

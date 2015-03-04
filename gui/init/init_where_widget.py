@@ -7,6 +7,7 @@ from gui.init.arena.arena_circle import ArenaCircle
 from gui.init.arena.arena_mark import ArenaMark
 import cv2
 import time
+from gui.init.background.bg_fix_widget import BgFixWidget
 import numpy as np
 
 class InitWhereWidget(QtGui.QWidget):
@@ -22,6 +23,7 @@ class InitWhereWidget(QtGui.QWidget):
         self.setLayout(self.vbox)
 
         self.progress_dialog = None
+        self.bg_fix_widget = None
 
         self.top_stripe_layout = QtGui.QHBoxLayout()
         self.vbox.addLayout(self.top_stripe_layout)
@@ -38,8 +40,8 @@ class InitWhereWidget(QtGui.QWidget):
         self.top_stripe_layout.addWidget(self.confirm_arena_selection)
 
         self.skip_bg_model = QtGui.QPushButton('Run without background model')
-        self.fix_bg_model = QtGui.QPushButton('Fix model by hand')
         self.confirm_bg_model = QtGui.QPushButton('Everything is all right, lets continue!')
+        self.confirm_bg_model.clicked.connect(self.finish)
 
         # image window...
         self.scene_objects = {}
@@ -55,8 +57,10 @@ class InitWhereWidget(QtGui.QWidget):
 
     def confirm_arena_selection_clicked(self):
         if self.bg_model.is_computed():
-            bg_model_img = self.bg_model.get_model()
-            self.bg_model_pixmap = self.scene.addPixmap(utils.cvimg2qtpixmap(bg_model_img))
+            self.graphics_view.hide()
+            self.bg_fix_widget = BgFixWidget(self.bg_model.get_model(), self.finish)
+            self.graphics_view.hide()
+            self.vbox.addWidget(self.bg_fix_widget)
 
             if self.progress_dialog:
                 self.progress_dialog.cancel()
@@ -79,12 +83,10 @@ class InitWhereWidget(QtGui.QWidget):
             return
 
 
-        self.label_instructions.setText('To support FERDA performance, we are using background model. Bellow you can see background model. There should be no tracked object visible. If they are, please select fix button and retushe them."')
-        # self.top_stripe_layout.removeWidget(self.confirm_arena_selection)
+        self.label_instructions.setText('To support FERDA performance, we are using background model. Bellow you can see background model. There should be no tracked object visible. If they are, please fix them by selecting problematic area in image. Then click f and by draggin move the green selection to area with background only. Press ctrl+z if you don\'t like the result for new selection."')
         self.confirm_arena_selection.setHidden(True)
 
         self.top_stripe_layout.addWidget(self.skip_bg_model)
-        self.top_stripe_layout.addWidget(self.fix_bg_model)
         self.top_stripe_layout.addWidget(self.confirm_bg_model)
 
     def add_circle_selection(self):
@@ -140,4 +142,9 @@ class InitWhereWidget(QtGui.QWidget):
 
     def finish(self):
         #TODO save values...
+        self.bg_fix_widget.hide()
+        self.graphics_view.show()
+        self.scene.removeItem(self.bg_model_pixmap)
+        self.bg_model_pixmap = utils.cvimg2qtpixmap(self.bg_fix_widget.image)
+        self.scene.addPixmap(self.bg_model_pixmap)
         self.finish_callback('init_where_finished')
