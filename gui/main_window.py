@@ -137,14 +137,14 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     ex = MainWindow()
     from core.project import Project
-    proj = Project()
-    proj.load('/Users/fnaiser/Documents/p15/p15.fproj')
-    # proj.load('/Users/fnaiser/Documents/new_project/test1.fproj')
-
-    bg_model = MaxIntensity(proj.video_paths)
-    bg_model.start()
-
-    ex.widget_control('project_created', {'project': proj, 'bg_model': bg_model})
+    # proj = Project()
+    # proj.load('/Users/fnaiser/Documents/p15/p15.fproj')
+    # # proj.load('/Users/fnaiser/Documents/new_project/test1.fproj')
+    #
+    # bg_model = MaxIntensity(proj.video_paths)
+    # bg_model.start()
+    #
+    # ex.widget_control('project_created', {'project': proj, 'bg_model': bg_model})
 
     app.exec_()
     app.deleteLater()
