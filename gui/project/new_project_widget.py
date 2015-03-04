@@ -84,7 +84,8 @@ class NewProjectWidget(QtGui.QWidget):
         self.show()
 
     def select_video_files_clicked(self):
-        self.video_files = utils.gui.file_names_dialog(self, 'Select video files', '*.avi; *.mkv; *.mp4') #, 'AVI (*.avi);MKV (*.mkv); MP4 (*.mp4)')
+        # self.video_files = utils.gui.file_names_dialog(self, 'Select video files', '*.avi; *.mkv; *.mp4') #, 'AVI (*.avi);MKV (*.mkv); MP4 (*.mp4)')
+        self.video_files = utils.gui.file_names_dialog(self, 'Select video files') #, 'AVI (*.avi);MKV (*.mkv); MP4 (*.mp4)')
         try:
             vid = utils.video_manager.get_auto_video_manager(self.video_files)
             im = vid.random_frame()
