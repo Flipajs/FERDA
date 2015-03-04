@@ -3,7 +3,7 @@ import os
 __author__ = 'fnaiser'
 
 import sys
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import numpy as np
 import core.project
 import utils.gui
@@ -85,7 +85,7 @@ class NewProjectWidget(QtGui.QWidget):
 
     def select_video_files_clicked(self):
         # self.video_files = utils.gui.file_names_dialog(self, 'Select video files', '*.avi; *.mkv; *.mp4') #, 'AVI (*.avi);MKV (*.mkv); MP4 (*.mp4)')
-        self.video_files = utils.gui.file_names_dialog(self, 'Select video files') #, 'AVI (*.avi);MKV (*.mkv); MP4 (*.mp4)')
+        self.video_files = utils.gui.file_names_dialog(self, 'Select video files', filter_="Videos (*.avi *.mkv *.mp4)") #, 'AVI (*.avi);MKV (*.mkv); MP4 (*.mp4)')
         try:
             vid = utils.video_manager.get_auto_video_manager(self.video_files)
             im = vid.random_frame()
@@ -108,9 +108,12 @@ class NewProjectWidget(QtGui.QWidget):
             layout.setWordWrap(True);
             self.video_preview_layout.addRow(None, layout)
 
-            # self.bg_computation = BGSub(vid, self.update_progress_label)
-            self.bg_computation = MaxIntensity(self.video_files, update_callback=self.update_progress_label)
+            self.bg_computation = MaxIntensity(self.video_files)
+            self.connect(self.bg_computation, QtCore.SIGNAL("update(int)"), self.update_progress_label)
             self.bg_computation.start()
+            #
+            # self.bg_computation = MaxIntensity(self.video_files, update_callback=self.update_progress_label)
+            # self.bg_computation.start()
 
 
         except Exception as e:
@@ -120,6 +123,7 @@ class NewProjectWidget(QtGui.QWidget):
         self.finish_callback('new_project_back')
 
     def update_progress_label(self, val):
+        print val
         self.bg_progress_bar.setValue(val)
 
     def select_working_directory_clicked(self):

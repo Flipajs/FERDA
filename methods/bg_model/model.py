@@ -1,9 +1,9 @@
 __author__ = 'fnaiser'
 
-import threading
+from PyQt4 import QtCore
 
 
-class Model(threading.Thread):
+class Model(QtCore.QThread):
     def __init__(self):
         super(Model, self).__init__()
         self.model_ready = False

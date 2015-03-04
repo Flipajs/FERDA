@@ -4,6 +4,8 @@ from model import Model
 from math import floor
 import numpy as np
 from utils import video_manager
+from PyQt4 import QtCore
+
 
 class MaxIntensity(Model):
     def __init__(self, video_paths, iterations=10, random_frames=False, update_callback=None):
@@ -32,7 +34,8 @@ class MaxIntensity(Model):
                 im = self.video.seek_frame(frame_i)
 
             self.iteration(im)
-            self.call_update_callback(i)
+            self.emit(QtCore.SIGNAL('update(int)'), int(100*(i+1)/float(self.iterations)))
+            # self.call_update_callback(i)
             self.step = i
             frame_i += step
 
