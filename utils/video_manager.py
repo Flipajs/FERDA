@@ -101,7 +101,6 @@ class VideoManager():
             return ret
 
     def seek_frame(self, frame_number):
-        print frame_number
         if frame_number < 0 or frame_number >= self.total_frame_count():
             raise Exception("Frame_number is invalid")
 

@@ -1,6 +1,3 @@
-import math
-from scipy import ndimage
-
 __author__ = 'filip@naiser.cz'
 
 """
@@ -27,16 +24,18 @@ n - next random image
 
 """
 
+import os
+import pickle
+
 import cv2
 import numpy as np
-from utils import video_manager
 from skimage.transform import rescale
-import my_utils
-from region.mser import Mser
-from region import mser_operations
-import os
+
+from utils import video_manager
+from core.region.mser import Mser
+from core.region import mser_operations
 import utils.img
-import pickle
+
 
 im = None
 scale_offset = (-1, -1)

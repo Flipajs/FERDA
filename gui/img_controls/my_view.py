@@ -5,6 +5,7 @@ __author__ = 'filip@naiser.cz'
 #from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import *
 import PyQt4.Qt
+from PyQt4 import QtGui
 from PyQt4.QtCore import *
 
 
@@ -50,38 +51,26 @@ class MyView(QGraphicsView, object):
     def mouseDoubleClickEvent(self, event):
         pass
 
-    # def keyPressEvent(self, event):
-    # 	if event.key() == Qt.Key_Control and not self._mousePressed:
-    # 		self._isPanning = True
-    # 		self.setCursor(Qt.OpenHandCursor)
-    # 	else:
-    # 		super(MyView, self).keyPressEvent(event)
-    #
-    # def keyReleaseEvent(self, event):
-    # 	if event.key() == Qt.Key_Control:
-    # 		if not self._mousePressed:
-    # 			self._isPanning = False
-    # 			self.setCursor(Qt.ArrowCursor)
-    # 	else:
-    # 		super(MyView, self).keyPressEvent(event)
-
     def wheelEvent(self, event):
-        scale_factor = 1.15
-        num_steps = event.delta() / 15 / 8
+        scale_factor = 1.12
 
-        if num_steps == 0:
-            event.ignore()
-            return
-
-        sc = scale_factor**num_steps
+        self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
 
         m11 = self.transform().m11()
         m22 = self.transform().m22()
 
-        if (m11 < 0.1 or m22 < 0.1) and sc < 1:
-            return
+        if event.delta() > 0:
+            # max zoom-out restriction
+            if m11 > 10 or m22 > 10:
+                return
 
-        self.zoom(sc, self.mapToScene(event.pos()))
+            self.scale(scale_factor, scale_factor)
+        else:
+            # max zoom-in restriction
+            if m11 < 0.1 or m22 < 0.1:
+                return
+
+            self.scale(1.0 / scale_factor, 1.0 / scale_factor)
 
     def zoom(self, factor, center_point):
         self.scale(factor, factor)

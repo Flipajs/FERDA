@@ -1,3 +1,5 @@
+import os
+
 __author__ = 'fnaiser'
 
 import sys
@@ -11,6 +13,7 @@ import utils.img
 import skimage.transform
 import threading
 from utils.video_manager import VideoType
+from methods.bg_model.max_intensity import MaxIntensity
 
 class BGSub(threading.Thread):
     def __init__(self, vid, update_callback):
@@ -18,6 +21,7 @@ class BGSub(threading.Thread):
         self.running = False
         self.vid = vid
         self.update_callback = update_callback
+
 
     def run(self):
         print "COMPUTING BG...."
@@ -99,9 +103,14 @@ class NewProjectWidget(QtGui.QWidget):
             value_layout = QtGui.QLabel(str(w)+'x'+str(h)+'px')
             self.video_preview_layout.addRow(layout, value_layout)
             self.video_preview_layout.addRow(None, self.bg_progress_bar)
+            layout = QtGui.QLabel('Video pre-processing in progress running in background... But don\'t worry, you can continue with your project creation and initialization meanwhile it will be finished.')
+            layout.setWordWrap(True);
+            self.video_preview_layout.addRow(None, layout)
 
-            self.bg_computation = BGSub(vid, self.update_progress_label)
+            # self.bg_computation = BGSub(vid, self.update_progress_label)
+            self.bg_computation = MaxIntensity(self.video_files, update_callback=self.update_progress_label)
             self.bg_computation.start()
+
 
         except Exception as e:
             utils.misc.print_exception(e)
@@ -115,9 +124,15 @@ class NewProjectWidget(QtGui.QWidget):
     def select_working_directory_clicked(self):
         self.working_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select working directory"))
 
+        if os.path.isdir(self.working_directory):
+            filenames = os.listdir(self.working_directory)
+            for f in filenames:
+                if os.path.isfile(self.working_directory+'/'+f) and f.endswith('.fproj'):
+                    QtGui.QMessageBox.information(None, '', 'This folder is already used for FERDA project, choose different one, please')
+                    self.select_working_directory_clicked()
+
+
     def create_project(self):
-        self.bg_computation.join()
-        print "READY"
         project = core.project.Project()
         project.name = self.project_name.text()
         project.description = str(self.project_description.toPlainText())
@@ -125,4 +140,4 @@ class NewProjectWidget(QtGui.QWidget):
         project.working_directory = self.working_directory
 
         if self.finish_callback:
-            self.finish_callback('project_created', project)
+            self.finish_callback('project_created', {'project': project, 'bg_model': self.bg_computation})
