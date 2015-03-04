@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
-
 import sys
+import os
 from PyQt4 import QtGui, QtCore
 
 # from gui.settings.dialogs import SettingsDialog
@@ -59,7 +59,7 @@ class MainWindow(QtGui.QMainWindow):
         self.file_menu.addAction(self.load_project_action)
 
         self.update()
-        self.showFullScreen()
+        self.showMaximized()
         self.show()
 
     def closeEvent(self, event):
@@ -131,6 +131,9 @@ class MainWindow(QtGui.QMainWindow):
         self.close()
 
 if __name__ == "__main__":
+    print sys.path[0]
+    __location__ = os.path.realpath(os.path.join(sys.path[0], os.path.dirname(__file__)))
+
     app = QtGui.QApplication(sys.argv)
     ex = MainWindow()
     from core.project import Project
@@ -142,8 +145,6 @@ if __name__ == "__main__":
     bg_model.start()
 
     ex.widget_control('project_created', {'project': proj, 'bg_model': bg_model})
-
-
 
     app.exec_()
     app.deleteLater()

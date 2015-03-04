@@ -144,7 +144,4 @@ class InitWhereWidget(QtGui.QWidget):
         #TODO save values...
         self.bg_fix_widget.hide()
         self.graphics_view.show()
-        self.scene.removeItem(self.bg_model_pixmap)
-        self.bg_model_pixmap = utils.cvimg2qtpixmap(self.bg_fix_widget.image)
-        self.scene.addPixmap(self.bg_model_pixmap)
         self.finish_callback('init_where_finished')
