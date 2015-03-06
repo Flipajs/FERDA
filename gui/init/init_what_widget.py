@@ -207,7 +207,7 @@ class InitWhatWidget(QtGui.QWidget):
         brush.setColor(QtGui.QColor(0,0,0,0x55))
         m[pref+'radius'].setBrush(brush)
 
-    def double_clicked(self, id):
+    def double_clicked(self):
         print "DOUBLECLIKCKED"
 
     def marks_activate(self, id, colormark=False):

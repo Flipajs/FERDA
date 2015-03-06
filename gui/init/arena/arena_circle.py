@@ -6,10 +6,11 @@ from PyQt4 import QtGui, QtCore
 
 
 class ArenaCircle(QGraphicsEllipseItem):
-    double_clicked = QtCore.pyqtSignal("int")
+    double_clicked = QtCore.pyqtSignal()
 
     def __init__(self, id=-1):
         super(ArenaCircle, self).__init__()
+        QtGui.QGraphicsObject.__init__(self)
         self.c = None
         self.a = None
         self.is_ready = False
@@ -39,6 +40,6 @@ class ArenaCircle(QGraphicsEllipseItem):
     def test_double_click(self):
         if self.click_num >= 2:
             print "DOUBLE CLICKED"
-            self.double_clicked.emit(self.id)
+            self.double_clicked.emit()
 
         self.click_num = 0

@@ -168,7 +168,7 @@ def on_mouse_scaled(event, x, y, flag, param):
         crop_im = utils.img.get_safe_selection(im, y, x, h_, w_)
         crop_ibg = utils.img.get_safe_selection(ibg_norm, y, x, h_, w_)
 
-        colormark, cmark_i, neigh_i, d_map = get_colormark(crop_im, crop_ibg, i_max, ant_colors[ant_id, :])
+        colormark, cmark_i, neigh_i, d_map, _ = get_colormark(crop_im, crop_ibg, i_max, ant_colors[ant_id, :])
 
         cv2.imshow('dmap', d_map)
         if not colormark:
@@ -317,8 +317,18 @@ def get_colormark(im, ibg_norm, i_max, c):
     ids = mser_operations.margin_filter(regions, groups)
     regions = [regions[i] for i in ids]
 
+
+    print "REGIONS", len(regions)
+    cols = collection_cols
+    rows = len(regions) / cols + 1
+    msers = np.zeros((collection_cell_size*rows, collection_cell_size*cols, 3), dtype=np.uint8)
+    i = 0
+    for r in regions:
+        msers = visualize2(im, i, msers, r, rows)
+        i+=1
+
     if len(regions) == 0:
-        return None, -1, -1, dist_im
+        return None, -1, -1, dist_im, None
 
     print COLORMARK_AREA
     areas_ = [p.area() for p in regions]
@@ -363,10 +373,37 @@ def get_colormark(im, ibg_norm, i_max, c):
 
     selected_r = [regions[id] for id in ids]
     print avg_intensity[ids[0]], darkest_neighbour[ids[0]]
-    return selected_r[0], avg_intensity[ids[0]], darkest_neighbour[ids[0]], dist_im
+
+
+
+
+    return selected_r[0], avg_intensity[ids[0]], darkest_neighbour[ids[0]], dist_im, msers
 
 
 def visualize(img, frame_i, collection, colormark, fill_color=np.array([255, 0, 255])):
+    id_in_collection = frame_i % (collection_cols * collection_rows)
+    c = np.asarray(colormark.centroid(), dtype=np.int32)
+    cell_half = collection_cell_size / 2
+
+    img = np.copy(img)
+    pts = colormark.pts()
+    img[pts[:, 0], pts[:, 1], :] = fill_color
+    crop = utils.img.get_safe_selection(img, c[0] - cell_half, c[1] - cell_half, collection_cell_size,
+                                        collection_cell_size)
+
+    cv2.putText(crop, str(frame_i), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
+
+    # crop[pts[:, 0] - int(c[0]) + cell_half, pts[:, 1] - int(c[1]) + cell_half, :] = fill_color
+
+    y = (id_in_collection / collection_cols) * collection_cell_size
+    x = (id_in_collection % collection_cols) * collection_cell_size
+
+    collection[y:y + collection_cell_size, x:x + collection_cell_size, :] = crop
+
+    return collection
+
+
+def visualize2(img, frame_i, collection, colormark, collection_rows, fill_color=np.array([255, 0, 255])):
     id_in_collection = frame_i % (collection_cols * collection_rows)
     c = np.asarray(colormark.centroid(), dtype=np.int32)
     cell_half = collection_cell_size / 2
@@ -436,6 +473,11 @@ if __name__ == "__main__":
             os.makedirs(dir)
 
     for a_id in range(ant_number):
+        dir = output_folder + '/msers/id' + str(a_id)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+    for a_id in range(ant_number):
         dir = output_folder + '/dmap/id' + str(a_id)
         if not os.path.exists(dir):
             os.makedirs(dir)
@@ -488,15 +530,17 @@ if __name__ == "__main__":
 
             crop_ibg = utils.img.get_safe_selection(ibg_norm, y, x, h_, w_)
 
-            c, cmark_i, neigh_i, dist_map = get_colormark(crop_im, crop_ibg, i_max, ant_colors[ant_id, :])
+            c, cmark_i, neigh_i, dist_map, msers = get_colormark(crop_im, crop_ibg, i_max, ant_colors[ant_id, :])
             if c:
                 collections[ant_id] = visualize(crop_im, frame_i, collections[ant_id], c)
                 c.set_centroid(c.centroid() + np.array([y, x]))
                 previous_position[ant_id] = c.centroid()
+                cv2.imwrite(output_folder + '/msers/id' + str(ant_id) + '/' + str(frame_i) + '.png', msers)
 
             frame_cmarks.append(c)
             frame_scores.append([cmark_i, neigh_i])
             cv2.imwrite(output_folder + '/dmap/id' + str(ant_id) + '/' + str(frame_i) + '.png', dist_map)
+
 
         regions[frame_i] = np.array(frame_cmarks)
         scores[frame_i] = np.array(frame_scores)
