@@ -200,12 +200,15 @@ class InitWhatWidget(QtGui.QWidget):
         m = self.scene_marks[id]
         m[pref+'center'].hide()
         m[pref+'radius'].setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
+        # m[pref+'circle'].setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
+        # m[pref+'circle'].setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
 
         brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
         brush.setColor(QtGui.QColor(0,0,0,0x55))
         m[pref+'radius'].setBrush(brush)
 
-
+    def double_clicked(self, id):
+        print "DOUBLECLIKCKED"
 
     def marks_activate(self, id, colormark=False):
         pref = ''
@@ -215,6 +218,10 @@ class InitWhatWidget(QtGui.QWidget):
         m = self.scene_marks[id]
         m[pref+'center'].show()
         m[pref+'radius'].setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+
+        m[pref+'radius'].setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+
+
 
         brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
         brush.setColor(QtGui.QColor(0,0,0,0x55))
@@ -229,6 +236,7 @@ class InitWhatWidget(QtGui.QWidget):
 
         marks['circle'] = Circle()
         marks['circle'].setBrush(brush)
+        # marks['circle'].double_clicked.connect(self.double_clicked)
 
         brush.setColor(QtGui.QColor(0,0xff,0xff,0xaa))
         marks['center'] = Mark(marks['circle'])

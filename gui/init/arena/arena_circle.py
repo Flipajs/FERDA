@@ -2,9 +2,12 @@ __author__ = 'filip@naiser.cz'
 
 from PyQt4.QtGui import *
 import math
+from PyQt4 import QtCore
 
 
 class ArenaCircle(QGraphicsEllipseItem):
+    double_clicked = QtCore.pyqtSignal("PyQt_PyObject")
+
     def __init__(self):
         super(ArenaCircle, self).__init__()
         self.c = None
@@ -25,3 +28,13 @@ class ArenaCircle(QGraphicsEllipseItem):
 
     def radius(self):
         return math.sqrt((self.c.x()-self.a.x())**2 + (self.c.y()-self.a.y())**2)
+
+    def mouseReleaseEvent(self, event):
+        print "TEST"
+
+    def mouseDoubleClickEvent(self, event):
+        super(ArenaCircle, self)
+
+        print "DOUBLE CLICKED"
+        self.double_clicked.emit(id)
+        pass
