@@ -54,3 +54,6 @@ class MaxIntensity(Model):
     def get_model(self):
         if self.model_ready:
             return self.bg_model
+
+    def update(self, img):
+        self.bg_model = np.copy(img)

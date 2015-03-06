@@ -11,8 +11,11 @@ class ArenaMark(QGraphicsEllipseItem):
         self.update_labels = update_labels
 
     def mouseMoveEvent(self, e):
+        super(ArenaMark, self).mouseMoveEvent(e)
         self.ellipse.update_geometry()
-
         self.update_labels()
 
-        return super(ArenaMark, self).mouseMoveEvent(e)
+    def MouseReleaseEvent(self, e):
+        super(ArenaMark, self).mouseMoveEvent(e)
+        self.ellipse.update_geometry()
+        self.update_labels()

@@ -13,7 +13,7 @@ from gui.main_tab_widget import MainTabWidget
 import core.project
 from methods.bg_model.max_intensity import MaxIntensity
 from gui.loading_widget import LoadingWidget
-
+from gui.settings.settings_dialog import SettingsDialog
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
@@ -39,7 +39,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle('FERDA')
         self.setGeometry(100, 100, 700, 400)
 
-        self.menu_bar = self.menuBar()
+        self.menu_bar = QtGui.QMenuBar(self)
         self.toolbar = self.addToolBar('')
 
         self.settings_action = QtGui.QAction('&Settings', self.centralWidget())
@@ -131,20 +131,17 @@ class MainWindow(QtGui.QMainWindow):
         self.close()
 
 if __name__ == "__main__":
-    print sys.path[0]
-    __location__ = os.path.realpath(os.path.join(sys.path[0], os.path.dirname(__file__)))
-
     app = QtGui.QApplication(sys.argv)
     ex = MainWindow()
     from core.project import Project
-    # proj = Project()
-    # proj.load('/Users/fnaiser/Documents/p15/p15.fproj')
-    # # proj.load('/Users/fnaiser/Documents/new_project/test1.fproj')
-    #
-    # bg_model = MaxIntensity(proj.video_paths)
-    # bg_model.start()
-    #
-    # ex.widget_control('project_created', {'project': proj, 'bg_model': bg_model})
+    proj = Project()
+    proj.load('/Users/fnaiser/Documents/p15/p15.fproj')
+    # proj.load('/Users/fnaiser/Documents/new_project/test1.fproj')
+
+    bg_model = MaxIntensity(proj.video_paths)
+    bg_model.start()
+
+    ex.widget_control('project_created', {'project': proj, 'bg_model': bg_model})
 
     app.exec_()
     app.deleteLater()

@@ -33,6 +33,7 @@ from skimage.transform import rescale
 
 from utils import video_manager
 from core.region.mser import Mser
+from core import region
 from core.region import mser_operations
 import utils.img
 
@@ -55,11 +56,14 @@ collection_rows = 2
 collection_cell_size = 100
 
 NEIGH_SQUARE_SIZE = 10
-FAST_START = True
+FAST_START = False
 CROP_SIZE = 200
 MSER_MAX_SIZE = 200
 MSER_MIN_SIZE = 5
 MSER_MIN_MARGIN = 5
+COLORMARK_RADIUS = 7
+
+COLORMARK_AREA = 3.14*COLORMARK_RADIUS**2
 
 #255*3 + 1
 #*3 is normalazing I to [0..1/3] as the GBR components are
@@ -316,10 +320,15 @@ def get_colormark(im, ibg_norm, i_max, c):
     if len(regions) == 0:
         return None, -1, -1, dist_im
 
+    areas = [(COLORMARK_AREA / float(p.area())) if p.area() > COLORMARK_AREA else (COLORMARK_AREA / float(p.area())) for p in regions]
+    areas = [a if a < 1.0 else 0 for a in areas]
     avg_intensity = [np.sum(dist_im[p.pts()[:, 0], p.pts()[:, 1]]) / p.area() for p in regions];
     darkest_neighbour = [darkest_neighbour_square(im, r.centroid(), NEIGH_SQUARE_SIZE) for r in regions];
 
-    val = np.array(avg_intensity) + np.array(darkest_neighbour)
+    # val = np.array(avg_intensity) + np.array(darkest_neighbour)
+
+    val = (((255 - np.array(avg_intensity)) / 255) * ((255 - np.array(darkest_neighbour)) / 255) * np.array(areas))
+    # val = np.array(areas)
     order = np.argsort(val)
 
     # dump_i = 0

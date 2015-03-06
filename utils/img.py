@@ -3,6 +3,7 @@ __author__ = 'fnaiser'
 import numpy as np
 from PIL import ImageQt
 from PyQt4 import QtGui
+from utils.misc import get_settings
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255,255,255)):
     y = int(y)
@@ -45,6 +46,41 @@ def get_pixmap_from_np_bgr(np_image):
 
     return pix_map
 
+def avg_circle_area_color(im, y, x, radius):
+    """
+    computes average color in circle area given by pos and radius
+    :param im:
+    :param pos:
+    :param radius:
+    :return:
+    """
+
+    c = np.zeros((1, 3), dtype=np.double)
+    num_px = 0
+    for h in range(radius * 2 + 1):
+        for w in range(radius * 2 + 1):
+            d = ((w - radius) ** 2 + (h - radius) ** 2) ** 0.5
+            if d <= radius:
+                num_px += 1
+                c += im[y - radius + h, x - radius + w, :]
+
+    print num_px
+    c /= num_px
+
+    return [c[0, 0], c[0, 1], c[0, 2]]
+
+def get_igbr_normalised(im):
+    igbr = np.zeros((im.shape[0], im.shape[1], 4), dtype=np.double)
+
+    igbr[:,:,0] = np.sum(im,axis=2) + 1
+    igbr[:, :, 1] = im[:,:,0] / igbr[:,:,0]
+    igbr[:,:,2] = im[:,:,1] / igbr[:,:,0]
+    igbr[:,:,3] = im[:,:,2] / igbr[:,:,0]
+
+    i_norm = (1/get_settings('igbr_i_weight', float)) * get_settings('igbr_i_norm', float)
+    igbr[:,:,0] = igbr[:,:,0] / i_norm
+
+    return igbr
 
 def get_contour(pts):
     return -1

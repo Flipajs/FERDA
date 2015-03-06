@@ -63,6 +63,7 @@ class SettingsDialog(QDialog):
 
         self.layout.addWidget(self.buttonBox)
 
+
         self.populate()
 
     def restore_defaults(self):

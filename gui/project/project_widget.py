@@ -5,8 +5,7 @@ import sys
 from PyQt4 import QtGui
 
 import core.project
-import utils.gui
-import utils.misc
+import gui.gui_utils
 
 
 class ProjectWidget(QtGui.QWidget):
@@ -32,7 +31,7 @@ class ProjectWidget(QtGui.QWidget):
             self.finish_callback('new_project')
 
     def load_project(self):
-        files = utils.gui.file_names_dialog(self, 'Select FERDA project', '*.fproj')
+        files = gui.gui_utils.file_names_dialog(self, 'Select FERDA project', '*.fproj')
         if len(files) == 1:
             f = files[0]
             project = core.project.Project()

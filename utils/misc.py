@@ -4,7 +4,8 @@ import sys
 __author__ = 'filip@naiser.cz'
 import pickle
 import numpy as np
-
+from PyQt4 import QtCore
+from gui.settings.default import get_default
 
 def get_pickle_data(filepath):
     f = open(filepath, "rb")
@@ -49,3 +50,12 @@ def is_flipajs_pc():
         return True
     else:
         return False
+
+def get_settings(key, type=str):
+    settings = QtCore.QSettings('FERDA')
+    return settings.value(key, get_default(key), type)
+
+
+def set_settings(key, value):
+    settings = QtCore.QSettings('FERDA')
+    settings.setValue(key, value)

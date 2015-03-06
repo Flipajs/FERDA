@@ -5,6 +5,8 @@ from gui.init.init_where_widget import InitWhereWidget
 from gui.init.init_what_widget import InitWhatWidget
 from gui.init.init_how_widget import InitHowWidget
 
+SKIP_WHERE = True
+
 class InitWidget(QtGui.QWidget):
     def __init__(self, finish_callback, project, bg_model):
         super(InitWidget, self).__init__()
@@ -17,7 +19,7 @@ class InitWidget(QtGui.QWidget):
 
         self.tabs = QtGui.QTabWidget()
         self.where_tab = InitWhereWidget(self.widget_control, project, bg_model)
-        self.what_tab = InitWhatWidget(self.widget_control)
+        self.what_tab = InitWhatWidget(self.widget_control, project, bg_model)
         self.how_tab = InitHowWidget(self.widget_control)
 
         self.finish_callback = finish_callback
@@ -29,6 +31,9 @@ class InitWidget(QtGui.QWidget):
         self.tabs.setTabEnabled(2, False)
 
         self.vbox.addWidget(self.tabs)
+
+        if SKIP_WHERE:
+            self.widget_control('init_where_finished')
 
     def widget_control(self, state, values=None):
         if state == 'init_where_finished':

@@ -96,16 +96,14 @@ class InitWhereWidget(QtGui.QWidget):
 
         brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
         brush.setColor(QtGui.QColor(0xff,0,0,0xaa))
-        self.c_center = ArenaMark(self.arena_ellipse, self.update_circle_labels)
-        self.c_center.setRect(0, 0, self.arena_mark_size, self.arena_mark_size)
+        self.c_center = ArenaMark(self.arena_ellipse, self.update_circle_labels, radius=self.arena_mark_size)
         self.c_center.setBrush(brush)
-        self.c_center.setPos(x - self.arena_mark_size, y-self.arena_mark_size)
+        self.c_center.setPos(x, y)
 
         brush.setColor(QtGui.QColor(0,0,0xff,0xaa))
-        self.c_radius = ArenaMark(self.arena_ellipse, self.update_circle_labels)
-        self.c_radius.setRect(0, 0, self.arena_mark_size, self.arena_mark_size)
+        self.c_radius = ArenaMark(self.arena_ellipse, self.update_circle_labels, radius=self.arena_mark_size)
         self.c_radius.setBrush(brush)
-        self.c_radius.setPos(x+r-self.arena_mark_size, y-self.arena_mark_size)
+        self.c_radius.setPos(x+r, y)
 
         brush.setColor(QtGui.QColor(0, 0xFF, 0, 0x55))
         self.arena_ellipse.setBrush(brush)
@@ -145,3 +143,4 @@ class InitWhereWidget(QtGui.QWidget):
         self.bg_fix_widget.hide()
         self.graphics_view.show()
         self.finish_callback('init_where_finished')
+        self.bg_model.update(np.copy(self.bg_fix_widget.image))
