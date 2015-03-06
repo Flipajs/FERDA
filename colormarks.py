@@ -320,8 +320,14 @@ def get_colormark(im, ibg_norm, i_max, c):
     if len(regions) == 0:
         return None, -1, -1, dist_im
 
-    areas = [(COLORMARK_AREA / float(p.area())) if p.area() > COLORMARK_AREA else (COLORMARK_AREA / float(p.area())) for p in regions]
-    areas = [a if a < 1.0 else 0 for a in areas]
+    print COLORMARK_AREA
+    areas_ = [p.area() for p in regions]
+
+    # areas = [(COLORMARK_AREA / float(p.area())) if p.area() > COLORMARK_AREA else (COLORMARK_AREA / float(p.area())) for p in regions]
+    areas = [(COLORMARK_AREA / float(p.area())) if p.area() > COLORMARK_AREA else (float(p.area()) / COLORMARK_AREA) for p in regions]
+    # areas = [a if a < 1.0 else 0 for a in areas]
+
+    # print areas_, areas
     avg_intensity = [np.sum(dist_im[p.pts()[:, 0], p.pts()[:, 1]]) / p.area() for p in regions];
     darkest_neighbour = [darkest_neighbour_square(im, r.centroid(), NEIGH_SQUARE_SIZE) for r in regions];
 
@@ -329,7 +335,7 @@ def get_colormark(im, ibg_norm, i_max, c):
 
     val = (((255 - np.array(avg_intensity)) / 255) * ((255 - np.array(darkest_neighbour)) / 255) * np.array(areas))
     # val = np.array(areas)
-    order = np.argsort(val)
+    order = np.argsort(-val)
 
     # dump_i = 0
     # for id in order:

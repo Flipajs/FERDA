@@ -201,7 +201,7 @@ class InitWhatWidget(QtGui.QWidget):
         m[pref+'center'].hide()
         m[pref+'radius'].setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
         # m[pref+'circle'].setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
-        # m[pref+'circle'].setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+        m[pref+'circle'].setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
 
         brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
         brush.setColor(QtGui.QColor(0,0,0,0x55))
