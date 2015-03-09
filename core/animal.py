@@ -26,3 +26,6 @@ class Animal():
     def set_colormark(self, colormark):
         self.colormark_ = colormark
         self.color_ = colormark.color_
+
+    def reset_id(self, id):
+        self.id = id

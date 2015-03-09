@@ -9,6 +9,8 @@ from core import animal_class
 
 
 class ClassWidget(QtGui.QWidget):
+    updated = QtCore.pyqtSignal()
+
     def __init__(self):
         super(ClassWidget, self).__init__()
 
@@ -17,14 +19,7 @@ class ClassWidget(QtGui.QWidget):
         self.vbox.setAlignment(QtCore.Qt.AlignTop)
         self.setLayout(self.vbox)
 
-        #LABEL
-        # self.title_label = QtGui.QLabel('Animal classes: ')
-        # font = self.title_label.font()
-        # font.setPointSize(40)
-        # self.title_label.setFont(font)
-        # self.vbox.addWidget(self.title_label)
-
-        self.classes.append(animal_class.AnimalClass('default'))
+        self.classes.append(animal_class.AnimalClass('default class'))
         self.list_widget_place = QtGui.QWidget()
         self.list_widget_place.setLayout(QtGui.QVBoxLayout())
         self.list_widget_place.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Maximum)
@@ -45,11 +40,13 @@ class ClassWidget(QtGui.QWidget):
         self.vbox.addWidget(self.new_class_widget)
         self.new_class_widget.hide()
 
-
-
         self.new_class_button = QtGui.QPushButton('+ new class')
         self.new_class_button.clicked.connect(self.new_class_widget.show)
         self.new_class_button.clicked.connect(self.name.setFocus)
+
+        # self.name.returnPressed.connect(self.)
+        self.connect(self.name, QtCore.SIGNAL('returnPressed()'), self.create_class_button, QtCore.SIGNAL('clicked()'))
+
         self.vbox.addWidget(self.new_class_button)
 
         self.show()
@@ -65,6 +62,8 @@ class ClassWidget(QtGui.QWidget):
         self.list_widget_place.layout().addWidget(self.list_widget)
 
         QtGui.QApplication.processEvents()
+
+        self.updated.emit()
 
     def get_list_widget(self):
         w = QtGui.QWidget()
@@ -114,6 +113,8 @@ class ClassWidget(QtGui.QWidget):
             self.list_widget = self.get_list_widget()
             self.list_widget_place.layout().addWidget(self.list_widget)
 
+        self.updated.emit()
+
     def finish_edditing(self, id):
         print "FINISH"
         self.classes[id].name = str(self.name.text())
@@ -132,6 +133,7 @@ class ClassWidget(QtGui.QWidget):
         self.list_widget_place.layout().addWidget(self.list_widget)
 
         QtGui.QApplication.processEvents()
+        self.updated.emit()
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

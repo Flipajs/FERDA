@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QImage
 from utils.misc import get_settings
 import utils.img

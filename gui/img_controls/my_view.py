@@ -77,11 +77,11 @@ class MyView(QtGui.QGraphicsView, object):
         if self.last_ == "Click":
             self.clicked.emit(self.event_click_pos)
 
-
     def mouseDoubleClickEvent(self, event):
+        super(MyView, self).mouseDoubleClickEvent(event)
         self.last_ = "Double Click"
         self.double_clicked.emit(event.pos())
-        pass
+        event.accept()
 
     def wheelEvent(self, event):
         modifiers = QtGui.QApplication.keyboardModifiers()
