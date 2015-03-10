@@ -46,14 +46,22 @@ class IdentityWidget(QtGui.QWidget):
         self.img_label = gui_utils.get_image_label(crop)
         self.hbox.addWidget(self.img_label)
 
-
         self.name_class_group_layout = QtGui.QVBoxLayout()
+        self.name_class_group_layout.setSpacing(0)
+        self.name_class_group_layout.setMargin(0)
+        self.name_class_group_widget = QtGui.QWidget()
+        self.name_class_group_widget.setLayout(self.name_class_group_layout)
 
         self.name = QtGui.QLineEdit()
         self.name.setText(self.animal.name)
         self.name_class_group_layout.addWidget(self.name)
 
         self.classes_groups_layout = QtGui.QHBoxLayout()
+        self.classes_groups_layout.setSpacing(0)
+        self.classes_groups_layout.setMargin(0)
+        self.classes_groups_widget = QtGui.QWidget()
+        self.classes_groups_widget.setLayout(self.classes_groups_layout)
+
         if self.classes:
             self.classes_box = QtGui.QComboBox()
             id = 0
@@ -71,11 +79,13 @@ class IdentityWidget(QtGui.QWidget):
         self.classes_groups_layout.addWidget(self.classes_box)
         self.classes_groups_layout.addWidget(self.groups_box)
 
-        self.name_class_group_layout.addLayout(self.classes_groups_layout)
+        self.name_class_group_layout.addWidget(self.classes_groups_widget)
 
-        self.hbox.addLayout(self.name_class_group_layout)
+        self.hbox.addWidget(self.name_class_group_widget)
 
         self.delete_button = QtGui.QPushButton('x')
+        self.delete_button.setFixedWidth(30)
+        self.delete_button.setFixedHeight(50)
         self.hbox.addWidget(self.delete_button)
 
     def color_label_clicked(self, event):
@@ -97,8 +107,7 @@ class IdentityWidget(QtGui.QWidget):
         self.classes = classes
 
         val = self.classes_box.currentText()
-        # val = self.classes_box.itemData(self.classes_box.currentIndex())
-        self.classes_groups_layout.removeWidget(self.classes_box)
+        self.classes_box.setParent(None)
 
         if self.classes:
             self.classes_box = QtGui.QComboBox()
@@ -112,6 +121,23 @@ class IdentityWidget(QtGui.QWidget):
 
         self.classes_groups_layout.insertWidget(0, self.classes_box)
 
+    def update_groups(self, groups):
+        self.groups = groups
+
+        val = self.groups_box.currentText()
+        self.groups_box.setParent(None)
+
+        if self.groups:
+            self.groups_box = QtGui.QComboBox()
+            id = 0
+            for c in self.groups:
+                self.groups_box.addItem(c.name, id)
+                if c.name == val:
+                    self.groups_box.setCurrentIndex(id)
+
+                id += 1
+
+        self.classes_groups_layout.insertWidget(1, self.groups_box)
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

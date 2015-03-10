@@ -5,22 +5,21 @@ from functools import partial
 
 from PyQt4 import QtGui, QtCore
 
-from core import animal_class
+from core import animal_group
 
-
-class ClassWidget(QtGui.QWidget):
+class GroupsWidget(QtGui.QWidget):
     updated = QtCore.pyqtSignal()
 
     def __init__(self):
-        super(ClassWidget, self).__init__()
+        super(GroupsWidget, self).__init__()
 
-        self.classes = []
+        self.groups = []
         self.vbox = QtGui.QVBoxLayout()
         self.vbox.setAlignment(QtCore.Qt.AlignTop)
         self.vbox.setSpacing(0)
         self.setLayout(self.vbox)
 
-        self.classes.append(animal_class.AnimalClass('default class'))
+        self.groups.append(animal_group.AnimalGroup('default group'))
         self.list_widget_place = QtGui.QWidget()
         self.list_widget_place.setLayout(QtGui.QVBoxLayout())
         self.list_widget_place.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Maximum)
@@ -51,8 +50,8 @@ class ClassWidget(QtGui.QWidget):
         self.vbox.addWidget(self.new_class_button)
 
     def create_new_class(self):
-        c = animal_class.AnimalClass(self.name.text(), str(self.description.toPlainText()), len(self.classes))
-        self.classes.append(c)
+        c = animal_group.AnimalGroup(self.name.text(), str(self.description.toPlainText()), len(self.groups))
+        self.groups.append(c)
         self.name.setText('')
         self.description.setPlainText('')
         self.new_class_widget.hide()
@@ -73,7 +72,7 @@ class ClassWidget(QtGui.QWidget):
         w.setLayout(vbox)
 
         id = 0
-        for c in self.classes:
+        for c in self.groups:
             r = QtGui.QWidget()
             r_layout = QtGui.QHBoxLayout()
             r_layout.setMargin(0)
@@ -97,19 +96,19 @@ class ClassWidget(QtGui.QWidget):
     def edit(self, id):
         print id
         self.new_class_widget.show()
-        self.name.setText(self.classes[id].name)
-        self.description.setPlainText(self.classes[id].description)
+        self.name.setText(self.groups[id].name)
+        self.description.setPlainText(self.groups[id].description)
         self.create_class_button.clicked.disconnect()
         self.create_class_button.clicked.connect(partial(self.finish_edditing, id))
         self.create_class_button.setText('edit')
         self.name.setFocus()
 
     def remove_class(self, id):
-        m = "Are you sure you want to delete class: "+str(self.classes[id].name)
+        m = "Are you sure you want to delete class: "+str(self.groups[id].name)
         reply = QtGui.QMessageBox.question(self, 'Message', m, QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
 
         if reply == QtGui.QMessageBox.Yes:
-            self.classes.remove(self.classes[id])
+            self.groups.remove(self.groups[id])
             self.list_widget.hide()
             self.list_widget = self.get_list_widget()
             self.list_widget_place.layout().addWidget(self.list_widget)
@@ -117,8 +116,8 @@ class ClassWidget(QtGui.QWidget):
         self.updated.emit()
 
     def finish_edditing(self, id):
-        self.classes[id].name = str(self.name.text())
-        self.classes[id].description = str(self.description.toPlainText())
+        self.groups[id].name = str(self.name.text())
+        self.groups[id].description = str(self.description.toPlainText())
 
         self.name.setText('')
         self.description.setPlainText('')
@@ -134,12 +133,3 @@ class ClassWidget(QtGui.QWidget):
 
         QtGui.QApplication.processEvents()
         self.updated.emit()
-
-if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
-    ex = ClassWidget()
-    ex.show()
-
-    app.exec_()
-    app.deleteLater()
-    sys.exit()

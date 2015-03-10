@@ -36,6 +36,7 @@ from core.region.mser import Mser
 from core import region
 from core.region import mser_operations
 import utils.img
+import matplotlib.mlab as mlab
 
 
 im = None
@@ -47,6 +48,7 @@ ant_colors = None
 init_regions = None
 init_scores = None
 init_positions = None
+init_means = None
 ant_id = 0
 ant_number = 0
 mser = None
@@ -61,9 +63,24 @@ CROP_SIZE = 200
 MSER_MAX_SIZE = 200
 MSER_MIN_SIZE = 5
 MSER_MIN_MARGIN = 5
-COLORMARK_RADIUS = 7
 
-COLORMARK_AREA = 3.14*COLORMARK_RADIUS**2
+# COLORMARK size statistics
+COLORMARK_RADIUS = 3.7
+COLORMARK_S = 2.2
+
+# AVG colormark intensity in distance map
+INTENSITY_MEAN = 20
+INTENSITY_S = 10
+
+# AVG min neihbour intensity in image
+NEIGH_MEAN = 40
+NEIHG_S = 15
+
+# W_AREA = 0.5
+# W_INT = 1.0
+# W_NEIGH_INT = 1.5
+
+# COLORMARK_AREA_SQROOT = (3.14*COLORMARK_RADIUS**2)**0.5
 
 #255*3 + 1
 #*3 is normalazing I to [0..1/3] as the GBR components are
@@ -168,6 +185,7 @@ def on_mouse_scaled(event, x, y, flag, param):
         crop_im = utils.img.get_safe_selection(im, y, x, h_, w_)
         crop_ibg = utils.img.get_safe_selection(ibg_norm, y, x, h_, w_)
 
+
         colormark, cmark_i, neigh_i, d_map, _ = get_colormark(crop_im, crop_ibg, i_max, ant_colors[ant_id, :])
 
         cv2.imshow('dmap', d_map)
@@ -177,6 +195,12 @@ def on_mouse_scaled(event, x, y, flag, param):
 
         init_regions[ant_id] = colormark
         init_scores[ant_id] = [cmark_i, neigh_i]
+
+        r = (colormark.area() / 3.14)**0.5
+        avg_i = np.sum(d_map[colormark.pts()[:, 0], colormark.pts()[:, 1]])
+        min_neigh = darkest_neighbour_square(crop_im, np.array([y, x]), NEIGH_SQUARE_SIZE)
+
+        init_means[ant_id] = {'intensity': avg_i, 'neigh': min_neigh, 'radius': r}
         crop = np.zeros((collection_cell_size, collection_cell_size, 3), dtype=np.uint8)
         crop = visualize(crop_im, 0, crop, colormark)
 
@@ -199,6 +223,7 @@ def init(path):
     global init_regions
     global init_scores
     global init_positions
+    global init_means
 
     vid = video_manager.get_auto_video_manager(path)
     im = vid.move2_next()
@@ -215,6 +240,7 @@ def init(path):
     init_regions = [None for i in range(ant_number)]
     init_scores = [None for i in range(ant_number)]
     init_positions = [None for i in range(ant_number)]
+    init_means = [None for i in range(ant_number)]
 
     while ant_id < ant_number:
         # this will take last 8 bits from integer so it is number between 0 - 255
@@ -273,6 +299,7 @@ def darkest_neighbour_square(im, pt, square_size):
 
             crop = utils.img.get_safe_selection(im, start[0] + square_size * i, start[1] + square_size * j, square_size,
                                                 square_size, fill_color=(255, 255, 255))
+
             crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
             s = np.sum(crop_gray)
 
@@ -302,8 +329,9 @@ def darkest_neighbour_square(im, pt, square_size):
     return squares[id] / square_size ** 2
 
 
-def get_colormark(im, ibg_norm, i_max, c):
+def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
     global mser
+    global init_means
 
     c_ibg = color2irg(c, i_max)
 
@@ -318,23 +346,14 @@ def get_colormark(im, ibg_norm, i_max, c):
     regions = [regions[i] for i in ids]
 
 
-    print "REGIONS", len(regions)
-    cols = collection_cols
-    rows = len(regions) / cols + 1
-    msers = np.zeros((collection_cell_size*rows, collection_cell_size*cols, 3), dtype=np.uint8)
-    i = 0
-    for r in regions:
-        msers = visualize2(im, i, msers, r, rows)
-        i+=1
-
     if len(regions) == 0:
         return None, -1, -1, dist_im, None
 
-    print COLORMARK_AREA
-    areas_ = [p.area() for p in regions]
+    # areas_ = [p.area() for p in regions]
 
     # areas = [(COLORMARK_AREA / float(p.area())) if p.area() > COLORMARK_AREA else (COLORMARK_AREA / float(p.area())) for p in regions]
-    areas = [(COLORMARK_AREA / float(p.area())) if p.area() > COLORMARK_AREA else (float(p.area()) / COLORMARK_AREA) for p in regions]
+    # areas = [(COLORMARK_AREA_SQROOT / float(p.area())**0.5) if p.area()**0.5 > COLORMARK_AREA_SQROOT else (float(p.area())**0.5 / COLORMARK_AREA_SQROOT) for p in regions]
+    areas = [(float(p.area()) / 3.14)**0.5 for p in regions]
     # areas = [a if a < 1.0 else 0 for a in areas]
 
     # print areas_, areas
@@ -343,9 +362,42 @@ def get_colormark(im, ibg_norm, i_max, c):
 
     # val = np.array(avg_intensity) + np.array(darkest_neighbour)
 
-    val = (((255 - np.array(avg_intensity)) / 255) * ((255 - np.array(darkest_neighbour)) / 255) * np.array(areas))
+    i_mean = INTENSITY_MEAN
+    r_mean = COLORMARK_RADIUS
+    n_mean = NEIGH_MEAN
+    if ant_id > -1:
+        i_mean = init_means[ant_id]['intensity']
+        r_mean = init_means[ant_id]['radius']
+        n_mean = init_means[ant_id]['neigh']
+
+
+
+    norm_i_ = mlab.normpdf(i_mean, i_mean, INTENSITY_S)
+    norm_neigh_ = mlab.normpdf(n_mean, n_mean, NEIHG_S)
+
+    norm_area_ = mlab.normpdf(r_mean, r_mean, COLORMARK_S)
+
+    val_i = mlab.normpdf(np.array(avg_intensity), i_mean, INTENSITY_S) / norm_i_
+    val_n = mlab.normpdf(np.array(darkest_neighbour), n_mean, NEIHG_S) / norm_neigh_
+    val_a = mlab.normpdf(np.array(areas), r_mean, COLORMARK_S) / norm_area_
+
+    val = val_i * val_n * val_a
+
+    print areas
+    print mlab.normpdf(np.array(areas), r_mean, COLORMARK_S) / norm_area_
+    print val
     # val = np.array(areas)
     order = np.argsort(-val)
+
+
+    print "REGIONS", len(regions)
+    cols = collection_cols
+    rows = len(regions) / cols + 1
+    msers = np.zeros((collection_cell_size*rows, collection_cell_size*cols, 3), dtype=np.uint8)
+    i = 0
+    for r in regions:
+        msers = visualize2(im, i, msers, r, rows, areas[i], val_a[i], avg_intensity[i], val_i[i], darkest_neighbour[i], val_n[i])
+        i+=1
 
     # dump_i = 0
     # for id in order:
@@ -403,7 +455,7 @@ def visualize(img, frame_i, collection, colormark, fill_color=np.array([255, 0, 
     return collection
 
 
-def visualize2(img, frame_i, collection, colormark, collection_rows, fill_color=np.array([255, 0, 255])):
+def visualize2(img, frame_i, collection, colormark, collection_rows, a, va, i, vi, n, vn, fill_color=np.array([255, 0, 255])):
     id_in_collection = frame_i % (collection_cols * collection_rows)
     c = np.asarray(colormark.centroid(), dtype=np.int32)
     cell_half = collection_cell_size / 2
@@ -413,9 +465,21 @@ def visualize2(img, frame_i, collection, colormark, collection_rows, fill_color=
     img[pts[:, 0], pts[:, 1], :] = fill_color
     crop = utils.img.get_safe_selection(img, c[0] - cell_half, c[1] - cell_half, collection_cell_size,
                                         collection_cell_size)
+    if va < 0.01:
+        va=0
 
+    if vn < 0.01:
+        vn = 0
+
+    if vi < 0.01:
+        vi = 0
+
+    vstep = 10
     cv2.putText(crop, str(frame_i), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
-
+    cv2.putText(crop, str(a)[0:5]+' '+str(va)[0:5], (3, 10+vstep), cv2.FONT_HERSHEY_PLAIN, 0.65, (125, 255, 0), 1, cv2.CV_AA)
+    cv2.putText(crop, str(i)[0:5]+' '+str(vi)[0:5], (3, 10+2*vstep), cv2.FONT_HERSHEY_PLAIN, 0.65, (125, 255, 0), 1, cv2.CV_AA)
+    cv2.putText(crop, str(n)[0:5]+' '+str(vn)[0:5], (3, 10+3*vstep), cv2.FONT_HERSHEY_PLAIN, 0.65, (125, 255, 0), 1, cv2.CV_AA)
+    cv2.putText(crop, str(va*vi*vn)[0:5], (3, 10+4*vstep), cv2.FONT_HERSHEY_PLAIN, 0.65, (125, 255, 0), 1, cv2.CV_AA)
     # crop[pts[:, 0] - int(c[0]) + cell_half, pts[:, 1] - int(c[1]) + cell_half, :] = fill_color
 
     y = (id_in_collection / collection_cols) * collection_cell_size
@@ -437,12 +501,13 @@ if __name__ == "__main__":
         init_regions = settings['init_regions']
         init_scores = settings['init_scores']
         init_positions = settings['init_positions']
+        init_means = settings['init_means']
         mser = Mser(max_area=0.1, min_area=MSER_MIN_SIZE, min_margin=MSER_MIN_MARGIN)
     else:
         init(video_file)
         settings = {'ant_number': ant_number, 'ant_colors': ant_colors, 'init_regions': init_regions,
                     'neigh_square_size': NEIGH_SQUARE_SIZE, 'init_scores': init_scores,
-                    'init_positions': init_positions}
+                    'init_positions': init_positions, 'init_means': init_means}
         with open(output_folder + '/settings.pkl', 'wb') as f:
             pickle.dump(settings, f)
 
