@@ -176,6 +176,7 @@ def on_mouse_scaled(event, x, y, flag, param):
 
         cv2.imshow('color', cimg)
 
+
         ibg_norm, i_max = normalized_ibg(im)
 
         h_ = CROP_SIZE
@@ -184,7 +185,6 @@ def on_mouse_scaled(event, x, y, flag, param):
 
         crop_im = utils.img.get_safe_selection(im, y, x, h_, w_)
         crop_ibg = utils.img.get_safe_selection(ibg_norm, y, x, h_, w_)
-
 
         colormark, cmark_i, neigh_i, d_map, _ = get_colormark(crop_im, crop_ibg, i_max, ant_colors[ant_id, :])
 
@@ -197,8 +197,8 @@ def on_mouse_scaled(event, x, y, flag, param):
         init_scores[ant_id] = [cmark_i, neigh_i]
 
         r = (colormark.area() / 3.14)**0.5
-        avg_i = np.sum(d_map[colormark.pts()[:, 0], colormark.pts()[:, 1]])
-        min_neigh = darkest_neighbour_square(crop_im, np.array([y, x]), NEIGH_SQUARE_SIZE)
+        avg_i = np.sum(d_map[colormark.pts()[:, 0], colormark.pts()[:, 1]]) / float(colormark.area())
+        min_neigh = darkest_neighbour_square(crop_im, colormark.centroid(), NEIGH_SQUARE_SIZE)
 
         init_means[ant_id] = {'intensity': avg_i, 'neigh': min_neigh, 'radius': r}
         crop = np.zeros((collection_cell_size, collection_cell_size, 3), dtype=np.uint8)
@@ -595,7 +595,7 @@ if __name__ == "__main__":
 
             crop_ibg = utils.img.get_safe_selection(ibg_norm, y, x, h_, w_)
 
-            c, cmark_i, neigh_i, dist_map, msers = get_colormark(crop_im, crop_ibg, i_max, ant_colors[ant_id, :])
+            c, cmark_i, neigh_i, dist_map, msers = get_colormark(crop_im, crop_ibg, i_max, ant_colors[ant_id, :], ant_id)
             if c:
                 collections[ant_id] = visualize(crop_im, frame_i, collections[ant_id], c)
                 c.set_centroid(c.centroid() + np.array([y, x]))
