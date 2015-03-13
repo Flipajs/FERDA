@@ -40,7 +40,7 @@ class GroupsWidget(QtGui.QWidget):
         self.vbox.addWidget(self.new_class_widget)
         self.new_class_widget.hide()
 
-        self.new_class_button = QtGui.QPushButton('+ new class')
+        self.new_class_button = QtGui.QPushButton('+ new group')
         self.new_class_button.clicked.connect(self.new_class_widget.show)
         self.new_class_button.clicked.connect(self.name.setFocus)
 

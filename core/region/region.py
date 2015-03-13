@@ -28,7 +28,7 @@ class Region():
                 pts.extend([[row['line'], c] for c in range(row['col1'], row['col2'] + 1)])
         else:
             raise Exception('wrong data format',
-                            'Wrong data format in from_dict_ in region.region.py. Expected dictionary with "rle" key.')
+                            'Wrong data format in from_dict_ in region.points.py. Expected dictionary with "rle" key.')
 
         self.centroid_ = np.array([data['cy'], data['cx']])
         self.pts_ = np.array(pts)

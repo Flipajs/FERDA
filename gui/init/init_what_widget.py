@@ -19,16 +19,16 @@ from functools import partial
 import cv2
 
 class InitWhatWidget(QtGui.QWidget):
-    def __init__(self, finish_callback, project, bg_model):
+    def __init__(self, finish_callback, project):
         super(InitWhatWidget, self).__init__()
 
         self.project = project
-        self.bg_model = bg_model
+        self.project.animals = []
+
         self.finish_callback = finish_callback
         self.video = video_manager.get_auto_video_manager(project.video_paths)
 
         self.active_id = 0
-        self.animals = []
         self.identities_widgets = []
         self.scene_marks = []
 
@@ -145,6 +145,7 @@ class InitWhatWidget(QtGui.QWidget):
         self.next_button.clicked.connect(self.next_step)
         self.left_layout.addWidget(self.next_button)
 
+
     def add_animal_widget(self, id=-1):
         self.focus_on_bottom = True
 
@@ -152,7 +153,7 @@ class InitWhatWidget(QtGui.QWidget):
 
         print id_
 
-        animal = self.animals[id_]
+        animal = self.project.animals[id_]
 
         center = self.scene_marks[id_]['center'].pos()
 
@@ -184,7 +185,7 @@ class InitWhatWidget(QtGui.QWidget):
         p = np.array([center.y(), center.x()])
 
         c = colormark.get_colormark(img, color, p, 200)
-        self.animals[id_].set_colormark(c)
+        self.project.animals[id_].set_colormark(c)
 
     def scene_clicked(self, pos):
         modifiers = QtGui.QApplication.keyboardModifiers()
@@ -194,9 +195,9 @@ class InitWhatWidget(QtGui.QWidget):
             self.scene_marks[self.active_id]['radius'].setPos(pos.x(), pos.y())
             self.scene_marks[self.active_id]['circle'].update_geometry()
 
-            if len(self.animals) <= self.active_id:
+            if len(self.project.animals) <= self.active_id:
                 animal = Animal(self.active_id)
-                self.animals.append(animal)
+                self.project.animals.append(animal)
 
                 if not get_settings('colormarks_use', bool):
                     self.add_animal_widget()
@@ -275,8 +276,8 @@ class InitWhatWidget(QtGui.QWidget):
             if isinstance(it, Circle):
                 colormark = False
                 if get_settings('colormarks_use'):
-                    for i in range(len(self.animals)):
-                        if self.scene_marks[i]['c_circle'] == it:
+                    for i in range(len(self.project.animals)):
+                        if 'c_circle' in self.scene_marks[i] and self.scene_marks[i]['c_circle'] == it:
                             colormark = True
                             break
 
@@ -311,7 +312,7 @@ class InitWhatWidget(QtGui.QWidget):
         m[pref+'radius'].setBrush(brush)
 
         brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
-        c_ = self.animals[id].color_
+        c_ = self.project.animals[id].color_
         if colormark:
             brush.setColor(QtGui.QColor(0, 0xff, 0, 0x22))
         else:
@@ -345,12 +346,12 @@ class InitWhatWidget(QtGui.QWidget):
     def delete_identity(self, id):
         self.identity_widget_box.layout().itemAt(id).widget().setParent(None)
 
-        for i in range(id, len(self.animals)):
+        for i in range(id, len(self.project.animals)):
             self.identities_widgets[i].delete_button.clicked.disconnect()
             self.identities_widgets[i].delete_button.clicked.connect(partial(self.delete_identity, i-1))
-            self.animals[i].id = i - 1
+            self.project.animals[i].id = i - 1
 
-        self.animals.remove(self.animals[id])
+        self.project.animals.remove(self.project.animals[id])
         self.identities_widgets.remove(self.identities_widgets[id])
 
         m = self.scene_marks[id]
@@ -409,11 +410,11 @@ class InitWhatWidget(QtGui.QWidget):
         return marks
 
     def update_identity_panel_classes(self):
-        for i in range(len(self.animals)):
+        for i in range(len(self.project.animals)):
             self.identities_widgets[i].update_classes(self.class_widget.classes)
 
     def update_identity_panel_groups(self):
-        for i in range(len(self.animals)):
+        for i in range(len(self.project.animals)):
             self.identities_widgets[i].update_groups(self.groups_widget.groups)
 
     def esc_action_(self):
@@ -444,7 +445,6 @@ class InitWhatWidget(QtGui.QWidget):
         self.put_mark_active = False
 
     def next_step(self):
-        print "ANIMALS: ", len(self.animal)
-        print "CLASSES: ", len(self.class_widget.classes)
-        print "GROUPS:", len(self.groups_widget.groups)
-        print "NEXT STEP"
+        self.project.classes = self.class_widget.classes
+        self.project.groups = self.groups_widget.groups
+        self.finish_callback('init_what_finished')

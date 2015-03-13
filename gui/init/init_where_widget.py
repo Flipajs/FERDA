@@ -9,14 +9,16 @@ import cv2
 import time
 from gui.init.background.bg_fix_widget import BgFixWidget
 import numpy as np
+from methods.arena.circle import Circle
+from methods.bg_model.model import Model
+from methods.bg_model.bg_model import BGModel
 
 class InitWhereWidget(QtGui.QWidget):
-    def __init__(self, finish_callback, project, bg_model):
+    def __init__(self, finish_callback, project):
         super(InitWhereWidget, self).__init__()
-
         self.arena_mark_size = 15
+        self.project = project
 
-        self.bg_model = bg_model
         self.finish_callback = finish_callback
 
         self.vbox = QtGui.QVBoxLayout()
@@ -56,11 +58,19 @@ class InitWhereWidget(QtGui.QWidget):
         self.vbox.addWidget(self.graphics_view)
 
     def confirm_arena_selection_clicked(self):
-        if self.bg_model.is_computed():
+        if isinstance(self.project.bg_model, BGModel) or self.project.bg_model.is_computed():
+            if isinstance(self.project.bg_model, Model):
+                self.project.bg_model = self.project.bg_model.get_model()
+
             self.graphics_view.hide()
-            self.bg_fix_widget = BgFixWidget(self.bg_model.get_model(), self.finish)
+            self.bg_fix_widget = BgFixWidget(self.project.bg_model.img(), self.finish)
             self.graphics_view.hide()
             self.vbox.addWidget(self.bg_fix_widget)
+
+            h_, w_, _ = self.project.bg_model.img().shape
+            self.project.arena_model = Circle(h_, w_)
+
+
 
             if self.progress_dialog:
                 self.progress_dialog.cancel()
@@ -72,11 +82,11 @@ class InitWhereWidget(QtGui.QWidget):
                     self.progress_dialog = QtGui.QProgressDialog('Computing background model. Be patient please...', QtCore.QString("Cancel"), 0, 100)
                     self.progress_dialog.setWindowTitle('Upload status')
                 else:
-                    self.progress_dialog.setLabelText('Computing '+str(self.bg_model.get_progress()))
-                    self.progress_dialog.setValue(self.bg_model.get_progress())
+                    self.progress_dialog.setLabelText('Computing '+str(self.project.bg_model.get_progress()))
+                    self.progress_dialog.setValue(self.project.bg_model.get_progress())
                     QtGui.QApplication.processEvents()
 
-                if self.bg_model.is_computed():
+                if self.project.bg_model.is_computed():
                     break
 
             self.confirm_arena_selection_clicked()
@@ -143,4 +153,4 @@ class InitWhereWidget(QtGui.QWidget):
         self.bg_fix_widget.hide()
         self.graphics_view.show()
         self.finish_callback('init_where_finished')
-        self.bg_model.update(np.copy(self.bg_fix_widget.image))
+        self.project.bg_model.update(np.copy(self.bg_fix_widget.image))

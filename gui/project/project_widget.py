@@ -24,7 +24,6 @@ class ProjectWidget(QtGui.QWidget):
         self.load_project_button.clicked.connect(self.load_project)
 
         self.update()
-        self.show()
 
     def new_project(self):
         if self.finish_callback:

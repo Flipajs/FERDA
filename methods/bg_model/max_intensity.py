@@ -1,17 +1,19 @@
 __author__ = 'fnaiser'
 
+import cv2
 from model import Model
+from methods.bg_model.bg_model import BGModel
 from math import floor
 import numpy as np
 from utils import video_manager
 from PyQt4 import QtCore
+import pickle
 
 
 class MaxIntensity(Model):
-    def __init__(self, video_paths, iterations=10, random_frames=False, update_callback=None):
+    def __init__(self, video_paths, iterations=20, random_frames=False, update_callback=None):
         super(MaxIntensity, self).__init__()
         self.video = video_manager.get_auto_video_manager(video_paths)
-        self.bg_model = None
         self.iterations = iterations
         self.random_frames = random_frames
         self.update_callback = update_callback
@@ -45,6 +47,7 @@ class MaxIntensity(Model):
         if self.update_callback:
             self.update_callback(int(100*(i+1)/float(self.iterations)))
 
+
     def is_computed(self):
         return self.model_ready
 
@@ -53,7 +56,30 @@ class MaxIntensity(Model):
 
     def get_model(self):
         if self.model_ready:
-            return self.bg_model
+            m = BGModel(self.bg_model)
+            return m
 
     def update(self, img):
         self.bg_model = np.copy(img)
+
+
+if __name__ == '__main__':
+    cap = cv2.VideoCapture('/Users/fnaiser/Documents/output.avi')
+    im = cv2.imread('/Users/fnaiser/Documents/bg.jpg')
+
+    bg = MaxIntensity('/Users/fnaiser/Documents/output.avi')
+    bg.bg_model = im
+    bg.model_ready = True
+
+    print isinstance(bg, Model)
+
+    with open('/Users/fnaiser/Documents/test.pkl', 'wb') as f:
+        pickle.dump(bg.get_model(), f)
+
+    _, im = cap.read()
+
+
+    sub = bg.get_model().bg_subtraction(im)
+    cv2.imshow('sub', sub)
+    cv2.moveWindow('sub', 0, 0)
+    cv2.waitKey(0)

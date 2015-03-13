@@ -1,5 +1,6 @@
 __author__ = 'fnaiser'
 
+import numpy as np
 from PyQt4 import QtCore
 
 
@@ -7,6 +8,7 @@ class Model(QtCore.QThread):
     def __init__(self):
         super(Model, self).__init__()
         self.model_ready = False
+        self.bg_model = None
 
     def compute_model(self):
         raise NotImplementedError("Should have implemented this!")

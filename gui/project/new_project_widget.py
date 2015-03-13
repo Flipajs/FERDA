@@ -13,6 +13,7 @@ import skimage.transform
 import threading
 from utils.video_manager import VideoType
 from methods.bg_model.max_intensity import MaxIntensity
+from gui.project.import_widget import ImportWidget
 
 class BGSub(threading.Thread):
     def __init__(self, vid, update_callback):
@@ -62,15 +63,26 @@ class NewProjectWidget(QtGui.QWidget):
         self.project_name = QtGui.QLineEdit()
         self.form_layout.addRow(label, self.project_name)
 
-        label = QtGui.QLabel('Project description', self)
+        label = QtGui.QLabel('Project description')
         self.project_description = QtGui.QPlainTextEdit(self)
         self.form_layout.addRow(label, self.project_description)
 
+        self.left_vbox = QtGui.QVBoxLayout()
+        self.import_templates = QtGui.QPushButton('Import templates')
+        self.import_templates.clicked.connect(self.import_templates_clicked)
+
+        self.import_widget = ImportWidget()
+        self.import_widget.import_button.clicked.connect(self.finish_import)
+        self.import_widget.hide()
+
         self.create_project_button = QtGui.QPushButton('Create new project', self)
-        self.form_layout.addWidget(self.create_project_button)
         self.create_project_button.clicked.connect(self.create_project)
 
-        self.hbox.addLayout(self.form_layout)
+        self.hbox.addLayout(self.left_vbox)
+        self.left_vbox.addLayout(self.form_layout)
+        self.left_vbox.addWidget(self.import_widget)
+        self.left_vbox.addWidget(self.import_templates)
+        self.left_vbox.addWidget(self.create_project_button)
 
         self.bg_progress_bar = QtGui.QProgressBar()
         self.bg_progress_bar.setRange(0, 100)
@@ -81,9 +93,10 @@ class NewProjectWidget(QtGui.QWidget):
         self.hbox.addLayout(self.video_preview_layout)
         self.update()
         self.show()
+        self.activateWindow()
+        self.select_video_files.setFocus()
 
     def select_video_files_clicked(self):
-        # self.video_files = utils.gui.file_names_dialog(self, 'Select video files', '*.avi; *.mkv; *.mp4') #, 'AVI (*.avi);MKV (*.mkv); MP4 (*.mp4)')
         self.video_files = gui.gui_utils.file_names_dialog(self, 'Select video files', filter_="Videos (*.avi *.mkv *.mp4)") #, 'AVI (*.avi);MKV (*.mkv); MP4 (*.mp4)')
         try:
             vid = utils.video_manager.get_auto_video_manager(self.video_files)
@@ -110,10 +123,9 @@ class NewProjectWidget(QtGui.QWidget):
             self.bg_computation = MaxIntensity(self.video_files)
             self.connect(self.bg_computation, QtCore.SIGNAL("update(int)"), self.update_progress_label)
             self.bg_computation.start()
-            #
-            # self.bg_computation = MaxIntensity(self.video_files, update_callback=self.update_progress_label)
-            # self.bg_computation.start()
+            self.activateWindow()
 
+            self.select_working_directory.setFocus()
 
         except Exception as e:
             utils.misc.print_exception(e)
@@ -135,13 +147,39 @@ class NewProjectWidget(QtGui.QWidget):
                     QtGui.QMessageBox.information(None, '', 'This folder is already used for FERDA project, choose different one, please')
                     self.select_working_directory_clicked()
 
+        self.project_name.setFocus()
 
-    def create_project(self):
+    def import_templates_clicked(self):
+        self.project_name.setDisabled(True)
+        self.project_description.setDisabled(True)
+        self.select_working_directory.setDisabled(True)
+        self.select_video_files.setDisabled(True)
+
+        self.import_templates.hide()
+        self.create_project_button.hide()
+
+        self.import_widget.show()
+
+    def finish_import(self):
+        project = self.get_project()
+        self.import_widget.finish_import(project)
+
+        if self.finish_callback:
+            self.finish_callback('project_created', project)
+
+    def get_project(self):
         project = core.project.Project()
         project.name = self.project_name.text()
         project.description = str(self.project_description.toPlainText())
         project.video_paths = self.video_files
         project.working_directory = self.working_directory
 
+        project.bg_model = self.bg_computation
+
+        return project
+
+    def create_project(self):
+        project = self.get_project()
+
         if self.finish_callback:
-            self.finish_callback('project_created', {'project': project, 'bg_model': self.bg_computation})
+            self.finish_callback('project_created', project)

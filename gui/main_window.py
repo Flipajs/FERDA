@@ -14,6 +14,7 @@ import core.project
 from methods.bg_model.max_intensity import MaxIntensity
 from gui.loading_widget import LoadingWidget
 from gui.settings.settings_dialog import SettingsDialog
+import pickle
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
@@ -40,7 +41,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setGeometry(100, 100, 700, 400)
 
         self.menu_bar = QtGui.QMenuBar(self)
-        self.toolbar = self.addToolBar('')
+        # self.toolbar = self.addToolBar('')
 
         self.settings_action = QtGui.QAction('&Settings', self.centralWidget())
         self.settings_action.triggered.connect(self.show_settings)
@@ -60,7 +61,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.update()
         self.showMaximized()
-        self.show()
+
 
     def closeEvent(self, event):
         print "exiting"
@@ -89,22 +90,17 @@ class MainWindow(QtGui.QMainWindow):
                 self.statusBar().showMessage("Something went wrong during project loading!")
 
         if state == 'project_created':
-            if isinstance(values['project'], core.project.Project):
-                self.project = values['project']
-                self.bg_model = values['bg_model']
+            if isinstance(values, core.project.Project):
+                self.project = values
                 self.project.save()
                 self.statusBar().showMessage("The project was successfully created.")
                 self.setWindowTitle('FERDA - '+self.project.name)
 
-                self.init_widget = InitWidget(self.widget_control, self.project, self.bg_model)
+                self.init_widget = InitWidget(self.widget_control, self.project)
                 self.central_widget.addWidget(self.init_widget)
                 self.central_widget.setCurrentWidget(self.init_widget)
             else:
                 self.statusBar().showMessage("Something went wrong during project creation!")
-
-        if state == 'initialization_loaded':
-            self.central_widget.addWidget(self.init_widget)
-            self.central_widget.setCurrentWidget(self.init_widget)
 
         if state == 'new_project_back':
             self.central_widget.setCurrentWidget(self.project_widget)
@@ -133,15 +129,13 @@ class MainWindow(QtGui.QMainWindow):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     ex = MainWindow()
+    ex.raise_()
+    ex.activateWindow()
     from core.project import Project
     proj = Project()
     proj.load('/Users/fnaiser/Documents/p15/p15.fproj')
-    # proj.load('/Users/fnaiser/Documents/new_project/test1.fproj')
 
-    bg_model = MaxIntensity(proj.video_paths)
-    bg_model.start()
-
-    ex.widget_control('project_created', {'project': proj, 'bg_model': bg_model})
+    ex.widget_control('project_created', proj)
 
     app.exec_()
     app.deleteLater()

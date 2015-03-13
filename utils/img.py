@@ -46,6 +46,20 @@ def get_pixmap_from_np_bgr(np_image):
 
     return pix_map
 
+def get_roi(pts):
+    """
+    Returns ROI tupple (y, x, height, width) - Region Of Interest for given points
+
+    :param pts:
+    :return:
+    """
+    x = np.min(pts[:, 1])
+    width = np.max(pts[:,1]) - x + 1
+    y = np.min(pts[:,0])
+    height = np.max(pts[:,0]) - y + 1
+
+    return (y, x, height, width)
+
 def avg_circle_area_color(im, y, x, radius):
     """
     computes average color in circle area given by pos and radius

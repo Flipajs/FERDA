@@ -4,6 +4,8 @@ from PyQt4 import QtGui, QtCore
 import default_settings
 import copy
 from gui.settings.parameters_tab import ParametersTab
+from gui.settings.general_tab import GeneralTab
+
 
 class SettingsDialog(QtGui.QDialog):
     """A dialog used for settings of almost everything in the ants correction tool. Note that the QSettings name is
@@ -33,6 +35,8 @@ class SettingsDialog(QtGui.QDialog):
         self.buttonBox.button(QtGui.QDialogButtonBox.RestoreDefaults).clicked.connect(self.restore_defaults)
 
         self.tabWidget = QtGui.QTabWidget()
+        self.general_tab = GeneralTab()
+        self.tabWidget.addTab(self.general_tab, "General")
         self.appearance_tab = AppearanceTab()
         self.tabWidget.addTab(self.appearance_tab, "Appearance")
         self.controls_tab = ControlsTab()
@@ -44,7 +48,7 @@ class SettingsDialog(QtGui.QDialog):
 
         self.parameters_tab = ParametersTab()
         self.tabWidget.addTab(self.parameters_tab, "Parameters")
-        self.tabWidget.setCurrentWidget(self.parameters_tab)
+        # self.tabWidget.setCurrentWidget(self.parameters_tab)
 
         self.layout = QtGui.QVBoxLayout()
         self.layout.setSizeConstraint(QtGui.QLayout.SetNoConstraint)

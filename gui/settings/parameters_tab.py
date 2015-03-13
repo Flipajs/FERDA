@@ -3,7 +3,7 @@ __author__ = 'fnaiser'
 from PyQt4 import QtGui, QtCore
 from gui.settings.default import get_tooltip
 from gui import gui_utils
-from utils.misc import get_settings
+from core.settings import Settings as S_
 
 
 class ParametersTab(QtGui.QWidget):
@@ -16,7 +16,7 @@ class ParametersTab(QtGui.QWidget):
         # COLORMARKS
         self.colormarks_box = QtGui.QGroupBox('Colormarks')
         self.colormarks_box.setCheckable(True)
-        self.colormarks_box.setChecked(get_settings('colormarks_use', bool))
+        self.colormarks_box.setChecked(S_.colormarks.use)
         self.colormarks_box.toggled.connect(lambda : gui_utils.gbox_collapse_expand(self.colormarks_box))
         if not self.colormarks_box.isChecked():
             gui_utils.gbox_collapse_expand(self.colormarks_box)
@@ -44,7 +44,7 @@ class ParametersTab(QtGui.QWidget):
         self.populate()
 
     def populate(self):
-        self.igbr_i_weight.setValue(get_settings('igbr_i_weight', float))
+        self.igbr_i_weight.setValue(S_.colormarks.igbr_i_weight)
 
     def restore_defaults(self):
         # TODO
