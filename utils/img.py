@@ -5,7 +5,69 @@ from PIL import ImageQt
 from PyQt4 import QtGui
 from utils.misc import get_settings
 
-def get_safe_selection(img, y, x, height, width, fill_color=(255,255,255)):
+
+class ROI():
+    def __init__(self, y=0, x=0, height=0, width=0):
+        self.y_ = y
+        self.x_ = x
+        self.y_max_ = y + height
+        self.x_max_ = x + width
+        self.height_ = height
+        self.width_ = width
+
+    def y(self):
+        return self.y_
+
+    def x(self):
+        return self.x_
+
+    def height(self):
+        return self.height_
+
+    def width(self):
+        return self.width_
+
+    def top_left_corner(self):
+        return np.array([self.y_, self.x_])
+
+    def nearest_pt_in_roi(self, y, x):
+        """
+        :return: If the point is inside ROI, pt is returned. Else the nearest point from border is returned
+        """
+
+        y_ = y
+        x_ = x
+        if y < self.y_:
+            y_ = self.y_
+        elif y_ >= self.y_max_:
+            y_ = self.y_max_ - 1
+
+        if x_ < self.x_:
+            x_ = self.x_
+        elif x_ >= self.x_max_:
+            x_ = self.x_max_ -1
+
+        return np.array([y_, x_])
+
+    def is_inside(self, pt):
+        y = pt[0]
+        x = pt[1]
+        if y < self.y_:
+            return False
+
+        if y >= self.y_max_:
+            return False
+
+        if x < self.x_:
+            return False
+
+        if x >= self.x_max_:
+            return False
+
+        return True
+
+
+def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255)):
     y = int(y)
     x = int(x)
     height = int(height)
@@ -34,17 +96,19 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255,255,255)):
 
         y += border
         x += border
-        crop = np.copy(img_[y:y+height, x:x+width, :])
+        crop = np.copy(img_[y:y + height, x:x + width, :])
     else:
-        crop = np.copy(img[y:y+height, x:x+height, :])
+        crop = np.copy(img[y:y + height, x:x + height, :])
 
     return crop
+
 
 def get_pixmap_from_np_bgr(np_image):
     img_q = ImageQt.QImage(np_image.data, np_image.shape[1], np_image.shape[0], np_image.shape[1] * 3, 13)
     pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
 
     return pix_map
+
 
 def get_roi(pts):
     """
@@ -54,11 +118,14 @@ def get_roi(pts):
     :return:
     """
     x = np.min(pts[:, 1])
-    width = np.max(pts[:,1]) - x + 1
-    y = np.min(pts[:,0])
-    height = np.max(pts[:,0]) - y + 1
+    width = np.max(pts[:, 1]) - x + 1
+    y = np.min(pts[:, 0])
+    height = np.max(pts[:, 0]) - y + 1
 
-    return (y, x, height, width)
+    roi = ROI(y, x, height, width)
+
+    return roi
+
 
 def avg_circle_area_color(im, y, x, radius):
     """
@@ -83,87 +150,16 @@ def avg_circle_area_color(im, y, x, radius):
 
     return [c[0, 0], c[0, 1], c[0, 2]]
 
+
 def get_igbr_normalised(im):
     igbr = np.zeros((im.shape[0], im.shape[1], 4), dtype=np.double)
 
-    igbr[:,:,0] = np.sum(im,axis=2) + 1
-    igbr[:, :, 1] = im[:,:,0] / igbr[:,:,0]
-    igbr[:,:,2] = im[:,:,1] / igbr[:,:,0]
-    igbr[:,:,3] = im[:,:,2] / igbr[:,:,0]
+    igbr[:, :, 0] = np.sum(im, axis=2) + 1
+    igbr[:, :, 1] = im[:, :, 0] / igbr[:, :, 0]
+    igbr[:, :, 2] = im[:, :, 1] / igbr[:, :, 0]
+    igbr[:, :, 3] = im[:, :, 2] / igbr[:, :, 0]
 
-    i_norm = (1/get_settings('igbr_i_weight', float)) * get_settings('igbr_i_norm', float)
-    igbr[:,:,0] = igbr[:,:,0] / i_norm
+    i_norm = (1 / get_settings('igbr_i_weight', float)) * get_settings('igbr_i_norm', float)
+    igbr[:, :, 0] = igbr[:, :, 0] / i_norm
 
     return igbr
-
-def get_contour(pts):
-    return -1
-    # y_min, x_min = np.min(pts, axis=0)
-    #
-    # min_c = 100000
-    # max_c = 0
-    # min_r = 100000
-    # max_r = 0
-    #
-    # if data == None:
-    #     min_r = region['rle'][0]['line']
-    #     max_r = region['rle'][-1]['line']
-    #     for r in region['rle']:
-    #         if min_c > r['col1']:
-    #             min_c = r['col1']
-    #         if max_c < r['col2']:
-    #             max_c = r['col2']
-    # else:
-    #     for pt in data:
-    #         if min_c > pt[0]:
-    #             min_c = pt[0]
-    #         if max_c < pt[0]:
-    #             max_c = pt[0]
-    #         if min_r > pt[1]:
-    #             min_r = pt[1]
-    #         if max_r < pt[1]:
-    #             max_r = pt[1]
-    #
-    # rows = max_r - min_r
-    # cols = max_c - min_c
-    #
-    # img = np.zeros((rows+1, cols+1), dtype=np.uint8)
-    #
-    # if data == None:
-    #     for r in region['rle']:
-    #         row = r['line'] - min_r
-    #         col1 = r['col1'] - min_c
-    #         col2 = r['col2'] - min_c
-    #         img[row][col1:col2+1] = 255
-    # else:
-    #     for pt in data:
-    #         row = pt[1] - min_r
-    #         col1 = pt[0] - min_c
-    #         #col2 = r['col2'] - min_c
-    #         img[row][col1] = 255
-    #
-    #
-    # #cv2.imshow("img", img)
-    #
-    # ret,thresh = cv2.threshold(img, 127, 255, 0)
-    # try:
-    #     _, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    # except:
-    #     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    #
-    # cnt = []
-    #
-    # for c in contours:
-    #     for pt in c:
-    #         cnt.append(pt)
-    #
-    # img_cont = np.zeros((rows+1, cols+1), dtype=np.uint8)
-    # pts = []
-    # for p in cnt:
-    #     img_cont[p[0][1]][p[0][0]] = 255
-    #     pts.append([p[0][0] + min_c, p[0][1] + min_r])
-    #
-    # #cv2.imshow("test", img2)
-    # #cv2.waitKey(0)
-    #
-    # return pts, img, img_cont, min_r, min_c

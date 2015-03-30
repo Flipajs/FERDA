@@ -240,6 +240,7 @@ def draw_situation(region, ants, img_shape, fill=False):
 
 
 def plot_situation(region, ants):
+    in_debug = True
     if in_debug:
         plt.close()
     #plt.ion()
@@ -1239,13 +1240,13 @@ def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterati
 
         pack = [ants, region, bounds]
 
-        if debug:
-            afile = open(params.dumpdir+"/split_by_cont/"+str(frame)+"_"+str(ants_ids[0])+".pkl", "wb")
-            pickle.dump(pack, afile)
-            afile.close()
+        # if debug:
+        #     afile = open(params.dumpdir+"/split_by_cont/"+str(frame)+"_"+str(ants_ids[0])+".pkl", "wb")
+        #     pickle.dump(pack, afile)
+        #     afile.close()
     else:
         dir = os.path.expanduser('~/dump/eight')
-        afile = open(dir+"/split_by_cont/209_1.pkl", "rb")
+        afile = open('/Volumes/Seagate Expansion Drive/regions-merged/74.pkl', "rb")
         #afile = open(dir+"/split_by_cont/60_4.pkl", "rb")
         #afile = open(dir+"/split_by_cont/452_0.pkl", "rb")
         #afile = open(dir+"/split_by_cont/727_0.pkl", "rb")
@@ -1284,9 +1285,10 @@ def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterati
 
     if debug and run:
         fig = plt.figure()
+        in_debug = True
         plot_situation(region, ants)
-        plt.savefig(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.png')
-        plt.close(fig)
+        # plt.savefig(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.png')
+        # plt.close(fig)
         #im = draw_situation(region, ants, img_shape)
         #cv2.imshow('test', im)
         #cv2.imwrite(params.dumpdir+'/split_by_cont/'+str(frame)+'_'+str(ants_ids[0])+'_a.jpg', im)
@@ -1314,8 +1316,8 @@ def solve(exp_region, points, ants_ids, exp_ants, params, img_shape, max_iterati
 
     done = False
     for i in range(max_iterations):
-        if not run:
-            plot_situation(region, ants)
+        # if not run:
+        plot_situation(region, ants)
 
             #im = draw_situation(region, ants, img_shape)
             #cv2.imshow('test', im)

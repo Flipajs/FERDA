@@ -1,7 +1,7 @@
 __author__ = 'fnaiser'
 
 import numpy as np
-
+import math
 
 class Region():
     """ This class encapsulates set of points. It computes and stores statistics like moments, contour of region etc.
@@ -15,6 +15,21 @@ class Region():
         self.centroid_ = np.array([-1, -1])
         self.label_ = -1
         self.margin_ = -1
+        self.min_intensity_ = -1
+        self.max_intensity_ = -1
+
+        self.sxx_ = -1
+        self.syy_ = -1
+        self.sxy_ = -1
+
+        self.major_axis_ = -1
+        self.minor_axis_ = -1
+
+        self.a_ = -1
+        self.b_ = -1
+
+        # in radians
+        self.theta_ = -1
 
         if isinstance(data, dict):
             self.from_dict_(data)
@@ -34,6 +49,29 @@ class Region():
         self.pts_ = np.array(pts)
         self.label_ = data['label']
         self.margin_ = data['margin']
+        self.min_intensity_ = data['minI']
+        self.max_intensity_ = data['maxI']
+
+        # image moments
+        self.sxx_ = data['sxx']
+        self.syy_ = data['syy']
+        self.sxy_ = data['sxy']
+
+        self.major_axis_, self.minor_axis_ = compute_region_axis_(self.sxx_, self.syy_, self.sxy_)
+
+        ########## stretching the axes
+        a = self.major_axis_
+        b = self.minor_axis_
+
+        axis_ratio = a / float(b)
+        self.b_ = math.sqrt(len(self.pts_) / (axis_ratio * math.pi))
+        self.a_ = self.b_ * axis_ratio
+        ########
+
+
+
+        self.theta_ = get_orientation(self.sxx_, self.syy_, self.sxy_)
+
 
     def from_pts_(self, data):
         self.pts_ = np.array(data)
@@ -58,6 +96,27 @@ class Region():
 
     def set_centroid(self, centroid):
         self.centroid_ = centroid
+
+
+def compute_region_axis_(sxx, syy, sxy):
+    la = (sxx + syy) / 2
+    lb = math.sqrt(4 * sxy * sxy + (sxx - syy) * (sxx - syy)) / 2
+
+    lambda1 = math.sqrt(la+lb)
+    lambda2 = math.sqrt(la-lb)
+
+    return lambda1, lambda2
+
+
+def get_orientation(sxx, syy, sxy):
+    theta = 0.5*math.atan2(2*sxy, (sxx - syy))
+
+    #it must be reversed around X because in image is top left corner [0, 0] and it is not very intuitive
+    theta = -theta
+    if theta < 0:
+        theta += math.pi
+
+    return theta
 
 
 

@@ -68,13 +68,13 @@ class Params():
         #self.ab_area_step = 0.05
         #self.ab_area_max = 43.0
 
-        afile = open('data/ab_area_hist_blurred.pkl', 'rb')
-        self.ab_area_hist = pickle.load(afile)
-        afile.close()
-
-        afile = open('data/a_area_hist_blurred.pkl', 'rb')
-        self.a_area_hist = pickle.load(afile)
-        afile.close()
+        # afile = open('data/ab_area_hist_blurred.pkl', 'rb')
+        # self.ab_area_hist = pickle.load(afile)
+        # afile.close()
+        #
+        # afile = open('data/a_area_hist_blurred.pkl', 'rb')
+        # self.a_area_hist = pickle.load(afile)
+        # afile.close()
 
         self.a_area_xstart = 0.2
         self.a_area_ystart = 0.2

@@ -41,7 +41,7 @@ def draw_points(img, pts, color=None, offset=(0, 0)):
     return img
 
 
-def draw_points_crop(img, pts, color=None, margin=0.1):
+def draw_points_crop(img, pts, color=None, margin=0.1, square=False):
     """
     returns image with region visualization cropped around region with margin which is specified by percentage of max(height, width)
     :param img:
@@ -54,19 +54,27 @@ def draw_points_crop(img, pts, color=None, margin=0.1):
     if pts.size == 0:
         return img
 
-    (y, x, height, width) = get_roi(pts)
+    roi = get_roi(pts)
+
+    width = roi.width()
+    height = roi.height()
+    if square:
+        a = max(roi.height(), roi.width())
+        height = a
+        width = a
+
     m_ = max(width, height)
     margin = m_ * margin
 
-    y -= margin
-    x -= margin
-    height += margin
-    width += margin
+    y_ = roi.y() - margin
+    x_ = roi.x() - margin
+    height_ = height + 2 * margin
+    width_ = width + 2 * margin
 
     im_ = np.copy(img)
-    im_ = draw_points(img, pts)
+    im_ = draw_points(im_, pts, color)
 
-    crop = get_safe_selection(im_, y, x, height, width)
+    crop = get_safe_selection(im_, y_, x_, height_, width_)
 
     return crop
 
@@ -79,12 +87,12 @@ def get_contour(pts):
     :return:
     """
 
-    (y, x, height, width) = get_roi(pts)
+    roi = get_roi(pts)
 
-    img = np.zeros((height, width), dtype=np.uint8)
+    img = np.zeros((roi.height(), roi.width()), dtype=np.uint8)
 
 
-    img[pts[:,0]-y, pts[:,1]-x] = 255
+    img[pts[:,0]-roi.y(), pts[:,1]-roi.x()] = 255
 
     ret, thresh = cv2.threshold(img, 127, 255, 0)
 
@@ -111,7 +119,7 @@ def get_contour(pts):
             cont = c
 
     if cont.size > 0:
-        cont += np.array([y, x])
+        cont += np.array([roi.y(), roi.x()])
 
     return cont
 

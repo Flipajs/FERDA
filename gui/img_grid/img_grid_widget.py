@@ -6,31 +6,71 @@ class ImgGridWidget(QtGui.QWidget):
     def __init__(self):
         super(ImgGridWidget, self).__init__()
 
-        self.cols = 10
+        self.element_width = 300
+        self.cols = 5
         self.id = 0
 
+
         self.grid = QtGui.QGridLayout()
+        self.grid.setSpacing(1)
+        self.grid.setMargin(0)
+
+        self.grid_widget = QtGui.QWidget()
+        self.grid_widget.setLayout(self.grid)
+
+        self.scroll_ = QtGui.QScrollArea()
+        self.scroll_.setWidgetResizable(True)
+        self.scroll_.setWidget(self.grid_widget)
+        self.set_width_()
+
         self.items = []
-        cols = 10
-        for i in range(100):
-            self.items.append(QtGui.QLabel('test' + str(i)))
-            row = i/cols
-            col = i%cols
-            self.grid.addWidget(self.items[i], row, col)
 
+        self.setLayout(QtGui.QVBoxLayout())
+        self.layout().setSpacing(0)
+        self.layout().setMargin(0)
+        self.layout().addWidget(self.scroll_)
 
-        self.setLayout(self.grid)
 
     def reshape(self, cols):
-        self.grid2 = QtGui.QGridLayout()
-        for i in range(self.grid.count()):
+        self.cols = cols
+
+        grid2 = QtGui.QGridLayout()
+
+        for i in range(len(self.items)):
             row = i/cols
             col = i%cols
 
-            self.grid2.addWidget(self.items[i], row, col)
+            grid2.addWidget(self.items[i], row, col)
 
-        QtGui.QWidget().setLayout(self.layout())
-        self.setLayout(self.grid2)
+        QtGui.QWidget().setLayout(self.grid)
+        self.grid_widget.setLayout(grid2)
+        self.grid = grid2
+        self.grid.setSpacing(1)
+        self.grid.setMargin(0)
+
+        self.set_width_()
 
     def add_item(self, item):
         self.items.append(item)
+
+        row = self.id/self.cols
+        col = self.id%self.cols
+
+        self.grid.addWidget(self.items[self.id], row, col)
+
+        self.set_width_()
+
+        self.id += 1
+
+    def set_width_(self):
+        vscroll_shint = self.scroll_.verticalScrollBar().sizeHint()
+        self.scroll_.setFixedWidth(self.cols*self.element_width + (self.cols + 1) + vscroll_shint.width())
+
+    def get_selected(self):
+        ids = []
+
+        for i in range(len(self.items)):
+            if self.items[i].selected:
+                ids.append(self.items[i].id)
+
+        return ids

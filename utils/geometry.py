@@ -3,7 +3,6 @@ import numpy as np
 import math
 import sys
 
-
 def rotate(pts, theta_radians, center=[0, 0], method='', roi=None):
     """Rotates given list of points which is list of lists [x1, x2]
     ([[1, 1], [2, 3], [10, 1]).
@@ -181,30 +180,3 @@ def roi_size(roi):
     rows = roi[1][1] - roi[0][1] + 1
 
     return cols, rows
-
-
-def check_roi(pt, y_min, x_min, y_max, x_max):
-    """
-    Checks whether the point is inside region of interest defined by 2 points [y_min, x_min] and [y_max, x_max]
-
-    :param pt: point to be checked
-    :param y_min:
-    :param x_min:
-    :param y_max:
-    :param x_max:
-    :return: If the point is inside, pt is returned. Else the nearest point from border is returned
-    """
-    y_, x_ = pt
-    if y_ < y_min:
-        y_ = y_min
-
-    if x_ < x_min:
-        x_ = x_min
-
-    if y_ >= y_max:
-        y_ = y_max - 1
-
-    if x_ >= x_max:
-        x_ = x_max - 1
-
-    return np.array([y_, x_])

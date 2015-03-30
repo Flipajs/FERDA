@@ -1,5 +1,7 @@
 __author__ = 'fnaiser'
 
+import numpy as np
+
 male_names_ = ["Arnold", "Bob", "Cenek", "Dusan", "Emil", "Ferda", "Gustav", "Hugo", "Igor", "Julius", "Kamil",
                  "Ludek", "Milos", "Narcis", "Oliver", "Prokop", "Quido", "Rene", "Servac", "Tadeas", "1", "2",
                  "3", "4", "5", "6", "7", "8", "9", "10"]
@@ -21,11 +23,20 @@ class Animal():
         else:
             self.color_ = colors_[id]
 
+
+        self.init_pos_center_ = None
+        self.init_pos_head_ = None
+
         self.colormark_ = None
 
     def set_colormark(self, colormark):
         self.colormark_ = colormark
+
         self.color_ = colormark.color_
 
     def reset_id(self, id):
         self.id = id
+
+    def set_init_pos(self, center, head):
+        self.init_pos_center_ = np.array([center.y(), center.x()])
+        self.init_pos_head_ = np.array([head.y(), head.x()])

@@ -47,6 +47,7 @@ class InitWidget(QtGui.QWidget):
         if state == 'init_where_finished':
             with open(self.project.working_directory+'/bg_model.pkl', 'wb') as f:
                 pickle.dump(self.project.bg_model, f)
+                print "SAVING BG_MODEL"
 
             with open(self.project.working_directory+'/arena_model.pkl', 'wb') as f:
                 pickle.dump(self.project.arena_model, f)
@@ -64,6 +65,7 @@ class InitWidget(QtGui.QWidget):
 
             with open(self.project.working_directory+'/animals.pkl', 'wb') as f:
                 pickle.dump(self.project.animals, f)
-                self.tabs.setTabEnabled(2, True)
-                self.tabs.setCurrentIndex(2)
-                self.tabs.setTabEnabled(1, False)
+
+            self.tabs.setTabEnabled(2, True)
+            self.tabs.setCurrentIndex(2)
+            self.tabs.setTabEnabled(1, False)

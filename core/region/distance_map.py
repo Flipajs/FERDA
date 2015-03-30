@@ -6,8 +6,9 @@ import numpy as np
 from scipy import ndimage
 import cv2
 
-from utils.geometry import check_roi
 from core.region.region import Region
+
+from utils.drawing.points import get_contour, get_roi
 
 
 class DistanceMap():
@@ -15,12 +16,23 @@ class DistanceMap():
     This class encapsulates distance map image, which is used to speed up search for nearest point for given coordinates.
     """
 
-    def __init__(self, pts):
-        [self.y_min, self.x_min] = np.min(pts, axis=0)
-        [self.y_max, self.x_max] = np.max(pts, axis=0)
+    def __init__(self, pts, only_cont=False):
+        pts = np.asarray(pts, dtype=np.int32)
 
-        self.contour_img_ = np.ones((self.y_max - self.y_min + 1, self.x_max - self.x_min + 1), dtype=np.bool)
-        self.contour_img_[pts[:, 0] - self.y_min, pts[:, 1] - self.x_min] = False
+        self.roi = get_roi(pts)
+
+        if not only_cont:
+            self.pt_img_ = np.zeros((self.roi.height(), self.roi.width()), dtype=np.bool)
+            self.pt_img_[pts[:,0] - self.roi.y(), pts[:,1] - self.roi.x()] = True
+
+        self.contour_img_ = np.ones((self.roi.height(), self.roi.width()), dtype=np.bool)
+
+        if only_cont:
+            self.cont_pts_ = pts
+        else:
+            self.cont_pts_ = get_contour(pts)
+
+        self.contour_img_[self.cont_pts_[:, 0] - self.roi.y(), self.cont_pts_[:, 1] - self.roi.x()] = False
 
         self.d_map, self.d_map_labels = ndimage.distance_transform_edt(self.contour_img_, return_indices=True)
 
@@ -32,9 +44,10 @@ class DistanceMap():
         :return: distance, [y, x]
         """
 
-        offset = np.array([self.y_min, self.x_min])
+        offset = self.roi.top_left_corner()
         pt = np.array(pt)
-        pt_ = check_roi(pt, self.y_min, self.x_min, self.y_max, self.x_max)
+        pt_ = self.roi.nearest_pt_in_roi(pt[0], pt[1])
+
         y_, x_ = pt_ - offset
         nearest_pt = self.d_map_labels[:, y_, x_]
         dist = self.d_map[y_, x_]
@@ -42,7 +55,7 @@ class DistanceMap():
         # If the point is outside ROI - the distance to distance map border will be added.
         dist += np.linalg.norm(pt - pt_)
 
-        return dist, nearest_pt + offset
+        return nearest_pt + offset, dist
 
     def get_contour_img(self):
         """
@@ -52,9 +65,19 @@ class DistanceMap():
 
         return self.contour_img_
 
+    def cont_pts(self):
+        return self.cont_pts_
+
+    def is_inside_object(self, pt):
+        if self.roi.is_inside(pt):
+            if self.pt_img_[pt[0] - self.roi.y(), pt[1] - self.roi.x()]:
+                return True
+
+        return False
+
 
 if __name__ == '__main__':
-    with open('/Volumes/Seagate Expansion Drive/regions-merged/472.pkl', 'rb') as f:
+    with open('/Volumes/Seagate Expansion Drive/regions-merged/74.pkl', 'rb') as f:
         data = pickle.load(f)
 
     reg = Region(data['region'])
@@ -65,7 +88,7 @@ if __name__ == '__main__':
     dm_im = dm_region.d_map / np.max(dm_im)
 
     dm_im = np.asarray(dm_im*255, dtype=np.uint8)
-    print dm_region.x_min, dm_region.y_min, dm_region.x_max, dm_region.y_max
+    # print dm_region.x_min, dm_region.y_min, dm_region.x_max, dm_region.y_max
 
     print [490, 205], dm_region.get_nearest_point([490, 205])
     print [480, 200], dm_region.get_nearest_point([480, 200])

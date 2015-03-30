@@ -6,12 +6,30 @@ from utils.misc import get_settings
 import utils.img
 from gui.settings.default import get_tooltip
 
+
 class IdButton(QtGui.QPushButton):
     def __init__(self, text, id):
         super(IdButton, self).__init__()
         self.id = id
         self.setText(text)
 
+
+class SelectableQLabel(QtGui.QLabel):
+    def __init__(self, parent=None, selected_callback=None, id=-1):
+        QtGui.QLabel.__init__(self, parent)
+        self.id = id
+        self.selected_callback = selected_callback
+        self.selected = False
+
+    def mouseReleaseEvent(self, ev):
+        if self.selected:
+            self.setStyleSheet("border: 0px;")
+            self.selected = False
+        else:
+            self.setStyleSheet("border: 2px dashed black;")
+            self.selected = True
+            if self.selected_callback:
+                self.selected_callback(self, self.id)
 
 def file_names_dialog(window, text='Select files', path='', filter_=''):
     file_names = QtGui.QFileDialog.getOpenFileNames(window, text, path, filter=filter_)

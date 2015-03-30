@@ -56,3 +56,12 @@ def margin_filter(regions, groups, min_margin=0):
             ids.append(region_id)
 
     return ids
+
+
+def area_filter(regions, r_ids, min_area):
+    ids = []
+    for i in r_ids:
+        if regions[i].area() > min_area:
+            ids.append(i)
+
+    return ids

@@ -1,8 +1,8 @@
 __author__ = 'filip@naiser.cz'
 
 from PyQt4 import QtGui, QtCore
+from PIL import ImageQt
 
-import ImageQt
 import math
 
 

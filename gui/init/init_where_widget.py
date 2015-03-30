@@ -152,5 +152,5 @@ class InitWhereWidget(QtGui.QWidget):
         #TODO save values...
         self.bg_fix_widget.hide()
         self.graphics_view.show()
-        self.finish_callback('init_where_finished')
         self.project.bg_model.update(np.copy(self.bg_fix_widget.image))
+        self.finish_callback('init_where_finished')

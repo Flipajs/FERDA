@@ -15,6 +15,9 @@ from methods.bg_model.max_intensity import MaxIntensity
 from gui.loading_widget import LoadingWidget
 from gui.settings.settings_dialog import SettingsDialog
 import pickle
+import cv2
+from utils.video_manager import get_auto_video_manager
+
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
@@ -133,9 +136,12 @@ if __name__ == "__main__":
     ex.activateWindow()
     from core.project import Project
     proj = Project()
-    proj.load('/Users/fnaiser/Documents/p15/p15.fproj')
+    proj.load('/Users/fnaiser/Documents/project2/project2.fproj')
 
     ex.widget_control('project_created', proj)
+
+    vid = get_auto_video_manager(proj.video_paths)
+    im = vid.move2_next()
 
     app.exec_()
     app.deleteLater()

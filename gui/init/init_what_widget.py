@@ -23,7 +23,8 @@ class InitWhatWidget(QtGui.QWidget):
         super(InitWhatWidget, self).__init__()
 
         self.project = project
-        self.project.animals = []
+        if not self.project.animals:
+            self.project.animals = []
 
         self.finish_callback = finish_callback
         self.video = video_manager.get_auto_video_manager(project.video_paths)
@@ -154,6 +155,7 @@ class InitWhatWidget(QtGui.QWidget):
         print id_
 
         animal = self.project.animals[id_]
+        animal.set_init_pos(self.scene_marks[id_]['center'].pos(), self.scene_marks[id_]['radius'].pos())
 
         center = self.scene_marks[id_]['center'].pos()
 
