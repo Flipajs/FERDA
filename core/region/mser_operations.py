@@ -1,5 +1,6 @@
 __author__ = 'fnaiser'
 
+import numpy as np
 
 def get_region_groups(regions):
     """
@@ -63,5 +64,44 @@ def area_filter(regions, r_ids, min_area):
     for i in r_ids:
         if regions[i].area() > min_area:
             ids.append(i)
+
+    return ids
+
+
+def is_child_of(child, parent):
+    if child.area() > parent.area():
+        return False
+
+    ch_r = child.roi()
+    p_r = parent.roi()
+    if p_r.is_inside(ch_r.top_left_corner()) and p_r.is_inside(ch_r.bottom_right_corner()):
+        img = np.zeros((p_r.height(), p_r.width()), dtype=np.bool)
+        offset = np.array([p_r.y(), p_r.x()])
+        p_pts = parent.pts() - offset
+        img[p_pts[:,0], p_pts[:,1]] = True
+
+        for p in child.pts() - offset:
+            if not img[p[0], p[1]]:
+                return False
+
+        return True
+    else:
+        return False
+
+
+def children_filter(regions, indexes):
+    ids = []
+    for r_id in indexes:
+        is_child = False
+        for parent_id in indexes:
+            if r_id == parent_id:
+                continue
+
+            if is_child_of(regions[r_id], regions[parent_id]):
+                is_child = True
+                break
+
+        if not is_child:
+            ids.append(r_id)
 
     return ids

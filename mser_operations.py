@@ -323,7 +323,7 @@ def is_child_of(child, parent):
         return False    # full intersection is impossible
 
 
-def filter_out_children(regions, indexes):
+def filter_out_children_of_best_margin(regions, indexes):
     ids = []
     for r_id in indexes:
         is_child = False

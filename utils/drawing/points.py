@@ -25,7 +25,7 @@ def process_color(c):
     return c
 
 
-def draw_points(img, pts, color=None, offset=(0, 0)):
+def draw_points(img, pts, color=None):
     if pts.size == 0:
         return img
 
@@ -36,7 +36,10 @@ def draw_points(img, pts, color=None, offset=(0, 0)):
     alpha = color[3]
     c = color[:3]
 
-    img[offset[0] + pts[:, 0], offset[1] + pts[:, 1], :] = alpha * c + (1 - alpha) * img[offset[0] + pts[:, 0], offset[1] + pts[:, 1], :]
+    valid_ids1 = np.logical_and(pts[:, 0] > 0, pts[:,0] < img.shape[0])
+    valid_ids2 = np.logical_and(pts[:, 1] > 0, pts[:,1] < img.shape[1])
+    ids = np.logical_and(valid_ids1, valid_ids2)
+    img[pts[ids, 0], pts[ids, 1], :] = alpha * c + (1 - alpha) * img[pts[ids, 0], pts[ids, 1], :]
 
     return img
 

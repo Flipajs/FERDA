@@ -31,8 +31,9 @@ class ImgGridWidget(QtGui.QWidget):
         self.layout().addWidget(self.scroll_)
 
 
-    def reshape(self, cols):
+    def reshape(self, cols, element_width=100):
         self.cols = cols
+        self.element_width = element_width
 
         grid2 = QtGui.QGridLayout()
 

@@ -2,7 +2,7 @@ __author__ = 'fnaiser'
 
 from core.region.distance_map import DistanceMap
 import numpy as np
-from utils.drawing.points import  draw_points
+from utils.drawing.points import draw_points
 from utils.video_manager import get_auto_video_manager
 import cv2
 import pickle

@@ -30,6 +30,9 @@ class ROI():
     def top_left_corner(self):
         return np.array([self.y_, self.x_])
 
+    def bottom_right_corner(self):
+        return np.array([self.y_max_, self.x_max_])
+
     def nearest_pt_in_roi(self, y, x):
         """
         :return: If the point is inside ROI, pt is returned. Else the nearest point from border is returned
@@ -55,13 +58,13 @@ class ROI():
         if y < self.y_:
             return False
 
-        if y >= self.y_max_:
+        if y > self.y_max_:
             return False
 
         if x < self.x_:
             return False
 
-        if x >= self.x_max_:
+        if x > self.x_max_:
             return False
 
         return True

@@ -14,7 +14,7 @@ import sys
 from PyQt4 import QtGui, QtCore
 from gui.img_controls.utils import cvimg2qtpixmap
 import numpy as np
-from core.region.mser_operations import get_region_groups, margin_filter, area_filter
+from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from matplotlib.mlab import normpdf
 import math
 from copy import copy
@@ -169,6 +169,7 @@ def select_msers_cached(frame):
     ids = margin_filter(msers, groups)
 
     ids = area_filter(msers, ids, MIN_AREA)
+    ids = children_filter(msers, ids)
     ids = sort_by_distance_from_origin(msers, ids)
 
     return [msers[i] for i in ids]
@@ -201,34 +202,39 @@ def add_edges(region, region_y, region_x, prev_msers, scene, G):
                 line_ = QtGui.QGraphicsLineItem(from_x, from_y, to_x, to_y)
                 line_.setPen(pen)
                 scene.addItem(line_)
+                G.add_edge(region, r)
 
-                x_ = (region.area() - r.area()) / float(AVG_AREA)
-                c_ = int(round(x_))
-                d_ = x_ - c_
+                if True:
+                    x_ = (region.area() - r.area()) / float(AVG_AREA)
+                    c_ = int(round(x_))
+                    d_ = x_ - c_
 
-                std_ = 2 / 3.
-                n_ = normpdf(0, 0, std_)
-                p_ = normpdf(d_, 0, std_) / n_
+                    std_ = 2 / 3.
+                    n_ = normpdf(0, 0, std_)
+                    p_ = normpdf(d_, 0, std_) / n_
 
-                G.add_edge(region, r, weight=p_, c=c_)
+                    G.add_edge(region, r, weight=p_, c=c_)
 
-                t_ = QtGui.QGraphicsTextItem('a = ' + str(r.area()) + ' c = ' + str(c_) + ' p = ' + str(p_)[0:5] + ' d = ' + str(d_))
-                r_ = line_.boundingRect()
+                    t_ = QtGui.QGraphicsTextItem('a = ' + str(r.area()) + ' p = ' + str(final_area_score(1, region)))
+                    r_ = line_.boundingRect()
 
-                text_pos = 0.7
-                text_pos_h_ = 0.7
-                if from_y > to_y:
-                    text_pos_h_ = 0.3
+                    text_pos = 0.7
+                    text_pos_h_ = 0.7
+                    if from_y > to_y:
+                        text_pos_h_ = 0.3
 
-                t_.setPos(r_.x() + r_.width() * text_pos, r_.y() + r_.height() * text_pos_h_)
-                scene.addItem(t_)
+                    t_.setPos(r_.x() + r_.width() * text_pos, r_.y() + r_.height() * text_pos_h_)
+                    scene.addItem(t_)
 
-                if r in edges_:
-                    edges_[r].append([line_, region])
-                    texts_[r].append(t_)
+                    if r in edges_:
+                        edges_[r].append([line_, region])
+                    else:
+                        edges_[r] = [[line_, region]]
                 else:
-                    edges_[r] = [[line_, region]]
-                    texts_[r] = [t_]
+                    if r in edges_:
+                        edges_[r].append([line_, region])
+                    else:
+                        edges_[r] = [[line_, region]]
 
             y += 1
 
@@ -339,11 +345,13 @@ class Gt():
 
         scores = []
         for c in configuraitons:
-            scores.append(np.sum(np.array(c) * r_scores))
+            c = np.array(c)
+            ids = np.nonzero(c)
+            scores.append(np.prod(r_scores[ids] ** c[ids]))
 
         return scores
 
-    def final_area_score(self, classes_num, r):
+    def final_area_score(self, classes_num, reg):
         # TOOD: replace
         class_avg_area = [250]
 
@@ -358,9 +366,14 @@ class Gt():
         if supposed_area == 0:
             print "supposed_area = 0", classes_num
 
-        x = (r.area() - supposed_area) / float(supposed_area)
+        x = (reg.area() - supposed_area) / float(supposed_area)
         # TODO : set std based on some experiment...
-        std = 0.5 / 3
+
+        # smaller
+        if x < 0:
+            std = 0.1 / 3
+        else:
+            std = 0.7 / 3
 
         return normpdf(x, 0, std) / normpdf(0, 0, std)
 
@@ -394,7 +407,7 @@ class Gt():
         return combinations
 
     def get_hypotheses_scores(self, hyps, r1_regions, available_regions, configurations, configuration_position_scores):
-        scores = np.zeros(len(hyps))
+        scores = np.ones(len(hyps))
         i = 0
 
         r1_regions_len = len(r1_regions)
@@ -406,26 +419,35 @@ class Gt():
 
                 # print i, config_id, r1, len(configuration_position_scores[r1])
 
+                scores[i] *= configuration_position_scores[r1][config_id]
+
                 k = 0
+                # everything except UNDEFINED
 
-                scores[i] += configuration_position_scores[r1][config_id]
+                if USE_UNDEFINED:
+                    for n in configurations[r1][config_id][:-1]:
+                        r2 = available_regions[r1][k]
+                        # scores[i] += configuration_position_scores[r1][k]
 
-                for n in configurations[r1][config_id]:
-                    r2 = available_regions[r1][k]
-                    # scores[i] += configuration_position_scores[r1][k]
+                        assignments[r2] = assignments.get(r2, 0) + n
+                        k += 1
+                else:
+                    for n in configurations[r1][config_id]:
+                        r2 = available_regions[r1][k]
+                        # scores[i] += configuration_position_scores[r1][k]
 
-                    assignments[r2] = assignments.get(r2, 0) + n
-                    k += 0
+                        assignments[r2] = assignments.get(r2, 0) + n
+                        k += 1
 
-            for r in self.R2:
-                if r in assignments and assignments[r] > 0:
-                    scores[i] += self.final_area_score(assignments[r], r) * assignments[r]
+            for reg in assignments:
+                if assignments[reg] > 0:
+                    scores[i] *= self.final_area_score(assignments[reg], reg) ** assignments[reg]
 
             i += 1
 
         return scores
 
-    def get_hypotheses(self, H):
+    def get_hypotheses(self, H, frame=0):
         """
         H - hypothesis, {region: [identities], ... }
         :param H:
@@ -437,12 +459,10 @@ class Gt():
         configurations = {}
         available_regions = {}
         position_scores = {}
-        num_of_hypotheses = 1
 
         r1_regions = []
 
         for r, ids in H.iteritems():
-            # neighs = nx.neighbors(G, r)
             test = G[r]
             available_regions[r] = []
             for r_, e_ in test.iteritems():
@@ -452,9 +472,6 @@ class Gt():
                 except ValueError:
                     pass
 
-            # available_regions[r] = neighs
-            # print r, available_regions
-
             configurations[r] = []
 
             r1_regions.append(r)
@@ -463,8 +480,6 @@ class Gt():
                 self.node_configurations(len(ids), available_regions[r], 0, [0 for i in range(len(available_regions[r]) + 1)], configurations[r])
             else:
                 self.node_configurations(len(ids), available_regions[r], 0, [0 for i in range(len(available_regions[r]))], configurations[r])
-
-            num_of_hypotheses *= len(configurations[r])
 
             position_scores[r] = self.configurations_position_scores(r, configurations[r], available_regions[r])
 
@@ -478,6 +493,8 @@ class Gt():
 
 
         ids_ = np.argsort(-scores)
+
+        self.get_hypotheses_scores([combinations[ids_[0]]], r1_regions, available_regions, configurations, position_scores)
 
         self.combinations = combinations
         self.r1_regions = r1_regions
@@ -510,12 +527,13 @@ class Gt():
 
         max_ = len(scores)
         if max_ < 11:
-            r_ = range(max_-1)
+            r_ = range(max_)
         else:
             r_ = range(5)
             r_ += range(len(combinations)-5, len(combinations))
 
         vbox = QtGui.QVBoxLayout()
+        vbox.addWidget(QtGui.QLabel(str(frame)))
         for j in r_:
             id = ids_[j]
 
@@ -546,6 +564,7 @@ class Gt():
             for e, r2 in edges_[r1]:
                 for j in range(len(self.configurations[r1][c])):
                     if self.configurations[r1][c][j] > 0:
+                        pen.setWidth(3 * self.configurations[r1][c][j])
                         if j < len(self.available_regions[r1]) and r2 == self.available_regions[r1][j]:
 
 
@@ -553,9 +572,42 @@ class Gt():
 
             i += 1
 
+def final_area_score(classes_num, reg):
+    # TOOD: replace
+    class_avg_area = [250]
+
+    supposed_area = 0
+
+    if isinstance(classes_num, list):
+        for i in classes_num:
+            supposed_area = class_avg_area[i] * classes_num
+    else:
+        supposed_area = class_avg_area[0] * classes_num
+
+    if supposed_area == 0:
+        print "supposed_area = 0", classes_num
+
+    x = (reg.area() - supposed_area) / float(supposed_area)
+    # TODO : set std based on some experiment...
+
+    # smaller
+    if x < 0:
+        std = 0.1 / 3
+    else:
+        std = 0.7 / 3
+
+    return normpdf(x, 0, std) / normpdf(0, 0, std)
+
 if __name__ == '__main__':
-    vid_path = '/Users/fnaiser/Documents/chunks/eight.m4v'
-    working_dir = '/Users/fnaiser/Documents/graphs'
+    # vid_path = '/Users/fnaiser/Documents/chunks/eight.m4v'
+    # working_dir = '/Users/fnaiser/Documents/graphs'
+    vid_path = '/Users/fnaiser/Documents/chunks/NoPlasterNoLid800.m4v'
+    working_dir = '/Users/fnaiser/Documents/graphs2'
+    AVG_AREA = 150
+    MAX_SPEED = 50
+    n_frames = 3
+
+
     vid = get_auto_video_manager(vid_path)
 
     selected = []
@@ -601,14 +653,15 @@ if __name__ == '__main__':
     Rs = []
     H0 = [2, 3, 4, 6, 7, 9, 11, 13]
 
-    for frame in range(1, 40):
+
+    for frame in range(1, n_frames+2):
         im = vid.move2_next()
 
         msers = select_msers_cached(frame + frame_offset)
 
         y = 0
         h_, w_, _ = im.shape
-        if h_ < w_:
+        if h_ <= w_:
             h_ = (width + x_margin) * (h_ / float(w_))
         w_ = width + x_margin
         top_offset = h_ + 40
@@ -623,12 +676,14 @@ if __name__ == '__main__':
 
         Rs.append(msers)
 
+        im_ = np.copy(im)
         for r in msers:
             node_name = str(frame) + '_' + str(y)
             G.add_node(r)
 
-            im_crop = draw_points(np.copy(im), r.pts())
-            im_crop = draw_points_crop(np.copy(im_crop), get_contour(r.pts()), color=(0, 0, 255, 0.7), square=True)
+
+            # im_crop = draw_points(im_, r.pts())
+            im_crop = draw_points_crop(im_, get_contour(r.pts()), color=(0, 0, 255, 0.7), square=True)
 
             im_crop = np.asarray(resize(im_crop, (height, width)) * 255, dtype=np.uint8)
             G.node[r]['image'] = im_crop
@@ -645,16 +700,21 @@ if __name__ == '__main__':
 
         prev_msers = msers
 
-    gt = Gt(Rs[0], Rs[1], G)
-
-    R1 = Rs[0]
-    H = {R1[2]: [0], R1[3]: [1], R1[4]: [2], R1[6]: [3], R1[7]: [4], R1[9]: [5], R1[11]: [6], R1[13]: [7]}
-    hyps = gt.get_hypotheses(H)
-
-    for i in range(35):
-        print i
-        gt = Gt(Rs[1+i], Rs[2+i], G)
-        hyps = gt.get_hypotheses(hyps)
+    # gt = Gt(Rs[0], Rs[1], G)
+    #
+    # R1 = Rs[0]
+    # # H = {R1[2]: [0], R1[3]: [1], R1[4]: [2], R1[6]: [3], R1[7]: [4], R1[9]: [5], R1[11]: [6], R1[13]: [7]}
+    # # H = {R1[1]: [0], R1[2]: [1], R1[3]: [2], R1[5]: [3], R1[6]: [4], R1[8]: [5], R1[10]: [6], R1[11]: [7]}
+    #
+    #
+    # H = {R1[6]: [0], R1[8]: [1], R1[11]: [2], R1[13]: [3], R1[17]: [4], R1[21]: [5], R1[23]: [6], R1[24]: [7], R1[25]: [8], R1[28]: [9], R1[34]: [10], R1[37]: [11], R1[39]: [12], R1[40]: [13], R1[41]: [14]}
+    #
+    # hyps = gt.get_hypotheses(H, frame_offset)
+    #
+    # for i in range(1, n_frames):
+    #     print i
+    #     gt = Gt(Rs[i], Rs[i+1], G)
+    #     hyps = gt.get_hypotheses(hyps, frame_offset+i)
 
 
     app.exec_()
