@@ -47,6 +47,13 @@ def get_intersection(pts1, pts2):
 
     return (len(s1) - inter_len + len(s2) - inter_len) / float(len(s1))
 
+
+def similarity_loss(r1, r2):
+    pts2 = transform_pts(r1, r2)
+    s = get_intersection(r1.pts(), pts2)
+
+    return s
+
 if __name__ == '__main__':
     # chunks = load_chunks()
     vid = get_auto_video_manager(WORKING_DIR+'/eight.m4v')

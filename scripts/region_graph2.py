@@ -23,6 +23,9 @@ import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
 import pickle
 from core.animal import colors_
+from scripts.similarity_test import similarity_loss
+from methods.bg_model.max_intensity import MaxIntensity
+
 
 # max speed of #px / frame
 MAX_SPEED = 200
@@ -36,12 +39,20 @@ USE_UNDEFINED = False
 S_THRESH = 0.8
 
 
+CACHE_IMGS = False
+
+
+SIMILARITY = 'sim'
+STRONG = 's'
+
+NODE_SIZE = 50
 vid_path = '/Users/fnaiser/Documents/chunks/eight.m4v'
 working_dir = '/Users/fnaiser/Documents/graphs'
 # vid_path = '/Users/fnaiser/Documents/chunks/NoPlasterNoLid800.m4v'
 # working_dir = '/Users/fnaiser/Documents/graphs2'
 # AVG_AREA = 150
-# MAX_SPEED = 120
+# MAX_SPEED = 60
+# NODE_SIZE = 30
 n_frames = 10
 
 
@@ -259,22 +270,35 @@ def remove_out_edges(G, n):
     for n_ in to_remove:
         remove_in_edges(G, n_)
 
+def num_strong_in_edges(G, n):
+    num = 0
+    last_n = None
+    for n_, _, d in G.in_edges(n, data=True):
+        if d['type'] == STRONG or SIMILARITY:
+            num += 1
+            last_n = n_
+
+    return num, last_n
+
+def num_strong_out_edges(G, n):
+    num = 0
+    last_n = None
+
+    for _, n_, d in G.out_edges(n, data=True):
+        if d['type'] == STRONG or SIMILARITY:
+            num += 1
+            last_n = n_
+
+    return num, last_n
+
 def simplify_g(G):
-    print nx.number_of_nodes(G)
-    print nx.number_of_edges(G)
-
     for n in G.nodes():
-        if G.out_degree(n) > 1:
-            remove_out_edges(G, n)
-        elif G.in_degree(n) > 1:
-            remove_in_edges(G, n)
+        in_num, in_n = num_strong_in_edges(G, n)
+        out_num, out_n = num_strong_out_edges(G, n)
 
-    for n in G.nodes():
-        if G.out_degree(n) == 1 and G.in_degree(n) == 1:
-            n_in = G.in_edges([n])[0][0]
-            n_out = G.out_edges([n])[0][1]
+        if out_num == 1 and in_num == 1:
             G.remove_node(n)
-            G.add_edge(n_in, n_out)
+            G.add_edge(in_n, out_n, type='s')
 
 def get_chunk(G, n, n2=None):
     ch = []
@@ -391,18 +415,253 @@ class VisualizeGraph():
 
             emphasize_edges(reg, select)
 
+
+class NodeGraphVisualizer():
+    def __init__(self, G, imgs, regions):
+        self.G = G
+        self.imgs = imgs
+        self.regions = regions
+        self.vid = get_auto_video_manager(vid_path)
+
+        self.w = QtGui.QWidget()
+        self.v = QtGui.QGraphicsView()
+        self.w.setLayout(QtGui.QVBoxLayout())
+        self.w.layout().addWidget(self.v)
+
+        self.scene = QtGui.QGraphicsScene()
+        self.v.setScene(self.scene)
+
+        self.used_rows = {}
+        self.positions = {}
+        self.node_displayed = {}
+        self.node_size = NODE_SIZE
+        self.y_step = self.node_size + 2
+        self.x_step = self.node_size + 150
+
+        self.edge_pen_dist = QtGui.QPen(QtCore.Qt.SolidLine)
+        self.edge_pen_dist.setColor(QtGui.QColor(0, 0, 0, 0x38))
+        self.edge_pen_dist.setWidth(1)
+
+        self.edge_pen_similarity = QtGui.QPen(QtCore.Qt.SolidLine)
+        self.edge_pen_similarity.setColor(QtGui.QColor(0, 0, 255, 0x68))
+        self.edge_pen_similarity.setWidth(2)
+
+        self.edge_pen_strong = QtGui.QPen(QtCore.Qt.SolidLine)
+        self.edge_pen_strong.setColor(QtGui.QColor(0, 180, 0, 0x68))
+        self.edge_pen_strong.setWidth(2)
+
+        self.r_color = (0, 255, 0, 0.35)
+        self.availability = np.zeros(len(regions))
+
+    def get_nearest_free_slot(self, t, pos):
+        if t in self.used_rows:
+            step = 0
+            while True:
+                test_pos = pos-step
+                if test_pos > -1 and test_pos not in self.used_rows[t]:
+                    self.used_rows[t][test_pos] = True
+                    return test_pos
+                if pos+step not in self.used_rows[t]:
+                    self.used_rows[t][pos+step] = True
+                    return pos+step
+
+                step += 1
+        else:
+            self.used_rows[t] = {pos: True}
+            return pos
+
+    def show_node_with_edges(self, n, prev_pos=0, with_descendants=True, im=None):
+        if n in self.node_displayed or n not in self.G.node:
+            return
+
+        self.node_displayed[n] = True
+
+        t = self.G.node[n]['t']
+
+        if CACHE_IMGS:
+            im = imgs[t].copy()
+        elif im is None:
+            im = vid.seek_frame(t)
+
+
+        vis = draw_points_crop(im, n.pts(), square=True, color=self.r_color)
+        if vis.shape[0] > self.node_size or vis.shape[1] > self.node_size:
+            vis = np.asarray(resize(vis, (self.node_size, self.node_size)) * 255, dtype=np.uint8)
+        else:
+            z = np.zeros((self.node_size, self.node_size, 3), dtype=np.uint8)
+            z[0:vis.shape[0], 0:vis.shape[1]] = vis
+            vis = z
+
+        self.G.node[n]['img'] = vis
+
+
+        if n in self.positions:
+            pos = self.positions[n]
+        else:
+            pos = self.get_nearest_free_slot(t, prev_pos)
+            self.positions[n] = pos
+
+        it = self.scene.addPixmap(cvimg2qtpixmap(vis))
+        it.setPos(self.x_step * t, self.y_step * pos)
+
+        if with_descendants:
+            edges = self.G.out_edges(n)
+            for e in edges:
+                self.show_node_with_edges(e[1], prev_pos=pos, with_descendants=with_descendants)
+                self.draw_edge(n, e[1])
+
+
+    def draw_edge(self, n1, n2):
+        t1 = self.G.node[n1]['t']
+        t2 = self.G.node[n2]['t']
+
+        from_x = self.x_step * t1 + self.node_size
+        to_x = self.x_step * t2
+
+        from_y = self.y_step * self.positions[n1] + self.node_size/2
+        to_y = self.y_step * self.positions[n2] + self.node_size/2
+
+        line_ = QtGui.QGraphicsLineItem(from_x, from_y, to_x, to_y)
+        if self.G[n1][n2]['type'] == 's':
+            line_.setPen(self.edge_pen_strong)
+
+            for t in range(t1, t2):
+                if t not in self.used_rows:
+                    self.used_rows[t] = {self.positions[n1]: True}
+                else:
+                    self.used_rows[t][self.positions[n1]] = True
+
+                self.availability[t] += 1
+
+            c_ = QtGui.QGraphicsEllipseItem(to_x-2, to_y-2, 4, 4)
+            c_.setPen(self.edge_pen_strong)
+            self.scene.addItem(c_)
+
+            c_ = QtGui.QGraphicsEllipseItem(from_x-2, from_y-2, 4, 4)
+            c_.setPen(self.edge_pen_strong)
+            self.scene.addItem(c_)
+
+        elif self.G[n1][n2]['type'] == 'sim':
+            line_.setPen(self.edge_pen_similarity)
+        else:
+            line_.setPen(self.edge_pen_dist)
+
+        self.scene.addItem(line_)
+
+    def prepare_positions(self, frames):
+        for f in frames:
+            for n1 in self.regions[f]:
+                if n1 not in self.G.node:
+                    continue
+
+                if n1 in self.positions:
+                    continue
+
+                for _, n2, d in self.G.out_edges(n1, data=True):
+                    if d['type'] == STRONG:
+                        if n2 in self.positions:
+                            continue
+
+                        t1 = self.G.node[n1]['t']
+                        t2 = self.G.node[n2]['t']
+
+                        p1 = self.get_nearest_free_slot(t1, 0)
+                        p2 = self.get_nearest_free_slot(t2, p1)
+
+                        self.positions[n1] = p1
+                        self.positions[n2] = p2
+
+                        for t in range(t1+1, t2):
+                            if t in self.used_rows:
+                                self.used_rows[t][p1] = True
+                            else:
+                                self.used_rows[t] = {p1: True}
+
+    def visualize(self):
+
+        k = np.array(self.regions.keys())
+        frames = np.sort(k)
+
+        self.prepare_positions(frames)
+
+        for f in frames:
+            im = None
+            if not CACHE_IMGS:
+                im = vid.seek_frame(f)
+
+            for r in self.regions[f]:
+                self.show_node_with_edges(r, im=im)
+
+        return self.w
+
+def g_add_frame(G, frame, regions, prev_nodes, max_speed=MAX_SPEED):
+    for r in regions:
+        G.add_node(r, t=frame)
+
+    for r in regions:
+        for prev_r in prev_nodes:
+            d = np.linalg.norm(r.centroid() - prev_r.centroid())
+
+            if d < max_speed:
+                G.add_edge(prev_r, r, d=d, type='d')
+
+
+def create_g(num_frames, vid, bg_model=None):
+    G = nx.DiGraph()
+
+    prev_nodes = []
+    imgs = {}
+    regions = {}
+
+    for f in range(num_frames):
+        # msers = select_msers_cached(f)
+        im = vid.move2_next()
+        if bg_model:
+            im = bg_model.get_model().bg_subtraction(im)
+
+        msers = select_msers(im)
+        if CACHE_IMGS:
+            imgs[f] = im
+        regions[f] = msers
+
+        g_add_frame(G, f, msers, prev_nodes)
+        prev_nodes = msers
+
+    return G, imgs, regions
+
+def test_similarity(g, max_loss):
+    for n in g.nodes():
+        edges = g.out_edges(n)
+        for e in edges:
+            if (n.area() - e[1].area()) / float(n.area()) < 0.5:
+                if abs(n.min_intensity_ - e[1].min_intensity_) < 15:
+                    s = similarity_loss(n, e[1])
+
+                    if s < max_loss:
+                        g[n][e[1]]['type'] = 'sim'
+
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
-    with open(working_dir+'/g.pkl', 'rb') as f:
-        G = pickle.load(f)
+    bg_model = MaxIntensity(vid_path)
+    bg_model.compute_model()
 
-    simplify_g(G)
-    vg = VisualizeGraph(G)
 
-    w = vg.visualize_graph()
+    vid = get_auto_video_manager(vid_path)
+
+    g, imgs, regions = create_g(500, vid, bg_model)
+    print "GRAPH CREATED"
+
+    test_similarity(g, 0.35)
+    print "REDUCED BASED ON SIMILARITY RULE"
+    simplify_g(g)
+    print "SIMPLIFIED"
+
+    ngv = NodeGraphVisualizer(g, imgs, regions)
+
+    w = ngv.visualize()
+
     w.showMaximized()
-
 
     app.exec_()
     sys.exit()
