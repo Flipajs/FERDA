@@ -25,6 +25,7 @@ import pickle
 from core.animal import colors_
 from scripts.similarity_test import similarity_loss
 from methods.bg_model.max_intensity import MaxIntensity
+import time
 
 
 # max speed of #px / frame
@@ -33,7 +34,9 @@ MIN_AREA = 50
 
 AVG_AREA = 240
 UNDEFINED_POS_SCORE = 0.1
+UNDEFINED_EDGE_THRESH = 50
 
+MIN_I_DISTANCE_COEF = 20.0
 
 USE_UNDEFINED = False
 S_THRESH = 0.8
@@ -44,16 +47,113 @@ CACHE_IMGS = False
 
 SIMILARITY = 'sim'
 STRONG = 's'
+CONFIRMED = 'c'
+MERGED = 'm'
+SPLIT = 'split'
+
+TSD_CONFIRM_THRESH = 30
+TSDI_CONFIRM_THRESH = UNDEFINED_EDGE_THRESH
+
+USE_BG_SUB = True
+
+with open('/Users/fnaiser/Documents/graphs/chunks.pkl', 'rb') as f:
+    log_hists = pickle.load(f)
 
 NODE_SIZE = 50
+MIN_AREA = 30
+AVG_MAIN_A = 40
 vid_path = '/Users/fnaiser/Documents/chunks/eight.m4v'
 working_dir = '/Users/fnaiser/Documents/graphs'
+
 # vid_path = '/Users/fnaiser/Documents/chunks/NoPlasterNoLid800.m4v'
 # working_dir = '/Users/fnaiser/Documents/graphs2'
 # AVG_AREA = 150
 # MAX_SPEED = 60
 # NODE_SIZE = 30
-n_frames = 10
+# MIN_AREA = 25
+#
+# vid_path = '/Users/fnaiser/Documents/Camera 1_biglense1.avi'
+# working_dir = '/Users/fnaiser/Documents/graphs5'
+# MAX_SPEED = 100
+# NODE_SIZE = 60
+# MIN_AREA = 50
+# USE_BG_SUB = True
+
+n_frames = 100
+
+#    ALPHA = 19.52
+#     BETA = 18.48
+#
+#     pred = np.array([0, 0])
+#     if G.in_degree(n1) == 1:
+#         for m1, m2, d in G.in_edges(n1, data=True):
+#             if d['type'] == CONFIRMED:
+#                 pred = n1.centroid() - m1.centroid()
+#
+#
+#     t = abs(n1.theta_ - n2.theta_)
+#     t *= ALPHA
+#
+#     s = abs(n1.area() - n2.area()) / float(min(n1.area(), n2.area()))
+#     if s < .5:
+#         if n1.area() < n2.area():
+#             s = similarity_loss(n2, n1)
+#         else:
+#             s = similarity_loss(n1, n2)
+#     else:
+#         s *= 2
+#
+#     s *= BETA
+#     d = np.linalg.norm(n1.centroid() + pred - n2.centroid())
+#
+
+def get_hist_val(data, bins, query):
+    if query > bins[-1]:
+        return np.min(data)
+    else:
+        return data[np.searchsorted(bins, query)]
+
+
+def d_lhist_score(G, hists, n1, n2):
+    pred = np.array([0, 0])
+    if G.in_degree(n1) == 1:
+        for m1, _ in G.in_edges(n1):
+            pred = n1.centroid() - m1.centroid()
+
+    d = np.linalg.norm(n1.centroid() + pred - n2.centroid()) / AVG_MAIN_A
+
+    bins = hists['distances']['bins']
+    data = hists['distances']['data']
+
+    return get_hist_val(data, bins, d)
+
+
+def o_lhist_score(hists, n1, n2):
+    t = abs(n1.theta_ - n2.theta_)
+
+    bins = hists['thetas']['bins']
+    data = hists['thetas']['data']
+
+    return get_hist_val(data, bins, t)
+
+
+def s_lhist_score(hists, n1, n2):
+    s = abs(n1.area() - n2.area()) / float(min(n1.area(), n2.area()))
+    if s < .5:
+        if n1.area() < n2.area():
+            s = similarity_loss(n2, n1)
+        else:
+            s = similarity_loss(n1, n2)
+    else:
+        s *= 2
+
+    return get_hist_val(hists['similarities']['data'], hists['similarities']['bins'], s)
+
+
+def m_lhist_score(hists, n1, n2):
+    m = n1.min_intensity_ - n2.min_intensity_
+
+    return get_hist_val(hists['minI']['data'], hists['minI']['bins'], m)
 
 
 def select_msers(im):
@@ -78,7 +178,6 @@ def select_msers_cached(frame):
     ids = sort_by_distance_from_origin(msers, ids)
 
     return [msers[i] for i in ids]
-
 
 def sort_by_distance_from_origin(regions, ids):
     dists = [np.linalg.norm(regions[i].centroid()) for i in ids]
@@ -317,104 +416,48 @@ def get_chunk(G, n, n2=None):
 
     return ch
 
-class VisualizeGraph():
-    def __init__(self, G):
-        self.G = G
-        self.w = QtGui.QWidget()
-        self.v = QtGui.QGraphicsView()
-        self.w.setLayout(QtGui.QVBoxLayout())
-        self.w.layout().addWidget(self.v)
 
-        self.scene = QtGui.QGraphicsScene()
-        self.v.setScene(self.scene)
+def tsd_vals(G, n1, n2):
+    # weights in distance
+    ALPHA = 19.52
+    BETA = 18.48
 
-        self.max_t = 1000
+    pred = np.array([0, 0])
+    if G.in_degree(n1) == 1:
+        for m1, m2, d in G.in_edges(n1, data=True):
+            if d['type'] == CONFIRMED:
+                pred = n1.centroid() - m1.centroid()
 
-    def item_moved(self, pos):
-        print pos
 
-    def visualize_id_lines(self, ids, height, width, y_margin, x_margin, top_offset):
-        y = 0
-        y_offset = 0
-        for id in ids:
-            c_ = colors_[id]
-            pen = QtGui.QPen(QtCore.Qt.SolidLine)
-            pen.setColor(QtGui.QColor(c_[0], c_[1], c_[2], 0x88))
-            pen.setWidth(2)
+    t = abs(n1.theta_ - n2.theta_)
+    t *= ALPHA
 
-            y_ = top_offset + y*(height+y_margin) + y_offset
-            line_ = QtGui.QGraphicsLineItem(0, y_, (self.max_t + 1) * (width + x_margin), y_)
-            line_.setPen(pen)
-            self.scene.addItem(line_)
-            y += 1
+    s = abs(n1.area() - n2.area()) / float(min(n1.area(), n2.area()))
+    if s < .5:
+        if n1.area() < n2.area():
+            s = similarity_loss(n2, n1)
+        else:
+            s = similarity_loss(n1, n2)
+    else:
+        s *= 2
 
-            for i in range(self.max_t):
-                x_ = (width + x_margin) * i
-                r_ = 1
-                el_ = QtGui.QGraphicsEllipseItem(QtCore.QRectF(x_ - r_, y_ - r_, 2*r_, 2*r_))
-                self.scene.addItem(el_)
+    s *= BETA
+    d = np.linalg.norm(n1.centroid() + pred - n2.centroid())
 
-    def visualize_graph(self, height=50, width=50, y_margin=3, x_margin=10, top_offset=0):
-        ys = {}
-        positions = {}
-        items = {}
 
-        self.visualize_id_lines([i for i in range(8)], height, width, y_margin, x_margin,top_offset)
+    return t, s, d
 
-        for n, d in self.G.nodes(data=True):
-            t = d['t']
-            ys[t] = ys.get(t, -1) + 1
-            y = ys[t]
+def tsd_distance(G, n1, n2):
+    t, s, d = tsd_vals(G, n1, n2)
 
-            it = self.scene.addPixmap(cvimg2qtpixmap(d['image']))
-            it.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
-            p = (t * (width + x_margin), y * (height + y_margin) + top_offset)
-            it.setPos(p[0], p[1])
+    return (t**2 + s**2 + d**2)**0.5
 
-            positions[n] = p
-            items[n] = it
+def tsdi_distance(G, n1, n2):
+    GAMMA = 1/3.
+    t, s, d = tsd_vals(G, n1, n2)
+    i = GAMMA * (abs(n1.min_intensity_ - n2.min_intensity_))
 
-        pen = QtGui.QPen(QtCore.Qt.DashLine)
-        pen.setColor(QtGui.QColor(0, 0, 0, 0x88))
-        pen.setWidth(1)
-
-        for e in self.G.edges():
-            p1 = positions[e[0]]
-            p2 = positions[e[1]]
-
-            w2 = p2[0]-p1[0]
-            line_ = QtGui.QGraphicsLineItem(width, height/2, w2, height/2)
-            line_.setPen(pen)
-
-            self.scene.addItem(line_)
-
-            line_.setParentItem(items[e[0]])
-            items[e[1]].setParentItem(items[e[0]])
-            items[e[1]].setPos(w2, 0)
-            items[e[1]].setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
-
-            # group = QtGui.QGraphicsItemGroup(scene=self.scene)
-            # group.addToGroup(items[e[0]])
-            # group.addToGroup(items[e[1]])
-            # group.addToGroup(line_)
-            # group.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
-            # line_.setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
-            # line_.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
-
-            # self.scene.createItemGroup(group)
-
-        return self.w
-
-    def graph_scene_clicked(self, pos):
-        it = self.scene.itemAt(pos)
-        if isinstance(it, QtGui.QGraphicsPixmapItem):
-            reg = regions[it]
-            select = True
-            if reg in selected:
-                select = False
-
-            emphasize_edges(reg, select)
-
+    return (t**2 + s**2 + d**2 + i**2)**0.5
 
 class NodeGraphVisualizer():
     def __init__(self, G, imgs, regions):
@@ -428,7 +471,10 @@ class NodeGraphVisualizer():
         self.w.setLayout(QtGui.QVBoxLayout())
         self.w.layout().addWidget(self.v)
 
-        self.scene = QtGui.QGraphicsScene()
+        # self.scene = QtGui.QGraphicsScene()
+        self.scene = MyScene()
+        self.scene.clicked.connect(self.scene_clicked)
+
         self.v.setScene(self.scene)
 
         self.used_rows = {}
@@ -450,8 +496,31 @@ class NodeGraphVisualizer():
         self.edge_pen_strong.setColor(QtGui.QColor(0, 180, 0, 0x68))
         self.edge_pen_strong.setWidth(2)
 
+        self.edge_pen_merged = QtGui.QPen(QtCore.Qt.DashLine)
+        self.edge_pen_merged.setColor(QtGui.QColor(255, 0, 0, 0x68))
+        self.edge_pen_merged.setWidth(2)
+
+        self.edge_pen_split = QtGui.QPen(QtCore.Qt.DashLine)
+        self.edge_pen_split.setColor(QtGui.QColor(0, 255, 0, 0x68))
+        self.edge_pen_split.setWidth(2)
+
         self.r_color = (0, 255, 0, 0.35)
         self.availability = np.zeros(len(regions))
+
+        self.edges_obj = {}
+        self.show_frames_number = True
+
+    def scene_clicked(self, click_pos):
+        item = self.scene.itemAt(click_pos)
+        for j in [-1, 1, -2, 2]:
+            if not item:
+                item = self.scene.itemAt(QtCore.QPointF(click_pos.x(), click_pos.y()-j))
+
+        if item and isinstance(item, QtGui.QGraphicsLineItem):
+            item.setSelected(True)
+            e = self.edges_obj[item]
+            print self.G[e[0]][e[1]]['tsdi'], e[0].min_intensity_, e[1].min_intensity_, e[0].max_intensity_, e[1].max_intensity_
+
 
     def get_nearest_free_slot(self, t, pos):
         if t in self.used_rows:
@@ -470,7 +539,7 @@ class NodeGraphVisualizer():
             self.used_rows[t] = {pos: True}
             return pos
 
-    def show_node_with_edges(self, n, prev_pos=0, with_descendants=True, im=None):
+    def show_node_with_edges(self, n, prev_pos=0, with_descendants=True):
         if n in self.node_displayed or n not in self.G.node:
             return
 
@@ -478,28 +547,19 @@ class NodeGraphVisualizer():
 
         t = self.G.node[n]['t']
 
-        if CACHE_IMGS:
-            im = imgs[t].copy()
-        elif im is None:
-            im = vid.seek_frame(t)
+        if n in self.positions:
+            pos = self.positions[n]
+        else:
+            pos = self.get_nearest_free_slot(t, prev_pos)
+            self.positions[n] = pos
 
-
-        vis = draw_points_crop(im, n.pts(), square=True, color=self.r_color)
+        vis = self.G.node[n]['img']
         if vis.shape[0] > self.node_size or vis.shape[1] > self.node_size:
             vis = np.asarray(resize(vis, (self.node_size, self.node_size)) * 255, dtype=np.uint8)
         else:
             z = np.zeros((self.node_size, self.node_size, 3), dtype=np.uint8)
             z[0:vis.shape[0], 0:vis.shape[1]] = vis
             vis = z
-
-        self.G.node[n]['img'] = vis
-
-
-        if n in self.positions:
-            pos = self.positions[n]
-        else:
-            pos = self.get_nearest_free_slot(t, prev_pos)
-            self.positions[n] = pos
 
         it = self.scene.addPixmap(cvimg2qtpixmap(vis))
         it.setPos(self.x_step * t, self.y_step * pos)
@@ -541,12 +601,19 @@ class NodeGraphVisualizer():
             c_.setPen(self.edge_pen_strong)
             self.scene.addItem(c_)
 
-        elif self.G[n1][n2]['type'] == 'sim':
+        elif self.G[n1][n2]['type'] == CONFIRMED:
             line_.setPen(self.edge_pen_similarity)
+        elif self.G[n1][n2]['type'] == MERGED:
+            line_.setPen(self.edge_pen_merged)
+        elif self.G[n1][n2]['type'] == SPLIT:
+            line_.setPen(self.edge_pen_split)
         else:
             line_.setPen(self.edge_pen_dist)
 
         self.scene.addItem(line_)
+        line_.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+
+        self.edges_obj[line_] = (n1, n2)
 
     def prepare_positions(self, frames):
         for f in frames:
@@ -578,21 +645,55 @@ class NodeGraphVisualizer():
                                 self.used_rows[t] = {p1: True}
 
     def visualize(self):
-
         k = np.array(self.regions.keys())
         frames = np.sort(k)
 
-        self.prepare_positions(frames)
+        # self.prepare_positions(frames)
 
         for f in frames:
-            im = None
-            if not CACHE_IMGS:
-                im = vid.seek_frame(f)
-
             for r in self.regions[f]:
-                self.show_node_with_edges(r, im=im)
+                self.show_node_with_edges(r)
+
+            if self.show_frames_number:
+                t_ = QtGui.QGraphicsTextItem(str(f))
+
+                t_.setPos(self.x_step * f + self.node_size*0.3, -20)
+                self.scene.addItem(t_)
 
         return self.w
+
+def get_cc(G, n):
+    t1 = G.node[n]['t']
+    s_t1 = set()
+    s_t2 = set()
+
+    process = [n]
+
+    while True:
+        if not process:
+            break
+
+        n_ = process.pop()
+        t_ = G.node[n_]['t']
+
+        s_test = s_t2
+        if t_ == t1:
+            s_test = s_t1
+
+        if n_ in s_test:
+            continue
+
+        s_test.add(n_)
+
+        if t_ == t1:
+            for _, n2 in G.out_edges(n_):
+                process.append(n2)
+        else:
+            for n2, _ in G.in_edges(n_):
+                process.append(n2)
+
+    return list(s_t1), list(s_t2)
+
 
 def g_add_frame(G, frame, regions, prev_nodes, max_speed=MAX_SPEED):
     for r in regions:
@@ -603,14 +704,13 @@ def g_add_frame(G, frame, regions, prev_nodes, max_speed=MAX_SPEED):
             d = np.linalg.norm(r.centroid() - prev_r.centroid())
 
             if d < max_speed:
-                G.add_edge(prev_r, r, d=d, type='d')
+                G.add_edge(prev_r, r, d=d, type='d', tsdi=tsdi_distance(G, prev_r, r))
 
 
 def create_g(num_frames, vid, bg_model=None):
     G = nx.DiGraph()
 
     prev_nodes = []
-    imgs = {}
     regions = {}
 
     for f in range(num_frames):
@@ -620,14 +720,12 @@ def create_g(num_frames, vid, bg_model=None):
             im = bg_model.get_model().bg_subtraction(im)
 
         msers = select_msers(im)
-        if CACHE_IMGS:
-            imgs[f] = im
         regions[f] = msers
 
         g_add_frame(G, f, msers, prev_nodes)
         prev_nodes = msers
 
-    return G, imgs, regions
+    return G, regions
 
 def test_similarity(g, max_loss):
     for n in g.nodes():
@@ -640,22 +738,175 @@ def test_similarity(g, max_loss):
                     if s < max_loss:
                         g[n][e[1]]['type'] = 'sim'
 
+
+def simplify(G, rules):
+    queue = G.nodes()
+
+    while queue:
+        n = queue.pop()
+        for r in rules:
+            affected = r(G, n)
+            queue.extend(affected)
+
+def confirmed_rule(G, n):
+    if G.out_degree(n) == 1:
+        _, n_, d = G.out_edges(n, data=True)[0]
+        if G.in_degree(n_) == 1 and d['tsdi'] < TSDI_CONFIRM_THRESH:
+            G[n][n_]['type'] = CONFIRMED
+
+    return []
+
+
+def get_configurations(G, nodes1, nodes2, c, s, configurations, conf_scores):
+    if nodes1:
+        n1 = nodes1.pop(0)
+        for i in range(len(nodes2)):
+            n2 = nodes2.pop(0)
+            if n2 in G[n1]:
+                get_configurations(G, nodes1, nodes2, c + [(n1, n2)], s+G[n1][n2]['tsdi'], configurations, conf_scores)
+            nodes2.append(n2)
+
+        # undefined state
+        get_configurations(G, nodes1, nodes2, c + [(n1, None)], s + UNDEFINED_EDGE_THRESH, configurations, conf_scores)
+
+        nodes1.append(n1)
+    else:
+        configurations.append(c)
+        conf_scores.append(s)
+
+def cc_optimization(G, nodes1, nodes2):
+    configurations = []
+    conf_scores = []
+
+    get_configurations(G, nodes1, nodes2, [], 0, configurations, conf_scores)
+
+    if len(conf_scores) == 0:
+        return [], []
+
+    ids = np.argsort(conf_scores)
+
+    c = 1 + 1.0/len(nodes1)
+    prev = conf_scores[ids[0]]
+
+    final_s = [prev]
+    final_c = [configurations[ids[0]]]
+
+    for id in ids:
+        s = conf_scores[id]
+        if prev < c*s:
+            break
+
+        prev = s
+        final_s.append(s)
+        final_c.append(configurations[id])
+
+    return final_s, final_c
+
+
+def cc_solver(G, n):
+    if G.out_degree(n) > 1:
+        for _, n2 in G.out_edges(n):
+            if G[n][n2]['type'] == MERGED or G[n][n2]['type'] == SPLIT:
+                return []
+
+    s1, s2 = get_cc(G, n)
+    if len(s1) > 1 or len(s2) > 1:
+        scores, configs = cc_optimization(G, s1, s2)
+
+        if len(scores) == 1:
+            for n1, n2 in configs[0]:
+                # undefined state
+                if not n2:
+                    continue
+
+                for _, n2_ in G.out_edges(n1):
+                    if n2_ != n2:
+                        G.remove_edge(n1, n2_)
+
+                for n1_, _ in G.in_edges(n2):
+                    if n1_ != n1:
+                        G.remove_edge(n1_, n2)
+
+    return []
+
+
+def merge_detector(G, n):
+    if G.in_degree(n) > 1:
+        merge = True
+        for n1, _ in G.in_edges(n):
+            if G.out_degree(n1) != 1:
+                merge = False
+                break
+
+        if merge:
+            for n1, _ in G.in_edges(n):
+                G[n1][n]['type'] = MERGED
+
+
+    return []
+
+
+def split_detector(G, n):
+    if G.out_degree(n) > 1:
+        split = True
+
+        for _, n2 in G.out_edges(n):
+            if G.in_degree(n2) != 1:
+                split = False
+                break
+
+        if split:
+            for _, n2 in G.out_edges(n):
+                G[n][n2]['type'] = SPLIT
+
+    return []
+
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
-    bg_model = MaxIntensity(vid_path)
-    bg_model.compute_model()
-
+    start = time.time()
 
     vid = get_auto_video_manager(vid_path)
+    im = vid.move2_next()
+    print im.shape
 
-    g, imgs, regions = create_g(500, vid, bg_model)
-    print "GRAPH CREATED"
+    try:
+        with open(working_dir+'/g'+str(n_frames)+'.pkl', 'rb') as f:
+            up = pickle.Unpickler(f)
+            g = up.load()
+            regions = up.load()
+    except:
+        bg_model = None
+        if USE_BG_SUB:
+            bg_model = MaxIntensity(vid_path)
+            bg_model.compute_model()
 
-    test_similarity(g, 0.35)
-    print "REDUCED BASED ON SIMILARITY RULE"
-    simplify_g(g)
-    print "SIMPLIFIED"
+        vid = get_auto_video_manager(vid_path)
+        g, regions = create_g(n_frames, vid, bg_model)
+        vid = get_auto_video_manager(vid_path)
+
+        for frame in regions:
+            im = vid.move2_next()
+            for r in regions[frame]:
+                vis = draw_points_crop(im, r.pts(), square=True, color=(0, 255, 0, 0.35))
+                g.node[r]['img'] = vis
+
+        with open(working_dir+'/g'+str(n_frames)+'.pkl', 'wb') as f:
+            p = pickle.Pickler(f)
+            p.dump(g)
+            p.dump(regions)
+
+    end = time.time()
+
+    print "GRAPH CREATED, takes ", end - start, " seconds which is ", (end-start) / n_frames, " seconds per frame"
+    start = time.time()
+    # simplify(g, [merge_detector, split_detector, cc_solver, confirmed_rule])
+    simplify(g, [cc_solver, confirmed_rule])
+    end = time.time()
+    print "SIMPLIFIED, takes ", end - start, " seconds which is ", (end-start) / n_frames, " seconds per frame"
+
+    imgs = {}
+    vid = get_auto_video_manager(vid_path)
 
     ngv = NodeGraphVisualizer(g, imgs, regions)
 
@@ -665,242 +916,3 @@ if __name__ == '__main__':
 
     app.exec_()
     sys.exit()
-
-
-    #
-    #
-    # vid = get_auto_video_manager(vid_path)
-    #
-    # selected = []
-    #
-    # visited = {}
-    #
-    # edges_ = {}
-    # texts_ = {}
-    # regions = {}
-    # app = QtGui.QApplication(sys.argv)
-    #
-    #
-    # w = QtGui.QWidget()
-    #
-    # v = QtGui.QGraphicsView()
-    #
-    # w.setLayout(QtGui.QVBoxLayout())
-    # w.layout().addWidget(v)
-    #
-    #
-    # scene = MyScene()
-    # scene.clicked.connect(scene_clicked)
-    # v.setScene(scene)
-    #
-    # w.showMaximized()
-    #
-    #
-    # w2 = QtGui.QWidget()
-    #
-    # v2 = QtGui.QGraphicsView()
-    #
-    # w2.setLayout(QtGui.QVBoxLayout())
-    # w2.layout().addWidget(v2)
-    #
-    #
-    # scene2 = MyScene()
-    # # scene2.clicked.connect(scene_clicked2)
-    # v2.setScene(scene2)
-    #
-    # w2.show()
-    #
-    # # w_hyps = QtGui.QWidget()
-    # # w_hyps.setLayout(QtGui.QHBoxLayout())
-    # # w_hyps.show()
-    #
-    # G = nx.DiGraph()
-    # y_margin = 3
-    # x_margin = 300
-    # height = 50
-    # width = 50
-    #
-    # top_offset = height + x_margin + 40
-    #
-    # pos = {}
-    #
-    # prev_msers = None
-    #
-    # frame_offset = 0
-    # vid.seek_frame(frame_offset)
-    #
-    # Rs = []
-    #
-    # for frame in range(1, n_frames+1):
-    #     print frame
-    #
-    #     im = vid.move2_next()
-    #     msers = select_msers_cached(frame + frame_offset)
-    #
-    #     y = 0
-    #     h_, w_, _ = im.shape
-    #     if h_ <= w_:
-    #         h_ = (width + x_margin) * (h_ / float(w_))
-    #     w_ = width + x_margin
-    #     top_offset = h_ + 40
-    #
-    #     im_ = cvimg2qtpixmap(np.asarray(resize(im, (h_, w_)) * 255, dtype=np.uint8))
-    #     it = scene.addPixmap(im_)
-    #     it.setPos(frame * (width + x_margin), 20)
-    #
-    #     t_ = QtGui.QGraphicsTextItem('frame = ' + str(frame + frame_offset))
-    #     t_.setPos(frame * (width + x_margin), 0)
-    #     scene.addItem(t_)
-    #
-    #     Rs.append(msers)
-    #
-    #     im_ = np.copy(im)
-    #     for r in msers:
-    #         node_name = str(frame) + '_' + str(y)
-    #         G.add_node(r, t=frame)
-    #
-    #         im_crop = draw_points_crop(im_, get_contour(r.pts()), color=(0, 0, 255, 0.7), square=True)
-    #
-    #         im_crop = np.asarray(resize(im_crop, (height, width)) * 255, dtype=np.uint8)
-    #         G.node[r]['image'] = im_crop
-    #
-    #         pos[node_name] = (frame * (width + x_margin), y * (height + y_margin) + top_offset)
-    #         it = scene.addPixmap(cvimg2qtpixmap(im_crop))
-    #         it.setPos(pos[node_name][0], pos[node_name][1])
-    #
-    #         regions[it] = r
-    #
-    #         add_edges(r, y, frame, prev_msers, scene, G)
-    #
-    #         y += 1
-    #
-    #     prev_msers = msers
-    #
-    # with open(working_dir+'/g.pkl', 'wb') as f:
-    #     pickle.dump(G, f)
-    #
-    # G_sim = nx.DiGraph()
-    #
-    # for n, d in G.nodes(data=True):
-    #     G_sim.add_node(n, d)
-    #
-    # G_sim.add_edges_from(G.edges())
-    # # G_sim = G.copy()
-    # simplify_g(G_sim)
-    #
-    # y = 0
-    # pen = QtGui.QPen(QtCore.Qt.DashLine)
-    # pen.setColor(QtGui.QColor(0, 0, 0, 0x88))
-    # pen.setWidth(1)
-    #
-    # x_margin_ = 10
-    #
-    # chunks = []
-    #
-    # lengths = []
-    # items = []
-    #
-    # for n, d in G_sim.nodes(data=True):
-    #     if len(G_sim.in_edges(n)) == 0:
-    #         # it = scene2.addPixmap(cvimg2qtpixmap(d['image']))
-    #         frame = d['t']
-    #         # from_x = frame * (width + x_margin_)
-    #         # from_x = 0
-    #         #
-    #         # from_y = y * (height + y_margin) + top_offset
-    #         # it.setPos(from_x, from_y)
-    #
-    #         e = G_sim.out_edges(n)
-    #         if e:
-    #             n2 = e[0][1]
-    #
-    #             d2 = G_sim.node[n2]
-    #             # it2 = scene2.addPixmap(cvimg2qtpixmap(d2['image']))
-    #             frame2 = d2['t']
-    #             # to_x = (frame2-frame) * (width + x_margin_)
-    #             # to_y = y * (height + y_margin) + top_offset
-    #             # it2.setPos(to_x, to_y)
-    #             #
-    #             # line_ = QtGui.QGraphicsLineItem(from_x+width, from_y+height/2, to_x, to_y+height/2)
-    #             # line_.setPen(pen)
-    #             # scene2.addItem(line_)
-    #
-    #
-    #             #text
-    #             # t_ = QtGui.QGraphicsTextItem(str(frame)+' - '+str(frame2))
-    #             #
-    #             # t_.setPos((from_x + width + to_x) / 2, (from_y + to_y) / 2)
-    #             # scene2.addItem(t_)
-    #
-    #             chunks.append(get_chunk(G, n, n2))
-    #
-    #             lengths.append(frame2-frame)
-    #             items.append({'im1': d['image'], 'im2': d2['image'], 'frame': frame, 'frame2': frame2})
-    #         else:
-    #             chunks.append(get_chunk(G, n))
-    #             lengths.append(0)
-    #             items.append({'im1': d['image'], 'frame': frame})
-    #
-    #         y += 1
-    #
-    #
-    # ids = np.argsort(-np.array(lengths))
-    # y = 0
-    # for id in ids:
-    #     v_ = items[id]
-    #     it = scene2.addPixmap(cvimg2qtpixmap(v_['im1']))
-    #     frame = v_['frame']
-    #     from_x = 0
-    #
-    #     from_y = y * (height + y_margin) + top_offset
-    #     it.setPos(from_x, from_y)
-    #
-    #     if 'im2' in v_:
-    #         it2 = scene2.addPixmap(cvimg2qtpixmap(v_['im2']))
-    #         to_x = (v_['frame2'] - v_['frame']) * (width + x_margin_)
-    #         to_y = y * (height + y_margin) + top_offset
-    #         it2.setPos(to_x, to_y)
-    #
-    #         line_ = QtGui.QGraphicsLineItem(from_x+width, from_y+height/2, to_x, to_y+height/2)
-    #         line_.setPen(pen)
-    #         scene2.addItem(line_)
-    #
-    #         t_ = QtGui.QGraphicsTextItem(str(frame)+' - '+str(v_['frame2']))
-    #
-    #         t_.setPos((from_x + width), (from_y + to_y) / 2)
-    #         scene2.addItem(t_)
-    #     y += 1
-    #
-    # # chunks = np.array(chunks)
-    #
-    #
-    # with open(working_dir+'/chunks.pkl', 'wb') as f:
-    #     pickle.dump(chunks, f)
-    #
-    # print len(chunks)
-    #
-    # fig = plt.figure()
-    # ax = fig.gca(projection='3d')
-    # # theta = np.linspace(-4 * np.pi, 4 * np.pi, 100)
-    # # z = np.linspace(-2, 2, 100)
-    # # r = z**2 + 1
-    # # x = r * np.sin(theta)
-    # # y = r * np.cos(theta)
-    #
-    # for ch in chunks:
-    #     ch =  np.array(ch)
-    #     if ch.shape[0] == 1:
-    #         # ax.plot([ch[0, 1], ch[0, 1]], [ch[0, 0], ch[0, 0]], [ch[0, 2] - 0.25, ch[0, 2]+0.25])
-    #         ax.scatter(ch[0, 1], ch[0, 0], ch[0, 2])
-    #     else:
-    #         avg_a = np.mean(ch[:, 3])
-    #         w_ = max(1, math.log(avg_a)-4)
-    #         ax.plot(ch[:, 1], ch[:, 0], ch[:, 2], linewidth=w_)
-    #
-    #     plt.hold(True)
-    #
-    # plt.hold(False)
-    # plt.show()
-    #
-    # app.exec_()
-    # sys.exit()
