@@ -181,7 +181,7 @@ if __name__ == '__main__':
     plt.subplot(4, 2, 7)
     plt.title('histogram of region min intensity diffs')
     data = np.array(minI.reshape(-1))
-    bins = np.linspace(np.min(data), np.max(data), n_bins)
+    bins = np.linspace(np.min(data), np.max(data), np.max(data)-np.min(data))
     data = np.append(data, bins)
     h_ = plt.hist(data, bins, normed=True)
 

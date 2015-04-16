@@ -26,6 +26,7 @@ from core.animal import colors_
 from scripts.similarity_test import similarity_loss
 from methods.bg_model.max_intensity import MaxIntensity
 import time
+from scipy.ndimage import gaussian_filter
 
 
 # max speed of #px / frame
@@ -34,7 +35,8 @@ MIN_AREA = 50
 
 AVG_AREA = 240
 UNDEFINED_POS_SCORE = 0.1
-UNDEFINED_EDGE_THRESH = 50
+UNDEFINED_EDGE_THRESH = -0.5
+UNDEFINED_EDGE_THRESH = -2.0
 
 MIN_I_DISTANCE_COEF = 20.0
 
@@ -45,6 +47,8 @@ S_THRESH = 0.8
 CACHE_IMGS = False
 
 
+
+
 SIMILARITY = 'sim'
 STRONG = 's'
 CONFIRMED = 'c'
@@ -53,33 +57,39 @@ SPLIT = 'split'
 
 TSD_CONFIRM_THRESH = 30
 TSDI_CONFIRM_THRESH = UNDEFINED_EDGE_THRESH
+SCORE_CONFIRM_THRESH = UNDEFINED_EDGE_THRESH
 
-USE_BG_SUB = True
+USE_BG_SUB = False
 
-with open('/Users/fnaiser/Documents/graphs/chunks.pkl', 'rb') as f:
+with open('/Users/fnaiser/Documents/graphs/log_hists.pkl', 'rb') as f:
     log_hists = pickle.load(f)
 
 NODE_SIZE = 50
 MIN_AREA = 30
+
 AVG_MAIN_A = 40
 vid_path = '/Users/fnaiser/Documents/chunks/eight.m4v'
 working_dir = '/Users/fnaiser/Documents/graphs'
 
-# vid_path = '/Users/fnaiser/Documents/chunks/NoPlasterNoLid800.m4v'
-# working_dir = '/Users/fnaiser/Documents/graphs2'
-# AVG_AREA = 150
-# MAX_SPEED = 60
-# NODE_SIZE = 30
-# MIN_AREA = 25
+vid_path = '/Users/fnaiser/Documents/chunks/NoPlasterNoLid800.m4v'
+working_dir = '/Users/fnaiser/Documents/graphs2'
+AVG_AREA = 150
+AVG_MAIN_A = 25
+MAX_SPEED = 60
+NODE_SIZE = 30
+MIN_AREA = 25
 #
-# vid_path = '/Users/fnaiser/Documents/Camera 1_biglense1.avi'
-# working_dir = '/Users/fnaiser/Documents/graphs5'
-# MAX_SPEED = 100
-# NODE_SIZE = 60
-# MIN_AREA = 50
-# USE_BG_SUB = True
+vid_path = '/Users/fnaiser/Documents/Camera 1_biglense1.avi'
+working_dir = '/Users/fnaiser/Documents/graphs5'
+MAX_SPEED = 100
+AVG_MAIN_A = 50
+NODE_SIZE = 60
+MIN_AREA = 500
 
-n_frames = 100
+USE_BG_SUB = False
+
+CACHE = True
+n_frames = 900
 
 #    ALPHA = 19.52
 #     BETA = 18.48
@@ -108,7 +118,7 @@ n_frames = 100
 #
 
 def get_hist_val(data, bins, query):
-    if query > bins[-1]:
+    if query > bins[-2]:
         return np.min(data)
     else:
         return data[np.searchsorted(bins, query)]
@@ -153,8 +163,16 @@ def s_lhist_score(hists, n1, n2):
 def m_lhist_score(hists, n1, n2):
     m = n1.min_intensity_ - n2.min_intensity_
 
-    return get_hist_val(hists['minI']['data'], hists['minI']['bins'], m)
+    return get_hist_val(hists['minI']['data'], hists['minI']['bins'], m-1)
 
+
+def get_hist_score(G, hists, n1, n2):
+    d = d_lhist_score(G, hists, n1, n2)
+    s = s_lhist_score(hists, n1, n2)
+    o = o_lhist_score(hists, n1, n2)
+    m = m_lhist_score(hists, n1, n2)
+
+    return -(d + s + o + m)
 
 def select_msers(im):
     msers = get_msers_(im)
@@ -469,7 +487,32 @@ class NodeGraphVisualizer():
         self.w = QtGui.QWidget()
         self.v = QtGui.QGraphicsView()
         self.w.setLayout(QtGui.QVBoxLayout())
+        self.info_layout = QtGui.QHBoxLayout()
+
+        self.info_label = QtGui.QLabel('INFO: ')
+        self.info_layout.addWidget(self.info_label)
+
+        self.score_label = QtGui.QLabel('')
+        self.info_layout.addWidget(self.score_label)
+
+        self.score_d_label = QtGui.QLabel('')
+        self.info_layout.addWidget(self.score_d_label)
+
+        self.score_o_label = QtGui.QLabel('')
+        self.info_layout.addWidget(self.score_o_label)
+
+        self.score_s_label = QtGui.QLabel('')
+        self.info_layout.addWidget(self.score_s_label)
+
+        self.score_m_label = QtGui.QLabel('')
+        self.info_layout.addWidget(self.score_m_label)
+
+        self.others_label = QtGui.QLabel('')
+        self.info_layout.addWidget(self.others_label)
+
+        self.w.layout().addLayout(self.info_layout)
         self.w.layout().addWidget(self.v)
+
 
         # self.scene = QtGui.QGraphicsScene()
         self.scene = MyScene()
@@ -518,8 +561,19 @@ class NodeGraphVisualizer():
 
         if item and isinstance(item, QtGui.QGraphicsLineItem):
             item.setSelected(True)
-            e = self.edges_obj[item]
-            print self.G[e[0]][e[1]]['tsdi'], e[0].min_intensity_, e[1].min_intensity_, e[0].max_intensity_, e[1].max_intensity_
+            e_ = self.edges_obj[item]
+
+            e = self.G[e_[0]][e_[1]]
+            prec = 7
+            self.score_label.setText('score: '+str(e['score'])[0:prec])
+            self.score_d_label.setText('dist_s: '+str(e['d'])[0:prec])
+            self.score_o_label.setText('orient_s: '+str(e['o'])[0:prec])
+            self.score_s_label.setText('overlap_s: '+str(e['s'])[0:prec])
+            self.score_m_label.setText('minI_s: '+str(e['m'])[0:prec])
+            val = np.linalg.norm(e_[0].centroid()-e_[1].centroid())
+            self.others_label.setText(str(val)[0:prec])
+
+            print "score: ", e['score'], "d: ", e['d'], "o: ", e['o'], "s: ", e['s'], "m: ", e['m'], e_[0].min_intensity_, e_[1].min_intensity_
 
 
     def get_nearest_free_slot(self, t, pos):
@@ -704,7 +758,13 @@ def g_add_frame(G, frame, regions, prev_nodes, max_speed=MAX_SPEED):
             d = np.linalg.norm(r.centroid() - prev_r.centroid())
 
             if d < max_speed:
-                G.add_edge(prev_r, r, d=d, type='d', tsdi=tsdi_distance(G, prev_r, r))
+
+                d = -d_lhist_score(G, log_hists, prev_r, r)
+                s = -s_lhist_score(log_hists, prev_r, r)
+                o = -o_lhist_score(log_hists, prev_r, r)
+                m = -m_lhist_score(log_hists, prev_r, r)
+
+                G.add_edge(prev_r, r, type='d', score=d+s+o+m, d=d, s=s, o=o, m=m)
 
 
 def create_g(num_frames, vid, bg_model=None):
@@ -751,7 +811,7 @@ def simplify(G, rules):
 def confirmed_rule(G, n):
     if G.out_degree(n) == 1:
         _, n_, d = G.out_edges(n, data=True)[0]
-        if G.in_degree(n_) == 1 and d['tsdi'] < TSDI_CONFIRM_THRESH:
+        if G.in_degree(n_) == 1 and d['score'] < SCORE_CONFIRM_THRESH:
             G[n][n_]['type'] = CONFIRMED
 
     return []
@@ -763,7 +823,7 @@ def get_configurations(G, nodes1, nodes2, c, s, configurations, conf_scores):
         for i in range(len(nodes2)):
             n2 = nodes2.pop(0)
             if n2 in G[n1]:
-                get_configurations(G, nodes1, nodes2, c + [(n1, n2)], s+G[n1][n2]['tsdi'], configurations, conf_scores)
+                get_configurations(G, nodes1, nodes2, c + [(n1, n2)], s+G[n1][n2]['score'], configurations, conf_scores)
             nodes2.append(n2)
 
         # undefined state
@@ -791,10 +851,17 @@ def cc_optimization(G, nodes1, nodes2):
     final_s = [prev]
     final_c = [configurations[ids[0]]]
 
+
     for id in ids:
         s = conf_scores[id]
-        if prev < c*s:
-            break
+
+        if prev < 0:
+            if prev > c*s:
+                break
+        else:
+            if prev < c*s:
+                break
+
 
         prev = s
         final_s.append(s)
@@ -826,6 +893,9 @@ def cc_solver(G, n):
                 for n1_, _ in G.in_edges(n2):
                     if n1_ != n1:
                         G.remove_edge(n1_, n2)
+
+        else:
+            print scores, configs
 
     return []
 
@@ -866,11 +936,10 @@ if __name__ == '__main__':
 
     start = time.time()
 
-    vid = get_auto_video_manager(vid_path)
-    im = vid.move2_next()
-    print im.shape
-
     try:
+        if not CACHE:
+            raise Exception
+
         with open(working_dir+'/g'+str(n_frames)+'.pkl', 'rb') as f:
             up = pickle.Unpickler(f)
             g = up.load()
@@ -880,6 +949,7 @@ if __name__ == '__main__':
         if USE_BG_SUB:
             bg_model = MaxIntensity(vid_path)
             bg_model.compute_model()
+            bg_model.bg_model = gaussian_filter(bg_model.bg_model, sigma=3)
 
         vid = get_auto_video_manager(vid_path)
         g, regions = create_g(n_frames, vid, bg_model)

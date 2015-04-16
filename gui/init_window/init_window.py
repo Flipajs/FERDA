@@ -1,4 +1,4 @@
-__author__ = 'flip'
+ __author__ = 'flip'
 
 from utils import video_manager
 import utils.misc
