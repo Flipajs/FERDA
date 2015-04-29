@@ -15,6 +15,8 @@ from core.region.mser_operations import get_region_groups, margin_filter, area_f
 from scripts.similarity_test import similarity_loss
 from scipy.ndimage.filters import gaussian_filter1d
 from scipy.stats.stats import pearsonr
+from core.region import region
+from utils.drawing.points import get_contour
 
 import matplotlib.pyplot as plt
 
@@ -38,16 +40,60 @@ if __name__ == '__main__':
     distances100 = np.zeros((ids, num_))
     minI = np.zeros((ids, num_))
     maxI = np.zeros((ids, num_))
+    avgI = np.zeros((ids, num_))
+    percentile10I = np.zeros((ids, num_))
+
+    contour_len_diff = np.zeros((ids, num_))
+    contour_len = np.zeros((ids, num_))
+
+    vid = get_auto_video_manager(WORKING_DIR + '/eight.m4v')
 
 
     a_ = np.zeros((ids, num_))
 
+    img1 = vid.move2_next()
+    img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+
     for i in range(num_):
+        img2 = vid.move2_next()
+        img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+
         for id in range(ids):
             r1 = chunks[id][i]
             r2 = chunks[id][i+1]
-            thetas[id, i] = r1.theta_ - r2.theta_
-            similarities[id, i] = similarity_loss(r1, r2)
+            # t1 = (region.get_orientation(r1.sxx_, r1.syy_, r1.sxy_) + np.pi/2) % np.pi
+            # t2 = (region.get_orientation(r2.sxx_, r2.syy_, r2.sxy_) + np.pi/2) % np.pi
+            t1 = region.get_orientation(r1.sxx_, r1.syy_, r1.sxy_)
+            t2 = region.get_orientation(r2.sxx_, r2.syy_, r2.sxy_)
+
+            c1 = len(get_contour(r1.pts()))
+            c2 = len(get_contour(r2.pts()))
+
+            contour_len_diff[id, i] = c2 - c1
+            contour_len[id, i] = c1
+
+            if t1 < 0:
+                t1 += np.pi
+            if t2 < 0:
+                t2 += np.pi
+
+            t_ = max(t1, t2) - min(t1, t2)
+
+            if t_ > np.pi/2:
+                t_ = np.pi - t_
+            # t_ %= np.pi/2
+
+            # t_ = abs((t1-t2)) % np.pi/2
+            # thetas[id, i] = max(t1, t2) - min(t1,t2)
+            thetas[id, i] = t_
+
+
+            # thetas[id, i] = (t1 + np.pi) - (t2 % np.pi)
+
+            # thetas[id, i] = r1.theta_ - r2.theta_
+
+            similarities[id, i] = abs(r1.area() - r2.area()) / float(min(r1.area(), r2.area()))
+            # similarities[id, i] = similarity_loss(r1, r2)
 
             a_[id, i] = r1.a_
 
@@ -55,16 +101,27 @@ if __name__ == '__main__':
                 pred = np.array([0, 0])
             else:
                 pred = r1.centroid() - chunks[id][i-1].centroid()
+                # pred = np.array([0, 0])
 
             distances100[id, i] = np.linalg.norm(r1.centroid() + pred - r2.centroid())
+
+            intensities1 = img1[r1.pts()[:, 0], r1.pts()[:, 1]]
+            intensities2 = img2[r2.pts()[:, 0], r2.pts()[:, 1]]
+
+            avgI[id, i] = np.mean(intensities1) - np.mean(intensities2)
+            percentile10I[id, i] = np.percentile(intensities1, 10) - np.percentile(intensities2, 10)
+
             minI[id, i] = r2.min_intensity_ - r1.min_intensity_
             maxI[id, i] = r2.max_intensity_ - r1.max_intensity_
+
+        img1 = img2
 
 
     n_bins = 100
 
     orientation_data = np.array(np.abs(thetas.reshape(-1)))
     avg_main_axis_len = 2*np.mean(a_.reshape(-1))
+    print avg_main_axis_len
     distance_data = np.array(distances100.reshape(-1)) / avg_main_axis_len
     similarity_data = np.array(similarities.reshape(-1))
     mini_data = np.array(minI.reshape(-1))
@@ -180,17 +237,24 @@ if __name__ == '__main__':
 
     plt.subplot(4, 2, 7)
     plt.title('histogram of region min intensity diffs')
-    data = np.array(minI.reshape(-1))
+    data = np.array(contour_len_diff.reshape(-1))
     bins = np.linspace(np.min(data), np.max(data), np.max(data)-np.min(data))
     data = np.append(data, bins)
     h_ = plt.hist(data, bins, normed=True)
 
     plt.subplot(4, 2, 8)
-    plt.title('log of hist of region min intensity diffs')
-    l_ = np.log(h_[0] + 1)
-    log_hists['minI'] = {'bins': bins, 'data': l_}
-    print np.min(l_)
-    plt.plot(bins[:-1], l_)
+    plt.title('histogram of region min intensity diffs')
+    data = np.array(contour_len.reshape(-1))
+    bins = np.linspace(np.min(data), np.max(data), np.max(data)-np.min(data))
+    data = np.append(data, bins)
+    h_ = plt.hist(data, bins, normed=True)
+
+
+    # plt.title('log of hist of region min intensity diffs')
+    # l_ = np.log(h_[0] + 1)
+    # log_hists['minI'] = {'bins': bins, 'data': l_}
+    # print np.min(l_)
+    # plt.plot(bins[:-1], l_)
 
     with open(WORKING_DIR+'/log_hists.pkl', 'wb') as f:
         pickle.dump(log_hists, f)

@@ -82,6 +82,19 @@ def draw_points_crop(img, pts, color=None, margin=0.1, square=False):
     return crop
 
 
+def draw_points_crop_binary(pts):
+    if pts.size == 0:
+        return None
+
+    roi = get_roi(pts)
+    width = roi.width()
+    height = roi.height()
+    im = np.zeros((height, width), dtype=np.bool)
+    im[pts[:, 0] - roi.y_, pts[:, 1] - roi.x_] = True
+
+    return im
+
+
 def get_contour(pts):
     """
     returns np.array of [y,x] positions of inner contour for given points

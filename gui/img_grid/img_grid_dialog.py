@@ -12,7 +12,8 @@ class ImgGridDialog(QtGui.QDialog):
         self.setLayout(QtGui.QVBoxLayout())
 
         self.img_grid = ImgGridWidget()
-        self.set_items(items)
+        if items:
+            self.set_items(items)
 
         self.cancel = QtGui.QPushButton('cancel')
         self.cancel.clicked.connect(self.close)

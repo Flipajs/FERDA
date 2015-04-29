@@ -40,6 +40,7 @@ class Region():
             self.from_pts_(data)
 
         self.roi_ = None
+        self.id_ = -1
 
     def from_dict_(self, data):
         pts = []
