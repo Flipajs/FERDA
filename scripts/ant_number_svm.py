@@ -29,6 +29,8 @@ from gui.img_grid.img_grid_dialog import ImgGridDialog
 WORKING_DIR = '/Users/fnaiser/Documents/chunks'
 vid_path = '/Users/fnaiser/Documents/chunks/eight.m4v'
 working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/eight'
+AVG_AREA = 252.1
+AVG_MARGIN = 25.2
 
 def load_chunks():
     with open(WORKING_DIR+'/chunks.pkl', 'rb') as f:
@@ -51,14 +53,14 @@ def get_t_diff(r1, r2):
 
     return t_
 
-def get_x(r):
+def get_x(r, AVG_AREA, AVG_MARGIN):
     x = []
-    x.append(r.area())
+    x.append(r.area() / float(AVG_AREA))
     # x.append(r.a_)
     # x.append(r.b_)
     x.append(r.a_ / r.b_)
 
-    c1 = len(get_contour(r.pts()))
+    # c1 = len(get_contour(r.pts()))
     # x.append(c1)
 
     # h1 = draw_points_crop_binary(r.pts())
@@ -66,7 +68,7 @@ def get_x(r):
     # h1 = np.sum(h1)
     #
     # x.append(h1)
-    x.append(r.margin_)
+    x.append(r.margin_-AVG_MARGIN)
     # x.append(r.area())
     # x.append(r.min_intensity_)
     # x.append(c1 / (r.area()**0.5))
@@ -81,12 +83,12 @@ def get_svm_model():
     X = []
     classes = []
     for (id, frame) in merged:
-        X.append(get_x(chunks[id][frame]))
+        X.append(get_x(chunks[id][frame], AVG_AREA, AVG_MARGIN))
         classes.append(1)
 
     for frame in range(6):
         for id in range(8):
-            X.append(get_x(chunks[id][frame]))
+            X.append(get_x(chunks[id][frame], AVG_AREA, AVG_MARGIN))
             classes.append(0)
 
     # X = np.array(X)
@@ -148,7 +150,7 @@ if __name__ == '__main__':
         im_gray = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
         detected = 0
         for m in msers:
-            x = get_x(m)
+            x = get_x(m, AVG_AREA)
 
             cont = get_contour(m.pts())
 

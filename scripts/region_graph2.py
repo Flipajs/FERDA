@@ -30,14 +30,15 @@ from scipy.ndimage import gaussian_filter
 from core.antlikeness import Antlikeness
 import assignment_svm
 import ant_number_svm
-import mser_svm
 import cProfile
+import multiprocessing as mp
 
 # max speed of #px / frame
 MAX_SPEED = 200
 MIN_AREA = 50
 
-AVG_AREA = 240
+AVG_AREA = 240.0
+AVG_MARGIN = 0.0
 UNDEFINED_POS_SCORE = 0.1
 UNDEFINED_EDGE_THRESH = -0.5
 UNDEFINED_EDGE_THRESH = -0.5
@@ -98,18 +99,18 @@ init_frames=3
 #
 # init_frames=3
 
-# vid_path = '/Users/fnaiser/Documents/Camera 1_biglense1.avi'
-# working_dir = '/Volumes/Seagate Expansion Drive/graphs5'
-# MAX_SPEED = 100
-# AVG_MAIN_A = 50
-# NODE_SIZE = 60
-# MIN_AREA = 500
-# ant_num=5
-# classes = np.zeros(1178)
-# classes[0:5] = 1
-# classes[384:389] = 1
-# classes[792:797] = 1
-# init_frames = 3
+vid_path = '/Users/fnaiser/Documents/Camera 1_biglense1.avi'
+working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/camera1'
+MAX_SPEED = 100
+AVG_MAIN_A = 50
+NODE_SIZE = 60
+MIN_AREA = 500
+ant_num=5
+classes = np.zeros(1178)
+classes[0:5] = 1
+classes[384:389] = 1
+classes[792:797] = 1
+init_frames = 3
 
 
 # vid_path = '/Volumes/Seagate Expansion Drive/IST - videos/bigLenses_colormarks2.avi'
@@ -140,19 +141,22 @@ init_frames=3
 # classes[383:389] = 1
 # init_frames = 3
 
-# vid_path = '/Volumes/Seagate Expansion Drive/IST - videos/smallLense_colony1.avi'
-# working_dir = '/Volumes/Seagate Expansion Drive/graphs6'
-# MAX_SPEED = 60
-# AVG_MAIN_A = 20
-# NODE_SIZE = 60
-# MIN_AREA = 100
-#
-# USE_BG_SUB = False
+vid_path = '/Volumes/Seagate Expansion Drive/IST - videos/smallLense_colony1.avi'
+working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/smalllense'
+MAX_SPEED = 60
+AVG_MAIN_A = 20
+NODE_SIZE = 60
+MIN_AREA = 50
+classes = np.zeros(133)
+classes[2:15] = 1
+classes[44:57] = 1
+classes[91:104] = 1
+init_frames = 3
+
+USE_BG_SUB = False
 
 CACHE = True
-n_frames = 1500
-
-svm_model = None
+n_frames = 500
 
 def get_hist_val(data, bins, query):
     if query > bins[-2]:
@@ -637,20 +641,36 @@ class NodeGraphVisualizer():
             e = self.G[e_[0]][e_[1]]
             prec = 7
 
-            s = e['score']
-            # if abs(s) < 0.00001:
-            #     s = 0
+            score = e['score']
+            if abs(score) < 0.0001:
+                score = 0
 
-            self.score_label.setText('score: '+str(s))
-            self.score_d_label.setText('dist_s: '+str(e['d'])[0:prec])
-            self.score_o_label.setText('orient_s: '+str(e['o'])[0:prec])
+            d = e['d']
+            if abs(d) < 0.0001:
+                d = 0
+
+            o = e['o']
+            if abs(o) < 0.0001:
+                o = 0
+
+            s = e['s']
+            if abs(s) < 0.0001:
+                s = 0
+
+            m = e['m']
+            if abs(m) < 0.0001:
+                m = 0
+
+            self.score_label.setText('score: '+str(score))
+            self.score_d_label.setText('dist_s: '+str(d)[0:prec])
+            self.score_o_label.setText('multi: '+str(o)[0:prec])
             if 'threshold' in e:
                 self.score_s_label.setText('a_thresh: '+str(e['threshold'])[0:prec])
             else:
-                self.score_s_label.setText('overlap_s: '+str(e['s'])[0:prec])
-            self.score_m_label.setText('minI_s: '+str(e['m'])[0:prec])
+                self.score_s_label.setText('overlap_s: '+str(s)[0:prec])
+            self.score_m_label.setText('antlike: '+str(m)[0:prec])
             val = np.linalg.norm(e_[0].centroid()-e_[1].centroid())
-            self.others_label.setText(str(val)[0:prec])
+            self.others_label.setText('dist: '+ str(val)[0:prec])
 
         if item and isinstance(item, QtGui.QGraphicsPixmapItem):
             n = self.nodes_obj[item]
@@ -1018,9 +1038,15 @@ def cc_solver(G, n):
 
 def adaptive_threshold(G, n):
     threshold = -0.3
-    c = 1.2
+    C = 1.5
 
     vals_out, best_out = get_best_n_out(G, n, 2)
+    if best_out[0]:
+        if G[n][best_out[0]]['type'] == CONFIRMED:
+            return []
+    else:
+        return []
+
     vals_in, best_in = get_best_n_in(G, best_out[0], 2)
     if best_in[0] == n and vals_out[0] < threshold:
         # n_a = G.node[n]['antlikeness']
@@ -1048,23 +1074,29 @@ def adaptive_threshold(G, n):
             s_in = vals_in[1]
 
 
-        threshold -= c*max(s_out, s_in)
+        # + because all scores are already with minus sign...
+        threshold += C*min(s_out, s_in)
 
 
         n1 = n
         n2 = best_out[0]
         G[n1][n2]['threshold'] = threshold
+        affected = []
         if s < threshold:
             for _, n2_ in G.out_edges(n1):
                 if n2_ != n2:
                     G.remove_edge(n1, n2_)
+                    affected.append(n2_)
 
             for n1_, _ in G.in_edges(n2):
                 if n1_ != n1:
                     G.remove_edge(n1_, n2)
+                    affected.append(n1_)
 
 
             G[n1][n2]['type'] = CONFIRMED
+
+        return affected
 
     return []
 
@@ -1089,8 +1121,8 @@ def get_best_in(G, n):
     return best, best_n
 
 def get_best_n_in(G, node, n):
-    best = np.array([0 for i in range(n)])
-    best_n = np.array([None for i in range(n)])
+    best = [0 for i in range(n)]
+    best_n = [None for i in range(n)]
 
     scores = []
     nodes = []
@@ -1282,16 +1314,16 @@ def get_assignment_score(r1, r2):
     d = np.linalg.norm(r1.centroid() - r2.centroid()) / float(AVG_MAIN_A)
     ds = max(0, (2-d) / 2.0)
 
-    p1 = ant_num_svm.predict_proba([ant_number_svm.get_x(r1)])
-    p2 = ant_num_svm.predict_proba([ant_number_svm.get_x(r2)])
+    # p1 = ant_num_svm.predict_proba([ant_number_svm.get_x(r1, AVG_AREA, AVG_MARGIN)])
+    # p2 = ant_num_svm.predict_proba([ant_number_svm.get_x(r2, AVG_AREA, AVG_MARGIN)])
 
-    q1 = mser_svm_model.predict_proba([mser_svm.get_x_minI(r1)])
-    q2 = mser_svm_model.predict_proba([mser_svm.get_x_minI(r2)])
+    q1 = antlikeness.get_prob(r1)
+    q2 = antlikeness.get_prob(r2)
 
-    # s = ds * min(p1[0][0], p2[0][0]) * min(q1[0][1], q2[0][1])
-    s = ds * min(q1[0][1], q2[0][1])
+    # s = ds * min(p1[0][0], p2[0][0]) * min(q1[1], q2[1])
+    s = ds * min(q1[1], q2[1])
 
-    return s, ds, 0, min(q1[0][1], q2[0][1])
+    return s, ds, 0, min(q1[1], q2[1])
 
 def compute_edges(G):
     for n1, n2 in G.edges():
@@ -1304,39 +1336,64 @@ def compute_edges(G):
         G[n1][n2]['o'] = multi
         G[n1][n2]['m'] = antlike
 
-def run_():
-    global ant_num_svm, mser_svm_model, svm_model
-    ant_num_svm = ant_number_svm.get_svm_model()
-    mser_svm_model = mser_svm.get_svm_model()
 
-    svm_model = assignment_svm.get_svm_model()
-    # svm_num_model = ant_number_svm.get_svm_model()
+def visualize_nodes(im, r):
+    vis = draw_points_crop(im, r.pts(), square=True, color=(0, 255, 0, 0.35))
+    cv2.putText(vis, str(r.id_), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.5, (0, 0, 255), 1, cv2.cv.CV_AA)
+
+    return vis
+
+def run_():
+    global ant_num_svm, antlikeness
+    ant_num_svm = ant_number_svm.get_svm_model()
 
     app = QtGui.QApplication(sys.argv)
 
-    start = time.time()
-
-    # antlikeness = Antlikeness()
-    # f_regions = {}
+    antlikeness = Antlikeness()
+    f_regions = {}
     # imgs_gray = {}
     # vid = get_auto_video_manager(vid_path)
-    # for f in range(init_frames):
-    #     im = vid.move2_next()
-    #     f_regions[f] = select_msers_cached(f, use_area_filter=False, use_sort=False)
-    #     imgs_gray[f] = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    #
-    # antlikeness.learn(f_regions, classes, imgs_gray)
+    for f in range(init_frames):
+        # im = vid.move2_next()
+        f_regions[f] = select_msers_cached(f, use_area_filter=False, use_sort=False)
+        # imgs_gray[f] = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+
+    antlikeness.learn(f_regions, classes)
+
+    i = 0
+    areas = []
+    major_axes = []
+    margins = []
+
+    for f in f_regions:
+        for r in f_regions[f]:
+            if classes[i]:
+                areas.append(r.area())
+                major_axes.append(r.a_ * 2)
+                margins.append(r.margin_)
+            i += 1
+
+    areas = np.array(areas)
+    major_axes = np.array(major_axes)
+    margins = np.array(margins)
+
+    AVG_AREA = np.median(areas)
+    AVG_MAIN_A = np.meadian(major_axes)
+    AVG_MARGIN = np.median(margins)
+    print "AVG: ", AVG_AREA, AVG_MAIN_A, AVG_MARGIN
 
     try:
         if not CACHE:
             raise Exception
 
+        start = time.time()
         with open(working_dir+'/g'+str(n_frames)+'.pkl', 'rb') as f:
             up = pickle.Unpickler(f)
             g = up.load()
             regions = up.load()
 
-        compute_edges(g)
+        end = time.time()
+        print "LOADING, takes ", end - start, " seconds which is ", (end-start) / n_frames, " seconds per frame"
 
     except:
         bg_model = None
@@ -1347,7 +1404,11 @@ def run_():
 
         vid = get_auto_video_manager(vid_path)
         g, regions = create_g(n_frames, vid, bg_model)
-        end = time.time()
+
+        with open(working_dir+'/g'+str(n_frames)+'.pkl', 'wb') as f:
+            p = pickle.Pickler(f)
+            p.dump(g)
+            p.dump(regions)
 
         # vid = get_auto_video_manager(vid_path)
         # for frame in regions:
@@ -1357,28 +1418,51 @@ def run_():
         #         cv2.putText(vis, str(r.id_), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.5, (0, 0, 255), 1, cv2.cv.CV_AA)
         #
         #         g.node[r]['img'] = vis
+        #
+        # compute_edges(g)
 
-        with open(working_dir+'/g'+str(n_frames)+'.pkl', 'wb') as f:
-            p = pickle.Pickler(f)
-            p.dump(g)
-            p.dump(regions)
+        # ngv_ = NodeGraphVisualizer(g, {}, regions)
+        # w_ = ngv_.visualize()
+        #
+        # w_.showMaximized()
 
-        compute_edges(g)
-
-        ngv_ = NodeGraphVisualizer(g, {}, regions)
-        w_ = ngv_.visualize()
-
-        w_.showMaximized()
 
     start = time.time()
-    # simplify(g, [merge_detector, split_detector, cc_solver, confirmed_rule])
-    # simplify_g_antlikeness(g, regions, ant_num)
-    # simplify(g, [cc_stable_marriage_solver, confirmed_rule])
-    # simplify(g, [cc_solver, confirmed_rule])
-    # simplify(g, [weak_overlap])
-    simplify(g, [adaptive_threshold])
+    # pool = mp.Pool()
+    vid = get_auto_video_manager(vid_path)
+
+    # for frame in regions:
+    #     im = vid.move2_next()
+    #
+    #     results = []
+    #     for r in regions[frame]:
+    #         results.append(pool.apply_async(visualize_nodes, args=(im, r)))
+    #
+    #     for p, r in zip(results, regions[frame]):
+    #         g.node[r]['img'] = p.get()
+
+    for frame in regions:
+        im = vid.move2_next()
+
+        # results = []
+        # for r in regions[frame]:
+        #     results.append(pool.apply_async(visualize_nodes, args=(im, r)))
+
+        for r in regions[frame]:
+            g.node[r]['img'] = visualize_nodes(im, r)
+
     end = time.time()
-    print "SIMPLIFIED, takes ", end - start, " seconds which is ", (end-start) / n_frames, " seconds per frame"
+    print "DRAWING NODES, takes ", end - start, " seconds which is ", (end-start) / n_frames, " seconds per frame"
+
+    start = time.time()
+    compute_edges(g)
+
+    end = time.time()
+    print "COMPUTING EDGE PRICES, takes ", end - start, " seconds which is ", (end-start) / n_frames, " seconds per frame"
+    ngv_ = NodeGraphVisualizer(g, {}, regions)
+    w_ = ngv_.visualize()
+
+    w_.showMaximized()
 
     compressed_g = nx.DiGraph()
     for n, d in g.nodes(data=True):
@@ -1386,6 +1470,17 @@ def run_():
 
     for n1, n2, d in g.edges(data=True):
         compressed_g.add_edge(n1, n2, d)
+
+
+    start = time.time()
+    # simplify(g, [merge_detector, split_detector, cc_solver, confirmed_rule])
+    # simplify_g_antlikeness(g, regions, ant_num)
+    # simplify(g, [cc_stable_marriage_solver, confirmed_rule])
+    # simplify(g, [cc_solver, confirmed_rule])
+    # simplify(g, [weak_overlap])
+    simplify(compressed_g, [adaptive_threshold])
+    end = time.time()
+    print "SIMPLIFIED, takes ", end - start, " seconds which is ", (end-start) / n_frames, " seconds per frame"
 
     simplify_g(compressed_g)
 
@@ -1409,112 +1504,3 @@ def run_():
 if __name__ == '__main__':
     run_()
     # cProfile.run('print run_(); print')
-
-    #
-    # ant_num_svm = ant_number_svm.get_svm_model()
-    # mser_svm_model = mser_svm.get_svm_model()
-    #
-    # svm_model = assignment_svm.get_svm_model()
-    # # svm_num_model = ant_number_svm.get_svm_model()
-    #
-    # app = QtGui.QApplication(sys.argv)
-    #
-    # start = time.time()
-    #
-    # # antlikeness = Antlikeness()
-    # # f_regions = {}
-    # # imgs_gray = {}
-    # # vid = get_auto_video_manager(vid_path)
-    # # for f in range(init_frames):
-    # #     im = vid.move2_next()
-    # #     f_regions[f] = select_msers_cached(f, use_area_filter=False, use_sort=False)
-    # #     imgs_gray[f] = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    # #
-    # # antlikeness.learn(f_regions, classes, imgs_gray)
-    #
-    # try:
-    #     if not CACHE:
-    #         raise Exception
-    #
-    #     with open(working_dir+'/g'+str(n_frames)+'.pkl', 'rb') as f:
-    #         up = pickle.Unpickler(f)
-    #         g = up.load()
-    #         regions = up.load()
-    # except:
-    #     bg_model = None
-    #     if USE_BG_SUB:
-    #         bg_model = MaxIntensity(vid_path)
-    #         bg_model.compute_model()
-    #         bg_model.bg_model = gaussian_filter(bg_model.bg_model, sigma=3)
-    #
-    #     vid = get_auto_video_manager(vid_path)
-    #     g, regions = create_g(n_frames, vid, bg_model)
-    #     end = time.time()
-    #
-    #     print "GRAPH CREATED, takes ", end - start, " seconds which is ", (end-start) / n_frames, " seconds per frame"
-    #     vid = get_auto_video_manager(vid_path)
-    #
-    #     for frame in regions:
-    #         im = vid.move2_next()
-    #         im_gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    #         for r in regions[frame]:
-    #             # prob = antlikeness.get_prob(r, im_gray)
-    #             # prob_multiple = svm_num_model.predict_proba([ant_number_svm.get_x(r)])
-    #             # prob_multiple = prob_multiple[0][1]
-    #             # r_ = int(255*(1-prob))
-    #             # g_ = int(255*prob)
-    #             g_ = 255
-    #             r_ = 0
-    #             # b_ = int(255*prob_multiple)
-    #             vis = draw_points_crop(im, r.pts(), square=True, color=(0, g_, r_, 0.35))
-    #             cv2.putText(vis, str(r.id_), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.5, (0, 0, 255), 1, cv2.cv.CV_AA)
-    #
-    #             g.node[r]['img'] = vis
-    #             # g.node[r]['antlikeness'] = prob
-    #
-    #     ngv_ = NodeGraphVisualizer(g, {}, regions)
-    #     w_ = ngv_.visualize()
-    #
-    #     w_.showMaximized()
-    #
-    #     # with open(working_dir+'/g'+str(n_frames)+'.pkl', 'wb') as f:
-    #     #     p = pickle.Pickler(f)
-    #     #     p.dump(g)
-    #     #     p.dump(regions)
-    #
-    #
-    # start = time.time()
-    # # simplify(g, [merge_detector, split_detector, cc_solver, confirmed_rule])
-    # # simplify_g_antlikeness(g, regions, ant_num)
-    # # simplify(g, [cc_stable_marriage_solver, confirmed_rule])
-    # # simplify(g, [cc_solver, confirmed_rule])
-    # # simplify(g, [weak_overlap])
-    # simplify(g, [adaptive_threshold])
-    # end = time.time()
-    # print "SIMPLIFIED, takes ", end - start, " seconds which is ", (end-start) / n_frames, " seconds per frame"
-    #
-    # compressed_g = nx.DiGraph()
-    # for n, d in g.nodes(data=True):
-    #     compressed_g.add_node(n, d)
-    #
-    # for n1, n2, d in g.edges(data=True):
-    #     compressed_g.add_edge(n1, n2, d)
-    #
-    # simplify_g(compressed_g)
-    #
-    # # with open('/Users/fnaiser/Documents/chunks/noplast_2262_results.arr', 'rb') as f:
-    # with open('/Users/fnaiser/Documents/chunks/eight_1505_results.arr', 'rb') as f:
-    #     gt_data = pickle.load(f)
-    #
-    # check_gt(g, regions, n_frames, gt_data)
-    #
-    # imgs = {}
-    # # ngv = NodeGraphVisualizer(g, imgs, regions)
-    # ngv = NodeGraphVisualizer(compressed_g, imgs, regions)
-    #
-    # w = ngv.visualize()
-    #
-    # w.showMaximized()
-    #
-    # app.exec_()
-    # sys.exit()
