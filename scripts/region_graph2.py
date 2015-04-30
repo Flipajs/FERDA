@@ -50,6 +50,8 @@ USE_UNDEFINED = False
 S_THRESH = 0.8
 
 
+CERT_THRESHOLD = 0.5
+
 CACHE_IMGS = True
 
 
@@ -63,6 +65,7 @@ TSD_CONFIRM_THRESH = 30
 TSDI_CONFIRM_THRESH = UNDEFINED_EDGE_THRESH
 # SCORE_CONFIRM_THRESH = UNDEFINED_EDGE_THRESH
 SCORE_CONFIRM_THRESH = -0.3
+ZERO_EPS_THRESHOLD = -0.1
 
 USE_BG_SUB = False
 
@@ -99,18 +102,18 @@ init_frames=3
 #
 # init_frames=3
 
-vid_path = '/Users/fnaiser/Documents/Camera 1_biglense1.avi'
-working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/camera1'
-MAX_SPEED = 100
-AVG_MAIN_A = 50
-NODE_SIZE = 60
-MIN_AREA = 500
-ant_num=5
-classes = np.zeros(1178)
-classes[0:5] = 1
-classes[384:389] = 1
-classes[792:797] = 1
-init_frames = 3
+# vid_path = '/Users/fnaiser/Documents/Camera 1_biglense1.avi'
+# working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/camera1'
+# MAX_SPEED = 100
+# AVG_MAIN_A = 50
+# NODE_SIZE = 60
+# MIN_AREA = 500
+# ant_num=5
+# classes = np.zeros(1178)
+# classes[0:5] = 1
+# classes[384:389] = 1
+# classes[792:797] = 1
+# init_frames = 3
 
 
 # vid_path = '/Volumes/Seagate Expansion Drive/IST - videos/bigLenses_colormarks2.avi'
@@ -141,22 +144,22 @@ init_frames = 3
 # classes[383:389] = 1
 # init_frames = 3
 
-vid_path = '/Volumes/Seagate Expansion Drive/IST - videos/smallLense_colony1.avi'
-working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/smalllense'
-MAX_SPEED = 60
-AVG_MAIN_A = 20
-NODE_SIZE = 60
-MIN_AREA = 50
-classes = np.zeros(133)
-classes[2:15] = 1
-classes[44:57] = 1
-classes[91:104] = 1
-init_frames = 3
-
+# vid_path = '/Volumes/Seagate Expansion Drive/IST - videos/smallLense_colony1.avi'
+# working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/smalllense'
+# MAX_SPEED = 60
+# AVG_MAIN_A = 20
+# NODE_SIZE = 60
+# MIN_AREA = 50
+# classes = np.zeros(133)
+# classes[2:15] = 1
+# classes[44:57] = 1
+# classes[91:104] = 1
+# init_frames = 3
+#
 USE_BG_SUB = False
 
 CACHE = True
-n_frames = 500
+n_frames = 1500
 
 def get_hist_val(data, bins, query):
     if query > bins[-2]:
@@ -654,6 +657,7 @@ class NodeGraphVisualizer():
                 o = 0
 
             s = e['s']
+
             if abs(s) < 0.0001:
                 s = 0
 
@@ -669,8 +673,16 @@ class NodeGraphVisualizer():
             else:
                 self.score_s_label.setText('overlap_s: '+str(s)[0:prec])
             self.score_m_label.setText('antlike: '+str(m)[0:prec])
-            val = np.linalg.norm(e_[0].centroid()-e_[1].centroid())
-            self.others_label.setText('dist: '+ str(val)[0:prec])
+            # val = np.linalg.norm(e_[0].centroid()-e_[1].centroid())
+
+            cert = -1
+            if 'certainty' in e:
+                cert = e['certainty']
+
+            if abs(cert) < 0.0001:
+                cert = 0
+
+            self.others_label.setText('certainty: '+ str(cert)[0:prec])
 
         if item and isinstance(item, QtGui.QGraphicsPixmapItem):
             n = self.nodes_obj[item]
@@ -1007,6 +1019,24 @@ def cc_optimization(G, nodes1, nodes2):
     return final_s, final_c
 
 
+def cc_optimization_2best(G, nodes1, nodes2):
+    configurations = []
+    conf_scores = []
+
+    get_configurations(G, nodes1, nodes2, [], 0, configurations, conf_scores)
+
+    if len(conf_scores) < 2:
+        return [], []
+
+    scores = [0, 0]
+    confs = [None, None]
+    ids = np.argsort(conf_scores)
+    for i in range(2):
+        scores[i] = conf_scores[ids[i]]
+        confs[i] = configurations[ids[i]]
+
+    return scores, confs
+
 def cc_solver(G, n):
     if G.out_degree(n) > 1:
         for _, n2 in G.out_edges(n):
@@ -1036,6 +1066,38 @@ def cc_solver(G, n):
 
     return []
 
+def symetric_cc_solver(G, n):
+    s1, s2 = get_cc(G, n)
+    if len(s1) == len(s2) and len(s1) > 1:
+        scores, configs = cc_optimization_2best(G, s1, s2)
+        if not scores:
+            return []
+
+        sc1 = scores[0]
+        sc2 = scores[1]
+        n_ = float(len(s1))
+        cert = abs(sc1 / n_) * (abs(sc1-sc2))
+
+        if cert > CERT_THRESHOLD:
+            for n1, n2 in configs[0]:
+                for _, n2_ in G.out_edges(n1):
+                    if n2_ != n2:
+                        G.remove_edge(n1, n2_)
+
+                for n1_, _ in G.in_edges(n2):
+                    if n1_ != n1:
+                        G.remove_edge(n1_, n2)
+
+                G[n1][n2]['type'] = CONFIRMED
+                G[n1][n2]['certainty'] = cert
+        else:
+            for n1, n2 in configs[0]:
+                G[n1][n2]['certainty'] = cert
+
+            print n.id_, cert, scores, configs
+
+    return []
+
 def adaptive_threshold(G, n):
     threshold = -0.3
     C = 1.5
@@ -1049,20 +1111,6 @@ def adaptive_threshold(G, n):
 
     vals_in, best_in = get_best_n_in(G, best_out[0], 2)
     if best_in[0] == n and vals_out[0] < threshold:
-        # n_a = G.node[n]['antlikeness']
-        # best_out_a = G.node[best_out[0]]['antlikeness']
-        #
-        # s = G[n][best_out[0]]['score'] * min(n_a, best_out_a)
-        #
-        # s_out = 0
-        # if best_out[1]:
-        #     s_out = vals_out[1] * min(n_a, G.node[best_out[1]]['antlikeness'])
-        #
-        # s_in = 0
-        # if best_in[1]:
-        #     s_in = vals_in[1] * min(best_out_a, G.node[best_in[1]]['antlikeness'])
-
-
         s = G[n][best_out[0]]['score']
 
         s_out = 0
@@ -1073,14 +1121,13 @@ def adaptive_threshold(G, n):
         if best_in[1]:
             s_in = vals_in[1]
 
-
         # + because all scores are already with minus sign...
         threshold += C*min(s_out, s_in)
-
 
         n1 = n
         n2 = best_out[0]
         G[n1][n2]['threshold'] = threshold
+        G[n1][n2]['certainty'] = abs(s) * abs(s - (min(s_out, s_in)))
         affected = []
         if s < threshold:
             for _, n2_ in G.out_edges(n1):
@@ -1329,12 +1376,15 @@ def compute_edges(G):
     for n1, n2 in G.edges():
         s, ds, multi, antlike = get_assignment_score(n1, n2)
 
-        G[n1][n2]['type'] = 'd'
-        G[n1][n2]['score'] = -s
-        G[n1][n2]['d'] = ds
-        G[n1][n2]['s'] = n2.area()-n1.area()
-        G[n1][n2]['o'] = multi
-        G[n1][n2]['m'] = antlike
+        if -s > ZERO_EPS_THRESHOLD:
+            G.remove_edge(n1, n2)
+        else:
+            G[n1][n2]['type'] = 'd'
+            G[n1][n2]['score'] = -s
+            G[n1][n2]['d'] = ds
+            G[n1][n2]['s'] = n2.area()-n1.area()
+            G[n1][n2]['o'] = multi
+            G[n1][n2]['m'] = antlike
 
 
 def visualize_nodes(im, r):
@@ -1378,7 +1428,7 @@ def run_():
     margins = np.array(margins)
 
     AVG_AREA = np.median(areas)
-    AVG_MAIN_A = np.meadian(major_axes)
+    AVG_MAIN_A = np.median(major_axes)
     AVG_MARGIN = np.median(margins)
     print "AVG: ", AVG_AREA, AVG_MAIN_A, AVG_MARGIN
 
@@ -1409,23 +1459,6 @@ def run_():
             p = pickle.Pickler(f)
             p.dump(g)
             p.dump(regions)
-
-        # vid = get_auto_video_manager(vid_path)
-        # for frame in regions:
-        #     im = vid.move2_next()
-        #     for r in regions[frame]:
-        #         vis = draw_points_crop(im, r.pts(), square=True, color=(0, 255, 0, 0.35))
-        #         cv2.putText(vis, str(r.id_), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.5, (0, 0, 255), 1, cv2.cv.CV_AA)
-        #
-        #         g.node[r]['img'] = vis
-        #
-        # compute_edges(g)
-
-        # ngv_ = NodeGraphVisualizer(g, {}, regions)
-        # w_ = ngv_.visualize()
-        #
-        # w_.showMaximized()
-
 
     start = time.time()
     # pool = mp.Pool()
@@ -1479,6 +1512,7 @@ def run_():
     # simplify(g, [cc_solver, confirmed_rule])
     # simplify(g, [weak_overlap])
     simplify(compressed_g, [adaptive_threshold])
+    simplify(compressed_g, [symetric_cc_solver])
     end = time.time()
     print "SIMPLIFIED, takes ", end - start, " seconds which is ", (end-start) / n_frames, " seconds per frame"
 
