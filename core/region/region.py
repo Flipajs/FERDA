@@ -41,6 +41,7 @@ class Region():
 
         self.roi_ = None
         self.id_ = -1
+        self.contour_ = None
 
     def from_dict_(self, data):
         pts = []
@@ -105,10 +106,18 @@ class Region():
         self.centroid_ = centroid
 
     def roi(self):
-        if not self.roi_:
+        if not hasattr(self, 'roi_') or not self.roi_:
             self.roi_ = get_roi(self.pts())
 
         return self.roi_
+
+    def contour(self):
+        from utils.drawing.points import get_contour
+        if not hasattr(self, 'contour_') or self.contour_ is None:
+            self.contour_ = get_contour(self.pts_)
+
+        return self.contour_
+
 
 def compute_region_axis_(sxx, syy, sxy):
     la = (sxx + syy) / 2

@@ -3,7 +3,7 @@ __author__ = 'fnaiser'
 import networkx as nx
 import matplotlib.pyplot as plt
 from utils.img import get_safe_selection
-from utils.drawing.points import draw_points_crop, get_contour, draw_points
+from utils.drawing.points import draw_points_crop, draw_points
 import cv2
 from utils.video_manager import get_auto_video_manager
 from core.region.mser import get_msers_, get_all_msers
@@ -32,6 +32,7 @@ import assignment_svm
 import ant_number_svm
 import cProfile
 import multiprocessing as mp
+from gui.correction.certainty import CertaintyVisualizer
 
 # max speed of #px / frame
 MAX_SPEED = 200
@@ -41,12 +42,12 @@ AVG_AREA = 240.0
 AVG_MARGIN = 0.0
 UNDEFINED_POS_SCORE = 0.1
 UNDEFINED_EDGE_THRESH = -0.5
-UNDEFINED_EDGE_THRESH = -0.5
+UNDEFINED_EDGE_THRESH = 0
 WEAK_OVERLAP_THRESH = -1.2
 
 MIN_I_DISTANCE_COEF = 20.0
 
-USE_UNDEFINED = False
+USE_UNDEFINED = True
 S_THRESH = 0.8
 
 
@@ -72,94 +73,18 @@ USE_BG_SUB = False
 with open('/Users/fnaiser/Documents/graphs/log_hists.pkl', 'rb') as f:
     log_hists = pickle.load(f)
 
-vid_path = '/Users/fnaiser/Documents/chunks/eight.m4v'
-working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/eight'
-NODE_SIZE = 50
-MIN_AREA = 30
-AVG_MAIN_A = 40.0
-ant_num = 8
-classes=np.zeros(77)
-classes[0:8] = 1
-classes[25:33] = 1
-classes[51:59] = 1
-init_frames=3
+from configs.eight import *
 
-# vid_path = '/Users/fnaiser/Documents/chunks/NoPlasterNoLid800.m4v'
-# working_dir = '/Volumes/Seagate Expansion Drive/graphs2'
-# AVG_AREA = 150
-# AVG_MAIN_A = 25
-# MAX_SPEED = 60
-# NODE_SIZE = 50
-# MIN_AREA = 25
-# ant_num=15
-# classes = np.zeros(301)
-# classes[3:19] = 1
-# classes[8] = 0
-# classes[106:122] = 1
-# classes[110] = 0
-# classes[202:218] = 1
-# classes[207] = 0
-#
-# init_frames=3
+# from configs.noplaster import *
+# from configs.colormarks1 import *
+from configs.colormarks2 import *
+# from configs.bilenses1 import *
+# from configs.colony1 import *
 
-# vid_path = '/Users/fnaiser/Documents/Camera 1_biglense1.avi'
-# working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/camera1'
-# MAX_SPEED = 100
-# AVG_MAIN_A = 50
-# NODE_SIZE = 60
-# MIN_AREA = 500
-# ant_num=5
-# classes = np.zeros(1178)
-# classes[0:5] = 1
-# classes[384:389] = 1
-# classes[792:797] = 1
-# init_frames = 3
-
-
-# vid_path = '/Volumes/Seagate Expansion Drive/IST - videos/bigLenses_colormarks2.avi'
-# working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/biglenses2'
-# MAX_SPEED = 100
-# AVG_MAIN_A = 40
-# NODE_SIZE = 60
-# MIN_AREA = 100
-# ant_num=9
-# classes = np.zeros(847)
-# classes[0:9] = 1
-# classes[218:226] = 1
-# classes[430:439] = 1
-# classes[637:646] = 1
-# init_frames = 4
-#
-#
-# vid_path = '/Volumes/Seagate Expansion Drive/IST - videos/bigLenses_colormarks1.avi'
-# working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/biglenses1'
-# MAX_SPEED = 100
-# AVG_MAIN_A = 40
-# NODE_SIZE = 60
-# MIN_AREA = 100
-# ant_num=6
-# classes = np.zeros(597)
-# classes[0:6] = 1
-# classes[191:197] = 1
-# classes[383:389] = 1
-# init_frames = 3
-
-# vid_path = '/Volumes/Seagate Expansion Drive/IST - videos/smallLense_colony1.avi'
-# working_dir = '/Volumes/Seagate Expansion Drive/mser_svm/smalllense'
-# MAX_SPEED = 60
-# AVG_MAIN_A = 20
-# NODE_SIZE = 60
-# MIN_AREA = 50
-# classes = np.zeros(133)
-# classes[2:15] = 1
-# classes[44:57] = 1
-# classes[91:104] = 1
-# init_frames = 3
-#
 USE_BG_SUB = False
 
 CACHE = True
-n_frames = 1500
+n_frames = 900
 
 def get_hist_val(data, bins, query):
     if query > bins[-2]:
@@ -687,7 +612,7 @@ class NodeGraphVisualizer():
         if item and isinstance(item, QtGui.QGraphicsPixmapItem):
             n = self.nodes_obj[item]
             self.score_label.setText('pos: '+str(n.centroid()[0])+', '+str(n.centroid()[1]))
-            c_len = len(get_contour(n.pts()))
+            c_len = len(n.contour())
             self.score_d_label.setText('contour len: '+str(c_len))
             self.score_o_label.setText('clen/area: '+str(c_len/float(n.area())))
             # self.score_s_label.setText('antlikeness: '+str(self.G.node[n]['antlikeness']))
@@ -1026,7 +951,7 @@ def cc_optimization_2best(G, nodes1, nodes2):
     get_configurations(G, nodes1, nodes2, [], 0, configurations, conf_scores)
 
     if len(conf_scores) < 2:
-        return [], []
+        return conf_scores, configurations
 
     scores = [0, 0]
     confs = [None, None]
@@ -1068,25 +993,38 @@ def cc_solver(G, n):
 
 def symetric_cc_solver(G, n):
     s1, s2 = get_cc(G, n)
+
+    affected = []
     if len(s1) == len(s2) and len(s1) > 1:
         scores, configs = cc_optimization_2best(G, s1, s2)
         if not scores:
             return []
 
-        sc1 = scores[0]
-        sc2 = scores[1]
-        n_ = float(len(s1))
-        cert = abs(sc1 / n_) * (abs(sc1-sc2))
+
+        if len(scores) == 1:
+            n_ = float(len(s1))
+            # to power of 2 because we want to multiply it by difference to secend best, which is 0
+            cert = abs(scores[0] / n_)**2
+        else:
+            sc1 = scores[0]
+            sc2 = scores[1]
+            n_ = float(len(s1))
+            cert = abs(sc1 / n_) * (abs(sc1-sc2))
 
         if cert > CERT_THRESHOLD:
             for n1, n2 in configs[0]:
                 for _, n2_ in G.out_edges(n1):
                     if n2_ != n2:
                         G.remove_edge(n1, n2_)
+                        affected.append(n2_)
 
                 for n1_, _ in G.in_edges(n2):
                     if n1_ != n1:
                         G.remove_edge(n1_, n2)
+                        affected.append(n1_)
+
+                affected.append(n1)
+                affected.append(n2)
 
                 G[n1][n2]['type'] = CONFIRMED
                 G[n1][n2]['certainty'] = cert
@@ -1096,12 +1034,10 @@ def symetric_cc_solver(G, n):
 
             print n.id_, cert, scores, configs
 
-    return []
+    return affected
+
 
 def adaptive_threshold(G, n):
-    threshold = -0.3
-    C = 1.5
-
     vals_out, best_out = get_best_n_out(G, n, 2)
     if best_out[0]:
         if G[n][best_out[0]]['type'] == CONFIRMED:
@@ -1110,37 +1046,45 @@ def adaptive_threshold(G, n):
         return []
 
     vals_in, best_in = get_best_n_in(G, best_out[0], 2)
-    if best_in[0] == n and vals_out[0] < threshold:
-        s = G[n][best_out[0]]['score']
-
-        s_out = 0
-        if best_out[1]:
-            s_out = vals_out[1]
-
-        s_in = 0
-        if best_in[1]:
-            s_in = vals_in[1]
-
-        # + because all scores are already with minus sign...
-        threshold += C*min(s_out, s_in)
-
+    if best_in[0] == n and vals_out[0] < -CERT_THRESHOLD:
+        cert = -vals_out[0]
         n1 = n
         n2 = best_out[0]
-        G[n1][n2]['threshold'] = threshold
-        G[n1][n2]['certainty'] = abs(s) * abs(s - (min(s_out, s_in)))
         affected = []
-        if s < threshold:
+        G[n1][n2]['certainty'] = cert
+        if best_out[1] or best_in[1]:
+            s = G[n][best_out[0]]['score']
+
+            s_out = 0
+            if best_out[1]:
+                s_out = vals_out[1]
+
+            s_in = 0
+            if best_in[1]:
+                s_in = vals_in[1]
+
+            cert = abs(s) * abs(s - (min(s_out, s_in)))
+            G[n1][n2]['certainty'] = cert
+
+        if n.id_ == 1190:
+            print cert, 1190, CERT_THRESHOLD
+
+        if cert > CERT_THRESHOLD:
             for _, n2_ in G.out_edges(n1):
                 if n2_ != n2:
                     G.remove_edge(n1, n2_)
                     affected.append(n2_)
+                    for n1_, _ in G.in_edges(n2_):
+                        if n1_ != n:
+                            affected.append(n1_)
 
             for n1_, _ in G.in_edges(n2):
                 if n1_ != n1:
                     G.remove_edge(n1_, n2)
                     affected.append(n1_)
 
-
+            if n.id_ == 1190:
+                print cert, 1190, CERT_THRESHOLD
             G[n1][n2]['type'] = CONFIRMED
 
         return affected
@@ -1348,17 +1292,18 @@ def simplify_g_antlikeness(G, regions, ant_num):
             if not r in G.node:
                 continue
 
-            ant_s.append(G.node[r]['antlikeness'])
+            prob = antlikeness.get_prob(r)
+            ant_s.append(prob[1])
 
         ids = np.argsort(-np.array(ant_s))
 
         for i, id in zip(range(len(ids)), ids):
-            if ant_s[id] < 0.1:
+            if ant_s[id] < 0.2:
             # if i >= ant_num or ant_s[id] < 0.1:
                 G.remove_node(regions[f][id])
 
-def get_assignment_score(r1, r2):
-    d = np.linalg.norm(r1.centroid() - r2.centroid()) / float(AVG_MAIN_A)
+def get_assignment_score(r1, r2, pred=0):
+    d = np.linalg.norm(r1.centroid() + pred - r2.centroid()) / float(AVG_MAIN_A)
     ds = max(0, (2-d) / 2.0)
 
     # p1 = ant_num_svm.predict_proba([ant_number_svm.get_x(r1, AVG_AREA, AVG_MARGIN)])
@@ -1368,9 +1313,12 @@ def get_assignment_score(r1, r2):
     q2 = antlikeness.get_prob(r2)
 
     # s = ds * min(p1[0][0], p2[0][0]) * min(q1[1], q2[1])
-    s = ds * min(q1[1], q2[1])
+    antlikeness_diff = 1 - abs(q1[1]-q2[1])
+    # s = ds * min(q1[1], q2[1])
+    s = ds * antlikeness_diff
 
-    return s, ds, 0, min(q1[1], q2[1])
+    # return s, ds, 0, min(q1[1], q2[1])
+    return s, ds, 0, antlikeness_diff
 
 def compute_edges(G):
     for n1, n2 in G.edges():
@@ -1389,9 +1337,143 @@ def compute_edges(G):
 
 def visualize_nodes(im, r):
     vis = draw_points_crop(im, r.pts(), square=True, color=(0, 255, 0, 0.35))
-    cv2.putText(vis, str(r.id_), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.5, (0, 0, 255), 1, cv2.cv.CV_AA)
+    cv2.putText(vis, str(r.id_), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
 
     return vis
+
+
+def cc_optimization_2best(G, nodes1, nodes2):
+    configurations = []
+    conf_scores = []
+
+    get_configurations(G, nodes1, nodes2, [], 0, configurations, conf_scores)
+
+    if len(conf_scores) < 2:
+        return conf_scores, configurations
+
+    scores = [0, 0]
+    confs = [None, None]
+    ids = np.argsort(conf_scores)
+    for i in range(2):
+        scores[i] = conf_scores[ids[i]]
+        confs[i] = configurations[ids[i]]
+
+    return scores, confs
+
+def cc_solver(G, n):
+    if G.out_degree(n) > 1:
+        for _, n2 in G.out_edges(n):
+            if G[n][n2]['type'] == MERGED or G[n][n2]['type'] == SPLIT:
+                return []
+
+    s1, s2 = get_cc(G, n)
+    if len(s1) > 1 or len(s2) > 1:
+        scores, configs = cc_optimization(G, s1, s2)
+
+        if len(scores) == 1:
+            for n1, n2 in configs[0]:
+                # undefined state
+                if not n2:
+                    continue
+
+                for _, n2_ in G.out_edges(n1):
+                    if n2_ != n2:
+                        G.remove_edge(n1, n2_)
+
+                for n1_, _ in G.in_edges(n2):
+                    if n1_ != n1:
+                        G.remove_edge(n1_, n2)
+
+        else:
+            print scores, configs
+
+    return []
+
+
+def cc_certainty(G, c1, c2):
+    configurations = []
+    scores = []
+
+    get_configurations(G, c1, c2, [], 0, configurations, scores)
+    ids = np.argsort(scores)
+    configurations = np.array(configurations)
+    scores = np.array(scores)
+    configurations = configurations[ids]
+    scores = scores[ids]
+
+    n_ = float(len(c1))
+    cert = abs(scores[0] / n_)
+    if len(scores) > 1:
+        cert = abs(scores[0] / n_) * abs(scores[0]-scores[1])
+
+    return cert, configurations, scores
+
+
+def get_ccs(G):
+    touched = {}
+    ccs = []
+    for n in G.nodes():
+        if n not in touched:
+            out_n, _ = num_strong_out_edges(G, n)
+            if out_n == 1:
+                touched[n] = True
+                continue
+
+            # We don't want to show last nodes as problem
+            if G.node[n]['t'] == n_frames-1:
+                continue
+
+            c1, c2 = get_cc(G, n)
+
+            for n_ in c1:
+                touched[n_] = True
+
+            cert, confs, scores = cc_certainty(G, c1, c2)
+            conf = {'c1': c1, 'c2': c2, 'certainty': cert, 'configurations': confs, 'scores': scores}
+            ccs.append(conf)
+
+    return ccs
+
+def update_costs(G, n):
+    in_d = G.in_degree(n)
+    out_d = G.out_degree(n)
+
+    affected = []
+    if in_d == 1 and out_d > 0:
+        e_ = G.in_edges(n)
+        prev_n = e_[0][0]
+        pred = n.centroid() - prev_n.centroid()
+
+        for _, n2 in G.out_edges(n):
+            s = G[n][n2]['score']
+
+            s2, _, _, _ = get_assignment_score(n, n2, pred)
+            s2 = -s2
+
+            if s2 < s:
+                G[n][n2]['score'] = s2
+                print "better score ", n.id_, n2.id_, pred, s, s2
+                affected.append(n)
+
+    elif in_d > 0 and out_d == 1:
+        e_ = G.out_edges(n)
+        next_n = e_[0][1]
+        pred = n.centroid() - next_n.centroid()
+
+        for n1, _ in G.in_edges(n):
+            s = G[n1][n]['score']
+
+            s2, _, _, _ = get_assignment_score(n1, n, pred)
+            s2 = -s2
+
+            if s2 < s:
+                G[n1][n]['score'] = s2
+                print "better score next ", n1.id_, n.id_, pred, s, s2
+                affected.append(n1)
+
+
+    return affected
+
 
 def run_():
     global ant_num_svm, antlikeness
@@ -1507,16 +1589,20 @@ def run_():
 
     start = time.time()
     # simplify(g, [merge_detector, split_detector, cc_solver, confirmed_rule])
-    # simplify_g_antlikeness(g, regions, ant_num)
+    simplify_g_antlikeness(compressed_g, regions, ant_num)
     # simplify(g, [cc_stable_marriage_solver, confirmed_rule])
     # simplify(g, [cc_solver, confirmed_rule])
     # simplify(g, [weak_overlap])
-    simplify(compressed_g, [adaptive_threshold])
-    simplify(compressed_g, [symetric_cc_solver])
+    simplify(compressed_g, [adaptive_threshold, symetric_cc_solver, update_costs])
+    # simplify(compressed_g, [symetric_cc_solver])
     end = time.time()
     print "SIMPLIFIED, takes ", end - start, " seconds which is ", (end-start) / n_frames, " seconds per frame"
 
-    simplify_g(compressed_g)
+    # simplify(compressed_g, [update_costs])
+    # simplify(compressed_g, [adaptive_threshold])
+    # simplify(compressed_g, [symetric_cc_solver])
+
+    # simplify_g(compressed_g)
 
     # with open('/Users/fnaiser/Documents/chunks/noplast_2262_results.arr', 'rb') as f:
     with open('/Users/fnaiser/Documents/chunks/eight_1505_results.arr', 'rb') as f:
@@ -1528,9 +1614,27 @@ def run_():
     # ngv = NodeGraphVisualizer(g, imgs, regions)
     ngv = NodeGraphVisualizer(compressed_g, imgs, regions)
 
-    w = ngv.visualize()
+    ccs = get_ccs(compressed_g)
+    print len(ccs)
+    ccs = sorted(ccs, key=lambda k: k['certainty'])
 
+    with open(working_dir+'/certainty_visu.pkl', 'wb') as f:
+        p = pickle.Pickler(f)
+        p.dump(compressed_g)
+        # p.dump(regions)
+        p.dump(ccs)
+        p.dump(vid_path)
+
+    cv = CertaintyVisualizer(compressed_g, get_auto_video_manager(vid_path))
+
+    for c in ccs:
+        cv.add_configuration(c)
+
+    cv.show()
+
+    w = ngv.visualize()
     w.showMaximized()
+
 
     app.exec_()
     sys.exit()

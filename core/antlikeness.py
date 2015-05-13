@@ -1,7 +1,6 @@
 __author__ = 'fnaiser'
 
 from sklearn import svm
-from utils.drawing.points import get_contour
 import numpy as np
 
 
@@ -38,7 +37,7 @@ class Antlikeness():
             x.append(r.margin_)
 
         if self.use_area_cont_ratio:
-            cl = len(get_contour(r.pts()))
+            cl = len(r.contour())
             x.append(cl/r.area()**0.5)
 
         if self.use_min_intensity_percentile:

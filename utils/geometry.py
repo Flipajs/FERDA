@@ -38,6 +38,13 @@ def rotation_matrix(theta, degrees=False):
     return rot
 
 
+def angle_from_matrix(R):
+    t1 = math.acos(R[0, 0])
+    t2 = math.asin(R[1, 0])
+
+    return t1*np.sign(t2)
+
+
 def _rotate(pts, th, center, rot=None):
     if rot is None:
         rot = rotation_matrix(th)

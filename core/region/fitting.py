@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from math import cos, sin
 import split_by_contours
 import experiment_params
+from utils.geometry import rotation_matrix, angle_from_matrix, rotate
 
 ##############
 # all point lists are in format [y, x]
@@ -22,6 +23,7 @@ class TransHelper():
         self.centroid = np.copy(animal.centroid())
         self.global_translation = np.array([0., 0.])
         self.global_rotation = np.identity(2)
+        self.angle = 0
 
 
 class Fitting():
@@ -36,7 +38,10 @@ class Fitting():
 
         self.trans_helpers = [TransHelper(a) for a in animals]
 
+        self.animal_history = [[] for a in animals]
+
     def fit(self):
+        # self.plot_situation()
         if self.use_settled_heuristics:
             settled_ids = self.get_settled_ids()
 
@@ -44,89 +49,98 @@ class Fitting():
             process_flag[settled_ids] = False
 
             for i in range(self.num_of_iterations/2):
+                # print i
                 list_of_pairs = self.get_pairs_a2r_region()
 
                 changed = False
                 for a_id in range(len(self.animals)):
                     if process_flag[a_id]:
                         changed = True
-                        # a2r_pairs = self.get_pairs_a2r_a_outside_r(self.d_map_animals[a_id], self.d_map_region, list_of_pairs[a_id])
                         a2r_pairs = self.get_pairs_a2r_a_outside_r(self.d_map_animals[a_id], self.d_map_region)
                         a2r_pairs.extend(list_of_pairs[a_id])
 
                         a2r_pairs = np.array(a2r_pairs)
 
-                        # a2r_pairs = np.array(list_of_pairs[a_id])
-
-                        h_ = a2r_pairs[:,0] - a2r_pairs[:,1]
-
-                        print a2r_pairs.shape
-                        fig = plt.figure(figsize=(4, 6.5))
-                        reg = plt.scatter(h_[:,1], h_[:,0], color='#777777', s=35, edgecolor='k')
-
-                        plt.ion()
-                        plt.show()
-                        plt.waitforbuttonpress(0)
-
-                        plt.close()
-                        plt.ioff()
-                        fig = plt.figure(figsize=(4, 6.5))
-                        reg = plt.scatter(a2r_pairs[:,0,1], a2r_pairs[:,0,0], color='#00ff00', s=35, edgecolor='k')
-
-                        plt.ion()
-                        plt.show()
-                        plt.waitforbuttonpress(0)
-                        plt.close()
-
-                        # print a2r_pairs
                         t, R = self.compute_transformation(np.copy(a2r_pairs))
                         # print t, R
+                        self.animal_history[a_id].append({'t': t, 'R': R})
                         self.apply_transform(a_id, t, R)
 
-                        # if test_position_convergence(a_id):
-                        #     process_flag[a_id] = False
+                        if self.test_t_convergence(self.animal_history[a_id], i):
+                            process_flag[a_id] = False
 
-
-                        self.plot_situation()
-                    # vid = get_auto_video_manager('/Volumes/Seagate Expansion Drive/FERDA-DATA/data/NoPlasterNoLid800.m4v')
-                    # im = vid.seek_frame(74)
-                    # draw_points(im, self.d_map_animals[a_id].cont_pts())
-                    #
-                    # cv2.imshow('test', im)
-                    # cv2.moveWindow('test', 0, 0)
-                    # cv2.waitKey(0)
+                        # self.plot_situation()
 
                 if not changed:
                     break
 
+        process_flag = np.ones((len(self.animals)), dtype=np.bool)
+        for i in range(self.num_of_iterations):
+            # print i
+            list_of_pairs = self.get_pairs_a2r_region()
 
-        #         t = estimate_transformation()
-        #         for each unsettled ant
-        #             apply_transformation()
-        #
-        #         if termination_test():
-        #             break
-        #
-        # for i in range(num_of_iterations):
-        #     t = estimate_transformation()
-        #     apply_transformation()
-        #     if termination_test():
-        #         break
+            changed = False
+            for a_id in range(len(self.animals)):
+                if process_flag[a_id]:
+                    changed = True
+                    a2r_pairs = self.get_pairs_a2r_a_outside_r(self.d_map_animals[a_id], self.d_map_region)
+                    a2r_pairs.extend(list_of_pairs[a_id])
 
+                    a2r_pairs = np.array(a2r_pairs)
+
+                    t, R = self.compute_transformation(np.copy(a2r_pairs))
+                    # print t, R
+                    self.animal_history[a_id].append({'t': t, 'R': R})
+                    self.apply_transform(a_id, t, R)
+
+                    if self.test_t_convergence(self.animal_history[a_id], i):
+                        process_flag[a_id] = False
+
+                    # self.plot_situation()
+
+            if not changed:
+                break
+
+
+        self.prepare_results()
+        self.plot_situation()
+
+    def test_t_convergence(self, animal_history, frame):
+        if frame > 0:
+            if np.array_equal(animal_history[frame-1]['t'], animal_history[frame]['t']):
+                if np.array_equal(animal_history[frame-1]['R'], animal_history[frame]['R']):
+                    return True
+
+        return False
+
+    def prepare_results(self):
+        for a_id in range(len(self.animals)):
+            pts_ = self.animals[a_id].pts() - self.animals[a_id].centroid()
+
+            pts_ = np.dot(pts_, rotation_matrix(self.trans_helpers[a_id].angle).T)
+            pts_ += self.trans_helpers[a_id].centroid
+
+            self.animals[a_id].pts_ = pts_
 
     def plot_situation(self):
         plt.close()
         plt.ioff()
+        plt.clf()
 
         fig = plt.figure(figsize=(4, 6.5))
         reg = plt.scatter(self.d_map_region.cont_pts()[:,1], self.d_map_region.cont_pts()[:,0], color='#777777', s=35, edgecolor='k')
 
-        colors = ['magenta', 'cyan', 'yellow', 'blue', 'cyan']
+        colors = ['magenta', 'cyan', 'yellow', 'blue', 'red', 'green']
         legends = []
         for a_id in range(len(self.animals)):
             a = self.d_map_animals[a_id]
+            #
+            # leg = plt.scatter(a.cont_pts()[:,1], a.cont_pts()[:,0], color=colors[a_id], s=35, edgecolor='black')
 
-            leg = plt.scatter(a.cont_pts()[:,1], a.cont_pts()[:,0], color=colors[a_id], s=35, edgecolor='black')
+            a = self.animals[a_id]
+            pts = a.pts()
+            leg = plt.scatter(pts[:,1], pts[:,0], color=colors[a_id], s=35, edgecolor='black')
+
             legends.append(leg)
 
         plt.ion()
@@ -136,32 +150,20 @@ class Fitting():
     def apply_transform(self, a_id, translation, rot):
         pts_ = self.d_map_animals[a_id].cont_pts()
 
-        # pts_ -= self.trans_helpers[a_id].centroid
-
-        # new_pts = []
-        # for pt in pts_:
-        #     p = np.dot(rot, pt.reshape(2, ))
-        #     p += translation
-        #     # p += self.trans_helpers[a_id].centroid + translation
-        #
-        #     new_pts.append(p)
-        #
-        # pts_ = np.array(new_pts)
-
-        # alpha = 0
-        # rot = np.array([np.array([cos(alpha), -sin(alpha)]), np.array([sin(alpha), cos(alpha)])])
-        # translation = [10., 0]
-        # pts_ -= self.trans_helpers[a_id].centroid
         pts_ = np.dot(pts_, rot.T)
-        # translation = np.array([10., 20.])
         pts_ += translation
 
-        # pts_ += self.trans_helpers[a_id].centroid + translation
-
-        self.trans_helpers[a_id].global_translation += translation
-        self.trans_helpers[a_id].global_rotation = np.dot(self.trans_helpers[a_id].global_rotation, rot)
+        self.trans_helpers[a_id].centroid = np.asarray(np.dot(self.trans_helpers[a_id].centroid, rot.T) + translation, dtype=np.int32)
+        # self.trans_helpers[a_id].global_translation += translation
+        # self.trans_helpers[a_id].global_rotation = np.dot(self.trans_helpers[a_id].global_rotation, rot.T)
+        self.trans_helpers[a_id].angle += angle_from_matrix(rot)
 
         self.d_map_animals[a_id] = DistanceMap(pts_, only_cont=True)
+
+        # pts_ = self.animals[a_id].pts()
+        # pts_ = np.dot(pts_, rot.T)
+        # pts_ += translation
+        # self.animals[a_id].pts_ = np.asarray(pts_, dtype=np.int32)
 
     def compute_transformation(self, pairs):
         apts = pairs[:,0]
@@ -307,12 +309,6 @@ class Fitting():
         return score
 
 
-def estimate_transformation():
-    pass
-
-
-
-
 if __name__ == '__main__':
     with open('/Volumes/Seagate Expansion Drive/regions-merged/74.pkl', 'rb') as f:
         data = pickle.load(f)
@@ -327,7 +323,7 @@ if __name__ == '__main__':
         r['col2'] += 10
         r['line'] += -3
 
-    split_by_contours.solve(data['region'], None, [0, 1], data['ants'], p, im.shape, debug=True)
+    # split_by_contours.solve(data['region'], None, [0, 1], data['ants'], p, im.shape, debug=True)
 
 
 

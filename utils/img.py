@@ -58,13 +58,13 @@ class ROI():
         if y < self.y_:
             return False
 
-        if y > self.y_max_:
+        if y >= self.y_max_:
             return False
 
         if x < self.x_:
             return False
 
-        if x > self.x_max_:
+        if x >= self.x_max_:
             return False
 
         return True
