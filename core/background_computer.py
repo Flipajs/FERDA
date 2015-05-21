@@ -65,6 +65,7 @@ class BackgroundComputer():
                 self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
         else:
             self.piece_results_together()
+            self.check_parallelization_timer.stop()
 
     def check_parallelization(self):
         if self.finished.all():

@@ -142,8 +142,8 @@ if __name__ == "__main__":
     from core.project import Project
     proj = Project()
     # proj.load('/Volumes/Seagate Expansion Drive/working_dir/eight1/eight1.fproj')
-    # proj.load('/Users/fnaiser/Documents/work_dir/eight/eight.fproj')
-    proj.load('/Users/fnaiser/Documents/work_dir/big_lenses1/bl1.fproj')
+    proj.load('/Users/fnaiser/Documents/work_dir/eight/eight.fproj')
+    # proj.load('/Users/fnaiser/Documents/work_dir/big_lenses1/bl1.fproj')
 
     ex.widget_control('load_project', proj)
 

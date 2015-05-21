@@ -23,320 +23,9 @@ from core.animal import colors_
 from core.region.fitting import Fitting
 import cv2
 from copy import deepcopy
-
-
-class ConfigWidget(QtGui.QWidget):
-    def __init__(self, G, c, vid, confirm_edges_callback, merged_callback, color_assignments=None):
-        super(ConfigWidget, self).__init__()
-
-        self.G = G
-        self.c = c
-        self.confirm_edges_callback = confirm_edges_callback
-        self.merged_callback = merged_callback
-
-        self.node_size = 70
-        self.frame_visu_margin = 100
-
-        self.config_lines = []
-        self.node_positions = []
-        self.h_ = self.node_size + 3
-        self.w_ = self.node_size + 100
-
-        self.user_actions = []
-
-        self.active_node = None
-
-        self.sub_g = self.G.subgraph(self.c.regions_t1 + self.c.regions_t2)
-
-        self.it_nodes = {}
-
-        self.active_config = 0
-        self.im_t1 = None
-        self.im_t2 = None
-        self.crop_t1_widget = None
-        self.crop_t2_widget = None
-        self.crop_visualize = True
-
-        self.node_positions = {}
-
-        self.frame_t = self.c.regions_t1[0].frame_
-
-        if color_assignments:
-            self.color_assignments = color_assignments
-        else:
-            self.color_assignments = {}
-
-            for n, i in zip(self.c.regions_t1, range(len(self.c.regions_t1))):
-                self.color_assignments[n] = colors_[i]
-
-        if not self.im_t1:
-            self.im_t1 = vid.seek_frame(self.frame_t)
-            self.im_t2 = vid.move2_next()
-
-        self.pop_menu_node = QtGui.QMenu(self)
-        self.action_remove_node = QtGui.QAction('remove', self)
-        self.action_remove_node.triggered.connect(self.remove_node)
-
-        self.action_partially_confirm = QtGui.QAction('confirm this connection', self)
-        self.action_partially_confirm.triggered.connect(self.partially_confirm)
-
-        self.action_mark_merged = QtGui.QAction('merged', self)
-        self.action_mark_merged.triggered.connect(self.mark_merged)
-
-        self.pop_menu_node.addAction(self.action_remove_node)
-        self.pop_menu_node.addAction(self.action_mark_merged)
-        self.pop_menu_node.addAction(self.action_partially_confirm)
-
-        self.pop_menu_else = QtGui.QMenu(self)
-        self.pop_menu_else.addAction(QtGui.QAction('add node', self))
-
-        self.setLayout(QtGui.QHBoxLayout())
-        self.v = QtGui.QGraphicsView()
-        self.scene = MyScene()
-
-        self.edge_pen = QtGui.QPen(QtCore.Qt.SolidLine)
-        self.edge_pen.setColor(QtGui.QColor(0, 0, 0, 0x38))
-        self.edge_pen.setWidth(1)
-
-        self.strong_edge_pen = QtGui.QPen(QtCore.Qt.SolidLine)
-        self.strong_edge_pen.setColor(QtGui.QColor(0, 255, 0, 0x78))
-        self.strong_edge_pen.setWidth(2)
-
-        self.layout().addWidget(self.v)
-        self.v.setScene(self.scene)
-        self.layout().addWidget(QtGui.QLabel(str(0 if c.certainty < 0.001 else c.certainty)[0:5]))
-
-        self.draw_scene()
-        self.draw_frame()
-
-        self.score_list = QtGui.QVBoxLayout()
-        self.layout().addLayout(self.score_list)
-
-        for i in range(min(10, len(self.c.configurations))):
-            s = self.c.scores[i]
-            b = QtGui.QPushButton(str(0 if abs(s) < 0.001 else s)[0:6])
-            b.clicked.connect(partial(self.show_configuration, i))
-            self.score_list.addWidget(b)
-            # self.score_list.addWidget(QtGui.QLabel(str(0 if abs(s) < 0.001 else s)[0:6]))
-
-        self.confirm_b = QtGui.QPushButton('confirm')
-        self.confirm_b.clicked.connect(self.confirm_clicked)
-
-        self.layout().addWidget(self.confirm_b)
-        self.v.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect(self.v, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.on_context_menu)
-
-
-    def on_context_menu(self, point):
-        it = self.scene.itemAt(self.v.mapToScene(point))
-
-        if isinstance(it, QtGui.QGraphicsPixmapItem):
-            self.active_node = self.it_nodes[it]
-            self.pop_menu_node.exec_(self.v.mapToGlobal(point))
-        else:
-            self.pop_menu_else.exec_(self.v.mapToGlobal(point))
-            self.active_node = None
-
-    def confirm_clicked(self):
-        pairs = []
-        for n1, n2 in self.c.configurations[self.active_config]:
-            pairs.append((n1, n2))
-
-        self.confirm_edges_callback(pairs, self.c)
-
-    def get_im(self, n, t1=True):
-        if t1:
-            im = self.im_t1
-        else:
-            im = self.im_t2
-
-        vis = draw_points_crop(im, n.pts(), color=self.get_node_color(n), square=True)
-        # vis = self.G.node[n]['img']
-
-        if vis.shape[0] > self.node_size or vis.shape[1] > self.node_size:
-            vis = np.asarray(resize(vis, (self.node_size, self.node_size)) * 255, dtype=np.uint8)
-
-        return cvimg2qtpixmap(vis)
-
-    def remove_node(self):
-        print "REMOVE", self.active_node
-
-    def get_node_color(self, n):
-        opacity = 0.5
-        c = colors_[self.node_positions[n] + len(self.c.regions_t1)] + (opacity, )
-        for c1, c2 in self.c.configurations[self.active_config]:
-            if c1 == n:
-                c = self.color_assignments[n] + (opacity, )
-                break
-            if c2 == n:
-                c = self.color_assignments[c1] + (opacity, )
-                break
-
-        return c
-
-    def draw_frame(self):
-        centroids = []
-        for n in self.c.regions_t1:
-            centroids.append(n.centroid())
-
-        roi = get_roi(np.array(centroids))
-        m = self.frame_visu_margin
-
-        h_, w_, _ = self.im_t1.shape
-
-        im = self.im_t1
-        if self.crop_visualize:
-            im = self.im_t1.copy()
-
-            for r in self.c.regions_t1:
-                im = draw_points(im, r.pts(), color=self.get_node_color(r))
-
-        roi = ROI(max(0, roi.y() - m), max(0, roi.x() - m), min(roi.height() + 2*m, h_), min(roi.width() + 2*m, w_))
-        crop = np.copy(im[roi.y():roi.y()+roi.height(), roi.x():roi.x()+roi.width(), :])
-        cv2.putText(crop, str(self.frame_t), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
-
-        self.crop_t1_widget = get_image_label(crop)
-        self.layout().insertWidget(0, self.crop_t1_widget)
-
-        if self.crop_visualize:
-            im = self.im_t2.copy()
-
-            for r in self.c.regions_t2:
-                im = draw_points(im, r.pts(), color=self.get_node_color(r))
-
-        crop = np.copy(im[roi.y():roi.y()+roi.height(), roi.x():roi.x()+roi.width(), :])
-        self.crop_t2_widget = get_image_label(crop)
-        self.layout().insertWidget(1, self.crop_t2_widget)
-
-    def mark_merged(self):
-        if len(self.c.regions_t1) > 0 and len(self.c.regions_t2) > 0:
-            avg_area_c1 = 0
-            for c1 in self.c.regions_t1:
-                avg_area_c1 += c1.area()
-            avg_area_c1 /= float(len(self.c.regions_t1))
-
-            avg_area_c2 = 0
-            for c2 in self.c.regions_t2:
-                avg_area_c2 += c2.area()
-
-            avg_area_c2 /= float(len(self.c.regions_t2))
-
-            t1_ = self.c.regions_t1
-            t2_ = self.c.regions_t2
-            t_reversed = False
-            if avg_area_c1 > avg_area_c2:
-                t1_ = self.c.regions_t2
-                t2_ = self.c.regions_t1
-                t_reversed = True
-
-            #TODO: make copy of regions!
-
-            reg = []
-            for c2 in t2_:
-                if not reg:
-                    reg = deepcopy(c2)
-                else:
-                    reg.pts_ = np.append(reg.pts_, c2.pts_, axis=0)
-
-            objects = []
-            for c1 in t1_:
-                a = deepcopy(c1)
-                if t_reversed:
-                    a.frame_ -= 1
-                else:
-                    a.frame_ += 1
-
-                objects.append(a)
-
-            print self, self.c.regions_t1
-            f = Fitting(reg, objects, num_of_iterations=10)
-            f.fit()
-
-            self.merged_callback(f.animals, t_reversed, self.c)
-            # h_pos = 4
-            # for a, a_dmap in zip(f.animals, f.d_map_animals):
-            #     a.pts_ = np.asarray(a.pts_, dtype=np.uint32)
-            #     self.node_positions[a] = h_pos
-            #     it = self.scene.addPixmap(self.get_im(a, t1=t_reversed))
-            #     it.setPos(0, h_pos * self.h_)
-            #     h_pos += 1
-
-            # self.merged_callback(f.animals, t_reversed)
-
-    def show_configuration(self, id):
-        self.active_config = id
-        for it in self.config_lines:
-            self.scene.removeItem(it)
-
-        self.config_lines = []
-
-        for n1, n2 in self.c.configurations[id]:
-            if n2 is None:
-                continue
-
-            line_ = QtGui.QGraphicsLineItem(self.node_size, self.node_positions[n1]*self.h_ + self.h_/2, self.w_, self.node_positions[n2]*self.h_ + self.h_/2)
-            line_.setPen(self.strong_edge_pen)
-            self.config_lines.append(line_)
-            self.scene.addItem(line_)
-
-    def partially_confirm(self):
-        conf = self.c.configurations[self.active_config]
-        n1 = self.active_node
-
-        i = 0
-        for n1_, n2_ in conf:
-            if n1_ == n1:
-                n2 = n2_
-                break
-
-            if n2_ == n1:
-                n1 = n1_
-                n2 = n2_
-                break
-
-            i += 1
-
-        self.confirm_edges_callback([(n1, n2)], self.c)
-
-    def redraw_config(self):
-        self.scene = MyScene()
-        self.v.setScene(self.scene)
-        self.draw_scene()
-
-        self.layout().removeWidget(self.crop_t1_widget)
-        self.crop_t1_widget.setParent(None)
-        self.layout().removeWidget(self.crop_t2_widget)
-        self.crop_t2_widget.setParent(None)
-
-        self.draw_frame()
-
-    def draw_scene(self):
-        h_pos = 0
-        for n in self.c.regions_t1:
-            self.node_positions[n] = h_pos
-            it = self.scene.addPixmap(self.get_im(n))
-            self.it_nodes[it] = n
-            it.setPos(0, h_pos * self.h_)
-            h_pos += 1
-
-        max_h_pos = h_pos
-
-        h_pos = 0
-        for n in self.c.regions_t2:
-            self.node_positions[n] = h_pos
-            it = self.scene.addPixmap(self.get_im(n, t1=False))
-            self.it_nodes[it] = n
-            it.setPos(self.w_, h_pos * self.h_)
-            h_pos += 1
-
-        max_h_pos = max(max_h_pos, h_pos)
-        self.v.setFixedHeight(max_h_pos * self.h_)
-        for n in self.c.regions_t1:
-            for _, n2 in self.sub_g.out_edges(n):
-                line_ = QtGui.QGraphicsLineItem(self.node_size, self.node_positions[n]*self.h_ + self.h_/2, self.w_, self.node_positions[n2]*self.h_ + self.h_/2)
-                line_.setPen(self.edge_pen)
-                self.scene.addItem(line_)
-
+from config_widget import ConfigWidget
+from new_region_widget import NewRegionWidget
+from core.region.region import Region
 
 class CertaintyVisualizer(QtGui.QWidget):
     def __init__(self, solver, vid):
@@ -360,7 +49,14 @@ class CertaintyVisualizer(QtGui.QWidget):
         self.t2_nodes_cc_refs = {}
 
         self.active_cw = 0
+        self.active_cw_node = -1
 
+        self.add_actions()
+
+        self.cc_number_label = QtGui.QLabel('')
+        self.layout().addWidget(self.cc_number_label)
+
+    def add_actions(self):
         self.next_action = QtGui.QAction('next', self)
         self.next_action.triggered.connect(self.next)
         self.next_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
@@ -376,36 +72,169 @@ class CertaintyVisualizer(QtGui.QWidget):
         self.confirm_cc_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
         self.addAction(self.confirm_cc_action)
 
+        self.partially_confirm_action = QtGui.QAction('partially confirm', self)
+        self.partially_confirm_action.triggered.connect(self.partially_confirm)
+        self.partially_confirm_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
+        self.addAction(self.partially_confirm_action)
+
         self.fitting_action = QtGui.QAction('fitting', self)
         self.fitting_action.triggered.connect(self.fitting)
         self.fitting_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_F))
         self.addAction(self.fitting_action)
 
-        self.cc_number_label = QtGui.QLabel('')
-        self.layout().addWidget(self.cc_number_label)
+        self.new_region_t1_action = QtGui.QAction('new region t1', self)
+        self.new_region_t1_action.triggered.connect(partial(self.new_region, True))
+        self.new_region_t1_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
+        self.addAction(self.new_region_t1_action)
+
+        self.new_region_t2_action = QtGui.QAction('new region t2', self)
+        self.new_region_t2_action.triggered.connect(partial(self.new_region, False))
+        self.new_region_t2_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
+        self.addAction(self.new_region_t2_action)
+
+        self.remove_region_action = QtGui.QAction('remove region', self)
+        self.remove_region_action.triggered.connect(self.remove_region)
+        self.remove_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Backspace))
+        self.addAction(self.remove_region_action)
+
+        self.action0 = QtGui.QAction('0', self)
+        self.action0.triggered.connect(partial(self.choose_node, 9))
+        self.action0.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
+        self.addAction(self.action0)
+
+        self.action1 = QtGui.QAction('1', self)
+        self.action1.triggered.connect(partial(self.choose_node, 0))
+        self.action1.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
+        self.addAction(self.action1)
+
+        self.action2 = QtGui.QAction('2', self)
+        self.action2.triggered.connect(partial(self.choose_node, 1))
+        self.action2.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_2))
+        self.addAction(self.action2)
+
+        self.action3 = QtGui.QAction('3', self)
+        self.action3.triggered.connect(partial(self.choose_node, 2))
+        self.action3.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_3))
+        self.addAction(self.action3)
+
+        self.action4 = QtGui.QAction('4', self)
+        self.action4.triggered.connect(partial(self.choose_node, 3))
+        self.action4.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_4))
+        self.addAction(self.action4)
+
+        self.action5 = QtGui.QAction('5', self)
+        self.action5.triggered.connect(partial(self.choose_node, 4))
+        self.action5.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_5))
+        self.addAction(self.action5)
+        
+        self.action6 = QtGui.QAction('6', self)
+        self.action6.triggered.connect(partial(self.choose_node, 5))
+        self.action6.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_6))
+        self.addAction(self.action6)
+        
+        self.action7 = QtGui.QAction('7', self)
+        self.action7.triggered.connect(partial(self.choose_node, 6))
+        self.action7.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_7))
+        self.addAction(self.action7)
+        
+        self.action8 = QtGui.QAction('8', self)
+        self.action8.triggered.connect(partial(self.choose_node, 7))
+        self.action8.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_8))
+        self.addAction(self.action8)
+        
+        self.action9 = QtGui.QAction('9', self)
+        self.action9.triggered.connect(partial(self.choose_node, 8))
+        self.action9.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
+        self.addAction(self.action9)
+
+        self.d_ = None
+
+    def new_region(self, is_t1):
+        cw = self.get_cw_widget_at(self.active_cw)
+        im = cw.crop_t1_widget.pixmap() if is_t1 else cw.crop_t2_widget.pixmap()
+        frame = cw.frame_t if is_t1 else cw.frame_t+1
+
+        w = NewRegionWidget(im, cw.crop_offset, frame, self.new_region_finished)
+        self.d_ = QtGui.QDialog()
+        self.d_.setLayout(QtGui.QVBoxLayout())
+        self.d_.layout().addWidget(w)
+        self.d_.setFixedWidth(500)
+        self.d_.setFixedHeight(500)
+        self.d_.show()
+        self.d_.exec_()
+
+    def new_region_finished(self, confirmed, data):
+        self.d_.close()
+        if confirmed:
+            r = Region()
+            r.pts_ = data['pts']
+            r.centroid_ = data['centroid']
+            r.frame_ = data['frame']
+            #TODO: get rid of this hack... also in antlikness test in solver.py
+            # flag for virtual region
+            r.min_intensity_ = -2
+
+            new_ccs, node_representatives = self.solver.add_virtual_region(r)
+
+            self.update_ccs(new_ccs, node_representatives)
+
+    def remove_region(self):
+        p = self.active_cw_node
+        cw = self.get_cw_widget_at(self.active_cw)
+
+        if p < 0 or p > len(cw.c.regions_t1) + len(cw.c.regions_t2):
+            return
+
+        if p < len(cw.c.regions_t1):
+            r = cw.c.regions_t1[p]
+        else:
+            r = cw.c.regions_t2[p - len(cw.c.regions_t1)]
+
+        new_ccs, node_representatives = self.solver.remove_region(r)
+        self.update_ccs(new_ccs, node_representatives)
+
+    def choose_node(self, pos):
+        cw = self.get_cw_widget_at(self.active_cw)
+        cw.dehighlight_node(self.active_cw_node)
+        self.active_cw_node = pos
+        cw.highlight_node(pos)
 
     def get_cw_widget_at(self, i):
         return self.scenes_widget.layout().itemAt(i).widget()
 
     def next(self):
         if self.active_cw < self.scenes_widget.layout().count() - 1:
-            self.cw_set_inactive(self.get_cw_widget_at(self.active_cw))
+            cw = self.get_cw_widget_at(self.active_cw)
+            cw.dehighlight_node(self.active_cw_node)
+            self.active_cw_node = -1
+            self.cw_set_inactive(cw)
             self.active_cw += 1
             self.cw_set_active(self.get_cw_widget_at(self.active_cw))
+            self.scroll_.ensureWidgetVisible(self.get_cw_widget_at(self.active_cw))
 
     def prev(self):
         if self.active_cw > 0:
-            self.cw_set_inactive(self.get_cw_widget_at(self.active_cw))
+            cw = self.get_cw_widget_at(self.active_cw)
+            cw.dehighlight_node(self.active_cw_node)
+            self.active_cw_node = -1
+            self.cw_set_inactive(cw)
             self.active_cw -= 1
             self.cw_set_active(self.get_cw_widget_at(self.active_cw))
+            self.scroll_.ensureWidgetVisible(self.get_cw_widget_at(self.active_cw))
 
     def confirm_cc(self):
         cw = self.get_cw_widget_at(self.active_cw)
         cw.confirm_clicked()
 
     def fitting(self):
-        cw = self.get_cw_widget_at(self.active_cw)
-        cw.mark_merged()
+        if self.active_cw_node > -1:
+            cw = self.get_cw_widget_at(self.active_cw)
+
+            t_reversed = False
+            if self.active_cw_node < len(cw.c.regions_t1):
+                t_reversed = True
+
+            cw.mark_merged(t_reversed)
 
     def cw_set_active(self, cw):
         cw.setStyleSheet("""QGraphicsView {background-color: rgb(235,237,252);}""")
@@ -426,7 +255,6 @@ class CertaintyVisualizer(QtGui.QWidget):
 
         self.cw_set_active(self.cws[0])
         self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
-
 
     def add_configuration(self, cc):
         for n in cc.regions_t1+cc.regions_t2:
@@ -526,13 +354,45 @@ class CertaintyVisualizer(QtGui.QWidget):
                 self.cws.remove(it.widget())
                 it.widget().setParent(None)
 
+        self.cw_set_active(self.get_cw_widget_at(self.active_cw))
+        self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
+
+    def partially_confirm(self):
+        cw = self.get_cw_widget_at(self.active_cw)
+        if -1 < self.active_cw_node < len(cw.c.regions_t1) + len(cw.c.regions_t2):
+            p = self.active_cw_node
+            cw = self.get_cw_widget_at(self.active_cw)
+
+            if p < 0 or p > len(cw.c.regions_t1) + len(cw.c.regions_t2):
+                return
+
+            if p < len(cw.c.regions_t1):
+                r = cw.c.regions_t1[p]
+            else:
+                r = cw.c.regions_t2[p - len(cw.c.regions_t1)]
+
+            n1 = r
+            conf = cw.c.configurations[0]
+
+            i = 0
+            for n1_, n2_ in conf:
+                if n1_ == n1:
+                    n2 = n2_
+                    break
+
+                if n2_ == n1:
+                    n1 = n1_
+                    n2 = n2_
+                    break
+
+                i += 1
+
+            self.confirm_edges([(n1, n2)], None)
+
     def confirm_edges(self, pairs, from_cc):
         new_ccs, node_representatives = self.solver.confirm_edges(pairs)
 
         self.update_ccs(new_ccs, node_representatives)
-        self.cw_set_active(self.get_cw_widget_at(self.active_cw))
-
-        self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
 
     def merged(self, new_regions, t_reversed, from_cc):
         replace = from_cc.regions_t2
@@ -542,12 +402,8 @@ class CertaintyVisualizer(QtGui.QWidget):
             nodes_to_connect = from_cc.regions_t2
 
         new_merged_cc, new_ccs, node_representatives = self.solver.merged(new_regions, replace, nodes_to_connect, t_reversed)
-        # self.replace_cw(new_merged_cc, cc_to_be_replaced=from_cc)
         self.update_ccs(new_ccs, node_representatives)
 
-        self.cw_set_active(self.get_cw_widget_at(self.active_cw))
-
-        self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

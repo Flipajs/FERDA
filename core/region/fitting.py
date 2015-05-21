@@ -114,18 +114,6 @@ class Fitting():
 
         return False
 
-    # def prepare_results(self):
-    #     # TODO back projection for objects without holes
-    #
-    #     for a_id in range(len(self.animals)):
-    #         pts_ = self.animals[a_id].pts() - self.animals[a_id].centroid()
-    #
-    #         pts_ = np.dot(pts_, rotation_matrix(self.trans_helpers[a_id].angle).T)
-    #         pts_ += self.trans_helpers[a_id].centroid
-    #
-    #         self.animals[a_id].pts_ = np.asarray(np.round(pts_), dtype=np.uint32)
-    #         self.animals[a_id].centroid_ = self.trans_helpers[a_id].centroid
-
     def prepare_results(self):
         for a_id in range(len(self.animals)):
             # The transformation is done using back projection to supress holes inside objects due rounding to int...

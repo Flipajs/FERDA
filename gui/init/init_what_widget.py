@@ -4,7 +4,7 @@ from PyQt4 import QtGui, QtCore
 
 from gui.img_controls import my_view, my_scene
 from utils import video_manager
-from utils.misc import get_settings, set_settings
+from utils.misc import set_settings
 import utils.img
 import gui.gui_utils
 from gui.init.class_widget import ClassWidget
@@ -16,6 +16,7 @@ from core import colormark
 import numpy as np
 from core.animal import Animal
 from functools import partial
+from core.settings import Settings as S_
 import cv2
 
 class InitWhatWidget(QtGui.QWidget):
@@ -201,7 +202,7 @@ class InitWhatWidget(QtGui.QWidget):
                 animal = Animal(self.active_id)
                 self.project.animals.append(animal)
 
-                if not get_settings('colormarks_use', bool):
+                if not S_.colormarks.use:
                     self.add_animal_widget()
                     self.marks_deactivate(self.active_id)
                     self.active_id += 1
@@ -277,7 +278,7 @@ class InitWhatWidget(QtGui.QWidget):
         for it in items:
             if isinstance(it, Circle):
                 colormark = False
-                if get_settings('colormarks_use'):
+                if S_.colormarks.use:
                     for i in range(len(self.project.animals)):
                         if 'c_circle' in self.scene_marks[i] and self.scene_marks[i]['c_circle'] == it:
                             colormark = True
@@ -394,7 +395,7 @@ class InitWhatWidget(QtGui.QWidget):
 
         marks['circle'].add_points(marks['center'], marks['radius'])
 
-        if get_settings('colormarks_use', bool):
+        if S_.colormarks.use:
             brush.setColor(QtGui.QColor(0, 0xFF, 0, 0x11))
             marks['c_circle'] = Circle(self.active_id)
             marks['c_circle'].setBrush(brush)

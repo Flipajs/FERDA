@@ -273,10 +273,19 @@ class Solver():
         d = np.linalg.norm(r1.centroid() + pred - r2.centroid()) / float(self.major_axis_median)
         ds = max(0, (2-d) / 2.0)
 
-        q1 = self.antlikeness.get_prob(r1)
-        q2 = self.antlikeness.get_prob(r2)
+        #TODO: get rid of this hack... also in antlikness test in solver.py
+        # flag for virtual region
+        if r1.min_intensity_ == -2:
+            q1 = 1.0
+        else:
+            q1 = self.antlikeness.get_prob(r1)[1]
 
-        antlikeness_diff = 1 - abs(q1[1]-q2[1])
+        if r2.min_intensity_ == -2:
+            q2 = 1.0
+        else:
+            q2 = self.antlikeness.get_prob(r2)[1]
+
+        antlikeness_diff = 1 - abs(q1-q2)
         s = ds * antlikeness_diff
 
         return s, ds, 0, antlikeness_diff
@@ -460,51 +469,46 @@ class Solver():
 
         return [], new_ccs, node_representative
 
+    def add_virtual_region(self, r):
+        self.g.add_node(r)
+        t = r.frame_
 
-    # def merged(self, new_regions, replace, nodes_to_connect, t_reversed):
-    #     for n in new_regions:
-    #         self.g.add_node(n)
-    #
-    #     to_connect2 = set()
-    #     if t_reversed:
-    #         for n in replace:
-    #             for n1, _, d in self.g.in_edges(n, data=True):
-    #                 # if 'chunk_ref' in d:
-    #                 #     n1 = self.disassemble_chunk(n1)
-    #
-    #                 to_connect2.add(n1)
-    #     else:
-    #         for n in replace:
-    #             for _, n2, d in self.g.out_edges(n, data=True):
-    #                 # if 'chunk_ref' in d:
-    #                 #     n2 = self.disassemble_chunk(n2)
-    #
-    #                 to_connect2.add(n2)
-    #
-    #     for n in replace:
-    #         self.g.remove_node(n)
-    #
-    #
-    #     regions_t1 = new_regions if t_reversed else nodes_to_connect
-    #     regions_t2 = nodes_to_connect if t_reversed else new_regions
-    #     self.add_edges_(regions_t1, regions_t2)
-    #
-    #     affected = list(regions_t1)[:]
-    #     merged_cc = self.get_ccs([regions_t1[0]])
-    #
-    #     # regions_t1 = to_connect2 if t_reversed else new_regions
-    #     # regions_t2 = new_regions if t_reversed else to_connect2
-    #     # self.add_edges_(regions_t1, regions_t2)
-    #     #
-    #     # affected += list(regions_t1)[:]
-    #     affected = list(self.simplify(affected[:], return_affected=True)) + affected
-    #
-    #     new_ccs, node_representative = self.get_new_ccs(affected)
-    #     new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
-    #
-    #     return merged_cc[0], new_ccs, node_representative
-    #     # return merged_cc[0], [], []
+        r_t_minus = []
+        r_t_plus = []
+        r_t = []
 
+        for n in self.g.nodes():
+            if n.frame_ == t-1:
+                r_t_minus.append(n)
+            elif n.frame_ == t+1:
+                r_t_plus.append(n)
+            elif n.frame_ == t:
+                r_t.append(n)
+
+        self.add_edges_(r_t_minus, [r])
+        self.add_edges_([r], r_t_plus)
+
+        new_ccs, node_representative = self.get_new_ccs(r_t_minus + r_t)
+        new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
+
+        return new_ccs, node_representative
+
+    def remove_region(self, r):
+        affected = set()
+        for n, _ in self.g.in_edges(r):
+            affected.add(n)
+            for _, n_ in self.g.out_edges(n):
+                affected.add(n_)
+
+        affected = list(affected)
+        affected.remove(r)
+
+        self.g.remove_node(r)
+
+        new_ccs, node_representative = self.get_new_ccs(affected)
+        new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
+
+        return new_ccs, node_representative
 
     def start_nodes(self):
         return self.frames[self.first_frame]
