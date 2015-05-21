@@ -11,7 +11,7 @@ class Region():
 
     """
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, frame=-1, id=-1):
         self.pts_ = None
         self.centroid_ = np.array([-1, -1])
         self.label_ = -1
@@ -40,7 +40,8 @@ class Region():
             self.from_pts_(data)
 
         self.roi_ = None
-        self.id_ = -1
+        self.frame_ = frame
+        self.id_ = id
         self.contour_ = None
 
     def from_dict_(self, data):

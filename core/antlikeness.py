@@ -25,9 +25,14 @@ class Antlikeness():
         else:
             self.use_min_intensity_percentile = False
             self.use_min_intensity = True
-            for f in f_regions:
-                for r in f_regions[f]:
+
+            if isinstance(f_regions, list):
+                for r in f_regions:
                     X.append(self.get_x(r))
+            else:
+                for f in f_regions:
+                    for r in f_regions[f]:
+                        X.append(self.get_x(r))
 
         self.svm_model.fit(X, classes)
 

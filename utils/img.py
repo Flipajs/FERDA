@@ -52,22 +52,30 @@ class ROI():
 
         return np.array([y_, x_])
 
-    def is_inside(self, pt):
+    def is_inside(self, pt, strict=True):
         y = pt[0]
         x = pt[1]
         if y < self.y_:
             return False
 
-        if y >= self.y_max_:
+        if y > self.y_max_ or strict and y == self.y_max_:
             return False
 
         if x < self.x_:
             return False
 
-        if x >= self.x_max_:
+        if x > self.x_max_ or strict and x == self.x_max_:
             return False
 
         return True
+
+    def corner_pts(self):
+        return np.array([
+            [self.y_, self.x_],
+            [self.y_, self.x_max_],
+            [self.y_max_, self.x_max_],
+            [self.y_max_, self.x_]
+        ])
 
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255)):
@@ -115,7 +123,7 @@ def get_pixmap_from_np_bgr(np_image):
 
 def get_roi(pts):
     """
-    Returns ROI tupple (y, x, height, width) - Region Of Interest for given points
+    Returns ROI class - Region Of Interest for given points
 
     :param pts:
     :return:

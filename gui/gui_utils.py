@@ -17,7 +17,7 @@ class IdButton(QtGui.QPushButton):
 class SelectableQLabel(QtGui.QLabel):
     def __init__(self, parent=None, selected_callback=None, id=-1):
         QtGui.QLabel.__init__(self, parent)
-        self.id = id
+        self.id_ = id
         self.selected_callback = selected_callback
         self.selected = False
 
@@ -29,7 +29,7 @@ class SelectableQLabel(QtGui.QLabel):
             self.setStyleSheet("border: 2px dashed black;")
             self.selected = True
             if self.selected_callback:
-                self.selected_callback(self, self.id)
+                self.selected_callback(self, self.id_)
 
 def file_names_dialog(window, text='Select files', path='', filter_=''):
     file_names = QtGui.QFileDialog.getOpenFileNames(window, text, path, filter=filter_)

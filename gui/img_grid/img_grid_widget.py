@@ -72,6 +72,6 @@ class ImgGridWidget(QtGui.QWidget):
 
         for i in range(len(self.items)):
             if self.items[i].selected:
-                ids.append(self.items[i].id)
+                ids.append(self.items[i].id_)
 
         return ids

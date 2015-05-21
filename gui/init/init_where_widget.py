@@ -42,6 +42,7 @@ class InitWhereWidget(QtGui.QWidget):
         self.top_stripe_layout.addWidget(self.confirm_arena_selection)
 
         self.skip_bg_model = QtGui.QPushButton('Run without background model')
+        self.skip_bg_model.clicked.connect(self.skip_bg_clicked)
         self.confirm_bg_model = QtGui.QPushButton('Everything is all right, lets continue!')
         self.confirm_bg_model.clicked.connect(self.finish)
 
@@ -148,9 +149,15 @@ class InitWhereWidget(QtGui.QWidget):
         else:
             return self.first_frame.shape[1]/2, self.first_frame.shape[0]/2, min(self.first_frame.shape[0], self.first_frame.shape[1])*0.45
 
+    def skip_bg_clicked(self):
+        self.project.bg_model = None
+        self.finish()
+
     def finish(self):
         #TODO save values...
         self.bg_fix_widget.hide()
         self.graphics_view.show()
-        self.project.bg_model.update(np.copy(self.bg_fix_widget.image))
+        if self.project.bg_model:
+            self.project.bg_model.update(np.copy(self.bg_fix_widget.image))
+
         self.finish_callback('init_where_finished')

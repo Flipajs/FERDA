@@ -15,7 +15,7 @@ class Mser():
         self.mser.set_max_area(max_area)
         self.mser.set_min_size(min_area)
 
-    def process_image(self, img, intensity_threshold=256):
+    def process_image(self, img, frame=-1, intensity_threshold=256):
         if len(img.shape) > 2:
             if img.shape[2] > 1:
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -29,8 +29,7 @@ class Mser():
 
         self.mser.process_image(gray, intensity_threshold)
         regions = self.mser.get_regions()
-
-        regions = [Region(dr) for dr in regions]
+        regions = [Region(dr, frame, id) for dr, id in zip(regions, range(len(regions)))]
 
         return regions
 
@@ -80,7 +79,7 @@ def get_all_msers(frame_number, video_paths, working_dir):
             return msers
         except IOError:
             vid = get_auto_video_manager(video_paths)
-            msers = get_msers_(vid.seek_frame(frame_number))
+            msers = get_msers_(vid.seek_frame(frame_number), frame_number)
 
             try:
                 with open(working_dir+'/mser/'+str(frame_number)+'.pkl', 'wb') as f:
@@ -95,10 +94,18 @@ def get_all_msers(frame_number, video_paths, working_dir):
         return get_msers_(vid.seek_frame(frame_number))
 
 
-def get_msers_(img):
+def get_msers_(img, frame=-1):
     """
     Returns msers using MSER algorithm with default settings.
 
     """
+
     mser = Mser(max_area=S_.mser.max_area, min_margin=S_.mser.min_margin, min_area=S_.mser.min_area)
-    return mser.process_image(img)
+    return mser.process_image(img, frame)
+
+
+def get_mser_by_id(img, id, frame=-1):
+    msers = get_msers_(img, frame)
+    for r in msers:
+        if r.id_ == id:
+            return r

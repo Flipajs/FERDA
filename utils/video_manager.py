@@ -140,7 +140,7 @@ class VideoManager():
 
 
     def frame_number(self):
-        return self.position_
+        return self.capture.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT)
 
     def fps(self):
         return self.capture.get(cv_compatibility.cv_CAP_PROP_FPS)

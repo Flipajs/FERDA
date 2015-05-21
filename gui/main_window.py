@@ -86,7 +86,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.statusBar().showMessage("The project was successfully loaded.")
                 self.setWindowTitle('FERDA - '+self.project.name)
 
-                self.main_tab_widget = MainTabWidget(self.widget_control)
+                self.main_tab_widget = MainTabWidget(self.widget_control, self.project)
                 self.central_widget.addWidget(self.main_tab_widget)
                 self.central_widget.setCurrentWidget(self.main_tab_widget)
             else:
@@ -107,6 +107,11 @@ class MainWindow(QtGui.QMainWindow):
 
         if state == 'new_project_back':
             self.central_widget.setCurrentWidget(self.project_widget)
+
+        if state == 'initialization_finished':
+            self.main_tab_widget = MainTabWidget(self.widget_control, self.project)
+            self.central_widget.addWidget(self.main_tab_widget)
+            self.central_widget.setCurrentWidget(self.main_tab_widget)
 
     def start_ferda(self):
         self.control_widget = control_window.ControlWindow(self.init_widget.params, self.init_widget.ants, self.init_widget.video_manager)
@@ -136,12 +141,14 @@ if __name__ == "__main__":
     ex.activateWindow()
     from core.project import Project
     proj = Project()
-    proj.load('/Users/fnaiser/Documents/project2/project2.fproj')
+    # proj.load('/Volumes/Seagate Expansion Drive/working_dir/eight1/eight1.fproj')
+    # proj.load('/Users/fnaiser/Documents/work_dir/eight/eight.fproj')
+    proj.load('/Users/fnaiser/Documents/work_dir/big_lenses1/bl1.fproj')
 
-    ex.widget_control('project_created', proj)
+    ex.widget_control('load_project', proj)
 
-    vid = get_auto_video_manager(proj.video_paths)
-    im = vid.move2_next()
+    # vid = get_auto_video_manager(proj.video_paths)
+    # im = vid.move2_next()
 
     app.exec_()
     app.deleteLater()

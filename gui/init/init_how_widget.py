@@ -15,6 +15,10 @@ from numpy.linalg import norm
 from core import colormark
 from gui.view.assignment_widget import AssignmentWidget
 import cv2
+from gui.img_grid.img_grid_widget import ImgGridWidget
+from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
+
+from core.classes_stats import ClassesStats
 
 class InitHowWidget(QtGui.QWidget):
     def __init__(self, finish_callback, project):
@@ -40,39 +44,57 @@ class InitHowWidget(QtGui.QWidget):
         img = self.fill_colormarks(img)
 
         self.items = []
-        self.init_ants(img)
+
+        # self.init_ants(img)
 
         self.assignment_widget = AssignmentWidget(project.animals, img=img)
-        self.vbox.addWidget(self.assignment_widget)
+        self.hlayout = QtGui.QHBoxLayout()
+        self.vbox.addLayout(self.hlayout)
+        self.hlayout.addWidget(self.assignment_widget)
 
+        elem_width = 70
+        self.img_grid = ImgGridWidget()
+        self.img_grid.reshape(10, elem_width)
+        self.hlayout.addWidget(self.img_grid)
 
+        self.finish_how = QtGui.QPushButton('confirm selection and finish initialization')
+        self.finish_how.clicked.connect(self.finish)
+        self.vbox.addWidget(self.finish_how)
 
+        self.regions = []
 
-        d = ImgGridDialog(self, self.items)
-        d.confirmed.connect(self.grid_dialog_selection_confirmed)
-        d.show()
+        r_id = 0
+        for i in range(3):
+            img = vid.move2_next()
+            img_ = project.bg_model.bg_subtraction(img)
 
-        # cv2.imshow('filled', img)
+            msers = get_msers_(img_)
+            groups = get_region_groups(msers)
+            ids = margin_filter(msers, groups)
 
-        # for i in range(1):
-        #     img = vid.move2_next()
-        #     img_ = project.bg_model.bg_subtraction(img)
-        #
-        #     msers = get_msers_(img_)
-        #
-        #     for j in range(len(msers)):
-        #         item = self.get_img_qlabel(msers[j].pts(), img, id, height, width)
-        #
-        #         self.image_grid_widget.add_item(item)
-        #
-        # print [r.major_axis_ for r in msers]
-        # print [r.minor_axis_ for r in msers]
-        #
-        # print [r.a_ for r in msers]
-        # print [r.b_ for r in msers]
+            for j in ids:
+                item = self.get_img_qlabel(msers[j].pts(), img, r_id, elem_width, elem_width)
+                r_id += 1
+                self.regions.append(msers[j])
+
+                self.img_grid.add_item(item)
+
+        self.classes = [0 for i in range(len(self.regions))]
+
+        self.class_stats = ClassesStats()
+
+    def finish(self):
+        selected = self.img_grid.get_selected()
+
+        for i in selected:
+            self.classes[i] = 1
+
+        self.class_stats.compute_stats(self.regions, self.classes)
+
+        self.finish_callback('init_how_finished', [self.class_stats])
 
     def give_me_selected(self):
-        print self.image_grid_widget.get_selected()
+        print self.img_grid.get_selected()
 
     def dist_score(self, animal, region):
         # half the radius

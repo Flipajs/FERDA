@@ -74,7 +74,7 @@ def is_child_of(child, parent):
 
     ch_r = child.roi()
     p_r = parent.roi()
-    if p_r.is_inside(ch_r.top_left_corner()) and p_r.is_inside(ch_r.bottom_right_corner()):
+    if p_r.is_inside(ch_r.top_left_corner()) and p_r.is_inside(ch_r.bottom_right_corner(), strict=False):
         img = np.zeros((p_r.height(), p_r.width()), dtype=np.bool)
         offset = np.array([p_r.y(), p_r.x()])
         p_pts = parent.pts() - offset

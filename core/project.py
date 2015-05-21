@@ -20,6 +20,8 @@ class Project:
         self.classes = None
         self.groups = None
         self.animals = None
+        self.stats = None
+
 
     def save(self):
         # BG MODEL
@@ -53,6 +55,11 @@ class Project:
         if self.animals:
             with open(self.working_directory+'/animals.pkl', 'wb') as f:
                 pickle.dump(self.animals, f)
+
+        # STATS
+        if self.stats:
+            with open(self.working_directory+'/stats.pkl', 'wb') as f:
+                pickle.dump(self.stats, f)
 
 
         p = Project()
@@ -105,15 +112,20 @@ class Project:
         except:
             pass
 
+        # ANIMALS
+        try:
+            with open(self.working_directory+'/stats.pkl', 'rb') as f:
+                self.stats = pickle.load(f)
+        except:
+            pass
+
 
 if __name__ == "__main__":
     p = Project()
     p.name = 'test'
     p.a = 20
     p.working_directory = '/home/flipajs/test'
-
     p.save()
-
 
     a = Project()
     a.load('/home/flipajs/test/test.pkl')

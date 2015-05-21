@@ -13,6 +13,7 @@ from math import cos, sin
 import split_by_contours
 import experiment_params
 from utils.geometry import rotation_matrix, angle_from_matrix, rotate
+from utils.img import get_roi, ROI
 
 ##############
 # all point lists are in format [y, x]
@@ -103,7 +104,7 @@ class Fitting():
 
 
         self.prepare_results()
-        self.plot_situation()
+        # self.plot_situation()
 
     def test_t_convergence(self, animal_history, frame):
         if frame > 0:
@@ -113,14 +114,50 @@ class Fitting():
 
         return False
 
+    # def prepare_results(self):
+    #     # TODO back projection for objects without holes
+    #
+    #     for a_id in range(len(self.animals)):
+    #         pts_ = self.animals[a_id].pts() - self.animals[a_id].centroid()
+    #
+    #         pts_ = np.dot(pts_, rotation_matrix(self.trans_helpers[a_id].angle).T)
+    #         pts_ += self.trans_helpers[a_id].centroid
+    #
+    #         self.animals[a_id].pts_ = np.asarray(np.round(pts_), dtype=np.uint32)
+    #         self.animals[a_id].centroid_ = self.trans_helpers[a_id].centroid
+
     def prepare_results(self):
         for a_id in range(len(self.animals)):
-            pts_ = self.animals[a_id].pts() - self.animals[a_id].centroid()
+            # The transformation is done using back projection to supress holes inside objects due rounding to int...
+            roi_t2 = self.d_map_animals[a_id].roi
+            m_ = 3
+            roi_t2 = ROI(roi_t2.y_-m_,roi_t2.x_-m_, roi_t2.height_+2*m_, roi_t2.width_+2*m_)
 
-            pts_ = np.dot(pts_, rotation_matrix(self.trans_helpers[a_id].angle).T)
-            pts_ += self.trans_helpers[a_id].centroid
+            pts_t2 = []
+            for y in range(int(roi_t2.y_), int(roi_t2.y_max_+1)):
+                for x in range(int(roi_t2.x_), int(roi_t2.x_max_+1)):
+                    pts_t2.append([y, x])
 
-            self.animals[a_id].pts_ = pts_
+            pts_t2 = np.array(pts_t2)
+
+            im_ = np.zeros((1200, 1200, 3), dtype=np.uint8)
+            im_[np.asarray(np.round(pts_t2[:, 0]), dtype=np.uint32), np.asarray(np.round(pts_t2[:, 1]), dtype=np.uint32), 0] = 255
+
+            pts_t1 = pts_t2 - self.trans_helpers[a_id].centroid
+            pts_t1 = np.dot(pts_t1, rotation_matrix(-self.trans_helpers[a_id].angle).T)
+            pts_t1 += self.animals[a_id].centroid()
+
+            d = DistanceMap(self.animals[a_id].pts().copy())
+
+            pts_ = []
+            for i in range(len(pts_t2[:, 0])):
+                if d.is_inside_object(np.asarray(np.round(pts_t1[i, :]), dtype=np.uint32)):
+                    pts_.append(pts_t2[i, :])
+
+            pts_ = np.array(pts_)
+
+            self.animals[a_id].pts_ = np.asarray(pts_, dtype=np.uint32)
+            self.animals[a_id].centroid_ = self.trans_helpers[a_id].centroid
 
     def plot_situation(self):
         plt.close()

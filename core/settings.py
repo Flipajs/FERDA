@@ -1,7 +1,7 @@
 __author__ = 'fnaiser'
 
 from PyQt4 import QtCore, QtGui
-# from core.settings_ import *
+
 
 """
 In this file all global settings are stored.
@@ -43,6 +43,7 @@ class Item():
             t = type_
 
         settings = QtCore.QSettings('FERDA')
+
         return settings.value(self.key_, self.val_, t)
 
     def set(self, val):
@@ -82,18 +83,23 @@ class Visualization:
     __metaclass__ = SettingsType
     default_region_color = Item('visualization/default_region_color', QtGui.QColor(0, 255, 255, 50), '')
 
-class Boo(object):
+class Solver:
     __metaclass__ = SettingsType
-    use = Item('cache/use', True, 'There will be stored information in working directory to speed up mainly the correction tool.')
-    max_area = Item('mser/max_area', 0.005, 'toooltip max_areas')
+    max_edge_distance_in_ant_length = Item('solver/max_edge_distance_in_ant_length', 2.5, 'Used to simplify graph based on distance between nodes')
+    antlikeness_threshold = Item('solver/antlikeness_threshold', 0.2, 'removes all nodes with antlikness below threshold')
+    certainty_threshold = Item('solver/certainty_threshold', 0.5, 'connected component can be solved ony if certainty is higher then this threshold')
 
+class Parallelization:
+    __metaclass__ = SettingsType
+    processes_num = Item('parallelization/processes_num', 8, 'The number of processes. It is good idea to set it <= num of CPUs')
 
 class Settings:
     cache = Cache
     mser = MSER
     colormarks = Colormarks
     visualization = Visualization
-
+    solver = Solver
+    parallelization = Parallelization
 
 if __name__ == '__main__':
-    print Settings.colormarks.use
+    print Settings.solver.max_edge_distance_in_ant_length

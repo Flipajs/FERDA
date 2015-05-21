@@ -162,6 +162,9 @@ class FerdaCompressedVideoManager():
     def fps(self):
         return self.capture_compressed_.get(cv_compatibility.cv_CAP_PROP_FPS)
 
+    def frame_number(self):
+        return self.capture_lossless_.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT)
+
     def get_manager_copy(self):
         """
         returns copy of FerdaCompressedVideoManager, might be useful in cases of asynchronous operations (mainly seeking) on video

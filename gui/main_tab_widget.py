@@ -6,13 +6,13 @@ from gui.correction.correction_widget import CorrectionWidget
 from gui.statistics.statistics_widget import StatisticsWidget
 
 class MainTabWidget(QtGui.QWidget):
-    def __init__(self, finish_callback):
+    def __init__(self, finish_callback, project):
         super(MainTabWidget, self).__init__()
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
 
         self.tabs = QtGui.QTabWidget()
-        self.tracker_tab = TrackerWidget()
+        self.tracker_tab = TrackerWidget(project)
         self.correction_tab = CorrectionWidget()
         self.statistics_tab = StatisticsWidget()
 
