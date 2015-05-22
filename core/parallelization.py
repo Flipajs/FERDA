@@ -6,13 +6,11 @@ sys.path.insert(0,parentdir)
 
 import sys
 import math
-from core.region.mser import get_msers_
 from utils.video_manager import get_auto_video_manager
 import cPickle as pickle
 # import pickle
 from core.graph.solver import Solver
 from core.project import Project
-from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from PyQt4 import QtGui
 from gui.correction.certainty import CertaintyVisualizer
 
@@ -26,6 +24,10 @@ if __name__ == '__main__':
 
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
+
+    from core.region.mser import get_msers_
+    from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
+
 
     #TODO: REMOVE
     min_area = proj.stats.area_median * 0.2
