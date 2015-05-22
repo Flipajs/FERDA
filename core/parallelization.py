@@ -1,4 +1,9 @@
 __author__ = 'fnaiser'
+import os,sys,inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+
 import sys
 import math
 from core.region.mser import get_msers_
@@ -10,7 +15,7 @@ from core.project import Project
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from PyQt4 import QtGui
 from gui.correction.certainty import CertaintyVisualizer
-import os
+
 
 if __name__ == '__main__':
     working_dir = sys.argv[1]
