@@ -19,7 +19,7 @@ from core.graph.solver import Solver
 class BackgroundComputer():
     def __init__(self, project, update_callback, finished_callback):
         self.project = project
-        self.process_n = S_.parallelization.processes_num
+        self.process_n = S_.parallelization.processes_num / 2
         self.results = []
         self.update_callback = update_callback
         self.finished_callback = finished_callback
