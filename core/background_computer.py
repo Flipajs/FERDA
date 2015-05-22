@@ -60,6 +60,8 @@ class BackgroundComputer():
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
 
                 p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
+    # python "/Users/fnaiser/Documents/FERDA/core/parallelization.py" "/Users/fnaiser/Documents/work_dir/eight" "eight" 0 376 0
+                # print str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
                 # p.start(str(sys.executable) + ' "core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
                 self.processes.append(p)
 
