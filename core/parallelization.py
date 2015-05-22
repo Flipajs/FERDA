@@ -12,7 +12,6 @@ from core.region.mser_operations import get_region_groups, margin_filter, area_f
 from core.graph.solver import Solver
 from core.project import Project
 
-
 if __name__ == '__main__':
     working_dir = sys.argv[1]
     proj_name = sys.argv[2]
@@ -49,7 +48,10 @@ if __name__ == '__main__':
 
         solver.add_regions_in_t([m[id_] for id_ in ids], frame)
 
+        print
         print i
+        sys.stdout.flush()
+
 
 
     solver.simplify()

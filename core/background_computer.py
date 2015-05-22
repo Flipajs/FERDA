@@ -19,7 +19,7 @@ from core.graph.solver import Solver
 class BackgroundComputer():
     def __init__(self, project, update_callback, finished_callback):
         self.project = project
-        self.process_n = S_.parallelization.processes_num / 2
+        self.process_n = S_.parallelization.processes_num
         self.results = []
         self.update_callback = update_callback
         self.finished_callback = finished_callback
@@ -61,7 +61,7 @@ class BackgroundComputer():
 
                 p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
     # python "/Users/fnaiser/Documents/FERDA/core/parallelization.py" "/Users/fnaiser/Documents/work_dir/eight" "eight" 0 376 0
-                # print str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
+                print str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
                 # p.start(str(sys.executable) + ' "core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
                 self.processes.append(p)
 
