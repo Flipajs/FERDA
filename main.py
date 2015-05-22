@@ -7,6 +7,7 @@ from gui import main_window
 app = QtGui.QApplication(sys.argv)
 # ex = ferda_window.FerdaControls()
 ex = main_window.MainWindow()
+ex.showMaximized()
 
 app.exec_()
 app.deleteLater()

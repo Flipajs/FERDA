@@ -1,8 +1,9 @@
 __author__ = 'fnaiser'
 import os,sys,inspect
-# currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-# parentdir = os.path.dirname(currentdir)
-# sys.path.insert(0,parentdir)
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+sys.path.insert(1, currentdir)
 
 import sys
 import math
@@ -16,6 +17,7 @@ from gui.correction.certainty import CertaintyVisualizer
 
 
 if __name__ == '__main__':
+    print sys.path
     working_dir = sys.argv[1]
     proj_name = sys.argv[2]
     id = int(sys.argv[3])
