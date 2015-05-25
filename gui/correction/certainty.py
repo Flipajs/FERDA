@@ -238,9 +238,11 @@ class CertaintyVisualizer(QtGui.QWidget):
 
     def cw_set_active(self, cw):
         cw.setStyleSheet("""QGraphicsView {background-color: rgb(235,237,252);}""")
+        cw.setStyleSheet("""QPushButton {background-color: rgb(0,0,252);}""")
 
     def cw_set_inactive(self, cw):
         cw.setStyleSheet("""QGraphicsView {background-color: rgb(255,255,255);}""")
+        cw.setStyleSheet("""QPushButton {background-color: rgb(255,255,255);}""")
 
     def visualize_n_sorted(self, n=np.inf, start=0):
         n = max(n, len(self.cws))

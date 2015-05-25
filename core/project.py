@@ -62,6 +62,7 @@ class Project:
             with open(self.working_directory+'/stats.pkl', 'wb') as f:
                 pickle.dump(self.stats, f)
 
+        self.save_qsettings()
 
         p = Project()
         p.name = self.name
@@ -72,14 +73,13 @@ class Project:
         with open(self.working_directory+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 
-        self.save_qsettings()
 
     def save_qsettings(self):
         s = QtCore.QSettings('FERDA')
         settings = {}
 
         for k in s.allKeys():
-            settings[k] = s.value(k, 0, str)
+            settings[str(k)] = str(s.value(k, 0, str))
 
         with open(self.working_directory+'/settings.pkl', 'wb') as f:
             pickle.dump(settings, f)
