@@ -39,12 +39,17 @@ class GeneralTab(QtGui.QWidget):
         self.number_of_processes = QtGui.QSpinBox()
         self.number_of_processes.setMinimum(1)
         self.number_of_processes.setMaximum(128)
+
+        self.use_parallelization = QtGui.QCheckBox()
+        self.form_layout.addRow('use parallelization', self.use_parallelization)
         self.form_layout.addRow('number of cores: ', self.number_of_processes)
+
 
         self.populate()
 
     def populate(self):
         self.number_of_processes.setValue(S_.parallelization.processes_num)
+        self.use_parallelization.setChecked(S_.parallelization.use)
         return
 
     def restore_defaults(self):
@@ -56,3 +61,4 @@ class GeneralTab(QtGui.QWidget):
 
     def harvest(self):
         S_.parallelization.processes_num = self.number_of_processes.value()
+        S_.parallelization.use = self.use_parallelization.isChecked()

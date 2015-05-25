@@ -189,7 +189,9 @@ class Solver():
         s1, s2 = get_cc(self.g, n)
 
         affected = []
-        if len(s1) == len(s2) and len(s1) > 1:
+        # TODO:
+        # in this case, there might be to much combinations....
+        if len(s1) == len(s2) and len(s1) > 1 and len(s1) + len(s2) < 12:
             scores, configs = best_2_cc_configs(self.g, s1, s2)
             if not scores:
                 return []
@@ -207,26 +209,26 @@ class Solver():
 
             if cert >= S_.solver.certainty_threshold:
                 for n1, n2 in configs[0]:
-                    for _, n2_ in self.g.out_edges(n1):
-                        if n2_ != n2:
-                            self.g.remove_edge(n1, n2_)
-                            affected.append(n2_)
+                    if n1 and n2:
+                        for _, n2_ in self.g.out_edges(n1):
+                            if n2_ != n2:
+                                self.g.remove_edge(n1, n2_)
+                                affected.append(n2_)
 
-                    for n1_, _ in self.g.in_edges(n2):
-                        if n1_ != n1:
-                            self.g.remove_edge(n1_, n2)
-                            affected.append(n1_)
+                        for n1_, _ in self.g.in_edges(n2):
+                            if n1_ != n1:
+                                self.g.remove_edge(n1_, n2)
+                                affected.append(n1_)
 
-                    affected.append(n1)
-                    affected.append(n2)
+                        affected.append(n1)
+                        affected.append(n2)
 
-                    self.g[n1][n2]['type'] = CONFIRMED
-                    self.g[n1][n2]['certainty'] = cert
+                        self.g[n1][n2]['type'] = CONFIRMED
+                        self.g[n1][n2]['certainty'] = cert
             else:
                 for n1, n2 in configs[0]:
-                    self.g[n1][n2]['certainty'] = cert
-
-                # print n.id_, cert, scores, configs
+                    if n1 and n2:
+                        self.g[n1][n2]['certainty'] = cert
 
         return affected
 

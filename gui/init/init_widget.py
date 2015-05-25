@@ -52,6 +52,7 @@ class InitWidget(QtGui.QWidget):
             with open(self.project.working_directory+'/arena_model.pkl', 'wb') as f:
                 pickle.dump(self.project.arena_model, f)
 
+
             self.tabs.setTabEnabled(1, True)
             self.tabs.setCurrentIndex(1)
             self.tabs.setTabEnabled(0, False)
@@ -65,6 +66,10 @@ class InitWidget(QtGui.QWidget):
 
             with open(self.project.working_directory+'/animals.pkl', 'wb') as f:
                 pickle.dump(self.project.animals, f)
+
+            self.how_tab = InitHowWidget(self.widget_control, self.project)
+            self.tabs.removeTab(2)
+            self.tabs.addTab(self.how_tab, "How")
 
             self.tabs.setTabEnabled(2, True)
             self.tabs.setCurrentIndex(2)

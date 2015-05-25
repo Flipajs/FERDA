@@ -47,6 +47,7 @@ class ParametersTab(QtGui.QWidget):
         self.mser_max_area.setMinimum(0.0001)
         self.mser_max_area.setSingleStep(0.0001)
         self.mser_max_area.setMaximum(1.0)
+        self.mser_max_area.setDecimals(6)
         self.frame_layout.addRow('MSER Max relative area', self.mser_max_area)
 
         self.mser_min_area = QtGui.QSpinBox()
@@ -77,5 +78,5 @@ class ParametersTab(QtGui.QWidget):
         # TODO:
         S_.colormarks.use = self.colormarks_box.isChecked()
         S_.mser.max_area = self.mser_max_area.value()
-        S_.mser.min_area = self.mser_max_area.value()
+        S_.mser.min_area = self.mser_min_area.value()
         S_.mser.min_margin = self.mser_min_margin.value()

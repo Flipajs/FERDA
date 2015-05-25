@@ -28,6 +28,7 @@ from scipy.spatial.qhull import QhullError
 import warnings
 import os
 from skimage.transform import resize
+from core.settings import Settings as S_
 
 
 WORKING_DIR = '/Users/fnaiser/Documents/chunks'
@@ -187,7 +188,37 @@ def get_svm_model2():
 
     return clf
 
+def test():
+    app = QtGui.QApplication(sys.argv)
+
+    dial = ImgGridDialog()
+    dial.img_grid.reshape(15, element_width=100)
+    vid = get_auto_video_manager('/Users/fnaiser/Documents/smallLense_colony1_1min.avi')
+    im = vid.move2_next()
+    im = vid.move2_next()
+    im = vid.move2_next()
+    im = vid.move2_next()
+
+
+    msers = get_msers_(im)
+    groups = get_region_groups(msers)
+    ids = margin_filter(msers, groups)
+    for id in ids:
+        r = msers[id]
+        vis = draw_points_crop(im.copy(), r.pts(), square=True)
+
+        iml = get_image_label(vis)
+        dial.img_grid.add_item(iml)
+
+    dial.showMaximized()
+    app.exec_()
+    sys.exit()
+
+
 if __name__ == '__main__':
+    test()
+
+
     clf = get_svm_model2()
 
     with open('/Volumes/Seagate Expansion Drive/mser_svm/biglenses2/certainty_visu.pkl', 'rb') as f:

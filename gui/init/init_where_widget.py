@@ -150,6 +150,7 @@ class InitWhereWidget(QtGui.QWidget):
             return self.first_frame.shape[1]/2, self.first_frame.shape[0]/2, min(self.first_frame.shape[0], self.first_frame.shape[1])*0.45
 
     def skip_bg_clicked(self):
+        print "SKIP"
         self.project.bg_model = None
         self.finish()
 
