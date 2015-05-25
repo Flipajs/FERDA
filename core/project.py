@@ -4,6 +4,7 @@ from utils.video_manager import VideoType
 import pickle
 from methods.bg_model.model import Model
 from PyQt4 import QtCore
+from core.graph.solver import Solver
 
 
 class Project:
@@ -22,6 +23,7 @@ class Project:
         self.groups = None
         self.animals = None
         self.stats = None
+        self.saved_progress = None
 
 
     def save(self):
@@ -152,6 +154,19 @@ class Project:
             self.load_qsettings()
         except:
             pass
+
+        # SAVED CORRECTION PROGRESS
+        try:
+            with open(self.working_directory+'/progress_save.pkl', 'rb') as f:
+                up = pickle.Unpickler(f)
+                g = up.load()
+                actions = up.load()
+                solver = Solver(self)
+                solver.g = g
+                self.saved_progress = {'solver': solver, 'actions': actions}
+        except:
+            pass
+
 
 
 if __name__ == "__main__":

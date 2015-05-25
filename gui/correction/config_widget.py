@@ -171,7 +171,7 @@ class ConfigWidget(QtGui.QWidget):
         for n1, n2 in self.c.configurations[self.active_config]:
             pairs.append((n1, n2))
 
-        self.confirm_edges_callback(pairs, self.c)
+        self.confirm_edges_callback(pairs)
 
     def get_im(self, n, t1=True):
         if t1:
@@ -316,7 +316,7 @@ class ConfigWidget(QtGui.QWidget):
 
             i += 1
 
-        self.confirm_edges_callback([(n1, n2)], self.c)
+        self.confirm_edges_callback([(n1, n2)])
 
     def redraw_config(self):
         self.scene = MyScene()

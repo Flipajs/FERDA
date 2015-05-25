@@ -6,3 +6,4 @@ class UserActions():
         self.actions = []
 
     def edge_confirmed(self, cc, ):
+        pass

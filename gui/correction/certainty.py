@@ -56,6 +56,9 @@ class CertaintyVisualizer(QtGui.QWidget):
         self.cc_number_label = QtGui.QLabel('')
         self.layout().addWidget(self.cc_number_label)
 
+        # list of tuples (cw_id, str action, data)
+        self.edit_actions = []
+
     def add_actions(self):
         self.next_action = QtGui.QAction('next', self)
         self.next_action.triggered.connect(self.next)
@@ -69,7 +72,7 @@ class CertaintyVisualizer(QtGui.QWidget):
 
         self.confirm_cc_action = QtGui.QAction('confirm', self)
         self.confirm_cc_action.triggered.connect(self.confirm_cc)
-        self.confirm_cc_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
+        self.confirm_cc_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Space))
         self.addAction(self.confirm_cc_action)
 
         self.partially_confirm_action = QtGui.QAction('partially confirm', self)
@@ -147,7 +150,29 @@ class CertaintyVisualizer(QtGui.QWidget):
         self.action9.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
         self.addAction(self.action9)
 
+        self.save_progress = QtGui.QAction('save', self)
+        self.save_progress.triggered.connect(self.save)
+        self.save_progress.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
+        self.addAction(self.save_progress)
+
         self.d_ = None
+
+        self.autosave_timer = QtCore.QTimer()
+        self.autosave_timer.timeout.connect(partial(self.save, True))
+        # TODO: add interval to settings
+        self.autosave_timer.start(1000*60*3)
+
+    def save(self, autosave=False):
+        wd = self.solver.project.working_directory
+
+        name = '/progress_save.pkl'
+        if autosave:
+            name = '/temp/__autosave.pkl'
+
+        with open(wd+name, 'wb') as f:
+            pc = pickle.Pickler(f)
+            pc.dump(self.solver.g)
+            pc.dump(self.edit_actions)
 
     def new_region(self, is_t1):
         cw = self.get_cw_widget_at(self.active_cw)
@@ -166,6 +191,9 @@ class CertaintyVisualizer(QtGui.QWidget):
     def new_region_finished(self, confirmed, data):
         self.d_.close()
         if confirmed:
+            # ADDING ACTION
+            self.edit_actions.append(('new_region_finished', (confirmed, data)))
+
             r = Region()
             r.pts_ = data['pts']
             r.centroid_ = data['centroid']
@@ -179,6 +207,9 @@ class CertaintyVisualizer(QtGui.QWidget):
             self.update_ccs(new_ccs, node_representatives)
 
     def remove_region(self):
+        # ADDING ACTION
+        self.edit_actions.append(('remove_region', None))
+
         p = self.active_cw_node
         cw = self.get_cw_widget_at(self.active_cw)
 
@@ -194,6 +225,9 @@ class CertaintyVisualizer(QtGui.QWidget):
         self.update_ccs(new_ccs, node_representatives)
 
     def choose_node(self, pos):
+        # ADDING ACTION
+        self.edit_actions.append(('choose_node', pos))
+
         cw = self.get_cw_widget_at(self.active_cw)
         cw.dehighlight_node(self.active_cw_node)
         self.active_cw_node = pos
@@ -203,6 +237,9 @@ class CertaintyVisualizer(QtGui.QWidget):
         return self.scenes_widget.layout().itemAt(i).widget()
 
     def next(self):
+        # ADDING ACTION
+        self.edit_actions.append(('next', None))
+
         if self.active_cw < self.scenes_widget.layout().count() - 1:
             cw = self.get_cw_widget_at(self.active_cw)
             cw.dehighlight_node(self.active_cw_node)
@@ -213,6 +250,9 @@ class CertaintyVisualizer(QtGui.QWidget):
             self.scroll_.ensureWidgetVisible(self.get_cw_widget_at(self.active_cw))
 
     def prev(self):
+        # ADDING ACTION
+        self.edit_actions.append(('prev', None))
+
         if self.active_cw > 0:
             cw = self.get_cw_widget_at(self.active_cw)
             cw.dehighlight_node(self.active_cw_node)
@@ -223,10 +263,16 @@ class CertaintyVisualizer(QtGui.QWidget):
             self.scroll_.ensureWidgetVisible(self.get_cw_widget_at(self.active_cw))
 
     def confirm_cc(self):
+        # ADDING ACTION
+        self.edit_actions.append(('confirm_cc', None))
+
         cw = self.get_cw_widget_at(self.active_cw)
         cw.confirm_clicked()
 
     def fitting(self):
+        # ADDING ACTION
+        self.edit_actions.append(('fitting', None))
+
         if self.active_cw_node > -1:
             cw = self.get_cw_widget_at(self.active_cw)
 
@@ -314,7 +360,6 @@ class CertaintyVisualizer(QtGui.QWidget):
             for n in cc_to_be_replaced.regions_t2:
                 del self.t2_nodes_cc_refs[n]
 
-
             self.scenes_widget.layout().removeItem(it)
             self.scenes_widget.layout().insertWidget(widget_i, cw)
 
@@ -360,6 +405,9 @@ class CertaintyVisualizer(QtGui.QWidget):
         self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
 
     def partially_confirm(self):
+        # ADDING ACTION
+        self.edit_actions.append(('partially_confirm', None))
+
         cw = self.get_cw_widget_at(self.active_cw)
         if -1 < self.active_cw_node < len(cw.c.regions_t1) + len(cw.c.regions_t2):
             p = self.active_cw_node
@@ -389,14 +437,20 @@ class CertaintyVisualizer(QtGui.QWidget):
 
                 i += 1
 
-            self.confirm_edges([(n1, n2)], None)
+            self.confirm_edges([(n1, n2)])
 
-    def confirm_edges(self, pairs, from_cc):
+    def confirm_edges(self, pairs):
+        # ADDING ACTION
+        self.edit_actions.append(('confirm_edges', pairs))
+
         new_ccs, node_representatives = self.solver.confirm_edges(pairs)
 
         self.update_ccs(new_ccs, node_representatives)
 
     def merged(self, new_regions, t_reversed, from_cc):
+        # ADDING ACTION
+        self.edit_actions.append(('merged', (new_regions, t_reversed, from_cc)))
+
         replace = from_cc.regions_t2
         nodes_to_connect = from_cc.regions_t1
         if t_reversed:

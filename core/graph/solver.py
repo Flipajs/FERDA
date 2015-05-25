@@ -341,7 +341,24 @@ class Solver():
                 for n_ in c1:
                     touched[n_] = True
 
-                cert, confs, scores = cc_certainty(self.g, c1, c2)
+                #TODO:
+                if len(c1) + len(c2) > 12:
+                    cert = 0
+                    confs = [[]]
+                    for r in c1:
+                        best_n2 = None
+                        best_score = -1
+                        for _, n2 in self.g.out_edges(r):
+                            if self.g[r][n2]['score'] > best_score:
+                                best_n2 = n2
+                                best_score = -1
+
+                        confs[0].append((n, best_n2))
+
+                    scores = [0]
+                else:
+                    cert, confs, scores = cc_certainty(self.g, c1, c2)
+
                 conf = Configuration(self.cc_id, c1, c2, cert, confs, scores)
                 self.cc_id += 1
 
