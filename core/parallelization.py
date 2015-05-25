@@ -5,6 +5,7 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 
 import sys
+# from sklearn import svm
 from utils.video_manager import get_auto_video_manager
 import cPickle as pickle
 from core.region.mser import get_msers_
@@ -51,8 +52,6 @@ if __name__ == '__main__':
         print
         print i
         sys.stdout.flush()
-
-
 
     solver.simplify()
     solver.simplify_to_chunks()
