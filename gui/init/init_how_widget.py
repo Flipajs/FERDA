@@ -66,8 +66,11 @@ class InitHowWidget(QtGui.QWidget):
         r_id = 0
         for i in range(3):
             img = vid.move2_next()
+
             if project.bg_model:
                 img_ = project.bg_model.bg_subtraction(img)
+            else:
+                img_ = img.copy()
 
             msers = get_msers_(img_)
             groups = get_region_groups(msers)

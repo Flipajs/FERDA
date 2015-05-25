@@ -40,11 +40,33 @@ class ParametersTab(QtGui.QWidget):
         self.colormarks_box.layout().addRow('Store debug info', self.colormarks_debug)
 
         self.vbox.addWidget(self.colormarks_box)
+        self.frame_layout = QtGui.QFormLayout()
+        self.vbox.addLayout(self.frame_layout)
+
+        self.mser_max_area = QtGui.QDoubleSpinBox()
+        self.mser_max_area.setMinimum(0.0001)
+        self.mser_max_area.setSingleStep(0.0001)
+        self.mser_max_area.setMaximum(1.0)
+        self.frame_layout.addRow('MSER Max relative area', self.mser_max_area)
+
+        self.mser_min_area = QtGui.QSpinBox()
+        self.mser_min_area.setMinimum(0)
+        self.mser_min_area.setMaximum(1000)
+        self.frame_layout.addRow('MSER Min area', self.mser_min_area)
+
+        self.mser_min_margin = QtGui.QSpinBox()
+        self.mser_min_margin.setMinimum(1)
+        self.mser_min_margin.setMaximum(100)
+        self.frame_layout.addRow('MSER Min margin', self.mser_min_margin)
 
         self.populate()
 
     def populate(self):
         self.colormarks_box.setChecked(S_.colormarks.use)
+        self.mser_max_area.setValue(S_.mser.max_area)
+        self.mser_min_area.setValue(S_.mser.min_area)
+        self.mser_min_margin.setValue(S_.mser.min_margin)
+
         # self.igbr_i_weight.setValue(S_.colormarks.igbr_i_weight)
 
     def restore_defaults(self):
@@ -54,3 +76,6 @@ class ParametersTab(QtGui.QWidget):
     def harvest(self):
         # TODO:
         S_.colormarks.use = self.colormarks_box.isChecked()
+        S_.mser.max_area = self.mser_max_area.value()
+        S_.mser.min_area = self.mser_max_area.value()
+        S_.mser.min_margin = self.mser_min_margin.value()

@@ -3,6 +3,7 @@ __author__ = 'filip@naiser.cz'
 from utils.video_manager import VideoType
 import pickle
 from methods.bg_model.model import Model
+from PyQt4 import QtCore
 
 
 class Project:
@@ -71,6 +72,27 @@ class Project:
         with open(self.working_directory+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 
+        self.save_qsettings()
+
+    def save_qsettings(self):
+        s = QtCore.QSettings('FERDA')
+        settings = {}
+
+        for k in s.allKeys():
+            settings[k] = s.value(k, 0, str)
+
+        with open(self.working_directory+'/settings.pkl', 'wb') as f:
+            pickle.dump(settings, f)
+
+    def load_qsettings(self):
+        with open(self.working_directory+'/settings.pkl', 'rb') as f:
+            settings = pickle.load(f)
+            qs = QtCore.QSettings('FERDA')
+
+            for key, it in settings.iteritems():
+                qs.setValue(key, it)
+
+
     def load(self, path):
         with open(path, 'rb') as f:
             tmp_dict = pickle.load(f)
@@ -116,6 +138,12 @@ class Project:
         try:
             with open(self.working_directory+'/stats.pkl', 'rb') as f:
                 self.stats = pickle.load(f)
+        except:
+            pass
+
+        # SETTINGS
+        try:
+            self.load_qsettings()
         except:
             pass
 

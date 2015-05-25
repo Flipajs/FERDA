@@ -43,6 +43,7 @@ class Item():
             t = type_
 
         settings = QtCore.QSettings('FERDA')
+        QtCore.QSettings()
 
         return settings.value(self.key_, self.val_, t)
 

@@ -1,5 +1,5 @@
 import sys
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from gui import ferda_window
 from gui import main_window
 

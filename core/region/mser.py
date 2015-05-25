@@ -27,6 +27,8 @@ class Mser():
         if intensity_threshold > 256:
             intensity_threshold = 256
 
+        self.mser.set_max_area()
+
         self.mser.process_image(gray, intensity_threshold)
         regions = self.mser.get_regions()
         regions = [Region(dr, frame, id) for dr, id in zip(regions, range(len(regions)))]
