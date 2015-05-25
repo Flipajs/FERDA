@@ -44,8 +44,13 @@ class ParametersTab(QtGui.QWidget):
         self.populate()
 
     def populate(self):
-        self.igbr_i_weight.setValue(S_.colormarks.igbr_i_weight)
+        self.colormarks_box.setChecked(S_.colormarks.use)
+        # self.igbr_i_weight.setValue(S_.colormarks.igbr_i_weight)
 
     def restore_defaults(self):
         # TODO
         return
+
+    def harvest(self):
+        # TODO:
+        S_.colormarks.use = self.colormarks_box.isChecked()

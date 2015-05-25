@@ -65,14 +65,15 @@ class SettingsDialog(QtGui.QDialog):
         self.key_binding_tab.populate()
 
     def harvest_results(self):
-
-        self.controls_tab.harvest()
-        self.appearance_tab.harvest()
-        self.test_tab.harvest()
-        self.key_binding_tab.harvest()
+        self.general_tab.harvest()
+        self.parameters_tab.harvest()
+        # self.
+        # self.controls_tab.harvest()
+        # self.appearance_tab.harvest()
+        # self.test_tab.harvest()
+        # self.key_binding_tab.harvest()
 
     def restore_defaults(self):
-
         self.tabWidget.currentWidget().restore_defaults()
 
     def done(self, p_int):

@@ -12,7 +12,6 @@ class GeneralTab(QtGui.QWidget):
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
 
-
         self.cache_box = QtGui.QGroupBox('Cache')
         self.cache_box.setCheckable(True)
         self.cache_box.setChecked(S_.cache.use)
@@ -32,11 +31,21 @@ class GeneralTab(QtGui.QWidget):
         self.clear_cache.clicked.connect(self.clear_cache_)
 
         self.vbox.addWidget(self.cache_box)
+
+        self.form_layout = QtGui.QFormLayout()
+
+        self.vbox.addLayout(self.form_layout)
+
+        self.number_of_processes = QtGui.QSpinBox()
+        self.number_of_processes.setMinimum(1)
+        self.number_of_processes.setMaximum(128)
+        self.form_layout.addRow('number of cores: ', self.number_of_processes)
+
         self.populate()
 
     def populate(self):
+        self.number_of_processes.setValue(S_.parallelization.processes_num)
         return
-        # self.igbr_i_weight.setValue(get_settings('igbr_i_weight', float))
 
     def restore_defaults(self):
         # TODO
@@ -44,3 +53,6 @@ class GeneralTab(QtGui.QWidget):
 
     def clear_cache_(self):
         raise Exception("CLEAR CACHE - clear_cache_ in gui.settings.general_tab is not implemented!")
+
+    def harvest(self):
+        S_.parallelization.processes_num = self.number_of_processes.value()
