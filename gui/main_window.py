@@ -109,7 +109,7 @@ class MainWindow(QtGui.QMainWindow):
             self.central_widget.setCurrentWidget(self.project_widget)
 
         if state == 'initialization_finished':
-            self.project.load(self.project.working_directory)
+            self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
             self.main_tab_widget = MainTabWidget(self.widget_control, self.project)
             self.central_widget.addWidget(self.main_tab_widget)
             self.central_widget.setCurrentWidget(self.main_tab_widget)
