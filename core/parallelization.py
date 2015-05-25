@@ -28,6 +28,8 @@ if __name__ == '__main__':
 
     vid = get_auto_video_manager(proj.video_paths)
     img = vid.seek_frame(id*frames_in_row)
+    if proj.bg_model:
+        img = proj.bg_model.bg_subtraction(img)
 
     sum_ = 0
 
@@ -44,6 +46,9 @@ if __name__ == '__main__':
         img = vid.move2_next()
         if img is None:
             break
+
+        if proj.bg_model:
+            img = proj.bg_model.bg_subtraction(img)
 
         sum_ += len(m)
 
