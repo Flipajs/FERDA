@@ -79,7 +79,10 @@ class Project:
         settings = {}
 
         for k in s.allKeys():
-            settings[str(k)] = str(s.value(k, 0, str))
+            try:
+                settings[str(k)] = str(s.value(k, 0, str))
+            except:
+                pass
 
         with open(self.working_directory+'/settings.pkl', 'wb') as f:
             pickle.dump(settings, f)
@@ -90,7 +93,10 @@ class Project:
             qs = QtCore.QSettings('FERDA')
 
             for key, it in settings.iteritems():
-                qs.setValue(key, it)
+                try:
+                    qs.setValue(key, it)
+                except:
+                    pass
 
 
     def load(self, path):
