@@ -459,7 +459,7 @@ class Solver():
                 for n1, _, d in self.g.in_edges(n, data=True):
                     # because if the second node from chunk (n1) is in the consecutive frame, then you just take this region...
                     if 'chunk_ref' in d and n.frame_ - 1 > n1.frame_:
-                        n1 = self.disassemble_chunk(n1, d['chunk_ref'], t_reversed)
+                        n1 = self.disassemblve_chunk(n1, d['chunk_ref'], t_reversed)
 
                     to_connect.add(n1)
         else:
@@ -473,11 +473,15 @@ class Solver():
         for n in replace:
             self.g.remove_node(n)
 
+
+
         regions_t1 = new_regions if t_reversed else to_fit
         regions_t2 = to_fit if t_reversed else new_regions
         self.add_edges_(regions_t1, regions_t2)
 
         affected = list(regions_t1)[:] + list(regions_t2)[:]
+
+        print "MERGED, to connect", to_connect
 
         regions_t1 = to_connect if t_reversed else new_regions
         regions_t2 = new_regions if t_reversed else to_connect

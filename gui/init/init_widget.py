@@ -67,8 +67,8 @@ class InitWidget(QtGui.QWidget):
             with open(self.project.working_directory+'/animals.pkl', 'wb') as f:
                 pickle.dump(self.project.animals, f)
 
-            self.how_tab = InitHowWidget(self.widget_control, self.project)
             self.tabs.removeTab(2)
+            self.how_tab = InitHowWidget(self.widget_control, self.project)
             self.tabs.addTab(self.how_tab, "How")
 
             self.tabs.setTabEnabled(2, True)

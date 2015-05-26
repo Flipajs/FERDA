@@ -5,7 +5,7 @@ from PyQt4 import QtGui
 from core.background_computer import BackgroundComputer
 from gui.correction.certainty import CertaintyVisualizer
 from utils.video_manager import get_auto_video_manager
-# from scripts.region_graph2 import NodeGraphVisualizer, visualize_nodes
+from scripts.region_graph2 import NodeGraphVisualizer, visualize_nodes
 
 class TrackerWidget(QtGui.QWidget):
     def __init__(self, project):

@@ -174,6 +174,8 @@ class CertaintyVisualizer(QtGui.QWidget):
             pc.dump(self.solver.g)
             pc.dump(self.edit_actions)
 
+        print "PROGRESS SAVED"
+
     def new_region(self, is_t1):
         cw = self.get_cw_widget_at(self.active_cw)
         im = cw.crop_t1_widget.pixmap() if is_t1 else cw.crop_t2_widget.pixmap()

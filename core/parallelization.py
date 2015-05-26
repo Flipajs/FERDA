@@ -50,6 +50,9 @@ if __name__ == '__main__':
         if proj.bg_model:
             img = proj.bg_model.bg_subtraction(img)
 
+        if proj.arena_model:
+            img = proj.arena_model.mask_image(img)
+
         sum_ += len(m)
 
         solver.add_regions_in_t([m[id_] for id_ in ids], frame)

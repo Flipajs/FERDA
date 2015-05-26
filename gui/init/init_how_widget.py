@@ -72,6 +72,9 @@ class InitHowWidget(QtGui.QWidget):
             else:
                 img_ = img.copy()
 
+            if project.arena_model:
+                img_ = project.arena_model.mask_image(img_)
+
             msers = get_msers_(img_)
             groups = get_region_groups(msers)
             ids = margin_filter(msers, groups)

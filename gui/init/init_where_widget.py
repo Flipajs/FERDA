@@ -70,8 +70,10 @@ class InitWhereWidget(QtGui.QWidget):
 
             h_, w_, _ = self.project.bg_model.img().shape
             self.project.arena_model = Circle(h_, w_)
+            c = np.array([self.arena_ellipse.c.pos().y(), self.arena_ellipse.c.pos().x()])
+            r = np.array([self.arena_ellipse.a.pos().y(), self.arena_ellipse.a.pos().x()])
 
-
+            self.project.arena_model.set_circle(c, np.linalg.norm(c-r))
 
             if self.progress_dialog:
                 self.progress_dialog.cancel()

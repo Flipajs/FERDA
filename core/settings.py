@@ -93,7 +93,7 @@ class Solver:
 class Parallelization:
     __metaclass__ = SettingsType
     processes_num = Item('parallelization/processes_num', 8, 'The number of processes. It is good idea to set it <= num of CPUs')
-    use = True
+    use = Item('parallelization/use', True, '...')
 
 class Settings:
     cache = Cache
