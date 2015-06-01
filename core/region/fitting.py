@@ -128,9 +128,6 @@ class Fitting():
 
             pts_t2 = np.array(pts_t2)
 
-            im_ = np.zeros((1200, 1200, 3), dtype=np.uint8)
-            im_[np.asarray(np.round(pts_t2[:, 0]), dtype=np.uint32), np.asarray(np.round(pts_t2[:, 1]), dtype=np.uint32), 0] = 255
-
             pts_t1 = pts_t2 - self.trans_helpers[a_id].centroid
             pts_t1 = np.dot(pts_t1, rotation_matrix(-self.trans_helpers[a_id].angle).T)
             pts_t1 += self.animals[a_id].centroid()
@@ -144,7 +141,7 @@ class Fitting():
 
             pts_ = np.array(pts_)
 
-            self.animals[a_id].pts_ = np.asarray(pts_, dtype=np.uint32)
+            self.animals[a_id].pts_ = np.asarray(np.round(pts_), dtype=np.uint32)
             self.animals[a_id].centroid_ = self.trans_helpers[a_id].centroid
 
     def plot_situation(self):

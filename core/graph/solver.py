@@ -34,7 +34,7 @@ class Chunk():
     def merge(self, chunk):
         self.reduced += chunk.reduced
         self.start_t = min(self.start_t, chunk.start_t)
-        self.end_t = min(self.end_t, chunk.end_t)
+        self.end_t = max(self.end_t, chunk.end_t)
 
     def remove_from_beginning(self):
         if not self.is_sorted:
@@ -437,8 +437,14 @@ class Solver():
             reduced = chunk.remove_from_beginning()
 
         vid = get_auto_video_manager(self.project.video_paths)
-        im = vid.seek_frame(reduced.t)
-        region = get_mser_by_id(im, reduced.mser_id, reduced.t)
+        img = vid.seek_frame(reduced.t)
+        if self.project.bg_model:
+            img = self.project.bg_model.bg_subtraction(img)
+
+        if self.project.arena_model:
+            img = self.project.arena_model.mask_image(img)
+
+        region = get_mser_by_id(img, reduced.mser_id, reduced.t)
 
         self.g.add_node(region)
 
@@ -459,7 +465,7 @@ class Solver():
                 for n1, _, d in self.g.in_edges(n, data=True):
                     # because if the second node from chunk (n1) is in the consecutive frame, then you just take this region...
                     if 'chunk_ref' in d and n.frame_ - 1 > n1.frame_:
-                        n1 = self.disassemblve_chunk(n1, d['chunk_ref'], t_reversed)
+                        n1 = self.disassemble_chunk(n1, d['chunk_ref'], t_reversed)
 
                     to_connect.add(n1)
         else:
@@ -487,7 +493,7 @@ class Solver():
         regions_t2 = new_regions if t_reversed else to_connect
         self.add_edges_(regions_t1, regions_t2)
 
-        new_ccs, node_representative = self.get_new_ccs(affected)
+        new_ccs, node_representative = self.get_new_ccs(list(affected) + list(regions_t2))
         new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
 
         return [], new_ccs, node_representative
@@ -516,6 +522,18 @@ class Solver():
 
         return new_ccs, node_representative
 
+    def is_chunk(self, n):
+        # returns (bool, bool, ref) where first is true if node is in chunk and the second returns True if it is t_reversed, and ref is None or reference to chunk
+        for n1, _, d in self.g.in_edges(n, data=True):
+            if 'chunk_ref' in d:
+                return True, True, d['chunk_ref']
+
+        for _, n2, d in self.g.out_edges(n, data=True):
+            if 'chunk_ref' in d:
+                return True, False, d['chunk_ref']
+
+        return False, False, None
+
     def remove_region(self, r):
         affected = set()
         for n, _ in self.g.in_edges(r):
@@ -525,6 +543,10 @@ class Solver():
 
         affected = list(affected)
         affected.remove(r)
+
+        is_ch, t_reversed, chunk_ref = self.is_chunk(r)
+        if is_ch:
+            n = self.disassemble_chunk(r, chunk_ref, t_reversed)
 
         self.g.remove_node(r)
 

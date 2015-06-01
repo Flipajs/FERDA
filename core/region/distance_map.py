@@ -68,8 +68,7 @@ class DistanceMap():
 
     def is_inside_object(self, pt):
         if self.roi.is_inside(pt):
-            if self.pt_img_[pt[0] - self.roi.y(), pt[1] - self.roi.x()]:
-                return True
+            return self.pt_img_[pt[0] - self.roi.y(), pt[1] - self.roi.x()]
 
         return False
 
