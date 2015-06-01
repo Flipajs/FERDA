@@ -296,28 +296,28 @@ class Solver():
         # for frame in self.frames:
         #     for n in self.frames[frame]:
         for n in self.g.nodes():
-                in_num, in_n = num_in_edges_of_type(self.g, n, CONFIRMED)
-                out_num, out_n = num_out_edges_of_type(self.g, n, CONFIRMED)
+            in_num, in_n = num_in_edges_of_type(self.g, n, CONFIRMED)
+            out_num, out_n = num_out_edges_of_type(self.g, n, CONFIRMED)
 
-                if out_num == 1 and in_num == 1:
-                    if 'chunk_ref' in self.g[in_n][n]:
-                        chunk = self.g[in_n][n]['chunk_ref']
-                    else:
-                        chunk = Chunk()
+            if out_num == 1 and in_num == 1:
+                if 'chunk_ref' in self.g[in_n][n]:
+                    chunk = self.g[in_n][n]['chunk_ref']
+                else:
+                    chunk = Chunk()
 
-                    # case when there are 2 chunks (due parallelization) -> MERGE
-                    if 'chunk_ref' in self.g[n][out_n]:
-                        second_chunk = self.g[n][out_n]['chunk_ref']
+                # case when there are 2 chunks (due parallelization) -> MERGE
+                if 'chunk_ref' in self.g[n][out_n]:
+                    second_chunk = self.g[n][out_n]['chunk_ref']
 
-                        # chunk.add_region(in_n)
-                        # self.g.remove_node(in_n)
+                    # chunk.add_region(in_n)
+                    # self.g.remove_node(in_n)
 
-                        chunk.merge(second_chunk)
+                    chunk.merge(second_chunk)
 
-                    chunk.add_region(n)
+                chunk.add_region(n)
 
-                    self.g.remove_node(n)
-                    self.g.add_edge(in_n, out_n, type=CONFIRMED, chunk_ref=chunk)
+                self.g.remove_node(n)
+                self.g.add_edge(in_n, out_n, type=CONFIRMED, chunk_ref=chunk, score=1.0)
 
     def get_ccs(self, queue=[]):
         if not queue:
@@ -449,9 +449,9 @@ class Solver():
         self.g.add_node(region)
 
         if reversed_dir:
-            self.g.add_edge(n, region, type=CONFIRMED, chunk_ref=chunk)
+            self.g.add_edge(n, region, type=CONFIRMED, chunk_ref=chunk, score=1.0)
         else:
-            self.g.add_edge(region, n, type=CONFIRMED, chunk_ref=chunk)
+            self.g.add_edge(region, n, type=CONFIRMED, chunk_ref=chunk, score=1.0)
 
         return region
 
@@ -479,15 +479,11 @@ class Solver():
         for n in replace:
             self.g.remove_node(n)
 
-
-
         regions_t1 = new_regions if t_reversed else to_fit
         regions_t2 = to_fit if t_reversed else new_regions
         self.add_edges_(regions_t1, regions_t2)
 
         affected = list(regions_t1)[:] + list(regions_t2)[:]
-
-        print "MERGED, to connect", to_connect
 
         regions_t1 = to_connect if t_reversed else new_regions
         regions_t2 = new_regions if t_reversed else to_connect
@@ -496,7 +492,7 @@ class Solver():
         new_ccs, node_representative = self.get_new_ccs(list(affected) + list(regions_t2))
         new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
 
-        return [], new_ccs, node_representative
+        return new_ccs, node_representative
 
     def add_virtual_region(self, r):
         self.g.add_node(r)

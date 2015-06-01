@@ -40,9 +40,8 @@ class CertaintyVisualizer(QtGui.QWidget):
 
         self.solver = solver
         self.vid = vid
-        self.ccs = []
         self.cws = []
-        self.ccs_sorted = False
+        self.cws_sorted = False
 
         self.node_ccs_refs = {}
         self.t1_nodes_cc_refs = {}
@@ -296,12 +295,11 @@ class CertaintyVisualizer(QtGui.QWidget):
     def visualize_n_sorted(self, n=np.inf, start=0):
         n = max(n, len(self.cws))
 
-        if not self.ccs_sorted:
+        if not self.cws_sorted:
             self.cws = sorted(self.cws, key=lambda k: k.c.t)
-            # self.ccs = sorted(self.ccs, key=lambda k: k.certainty)
-            self.ccs_sorted = True
+            self.cws_sorted = True
 
-        for i in range(start, min(start+n, len(self.ccs))):
+        for i in range(start, min(start+n, len(self.cws))):
             self.scenes_widget.layout().addWidget(self.cws[i])
 
         self.cw_set_active(self.cws[0])
@@ -320,15 +318,12 @@ class CertaintyVisualizer(QtGui.QWidget):
         for n in cc.regions_t2:
             self.t2_nodes_cc_refs[n] = cc
 
-        self.ccs_sorted = False
-        self.ccs.append(cc)
+        self.cws_sorted = False
         cw = ConfigWidget(self.solver.g, cc, self.vid, self)
         self.cws.append(cw)
         # self.scenes_widget.layout().addWidget(cw)
 
     def replace_cw(self, new_cc, cc_to_be_replaced=None):
-        print len(new_cc.regions_t1), new_cc.t
-
         if new_cc.regions_t1[0] not in self.t1_nodes_cc_refs and new_cc.regions_t2[0] not in self.t2_nodes_cc_refs and not cc_to_be_replaced:
             cw = ConfigWidget(self.solver.g, new_cc, self.vid, self)
             self.cws.append(cw)
@@ -357,33 +352,35 @@ class CertaintyVisualizer(QtGui.QWidget):
             cw = ConfigWidget(self.solver.g, new_cc, self.vid, self, color_assignments=c_assignment)
             self.cws.append(cw)
 
-            for n in cc_to_be_replaced.regions_t1:
-                del self.t1_nodes_cc_refs[n]
-
-            for n in cc_to_be_replaced.regions_t2:
-                del self.t2_nodes_cc_refs[n]
-
             self.scenes_widget.layout().removeItem(it)
             self.scenes_widget.layout().insertWidget(widget_i, cw)
 
             self.cws.remove(it.widget())
             it.widget().setParent(None)
 
-            self.ccs.remove(cc_to_be_replaced)
+        self.update_node_cc_refs(cc_to_be_replaced, new_cc)
 
-        self.ccs.append(new_cc)
-
-        for n in new_cc.regions_t1:
-            self.t1_nodes_cc_refs[n] = new_cc
-
-        for n in new_cc.regions_t2:
-            self.t2_nodes_cc_refs[n] = new_cc
 
     def get_cc_item_position(self, cc):
         for i in range(0, self.scenes_widget.layout().count()):
             it = self.scenes_widget.layout().itemAt(i)
             if it.widget().c == cc:
                 return i, it
+
+    def update_node_cc_refs(self, old_cc, new_cc):
+        if old_cc:
+            for n_ in old_cc.regions_t1:
+                del self.t1_nodes_cc_refs[n_]
+
+            for n_ in old_cc.regions_t2:
+                del self.t2_nodes_cc_refs[n_]
+
+        if new_cc:
+            for n_ in new_cc.regions_t1:
+                self.t1_nodes_cc_refs[n_] = new_cc
+
+            for n_ in new_cc.regions_t2:
+                self.t2_nodes_cc_refs[n_] = new_cc
 
     def update_ccs(self, new_ccs, node_representatives):
         for new_cc, n in zip(new_ccs, node_representatives):
@@ -398,8 +395,7 @@ class CertaintyVisualizer(QtGui.QWidget):
                 _, it = self.get_cc_item_position(old_cc)
                 self.scenes_widget.layout().removeItem(it)
 
-                for n in it.widget().c.regions_t1:
-                    del self.t1_nodes_cc_refs[n]
+                self.update_node_cc_refs(it.widget().c, new_cc)
 
                 self.cws.remove(it.widget())
                 it.widget().setParent(None)
@@ -447,7 +443,6 @@ class CertaintyVisualizer(QtGui.QWidget):
         self.edit_actions.append(('confirm_edges', pairs))
 
         new_ccs, node_representatives = self.solver.confirm_edges(pairs)
-
         self.update_ccs(new_ccs, node_representatives)
 
     def merged(self, new_regions, t_reversed, from_cc):
@@ -460,7 +455,7 @@ class CertaintyVisualizer(QtGui.QWidget):
             replace = from_cc.regions_t1
             nodes_to_connect = from_cc.regions_t2
 
-        new_merged_cc, new_ccs, node_representatives = self.solver.merged(new_regions, replace, nodes_to_connect, t_reversed)
+        new_ccs, node_representatives = self.solver.merged(new_regions, replace, nodes_to_connect, t_reversed)
         self.update_ccs(new_ccs, node_representatives)
 
 
@@ -477,8 +472,8 @@ if __name__ == '__main__':
 
     i = 0
     for c_ in ccs:
-        if i == 10:
-            break
+        # if i == 10:
+        #     break
 
         cv.add_configuration(c_)
         i += 1

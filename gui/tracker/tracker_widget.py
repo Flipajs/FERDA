@@ -74,10 +74,10 @@ class TrackerWidget(QtGui.QWidget):
 
         i = 0
         for c_ in ccs:
-            if c_.certainty < 0.0001:
-                print c_.regions_t1[0].frame_
-            if i == 10:
-                break
+            # if c_.certainty < 0.0001:
+            #     print c_.regions_t1[0].frame_
+            # if i == 10:
+            #     break
 
             self.certainty_visualizer.add_configuration(c_)
             i += 1
