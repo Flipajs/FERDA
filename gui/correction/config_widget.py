@@ -26,13 +26,12 @@ from copy import deepcopy
 
 
 class ConfigWidget(QtGui.QWidget):
-    def __init__(self, G, c, vid, confirm_edges_callback, merged_callback, color_assignments=None):
+    def __init__(self, G, c, vid, parent_widget, color_assignments=None):
         super(ConfigWidget, self).__init__()
 
         self.G = G
         self.c = c
-        self.confirm_edges_callback = confirm_edges_callback
-        self.merged_callback = merged_callback
+        self.parent = parent_widget
 
         self.node_size = 70
         self.frame_visu_margin = 100
@@ -45,6 +44,7 @@ class ConfigWidget(QtGui.QWidget):
         self.user_actions = []
 
         self.active_node = None
+        self.connect_with_active = False
 
         self.sub_g = self.G.subgraph(self.c.regions_t1 + self.c.regions_t2)
 
@@ -77,7 +77,7 @@ class ConfigWidget(QtGui.QWidget):
 
         self.pop_menu_node = QtGui.QMenu(self)
         self.action_remove_node = QtGui.QAction('remove', self)
-        self.action_remove_node.triggered.connect(self.remove_node)
+        self.action_remove_node.triggered.connect(self.remove_node_)
 
         self.action_partially_confirm = QtGui.QAction('confirm this connection', self)
         self.action_partially_confirm.triggered.connect(self.partially_confirm)
@@ -85,12 +85,21 @@ class ConfigWidget(QtGui.QWidget):
         self.action_mark_merged = QtGui.QAction('merged', self)
         self.action_mark_merged.triggered.connect(self.mark_merged)
 
+        self.new_region_t1 = QtGui.QAction('new region t1', self)
+        self.new_region_t1.triggered.connect(partial(self.parent.new_region, True))
+
+        self.new_region_t2 = QtGui.QAction('new region t2', self)
+        self.new_region_t2.triggered.connect(partial(self.parent.new_region, False))
+
+        self.connect_with = QtGui.QAction('connect with and confirm', self)
+        self.connect_with.triggered.connect(self.connect_with_)
+
         self.pop_menu_node.addAction(self.action_remove_node)
         self.pop_menu_node.addAction(self.action_mark_merged)
         self.pop_menu_node.addAction(self.action_partially_confirm)
-
-        self.pop_menu_else = QtGui.QMenu(self)
-        self.pop_menu_else.addAction(QtGui.QAction('add node', self))
+        self.pop_menu_node.addAction(self.new_region_t1)
+        self.pop_menu_node.addAction(self.new_region_t2)
+        self.pop_menu_node.addAction(self.connect_with)
 
         self.setLayout(QtGui.QHBoxLayout())
         self.v = QtGui.QGraphicsView()
@@ -108,6 +117,8 @@ class ConfigWidget(QtGui.QWidget):
         self.v.setScene(self.scene)
         self.layout().addWidget(QtGui.QLabel(str(0 if c.certainty < 0.001 else c.certainty)[0:5]))
 
+        self.scene.clicked.connect(self.scene_clicked)
+
         self.draw_scene()
         self.draw_frame()
 
@@ -122,6 +133,9 @@ class ConfigWidget(QtGui.QWidget):
         self.connect(self.v, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.on_context_menu)
 
         self.show_configuration(0)
+
+    def remove_node_(self):
+        self.parent.remove_region(self.active_node)
 
     def get_node_item_at_pos(self, node_pos):
         n_key = None
@@ -143,6 +157,8 @@ class ConfigWidget(QtGui.QWidget):
 
         return n_it
 
+    def connect_with_(self):
+        self.connect_with_active = True
 
     def highlight_node(self, node_pos):
         if node_pos > -1 and node_pos < len(self.c.regions_t1) + len(self.c.regions_t2):
@@ -163,7 +179,24 @@ class ConfigWidget(QtGui.QWidget):
             self.active_node = self.it_nodes[it]
             self.pop_menu_node.exec_(self.v.mapToGlobal(point))
         else:
-            self.pop_menu_else.exec_(self.v.mapToGlobal(point))
+            self.active_node = None
+
+    def scene_clicked(self, point):
+        it = self.scene.itemAt(point)
+
+        if isinstance(it, QtGui.QGraphicsPixmapItem):
+            if self.connect_with_active:
+                n1 = self.active_node
+                n2 = self.it_nodes[it]
+                if self.active_node.frame_ > self.it_nodes[it].frame_:
+                    n1 = self.it_nodes[it]
+                    n2 = self.active_node
+
+                self.parent.confirm_edges([(n1, n2)])
+                self.active_node = self.it_nodes[it]
+                self.connect_with_active = False
+        else:
+            self.connect_with_active = False
             self.active_node = None
 
     def confirm_clicked(self):
@@ -171,7 +204,7 @@ class ConfigWidget(QtGui.QWidget):
         for n1, n2 in self.c.configurations[self.active_config]:
             pairs.append((n1, n2))
 
-        self.confirm_edges_callback(pairs)
+        self.parent.confirm_edges(pairs)
 
     def get_im(self, n, t1=True):
         if t1:
@@ -186,9 +219,6 @@ class ConfigWidget(QtGui.QWidget):
             vis = np.asarray(resize(vis, (self.node_size, self.node_size)) * 255, dtype=np.uint8)
 
         return cvimg2qtpixmap(vis)
-
-    def remove_node(self):
-        print "REMOVE", self.active_node
 
     def get_node_color(self, n):
         opacity = 0.5
@@ -281,7 +311,7 @@ class ConfigWidget(QtGui.QWidget):
             f = Fitting(reg, objects, num_of_iterations=10)
             f.fit()
 
-            self.merged_callback(f.animals, t_reversed, self.c)
+            self.parent.merged(f.animals, t_reversed, self.c)
 
     def show_configuration(self, id):
         self.active_config = id
@@ -316,7 +346,7 @@ class ConfigWidget(QtGui.QWidget):
 
             i += 1
 
-        self.confirm_edges_callback([(n1, n2)])
+        self.parent.confirm_edges([(n1, n2)])
 
     def redraw_config(self):
         self.scene = MyScene()

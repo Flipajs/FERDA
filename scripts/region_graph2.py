@@ -71,8 +71,8 @@ ZERO_EPS_THRESHOLD = -0.1
 
 USE_BG_SUB = False
 
-with open('/Users/fnaiser/Documents/graphs/log_hists.pkl', 'rb') as f:
-    log_hists = pickle.load(f)
+# with open('/Users/fnaiser/Documents/graphs/log_hists.pkl', 'rb') as f:
+#     log_hists = pickle.load(f)
 
 from configs.eight import *
 

@@ -208,22 +208,23 @@ class CertaintyVisualizer(QtGui.QWidget):
 
             self.update_ccs(new_ccs, node_representatives)
 
-    def remove_region(self):
+    def remove_region(self, node=None):
         # ADDING ACTION
-        self.edit_actions.append(('remove_region', None))
+        self.edit_actions.append(('remove_region', node))
 
-        p = self.active_cw_node
-        cw = self.get_cw_widget_at(self.active_cw)
+        if not node:
+            p = self.active_cw_node
+            cw = self.get_cw_widget_at(self.active_cw)
 
-        if p < 0 or p > len(cw.c.regions_t1) + len(cw.c.regions_t2):
-            return
+            if p < 0 or p > len(cw.c.regions_t1) + len(cw.c.regions_t2):
+                return
 
-        if p < len(cw.c.regions_t1):
-            r = cw.c.regions_t1[p]
-        else:
-            r = cw.c.regions_t2[p - len(cw.c.regions_t1)]
+            if p < len(cw.c.regions_t1):
+                node = cw.c.regions_t1[p]
+            else:
+                node = cw.c.regions_t2[p - len(cw.c.regions_t1)]
 
-        new_ccs, node_representatives = self.solver.remove_region(r)
+        new_ccs, node_representatives = self.solver.remove_region(node)
         self.update_ccs(new_ccs, node_representatives)
 
     def choose_node(self, pos):
@@ -321,7 +322,7 @@ class CertaintyVisualizer(QtGui.QWidget):
 
         self.ccs_sorted = False
         self.ccs.append(cc)
-        cw = ConfigWidget(self.solver.g, cc, self.vid, self.confirm_edges, self.merged)
+        cw = ConfigWidget(self.solver.g, cc, self.vid, self)
         self.cws.append(cw)
         # self.scenes_widget.layout().addWidget(cw)
 
@@ -329,7 +330,7 @@ class CertaintyVisualizer(QtGui.QWidget):
         print len(new_cc.regions_t1), new_cc.t
 
         if new_cc.regions_t1[0] not in self.t1_nodes_cc_refs and new_cc.regions_t2[0] not in self.t2_nodes_cc_refs and not cc_to_be_replaced:
-            cw = ConfigWidget(self.solver.g, new_cc, self.vid, self.confirm_edges, self.merged)
+            cw = ConfigWidget(self.solver.g, new_cc, self.vid, self)
             self.cws.append(cw)
 
             for i in range(0, self.scenes_widget.layout().count()):
@@ -353,7 +354,7 @@ class CertaintyVisualizer(QtGui.QWidget):
             if cc_to_be_replaced:
                 c_assignment = None
 
-            cw = ConfigWidget(self.solver.g, new_cc, self.vid, self.confirm_edges, self.merged, color_assignments=c_assignment)
+            cw = ConfigWidget(self.solver.g, new_cc, self.vid, self, color_assignments=c_assignment)
             self.cws.append(cw)
 
             for n in cc_to_be_replaced.regions_t1:
