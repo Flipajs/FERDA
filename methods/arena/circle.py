@@ -11,7 +11,7 @@ class Circle(Model):
 
     def set_circle(self, center, radius):
         self.mask_ = np.zeros((self.im_height, self.im_width), dtype=np.uint8)
-        cv2.circle(self.mask_, (int(round(center[0])), int(round(center[1]))), int(round(radius)), 255, -1)
+        cv2.circle(self.mask_, (int(round(center[1])), int(round(center[0]))), int(round(radius)), 255, -1)
 
         self.mask_idx_ = (self.mask_ == 0)
 

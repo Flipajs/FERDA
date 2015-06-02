@@ -13,10 +13,7 @@ class TrackerWidget(QtGui.QWidget):
         self.project = project
 
         self.vbox = QtGui.QVBoxLayout()
-        b = QtGui.QPushButton('tracker')
-
         self.setLayout(self.vbox)
-        self.vbox.addWidget(b)
 
         self.mser_progress_label = QtGui.QLabel('MSER computation progress')
         self.vbox.addWidget(self.mser_progress_label)
@@ -98,7 +95,7 @@ class TrackerWidget(QtGui.QWidget):
 
         self.certainty_visualizer.visualize_n_sorted()
 
-        # self.update_graph_visu(600, 700)
+        self.update_graph_visu()
         print "FINISHED"
 
     def apply_actions(self, actions):

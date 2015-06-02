@@ -138,7 +138,9 @@ class Solver():
             for r in self.rules:
                 affected = r(n)
                 if return_affected:
-                    (all_affected.add(x) for x in affected)
+                    for a in affected:
+                        all_affected.add(a)
+                    # (all_affected.add(x) for x in affected)
 
                 queue.extend(affected)
 
@@ -207,7 +209,7 @@ class Solver():
 
             if len(scores) == 1:
                 n_ = float(len(s1))
-                # to power of 2 because we want to multiply it by difference to secend best, which is 0
+                # to power of 2 because we want to multiply it by difference to second best, which is 0
                 cert = abs(scores[0] / n_)**2
             else:
                 sc1 = scores[0]
@@ -437,7 +439,7 @@ class Solver():
         all_affected = list(set(all_affected + affected))
         self.simplify_to_chunks()
 
-        new_ccs, node_representative = self.get_new_ccs(affected)
+        new_ccs, node_representative = self.get_new_ccs(all_affected)
 
         # order them by size, this will prevent widgets removing when we want update them...
         return self.order_ccs_by_size(new_ccs, node_representative)
