@@ -307,7 +307,6 @@ class ConfigWidget(QtGui.QWidget):
 
                 objects.append(a)
 
-            print self, self.c.regions_t1
             f = Fitting(reg, objects, num_of_iterations=10)
             f.fit()
 

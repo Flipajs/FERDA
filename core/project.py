@@ -93,6 +93,7 @@ class Project:
         with open(self.working_directory+'/settings.pkl', 'rb') as f:
             settings = pickle.load(f)
             qs = QtCore.QSettings('FERDA')
+            qs.clear()
 
             for key, it in settings.iteritems():
                 try:

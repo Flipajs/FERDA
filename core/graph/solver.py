@@ -102,7 +102,15 @@ class Solver():
 
     def add_edges_(self, regions_t1, regions_t2):
         for r_t1 in regions_t1:
+            is_ch, reversed, _ = self.is_chunk(r_t1)
+            if is_ch and not reversed:
+                continue
+
             for r_t2 in regions_t2:
+                is_ch, reversed, _ = self.is_chunk(r_t2)
+                if is_ch and reversed:
+                    continue
+
                 d = np.linalg.norm(r_t1.centroid() - r_t2.centroid())
 
                 if d < self.max_distance:
@@ -377,6 +385,10 @@ class Solver():
 
             node_representative.append(n)
 
+            if n not in self.g.nodes():
+                new_ccs.append(None)
+                continue
+
             cc = self.get_ccs([n])
             for c_ in cc:
                 for n_ in c_.regions_t1:
@@ -423,9 +435,9 @@ class Solver():
 
         all_affected = list(self.simplify(affected[:], return_affected=True))
         all_affected = list(set(all_affected + affected))
-        # self.simplify_to_chunks()
+        self.simplify_to_chunks()
 
-        new_ccs, node_representative = self.get_new_ccs(all_affected)
+        new_ccs, node_representative = self.get_new_ccs(affected)
 
         # order them by size, this will prevent widgets removing when we want update them...
         return self.order_ccs_by_size(new_ccs, node_representative)
@@ -479,6 +491,11 @@ class Solver():
         for n in replace:
             self.g.remove_node(n)
 
+
+        r_t_minus, r_t, r_t_plus = self.get_regions_around(new_regions[0].frame_)
+        self.add_edges_(r_t_minus, r_t)
+        self.add_edges_(r_t, r_t_plus)
+
         regions_t1 = new_regions if t_reversed else to_fit
         regions_t2 = to_fit if t_reversed else new_regions
         self.add_edges_(regions_t1, regions_t2)
@@ -494,10 +511,7 @@ class Solver():
 
         return new_ccs, node_representative
 
-    def add_virtual_region(self, r):
-        self.g.add_node(r)
-        t = r.frame_
-
+    def get_regions_around(self, t):
         r_t_minus = []
         r_t_plus = []
         r_t = []
@@ -509,6 +523,14 @@ class Solver():
                 r_t_plus.append(n)
             elif n.frame_ == t:
                 r_t.append(n)
+
+        return r_t_minus, r_t, r_t_plus
+
+    def add_virtual_region(self, r):
+        self.g.add_node(r)
+        t = r.frame_
+
+        r_t_minus, r_t, r_t_plus = self.get_regions_around(t)
 
         self.add_edges_(r_t_minus, [r])
         self.add_edges_([r], r_t_plus)

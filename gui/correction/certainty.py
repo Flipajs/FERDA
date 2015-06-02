@@ -27,8 +27,11 @@ from config_widget import ConfigWidget
 from new_region_widget import NewRegionWidget
 from core.region.region import Region
 
+VISU_MARGIN = 20
+
+
 class CertaintyVisualizer(QtGui.QWidget):
-    def __init__(self, solver, vid):
+    def __init__(self, solver, vid, graph_visu_callback):
         super(CertaintyVisualizer, self).__init__()
         self.setLayout(QtGui.QVBoxLayout())
         self.scenes_widget = QtGui.QWidget()
@@ -37,6 +40,7 @@ class CertaintyVisualizer(QtGui.QWidget):
         self.scroll_.setWidgetResizable(True)
         self.scroll_.setWidget(self.scenes_widget)
         self.layout().addWidget(self.scroll_)
+        self.graph_visu_callback = graph_visu_callback
 
         self.solver = solver
         self.vid = vid
@@ -324,7 +328,7 @@ class CertaintyVisualizer(QtGui.QWidget):
         # self.scenes_widget.layout().addWidget(cw)
 
     def replace_cw(self, new_cc, cc_to_be_replaced=None):
-        if new_cc.regions_t1[0] not in self.t1_nodes_cc_refs and new_cc.regions_t2[0] not in self.t2_nodes_cc_refs and not cc_to_be_replaced:
+        if not self.is_cc_familiar(new_cc) and not cc_to_be_replaced:
             cw = ConfigWidget(self.solver.g, new_cc, self.vid, self)
             self.cws.append(cw)
 
@@ -337,10 +341,8 @@ class CertaintyVisualizer(QtGui.QWidget):
             self.scenes_widget.layout().insertWidget(i, cw)
         else:
             if not cc_to_be_replaced:
-                if new_cc.regions_t1[0] in self.t1_nodes_cc_refs:
-                    cc_to_be_replaced = self.t1_nodes_cc_refs[new_cc.regions_t1[0]]
-                else:
-                    cc_to_be_replaced = self.t2_nodes_cc_refs[new_cc.regions_t2[0]]
+                if self.is_cc_familiar(new_cc):
+                    cc_to_be_replaced = self.find_ref(new_cc)
 
             widget_i, it = self.get_cc_item_position(cc_to_be_replaced)
 
@@ -382,12 +384,50 @@ class CertaintyVisualizer(QtGui.QWidget):
             for n_ in new_cc.regions_t2:
                 self.t2_nodes_cc_refs[n_] = new_cc
 
+    def find_ref(self, cc):
+        for n in cc.regions_t1:
+            if n in self.t1_nodes_cc_refs:
+                return self.t1_nodes_cc_refs[n]
+
+        for n in cc.regions_t2:
+            if n in self.t2_nodes_cc_refs:
+                return self.t2_nodes_cc_refs[n]
+
+        return None
+
+    def is_cc_familiar_t1(self, cc):
+        if cc:
+            for n in cc.regions_t1:
+                if n in self.t1_nodes_cc_refs:
+                    return True
+
+        return False
+
+    def is_cc_familiar_t2(self, cc):
+        if cc:
+            for n in cc.regions_t2:
+                if n in self.t2_nodes_cc_refs:
+                    return True
+
+        return False
+
+    def is_cc_familiar(self, cc):
+        if self.is_cc_familiar_t1(cc):
+            return True
+
+        return self.is_cc_familiar_t2(cc)
+
     def update_ccs(self, new_ccs, node_representatives):
+        min_t = np.inf
+        max_t = 0
+
         for new_cc, n in zip(new_ccs, node_representatives):
+            min_t = min(n.frame_, min_t)
+            max_t = max(n.frame_, max_t)
             if new_cc:
                 self.replace_cw(new_cc)
             else:
-                if n not in self.t1_nodes_cc_refs:
+                if not self.is_cc_familiar_t1(new_cc) and n not in self.t1_nodes_cc_refs:
                     # already removed
                     continue
 
@@ -402,6 +442,9 @@ class CertaintyVisualizer(QtGui.QWidget):
 
         self.cw_set_active(self.get_cw_widget_at(self.active_cw))
         self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
+
+        print min_t - VISU_MARGIN, max_t + VISU_MARGIN
+        self.graph_visu_callback(min_t - VISU_MARGIN, max_t + VISU_MARGIN)
 
     def partially_confirm(self):
         # ADDING ACTION
@@ -437,6 +480,8 @@ class CertaintyVisualizer(QtGui.QWidget):
                 i += 1
 
             self.confirm_edges([(n1, n2)])
+
+        self.active_cw_node = -1
 
     def confirm_edges(self, pairs):
         # ADDING ACTION
