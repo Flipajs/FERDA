@@ -2,10 +2,12 @@ __author__ = 'fnaiser'
 
 from PyQt4 import QtGui
 
-from core.background_computer import BackgroundComputer
 from gui.correction.certainty import CertaintyVisualizer
 from utils.video_manager import get_auto_video_manager
 from scripts.region_graph2 import NodeGraphVisualizer, visualize_nodes
+from core.settings import Settings as S_
+import numpy as np
+from skimage.transform import rescale
 
 class TrackerWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -23,13 +25,6 @@ class TrackerWidget(QtGui.QWidget):
 
         self.graph_widget = QtGui.QWidget()
         self.layout().addWidget(self.graph_widget)
-
-        if project.saved_progress:
-            self.background_computer_finished(project.saved_progress['solver'])
-            # self.apply_actions(project.saved_progress['actions'])
-        else:
-            self.bc_msers = BackgroundComputer(project, self.bc_update, self.background_computer_finished)
-            self.bc_msers.run()
 
     def bc_update(self, text):
         self.mser_progress_label.setText('MSER computation progress'+text)
@@ -54,7 +49,6 @@ class TrackerWidget(QtGui.QWidget):
 
         vid = get_auto_video_manager(self.project.video_paths)
         regions = {}
-        print len(sub_g.nodes())
         for n in sub_g.nodes():
             if n.frame_ in regions:
                 regions[n.frame_].append(n)
@@ -63,6 +57,9 @@ class TrackerWidget(QtGui.QWidget):
 
             if 'img' not in self.solver.g.node[n]:
                 im = vid.seek_frame(n.frame_)
+                if S_.mser.img_subsample_factor > 1.0:
+                    im = np.asarray(rescale(im, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
+
                 self.solver.g.node[n]['img'] = visualize_nodes(im, n)
                 sub_g.node[n]['img'] = self.solver.g.node[n]['img']
 
@@ -73,30 +70,40 @@ class TrackerWidget(QtGui.QWidget):
         self.graph_widget = w_
         self.layout().addWidget(self.graph_widget)
         self.graph_widget.showMaximized()
+        self.graph_widget.setFixedHeight(300)
 
-
-    def background_computer_finished(self, solver):
+    def prepare_corrections(self, solver):
         self.solver = solver
+
         self.certainty_visualizer = CertaintyVisualizer(self.solver, get_auto_video_manager(self.project.video_paths), self.update_graph_visu)
         self.vbox.addWidget(self.certainty_visualizer)
 
+        t1_nodes = []
+        for n in self.solver.g.nodes():
+            if n.frame_ == 0:
+                t1_nodes.append(n)
+
+        self.solver.simplify()
+        self.solver.simplify_to_chunks()
+
         ccs = self.solver.get_ccs()
         ccs = sorted(ccs, key=lambda k: k.regions_t1[0].frame_)
+        print "NUMBER OF CASES: ", len(ccs)
+
+        print "MAJOR AXIS MEDIAN", self.project.stats.major_axis_median, S_.solver.max_edge_distance_in_ant_length, self.solver.max_distance
 
         i = 0
         for c_ in ccs:
-            # if c_.certainty < 0.0001:
-            #     print c_.regions_t1[0].frame_
-            # if i == 10:
-            #     break
-
+            print i
             self.certainty_visualizer.add_configuration(c_)
+            if i > 1:
+                break
+
             i += 1
 
         self.certainty_visualizer.visualize_n_sorted()
 
-        self.update_graph_visu()
-        print "FINISHED"
+        # self.update_graph_visu(0, 10)
 
     def apply_actions(self, actions):
         for action_name, data in actions:

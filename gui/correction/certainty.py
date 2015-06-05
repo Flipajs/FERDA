@@ -26,6 +26,7 @@ from copy import deepcopy
 from config_widget import ConfigWidget
 from new_region_widget import NewRegionWidget
 from core.region.region import Region
+import math
 
 VISU_MARGIN = 20
 
@@ -102,6 +103,11 @@ class CertaintyVisualizer(QtGui.QWidget):
         self.remove_region_action.triggered.connect(self.remove_region)
         self.remove_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Backspace))
         self.addAction(self.remove_region_action)
+
+        self.strong_remove_action = QtGui.QAction('strong remove', self)
+        self.strong_remove_action.triggered.connect(self.strong_remove_region)
+        self.strong_remove_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Backspace))
+        self.addAction(self.strong_remove_action)
 
         self.action0 = QtGui.QAction('0', self)
         self.action0.triggered.connect(partial(self.choose_node, 9))
@@ -227,8 +233,21 @@ class CertaintyVisualizer(QtGui.QWidget):
             else:
                 node = cw.c.regions_t2[p - len(cw.c.regions_t1)]
 
+            # remove cw
+            if len(cw.c.regions_t1) + len(cw.c.regions_t2) == 1:
+                widget_i, it = self.get_cc_item_position(cw.c)
+                self.scenes_widget.layout().removeItem(it)
+                self.cws.remove(cw)
+                if node in self.t1_nodes_cc_refs:
+                    del self.t1_nodes_cc_refs[node]
+                elif node in self.t2_nodes_cc_refs:
+                    del self.t2_nodes_cc_refs[node]
+
         new_ccs, node_representatives = self.solver.remove_region(node)
         self.update_ccs(new_ccs, node_representatives)
+
+    def strong_remove_region(self):
+        pass
 
     def choose_node(self, pos):
         # ADDING ACTION
@@ -289,12 +308,10 @@ class CertaintyVisualizer(QtGui.QWidget):
             cw.mark_merged(t_reversed)
 
     def cw_set_active(self, cw):
-        cw.setStyleSheet("""QGraphicsView {background-color: rgb(235,237,252);}""")
-        cw.setStyleSheet("""QPushButton {background-color: rgb(0,0,252);}""")
+        cw.setStyleSheet("""QGraphicsView {background-color: rgb(200,200,200);} QPushButton {background-color: rgb(205,207,252);}""")
 
     def cw_set_inactive(self, cw):
-        cw.setStyleSheet("""QGraphicsView {background-color: rgb(255,255,255);}""")
-        cw.setStyleSheet("""QPushButton {background-color: rgb(255,255,255);}""")
+        cw.setStyleSheet("""QGraphicsView {background-color: rgb(255,255,255);} QPushButton {background-color: rgb(255,255,255);}""")
 
     def visualize_n_sorted(self, n=np.inf, start=0):
         n = max(n, len(self.cws))
@@ -421,6 +438,8 @@ class CertaintyVisualizer(QtGui.QWidget):
         min_t = np.inf
         max_t = 0
 
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+
         for new_cc, n in zip(new_ccs, node_representatives):
             min_t = min(n.frame_, min_t)
             max_t = max(n.frame_, max_t)
@@ -442,9 +461,11 @@ class CertaintyVisualizer(QtGui.QWidget):
 
         self.cw_set_active(self.get_cw_widget_at(self.active_cw))
         self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
+        QtGui.QApplication.processEvents()
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
+        self.scroll_.ensureWidgetVisible(self.get_cw_widget_at(self.active_cw), 0)
 
-        print min_t - VISU_MARGIN, max_t + VISU_MARGIN
-        self.graph_visu_callback(min_t - VISU_MARGIN, max_t + VISU_MARGIN)
+        self.graph_visu_callback(min_t - math.ceil(VISU_MARGIN / 5.), max_t + VISU_MARGIN)
 
     def partially_confirm(self):
         # ADDING ACTION
@@ -503,6 +524,18 @@ class CertaintyVisualizer(QtGui.QWidget):
         new_ccs, node_representatives = self.solver.merged(new_regions, replace, nodes_to_connect, t_reversed)
         self.update_ccs(new_ccs, node_representatives)
 
+    def join_regions(self, n1, n2):
+        if n1.area() < n2.area():
+            n1, n2 = n2, n1
+
+        # TODO: update also other moments etc...
+        n_new = deepcopy(n1)
+        n_new.pts_ = np.concatenate((n_new.pts_, n2.pts_), 0)
+        n_new.centroid_ = np.mean(n_new.pts_, 0)
+        self.solver.remove_region(n1)
+        self.solver.remove_region(n2)
+        new_ccs, node_representativs = self.solver.add_virtual_region(n_new)
+        self.update_ccs(new_ccs, node_representativs)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

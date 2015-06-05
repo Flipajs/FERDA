@@ -60,6 +60,12 @@ class ParametersTab(QtGui.QWidget):
         self.mser_min_margin.setMaximum(100)
         self.frame_layout.addRow('MSER Min margin', self.mser_min_margin)
 
+        self.mser_img_subsample = QtGui.QDoubleSpinBox()
+        self.mser_img_subsample.setMinimum(1.0)
+        self.mser_img_subsample.setMaximum(12.0)
+        self.mser_img_subsample.setSingleStep(0.1)
+        self.frame_layout.addRow('MSER image subsample factor', self.mser_img_subsample)
+
         self.populate()
 
     def populate(self):
@@ -67,6 +73,7 @@ class ParametersTab(QtGui.QWidget):
         self.mser_max_area.setValue(S_.mser.max_area)
         self.mser_min_area.setValue(S_.mser.min_area)
         self.mser_min_margin.setValue(S_.mser.min_margin)
+        self.mser_img_subsample.setValue(S_.mser.img_subsample_factor)
 
         # self.igbr_i_weight.setValue(S_.colormarks.igbr_i_weight)
 
@@ -80,3 +87,4 @@ class ParametersTab(QtGui.QWidget):
         S_.mser.max_area = self.mser_max_area.value()
         S_.mser.min_area = self.mser_min_area.value()
         S_.mser.min_margin = self.mser_min_margin.value()
+        S_.mser.img_subsample_factor = self.mser_img_subsample.value()

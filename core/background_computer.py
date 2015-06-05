@@ -39,7 +39,7 @@ class BackgroundComputer():
 
     def set_frames_in_row(self):
         vid = get_auto_video_manager(self.project.video_paths)
-        frame_num = int(vid.frame_number())
+        frame_num = int(vid.total_frame_count())
 
         self.frames_in_row = int(frame_num / self.process_n)
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.process_n))
@@ -82,7 +82,7 @@ class BackgroundComputer():
 
         self.solver = Solver(self.project)
 
-        for i in range(self.process_n):
+        for i in range(S_.parallelization.processes_num):
             with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g_ = up.load()
@@ -97,6 +97,7 @@ class BackgroundComputer():
                 self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
                 end_nodes_prev = end_nodes
 
+        self.solver.update_nodes_in_t_refs()
         self.solver.simplify(nodes_to_process)
         self.solver.simplify_to_chunks()
 

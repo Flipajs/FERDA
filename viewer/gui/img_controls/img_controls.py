@@ -39,10 +39,10 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
         self.lines_layout.addWidget(self.informationLabel)
 
-        self.scene = QtGui.QGraphicsScene()
 
         graphics_view_widget = QtGui.QWidget()
         self.graphics_view = MyView(graphics_view_widget)
+        self.scene = QtGui.QGraphicsScene()
 
         self.splitter1 = QtGui.QSplitter(QtCore.Qt.Horizontal)
         self.splitter1.addWidget(self.video_widget)
@@ -126,6 +126,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
         self.update()
         self.showMaximized()
+
 
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""

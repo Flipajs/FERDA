@@ -12,6 +12,9 @@ from core.region.mser import get_msers_
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from core.graph.solver import Solver
 from core.project import Project
+from core.settings import Settings as S_
+from skimage.transform import rescale
+import numpy as np
 
 if __name__ == '__main__':
     working_dir = sys.argv[1]
@@ -30,6 +33,12 @@ if __name__ == '__main__':
     img = vid.seek_frame(id*frames_in_row)
     if proj.bg_model:
         img = proj.bg_model.bg_subtraction(img)
+
+    if proj.arena_model:
+        img = proj.arena_model.mask_image(img)
+
+    if S_.mser.img_subsample_factor > 1.0:
+        img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
 
     sum_ = 0
 
@@ -52,6 +61,9 @@ if __name__ == '__main__':
 
         if proj.arena_model:
             img = proj.arena_model.mask_image(img)
+
+        if S_.mser.img_subsample_factor > 1.0:
+            img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
 
         sum_ += len(m)
 

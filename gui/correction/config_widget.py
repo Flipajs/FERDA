@@ -23,6 +23,8 @@ from core.animal import colors_
 from core.region.fitting import Fitting
 import cv2
 from copy import deepcopy
+from skimage.transform import rescale
+from core.settings import Settings as S_
 
 
 class ConfigWidget(QtGui.QWidget):
@@ -45,6 +47,7 @@ class ConfigWidget(QtGui.QWidget):
 
         self.active_node = None
         self.connect_with_active = False
+        self.join_with_active = False
 
         self.sub_g = self.G.subgraph(self.c.regions_t1 + self.c.regions_t2)
 
@@ -74,6 +77,9 @@ class ConfigWidget(QtGui.QWidget):
         if not self.im_t1:
             self.im_t1 = vid.seek_frame(self.frame_t)
             self.im_t2 = vid.move2_next()
+            if S_.mser.img_subsample_factor > 1.0:
+                self.im_t1 = np.asarray(rescale(self.im_t1, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
+                self.im_t2 = np.asarray(rescale(self.im_t2, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
 
         self.pop_menu_node = QtGui.QMenu(self)
         self.action_remove_node = QtGui.QAction('remove', self)
@@ -94,12 +100,16 @@ class ConfigWidget(QtGui.QWidget):
         self.connect_with = QtGui.QAction('connect with and confirm', self)
         self.connect_with.triggered.connect(self.connect_with_)
 
+        self.join_with = QtGui.QAction('join with', self)
+        self.join_with.triggered.connect(self.join_with_)
+
         self.pop_menu_node.addAction(self.action_remove_node)
         self.pop_menu_node.addAction(self.action_mark_merged)
         self.pop_menu_node.addAction(self.action_partially_confirm)
         self.pop_menu_node.addAction(self.new_region_t1)
         self.pop_menu_node.addAction(self.new_region_t2)
         self.pop_menu_node.addAction(self.connect_with)
+        self.pop_menu_node.addAction(self.join_with)
 
         self.setLayout(QtGui.QHBoxLayout())
         self.v = QtGui.QGraphicsView()
@@ -158,7 +168,12 @@ class ConfigWidget(QtGui.QWidget):
         return n_it
 
     def connect_with_(self):
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
         self.connect_with_active = True
+
+    def join_with_(self):
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
+        self.join_with_active = True
 
     def highlight_node(self, node_pos):
         if node_pos > -1 and node_pos < len(self.c.regions_t1) + len(self.c.regions_t2):
@@ -185,21 +200,35 @@ class ConfigWidget(QtGui.QWidget):
         it = self.scene.itemAt(point)
 
         if isinstance(it, QtGui.QGraphicsPixmapItem):
+            n1 = self.active_node
+            n2 = self.it_nodes[it]
+
             if self.connect_with_active:
-                n1 = self.active_node
-                n2 = self.it_nodes[it]
                 if self.active_node.frame_ > self.it_nodes[it].frame_:
                     n1 = self.it_nodes[it]
                     n2 = self.active_node
 
                 self.parent.confirm_edges([(n1, n2)])
-                self.active_node = self.it_nodes[it]
                 self.connect_with_active = False
+                QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
+
+            elif self.join_with_active:
+                self.parent.join_regions(n1, n2)
+                self.join_with_active = False
+                QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
+
+            self.active_node = self.it_nodes[it]
         else:
             self.connect_with_active = False
+            self.join_with_active = False
+            QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
             self.active_node = None
 
     def confirm_clicked(self):
+        if len(self.c.regions_t1) != len(self.c.regions_t2):
+            print "UNBALANCED configuration, ignoring confirmation"
+            return
+
         pairs = []
         for n1, n2 in self.c.configurations[self.active_config]:
             pairs.append((n1, n2))
@@ -211,6 +240,7 @@ class ConfigWidget(QtGui.QWidget):
             im = self.im_t1
         else:
             im = self.im_t2
+
 
         vis = draw_points_crop(im, n.pts(), color=self.get_node_color(n), square=True)
         # vis = self.G.node[n]['img']

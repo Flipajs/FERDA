@@ -6,109 +6,96 @@ from core.settings import Settings as S_
 from core.graph.graph_utils import *
 from utils.video_manager import get_auto_video_manager
 from core.region.mser import get_mser_by_id
-
-CONFIRMED = 'c'
-
-
-class Reduced():
-    def __init__(self, region):
-        self.centroid = region.centroid()
-        self.t = region.frame_
-        self.mser_id = region.id_
-
-
-class Chunk():
-    def __init__(self):
-        self.reduced = []
-        self.start_t = np.inf
-        self.end_t = -1
-        self.is_sorted = False
-
-    def add_region(self, r):
-        self.start_t = min(self.start_t, r.frame_)
-        self.end_t = max(self.end_t, r.frame_)
-
-        self.reduced.append(Reduced(r))
-        self.is_sorted = False
-
-    def merge(self, chunk):
-        self.reduced += chunk.reduced
-        self.start_t = min(self.start_t, chunk.start_t)
-        self.end_t = max(self.end_t, chunk.end_t)
-
-    def remove_from_beginning(self):
-        if not self.is_sorted:
-            self.reduced = sorted(self.reduced, key=lambda k: k.t)
-            self.is_sorted = True
-
-        return self.reduced.pop(0)
-
-    def remove_from_end(self):
-        if not self.is_sorted:
-            self.reduced = sorted(self.reduced, key=lambda k: k.t)
-            self.is_sorted = True
-
-        return self.reduced.pop()
-
-
-class Configuration():
-    def __init__(self, id, regions_t1, regions_t2, certainty, confs, scores):
-        self.regions_t1 = regions_t1
-        self.regions_t2 = regions_t2
-
-        self.certainty = certainty
-        self.configurations = confs
-        self.scores = scores
-        self.id = id
-        self.t = regions_t1[0].frame_
+from core.settings import Settings as S_
+from skimage.transform import rescale
+import numpy as np
+from chunk import Chunk
+from configuration import Configuration
 
 
 class Solver():
+    EDGE_CONFIRMED = 'c'
+
     def __init__(self, project):
         self.g = nx.DiGraph()
         self.project = project
-        self.frames = {}
-        self.first_frame = np.inf
-        self.last_frame = -1
+
+        self.start_t = np.inf
+        self.end_t = -1
+
         self.major_axis_median = project.stats.major_axis_median
         self.max_distance = S_.solver.max_edge_distance_in_ant_length * self.major_axis_median
         self.antlikeness = project.stats.antlikeness_svm
 
+        # TODO: add to config
         self.antlike_filter = True
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
+        self.nodes_in_t = {}
 
         self.cc_id = 0
 
+
+    def add_node(self, n):
+        self.start_t = min(self.start_t, n.frame_)
+        self.end_t = max(self.end_t, n.frame_)
+
+        self.g.add_node(n)
+        self.nodes_in_t.setdefault(n.frame_, []).append(n)
+
+    def remove_node(self, n):
+        self.g.remove_node(n)
+        self.nodes_in_t[n.frame_].remove(n)
+        if not self.nodes_in_t[n.frame_]:
+            del self.nodes_in_t[n.frame_]
+
+    def update_time_boundaries(self):
+        self.start_t = np.inf
+        self.end_t = -1
+
+        for n in self.g.nodes():
+            self.start_t = min(self.start_t, n.frame_)
+            self.end_t = max(self.end_t, n.frame_)
+
+    def update_nodes_in_t_refs(self):
+        self.nodes_in_t = {}
+        for n in self.g.nodes():
+            self.nodes_in_t.setdefault(n.frame_, []).append(n)
+
+        self.update_time_boundaries()
+
     def add_regions_in_t(self, regions, t):
-        if t not in self.frames:
-            self.frames[t] = []
-
-            if len(regions) > 0:
-                if self.last_frame < t:
-                    self.last_frame = t
-                if self.first_frame > t:
-                    self.first_frame = t
-
         for r in regions:
             if self.antlike_filter:
                 prob = self.antlikeness.get_prob(r)
                 if prob[1] < S_.solver.antlikeness_threshold:
                     continue
 
-            self.g.add_node(r)
-            self.frames[t].append(r)
+            self.add_node(r)
 
         self.add_edges_to_t(t)
 
+    def is_out_confirmed(self, n):
+        # returns bool if there is outcoming confirmed edge from node n
+        for _, _, d in self.g.out_edges(n, data=True):
+            if 'type' in d and d['type'] == self.EDGE_CONFIRMED:
+                return True
+
+        return False
+
+    def is_in_confirmed(self, n):
+        for _, _, d in self.g.in_edges(n, data=True):
+            if 'type' in d and d['type'] == self.EDGE_CONFIRMED:
+                return True
+
+        return False
+
     def add_edges_(self, regions_t1, regions_t2):
         for r_t1 in regions_t1:
-            is_ch, reversed, _ = self.is_chunk(r_t1)
-            if is_ch and not reversed:
+            if self.is_out_confirmed(r_t1):
                 continue
 
             for r_t2 in regions_t2:
-                is_ch, reversed, _ = self.is_chunk(r_t2)
-                if is_ch and reversed:
+                if self.is_in_confirmed(r_t2):
                     continue
 
                 d = np.linalg.norm(r_t1.centroid() - r_t2.centroid())
@@ -118,8 +105,8 @@ class Solver():
                     self.g.add_edge(r_t1, r_t2, type='d', score=-s)
 
     def add_edges_to_t(self, t):
-        if t-1 in self.frames:
-            self.add_edges_(self.frames[t-1], self.frames[t])
+        if t-1 in self.nodes_in_t:
+            self.add_edges_(self.nodes_in_t[t-1], self.nodes_in_t[t])
 
     def simplify(self, queue=None, return_affected=False):
         if queue is None:
@@ -131,7 +118,7 @@ class Solver():
             n = queue.pop()
 
             #chunk test
-            num_out, n_out = num_out_edges_of_type(self.g, n, CONFIRMED)
+            num_out, n_out = num_out_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
             if num_out == 1 and 'chunk_ref' in self.g[n][n_out]:
                 continue
 
@@ -149,7 +136,7 @@ class Solver():
     def adaptive_threshold(self, n):
         vals_out, best_out = get_best_n_out_nodes(self.g, n, 2)
         if best_out[0]:
-            if self.g[n][best_out[0]]['type'] == CONFIRMED:
+            if self.g[n][best_out[0]]['type'] == self.EDGE_CONFIRMED:
                 return []
         else:
             return []
@@ -189,7 +176,7 @@ class Solver():
                         self.g.remove_edge(n1_, n2)
                         affected.append(n1_)
 
-                self.g[n1][n2]['type'] = CONFIRMED
+                self.g[n1][n2]['type'] = self.EDGE_CONFIRMED
 
             return affected
 
@@ -233,7 +220,7 @@ class Solver():
                         affected.append(n1)
                         affected.append(n2)
 
-                        self.g[n1][n2]['type'] = CONFIRMED
+                        self.g[n1][n2]['type'] = self.EDGE_CONFIRMED
                         self.g[n1][n2]['certainty'] = cert
             else:
                 for n1, n2 in configs[0]:
@@ -303,11 +290,9 @@ class Solver():
         return s, ds, 0, antlikeness_diff
 
     def simplify_to_chunks(self):
-        # for frame in self.frames:
-        #     for n in self.frames[frame]:
         for n in self.g.nodes():
-            in_num, in_n = num_in_edges_of_type(self.g, n, CONFIRMED)
-            out_num, out_n = num_out_edges_of_type(self.g, n, CONFIRMED)
+            in_num, in_n = num_in_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
+            out_num, out_n = num_out_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
 
             if out_num == 1 and in_num == 1:
                 if 'chunk_ref' in self.g[in_n][n]:
@@ -327,23 +312,26 @@ class Solver():
                 chunk.add_region(n)
 
                 self.g.remove_node(n)
-                self.g.add_edge(in_n, out_n, type=CONFIRMED, chunk_ref=chunk, score=1.0)
+                self.g.add_edge(in_n, out_n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
 
     def get_ccs(self, queue=[]):
         if not queue:
             queue = self.g.nodes()
 
+        # sort nodes so the order of ccs is always the same thus the ID of ccs make sense.
+        queue = sorted(queue, key=lambda k: (k.frame_, k.id_))
+
         touched = {}
         ccs = []
         for n in queue:
             if n not in touched:
-                out_n, _ = num_out_edges_of_type(self.g, n, CONFIRMED)
+                out_n, _ = num_out_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
                 if out_n == 1:
                     touched[n] = True
                     continue
 
                 # We don't want to show last nodes as problem
-                if n.frame_ == self.last_frame:
+                if n.frame_ == self.end_t:
                     continue
 
                 c1, c2 = get_cc(self.g, n)
@@ -433,7 +421,7 @@ class Solver():
                     self.g.remove_edge(n1_, n2)
                     affected.append(n1_)
 
-            self.g[n1][n2]['type'] = CONFIRMED
+            self.g[n1][n2]['type'] = self.EDGE_CONFIRMED
 
         all_affected = list(self.simplify(affected[:], return_affected=True))
         all_affected = list(set(all_affected + affected))
@@ -458,14 +446,17 @@ class Solver():
         if self.project.arena_model:
             img = self.project.arena_model.mask_image(img)
 
+        if S_.mser.img_subsample_factor > 1.0:
+            img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
+
         region = get_mser_by_id(img, reduced.mser_id, reduced.t)
 
         self.g.add_node(region)
 
         if reversed_dir:
-            self.g.add_edge(n, region, type=CONFIRMED, chunk_ref=chunk, score=1.0)
+            self.g.add_edge(n, region, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
         else:
-            self.g.add_edge(region, n, type=CONFIRMED, chunk_ref=chunk, score=1.0)
+            self.g.add_edge(region, n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
 
         return region
 
@@ -514,17 +505,9 @@ class Solver():
         return new_ccs, node_representative
 
     def get_regions_around(self, t):
-        r_t_minus = []
-        r_t_plus = []
-        r_t = []
-
-        for n in self.g.nodes():
-            if n.frame_ == t-1:
-                r_t_minus.append(n)
-            elif n.frame_ == t+1:
-                r_t_plus.append(n)
-            elif n.frame_ == t:
-                r_t.append(n)
+        r_t_minus = [] if t-1 not in self.nodes_in_t else self.nodes_in_t[t-1]
+        r_t_plus = [] if t+1 not in self.nodes_in_t else self.nodes_in_t[t+1]
+        r_t = [] if t not in self.nodes_in_t else self.nodes_in_t[t]
 
         return r_t_minus, r_t, r_t_plus
 
@@ -561,8 +544,14 @@ class Solver():
             for _, n_ in self.g.out_edges(n):
                 affected.add(n_)
 
+        for _, n in self.g.out_edges(r):
+            affected.add(n)
+            for n_, _ in self.g.in_edges(n):
+                affected.add(n_)
+
         affected = list(affected)
-        affected.remove(r)
+        if r in affected:
+            affected.remove(r)
 
         is_ch, t_reversed, chunk_ref = self.is_chunk(r)
         if is_ch:
@@ -575,8 +564,11 @@ class Solver():
 
         return new_ccs, node_representative
 
+    def strong_remove(self, r):
+        pass
+
     def start_nodes(self):
-        return self.frames[self.first_frame]
+        return self.nodes_in_t[self.start_t]
 
     def end_nodes(self):
-        return self.frames[self.last_frame]
+        return self.nodes_in_t[self.end_t]

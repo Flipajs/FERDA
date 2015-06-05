@@ -17,8 +17,10 @@ from gui.view.assignment_widget import AssignmentWidget
 import cv2
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
-
 from core.classes_stats import ClassesStats
+from core.settings import Settings as S_
+from skimage.transform import rescale
+
 
 class InitHowWidget(QtGui.QWidget):
     def __init__(self, finish_callback, project):
@@ -74,6 +76,10 @@ class InitHowWidget(QtGui.QWidget):
 
             if project.arena_model:
                 img_ = project.arena_model.mask_image(img_)
+
+            if S_.mser.img_subsample_factor > 1.0:
+                img_ = np.asarray(rescale(img_, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
+                img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
 
             msers = get_msers_(img_)
             groups = get_region_groups(msers)

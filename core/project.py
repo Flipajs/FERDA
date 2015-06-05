@@ -24,6 +24,7 @@ class Project:
         self.animals = None
         self.stats = None
         self.saved_progress = None
+        self.version = "2.0.1"
 
 
     def save(self):
