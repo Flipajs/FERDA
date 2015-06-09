@@ -15,7 +15,6 @@ import cPickle as pickle
 import networkx as nx
 from core.graph.solver import Solver
 
-
 class BackgroundComputer():
     def __init__(self, project, update_callback, finished_callback):
         self.project = project
@@ -60,9 +59,7 @@ class BackgroundComputer():
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
 
                 p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
-    # python "/Users/fnaiser/Documents/FERDA/core/parallelization.py" "/Users/fnaiser/Documents/work_dir/eight" "eight" 0 376 0
                 print str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
-                # p.start(str(sys.executable) + ' "core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
                 self.processes.append(p)
 
                 self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))

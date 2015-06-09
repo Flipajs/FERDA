@@ -47,3 +47,6 @@ class Chunk():
             return self.reduced[t]
 
         return None
+
+    def length(self):
+        return self.end_t - self.start_t

@@ -2,12 +2,14 @@ __author__ = 'fnaiser'
 
 from PyQt4 import QtGui
 
-from gui.correction.certainty import CertaintyVisualizer
+from gui.correction.configurations_visualizer import ConfigurationsVisualizer
 from utils.video_manager import get_auto_video_manager
 from scripts.region_graph2 import NodeGraphVisualizer, visualize_nodes
 from core.settings import Settings as S_
 import numpy as np
 from skimage.transform import rescale
+from core.graph.configuration import get_length_of_longest_chunk
+
 
 class TrackerWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -75,7 +77,7 @@ class TrackerWidget(QtGui.QWidget):
     def prepare_corrections(self, solver):
         self.solver = solver
 
-        self.certainty_visualizer = CertaintyVisualizer(self.solver, get_auto_video_manager(self.project.video_paths), self.update_graph_visu)
+        self.certainty_visualizer = ConfigurationsVisualizer(self.solver, get_auto_video_manager(self.project.video_paths), self.update_graph_visu)
         self.vbox.addWidget(self.certainty_visualizer)
 
         t1_nodes = []
@@ -87,16 +89,17 @@ class TrackerWidget(QtGui.QWidget):
         self.solver.simplify_to_chunks()
 
         ccs = self.solver.get_ccs()
-        ccs = sorted(ccs, key=lambda k: k.regions_t1[0].frame_)
+        # ccs = sorted(ccs, key=lambda k: k.regions_t1[0].frame_)
+        ccs = sorted(ccs, key=lambda k: (-get_length_of_longest_chunk(self.solver, k), k.regions_t1[0].frame_))
         print "NUMBER OF CASES: ", len(ccs)
 
         print "MAJOR AXIS MEDIAN", self.project.stats.major_axis_median, S_.solver.max_edge_distance_in_ant_length, self.solver.max_distance
 
         i = 0
         for c_ in ccs:
-            print i
+            print i, get_length_of_longest_chunk(self.solver, c_)
             self.certainty_visualizer.add_configuration(c_)
-            if i > 1:
+            if i > 20:
                 break
 
             i += 1

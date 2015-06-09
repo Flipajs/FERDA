@@ -125,8 +125,11 @@ class ResultsWidget(QtGui.QWidget):
         self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
 
         self.backward = QtGui.QPushButton('back')
+        self.backward.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B))
         self.playPause = QtGui.QPushButton('play')
+        self.playPause.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
         self.forward = QtGui.QPushButton('forward')
+        self.forward.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
         self.frameEdit = SelectAllLineEdit()
         self.showFrame = QtGui.QPushButton('show')
         self.fpsLabel = QtGui.QLabel()
@@ -169,14 +172,6 @@ class ResultsWidget(QtGui.QWidget):
         i = 0
         for n, n2, ch in self.chunks:
             data = ch.get_reduced_at(frame)
-
-            # c = None
-            # if data:
-            #     c = data.centroid.copy()
-            # elif frame == 0:
-            #     c = n.centroid().copy()
-            # elif frame == ch.end_t + 1:
-            #     c = n2.centroid().copy()
 
             c = None
             if data:
@@ -224,21 +219,6 @@ class ResultsWidget(QtGui.QWidget):
             for _, n2, d, in self.solver.g.out_edges(n, data=True):
                 if 'chunk_ref' in d:
                     self.chunks.append((n, n2, d['chunk_ref']))
-
-        # i = 0
-        # for n in t_0_nodes:
-        #     for _, n2, d in self.solver.g.out_edges(n, data=True):
-        #         if 'chunk_ref' not in d:
-        #             continue
-        #
-        #         self.chunks.append((n, n2, d['chunk_ref']))
-        #         b, g, r = colors_[i]
-        #         item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
-        #         item.setZValue(0.5)
-        #         self.items.append(item)
-        #         self.scene.addItem(item)
-        #
-        #     i += 1
 
         i = 0
         for n, n2, ch in self.chunks:
@@ -303,14 +283,12 @@ class ResultsWidget(QtGui.QWidget):
         if self.video is not None:
             if self.timer.isActive():
                 self.timer.stop()
-                self.playPause.setIcon(QtGui.QIcon(QtGui.QPixmap('src/play.png')))
                 self.playPause.setText("play")
-                # self.playPause.setShortcut(settings.value(self.playPause.objectName(), default_settings.get_default(str(self.playPause.objectName())), QtGui.QKeySequence))
+                self.playPause.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
             else:
                 self.timer.start()
-                self.playPause.setIcon(QtGui.QIcon(QtGui.QPixmap('src/pause.png')))
                 self.playPause.setText("pause")
-                # self.playPause.setShortcut(settings.value(self.playPause.objectName(), default_settings.get_default(str(self.playPause.objectName())), QtGui.QKeySequence))
+                self.playPause.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
 
     def update_frame_number(self):
         """Updates values of components displaying frame number"""

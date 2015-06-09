@@ -32,7 +32,7 @@ import assignment_svm
 import ant_number_svm
 import cProfile
 import multiprocessing as mp
-from gui.correction.certainty import CertaintyVisualizer
+from gui.correction.configurations_visualizer import ConfigurationsVisualizer
 from core.graph.solver import Solver
 
 # max speed of #px / frame
@@ -1353,7 +1353,7 @@ def run_():
     #     p.dump(ccs)
     #     p.dump(vid_path)
 
-    cv = CertaintyVisualizer(solver.g, get_auto_video_manager(vid_path))
+    cv = ConfigurationsVisualizer(solver.g, get_auto_video_manager(vid_path))
 
     i = 0
     for c in ccs:

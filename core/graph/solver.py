@@ -34,7 +34,6 @@ class Solver():
 
         self.cc_id = 0
 
-
     def add_node(self, n):
         self.start_t = min(self.start_t, n.frame_)
         self.end_t = max(self.end_t, n.frame_)
@@ -47,6 +46,10 @@ class Solver():
         self.nodes_in_t[n.frame_].remove(n)
         if not self.nodes_in_t[n.frame_]:
             del self.nodes_in_t[n.frame_]
+
+        # maybe we need to shrink time boundaries...
+        if self.end_t == n.frame_ or self.start_t == n.frame_:
+            self.update_time_boundaries()
 
     def update_time_boundaries(self):
         self.start_t = np.inf
@@ -304,14 +307,11 @@ class Solver():
                 if 'chunk_ref' in self.g[n][out_n]:
                     second_chunk = self.g[n][out_n]['chunk_ref']
 
-                    # chunk.add_region(in_n)
-                    # self.g.remove_node(in_n)
-
                     chunk.merge(second_chunk)
 
                 chunk.add_region(n)
 
-                self.g.remove_node(n)
+                self.remove_node(n)
                 self.g.add_edge(in_n, out_n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
 
     def get_ccs(self, queue=[]):
@@ -451,18 +451,22 @@ class Solver():
 
         region = get_mser_by_id(img, reduced.mser_id, reduced.t)
 
-        self.g.add_node(region)
+        self.add_node(region)
 
         if reversed_dir:
             self.g.add_edge(n, region, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+            _, _, t_plus = self.get_regions_around(region.frame_)
+            self.add_edges_([region], t_plus)
         else:
             self.g.add_edge(region, n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+            t_minus, _, _ = self.get_regions_around(region.frame_)
+            self.add_edges_(t_minus, [region])
 
         return region
 
     def merged(self, new_regions, replace, to_fit, t_reversed):
         for n in new_regions:
-            self.g.add_node(n)
+            self.add_node(n)
 
         to_connect = set()
         if t_reversed:
@@ -482,8 +486,7 @@ class Solver():
                     to_connect.add(n2)
 
         for n in replace:
-            self.g.remove_node(n)
-
+            self.remove_node(n)
 
         r_t_minus, r_t, r_t_plus = self.get_regions_around(new_regions[0].frame_)
         self.add_edges_(r_t_minus, r_t)
@@ -505,6 +508,7 @@ class Solver():
         return new_ccs, node_representative
 
     def get_regions_around(self, t):
+        # returns (list, list, list) of nodes in t_minus, t, t+plus
         r_t_minus = [] if t-1 not in self.nodes_in_t else self.nodes_in_t[t-1]
         r_t_plus = [] if t+1 not in self.nodes_in_t else self.nodes_in_t[t+1]
         r_t = [] if t not in self.nodes_in_t else self.nodes_in_t[t]
@@ -512,7 +516,7 @@ class Solver():
         return r_t_minus, r_t, r_t_plus
 
     def add_virtual_region(self, r):
-        self.g.add_node(r)
+        self.add_node(r)
         t = r.frame_
 
         r_t_minus, r_t, r_t_plus = self.get_regions_around(t)
@@ -537,7 +541,7 @@ class Solver():
 
         return False, False, None
 
-    def remove_region(self, r):
+    def remove_region(self, r, strong=False):
         affected = set()
         for n, _ in self.g.in_edges(r):
             affected.add(n)
@@ -555,9 +559,20 @@ class Solver():
 
         is_ch, t_reversed, chunk_ref = self.is_chunk(r)
         if is_ch:
-            n = self.disassemble_chunk(r, chunk_ref, t_reversed)
+            # get the other end of chunk
+            if t_reversed:
+                for n1, _ in self.g.in_edges(r):
+                    n_ = n1
+            else:
+                for _, n2 in self.g.out_edges(r):
+                    n_ = n2
 
-        self.g.remove_node(r)
+            if not strong:
+                self.disassemble_chunk(n_, chunk_ref, t_reversed)
+
+            affected.append(n_)
+
+        self.remove_node(r)
 
         new_ccs, node_representative = self.get_new_ccs(affected)
         new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
@@ -565,7 +580,25 @@ class Solver():
         return new_ccs, node_representative
 
     def strong_remove(self, r):
-        pass
+        is_ch, t_reversed, ch = self.is_chunk(r)
+
+        if is_ch:
+            ch_end_n = None
+            if t_reversed:
+                for n_, _ in self.g.in_edges(r):
+                    ch_end_n = n_
+            else:
+                for _, n_ in self.g.out_edges(r):
+                    ch_end_n = n_
+
+            new_ccs, node_representative = self.remove_region(r, strong=True)
+            new_ccs2, node_representative2 = self.remove_region(ch_end_n, strong=True)
+            new_ccs += new_ccs2
+            node_representative += node_representative2
+
+            return new_ccs, node_representative
+        else:
+            return self.remove_region(r)
 
     def start_nodes(self):
         return self.nodes_in_t[self.start_t]

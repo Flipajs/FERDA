@@ -29,9 +29,13 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.addTab(self.statistics_tab, "Statistics")
         self.vbox.addWidget(self.tabs)
 
+        self.tabs.currentChanged.connect(self.tab_changed)
+
         print "LOADING GRAPH..."
         if project.saved_progress:
-            self.background_computer_finished(project.saved_progress['solver'])
+            solver = project.saved_progress['solver']
+            solver.update_nodes_in_t_refs()
+            self.background_computer_finished(solver)
         else:
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)
             self.bc_msers.run()
@@ -42,3 +46,12 @@ class MainTabWidget(QtGui.QWidget):
         self.results_tab.solver = solver
         self.results_tab.add_data(self.solver)
         self.tracker_tab.prepare_corrections(self.solver)
+
+    def tab_changed(self, i):
+        # if i == 0:
+        #     # TODO: add interval to settings
+        #     self.tracker_tab.autosave_timer.start(1000*60*5)
+        # else:
+        #     self.tracker_tab.autosave_timer.stop()
+
+        pass

@@ -28,12 +28,12 @@ from new_region_widget import NewRegionWidget
 from core.region.region import Region
 import math
 
-VISU_MARGIN = 20
+VISU_MARGIN = 10
 
 
-class CertaintyVisualizer(QtGui.QWidget):
+class ConfigurationsVisualizer(QtGui.QWidget):
     def __init__(self, solver, vid, graph_visu_callback):
-        super(CertaintyVisualizer, self).__init__()
+        super(ConfigurationsVisualizer, self).__init__()
         self.setLayout(QtGui.QVBoxLayout())
         self.scenes_widget = QtGui.QWidget()
         self.scenes_widget.setLayout(QtGui.QVBoxLayout())
@@ -59,6 +59,12 @@ class CertaintyVisualizer(QtGui.QWidget):
 
         self.cc_number_label = QtGui.QLabel('')
         self.layout().addWidget(self.cc_number_label)
+
+        self.autosave_timer = QtCore.QTimer()
+        self.autosave_timer.timeout.connect(partial(self.save, True))
+        # TODO: add interval to settings
+        self.autosave_timer.start(1000*60*10)
+
 
         # list of tuples (cw_id, str action, data)
         self.edit_actions = []
@@ -166,10 +172,6 @@ class CertaintyVisualizer(QtGui.QWidget):
 
         self.d_ = None
 
-        self.autosave_timer = QtCore.QTimer()
-        self.autosave_timer.timeout.connect(partial(self.save, True))
-        # TODO: add interval to settings
-        self.autosave_timer.start(1000*60*3)
 
     def save(self, autosave=False):
         wd = self.solver.project.working_directory
@@ -233,21 +235,35 @@ class CertaintyVisualizer(QtGui.QWidget):
             else:
                 node = cw.c.regions_t2[p - len(cw.c.regions_t1)]
 
-            # remove cw
-            if len(cw.c.regions_t1) + len(cw.c.regions_t2) == 1:
-                widget_i, it = self.get_cc_item_position(cw.c)
-                self.scenes_widget.layout().removeItem(it)
-                self.cws.remove(cw)
-                if node in self.t1_nodes_cc_refs:
-                    del self.t1_nodes_cc_refs[node]
-                elif node in self.t2_nodes_cc_refs:
-                    del self.t2_nodes_cc_refs[node]
+            # # remove cw
+            # if len(cw.c.regions_t1) + len(cw.c.regions_t2) == 1:
+            #     widget_i, it = self.get_cc_item_position(cw.c)
+            #     self.scenes_widget.layout().removeItem(it)
+            #     self.cws.remove(cw)
+            #     if node in self.t1_nodes_cc_refs:
+            #         del self.t1_nodes_cc_refs[node]
+            #     elif node in self.t2_nodes_cc_refs:
+            #         del self.t2_nodes_cc_refs[node]
 
         new_ccs, node_representatives = self.solver.remove_region(node)
         self.update_ccs(new_ccs, node_representatives)
 
     def strong_remove_region(self):
-        pass
+        self.edit_actions.append(('strong_remove'))
+
+        p = self.active_cw_node
+        cw = self.get_cw_widget_at(self.active_cw)
+
+        if p < 0 or p > len(cw.c.regions_t1) + len(cw.c.regions_t2):
+            return
+
+        if p < len(cw.c.regions_t1):
+            node = cw.c.regions_t1[p]
+        else:
+            node = cw.c.regions_t2[p - len(cw.c.regions_t1)]
+
+        new_ccs, node_representatives = self.solver.strong_remove(node)
+        self.update_ccs(new_ccs, node_representatives)
 
     def choose_node(self, pos):
         # ADDING ACTION
@@ -316,14 +332,16 @@ class CertaintyVisualizer(QtGui.QWidget):
     def visualize_n_sorted(self, n=np.inf, start=0):
         n = max(n, len(self.cws))
 
-        if not self.cws_sorted:
-            self.cws = sorted(self.cws, key=lambda k: k.c.t)
-            self.cws_sorted = True
+        # if not self.cws_sorted:
+        #     self.cws = sorted(self.cws, key=lambda k: k.c.t)
+        #     self.cws_sorted = True
 
         for i in range(start, min(start+n, len(self.cws))):
             self.scenes_widget.layout().addWidget(self.cws[i])
 
-        self.cw_set_active(self.cws[0])
+        if self.cws:
+            self.cw_set_active(self.cws[0])
+
         self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
 
     def add_configuration(self, cc):
@@ -379,12 +397,13 @@ class CertaintyVisualizer(QtGui.QWidget):
 
         self.update_node_cc_refs(cc_to_be_replaced, new_cc)
 
-
     def get_cc_item_position(self, cc):
         for i in range(0, self.scenes_widget.layout().count()):
             it = self.scenes_widget.layout().itemAt(i)
             if it.widget().c == cc:
                 return i, it
+
+        return -1, None
 
     def update_node_cc_refs(self, old_cc, new_cc):
         if old_cc:
@@ -434,6 +453,26 @@ class CertaintyVisualizer(QtGui.QWidget):
 
         return self.is_cc_familiar_t2(cc)
 
+    def delete_empty_ccs(self):
+        for cw in self.cws:
+            delete = False
+            for n in cw.c.regions_t1 + cw.c.regions_t2:
+                if n in self.solver.g.nodes():
+                    break
+
+                delete = True
+
+            if delete:
+                _, it = self.get_cc_item_position(cw.c)
+                if it:
+                    self.scenes_widget.layout().removeItem(it)
+                    self.update_node_cc_refs(it.widget().c, None)
+                    self.cws.remove(it.widget())
+                    it.widget().setParent(None)
+                else:
+                    self.cws.remove(cw)
+
+
     def update_ccs(self, new_ccs, node_representatives):
         min_t = np.inf
         max_t = 0
@@ -459,13 +498,15 @@ class CertaintyVisualizer(QtGui.QWidget):
                 self.cws.remove(it.widget())
                 it.widget().setParent(None)
 
+        self.delete_empty_ccs()
+
         self.cw_set_active(self.get_cw_widget_at(self.active_cw))
         self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
         QtGui.QApplication.processEvents()
         QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
         self.scroll_.ensureWidgetVisible(self.get_cw_widget_at(self.active_cw), 0)
 
-        self.graph_visu_callback(min_t - math.ceil(VISU_MARGIN / 5.), max_t + VISU_MARGIN)
+        # self.graph_visu_callback(min_t - math.ceil(VISU_MARGIN / 5.), max_t + VISU_MARGIN)
 
     def partially_confirm(self):
         # ADDING ACTION
@@ -546,7 +587,7 @@ if __name__ == '__main__':
         ccs = up.load()
         vid_path = up.load()
 
-    cv = CertaintyVisualizer(g, get_auto_video_manager(vid_path))
+    cv = ConfigurationsVisualizer(g, get_auto_video_manager(vid_path))
 
     i = 0
     for c_ in ccs:
