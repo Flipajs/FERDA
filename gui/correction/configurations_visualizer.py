@@ -46,14 +46,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.solver = solver
         self.vid = vid
         self.cws = []
+        self.ccs = []
         self.cws_sorted = False
 
-        self.node_ccs_refs = {}
         self.t1_nodes_cc_refs = {}
         self.t2_nodes_cc_refs = {}
 
-        self.active_cw = 0
-        self.active_cw_node = -1
+        self.active_cw = None
+        self.active_cw_node = None
 
         self.add_actions()
 
@@ -65,9 +65,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         # TODO: add interval to settings
         self.autosave_timer.start(1000*60*10)
 
-
-        # list of tuples (cw_id, str action, data)
         self.edit_actions = []
+        # posibilities time, chunk_length
+        self.order_by = 'chunk_length'
+        # self.frame_cc_links = {}
+
+    # def add_cc(self, cc):
+    #     self.frame_cc_links.setdefault(cc.t, [])
+
 
     def add_actions(self):
         self.next_action = QtGui.QAction('next', self)
@@ -188,7 +193,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         print "PROGRESS SAVED"
 
     def new_region(self, is_t1):
-        cw = self.get_cw_widget_at(self.active_cw)
+        cw = self.active_cw
         im = cw.crop_t1_widget.pixmap() if is_t1 else cw.crop_t2_widget.pixmap()
         frame = cw.frame_t if is_t1 else cw.frame_t+1
 
@@ -200,6 +205,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.d_.setFixedHeight(500)
         self.d_.show()
         self.d_.exec_()
+
 
     def new_region_finished(self, confirmed, data):
         self.d_.close()
@@ -220,106 +226,91 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.update_ccs(new_ccs, node_representatives)
 
     def remove_region(self, node=None):
-        # ADDING ACTION
-        self.edit_actions.append(('remove_region', node))
-
         if not node:
-            p = self.active_cw_node
-            cw = self.get_cw_widget_at(self.active_cw)
-
-            if p < 0 or p > len(cw.c.regions_t1) + len(cw.c.regions_t2):
+            if not self.active_cw_node:
                 return
+            node = self.active_cw_node
 
-            if p < len(cw.c.regions_t1):
-                node = cw.c.regions_t1[p]
-            else:
-                node = cw.c.regions_t2[p - len(cw.c.regions_t1)]
-
-            # # remove cw
-            # if len(cw.c.regions_t1) + len(cw.c.regions_t2) == 1:
-            #     widget_i, it = self.get_cc_item_position(cw.c)
-            #     self.scenes_widget.layout().removeItem(it)
-            #     self.cws.remove(cw)
-            #     if node in self.t1_nodes_cc_refs:
-            #         del self.t1_nodes_cc_refs[node]
-            #     elif node in self.t2_nodes_cc_refs:
-            #         del self.t2_nodes_cc_refs[node]
+        # ADDING ACTION
+        self.edit_actions.append(('remove_region', {'frame': node.frame_, 'id': node.id_}))
 
         new_ccs, node_representatives = self.solver.remove_region(node)
         self.update_ccs(new_ccs, node_representatives)
 
     def strong_remove_region(self):
-        self.edit_actions.append(('strong_remove'))
-
-        p = self.active_cw_node
-        cw = self.get_cw_widget_at(self.active_cw)
-
-        if p < 0 or p > len(cw.c.regions_t1) + len(cw.c.regions_t2):
+        if not self.active_cw_node:
             return
 
-        if p < len(cw.c.regions_t1):
-            node = cw.c.regions_t1[p]
-        else:
-            node = cw.c.regions_t2[p - len(cw.c.regions_t1)]
-
-        new_ccs, node_representatives = self.solver.strong_remove(node)
+        self.edit_actions.append(('strong_remove', {'frame': self.active_cw_node.frame_, 'id': self.active_cw_node.id_}))
+        new_ccs, node_representatives = self.solver.strong_remove(self.active_cw_node)
         self.update_ccs(new_ccs, node_representatives)
 
     def choose_node(self, pos):
-        # ADDING ACTION
-        self.edit_actions.append(('choose_node', pos))
+        cw = self.active_cw
+        if pos >= len(cw.c.regions_t1) + len(cw.c.regions_t2):
+            return
 
-        cw = self.get_cw_widget_at(self.active_cw)
         cw.dehighlight_node(self.active_cw_node)
-        self.active_cw_node = pos
-        cw.highlight_node(pos)
+        self.active_cw_node = cw.get_node_at_pos(pos)
+
+        # ADDING ACTION
+        self.edit_actions.append(('choose_node', {'id': self.active_cw_node.id_}))
+        cw.highlight_node(self.active_cw_node)
 
     def get_cw_widget_at(self, i):
         return self.scenes_widget.layout().itemAt(i).widget()
 
     def next(self):
-        # ADDING ACTION
-        self.edit_actions.append(('next', None))
-
-        if self.active_cw < self.scenes_widget.layout().count() - 1:
-            cw = self.get_cw_widget_at(self.active_cw)
+        if self.active_cw:
+            cw = self.active_cw
             cw.dehighlight_node(self.active_cw_node)
-            self.active_cw_node = -1
+            self.active_cw_node = None
             self.cw_set_inactive(cw)
-            self.active_cw += 1
-            self.cw_set_active(self.get_cw_widget_at(self.active_cw))
-            self.scroll_.ensureWidgetVisible(self.get_cw_widget_at(self.active_cw))
+            self.active_cw = self.get_next_cw(cw)
+            # ADDING ACTION
+            repre = self.active_cw.c.get_node_representant()
+            self.edit_actions.append(('next', {'frame': self.active_cw.c.t,
+                                               'representant_frame': repre.frame_,
+                                               'representant_id': repre.id_}))
+
+            self.cw_set_active(self.active_cw)
+            self.scroll_.ensureWidgetVisible(self.active_cw)
 
     def prev(self):
-        # ADDING ACTION
-        self.edit_actions.append(('prev', None))
-
-        if self.active_cw > 0:
-            cw = self.get_cw_widget_at(self.active_cw)
+        if self.active_cw:
+            cw = self.active_cw
             cw.dehighlight_node(self.active_cw_node)
-            self.active_cw_node = -1
+            self.active_cw_node = None
             self.cw_set_inactive(cw)
-            self.active_cw -= 1
-            self.cw_set_active(self.get_cw_widget_at(self.active_cw))
-            self.scroll_.ensureWidgetVisible(self.get_cw_widget_at(self.active_cw))
+            self.active_cw = self.get_prev_cw(cw)
+            self.cw_set_active(self.active_cw)
+            # ADDING ACTION
+            repre = self.active_cw.c.get_node_representant()
+            self.edit_actions.append(('prev', {'frame': self.active_cw.c.t,
+                                               'node_frame': repre.frame_,
+                                               'node_id': repre.id_}))
+            self.scroll_.ensureWidgetVisible(self.active_cw)
 
     def confirm_cc(self):
         # ADDING ACTION
-        self.edit_actions.append(('confirm_cc', None))
-
-        cw = self.get_cw_widget_at(self.active_cw)
-        cw.confirm_clicked()
+        repre = self.active_cw.c.get_node_representant()
+        self.edit_actions.append(('confirm_cc', {'frame': self.active_cw.c.t,
+                                                 'node_frame': repre.frame_,
+                                                 'node_id': repre.id_}))
+        self.active_cw.confirm_clicked()
 
     def fitting(self):
-        # ADDING ACTION
-        self.edit_actions.append(('fitting', None))
-
-        if self.active_cw_node > -1:
-            cw = self.get_cw_widget_at(self.active_cw)
+        if self.active_cw_node:
+            cw = self.active_cw
 
             t_reversed = False
-            if self.active_cw_node < len(cw.c.regions_t1):
+            if self.active_cw_node.frame_ == cw.c.t:
                 t_reversed = True
+
+            # ADDING ACTION
+            self.edit_actions.append(('fitting', {'frame': self.active_cw.c.t,
+                                                  'node_frame': self.active_cw_node.frame_,
+                                                  'node_id': self.active_cw_node.id_}))
 
             cw.mark_merged(t_reversed)
 
@@ -332,40 +323,33 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def visualize_n_sorted(self, n=np.inf, start=0):
         n = max(n, len(self.cws))
 
+        if self.order_by == 'chunk_length':
+            self.ccs = sorted(self.ccs, key=lambda k: (-k.longest_chunk_length, k.t))
+        else:
+            self.ccs = sorted(self.ccs, key=lambda k: k.t)
+
         # if not self.cws_sorted:
         #     self.cws = sorted(self.cws, key=lambda k: k.c.t)
         #     self.cws_sorted = True
 
-        for i in range(start, min(start+n, len(self.cws))):
+        for i in range(start, min(start+n, len(self.ccs))):
+            cw = ConfigWidget(self.solver.g, self.ccs[i], self.vid, self)
+            self.cws.append(cw)
             self.scenes_widget.layout().addWidget(self.cws[i])
+            self.update_node_cc_refs(None, cw.c)
 
         if self.cws:
             self.cw_set_active(self.cws[0])
+            self.active_cw = self.cws[0]
 
         self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
 
     def add_configuration(self, cc):
-        for n in cc.regions_t1+cc.regions_t2:
-            if n in self.node_ccs_refs:
-                self.node_ccs_refs[n].append(cc)
-            else:
-                self.node_ccs_refs[n] = [cc]
-
-        for n in cc.regions_t1:
-            self.t1_nodes_cc_refs[n] = cc
-
-        for n in cc.regions_t2:
-            self.t2_nodes_cc_refs[n] = cc
-
-        self.cws_sorted = False
-        cw = ConfigWidget(self.solver.g, cc, self.vid, self)
-        self.cws.append(cw)
-        # self.scenes_widget.layout().addWidget(cw)
+        self.ccs.append(cc)
 
     def replace_cw(self, new_cc, cc_to_be_replaced=None):
         if not self.is_cc_familiar(new_cc) and not cc_to_be_replaced:
             cw = ConfigWidget(self.solver.g, new_cc, self.vid, self)
-            self.cws.append(cw)
 
             for i in range(0, self.scenes_widget.layout().count()):
                 it = self.scenes_widget.layout().itemAt(i)
@@ -380,13 +364,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                     cc_to_be_replaced = self.find_ref(new_cc)
 
             widget_i, it = self.get_cc_item_position(cc_to_be_replaced)
+            if not it:
+                self.update_node_cc_refs(cc_to_be_replaced, new_cc)
+                return
 
-            # if cc_to_be_replaced, then there is a risc that the nodes will be different and as the color is based on node reference, it will fail...
-            c_assignment = it.widget().color_assignments
-            if cc_to_be_replaced:
-                c_assignment = None
-
-            cw = ConfigWidget(self.solver.g, new_cc, self.vid, self, color_assignments=c_assignment)
+            cw = ConfigWidget(self.solver.g, new_cc, self.vid, self)
             self.cws.append(cw)
 
             self.scenes_widget.layout().removeItem(it)
@@ -472,6 +454,64 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 else:
                     self.cws.remove(cw)
 
+    def is_cc_child_of(self, test_cc, potential_parent_cc):
+        if test_cc.t == potential_parent_cc.t:
+            for n in test_cc.regions_t1:
+                if n in potential_parent_cc.regions_t1:
+                    return True
+
+            for n in test_cc.regions_t2:
+                if n in potential_parent_cc.regions_t2:
+                    return True
+
+        return False
+
+    def get_cw_index(self, cw):
+        for i in range(0, self.scenes_widget.layout().count()):
+            it = self.scenes_widget.layout().itemAt(i)
+            if it.widget() == cw:
+                return i
+
+        return -1
+
+    def get_next_cw(self, cw):
+        if not self.cws:
+            return None
+
+        id = self.get_cw_index(cw)
+        if id+1 == self.scenes_widget.layout().count() or id == -1:
+            return cw
+        else:
+            return self.scenes_widget.layout().itemAt(id+1).widget()
+
+    def get_prev_cw(self, cw):
+        if not self.cws:
+            return None
+
+        id = self.get_cw_index(cw)
+        if id-1 < 0:
+            return cw
+        else:
+            return self.scenes_widget.layout().itemAt(id-1).widget()
+
+    def get_nearest_cw(self, cw):
+        if not self.cws:
+            return None
+
+        best_match = self.cws[0]
+        for cw_ in self.cws:
+            if self.is_cc_child_of(cw_.c, cw.c):
+                return cw_
+
+            # TODO: based on order
+            d1 = best_match.c.t - cw.c.t
+            d2 = cw_.c.t - cw.c.t
+            if abs(d1) > abs(d2):
+                best_match = cw_
+            elif abs(d1) == abs(d2) and d2 > d1:
+                best_match = cw_
+
+        return best_match
 
     def update_ccs(self, new_ccs, node_representatives):
         min_t = np.inf
@@ -494,36 +534,27 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 self.scenes_widget.layout().removeItem(it)
 
                 self.update_node_cc_refs(it.widget().c, new_cc)
-
                 self.cws.remove(it.widget())
                 it.widget().setParent(None)
 
         self.delete_empty_ccs()
 
-        self.cw_set_active(self.get_cw_widget_at(self.active_cw))
+        self.active_cw = self.get_nearest_cw(self.active_cw)
+        self.active_cw_node = None
+
+        self.cw_set_active(self.active_cw)
         self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
         QtGui.QApplication.processEvents()
         QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
-        self.scroll_.ensureWidgetVisible(self.get_cw_widget_at(self.active_cw), 0)
+        self.scroll_.ensureWidgetVisible(self.active_cw, 0)
 
         # self.graph_visu_callback(min_t - math.ceil(VISU_MARGIN / 5.), max_t + VISU_MARGIN)
 
     def partially_confirm(self):
-        # ADDING ACTION
-        self.edit_actions.append(('partially_confirm', None))
+        if self.active_cw_node:
+            cw = self.active_cw
 
-        cw = self.get_cw_widget_at(self.active_cw)
-        if -1 < self.active_cw_node < len(cw.c.regions_t1) + len(cw.c.regions_t2):
-            p = self.active_cw_node
-            cw = self.get_cw_widget_at(self.active_cw)
-
-            if p < 0 or p > len(cw.c.regions_t1) + len(cw.c.regions_t2):
-                return
-
-            if p < len(cw.c.regions_t1):
-                r = cw.c.regions_t1[p]
-            else:
-                r = cw.c.regions_t2[p - len(cw.c.regions_t1)]
+            r = self.active_cw_node
 
             n1 = r
             conf = cw.c.configurations[0]
@@ -541,21 +572,23 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
                 i += 1
 
+            # ADDING ACTION
+            self.edit_actions.append(('partially_confirm', {'frame': cw.c.t,
+                                                            'node_frame': self.active_cw_node.frame_,
+                                                            'node_id': self.active_cw_node.id_}))
+
             self.confirm_edges([(n1, n2)])
 
-        self.active_cw_node = -1
+        self.active_cw_node = None
 
     def confirm_edges(self, pairs):
         # ADDING ACTION
-        self.edit_actions.append(('confirm_edges', pairs))
+        self.edit_actions.append(('confirm_edges', {'pairs': pairs}))
 
         new_ccs, node_representatives = self.solver.confirm_edges(pairs)
         self.update_ccs(new_ccs, node_representatives)
 
     def merged(self, new_regions, t_reversed, from_cc):
-        # ADDING ACTION
-        self.edit_actions.append(('merged', (new_regions, t_reversed, from_cc)))
-
         replace = from_cc.regions_t2
         nodes_to_connect = from_cc.regions_t1
         if t_reversed:

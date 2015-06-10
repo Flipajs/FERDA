@@ -147,6 +147,27 @@ class ConfigWidget(QtGui.QWidget):
     def remove_node_(self):
         self.parent.remove_region(self.active_node)
 
+    def get_node_item(self, node):
+        n_it = None
+        for it, key in self.it_nodes.iteritems():
+            if key == node:
+                n_it = it
+
+        return n_it
+
+    def get_node_at_pos(self, node_pos):
+        node = None
+
+        for key, pos in self.node_positions.iteritems():
+            if self.frame_t < key.frame_:
+                pos += len(self.c.regions_t1)
+
+            if pos == node_pos:
+                node = key
+                break
+
+        return node
+
     def get_node_item_at_pos(self, node_pos):
         n_key = None
 
@@ -175,15 +196,15 @@ class ConfigWidget(QtGui.QWidget):
         QtGui.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
         self.join_with_active = True
 
-    def highlight_node(self, node_pos):
-        if node_pos > -1 and node_pos < len(self.c.regions_t1) + len(self.c.regions_t2):
-            it = self.get_node_item_at_pos(node_pos)
+    def highlight_node(self, node):
+        if node:
+            it = self.get_node_item(node)
             it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
             it.setSelected(True)
 
-    def dehighlight_node(self, node_pos):
-        if node_pos > -1 and node_pos < len(self.c.regions_t1) + len(self.c.regions_t2):
-            it = self.get_node_item_at_pos(node_pos)
+    def dehighlight_node(self, node):
+        if node:
+            it = self.get_node_item(node)
             it.setSelected(False)
             it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
 

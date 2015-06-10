@@ -432,35 +432,54 @@ class Solver():
         # order them by size, this will prevent widgets removing when we want update them...
         return self.order_ccs_by_size(new_ccs, node_representative)
 
+    def get_chunk_node_partner(self, n):
+        for n_, _, d in self.g.in_edges(n, data=True):
+            if 'chunk_ref' in d:
+                return n_
+
+        for _, n_, d in self.g.out_edges(n, data=True):
+            if 'chunk_ref' in d:
+                return n_
+
+        return None
+
     def disassemble_chunk(self, n, chunk, reversed_dir):
         if reversed_dir:
             reduced = chunk.remove_from_end()
+            if not reduced:
+                region = self.get_chunk_node_partner(n)
+                self.g.remove_edge(n, region)
         else:
             reduced = chunk.remove_from_beginning()
+            if not reduced:
+                region = self.get_chunk_node_partner(n)
+                self.g.remove_edge(region, n)
 
-        vid = get_auto_video_manager(self.project.video_paths)
-        img = vid.seek_frame(reduced.t)
-        if self.project.bg_model:
-            img = self.project.bg_model.bg_subtraction(img)
+        # if the chunk is only n1, n2  and nothing between in reduced form, the reduced is None and the disassembled region is in region var
+        if reduced:
+            vid = get_auto_video_manager(self.project.video_paths)
+            img = vid.seek_frame(reduced.t)
+            if self.project.bg_model:
+                img = self.project.bg_model.bg_subtraction(img)
 
-        if self.project.arena_model:
-            img = self.project.arena_model.mask_image(img)
+            if self.project.arena_model:
+                img = self.project.arena_model.mask_image(img)
 
-        if S_.mser.img_subsample_factor > 1.0:
-            img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
+            if S_.mser.img_subsample_factor > 1.0:
+                img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
 
-        region = get_mser_by_id(img, reduced.mser_id, reduced.t)
+            region = get_mser_by_id(img, reduced.mser_id, reduced.t)
 
-        self.add_node(region)
+            self.add_node(region)
 
-        if reversed_dir:
-            self.g.add_edge(n, region, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
-            _, _, t_plus = self.get_regions_around(region.frame_)
-            self.add_edges_([region], t_plus)
-        else:
-            self.g.add_edge(region, n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
-            t_minus, _, _ = self.get_regions_around(region.frame_)
-            self.add_edges_(t_minus, [region])
+            if reversed_dir:
+                self.g.add_edge(n, region, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+                _, _, t_plus = self.get_regions_around(region.frame_)
+                self.add_edges_([region], t_plus)
+            else:
+                self.g.add_edge(region, n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+                t_minus, _, _ = self.get_regions_around(region.frame_)
+                self.add_edges_(t_minus, [region])
 
         return region
 
@@ -583,13 +602,7 @@ class Solver():
         is_ch, t_reversed, ch = self.is_chunk(r)
 
         if is_ch:
-            ch_end_n = None
-            if t_reversed:
-                for n_, _ in self.g.in_edges(r):
-                    ch_end_n = n_
-            else:
-                for _, n_ in self.g.out_edges(r):
-                    ch_end_n = n_
+            ch_end_n = self.get_chunk_node_partner(r)
 
             new_ccs, node_representative = self.remove_region(r, strong=True)
             new_ccs2, node_representative2 = self.remove_region(ch_end_n, strong=True)

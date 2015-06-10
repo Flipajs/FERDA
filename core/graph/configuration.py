@@ -11,7 +11,10 @@ class Configuration():
         self.scores = scores
         self.id = id
         self.t = regions_t1[0].frame_
+        self.longest_chunk_length = -1
 
+    def get_node_representant(self):
+        return self.regions_t1[0] if self.regions_t1 else self.regions_t2[0]
 
 def get_length_of_longest_chunk(solver, cc):
     longest1 = -1

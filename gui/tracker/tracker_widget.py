@@ -95,16 +95,16 @@ class TrackerWidget(QtGui.QWidget):
 
         print "MAJOR AXIS MEDIAN", self.project.stats.major_axis_median, S_.solver.max_edge_distance_in_ant_length, self.solver.max_distance
 
-        i = 0
+        # i = 0
         for c_ in ccs:
-            print i, get_length_of_longest_chunk(self.solver, c_)
+            c_.longest_chunk_length = get_length_of_longest_chunk(self.solver, c_)
             self.certainty_visualizer.add_configuration(c_)
-            if i > 20:
-                break
+            # if i > 10:
+            #     break
 
-            i += 1
+            # i += 1
 
-        self.certainty_visualizer.visualize_n_sorted()
+        self.certainty_visualizer.visualize_n_sorted(10)
 
         # self.update_graph_visu(0, 10)
 

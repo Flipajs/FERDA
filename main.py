@@ -10,7 +10,7 @@ ex.showMaximized()
 
 from core.project import Project
 proj = Project()
-proj.load('/Users/fnaiser/Documents/work_dir/small_lenses_collony1/slc1.fproj')
+proj.load('/Users/fnaiser/Documents/work_dir/c6/c6.fproj')
 ex.widget_control('load_project', proj)
 
 app.exec_()

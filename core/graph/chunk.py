@@ -28,12 +28,18 @@ class Chunk():
             self.reduced = sorted(self.reduced, key=lambda k: k.t)
             self.is_sorted = True
 
+        if not self.reduced:
+            return None
+
         return self.reduced.pop(0)
 
     def remove_from_end(self):
         if not self.is_sorted:
             self.reduced = sorted(self.reduced, key=lambda k: k.t)
             self.is_sorted = True
+
+        if not self.reduced:
+            return None
 
         return self.reduced.pop()
 
