@@ -611,19 +611,19 @@ class Solver():
 
             new_ccs_ = []
             node_representatives_ = []
+
+            # remove everything from first remove region which doesn't make sense after second removing...
             for cc, n in zip(new_ccs, node_representative):
                 ok = True
                 for n in cc.regions_t1:
                     if n not in self.g.nodes():
                         ok = False
                         break
-
                 if ok:
                     for n in cc.regions_t2:
                         if n not in self.g.nodes():
                             ok = False
                             break
-
                 if ok:
                     new_ccs_.append(cc)
                     node_representatives_.append(n)
