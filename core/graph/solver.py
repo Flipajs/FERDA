@@ -609,7 +609,26 @@ class Solver():
             new_ccs += new_ccs2
             node_representative += node_representative2
 
-            return new_ccs, node_representative
+            new_ccs_ = []
+            node_representatives_ = []
+            for cc, n in zip(new_ccs, node_representative):
+                ok = True
+                for n in cc.regions_t1:
+                    if n not in self.g.nodes():
+                        ok = False
+                        break
+
+                if ok:
+                    for n in cc.regions_t2:
+                        if n not in self.g.nodes():
+                            ok = False
+                            break
+
+                if ok:
+                    new_ccs_.append(cc)
+                    node_representatives_.append(n)
+
+            return new_ccs_, node_representatives_
         else:
             return self.remove_region(r)
 

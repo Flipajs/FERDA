@@ -542,11 +542,13 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.active_cw = self.get_nearest_cw(self.active_cw)
         self.active_cw_node = None
 
-        self.cw_set_active(self.active_cw)
+        if self.active_cw:
+            self.cw_set_active(self.active_cw)
+            self.scroll_.ensureWidgetVisible(self.active_cw, 0)
+
         self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
         QtGui.QApplication.processEvents()
         QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
-        self.scroll_.ensureWidgetVisible(self.active_cw, 0)
 
         # self.graph_visu_callback(min_t - math.ceil(VISU_MARGIN / 5.), max_t + VISU_MARGIN)
 
