@@ -32,14 +32,6 @@ class InitHowWidget(QtGui.QWidget):
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
 
-        self.b = QtGui.QPushButton('reshape')
-        self.b.clicked.connect(lambda: self.image_grid_widget.reshape(10))
-        self.vbox.addWidget(self.b)
-
-        self.give_me_selected_b = QtGui.QPushButton('selected ?')
-        self.give_me_selected_b.clicked.connect(self.give_me_selected)
-        self.vbox.addWidget(self.give_me_selected_b)
-
         vid = get_auto_video_manager(project.video_paths)
 
         img = vid.move2_next()

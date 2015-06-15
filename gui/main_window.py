@@ -43,24 +43,26 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle('FERDA')
         self.setGeometry(100, 100, 700, 400)
 
-        self.menu_bar = QtGui.QMenuBar(self)
+        # self.menu_bar = QtGui.QMenuBar(self)
         # self.toolbar = self.addToolBar('')
 
         self.settings_action = QtGui.QAction('&Settings', self.centralWidget())
         self.settings_action.triggered.connect(self.show_settings)
+        self.settings_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Comma))
+        self.addAction(self.settings_action)
 
-        self.new_project_action = QtGui.QAction("New project", self.centralWidget())
+        # self.new_project_action = QtGui.QAction("New project", self.centralWidget())
 
-        self.load_project_action = QtGui.QAction("Load project", self.centralWidget())
+        # self.load_project_action = QtGui.QAction("Load project", self.centralWidget())
         # self.load_project_action.triggered.connect(self.show_load_project_dialog)
 
-        self.show_correction_tool_action = QtGui.QAction("Correction tool", self.centralWidget())
+        # self.show_correction_tool_action = QtGui.QAction("Correction tool", self.centralWidget())
         # self.settings_action.triggered.connect(self.show_correction_tool)
 
-        self.file_menu = self.menu_bar.addMenu('&File')
-        self.file_menu.addAction(self.settings_action)
-        self.file_menu.addAction(self.new_project_action)
-        self.file_menu.addAction(self.load_project_action)
+        # self.file_menu = self.menu_bar.addMenu('&File')
+        # self.file_menu.addAction(self.settings_action)
+        # self.file_menu.addAction(self.new_project_action)
+        # self.file_menu.addAction(self.load_project_action)
 
         self.update()
         self.showMaximized()

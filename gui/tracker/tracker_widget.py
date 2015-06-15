@@ -70,9 +70,9 @@ class TrackerWidget(QtGui.QWidget):
         self.layout().removeWidget(self.graph_widget)
         self.graph_widget.setParent(None)
         self.graph_widget = w_
-        self.layout().addWidget(self.graph_widget)
+        # self.layout().addWidget(self.graph_widget)
         self.graph_widget.showMaximized()
-        self.graph_widget.setFixedHeight(300)
+        # self.graph_widget.setFixedHeight(300)
 
     def prepare_corrections(self, solver):
         self.solver = solver
@@ -104,7 +104,7 @@ class TrackerWidget(QtGui.QWidget):
 
             # i += 1
 
-        self.certainty_visualizer.visualize_n_sorted(10)
+        self.certainty_visualizer.visualize_n_sorted(40)
 
         # self.update_graph_visu(0, 10)
 

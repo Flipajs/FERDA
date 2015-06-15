@@ -96,6 +96,11 @@ class Parallelization:
     processes_num = Item('parallelization/processes_num', 8, 'The number of processes. It is good idea to set it <= num of CPUs')
     use = Item('parallelization/use', True, '...')
 
+class Temp:
+    __metaclass__ = SettingsType
+    last_vid_path = Item('temp/last_vid_path', '')
+    last_wd_path = Item('temp/last_wd_path', '')
+
 class Settings:
     cache = Cache
     mser = MSER
@@ -103,6 +108,7 @@ class Settings:
     visualization = Visualization
     solver = Solver
     parallelization = Parallelization
+    temp = Temp
 
 if __name__ == '__main__':
     print Settings.solver.max_edge_distance_in_ant_length

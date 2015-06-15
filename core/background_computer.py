@@ -79,8 +79,8 @@ class BackgroundComputer():
 
         self.solver = Solver(self.project)
 
-        # for i in range(S_.parallelization.processes_num):
-        for i in range(1):
+        for i in range(S_.parallelization.processes_num):
+        # for i in range(1):
             with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g_ = up.load()
@@ -96,8 +96,8 @@ class BackgroundComputer():
                 end_nodes_prev = end_nodes
 
         self.solver.update_nodes_in_t_refs()
-        self.solver.simplify(nodes_to_process)
-        self.solver.simplify_to_chunks()
+        # self.solver.simplify(nodes_to_process)
+        # self.solver.simplify_to_chunks()
 
         self.finished_callback(self.solver)
 

@@ -5,6 +5,8 @@ from PyQt4.QtGui import QImage
 from utils.misc import get_settings
 import utils.img
 from gui.settings.default import get_tooltip
+import os
+from core.settings import Settings as S_
 
 
 class IdButton(QtGui.QPushButton):

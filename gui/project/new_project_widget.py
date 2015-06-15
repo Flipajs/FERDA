@@ -13,6 +13,8 @@ import skimage.transform
 import threading
 from utils.video_manager import VideoType
 from methods.bg_model.max_intensity import MaxIntensity
+import os
+from core.settings import Settings as S_
 from gui.project.import_widget import ImportWidget
 
 class BGSub(threading.Thread):
@@ -97,7 +99,12 @@ class NewProjectWidget(QtGui.QWidget):
         self.select_video_files.setFocus()
 
     def select_video_files_clicked(self):
-        self.video_files = gui.gui_utils.file_names_dialog(self, 'Select video files', filter_="Videos (*.avi *.mkv *.mp4 *.m4v)") #, 'AVI (*.avi);MKV (*.mkv); MP4 (*.mp4)')
+        path = ''
+        if os.path.isdir(S_.temp.last_vid_path):
+            path = S_.temp.last_vid_path
+        self.video_files = gui.gui_utils.file_names_dialog(self, 'Select video files', filter_="Videos (*.avi *.mkv *.mp4 *.m4v)", path=path)
+        if self.video_files:
+            S_.temp.last_vid_path = os.path.dirname(self.video_files[0])
         try:
             vid = utils.video_manager.get_auto_video_manager(self.video_files)
             im = vid.random_frame()
@@ -138,7 +145,13 @@ class NewProjectWidget(QtGui.QWidget):
         self.bg_progress_bar.setValue(val)
 
     def select_working_directory_clicked(self):
-        self.working_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select working directory"))
+        path = ''
+        if os.path.isdir(S_.temp.last_wd_path):
+            path = S_.temp.last_wd_path
+
+        self.working_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select working directory", path, QtGui.QFileDialog.ShowDirsOnly))
+
+        S_.temp.last_wd_path = os.path.dirname(self.working_directory)
 
         if os.path.isdir(self.working_directory):
             filenames = os.listdir(self.working_directory)

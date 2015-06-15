@@ -37,14 +37,14 @@ class SettingsDialog(QtGui.QDialog):
         self.tabWidget = QtGui.QTabWidget()
         self.general_tab = GeneralTab()
         self.tabWidget.addTab(self.general_tab, "General")
-        self.appearance_tab = AppearanceTab()
-        self.tabWidget.addTab(self.appearance_tab, "Appearance")
-        self.controls_tab = ControlsTab()
-        self.tabWidget.addTab(self.controls_tab, "Controls")
-        self.key_binding_tab = KeyBindingsTab(settable_buttons)
-        self.tabWidget.addTab(self.key_binding_tab, "Key bindings")
-        self.test_tab = FaultTestTab()
-        self.tabWidget.addTab(self.test_tab, "Fault tests")
+        # self.appearance_tab = AppearanceTab()
+        # self.tabWidget.addTab(self.appearance_tab, "Appearance")
+        # self.controls_tab = ControlsTab()
+        # self.tabWidget.addTab(self.controls_tab, "Controls")
+        # self.key_binding_tab = KeyBindingsTab(settable_buttons)
+        # self.tabWidget.addTab(self.key_binding_tab, "Key bindings")
+        # self.test_tab = FaultTestTab()
+        # self.tabWidget.addTab(self.test_tab, "Fault tests")
 
         self.parameters_tab = ParametersTab()
         self.tabWidget.addTab(self.parameters_tab, "Parameters")
@@ -59,10 +59,11 @@ class SettingsDialog(QtGui.QDialog):
         self.populate()
 
     def populate(self, ):
-        self.controls_tab.populate()
-        self.appearance_tab.populate()
-        self.test_tab.populate()
-        self.key_binding_tab.populate()
+        # self.controls_tab.populate()
+        # self.appearance_tab.populate()
+        # self.test_tab.populate()
+        # self.key_binding_tab.populate()
+        pass
 
     def harvest_results(self):
         self.general_tab.harvest()

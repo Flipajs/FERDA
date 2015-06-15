@@ -64,14 +64,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.autosave_timer.timeout.connect(partial(self.save, True))
         # TODO: add interval to settings
         self.autosave_timer.start(1000*60*10)
-
         self.edit_actions = []
-        # posibilities time, chunk_length
-        self.order_by = 'chunk_length'
-        # self.frame_cc_links = {}
-
-    # def add_cc(self, cc):
-    #     self.frame_cc_links.setdefault(cc.t, [])
+        self.order_by = 'time'
 
 
     def add_actions(self):
@@ -299,7 +293,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                                                  'node_id': repre.id_}))
         self.active_cw.confirm_clicked()
 
-    def fitting(self):
+    def fitting_(self):
         if self.active_cw_node:
             cw = self.active_cw
 
@@ -313,6 +307,40 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                                                   'node_id': self.active_cw_node.id_}))
 
             cw.mark_merged(t_reversed)
+
+    def activate_cw(self, cw):
+        self.active_cw.dehighlight_node(self.active_cw_node)
+        self.active_cw_node = None
+        self.cw_set_inactive(self.active_cw)
+
+        self.active_cw = cw
+        self.cw_set_active(self.active_cw)
+        self.scroll_.ensureWidgetVisible(self.active_cw)
+
+    def fitting(self):
+        if self.active_cw_node:
+            t_reversed = False
+            if self.active_cw_node.frame_ == self.active_cw.c.t:
+                t_reversed = True
+
+            orig_regions = []
+
+            is_ch, ch_t_reversed, chunk_ref = self.solver.is_chunk(self.active_cw_node)
+            if is_ch:
+                for i in range(chunk_ref.length() + 3):
+                    self.active_cw.mark_merged(t_reversed)
+
+                    if i == 0:
+                        old_active_cw = self.active_cw
+
+                    cc = self.t1_nodes_cc_refs[self.active_cw.c.regions_t2[0]]
+                    print cc.t
+                    self.activate_cw(self.get_cc_item_position(cc)[1].widget())
+
+                self.activate_cw(old_active_cw)
+
+            else:
+                self.active_cw.mark_merged(t_reversed)
 
     def cw_set_active(self, cw):
         cw.setStyleSheet("""QGraphicsView {background-color: rgb(200,200,200);} QPushButton {background-color: rgb(205,207,252);}""")
@@ -539,16 +567,16 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.delete_empty_ccs()
 
-        self.active_cw = self.get_nearest_cw(self.active_cw)
-        self.active_cw_node = None
+        new_active_cw = self.get_nearest_cw(self.active_cw)
 
-        if self.active_cw:
-            self.cw_set_active(self.active_cw)
-            self.scroll_.ensureWidgetVisible(self.active_cw, 0)
+        if new_active_cw:
+            self.activate_cw(new_active_cw)
 
         self.cc_number_label.setText(str(self.scenes_widget.layout().count()))
         QtGui.QApplication.processEvents()
         QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
+        if self.active_cw:
+            self.scroll_.ensureWidgetVisible(self.active_cw, 0)
 
         # self.graph_visu_callback(min_t - math.ceil(VISU_MARGIN / 5.), max_t + VISU_MARGIN)
 
