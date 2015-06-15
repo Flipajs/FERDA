@@ -8,10 +8,10 @@ app = QtGui.QApplication(sys.argv)
 ex = main_window.MainWindow()
 ex.showMaximized()
 
-from core.project import Project
-proj = Project()
-proj.load('/Users/fnaiser/Documents/work_dir/eight/eight.fproj')
-ex.widget_control('load_project', proj)
+# from core.project import Project
+# proj = Project()
+# proj.load('/Users/fnaiser/Documents/work_dir/eight/eight.fproj')
+# ex.widget_control('load_project', proj)
 
 app.exec_()
 app.deleteLater()
