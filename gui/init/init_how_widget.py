@@ -20,6 +20,7 @@ from core.region.mser_operations import get_region_groups, margin_filter, area_f
 from core.classes_stats import ClassesStats
 from core.settings import Settings as S_
 from skimage.transform import rescale
+import scipy
 
 
 class InitHowWidget(QtGui.QWidget):
@@ -68,6 +69,9 @@ class InitHowWidget(QtGui.QWidget):
 
             if project.arena_model:
                 img_ = project.arena_model.mask_image(img_)
+
+            if S_.mser.gaussian_kernel_std > 0:
+                img_ = scipy.ndimage.gaussian_filter(img_, sigma=S_.mser.gaussian_kernel_std)
 
             if S_.mser.img_subsample_factor > 1.0:
                 img_ = np.asarray(rescale(img_, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
@@ -164,7 +168,6 @@ class InitHowWidget(QtGui.QWidget):
                 self.items.append(item)
             #
             # self.image_grid_widget.add_item(item)
-
 
     def get_img_qlabel(self, pts, img, id, height=100, width=100):
         cont = get_contour(pts)

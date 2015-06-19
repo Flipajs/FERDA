@@ -67,6 +67,7 @@ class MSER:
     min_area = Item('mser/min_area', 5)
     min_margin = Item('mser/min_margin', 5)
     img_subsample_factor = Item('mser/img_subsample_factor', 1.0, 'If set to 1, no subsampling is used, else the image used for mser computation will be smaller by this factor')
+    gaussian_kernel_std = Item('mser/gauss_kernel_std', 0.0, '...')
 
 
 class Colormarks:

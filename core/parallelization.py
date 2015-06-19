@@ -15,6 +15,7 @@ from core.project import Project
 from core.settings import Settings as S_
 from skimage.transform import rescale
 import numpy as np
+import scipy
 
 if __name__ == '__main__':
     working_dir = sys.argv[1]
@@ -36,6 +37,9 @@ if __name__ == '__main__':
 
     if proj.arena_model:
         img = proj.arena_model.mask_image(img)
+
+    if S_.mser.gaussian_kernel_std > 0:
+        img = scipy.ndimage.gaussian_filter(img, sigma=S_.mser.gaussian_kernel_std)
 
     if S_.mser.img_subsample_factor > 1.0:
         img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)

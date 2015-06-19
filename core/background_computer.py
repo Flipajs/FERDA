@@ -14,6 +14,7 @@ from core.settings import Settings as S_
 import cPickle as pickle
 import networkx as nx
 from core.graph.solver import Solver
+from core.graph.reduced import Reduced
 
 class BackgroundComputer():
     def __init__(self, project, update_callback, finished_callback):
