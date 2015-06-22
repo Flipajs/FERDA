@@ -106,7 +106,7 @@ class TrackerWidget(QtGui.QWidget):
 
         self.certainty_visualizer.visualize_n_sorted(10)
 
-        self.update_graph_visu(0, 10)
+        # self.update_graph_visu(0, 10)
 
     def apply_actions(self, actions):
         for action_name, data in actions:

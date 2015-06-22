@@ -292,7 +292,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                                                  'node_id': repre.id_}))
         self.active_cw.confirm_clicked()
 
-    def fitting(self):
+    def fitting_(self):
         if self.active_cw_node:
             cw = self.active_cw
 
@@ -316,7 +316,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.cw_set_active(self.active_cw)
         self.scroll_.ensureWidgetVisible(self.active_cw)
 
-    def fitting_(self):
+    def fitting(self):
         if self.active_cw_node:
             t_reversed = False
             if self.active_cw_node.frame_ == self.active_cw.c.t:
@@ -579,7 +579,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         if self.active_cw:
             self.scroll_.ensureWidgetVisible(self.active_cw, 0)
 
-        self.graph_visu_callback(min_t - math.ceil(VISU_MARGIN / 5.), max_t + VISU_MARGIN)
+        # self.graph_visu_callback(min_t - math.ceil(VISU_MARGIN / 5.), max_t + VISU_MARGIN)
 
     def partially_confirm(self):
         if self.active_cw_node:
