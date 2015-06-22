@@ -5,12 +5,14 @@ import numpy as np
 from core.settings import Settings as S_
 from core.graph.graph_utils import *
 from utils.video_manager import get_auto_video_manager
-from core.region.mser import get_mser_by_id
+from core.region.mser import get_mser_by_id, get_msers_
+from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from core.settings import Settings as S_
 from skimage.transform import rescale
 import numpy as np
 from chunk import Chunk
 from configuration import Configuration
+import scipy
 
 
 class Solver():
@@ -459,16 +461,36 @@ class Solver():
         if reduced:
             vid = get_auto_video_manager(self.project.video_paths)
             img = vid.seek_frame(reduced.t)
+
             if self.project.bg_model:
                 img = self.project.bg_model.bg_subtraction(img)
 
             if self.project.arena_model:
                 img = self.project.arena_model.mask_image(img)
 
+            if S_.mser.gaussian_kernel_std > 0:
+                img = scipy.ndimage.gaussian_filter(img, sigma=S_.mser.gaussian_kernel_std)
+
             if S_.mser.img_subsample_factor > 1.0:
                 img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
 
-            region = get_mser_by_id(img, reduced.mser_id, reduced.t)
+            # region = get_mser_by_id(img, reduced.mser_id, reduced.t)
+
+            min_area = self.project.stats.area_median * 0.2
+            m = get_msers_(img, reduced.t)
+            groups = get_region_groups(m)
+            ids = margin_filter(m, groups)
+            ids = area_filter(m, ids, min_area)
+            ids = children_filter(m, ids)
+
+            best_match_d = np.inf
+            region = None
+            for id in ids:
+                r = m[id]
+                d = np.linalg.norm(r.centroid() - reduced.centroid)
+                if best_match_d > d:
+                    best_match_d = d
+                    region = r
 
             self.add_node(region)
 

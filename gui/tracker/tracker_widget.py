@@ -104,7 +104,7 @@ class TrackerWidget(QtGui.QWidget):
 
             # i += 1
 
-        self.certainty_visualizer.visualize_n_sorted(40)
+        self.certainty_visualizer.visualize_n_sorted(10)
 
         # self.update_graph_visu(0, 10)
 

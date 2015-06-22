@@ -200,7 +200,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.d_.show()
         self.d_.exec_()
 
-
     def new_region_finished(self, confirmed, data):
         self.d_.close()
         if confirmed:
@@ -418,10 +417,12 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def update_node_cc_refs(self, old_cc, new_cc):
         if old_cc:
             for n_ in old_cc.regions_t1:
-                del self.t1_nodes_cc_refs[n_]
+                if n_ in self.t1_nodes_cc_refs:
+                    del self.t1_nodes_cc_refs[n_]
 
             for n_ in old_cc.regions_t2:
-                del self.t2_nodes_cc_refs[n_]
+                if n_ in self.t2_nodes_cc_refs:
+                    del self.t2_nodes_cc_refs[n_]
 
         if new_cc:
             for n_ in new_cc.regions_t1:
