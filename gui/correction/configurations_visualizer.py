@@ -60,6 +60,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.cc_number_label = QtGui.QLabel('')
         self.layout().addWidget(self.cc_number_label)
 
+        self.show_new_configs = QtGui.QPushButton('show new 20 configs')
+        self.show_new_configs.clicked.connect(partial(self.visualize_n_sorted, 20))
+        self.layout().addWidget(self.show_new_configs)
+
         self.autosave_timer = QtCore.QTimer()
         self.autosave_timer.timeout.connect(partial(self.save, True))
         # TODO: add interval to settings
@@ -67,6 +71,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.edit_actions = []
         self.order_by = 'time'
 
+        self.join_regions_active = False
+        self.join_regions_n1 = self.active_cw_node
 
     def add_actions(self):
         self.next_action = QtGui.QAction('next', self)
@@ -113,6 +119,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.strong_remove_action.triggered.connect(self.strong_remove_region)
         self.strong_remove_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Backspace))
         self.addAction(self.strong_remove_action)
+
+        self.join_regions_action = QtGui.QAction('join regions', self)
+        self.join_regions_action.triggered.connect(self.join_regions_pick_second)
+        self.join_regions_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_J))
+        self.addAction(self.join_regions_action)
 
         self.action0 = QtGui.QAction('0', self)
         self.action0.triggered.connect(partial(self.choose_node, 9))
@@ -204,7 +215,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.d_.close()
         if confirmed:
             # ADDING ACTION
-            self.edit_actions.append(('new_region_finished', (confirmed, data)))
+            self.edit_actions.append(('new_region_finished', {'data': data}))
 
             r = Region()
             r.pts_ = data['pts']
@@ -225,7 +236,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             node = self.active_cw_node
 
         # ADDING ACTION
-        self.edit_actions.append(('remove_region', {'frame': node.frame_, 'id': node.id_}))
+        self.edit_actions.append(('remove_region', {'frame': node.frame_, 'id': node.id_, 'centroid': node.centroid()}))
 
         new_ccs, node_representatives = self.solver.remove_region(node)
         self.update_ccs(new_ccs, node_representatives)
@@ -234,7 +245,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         if not self.active_cw_node:
             return
 
-        self.edit_actions.append(('strong_remove', {'frame': self.active_cw_node.frame_, 'id': self.active_cw_node.id_}))
+        self.edit_actions.append(('strong_remove', {'frame': self.active_cw_node.frame_, 'id': self.active_cw_node.id_, 'centroid': self.active_cw_node.centroid()}))
         new_ccs, node_representatives = self.solver.strong_remove(self.active_cw_node)
         self.update_ccs(new_ccs, node_representatives)
 
@@ -247,8 +258,15 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.active_cw_node = cw.get_node_at_pos(pos)
 
         # ADDING ACTION
-        self.edit_actions.append(('choose_node', {'id': self.active_cw_node.id_}))
+        self.edit_actions.append(('choose_node', {'frame': self.active_cw_node.frame_,
+                                                  'id': self.active_cw_node.id_,
+                                                  'centroid': self.active_cw_node.centroid()}))
         cw.highlight_node(self.active_cw_node)
+
+        if self.join_regions_active:
+            self.join_regions(self.join_regions_n1, self.active_cw_node)
+            self.join_regions_active = False
+            self.join_regions_n1 = None
 
     def get_cw_widget_at(self, i):
         return self.scenes_widget.layout().itemAt(i).widget()
@@ -264,7 +282,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             repre = self.active_cw.c.get_node_representant()
             self.edit_actions.append(('next', {'frame': self.active_cw.c.t,
                                                'representant_frame': repre.frame_,
-                                               'representant_id': repre.id_}))
+                                               'representant_id': repre.id_,
+                                               'representant_centroid': repre.centroid()}))
 
             self.cw_set_active(self.active_cw)
             self.scroll_.ensureWidgetVisible(self.active_cw)
@@ -281,7 +300,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             repre = self.active_cw.c.get_node_representant()
             self.edit_actions.append(('prev', {'frame': self.active_cw.c.t,
                                                'node_frame': repre.frame_,
-                                               'node_id': repre.id_}))
+                                               'node_id': repre.id_,
+                                               'representant_centroid': repre.centroid()}))
             self.scroll_.ensureWidgetVisible(self.active_cw)
 
     def confirm_cc(self):
@@ -289,7 +309,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         repre = self.active_cw.c.get_node_representant()
         self.edit_actions.append(('confirm_cc', {'frame': self.active_cw.c.t,
                                                  'node_frame': repre.frame_,
-                                                 'node_id': repre.id_}))
+                                                 'node_id': repre.id_,
+                                                 'representant_centroid': repre.centroid()}))
         self.active_cw.confirm_clicked()
 
     def fitting_(self):
@@ -303,7 +324,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             # ADDING ACTION
             self.edit_actions.append(('fitting', {'frame': self.active_cw.c.t,
                                                   'node_frame': self.active_cw_node.frame_,
-                                                  'node_id': self.active_cw_node.id_}))
+                                                  'node_id': self.active_cw_node.id_,
+                                                  'node_centroid': self.active_cw_node.centroid()}))
 
             cw.mark_merged(t_reversed)
 
@@ -326,6 +348,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
             is_ch, ch_t_reversed, chunk_ref = self.solver.is_chunk(self.active_cw_node)
             if is_ch:
+                print "FITTING WHOLE CHUNK, WAIT PLEASE"
                 for i in range(chunk_ref.length() + 3):
                     self.active_cw.mark_merged(t_reversed)
 
@@ -337,6 +360,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                     self.activate_cw(self.get_cc_item_position(cc)[1].widget())
 
                 self.activate_cw(old_active_cw)
+                print "CHUNK FINISHED"
 
             else:
                 self.active_cw.mark_merged(t_reversed)
@@ -350,6 +374,18 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def visualize_n_sorted(self, n=np.inf, start=0):
         n = max(n, len(self.cws))
 
+        # # remove outdated regions
+        # for c in self.ccs:
+        #     for n in c.regions_t1:
+        #         if n not in self.solver.g.nodes():
+        #             self.ccs.remove(c)
+        #             continue
+        #
+        #     for n in c.regions_t2:
+        #         if n not in self.solver.g.nodes():
+        #             self.ccs.remove(c)
+        #             continue
+
         if self.order_by == 'chunk_length':
             self.ccs = sorted(self.ccs, key=lambda k: (-k.longest_chunk_length, k.t))
         else:
@@ -360,10 +396,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         #     self.cws_sorted = True
 
         for i in range(start, min(start+n, len(self.ccs))):
-            cw = ConfigWidget(self.solver.g, self.ccs[i], self.vid, self)
-            self.cws.append(cw)
-            self.scenes_widget.layout().addWidget(self.cws[i])
-            self.update_node_cc_refs(None, cw.c)
+            try:
+                cw = ConfigWidget(self.solver.g, self.ccs[i], self.vid, self)
+                self.cws.append(cw)
+                self.scenes_widget.layout().addWidget(self.cws[i])
+                self.update_node_cc_refs(None, cw.c)
+            except:
+                self.ccs.remove(self.ccs[i])
+                pass
 
         if self.cws:
             self.cw_set_active(self.cws[0])
@@ -606,7 +646,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             # ADDING ACTION
             self.edit_actions.append(('partially_confirm', {'frame': cw.c.t,
                                                             'node_frame': self.active_cw_node.frame_,
-                                                            'node_id': self.active_cw_node.id_}))
+                                                            'node_id': self.active_cw_node.id_,
+                                                            'node_centroid': self.active_cw_node.centroid()}))
 
             self.confirm_edges([(n1, n2)])
 
@@ -629,9 +670,20 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         new_ccs, node_representatives = self.solver.merged(new_regions, replace, nodes_to_connect, t_reversed)
         self.update_ccs(new_ccs, node_representatives)
 
+    def join_regions_pick_second(self):
+        self.join_regions_active = True
+        self.join_regions_n1 = self.active_cw_node
+
     def join_regions(self, n1, n2):
         if n1.area() < n2.area():
             n1, n2 = n2, n1
+
+        self.edit_actions.append(('join_regions', {'node_frame': n1.frame_,
+                                                   'node_id': n1.id_,
+                                                   'node_centroid': n1.centroid(),
+                                                   'node2_frame': n2.frame_,
+                                                   'node2_id': n2.id_,
+                                                   'node2_centroid': n2.centroid()}))
 
         # TODO: update also other moments etc...
         n_new = deepcopy(n1)
