@@ -636,6 +636,9 @@ class Solver():
 
             # remove everything from first remove region which doesn't make sense after second removing...
             for cc, n in zip(new_ccs, node_representative):
+                if not cc:
+                    continue
+
                 ok = True
                 for n in cc.regions_t1:
                     if n not in self.g.nodes():
