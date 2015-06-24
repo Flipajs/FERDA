@@ -1,11 +1,11 @@
 __author__ = 'fnaiser'
 
 import sys
-
+import os
 from PyQt4 import QtGui
-
 import core.project
 import gui.gui_utils
+from core.settings import Settings as S_
 
 
 class ProjectWidget(QtGui.QWidget):
@@ -30,7 +30,10 @@ class ProjectWidget(QtGui.QWidget):
             self.finish_callback('new_project')
 
     def load_project(self):
-        files = gui.gui_utils.file_names_dialog(self, 'Select FERDA project', filter_="Project (*.fproj)")
+        path = ''
+        if os.path.isdir(S_.temp.last_wd_path):
+            path = S_.temp.last_vid_path
+        files = gui.gui_utils.file_names_dialog(self, 'Select FERDA project', filter_="Project (*.fproj)", path=path)
         if len(files) == 1:
             f = files[0]
             project = core.project.Project()

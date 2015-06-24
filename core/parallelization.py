@@ -31,7 +31,14 @@ if __name__ == '__main__':
     min_area = proj.stats.area_median * 0.2
 
     vid = get_auto_video_manager(proj.video_paths)
-    img = vid.seek_frame(id*frames_in_row)
+    if id*frames_in_row > 0:
+        img = vid.seek_frame(id*frames_in_row)
+    else:
+        img = vid.move2_next()
+
+    if id == 0:
+        print img.shape
+
     if proj.bg_model:
         img = proj.bg_model.bg_subtraction(img)
 
