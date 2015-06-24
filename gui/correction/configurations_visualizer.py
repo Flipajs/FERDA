@@ -374,26 +374,28 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def visualize_n_sorted(self, n=np.inf, start=0):
         n = max(n, len(self.cws))
 
-        # # remove outdated regions
-        # for c in self.ccs:
-        #     for n in c.regions_t1:
-        #         if n not in self.solver.g.nodes():
-        #             self.ccs.remove(c)
-        #             continue
-        #
-        #     for n in c.regions_t2:
-        #         if n not in self.solver.g.nodes():
-        #             self.ccs.remove(c)
-        #             continue
+        # remove outdated regions
+        print "REMOVING OUTDATED REGIONS. BEFORE: ", len(self.ccs)
+        for c in self.ccs:
+            done = False
+            for n_ in c.regions_t1:
+                if n_ not in self.solver.g.nodes():
+                    self.ccs.remove(c)
+                    done = True
+                    break
+            
+            if not done:
+                for n_ in c.regions_t2:
+                    if n_ not in self.solver.g.nodes():
+                        self.ccs.remove(c)
+                        break
+
+        print "DONE. NOW: ", len(self.ccs)
 
         if self.order_by == 'chunk_length':
             self.ccs = sorted(self.ccs, key=lambda k: (-k.longest_chunk_length, k.t))
         else:
             self.ccs = sorted(self.ccs, key=lambda k: k.t)
-
-        # if not self.cws_sorted:
-        #     self.cws = sorted(self.cws, key=lambda k: k.c.t)
-        #     self.cws_sorted = True
 
         for i in range(start, min(start+n, len(self.ccs))):
             try:
