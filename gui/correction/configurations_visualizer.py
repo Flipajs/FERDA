@@ -43,6 +43,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.layout().addWidget(self.scroll_)
         self.graph_visu_callback = graph_visu_callback
 
+# potrebuji kontejner pro pripravene cw
+# musi byt nejako indexovany abych nemusel prochazet vzdy cely seznam
+# co se stane, pokud uzivatel upravuje widget ktery ma byt zrovna odstranen? 
+#  - checkovat po kazde uzivatelske akci a kdyztak ho odstranit
+#  - mit nejaky callback ktery by zavolal autodestrukci
+# dalsi cw by mel byt vybran tak aby se maximalizoval zisk z upravy... Tedy napr cw + 10 
+# nebo mozna staci checkovat, ze se z aktualniho cw nedostanu po max n hranach do nasledujiciho
+
         self.solver = solver
         self.vid = vid
         self.cws = []
@@ -396,7 +404,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.ccs = sorted(self.ccs, key=lambda k: (-k.longest_chunk_length, k.t))
         else:
             self.ccs = sorted(self.ccs, key=lambda k: k.t)
-
+ 
         for i in range(start, min(start+n, len(self.ccs))):
             try:
                 cw = ConfigWidget(self.solver.g, self.ccs[i], self.vid, self)
