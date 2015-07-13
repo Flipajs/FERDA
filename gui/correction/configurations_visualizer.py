@@ -31,6 +31,56 @@ import math
 VISU_MARGIN = 10
 
 
+class CaseWrapper():
+    def __init__(self, cc, solver):
+        self.cc = cc
+        self.cw = None
+        self.solver = solver
+
+    def prepare_cw(self, cw):
+        self.cw = cw
+
+
+class Cases():
+    def __init__(self):
+        self.ccs = []
+        self.cws = {}
+
+    def add(self, cc):
+        # add to container
+        # update references
+        self.ccs.append(cc)
+
+        # jak to udelat s pocitanim na pozadi?
+        # 
+
+        pass
+
+    def remove(self, cc):
+        pass
+
+    def next(self):
+        pass
+
+    def prev(self):
+        pass
+
+
+class ComputeInQueue(QtCore.QThread):
+    def __init__(self, callback):
+        super(ComputeInQueue, self).__init__()
+        self.model_ready = False
+        self.bg_model = None
+        self.callback = callback
+
+    def run(self):
+        """
+        this method is called only when you want to run it in parallel.
+        :return:
+        """
+        self.compute_model()
+
+
 class ConfigurationsVisualizer(QtGui.QWidget):
     def __init__(self, solver, vid, graph_visu_callback):
         super(ConfigurationsVisualizer, self).__init__()
@@ -399,6 +449,13 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                         break
 
         print "DONE. NOW: ", len(self.ccs)
+        self.cws = []
+        for i in reversed(range(self.scenes_widget.layout().count())):
+            it = self.scenes_widget.layout().itemAt(i)
+            self.update_node_cc_refs(it.widget().cc, None)
+            it.widget().setParent(None)
+
+        print self.t1_nodes_cc_refs, self.t2_nodes_cc_refs
 
         if self.order_by == 'chunk_length':
             self.ccs = sorted(self.ccs, key=lambda k: (-k.longest_chunk_length, k.t))
@@ -434,6 +491,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                     break
 
             self.cws.insert(i, cw)
+            self.ccs.append(new_cc)
             self.scenes_widget.layout().insertWidget(i, cw)
         else:
             if not cc_to_be_replaced:
@@ -447,6 +505,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
             cw = ConfigWidget(self.solver.g, new_cc, self.vid, self)
             self.cws.append(cw)
+            self.ccs.append(new_cc)
+            self.ccs.remove(it.widget().cc)
 
             self.scenes_widget.layout().removeItem(it)
             self.scenes_widget.layout().insertWidget(widget_i, cw)
@@ -528,6 +588,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 if it:
                     self.scenes_widget.layout().removeItem(it)
                     self.update_node_cc_refs(it.widget().c, None)
+                    self.ccs.remove(it.widget().cc)
                     self.cws.remove(it.widget())
                     it.widget().setParent(None)
                 else:

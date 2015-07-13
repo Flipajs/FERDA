@@ -196,3 +196,7 @@ class NewProjectWidget(QtGui.QWidget):
 
         if self.finish_callback:
             self.finish_callback('project_created', project)
+
+
+
+            
