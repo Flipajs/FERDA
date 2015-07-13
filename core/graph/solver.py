@@ -187,6 +187,35 @@ class Solver():
 
         return []
 
+    def get_cc_from_node(self, n):
+        node_groups = []
+        out_n, _ = num_out_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
+        if out_n == 1:
+            return node_groups
+
+        s1, s2 = get_cc(self.g, n)
+        node_groups.append(s1)
+        node_groups.append(s2)
+
+        for i in range(10):
+            new_s2 = set()
+            for n2 in s2:
+                out_n, _ = num_out_edges_of_type(self.g, n2, self.EDGE_CONFIRMED)
+                if out_n == 1:
+                    continue
+
+                _, s2_ = get_cc(self.g, n2)
+                for n_ in s2_:
+                    new_s2.add(n_)
+
+            if len(new_s2) <= 0:
+                break
+
+            s2 = list(new_s2)
+            node_groups.append(s2)
+
+        return node_groups
+
     def symmetric_cc_solver(self, n):
         s1, s2 = get_cc(self.g, n)
 

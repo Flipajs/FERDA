@@ -24,6 +24,7 @@ from core.region.fitting import Fitting
 import cv2
 from copy import deepcopy
 from config_widget import ConfigWidget
+from case_widget import CaseWidget
 from new_region_widget import NewRegionWidget
 from core.region.region import Region
 import math
@@ -32,13 +33,30 @@ VISU_MARGIN = 10
 
 
 class CaseWrapper():
-    def __init__(self, cc, solver):
-        self.cc = cc
+    def __init__(self, id, nodes_groups, suggested_solution, solver):
+        """
+        :param id:
+        :param nodes_groups: for each time, there is set of nodes, sorted by frame
+        :param cc:
+        :param solver:
+        :return:
+        """
+        self.id = id
+        self.t = np.inf
         self.cw = None
         self.solver = solver
+        self.nodes_groups = nodes_groups
+        self.process_nodes_groups()
+
+    def process_nodes_groups(self):
+        for g in self.nodes_groups:
+            for n in g:
+                if n.frame_ < self.t:
+                    self.t = n.frame_
 
     def prepare_cw(self, cw):
         self.cw = cw
+
 
 
 class Cases():
@@ -107,6 +125,15 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.ccs = []
         self.cws_sorted = False
 
+        # nodes with undecided edges
+        self.nodes = []
+        # index of active node in self.nodes
+        self.active_node_id = -1
+        # img cache indexed by frame
+        self.img_cache = {}
+        # node visualization cache indexed by node ref
+        self.node_vis_cache = {}
+
         self.t1_nodes_cc_refs = {}
         self.t2_nodes_cc_refs = {}
 
@@ -132,115 +159,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.join_regions_active = False
         self.join_regions_n1 = self.active_cw_node
 
-    def add_actions(self):
-        self.next_action = QtGui.QAction('next', self)
-        self.next_action.triggered.connect(self.next)
-        self.next_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
-        self.addAction(self.next_action)
-
-        self.prev_action = QtGui.QAction('prev', self)
-        self.prev_action.triggered.connect(self.prev)
-        self.prev_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B))
-        self.addAction(self.prev_action)
-
-        self.confirm_cc_action = QtGui.QAction('confirm', self)
-        self.confirm_cc_action.triggered.connect(self.confirm_cc)
-        self.confirm_cc_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Space))
-        self.addAction(self.confirm_cc_action)
-
-        self.partially_confirm_action = QtGui.QAction('partially confirm', self)
-        self.partially_confirm_action.triggered.connect(self.partially_confirm)
-        self.partially_confirm_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
-        self.addAction(self.partially_confirm_action)
-
-        self.fitting_action = QtGui.QAction('fitting', self)
-        self.fitting_action.triggered.connect(self.fitting)
-        self.fitting_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_F))
-        self.addAction(self.fitting_action)
-
-        self.new_region_t1_action = QtGui.QAction('new region t1', self)
-        self.new_region_t1_action.triggered.connect(partial(self.new_region, True))
-        self.new_region_t1_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
-        self.addAction(self.new_region_t1_action)
-
-        self.new_region_t2_action = QtGui.QAction('new region t2', self)
-        self.new_region_t2_action.triggered.connect(partial(self.new_region, False))
-        self.new_region_t2_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
-        self.addAction(self.new_region_t2_action)
-
-        self.remove_region_action = QtGui.QAction('remove region', self)
-        self.remove_region_action.triggered.connect(self.remove_region)
-        self.remove_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Backspace))
-        self.addAction(self.remove_region_action)
-
-        self.strong_remove_action = QtGui.QAction('strong remove', self)
-        self.strong_remove_action.triggered.connect(self.strong_remove_region)
-        self.strong_remove_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Backspace))
-        self.addAction(self.strong_remove_action)
-
-        self.join_regions_action = QtGui.QAction('join regions', self)
-        self.join_regions_action.triggered.connect(self.join_regions_pick_second)
-        self.join_regions_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_J))
-        self.addAction(self.join_regions_action)
-
-        self.action0 = QtGui.QAction('0', self)
-        self.action0.triggered.connect(partial(self.choose_node, 9))
-        self.action0.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
-        self.addAction(self.action0)
-
-        self.action1 = QtGui.QAction('1', self)
-        self.action1.triggered.connect(partial(self.choose_node, 0))
-        self.action1.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
-        self.addAction(self.action1)
-
-        self.action2 = QtGui.QAction('2', self)
-        self.action2.triggered.connect(partial(self.choose_node, 1))
-        self.action2.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_2))
-        self.addAction(self.action2)
-
-        self.action3 = QtGui.QAction('3', self)
-        self.action3.triggered.connect(partial(self.choose_node, 2))
-        self.action3.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_3))
-        self.addAction(self.action3)
-
-        self.action4 = QtGui.QAction('4', self)
-        self.action4.triggered.connect(partial(self.choose_node, 3))
-        self.action4.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_4))
-        self.addAction(self.action4)
-
-        self.action5 = QtGui.QAction('5', self)
-        self.action5.triggered.connect(partial(self.choose_node, 4))
-        self.action5.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_5))
-        self.addAction(self.action5)
-        
-        self.action6 = QtGui.QAction('6', self)
-        self.action6.triggered.connect(partial(self.choose_node, 5))
-        self.action6.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_6))
-        self.addAction(self.action6)
-        
-        self.action7 = QtGui.QAction('7', self)
-        self.action7.triggered.connect(partial(self.choose_node, 6))
-        self.action7.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_7))
-        self.addAction(self.action7)
-        
-        self.action8 = QtGui.QAction('8', self)
-        self.action8.triggered.connect(partial(self.choose_node, 7))
-        self.action8.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_8))
-        self.addAction(self.action8)
-        
-        self.action9 = QtGui.QAction('9', self)
-        self.action9.triggered.connect(partial(self.choose_node, 8))
-        self.action9.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
-        self.addAction(self.action9)
-
-        self.save_progress = QtGui.QAction('save', self)
-        self.save_progress.triggered.connect(self.save)
-        self.save_progress.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
-        self.addAction(self.save_progress)
-
-        self.d_ = None
-
-
     def save(self, autosave=False):
         wd = self.solver.project.working_directory
 
@@ -254,6 +172,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             pc.dump(self.edit_actions)
 
         print "PROGRESS SAVED"
+
+    def set_nodes_queue(self, nodes):
+        for n in nodes:
+            if n.frame_ != self.solver.start_t and n.frame_ != self.solver.end_t:
+                self.nodes.append(n)
+
+        self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
+        self.active_node_id = -1
 
     def new_region(self, is_t1):
         cw = self.active_cw
@@ -329,22 +255,79 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def get_cw_widget_at(self, i):
         return self.scenes_widget.layout().itemAt(i).widget()
 
-    def next(self):
-        if self.active_cw:
-            cw = self.active_cw
-            cw.dehighlight_node(self.active_cw_node)
-            self.active_cw_node = None
-            self.cw_set_inactive(cw)
-            self.active_cw = self.get_next_cw(cw)
-            # ADDING ACTION
-            repre = self.active_cw.c.get_node_representant()
-            self.edit_actions.append(('next', {'frame': self.active_cw.c.t,
-                                               'representant_frame': repre.frame_,
-                                               'representant_id': repre.id_,
-                                               'representant_centroid': repre.centroid()}))
+    def next_case(self):
+        if self.active_node_id + 1 < len(self.nodes):
+            self.active_node_id += 1
 
-            self.cw_set_active(self.active_cw)
-            self.scroll_.ensureWidgetVisible(self.active_cw)
+            # test if this node is still in a graph:
+            if self.nodes[self.active_node_id] not in self.solver.g.nodes():
+                self.next_case()
+                return
+
+            n = self.nodes[self.active_node_id]
+
+            # test if it is different cc:
+            if self.active_cw:
+                for g in self.active_cw.nodes_groups:
+                    for n_ in g:
+                        if n == n_:
+                            self.next_case()
+                            return
+
+            # remove previous case (if exists)
+            if self.scenes_widget.layout().count():
+                it = self.scenes_widget.layout().itemAt(0)
+                self.scenes_widget.layout().removeItem(it)
+                it.widget().setParent(None)
+
+            # add new widget
+            nodes_groups = self.solver.get_cc_from_node(n)
+            if len(nodes_groups) == 0:
+                self.next_case()
+                return
+
+            print self.active_node_id
+
+            config = self.best_greedy_config(nodes_groups)
+
+            self.active_cw = CaseWidget(self.solver.g, nodes_groups, config, self.vid, self)
+            self.scenes_widget.layout().addWidget(self.active_cw)
+
+            # TODO: ADD ACTION
+            # # ADDING ACTION
+            # repre = self.active_cw.c.get_node_representant()
+            # self.edit_actions.append(('next', {'frame': self.active_cw.c.t,
+            #                                    'representant_frame': repre.frame_,
+            #                                    'representant_id': repre.id_,
+            #                                    'representant_centroid': repre.centroid()}))
+
+    def best_greedy_config(self, nodes_groups):
+        config = {}
+        for i in range(len(nodes_groups) - 1):
+            r1 = list(nodes_groups[i])
+            r2 = list(nodes_groups[i+1])
+
+            while r1 and r2:
+                changed = False
+                values = []
+                for n1 in r1:
+                    for n2 in r2:
+                        try:
+                            s = self.solver.g[n1][n2]['score']
+                            values.append([s, n1, n2])
+                            changed = True
+                        except:
+                            pass
+
+                if not changed:
+                    break
+
+                values = sorted(values, key=lambda k: k[0])
+                r1.remove(values[0][1])
+                r2.remove(values[0][2])
+                config[values[0][1]] = values[0][2]
+
+        return config
 
     def prev(self):
         if self.active_cw:
@@ -765,6 +748,115 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         new_ccs, node_representativs = self.solver.add_virtual_region(n_new)
         self.update_ccs(new_ccs, node_representativs)
 
+    def add_actions(self):
+        self.next_action = QtGui.QAction('next', self)
+        self.next_action.triggered.connect(self.next_case)
+        self.next_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
+        self.addAction(self.next_action)
+
+        self.prev_action = QtGui.QAction('prev', self)
+        self.prev_action.triggered.connect(self.prev)
+        self.prev_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B))
+        self.addAction(self.prev_action)
+
+        self.confirm_cc_action = QtGui.QAction('confirm', self)
+        self.confirm_cc_action.triggered.connect(self.confirm_cc)
+        self.confirm_cc_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Space))
+        self.addAction(self.confirm_cc_action)
+
+        self.partially_confirm_action = QtGui.QAction('partially confirm', self)
+        self.partially_confirm_action.triggered.connect(self.partially_confirm)
+        self.partially_confirm_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
+        self.addAction(self.partially_confirm_action)
+
+        self.fitting_action = QtGui.QAction('fitting', self)
+        self.fitting_action.triggered.connect(self.fitting)
+        self.fitting_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_F))
+        self.addAction(self.fitting_action)
+
+        self.new_region_t1_action = QtGui.QAction('new region t1', self)
+        self.new_region_t1_action.triggered.connect(partial(self.new_region, True))
+        self.new_region_t1_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
+        self.addAction(self.new_region_t1_action)
+
+        self.new_region_t2_action = QtGui.QAction('new region t2', self)
+        self.new_region_t2_action.triggered.connect(partial(self.new_region, False))
+        self.new_region_t2_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
+        self.addAction(self.new_region_t2_action)
+
+        self.remove_region_action = QtGui.QAction('remove region', self)
+        self.remove_region_action.triggered.connect(self.remove_region)
+        self.remove_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Backspace))
+        self.addAction(self.remove_region_action)
+
+        self.strong_remove_action = QtGui.QAction('strong remove', self)
+        self.strong_remove_action.triggered.connect(self.strong_remove_region)
+        self.strong_remove_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Backspace))
+        self.addAction(self.strong_remove_action)
+
+        self.join_regions_action = QtGui.QAction('join regions', self)
+        self.join_regions_action.triggered.connect(self.join_regions_pick_second)
+        self.join_regions_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_J))
+        self.addAction(self.join_regions_action)
+
+        self.action0 = QtGui.QAction('0', self)
+        self.action0.triggered.connect(partial(self.choose_node, 9))
+        self.action0.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
+        self.addAction(self.action0)
+
+        self.action1 = QtGui.QAction('1', self)
+        self.action1.triggered.connect(partial(self.choose_node, 0))
+        self.action1.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
+        self.addAction(self.action1)
+
+        self.action2 = QtGui.QAction('2', self)
+        self.action2.triggered.connect(partial(self.choose_node, 1))
+        self.action2.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_2))
+        self.addAction(self.action2)
+
+        self.action3 = QtGui.QAction('3', self)
+        self.action3.triggered.connect(partial(self.choose_node, 2))
+        self.action3.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_3))
+        self.addAction(self.action3)
+
+        self.action4 = QtGui.QAction('4', self)
+        self.action4.triggered.connect(partial(self.choose_node, 3))
+        self.action4.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_4))
+        self.addAction(self.action4)
+
+        self.action5 = QtGui.QAction('5', self)
+        self.action5.triggered.connect(partial(self.choose_node, 4))
+        self.action5.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_5))
+        self.addAction(self.action5)
+
+        self.action6 = QtGui.QAction('6', self)
+        self.action6.triggered.connect(partial(self.choose_node, 5))
+        self.action6.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_6))
+        self.addAction(self.action6)
+
+        self.action7 = QtGui.QAction('7', self)
+        self.action7.triggered.connect(partial(self.choose_node, 6))
+        self.action7.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_7))
+        self.addAction(self.action7)
+
+        self.action8 = QtGui.QAction('8', self)
+        self.action8.triggered.connect(partial(self.choose_node, 7))
+        self.action8.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_8))
+        self.addAction(self.action8)
+
+        self.action9 = QtGui.QAction('9', self)
+        self.action9.triggered.connect(partial(self.choose_node, 8))
+        self.action9.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
+        self.addAction(self.action9)
+
+        self.save_progress = QtGui.QAction('save', self)
+        self.save_progress.triggered.connect(self.save)
+        self.save_progress.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
+        self.addAction(self.save_progress)
+
+        self.d_ = None
+
+
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
@@ -785,7 +877,6 @@ if __name__ == '__main__':
         i += 1
 
     cv.showMaximized()
-
 
     app.exec_()
     sys.exit()
