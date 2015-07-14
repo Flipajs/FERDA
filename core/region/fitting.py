@@ -102,7 +102,6 @@ class Fitting():
             if not changed:
                 break
 
-
         self.prepare_results()
         # self.plot_situation()
 

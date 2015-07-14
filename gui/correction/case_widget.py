@@ -35,7 +35,14 @@ class CaseWidget(QtGui.QWidget):
         self.nodes_groups = node_groups
         self.parent = parent_widget
         self.vid = vid
-        self.suggested_config = suggested_config
+
+        self.suggested_config = None
+        self.num_of_nodes = 0
+        for g in self.nodes_groups:
+            for n in g:
+                self.num_of_nodes += 1
+
+        self.process_suggested_config(suggested_config)
 
         self.node_size = 70
         self.frame_visu_margin = 100
@@ -76,16 +83,8 @@ class CaseWidget(QtGui.QWidget):
                     self.color_assignments[n] = colors_[i%len(colors_)] + (self.opacity, )
                     i += 1
 
-            l_ = []
-            for n1, n2 in self.suggested_config.iteritems():
-                l_.append([n1.frame_, n1, n2])
-
-            l_ = sorted(l_, key=lambda k: k[0])
-            for _, n1, n2 in l_:
+            for _, n1, n2 in self.suggested_config:
                 self.color_assignments[n2] = self.color_assignments[n1]
-
-            # for n, i in zip(self.nodes_groups[0], range(len(self.nodes_groups[0]))):
-            #     self.color_assignments[n] = colors_[i%len(colors_)] + (self.opacity, )
 
         self.pop_menu_node = QtGui.QMenu(self)
         self.action_remove_node = QtGui.QAction('remove', self)
@@ -134,7 +133,6 @@ class CaseWidget(QtGui.QWidget):
 
         self.layout().addWidget(self.v)
         self.v.setScene(self.scene)
-        # self.layout().addWidget(QtGui.QLabel(str(0 if c.certainty < 0.001 else c.certainty)[0:5]))
 
         self.scene.clicked.connect(self.scene_clicked)
 
@@ -151,8 +149,7 @@ class CaseWidget(QtGui.QWidget):
         self.v.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self.v, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.on_context_menu)
 
-        # TODO : zaruc, ze to bude v chronologickem poradi
-        for n1, n2 in self.suggested_config.iteritems():
+        for _, n1, n2 in self.suggested_config:
             if n1 not in self.color_assignments:
                 self.color_assignments[n1] = colors_[10]
 
@@ -176,17 +173,15 @@ class CaseWidget(QtGui.QWidget):
         return n_it
 
     def get_node_at_pos(self, node_pos):
-        node = None
+        i = 0
+        for g in self.nodes_groups:
+            for n in g:
+                if i == node_pos:
+                    return n
 
-        for key, pos in self.node_positions.iteritems():
-            if self.frame_t < key.frame_:
-                pos += len(self.nodes_groups[0])
+                i += 1
 
-            if pos == node_pos:
-                node = key
-                break
-
-        return node
+        return None
 
     def get_node_item_at_pos(self, node_pos):
         n_key = None
@@ -266,12 +261,19 @@ class CaseWidget(QtGui.QWidget):
             self.active_node = None
 
     def confirm_clicked(self):
-        if len(self.nodes_groups.regions_t1) != len(self.nodes_groups.regions_t2):
-            print "UNBALANCED configuration, ignoring confirmation"
+        if len(self.nodes_groups) < 1:
             return
 
+        w = len(self.nodes_groups[0])
+        for g in self.nodes_groups:
+            if w != len(g):
+                print "UNBALANCED configuration, ignoring confirmation"
+                return
+            w = len(g)
+
         pairs = []
-        for n1, n2 in self.nodes_groups.configurations[self.active_config]:
+
+        for _, n1, n2 in self.suggested_config:
             pairs.append((n1, n2))
 
         self.parent.confirm_edges(pairs)
@@ -288,22 +290,6 @@ class CaseWidget(QtGui.QWidget):
 
     def get_node_color(self, n):
         return self.color_assignments[n]
-        # c = colors_[20] + (self.opacity, )
-        #
-        # for c1, c2 in self.suggested_config.iteritems():
-        #     if c2 == n:
-        #         if c1 not in self.color_assignments:
-        #             self.color_assignments[c1] = self.get_node_color(c1)
-        #         c = self.color_assignments[c1]
-        #         break
-        #     if c1 == n:
-        #         if n not in self.color_assignments:
-        #             self.color_assignments[n] = self.get_node_color(n)
-        #
-        #         c = self.color_assignments[n]
-        #         break
-        #
-        # return c
 
     def draw_frame(self):
         centroids = []
@@ -325,7 +311,7 @@ class CaseWidget(QtGui.QWidget):
 
             self.crop_offset = roi.top_left_corner()
             crop = np.copy(im[roi.y():roi.y()+roi.height(), roi.x():roi.x()+roi.width(), :])
-            cv2.putText(crop, str(self.frame_t), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
+            cv2.putText(crop, str(self.frame_t+i), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
 
             self.frames_layout.addWidget(get_image_label(crop))
 
@@ -341,13 +327,16 @@ class CaseWidget(QtGui.QWidget):
 
             self.frame_cache.append(im)
 
-    def mark_merged(self, t_reversed=None):
-        if len(self.nodes_groups.regions_t1) > 0 and len(self.nodes_groups.regions_t2) > 0:
+    def mark_merged(self, region, t_reversed=None):
+        merged_t = region.frame_ - self.frame_t
+        model_t = merged_t + 1 if t_reversed else merged_t - 1
+
+        if len(self.nodes_groups[model_t]) > 0 and len(self.nodes_groups[merged_t]) > 0:
             if t_reversed is None:
                 avg_area_c1 = 0
                 for c1 in self.nodes_groups.regions_t1:
                     avg_area_c1 += c1.area()
-                avg_area_c1 /= float(len(self.nodes_groups.regions_t1))
+                avg_area_c1 /= float(len(self.nodes1_groups.regions_t1))
 
                 avg_area_c2 = 0
                 for c2 in self.nodes_groups.regions_t2:
@@ -359,8 +348,8 @@ class CaseWidget(QtGui.QWidget):
                 if avg_area_c1 > avg_area_c2:
                     t_reversed = True
 
-            t1_ = self.nodes_groups.regions_t2 if t_reversed else self.nodes_groups.regions_t1
-            t2_ = self.nodes_groups.regions_t1 if t_reversed else self.nodes_groups.regions_t2
+            t1_ = self.nodes_groups[model_t]
+            t2_ = self.nodes_groups[merged_t]
 
             reg = []
             for c2 in t2_:
@@ -382,7 +371,9 @@ class CaseWidget(QtGui.QWidget):
             f = Fitting(reg, objects, num_of_iterations=10)
             f.fit()
 
-            self.parent.merged(f.animals, t_reversed, self.nodes_groups)
+            print "PREVIOUS FITTING FUNCTION USED"
+
+            return [self.parent.solver.merged(f.animals, region, t_reversed), f.animals]
 
     def partially_confirm(self):
         conf = self.nodes_groups.configurations[self.active_config]
@@ -426,9 +417,20 @@ class CaseWidget(QtGui.QWidget):
         for i in range(len(self.nodes_groups) - 1):
             for n in self.nodes_groups[i]:
                 for _, n2 in self.G.out_edges(n):
+                    if n2 not in self.node_positions:
+                        print "n2 not in node_positions case_widget.py", n.frame_, n2.frame_
+                        continue
+
                     line_ = QtGui.QGraphicsLineItem(self.node_size + self.w_*i,
                                                     self.node_positions[n]*self.h_ + self.h_/2,
                                                     self.w_ + i * self.w_,
                                                     self.node_positions[n2]*self.h_ + self.h_/2)
                     line_.setPen(self.edge_pen)
                     self.scene.addItem(line_)
+
+    def process_suggested_config(self, suggested_config):
+        l_ = []
+        for n1, n2 in suggested_config.iteritems():
+            l_.append([n1.frame_, n1, n2])
+
+        self.suggested_config = sorted(l_, key=lambda k: k[0])

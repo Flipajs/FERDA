@@ -44,10 +44,11 @@ class Solver():
         self.nodes_in_t.setdefault(n.frame_, []).append(n)
 
     def remove_node(self, n):
-        self.g.remove_node(n)
         self.nodes_in_t[n.frame_].remove(n)
         if not self.nodes_in_t[n.frame_]:
             del self.nodes_in_t[n.frame_]
+
+        self.g.remove_node(n)
 
         # maybe we need to shrink time boundaries...
         if self.end_t == n.frame_ or self.start_t == n.frame_:
@@ -193,26 +194,31 @@ class Solver():
         if out_n == 1:
             return node_groups
 
-        s1, s2 = get_cc(self.g, n)
+        s1, s2 = get_cc_without_confirmed(self.g, n)
         node_groups.append(s1)
         node_groups.append(s2)
 
         for i in range(10):
+            new_s1 = set()
             new_s2 = set()
             for n2 in s2:
-                out_n, _ = num_out_edges_of_type(self.g, n2, self.EDGE_CONFIRMED)
-                if out_n == 1:
-                    continue
+                a1, a2 = get_cc_without_confirmed(self.g, n2)
 
-                _, s2_ = get_cc(self.g, n2)
-                for n_ in s2_:
+                for n_ in a2:
                     new_s2.add(n_)
+
+                for n_ in a1:
+                    new_s1.add(n_)
 
             if len(new_s2) <= 0:
                 break
 
+            node_groups[len(node_groups)-1] = list(new_s1)
             s2 = list(new_s2)
             node_groups.append(s2)
+
+        for i in range(len(node_groups)):
+            node_groups[i] = list(set(node_groups[i]))
 
         return node_groups
 
@@ -434,26 +440,27 @@ class Solver():
         return new_ccs, node_representative
 
     def confirm_edges(self, edge_pairs):
-        affected = []
+        affected = set()
         for (n1, n2) in edge_pairs:
-            affected.append(n1)
-            affected.append(n2)
+            affected.add(n1)
+            affected.add(n2)
 
             for _, n2_ in self.g.out_edges(n1):
                 if n2_ != n2:
                     self.g.remove_edge(n1, n2_)
-                    affected.append(n2_)
+                    affected.add(n2_)
                     for n1_, _ in self.g.in_edges(n2_):
                         if n1_ != n1:
-                            affected.append(n1_)
+                            affected.add(n1_)
 
             for n1_, _ in self.g.in_edges(n2):
                 if n1_ != n1:
                     self.g.remove_edge(n1_, n2)
-                    affected.append(n1_)
+                    affected.add(n1_)
 
             self.g[n1][n2]['type'] = self.EDGE_CONFIRMED
 
+        affected = list(affected)
         all_affected = list(self.simplify(affected[:], return_affected=True))
         all_affected = list(set(all_affected + affected))
         self.simplify_to_chunks()
@@ -534,48 +541,37 @@ class Solver():
 
         return region
 
-    def merged(self, new_regions, replace, to_fit, t_reversed):
+    def merged(self, new_regions, replace, t_reversed):
         for n in new_regions:
             self.add_node(n)
 
-        to_connect = set()
+        disassembled = []
         if t_reversed:
-            for n in replace:
-                for n1, _, d in self.g.in_edges(n, data=True):
-                    # because if the second node from chunk (n1) is in the consecutive frame, then you just take this region...
-                    if 'chunk_ref' in d and n.frame_ - 1 > n1.frame_:
-                        n1 = self.disassemble_chunk(n1, d['chunk_ref'], t_reversed)
+            for n1, _, d in self.g.in_edges(replace, data=True):
+                # because if the second node from chunk (n1) is in the consecutive frame, then you just take this region...
+                if 'chunk_ref' in d and n.frame_ - 1 > n1.frame_:
+                    n1 = self.disassemble_chunk(n1, d['chunk_ref'], t_reversed)
 
-                    to_connect.add(n1)
+                disassembled.append(n1)
         else:
-            for n in replace:
-                for _, n2, d in self.g.out_edges(n, data=True):
-                    if 'chunk_ref' in d and n.frame_ + 1 < n2.frame_:
-                        n2 = self.disassemble_chunk(n2, d['chunk_ref'], t_reversed)
+            for _, n2, d in self.g.out_edges(replace, data=True):
+                if 'chunk_ref' in d and n.frame_ + 1 < n2.frame_:
+                    n2 = self.disassemble_chunk(n2, d['chunk_ref'], t_reversed)
 
-                    to_connect.add(n2)
+                disassembled.append(n2)
 
-        for n in replace:
-            self.remove_node(n)
+        self.remove_node(replace)
 
         r_t_minus, r_t, r_t_plus = self.get_regions_around(new_regions[0].frame_)
         self.add_edges_(r_t_minus, r_t)
         self.add_edges_(r_t, r_t_plus)
 
-        regions_t1 = new_regions if t_reversed else to_fit
-        regions_t2 = to_fit if t_reversed else new_regions
-        self.add_edges_(regions_t1, regions_t2)
+        if len(disassembled) != 1:
+            print "DISASSEMBLE"
+            return None
+            # raise Exception("Multiple disassembled regions in merged in solver.py")
 
-        affected = list(regions_t1)[:] + list(regions_t2)[:]
-
-        regions_t1 = to_connect if t_reversed else new_regions
-        regions_t2 = new_regions if t_reversed else to_connect
-        self.add_edges_(regions_t1, regions_t2)
-
-        new_ccs, node_representative = self.get_new_ccs(list(affected) + list(regions_t2))
-        new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
-
-        return new_ccs, node_representative
+        return disassembled[0]
 
     def get_regions_around(self, t):
         # returns (list, list, list) of nodes in t_minus, t, t+plus

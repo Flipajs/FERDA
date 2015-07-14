@@ -123,6 +123,8 @@ class ResultsWidget(QtGui.QWidget):
 
         self.speedSlider = QtGui.QSlider()
         self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
+        self.speedSlider.setMinimum(0)
+        self.speedSlider.setMaximum(99)
 
         self.backward = QtGui.QPushButton('back')
         self.backward.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B))

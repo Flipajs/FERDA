@@ -7,6 +7,7 @@ app = QtGui.QApplication(sys.argv)
 # ex = ferda_window.FerdaControls()
 ex = main_window.MainWindow()
 ex.showMaximized()
+ex.setFocus()
 
 from core.project import Project
 proj = Project()
