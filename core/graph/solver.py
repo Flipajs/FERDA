@@ -13,7 +13,7 @@ import numpy as np
 from chunk import Chunk
 from configuration import Configuration
 import scipy
-
+from core.log import LogCategories, ActionNames
 
 class Solver():
     EDGE_CONFIRMED = 'c'
@@ -37,7 +37,7 @@ class Solver():
         self.cc_id = 0
 
     def add_node(self, n):
-        print "ADDING NODE ", n.frame_, n
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, n)
         self.start_t = min(self.start_t, n.frame_)
         self.end_t = max(self.end_t, n.frame_)
 
@@ -45,7 +45,15 @@ class Solver():
         self.nodes_in_t.setdefault(n.frame_, []).append(n)
 
     def remove_node(self, n):
-        print "REMOVING NODE ", n.frame_, n
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, n)
+
+        # save all edges
+        for n1, n2, d in self.g.in_edges(n, data=True):
+            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
+
+        for n1, n2, d in self.g.out_edges(n, data=True):
+            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
+
         self.nodes_in_t[n.frame_].remove(n)
         if not self.nodes_in_t[n.frame_]:
             del self.nodes_in_t[n.frame_]
@@ -55,6 +63,15 @@ class Solver():
         # maybe we need to shrink time boundaries...
         if self.end_t == n.frame_ or self.start_t == n.frame_:
             self.update_time_boundaries()
+
+    def remove_edge(self, n1, n2):
+        d = self.g.get_edge_data(n1, n2)
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
+        self.g.remove_edge(n1, n2)
+
+    def add_edge(self, n1, n2, **data):
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_EDGE, data)
+        self.g.add_edge(n1, n2, data)
 
     def update_time_boundaries(self):
         self.start_t = np.inf
@@ -110,7 +127,7 @@ class Solver():
 
                 if d < self.max_distance:
                     s, ds, multi, antlike = self.assignment_score(r_t1, r_t2)
-                    self.g.add_edge(r_t1, r_t2, type='d', score=-s)
+                    self.add_edge(r_t1, r_t2, type='d', score=-s)
 
     def add_edges_to_t(self, t):
         if t-1 in self.nodes_in_t:
@@ -173,7 +190,7 @@ class Solver():
             if cert > S_.solver.certainty_threshold:
                 for _, n2_ in self.g.out_edges(n1):
                     if n2_ != n2:
-                        self.g.remove_edge(n1, n2_)
+                        self.remove_edge(n1, n2_)
                         affected.append(n2_)
                         for n1_, _ in self.g.in_edges(n2_):
                             if n1_ != n:
@@ -181,7 +198,7 @@ class Solver():
 
                 for n1_, _ in self.g.in_edges(n2):
                     if n1_ != n1:
-                        self.g.remove_edge(n1_, n2)
+                        self.remove_edge(n1_, n2)
                         affected.append(n1_)
 
                 self.g[n1][n2]['type'] = self.EDGE_CONFIRMED
@@ -252,12 +269,12 @@ class Solver():
                     if n1 and n2:
                         for _, n2_ in self.g.out_edges(n1):
                             if n2_ != n2:
-                                self.g.remove_edge(n1, n2_)
+                                self.remove_edge(n1, n2_)
                                 affected.append(n2_)
 
                         for n1_, _ in self.g.in_edges(n2):
                             if n1_ != n1:
-                                self.g.remove_edge(n1_, n2)
+                                self.remove_edge(n1_, n2)
                                 affected.append(n1_)
 
                         affected.append(n1)
@@ -317,15 +334,19 @@ class Solver():
 
         #TODO: get rid of this hack... also in antlikness test in solver.py
         # flag for virtual region
-        if r1.min_intensity_ == -2:
-            q1 = 1.0
-        else:
-            q1 = self.antlikeness.get_prob(r1)[1]
+        q1 = self.antlikeness.get_prob(r1)[1]
+        try:
+            if r1.is_virtual:
+                q1 = 1.0
+        except:
+            pass
 
-        if r2.min_intensity_ == -2:
-            q2 = 1.0
-        else:
-            q2 = self.antlikeness.get_prob(r2)[1]
+        q2 = self.antlikeness.get_prob(r2)[1]
+        try:
+            if r2.is_virtual:
+                q2 = 1.0
+        except:
+            pass
 
         antlikeness_diff = 1 - abs(q1-q2)
         s = ds * antlikeness_diff
@@ -333,6 +354,7 @@ class Solver():
         return s, ds, 0, antlikeness_diff
 
     def simplify_to_chunks(self):
+        # TODO: add option to go through only small set of nodes
         for n in self.g.nodes():
             in_num, in_n = num_in_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
             out_num, out_n = num_out_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
@@ -352,7 +374,7 @@ class Solver():
                 chunk.add_region(n)
 
                 self.remove_node(n)
-                self.g.add_edge(in_n, out_n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+                self.add_edge(in_n, out_n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
 
     def get_ccs(self, queue=[]):
         if not queue:
@@ -450,7 +472,7 @@ class Solver():
 
             for _, n2_ in self.g.out_edges(n1):
                 if n2_ != n2:
-                    self.g.remove_edge(n1, n2_)
+                    self.remove_edge(n1, n2_)
                     affected.add(n2_)
                     for n1_, _ in self.g.in_edges(n2_):
                         if n1_ != n1:
@@ -458,7 +480,7 @@ class Solver():
 
             for n1_, _ in self.g.in_edges(n2):
                 if n1_ != n1:
-                    self.g.remove_edge(n1_, n2)
+                    self.remove_edge(n1_, n2)
                     affected.add(n1_)
 
             self.g[n1][n2]['type'] = self.EDGE_CONFIRMED
@@ -489,12 +511,12 @@ class Solver():
             reduced = chunk.remove_from_end()
             if not reduced:
                 region = self.get_chunk_node_partner(n)
-                self.g.remove_edge(n, region)
+                self.remove_edge(n, region)
         else:
             reduced = chunk.remove_from_beginning()
             if not reduced:
                 region = self.get_chunk_node_partner(n)
-                self.g.remove_edge(region, n)
+                self.remove_edge(region, n)
 
         # if the chunk is only n1, n2  and nothing between in reduced form, the reduced is None and the disassembled region is in region var
         if reduced:
@@ -534,11 +556,11 @@ class Solver():
             self.add_node(region)
 
             if reversed_dir:
-                self.g.add_edge(n, region, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+                self.add_edge(n, region, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
                 _, _, t_plus = self.get_regions_around(region.frame_)
                 self.add_edges_([region], t_plus)
             else:
-                self.g.add_edge(region, n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+                self.add_edge(region, n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
                 t_minus, _, _ = self.get_regions_around(region.frame_)
                 self.add_edges_(t_minus, [region])
 
@@ -566,6 +588,19 @@ class Solver():
         self.remove_node(replace)
 
         r_t_minus, r_t, r_t_plus = self.get_regions_around(new_regions[0].frame_)
+
+        # TEST
+        for n in new_regions:
+            found = False
+            for r in r_t:
+                if r == n:
+                    found = True
+                    break
+
+            if not found:
+                raise Exception('new regions not found')
+
+
         self.add_edges_(r_t_minus, r_t)
         self.add_edges_(r_t, r_t_plus)
 

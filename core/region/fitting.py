@@ -142,6 +142,7 @@ class Fitting():
 
             self.animals[a_id].pts_ = np.asarray(np.round(pts_), dtype=np.uint32)
             self.animals[a_id].centroid_ = self.trans_helpers[a_id].centroid
+            self.animals[a_id].is_virtual = True
 
     def plot_situation(self):
         plt.close()

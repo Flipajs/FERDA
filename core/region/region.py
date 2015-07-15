@@ -43,6 +43,7 @@ class Region():
         self.frame_ = frame
         self.id_ = id
         self.contour_ = None
+        self.is_virtual = False
 
     def from_dict_(self, data):
         pts = []
