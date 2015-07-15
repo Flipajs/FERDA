@@ -89,7 +89,7 @@ class Visualization:
 class Solver:
     __metaclass__ = SettingsType
     max_edge_distance_in_ant_length = Item('solver/max_edge_distance_in_ant_length', 2.5, 'Used to simplify graph based on distance between nodes')
-    antlikeness_threshold = Item('solver/antlikeness_threshold', 0.2, 'removes all nodes with antlikness below threshold')
+    antlikeness_threshold = Item('solver/antlikeness_threshold', 0.1, 'removes all nodes with antlikness below threshold')
     certainty_threshold = Item('solver/certainty_threshold', 0.5, 'connected component can be solved ony if certainty is higher then this threshold')
 
 class Parallelization:

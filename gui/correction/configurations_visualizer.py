@@ -128,12 +128,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
         self.active_node_id = 0
 
-    def new_region(self, is_t1):
+    def new_region(self, t_offset):
         cw = self.active_cw
-        im = cw.crop_t1_widget.pixmap() if is_t1 else cw.crop_t2_widget.pixmap()
-        frame = cw.frame_t if is_t1 else cw.frame_t+1
+        im = cw.crop_pixmaps_cache[t_offset]
 
-        w = NewRegionWidget(im, cw.crop_offset, frame, self.new_region_finished)
+        w = NewRegionWidget(im, cw.crop_offset, cw.frame_t + t_offset, self.new_region_finished)
         self.d_ = QtGui.QDialog()
         self.d_.setLayout(QtGui.QVBoxLayout())
         self.d_.layout().addWidget(w)
@@ -156,9 +155,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             # flag for virtual region
             r.min_intensity_ = -2
 
-            new_ccs, node_representatives = self.solver.add_virtual_region(r)
-
-            self.update_ccs(new_ccs, node_representatives)
+            self.solver.add_virtual_region(r)
+            self.next_case()
 
     def remove_region(self, node=None):
         if not node:
@@ -244,6 +242,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.active_cw = CaseWidget(self.solver.g, nodes_groups, config, self.vid, self)
             self.active_cw_node = None
             self.scenes_widget.layout().addWidget(self.active_cw)
+
+            # min_t = self.active_cw.frame_t
+            # max_t = min_t + 10
+            # self.graph_visu_callback(min_t - math.ceil(VISU_MARGIN / 5.), max_t + VISU_MARGIN)
 
             # TODO: ADD ACTION
             # # ADDING ACTION
@@ -394,40 +396,28 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 merged = self.active_cw_node
                 model = None
                 self.active_cw_node = None
-                for i in range(chunk_ref.length()+3):
+
+                # TODO: add to settings
+                for i in range(min(chunk_ref.length()+3, 15)):
                     print i
                     if i == 0:
-
-                        model = []
-                        merged_t = merged.frame_ - self.active_cw.frame_t
-                        model_t = merged_t + 1 if t_reversed else merged_t - 1
-
-                        t1_ = self.active_cw.nodes_groups[model_t]
-                        for c1 in t1_:
-                            a = deepcopy(c1)
-                            if t_reversed:
-                                a.frame_ -= 1
-                            else:
-                                a.frame_ += 1
-
-                            model.append(a)
-
-                        # res = self.active_cw.mark_merged(merged, t_reversed)
-                        merged = self.solver.merged(model, merged, t_reversed)
-                        # merged = res[0]
-                        model = deepcopy(model)
+                        print "MERGED ", merged.frame_
+                        res = self.active_cw.mark_merged(merged, t_reversed)
+                        merged = res[0]
+                        model = deepcopy(res[1])
                     else:
+                        print "MERGED ", merged.frame_
                         f = Fitting(merged, model, num_of_iterations=10)
                         f.fit()
 
                         model = deepcopy(f.animals)
                         merged = self.solver.merged(f.animals, merged, t_reversed)
 
-                    for m in model:
-                        m.frame_ += -1 if t_reversed else 1
-
                     if not merged:
                         break
+
+                    for m in model:
+                        m.frame_ += -1 if t_reversed else 1
 
                 print "CHUNK FINISHED"
             else:
@@ -800,12 +790,12 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.addAction(self.fitting_rev_action)
 
         self.new_region_t1_action = QtGui.QAction('new region t1', self)
-        self.new_region_t1_action.triggered.connect(partial(self.new_region, True))
+        self.new_region_t1_action.triggered.connect(partial(self.new_region, 0))
         self.new_region_t1_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
         self.addAction(self.new_region_t1_action)
 
         self.new_region_t2_action = QtGui.QAction('new region t2', self)
-        self.new_region_t2_action.triggered.connect(partial(self.new_region, False))
+        self.new_region_t2_action.triggered.connect(partial(self.new_region, 1))
         self.new_region_t2_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
         self.addAction(self.new_region_t2_action)
 

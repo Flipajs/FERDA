@@ -64,8 +64,10 @@ class CaseWidget(QtGui.QWidget):
 
         self.active_config = 0
         self.frame_cache = []
+        self.crop_pixmaps_cache = []
 
         self.crop_visualize = True
+        self.crop_offset = None
 
         self.node_positions = {}
 
@@ -97,10 +99,10 @@ class CaseWidget(QtGui.QWidget):
         self.action_mark_merged.triggered.connect(self.mark_merged)
 
         self.new_region_t1 = QtGui.QAction('new region t1', self)
-        self.new_region_t1.triggered.connect(partial(self.parent.new_region, True))
+        self.new_region_t1.triggered.connect(partial(self.parent.new_region, 0))
 
         self.new_region_t2 = QtGui.QAction('new region t2', self)
-        self.new_region_t2.triggered.connect(partial(self.parent.new_region, False))
+        self.new_region_t2.triggered.connect(partial(self.parent.new_region, 1))
 
         self.connect_with = QtGui.QAction('connect with and confirm', self)
         self.connect_with.triggered.connect(self.connect_with_)
@@ -121,12 +123,18 @@ class CaseWidget(QtGui.QWidget):
         self.scene = MyScene()
 
         self.edge_pen = QtGui.QPen(QtCore.Qt.SolidLine)
-        self.edge_pen.setColor(QtGui.QColor(0, 0, 0, 0x38))
+        self.edge_pen.setColor(QtGui.QColor(0, 0, 0, 0x16))
         self.edge_pen.setWidth(1)
 
         self.strong_edge_pen = QtGui.QPen(QtCore.Qt.SolidLine)
         self.strong_edge_pen.setColor(QtGui.QColor(0, 255, 0, 0x78))
         self.strong_edge_pen.setWidth(2)
+
+        self.node_bg_color = QtGui.QColor(230, 230, 230, 230)
+
+        self.chunk_highlight_pen = QtGui.QPen(QtCore.Qt.DotLine)
+        self.chunk_highlight_pen.setColor(QtGui.QColor(255, 0, 0, 0x78))
+        self.chunk_highlight_pen.setWidth(2)
 
         self.frames_layout = QtGui.QHBoxLayout()
         self.layout().addLayout(self.frames_layout)
@@ -138,7 +146,7 @@ class CaseWidget(QtGui.QWidget):
 
         self.cache_frames()
         self.draw_scene()
-        self.draw_frame()
+        self.draw_frames()
 
         self.score_list = QtGui.QVBoxLayout()
         self.layout().addLayout(self.score_list)
@@ -161,8 +169,27 @@ class CaseWidget(QtGui.QWidget):
             self.config_lines.append(line_)
             self.scene.addItem(line_)
 
+        self.highlight_chunk_nodes()
+
     def remove_node_(self):
         self.parent.remove_region(self.active_node)
+
+    def highlight_chunk_nodes(self):
+        highlight_line_len = 50
+
+        for g in self.nodes_groups:
+            for n in g:
+                is_ch, t_rev, _ = self.parent.solver.is_chunk(n)
+                if is_ch:
+                    t = n.frame_ - self.frame_t
+
+                    if t_rev:
+                        line_ = QtGui.QGraphicsLineItem(self.w_ * t - highlight_line_len, self.node_positions[n]*self.h_ + self.h_/2, self.w_ * t, self.node_positions[n]*self.h_ + self.h_/2)
+                    else:
+                        line_ = QtGui.QGraphicsLineItem(self.node_size + self.w_ * t, self.node_positions[n]*self.h_ + self.h_/2, self.node_size + self.w_ * t + highlight_line_len, self.node_positions[n]*self.h_ + self.h_/2)
+
+                    line_.setPen(self.chunk_highlight_pen)
+                    self.scene.addItem(line_)
 
     def get_node_item(self, node):
         n_it = None
@@ -291,7 +318,7 @@ class CaseWidget(QtGui.QWidget):
     def get_node_color(self, n):
         return self.color_assignments[n]
 
-    def draw_frame(self):
+    def draw_frames(self):
         centroids = []
         for n in self.nodes_groups[0]:
             centroids.append(n.centroid())
@@ -301,7 +328,7 @@ class CaseWidget(QtGui.QWidget):
 
         h_, w_, _ = self.frame_cache[0].shape
         roi = ROI(max(0, roi.y() - m), max(0, roi.x() - m), min(roi.height() + 2*m, h_), min(roi.width() + 2*m, w_))
-
+        self.crop_offset = roi.top_left_corner()
         for i in range(len(self.nodes_groups)):
             im = self.frame_cache[i].copy()
 
@@ -309,11 +336,12 @@ class CaseWidget(QtGui.QWidget):
                 for r in self.nodes_groups[i]:
                     im = draw_points(im, r.pts(), color=self.get_node_color(r))
 
-            self.crop_offset = roi.top_left_corner()
             crop = np.copy(im[roi.y():roi.y()+roi.height(), roi.x():roi.x()+roi.width(), :])
             cv2.putText(crop, str(self.frame_t+i), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
 
-            self.frames_layout.addWidget(get_image_label(crop))
+            w = get_image_label(crop)
+            self.frames_layout.addWidget(w)
+            self.crop_pixmaps_cache.append(w.pixmap())
 
     def cache_frames(self):
         for i in range(len(self.nodes_groups)):
@@ -352,11 +380,11 @@ class CaseWidget(QtGui.QWidget):
             t2_ = self.nodes_groups[merged_t]
 
             reg = []
-            for c2 in t2_:
-                if not reg:
-                    reg = deepcopy(c2)
-                else:
-                    reg.pts_ = np.append(reg.pts_, c2.pts_, axis=0)
+            # for c2 in t2_:
+            #     if not reg:
+            #         reg = deepcopy(c2)
+            #     else:
+            #         reg.pts_ = np.append(reg.pts_, c2.pts_, axis=0)
 
             objects = []
             for c1 in t1_:
@@ -368,7 +396,7 @@ class CaseWidget(QtGui.QWidget):
 
                 objects.append(a)
 
-            f = Fitting(reg, objects, num_of_iterations=10)
+            f = Fitting(region, objects, num_of_iterations=10)
             f.fit()
 
             print "PREVIOUS FITTING FUNCTION USED"
@@ -400,6 +428,9 @@ class CaseWidget(QtGui.QWidget):
             h_pos = 0
             for n in self.nodes_groups[i]:
                 self.node_positions[n] = h_pos
+
+                self.scene.addRect(self.w_*i, h_pos*self.h_, self.node_size, self.node_size, self.node_bg_color, self.node_bg_color)
+
                 if i == 0:
                     it = self.scene.addPixmap(self.get_im(n))
                 else:
@@ -407,7 +438,8 @@ class CaseWidget(QtGui.QWidget):
                     it = self.scene.addPixmap(self.get_im(n, t1=False))
 
                 self.it_nodes[it] = n
-                it.setPos(self.w_ * i, h_pos * self.h_)
+                off = (self.node_size - it.boundingRect().width()) / 2
+                it.setPos(self.w_ * i + off, h_pos * self.h_ + off)
                 h_pos += 1
 
             max_h_pos = max(max_h_pos, h_pos)

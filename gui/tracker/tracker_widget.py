@@ -85,8 +85,10 @@ class TrackerWidget(QtGui.QWidget):
             if n.frame_ == 0:
                 t1_nodes.append(n)
 
-        self.solver.simplify()
-        self.solver.simplify_to_chunks()
+
+        print "TEST"
+        # self.solver.simplify()
+        # self.solver.simplify_to_chunks()
 
         nodes_ = self.solver.g.nodes()
         self.certainty_visualizer.set_nodes_queue(nodes_)

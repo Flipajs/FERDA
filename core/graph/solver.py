@@ -37,6 +37,7 @@ class Solver():
         self.cc_id = 0
 
     def add_node(self, n):
+        print "ADDING NODE ", n.frame_, n
         self.start_t = min(self.start_t, n.frame_)
         self.end_t = max(self.end_t, n.frame_)
 
@@ -44,6 +45,7 @@ class Solver():
         self.nodes_in_t.setdefault(n.frame_, []).append(n)
 
     def remove_node(self, n):
+        print "REMOVING NODE ", n.frame_, n
         self.nodes_in_t[n.frame_].remove(n)
         if not self.nodes_in_t[n.frame_]:
             del self.nodes_in_t[n.frame_]
@@ -214,6 +216,7 @@ class Solver():
                 break
 
             node_groups[len(node_groups)-1] = list(new_s1)
+            # node_groups[len(node_groups)-1] = list(set(node_groups[len(node_groups)-1]))
             s2 = list(new_s2)
             node_groups.append(s2)
 
@@ -567,7 +570,7 @@ class Solver():
         self.add_edges_(r_t, r_t_plus)
 
         if len(disassembled) != 1:
-            print "DISASSEMBLE"
+            print "DISASSEMBLE", disassembled[0].frame_, disassembled[1].frame_
             return None
             # raise Exception("Multiple disassembled regions in merged in solver.py")
 

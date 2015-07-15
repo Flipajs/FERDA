@@ -36,7 +36,6 @@ class BackgroundComputer():
         self.check_parallelization_timer.timeout.connect(self.check_parallelization)
         self.check_parallelization_timer.start(100)
 
-
     def set_frames_in_row(self):
         vid = get_auto_video_manager(self.project.video_paths)
         frame_num = int(vid.total_frame_count())
@@ -97,8 +96,8 @@ class BackgroundComputer():
                 end_nodes_prev = end_nodes
 
         self.solver.update_nodes_in_t_refs()
-        # self.solver.simplify(nodes_to_process)
-        # self.solver.simplify_to_chunks()
+        self.solver.simplify(nodes_to_process)
+        self.solver.simplify_to_chunks()
 
         self.finished_callback(self.solver)
 
