@@ -238,8 +238,12 @@ class CaseWidget(QtGui.QWidget):
             if 'score' in d:
                 best_in = min(best_in, d['score'])
 
+        is_ch, _, ch = self.parent.solver.is_chunk(n)
+        ch_info = ''
+        if is_ch:
+            ch_info = str(ch)
         QtGui.QMessageBox.about(self, "My message box",
-                                "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s" % (n.area(), str(n.centroid()), n.margin_, antlikeness, str(virtual), str(best_in), str(best_out)))
+                                "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (n.area(), str(n.centroid()), n.margin_, antlikeness, str(virtual), str(best_in), str(best_out), ch_info))
 
     def row_changed(self, off):
         if -1 < self.active_row + off < self.cols:

@@ -45,14 +45,14 @@ class Solver():
         self.nodes_in_t.setdefault(n.frame_, []).append(n)
 
     def remove_node(self, n):
-        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, n)
-
         # save all edges
         for n1, n2, d in self.g.in_edges(n, data=True):
             self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
 
         for n1, n2, d in self.g.out_edges(n, data=True):
             self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
+
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, n)
 
         self.nodes_in_t[n.frame_].remove(n)
         if not self.nodes_in_t[n.frame_]:
@@ -70,7 +70,11 @@ class Solver():
         self.g.remove_edge(n1, n2)
 
     def add_edge(self, n1, n2, **data):
-        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_EDGE, data)
+        self.project.log.add(LogCategories.GRAPH_EDIT,
+                             ActionNames.ADD_EDGE,
+                             {'n1': n1,
+                              'n2': n2,
+                              'data': data})
         self.g.add_edge(n1, n2, data)
 
     def update_time_boundaries(self):
@@ -353,13 +357,18 @@ class Solver():
 
         return s, ds, 0, antlikeness_diff
 
-    def simplify_to_chunks(self):
+    def simplify_to_chunks(self, nodes=None):
         # TODO: add option to go through only small set of nodes
-        for n in self.g.nodes():
+        if not nodes:
+            nodes = self.g.nodes()
+
+        for n in nodes:
             in_num, in_n = num_in_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
             out_num, out_n = num_out_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
 
             if out_num == 1 and in_num == 1:
+                self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ASSEMBLE_CHUNK, {'n': n})
+
                 if 'chunk_ref' in self.g[in_n][n]:
                     chunk = self.g[in_n][n]['chunk_ref']
                 else:
@@ -369,7 +378,10 @@ class Solver():
                 if 'chunk_ref' in self.g[n][out_n]:
                     second_chunk = self.g[n][out_n]['chunk_ref']
 
+                    # TODO: graph problems
+                    # TODO: change refs, remove nodes...
                     chunk.merge(second_chunk)
+                    self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.MERGE_CHUNKS, {'n': n})
 
                 chunk.add_region(n)
 
@@ -506,7 +518,12 @@ class Solver():
 
         return None
 
-    def disassemble_chunk(self, n, chunk, reversed_dir):
+    def disassemble_chunk(self, n, chunk=None, reversed_dir=None):
+        if not chunk:
+            _, reversed_dir, chunk = self.is_chunk(n)
+
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.DISASSEMBLE_CHUNK, {'n': n})
+
         if reversed_dir:
             reduced = chunk.remove_from_end()
             if not reduced:
@@ -565,6 +582,10 @@ class Solver():
                 self.add_edges_(t_minus, [region])
 
         return region
+
+    def split_chunks(self, n, chunk):
+        raise Exception("split_chunks in solver.py not implemented yet!!!")
+        # _, _, chunk = self.is_chunk(n)
 
     def merged(self, new_regions, replace, t_reversed):
         for n in new_regions:

@@ -10,8 +10,15 @@ class Chunk():
         self.start_t = np.inf
         self.end_t = -1
         self.is_sorted = False
+        self.start_n = None
+        self.end_n = None
+
+    def __str__(self):
+        s = "CHUNK --- start_t: "+str(self.start_t)+" end_t: "+str(self.end_t)+" reduced_len: "+str(len(self.reduced))+"\n"
+        return s
 
     def add_region(self, r):
+        # if r.frame_ < self.start_t:
         self.start_t = min(self.start_t, r.frame_)
         self.end_t = max(self.end_t, r.frame_)
 
