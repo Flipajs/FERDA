@@ -77,11 +77,8 @@ class Region():
         self.a_ = self.b_ * axis_ratio
         ########
 
-
-
         self.theta_ = get_orientation(self.sxx_, self.syy_, self.sxy_)
         self.parent_label_ = data['parent_label']
-
 
     def from_pts_(self, data):
         self.pts_ = np.array(data)

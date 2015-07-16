@@ -7,6 +7,9 @@ from core.region.region import Region
 import pickle
 from utils.video_manager import get_auto_video_manager
 from core.settings import Settings as S_
+from core.region.mser import get_msers_
+from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
+
 
 class Mser():
     def __init__(self, max_area=0.005, min_margin=5, min_area=5):
@@ -109,3 +112,14 @@ def get_mser_by_id(img, id, frame=-1):
     for r in msers:
         if r.id_ == id:
             return r
+
+
+def ferda_filtered_msers(img, project, frame=-1):
+    m = get_msers_(img, frame)
+    groups = get_region_groups(m)
+    ids = margin_filter(m, groups)
+    min_area = project.stats.area_median * 0.2
+    ids = area_filter(m, ids, min_area)
+    ids = children_filter(m, ids)
+
+    return [m[id] for id in ids]

@@ -4,6 +4,9 @@ import numpy as np
 from PIL import ImageQt
 from PyQt4 import QtGui
 from utils.misc import get_settings
+from core.settings import Settings as S_
+import scipy
+from skimage.transform import rescale
 
 
 class ROI():
@@ -174,3 +177,18 @@ def get_igbr_normalised(im):
     igbr[:, :, 0] = igbr[:, :, 0] / i_norm
 
     return igbr
+
+def prepare_for_segmentation(img, project):
+    if project.bg_model:
+        img = project.bg_model.bg_subtraction(img)
+
+    if project.arena_model:
+        img = project.arena_model.mask_image(img)
+
+    if S_.mser.gaussian_kernel_std > 0:
+        img = scipy.ndimage.gaussian_filter(img, sigma=S_.mser.gaussian_kernel_std)
+
+    if S_.mser.img_subsample_factor > 1.0:
+        img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
+
+    return img

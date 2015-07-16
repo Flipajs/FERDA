@@ -583,31 +583,7 @@ class CaseWidget(QtGui.QWidget):
         model_t = merged_t + 1 if t_reversed else merged_t - 1
 
         if len(self.nodes_groups[model_t]) > 0 and len(self.nodes_groups[merged_t]) > 0:
-            if t_reversed is None:
-                avg_area_c1 = 0
-                for c1 in self.nodes_groups.regions_t1:
-                    avg_area_c1 += c1.area()
-                avg_area_c1 /= float(len(self.nodes1_groups.regions_t1))
-
-                avg_area_c2 = 0
-                for c2 in self.nodes_groups.regions_t2:
-                    avg_area_c2 += c2.area()
-
-                avg_area_c2 /= float(len(self.nodes_groups.regions_t2))
-
-                t_reversed = False
-                if avg_area_c1 > avg_area_c2:
-                    t_reversed = True
-
             t1_ = self.nodes_groups[model_t]
-            t2_ = self.nodes_groups[merged_t]
-
-            reg = []
-            # for c2 in t2_:
-            #     if not reg:
-            #         reg = deepcopy(c2)
-            #     else:
-            #         reg.pts_ = np.append(reg.pts_, c2.pts_, axis=0)
 
             objects = []
             for c1 in t1_:

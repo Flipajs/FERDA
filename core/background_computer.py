@@ -110,7 +110,6 @@ class BackgroundComputer():
                     s, ds, multi, antlike = self.solver.assignment_score(r_t1, r_t2)
                     g.add_edge(r_t1, r_t2, type='d', score=-s)
 
-
     def OnProcessOutputReady(self, p_id):
         while True:
             try:
