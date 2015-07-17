@@ -67,6 +67,8 @@ class CaseWidget(QtGui.QWidget):
         self.active_config = 0
         self.frame_cache = []
         self.crop_pixmaps_cache = []
+        self.crop_clear_frames_items = []
+        self.visualization_hidden = False
 
         self.active_row = -1
         self.active_col = -1
@@ -144,6 +146,11 @@ class CaseWidget(QtGui.QWidget):
         self.col_right.triggered.connect(partial(self.col_changed, 1))
         self.col_right.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Right))
         self.addAction(self.col_right)
+
+        self.hide_visualization_a = QtGui.QAction('hide visualization', self)
+        self.hide_visualization_a.triggered.connect(self.hide_visualization)
+        self.hide_visualization_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
+        self.addAction(self.hide_visualization_a)
 
         self.pop_menu_node.addAction(self.action_remove_node)
         self.pop_menu_node.addAction(self.action_mark_merged)
@@ -574,6 +581,16 @@ class CaseWidget(QtGui.QWidget):
             it.setPos(1 + off + self.left_margin + i*(self.w_) - self.node_size/2, 0)
             self.crop_pixmaps_cache.append(pm)
 
+            im = self.frame_cache[i]
+            crop = np.copy(im[roi.y():roi.y()+roi.height(), roi.x():roi.x()+roi.width(), :])
+            pm = cvimg2qtpixmap(crop)
+            it = self.scene.addPixmap(pm)
+            it.setPos(1 + off + self.left_margin + i*(self.w_) - self.node_size/2, 0)
+            it.hide()
+            self.crop_clear_frames_items.append(it)
+
+
+
     def cache_frames(self):
         for i in range(len(self.nodes_groups)):
             if i == 0:
@@ -653,3 +670,12 @@ class CaseWidget(QtGui.QWidget):
             l_.append([n1.frame_, n1, n2])
 
         self.suggested_config = sorted(l_, key=lambda k: k[0])
+
+    def hide_visualization(self):
+        for it in self.crop_clear_frames_items:
+            if self.visualization_hidden:
+                it.hide()
+            else:
+                it.show()
+
+        self.visualization_hidden = not self.visualization_hidden
