@@ -13,7 +13,7 @@ from math import cos, sin
 import split_by_contours
 import experiment_params
 from utils.geometry import rotation_matrix, angle_from_matrix, rotate
-from utils.img import get_roi, ROI
+from utils.roi import ROI
 
 ##############
 # all point lists are in format [y, x]

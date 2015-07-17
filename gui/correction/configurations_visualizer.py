@@ -2,10 +2,9 @@ __author__ = 'fnaiser'
 
 from PyQt4 import QtGui, QtCore
 from gui.img_controls.my_scene import MyScene
-from gui.gui_utils import cvimg2qtpixmap
+from gui.gui_utils import cvimg2qtpixmap, get_img_qlabel
 import numpy as np
 from skimage.transform import resize
-from utils.img import get_roi, ROI
 from gui.gui_utils import get_image_label
 from utils.drawing.points import draw_points_crop, draw_points
 from utils.video_manager import get_auto_video_manager
@@ -28,6 +27,9 @@ from case_widget import CaseWidget
 from new_region_widget import NewRegionWidget
 from core.region.region import Region
 from core.log import LogCategories, ActionNames
+from gui.img_grid.img_grid_widget import ImgGridWidget
+from utils.img import prepare_for_segmentation
+from gui.gui_utils import get_image_label
 
 
 VISU_MARGIN = 10
@@ -54,10 +56,28 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.scenes_widget = QtGui.QWidget()
         self.scenes_widget.setLayout(QtGui.QVBoxLayout())
         self.scenes_widget.layout().setContentsMargins(0, 0, 0, 0)
+
+        self.noise_nodes_filter_b = QtGui.QPushButton('noise filter')
+        self.noise_nodes_filter_b.clicked.connect(self.noise_nodes_filter)
+        self.layout().addWidget(self.noise_nodes_filter_b)
+
+        self.noise_nodes_confirm_b = QtGui.QPushButton('remove selected')
+        self.noise_nodes_confirm_b.clicked.connect(self.remove_noise)
+        self.layout().addWidget(self.noise_nodes_confirm_b)
+        self.noise_nodes_confirm_b.hide()
+
+        self.noise_nodes_back_b = QtGui.QPushButton('back')
+        self.noise_nodes_back_b.clicked.connect(self.next_case)
+        self.layout().addWidget(self.noise_nodes_back_b)
+        self.noise_nodes_back_b.hide()
+
+        self.noise_nodes_widget = None
+
         self.scroll_ = QtGui.QScrollArea()
         self.scroll_.setWidgetResizable(True)
         self.scroll_.setWidget(self.scenes_widget)
         self.layout().addWidget(self.scroll_)
+
         self.graph_visu_callback = graph_visu_callback
         self.solver = solver
         self.project = solver.project
@@ -147,7 +167,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.solver.add_virtual_region(r)
             self.next_case()
 
-    def remove_region(self, node=None):
+    def remove_region(self, node=None, suppress_next_case=False):
         if not node:
             if not self.active_cw.active_node:
                 return
@@ -155,15 +175,20 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.REMOVE, node)
         self.solver.remove_region(node)
-        self.next_case()
+        if not suppress_next_case:
+            self.next_case()
 
-    def strong_remove_region(self):
-        if not self.active_cw.active_node:
+    def strong_remove_region(self, n=None, suppress_next_case=False):
+        if not n:
+            n = self.active_cw.active_node
+
+        if not n:
             return
 
-        self.project.log.add(LogCategories.USER_ACTION, ActionNames.STRONG_REMOVE, self.active_cw.active_node)
-        self.solver.strong_remove(self.active_cw.active_node)
-        self.next_case()
+        self.project.log.add(LogCategories.USER_ACTION, ActionNames.STRONG_REMOVE, n)
+        self.solver.strong_remove(n)
+        if not suppress_next_case:
+            self.next_case()
 
     def choose_node(self, pos):
         cw = self.active_cw
@@ -445,6 +470,45 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.next_case()
 
+    def noise_nodes_filter(self):
+        self.noise_nodes_filter_b.hide()
+        self.noise_nodes_confirm_b.show()
+        self.noise_nodes_back_b.show()
+        if self.scenes_widget.layout().count():
+            it = self.scenes_widget.layout().itemAt(0)
+            self.scenes_widget.layout().removeItem(it)
+            it.widget().setParent(None)
+
+        self.noise_nodes_widget = ImgGridWidget()
+
+        self.scenes_widget.layout().addWidget(self.noise_nodes_widget)
+
+        # TODO: add some settings...
+        th = 0.2
+        elem_width = 200
+        for n in self.solver.g.nodes():
+            prob = self.project.stats.antlikeness_svm.get_prob(n)
+            if prob[1] < th:
+                img = self.vid.seek_frame(n.frame_)
+                img = prepare_for_segmentation(img, self.project)
+                item = get_img_qlabel(n.pts(), img, n, elem_width, elem_width, filled=True)
+                item.set_selected(True)
+                self.noise_nodes_widget.add_item(item)
+
+    def remove_noise(self):
+        # TODO: add actions
+
+        to_remove = self.noise_nodes_widget.get_selected()
+        for n in to_remove:
+            if n in self.solver.g.nodes():
+                self.strong_remove_region(n, suppress_next_case=True)
+
+        self.noise_nodes_back_b.hide()
+        self.noise_nodes_confirm_b.hide()
+        self.noise_nodes_filter_b.show()
+
+        self.next_case()
+
     def add_actions(self):
         self.next_action = QtGui.QAction('next', self)
         self.next_action.triggered.connect(partial(self.next_case, True))
@@ -465,6 +529,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.partially_confirm_action.triggered.connect(self.partially_confirm)
         self.partially_confirm_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
         self.addAction(self.partially_confirm_action)
+
+        # self.path_confirm_action = QtGui.QAction('path confirm', self)
+        
 
         self.fitting_action = QtGui.QAction('fitting', self)
         self.fitting_action.triggered.connect(partial(self.fitting, False))

@@ -2,7 +2,8 @@ __author__ = 'fnaiser'
 
 import numpy as np
 import math
-from utils.img import get_roi
+from utils.roi import get_roi
+
 
 class Region():
     """ This class encapsulates set of points. It computes and stores statistics like moments, contour of region etc.

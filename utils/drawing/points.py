@@ -4,7 +4,8 @@ import pickle
 import cv2
 import numpy as np
 from core.region import mser, mser_operations
-from utils.img import get_safe_selection, get_roi
+from utils.img import get_safe_selection
+from utils.roi import get_roi
 from core.settings import Settings as S_
 from PyQt4 import QtGui
 
@@ -106,7 +107,6 @@ def get_contour(pts):
     roi = get_roi(pts)
 
     img = np.zeros((roi.height(), roi.width()), dtype=np.uint8)
-
 
     img[pts[:,0]-roi.y(), pts[:,1]-roi.x()] = 255
 
