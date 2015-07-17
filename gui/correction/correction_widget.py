@@ -173,25 +173,19 @@ class ResultsWidget(QtGui.QWidget):
     def update_positions(self, frame):
         i = 0
         for n, n2, ch in self.chunks:
-            data = ch.get_reduced_at(frame)
+            c = ch.get_centroid_in_time(frame)
 
-            c = None
-            if data:
-                c = data.centroid().copy()
-            elif frame == ch.start_t()-1:
-                c = n.centroid().copy()
-            elif frame == ch.end_t() + 1:
-                c = n2.centroid().copy()
+            if c is None:
+                self.items[i].setVisible(False)
+            else:
+                c = c.copy()
 
-            if c is not None:
                 if S_.mser.img_subsample_factor > 1.0:
                     c[0] *= S_.mser.img_subsample_factor
                     c[1] *= S_.mser.img_subsample_factor
 
                 self.items[i].setVisible(True)
                 self.items[i].setPos(c[1] - MARKER_SIZE / 2, c[0] - MARKER_SIZE/2)
-            else:
-                self.items[i].setVisible(False)
 
             i += 1
 

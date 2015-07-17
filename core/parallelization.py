@@ -56,7 +56,7 @@ if __name__ == '__main__':
         print i
         sys.stdout.flush()
 
-    # solver.simplify()
+    solver.simplify()
     solver.simplify_to_chunks()
 
     if not os.path.exists(proj.working_directory+'/temp'):

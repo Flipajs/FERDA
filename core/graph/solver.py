@@ -45,10 +45,11 @@ class Solver:
         self.g.add_node(n)
         self.nodes_in_t.setdefault(n.frame_, []).append(n)
 
-    def remove_node(self, n):
-        is_ch, t_reversed, ch = self.is_chunk(n)
-        if is_ch:
-            ch.pop_last(self) if t_reversed else ch.pop_first(self)
+    def remove_node(self, n, disassembly=True):
+        if disassembly:
+            is_ch, t_reversed, ch = self.is_chunk(n)
+            if is_ch:
+                ch.pop_last(self) if t_reversed else ch.pop_first(self)
 
         # save all edges
         for n1, n2, d in self.g.in_edges(n, data=True):
@@ -364,8 +365,13 @@ class Solver:
     def simplify_to_chunks(self, nodes=None):
         if not nodes:
             nodes = self.g.nodes()
+            nodes = sorted(nodes, key=lambda k: k.frame_)
 
         for n in nodes:
+            if n not in self.g.nodes():
+                print n.frame_, "not in graph"
+                continue
+
             in_num, in_n = num_in_edges_of_type(self.g, n, EDGE_CONFIRMED)
             out_num, out_n = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
 
@@ -374,17 +380,18 @@ class Solver:
 
                 if 'chunk_ref' in self.g[in_n][n]:
                     chunk = self.g[in_n][n]['chunk_ref']
-                    chunk.append_right(n, self.g)
+                    chunk.append_right(out_n, self)
+                elif 'chunk_ref' in self.g[n][out_n]:
+                    chunk = self.g[n][out_n]['chunk_ref']
+                    chunk.append_left(in_n, self)
                 else:
-                    chunk = Chunk(in_n, n, self)
-                    chunk.append_right(out_n)
-
-                # # case when there are 2 chunks (due parallelization) -> MERGE
-                # if 'chunk_ref' in self.g[n][out_n]:
-                #     second_chunk = self.g[n][out_n]['chunk_ref']
-                #
-                #     chunk.merge(second_chunk, self)
-                #     self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.MERGE_CHUNKS, {'n': n})
+                    is_ch, _, ch_in = self.is_chunk(in_n)
+                    if is_ch:
+                        ch_in.append_right(n, self)
+                        ch_in.append_right(out_n, self)
+                    else:
+                        chunk = Chunk(in_n, n, self)
+                        chunk.append_right(out_n, self)
 
     def get_ccs(self, queue=[]):
         if not queue:
@@ -517,38 +524,40 @@ class Solver:
         return None
 
     def disassemble_chunk(self, n, chunk=None, reversed_dir=None):
-        if not chunk:
-            _, reversed_dir, chunk = self.is_chunk(n)
+        pass
 
-        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.DISASSEMBLE_CHUNK, {'n': n})
-
-        if reversed_dir:
-            reduced = chunk.remove_from_end()
-            if not reduced:
-                region = self.get_chunk_node_partner(n)
-                self.remove_edge(n, region)
-        else:
-            reduced = chunk.remove_from_beginning()
-            if not reduced:
-                region = self.get_chunk_node_partner(n)
-                self.remove_edge(region, n)
-
-        # if the chunk is only n1, n2  and nothing between in reduced form, the reduced is None and the disassembled region is in region var
-        if reduced:
-            region = reduced.reconstruct(self.project)
-
-            self.add_node(region)
-
-            if reversed_dir:
-                self.add_edge(n, region, type=EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
-                _, _, t_plus = self.get_regions_around(region.frame_)
-                self.add_edges_([region], t_plus)
-            else:
-                self.add_edge(region, n, type=EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
-                t_minus, _, _ = self.get_regions_around(region.frame_)
-                self.add_edges_(t_minus, [region])
-
-        return region
+        # if not chunk:
+        #     _, reversed_dir, chunk = self.is_chunk(n)
+        #
+        # self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.DISASSEMBLE_CHUNK, {'n': n})
+        #
+        # if reversed_dir:
+        #     reduced = chunk.remove_from_end()
+        #     if not reduced:
+        #         region = self.get_chunk_node_partner(n)
+        #         self.remove_edge(n, region)
+        # else:
+        #     reduced = chunk.remove_from_beginning()
+        #     if not reduced:
+        #         region = self.get_chunk_node_partner(n)
+        #         self.remove_edge(region, n)
+        #
+        # # if the chunk is only n1, n2  and nothing between in reduced form, the reduced is None and the disassembled region is in region var
+        # if reduced:
+        #     region = reduced.reconstruct(self.project)
+        #
+        #     self.add_node(region)
+        #
+        #     if reversed_dir:
+        #         self.add_edge(n, region, type=EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+        #         _, _, t_plus = self.get_regions_around(region.frame_)
+        #         self.add_edges_([region], t_plus)
+        #     else:
+        #         self.add_edge(region, n, type=EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+        #         t_minus, _, _ = self.get_regions_around(region.frame_)
+        #         self.add_edges_(t_minus, [region])
+        #
+        # return region
 
     def split_chunks(self, n, chunk):
         raise Exception("split_chunks in solver.py not implemented yet!!!")
@@ -653,37 +662,40 @@ class Solver:
         is_ch, t_reversed, ch = self.is_chunk(r)
 
         if is_ch:
-            # q = ch.last() if
-            ch_end_n = self.get_chunk_node_partner(r)
-
-            new_ccs, node_representative = self.remove_region(r, strong=True)
-            new_ccs2, node_representative2 = self.remove_region(ch_end_n, strong=True)
-            new_ccs += new_ccs2
-            node_representative += node_representative2
-
-            new_ccs_ = []
-            node_representatives_ = []
-
-            # remove everything from first remove region which doesn't make sense after second removing...
-            for cc, n in zip(new_ccs, node_representative):
-                if not cc:
-                    continue
-
-                ok = True
-                for n in cc.regions_t1:
-                    if n not in self.g.nodes():
-                        ok = False
-                        break
-                if ok:
-                    for n in cc.regions_t2:
-                        if n not in self.g.nodes():
-                            ok = False
-                            break
-                if ok:
-                    new_ccs_.append(cc)
-                    node_representatives_.append(n)
-
-            return new_ccs_, node_representatives_
+            # TODO: save to log somehow...
+            self.remove_node(ch.start_n, False)
+            self.remove_node(ch.end_n, False)
+            # # q = ch.last() if
+            # ch_end_n = self.get_chunk_node_partner(r)
+            #
+            # new_ccs, node_representative = self.remove_region(r, strong=True)
+            # new_ccs2, node_representative2 = self.remove_region(ch_end_n, strong=True)
+            # new_ccs += new_ccs2
+            # node_representative += node_representative2
+            #
+            # new_ccs_ = []
+            # node_representatives_ = []
+            #
+            # # remove everything from first remove region which doesn't make sense after second removing...
+            # for cc, n in zip(new_ccs, node_representative):
+            #     if not cc:
+            #         continue
+            #w
+            #     ok = True
+            #     for n in cc.regions_t1:
+            #         if n not in self.g.nodes():
+            #             ok = False
+            #             break
+            #     if ok:
+            #         for n in cc.regions_t2:
+            #             if n not in self.g.nodes():
+            #                 ok = False
+            #                 break
+            #     if ok:
+            #         new_ccs_.append(cc)
+            #         node_representatives_.append(n)
+            #
+            # return new_ccs_, node_representatives_
         else:
             return self.remove_region(r)
 

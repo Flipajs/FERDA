@@ -53,6 +53,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.setLayout(QtGui.QVBoxLayout())
         self.scenes_widget = QtGui.QWidget()
         self.scenes_widget.setLayout(QtGui.QVBoxLayout())
+        self.scenes_widget.layout().setContentsMargins(0, 0, 0, 0)
         self.scroll_ = QtGui.QScrollArea()
         self.scroll_.setWidgetResizable(True)
         self.scroll_.setWidget(self.scenes_widget)
@@ -92,6 +93,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.join_regions_active = False
         self.join_regions_n1 = None
+
+        self.layout().setContentsMargins(0, 0, 0, 0)
 
     def save(self, autosave=False):
         wd = self.solver.project.working_directory
@@ -176,6 +179,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.join_regions_n1 = None
 
     def next_case(self, move_to_different_case=False):
+        print "next_case", move_to_different_case, self.active_node_id
         if move_to_different_case:
             self.active_node_id += 1
 
@@ -201,10 +205,21 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             # add new widget
             nodes_groups = self.solver.get_cc_from_node(n)
             if len(nodes_groups) == 0:
+                print n, "empty nodes groups"
                 # self.nodes.pop(self.active_node_id)
                 self.active_node_id += 1
                 self.next_case()
                 return
+
+            # nodes_groups = []
+            # for i in range(100):
+            #     nodes_groups.append([])
+            #
+            # nodes_ = self.solver.g.nodes()
+            # nodes_ = sorted(nodes_, key=lambda k: k.frame_)
+            # while nodes_:
+            #     n = nodes_.pop(0)
+            #     nodes_groups[n.frame_].append(n)
 
             config = self.best_greedy_config(nodes_groups)
 
@@ -245,9 +260,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         return config
 
     def prev_case(self):
-        if self.active_node_id == 0:
-            return
-
         self.active_node_id -= 1
 
         self.nodes = self.solver.g.nodes()
@@ -273,6 +285,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         nodes_groups = self.solver.get_cc_from_node(n)
         if len(nodes_groups) == 0:
             # self.nodes.pop(self.active_node_id)
+            self.active_node_id -= 1
             self.prev_case()
             return
 
@@ -291,8 +304,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         merged_t = region.frame_ - self.active_cw.frame_t
         model_t = merged_t + 1 if t_reversed else merged_t - 1
 
-        if len(self.active_cw.nodes_groups[model_t]) > 0 and len(self.nodes_groups[merged_t]) > 0:
-            t1_ = self.nodes_groups[model_t]
+        if len(self.active_cw.nodes_groups[model_t]) > 0 and len(self.active_cw.nodes_groups[merged_t]) > 0:
+            t1_ = self.active_cw.nodes_groups[model_t]
 
             objects = []
             for c1 in t1_:
@@ -322,7 +335,15 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
                 q = chunk.last if t_reversed else chunk.first
                 i = 0
-                for merged in q():
+                while True:
+                    merged = q()
+                    if not merged:
+                        break
+
+                    # TODO: find better way
+                    if chunk.length() < 3:
+                        chunk.pop_last(self.solver) if t_reversed else chunk.pop_first(self.solver)
+
                     # TODO: settings, safe break
                     if i > 15:
                         break

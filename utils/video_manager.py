@@ -102,7 +102,7 @@ class VideoManager():
 
     def seek_frame(self, frame_number):
         if frame_number < 0 or frame_number >= self.total_frame_count():
-            raise Exception("Frame_number is invalid")
+            raise Exception("Frame_number is invalid: "+str(frame_number))
 
         # Reset buffer as buffered images are now from other part of the video
         self.buffer_position_ = 0

@@ -64,6 +64,9 @@ class Log:
         if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
             return
 
+        if S_.general.print_log:
+            print category, action_name, data
+
         self.data_.append(LogEntry(category, action_name, data))
 
     def pop_last_user_action(self):

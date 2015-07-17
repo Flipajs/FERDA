@@ -13,7 +13,9 @@ class Chunk:
         self.end_n = end_n
 
         if solver:
-            self.simple_reconnect(solver)
+            self.simple_reconnect_(solver)
+
+        # print "CREATED ", self.start_t(), self.end_t()
 
     def __str__(self):
         s = "CHUNK --- start_t: "+str(self.start_n.frame_)+" end_t: "+str(self.end_n.frame_)+" reduced_len: "+str(len(self.reduced))+"\n"
@@ -26,40 +28,46 @@ class Chunk:
         return self.end_n.frame_
 
     def append_left(self, r, solver):
+        # print "APPEND L ", self.start_t(), self.end_t(), r.frame_
         if r.frame_ + 1 != self.start_t():
             raise Exception("DISCONTINUITY in chunk.py/append_left")
 
-        solver.remove_node(self.start_n)
-        self.add_to_reduced_(self.start_n, solver)
+        is_ch, t_reversed, ch2 = solver.is_chunk(r)
+
+        solver.remove_node(self.start_n, False)
+        self.add_to_reduced_(self.start_n)
         self.start_n = r
 
         self.chunk_reconnect_(solver)
 
+        # r was already in chunk
+        if is_ch:
+            ch2.merge(self, solver)
+
     def append_right(self, r, solver):
+        # print "APPEND R ", self.start_t(), self.end_t(), r.frame_
         if r.frame_ != self.end_t() + 1:
             raise Exception("DISCONTINUITY in chunk.py/append_right")
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
-        solver.remove_node(self.end_n)
-        self.add_to_reduced_(self.end_n, solver)
+        solver.remove_node(self.end_n, False)
+        self.add_to_reduced_(self.end_n)
         self.end_n = r
 
         self.chunk_reconnect_(solver)
 
         # r was already in chunk
-        self.merge(ch2, solver)
-
+        if is_ch:
+            self.merge(ch2, solver)
 
     def chunk_reconnect_(self, solver):
         solver.add_edge(self.start_n, self.end_n, type=EDGE_CONFIRMED, chunk_ref=self, score=1.0)
 
-    def simple_reconnect(self, solver):
+    def simple_reconnect_(self, solver):
         solver.add_edge(self.start_n, self.end_n, type=EDGE_CONFIRMED, score=1.0)
 
-    def add_to_reduced_(self, r, solver):
-        solver.remove_node(r)
-
+    def add_to_reduced_(self, r):
         it = Reduced(r)
         try:
             if r.is_virtual:
@@ -76,11 +84,13 @@ class Chunk:
             second_chunk.merge(self)
             return
 
-        solver.remove_node(self.end_n)
-        solver.remove_node(second_chunk.start_n)
+        # print "MERGE ", self.start_t(), self.end_t(), second_chunk.start_t(), second_chunk.end_t()
 
-        self.add_to_reduced_(self.end_n, solver)
-        self.add_to_reduced_(second_chunk.start_n, solver)
+        solver.remove_node(self.end_n, False)
+        # solver.remove_node(second_chunk.start_n, False)
+
+        self.add_to_reduced_(self.end_n)
+        # self.add_to_reduced_(second_chunk.start_n)
         self.reduced += second_chunk.reduced
         self.end_n = second_chunk.end_n
 
@@ -92,11 +102,15 @@ class Chunk:
         elif self.end_n:
             return self.end_n
 
+        return None
+
     def last(self):
         if self.end_n:
             return self.end_n
         elif self.start_n:
             return self.start_n
+
+        return None
 
     def pop_first(self, solver):
         if not self.reduced:
@@ -104,10 +118,12 @@ class Chunk:
                 first = self.start_n
                 self.start_n = None
                 return first
-            else:
+            elif self.end_n:
                 first = self.end_n
                 self.end_n = None
                 return first
+            else:
+                return None
 
         first = self.start_n
 
@@ -118,7 +134,7 @@ class Chunk:
         solver.add_node(reconstructed)
         self.start_n = reconstructed
         prev_nodes, _, _ = solver.get_regions_around(reconstructed.frame_)
-        solver.add_edges(prev_nodes, [reconstructed])
+        solver.add_edges_(prev_nodes, [reconstructed])
 
         if self.reduced:
             self.chunk_reconnect_(solver)
@@ -134,10 +150,12 @@ class Chunk:
                 last = self.end_n
                 self.end_n = None
                 return last
-            else:
+            elif self.start_n:
                 last = self.start_n
                 self.start_n = None
                 return last
+            else:
+                return None
 
         last = self.end_n
 
@@ -148,12 +166,12 @@ class Chunk:
         solver.add_node(reconstructed)
         self.end_n = reconstructed
         _, _, next_nodes = solver.get_regions_around(reconstructed.frame_)
-        solver.add_edges([reconstructed], next_nodes)
+        solver.add_edges_([reconstructed], next_nodes)
 
         if self.reduced:
             self.chunk_reconnect_(solver)
         else:
-            self.simple_reconnect(solver)
+            self.simple_reconnect_(solver)
 
         return last
 
@@ -161,6 +179,17 @@ class Chunk:
         if not self.is_sorted:
             self.reduced = sorted(self.reduced, key=lambda k: k.frame_)
             self.is_sorted = True
+
+    def get_centroid_in_time(self, t):
+        if self.start_t() <= t <= self.end_t():
+            if t == self.start_t():
+                return self.start_n.centroid()
+            elif t == self.end_t():
+                return self.end_n.centroid()
+            else:
+                return self.reduced[t-self.start_t()-1].centroid()
+
+        return None
 
     def get_reduced_at(self, t):
         self.if_not_sorted_sort_()
@@ -234,12 +263,12 @@ class Chunk:
                 if self.reduced:
                     self.chunk_reconnect_(solver)
                 else:
-                    self.simple_reconnect(solver)
+                    self.simple_reconnect_(solver)
 
                 if ch2.reduced:
                     ch2.chunk_reconnect_(solver)
                 else:
-                    ch2.simple_reconnect(solver)
+                    ch2.simple_reconnect_(solver)
 
         else:
             raise Exception("t is out of range of this chunk in chunk.py/split_at_t")

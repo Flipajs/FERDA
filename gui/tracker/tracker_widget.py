@@ -27,6 +27,7 @@ class TrackerWidget(QtGui.QWidget):
 
         self.graph_widget = QtGui.QWidget()
         self.layout().addWidget(self.graph_widget)
+        self.layout().setContentsMargins(0, 0, 0, 0)
 
     def bc_update(self, text):
         self.mser_progress_label.setText('MSER computation progress'+text)
@@ -85,17 +86,12 @@ class TrackerWidget(QtGui.QWidget):
             if n.frame_ == 0:
                 t1_nodes.append(n)
 
-
         print "TEST"
-        # self.solver.simplify()
-        # self.solver.simplify_to_chunks()
 
         nodes_ = self.solver.g.nodes()
+        self.mser_progress_label.setParent(None)
         self.certainty_visualizer.set_nodes_queue(nodes_)
         self.certainty_visualizer.next_case()
-
-        # self.certainty_visualizer.visualize_n_sorted(5)
-        # self.update_graph_visu(0, 10)
 
     def apply_actions(self, actions):
         for action_name, data in actions:

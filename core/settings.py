@@ -110,6 +110,7 @@ class General:
     __metaclass__ = SettingsType
     log_graph_edits = Item('general/log_graph_edits', True, '...')
     log_in_bg_computation = Item('general/log_in_bg_computation', False, 'Could be switched off before user interactions to save space.')
+    print_log = Item('general/print_log', True, '...')
 
 class Settings:
     cache = Cache

@@ -17,8 +17,8 @@ class Reduced:
     def reconstruct(self, project):
         vid = get_auto_video_manager(project.video_paths)
         img = vid.seek_frame(self.frame_)
-        img = prepare_for_segmentation(img)
-        msers = ferda_filtered_msers(img, project)
+        img = prepare_for_segmentation(img, project)
+        msers = ferda_filtered_msers(img, project, self.frame_)
 
         best_match_d = np.inf
         region = None

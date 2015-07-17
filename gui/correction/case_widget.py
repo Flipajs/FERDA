@@ -216,6 +216,10 @@ class CaseWidget(QtGui.QWidget):
             self.config_lines.append(line_)
             self.scene.addItem(line_)
 
+        self.layout().setContentsMargins(0, 0, 0, 0)
+        self.setStyleSheet("border: 0px")
+
+
     def get_info(self):
         n = self.active_node
 
@@ -259,6 +263,8 @@ class CaseWidget(QtGui.QWidget):
 
             self.active_row_it = it
             self.scene.addItem(it)
+            it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
+            it.setZValue(-1)
 
             if self.active_col > -1:
                 try:
@@ -281,6 +287,8 @@ class CaseWidget(QtGui.QWidget):
 
             self.active_col_it = it
             self.scene.addItem(it)
+            it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
+            it.setZValue(-1)
 
             if self.active_row > -1:
                 try:

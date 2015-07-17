@@ -45,6 +45,10 @@ class Region():
         self.contour_ = None
         self.is_virtual = False
 
+    def __str__(self):
+        s = "t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(self.centroid_[0])+", "+str(self.centroid_[1])+"]"
+        return s
+
     def from_dict_(self, data):
         pts = []
         if 'rle' in data:
