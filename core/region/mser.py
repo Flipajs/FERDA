@@ -7,7 +7,6 @@ from core.region.region import Region
 import pickle
 from utils.video_manager import get_auto_video_manager
 from core.settings import Settings as S_
-from core.region.mser import get_msers_
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 
 

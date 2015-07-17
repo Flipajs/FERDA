@@ -177,10 +177,10 @@ class ResultsWidget(QtGui.QWidget):
 
             c = None
             if data:
-                c = data.centroid.copy()
-            elif frame == ch.start_t-1:
+                c = data.centroid().copy()
+            elif frame == ch.start_t()-1:
                 c = n.centroid().copy()
-            elif frame == ch.end_t + 1:
+            elif frame == ch.end_t() + 1:
                 c = n2.centroid().copy()
 
             if c is not None:

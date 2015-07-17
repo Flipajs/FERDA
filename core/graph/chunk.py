@@ -6,13 +6,14 @@ from utils.constants import EDGE_CONFIRMED
 
 
 class Chunk:
-    def __init__(self, start_n=None, middle_n=None, end_n=None):
+    def __init__(self, start_n=None, end_n=None, solver=None):
         self.reduced = []
         self.is_sorted = False
         self.start_n = start_n
         self.end_n = end_n
-        if middle_n:
-            self.add_to_reduced_(middle_n)
+
+        if solver:
+            self.simple_reconnect(solver)
 
     def __str__(self):
         s = "CHUNK --- start_t: "+str(self.start_n.frame_)+" end_t: "+str(self.end_n.frame_)+" reduced_len: "+str(len(self.reduced))+"\n"
@@ -29,7 +30,7 @@ class Chunk:
             raise Exception("DISCONTINUITY in chunk.py/append_left")
 
         solver.remove_node(self.start_n)
-        self.add_to_reduced_(self.start_n)
+        self.add_to_reduced_(self.start_n, solver)
         self.start_n = r
 
         self.chunk_reconnect_(solver)
@@ -38,11 +39,17 @@ class Chunk:
         if r.frame_ != self.end_t() + 1:
             raise Exception("DISCONTINUITY in chunk.py/append_right")
 
+        is_ch, t_reversed, ch2 = solver.is_chunk(r)
+
         solver.remove_node(self.end_n)
-        self.add_to_reduced_(self.end_n)
+        self.add_to_reduced_(self.end_n, solver)
         self.end_n = r
 
         self.chunk_reconnect_(solver)
+
+        # r was already in chunk
+        self.merge(ch2, solver)
+
 
     def chunk_reconnect_(self, solver):
         solver.add_edge(self.start_n, self.end_n, type=EDGE_CONFIRMED, chunk_ref=self, score=1.0)
@@ -50,9 +57,10 @@ class Chunk:
     def simple_reconnect(self, solver):
         solver.add_edge(self.start_n, self.end_n, type=EDGE_CONFIRMED, score=1.0)
 
-    def add_to_reduced_(self, r):
-        it = Reduced(r)
+    def add_to_reduced_(self, r, solver):
+        solver.remove_node(r)
 
+        it = Reduced(r)
         try:
             if r.is_virtual:
                 # in this case, save whole region, it is much easier...
@@ -71,14 +79,36 @@ class Chunk:
         solver.remove_node(self.end_n)
         solver.remove_node(second_chunk.start_n)
 
-        self.add_to_reduced_(self.end_n)
-        self.add_to_reduced_(second_chunk.start_n)
+        self.add_to_reduced_(self.end_n, solver)
+        self.add_to_reduced_(second_chunk.start_n, solver)
         self.reduced += second_chunk.reduced
         self.end_n = second_chunk.end_n
 
         self.chunk_reconnect_(solver)
 
+    def first(self):
+        if self.start_n:
+            return self.start_n
+        elif self.end_n:
+            return self.end_n
+
+    def last(self):
+        if self.end_n:
+            return self.end_n
+        elif self.start_n:
+            return self.start_n
+
     def pop_first(self, solver):
+        if not self.reduced:
+            if self.start_n:
+                first = self.start_n
+                self.start_n = None
+                return first
+            else:
+                first = self.end_n
+                self.end_n = None
+                return first
+
         first = self.start_n
 
         popped = self.reduced.pop(0)
@@ -99,6 +129,16 @@ class Chunk:
         return first
 
     def pop_last(self, solver):
+        if not self.reduced:
+            if self.end_n:
+                last = self.end_n
+                self.end_n = None
+                return last
+            else:
+                last = self.start_n
+                self.start_n = None
+                return last
+
         last = self.end_n
 
         popped = self.reduced.pop()
@@ -115,6 +155,8 @@ class Chunk:
         else:
             self.simple_reconnect(solver)
 
+        return last
+
     def if_not_sorted_sort_(self):
         if not self.is_sorted:
             self.reduced = sorted(self.reduced, key=lambda k: k.frame_)
@@ -123,14 +165,21 @@ class Chunk:
     def get_reduced_at(self, t):
         self.if_not_sorted_sort_()
 
-        t -= self.start_t
+        t -= self.start_t()
         if 0 <= t < len(self.reduced):
             return self.reduced[t]
 
         return None
 
     def length(self):
-        return self.end_t() - self.start_t() + 1
+        if self.start_n and self.end_n:
+            return self.end_t() - self.start_t() + 1
+        elif self.start_n:
+            return 1
+        elif self.end_n:
+            return 1
+
+        return 0
 
     @ staticmethod
     def reconstruct(r, project):

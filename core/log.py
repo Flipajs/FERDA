@@ -1,6 +1,7 @@
 __author__ = 'flipajs'
 
 import time
+from core.settings import Settings as S_
 
 
 class LogCategories:
@@ -60,6 +61,9 @@ class Log:
         self.data_ = []
 
     def add(self, category, action_name, data):
+        if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
+            return
+
         self.data_.append(LogEntry(category, action_name, data))
 
     def pop_last_user_action(self):

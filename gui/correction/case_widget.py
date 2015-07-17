@@ -598,12 +598,9 @@ class CaseWidget(QtGui.QWidget):
             f = Fitting(region, objects, num_of_iterations=10)
             f.fit()
 
-            print "PREVIOUS FITTING FUNCTION USED"
-
-            return [self.parent.solver.merged(f.animals, region, t_reversed), f.animals]
+            return f.animals
 
     def draw_scene(self):
-        max_h_pos = 0
         for i in range(len(self.nodes_groups)):
             h_pos = 0
             for n in self.nodes_groups[i]:
@@ -628,9 +625,6 @@ class CaseWidget(QtGui.QWidget):
                           self.top_margin + h_pos * self.h_ + off)
                 h_pos += 1
 
-            max_h_pos = max(max_h_pos, h_pos)
-
-        max_h_pos = max(max_h_pos, h_pos)
         for i in range(len(self.nodes_groups) - 1):
             for n in self.nodes_groups[i]:
                 for _, n2 in self.G.out_edges(n):

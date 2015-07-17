@@ -45,6 +45,8 @@ class BackgroundComputer():
 
     def run(self):
         if not os.path.exists(self.project.working_directory+'/temp/g_simplified0.pkl'):
+            if not S_.general.log_in_bg_computation:
+                S_.general.log_graph_edits = False
             self.start = time.time()
             for i in range(self.process_n):
                 p = QtCore.QProcess()
@@ -54,6 +56,7 @@ class BackgroundComputer():
                 p.readyReadStandardOutput.connect(partial(self.OnProcessOutputReady, i))
 
                 f_num = self.frames_in_row
+                f_num = 30
                 last_n_frames = 0
                 if i == self.process_n - 1:
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
@@ -63,6 +66,8 @@ class BackgroundComputer():
                 self.processes.append(p)
 
                 self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
+
+            S_.general.log_graph_edits = True
         else:
             self.piece_results_together()
             self.check_parallelization_timer.stop()
@@ -96,7 +101,7 @@ class BackgroundComputer():
                 end_nodes_prev = end_nodes
 
         self.solver.update_nodes_in_t_refs()
-        self.solver.simplify(nodes_to_process)
+        # self.solver.simplify(nodes_to_process)
         self.solver.simplify_to_chunks()
 
         self.finished_callback(self.solver)

@@ -48,7 +48,7 @@ class Solver:
     def remove_node(self, n):
         is_ch, t_reversed, ch = self.is_chunk(n)
         if is_ch:
-            ch.pop_last() if t_reversed else ch.pop_first()
+            ch.pop_last(self) if t_reversed else ch.pop_first(self)
 
         # save all edges
         for n1, n2, d in self.g.in_edges(n, data=True):
@@ -370,22 +370,21 @@ class Solver:
             out_num, out_n = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
 
             if out_num == 1 and in_num == 1:
-
                 self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ASSEMBLE_CHUNK, {'n': n})
 
                 if 'chunk_ref' in self.g[in_n][n]:
                     chunk = self.g[in_n][n]['chunk_ref']
+                    chunk.append_right(n, self.g)
                 else:
-                    chunk = Chunk(in_n, n, out_n)
+                    chunk = Chunk(in_n, n, self)
+                    chunk.append_right(out_n)
 
-                # case when there are 2 chunks (due parallelization) -> MERGE
-                if 'chunk_ref' in self.g[n][out_n]:
-                    second_chunk = self.g[n][out_n]['chunk_ref']
-
-                    chunk.merge(second_chunk, self)
-                    self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.MERGE_CHUNKS, {'n': n})
-
-                chunk.append_left(n, self.g, self.project.log)
+                # # case when there are 2 chunks (due parallelization) -> MERGE
+                # if 'chunk_ref' in self.g[n][out_n]:
+                #     second_chunk = self.g[n][out_n]['chunk_ref']
+                #
+                #     chunk.merge(second_chunk, self)
+                #     self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.MERGE_CHUNKS, {'n': n})
 
     def get_ccs(self, queue=[]):
         if not queue:
@@ -654,6 +653,7 @@ class Solver:
         is_ch, t_reversed, ch = self.is_chunk(r)
 
         if is_ch:
+            # q = ch.last() if
             ch_end_n = self.get_chunk_node_partner(r)
 
             new_ccs, node_representative = self.remove_region(r, strong=True)

@@ -285,6 +285,27 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def confirm_cc(self):
         self.active_cw.confirm_clicked()
 
+    def fitting_get_model(self, t_reversed):
+        region = self.active_cw.active_node
+
+        merged_t = region.frame_ - self.active_cw.frame_t
+        model_t = merged_t + 1 if t_reversed else merged_t - 1
+
+        if len(self.active_cw.nodes_groups[model_t]) > 0 and len(self.nodes_groups[merged_t]) > 0:
+            t1_ = self.nodes_groups[model_t]
+
+            objects = []
+            for c1 in t1_:
+                a = deepcopy(c1)
+                if t_reversed:
+                    a.frame_ -= 1
+                else:
+                    a.frame_ += 1
+
+                objects.append(a)
+
+        return objects
+
     def fitting(self, t_reversed=False):
         if self.active_cw.active_node:
             self.project.log.add(LogCategories.USER_ACTION,
@@ -294,35 +315,40 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                                      't_reversed': t_reversed
                                  })
 
-            is_ch, ch_t_reversed, chunk_ref = self.solver.is_chunk(self.active_cw.active_node)
+            is_ch, _, chunk = self.solver.is_chunk(self.active_cw.active_node)
             if is_ch:
                 print "FITTING WHOLE CHUNK, WAIT PLEASE"
-                merged = self.active_cw.active_node
                 model = None
 
-                # TODO: add to settings
-                for i in range(min(chunk_ref.length()+3, 15)):
-                    print i
-                    if i == 0:
-                        res = self.active_cw.mark_merged(merged, t_reversed)
-                        merged = res[0]
-                        model = deepcopy(res[1])
-                    else:
-                        f = Fitting(merged, model, num_of_iterations=10)
-                        f.fit()
-
-                        model = deepcopy(f.animals)
-                        merged = self.solver.merged(f.animals, merged, t_reversed)
-
-                    if not merged:
+                q = chunk.last if t_reversed else chunk.first
+                i = 0
+                for merged in q():
+                    # TODO: settings, safe break
+                    if i > 15:
                         break
 
+                    if not model:
+                        model = self.fitting_get_model(t_reversed)
+
+                    # TODO : add to settings
+                    f = Fitting(merged, model, num_of_iterations=10)
+                    f.fit()
+
+                    self.solver.merged(f.animals, merged, t_reversed)
+
+                    model = deepcopy(f.animals)
                     for m in model:
                         m.frame_ += -1 if t_reversed else 1
 
+                    i += 1
+
                 print "CHUNK FINISHED"
             else:
-                self.active_cw.mark_merged(self.active_cw.active_node, t_reversed)
+                model = self.fitting_get_model(t_reversed)
+                f = Fitting(self.active_cw.active_node, model, num_of_iterations=10)
+                f.fit()
+
+                self.solver.merged(f.animals, self.active_cw.active_node, t_reversed)
 
             self.next_case()
 
