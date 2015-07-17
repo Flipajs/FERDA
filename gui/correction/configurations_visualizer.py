@@ -415,6 +415,32 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
             self.confirm_edges(pairs)
 
+    def path_confirm(self):
+        print "PATH CONFIRM"
+        n = self.active_cw.active_node
+        if n:
+            cw = self.active_cw
+            conf = cw.suggested_config
+
+            edges = []
+
+            print "WHILE"
+            while True:
+                finish = True
+                for _, n1, n2 in conf:
+                    if n1 == n:
+                        edges.append((n1, n2))
+                        n = n2
+                        finish = False
+                        break
+
+                if finish:
+                    break
+
+            print "END"
+
+            self.confirm_edges(edges)
+
     def confirm_edges(self, pairs):
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.CONFIRM, {'pairs': pairs})
         self.solver.confirm_edges(pairs)
@@ -530,8 +556,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.partially_confirm_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
         self.addAction(self.partially_confirm_action)
 
-        # self.path_confirm_action = QtGui.QAction('path confirm', self)
-        
+        self.path_confirm_action = QtGui.QAction('path confirm', self)
+        self.path_confirm_action.triggered.connect(self.path_confirm)
+        self.path_confirm_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_C))
+        self.addAction(self.path_confirm_action)
 
         self.fitting_action = QtGui.QAction('fitting', self)
         self.fitting_action.triggered.connect(partial(self.fitting, False))
