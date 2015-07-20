@@ -3,6 +3,8 @@ __author__ = 'fnaiser'
 import numpy as np
 from reduced import Reduced
 from utils.constants import EDGE_CONFIRMED
+from core.log import LogCategories, ActionNames
+from core.settings import Settings as S_
 
 
 class Chunk:
@@ -15,8 +17,6 @@ class Chunk:
         if solver:
             self.simple_reconnect_(solver)
 
-        # print "CREATED ", self.start_t(), self.end_t()
-
     def __str__(self):
         s = "CHUNK --- start_t: "+str(self.start_n.frame_)+" end_t: "+str(self.end_n.frame_)+" reduced_len: "+str(len(self.reduced))+"\n"
         return s
@@ -28,34 +28,44 @@ class Chunk:
         return self.end_n.frame_
 
     def append_left(self, r, solver):
-        # print "APPEND L ", self.start_t(), self.end_t(), r.frame_
         if r.frame_ + 1 != self.start_t():
             raise Exception("DISCONTINUITY in chunk.py/append_left")
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_LEFT, {'append': r, 'old_start_n': self.start_n})
+
+        S_.general.log_graph_edits = False
         solver.remove_node(self.start_n, False)
+
         self.add_to_reduced_(self.start_n)
         self.start_n = r
 
         self.chunk_reconnect_(solver)
+
+        S_.general.log_graph_edits = True
 
         # r was already in chunk
         if is_ch:
             ch2.merge(self, solver)
 
     def append_right(self, r, solver):
-        # print "APPEND R ", self.start_t(), self.end_t(), r.frame_
         if r.frame_ != self.end_t() + 1:
             raise Exception("DISCONTINUITY in chunk.py/append_right")
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_RIGHT, {'append': r, 'old_end_n': self.end_n})
+        S_.general.log_graph_edits = False
+
         solver.remove_node(self.end_n, False)
+
         self.add_to_reduced_(self.end_n)
         self.end_n = r
 
         self.chunk_reconnect_(solver)
+
+        S_.general.log_graph_edits = False
 
         # r was already in chunk
         if is_ch:
@@ -130,6 +140,8 @@ class Chunk:
         popped = self.reduced.pop(0)
 
         reconstructed = self.reconstruct(popped, solver.project)
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_POP_FIRST, {'reconstructed': reconstructed, 'old_start_n': self.start_n})
+        S_.general.log_graph_edits = False
 
         solver.add_node(reconstructed)
         self.start_n = reconstructed
@@ -141,6 +153,8 @@ class Chunk:
         else:
             # it is not a chunk anymore
             self.simple_reconnect_(solver)
+
+        S_.general.log_graph_edits = True
 
         return first
 
@@ -162,6 +176,8 @@ class Chunk:
         popped = self.reduced.pop()
 
         reconstructed = self.reconstruct(popped, solver.project)
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_POP_LAST, {'reconstructed': reconstructed, 'old_end_n': self.end_n})
+        S_.general.log_graph_edits = False
 
         solver.add_node(reconstructed)
         self.end_n = reconstructed
@@ -172,6 +188,8 @@ class Chunk:
             self.chunk_reconnect_(solver)
         else:
             self.simple_reconnect_(solver)
+
+        S_.general.log_graph_edits = True
 
         return last
 

@@ -53,9 +53,13 @@ class Solver:
 
         # save all edges
         for n1, n2, d in self.g.in_edges(n, data=True):
+            if 'chunk_ref' in d:
+                continue
             self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
 
         for n1, n2, d in self.g.out_edges(n, data=True):
+            if 'chunk_ref' in d:
+                continue
             self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
 
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, n)
@@ -81,7 +85,7 @@ class Solver:
                              {'n1': n1,
                               'n2': n2,
                               'data': data})
-        self.g.add_edge(n1, n2, data)
+        self.g.add_edge(n1, n2, **data)
 
     def update_time_boundaries(self):
         self.start_t = np.inf
@@ -376,8 +380,7 @@ class Solver:
             out_num, out_n = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
 
             if out_num == 1 and in_num == 1:
-                self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ASSEMBLE_CHUNK, {'n': n})
-
+                # self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ASSEMBLE_CHUNK, {'n': n})
                 if 'chunk_ref' in self.g[in_n][n]:
                     chunk = self.g[in_n][n]['chunk_ref']
                     chunk.append_right(out_n, self)
@@ -636,20 +639,20 @@ class Solver:
         if r in affected:
             affected.remove(r)
 
-        is_ch, t_reversed, chunk_ref = self.is_chunk(r)
-        if is_ch:
-            # get the other end of chunk
-            if t_reversed:
-                for n1, _ in self.g.in_edges(r):
-                    n_ = n1
-            else:
-                for _, n2 in self.g.out_edges(r):
-                    n_ = n2
-
-            if not strong:
-                self.disassemble_chunk(n_, chunk_ref, t_reversed)
-
-            affected.append(n_)
+        # is_ch, t_reversed, chunk_ref = self.is_chunk(r)
+        # if is_ch:
+        #     # get the other end of chunk
+        #     if t_reversed:
+        #         for n1, _ in self.g.in_edges(r):
+        #             n_ = n1
+        #     else:
+        #         for _, n2 in self.g.out_edges(r):
+        #             n_ = n2
+        #
+        #     if not strong:
+        #         self.disassemble_chunk(n_, chunk_ref, t_reversed)
+        #
+        #     affected.append(n_)
 
         self.remove_node(r)
 

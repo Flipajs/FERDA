@@ -30,7 +30,7 @@ from core.log import LogCategories, ActionNames
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from utils.img import prepare_for_segmentation
 from gui.gui_utils import get_image_label
-
+from core.settings import Settings as S_
 
 VISU_MARGIN = 10
 
@@ -463,8 +463,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.solver.remove_region(n1)
         self.solver.remove_region(n2)
         self.solver.add_virtual_region(n_new)
+        self.next_case()
 
     def undo(self):
+        S_.general.log_graph_edits = False
+
         log = self.solver.project.log
         last_actions = log.pop_last_user_action()
 
@@ -487,12 +490,26 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 solver.simplify_to_chunks([a.data['n']])
                 _, _, ch = solver.is_chunk(a.data['n'])
                 print ch
+            elif a.action_name == ActionNames.CHUNK_APPEND_LEFT:
+                _, _, ch = solver.is_chunk(a.data['append'])
+                ch.pop_first(self.solver)
+            elif a.action_name == ActionNames.CHUNK_APPEND_RIGHT:
+                _, _, ch = solver.is_chunk(a.data['append'])
+                ch.pop_last(self.solver)
+            elif a.action_name == ActionNames.CHUNK_POP_FIRST:
+                _, _, ch = solver.is_chunk(a.data['reconstructed'])
+                ch.append_left(a.data['old_start_n'], self.solver)
+            elif a.action_name == ActionNames.CHUNK_POP_LAST:
+                _, _, ch = solver.is_chunk(a.data['reconstructed'])
+                ch.append_right(a.data['old_end_n'], self.solver)
             elif a.action_name == ActionNames.ASSEMBLE_CHUNK:
                 solver.disassemble_chunk([a.data['n']])
                 _, _, ch = solver.is_chunk(a.data['n'])
                 print ch
             elif a.action_name == ActionNames.MERGE_CHUNKS:
                 solver.split_chunks(a.data['n'], a.data['chunk'])
+
+        S_.general.log_graph_edits = True
 
         self.next_case()
 

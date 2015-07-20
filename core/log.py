@@ -31,6 +31,10 @@ class ActionNames:
     DISASSEMBLE_CHUNK = 'disassemble_chunk'
     ASSEMBLE_CHUNK = 'assemble_chunk'
     MERGE_CHUNKS = 'merge_chunks'
+    CHUNK_APPEND_LEFT = 'chunk_append_left'
+    CHUNK_APPEND_RIGHT = 'chunk_append_right'
+    CHUNK_POP_FIRST = 'chunk_pop_first'
+    CHUNK_POP_LAST = 'chunk_pop_last'
 
     # USER ACTION
     CONFIRM_ALL = 'confirm_all'

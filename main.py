@@ -11,8 +11,8 @@ ex.setFocus()
 
 from core.project import Project
 proj = Project()
-proj.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
-ex.widget_control('load_project', proj)
+# proj.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+# ex.widget_control('load_project', proj)
 
 app.exec_()
 app.deleteLater()
