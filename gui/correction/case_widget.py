@@ -535,7 +535,7 @@ class CaseWidget(QtGui.QWidget):
 
         self.parent.confirm_edges(pairs)
 
-    def get_im(self, n, t1=True):
+    def get_im(self, n):
         im = self.frame_cache[n.frame_-self.frame_t].copy()
 
         vis = draw_points_crop(im, n.pts(), color=self.get_node_color(n), square=True)
@@ -589,8 +589,6 @@ class CaseWidget(QtGui.QWidget):
             it.hide()
             self.crop_clear_frames_items.append(it)
 
-
-
     def cache_frames(self):
         for i in range(len(self.nodes_groups)):
             if i == 0:
@@ -638,11 +636,7 @@ class CaseWidget(QtGui.QWidget):
                                    self.node_bg_color,
                                    self.node_bg_color)
 
-                if i == 0:
-                    it = self.scene.addPixmap(self.get_im(n))
-                else:
-                    # TODO:
-                    it = self.scene.addPixmap(self.get_im(n, t1=False))
+                it = self.scene.addPixmap(self.get_im(n))
 
                 self.it_nodes[it] = n
                 off = (self.node_size - it.boundingRect().width()) / 2

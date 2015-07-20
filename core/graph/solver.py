@@ -221,40 +221,82 @@ class Solver:
 
         return []
 
+    def get_cc_rec(self, n, depth, node_groups):
+        if depth > 10:
+            return
+
+        if n.frame_ in node_groups and n in node_groups[n.frame_]:
+            return
+
+        node_groups.setdefault(n.frame_, []).append(n)
+
+        for n1, _, d in self.g.in_edges(n, data=True):
+            if 'chunk_ref' in d:
+                continue
+
+            self.get_cc_rec(n1, depth+1, node_groups)
+
+        for _, n2, d in self.g.out_edges(n, data=True):
+            if 'chunk_ref' in d:
+                continue
+
+            self.get_cc_rec(n2, depth+1, node_groups)
+
+        # for n1, n2, d in self.g.edges(n, data=True):
+        #     if 'chunk_ref' in d:
+        #         continue
+        #
+        #     n_ = n1 if n2 == n else n2
+        #
+        #     self.get_cc_rec(n_, depth+1, node_groups)
+
     def get_cc_from_node(self, n):
-        node_groups = []
-        out_n, _ = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
-        if out_n == 1:
-            return node_groups
+        node_groups = {}
+        self.get_cc_rec(n, 0, node_groups)
 
-        s1, s2 = get_cc_without_confirmed(self.g, n)
-        node_groups.append(s1)
-        node_groups.append(s2)
+        keys = node_groups.keys()
+        keys = sorted(keys)
 
-        for i in range(10):
-            new_s1 = set()
-            new_s2 = set()
-            for n2 in s2:
-                a1, a2 = get_cc_without_confirmed(self.g, n2)
+        g = []
+        for k in keys:
+            g.append(node_groups[k])
 
-                for n_ in a2:
-                    new_s2.add(n_)
+        return g
 
-                for n_ in a1:
-                    new_s1.add(n_)
-
-            if len(new_s2) <= 0:
-                break
-
-            node_groups[len(node_groups)-1] = list(new_s1)
-            # node_groups[len(node_groups)-1] = list(set(node_groups[len(node_groups)-1]))
-            s2 = list(new_s2)
-            node_groups.append(s2)
-
-        for i in range(len(node_groups)):
-            node_groups[i] = list(set(node_groups[i]))
-
-        return node_groups
+    # def get_cc_from_node(self, n):
+    #     node_groups = []
+    #     out_n, _ = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
+    #     if out_n == 1:
+    #         return node_groups
+    #
+    #     s1, s2 = get_cc_without_confirmed(self.g, n)
+    #     node_groups.append(s1)
+    #     node_groups.append(s2)
+    #
+    #     for i in range(10):
+    #         new_s1 = set()
+    #         new_s2 = set()
+    #         for n2 in s2:
+    #             a1, a2 = get_cc_without_confirmed(self.g, n2)
+    #
+    #             for n_ in a2:
+    #                 new_s2.add(n_)
+    #
+    #             for n_ in a1:
+    #                 new_s1.add(n_)
+    #
+    #         if len(new_s2) <= 0:
+    #             break
+    #
+    #         node_groups[len(node_groups)-1] = list(new_s1)
+    #         # node_groups[len(node_groups)-1] = list(set(node_groups[len(node_groups)-1]))
+    #         s2 = list(new_s2)
+    #         node_groups.append(s2)
+    #
+    #     for i in range(len(node_groups)):
+    #         node_groups[i] = list(set(node_groups[i]))
+    #
+    #     return node_groups
 
     def symmetric_cc_solver(self, n):
         s1, s2 = get_cc(self.g, n)
@@ -508,7 +550,7 @@ class Solver:
         affected = list(affected)
         all_affected = list(self.simplify(affected[:], return_affected=True))
         all_affected = list(set(all_affected + affected))
-        self.simplify_to_chunks()
+        self.simplify_to_chunks(all_affected)
 
         new_ccs, node_representative = self.get_new_ccs(all_affected)
 
@@ -585,7 +627,6 @@ class Solver:
             if not found:
                 raise Exception('new regions not found')
 
-
         self.add_edges_(r_t_minus, r_t)
         self.add_edges_(r_t, r_t_plus)
 
@@ -656,10 +697,10 @@ class Solver:
 
         self.remove_node(r)
 
-        new_ccs, node_representative = self.get_new_ccs(affected)
-        new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
+        # new_ccs, node_representative = self.get_new_ccs(affected)
+        # new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
 
-        return new_ccs, node_representative
+        # return new_ccs, node_representative
 
     def strong_remove(self, r):
         is_ch, t_reversed, ch = self.is_chunk(r)

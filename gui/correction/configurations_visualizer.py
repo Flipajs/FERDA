@@ -204,14 +204,28 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.join_regions_n1 = None
 
     def next_case(self, move_to_different_case=False):
-        print "next_case", move_to_different_case, self.active_node_id
         if move_to_different_case:
             self.active_node_id += 1
 
         self.nodes = self.solver.g.nodes()
         self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
+
         if self.active_node_id < len(self.nodes):
             n = self.nodes[self.active_node_id]
+
+            # test end
+            if n.frame_ == self.solver.end_t:
+                self.active_node_id += 1
+                self.next_case()
+                return
+
+            # test beginning
+            if n.frame_ == 0:
+                is_ch, _, _ = self.solver.is_chunk(n)
+                if is_ch:
+                    self.active_node_id += 1
+                    self.next_case()
+                    return
 
             # test if it is different cc:
             if move_to_different_case and self.active_cw:
@@ -291,6 +305,19 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
 
         n = self.nodes[self.active_node_id]
+
+        if n.frame_ == self.solver.end_t:
+            self.active_node_id -= 1
+            self.prev_case()
+            return
+
+        # test beginning
+        if n.frame_ == 0:
+            is_ch, _, _ = self.solver.is_chunk(n)
+            if is_ch:
+                self.active_node_id -= 1
+                self.prev_case()
+                return
 
         # test if it is different cc:
         if self.active_cw:
@@ -473,6 +500,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         solver = self.solver
 
+        reconnect_later = []
         for a in last_actions:
             print a
             if a.action_name == ActionNames.ADD_NODE:
@@ -485,17 +513,18 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 except:
                     print "NOT EXISTING EDGE"
             elif a.action_name == ActionNames.REMOVE_EDGE:
-                solver.add_edge(a.data['n1'], a.data['n2'], **a.data['data'])
+                if a.data['n1'] in solver.g.nodes() and a.data['n2'] in solver.g.nodes():
+                    solver.add_edge(a.data['n1'], a.data['n2'], **a.data['data'])
             elif a.action_name == ActionNames.DISASSEMBLE_CHUNK:
                 solver.simplify_to_chunks([a.data['n']])
                 _, _, ch = solver.is_chunk(a.data['n'])
                 print ch
             elif a.action_name == ActionNames.CHUNK_APPEND_LEFT:
                 _, _, ch = solver.is_chunk(a.data['append'])
-                ch.pop_first(self.solver)
+                reconnect_later.append(ch.pop_first(self.solver))
             elif a.action_name == ActionNames.CHUNK_APPEND_RIGHT:
                 _, _, ch = solver.is_chunk(a.data['append'])
-                ch.pop_last(self.solver)
+                reconnect_later.append(ch.pop_last(self.solver))
             elif a.action_name == ActionNames.CHUNK_POP_FIRST:
                 _, _, ch = solver.is_chunk(a.data['reconstructed'])
                 ch.append_left(a.data['old_start_n'], self.solver)
@@ -508,6 +537,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 print ch
             elif a.action_name == ActionNames.MERGE_CHUNKS:
                 solver.split_chunks(a.data['n'], a.data['chunk'])
+
+        for r in reconnect_later:
+            t_minus, t, t_plus = solver.get_regions_around(r.frame_)
+            solver.add_edges_(t_minus, t)
+            solver.add_edges_(t, t_plus)
 
         S_.general.log_graph_edits = True
 
@@ -529,6 +563,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         # TODO: add some settings...
         th = 0.2
         elem_width = 200
+
+        print "COMPUTING, hold on..."
+        i = 0
         for n in self.solver.g.nodes():
             prob = self.project.stats.antlikeness_svm.get_prob(n)
             if prob[1] < th:
@@ -537,6 +574,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 item = get_img_qlabel(n.pts(), img, n, elem_width, elem_width, filled=True)
                 item.set_selected(True)
                 self.noise_nodes_widget.add_item(item)
+                i += 1
+
+                print i
+
+                if i > 100:
+                    break
+
+        print "DONE"
 
     def remove_noise(self):
         # TODO: add actions

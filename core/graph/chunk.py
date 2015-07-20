@@ -65,7 +65,7 @@ class Chunk:
 
         self.chunk_reconnect_(solver)
 
-        S_.general.log_graph_edits = False
+        S_.general.log_graph_edits = True
 
         # r was already in chunk
         if is_ch:
@@ -145,6 +145,7 @@ class Chunk:
 
         solver.add_node(reconstructed)
         self.start_n = reconstructed
+        solver.g.remove_edge(first, self.end_n)
         prev_nodes, _, _ = solver.get_regions_around(reconstructed.frame_)
         solver.add_edges_(prev_nodes, [reconstructed])
 
@@ -174,13 +175,13 @@ class Chunk:
         last = self.end_n
 
         popped = self.reduced.pop()
-
         reconstructed = self.reconstruct(popped, solver.project)
         solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_POP_LAST, {'reconstructed': reconstructed, 'old_end_n': self.end_n})
         S_.general.log_graph_edits = False
 
         solver.add_node(reconstructed)
         self.end_n = reconstructed
+        solver.g.remove_edge(self.start_n, last)
         _, _, next_nodes = solver.get_regions_around(reconstructed.frame_)
         solver.add_edges_([reconstructed], next_nodes)
 
