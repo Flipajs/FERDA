@@ -190,7 +190,10 @@ class Chunk:
 
         solver.add_node(reconstructed)
         self.end_n = reconstructed
-        solver.remove_edge(self.start_n, last)
+        try:
+            solver.remove_edge(self.start_n, last)
+        except:
+            pass
         _, _, next_nodes = solver.get_regions_around(reconstructed.frame_)
         solver.add_edges_([reconstructed], next_nodes)
 

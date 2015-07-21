@@ -48,6 +48,7 @@ class Solver:
     def remove_node(self, n, disassembly=True):
         n = self.match_if_reconstructed(n)
         if n is None:
+            print "remove node n is None"
             return
 
         if disassembly:
@@ -89,6 +90,10 @@ class Solver:
         n2 = self.match_if_reconstructed(n2)
 
         if n1 is None or n2 is None:
+            if n1 is None:
+                print "remove_edge n1 is None, n2: ", n2
+            else:
+                print "remvoe_edge n2 is None, n1: ", n1
             return
 
         d = self.g.get_edge_data(n1, n2)
@@ -100,6 +105,10 @@ class Solver:
         n1 = self.match_if_reconstructed(n1)
         n2 = self.match_if_reconstructed(n2)
         if n1 is None or n2 is None:
+            if n1 is None:
+                print "add_edge n1 is None, n2: ", n2
+            else:
+                print "add_edge n2 is None, n1: ", n1
             return
 
         self.project.log.add(LogCategories.GRAPH_EDIT,
@@ -297,41 +306,6 @@ class Solver:
                 return a
 
         return None
-
-    # def get_cc_from_node(self, n):
-    #     node_groups = []
-    #     out_n, _ = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
-    #     if out_n == 1:
-    #         return node_groups
-    #
-    #     s1, s2 = get_cc_without_confirmed(self.g, n)
-    #     node_groups.append(s1)
-    #     node_groups.append(s2)
-    #
-    #     for i in range(10):
-    #         new_s1 = set()
-    #         new_s2 = set()
-    #         for n2 in s2:
-    #             a1, a2 = get_cc_without_confirmed(self.g, n2)
-    #
-    #             for n_ in a2:
-    #                 new_s2.add(n_)
-    #
-    #             for n_ in a1:
-    #                 new_s1.add(n_)
-    #
-    #         if len(new_s2) <= 0:
-    #             break
-    #
-    #         node_groups[len(node_groups)-1] = list(new_s1)
-    #         # node_groups[len(node_groups)-1] = list(set(node_groups[len(node_groups)-1]))
-    #         s2 = list(new_s2)
-    #         node_groups.append(s2)
-    #
-    #     for i in range(len(node_groups)):
-    #         node_groups[i] = list(set(node_groups[i]))
-    #
-    #     return node_groups
 
     def symmetric_cc_solver(self, n):
         s1, s2 = get_cc(self.g, n)
