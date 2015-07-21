@@ -582,7 +582,7 @@ class CaseWidget(QtGui.QWidget):
             self.crop_pixmaps_cache.append(pm)
 
             im = self.frame_cache[i]
-            crop = np.copy(im[roi.y():roi.y()+roi.height(), roi.x():roi.x()+roi.width(), :])
+            crop = np.copy(im[int(roi.y()):int(roi.y())+int(roi.height()), int(roi.x()):int(roi.x())+int(roi.width()), :])
             pm = cvimg2qtpixmap(crop)
             it = self.scene.addPixmap(pm)
             it.setPos(1 + off + self.left_margin + i*(self.w_) - self.node_size/2, 0)
