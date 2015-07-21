@@ -108,7 +108,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.autosave_timer = QtCore.QTimer()
         self.autosave_timer.timeout.connect(partial(self.save, True))
         # TODO: add interval to settings
-        self.autosave_timer.start(1000*60*10)
+        # self.autosave_timer.start(1000*60*10)
         self.order_by = 'time'
 
         self.join_regions_active = False
@@ -520,23 +520,23 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 _, _, ch = solver.is_chunk(a.data['n'])
                 print ch
             elif a.action_name == ActionNames.CHUNK_APPEND_LEFT:
-                _, _, ch = solver.is_chunk(a.data['append'])
-                reconnect_later.append(ch.pop_first(self.solver))
+                ch = a.data['chunk']
+                reconnect_later.append(ch.pop_first(self.solver, a.data['old_start_n']))
             elif a.action_name == ActionNames.CHUNK_APPEND_RIGHT:
-                _, _, ch = solver.is_chunk(a.data['append'])
-                reconnect_later.append(ch.pop_last(self.solver))
+                ch = a.data['chunk']
+                reconnect_later.append(ch.pop_last(self.solver, a.data['old_end_n']))
             elif a.action_name == ActionNames.CHUNK_POP_FIRST:
-                _, _, ch = solver.is_chunk(a.data['reconstructed'])
+                ch = a.data['chunk']
                 ch.append_left(a.data['old_start_n'], self.solver)
             elif a.action_name == ActionNames.CHUNK_POP_LAST:
-                _, _, ch = solver.is_chunk(a.data['reconstructed'])
+                ch = a.data['chunk']
                 ch.append_right(a.data['old_end_n'], self.solver)
             elif a.action_name == ActionNames.ASSEMBLE_CHUNK:
                 solver.disassemble_chunk([a.data['n']])
                 _, _, ch = solver.is_chunk(a.data['n'])
                 print ch
             elif a.action_name == ActionNames.MERGE_CHUNKS:
-                solver.split_chunks(a.data['n'], a.data['chunk'])
+                a.data['chunk'].split_at_t(a.data['shared'].frame_, self.solver)
 
         for r in reconnect_later:
             t_minus, t, t_plus = solver.get_regions_around(r.frame_)

@@ -646,9 +646,8 @@ class CaseWidget(QtGui.QWidget):
 
         for i in range(len(self.nodes_groups) - 1):
             for n in self.nodes_groups[i]:
-                for _, n2 in self.G.out_edges(n):
-                    if n2 not in self.node_positions:
-                        print "n2 not in node_positions case_widget.py", n.frame_, n2.frame_
+                for _, n2, d in self.G.out_edges(n, data=True):
+                    if 'chunk_ref' in d:
                         continue
 
                     line_ = QtGui.QGraphicsLineItem(self.left_margin + self.node_size + self.w_*i,

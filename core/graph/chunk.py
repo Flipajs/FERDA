@@ -33,7 +33,7 @@ class Chunk:
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
-        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_LEFT, {'append': r, 'old_start_n': self.start_n})
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_LEFT, {'append': r, 'old_start_n': self.start_n, 'chunk': self})
 
         S_.general.log_graph_edits = False
         solver.remove_node(self.start_n, False)
@@ -43,11 +43,11 @@ class Chunk:
 
         self.chunk_reconnect_(solver)
 
-        S_.general.log_graph_edits = True
-
         # r was already in chunk
         if is_ch:
             ch2.merge(self, solver)
+
+        S_.general.log_graph_edits = True
 
     def append_right(self, r, solver):
         if r.frame_ != self.end_t() + 1:
@@ -55,7 +55,7 @@ class Chunk:
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
-        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_RIGHT, {'append': r, 'old_end_n': self.end_n})
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_RIGHT, {'append': r, 'old_end_n': self.end_n, 'chunk': self})
         S_.general.log_graph_edits = False
 
         solver.remove_node(self.end_n, False)
@@ -65,11 +65,11 @@ class Chunk:
 
         self.chunk_reconnect_(solver)
 
-        S_.general.log_graph_edits = True
-
         # r was already in chunk
         if is_ch:
             self.merge(ch2, solver)
+
+        S_.general.log_graph_edits = True
 
     def chunk_reconnect_(self, solver):
         solver.add_edge(self.start_n, self.end_n, type=EDGE_CONFIRMED, chunk_ref=self, score=1.0)
@@ -93,15 +93,14 @@ class Chunk:
         if self.start_t() > second_chunk.start_t():
             second_chunk.merge(self)
             return
-
-        # print "MERGE ", self.start_t(), self.end_t(), second_chunk.start_t(), second_chunk.end_t()
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.MERGE_CHUNKS, {'chunk': self, 'shared': self.end_n})
 
         solver.remove_node(self.end_n, False)
-        # solver.remove_node(second_chunk.start_n, False)
 
         self.add_to_reduced_(self.end_n)
-        # self.add_to_reduced_(second_chunk.start_n)
+
         self.reduced += second_chunk.reduced
+        self.is_sorted = False
         self.end_n = second_chunk.end_n
 
         self.chunk_reconnect_(solver)
@@ -122,7 +121,7 @@ class Chunk:
 
         return None
 
-    def pop_first(self, solver):
+    def pop_first(self, solver, reconstructed=None):
         if not self.reduced:
             if self.start_n:
                 first = self.start_n
@@ -138,13 +137,15 @@ class Chunk:
         first = self.start_n
 
         popped = self.reduced.pop(0)
+        if reconstructed is None:
+            reconstructed = self.reconstruct(popped, solver.project)
 
-        reconstructed = self.reconstruct(popped, solver.project)
-        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_POP_FIRST, {'reconstructed': reconstructed, 'old_start_n': self.start_n})
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_POP_FIRST, {'reconstructed': reconstructed, 'old_start_n': self.start_n, 'chunk': self})
         S_.general.log_graph_edits = False
 
         solver.add_node(reconstructed)
         self.start_n = reconstructed
+        print first.frame_, self.end_n.frame_
         solver.g.remove_edge(first, self.end_n)
         prev_nodes, _, _ = solver.get_regions_around(reconstructed.frame_)
         solver.add_edges_(prev_nodes, [reconstructed])
@@ -159,7 +160,7 @@ class Chunk:
 
         return first
 
-    def pop_last(self, solver):
+    def pop_last(self, solver,reconstructed=None):
         if not self.reduced:
             if self.end_n:
                 last = self.end_n
@@ -175,8 +176,10 @@ class Chunk:
         last = self.end_n
 
         popped = self.reduced.pop()
-        reconstructed = self.reconstruct(popped, solver.project)
-        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_POP_LAST, {'reconstructed': reconstructed, 'old_end_n': self.end_n})
+        if reconstructed is None:
+            reconstructed = self.reconstruct(popped, solver.project)
+
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_POP_LAST, {'reconstructed': reconstructed, 'old_end_n': self.end_n, 'chunk': self})
         S_.general.log_graph_edits = False
 
         solver.add_node(reconstructed)
@@ -243,6 +246,7 @@ class Chunk:
 
             node_t = self.get_reduced_at(t)
             pos = self.reduced.index(node_t)
+            node_t = self.reconstruct(node_t, solver.project)
 
             if pos == 0:
                 # it is first in reduced, to spin it off two pop_first are enough
@@ -259,14 +263,15 @@ class Chunk:
                 self.reduced.pop(pos)
                 ch2 = Chunk()
                 ch2.start_n = self.reduced.pop(pos)
-                ch2.end_n = self.end
+                ch2.start_n = self.reconstruct(ch2.start_n, solver.project)
+                ch2.end_n = self.end_n
 
-                while len(self.reduced) >= pos:
-                    ch2.reduced.append(self.reduced.pop(id))
+                while len(self.reduced) > pos:
+                    ch2.reduced.append(self.reduced.pop(pos))
 
                 # ----- adjust first chunk -----
                 new_end_n = self.reduced.pop(pos-1)
-                reconstructed = self.reconstruct(new_end_n)
+                reconstructed = self.reconstruct(new_end_n, solver.project)
                 self.end_n = reconstructed
 
                 # ----- reconnect with neighbours ----
@@ -274,7 +279,7 @@ class Chunk:
                 solver.add_node(self.end_n)
                 solver.add_node(ch2.start_n)
 
-                t_minus, t, t_plus = solver.get_regions_around(node_t)
+                t_minus, t, t_plus = solver.get_regions_around(node_t.frame_)
                 solver.add_edges_(t_minus, t)
                 solver.add_edges_(t, t_plus)
 
