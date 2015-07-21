@@ -127,7 +127,6 @@ class InitHowWidget(QtGui.QWidget):
 
         return s
 
-
     def margin_score(self, region):
         #TODO REMOVE CONSTANT!
         return min(region.margin() / 30.0, 1)

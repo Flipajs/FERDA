@@ -46,6 +46,10 @@ class Solver:
         self.nodes_in_t.setdefault(n.frame_, []).append(n)
 
     def remove_node(self, n, disassembly=True):
+        n = self.match_if_reconstructed(n)
+        if n is None:
+            return
+
         if disassembly:
             is_ch, t_reversed, ch = self.is_chunk(n)
             if is_ch:
@@ -74,12 +78,30 @@ class Solver:
         if self.end_t == n.frame_ or self.start_t == n.frame_:
             self.update_time_boundaries()
 
+    def match_if_reconstructed(self, n):
+        if n not in self.g.nodes():
+            return self.find_similar(n)
+
+        return n
+
     def remove_edge(self, n1, n2):
+        n1 = self.match_if_reconstructed(n1)
+        n2 = self.match_if_reconstructed(n2)
+
+        if n1 is None or n2 is None:
+            return
+
         d = self.g.get_edge_data(n1, n2)
+
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
         self.g.remove_edge(n1, n2)
 
     def add_edge(self, n1, n2, **data):
+        n1 = self.match_if_reconstructed(n1)
+        n2 = self.match_if_reconstructed(n2)
+        if n1 is None or n2 is None:
+            return
+
         self.project.log.add(LogCategories.GRAPH_EDIT,
                              ActionNames.ADD_EDGE,
                              {'n1': n1,
@@ -262,6 +284,19 @@ class Solver:
             g.append(node_groups[k])
 
         return g
+
+    def find_similar(self, n):
+        if n.frame_ in self.nodes_in_t:
+            adepts = self.nodes_in_t[n.frame_]
+        else:
+            return None
+
+        for a in adepts:
+            # TODO some reasonable eps
+            if np.linalg.norm(n.centroid() - a.centroid()) < 3:
+                return a
+
+        return None
 
     # def get_cc_from_node(self, n):
     #     node_groups = []

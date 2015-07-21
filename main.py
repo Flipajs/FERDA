@@ -15,8 +15,8 @@ proj = Project()
 
 S_.general.print_log = False
 
-# proj.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
-# ex.widget_control('load_project', proj)
+proj.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+ex.widget_control('load_project', proj)
 
 # proj.load('/Users/flipajs/Documents/wd/colonies_c1/c1.fproj')
 # ex.widget_control('load_project', proj)
