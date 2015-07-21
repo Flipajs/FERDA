@@ -35,7 +35,7 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255)):
         img_ += np.asarray(fill_color, dtype=img.dtype)
         img_[border:-border, border:-border] = img
         crop = np.ones((height, width, channels), dtype=img.dtype)
-        crop *= fill_color
+        crop *= np.asarray(fill_color, dtype=img.dtype)
 
         y += border
         x += border

@@ -33,7 +33,8 @@ class Chunk:
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
-        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_LEFT, {'append': r, 'old_start_n': self.start_n, 'chunk': self})
+        if not is_ch:
+            solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_LEFT, {'append': r, 'old_start_n': self.start_n, 'chunk': self})
 
         S_.general.log_graph_edits = False
         solver.remove_node(self.start_n, False)
@@ -42,12 +43,11 @@ class Chunk:
         self.start_n = r
 
         self.chunk_reconnect_(solver)
+        S_.general.log_graph_edits = True
 
         # r was already in chunk
         if is_ch:
             ch2.merge(self, solver)
-
-        S_.general.log_graph_edits = True
 
     def append_right(self, r, solver):
         if r.frame_ != self.end_t() + 1:
@@ -55,7 +55,9 @@ class Chunk:
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
-        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_RIGHT, {'append': r, 'old_end_n': self.end_n, 'chunk': self})
+        if not is_ch:
+            solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_RIGHT, {'append': r, 'old_end_n': self.end_n, 'chunk': self})
+
         S_.general.log_graph_edits = False
 
         solver.remove_node(self.end_n, False)
@@ -65,11 +67,11 @@ class Chunk:
 
         self.chunk_reconnect_(solver)
 
+        S_.general.log_graph_edits = True
+
         # r was already in chunk
         if is_ch:
             self.merge(ch2, solver)
-
-        S_.general.log_graph_edits = True
 
     def chunk_reconnect_(self, solver):
         solver.add_edge(self.start_n, self.end_n, type=EDGE_CONFIRMED, chunk_ref=self, score=1.0)
@@ -95,6 +97,8 @@ class Chunk:
             return
         solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.MERGE_CHUNKS, {'chunk': self, 'shared': self.end_n})
 
+        S_.general.log_graph_edits = False
+
         solver.remove_node(self.end_n, False)
 
         self.add_to_reduced_(self.end_n)
@@ -104,6 +108,8 @@ class Chunk:
         self.end_n = second_chunk.end_n
 
         self.chunk_reconnect_(solver)
+
+        S_.general.log_graph_edits = True
 
     def first(self):
         if self.start_n:
@@ -216,7 +222,7 @@ class Chunk:
     def get_reduced_at(self, t):
         self.if_not_sorted_sort_()
 
-        t -= self.start_t()
+        t -= self.start_t() + 1
         if 0 <= t < len(self.reduced):
             return self.reduced[t]
 
@@ -260,28 +266,27 @@ class Chunk:
                 # ----- building second chunk -----
 
                 # remove node_t we already have
-                self.reduced.pop(pos)
                 ch2 = Chunk()
-                ch2.start_n = self.reduced.pop(pos)
+                ch2.start_n = self.reduced.pop(pos+1)
                 ch2.start_n = self.reconstruct(ch2.start_n, solver.project)
                 ch2.end_n = self.end_n
 
-                while len(self.reduced) > pos:
-                    ch2.reduced.append(self.reduced.pop(pos))
+                while len(self.reduced) > pos+1:
+                    ch2.reduced.append(self.reduced.pop(pos+1))
 
                 # ----- adjust first chunk -----
-                new_end_n = self.reduced.pop(pos-1)
+                new_end_n = self.reduced.pop(pos)
                 reconstructed = self.reconstruct(new_end_n, solver.project)
                 self.end_n = reconstructed
 
                 # ----- reconnect with neighbours ----
-                solver.add_node(node_t)
+                # solver.add_node(node_t)
                 solver.add_node(self.end_n)
                 solver.add_node(ch2.start_n)
 
-                t_minus, t, t_plus = solver.get_regions_around(node_t.frame_)
-                solver.add_edges_(t_minus, t)
+                t_minus, t, t_plus = solver.get_regions_around(self.end_n.frame_)
                 solver.add_edges_(t, t_plus)
+                # solver.add_edges_(t, t_plus)
 
                 # ----- test if we still have 2 chunks and reconnect first and last ---
                 if self.reduced:
