@@ -27,6 +27,8 @@ if __name__ == '__main__':
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
+    S_.general.log_graph_edits = False
+
     vid = get_auto_video_manager(proj.video_paths)
     if id*frames_in_row > 0:
         img = vid.seek_frame(id*frames_in_row)

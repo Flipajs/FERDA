@@ -185,7 +185,7 @@ class NewProjectWidget(QtGui.QWidget):
         project.name = self.project_name.text()
         if not len(project.name):
             project.name = "untitled"
-            
+
         project.description = str(self.project_description.toPlainText())
         project.video_paths = self.video_files
         project.working_directory = self.working_directory
