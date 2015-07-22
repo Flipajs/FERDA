@@ -234,7 +234,6 @@ class CropVideoWidget(QtGui.QWidget):
 
         self.update_positions(0)
 
-
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""
         self.forward.clicked.connect(self.load_next_frame)
@@ -244,7 +243,6 @@ class CropVideoWidget(QtGui.QWidget):
         # self.showFrame.clicked.connect(self.show_frame)
         self.videoSlider.valueChanged.connect(self.video_slider_changed)
         self.timer.timeout.connect(self.load_next_frame)
-
 
     def load_next_frame(self):
         """Loads next frame of the video and displays it. If there is no next frame, calls self.out_of_frames"""
@@ -293,7 +291,6 @@ class CropVideoWidget(QtGui.QWidget):
         """Updates values of components displaying frame number"""
         self.frameEdit.setText(str(int(self.video.frame_number() + 1)) + '/' + str(self.video.total_frame_count()))
         self.videoSlider.setValue(self.video.frame_number())
-
 
     def out_of_frames(self):
         """Stops playing of the video if it is playing."""
