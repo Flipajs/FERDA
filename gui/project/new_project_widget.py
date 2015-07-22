@@ -183,6 +183,9 @@ class NewProjectWidget(QtGui.QWidget):
     def get_project(self):
         project = core.project.Project()
         project.name = self.project_name.text()
+        if not len(project.name):
+            project.name = "untitled"
+            
         project.description = str(self.project_description.toPlainText())
         project.video_paths = self.video_files
         project.working_directory = self.working_directory
@@ -196,7 +199,3 @@ class NewProjectWidget(QtGui.QWidget):
 
         if self.finish_callback:
             self.finish_callback('project_created', project)
-
-
-
-            
