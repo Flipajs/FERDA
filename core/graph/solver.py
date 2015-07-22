@@ -58,13 +58,13 @@ class Solver:
 
         # save all edges
         for n1, n2, d in self.g.in_edges(n, data=True):
-            if 'chunk_ref' in d:
-                continue
+            # if 'chunk_ref' in d:
+            #     continue
             self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
 
         for n1, n2, d in self.g.out_edges(n, data=True):
-            if 'chunk_ref' in d:
-                continue
+            # if 'chunk_ref' in d:
+            #     continue
             self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
 
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, n)
@@ -110,6 +110,12 @@ class Solver:
             else:
                 print "add_edge n2 is None, n1: ", n1
             return
+
+        # if n1 not in self.g.nodes():
+        #     print "n1 not in g.nodes"
+        #
+        # if n2 not in self.g.nodes():
+        #     print "n2 not in g.nodes"
 
         self.project.log.add(LogCategories.GRAPH_EDIT,
                              ActionNames.ADD_EDGE,
@@ -420,7 +426,8 @@ class Solver:
     def simplify_to_chunks(self, nodes=None):
         if not nodes:
             nodes = self.g.nodes()
-            nodes = sorted(nodes, key=lambda k: k.frame_)
+
+        nodes = sorted(nodes, key=lambda k: k.frame_)
 
         for n in nodes:
             if n not in self.g.nodes():
@@ -559,12 +566,8 @@ class Solver:
         affected = list(affected)
         all_affected = list(self.simplify(affected[:], return_affected=True))
         all_affected = list(set(all_affected + affected))
+
         self.simplify_to_chunks(all_affected)
-
-        new_ccs, node_representative = self.get_new_ccs(all_affected)
-
-        # order them by size, this will prevent widgets removing when we want update them...
-        return self.order_ccs_by_size(new_ccs, node_representative)
 
     def get_chunk_node_partner(self, n):
         for n_, _, d in self.g.in_edges(n, data=True):

@@ -43,11 +43,13 @@ class Chunk:
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
-        if not undo_action:
-            solver.remove_node(self.start_n, False)
+        first = self.start_n
 
         self.add_to_reduced_(self.start_n, solver)
         self.set_start(r, solver)
+
+        if not undo_action:
+            solver.remove_node(first, False)
 
         if not undo_action:
             self.chunk_reconnect_(solver)
@@ -62,11 +64,13 @@ class Chunk:
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
-        if not undo_action:
-            solver.remove_node(self.end_n, False)
+        last = self.end_n
 
         self.add_to_reduced_(self.end_n, solver)
         self.set_end(r, solver)
+
+        if not undo_action:
+            solver.remove_node(last, False)
 
         if not undo_action:
             self.chunk_reconnect_(solver)
