@@ -431,7 +431,6 @@ class Solver:
 
         for n in nodes:
             if n not in self.g.nodes():
-                print n.frame_, "not in graph"
                 continue
 
             in_num, in_n = num_in_edges_of_type(self.g, n, EDGE_CONFIRMED)
