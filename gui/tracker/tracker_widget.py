@@ -86,8 +86,6 @@ class TrackerWidget(QtGui.QWidget):
             if n.frame_ == 0:
                 t1_nodes.append(n)
 
-        print "TEST"
-
         nodes_ = self.solver.g.nodes()
         self.mser_progress_label.setParent(None)
         self.certainty_visualizer.set_nodes_queue(nodes_)
