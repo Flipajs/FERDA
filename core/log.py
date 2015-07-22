@@ -35,6 +35,10 @@ class ActionNames:
     CHUNK_APPEND_RIGHT = 'chunk_append_right'
     CHUNK_POP_FIRST = 'chunk_pop_first'
     CHUNK_POP_LAST = 'chunk_pop_last'
+    CHUNK_ADD_TO_REDUCED = 'chunk_add_to_reduced'
+    CHUNK_REMOVE_FROM_REDUCED = 'chunk_remove_from_reduced'
+    CHUNK_SET_START = 'chunk_set_start'
+    CHUNK_SET_END = 'chunk_set_end'
 
     # USER ACTION
     CONFIRM_ALL = 'confirm_all'

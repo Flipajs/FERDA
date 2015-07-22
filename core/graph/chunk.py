@@ -11,10 +11,12 @@ class Chunk:
     def __init__(self, start_n=None, end_n=None, solver=None):
         self.reduced = []
         self.is_sorted = False
-        self.start_n = start_n
-        self.end_n = end_n
+        self.start_n = None
+        self.end_n = None
 
         if solver:
+            self.set_start(start_n, solver)
+            self.set_end(end_n, solver)
             self.simple_reconnect_(solver)
 
     def __str__(self):
@@ -27,47 +29,47 @@ class Chunk:
     def end_t(self):
         return self.end_n.frame_
 
-    def append_left(self, r, solver):
+    def set_start(self, n, solver):
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_SET_START, {'chunk': self, 'old_start_n': self.start_n, 'new_start_n': n})
+        self.start_n = n
+
+    def set_end(self, n, solver):
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_SET_END, {'chunk': self, 'old_end_n': self.end_n, 'new_end_n': n})
+        self.end_n = n
+
+    def append_left(self, r, solver, undo_action=False):
         if r.frame_ + 1 != self.start_t():
             raise Exception("DISCONTINUITY in chunk.py/append_left")
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
-        if not is_ch:
-            solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_LEFT, {'append': r, 'old_start_n': self.start_n, 'chunk': self})
+        if not undo_action:
+            solver.remove_node(self.start_n, False)
 
-        S_.general.log_graph_edits = False
-        solver.remove_node(self.start_n, False)
+        self.add_to_reduced_(self.start_n, solver)
+        self.set_start(r, solver)
 
-        self.add_to_reduced_(self.start_n)
-        self.start_n = r
-
-        self.chunk_reconnect_(solver)
-        S_.general.log_graph_edits = True
+        if not undo_action:
+            self.chunk_reconnect_(solver)
 
         # r was already in chunk
         if is_ch:
             ch2.merge(self, solver)
 
-    def append_right(self, r, solver):
+    def append_right(self, r, solver, undo_action=False):
         if r.frame_ != self.end_t() + 1:
             raise Exception("DISCONTINUITY in chunk.py/append_right")
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
-        if not is_ch:
-            solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_APPEND_RIGHT, {'append': r, 'old_end_n': self.end_n, 'chunk': self})
+        if not undo_action:
+            solver.remove_node(self.end_n, False)
 
-        S_.general.log_graph_edits = False
+        self.add_to_reduced_(self.end_n, solver)
+        self.set_end(r, solver)
 
-        solver.remove_node(self.end_n, False)
-
-        self.add_to_reduced_(self.end_n)
-        self.end_n = r
-
-        self.chunk_reconnect_(solver)
-
-        S_.general.log_graph_edits = True
+        if not undo_action:
+            self.chunk_reconnect_(solver)
 
         # r was already in chunk
         if is_ch:
@@ -79,7 +81,7 @@ class Chunk:
     def simple_reconnect_(self, solver):
         solver.add_edge(self.start_n, self.end_n, type=EDGE_CONFIRMED, score=1.0)
 
-    def add_to_reduced_(self, r):
+    def add_to_reduced_(self, r, solver, i=-1):
         it = Reduced(r)
         try:
             if r.is_virtual:
@@ -88,28 +90,40 @@ class Chunk:
         except:
             pass
 
-        self.reduced.append(it)
+        if i == -1:
+            self.reduced.append(it)
+        else:
+            self.reduced.insert(i, it)
+
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_ADD_TO_REDUCED, {'chunk': self, 'node': r, 'index': i})
         self.is_sorted = False
 
-    def merge(self, second_chunk, solver):
+    def remove_from_reduced_(self, i, solver):
+        if i < 0:
+            r = self.reduced.pop()
+        else:
+            r = self.reduced.pop(i)
+        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_REMOVE_FROM_REDUCED, {'chunk': self, 'node': r, 'index': i})
+        return r
+
+    def merge(self, second_chunk, solver, undo_action=False):
         if self.start_t() > second_chunk.start_t():
             second_chunk.merge(self)
             return
-        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.MERGE_CHUNKS, {'chunk': self, 'shared': self.end_n})
 
-        S_.general.log_graph_edits = False
+        if not undo_action:
+            solver.remove_node(self.end_n, False)
 
-        solver.remove_node(self.end_n, False)
+        self.add_to_reduced_(self.end_n, solver)
+        while second_chunk.reduced:
+            r = second_chunk.remove_from_reduced_(0, solver)
+            self.add_to_reduced_(r, solver)
 
-        self.add_to_reduced_(self.end_n)
-
-        self.reduced += second_chunk.reduced
         self.is_sorted = False
-        self.end_n = second_chunk.end_n
+        self.set_end(second_chunk.end_n, solver)
 
-        self.chunk_reconnect_(solver)
-
-        S_.general.log_graph_edits = True
+        if not undo_action:
+            self.chunk_reconnect_(solver)
 
     def first(self):
         if self.start_n:
@@ -127,82 +141,81 @@ class Chunk:
 
         return None
 
-    def pop_first(self, solver, reconstructed=None):
+    def pop_first(self, solver, reconstructed=None, undo_action=False):
         if not self.reduced:
             if self.start_n:
                 first = self.start_n
-                self.start_n = None
+                self.set_start(None, solver)
                 return first
             elif self.end_n:
                 first = self.end_n
-                self.end_n = None
+                self.set_end(None, solver)
                 return first
             else:
                 return None
 
         first = self.start_n
 
-        popped = self.reduced.pop(0)
+        popped = self.remove_from_reduced_(0, solver)
         if reconstructed is None:
             reconstructed = self.reconstruct(popped, solver.project)
 
-        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_POP_FIRST, {'reconstructed': reconstructed, 'old_start_n': self.start_n, 'chunk': self})
-        S_.general.log_graph_edits = False
+        if not undo_action:
+            solver.add_node(reconstructed)
 
-        solver.add_node(reconstructed)
-        self.start_n = reconstructed
-        print first.frame_, self.end_n.frame_
-        solver.remove_edge(first, self.end_n)
-        prev_nodes, _, _ = solver.get_regions_around(reconstructed.frame_)
-        solver.add_edges_(prev_nodes, [reconstructed])
+        self.set_start(reconstructed, solver)
 
-        if self.reduced:
-            self.chunk_reconnect_(solver)
-        else:
-            # it is not a chunk anymore
-            self.simple_reconnect_(solver)
+        if not undo_action:
+            solver.remove_edge(first, self.end_n)
+            prev_nodes, _, _ = solver.get_regions_around(reconstructed.frame_)
+            solver.add_edges_(prev_nodes, [reconstructed])
 
-        S_.general.log_graph_edits = True
+        if not undo_action:
+            if self.reduced:
+                self.chunk_reconnect_(solver)
+            else:
+                # it is not a chunk anymore
+                self.simple_reconnect_(solver)
 
         return first
 
-    def pop_last(self, solver,reconstructed=None):
+    def pop_last(self, solver, reconstructed=None, undo_action=False):
         if not self.reduced:
             if self.end_n:
                 last = self.end_n
-                self.end_n = None
+                self.set_end(None, solver)
                 return last
             elif self.start_n:
                 last = self.start_n
-                self.start_n = None
+                self.set_start(None, solver)
                 return last
             else:
                 return None
 
         last = self.end_n
 
-        popped = self.reduced.pop()
+        popped = self.reduced.pop(len(self.reduced)-1, solver)
         if reconstructed is None:
             reconstructed = self.reconstruct(popped, solver.project)
 
-        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_POP_LAST, {'reconstructed': reconstructed, 'old_end_n': self.end_n, 'chunk': self})
-        S_.general.log_graph_edits = False
+        if not undo_action:
+            solver.add_node(reconstructed)
 
-        solver.add_node(reconstructed)
         self.end_n = reconstructed
-        try:
-            solver.remove_edge(self.start_n, last)
-        except:
-            pass
-        _, _, next_nodes = solver.get_regions_around(reconstructed.frame_)
-        solver.add_edges_([reconstructed], next_nodes)
 
-        if self.reduced:
-            self.chunk_reconnect_(solver)
-        else:
-            self.simple_reconnect_(solver)
+        if not undo_action:
+            try:
+                solver.remove_edge(self.start_n, last)
+            except:
+                pass
 
-        S_.general.log_graph_edits = True
+            _, _, next_nodes = solver.get_regions_around(reconstructed.frame_)
+            solver.add_edges_([reconstructed], next_nodes)
+
+            if self.reduced:
+                self.chunk_reconnect_(solver)
+            else:
+                self.simple_reconnect_(solver)
 
         return last
 
@@ -248,7 +261,7 @@ class Chunk:
 
         return r
 
-    def split_at_t(self, t, solver):
+    def split_at_t(self, t, solver, undo_action=False):
         # spins off and reconstructs region at frame t and if chunk is long enough it will separate it into 2 chunks
         if self.start_t() < t < self.end_t():
             self.if_not_sorted_sort_()
@@ -284,23 +297,25 @@ class Chunk:
 
                 # ----- reconnect with neighbours ----
                 # solver.add_node(node_t)
-                solver.add_node(self.end_n)
-                solver.add_node(ch2.start_n)
+                if not undo_action:
+                    solver.add_node(self.end_n)
+                    solver.add_node(ch2.start_n)
 
-                t_minus, t, t_plus = solver.get_regions_around(self.end_n.frame_)
-                solver.add_edges_(t, t_plus)
+                    t_minus, t, t_plus = solver.get_regions_around(self.end_n.frame_)
+                    solver.add_edges_(t, t_plus)
                 # solver.add_edges_(t, t_plus)
 
                 # ----- test if we still have 2 chunks and reconnect first and last ---
-                if self.reduced:
-                    self.chunk_reconnect_(solver)
-                else:
-                    self.simple_reconnect_(solver)
+                if not undo_action:
+                    if self.reduced:
+                        self.chunk_reconnect_(solver)
+                    else:
+                        self.simple_reconnect_(solver)
 
-                if ch2.reduced:
-                    ch2.chunk_reconnect_(solver)
-                else:
-                    ch2.simple_reconnect_(solver)
+                    if ch2.reduced:
+                        ch2.chunk_reconnect_(solver)
+                    else:
+                        ch2.simple_reconnect_(solver)
 
         else:
             raise Exception("t is out of range of this chunk in chunk.py/split_at_t")

@@ -501,6 +501,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         solver = self.solver
 
         reconnect_later = []
+        i = 0
         for a in last_actions:
             print a
             if a.action_name == ActionNames.ADD_NODE:
@@ -515,33 +516,44 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             elif a.action_name == ActionNames.REMOVE_EDGE:
                 if a.data['n1'] in solver.g.nodes() and a.data['n2'] in solver.g.nodes():
                     solver.add_edge(a.data['n1'], a.data['n2'], **a.data['data'])
-            elif a.action_name == ActionNames.DISASSEMBLE_CHUNK:
-                solver.simplify_to_chunks([a.data['n']])
-                _, _, ch = solver.is_chunk(a.data['n'])
-                print ch
-            elif a.action_name == ActionNames.CHUNK_APPEND_LEFT:
-                ch = a.data['chunk']
-                reconnect_later.append(ch.pop_first(self.solver, a.data['old_start_n']))
-            elif a.action_name == ActionNames.CHUNK_APPEND_RIGHT:
-                ch = a.data['chunk']
-                reconnect_later.append(ch.pop_last(self.solver, a.data['old_end_n']))
-            elif a.action_name == ActionNames.CHUNK_POP_FIRST:
-                ch = a.data['chunk']
-                ch.append_left(a.data['old_start_n'], self.solver)
-            elif a.action_name == ActionNames.CHUNK_POP_LAST:
-                ch = a.data['chunk']
-                ch.append_right(a.data['old_end_n'], self.solver)
-            elif a.action_name == ActionNames.ASSEMBLE_CHUNK:
-                solver.disassemble_chunk([a.data['n']])
-                _, _, ch = solver.is_chunk(a.data['n'])
-                print ch
-            elif a.action_name == ActionNames.MERGE_CHUNKS:
-                a.data['chunk'].split_at_t(a.data['shared'].frame_, self.solver)
+            # elif a.action_name == ActionNames.DISASSEMBLE_CHUNK:
+            #     solver.simplify_to_chunks([a.data['n']])
+            #     _, _, ch = solver.is_chunk(a.data['n'])
+            #     print ch
+            # elif a.action_name == ActionNames.CHUNK_APPEND_LEFT:
+            #     ch = a.data['chunk']
+            #     reconnect_later.append(ch.pop_first(self.solver, a.data['old_start_n'], undo_action=True))
+            # elif a.action_name == ActionNames.CHUNK_APPEND_RIGHT:
+            #     ch = a.data['chunk']
+            #     reconnect_later.append(ch.pop_last(self.solver, a.data['old_end_n'], undo_action=True))
+            # elif a.action_name == ActionNames.CHUNK_POP_FIRST:
+            #     ch = a.data['chunk']
+            #     ch.append_left(a.data['old_start_n'], self.solver, undo_action=True)
+            # elif a.action_name == ActionNames.CHUNK_POP_LAST:
+            #     ch = a.data['chunk']
+            #     ch.append_right(a.data['old_end_n'], self.solver, undo_action=True)
+            # elif a.action_name == ActionNames.ASSEMBLE_CHUNK:
+            #     solver.disassemble_chunk([a.data['n']])
+            #     _, _, ch = solver.is_chunk(a.data['n'])
+            #     print ch
+            # elif a.action_name == ActionNames.MERGE_CHUNKS:
+            #     a.data['chunk'].split_at_t(a.data['shared'].frame_, self.solver, undo_action=True)
 
-        for r in reconnect_later:
-            t_minus, t, t_plus = solver.get_regions_around(r.frame_)
-            solver.add_edges_(t_minus, t)
-            solver.add_edges_(t, t_plus)
+            elif a.action_name == ActionNames.CHUNK_ADD_TO_REDUCED:
+                a.data['chunk'].remove_from_reduced_(-1, self.solver)
+            elif a.action_name == ActionNames.CHUNK_REMOVE_FROM_REDUCED:
+                a.data['chunk'].add_to_reduced_(a.data['node'], self.solver, a.data['index'])
+            elif a.action_name == ActionNames.CHUNK_SET_START:
+                a.data['chunk'].set_start(a.data['old_start_n'], self.solver)
+            elif a.action_name == ActionNames.CHUNK_SET_END:
+                a.data['chunk'].set_start(a.data['old_end_n'], self.solver)
+
+            i += 1
+        #
+        # for r in reconnect_later:
+        #     t_minus, t, t_plus = solver.get_regions_around(r.frame_)
+        #     solver.add_edges_(t_minus, t)
+        #     solver.add_edges_(t, t_plus)
 
         S_.general.log_graph_edits = True
 
