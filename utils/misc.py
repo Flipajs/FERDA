@@ -46,7 +46,7 @@ def is_flipajs_pc():
     """
     p = os.path.realpath(__file__)
 
-    if '/home/flipajs/Dropbox/PycharmProjects/ants/' in p:
+    if '/Users/flipajs/Documents/dev/ferda/' in p:
         return True
     else:
         return False

@@ -129,6 +129,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             pc = pickle.Pickler(f)
             pc.dump(self.solver.g)
             pc.dump(self.solver.project.log)
+            pc.dump(self.solver.ignored_nodes)
 
         print "PROGRESS SAVED"
 
@@ -214,6 +215,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         if self.active_node_id < len(self.nodes):
             n = self.nodes[self.active_node_id]
+            if n in self.solver.ignored_nodes:
+                self.active_node_id += 1
+                self.next_case()
+                return
 
             # test end
             if n.frame_ == self.solver.end_t:
@@ -307,6 +312,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
 
         n = self.nodes[self.active_node_id]
+
+        if n in self.solver.ignored_nodes:
+            self.active_node_id -= 1
+            self.prev_case()
+            return
 
         if n.frame_ == self.solver.end_t:
             self.active_node_id -= 1
@@ -503,6 +513,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         solver = self.solver
 
         i = 0
+        ignore_node = False
         for a in last_actions:
             # if a.action_name != ActionNames.CHUNK_REMOVE_FROM_REDUCED and a.action_name != ActionNames.CHUNK_ADD_TO_REDUCED:
             #     print a
@@ -525,10 +536,16 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 a.data['chunk'].set_start(a.data['old_start_n'], self.solver)
             elif a.action_name == ActionNames.CHUNK_SET_END:
                 a.data['chunk'].set_end(a.data['old_end_n'], self.solver)
+            elif a.action_name == ActionNames.IGNORE_NODE:
+                del self.solver.ignored_nodes[a.data]
+                ignore_node = True
 
             i += 1
 
         S_.general.log_graph_edits = True
+
+        if ignore_node:
+            self.active_node_id -= 1
 
         self.next_case()
 
@@ -609,6 +626,15 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.noise_nodes_back_b.hide()
         self.noise_nodes_confirm_b.hide()
         self.noise_nodes_filter_b.show()
+
+        self.next_case()
+
+    def ignore_node(self):
+        self.project.log.add(LogCategories.USER_ACTION, ActionNames.IGNORE_NODES)
+        for g in self.active_cw.nodes_groups:
+            for n in g:
+                self.solver.ignored_nodes[n] = True
+                self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.IGNORE_NODE, n)
 
         self.next_case()
 
@@ -732,6 +758,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.undo_action.triggered.connect(self.undo)
         self.undo_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Z))
         self.addAction(self.undo_action)
+
+        self.ignore_action = QtGui.QAction('ignore', self)
+        self.ignore_action.triggered.connect(self.ignore_node)
+        self.ignore_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
+        self.addAction(self.ignore_action)
 
         self.d_ = None
 

@@ -165,8 +165,15 @@ class Project:
                 if isinstance(log, list):
                     log = Log()
 
+                ignored_nodes = {}
+                try:
+                    ignored_nodes = up.load()
+                except:
+                    pass
+
                 solver = Solver(self)
                 solver.g = g
+                solver.ignored_nodes = ignored_nodes
                 self.saved_progress = {'solver': solver}
                 self.log = log
         except:

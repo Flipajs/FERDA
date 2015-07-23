@@ -35,6 +35,8 @@ class Solver:
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
         self.nodes_in_t = {}
 
+        self.ignored_nodes = {}
+
         self.cc_id = 0
 
     def add_node(self, n):

@@ -39,8 +39,10 @@ class ActionNames:
     CHUNK_REMOVE_FROM_REDUCED = 'chunk_remove_from_reduced'
     CHUNK_SET_START = 'chunk_set_start'
     CHUNK_SET_END = 'chunk_set_end'
+    IGNORE_NODE = 'ignore_node'
 
     # USER ACTION
+    IGNORE_NODES = 'ignore_nodes'
     CONFIRM_ALL = 'confirm_all'
     CONFIRM = 'confirm'
     MERGED_REGION = 'merged_region'
@@ -68,7 +70,7 @@ class Log:
     def __init__(self):
         self.data_ = []
 
-    def add(self, category, action_name, data):
+    def add(self, category, action_name, data=None):
         if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
             return
 
