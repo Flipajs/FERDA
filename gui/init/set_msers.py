@@ -111,7 +111,9 @@ class SetMSERs(QtGui.QWidget):
         m = get_msers_(img_)
         groups = get_region_groups(m)
         ids = margin_filter(m, groups)
-        min_area = self.project.stats.area_median * 0.2
+        # TODO:
+        # min_area = self.project.stats.area_median * 0.2
+        min_area = 30
         ids = area_filter(m, ids, min_area)
         ids = children_filter(m, ids)
 
@@ -124,9 +126,10 @@ class SetMSERs(QtGui.QWidget):
         for id in ids:
             r = m[id]
 
-            prob = self.project.stats.antlikeness_svm.get_prob(r)
-            if prob[1] < S_.solver.antlikeness_threshold * 0.5:
-                continue
+            if self.project.stats:
+                prob = self.project.stats.antlikeness_svm.get_prob(r)
+                if prob[1] < S_.solver.antlikeness_threshold * 0.5:
+                    continue
 
             cont = get_contour(r.pts())
             crop = draw_points_crop(img_, cont, (0, 255, 0, 0.9), square=True)

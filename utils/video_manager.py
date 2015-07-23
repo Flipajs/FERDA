@@ -215,6 +215,36 @@ def get_auto_video_manager(file_paths):
         return FerdaCompressedVideoManager(compressed, lossless)
 
 
+def optimize_frame_access(list_data, ra_n_times_slower=40):
+    """
+    implemented by Simon Mandlik
+
+    list_data should be array of nodes, must have .frame_ var
+    returns list of tuples in format (data, ra_access [bool], stay_on_same_frame [bool])
+    :param list_data:
+    :param ra_n_times_slower:
+    :return:
+    """
+
+    sorted_list = list(list_data)
+    sorted_list = sorted(list_data, key=lambda x: x.frame_)
+    result = []
+    prev_frame = 0
+    while sorted_list:
+        node = sorted_list.pop(0)
+        frame = node.frame_
+        prev_bool = frame == prev_frame
+        if (frame - prev_frame) <= ra_n_times_slower:
+            tup = (node, True, prev_bool)
+            result.append(tup)
+        else:
+            tup = (node, False, prev_bool)
+            result.append(tup)
+        prev_frame = frame
+
+    return result
+
+
 if __name__ == "__main__":
     # test lossless detection:
 

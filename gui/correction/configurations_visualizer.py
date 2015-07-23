@@ -7,7 +7,7 @@ import numpy as np
 from skimage.transform import resize
 from gui.gui_utils import get_image_label
 from utils.drawing.points import draw_points_crop, draw_points
-from utils.video_manager import get_auto_video_manager
+from utils.video_manager import get_auto_video_manager, optimize_frame_access
 from core.region.mser import get_msers_, get_all_msers
 from skimage.transform import resize
 from gui.img_controls.my_view import MyView
@@ -31,6 +31,8 @@ from gui.img_grid.img_grid_widget import ImgGridWidget
 from utils.img import prepare_for_segmentation
 from gui.gui_utils import get_image_label
 from core.settings import Settings as S_
+import time
+
 
 VISU_MARGIN = 10
 
@@ -549,22 +551,52 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         print "COMPUTING, hold on..."
         i = 0
+        to_process = []
         for n in self.solver.g.nodes():
             prob = self.project.stats.antlikeness_svm.get_prob(n)
             if prob[1] < th:
-                img = self.vid.seek_frame(n.frame_)
-                img = prepare_for_segmentation(img, self.project)
-                item = get_img_qlabel(n.pts(), img, n, elem_width, elem_width, filled=True)
-                item.set_selected(True)
-                self.noise_nodes_widget.add_item(item)
+                to_process.append(n)
                 i += 1
-
-                print i
 
                 if i > 100:
                     break
 
-        print "DONE"
+        # start = time.time()
+        # for i in range(20):
+        #     self.vid.seek_frame(i*13)
+        # print "RA", (time.time() - start) / 20
+        #
+        # start = time.time()
+        # for i in range(20):
+        #     self.vid.move2_next()
+        # print "Seq", (time.time() - start) / 20
+
+        start = time.time()
+
+        optimized = optimize_frame_access(to_process)
+        for n, seq, _ in optimized:
+            if seq:
+                while self.vid.frame_number() < n.frame_:
+                    self.vid.move2_next()
+
+                img = self.vid.img()
+            else:
+                img = self.vid.seek_frame(n.frame_)
+
+            img = prepare_for_segmentation(img, self.project)
+            item = get_img_qlabel(n.pts(), img, n, elem_width, elem_width, filled=True)
+            item.set_selected(True)
+            self.noise_nodes_widget.add_item(item)
+
+        # for n in to_process:
+        #     img = self.vid.seek_frame(n.frame_)
+        #
+        #     img = prepare_for_segmentation(img, self.project)
+        #     item = get_img_qlabel(n.pts(), img, n, elem_width, elem_width, filled=True)
+        #     item.set_selected(True)
+        #     self.noise_nodes_widget.add_item(item)
+
+        print "DONE", time.time() - start
 
     def remove_noise(self):
         # TODO: add actions
