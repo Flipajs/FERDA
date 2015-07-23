@@ -58,6 +58,8 @@ if __name__ == '__main__':
         print i
         sys.stdout.flush()
 
+    solver.simplify(first_run=True)
+    solver.simplify_to_chunks()
     solver.simplify()
     solver.simplify_to_chunks()
 

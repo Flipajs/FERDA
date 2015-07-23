@@ -186,7 +186,7 @@ class Solver:
         if t-1 in self.nodes_in_t:
             self.add_edges_(self.nodes_in_t[t-1], self.nodes_in_t[t])
 
-    def simplify(self, queue=None, return_affected=False):
+    def simplify(self, queue=None, return_affected=False, first_run=False):
         if queue is None:
             queue = self.g.nodes()
 
@@ -206,8 +206,8 @@ class Solver:
                     for a in affected:
                         all_affected.add(a)
                     # (all_affected.add(x) for x in affected)
-
-                queue.extend(affected)
+                if not first_run:
+                    queue.extend(affected)
 
         return all_affected
 
