@@ -198,7 +198,7 @@ class Chunk:
 
         last = self.end_n
 
-        popped = self.reduced.pop(len(self.reduced)-1, solver)
+        popped = self.reduced.pop(len(self.reduced)-1)
         if reconstructed is None:
             reconstructed = self.reconstruct(popped, solver.project)
 

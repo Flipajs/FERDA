@@ -211,6 +211,12 @@ class NewProjectWidget(QtGui.QWidget):
         if self.video_files:
             p.video_paths = self.video_files
 
+            self.d_ = QtGui.QDialog()
+            self.d_.setLayout(QtGui.QVBoxLayout())
             sm = SetMSERs(p)
-            sm.show()
-            sm.exec_()
+            self.d_.layout().addWidget(sm)
+            self.d_.showMaximized()
+            # self.d_.setFixedWidth(500)
+            # self.d_.setFixedHeight(500)
+            # self.d_.show()
+            self.d_.exec_()

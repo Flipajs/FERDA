@@ -562,12 +562,15 @@ class CaseWidget(QtGui.QWidget):
         self.w_ = max(roi.width() + 2, self.w_)
         self.top_margin = int(roi.height() + 1)
         self.crop_offset = roi.top_left_corner()
-        for i in range(len(self.nodes_groups)):
+
+        special_case = 0 if len(self.nodes_groups) > 1 else 1
+        for i in range(len(self.nodes_groups) + special_case):
             im = self.frame_cache[i].copy()
 
             if self.crop_visualize:
-                for r in self.nodes_groups[i]:
-                    im = draw_points(im, r.pts(), color=self.get_node_color(r))
+                if not(special_case and i > 0):
+                    for r in self.nodes_groups[i]:
+                        im = draw_points(im, r.pts(), color=self.get_node_color(r))
 
             crop = np.copy(im[roi.y():roi.y()+roi.height(), roi.x():roi.x()+roi.width(), :])
             cv2.putText(crop, str(self.frame_t+i), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
@@ -589,8 +592,19 @@ class CaseWidget(QtGui.QWidget):
             it.hide()
             self.crop_clear_frames_items.append(it)
 
+        if special_case:
+            i = 1
+            im = self.frame_cache[i]
+            crop = np.copy(im[int(roi.y()):int(roi.y())+int(roi.height()), int(roi.x()):int(roi.x())+int(roi.width()), :])
+            pm = cvimg2qtpixmap(crop)
+            it = self.scene.addPixmap(pm)
+            it.setPos(1 + off + self.left_margin + i*(self.w_) - self.node_size/2, 0)
+            it.hide()
+            self.crop_clear_frames_items.append(it)
+
     def cache_frames(self):
-        for i in range(len(self.nodes_groups)):
+        special_case = 0 if len(self.nodes_groups) > 1 else 1
+        for i in range(len(self.nodes_groups)+special_case):
             if i == 0:
                 im = self.vid.seek_frame(self.frame_t)
             else:

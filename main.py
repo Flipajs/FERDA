@@ -17,7 +17,7 @@ proj = Project()
 S_.general.print_log = False
 # ex.widget_control('load_project', proj)
 
-# proj.load('/Users/flipajs/Documents/wd/c1__/c1.fproj')
+# proj.load('/Users/flipajs/Documents/wd/crop_00-01-00-04/c1.fproj')
 # ex.widget_control('load_project', proj)
 
 app.exec_()
