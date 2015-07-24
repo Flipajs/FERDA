@@ -274,7 +274,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.active_cw.active_node = None
             self.scenes_widget.layout().addWidget(self.active_cw)
 
-            self.graph_visu_callback(500, 600)
+            # self.graph_visu_callback(500, 600)
 
     def best_greedy_config(self, nodes_groups):
         config = {}
