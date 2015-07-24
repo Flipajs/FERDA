@@ -39,6 +39,10 @@ class MainWindow(QtGui.QMainWindow):
         self.project_widget = project_widget.ProjectWidget(self.widget_control)
         self.central_widget.addWidget(self.project_widget)
 
+        self.settings_button = QtGui.QPushButton('Settings', self)
+        self.settings_button.clicked.connect(self.show_settings)
+        self.layout().addWidget(self.settings_button)
+
         self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
         self.setWindowTitle('FERDA')
         self.setGeometry(100, 100, 700, 400)
@@ -76,6 +80,7 @@ class MainWindow(QtGui.QMainWindow):
         event.accept()
 
     def widget_control(self, state, values=None):
+        self.settings_button.hide()
         if state == 'new_project':
             self.new_project_widget = new_project_widget.NewProjectWidget(self.widget_control)
             self.central_widget.addWidget(self.new_project_widget)
