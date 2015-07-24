@@ -454,7 +454,6 @@ class Solver:
                             ch_in.append_right(n, self)
                             ch_in.append_right(out_n, self)
                         else:
-                            print "new chunk"
                             chunk = Chunk(in_n, n, self)
                             chunk.append_right(out_n, self)
             # except:
