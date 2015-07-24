@@ -29,8 +29,9 @@ class BackgroundComputer():
         self.update_callback = update_callback
         self.finished_callback = finished_callback
         self.start = 0
+
         # TODO: Settings
-        self.frames_in_row = 100
+        self.frames_in_row = S_.parallelization.frames_in_row
         self.frames_in_row_last = -1
         self.part_num = -1
 
@@ -98,8 +99,8 @@ class BackgroundComputer():
 
         self.solver = Solver(self.project)
 
-        for i in range(S_.parallelization.processes_num):
-        # for i in range(1):
+        print "ASSEMBLING SOLUTION"
+        for i in range(self.part_num):
             with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g_ = up.load()
@@ -114,11 +115,16 @@ class BackgroundComputer():
                 self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
                 end_nodes_prev = end_nodes
 
+            print str(i) + " / " + str(self.part_num)
+
         S_.general.log_graph_edits = False
         print "NODES: ", len(self.solver.g.nodes())
         self.solver.update_nodes_in_t_refs()
+        print "SIMPLIFYING"
         self.solver.simplify(nodes_to_process)
+        print "CHUNK CONSTRUCTION"
         self.solver.simplify_to_chunks(nodes_to_process)
+        print "DONE"
 
         S_.general.log_graph_edits = True
 
@@ -159,7 +165,7 @@ class BackgroundComputer():
             try:
                 end = time.time()
                 self.finished[p_id] = True
-                print "PART "+str(p_id+1)+"/"+str(self.part_num)+" FINISHED MSERS, takes ", end - self.start, " seconds which is ", (end-self.start) / (self.process_n * self.frames_in_row), " seconds per frame"
+                print "PART "+str(p_id+1)+"/"+str(self.part_num)+" FINISHED MSERS, takes ", end - self.start, " seconds which is ", (end-self.start) / (self.process_n * self.frames_in_row * int((p_id+self.process_n)/self.process_n)), " seconds per frame"
 
                 self.processes[p_id][2] = self.FINISHED
 
