@@ -117,6 +117,10 @@ class BackgroundComputer():
 
             print str(i) + " / " + str(self.part_num)
 
+        # with open(self.project.working_directory+'/solver.pkl', 'wb') as f:
+        #     p = pickle.Pickler(f)
+        #     p.dump(self.solver.g)
+
         S_.general.log_graph_edits = False
         print "NODES: ", len(self.solver.g.nodes())
         self.solver.update_nodes_in_t_refs()
