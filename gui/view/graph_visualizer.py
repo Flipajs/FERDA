@@ -64,8 +64,9 @@ if __name__ == "__main__":
         project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
     else:
         # EDIT HERE....
+
         project = Project()
-        project.load('...')
+        project.load('/home/simon/Documents/res/c1')
 
 
     ex = call_visualizer(500, 600, project)
