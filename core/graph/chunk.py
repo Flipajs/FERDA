@@ -100,7 +100,7 @@ class Chunk:
             self.reduced.insert(i, it)
 
         solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_ADD_TO_REDUCED, {'chunk': self, 'node': r, 'index': i})
-        self.is_sorted = False
+        # self.is_sorted = False
 
     def remove_from_reduced_(self, i, solver):
         if i < 0:
@@ -128,7 +128,7 @@ class Chunk:
             self.reduced += second_chunk.reduced
             second_chunk.reduced = []
 
-        self.is_sorted = False
+        # self.is_sorted = False
         self.set_end(second_chunk.end_n, solver)
 
         if not undo_action:
