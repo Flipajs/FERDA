@@ -66,7 +66,7 @@ if __name__ == "__main__":
         # EDIT HERE....
 
         project = Project()
-        project.load('/home/simon/Documents/res/c1')
+        project.load('/home/simon/Documents/res/eight/eight.fproj')
 
 
     ex = call_visualizer(500, 600, project)
