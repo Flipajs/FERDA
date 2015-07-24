@@ -78,10 +78,10 @@ class TrackerWidget(QtGui.QWidget):
                 sub_g.node[n]['img'] = self.solver.g.node[n]['img']
 
         ngv = NodeGraphVisualizer(sub_g, [], regions)
-        w_ = ngv.visualize()
+        ngv.visualize()
         self.layout().removeWidget(self.graph_widget)
         self.graph_widget.setParent(None)
-        self.graph_widget = w_
+        self.graph_widget = ngv
         # self.layout().addWidget(self.graph_widget)
         self.graph_widget.showMaximized()
         # self.graph_widget.setFixedHeight(300)
