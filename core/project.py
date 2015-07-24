@@ -5,6 +5,7 @@ import pickle
 from methods.bg_model.model import Model
 from PyQt4 import QtCore
 from core.graph.solver import Solver
+from core.log import Log
 
 
 class Project:
@@ -24,8 +25,8 @@ class Project:
         self.animals = None
         self.stats = None
         self.saved_progress = None
+        self.log = Log()
         self.version = "2.0.1"
-
 
     def save(self):
         # BG MODEL
@@ -76,7 +77,6 @@ class Project:
         with open(self.working_directory+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 
-
     def save_qsettings(self):
         s = QtCore.QSettings('FERDA')
         settings = {}
@@ -101,7 +101,6 @@ class Project:
                     qs.setValue(key, it)
                 except:
                     pass
-
 
     def load(self, path):
         with open(path, 'rb') as f:
@@ -162,13 +161,23 @@ class Project:
             with open(self.working_directory+'/progress_save.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g = up.load()
-                actions = up.load()
+                log = up.load()
+                if isinstance(log, list):
+                    log = Log()
+
+                ignored_nodes = {}
+                try:
+                    ignored_nodes = up.load()
+                except:
+                    pass
+
                 solver = Solver(self)
                 solver.g = g
-                self.saved_progress = {'solver': solver, 'actions': actions}
+                solver.ignored_nodes = ignored_nodes
+                self.saved_progress = {'solver': solver}
+                self.log = log
         except:
             pass
-
 
 
 if __name__ == "__main__":

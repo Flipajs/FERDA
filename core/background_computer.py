@@ -36,7 +36,6 @@ class BackgroundComputer():
         self.check_parallelization_timer.timeout.connect(self.check_parallelization)
         self.check_parallelization_timer.start(100)
 
-
     def set_frames_in_row(self):
         vid = get_auto_video_manager(self.project.video_paths)
         frame_num = int(vid.total_frame_count())
@@ -46,6 +45,8 @@ class BackgroundComputer():
 
     def run(self):
         if not os.path.exists(self.project.working_directory+'/temp/g_simplified0.pkl'):
+            if not S_.general.log_in_bg_computation:
+                S_.general.log_graph_edits = False
             self.start = time.time()
             for i in range(self.process_n):
                 p = QtCore.QProcess()
@@ -55,6 +56,7 @@ class BackgroundComputer():
                 p.readyReadStandardOutput.connect(partial(self.OnProcessOutputReady, i))
 
                 f_num = self.frames_in_row
+                # f_num = 100
                 last_n_frames = 0
                 if i == self.process_n - 1:
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
@@ -64,6 +66,8 @@ class BackgroundComputer():
                 self.processes.append(p)
 
                 self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
+
+            S_.general.log_graph_edits = True
         else:
             self.piece_results_together()
             self.check_parallelization_timer.stop()
@@ -96,9 +100,10 @@ class BackgroundComputer():
                 self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
                 end_nodes_prev = end_nodes
 
+        print "NODES: ", len(self.solver.g.nodes())
         self.solver.update_nodes_in_t_refs()
-        # self.solver.simplify(nodes_to_process)
-        # self.solver.simplify_to_chunks()
+        self.solver.simplify(nodes_to_process)
+        self.solver.simplify_to_chunks()
 
         self.finished_callback(self.solver)
 
@@ -110,7 +115,6 @@ class BackgroundComputer():
                 if d < self.solver.max_distance:
                     s, ds, multi, antlike = self.solver.assignment_score(r_t1, r_t2)
                     g.add_edge(r_t1, r_t2, type='d', score=-s)
-
 
     def OnProcessOutputReady(self, p_id):
         while True:

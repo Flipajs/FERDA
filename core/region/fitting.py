@@ -13,7 +13,7 @@ from math import cos, sin
 import split_by_contours
 import experiment_params
 from utils.geometry import rotation_matrix, angle_from_matrix, rotate
-from utils.img import get_roi, ROI
+from utils.roi import ROI
 
 ##############
 # all point lists are in format [y, x]
@@ -102,7 +102,6 @@ class Fitting():
             if not changed:
                 break
 
-
         self.prepare_results()
         # self.plot_situation()
 
@@ -143,6 +142,7 @@ class Fitting():
 
             self.animals[a_id].pts_ = np.asarray(np.round(pts_), dtype=np.uint32)
             self.animals[a_id].centroid_ = self.trans_helpers[a_id].centroid
+            self.animals[a_id].is_virtual = True
 
     def plot_situation(self):
         plt.close()

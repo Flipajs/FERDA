@@ -27,6 +27,7 @@ class TrackerWidget(QtGui.QWidget):
 
         self.graph_widget = QtGui.QWidget()
         self.layout().addWidget(self.graph_widget)
+        self.layout().setContentsMargins(0, 0, 0, 0)
 
     def bc_update(self, text):
         self.mser_progress_label.setText('MSER computation progress'+text)
@@ -85,28 +86,10 @@ class TrackerWidget(QtGui.QWidget):
             if n.frame_ == 0:
                 t1_nodes.append(n)
 
-        self.solver.simplify()
-        self.solver.simplify_to_chunks()
-
-        ccs = self.solver.get_ccs()
-        # ccs = sorted(ccs, key=lambda k: k.regions_t1[0].frame_)
-        ccs = sorted(ccs, key=lambda k: (-get_length_of_longest_chunk(self.solver, k), k.regions_t1[0].frame_))
-        print "NUMBER OF CASES: ", len(ccs)
-
-        print "MAJOR AXIS MEDIAN", self.project.stats.major_axis_median, S_.solver.max_edge_distance_in_ant_length, self.solver.max_distance
-
-        # i = 0
-        for c_ in ccs:
-            c_.longest_chunk_length = get_length_of_longest_chunk(self.solver, c_)
-            self.certainty_visualizer.add_configuration(c_)
-            # if i > 10:
-            #     break
-
-            # i += 1
-
-        self.certainty_visualizer.visualize_n_sorted(5)
-
-        # self.update_graph_visu(0, 10)
+        nodes_ = self.solver.g.nodes()
+        self.mser_progress_label.setParent(None)
+        self.certainty_visualizer.set_nodes_queue(nodes_)
+        self.certainty_visualizer.next_case()
 
     def apply_actions(self, actions):
         for action_name, data in actions:

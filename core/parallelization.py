@@ -8,14 +8,14 @@ import sys
 from sklearn import svm
 from utils.video_manager import get_auto_video_manager
 import cPickle as pickle
-from core.region.mser import get_msers_
-from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
+from core.region.mser import ferda_filtered_msers
 from core.graph.solver import Solver
 from core.project import Project
 from core.settings import Settings as S_
 from skimage.transform import rescale
 import numpy as np
 import scipy
+from utils.img import prepare_for_segmentation
 
 if __name__ == '__main__':
     working_dir = sys.argv[1]
@@ -27,8 +27,7 @@ if __name__ == '__main__':
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
-    #TODO: REMOVE
-    min_area = proj.stats.area_median * 0.2
+    S_.general.log_graph_edits = False
 
     vid = get_auto_video_manager(proj.video_paths)
     if id*frames_in_row > 0:
@@ -39,51 +38,28 @@ if __name__ == '__main__':
     if id == 0:
         print img.shape
 
-    if proj.bg_model:
-        img = proj.bg_model.bg_subtraction(img)
-
-    if proj.arena_model:
-        img = proj.arena_model.mask_image(img)
-
-    if S_.mser.gaussian_kernel_std > 0:
-        img = scipy.ndimage.gaussian_filter(img, sigma=S_.mser.gaussian_kernel_std)
-
-    if S_.mser.img_subsample_factor > 1.0:
-        img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
-
-    sum_ = 0
+    img = prepare_for_segmentation(img, proj)
 
     solver = Solver(proj)
     for i in range(frames_in_row + last_n_frames):
         frame = id*frames_in_row + i
 
-        m = get_msers_(img, frame)
-        groups = get_region_groups(m)
-        ids = margin_filter(m, groups)
-        ids = area_filter(m, ids, min_area)
-        ids = children_filter(m, ids)
+        msers = ferda_filtered_msers(img, proj, frame)
 
         img = vid.move2_next()
         if img is None:
             break
 
-        if proj.bg_model:
-            img = proj.bg_model.bg_subtraction(img)
+        img = prepare_for_segmentation(img, proj)
 
-        if proj.arena_model:
-            img = proj.arena_model.mask_image(img)
-
-        if S_.mser.img_subsample_factor > 1.0:
-            img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
-
-        sum_ += len(m)
-
-        solver.add_regions_in_t([m[id_] for id_ in ids], frame)
+        solver.add_regions_in_t(msers, frame)
 
         print
         print i
         sys.stdout.flush()
 
+    solver.simplify(first_run=True)
+    solver.simplify_to_chunks()
     solver.simplify()
     solver.simplify_to_chunks()
 

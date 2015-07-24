@@ -13,11 +13,12 @@ import numpy as np
 from chunk import Chunk
 from configuration import Configuration
 import scipy
+from core.log import LogCategories, ActionNames
+from utils.img import prepare_for_segmentation
+from utils.constants import EDGE_CONFIRMED
 
 
-class Solver():
-    EDGE_CONFIRMED = 'c'
-
+class Solver:
     def __init__(self, project):
         self.g = nx.DiGraph()
         self.project = project
@@ -34,24 +35,96 @@ class Solver():
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
         self.nodes_in_t = {}
 
+        self.ignored_nodes = {}
+
         self.cc_id = 0
 
     def add_node(self, n):
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, n)
         self.start_t = min(self.start_t, n.frame_)
         self.end_t = max(self.end_t, n.frame_)
 
         self.g.add_node(n)
         self.nodes_in_t.setdefault(n.frame_, []).append(n)
 
-    def remove_node(self, n):
-        self.g.remove_node(n)
+    def remove_node(self, n, disassembly=True):
+        n = self.match_if_reconstructed(n)
+        if n is None:
+            print "remove node n is None"
+            return
+
+        if disassembly:
+            is_ch, t_reversed, ch = self.is_chunk(n)
+            if is_ch:
+                ch.pop_last(self) if t_reversed else ch.pop_first(self)
+
+        # save all edges
+        for n1, n2, d in self.g.in_edges(n, data=True):
+            # if 'chunk_ref' in d:
+            #     continue
+            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
+
+        for n1, n2, d in self.g.out_edges(n, data=True):
+            # if 'chunk_ref' in d:
+            #     continue
+            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
+
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, n)
+
         self.nodes_in_t[n.frame_].remove(n)
         if not self.nodes_in_t[n.frame_]:
             del self.nodes_in_t[n.frame_]
 
+        self.g.remove_node(n)
+
         # maybe we need to shrink time boundaries...
         if self.end_t == n.frame_ or self.start_t == n.frame_:
             self.update_time_boundaries()
+
+    def match_if_reconstructed(self, n):
+        if n not in self.g.nodes():
+            return self.find_similar(n)
+
+        return n
+
+    def remove_edge(self, n1, n2):
+        n1 = self.match_if_reconstructed(n1)
+        n2 = self.match_if_reconstructed(n2)
+
+        if n1 is None or n2 is None:
+            if n1 is None:
+                print "remove_edge n1 is None, n2: ", n2
+            else:
+                print "remvoe_edge n2 is None, n1: ", n1
+            return
+
+        d = self.g.get_edge_data(n1, n2)
+
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
+        self.g.remove_edge(n1, n2)
+
+    def add_edge(self, n1, n2, **data):
+        n1 = self.match_if_reconstructed(n1)
+        n2 = self.match_if_reconstructed(n2)
+        if n1 is None or n2 is None:
+            if n1 is None:
+                print "add_edge n1 is None, n2: ", n2
+            else:
+                print "add_edge n2 is None, n1: ", n1
+            return
+
+        # if n1 not in self.g.nodes():
+        #     print "n1 not in g.nodes"
+        #
+        # if n2 not in self.g.nodes():
+        #     print "n2 not in g.nodes"
+
+        self.project.log.add(LogCategories.GRAPH_EDIT,
+                             ActionNames.ADD_EDGE,
+                             {'n1': n1,
+                              'n2': n2,
+                              'data': data})
+        self.g.add_edge(n1, n2, **data)
 
     def update_time_boundaries(self):
         self.start_t = np.inf
@@ -82,14 +155,14 @@ class Solver():
     def is_out_confirmed(self, n):
         # returns bool if there is outcoming confirmed edge from node n
         for _, _, d in self.g.out_edges(n, data=True):
-            if 'type' in d and d['type'] == self.EDGE_CONFIRMED:
+            if 'type' in d and d['type'] == EDGE_CONFIRMED:
                 return True
 
         return False
 
     def is_in_confirmed(self, n):
         for _, _, d in self.g.in_edges(n, data=True):
-            if 'type' in d and d['type'] == self.EDGE_CONFIRMED:
+            if 'type' in d and d['type'] == EDGE_CONFIRMED:
                 return True
 
         return False
@@ -107,13 +180,13 @@ class Solver():
 
                 if d < self.max_distance:
                     s, ds, multi, antlike = self.assignment_score(r_t1, r_t2)
-                    self.g.add_edge(r_t1, r_t2, type='d', score=-s)
+                    self.add_edge(r_t1, r_t2, type='d', score=-s)
 
     def add_edges_to_t(self, t):
         if t-1 in self.nodes_in_t:
             self.add_edges_(self.nodes_in_t[t-1], self.nodes_in_t[t])
 
-    def simplify(self, queue=None, return_affected=False):
+    def simplify(self, queue=None, return_affected=False, first_run=False):
         if queue is None:
             queue = self.g.nodes()
 
@@ -123,7 +196,7 @@ class Solver():
             n = queue.pop()
 
             #chunk test
-            num_out, n_out = num_out_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
+            num_out, n_out = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
             if num_out == 1 and 'chunk_ref' in self.g[n][n_out]:
                 continue
 
@@ -133,15 +206,15 @@ class Solver():
                     for a in affected:
                         all_affected.add(a)
                     # (all_affected.add(x) for x in affected)
-
-                queue.extend(affected)
+                if not first_run:
+                    queue.extend(affected)
 
         return all_affected
 
     def adaptive_threshold(self, n):
         vals_out, best_out = get_best_n_out_nodes(self.g, n, 2)
         if best_out[0]:
-            if self.g[n][best_out[0]]['type'] == self.EDGE_CONFIRMED:
+            if self.g[n][best_out[0]]['type'] == EDGE_CONFIRMED:
                 return []
         else:
             return []
@@ -170,7 +243,7 @@ class Solver():
             if cert > S_.solver.certainty_threshold:
                 for _, n2_ in self.g.out_edges(n1):
                     if n2_ != n2:
-                        self.g.remove_edge(n1, n2_)
+                        self.remove_edge(n1, n2_)
                         affected.append(n2_)
                         for n1_, _ in self.g.in_edges(n2_):
                             if n1_ != n:
@@ -178,14 +251,69 @@ class Solver():
 
                 for n1_, _ in self.g.in_edges(n2):
                     if n1_ != n1:
-                        self.g.remove_edge(n1_, n2)
+                        self.remove_edge(n1_, n2)
                         affected.append(n1_)
 
-                self.g[n1][n2]['type'] = self.EDGE_CONFIRMED
+                self.g[n1][n2]['type'] = EDGE_CONFIRMED
 
             return affected
 
         return []
+
+    def get_cc_rec(self, n, depth, node_groups):
+        if depth > 10:
+            return
+
+        if n.frame_ in node_groups and n in node_groups[n.frame_]:
+            return
+
+        node_groups.setdefault(n.frame_, []).append(n)
+
+        for n1, _, d in self.g.in_edges(n, data=True):
+            if 'chunk_ref' in d:
+                continue
+
+            self.get_cc_rec(n1, depth+1, node_groups)
+
+        for _, n2, d in self.g.out_edges(n, data=True):
+            if 'chunk_ref' in d:
+                continue
+
+            self.get_cc_rec(n2, depth+1, node_groups)
+
+        # for n1, n2, d in self.g.edges(n, data=True):
+        #     if 'chunk_ref' in d:
+        #         continue
+        #
+        #     n_ = n1 if n2 == n else n2
+        #
+        #     self.get_cc_rec(n_, depth+1, node_groups)
+
+    def get_cc_from_node(self, n):
+        node_groups = {}
+        self.get_cc_rec(n, 0, node_groups)
+
+        keys = node_groups.keys()
+        keys = sorted(keys)
+
+        g = []
+        for k in keys:
+            g.append(node_groups[k])
+
+        return g
+
+    def find_similar(self, n):
+        if n.frame_ in self.nodes_in_t:
+            adepts = self.nodes_in_t[n.frame_]
+        else:
+            return None
+
+        for a in adepts:
+            # TODO some reasonable eps
+            if np.linalg.norm(n.centroid() - a.centroid()) < 3:
+                return a
+
+        return None
 
     def symmetric_cc_solver(self, n):
         s1, s2 = get_cc(self.g, n)
@@ -197,7 +325,6 @@ class Solver():
             scores, configs = best_2_cc_configs(self.g, s1, s2)
             if not scores:
                 return []
-
 
             if len(scores) == 1:
                 n_ = float(len(s1))
@@ -214,18 +341,18 @@ class Solver():
                     if n1 and n2:
                         for _, n2_ in self.g.out_edges(n1):
                             if n2_ != n2:
-                                self.g.remove_edge(n1, n2_)
+                                self.remove_edge(n1, n2_)
                                 affected.append(n2_)
 
                         for n1_, _ in self.g.in_edges(n2):
                             if n1_ != n1:
-                                self.g.remove_edge(n1_, n2)
+                                self.remove_edge(n1_, n2)
                                 affected.append(n1_)
 
                         affected.append(n1)
                         affected.append(n2)
 
-                        self.g[n1][n2]['type'] = self.EDGE_CONFIRMED
+                        self.g[n1][n2]['type'] = EDGE_CONFIRMED
                         self.g[n1][n2]['certainty'] = cert
             else:
                 for n1, n2 in configs[0]:
@@ -279,42 +406,54 @@ class Solver():
 
         #TODO: get rid of this hack... also in antlikness test in solver.py
         # flag for virtual region
-        if r1.min_intensity_ == -2:
-            q1 = 1.0
-        else:
-            q1 = self.antlikeness.get_prob(r1)[1]
+        q1 = self.antlikeness.get_prob(r1)[1]
+        try:
+            if r1.is_virtual:
+                q1 = 1.0
+        except:
+            pass
 
-        if r2.min_intensity_ == -2:
-            q2 = 1.0
-        else:
-            q2 = self.antlikeness.get_prob(r2)[1]
+        q2 = self.antlikeness.get_prob(r2)[1]
+        try:
+            if r2.is_virtual:
+                q2 = 1.0
+        except:
+            pass
 
         antlikeness_diff = 1 - abs(q1-q2)
         s = ds * antlikeness_diff
 
         return s, ds, 0, antlikeness_diff
 
-    def simplify_to_chunks(self):
-        for n in self.g.nodes():
-            in_num, in_n = num_in_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
-            out_num, out_n = num_out_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
+    def simplify_to_chunks(self, nodes=None):
+        if not nodes:
+            nodes = self.g.nodes()
+
+        nodes = sorted(nodes, key=lambda k: k.frame_)
+
+        for n in nodes:
+            if n not in self.g.nodes():
+                continue
+
+            in_num, in_n = num_in_edges_of_type(self.g, n, EDGE_CONFIRMED)
+            out_num, out_n = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
 
             if out_num == 1 and in_num == 1:
+                # self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ASSEMBLE_CHUNK, {'n': n})
                 if 'chunk_ref' in self.g[in_n][n]:
                     chunk = self.g[in_n][n]['chunk_ref']
+                    chunk.append_right(out_n, self)
+                elif 'chunk_ref' in self.g[n][out_n]:
+                    chunk = self.g[n][out_n]['chunk_ref']
+                    chunk.append_left(in_n, self)
                 else:
-                    chunk = Chunk()
-
-                # case when there are 2 chunks (due parallelization) -> MERGE
-                if 'chunk_ref' in self.g[n][out_n]:
-                    second_chunk = self.g[n][out_n]['chunk_ref']
-
-                    chunk.merge(second_chunk)
-
-                chunk.add_region(n)
-
-                self.remove_node(n)
-                self.g.add_edge(in_n, out_n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+                    is_ch, _, ch_in = self.is_chunk(in_n)
+                    if is_ch:
+                        ch_in.append_right(n, self)
+                        ch_in.append_right(out_n, self)
+                    else:
+                        chunk = Chunk(in_n, n, self)
+                        chunk.append_right(out_n, self)
 
     def get_ccs(self, queue=[]):
         if not queue:
@@ -327,7 +466,7 @@ class Solver():
         ccs = []
         for n in queue:
             if n not in touched:
-                out_n, _ = num_out_edges_of_type(self.g, n, self.EDGE_CONFIRMED)
+                out_n, _ = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
                 if out_n == 1:
                     touched[n] = True
                     continue
@@ -405,34 +544,31 @@ class Solver():
         return new_ccs, node_representative
 
     def confirm_edges(self, edge_pairs):
-        affected = []
+        affected = set()
         for (n1, n2) in edge_pairs:
-            affected.append(n1)
-            affected.append(n2)
+            affected.add(n1)
+            affected.add(n2)
 
             for _, n2_ in self.g.out_edges(n1):
                 if n2_ != n2:
-                    self.g.remove_edge(n1, n2_)
-                    affected.append(n2_)
+                    self.remove_edge(n1, n2_)
+                    affected.add(n2_)
                     for n1_, _ in self.g.in_edges(n2_):
                         if n1_ != n1:
-                            affected.append(n1_)
+                            affected.add(n1_)
 
             for n1_, _ in self.g.in_edges(n2):
                 if n1_ != n1:
-                    self.g.remove_edge(n1_, n2)
-                    affected.append(n1_)
+                    self.remove_edge(n1_, n2)
+                    affected.add(n1_)
 
-            self.g[n1][n2]['type'] = self.EDGE_CONFIRMED
+            self.g[n1][n2]['type'] = EDGE_CONFIRMED
 
+        affected = list(affected)
         all_affected = list(self.simplify(affected[:], return_affected=True))
         all_affected = list(set(all_affected + affected))
-        self.simplify_to_chunks()
 
-        new_ccs, node_representative = self.get_new_ccs(all_affected)
-
-        # order them by size, this will prevent widgets removing when we want update them...
-        return self.order_ccs_by_size(new_ccs, node_representative)
+        self.simplify_to_chunks(all_affected)
 
     def get_chunk_node_partner(self, n):
         for n_, _, d in self.g.in_edges(n, data=True):
@@ -445,108 +581,67 @@ class Solver():
 
         return None
 
-    def disassemble_chunk(self, n, chunk, reversed_dir):
-        if reversed_dir:
-            reduced = chunk.remove_from_end()
-            if not reduced:
-                region = self.get_chunk_node_partner(n)
-                self.g.remove_edge(n, region)
-        else:
-            reduced = chunk.remove_from_beginning()
-            if not reduced:
-                region = self.get_chunk_node_partner(n)
-                self.g.remove_edge(region, n)
+    def disassemble_chunk(self, n, chunk=None, reversed_dir=None):
+        pass
 
-        # if the chunk is only n1, n2  and nothing between in reduced form, the reduced is None and the disassembled region is in region var
-        if reduced:
-            vid = get_auto_video_manager(self.project.video_paths)
-            img = vid.seek_frame(reduced.t)
+        # if not chunk:
+        #     _, reversed_dir, chunk = self.is_chunk(n)
+        #
+        # self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.DISASSEMBLE_CHUNK, {'n': n})
+        #
+        # if reversed_dir:
+        #     reduced = chunk.remove_from_end()
+        #     if not reduced:
+        #         region = self.get_chunk_node_partner(n)
+        #         self.remove_edge(n, region)
+        # else:
+        #     reduced = chunk.remove_from_beginning()
+        #     if not reduced:
+        #         region = self.get_chunk_node_partner(n)
+        #         self.remove_edge(region, n)
+        #
+        # # if the chunk is only n1, n2  and nothing between in reduced form, the reduced is None and the disassembled region is in region var
+        # if reduced:
+        #     region = reduced.reconstruct(self.project)
+        #
+        #     self.add_node(region)
+        #
+        #     if reversed_dir:
+        #         self.add_edge(n, region, type=EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+        #         _, _, t_plus = self.get_regions_around(region.frame_)
+        #         self.add_edges_([region], t_plus)
+        #     else:
+        #         self.add_edge(region, n, type=EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
+        #         t_minus, _, _ = self.get_regions_around(region.frame_)
+        #         self.add_edges_(t_minus, [region])
+        #
+        # return region
 
-            if self.project.bg_model:
-                img = self.project.bg_model.bg_subtraction(img)
+    def split_chunks(self, n, chunk):
+        raise Exception("split_chunks in solver.py not implemented yet!!!")
+        # _, _, chunk = self.is_chunk(n)
 
-            if self.project.arena_model:
-                img = self.project.arena_model.mask_image(img)
-
-            if S_.mser.gaussian_kernel_std > 0:
-                img = scipy.ndimage.gaussian_filter(img, sigma=S_.mser.gaussian_kernel_std)
-
-            if S_.mser.img_subsample_factor > 1.0:
-                img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
-
-            # region = get_mser_by_id(img, reduced.mser_id, reduced.t)
-
-            min_area = self.project.stats.area_median * 0.2
-            m = get_msers_(img, reduced.t)
-            groups = get_region_groups(m)
-            ids = margin_filter(m, groups)
-            ids = area_filter(m, ids, min_area)
-            ids = children_filter(m, ids)
-
-            best_match_d = np.inf
-            region = None
-            for id in ids:
-                r = m[id]
-                d = np.linalg.norm(r.centroid() - reduced.centroid)
-                if best_match_d > d:
-                    best_match_d = d
-                    region = r
-
-            self.add_node(region)
-
-            if reversed_dir:
-                self.g.add_edge(n, region, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
-                _, _, t_plus = self.get_regions_around(region.frame_)
-                self.add_edges_([region], t_plus)
-            else:
-                self.g.add_edge(region, n, type=self.EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
-                t_minus, _, _ = self.get_regions_around(region.frame_)
-                self.add_edges_(t_minus, [region])
-
-        return region
-
-    def merged(self, new_regions, replace, to_fit, t_reversed):
+    def merged(self, new_regions, replace, t_reversed):
         for n in new_regions:
             self.add_node(n)
 
-        to_connect = set()
-        if t_reversed:
-            for n in replace:
-                for n1, _, d in self.g.in_edges(n, data=True):
-                    # because if the second node from chunk (n1) is in the consecutive frame, then you just take this region...
-                    if 'chunk_ref' in d and n.frame_ - 1 > n1.frame_:
-                        n1 = self.disassemble_chunk(n1, d['chunk_ref'], t_reversed)
-
-                    to_connect.add(n1)
-        else:
-            for n in replace:
-                for _, n2, d in self.g.out_edges(n, data=True):
-                    if 'chunk_ref' in d and n.frame_ + 1 < n2.frame_:
-                        n2 = self.disassemble_chunk(n2, d['chunk_ref'], t_reversed)
-
-                    to_connect.add(n2)
-
-        for n in replace:
-            self.remove_node(n)
+        self.remove_node(replace)
 
         r_t_minus, r_t, r_t_plus = self.get_regions_around(new_regions[0].frame_)
+
+        # TEST
+        for n in new_regions:
+            found = False
+            for r in r_t:
+                if r == n:
+                    found = True
+                    break
+
+            if not found:
+                raise Exception('new regions not found')
+
         self.add_edges_(r_t_minus, r_t)
         self.add_edges_(r_t, r_t_plus)
-
-        regions_t1 = new_regions if t_reversed else to_fit
-        regions_t2 = to_fit if t_reversed else new_regions
-        self.add_edges_(regions_t1, regions_t2)
-
-        affected = list(regions_t1)[:] + list(regions_t2)[:]
-
-        regions_t1 = to_connect if t_reversed else new_regions
-        regions_t2 = new_regions if t_reversed else to_connect
-        self.add_edges_(regions_t1, regions_t2)
-
-        new_ccs, node_representative = self.get_new_ccs(list(affected) + list(regions_t2))
-        new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
-
-        return new_ccs, node_representative
 
     def get_regions_around(self, t):
         # returns (list, list, list) of nodes in t_minus, t, t+plus
@@ -598,62 +693,66 @@ class Solver():
         if r in affected:
             affected.remove(r)
 
-        is_ch, t_reversed, chunk_ref = self.is_chunk(r)
-        if is_ch:
-            # get the other end of chunk
-            if t_reversed:
-                for n1, _ in self.g.in_edges(r):
-                    n_ = n1
-            else:
-                for _, n2 in self.g.out_edges(r):
-                    n_ = n2
-
-            if not strong:
-                self.disassemble_chunk(n_, chunk_ref, t_reversed)
-
-            affected.append(n_)
+        # is_ch, t_reversed, chunk_ref = self.is_chunk(r)
+        # if is_ch:
+        #     # get the other end of chunk
+        #     if t_reversed:
+        #         for n1, _ in self.g.in_edges(r):
+        #             n_ = n1
+        #     else:
+        #         for _, n2 in self.g.out_edges(r):
+        #             n_ = n2
+        #
+        #     if not strong:
+        #         self.disassemble_chunk(n_, chunk_ref, t_reversed)
+        #
+        #     affected.append(n_)
 
         self.remove_node(r)
 
-        new_ccs, node_representative = self.get_new_ccs(affected)
-        new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
+        # new_ccs, node_representative = self.get_new_ccs(affected)
+        # new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
 
-        return new_ccs, node_representative
+        # return new_ccs, node_representative
 
     def strong_remove(self, r):
         is_ch, t_reversed, ch = self.is_chunk(r)
 
         if is_ch:
-            ch_end_n = self.get_chunk_node_partner(r)
-
-            new_ccs, node_representative = self.remove_region(r, strong=True)
-            new_ccs2, node_representative2 = self.remove_region(ch_end_n, strong=True)
-            new_ccs += new_ccs2
-            node_representative += node_representative2
-
-            new_ccs_ = []
-            node_representatives_ = []
-
-            # remove everything from first remove region which doesn't make sense after second removing...
-            for cc, n in zip(new_ccs, node_representative):
-                if not cc:
-                    continue
-
-                ok = True
-                for n in cc.regions_t1:
-                    if n not in self.g.nodes():
-                        ok = False
-                        break
-                if ok:
-                    for n in cc.regions_t2:
-                        if n not in self.g.nodes():
-                            ok = False
-                            break
-                if ok:
-                    new_ccs_.append(cc)
-                    node_representatives_.append(n)
-
-            return new_ccs_, node_representatives_
+            # TODO: save to log somehow...
+            self.remove_node(ch.start_n, False)
+            self.remove_node(ch.end_n, False)
+            # # q = ch.last() if
+            # ch_end_n = self.get_chunk_node_partner(r)
+            #
+            # new_ccs, node_representative = self.remove_region(r, strong=True)
+            # new_ccs2, node_representative2 = self.remove_region(ch_end_n, strong=True)
+            # new_ccs += new_ccs2
+            # node_representative += node_representative2
+            #
+            # new_ccs_ = []
+            # node_representatives_ = []
+            #
+            # # remove everything from first remove region which doesn't make sense after second removing...
+            # for cc, n in zip(new_ccs, node_representative):
+            #     if not cc:
+            #         continue
+            #w
+            #     ok = True
+            #     for n in cc.regions_t1:
+            #         if n not in self.g.nodes():
+            #             ok = False
+            #             break
+            #     if ok:
+            #         for n in cc.regions_t2:
+            #             if n not in self.g.nodes():
+            #                 ok = False
+            #                 break
+            #     if ok:
+            #         new_ccs_.append(cc)
+            #         node_representatives_.append(n)
+            #
+            # return new_ccs_, node_representatives_
         else:
             return self.remove_region(r)
 

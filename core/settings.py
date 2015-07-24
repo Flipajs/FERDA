@@ -86,21 +86,31 @@ class Visualization:
     __metaclass__ = SettingsType
     default_region_color = Item('visualization/default_region_color', QtGui.QColor(0, 255, 255, 50), '')
 
+
 class Solver:
     __metaclass__ = SettingsType
     max_edge_distance_in_ant_length = Item('solver/max_edge_distance_in_ant_length', 2.5, 'Used to simplify graph based on distance between nodes')
-    antlikeness_threshold = Item('solver/antlikeness_threshold', 0.2, 'removes all nodes with antlikness below threshold')
+    antlikeness_threshold = Item('solver/antlikeness_threshold', 0.1, 'removes all nodes with antlikness below threshold')
     certainty_threshold = Item('solver/certainty_threshold', 0.5, 'connected component can be solved ony if certainty is higher then this threshold')
+
 
 class Parallelization:
     __metaclass__ = SettingsType
     processes_num = Item('parallelization/processes_num', 8, 'The number of processes. It is good idea to set it <= num of CPUs')
     use = Item('parallelization/use', True, '...')
 
+
 class Temp:
     __metaclass__ = SettingsType
     last_vid_path = Item('temp/last_vid_path', '')
     last_wd_path = Item('temp/last_wd_path', '')
+
+
+class General:
+    __metaclass__ = SettingsType
+    log_graph_edits = Item('general/log_graph_edits', True, '...')
+    log_in_bg_computation = Item('general/log_in_bg_computation', False, 'Could be switched off before user interactions to save space.')
+    print_log = Item('general/print_log', True, '...')
 
 class Settings:
     cache = Cache
@@ -110,6 +120,7 @@ class Settings:
     solver = Solver
     parallelization = Parallelization
     temp = Temp
+    general = General
 
 if __name__ == '__main__':
     print Settings.solver.max_edge_distance_in_ant_length

@@ -67,7 +67,6 @@ class MainWindow(QtGui.QMainWindow):
         self.update()
         self.showMaximized()
 
-
     def closeEvent(self, event):
         print "exiting"
         #

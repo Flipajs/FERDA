@@ -2,7 +2,8 @@ __author__ = 'fnaiser'
 
 import numpy as np
 import math
-from utils.img import get_roi
+from utils.roi import get_roi
+
 
 class Region():
     """ This class encapsulates set of points. It computes and stores statistics like moments, contour of region etc.
@@ -43,6 +44,11 @@ class Region():
         self.frame_ = frame
         self.id_ = id
         self.contour_ = None
+        self.is_virtual = False
+
+    def __str__(self):
+        s = "t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(self.centroid_[0])+", "+str(self.centroid_[1])+"]"
+        return s
 
     def from_dict_(self, data):
         pts = []
@@ -76,11 +82,8 @@ class Region():
         self.a_ = self.b_ * axis_ratio
         ########
 
-
-
         self.theta_ = get_orientation(self.sxx_, self.syy_, self.sxy_)
         self.parent_label_ = data['parent_label']
-
 
     def from_pts_(self, data):
         self.pts_ = np.array(data)

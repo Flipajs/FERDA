@@ -16,6 +16,8 @@ from methods.bg_model.max_intensity import MaxIntensity
 import os
 from core.settings import Settings as S_
 from gui.project.import_widget import ImportWidget
+from gui.init.set_msers import SetMSERs
+from core.project import Project
 
 class BGSub(threading.Thread):
     def __init__(self, vid, update_callback):
@@ -68,6 +70,10 @@ class NewProjectWidget(QtGui.QWidget):
         label = QtGui.QLabel('Project description')
         self.project_description = QtGui.QPlainTextEdit(self)
         self.form_layout.addRow(label, self.project_description)
+
+        self.set_msers_button = QtGui.QPushButton('Set MSERs')
+        self.set_msers_button.clicked.connect(self.set_msers)
+        self.form_layout.addRow('', self.set_msers_button)
 
         self.left_vbox = QtGui.QVBoxLayout()
         self.import_templates = QtGui.QPushButton('Import templates')
@@ -183,6 +189,9 @@ class NewProjectWidget(QtGui.QWidget):
     def get_project(self):
         project = core.project.Project()
         project.name = self.project_name.text()
+        if not len(project.name):
+            project.name = "untitled"
+
         project.description = str(self.project_description.toPlainText())
         project.video_paths = self.video_files
         project.working_directory = self.working_directory
@@ -197,6 +206,17 @@ class NewProjectWidget(QtGui.QWidget):
         if self.finish_callback:
             self.finish_callback('project_created', project)
 
+    def set_msers(self):
+        p = Project()
+        if self.video_files:
+            p.video_paths = self.video_files
 
-
-            
+            self.d_ = QtGui.QDialog()
+            self.d_.setLayout(QtGui.QVBoxLayout())
+            sm = SetMSERs(p)
+            self.d_.layout().addWidget(sm)
+            self.d_.showMaximized()
+            # self.d_.setFixedWidth(500)
+            # self.d_.setFixedHeight(500)
+            # self.d_.show()
+            self.d_.exec_()

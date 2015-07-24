@@ -40,7 +40,17 @@ class SetMSERs(QtGui.QWidget):
         self.w_.layout().addLayout(self.top_row)
 
         self.vid = get_auto_video_manager(project.video_paths)
-        self.im = self.vid.move2_next()
+        # self.im = self.vid.move2_next()
+        self.im = self.vid.seek_frame(659)
+
+        im = self.im
+        if self.project.bg_model:
+            im = self.project.bg_model.bg_subtraction(im)
+
+        if self.project.arena_model:
+            im = self.project.arena_model.mask_image(im)
+
+        self.im = im
 
         self.img_preview = get_image_label(self.im)
         self.top_row.addWidget(self.img_preview)
@@ -86,7 +96,7 @@ class SetMSERs(QtGui.QWidget):
         self.blur_kernel_size.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('Gblur kernel size', self.blur_kernel_size)
 
-        # self.update()
+        self.update()
         self.show()
 
     def update(self):
@@ -101,7 +111,10 @@ class SetMSERs(QtGui.QWidget):
         m = get_msers_(img_)
         groups = get_region_groups(m)
         ids = margin_filter(m, groups)
-        # ids = area_filter(m, ids, min_area)
+        # TODO:
+        # min_area = self.project.stats.area_median * 0.2
+        min_area = 30
+        ids = area_filter(m, ids, min_area)
         ids = children_filter(m, ids)
 
         self.img_grid.setParent(None)
@@ -112,6 +125,12 @@ class SetMSERs(QtGui.QWidget):
 
         for id in ids:
             r = m[id]
+
+            if self.project.stats:
+                prob = self.project.stats.antlikeness_svm.get_prob(r)
+                if prob[1] < S_.solver.antlikeness_threshold * 0.5:
+                    continue
+
             cont = get_contour(r.pts())
             crop = draw_points_crop(img_, cont, (0, 255, 0, 0.9), square=True)
             draw_points(img_, cont, (0, 255, 0, 0.9))
@@ -144,8 +163,9 @@ class SetMSERs(QtGui.QWidget):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
+    proj.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
     # proj.video_paths = '/home/flipajs/Downloads/Camera 1_biglense1.avi'
-    proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
+    # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c2.avi'
 

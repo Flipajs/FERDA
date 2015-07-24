@@ -6,7 +6,8 @@ import numpy as np
 from scipy import ndimage
 import cv2
 from core.region.region import Region
-from utils.drawing.points import get_contour, get_roi
+from utils.drawing.points import get_contour
+from utils.roi import get_roi
 
 
 class DistanceMap():

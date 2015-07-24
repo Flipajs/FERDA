@@ -4,7 +4,8 @@ import pickle
 import cv2
 import numpy as np
 from core.region import mser, mser_operations
-from utils.img import get_safe_selection, get_roi
+from utils.img import get_safe_selection
+from utils.roi import get_roi
 from core.settings import Settings as S_
 from PyQt4 import QtGui
 
@@ -44,7 +45,7 @@ def draw_points(img, pts, color=None):
     return img
 
 
-def draw_points_crop(img, pts, color=None, margin=0.1, square=False):
+def draw_points_crop(img, pts, color=None, margin=0.1, square=False, fill_color=(255, 255, 255)):
     """
     returns image with region visualization cropped around region with margin which is specified by percentage of max(height, width)
     :param img:
@@ -77,7 +78,7 @@ def draw_points_crop(img, pts, color=None, margin=0.1, square=False):
     im_ = np.copy(img)
     im_ = draw_points(im_, pts, color)
 
-    crop = get_safe_selection(im_, y_, x_, height_, width_)
+    crop = get_safe_selection(im_, y_, x_, height_, width_, fill_color=fill_color)
 
     return crop
 
@@ -106,7 +107,6 @@ def get_contour(pts):
     roi = get_roi(pts)
 
     img = np.zeros((roi.height(), roi.width()), dtype=np.uint8)
-
 
     img[pts[:,0]-roi.y(), pts[:,1]-roi.x()] = 255
 

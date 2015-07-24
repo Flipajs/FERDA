@@ -2,6 +2,8 @@ __author__ = 'fnaiser'
 
 import numpy as np
 
+# TODO: also in solver.py...
+EDGE_CONFIRMED = 'c'
 
 def get_best_n_in_nodes(g, node, n, key='score', order='asc'):
     best = [0 for i in range(n)]
@@ -56,6 +58,38 @@ def get_best_n_out_nodes(g, node, n, key='score', order='asc'):
 
     return best, best_n
 
+
+def get_cc_without_confirmed(g, n):
+    s_t1 = set()
+    s_t2 = set()
+
+    process = [(n, 1)]
+
+    while True:
+        if not process:
+            break
+
+        n_, t_ = process.pop()
+
+        s_test = s_t2
+        if t_ == 1:
+            s_test = s_t1
+
+        if n_ in s_test:
+            continue
+
+        s_test.add(n_)
+
+        if t_ == 1:
+            for _, n2, d in g.out_edges(n_, data=True):
+                if d['type'] != EDGE_CONFIRMED:
+                    process.append((n2, 2))
+        else:
+            for n2, _ in g.in_edges(n_):
+                if d['type'] != EDGE_CONFIRMED:
+                    process.append((n2, 1))
+
+    return list(s_t1), list(s_t2)
 
 def get_cc(g, n):
     s_t1 = set()

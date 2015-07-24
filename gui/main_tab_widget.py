@@ -48,6 +48,9 @@ class MainTabWidget(QtGui.QWidget):
         self.tracker_tab.prepare_corrections(self.solver)
 
     def tab_changed(self, i):
+        if i == 1:
+            self.results_tab.add_data(self.solver)
+            self.results_tab.update_positions(self.results_tab.video.frame_number())
         # if i == 0:
         #     # TODO: add interval to settings
         #     self.tracker_tab.autosave_timer.start(1000*60*5)

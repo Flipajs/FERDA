@@ -1,3 +1,6 @@
+from PIL import ImageQt
+from utils.drawing.points import get_contour, draw_points_crop
+
 __author__ = 'fnaiser'
 
 from PyQt4 import QtGui, QtCore
@@ -7,6 +10,7 @@ import utils.img
 from gui.settings.default import get_tooltip
 import os
 from core.settings import Settings as S_
+import numpy as np
 
 
 class IdButton(QtGui.QPushButton):
@@ -25,13 +29,19 @@ class SelectableQLabel(QtGui.QLabel):
 
     def mouseReleaseEvent(self, ev):
         if self.selected:
-            self.setStyleSheet("border: 0px;")
-            self.selected = False
+            self.set_selected(False)
         else:
-            self.setStyleSheet("border: 2px dashed black;")
-            self.selected = True
+            self.set_selected(True)
             if self.selected_callback:
                 self.selected_callback(self, self.id_)
+
+    def set_selected(self, selected):
+        if selected:
+            self.setStyleSheet("border: 2px dashed black;")
+            self.selected = True
+        else:
+            self.setStyleSheet("border: 0px;")
+            self.selected = False
 
 def file_names_dialog(window, text='Select files', path='', filter_=''):
     file_names = QtGui.QFileDialog.getOpenFileNames(window, text, path, filter=filter_)
@@ -106,3 +116,21 @@ def gbox_collapse_expand(gbox, height=35):
         gbox.setFixedHeight(gbox.sizeHint().height())
     else:
         gbox.setFixedHeight(height)
+
+
+def get_img_qlabel(pts, img, id, height=100, width=100, filled=False):
+    pts = np.asarray(pts, dtype=np.int32)
+    if not filled:
+        pts = get_contour(pts)
+    crop = draw_points_crop(img, pts, (0, 0, 255, 0.5), square=True)
+
+    img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
+    pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
+
+    item = SelectableQLabel(id=id)
+
+    item.setScaledContents(True)
+    item.setFixedSize(height, width)
+    item.setPixmap(pix_map)
+
+    return item
