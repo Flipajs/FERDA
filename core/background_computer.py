@@ -57,7 +57,7 @@ class BackgroundComputer():
                 p.readyReadStandardOutput.connect(partial(self.OnProcessOutputReady, i))
 
                 f_num = self.frames_in_row
-                # f_num = 100
+                f_num = 100
                 last_n_frames = 0
                 if i == self.process_n - 1:
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
