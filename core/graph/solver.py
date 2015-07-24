@@ -435,10 +435,6 @@ class Solver:
             if n not in self.g.nodes():
                 continue
 
-            is_ch, _, ch_in = self.is_chunk(n)
-            if is_ch:
-                continue
-
             # try:
             in_num, in_n = num_in_edges_of_type(self.g, n, EDGE_CONFIRMED)
             if in_num == 1:
@@ -458,6 +454,7 @@ class Solver:
                             ch_in.append_right(n, self)
                             ch_in.append_right(out_n, self)
                         else:
+                            print "new chunk"
                             chunk = Chunk(in_n, n, self)
                             chunk.append_right(out_n, self)
             # except:
