@@ -18,18 +18,26 @@ from core.graph.reduced import Reduced
 import cProfile
 
 class BackgroundComputer():
+    WAITING = 0
+    RUNNING = 1
+    FINISHED = 2
+
     def __init__(self, project, update_callback, finished_callback):
         self.project = project
         self.process_n = S_.parallelization.processes_num
         self.results = []
         self.update_callback = update_callback
         self.finished_callback = finished_callback
-        self.processes = []
         self.start = 0
-        self.frames_in_row = -1
+        # TODO: Settings
+        self.frames_in_row = 100
         self.frames_in_row_last = -1
+        self.part_num = -1
+
+        self.processes = []
+
         self.set_frames_in_row()
-        self.finished = np.array([False for i in range(self.process_n)])
+        self.finished = np.array([False for i in range(self.part_num)])
 
         self.solver = None
 
@@ -41,15 +49,15 @@ class BackgroundComputer():
         vid = get_auto_video_manager(self.project.video_paths)
         frame_num = int(vid.total_frame_count())
 
-        self.frames_in_row = int(frame_num / self.process_n)
-        self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.process_n))
+        self.part_num = int(frame_num / self.frames_in_row)
+        self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
         if not os.path.exists(self.project.working_directory+'/temp/g_simplified0.pkl'):
             if not S_.general.log_in_bg_computation:
                 S_.general.log_graph_edits = False
             self.start = time.time()
-            for i in range(self.process_n):
+            for i in range(self.part_num):
                 p = QtCore.QProcess()
 
                 p.finished.connect(partial(self.onFinished, i))
@@ -62,11 +70,16 @@ class BackgroundComputer():
                 if i == self.process_n - 1:
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
 
-                p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
-                print str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
-                self.processes.append(p)
+                ex_str = str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
 
-                self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
+                status = self.WAITING
+                if i < self.process_n:
+                    status = self.RUNNING
+                    p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
+
+                self.processes.append([p, ex_str, status])
+
+                # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
 
             S_.general.log_graph_edits = True
         else:
@@ -124,7 +137,7 @@ class BackgroundComputer():
         while True:
             try:
                 codec = QtCore.QTextCodec.codecForName("UTF-8")
-                str_ = str(codec.toUnicode(self.processes[p_id].readAllStandardOutput().data()))
+                str_ = str(codec.toUnicode(self.processes[p_id][0].readAllStandardOutput().data()))
                 if p_id == self.process_n - 1:
                     try:
                         i = int(str_)
@@ -139,14 +152,22 @@ class BackgroundComputer():
 
     def OnProcessErrorReady(self, p_id):
         codec = QtCore.QTextCodec.codecForName("UTF-8")
-        print p_id, codec.toUnicode(self.processes[p_id].readAllStandardError().data())
+        print p_id, codec.toUnicode(self.processes[p_id][0].readAllStandardError().data())
 
     def onFinished(self, p_id):
         while True:
             try:
                 end = time.time()
                 self.finished[p_id] = True
-                print "FINISHED MSERS, takes ", end - self.start, " seconds which is ", (end-self.start) / (self.process_n * self.frames_in_row), " seconds per frame"
+                print "PART "+str(p_id+1)+"/"+str(self.part_num)+" FINISHED MSERS, takes ", end - self.start, " seconds which is ", (end-self.start) / (self.process_n * self.frames_in_row), " seconds per frame"
+
+                self.processes[p_id][2] = self.FINISHED
+
+                new_id = p_id + self.process_n
+                if new_id < len(self.processes):
+                    it = self.processes[new_id]
+                    it[0].start(it[1])
+                    self.processes[new_id][2] = self.RUNNING
 
                 break
             except IOError, e:
