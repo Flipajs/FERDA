@@ -461,15 +461,16 @@ def tsdi_distance(G, n1, n2):
 
     return (t**2 + s**2 + d**2 + i**2)**0.5
 
-class NodeGraphVisualizer():
+class NodeGraphVisualizer(QtGui.QWidget):
     def __init__(self, G, imgs, regions):
+        super(NodeGraphVisualizer, self).__init__()
+
         self.G = G
         self.imgs = imgs
         self.regions = regions
 
-        self.w = QtGui.QWidget()
         self.v = QtGui.QGraphicsView()
-        self.w.setLayout(QtGui.QVBoxLayout())
+        self.setLayout(QtGui.QVBoxLayout())
         self.info_layout = QtGui.QHBoxLayout()
 
         self.info_label = QtGui.QLabel('INFO: ')
@@ -493,15 +494,17 @@ class NodeGraphVisualizer():
         self.others_label = QtGui.QLabel('')
         self.info_layout.addWidget(self.others_label)
 
-        self.w.layout().addLayout(self.info_layout)
-        self.w.layout().addWidget(self.v)
-
+        self.layout().addLayout(self.info_layout)
+        self.layout().addWidget(self.v)
+        self.layout().addWidget(QtGui.QPushButton('TEST'))
 
         # self.scene = QtGui.QGraphicsScene()
-        self.scene = MyScene()
-        self.scene.clicked.connect(self.scene_clicked)
 
+        self.v.setMouseTracking(True)
+        self.scene = MyScene()
         self.v.setScene(self.scene)
+        self.v.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.scene.clicked.connect(self.scene_clicked)
 
         self.used_rows = {}
         self.positions = {}
@@ -537,7 +540,10 @@ class NodeGraphVisualizer():
         self.show_frames_number = True
 
     def scene_clicked(self, click_pos):
+        print "SCENE CLIKCED"
         item = self.scene.itemAt(click_pos)
+
+        # lines are thick, so search around...
         for j in [-1, 1, -2, 2]:
             if not item:
                 item = self.scene.itemAt(QtCore.QPointF(click_pos.x(), click_pos.y()-j))
@@ -598,6 +604,8 @@ class NodeGraphVisualizer():
             # self.score_s_label.setText('antlikeness: '+str(self.G.node[n]['antlikeness']))
             self.score_m_label.setText('')
 
+            print n.frame_
+
 
     def get_nearest_free_slot(self, t, pos):
         if t in self.used_rows:
@@ -647,7 +655,6 @@ class NodeGraphVisualizer():
         #     for e in edges:
         #         self.show_node_with_edges(e[1], prev_pos=pos, with_descendants=with_descendants)
         #         self.draw_edge(n, e[1])
-
 
     def draw_edge(self, n1, n2):
         t1 = n1.frame_
@@ -761,8 +768,6 @@ class NodeGraphVisualizer():
 
         for e in self.G.edges():
             self.draw_edge(e[0], e[1])
-
-        return self.w
 
 def g_add_frame(G, frame, regions, prev_nodes, max_speed=MAX_SPEED):
     for r in regions:

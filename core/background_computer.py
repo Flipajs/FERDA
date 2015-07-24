@@ -15,6 +15,7 @@ import cPickle as pickle
 import networkx as nx
 from core.graph.solver import Solver
 from core.graph.reduced import Reduced
+import cProfile
 
 class BackgroundComputer():
     def __init__(self, project, update_callback, finished_callback):
@@ -100,10 +101,16 @@ class BackgroundComputer():
                 self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
                 end_nodes_prev = end_nodes
 
+        S_.general.log_graph_edits = False
         print "NODES: ", len(self.solver.g.nodes())
         self.solver.update_nodes_in_t_refs()
+        print "SIMPLIFY"
         self.solver.simplify(nodes_to_process)
-        self.solver.simplify_to_chunks()
+        print "SIMPLIFY 2 CHUNKS"
+        self.solver.simplify_to_chunks(nodes_to_process)
+        print "DONE"
+
+        S_.general.log_graph_edits = True
 
         self.finished_callback(self.solver)
 
