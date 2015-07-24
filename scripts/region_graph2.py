@@ -496,7 +496,6 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         self.layout().addLayout(self.info_layout)
         self.layout().addWidget(self.v)
-        self.layout().addWidget(QtGui.QPushButton('TEST'))
 
         # self.scene = QtGui.QGraphicsScene()
 

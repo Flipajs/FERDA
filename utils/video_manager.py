@@ -230,6 +230,7 @@ def optimize_frame_access(list_data, ra_n_times_slower=40):
     sorted_list = sorted(list_data, key=lambda x: x.frame_)
     result = []
     prev_frame = 0
+
     while sorted_list:
         node = sorted_list.pop(0)
         frame = node.frame_
