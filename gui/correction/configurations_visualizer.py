@@ -32,6 +32,7 @@ from utils.img import prepare_for_segmentation
 from gui.gui_utils import get_image_label
 from core.settings import Settings as S_
 import time
+import math
 
 
 VISU_MARGIN = 10
@@ -273,9 +274,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.active_cw.active_node = None
             self.scenes_widget.layout().addWidget(self.active_cw)
 
-            # min_t = self.active_cw.frame_t
-            # max_t = min_t + 10
-            # self.graph_visu_callback(min_t - math.ceil(VISU_MARGIN / 5.), max_t + VISU_MARGIN)
+            self.graph_visu_callback(500, 600)
 
     def best_greedy_config(self, nodes_groups):
         config = {}
@@ -567,30 +566,18 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         elem_width = 200
 
         print "COMPUTING, hold on..."
-        i = 0
+
         to_process = []
         for n in self.solver.g.nodes():
             prob = self.project.stats.antlikeness_svm.get_prob(n)
             if prob[1] < th:
                 to_process.append(n)
-                i += 1
-
-                if i > 100:
-                    break
-
-        # start = time.time()
-        # for i in range(20):
-        #     self.vid.seek_frame(i*13)
-        # print "RA", (time.time() - start) / 20
-        #
-        # start = time.time()
-        # for i in range(20):
-        #     self.vid.move2_next()
-        # print "Seq", (time.time() - start) / 20
 
         start = time.time()
 
         optimized = optimize_frame_access(to_process)
+
+        i = 0
         for n, seq, _ in optimized:
             if seq:
                 while self.vid.frame_number() < n.frame_:
@@ -605,13 +592,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             item.set_selected(True)
             self.noise_nodes_widget.add_item(item)
 
-        # for n in to_process:
-        #     img = self.vid.seek_frame(n.frame_)
-        #
-        #     img = prepare_for_segmentation(img, self.project)
-        #     item = get_img_qlabel(n.pts(), img, n, elem_width, elem_width, filled=True)
-        #     item.set_selected(True)
-        #     self.noise_nodes_widget.add_item(item)
+            i += 1
+
+            if i > 100:
+                break
 
         print "DONE", time.time() - start
 

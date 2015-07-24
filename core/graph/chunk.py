@@ -119,9 +119,14 @@ class Chunk:
             solver.remove_node(self.end_n, False)
 
         self.add_to_reduced_(self.end_n, solver)
-        while second_chunk.reduced:
-            r = second_chunk.remove_from_reduced_(0, solver)
-            self.add_to_reduced_(r, solver)
+
+        if S_.general.log_graph_edits:
+            while second_chunk.reduced:
+                r = second_chunk.remove_from_reduced_(0, solver)
+                self.add_to_reduced_(r, solver)
+        else:
+            self.reduced += second_chunk.reduced
+            second_chunk.reduced = []
 
         self.is_sorted = False
         self.set_end(second_chunk.end_n, solver)

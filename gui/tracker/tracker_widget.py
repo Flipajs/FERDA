@@ -9,6 +9,7 @@ from core.settings import Settings as S_
 import numpy as np
 from skimage.transform import rescale
 from core.graph.configuration import get_length_of_longest_chunk
+from utils.video_manager import optimize_frame_access
 
 
 class TrackerWidget(QtGui.QWidget):
@@ -52,14 +53,24 @@ class TrackerWidget(QtGui.QWidget):
 
         vid = get_auto_video_manager(self.project.video_paths)
         regions = {}
-        for n in sub_g.nodes():
+
+        optimized = optimize_frame_access(sub_g.nodes())
+
+        for n, seq, _ in optimized:
             if n.frame_ in regions:
                 regions[n.frame_].append(n)
             else:
                 regions[n.frame_] = [n]
 
             if 'img' not in self.solver.g.node[n]:
-                im = vid.seek_frame(n.frame_)
+                if seq:
+                    while vid.frame_number() < n.frame_:
+                        vid.move2_next()
+
+                    im = vid.img()
+                else:
+                    im = vid.seek_frame(n.frame_)
+
                 if S_.mser.img_subsample_factor > 1.0:
                     im = np.asarray(rescale(im, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
 
