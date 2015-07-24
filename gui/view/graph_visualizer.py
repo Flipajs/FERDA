@@ -8,6 +8,7 @@ from utils.video_manager import get_auto_video_manager, optimize_frame_access
 import numpy as np
 from skimage.transform import rescale
 from core.project import Project
+from utils.misc import is_flipajs_pc
 
 
 def call_visualizer(t_start, t_end, project):
@@ -57,8 +58,15 @@ def call_visualizer(t_start, t_end, project):
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
-    project = Project()
-    project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+
+    if is_flipajs_pc():
+        project = Project()
+        project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+    else:
+        # EDIT HERE....
+        project = Project()
+        project.load('...')
+
 
     ex = call_visualizer(500, 600, project)
     ex.showMaximized()
