@@ -104,11 +104,8 @@ class BackgroundComputer():
         S_.general.log_graph_edits = False
         print "NODES: ", len(self.solver.g.nodes())
         self.solver.update_nodes_in_t_refs()
-        print "SIMPLIFY"
         self.solver.simplify(nodes_to_process)
-        print "SIMPLIFY 2 CHUNKS"
         self.solver.simplify_to_chunks(nodes_to_process)
-        print "DONE"
 
         S_.general.log_graph_edits = True
 

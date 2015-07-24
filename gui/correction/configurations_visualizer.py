@@ -529,8 +529,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 solver.add_edge(a.data['n1'], a.data['n2'], **a.data['data'])
             elif a.action_name == ActionNames.CHUNK_ADD_TO_REDUCED:
                 a.data['chunk'].remove_from_reduced_(-1, self.solver)
+                a.data['chunk'].is_sorted = False
             elif a.action_name == ActionNames.CHUNK_REMOVE_FROM_REDUCED:
                 a.data['chunk'].add_to_reduced_(a.data['node'], self.solver, a.data['index'])
+                a.data['chunk'].is_sorted = False
             elif a.action_name == ActionNames.CHUNK_SET_START:
                 a.data['chunk'].set_start(a.data['old_start_n'], self.solver)
             elif a.action_name == ActionNames.CHUNK_SET_END:
