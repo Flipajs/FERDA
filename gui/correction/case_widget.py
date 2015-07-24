@@ -664,12 +664,16 @@ class CaseWidget(QtGui.QWidget):
                     if 'chunk_ref' in d:
                         continue
 
-                    line_ = QtGui.QGraphicsLineItem(self.left_margin + self.node_size + self.w_*i,
-                                                    self.top_margin + self.node_positions[n]*self.h_ + self.h_/2,
-                                                    self.left_margin + self.w_ + i * self.w_,
-                                                    self.top_margin + self.node_positions[n2]*self.h_ + self.h_/2)
-                    line_.setPen(self.edge_pen)
-                    self.scene.addItem(line_)
+                    try:
+                        line_ = QtGui.QGraphicsLineItem(self.left_margin + self.node_size + self.w_*i,
+                                                        self.top_margin + self.node_positions[n]*self.h_ + self.h_/2,
+                                                        self.left_margin + self.w_ + i * self.w_,
+                                                        self.top_margin + self.node_positions[n2]*self.h_ + self.h_/2)
+                        line_.setPen(self.edge_pen)
+                        self.scene.addItem(line_)
+                    except:
+                        print "potential problem in case_wdiget.py in draw_scene", n, n2
+                        pass
 
     def process_suggested_config(self, suggested_config):
         l_ = []

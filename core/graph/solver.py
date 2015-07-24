@@ -434,29 +434,34 @@ class Solver:
         for n in nodes:
             if n not in self.g.nodes():
                 continue
-            try:
-                in_num, in_n = num_in_edges_of_type(self.g, n, EDGE_CONFIRMED)
-                if in_num == 1:
-                    out_num, out_n = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
 
-                    if out_num == 1:
-                        # self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ASSEMBLE_CHUNK, {'n': n})
-                        if 'chunk_ref' in self.g[in_n][n]:
-                            chunk = self.g[in_n][n]['chunk_ref']
-                            chunk.append_right(out_n, self)
-                        elif 'chunk_ref' in self.g[n][out_n]:
-                            chunk = self.g[n][out_n]['chunk_ref']
-                            chunk.append_left(in_n, self)
+            is_ch, _, ch_in = self.is_chunk(n)
+            if is_ch:
+                continue
+
+            # try:
+            in_num, in_n = num_in_edges_of_type(self.g, n, EDGE_CONFIRMED)
+            if in_num == 1:
+                out_num, out_n = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
+
+                if out_num == 1:
+                    # self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ASSEMBLE_CHUNK, {'n': n})
+                    if 'chunk_ref' in self.g[in_n][n]:
+                        chunk = self.g[in_n][n]['chunk_ref']
+                        chunk.append_right(out_n, self)
+                    elif 'chunk_ref' in self.g[n][out_n]:
+                        chunk = self.g[n][out_n]['chunk_ref']
+                        chunk.append_left(in_n, self)
+                    else:
+                        is_ch, _, ch_in = self.is_chunk(in_n)
+                        if is_ch:
+                            ch_in.append_right(n, self)
+                            ch_in.append_right(out_n, self)
                         else:
-                            is_ch, _, ch_in = self.is_chunk(in_n)
-                            if is_ch:
-                                ch_in.append_right(n, self)
-                                ch_in.append_right(out_n, self)
-                            else:
-                                chunk = Chunk(in_n, n, self)
-                                chunk.append_right(out_n, self)
-            except:
-                pass
+                            chunk = Chunk(in_n, n, self)
+                            chunk.append_right(out_n, self)
+            # except:
+            #     pass
 
     def get_ccs(self, queue=[]):
         if not queue:
