@@ -54,12 +54,13 @@ if __name__ == '__main__':
 
         solver.add_regions_in_t(msers, frame)
 
-        print
-        print i
-        sys.stdout.flush()
+        # if i % 20 == 0:
+        #     print
+        #     print i
+        #     sys.stdout.flush()
 
-    solver.simplify(first_run=True)
-    solver.simplify_to_chunks()
+    # solver.simplify(first_run=True)
+    # solver.simplify_to_chunks()
     solver.simplify()
     solver.simplify_to_chunks()
 
