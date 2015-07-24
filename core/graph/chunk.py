@@ -45,7 +45,7 @@ class Chunk:
 
         first = self.start_n
 
-        self.add_to_reduced_(self.start_n, solver)
+        self.add_to_reduced_(self.start_n, solver, 0)
         self.set_start(r, solver)
 
         if not undo_action:

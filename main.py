@@ -16,10 +16,10 @@ proj = Project()
 
 S_.general.print_log = False
 if is_flipajs_pc():
-    proj.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+    # proj.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
     S_.general.print_log = False
-    ex.widget_control('load_project', proj)
-
+    # ex.widget_control('load_project', proj)
+    #
     # proj.load('/Users/flipajs/Documents/wd/crop_1h00/c1.fproj')
     # ex.widget_control('load_project', proj)
 
