@@ -569,7 +569,7 @@ class Solver:
             # This will happen when there is edge missing (action connect_with_and_confirm)
             # in this case add the edge
             if n2 not in self.g[n1]:
-                self.add_edge(n1, n2)
+                self.add_edge(n1, n2, score=-1)
 
             self.g[n1][n2]['type'] = EDGE_CONFIRMED
 
