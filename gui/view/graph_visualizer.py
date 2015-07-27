@@ -2,7 +2,7 @@ __author__ = 'flipajs'
 
 import sys
 from PyQt4 import QtGui, QtCore
-from scripts.region_graph2 import NodeGraphVisualizer, visualize_nodes
+from scripts.region_graph3 import NodeGraphVisualizer, visualize_nodes
 from core.settings import Settings as S_
 from utils.video_manager import get_auto_video_manager, optimize_frame_access
 import numpy as np
@@ -66,7 +66,7 @@ if __name__ == "__main__":
         # EDIT HERE....
 
         project = Project()
-        project.load('/home/simon/Documents/res/eight/eight.fproj')
+        project.load('/home/simon/Documents/res/c3_0h30/c3_0h30.fproj')
 
 
     ex = call_visualizer(500, 600, project)
