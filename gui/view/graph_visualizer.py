@@ -69,7 +69,7 @@ if __name__ == "__main__":
         project.load('/home/simon/Documents/res/c3_0h30/c3_0h30.fproj')
 
 
-    ex = call_visualizer(500, 600, project)
+    ex = call_visualizer(500, 550, project)
     ex.showMaximized()
 
     app.exec_()
