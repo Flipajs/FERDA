@@ -4,37 +4,42 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
 import math
 
-SELECTION_OFFSET = 1.5
-SELECTION_LINE_WIDTH = 1
-LINE_WIDTH = SELECTION_OFFSET * 2
+SELECTION_LINE_WIDTH = 2
 
 class Pixmap_Selectable(QtGui.QGraphicsPixmapItem):
 
-
-    def __init__(self, parent_pixmap, x, y):
+    def __init__(self, parent_pixmap, size):
         super(Pixmap_Selectable, self).__init__(parent_pixmap)
         self.parent_pixmap = parent_pixmap
-        self.x = x
-        self.y = y
+        self.x = self.parent_pixmap.offset().x()
+        self.y = self.parent_pixmap.offset().y()
+        self.size = size
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
-        self.selection_offset = SELECTION_OFFSET
         self.selection_polygon = self.create_selection_polygon()
 
-    def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget=None):
+        self.clipped = False
+        self.color = None
+
+    def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget = None):
+        self.parent_pixmap.paint(QPainter, QStyleOptionGraphicsItem, None)
         if self.isSelected():
-            pen = QtGui.QPen(Qt.black, SELECTION_OFFSET, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
+            pen = QtGui.QPen(Qt.black, SELECTION_LINE_WIDTH, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
             QPainter.setPen(pen)
             QPainter.drawPolygon(self.selection_polygon)
-            print "jsem tu"
+        elif self.clipped:
+                pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+                QPainter.setPen(pen)
+                QPainter.drawPolygon(self.selection_polygon)
         else:
-            super(Pixmap_Selectable, self).paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget=None)
+            pen = QtGui.QPen(Qt.white, SELECTION_LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+            QPainter.setPen(pen)
+            QPainter.drawPolygon(self.selection_polygon)
 
     def create_selection_polygon(self):
         p1 = QtCore.QPointF(self.x, self.y)
-        p2 = QtCore.QPointF(self.x+50, self.y)
-        p3 = QtCore.QPointF(self.x, self.y+50)
-        p4 = QtCore.QPointF(self.x + 500, self.y)
-
+        p2 = QtCore.QPointF(self.x + self.size, self.y)
+        p4 = QtCore.QPointF(self.x, self.y + self.size)
+        p3 = QtCore.QPointF(self.x + self.size, self.y + self.size)
         polygon = QtGui.QPolygonF()
         polygon << p1 << p2 << p3 << p4
         return polygon
@@ -46,6 +51,12 @@ class Pixmap_Selectable(QtGui.QGraphicsPixmapItem):
         path = QtGui.QPainterPath()
         path.addPolygon(self.selection_polygon)
         return path
+
+    def setClipped(self, color):
+        self.clipped = False if color == None else True
+        self.color = color
+
+
 
 
 

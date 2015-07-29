@@ -49,7 +49,7 @@ def call_visualizer(t_start, t_end, project):
             solver.g.node[n]['img'] = visualize_nodes(im, n)
             sub_g.node[n]['img'] = solver.g.node[n]['img']
 
-    ngv = NodeGraphVisualizer(sub_g, [], regions)
+    ngv = NodeGraphVisualizer(sub_g, regions)
     ngv.visualize()
 
     return ngv
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         project.load('/home/simon/Documents/res/c3_0h30/c3_0h30.fproj')
 
 
-    ex = call_visualizer(500, 550, project)
+    ex = call_visualizer(500, 800, project)
     ex.showMaximized()
 
     app.exec_()
