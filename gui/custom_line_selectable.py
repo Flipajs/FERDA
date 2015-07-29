@@ -35,13 +35,12 @@ class Custom_Line_Selectable(QtGui.QGraphicsLineItem):
         rad_angle = float(self.parent_line.angle() * pi / 180)
         dx = self.selection_offset * math.sin(rad_angle)
         dy = self.selection_offset * math.cos(rad_angle)
-
-        if rad_angle == -0.0 :
-            offset1 = QtCore.QPointF(dx, dy)
-            offset2 = QtCore.QPointF(-dx, -dy - SELECTION_LINE_WIDTH)
-        else:
-            offset1 = QtCore.QPointF(dx, dy)
-            offset2 = QtCore.QPointF(-dx, -dy)
+        #
+        # if rad_angle == -0.0 :
+        #     offset1 = QtCore.QPointF(dx, dy)
+        #     offset2 = QtCore.QPointF(-dx, -dy)
+        offset1 = QtCore.QPointF(dx, dy)
+        offset2 = QtCore.QPointF(-dx, -dy)
 
         polygon = QtGui.QPolygonF([self.parent_line.p1() + offset1, self.parent_line.p1() + offset2,\
                                    self.parent_line.p2() + offset2, self.parent_line.p2() + offset1])

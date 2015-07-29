@@ -107,6 +107,7 @@ class ResultsWidget(QtGui.QWidget):
         self.video_widget = QtGui.QWidget()
         self.video_layout = QtGui.QVBoxLayout()
         self.vbox.addLayout(self.video_layout)
+        self.vbox.addLayout(self.video_layout)
         self.video_widget.setLayout(self.video_layout)
 
         self.video_control_widget = QtGui.QWidget()
