@@ -27,7 +27,7 @@ class Pixmap_Selectable(QtGui.QGraphicsPixmapItem):
             QPainter.setPen(pen)
             QPainter.drawPolygon(self.selection_polygon)
         elif self.clipped:
-                pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+                pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH + 2, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
                 QPainter.setPen(pen)
                 QPainter.drawPolygon(self.selection_polygon)
         else:

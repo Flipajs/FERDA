@@ -1,7 +1,7 @@
 __author__ = 'flipajs'
 
 import sys
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 from scripts.region_graph3 import NodeGraphVisualizer, visualize_nodes
 from core.settings import Settings as S_
 from utils.video_manager import get_auto_video_manager, optimize_frame_access
