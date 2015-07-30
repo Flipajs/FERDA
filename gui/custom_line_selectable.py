@@ -54,7 +54,7 @@ class Custom_Line_Selectable(QtGui.QGraphicsLineItem):
 
         if rad_angle == -0.0 :
             offset1 = QtCore.QPointF(dx * SENSITIVITY_CONSTANT, dy * SENSITIVITY_CONSTANT)
-            offset2 = QtCore.QPointF(-dx * SENSITIVITY_CONSTANT, (-dy - SELECTION_LINE_WIDTH) * SENSITIVITY_CONSTANT)
+            offset2 = QtCore.QPointF(-dx * SENSITIVITY_CONSTANT, -dy * SENSITIVITY_CONSTANT)
         else:
             offset1 = QtCore.QPointF(dx * SENSITIVITY_CONSTANT, dy * SENSITIVITY_CONSTANT)
             offset2 = QtCore.QPointF(-dx * SENSITIVITY_CONSTANT, -dy * SENSITIVITY_CONSTANT)
