@@ -55,7 +55,7 @@ class Custom_Line_Selectable(QtGui.QGraphicsLineItem):
         return polygon
 
     def boundingRect(self):
-        return self.selection_polygon.boundingRect();
+        return self.pick_polygon.boundingRect();
 
     def shape(self):
         path = QtGui.QPainterPath()

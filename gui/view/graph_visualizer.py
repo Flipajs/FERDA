@@ -66,10 +66,10 @@ if __name__ == "__main__":
         # EDIT HERE....
 
         project = Project()
-        project.load('/home/simon/Documents/res/c3_0h30/c3_0h30.fproj')
+        project.load('/home/simon/Documents/res/c3_1h30/c3_1h30.fproj')
 
 
-    ex = call_visualizer(500, 800, project)
+    ex = call_visualizer(0, 200, project)
     ex.showMaximized()
 
     app.exec_()
