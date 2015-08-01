@@ -1,5 +1,9 @@
 __author__ = 'flipajs'
 
+
+# for some reason on MAC machines it is necessary to import it, else there is problem with loading MSER DLLs
+import networkx as nx
+
 import sys
 from PyQt4 import QtGui
 from scripts.region_graph3 import NodeGraphVisualizer, visualize_nodes
@@ -68,7 +72,7 @@ if __name__ == "__main__":
         project = Project()
         project.load('/home/simon/Documents/res/c3_1h30/c3_1h30.fproj')
 
-    ex = call_visualizer(0, 200, project)
+    ex = call_visualizer(0, 1600, project)
     ex.showMaximized()
 
     app.exec_()
