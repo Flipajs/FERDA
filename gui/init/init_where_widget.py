@@ -1,17 +1,20 @@
 __author__ = 'fnaiser'
 
+import time
+
 from PyQt4 import QtGui, QtCore
+import cv2
+import numpy as np
+
 from utils import video_manager
 from gui.img_controls import my_view, utils
 from gui.init.arena.arena_circle import ArenaCircle
 from gui.init.arena.arena_mark import ArenaMark
-import cv2
-import time
 from gui.init.background.bg_fix_widget import BgFixWidget
-import numpy as np
-from methods.arena.circle import Circle
-from methods.bg_model.model import Model
-from methods.bg_model.bg_model import BGModel
+from core.arena.circle import Circle
+from core.bg_model.model import Model
+from core.bg_model.bg_model import BGModel
+
 
 class InitWhereWidget(QtGui.QWidget):
     def __init__(self, finish_callback, project):

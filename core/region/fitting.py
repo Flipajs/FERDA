@@ -7,11 +7,7 @@ from utils.video_manager import get_auto_video_manager
 import cv2
 import pickle
 from core.region.region import Region
-import ant
 import matplotlib.pyplot as plt
-from math import cos, sin
-import split_by_contours
-import experiment_params
 from utils.geometry import rotation_matrix, angle_from_matrix, rotate
 from utils.roi import ROI
 
@@ -338,8 +334,6 @@ if __name__ == '__main__':
     vid = get_auto_video_manager('/Volumes/Seagate Expansion Drive/FERDA-DATA/data/NoPlasterNoLid800.m4v')
     im = vid.seek_frame(74)
 
-    p = experiment_params.Params()
-
     for r in data['ants'][0].state.region['rle']:
         r['col1'] += 10
         r['col2'] += 10
@@ -370,11 +364,7 @@ if __name__ == '__main__':
     test_pairs.append(np.array([np.array([0.,1.]), np.array([1., 1.])]))
     test_pairs.append(np.array([np.array([0.,0.]), np.array([0., 1.])]))
 
-    # test_pairs.append(np.array([np.array([1.,0.]), np.array([2., 1.])]))
-    # test_pairs.append(np.array([np.array([1.,1.]), np.array([2., 2.])]))
-    # test_pairs.append(np.array([np.array([0.,1.]), np.array([1., 2.])]))
     test_pairs = np.array(test_pairs)
-
 
     t, r = f.compute_transformation(np.copy(test_pairs))
     print t
@@ -390,29 +380,6 @@ if __name__ == '__main__':
 
     print new_pts
 
-
     cv2.imshow('im', im)
     cv2.moveWindow('im', 0, 0)
     cv2.waitKey(0)
-
-
-    #
-    #
-    # reg = Region(data['region'])
-    # dm_region = DistanceMap(reg.pts())
-    # im = np.asarray(255*dm_region.contour_img_, dtype=np.uint8)
-    # cv2.imshow('contour', im)
-    # dm_im = dm_region.d_map
-    # dm_im = dm_region.d_map / np.max(dm_im)
-    #
-    # dm_im = np.asarray(dm_im*255, dtype=np.uint8)
-    # # print dm_region.x_min, dm_region.y_min, dm_region.x_max, dm_region.y_max
-    #
-    # print [490, 205], dm_region.get_nearest_point([490, 205])
-    # print [480, 200], dm_region.get_nearest_point([480, 200])
-    # print [460, 200], dm_region.get_nearest_point([460, 200])
-    # print [500, 230], dm_region.get_nearest_point([500, 230])
-    # print [500, 260], dm_region.get_nearest_point([500, 260])
-    #
-    # cv2.imshow('dmap', dm_im)
-    # cv2.waitKey(0)

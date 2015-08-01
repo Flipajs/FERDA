@@ -1,5 +1,6 @@
 from PyQt4 import QtCore, QtGui
-import visualization_utils
+
+from utils import visualization_utils
 import default_settings
 
 

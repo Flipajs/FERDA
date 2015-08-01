@@ -1,12 +1,13 @@
 __author__ = 'filip@naiser.cz'
 
-from utils.video_manager import VideoType
 import pickle
-from methods.bg_model.model import Model
+import string
+
 from PyQt4 import QtCore
+
+from core.bg_model.model import Model
 from core.graph.solver import Solver
 from core.log import Log
-import string
 
 
 class Project:

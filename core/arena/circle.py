@@ -2,7 +2,8 @@ __author__ = 'fnaiser'
 
 import cv2
 import numpy as np
-from methods.arena.model import Model
+
+from core.arena.model import Model
 
 
 class Circle(Model):

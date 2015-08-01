@@ -1,15 +1,14 @@
 __author__ = 'filip@naiser.cz'
-from PyQt4 import QtGui, QtCore
-from PIL import ImageQt
-from numpy import *
-
 import sys
-import cv2
-from utils import video_manager
-from viewer.identity_manager import IdentityManager
 from random import randint
 
-import visualization_utils
+from PyQt4 import QtGui
+from PIL import ImageQt
+from numpy import *
+import cv2
+
+from utils import video_manager, visualization_utils
+from viewer.identity_manager import IdentityManager
 
 
 class SelectableImageQLabel(QtGui.QLabel):

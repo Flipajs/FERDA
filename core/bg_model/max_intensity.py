@@ -1,13 +1,15 @@
 __author__ = 'fnaiser'
 
-import cv2
-from model import Model
-from methods.bg_model.bg_model import BGModel
 from math import floor
-import numpy as np
-from utils import video_manager
-from PyQt4 import QtCore
 import pickle
+
+import cv2
+import numpy as np
+from PyQt4 import QtCore
+
+from model import Model
+from core.bg_model.bg_model import BGModel
+from utils import video_manager
 
 
 class MaxIntensity(Model):

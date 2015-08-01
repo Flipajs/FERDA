@@ -1,23 +1,24 @@
-import os
-
 __author__ = 'fnaiser'
+
+import threading
+import os
 
 from PyQt4 import QtGui, QtCore
 import numpy as np
+import skimage.transform
+
 import core.project
 import gui.gui_utils
 import utils.video_manager
 import utils.misc
 import utils.img
-import skimage.transform
-import threading
 from utils.video_manager import VideoType
-from methods.bg_model.max_intensity import MaxIntensity
-import os
+from core.bg_model.max_intensity import MaxIntensity
 from core.settings import Settings as S_
 from gui.project.import_widget import ImportWidget
 from gui.init.set_msers import SetMSERs
 from core.project import Project
+
 
 class BGSub(threading.Thread):
     def __init__(self, vid, update_callback):

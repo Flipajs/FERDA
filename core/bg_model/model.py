@@ -1,6 +1,5 @@
 __author__ = 'fnaiser'
 
-import numpy as np
 from PyQt4 import QtCore
 
 

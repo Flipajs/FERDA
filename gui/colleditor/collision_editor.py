@@ -3,21 +3,19 @@ import sys
 __author__ = 'filip@naiser.cz'
 
 from PyQt4 import QtGui, QtCore
-from collision_view import CollisionView
+from gui.colleditor.collision_view import CollisionView
 import cv2
 import os
 from gui.img_controls import utils
-import copy
-import numpy
 import pickle
-import settings_dialog
+from gui.colleditor import settings_dialog
 import ImageQt
-import visualization_utils
+from utils import visualization_utils
 
 from viewer.gui.img_controls import markers
 import default_settings
-from editable_pixmap import *
-from drawing_manager import *
+from gui.colleditor.editable_pixmap import *
+from gui.colleditor.drawing_manager import *
 
 settings = QtCore.QSettings("FERDA")
 

@@ -1,39 +1,30 @@
 __author__ = 'fnaiser'
 
+import sys
+import pickle
+import time
+
 import networkx as nx
-import matplotlib.pyplot as plt
-from utils.img import get_safe_selection
-from utils.drawing.points import draw_points_crop, draw_points
 import cv2
+from skimage.transform import resize
+from PyQt4 import QtGui, QtCore
+import numpy as np
+from matplotlib.mlab import normpdf
+from scipy.ndimage import gaussian_filter
+
+from utils.drawing.points import draw_points_crop
 from utils.video_manager import get_auto_video_manager
 from core.region.mser import get_msers_, get_all_msers
-from skimage.transform import resize
-from gui.img_controls.my_view import MyView
 from gui.img_controls.my_scene import MyScene
-import sys
-from PyQt4 import QtGui, QtCore
 from gui.img_controls.utils import cvimg2qtpixmap
-import numpy as np
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
-from matplotlib.mlab import normpdf
-import math
-from copy import copy
-from functools import partial
-import matplotlib as mpl
-from mpl_toolkits.mplot3d import Axes3D
-import pickle
-from core.animal import colors_
 from scripts.similarity_test import similarity_loss
-from methods.bg_model.max_intensity import MaxIntensity
-import time
-from scipy.ndimage import gaussian_filter
+from core.bg_model.max_intensity import MaxIntensity
 from core.antlikeness import Antlikeness
-import assignment_svm
 import ant_number_svm
-import cProfile
-import multiprocessing as mp
 from gui.correction.configurations_visualizer import ConfigurationsVisualizer
 from core.graph.solver import Solver
+
 
 # max speed of #px / frame
 MAX_SPEED = 200

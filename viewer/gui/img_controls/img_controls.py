@@ -2,25 +2,17 @@ __author__ = 'filip@naiser.cz'
 
 import os
 import re
+
 from PyQt4 import QtCore, QtGui
 
 import default_settings
 from viewer.gui.img_controls import img_controls_qt, img_control_utils, markers
 from my_view import *
-import visualization_utils
 from viewer.identity_manager import IdentityManager
 from viewer.gui.img_controls.dialogs import SettingsDialog
 from gui.img_sequence import img_sequence_widget
-
-import visualize
-from utils import video_manager
-import mser_operations, experiment_params
-import cv2
-from numpy import arange, sin, pi, cos
+from utils import video_manager, visualization_utils
 from gui.plot import plot_widget
-import my_utils
-from core.assignment import assignment
-from ant import Ant, set_ant_state
 from utils.misc import is_flipajs_pc
 
 try:
@@ -1121,34 +1113,35 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         self.graphics_view.zoom(min(scale, max_zoom), center)
 
     def re_track(self, ant_id, frame, length):
-        vid = self.video.get_manager_copy()
-        vid.seek_frame(frame)
-
-        params = experiment_params.Params()
-
-        new_trajectory = []
-        score_functions = ['distance_score']
-        expression = '$0'
-
-        res = self.identity_manager.get_positions(frame, ant_id)
-        ant = Ant(ant_id)
-        ant.state.position.x = res['cx']
-        ant.state.position.y = res['cy']
-
-        for i in range(frame, frame+length):
-            img = vid.move2_next()
-            regions, idx = mser_operations.MserOperations(params).process_image(img, ignore_arena=True)
-
-            r_id = assignment.ant2region_assignment(ant, regions, params, score_functions, expression, idx)
-
-            set_ant_state(ant, r_id, regions[r_id], False)
-
-            t = {'cx': ant.state.position.x, 'cy': ant.state.position.y, 'hx': ant.state.head.x, 'hy': ant.state.head.y,
-                 'bx': ant.state.back.x, 'by': ant.state.back.y}
-
-            new_trajectory.append(t)
-
-        return new_trajectory
+        pass
+        # vid = self.video.get_manager_copy()
+        # vid.seek_frame(frame)
+        #
+        # params = experiment_params.Params()
+        #
+        # new_trajectory = []
+        # score_functions = ['distance_score']
+        # expression = '$0'
+        #
+        # res = self.identity_manager.get_positions(frame, ant_id)
+        # ant = Ant(ant_id)
+        # ant.state.position.x = res['cx']
+        # ant.state.position.y = res['cy']
+        #
+        # for i in range(frame, frame+length):
+        #     img = vid.move2_next()
+        #     regions, idx = mser_operations.MserOperations(params).process_image(img, ignore_arena=True)
+        #
+        #     r_id = assignment.ant2region_assignment(ant, regions, params, score_functions, expression, idx)
+        #
+        #     set_ant_state(ant, r_id, regions[r_id], False)
+        #
+        #     t = {'cx': ant.state.position.x, 'cy': ant.state.position.y, 'hx': ant.state.head.x, 'hy': ant.state.head.y,
+        #          'bx': ant.state.back.x, 'by': ant.state.back.y}
+        #
+        #     new_trajectory.append(t)
+        #
+        # return new_trajectory
 
     def show_sequence(self):
         frame = self.video.frame_number()
@@ -1200,23 +1193,24 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
             r = regions[r_id]
             print r_id, r['cx'], r['cy'], r['area']
 
-
     def show_MSERs(self):
-        img = self.video.img()
-        params = experiment_params.Params()
-        # mask = my_utils.prepare_image(img, params)
-        regions, idx = mser_operations.MserOperations(params).process_image(img, ignore_arena=True)
-        # chosen_regions_indexes = mser_operations.filter_out_children(regions, idx)
-        self.match_msers_with_identities(regions, idx)
-
-        groups, groups_avg_pos = mser_operations.get_region_groups2(regions, check_flags=False)
-
-        msers2 = visualize.draw_region_group_collection(img, regions, groups, params)
-        # msers2 = visualize.draw_region_group_collection2(img, regions, groups, params)
-        msers = visualize.draw_region_collection(img, regions, params, cell_size=100)
-
-        cv2.imshow("msers", msers)
-        cv2.imshow("msers2", msers2)
+        pass
+        #
+        # img = self.video.img()
+        # params = experiment_params.Params()
+        # # mask = my_utils.prepare_image(img, params)
+        # regions, idx = mser_operations.MserOperations(params).process_image(img, ignore_arena=True)
+        # # chosen_regions_indexes = mser_operations.filter_out_children(regions, idx)
+        # self.match_msers_with_identities(regions, idx)
+        #
+        # groups, groups_avg_pos = mser_operations.get_region_groups2(regions, check_flags=False)
+        #
+        # msers2 = visualize.draw_region_group_collection(img, regions, groups, params)
+        # # msers2 = visualize.draw_region_group_collection2(img, regions, groups, params)
+        # msers = visualize.draw_region_collection(img, regions, params, cell_size=100)
+        #
+        # cv2.imshow("msers", msers)
+        # cv2.imshow("msers2", msers2)
 
     def show_certainty(self):
         frame = self.video.frame_number()
