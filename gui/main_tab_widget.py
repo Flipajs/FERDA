@@ -20,13 +20,13 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs = QtGui.QTabWidget()
         self.tracker_tab = TrackerWidget(project)
         self.results_tab = ResultsWidget(project)
-        self.statistics_tab = StatisticsWidget()
+        self.statistics_tab = StatisticsWidget(project)
 
         self.finish_callback = finish_callback
 
-        self.tabs.addTab(self.tracker_tab, "Tracking")
-        self.tabs.addTab(self.results_tab, "Results")
-        self.tabs.addTab(self.statistics_tab, "Statistics")
+        self.tabs.addTab(self.tracker_tab, "tracking")
+        self.tabs.addTab(self.results_tab, "results viewer")
+        self.tabs.addTab(self.statistics_tab, "stats && results")
         self.vbox.addWidget(self.tabs)
 
         self.tabs.currentChanged.connect(self.tab_changed)
@@ -51,6 +51,10 @@ class MainTabWidget(QtGui.QWidget):
         if i == 1:
             self.results_tab.add_data(self.solver)
             self.results_tab.update_positions(self.results_tab.video.frame_number())
+        if i == 2:
+            self.statistics_tab.update_data(self.solver)
+
+
         # if i == 0:
         #     # TODO: add interval to settings
         #     self.tracker_tab.autosave_timer.start(1000*60*5)

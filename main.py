@@ -23,7 +23,7 @@ if is_flipajs_pc():
     # proj.load('/Users/flipajs/Documents/wd/crop_1h00m-01h05m/c1_crop.fproj')
     # S_.parallelization.processes_num = 3
     # proj.save()
-    ex.widget_control('load_project', proj)
+    # ex.widget_control('load_project', proj)
 
 app.exec_()
 app.deleteLater()

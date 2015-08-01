@@ -770,3 +770,15 @@ class Solver:
 
     def end_nodes(self):
         return self.nodes_in_t[self.end_t]
+
+    def chunk_list(self):
+        chunks = []
+        for n in self.g.nodes():
+            for _, _, d in self.g.out_edges(n, data=True):
+                if 'chunk_ref' in d:
+                    chunks.append(d['chunk_ref'])
+
+        if len(chunks) != len(set(chunks)):
+            raise Exception("ERROR in solver... len(chunks) != len(set(chunks))")
+
+        return chunks
