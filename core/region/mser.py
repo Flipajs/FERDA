@@ -2,8 +2,8 @@ __author__ = 'fnaiser'
 
 import cv2
 
-from core.region import cyMser
 from core.region.region import Region
+from core.region import cyMser
 import pickle
 from utils.video_manager import get_auto_video_manager
 from core.settings import Settings as S_

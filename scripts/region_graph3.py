@@ -1,5 +1,8 @@
 __author__ = 'simon'
 
+# for some reason on MAC machines it is necessary to import it, else there is problem with loading MSER DLLs
+import networkx as nx
+
 import cv2
 import random
 import matplotlib.colors as colors

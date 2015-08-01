@@ -1,6 +1,5 @@
 __author__ = 'filip@naiser.cz'
 
-from utils.misc import is_flipajs_pc
 import platform
 
 
@@ -19,6 +18,5 @@ def __bootstrap__():
     __loader__ = None;
     del __bootstrap__, __loader__
     imp.load_dynamic(__name__, __file__)
-
 
 __bootstrap__()
