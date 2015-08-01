@@ -6,6 +6,7 @@ from methods.bg_model.model import Model
 from PyQt4 import QtCore
 from core.graph.solver import Solver
 from core.log import Log
+import string
 
 
 class Project:
@@ -26,7 +27,18 @@ class Project:
         self.stats = None
         self.saved_progress = None
         self.log = Log()
-        self.version = "2.0.1"
+        self.version = "2.1.1"
+
+    def version_is_le(self, ver):
+        # returns true if self.version is lower or equal then version
+        l1 = string.split(self.version, '.')
+        l2 = string.split(ver, '.')
+
+        for a, b in zip(l1, l2):
+            if a > b:
+                return False
+
+        return True
 
     def save(self):
         # BG MODEL

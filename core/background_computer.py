@@ -100,7 +100,12 @@ class BackgroundComputer():
         self.solver = Solver(self.project)
 
         print "ASSEMBLING SOLUTION"
-        for i in range(self.part_num):
+        part_num = self.part_num
+        # compability...
+        if self.project.version_is_le("2.0.1"):
+            part_num = self.process_n
+
+        for i in range(part_num):
             with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g_ = up.load()
@@ -115,7 +120,7 @@ class BackgroundComputer():
                 self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
                 end_nodes_prev = end_nodes
 
-            print str(i) + " / " + str(self.part_num)
+            print str(i+1) + " / " + str(part_num)
 
         # with open(self.project.working_directory+'/solver.pkl', 'wb') as f:
         #     p = pickle.Pickler(f)
