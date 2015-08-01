@@ -74,8 +74,6 @@ USE_BG_SUB = False
 # with open('/Users/fnaiser/Documents/graphs/log_hists.pkl', 'rb') as f:
 #     log_hists = pickle.load(f)
 
-from configs.eight import *
-
 # from configs.noplaster import *
 # from configs.colormarks1 import *
 # from configs.colormarks2 import *

@@ -1,22 +1,12 @@
 __author__ = 'fnaiser'
-import sys
-import os
-from PyQt4 import QtGui, QtCore
 
-# from gui.settings.dialogs import SettingsDialog
-from gui import ferda_window_qt
-from gui.init_window import init_window
+import sys
+from PyQt4 import QtGui, QtCore
 from gui.init.init_widget import InitWidget
-from gui import control_window
 from gui.project import project_widget, new_project_widget
 from gui.main_tab_widget import MainTabWidget
 import core.project
-from methods.bg_model.max_intensity import MaxIntensity
-from gui.loading_widget import LoadingWidget
 from gui.settings.settings_dialog import SettingsDialog
-import pickle
-import cv2
-from utils.video_manager import get_auto_video_manager
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -41,42 +31,21 @@ class MainWindow(QtGui.QMainWindow):
 
         self.settings_button = QtGui.QPushButton('Settings', self)
         self.settings_button.clicked.connect(self.show_settings)
-        self.layout().addWidget(self.settings_button)
+        self.central_widget.addWidget(self.settings_button)
 
         self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
         self.setWindowTitle('FERDA')
         self.setGeometry(100, 100, 700, 400)
-
-        # self.menu_bar = QtGui.QMenuBar(self)
-        # self.toolbar = self.addToolBar('')
 
         self.settings_action = QtGui.QAction('&Settings', self.centralWidget())
         self.settings_action.triggered.connect(self.show_settings)
         self.settings_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Comma))
         self.addAction(self.settings_action)
 
-        # self.new_project_action = QtGui.QAction("New project", self.centralWidget())
-
-        # self.load_project_action = QtGui.QAction("Load project", self.centralWidget())
-        # self.load_project_action.triggered.connect(self.show_load_project_dialog)
-
-        # self.show_correction_tool_action = QtGui.QAction("Correction tool", self.centralWidget())
-        # self.settings_action.triggered.connect(self.show_correction_tool)
-
-        # self.file_menu = self.menu_bar.addMenu('&File')
-        # self.file_menu.addAction(self.settings_action)
-        # self.file_menu.addAction(self.new_project_action)
-        # self.file_menu.addAction(self.load_project_action)
-
         self.update()
         self.showMaximized()
 
     def closeEvent(self, event):
-        print "exiting"
-        #
-        # if self.control_widget is not None:
-        #     self.control_widget.close()
-
         event.accept()
 
     def widget_control(self, state, values=None):
@@ -122,7 +91,6 @@ class MainWindow(QtGui.QMainWindow):
             self.central_widget.setCurrentWidget(self.main_tab_widget)
 
     def start_ferda(self):
-        self.control_widget = control_window.ControlWindow(self.init_widget.params, self.init_widget.ants, self.init_widget.video_manager)
         self.control_widget.set_exit_callback(self.control_widget_exit)
 
         self.central_widget.addWidget(self.control_widget)
@@ -149,14 +117,8 @@ if __name__ == "__main__":
     ex.activateWindow()
     from core.project import Project
     proj = Project()
-    # proj.load('/Volumes/Seagate Expansion Drive/working_dir/eight1/eight1.fproj')
     proj.load('/Users/fnaiser/Documents/work_dir/eight/eight.fproj')
-    # proj.load('/Users/fnaiser/Documents/work_dir/big_lenses1/bl1.fproj')
-
     ex.widget_control('load_project', proj)
-
-    # vid = get_auto_video_manager(proj.video_paths)
-    # im = vid.move2_next()
 
     app.exec_()
     app.deleteLater()
