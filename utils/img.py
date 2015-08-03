@@ -91,11 +91,12 @@ def get_igbr_normalised(im):
 
     return igbr
 
-def prepare_for_segmentation(img, project):
+def prepare_for_segmentation(img, project, grayscale_speedup=True):
     if project.bg_model:
         img = project.bg_model.bg_subtraction(img)
 
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    if grayscale_speedup:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     if project.arena_model:
         img = project.arena_model.mask_image(img)
