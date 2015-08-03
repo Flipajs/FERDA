@@ -16,6 +16,7 @@ from skimage.transform import rescale
 import numpy as np
 from core.settings import Settings as S_
 import scipy
+from utils.img import prepare_for_segmentation
 
 
 class SetMSERs(QtGui.QWidget):
@@ -102,11 +103,12 @@ class SetMSERs(QtGui.QWidget):
     def update(self):
         img_ = self.im.copy()
 
-        if S_.mser.gaussian_kernel_std > 0:
-            img_ = scipy.ndimage.gaussian_filter(img_, sigma=S_.mser.gaussian_kernel_std)
-
-        if S_.mser.img_subsample_factor > 1.0:
-            img_ = np.asarray(rescale(img_, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
+        img_ = prepare_for_segmentation(img_, self.project)
+        # if S_.mser.gaussian_kernel_std > 0:
+        #     img_ = scipy.ndimage.gaussian_filter(img_, sigma=S_.mser.gaussian_kernel_std)
+        #
+        # if S_.mser.img_subsample_factor > 1.0:
+        #     img_ = np.asarray(rescale(img_, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
 
         m = get_msers_(img_)
         groups = get_region_groups(m)
