@@ -7,7 +7,7 @@ from gui.project import project_widget, new_project_widget
 from gui.main_tab_widget import MainTabWidget
 import core.project
 from gui.settings.settings_dialog import SettingsDialog
-
+from core.settings import Settings as S_
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
@@ -39,7 +39,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.settings_action = QtGui.QAction('&Settings', self.centralWidget())
         self.settings_action.triggered.connect(self.show_settings)
-        self.settings_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Comma))
+        self.settings_action.setShortcut(S_.controls.show_settings)
         self.addAction(self.settings_action)
 
         self.update()

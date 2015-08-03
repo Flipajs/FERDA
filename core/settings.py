@@ -114,6 +114,10 @@ class General:
     log_in_bg_computation = Item('general/log_in_bg_computation', False, 'Could be switched off before user interactions to save space.')
     print_log = Item('general/print_log', True, '...')
 
+class Controls:
+    __metaclass__ = SettingsType
+    show_settings = Item('controls/show_setting', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Comma), 'Show settings tab')
+
 class Settings:
     cache = Cache
     mser = MSER
@@ -123,6 +127,7 @@ class Settings:
     parallelization = Parallelization
     temp = Temp
     general = General
+    controls = Controls
 
 if __name__ == '__main__':
     print Settings.solver.max_edge_distance_in_ant_length
