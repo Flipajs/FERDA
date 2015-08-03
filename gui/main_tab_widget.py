@@ -29,6 +29,9 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.addTab(self.statistics_tab, "stats && results")
         self.vbox.addWidget(self.tabs)
 
+        self.tabs.setTabEnabled(1, False)
+        self.tabs.setTabEnabled(2, False)
+
         self.tabs.currentChanged.connect(self.tab_changed)
 
         print "LOADING GRAPH..."
@@ -46,6 +49,9 @@ class MainTabWidget(QtGui.QWidget):
         self.results_tab.solver = solver
         self.results_tab.add_data(self.solver)
         self.tracker_tab.prepare_corrections(self.solver)
+
+        self.tabs.setTabEnabled(1, True)
+        self.tabs.setTabEnabled(2, True)
 
     def tab_changed(self, i):
         if i == 1:
