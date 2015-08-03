@@ -231,7 +231,6 @@ class ResultsWidget(QtGui.QWidget):
 
         self.update_positions(0)
 
-
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""
         self.forward.clicked.connect(self.load_next_frame)

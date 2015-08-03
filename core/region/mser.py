@@ -8,6 +8,7 @@ import pickle
 from utils.video_manager import get_auto_video_manager
 from core.settings import Settings as S_
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
+import time
 
 
 class Mser():
@@ -101,9 +102,14 @@ def get_msers_(img, frame=-1):
     Returns msers using MSER algorithm with default settings.
 
     """
-
+    start = time.time()
     mser = Mser(max_area=S_.mser.max_area, min_margin=S_.mser.min_margin, min_area=S_.mser.min_area)
-    return mser.process_image(img, frame)
+    print "MSER init takes", time.time()-start
+
+    start = time.time()
+    m = mser.process_image(img, frame)
+    print "MSER computatin takes", time.time()-start
+    return m
 
 
 def get_mser_by_id(img, id, frame=-1):
