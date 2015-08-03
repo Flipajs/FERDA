@@ -8,6 +8,7 @@ from skimage.transform import rescale
 
 from utils.misc import get_settings
 from core.settings import Settings as S_
+import cv2
 
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255)):
@@ -90,9 +91,12 @@ def get_igbr_normalised(im):
 
     return igbr
 
-def prepare_for_segmentation(img, project):
+def prepare_for_segmentation(img, project, grayscale_speedup=True):
     if project.bg_model:
         img = project.bg_model.bg_subtraction(img)
+
+    if grayscale_speedup:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     if project.arena_model:
         img = project.arena_model.mask_image(img)

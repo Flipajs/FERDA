@@ -27,6 +27,7 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.addTab(self.tracker_tab, "tracking")
         self.tabs.addTab(self.results_tab, "results viewer")
         self.tabs.addTab(self.statistics_tab, "stats && results")
+        
         self.vbox.addWidget(self.tabs)
 
         self.tabs.setTabEnabled(1, False)
@@ -59,7 +60,6 @@ class MainTabWidget(QtGui.QWidget):
             self.results_tab.update_positions(self.results_tab.video.frame_number())
         if i == 2:
             self.statistics_tab.update_data(self.solver)
-
 
         # if i == 0:
         #     # TODO: add interval to settings

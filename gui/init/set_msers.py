@@ -17,6 +17,7 @@ import numpy as np
 from core.settings import Settings as S_
 import scipy
 from utils.img import prepare_for_segmentation
+import time
 
 
 class SetMSERs(QtGui.QWidget):
@@ -103,7 +104,9 @@ class SetMSERs(QtGui.QWidget):
     def update(self):
         img_ = self.im.copy()
 
-        img_ = prepare_for_segmentation(img_, self.project)
+        start = time.time()
+        img_ = prepare_for_segmentation(img_, self.project, grayscale_speedup=False)
+
         # if S_.mser.gaussian_kernel_std > 0:
         #     img_ = scipy.ndimage.gaussian_filter(img_, sigma=S_.mser.gaussian_kernel_std)
         #
