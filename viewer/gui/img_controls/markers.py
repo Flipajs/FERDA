@@ -1,7 +1,7 @@
 from PyQt4 import QtCore, QtGui
 
 from utils import visualization_utils
-import default_settings
+from core.settings import Settings as S_
 
 
 class BaseMarker(QtGui.QGraphicsEllipseItem, object):
@@ -30,19 +30,16 @@ class BaseMarker(QtGui.QGraphicsEllipseItem, object):
         self.dot.setFlag(QtGui.QGraphicsItem.ItemIgnoresParentOpacity, True)
         self.dot.setOpacity(0)
 
-        settings = QtCore.QSettings("Ants correction tool")
-        self.setOpacity(settings.value('marker_opacity', default_settings.get_default('marker_opacity'), float))
+        self.setOpacity(S_.visualization.basic_marker_opacity)
 
     def mousePressEvent(self, event):
         super(BaseMarker, self).mousePressEvent(event)
-        settings = QtCore.QSettings("Ants correction tool")
         self.setOpacity(.1)
-        self.dot.setOpacity(settings.value('marker_opacity', default_settings.get_default('marker_opacity'), float))
+        self.dot.setOpacity(S_.visualization.basic_marker_opacity)
 
     def mouseReleaseEvent(self, event):
         super(BaseMarker, self).mouseReleaseEvent(event)
-        settings = QtCore.QSettings("Ants correction tool")
-        self.setOpacity(settings.value('marker_opacity', default_settings.get_default('marker_opacity'), float))
+        self.setOpacity(S_.visualization.basic_marker_opacity)
         self.dot.setOpacity(0)
         if self.changeHandler is not None:
             self.changeHandler(self.antId)

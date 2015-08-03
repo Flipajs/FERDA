@@ -31,7 +31,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.settings_button = QtGui.QPushButton('Settings', self)
         self.settings_button.clicked.connect(self.show_settings)
-        self.central_widget.addWidget(self.settings_button)
+        self.layout().addWidget(self.settings_button)
 
         self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
         self.setWindowTitle('FERDA')
@@ -82,6 +82,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if state == 'new_project_back':
             self.central_widget.setCurrentWidget(self.project_widget)
+            self.settings_button.show()
 
         if state == 'initialization_finished':
             self.project.save()

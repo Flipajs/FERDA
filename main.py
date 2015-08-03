@@ -16,9 +16,9 @@ S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 if is_flipajs_pc():
-    project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+    # project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
     S_.general.print_log = False
-    ex.widget_control('load_project', project)
+    # ex.widget_control('load_project', project)
 
 app.exec_()
 app.deleteLater()
