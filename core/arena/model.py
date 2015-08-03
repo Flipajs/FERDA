@@ -14,6 +14,11 @@ class Model(object):
         self.weights_ = None
 
     def mask_image(self, img, fill=(255, 255, 255)):
+        if len(img.shape) == 2:
+            fill = fill[0]
+        elif img.shape[2] == 1:
+            fill = fill[0]
+            
         processed = np.copy(img)
         processed[self.mask_idx_] = fill
 
