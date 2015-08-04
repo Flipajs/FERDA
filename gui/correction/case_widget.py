@@ -226,7 +226,6 @@ class CaseWidget(QtGui.QWidget):
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.setStyleSheet("border: 0px")
 
-
     def get_info(self):
         n = self.active_node
 

@@ -1,6 +1,6 @@
 __author__ = 'simon'
 
-
+import numpy as np
 import cv2
 import random
 import matplotlib.colors as colors
@@ -11,7 +11,6 @@ from gui.img_controls.my_view_zoomable import MyViewZoomable
 from PyQt4 import QtGui, QtCore
 from gui.img_controls.utils import cvimg2qtpixmap
 from core.region.region import Region
-from configs.eight import *
 from gui.custom_line_selectable import Custom_Line_Selectable
 from gui.pixmap_selectable import Pixmap_Selectable
 
@@ -29,6 +28,7 @@ FONT_SIZE = 13
 M = 3
 #Multiplayer of width of graph
 GRAPH_WIDTH = 1
+NODE_SIZE = 30
 
 SIMILARITY = 'sim'
 STRONG = 's'
@@ -268,6 +268,9 @@ class NodeGraphVisualizer(QtGui.QWidget):
                 return
 
             self.node_displayed[n] = True
+
+            if n not in self.frames:
+                return
 
             t = n.frame_
             t_num = self.frames.index(t) * GRAPH_WIDTH

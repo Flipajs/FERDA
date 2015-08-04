@@ -18,7 +18,7 @@ class Mser():
         self.mser.set_max_area(max_area)
         self.mser.set_min_size(min_area)
 
-    def process_image(self, img, frame=-1, intensity_threshold=250):
+    def process_image(self, img, frame=-1, intensity_threshold=256):
         if len(img.shape) > 2:
             if img.shape[2] > 1:
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

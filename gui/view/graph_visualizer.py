@@ -30,8 +30,18 @@ def call_visualizer(t_start, t_end, project):
     vid = get_auto_video_manager(project.video_paths)
     regions = {}
 
-    optimized = optimize_frame_access(sub_g.nodes())
+    nodes = []
+    for n in sub_g.nodes():
+        is_ch, t_reversed, ch = solver.is_chunk(n)
+        if is_ch:
+            if ch.length() > 10:
+                nodes.append(n)
 
+    optimized = optimize_frame_access(nodes)
+
+    i = 0
+    num_parts = 50
+    part_ = len(optimized) / num_parts
     for n, seq, _ in optimized:
         if n.frame_ in regions:
             regions[n.frame_].append(n)
@@ -53,6 +63,11 @@ def call_visualizer(t_start, t_end, project):
             solver.g.node[n]['img'] = visualize_nodes(im, n)
             sub_g.node[n]['img'] = solver.g.node[n]['img']
 
+        i += 1
+
+        if i % part_ == 0:
+            print "PROGRESS ", i, " / ", len(optimized)
+
     ngv = NodeGraphVisualizer(sub_g, regions)
     ngv.visualize()
 
@@ -65,14 +80,15 @@ if __name__ == "__main__":
 
     if is_flipajs_pc():
         project = Project()
-        project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+        project.load('/Users/flipajs/Documents/wd/colonies_crop1/colonies.fproj')
     else:
         # EDIT HERE....
 
         project = Project()
         project.load('/home/simon/Documents/res/c3_1h30/c3_1h30.fproj')
 
-    ex = call_visualizer(0, 1600, project)
+    ex = call_visualizer(-1, -1, project)
+    # ex = call_visualizer(0, 200, project)
     ex.showMaximized()
 
     app.exec_()
