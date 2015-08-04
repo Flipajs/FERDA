@@ -103,8 +103,11 @@ def get_msers_(img, frame=-1):
 
     """
 
+    start = time.time()
     mser = Mser(max_area=S_.mser.max_area, min_margin=S_.mser.min_margin, min_area=S_.mser.min_area)
-    return mser.process_image(img, frame)
+    m = mser.process_image(img, frame)
+    print "MSER computation: (s)", time.time() - start
+    return m
 
 
 def get_mser_by_id(img, id, frame=-1):
