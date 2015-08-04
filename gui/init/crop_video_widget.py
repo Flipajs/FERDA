@@ -492,7 +492,7 @@ def view_add_bg_image(g_view, pix_map):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     project = Project()
-    project.load('/home/simon/Documents/res/5/5.fproj')
+    project.load('/home/simon/Documents/res/c3_0h30/c3_0h30.fproj')
 
     ex = CropVideoWidget(project)
     ex.showMaximized()
