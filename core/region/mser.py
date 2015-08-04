@@ -102,7 +102,7 @@ def get_msers_(img, frame=-1):
     Returns msers using MSER algorithm with default settings.
 
     """
-    
+
     mser = Mser(max_area=S_.mser.max_area, min_margin=S_.mser.min_margin, min_area=S_.mser.min_area)
     return mser.process_image(img, frame)
 

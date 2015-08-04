@@ -218,7 +218,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
     def chunk_len_(self, n):
         is_ch, t_reversed, ch = self.solver.is_chunk(n)
-        if is_ch and not t_reversed:
+        if is_ch:
             return ch.length()
 
         return 0
