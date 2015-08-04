@@ -18,7 +18,7 @@ class Mser():
         self.mser.set_max_area(max_area)
         self.mser.set_min_size(min_area)
 
-    def process_image(self, img, frame=-1, intensity_threshold=10):
+    def process_image(self, img, frame=-1, intensity_threshold=250):
         if len(img.shape) > 2:
             if img.shape[2] > 1:
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -102,10 +102,9 @@ def get_msers_(img, frame=-1):
     Returns msers using MSER algorithm with default settings.
 
     """
-
-    start = time.time()
+    
     mser = Mser(max_area=S_.mser.max_area, min_margin=S_.mser.min_margin, min_area=S_.mser.min_area)
-    m = mser.process_image(img, frame)
+    return mser.process_image(img, frame)
 
 
 def get_mser_by_id(img, id, frame=-1):
