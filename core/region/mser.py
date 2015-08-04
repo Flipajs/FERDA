@@ -18,7 +18,7 @@ class Mser():
         self.mser.set_max_area(max_area)
         self.mser.set_min_size(min_area)
 
-    def process_image(self, img, frame=-1, intensity_threshold=256):
+    def process_image(self, img, frame=-1, intensity_threshold=250):
         if len(img.shape) > 2:
             if img.shape[2] > 1:
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -103,12 +103,8 @@ def get_msers_(img, frame=-1):
 
     """
 
-    start = time.time()
     mser = Mser(max_area=S_.mser.max_area, min_margin=S_.mser.min_margin, min_area=S_.mser.min_area)
-    m = mser.process_image(img, frame)
-    print "MSER takes: ", time.time()-start
-
-    return m
+    return mser.process_image(img, frame)
 
 
 def get_mser_by_id(img, id, frame=-1):
@@ -122,8 +118,8 @@ def ferda_filtered_msers(img, project, frame=-1):
     m = get_msers_(img, frame)
     groups = get_region_groups(m)
     ids = margin_filter(m, groups)
-    min_area = project.stats.area_median * 0.2
-    ids = area_filter(m, ids, min_area)
+    # min_area = project.stats.area_median * 0.2
+    # ids = area_filter(m, ids, min_area)
     ids = children_filter(m, ids)
 
     return [m[id] for id in ids]

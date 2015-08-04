@@ -39,6 +39,7 @@ class Chunk:
 
     def append_left(self, r, solver, undo_action=False):
         if r.frame_ + 1 != self.start_t():
+            print "DISCONTINUITY in chunk.py/append_left", r.frame_, self.start_t(), r, self.start_n
             raise Exception("DISCONTINUITY in chunk.py/append_left")
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
@@ -60,6 +61,7 @@ class Chunk:
 
     def append_right(self, r, solver, undo_action=False):
         if r.frame_ != self.end_t() + 1:
+            print "DISCONTINUITY in chunk.py/append_right", r.frame_, self.end_t(), r, self.end_n
             raise Exception("DISCONTINUITY in chunk.py/append_right")
 
         is_ch, t_reversed, ch2 = solver.is_chunk(r)
