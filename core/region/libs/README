@@ -1,0 +1,45 @@
+> cyMser_64_OSX_v2.so - is builded with following extremaConfig.h
+
+		#ifndef __EXTREMA_CONFIG_H__
+		#define __EXTREMA_CONFIG_H__
+
+		#define REGION_STATISTICS_BASIC    0
+		#define REGION_STATISTICS_BARY     1
+		#define REGION_STATISTICS_ELLIPSE  2
+
+		#define STANDARD_HISTOGRAM_EXTREMA 1
+
+		/* measure time in libExtrema functions */
+		//#define TIME_STATS                 1
+
+		//#define DO_TRACE_MERGE_TREE        1
+
+		//#define BARYCENTER
+		//#define ELLIPSE
+
+
+
+		#endif // __EXTREMA_CONFIG_H__
+
+> cyMser_64_OSX.so - is builded with following extremaConfig.h
+
+		#ifndef __EXTREMA_CONFIG_H__
+		#define __EXTREMA_CONFIG_H__
+
+		#define REGION_STATISTICS_BASIC    0
+		#define REGION_STATISTICS_BARY     1
+		#define REGION_STATISTICS_ELLIPSE  2
+
+		// #define STANDARD_HISTOGRAM_EXTREMA 1
+
+		/* measure time in libExtrema functions */
+		//#define TIME_STATS                 1
+
+		#define DO_TRACE_MERGE_TREE        1
+
+		//#define BARYCENTER
+		//#define ELLIPSE
+
+
+
+		#endif // __EXTREMA_CONFIG_H__

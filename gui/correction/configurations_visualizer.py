@@ -207,12 +207,21 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.join_regions_active = False
             self.join_regions_n1 = None
 
+    def chunk_len_(self, n):
+        is_ch, t_reversed, ch = self.solver.is_chunk(n)
+        if is_ch and not t_reversed:
+            return ch.length()
+
+        return 0
+
     def next_case(self, move_to_different_case=False):
         if move_to_different_case:
             self.active_node_id += 1
 
         self.nodes = self.solver.g.nodes()
-        self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
+        # self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
+
+        self.nodes = sorted(self.nodes, key=lambda k: -self.chunk_len_(k))
 
         if self.active_node_id < len(self.nodes):
             n = self.nodes[self.active_node_id]

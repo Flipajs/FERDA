@@ -9,7 +9,7 @@ def __bootstrap__():
     import sys, pkg_resources, imp
 
     if platform.system() == 'Darwin':
-        __file__ = pkg_resources.resource_filename(__name__, 'libs/cyMser_64_OSX.so')
+        __file__ = pkg_resources.resource_filename(__name__, 'libs/cyMser_64_OSX_v3.so')
     elif platform.system() == 'Linux':
         if platform.architecture()[0] == '64bit':
             __file__ = pkg_resources.resource_filename(__name__, 'libs/cyMser_debian.so')

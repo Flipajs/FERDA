@@ -51,7 +51,6 @@ for id in ids:
         values = a2
         print "XY"
 
-
     min = float('inf')
     max = float('-inf')
 

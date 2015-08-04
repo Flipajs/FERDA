@@ -16,6 +16,7 @@ from skimage.transform import rescale
 import numpy as np
 import scipy
 from utils.img import prepare_for_segmentation
+import time
 
 if __name__ == '__main__':
     working_dir = sys.argv[1]
@@ -35,9 +36,6 @@ if __name__ == '__main__':
     else:
         img = vid.move2_next()
 
-    if id == 0:
-        print img.shape
-
     img = prepare_for_segmentation(img, proj)
 
     solver = Solver(proj)
@@ -52,7 +50,7 @@ if __name__ == '__main__':
 
         img = prepare_for_segmentation(img, proj)
 
-        solver.add_regions_in_t(msers, frame)
+        solver.add_regions_in_t(msers, frame, fast=True)
 
         # if i % 20 == 0:
         #     print
@@ -61,6 +59,7 @@ if __name__ == '__main__':
 
     # solver.simplify(first_run=True)
     # solver.simplify_to_chunks()
+
     solver.simplify()
     solver.simplify_to_chunks()
 

@@ -66,13 +66,13 @@ class BackgroundComputer():
                 p.readyReadStandardOutput.connect(partial(self.OnProcessOutputReady, i))
 
                 f_num = self.frames_in_row
-                f_num = 100
+                # f_num = 100
                 last_n_frames = 0
-                if i == self.process_n - 1:
+                if i == self.part_num - 1:
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
 
                 ex_str = str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
-
+                print ex_str
                 status = self.WAITING
                 if i < self.process_n:
                     status = self.RUNNING
@@ -115,7 +115,9 @@ class BackgroundComputer():
                 self.solver.g = nx.union(self.solver.g, g_)
 
                 if i < self.process_n - 1:
-                    nodes_to_process += end_nodes
+                    nodes_to_process += start_nodes
+
+                nodes_to_process += end_nodes
 
                 self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
                 end_nodes_prev = end_nodes
@@ -146,7 +148,7 @@ class BackgroundComputer():
 
                 if d < self.solver.max_distance:
                     s, ds, multi, antlike = self.solver.assignment_score(r_t1, r_t2)
-                    g.add_edge(r_t1, r_t2, type='d', score=-s)
+                    self.solver.add_edge_fast(r_t1, r_t2, type='d', score=-s)
 
     def OnProcessOutputReady(self, p_id):
         while True:

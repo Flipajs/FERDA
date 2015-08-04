@@ -102,6 +102,7 @@ def get_msers_(img, frame=-1):
     Returns msers using MSER algorithm with default settings.
 
     """
+
     mser = Mser(max_area=S_.mser.max_area, min_margin=S_.mser.min_margin, min_area=S_.mser.min_area)
     return mser.process_image(img, frame)
 
@@ -117,8 +118,8 @@ def ferda_filtered_msers(img, project, frame=-1):
     m = get_msers_(img, frame)
     groups = get_region_groups(m)
     ids = margin_filter(m, groups)
-    min_area = project.stats.area_median * 0.2
-    ids = area_filter(m, ids, min_area)
+    # min_area = project.stats.area_median * 0.2
+    # ids = area_filter(m, ids, min_area)
     ids = children_filter(m, ids)
 
     return [m[id] for id in ids]

@@ -16,6 +16,7 @@ import scipy
 from core.log import LogCategories, ActionNames
 from utils.img import prepare_for_segmentation
 from utils.constants import EDGE_CONFIRMED
+import time
 
 
 class Solver:
@@ -82,7 +83,7 @@ class Solver:
             self.update_time_boundaries()
 
     def match_if_reconstructed(self, n):
-        if n not in self.g.nodes():
+        if n not in self.g:
             return self.find_similar(n)
 
         return n
@@ -103,6 +104,14 @@ class Solver:
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
         self.g.remove_edge(n1, n2)
 
+    def add_edge_fast(self, n1, n2, **data):
+        self.project.log.add(LogCategories.GRAPH_EDIT,
+                             ActionNames.ADD_EDGE,
+                             {'n1': n1,
+                              'n2': n2,
+                              'data': data})
+        self.g.add_edge(n1, n2, **data)
+
     def add_edge(self, n1, n2, **data):
         n1 = self.match_if_reconstructed(n1)
         n2 = self.match_if_reconstructed(n2)
@@ -119,29 +128,24 @@ class Solver:
         # if n2 not in self.g.nodes():
         #     print "n2 not in g.nodes"
 
-        self.project.log.add(LogCategories.GRAPH_EDIT,
-                             ActionNames.ADD_EDGE,
-                             {'n1': n1,
-                              'n2': n2,
-                              'data': data})
-        self.g.add_edge(n1, n2, **data)
+        self.add_edge_fast(n1, n2, **data)
 
     def update_time_boundaries(self):
         self.start_t = np.inf
         self.end_t = -1
 
-        for n in self.g.nodes():
+        for n in self.g:
             self.start_t = min(self.start_t, n.frame_)
             self.end_t = max(self.end_t, n.frame_)
 
     def update_nodes_in_t_refs(self):
         self.nodes_in_t = {}
-        for n in self.g.nodes():
+        for n in self.g:
             self.nodes_in_t.setdefault(n.frame_, []).append(n)
 
         self.update_time_boundaries()
 
-    def add_regions_in_t(self, regions, t):
+    def add_regions_in_t(self, regions, t, fast=False):
         for r in regions:
             if self.antlike_filter:
                 prob = self.antlikeness.get_prob(r)
@@ -150,7 +154,7 @@ class Solver:
 
             self.add_node(r)
 
-        self.add_edges_to_t(t)
+        self.add_edges_to_t(t, fast)
 
     def is_out_confirmed(self, n):
         # returns bool if there is outcoming confirmed edge from node n
@@ -167,24 +171,28 @@ class Solver:
 
         return False
 
-    def add_edges_(self, regions_t1, regions_t2):
+    def add_edges_(self, regions_t1, regions_t2, fast=False):
         for r_t1 in regions_t1:
-            if self.is_out_confirmed(r_t1):
-                continue
-
             for r_t2 in regions_t2:
-                if self.is_in_confirmed(r_t2):
-                    continue
-
                 d = np.linalg.norm(r_t1.centroid() - r_t2.centroid())
 
                 if d < self.max_distance:
-                    s, ds, multi, antlike = self.assignment_score(r_t1, r_t2)
-                    self.add_edge(r_t1, r_t2, type='d', score=-s)
+                    if self.is_out_confirmed(r_t1):
+                        continue
 
-    def add_edges_to_t(self, t):
+                    if self.is_in_confirmed(r_t2):
+                        continue
+
+                    s, ds, multi, antlike = self.assignment_score(r_t1, r_t2)
+                    # self.add_edge(r_t1, r_t2)
+                    if fast:
+                        self.add_edge_fast(r_t1, r_t2, type='d', score=-s)
+                    else:
+                        self.add_edge(r_t1, r_t2, type='d', score=-s)
+
+    def add_edges_to_t(self, t, fast=False):
         if t-1 in self.nodes_in_t:
-            self.add_edges_(self.nodes_in_t[t-1], self.nodes_in_t[t])
+            self.add_edges_(self.nodes_in_t[t-1], self.nodes_in_t[t], fast=fast)
 
     def simplify(self, queue=None, return_affected=False, first_run=False):
         if queue is None:
@@ -201,11 +209,12 @@ class Solver:
                 continue
 
             for r in self.rules:
+                start = time.time()
                 affected = r(n)
                 if return_affected:
                     for a in affected:
                         all_affected.add(a)
-                    # (all_affected.add(x) for x in affected)
+                        # (all_affected.add(x) for x in affected)
                 if not first_run:
                     queue.extend(affected)
 
@@ -405,6 +414,7 @@ class Solver:
         ds = max(0, (2-d) / 2.0)
 
         #TODO: get rid of this hack... also in antlikness test in solver.py
+        #TODO: without try it will be faster...
         # flag for virtual region
         q1 = self.antlikeness.get_prob(r1)[1]
         try:
@@ -432,7 +442,7 @@ class Solver:
         nodes = sorted(nodes, key=lambda k: k.frame_)
 
         for n in nodes:
-            if n not in self.g.nodes():
+            if n not in self.g:
                 continue
 
             # try:
@@ -520,7 +530,7 @@ class Solver:
 
             node_representative.append(n)
 
-            if n not in self.g.nodes():
+            if n not in self.g:
                 new_ccs.append(None)
                 continue
 
@@ -773,7 +783,7 @@ class Solver:
 
     def chunk_list(self):
         chunks = []
-        for n in self.g.nodes():
+        for n in self.g:
             for _, _, d in self.g.out_edges(n, data=True):
                 if 'chunk_ref' in d:
                     chunks.append(d['chunk_ref'])

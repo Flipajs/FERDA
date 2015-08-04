@@ -16,9 +16,11 @@ S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 if is_flipajs_pc():
-    # project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+    project.load('/Users/flipajs/Documents/wd/colonies_crop1/colonies.fproj')
     S_.general.print_log = False
-    # ex.widget_control('load_project', project)
+    S_.parallelization.processes_num = 3
+    S_.parallelization.frames_in_row = 50
+    ex.widget_control('load_project', project)
 
 app.exec_()
 app.deleteLater()
