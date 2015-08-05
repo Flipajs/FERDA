@@ -611,7 +611,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             else:
                 img = self.vid.seek_frame(n.frame_)
 
-            img = prepare_for_segmentation(img, self.project)
+            img = prepare_for_segmentation(img, self.project, grayscale_speedup=False)
             item = get_img_qlabel(n.pts(), img, n, elem_width, elem_width, filled=True)
             item.set_selected(True)
             self.noise_nodes_widget.add_item(item)

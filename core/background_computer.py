@@ -105,7 +105,6 @@ class BackgroundComputer():
         if self.project.version_is_le("2.0.1"):
             part_num = self.process_n
 
-        part_num = 100
         for i in range(part_num):
             with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
@@ -113,7 +112,12 @@ class BackgroundComputer():
                 start_nodes = up.load()
                 end_nodes = up.load()
 
-                self.solver.g = nx.union(self.solver.g, g_)
+                # This is much faster then nx.union()
+                for n, d in g_.nodes(data=True):
+                    self.solver.g.add_node(n, d)
+
+                for n1, n2, d in g_.edges(data=True):
+                    self.solver.g.add_edge(n1, n2, d)
 
                 if i < self.process_n - 1:
                     nodes_to_process += start_nodes
