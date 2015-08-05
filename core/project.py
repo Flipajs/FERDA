@@ -172,6 +172,7 @@ class Project:
         # SAVED CORRECTION PROGRESS
         try:
             with open(self.working_directory+'/progress_save.pkl', 'rb') as f:
+                print "LOADING last progerss save... it might take some time..."
                 up = pickle.Unpickler(f)
                 g = up.load()
                 log = up.load()
@@ -189,6 +190,7 @@ class Project:
                 solver.ignored_nodes = ignored_nodes
                 self.saved_progress = {'solver': solver}
                 self.log = log
+                print "FINISHED..."
         except:
             pass
 
