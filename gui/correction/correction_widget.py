@@ -197,6 +197,8 @@ class ResultsWidget(QtGui.QWidget):
                 c = ch.get_centroid_in_time(frame).copy()
                 self.update_marker_position(self.items[m_id], c)
 
+        self.active_markers = new_active_markers
+
         if frame in self.starting_frames:
             for ch, m_id in self.starting_frames[frame]:
                 c = ch.get_centroid_in_time(frame).copy()
