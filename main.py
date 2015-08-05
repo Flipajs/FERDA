@@ -16,7 +16,8 @@ S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 if is_flipajs_pc():
-    project.load('/Users/flipajs/Documents/wd/colonies1_30m/colonies30m.fproj')
+
+    project.load('/Users/flipajs/Documents/wd/eight_test/test.fproj')
     ex.widget_control('load_project', project)
     pass
 
