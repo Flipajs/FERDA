@@ -589,8 +589,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         th = 0.2
         elem_width = 200
 
-        print "COMPUTING, hold on..."
-
         to_process = []
         for n in self.solver.g.nodes():
             prob = self.project.stats.antlikeness_svm.get_prob(n)
@@ -600,6 +598,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         start = time.time()
 
         optimized = optimize_frame_access(to_process)
+
+        from gui.loading_widget import LoadingWidget
+        load = LoadingWidget(max_range=100)
 
         i = 0
         for n, seq, _ in optimized:
@@ -617,11 +618,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.noise_nodes_widget.add_item(item)
 
             i += 1
+            load.update_progress(i)
 
-            if i > 100:
+            if i > 1000:
                 break
 
         print "DONE", time.time() - start
+
+        load.hide()
 
     def remove_noise(self):
         # TODO: add actions
