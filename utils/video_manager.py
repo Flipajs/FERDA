@@ -182,6 +182,16 @@ class VideoManager():
 
         return vid
 
+    # TODO: add this and other functions into prototype class...
+    def get_frame(self, frame, sequence_access=False):
+        if sequence_access:
+            while self.frame_number() < frame:
+                self.move2_next()
+
+            return self.img()
+        else:
+            return self.seek_frame(frame)
+
 
 def get_auto_video_manager(file_paths):
     """

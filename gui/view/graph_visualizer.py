@@ -34,7 +34,7 @@ def call_visualizer(t_start, t_end, project):
     for n in sub_g.nodes():
         is_ch, t_reversed, ch = solver.is_chunk(n)
         if is_ch:
-            if ch.length() > 100:
+            if ch.length() >= 0:
                 nodes.append(n)
 
     optimized = optimize_frame_access(nodes)
@@ -49,13 +49,7 @@ def call_visualizer(t_start, t_end, project):
             regions[n.frame_] = [n]
 
         if 'img' not in solver.g.node[n]:
-            if seq:
-                while vid.frame_number() < n.frame_:
-                    vid.move2_next()
-
-                im = vid.img()
-            else:
-                im = vid.seek_frame(n.frame_)
+            im = vid.get_frame(n.frame_, sequence_access=seq)
 
             if S_.mser.img_subsample_factor > 1.0:
                 im = np.asarray(rescale(im, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
@@ -80,7 +74,7 @@ if __name__ == "__main__":
 
     if is_flipajs_pc():
         project = Project()
-        project.load('/Users/flipajs/Documents/wd/colonies_crop1/colonies.fproj')
+        project.load('/Users/flipajs/Documents/wd/eight_test/test.fproj')
     else:
         # EDIT HERE....
 
@@ -90,6 +84,7 @@ if __name__ == "__main__":
     ex = call_visualizer(-1, -1, project)
     # ex = call_visualizer(0, 50, project)
     ex.showMaximized()
+    ex.setFocus()
 
     app.exec_()
     app.deleteLater()

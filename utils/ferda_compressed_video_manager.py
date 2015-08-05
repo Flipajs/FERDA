@@ -175,6 +175,15 @@ class FerdaCompressedVideoManager():
 
         return vid
 
+    def get_frame(self, frame, sequence_access=False):
+        if sequence_access:
+            while self.frame_number() < frame:
+                self.move2_next()
+
+            return self.img()
+        else:
+            return self.seek_frame(frame)
+
 
 if __name__ == "__main__":
     compressed = "/home/flipajs/segmentation/camera1_test3_c25_f.avi"
