@@ -264,13 +264,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
                 self.widgets_hide(self.auxes)
 
         def show_node_with_edges(self, n, prev_pos=0):
-            if n in self.node_displayed or n not in self.G.node:
-                return
-
             self.node_displayed[n] = True
-
-            if n not in self.frames:
-                return
 
             t = n.frame_
             t_num = self.frames.index(t) * GRAPH_WIDTH
@@ -298,11 +292,13 @@ class NodeGraphVisualizer(QtGui.QWidget):
         def draw_edge_selectable(self, n1, n2):
             t1 = n1.frame_
             t2 = n2.frame_
+
             t1_framenum = self.frames.index(t1) * GRAPH_WIDTH
             t2_framenums = self.frames.index(t2) * GRAPH_WIDTH
 
             from_x = self.x_step * t1_framenum + self.node_size
             to_x = self.x_step * t2_framenums
+
             from_y = self.y_step * self.positions[n1] + self.node_size / 2
             to_y = self.y_step * self.positions[n2] + self.node_size / 2
 
@@ -387,10 +383,16 @@ class NodeGraphVisualizer(QtGui.QWidget):
                             temp_queue.append(e_[1])
 
             for n in nodes_queue:
-                self.show_node_with_edges(n)
+                try:
+                    self.show_node_with_edges(n)
+                except:
+                    pass
 
             for e in self.G.edges():
-                self.draw_edge_selectable(e[0], e[1])
+                try:
+                    self.draw_edge_selectable(e[0], e[1])
+                except:
+                    pass
 
             for f in frames:
                 if self.show_frames_number:
@@ -402,7 +404,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
 def visualize_nodes(im, r):
     vis = draw_points_crop(im, r.pts(), square=True, color=(0, 255, 0, 0.35))
-    cv2.putText(vis, str(r.id_), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
+    # cv2.putText(vis, str(r.id_), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
 
     return vis
 

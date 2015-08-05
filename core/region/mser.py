@@ -9,6 +9,7 @@ from utils.video_manager import get_auto_video_manager
 from core.settings import Settings as S_
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 import time
+from utils.misc import is_flipajs_pc
 
 
 class Mser():
@@ -19,6 +20,9 @@ class Mser():
         self.mser.set_min_size(min_area)
 
     def process_image(self, img, frame=-1, intensity_threshold=256):
+        if is_flipajs_pc():
+            intensity_threshold = 200
+
         if len(img.shape) > 2:
             if img.shape[2] > 1:
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

@@ -86,7 +86,11 @@ class MainWindow(QtGui.QMainWindow):
 
         if state == 'initialization_finished':
             self.project.save()
+            print "min_area", S_.mser.min_area
+
             self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
+            print "min_area", S_.mser.min_area
+
             self.main_tab_widget = MainTabWidget(self.widget_control, self.project)
             self.central_widget.addWidget(self.main_tab_widget)
             self.central_widget.setCurrentWidget(self.main_tab_widget)

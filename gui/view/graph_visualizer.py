@@ -34,14 +34,14 @@ def call_visualizer(t_start, t_end, project):
     for n in sub_g.nodes():
         is_ch, t_reversed, ch = solver.is_chunk(n)
         if is_ch:
-            if ch.length() > 10:
+            if ch.length() > 100:
                 nodes.append(n)
 
     optimized = optimize_frame_access(nodes)
 
     i = 0
     num_parts = 50
-    part_ = len(optimized) / num_parts
+    part_ = len(optimized) / num_parts + 1
     for n, seq, _ in optimized:
         if n.frame_ in regions:
             regions[n.frame_].append(n)
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         project.load('/home/simon/Documents/res/c3_1h30/c3_1h30.fproj')
 
     ex = call_visualizer(-1, -1, project)
-    # ex = call_visualizer(0, 200, project)
+    # ex = call_visualizer(0, 50, project)
     ex.showMaximized()
 
     app.exec_()
