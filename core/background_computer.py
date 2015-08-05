@@ -107,13 +107,18 @@ class BackgroundComputer():
 
         for i in range(part_num):
             with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
+                start = time.time()
                 up = pickle.Unpickler(f)
                 g_ = up.load()
                 start_nodes = up.load()
                 end_nodes = up.load()
+                print "LOADING... ", time.time()-start
 
+                start = time.time()
                 self.solver.g = nx.union(self.solver.g, g_)
+                print "UNION... ", time.time()-start
 
+                start = time.time()
                 if i < self.process_n - 1:
                     nodes_to_process += start_nodes
 
@@ -121,6 +126,7 @@ class BackgroundComputer():
 
                 self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
                 end_nodes_prev = end_nodes
+                print "CONNECTING... ", time.time()-start
 
             print str(i+1) + " / " + str(part_num)
 
