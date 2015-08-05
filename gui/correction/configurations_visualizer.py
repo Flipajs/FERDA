@@ -60,19 +60,28 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.scenes_widget.setLayout(QtGui.QVBoxLayout())
         self.scenes_widget.layout().setContentsMargins(0, 0, 0, 0)
 
+        self.top_row_l = QtGui.QHBoxLayout()
+        self.layout().addLayout(self.top_row_l)
+
         self.noise_nodes_filter_b = QtGui.QPushButton('noise filter')
         self.noise_nodes_filter_b.clicked.connect(self.noise_nodes_filter)
-        self.layout().addWidget(self.noise_nodes_filter_b)
+        self.top_row_l.addWidget(self.noise_nodes_filter_b)
 
         self.noise_nodes_confirm_b = QtGui.QPushButton('remove selected')
         self.noise_nodes_confirm_b.clicked.connect(self.remove_noise)
-        self.layout().addWidget(self.noise_nodes_confirm_b)
+        self.top_row_l.addWidget(self.noise_nodes_confirm_b)
         self.noise_nodes_confirm_b.hide()
 
         self.noise_nodes_back_b = QtGui.QPushButton('back')
         self.noise_nodes_back_b.clicked.connect(self.next_case)
-        self.layout().addWidget(self.noise_nodes_back_b)
+        self.top_row_l.addWidget(self.noise_nodes_back_b)
         self.noise_nodes_back_b.hide()
+
+        self.order_by_sb = QtGui.QComboBox()
+        self.order_by_sb.addItem('frame')
+        self.order_by_sb.addItem('chunk length')
+        self.top_row_l.addWidget(QtGui.QLabel('order by: '))
+        self.top_row_l.addWidget(self.order_by_sb)
 
         self.noise_nodes_widget = None
 
@@ -209,19 +218,23 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
     def chunk_len_(self, n):
         is_ch, t_reversed, ch = self.solver.is_chunk(n)
-        if is_ch and not t_reversed:
+        if is_ch:
             return ch.length()
 
         return 0
+
+    def order_nodes(self, nodes):
+        if self.order_by_sb.currentText() == 'chunk length':
+            self.nodes = sorted(self.nodes, key=lambda k: -self.chunk_len_(k))
+        else:
+            self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
 
     def next_case(self, move_to_different_case=False):
         if move_to_different_case:
             self.active_node_id += 1
 
         self.nodes = self.solver.g.nodes()
-        # self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
-
-        self.nodes = sorted(self.nodes, key=lambda k: -self.chunk_len_(k))
+        self.order_nodes(self.nodes)
 
         if self.active_node_id < len(self.nodes):
             n = self.nodes[self.active_node_id]
@@ -317,7 +330,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.active_node_id -= 1
 
         self.nodes = self.solver.g.nodes()
-        self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
+        self.order_nodes(self.nodes)
 
         n = self.nodes[self.active_node_id]
 

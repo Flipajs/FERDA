@@ -24,3 +24,4 @@ class MyScene(QtGui.QGraphicsScene):
         items = self.items(event.pos())
 
         self.double_clicked.emit(event.pos(), items)
+

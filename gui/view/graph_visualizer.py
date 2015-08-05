@@ -1,8 +1,12 @@
 __author__ = 'flipajs'
 
+
+# for some reason on MAC machines it is necessary to import it, else there is problem with loading MSER DLLs
+import networkx as nx
+
 import sys
-from PyQt4 import QtGui, QtCore
-from scripts.region_graph2 import NodeGraphVisualizer, visualize_nodes
+from PyQt4 import QtGui
+from scripts.region_graph3 import NodeGraphVisualizer, visualize_nodes
 from core.settings import Settings as S_
 from utils.video_manager import get_auto_video_manager, optimize_frame_access
 import numpy as np
@@ -26,8 +30,18 @@ def call_visualizer(t_start, t_end, project):
     vid = get_auto_video_manager(project.video_paths)
     regions = {}
 
-    optimized = optimize_frame_access(sub_g.nodes())
+    nodes = []
+    for n in sub_g.nodes():
+        is_ch, t_reversed, ch = solver.is_chunk(n)
+        if is_ch:
+            if ch.length() > 100:
+                nodes.append(n)
 
+    optimized = optimize_frame_access(nodes)
+
+    i = 0
+    num_parts = 50
+    part_ = len(optimized) / num_parts + 1
     for n, seq, _ in optimized:
         if n.frame_ in regions:
             regions[n.frame_].append(n)
@@ -49,7 +63,12 @@ def call_visualizer(t_start, t_end, project):
             solver.g.node[n]['img'] = visualize_nodes(im, n)
             sub_g.node[n]['img'] = solver.g.node[n]['img']
 
-    ngv = NodeGraphVisualizer(sub_g, [], regions)
+        i += 1
+
+        if i % part_ == 0:
+            print "PROGRESS ", i, " / ", len(optimized)
+
+    ngv = NodeGraphVisualizer(sub_g, regions)
     ngv.visualize()
 
     return ngv
@@ -61,14 +80,15 @@ if __name__ == "__main__":
 
     if is_flipajs_pc():
         project = Project()
-        project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+        project.load('/Users/flipajs/Documents/wd/colonies_crop1/colonies.fproj')
     else:
         # EDIT HERE....
+
         project = Project()
-        project.load('...')
+        project.load('/home/simon/Documents/res/c3_1h30/c3_1h30.fproj')
 
-
-    ex = call_visualizer(500, 600, project)
+    ex = call_visualizer(-1, -1, project)
+    # ex = call_visualizer(0, 50, project)
     ex.showMaximized()
 
     app.exec_()
