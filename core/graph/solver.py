@@ -147,7 +147,7 @@ class Solver:
 
     def get_antlikeness(self, n):
         if 'antlikeness' in self.g[n]:
-            prob = self.g[n]['antlikeness']
+            prob = self.g.node[n]['antlikeness']
         else:
             prob = self.project.stats.antlikeness_svm.get_prob(n)[1]
 

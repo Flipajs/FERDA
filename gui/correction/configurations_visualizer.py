@@ -704,7 +704,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         to_confirm = self.noise_nodes_widget.get_unselected()
         for n in to_confirm:
             if n in self.solver.g:
-                self.solver.g[n]['antlikeness'] = 1.0
+                self.solver.g.node[n]['antlikeness'] = 1.0
 
         self.noise_nodes_back_b.hide()
         self.noise_nodes_confirm_b.hide()

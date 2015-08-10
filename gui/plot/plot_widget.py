@@ -4,6 +4,12 @@ from PyQt4 import QtGui
 from numpy import arange, sin, pi, cos
 from my_mpl_canvas import *
 import sys
+from pylab import *
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.cbook import get_sample_data
+from matplotlib._png import read_png
+import numpy as np
+
 
 class PlotWidget(QtGui.QWidget):
     def __init__(self):
@@ -13,16 +19,36 @@ class PlotWidget(QtGui.QWidget):
         self.setLayout(self.main_layout)
 
         self.central_widget = QtGui.QWidget()
-        self.b4 = MyStaticMplCanvas(self.central_widget, width=5, height=4, dpi=100)
-        x = arange(0.0, 3.0, 0.01)
-        y = sin(2*pi*x)
-        y2 = cos(2*pi*x)
-        self.b4.process_data(y, x)
 
-        self.main_layout.addWidget(self.b4)
+        self.p3 = MyMplCanvas3D(self.central_widget, width=5, height=4, dpi=100)
+
+        self.z = 0
+        self.draw_plane()
+        self.main_layout.addWidget(self.p3)
+
+        self.b = QtGui.QPushButton('draw plane')
+        self.b.clicked.connect(self.draw_plane)
+        self.main_layout.addWidget(self.b)
 
         self.update()
         self.show()
+
+    def draw_plane(self):
+        try:
+            self.plane.remove()
+            del self.plane
+        except:
+            pass
+
+        img = np.zeros((1000, 1000, 4))
+        img[:,:,3] = 0.2
+
+        self.z += 300
+        print self.z
+        x, y = ogrid[0:img.shape[0], 0:img.shape[1]]
+        self.plane = self.p3.axes.plot_surface(x, y, self.z, rstride=1000, cstride=1000, facecolors=img)
+
+        self.p3.draw()
 
     def new_data(self, x, y):
         self.b4.process_data(x, y)

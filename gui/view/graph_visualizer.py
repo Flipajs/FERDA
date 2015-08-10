@@ -55,14 +55,13 @@ def call_visualizer(t_start, t_end, project):
                 im = np.asarray(rescale(im, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
 
             solver.g.node[n]['img'] = visualize_nodes(im, n)
-            sub_g.node[n]['img'] = solver.g.node[n]['img']
 
         i += 1
 
         if i % part_ == 0:
             print "PROGRESS ", i, " / ", len(optimized)
 
-    ngv = NodeGraphVisualizer(sub_g, regions)
+    ngv = NodeGraphVisualizer(solver, sub_g, regions)
     ngv.visualize()
 
     return ngv
@@ -75,14 +74,30 @@ if __name__ == "__main__":
     if is_flipajs_pc():
         project = Project()
         project.load('/Users/flipajs/Documents/wd/eight_test/test.fproj')
+        # project.load('/Users/flipajs/Documents/wd/colonies_crop1/colonies.fproj')
     else:
         # EDIT HERE....
 
         project = Project()
         project.load('/home/simon/Documents/res/c3_1h30/c3_1h30.fproj')
 
-    ex = call_visualizer(-1, -1, project)
-    # ex = call_visualizer(0, 50, project)
+    # from utils.video_manager import get_auto_video_manager
+    # vid = get_auto_video_manager(project.video_paths)
+    # img = vid.move2_next()
+    #
+    # from pylab import ogrid, gca, show
+    # from mpl_toolkits.mplot3d import Axes3D
+    # from matplotlib.cbook import get_sample_data
+    # from matplotlib._png import read_png
+    #
+    # x, y = ogrid[0:img.shape[0], 0:img.shape[1]]
+    # ax = gca(projection='3d')
+    # ax.plot_surface(x, y, 0, rstride=5, cstride=5, facecolors=np.asarray(img, dtype=np.float)/255.)
+    #
+    # show()
+
+    # ex = call_visualizer(-1, -1, project)
+    ex = call_visualizer(0, 700, project)
     ex.showMaximized()
     ex.setFocus()
 

@@ -188,6 +188,7 @@ class Project:
                 solver = Solver(self)
                 solver.g = g
                 solver.ignored_nodes = ignored_nodes
+                solver.update_nodes_in_t_refs()
                 self.saved_progress = {'solver': solver}
                 self.log = log
                 print "FINISHED..."

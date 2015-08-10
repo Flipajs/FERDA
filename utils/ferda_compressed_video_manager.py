@@ -175,10 +175,22 @@ class FerdaCompressedVideoManager():
 
         return vid
 
-    def get_frame(self, frame, sequence_access=False):
+    def get_frame(self, frame, sequence_access=False, auto=False):
+        if auto:
+            if abs(frame - self.frame_number()) < 15:
+                sequence_access = True
+
+        reversed = False
+        if frame < self.frame_number():
+            reversed = True
+
         if sequence_access:
-            while self.frame_number() < frame:
-                self.move2_next()
+            if reversed:
+                while self.frame_number() > frame:
+                    self.move2_prev()
+            else:
+                while self.frame_number() < frame:
+                    self.move2_next()
 
             return self.img()
         else:
