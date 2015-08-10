@@ -13,7 +13,7 @@ class ChunksOnFrame(QtGui.QWidget):
 
         self.plot_w = plot_w
         self.setLayout(QtGui.QHBoxLayout())
-        self.setFixedWidth(220)
+        self.setFixedWidth(320)
         self.project = project
         self.slider = QtGui.QSlider()
         self.slider.setMinimum(start_t)
@@ -37,7 +37,11 @@ class ChunksOnFrame(QtGui.QWidget):
 
         self.vid.get_frame(f, auto=True)
         im = self.vid.seek_frame(f)
-        im = np.asarray(resize(im, (150, 150)) * 255, dtype=np.uint8)
+
+        w = 250
+        h = int(im.shape[0] * (250 / float(im.shape[1])))
+
+        im = np.asarray(resize(im, (h, w)) * 255, dtype=np.uint8)
 
         if self.frame_it:
             self.scene.removeItem(self.frame_it)

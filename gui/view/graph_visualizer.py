@@ -98,6 +98,8 @@ if __name__ == "__main__":
 
     # ex = call_visualizer(-1, -1, project)
     ex = call_visualizer(0, 700, project)
+    ex.show()
+    ex.move(-500, -500)
     ex.showMaximized()
     ex.setFocus()
 

@@ -7,7 +7,7 @@ from utils.misc import is_flipajs_pc
 
 app = QtGui.QApplication(sys.argv)
 ex = main_window.MainWindow()
-ex.showMaximized()
+# ex.showMaximized()
 ex.setFocus()
 
 from core.project import Project

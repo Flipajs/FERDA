@@ -43,7 +43,17 @@ class MainWindow(QtGui.QMainWindow):
         self.addAction(self.settings_action)
 
         self.update()
+        # p = QtGui.QDesktopWidget.screen(1).geometry()
+        print QtGui.QApplication.desktop().screenGeometry()
+        print "SCREEN COUNT: ", QtGui.QDesktopWidget().screen(3).geometry()
+        # self.show()
+        # QtGui.QDesktopWidget().screenGeometry()
+        # self.setGeometry(p)
+        self.show()
+        # TOOD: remove this hack...
+        self.move(-500, -500)
         self.showMaximized()
+
 
     def closeEvent(self, event):
         event.accept()
