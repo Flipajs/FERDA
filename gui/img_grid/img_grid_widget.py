@@ -73,3 +73,11 @@ class ImgGridWidget(QtGui.QWidget):
                 ids.append(self.items[i].id_)
 
         return ids
+
+    def get_unselected(self):
+        ids = []
+        for i in range(len(self.items)):
+            if not self.items[i].selected:
+                ids.append(self.items[i].id_)
+
+        return ids

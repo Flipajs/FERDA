@@ -39,7 +39,7 @@ class CaseWidget(QtGui.QWidget):
         self.suggested_config = None
         self.num_of_nodes = 0
         for g in self.nodes_groups:
-            for n in g:
+            for _ in g:
                 self.num_of_nodes += 1
 
         self.process_suggested_config(suggested_config)

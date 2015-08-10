@@ -37,19 +37,54 @@ import math
 
 VISU_MARGIN = 10
 
-class ComputeInQueue(QtCore.QThread):
-    def __init__(self, callback):
-        super(ComputeInQueue, self).__init__()
-        self.model_ready = False
-        self.bg_model = None
-        self.callback = callback
+
+class NoiseFilterComputer(QtCore.QThread):
+    proc_done = QtCore.pyqtSignal(bool)
+    part_done = QtCore.pyqtSignal(float, object, object)
+    set_range = QtCore.pyqtSignal(int)
+
+    def __init__(self, solver, project, steps):
+        super(NoiseFilterComputer, self).__init__()
+        self.solver = solver
+        self.steps = steps
+        self.project = project
 
     def run(self):
-        """
-        this method is called only when you want to run it in parallel.
-        :return:
-        """
-        self.compute_model()
+        # TODO: add some settings...
+        th = 0.2
+
+        to_process = []
+        for n in self.solver.g:
+            prob = self.solver.get_antlikeness(n)
+
+            if prob < th:
+                to_process.append(n)
+
+        optimized = optimize_frame_access(to_process)
+        vid = get_auto_video_manager(self.project.video_paths)
+
+        self.set_range.emit(len(optimized))
+
+        i = 0
+        for n, seq, _ in optimized:
+            if seq:
+                while vid.frame_number() < n.frame_:
+                    vid.move2_next()
+
+                img = vid.img()
+            else:
+                img = vid.seek_frame(n.frame_)
+
+            img = prepare_for_segmentation(img, self.project, grayscale_speedup=False)
+
+            self.part_done.emit(i, img, n)
+
+            i += 1
+
+            if i > self.steps:
+                break
+
+        self.proc_done.emit(True)
 
 
 class ConfigurationsVisualizer(QtGui.QWidget):
@@ -73,17 +108,19 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.noise_nodes_confirm_b.hide()
 
         self.noise_nodes_back_b = QtGui.QPushButton('back')
-        self.noise_nodes_back_b.clicked.connect(self.next_case)
+        self.noise_nodes_back_b.clicked.connect(self.remove_noise_back)
         self.top_row_l.addWidget(self.noise_nodes_back_b)
         self.noise_nodes_back_b.hide()
 
         self.order_by_sb = QtGui.QComboBox()
         self.order_by_sb.addItem('frame')
         self.order_by_sb.addItem('chunk length')
+        self.order_by_sb.currentIndexChanged.connect(self.next_case)
         self.top_row_l.addWidget(QtGui.QLabel('order by: '))
         self.top_row_l.addWidget(self.order_by_sb)
 
         self.noise_nodes_widget = None
+        self.progress_bar = None
 
         self.scroll_ = QtGui.QScrollArea()
         self.scroll_.setWidgetResizable(True)
@@ -151,7 +188,13 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
         self.active_node_id = 0
 
-    def new_region(self, t_offset):
+    def new_region(self, t_offset=-1):
+        if t_offset < 0:
+            t_offset = self.active_cw.active_col
+            print t_offset
+            if t_offset < 0:
+                return
+
         cw = self.active_cw
         im = cw.crop_pixmaps_cache[t_offset]
 
@@ -223,7 +266,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         return 0
 
-    def order_nodes(self, nodes):
+    def order_nodes(self):
         if self.order_by_sb.currentText() == 'chunk length':
             self.nodes = sorted(self.nodes, key=lambda k: -self.chunk_len_(k))
         else:
@@ -234,7 +277,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.active_node_id += 1
 
         self.nodes = self.solver.g.nodes()
-        self.order_nodes(self.nodes)
+        self.order_nodes()
 
         if self.active_node_id < len(self.nodes):
             n = self.nodes[self.active_node_id]
@@ -330,7 +373,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.active_node_id -= 1
 
         self.nodes = self.solver.g.nodes()
-        self.order_nodes(self.nodes)
+        self.order_nodes()
 
         n = self.nodes[self.active_node_id]
 
@@ -572,73 +615,107 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.next_case()
 
-    def noise_nodes_filter(self):
-        self.noise_nodes_filter_b.hide()
+    def noise_part_done(self, val, img, n):
+        elem_width = 200
+        self.progress_bar.setValue(val)
+        item = get_img_qlabel(n.pts(), img, n, elem_width, elem_width, filled=True)
+        item.set_selected(True)
+        self.noise_nodes_widget.add_item(item)
+
+    def noise_finished(self):
+        self.progress_bar.setParent(None)
         self.noise_nodes_confirm_b.show()
         self.noise_nodes_back_b.show()
+
+    def noise_nodes_filter(self):
+        self.noise_nodes_filter_b.hide()
         if self.scenes_widget.layout().count():
             it = self.scenes_widget.layout().itemAt(0)
             self.scenes_widget.layout().removeItem(it)
             it.widget().setParent(None)
 
+        elem_width = 200
+        cols = math.floor(self.scenes_widget.width() / elem_width)
         self.noise_nodes_widget = ImgGridWidget()
+        self.noise_nodes_widget.reshape(cols, elem_width)
 
+        steps = 100
+
+        self.progress_bar = QtGui.QProgressBar()
+        self.progress_bar.setRange(0, 0)
+        self.scenes_widget.layout().addWidget(self.progress_bar)
         self.scenes_widget.layout().addWidget(self.noise_nodes_widget)
 
-        # TODO: add some settings...
-        th = 0.2
-        elem_width = 200
+        self.thread = NoiseFilterComputer(self.solver, self.project, steps)
+        self.thread.part_done.connect(self.noise_part_done)
+        self.thread.proc_done.connect(self.noise_finished)
+        self.thread.set_range.connect(self.progress_bar.setMaximum)
+        self.thread.start()
 
-        to_process = []
-        for n in self.solver.g.nodes():
-            prob = self.project.stats.antlikeness_svm.get_prob(n)
-            if prob[1] < th:
-                to_process.append(n)
-
-        start = time.time()
-
-        optimized = optimize_frame_access(to_process)
-
-        from gui.loading_widget import LoadingWidget
-        load = LoadingWidget(max_range=100)
-
-        i = 0
-        for n, seq, _ in optimized:
-            if seq:
-                while self.vid.frame_number() < n.frame_:
-                    self.vid.move2_next()
-
-                img = self.vid.img()
-            else:
-                img = self.vid.seek_frame(n.frame_)
-
-            img = prepare_for_segmentation(img, self.project, grayscale_speedup=False)
-            item = get_img_qlabel(n.pts(), img, n, elem_width, elem_width, filled=True)
-            item.set_selected(True)
-            self.noise_nodes_widget.add_item(item)
-
-            i += 1
-            load.update_progress(i)
-
-            if i > 1000:
-                break
-
-        print "DONE", time.time() - start
-
-        load.hide()
+        #
+        # # TODO: add some settings...
+        # th = 0.2
+        # elem_width = 200
+        #
+        # to_process = []
+        # for n in self.solver.g.nodes():
+        #     prob = self.project.stats.antlikeness_svm.get_prob(n)
+        #     if prob[1] < th:
+        #         to_process.append(n)
+        #
+        # start = time.time()
+        #
+        # optimized = optimize_frame_access(to_process)
+        #
+        #
+        # i = 0
+        # for n, seq, _ in optimized:
+        #     if seq:
+        #         while self.vid.frame_number() < n.frame_:
+        #             self.vid.move2_next()
+        #
+        #         img = self.vid.img()
+        #     else:
+        #         img = self.vid.seek_frame(n.frame_)
+        #
+        #     img = prepare_for_segmentation(img, self.project, grayscale_speedup=False)
+        #     item = get_img_qlabel(n.pts(), img, n, elem_width, elem_width, filled=True)
+        #     item.set_selected(True)
+        #     self.noise_nodes_widget.add_item(item)
+        #
+        #     i += 1
+        #     load.update_progress(i)
+        #
+        #     if i > 1000:
+        #         break
+        #
+        # print "DONE", time.time() - start
+        #
+        # load.hide()
 
     def remove_noise(self):
         # TODO: add actions
 
         to_remove = self.noise_nodes_widget.get_selected()
         for n in to_remove:
-            if n in self.solver.g.nodes():
+            if n in self.solver.g:
                 self.strong_remove_region(n, suppress_next_case=True)
+
+        to_confirm = self.noise_nodes_widget.get_unselected()
+        for n in to_confirm:
+            if n in self.solver.g:
+                self.solver.g[n]['antlikeness'] = 1.0
 
         self.noise_nodes_back_b.hide()
         self.noise_nodes_confirm_b.hide()
         self.noise_nodes_filter_b.show()
 
+        self.next_case()
+
+    def remove_noise_back(self):
+        self.noise_nodes_back_b.hide()
+        self.noise_nodes_confirm_b.hide()
+        self.noise_nodes_filter_b.show()
         self.next_case()
 
     def ignore_node(self):
@@ -775,6 +852,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.ignore_action.triggered.connect(self.ignore_node)
         self.ignore_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
         self.addAction(self.ignore_action)
+
+        self.new_region_t_action = QtGui.QAction('new region', self)
+        self.new_region_t_action.triggered.connect(partial(self.new_region, -1))
+        self.new_region_t_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_R))
+        self.addAction(self.new_region_t_action)
 
         self.d_ = None
 

@@ -145,11 +145,18 @@ class Solver:
 
         self.update_time_boundaries()
 
+    def get_antlikeness(self, n):
+        if 'antlikeness' in self.g[n]:
+            prob = self.g[n]['antlikeness']
+        else:
+            prob = self.project.stats.antlikeness_svm.get_prob(n)[1]
+
+        return prob
+
     def add_regions_in_t(self, regions, t, fast=False):
         for r in regions:
             if self.antlike_filter:
-                prob = self.antlikeness.get_prob(r)
-                if prob[1] < S_.solver.antlikeness_threshold:
+                if self.get_antlikeness(r) < S_.solver.antlikeness_threshold:
                     continue
 
             self.add_node(r)
@@ -413,22 +420,15 @@ class Solver:
         d = np.linalg.norm(r1.centroid() + pred - r2.centroid()) / float(self.major_axis_median)
         ds = max(0, (2-d) / 2.0)
 
-        #TODO: get rid of this hack... also in antlikness test in solver.py
-        #TODO: without try it will be faster...
-        # flag for virtual region
-        q1 = self.antlikeness.get_prob(r1)[1]
-        try:
-            if r1.is_virtual:
-                q1 = 1.0
-        except:
-            pass
+        if r1.is_virtual:
+            q1 = 1.0
+        else:
+            q1 = self.get_antlikeness(r1)
 
-        q2 = self.antlikeness.get_prob(r2)[1]
-        try:
-            if r2.is_virtual:
-                q2 = 1.0
-        except:
-            pass
+        if r2.is_virtual:
+            q2 = 1.0
+        else:
+            q2 = self.get_antlikeness(r2)
 
         antlikeness_diff = 1 - abs(q1-q2)
         s = ds * antlikeness_diff
@@ -600,42 +600,6 @@ class Solver:
 
         return None
 
-    def disassemble_chunk(self, n, chunk=None, reversed_dir=None):
-        pass
-
-        # if not chunk:
-        #     _, reversed_dir, chunk = self.is_chunk(n)
-        #
-        # self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.DISASSEMBLE_CHUNK, {'n': n})
-        #
-        # if reversed_dir:
-        #     reduced = chunk.remove_from_end()
-        #     if not reduced:
-        #         region = self.get_chunk_node_partner(n)
-        #         self.remove_edge(n, region)
-        # else:
-        #     reduced = chunk.remove_from_beginning()
-        #     if not reduced:
-        #         region = self.get_chunk_node_partner(n)
-        #         self.remove_edge(region, n)
-        #
-        # # if the chunk is only n1, n2  and nothing between in reduced form, the reduced is None and the disassembled region is in region var
-        # if reduced:
-        #     region = reduced.reconstruct(self.project)
-        #
-        #     self.add_node(region)
-        #
-        #     if reversed_dir:
-        #         self.add_edge(n, region, type=EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
-        #         _, _, t_plus = self.get_regions_around(region.frame_)
-        #         self.add_edges_([region], t_plus)
-        #     else:
-        #         self.add_edge(region, n, type=EDGE_CONFIRMED, chunk_ref=chunk, score=1.0)
-        #         t_minus, _, _ = self.get_regions_around(region.frame_)
-        #         self.add_edges_(t_minus, [region])
-        #
-        # return region
-
     def split_chunks(self, n, chunk):
         raise Exception("split_chunks in solver.py not implemented yet!!!")
         # _, _, chunk = self.is_chunk(n)
@@ -712,27 +676,7 @@ class Solver:
         if r in affected:
             affected.remove(r)
 
-        # is_ch, t_reversed, chunk_ref = self.is_chunk(r)
-        # if is_ch:
-        #     # get the other end of chunk
-        #     if t_reversed:
-        #         for n1, _ in self.g.in_edges(r):
-        #             n_ = n1
-        #     else:
-        #         for _, n2 in self.g.out_edges(r):
-        #             n_ = n2
-        #
-        #     if not strong:
-        #         self.disassemble_chunk(n_, chunk_ref, t_reversed)
-        #
-        #     affected.append(n_)
-
         self.remove_node(r)
-
-        # new_ccs, node_representative = self.get_new_ccs(affected)
-        # new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
-
-        # return new_ccs, node_representative
 
     def strong_remove(self, r):
         is_ch, t_reversed, ch = self.is_chunk(r)
@@ -741,37 +685,6 @@ class Solver:
             # TODO: save to log somehow...
             self.remove_node(ch.start_n, False)
             self.remove_node(ch.end_n, False)
-            # # q = ch.last() if
-            # ch_end_n = self.get_chunk_node_partner(r)
-            #
-            # new_ccs, node_representative = self.remove_region(r, strong=True)
-            # new_ccs2, node_representative2 = self.remove_region(ch_end_n, strong=True)
-            # new_ccs += new_ccs2
-            # node_representative += node_representative2
-            #
-            # new_ccs_ = []
-            # node_representatives_ = []
-            #
-            # # remove everything from first remove region which doesn't make sense after second removing...
-            # for cc, n in zip(new_ccs, node_representative):
-            #     if not cc:
-            #         continue
-            #w
-            #     ok = True
-            #     for n in cc.regions_t1:
-            #         if n not in self.g.nodes():
-            #             ok = False
-            #             break
-            #     if ok:
-            #         for n in cc.regions_t2:
-            #             if n not in self.g.nodes():
-            #                 ok = False
-            #                 break
-            #     if ok:
-            #         new_ccs_.append(cc)
-            #         node_representatives_.append(n)
-            #
-            # return new_ccs_, node_representatives_
         else:
             return self.remove_region(r)
 
