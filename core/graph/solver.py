@@ -146,7 +146,7 @@ class Solver:
         self.update_time_boundaries()
 
     def get_antlikeness(self, n):
-        if 'antlikeness' in self.g.node[n]:
+        if n in self.g and 'antlikeness' in self.g.node[n]:
             prob = self.g.node[n]['antlikeness']
         else:
             prob = self.project.stats.antlikeness_svm.get_prob(n)[1]
@@ -190,7 +190,7 @@ class Solver:
                     if self.is_in_confirmed(r_t2):
                         continue
 
-                    s, ds, multi, antlike = self.assignment_score(r_t1, r_t2)
+                    s, ds, multi, _ = self.assignment_score(r_t1, r_t2)
                     # self.add_edge(r_t1, r_t2)
                     if fast:
                         self.add_edge_fast(r_t1, r_t2, type='d', score=-s)
