@@ -18,7 +18,7 @@ from utils.misc import is_flipajs_pc
 def call_visualizer(t_start, t_end, project):
     solver = project.saved_progress['solver']
     if t_start == t_end == -1:
-            sub_g = solver.g
+        sub_g = solver.g
     else:
         nodes = []
         for n in solver.g.nodes():

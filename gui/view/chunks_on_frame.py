@@ -70,7 +70,10 @@ class ChunksOnFrame(QtGui.QWidget):
 
         im = np.asarray(resize(im, (h, w)) * 255, dtype=np.uint8)
         for y, x, c in self.plot_w.intersection_positions:
-            self.marker_its.append(markers.CenterMarker(0, 0, 3, QtGui.QColor(255, 0, 0), 0, None))
+            r = int(c[0]*255)
+            g = int(c[1]*255)
+            b = int(c[2]*255)
+            self.marker_its.append(markers.CenterMarker(0, 0, 3, QtGui.QColor(r, g, b), 0, None))
             self.marker_its[-1].setZValue(0.5)
             self.marker_its[-1].setPos(x*scale, y*scale)
             self.scene.addItem(self.marker_its[-1])

@@ -10,6 +10,10 @@ from utils.misc import get_settings
 from core.settings import Settings as S_
 import cv2
 
+import matplotlib.pyplot as plt
+import matplotlib.cm as cmx
+import matplotlib.colors as colors
+
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255)):
     y = int(y)
@@ -109,3 +113,13 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
 
     return img
 
+
+def get_cmap(N):
+    '''Returns a function that maps each index in 0, 1, ... N-1 to a distinct
+    RGB color.'''
+    color_norm  = colors.Normalize(vmin=0, vmax=N-1)
+    scalar_map = cmx.ScalarMappable(norm=color_norm, cmap='nipy_spectral')
+    def map_index_to_rgb_color(index):
+        return scalar_map.to_rgba(index)
+
+    return map_index_to_rgb_color

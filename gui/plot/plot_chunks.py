@@ -11,6 +11,7 @@ from matplotlib._png import read_png
 import numpy as np
 from gui.plot.plot_utils import line_picker
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from utils.img import get_cmap
 
 
 class PlotChunks(QtGui.QWidget):
@@ -50,7 +51,7 @@ class PlotChunks(QtGui.QWidget):
                 x = [ch.start_n.centroid()[1]]
                 y = [ch.start_n.centroid()[0]]
 
-            for t in range(max(start_t, ch.start_t()+1), min(end_t, ch.end_t()-1)):
+            for t in range(max(start_t, ch.start_t()+1), min(end_t, ch.end_t()1)):
                 time.append(t)
                 r = ch.get_reduced_at(t)
                 x.append(r.centroid()[1])
@@ -65,10 +66,10 @@ class PlotChunks(QtGui.QWidget):
             self.p3.axes.hold(True)
 
             if start_t < ch.start_t():
-                self.p3.axes.scatter(ch.start_n.centroid()[1], ch.start_n.centroid()[0], zs=ch.start_t())
+                self.p3.axes.scatter(ch.start_n.centroid()[1], ch.start_n.centroid()[0], zs=ch.start_t(), marker='^')
 
             if end_t > ch.end_t():
-                self.p3.axes.scatter(ch.end_n.centroid()[1], ch.end_n.centroid()[0], zs=ch.end_t())
+                self.p3.axes.scatter(ch.end_n.centroid()[1], ch.end_n.centroid()[0], zs=ch.end_t(), marker='v')
 
             self.p3.axes.hold(True)
 
@@ -94,11 +95,15 @@ class PlotChunks(QtGui.QWidget):
         self.intersection_positions = []
 
         self.p3.axes.hold(True)
+        i = 0
         for ch in self.chunks:
             if ch.start_t() <= frame <= ch.end_t():
                 c = ch.get_centroid_in_time(frame)
-                self.intersection_items.append(self.p3.axes.scatter(c[1], c[0], zs=frame, color='r'))
-                self.intersection_positions.append((c[0], c[1], 'r'))
+                color_ = get_cmap(len(self.chunks))(i)
+                self.intersection_items.append(self.p3.axes.scatter(c[1], c[0], zs=frame, color=color_))
+                self.intersection_positions.append((c[0], c[1], color_))
+
+            i += 1
 
     def draw_plane(self, level=-1):
         level = self.z if level < 0 else level
@@ -130,11 +135,3 @@ class PlotChunks(QtGui.QWidget):
 
     def set_onclick_callback(self, method):
         self.b4.onclick_callback = method
-
-if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
-    ex = PlotWidget()
-
-    app.exec_()
-    app.deleteLater()
-    sys.exit()

@@ -42,8 +42,8 @@ class SetMSERs(QtGui.QWidget):
         self.w_.layout().addLayout(self.top_row)
 
         self.vid = get_auto_video_manager(project.video_paths)
-        # self.im = self.vid.move2_next()
-        self.im = self.vid.seek_frame(659)
+        self.im = self.vid.move2_next()
+        # self.im = self.vid.seek_frame(659)
 
         im = self.im
         if self.project.bg_model:
@@ -98,8 +98,16 @@ class SetMSERs(QtGui.QWidget):
         self.blur_kernel_size.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('Gblur kernel size', self.blur_kernel_size)
 
+        self.random_frame = QtGui.QPushButton('random frame')
+        self.random_frame.clicked.connect(self.choose_random_frame)
+        self.bottom_row.addRow('', self.random_frame)
+
         self.update()
         self.show()
+
+    def choose_random_frame(self):
+        self.im = self.vid.random_frame()
+        self.update()
 
     def update(self):
         img_ = self.im.copy()
