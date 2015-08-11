@@ -202,6 +202,9 @@ class NewProjectWidget(QtGui.QWidget):
         return project
 
     def create_project(self):
+        if self.working_directory == '':
+            raise Exception('WORKING DIRECTORY WAS NOT SELECTED in new_project_widget.py')
+
         project = self.get_project()
 
         if self.finish_callback:
