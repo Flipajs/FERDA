@@ -54,7 +54,6 @@ class MainWindow(QtGui.QMainWindow):
         self.move(-500, -500)
         self.showMaximized()
 
-
     def closeEvent(self, event):
         event.accept()
 

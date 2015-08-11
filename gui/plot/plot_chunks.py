@@ -10,6 +10,7 @@ from matplotlib.cbook import get_sample_data
 from matplotlib._png import read_png
 import numpy as np
 from gui.plot.plot_utils import line_picker
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 
 class PlotChunks(QtGui.QWidget):
@@ -30,11 +31,14 @@ class PlotChunks(QtGui.QWidget):
         self.main_layout.addWidget(self.b)
 
         self.z = 0
+        self.chunks = None
         self.p3.figure.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0.0)
         self.update()
         # self.show()
 
     def plot_chunks(self, chunks, start_t=-1, end_t=-1):
+        self.chunks = chunks
+
         self.lines = []
         for ch in chunks:
             time = []
@@ -69,29 +73,50 @@ class PlotChunks(QtGui.QWidget):
             self.p3.axes.hold(True)
 
         self.p3.axes.hold(False)
-        self.p3.axes.grid(False)
+        # self.p3.axes.grid(False)
+
+        self.intersection_items = []
+        self.intersection_positions = []
 
         self.z = start_t
         self.draw_plane()
         self.p3.draw()
 
+    def draw_intersections(self, frame):
+        for it in self.intersection_items:
+            try:
+                it.remove()
+                del it
+            except:
+                pass
+
+        self.intersection_items = []
+        self.intersection_positions = []
+
+        self.p3.axes.hold(True)
+        for ch in self.chunks:
+            if ch.start_t() <= frame <= ch.end_t():
+                c = ch.get_centroid_in_time(frame)
+                self.intersection_items.append(self.p3.axes.scatter(c[1], c[0], zs=frame, color='r'))
+                self.intersection_positions.append((c[0], c[1], 'r'))
+
     def draw_plane(self, level=-1):
-        try:
-            self.plane.remove()
-            del self.plane
-        except:
-            pass
-
         level = self.z if level < 0 else level
+        for o in self.p3.figure.findobj(lambda x: isinstance(x, Poly3DCollection)):
+            try:
+                o.remove()
+                del o
+            except:
+                pass
 
-        img = np.zeros((1000, 1000, 4), dtype=np.float)
-        img[:,:,0] = 1
-        img[:,:,3] = 0.2
+        x = [0, 1000, 1000, 0]
+        y = [0, 0, 1000, 1000]
+        z = [level, level,level,level]
+        verts = [zip(x, y,z)]
+        self.plane = Poly3DCollection(verts, alpha=0.1, facecolors='r')
+        self.p3.axes.add_collection3d(self.plane)
 
-        self.z += 1
-        x, y = ogrid[0:img.shape[0], 0:img.shape[1]]
-        self.plane = self.p3.axes.plot_surface(x, y, level, rstride=1000, cstride=1000, facecolors=img)
-
+        self.draw_intersections(level)
         self.p3.draw()
 
     def new_data(self, x, y):

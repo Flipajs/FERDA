@@ -99,7 +99,7 @@ class InitHowWidget(QtGui.QWidget):
             self.classes[i] = 1
 
         self.class_stats.compute_stats(self.regions, self.classes)
-        S_.mser.min_area = self.class_stats.area_median * 0.2
+        S_.mser.min_area = int(self.class_stats.area_median * 0.2)
 
         self.finish_callback('init_how_finished', [self.class_stats])
 
