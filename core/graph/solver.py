@@ -146,7 +146,7 @@ class Solver:
         self.update_time_boundaries()
 
     def get_antlikeness(self, n):
-        if 'antlikeness' in self.g[n]:
+        if 'antlikeness' in self.g.node[n]:
             prob = self.g.node[n]['antlikeness']
         else:
             prob = self.project.stats.antlikeness_svm.get_prob(n)[1]

@@ -131,7 +131,7 @@ class NewProjectWidget(QtGui.QWidget):
             self.video_preview_layout.addRow(layout, value_layout)
             self.video_preview_layout.addRow(None, self.bg_progress_bar)
             layout = QtGui.QLabel('Video pre-processing in progress running in background... But don\'t worry, you can continue with your project creation and initialization meanwhile it will be finished.')
-            layout.setWordWrap(True);
+            layout.setWordWrap(True)
             self.video_preview_layout.addRow(None, layout)
 
             self.bg_computation = MaxIntensity(self.video_files)
