@@ -292,7 +292,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         if self.hide_button.isHidden():
             self.widgets_hide(self.auxes)
 
-    def show_node_with_edges(self, n, prev_pos=0):
+    def show_node(self, n, prev_pos=0):
         self.node_displayed[n] = True
 
         t = n.frame_
@@ -421,7 +421,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         for n in nodes_queue:
             try:
-                self.show_node_with_edges(n)
+                self.show_node(n)
             except:
                 pass
 
@@ -429,6 +429,12 @@ class NodeGraphVisualizer(QtGui.QWidget):
             try:
                 if e[0] in visited and e[1] in visited:
                     self.draw_edge_selectable(e[0], e[1])
+                else:
+                    if 'chunk_ref' in self.g[e[0]][e[1]]:
+                        if e[0] in visited:
+                            self.draw_chunk_residual_edge(e[0], e[1], outgoing=True)
+                        else:
+                            self.draw_chunk_residual_edge(e[0], e[1], outgoing=False)
             except:
                 pass
 
@@ -439,6 +445,28 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
                 t_.setPos(self.x_step * f_num + self.node_size * 0.2, -20)
                 self.scene.addItem(t_)
+
+    def draw_chunk_residual_edge(self, n1, n2, outgoing):
+        t = n1.frame_ if outgoing else n2.frame_
+        t_framenum = self.frames.index(t) * GRAPH_WIDTH
+
+        from_x = self.x_step * t_framenum + self.node_size
+        if outgoing:
+            # TODO: remove constant...
+            to_x = from_x + 50
+        else:
+            to_x = from_x
+            from_x -= 50
+
+        n = n1 if outgoing else n2
+        from_y = self.y_step * self.positions[n] + self.node_size / 2
+        to_y = from_y
+
+        line_ = QtCore.QLineF(from_x, from_y, to_x, to_y)
+        custom_line_ = Custom_Line_Selectable(line_, style='chunk_residual')
+
+        self.scene.addItem(custom_line_)
+        self.edges_obj[custom_line_] = (n1, n2)
 
     def plot_graph(self):
         if self.box_aux_count > 0:

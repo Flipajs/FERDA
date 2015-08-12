@@ -11,24 +11,36 @@ LINE_WIDTH = SELECTION_OFFSET * 2
 SENSITIVITY_CONSTANT = SELECTION_OFFSET * 2
 
 class Custom_Line_Selectable(QtGui.QGraphicsLineItem):
-
-
-    def __init__(self, parent_line):
+    def __init__(self, parent_line, style='default'):
         super(Custom_Line_Selectable, self).__init__(parent_line)
         self.parent_line = parent_line
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
         self.selection_offset = SELECTION_OFFSET
         self.selection_polygon = self.create_selection_polygon()
         self.pick_polygon = self.create_pick_polygon()
+        self.style = style
 
     def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget=None):
-        pen = QtGui.QPen(Qt.darkGray, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
-        QPainter.setPen(pen)
-        QPainter.drawLine(self.parent_line)
-        if self.isSelected():
-            pen = QtGui.QPen(Qt.black, SELECTION_OFFSET, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
+        if self.style == 'default':
+            pen = QtGui.QPen(Qt.darkGray, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
             QPainter.setPen(pen)
-            QPainter.drawPolygon(self.selection_polygon)
+            QPainter.drawLine(self.parent_line)
+            if self.isSelected():
+                pen = QtGui.QPen(Qt.black, SELECTION_OFFSET, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
+                QPainter.setPen(pen)
+                QPainter.drawPolygon(self.selection_polygon)
+
+        elif self.style == 'chunk_residual':
+            pen = QtGui.QPen(QtCore.Qt.DotLine)
+            pen.setColor(QtGui.QColor(255, 0, 0, 0x78))
+            pen.setWidth(2)
+            # pen = QtGui.QPen(Qt.darkGray, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+            QPainter.setPen(pen)
+            QPainter.drawLine(self.parent_line)
+            if self.isSelected():
+                pen = QtGui.QPen(Qt.black, SELECTION_OFFSET, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
+                QPainter.setPen(pen)
+                QPainter.drawPolygon(self.selection_polygon)
 
     def create_selection_polygon(self):
         pi = math.pi
