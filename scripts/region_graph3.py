@@ -43,7 +43,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
     def __init__(self, solver, g, regions):
         super(NodeGraphVisualizer, self).__init__()
         self.solver = solver
-        self.G = g
+        self.g = g
         self.regions = regions
         self.edges_obj = {}
         self.nodes_obj = {}
@@ -60,7 +60,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.x_step = self.node_size + 200
         self.availability = np.zeros(len(regions))
 
-        self.view = MyViewZoomable(self)
+        self.view = QtGui.QGraphicsView(self)
         self.setLayout(QtGui.QVBoxLayout())
         self.edge_info_layout = QtGui.QHBoxLayout()
         self.node_info_layout = QtGui.QHBoxLayout()
@@ -116,6 +116,11 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.plot_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_P))
         self.addAction(self.plot_action)
 
+        self.connect_action = QtGui.QAction('connect', self)
+        self.connect_action.triggered.connect(self.connect_chunks)
+        self.connect_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
+        self.addAction(self.connect_action)
+
         self.info_label_lower = QtGui.QLabel()
         self.info_label_lower.setStyleSheet(self.stylesheet_info_label)
         self.info_label_lower.setText("Frame:\nCentroid:\nArea:")
@@ -164,7 +169,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         if item and isinstance(item, Custom_Line_Selectable):
             e_ = self.edges_obj[item]
             self.selected_edge[0] = e_
-            e = self.G[e_[0]][e_[1]]
+            e = self.g[e_[0]][e_[1]]
             try:
                 chunk = e["chunk_ref"]
             except KeyError:
@@ -297,7 +302,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
             pos = self.get_nearest_free_slot(t, prev_pos)
             self.positions[n] = pos
 
-        vis = self.G.node[n]['img']
+        vis = self.g.node[n]['img']
         if vis.shape[0] > self.node_size or vis.shape[1] > self.node_size:
             vis = np.asarray(resize(vis, (self.node_size, self.node_size)) * 255, dtype=np.uint8)
         else:
@@ -333,17 +338,21 @@ class NodeGraphVisualizer(QtGui.QWidget):
     def prepare_positions(self, frames):
         for f in frames:
             for n1 in self.regions[f]:
-                if n1 not in self.G.node:
+                if n1 not in self.g.node:
                     continue
                 if n1 in self.positions:
                     continue
 
-                for _, n2, d in self.G.out_edges(n1, data=True):
+                for _, n2, d in self.g.out_edges(n1, data=True):
                         if n2 in self.positions:
                             continue
 
                         t1 = n1.frame_
                         t2 = n2.frame_
+
+                        if t1 not in self.frames or t2 not in self.frames:
+                            continue
+
                         t1_framenum = self.frames.index(t1) * GRAPH_WIDTH
                         t2_framenum = self.frames.index(t2) * GRAPH_WIDTH
                         p1 = self.get_nearest_free_slot(t1_framenum, 0)
@@ -375,18 +384,19 @@ class NodeGraphVisualizer(QtGui.QWidget):
             return pos
 
     def visualize(self):
+        self.positions = {}
+        self.used_rows = {}
+
         k = np.array(self.regions.keys())
-        frames = np.sort(k)
-        for f in frames:
-            self.frames.append(f)
-        self.prepare_positions(frames)
+        self.frames = np.sort(k).tolist()
+        self.prepare_positions(self.frames)
 
         nodes_queue = []
 
         visited = {}
-        for f in frames:
+        for f in self.frames:
             for r in self.regions[f]:
-                if r in visited or r not in self.G.node:
+                if r in visited or r not in self.g:
                     continue
 
                 temp_queue = [r]
@@ -399,12 +409,12 @@ class NodeGraphVisualizer(QtGui.QWidget):
                     if n in visited:
                         continue
 
-                    if 'img' not in self.G.node[n]:
+                    if 'img' not in self.g.node[n]:
                         continue
 
                     visited[n] = True
                     nodes_queue.append(n)
-                    for e_ in self.G.out_edges(n):
+                    for e_ in self.g.out_edges(n):
                         temp_queue.append(e_[1])
 
         for n in nodes_queue:
@@ -413,14 +423,14 @@ class NodeGraphVisualizer(QtGui.QWidget):
             except:
                 pass
 
-        for e in self.G.edges():
+        for e in self.g.edges():
             try:
                 if e[0] in visited and e[1] in visited:
                     self.draw_edge_selectable(e[0], e[1])
             except:
                 pass
 
-        for f in frames:
+        for f in self.frames:
             if self.show_frames_number:
                 f_num = self.frames.index(f) * GRAPH_WIDTH
                 t_ = QtGui.QGraphicsTextItem(str(f))
@@ -443,10 +453,10 @@ class NodeGraphVisualizer(QtGui.QWidget):
                         if is_ch:
                             chunks.append(ch)
 
-            w = PlotChunks()
+            self.plot_chunks_w = PlotChunks()
             start_t = seed_n.frame_ - pre_offset
             end_t = seed_n.frame_ + offset
-            w.plot_chunks(chunks, start_t, end_t)
+            self.plot_chunks_w.plot_chunks(chunks, seed_n, start_t, end_t)
 
             self.view.hide()
             self.widgets_hide(self.lower_widgets)
@@ -455,13 +465,60 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
             hbox = QtGui.QHBoxLayout()
 
-            chunks_w = ChunksOnFrame(self.solver.project, w, start_t, end_t)
-            hbox.addWidget(chunks_w)
+            self.chunks_w = ChunksOnFrame(self.solver.project, self.plot_chunks_w, start_t, end_t, self.close_plot_graph)
+            hbox.addWidget(self.chunks_w)
+            self.chunks_w.frame_slider_changed()
 
             self.layout().addLayout(hbox)
-            hbox.addWidget(w)
+            hbox.addWidget(self.plot_chunks_w)
 
             # fig.canvas.mpl_connect('pick_event', self.onpick)
+
+    def close_plot_graph(self):
+        self.plot_chunks_w.hide()
+        self.chunks_w.hide()
+        self.view.show()
+
+    def connect_chunks(self):
+        n1 = self.boxes[0][3]
+        n2 = self.boxes[1][3]
+
+        if not n1 or not n2:
+            self.clear_all_button_function()
+            return
+
+        is_ch1, t_reversed1, ch1 = self.solver.is_chunk(n1)
+        is_ch2, t_reversed2, ch2 = self.solver.is_chunk(n2)
+
+        # there is not a end and start of chunks, so no way how to connect them...
+        if t_reversed1 == t_reversed2:
+            self.clear_all_button_function()
+            return
+
+        ch1.merge_and_interpolate(ch2, self.solver)
+
+        self.view.setParent(None)
+        self.view = QtGui.QGraphicsView(self)
+
+        self.scene = MyScene()
+        self.view.setScene(self.scene)
+        self.scene.clicked.connect(self.scene_clicked)
+
+        self.layout().addWidget(self.view)
+
+        self.regions[n1.frame_].remove(n1)
+        if not self.regions[n1.frame_]:
+            del self.regions[n1.frame_]
+
+        self.regions[n2.frame_].remove(n2)
+        if not self.regions[n2.frame_]:
+            del self.regions[n2.frame_]
+
+        self.clear_all_button_function()
+        for i in range(BOX_NUM):
+            self.boxes[i][3] = None
+
+        self.visualize()
 
     def onpick(self, event):
         print self.lines.index(event.artist)

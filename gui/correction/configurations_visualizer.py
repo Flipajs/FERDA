@@ -33,6 +33,7 @@ from gui.gui_utils import get_image_label
 from core.settings import Settings as S_
 import time
 import math
+from gui.view.graph_visualizer import call_visualizer
 
 
 VISU_MARGIN = 10
@@ -118,6 +119,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.order_by_sb.currentIndexChanged.connect(self.next_case)
         self.top_row_l.addWidget(QtGui.QLabel('order by: '))
         self.top_row_l.addWidget(self.order_by_sb)
+
+        self.global_view_b = QtGui.QPushButton('global view')
+        self.global_view_b.clicked.connect(self.show_global_view)
+        self.top_row_l.addWidget(self.global_view_b)
 
         self.noise_nodes_widget = None
         self.progress_bar = None
@@ -727,6 +732,15 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.next_case()
 
+    def show_global_view(self):
+        if self.scenes_widget.layout().count():
+            it = self.scenes_widget.layout().itemAt(0)
+            self.scenes_widget.layout().removeItem(it)
+            it.widget().setParent(None)
+
+        w = call_visualizer(0, 700, self.project)
+        self.scenes_widget.layout().addWidget(w)
+
     def add_actions(self):
         self.next_action = QtGui.QAction('next', self)
         self.next_action.triggered.connect(partial(self.next_case, True))
@@ -746,6 +760,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.partially_confirm_action = QtGui.QAction('partially confirm', self)
         self.partially_confirm_action.triggered.connect(self.partially_confirm)
         self.partially_confirm_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
+        self.partially_confirm_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.partially_confirm_action)
 
         self.path_confirm_action = QtGui.QAction('path confirm', self)
@@ -771,6 +786,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.new_region_t2_action = QtGui.QAction('new region t2', self)
         self.new_region_t2_action.triggered.connect(partial(self.new_region, 1))
         self.new_region_t2_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
+        self.new_region_t2_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.new_region_t2_action)
 
         self.remove_region_action = QtGui.QAction('remove region', self)
@@ -859,7 +875,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.addAction(self.new_region_t_action)
 
         self.d_ = None
-
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

@@ -13,6 +13,7 @@ import cv2
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
+import math
 
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255)):
@@ -114,11 +115,25 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
     return img
 
 
-def get_cmap(N):
+class DistinguishableColors():
+    def __init__(self, N, step=5, cmap='hsv'):
+        self.step = step
+        self.N = math.ceil(N/step) * step
+        color_norm = colors.Normalize(vmin=0, vmax=self.N-1)
+        self.scalar_map = cmx.ScalarMappable(norm=color_norm, cmap=cmap)
+
+    def get_color(self, index):
+        i = self.step * (index % self.step) + index / self.step #   index/self.step + index % self.step
+        return self.scalar_map.to_rgba(i)
+
+def get_cmap(N, step):
     '''Returns a function that maps each index in 0, 1, ... N-1 to a distinct
     RGB color.'''
-    color_norm  = colors.Normalize(vmin=0, vmax=N-1)
+
+    N = math.ceil(N/step) * step
+    color_norm = colors.Normalize(vmin=0, vmax=N-1)
     scalar_map = cmx.ScalarMappable(norm=color_norm, cmap='nipy_spectral')
+
     def map_index_to_rgb_color(index):
         return scalar_map.to_rgba(index)
 

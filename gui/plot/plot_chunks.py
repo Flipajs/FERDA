@@ -1,6 +1,6 @@
 __author__ = 'filip@naiser.cz'
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from numpy import arange, sin, pi, cos
 from my_mpl_canvas import *
 import sys
@@ -11,7 +11,8 @@ from matplotlib._png import read_png
 import numpy as np
 from gui.plot.plot_utils import line_picker
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-from utils.img import get_cmap
+from utils.img import DistinguishableColors
+import time
 
 
 class PlotChunks(QtGui.QWidget):
@@ -23,7 +24,7 @@ class PlotChunks(QtGui.QWidget):
 
         self.central_widget = QtGui.QWidget()
 
-        self.p3 = MyMplCanvas3D(self.central_widget, width=5, height=4, dpi=100)
+        self.p3 = MyMplCanvas3D(self.central_widget, width=5, height=4, dpi=90)
         self.z = 0
         self.main_layout.addWidget(self.p3)
 
@@ -31,16 +32,30 @@ class PlotChunks(QtGui.QWidget):
         self.b.clicked.connect(self.draw_plane)
         self.main_layout.addWidget(self.b)
 
+        self.color_man = None
         self.z = 0
         self.chunks = None
         self.p3.figure.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0.0)
         self.update()
+        self.update_plot = True
+
+        self.update_plot_action = QtGui.QAction('update_plot', self)
+        self.update_plot_action.triggered.connect(self.update_plot_switch)
+        self.update_plot_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
+        self.addAction(self.update_plot_action)
+
         # self.show()
 
-    def plot_chunks(self, chunks, start_t=-1, end_t=-1):
+    def update_plot_switch(self):
+        self.update_plot = not self.update_plot
+        self.p3.draw()
+
+    def plot_chunks(self, chunks, seed_n, start_t=-1, end_t=-1):
         self.chunks = chunks
+        self.color_man = DistinguishableColors(len(chunks))
 
         self.lines = []
+        i = 0
         for ch in chunks:
             time = []
             x = []
@@ -51,7 +66,7 @@ class PlotChunks(QtGui.QWidget):
                 x = [ch.start_n.centroid()[1]]
                 y = [ch.start_n.centroid()[0]]
 
-            for t in range(max(start_t, ch.start_t()+1), min(end_t, ch.end_t()1)):
+            for t in range(max(start_t, ch.start_t()+1), min(end_t, ch.end_t())):
                 time.append(t)
                 r = ch.get_reduced_at(t)
                 x.append(r.centroid()[1])
@@ -62,14 +77,21 @@ class PlotChunks(QtGui.QWidget):
                 x.append(ch.end_n.centroid()[1])
                 y.append(ch.end_n.centroid()[0])
 
-            self.lines.append(self.p3.axes.plot(x, y, time, picker=line_picker)[0])
+            color_ = self.color_man.get_color(i)
+            i += 1
+
+            lw = 2
+            if ch.end_n == seed_n or ch.start_n == seed_n:
+                lw = 4
+
+            self.lines.append(self.p3.axes.plot(x, y, time, picker=line_picker, c=color_, linewidth=lw)[0])
             self.p3.axes.hold(True)
 
             if start_t < ch.start_t():
-                self.p3.axes.scatter(ch.start_n.centroid()[1], ch.start_n.centroid()[0], zs=ch.start_t(), marker='^')
+                self.p3.axes.scatter(ch.start_n.centroid()[1], ch.start_n.centroid()[0], zs=ch.start_t(), marker='^', s=3)
 
             if end_t > ch.end_t():
-                self.p3.axes.scatter(ch.end_n.centroid()[1], ch.end_n.centroid()[0], zs=ch.end_t(), marker='v')
+                self.p3.axes.scatter(ch.end_n.centroid()[1], ch.end_n.centroid()[0], zs=ch.end_t(), marker='v', s=3)
 
             self.p3.axes.hold(True)
 
@@ -81,7 +103,6 @@ class PlotChunks(QtGui.QWidget):
 
         self.z = start_t
         self.draw_plane()
-        self.p3.draw()
 
     def draw_intersections(self, frame):
         for it in self.intersection_items:
@@ -96,33 +117,47 @@ class PlotChunks(QtGui.QWidget):
 
         self.p3.axes.hold(True)
         i = 0
+
+        xs = []
+        ys = []
+        zs = []
+        colors = []
+
         for ch in self.chunks:
             if ch.start_t() <= frame <= ch.end_t():
                 c = ch.get_centroid_in_time(frame)
-                color_ = get_cmap(len(self.chunks))(i)
-                self.intersection_items.append(self.p3.axes.scatter(c[1], c[0], zs=frame, color=color_))
+                color_ = self.color_man.get_color(i)
+                xs.append(c[1])
+                ys.append(c[0])
+                zs.append(frame)
+                colors.append(color_)
+
                 self.intersection_positions.append((c[0], c[1], color_))
 
             i += 1
 
+        self.intersection_items.append(self.p3.axes.scatter(xs, ys, zs=zs, color=colors))
+
     def draw_plane(self, level=-1):
         level = self.z if level < 0 else level
-        for o in self.p3.figure.findobj(lambda x: isinstance(x, Poly3DCollection)):
-            try:
-                o.remove()
-                del o
-            except:
-                pass
-
-        x = [0, 1000, 1000, 0]
-        y = [0, 0, 1000, 1000]
-        z = [level, level,level,level]
-        verts = [zip(x, y,z)]
-        self.plane = Poly3DCollection(verts, alpha=0.1, facecolors='r')
-        self.p3.axes.add_collection3d(self.plane)
+        # # draw plane
+        # for o in self.p3.figure.findobj(lambda x: isinstance(x, Poly3DCollection)):
+        #     try:
+        #         o.remove()
+        #         del o
+        #     except:
+        #         pass
+        #
+        # x = [0, 1000, 1000, 0]
+        # y = [0, 0, 1000, 1000]
+        # z = [level, level,level,level]
+        # verts = [zip(x, y,z)]
+        # self.plane = Poly3DCollection(verts, alpha=0.1, facecolors='r')
+        # self.p3.axes.add_collection3d(self.plane)
 
         self.draw_intersections(level)
-        self.p3.draw()
+        if self.update_plot:
+            self.p3.draw()
 
     def new_data(self, x, y):
         self.b4.process_data(x, y)

@@ -5,6 +5,7 @@ from reduced import Reduced
 from utils.constants import EDGE_CONFIRMED
 from core.log import LogCategories, ActionNames
 from core.settings import Settings as S_
+from core.region.region import Region
 
 
 class Chunk:
@@ -114,7 +115,7 @@ class Chunk:
 
     def merge(self, second_chunk, solver, undo_action=False):
         if self.start_t() > second_chunk.start_t():
-            second_chunk.merge(self)
+            second_chunk.merge(self, solver)
             return
 
         if not undo_action:
@@ -135,6 +136,43 @@ class Chunk:
 
         if not undo_action:
             self.chunk_reconnect_(solver)
+
+    def merge_and_interpolate(self, second_chunk, solver, undo_action=False):
+        if self.end_t() > second_chunk.start_t():
+            print self.end_t(), second_chunk.start_t()
+            second_chunk.merge_and_interpolate(self, solver, undo_action)
+            return
+
+        print "CONNECTING: ", self, second_chunk
+
+        gap_len = second_chunk.start_t() - self.end_t() - 1
+        if gap_len > 0:
+            c_diff_part = (second_chunk.start_n.centroid() - self.end_n.centroid()) / gap_len
+
+            i = 1
+            for f in range(self.end_t()+1, second_chunk.start_t()):
+                r = Region(frame=f)
+                r.is_virtual = True
+                c = self.end_n.centroid() + np.array(c_diff_part * i)
+                print c
+                r.centroid_ = c.copy()
+
+                # TODO: log...
+                self.reduced.append(Reduced(r))
+
+                i += 1
+
+        n1 = self.end_n
+        self.merge(second_chunk, solver, undo_action)
+
+        n = second_chunk.start_n
+        self.add_to_reduced_(n, solver)
+        solver.remove_node(n, False)
+
+        print "N in g", (n in solver.g), n1 in solver.g, n1.frame_, n.frame_
+
+        self.is_sorted = False
+        self.if_not_sorted_sort_()
 
     def first(self):
         if self.start_n:

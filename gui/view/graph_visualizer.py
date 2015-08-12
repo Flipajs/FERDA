@@ -61,7 +61,7 @@ def call_visualizer(t_start, t_end, project):
         if i % part_ == 0:
             print "PROGRESS ", i, " / ", len(optimized)
 
-    ngv = NodeGraphVisualizer(solver, sub_g, regions)
+    ngv = NodeGraphVisualizer(solver, solver.g, regions)
     ngv.visualize()
 
     return ngv

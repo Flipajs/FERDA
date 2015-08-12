@@ -8,9 +8,10 @@ import numpy as np
 from viewer.gui.img_controls import markers
 
 class ChunksOnFrame(QtGui.QWidget):
-    def __init__(self, project, plot_w, start_t, end_t):
+    def __init__(self, project, plot_w, start_t, end_t, close_callback):
         super(ChunksOnFrame, self).__init__()
 
+        self.close_callback = close_callback
         self.plot_w = plot_w
         self.setLayout(QtGui.QHBoxLayout())
         self.setFixedWidth(450)
@@ -41,7 +42,13 @@ class ChunksOnFrame(QtGui.QWidget):
 
         self.marker_its = []
 
-        self.layout().addWidget(self.view)
+        self.vbox = QtGui.QVBoxLayout()
+        self.layout().addLayout(self.vbox)
+
+        self.close_b = QtGui.QPushButton('close')
+        self.close_b.clicked.connect(self.close_callback)
+        self.vbox.addWidget(self.close_b)
+        self.vbox.addWidget(self.view)
 
     def next_frame(self):
         f = self.slider.value()
@@ -55,8 +62,8 @@ class ChunksOnFrame(QtGui.QWidget):
         f = self.slider.value()
         self.plot_w.draw_plane(f)
 
-        self.vid.get_frame(f, auto=True)
-        im = self.vid.seek_frame(f)
+        im = self.vid.get_frame(f, auto=True)
+        # im = self.vid.seek_frame(f)
 
         w = 420
         scale = (w / float(im.shape[1]))

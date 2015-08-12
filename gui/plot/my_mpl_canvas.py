@@ -60,7 +60,7 @@ class MyMplCanvas3D(FigureCanvas):
                                    QtGui.QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
 
-        cid = self.mpl_connect('button_press_event', self.onclick)
+        # cid = self.mpl_connect('button_press_event', self.onclick)
 
         self.onclick_callback = None
         self.axes.mouse_init()
