@@ -738,7 +738,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.scenes_widget.layout().removeItem(it)
             it.widget().setParent(None)
 
-        w = call_visualizer(0, 700, self.project)
+        w = call_visualizer(-1, -1, self.project)
         self.scenes_widget.layout().addWidget(w)
 
     def add_actions(self):
