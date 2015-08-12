@@ -136,7 +136,7 @@ class PlotChunks(QtGui.QWidget):
 
             i += 1
 
-        self.intersection_items.append(self.p3.axes.scatter(xs, ys, zs=zs, color=colors))
+        self.intersection_items.append(self.p3.axes.scatter(xs, ys, zs=zs, color=colors, edgecolors='k'))
 
     def draw_plane(self, level=-1):
         level = self.z if level < 0 else level

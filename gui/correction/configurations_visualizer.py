@@ -1,91 +1,25 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui, QtCore
-from gui.img_controls.my_scene import MyScene
-from gui.gui_utils import cvimg2qtpixmap, get_img_qlabel
-import numpy as np
-from skimage.transform import resize
-from gui.gui_utils import get_image_label
-from utils.drawing.points import draw_points_crop, draw_points
-from utils.video_manager import get_auto_video_manager, optimize_frame_access
-from core.region.mser import get_msers_, get_all_msers
-from skimage.transform import resize
-from gui.img_controls.my_view import MyView
-from gui.img_controls.my_scene import MyScene
+
+from gui.correction.noise_filter_computer import NoiseFilterComputer
+from gui.gui_utils import get_img_qlabel
+from utils.video_manager import get_auto_video_manager
 import sys
 from PyQt4 import QtGui, QtCore
-from gui.img_controls.utils import cvimg2qtpixmap
 import numpy as np
 import pickle
 from functools import partial
-from core.animal import colors_
 from core.region.fitting import Fitting
-import cv2
 from copy import deepcopy
-from config_widget import ConfigWidget
 from case_widget import CaseWidget
 from new_region_widget import NewRegionWidget
 from core.region.region import Region
 from core.log import LogCategories, ActionNames
 from gui.img_grid.img_grid_widget import ImgGridWidget
-from utils.img import prepare_for_segmentation
-from gui.gui_utils import get_image_label
 from core.settings import Settings as S_
-import time
 import math
 from gui.view.graph_visualizer import call_visualizer
-
-
-VISU_MARGIN = 10
-
-
-class NoiseFilterComputer(QtCore.QThread):
-    proc_done = QtCore.pyqtSignal(bool)
-    part_done = QtCore.pyqtSignal(float, object, object)
-    set_range = QtCore.pyqtSignal(int)
-
-    def __init__(self, solver, project, steps):
-        super(NoiseFilterComputer, self).__init__()
-        self.solver = solver
-        self.steps = steps
-        self.project = project
-
-    def run(self):
-        # TODO: add some settings...
-        th = 0.2
-
-        to_process = []
-        for n in self.solver.g:
-            prob = self.solver.get_antlikeness(n)
-
-            if prob < th:
-                to_process.append(n)
-
-        optimized = optimize_frame_access(to_process)
-        vid = get_auto_video_manager(self.project.video_paths)
-
-        self.set_range.emit(len(optimized))
-
-        i = 0
-        for n, seq, _ in optimized:
-            if seq:
-                while vid.frame_number() < n.frame_:
-                    vid.move2_next()
-
-                img = vid.img()
-            else:
-                img = vid.seek_frame(n.frame_)
-
-            img = prepare_for_segmentation(img, self.project, grayscale_speedup=False)
-
-            self.part_done.emit(i, img, n)
-
-            i += 1
-
-            if i > self.steps:
-                break
-
-        self.proc_done.emit(True)
+from gui.loading_widget import LoadingWidget
 
 
 class ConfigurationsVisualizer(QtGui.QWidget):
@@ -99,30 +33,77 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.top_row_l = QtGui.QHBoxLayout()
         self.layout().addLayout(self.top_row_l)
 
-        self.noise_nodes_filter_b = QtGui.QPushButton('noise filter')
-        self.noise_nodes_filter_b.clicked.connect(self.noise_nodes_filter)
-        self.top_row_l.addWidget(self.noise_nodes_filter_b)
+        self.mode_selectbox = QtGui.QComboBox()
+        self.mode_selectbox.addItem('step by step')
+        self.mode_selectbox.addItem('global view')
+        self.mode_selectbox.addItem('noise filter')
+        self.mode_selectbox.currentIndexChanged.connect(self.mode_changed)
+        self.top_row_l.addWidget(self.mode_selectbox)
 
-        self.noise_nodes_confirm_b = QtGui.QPushButton('remove selected')
-        self.noise_nodes_confirm_b.clicked.connect(self.remove_noise)
-        self.top_row_l.addWidget(self.noise_nodes_confirm_b)
-        self.noise_nodes_confirm_b.hide()
+        self.mode_tools = QtGui.QWidget()
+        self.mode_tools.setLayout(QtGui.QHBoxLayout())
+        self.top_row_l.addWidget(self.mode_tools)
 
-        self.noise_nodes_back_b = QtGui.QPushButton('back')
-        self.noise_nodes_back_b.clicked.connect(self.remove_noise_back)
-        self.top_row_l.addWidget(self.noise_nodes_back_b)
-        self.noise_nodes_back_b.hide()
+        # step by step toolbox
+        self.mode_tools_sbs = QtGui.QWidget()
+        self.mode_tools_sbs.setLayout(QtGui.QHBoxLayout())
+        self.top_row_l.addWidget(self.mode_tools_sbs)
 
         self.order_by_sb = QtGui.QComboBox()
         self.order_by_sb.addItem('frame')
         self.order_by_sb.addItem('chunk length')
         self.order_by_sb.currentIndexChanged.connect(self.next_case)
-        self.top_row_l.addWidget(QtGui.QLabel('order by: '))
-        self.top_row_l.addWidget(self.order_by_sb)
+        self.mode_tools_sbs.layout().addWidget(QtGui.QLabel('order by: '))
+        self.mode_tools_sbs.layout().addWidget(self.order_by_sb)
 
-        self.global_view_b = QtGui.QPushButton('global view')
-        self.global_view_b.clicked.connect(self.show_global_view)
-        self.top_row_l.addWidget(self.global_view_b)
+        self.top_row_l.addWidget(self.mode_tools_sbs)
+
+        # noise toolbox
+        self.mode_tools_noise = QtGui.QWidget()
+        self.mode_tools_noise.setLayout(QtGui.QHBoxLayout())
+        self.top_row_l.addWidget(self.mode_tools_noise)
+
+        self.noise_nodes_confirm_b = QtGui.QPushButton('remove selected')
+        self.noise_nodes_confirm_b.clicked.connect(self.remove_noise)
+        self.mode_tools_noise.layout().addWidget(self.noise_nodes_confirm_b)
+
+        self.noise_nodes_back_b = QtGui.QPushButton('back')
+        self.noise_nodes_back_b.clicked.connect(self.remove_noise_back)
+        self.mode_tools_noise.layout().addWidget(self.noise_nodes_back_b)
+        self.mode_tools_noise.hide()
+
+        self.top_row_l.addWidget(self.mode_tools_noise)
+
+        # global view toolbox
+        self.mode_tools_gv = QtGui.QWidget()
+        self.mode_tools_gv.setLayout(QtGui.QHBoxLayout())
+
+        self.gv_chunk_len_threshold = QtGui.QSpinBox()
+        self.gv_chunk_len_threshold.setMinimum(0)
+        self.gv_chunk_len_threshold.setMaximum(100000)
+        self.gv_chunk_len_threshold.setValue(10)
+        self.mode_tools_gv.layout().addWidget(QtGui.QLabel('min chunk length: '))
+        self.mode_tools_gv.layout().addWidget(self.gv_chunk_len_threshold)
+
+        self.gv_start_t = QtGui.QSpinBox()
+        self.gv_start_t.setMinimum(-1)
+        self.gv_start_t.setMaximum(vid.total_frame_count()-1)
+        self.gv_start_t.setValue(-1)
+        self.mode_tools_gv.layout().addWidget(QtGui.QLabel('start t:'))
+        self.mode_tools_gv.layout().addWidget(self.gv_start_t)
+        
+        self.gv_end_t = QtGui.QSpinBox()
+        self.gv_end_t.setMinimum(-1)
+        self.gv_end_t.setMaximum(vid.total_frame_count())
+        self.gv_end_t.setValue(-1)
+        self.mode_tools_gv.layout().addWidget(QtGui.QLabel('end t:'))
+        self.mode_tools_gv.layout().addWidget(self.gv_end_t)
+
+        self.gv_show_now = QtGui.QPushButton('show')
+        self.gv_show_now.clicked.connect(self.show_global_view)
+        self.mode_tools_gv.layout().addWidget(self.gv_show_now)
+
+        self.top_row_l.addWidget(self.mode_tools_gv)
 
         self.noise_nodes_widget = None
         self.progress_bar = None
@@ -169,6 +150,25 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.join_regions_n1 = None
 
         self.layout().setContentsMargins(0, 0, 0, 0)
+
+        self.mode_changed()
+
+    def mode_changed(self):
+        self.clear_scenew_widget()
+
+        self.mode_tools_noise.hide()
+        self.mode_tools_sbs.hide()
+        self.mode_tools_gv.hide()
+
+        ct = self.mode_selectbox.currentText()
+        if ct == 'step by step':
+            self.mode_tools_sbs.show()
+            self.next_case()
+        elif ct == 'global view':
+            self.mode_tools_gv.show()
+        elif ct == 'noise filter':
+            self.mode_tools_noise.show()
+            self.noise_nodes_filter()
 
     def save(self, autosave=False):
         wd = self.solver.project.working_directory
@@ -633,7 +633,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.noise_nodes_back_b.show()
 
     def noise_nodes_filter(self):
-        self.noise_nodes_filter_b.hide()
         if self.scenes_widget.layout().count():
             it = self.scenes_widget.layout().itemAt(0)
             self.scenes_widget.layout().removeItem(it)
@@ -657,47 +656,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.thread.set_range.connect(self.progress_bar.setMaximum)
         self.thread.start()
 
-        #
-        # # TODO: add some settings...
-        # th = 0.2
-        # elem_width = 200
-        #
-        # to_process = []
-        # for n in self.solver.g.nodes():
-        #     prob = self.project.stats.antlikeness_svm.get_prob(n)
-        #     if prob[1] < th:
-        #         to_process.append(n)
-        #
-        # start = time.time()
-        #
-        # optimized = optimize_frame_access(to_process)
-        #
-        #
-        # i = 0
-        # for n, seq, _ in optimized:
-        #     if seq:
-        #         while self.vid.frame_number() < n.frame_:
-        #             self.vid.move2_next()
-        #
-        #         img = self.vid.img()
-        #     else:
-        #         img = self.vid.seek_frame(n.frame_)
-        #
-        #     img = prepare_for_segmentation(img, self.project, grayscale_speedup=False)
-        #     item = get_img_qlabel(n.pts(), img, n, elem_width, elem_width, filled=True)
-        #     item.set_selected(True)
-        #     self.noise_nodes_widget.add_item(item)
-        #
-        #     i += 1
-        #     load.update_progress(i)
-        #
-        #     if i > 1000:
-        #         break
-        #
-        # print "DONE", time.time() - start
-        #
-        # load.hide()
-
     def remove_noise(self):
         # TODO: add actions
 
@@ -711,16 +669,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             if n in self.solver.g:
                 self.solver.g.node[n]['antlikeness'] = 1.0
 
-        self.noise_nodes_back_b.hide()
-        self.noise_nodes_confirm_b.hide()
-        self.noise_nodes_filter_b.show()
-
+        self.mode_tools_noise.hide()
         self.next_case()
 
     def remove_noise_back(self):
-        self.noise_nodes_back_b.hide()
-        self.noise_nodes_confirm_b.hide()
-        self.noise_nodes_filter_b.show()
+        self.mode_tools_noise.hide()
         self.next_case()
 
     def ignore_node(self):
@@ -741,12 +694,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def show_global_view(self):
         self.clear_scenew_widget()
 
-        from gui.loading_widget import LoadingWidget
         w_loading = LoadingWidget()
         self.scenes_widget.layout().addWidget(w_loading)
         QtGui.QApplication.processEvents()
 
-        w = call_visualizer(-1, -1, self.project, w_loading.update_progress)
+        start_t = self.gv_start_t.value()
+        end_t = self.gv_end_t.value()
+        min_chunk_len = self.gv_chunk_len_threshold.value()
+        w = call_visualizer(start_t, end_t, self.project, min_chunk_len, w_loading.update_progress)
         self.clear_scenew_widget()
         self.scenes_widget.layout().addWidget(w)
 
@@ -754,42 +709,50 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.next_action = QtGui.QAction('next', self)
         self.next_action.triggered.connect(partial(self.next_case, True))
         self.next_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
+        self.next_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.next_action)
 
         self.prev_action = QtGui.QAction('prev', self)
         self.prev_action.triggered.connect(self.prev_case)
         self.prev_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B))
+        self.prev_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.prev_action)
 
         self.confirm_cc_action = QtGui.QAction('confirm', self)
         self.confirm_cc_action.triggered.connect(self.confirm_cc)
         self.confirm_cc_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Space))
+        self.confirm_cc_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.confirm_cc_action)
 
         self.partially_confirm_action = QtGui.QAction('partially confirm', self)
         self.partially_confirm_action.triggered.connect(self.partially_confirm)
         self.partially_confirm_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
         self.partially_confirm_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
+        self.partially_confirm_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.partially_confirm_action)
 
         self.path_confirm_action = QtGui.QAction('path confirm', self)
         self.path_confirm_action.triggered.connect(self.path_confirm)
         self.path_confirm_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_C))
+        self.partially_confirm_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.path_confirm_action)
 
         self.fitting_action = QtGui.QAction('fitting', self)
         self.fitting_action.triggered.connect(partial(self.fitting, False))
         self.fitting_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_F))
+        self.fitting_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.fitting_action)
 
         self.fitting_rev_action = QtGui.QAction('fitting rev', self)
         self.fitting_rev_action.triggered.connect(partial(self.fitting, True))
         self.fitting_rev_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_G))
+        self.fitting_rev_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.fitting_rev_action)
 
         self.new_region_t1_action = QtGui.QAction('new region t1', self)
         self.new_region_t1_action.triggered.connect(partial(self.new_region, 0))
         self.new_region_t1_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
+        self.new_region_t1_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.new_region_t1_action)
 
         self.new_region_t2_action = QtGui.QAction('new region t2', self)
@@ -801,86 +764,103 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.remove_region_action = QtGui.QAction('remove region', self)
         self.remove_region_action.triggered.connect(self.remove_region)
         self.remove_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Backspace))
+        self.remove_region_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.remove_region_action)
 
         self.strong_remove_action = QtGui.QAction('strong remove', self)
         self.strong_remove_action.triggered.connect(self.strong_remove_region)
         self.strong_remove_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Backspace))
+        self.strong_remove_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.strong_remove_action)
 
         self.join_regions_action = QtGui.QAction('join regions', self)
         self.join_regions_action.triggered.connect(self.join_regions_pick_second)
         self.join_regions_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_J))
+        self.join_regions_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.join_regions_action)
 
         self.action0 = QtGui.QAction('0', self)
         self.action0.triggered.connect(partial(self.choose_node, 9))
         self.action0.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
+        self.action0.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.action0)
 
         self.action1 = QtGui.QAction('1', self)
         self.action1.triggered.connect(partial(self.choose_node, 0))
         self.action1.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
+        self.action1.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.action1)
 
         self.action2 = QtGui.QAction('2', self)
         self.action2.triggered.connect(partial(self.choose_node, 1))
         self.action2.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_2))
+        self.action2.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.action2)
 
         self.action3 = QtGui.QAction('3', self)
         self.action3.triggered.connect(partial(self.choose_node, 2))
         self.action3.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_3))
+        self.action3.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.action3)
 
         self.action4 = QtGui.QAction('4', self)
         self.action4.triggered.connect(partial(self.choose_node, 3))
         self.action4.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_4))
+        self.action4.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.action4)
 
         self.action5 = QtGui.QAction('5', self)
         self.action5.triggered.connect(partial(self.choose_node, 4))
         self.action5.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_5))
+        self.action5.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.action5)
 
         self.action6 = QtGui.QAction('6', self)
         self.action6.triggered.connect(partial(self.choose_node, 5))
         self.action6.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_6))
+        self.action6.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.action6)
 
         self.action7 = QtGui.QAction('7', self)
         self.action7.triggered.connect(partial(self.choose_node, 6))
         self.action7.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_7))
+        self.action7.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.action7)
 
         self.action8 = QtGui.QAction('8', self)
         self.action8.triggered.connect(partial(self.choose_node, 7))
         self.action8.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_8))
+        self.action8.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.action8)
 
         self.action9 = QtGui.QAction('9', self)
         self.action9.triggered.connect(partial(self.choose_node, 8))
         self.action9.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
+        self.action9.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.action9)
 
         self.save_progress = QtGui.QAction('save', self)
         self.save_progress.triggered.connect(self.save)
         self.save_progress.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
+        self.save_progress.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.save_progress)
 
         self.undo_action = QtGui.QAction('undo', self)
         self.undo_action.triggered.connect(self.undo)
         self.undo_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Z))
+        self.undo_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.undo_action)
 
         self.ignore_action = QtGui.QAction('ignore', self)
         self.ignore_action.triggered.connect(self.ignore_node)
         self.ignore_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
+        self.ignore_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.ignore_action)
 
         self.new_region_t_action = QtGui.QAction('new region', self)
         self.new_region_t_action.triggered.connect(partial(self.new_region, -1))
         self.new_region_t_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_R))
+        self.new_region_t_action.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.addAction(self.new_region_t_action)
 
         self.d_ = None

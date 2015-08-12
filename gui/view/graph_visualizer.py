@@ -15,7 +15,7 @@ from core.project import Project
 from utils.misc import is_flipajs_pc
 
 
-def call_visualizer(t_start, t_end, project, update_callback=None):
+def call_visualizer(t_start, t_end, project, min_chunk_len, update_callback=None):
     solver = project.saved_progress['solver']
     if t_start == t_end == -1:
         sub_g = solver.g
@@ -31,11 +31,13 @@ def call_visualizer(t_start, t_end, project, update_callback=None):
     regions = {}
 
     nodes = []
+    chunks = set()
     for n in sub_g.nodes():
         is_ch, t_reversed, ch = solver.is_chunk(n)
         if is_ch:
-            if ch.length() >= 0:
+            if ch.length() >= min_chunk_len:
                 nodes.append(n)
+                chunks.add(ch)
 
     optimized = optimize_frame_access(nodes)
 
@@ -61,7 +63,7 @@ def call_visualizer(t_start, t_end, project, update_callback=None):
         if update_callback is not None and i % part_ == 0:
             update_callback(i / float(len(optimized)))
 
-    ngv = NodeGraphVisualizer(solver, solver.g, regions)
+    ngv = NodeGraphVisualizer(solver, solver.g, regions, list(chunks))
     ngv.visualize()
 
     return ngv
@@ -97,7 +99,7 @@ if __name__ == "__main__":
     # show()
 
     # ex = call_visualizer(-1, -1, project)
-    ex = call_visualizer(0, 700, project)
+    ex = call_visualizer(0, 700, project, 10)
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()

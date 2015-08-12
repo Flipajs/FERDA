@@ -40,7 +40,7 @@ SPLIT = 'split'
 
 
 class NodeGraphVisualizer(QtGui.QWidget):
-    def __init__(self, solver, g, regions):
+    def __init__(self, solver, g, regions, chunks):
         super(NodeGraphVisualizer, self).__init__()
         self.solver = solver
         self.g = g
@@ -59,6 +59,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.y_step = self.node_size + 2
         self.x_step = self.node_size + 200
         self.availability = np.zeros(len(regions))
+
+        self.chunks = chunks
 
         self.view = QtGui.QGraphicsView(self)
         self.setLayout(QtGui.QVBoxLayout())
@@ -441,22 +443,15 @@ class NodeGraphVisualizer(QtGui.QWidget):
     def plot_graph(self):
         if self.box_aux_count > 0:
             seed_n = self.boxes[0][3]
-            chunks = []
 
             # TODO remove param:
             pre_offset = 20
             offset = 50
-            for f in range(seed_n.frame_, seed_n.frame_ + offset):
-                if f in self.solver.nodes_in_t:
-                    for n in self.solver.nodes_in_t[f]:
-                        is_ch, _, ch = self.solver.is_chunk(n)
-                        if is_ch:
-                            chunks.append(ch)
 
             self.plot_chunks_w = PlotChunks()
             start_t = seed_n.frame_ - pre_offset
             end_t = seed_n.frame_ + offset
-            self.plot_chunks_w.plot_chunks(chunks, seed_n, start_t, end_t)
+            self.plot_chunks_w.plot_chunks(self.chunks, seed_n, start_t, end_t)
 
             self.view.hide()
             self.widgets_hide(self.lower_widgets)
