@@ -732,13 +732,22 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.next_case()
 
-    def show_global_view(self):
+    def clear_scenew_widget(self):
         if self.scenes_widget.layout().count():
             it = self.scenes_widget.layout().itemAt(0)
             self.scenes_widget.layout().removeItem(it)
             it.widget().setParent(None)
 
-        w = call_visualizer(-1, -1, self.project)
+    def show_global_view(self):
+        self.clear_scenew_widget()
+
+        from gui.loading_widget import LoadingWidget
+        w_loading = LoadingWidget()
+        self.scenes_widget.layout().addWidget(w_loading)
+        QtGui.QApplication.processEvents()
+
+        w = call_visualizer(-1, -1, self.project, w_loading.update_progress)
+        self.clear_scenew_widget()
         self.scenes_widget.layout().addWidget(w)
 
     def add_actions(self):

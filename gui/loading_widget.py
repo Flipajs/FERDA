@@ -3,7 +3,7 @@ __author__ = 'fnaiser'
 from PyQt4 import QtGui
 
 class LoadingWidget(QtGui.QWidget):
-    def __init__(self, max_range=0):
+    def __init__(self, max_range=100):
         super(LoadingWidget, self).__init__()
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
@@ -14,8 +14,8 @@ class LoadingWidget(QtGui.QWidget):
         self.vbox.addWidget(self.progress_bar)
 
     def update_progress(self, val):
-        print val
-        self.progress_bar.setValue(val)
+        self.progress_bar.setValue(val*100)
+        QtGui.QApplication.processEvents()
 
     def finished(self):
         print "FINISHED"
