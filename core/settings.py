@@ -116,7 +116,12 @@ class General:
 
 class Controls:
     __metaclass__ = SettingsType
-    show_settings = Item('controls/show_setting', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Comma), 'Show settings tab')
+    # general
+    show_settings = Item('controls/show_settings', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Comma), 'Show settings tab')
+
+    # step by step correction
+    next_case = Item('controls/sbs/next_case', QtGui.QKeySequence(QtCore.Qt.Key_N))
+    prev_case = Item('controls/sbs/prev_case', QtGui.QKeySequence(QtCore.Qt.Key_B))
 
 class Settings:
     cache = Cache

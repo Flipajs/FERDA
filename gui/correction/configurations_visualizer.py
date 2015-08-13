@@ -198,7 +198,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         else:
             self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
 
-    def next_case(self, move_to_different_case=False):
+    def se(self, move_to_different_case=False):
         if move_to_different_case:
             self.active_node_id += 1
 
@@ -628,14 +628,12 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def add_actions(self):
         self.next_action = QtGui.QAction('next', self)
         self.next_action.triggered.connect(partial(self.next_case, True))
-        self.next_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
-        self.next_action.setShortcutContext(QtCore.Qt.WidgetWithChildrenShortcut)
+        self.next_action.setShortcut(S_.controls.next_case)
         self.addAction(self.next_action)
 
         self.prev_action = QtGui.QAction('prev', self)
         self.prev_action.triggered.connect(self.prev_case)
-        self.prev_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B))
-        self.prev_action.setShortcutContext(QtCore.Qt.WidgetWithChildrenShortcut)
+        self.prev_action.setShortcut(S_.controls.prev_case)
         self.addAction(self.prev_action)
 
         self.confirm_cc_action = QtGui.QAction('confirm', self)
