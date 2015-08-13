@@ -16,7 +16,7 @@ from core.project.project import Project
 from utils.misc import is_flipajs_pc
 
 
-def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callback=None):
+def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callback=None, node_size=30, node_margin=0.1):
     solver = solver
     if t_start == t_end == -1:
         sub_g = solver.g
@@ -45,6 +45,9 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
     i = 0
     num_parts = 100
     part_ = len(optimized) / num_parts + 1
+
+    # TODO: optimize for same frames...
+
     for n, seq, _ in optimized:
         if n.frame_ in regions:
             regions[n.frame_].append(n)
@@ -58,14 +61,14 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
             if sf > 1.0:
                 im = np.asarray(rescale(im, 1/sf) * 255, dtype=np.uint8)
 
-            solver.g.node[n]['img'] = visualize_nodes(im, n)
+            solver.g.node[n]['img'] = visualize_nodes(im, n, margin=node_margin)
 
         i += 1
 
         if update_callback is not None and i % part_ == 0:
             update_callback(i / float(len(optimized)))
 
-    ngv = NodeGraphVisualizer(solver, solver.g, regions, list(chunks))
+    ngv = NodeGraphVisualizer(solver, solver.g, regions, list(chunks), node_size=node_size)
     ngv.visualize()
 
     return ngv

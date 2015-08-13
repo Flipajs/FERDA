@@ -31,7 +31,6 @@ FONT_SIZE = 13
 M = 3
 #Multiplayer of width of graph
 GRAPH_WIDTH = 1
-NODE_SIZE = 30
 
 SIMILARITY = 'sim'
 STRONG = 's'
@@ -41,7 +40,7 @@ SPLIT = 'split'
 
 
 class NodeGraphVisualizer(QtGui.QWidget):
-    def __init__(self, solver, g, regions, chunks):
+    def __init__(self, solver, g, regions, chunks, node_size=30):
         super(NodeGraphVisualizer, self).__init__()
         self.solver = solver
         self.g = g
@@ -56,7 +55,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.frames = []
         self.positions = {}
         self.node_displayed = {}
-        self.node_size = NODE_SIZE
+        self.node_size = node_size
         self.y_step = self.node_size + 2
         self.x_step = self.node_size + 200
         self.availability = np.zeros(len(regions))
@@ -567,8 +566,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
     def onpick(self, event):
         print self.lines.index(event.artist)
 
-def visualize_nodes(im, r):
-    vis = draw_points_crop(im, r.pts(), square=True, color=(0, 255, 0, 0.35))
+def visualize_nodes(im, r, margin=0.1):
+    vis = draw_points_crop(im, r.pts(), margin=margin, square=True, color=(0, 255, 0, 0.35))
     # cv2.putText(vis, str(r.id_), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
 
     return vis

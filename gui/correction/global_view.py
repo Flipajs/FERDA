@@ -35,6 +35,8 @@ class GlobalView(QtGui.QWidget):
         self.start_t = None
         self.end_t = None
         self.show_b = None
+        self.node_size = None
+        self.relative_margin = None
         
         self.tool_w = self.create_tool_w()
 
@@ -65,6 +67,21 @@ class GlobalView(QtGui.QWidget):
         w.layout().addWidget(QtGui.QLabel('end t:'))
         w.layout().addWidget(self.end_t)
 
+        self.node_size = QtGui.QSpinBox()
+        self.node_size.setMinimum(5)
+        self.node_size.setMaximum(500)
+        self.node_size.setValue(30)
+        w.layout().addWidget(QtGui.QLabel('node size: '))
+        w.layout().addWidget(self.node_size)
+
+        self.relative_margin = QtGui.QDoubleSpinBox()
+        self.relative_margin.setMinimum(0)
+        self.relative_margin.setMaximum(5)
+        self.relative_margin.setSingleStep(0.05)
+        self.relative_margin.setValue(0.7)
+        w.layout().addWidget(QtGui.QLabel('node relative margin: '))
+        w.layout().addWidget(self.relative_margin)
+
         self.show_b = QtGui.QPushButton('show')
         self.show_b.clicked.connect(self.start_preparation)
         w.layout().addWidget(self.show_b)
@@ -79,6 +96,10 @@ class GlobalView(QtGui.QWidget):
         start_t = self.start_t.value()
         end_t = self.end_t.value()
         min_chunk_len = self.chunk_len_threshold.value()
-        w = call_visualizer(start_t, end_t, self.project, self.solver, min_chunk_len, w_loading.update_progress)
+
+        node_size = self.node_size.value()
+        margin = self.relative_margin.value()
+
+        w = call_visualizer(start_t, end_t, self.project, self.solver, min_chunk_len, w_loading.update_progress, node_size=node_size, node_margin=margin)
         w_loading.hide()
         self.layout().addWidget(w)
