@@ -130,7 +130,7 @@ class KeyBindingsTab(QtGui.QWidget):
             'confirm',
             'partially_confirm',
 
-            'global_view_join_chunks'
+            'global_view_join_chunks',
             'global_view_remove_chunk'
         ]
 

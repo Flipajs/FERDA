@@ -47,6 +47,7 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
     part_ = len(optimized) / num_parts + 1
 
     # TODO: optimize for same frames...
+    cache = {}
 
     for n, seq, _ in optimized:
         if n.frame_ in regions:
@@ -59,7 +60,11 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
 
             sf = project.other_parameters.img_subsample_factor
             if sf > 1.0:
-                im = np.asarray(rescale(im, 1/sf) * 255, dtype=np.uint8)
+                if n.frame_ not in cache:
+                    im = np.asarray(rescale(im, 1/sf) * 255, dtype=np.uint8)
+                    cache[n.frame_] = im
+                else:
+                    im = cache[n.frame_]
 
             solver.g.node[n]['img'] = visualize_nodes(im, n, margin=node_margin)
 
