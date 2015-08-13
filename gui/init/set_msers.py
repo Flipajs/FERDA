@@ -95,6 +95,10 @@ class SetMSERs(QtGui.QWidget):
         self.blur_kernel_size.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('Gblur kernel size', self.blur_kernel_size)
 
+        self.use_only_red_ch = QtGui.QCheckBox()
+        self.use_only_red_ch.stateChanged.connect(self.val_changed)
+        self.bottom_row.addRow('use only red channel in img', self.use_only_red_ch)
+
         self.random_frame = QtGui.QPushButton('random frame')
         self.random_frame.clicked.connect(self.choose_random_frame)
         self.bottom_row.addRow('', self.random_frame)
@@ -109,7 +113,12 @@ class SetMSERs(QtGui.QWidget):
     def update(self):
         img_ = self.im.copy()
 
-        img_ = prepare_for_segmentation(img_, self.project, grayscale_speedup=False)
+        img_ = prepare_for_segmentation(img_, self.project, grayscale_speedup=True)
+
+        img_vis = self.im.copy()
+        img_vis[:,:,0] = img_
+        img_vis[:,:,1] = img_
+        img_vis[:,:,2] = img_
 
         m = get_msers_(img_, self.project)
         groups = get_region_groups(m)
@@ -134,8 +143,8 @@ class SetMSERs(QtGui.QWidget):
                     continue
 
             cont = get_contour(r.pts())
-            crop = draw_points_crop(img_, cont, (0, 255, 0, 0.9), square=True)
-            draw_points(img_, cont, (0, 255, 0, 0.9))
+            crop = draw_points_crop(img_vis, cont, (0, 255, 0, 0.9), square=True)
+            draw_points(img_vis, cont, (0, 255, 0, 0.9))
 
             img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
             pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
@@ -149,7 +158,7 @@ class SetMSERs(QtGui.QWidget):
             self.img_grid.add_item(item)
 
         self.img_preview.setParent(None)
-        self.img_preview = get_image_label(img_)
+        self.img_preview = get_image_label(img_vis)
         self.top_row.insertWidget(0, self.img_preview)
 
     def val_changed(self):
@@ -158,6 +167,7 @@ class SetMSERs(QtGui.QWidget):
         self.project.mser_parameters.max_area = self.mser_max_area.value()
         self.project.mser_parameters.min_margin = self.mser_min_margin.value()
         self.project.mser_parameters.gaussian_kernel_std = self.blur_kernel_size.value()
+        self.project.other_parameters.use_only_red_channel = self.use_only_red_ch.isChecked()
 
         self.update()
 
@@ -165,7 +175,10 @@ class SetMSERs(QtGui.QWidget):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
+
     proj.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+    proj.arena_model = None
+    proj.bg_model = None
     # proj.video_paths = '/home/flipajs/Downloads/Camera 1_biglense1.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'

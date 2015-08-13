@@ -57,7 +57,7 @@ class MainTabWidget(QtGui.QWidget):
     def tab_changed(self, i):
         if i == 1:
             self.results_tab.add_data(self.solver)
-            self.results_tab.update_positions(self.results_tab.video.frame_number())
+            self.results_tab.update_positions(self.results_tab.video.frame_number(), optimized=False)
         if i == 2:
             self.statistics_tab.update_data(self.solver)
 

@@ -101,7 +101,13 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
         img = project.bg_model.bg_subtraction(img)
 
     if grayscale_speedup:
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        try:
+            if project.other_parameters.use_only_red_channel:
+                img = img[:,:,2].copy()
+            else:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        except:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     if project.arena_model is not None:
         img = project.arena_model.mask_image(img)

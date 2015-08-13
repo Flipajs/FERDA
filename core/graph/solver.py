@@ -198,7 +198,7 @@ class Solver:
                         self.add_edge(r_t1, r_t2, type='d', score=-s)
 
     def add_edges_to_t(self, t, fast=False):
-        if t-1 in self.nodes_in_t:
+        if t-1 in self.nodes_in_t and t in self.nodes_in_t:
             self.add_edges_(self.nodes_in_t[t-1], self.nodes_in_t[t], fast=fast)
 
     def simplify(self, queue=None, return_affected=False, first_run=False):
