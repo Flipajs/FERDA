@@ -23,87 +23,12 @@ from gui.loading_widget import LoadingWidget
 
 
 class ConfigurationsVisualizer(QtGui.QWidget):
-    def __init__(self, solver, vid, graph_visu_callback):
+    def __init__(self, solver, vid):
         super(ConfigurationsVisualizer, self).__init__()
         self.setLayout(QtGui.QVBoxLayout())
         self.scenes_widget = QtGui.QWidget()
         self.scenes_widget.setLayout(QtGui.QVBoxLayout())
         self.scenes_widget.layout().setContentsMargins(0, 0, 0, 0)
-
-        self.top_row_l = QtGui.QHBoxLayout()
-        self.layout().addLayout(self.top_row_l)
-
-        self.mode_selectbox = QtGui.QComboBox()
-        self.mode_selectbox.addItem('step by step')
-        self.mode_selectbox.addItem('global view')
-        self.mode_selectbox.addItem('noise filter')
-        self.mode_selectbox.currentIndexChanged.connect(self.mode_changed)
-        self.top_row_l.addWidget(self.mode_selectbox)
-
-        self.mode_tools = QtGui.QWidget()
-        self.mode_tools.setLayout(QtGui.QHBoxLayout())
-        self.top_row_l.addWidget(self.mode_tools)
-
-        # step by step toolbox
-        self.mode_tools_sbs = QtGui.QWidget()
-        self.mode_tools_sbs.setLayout(QtGui.QHBoxLayout())
-        self.top_row_l.addWidget(self.mode_tools_sbs)
-
-        self.order_by_sb = QtGui.QComboBox()
-        self.order_by_sb.addItem('frame')
-        self.order_by_sb.addItem('chunk length')
-        self.order_by_sb.currentIndexChanged.connect(self.next_case)
-        self.mode_tools_sbs.layout().addWidget(QtGui.QLabel('order by: '))
-        self.mode_tools_sbs.layout().addWidget(self.order_by_sb)
-
-        self.top_row_l.addWidget(self.mode_tools_sbs)
-
-        # noise toolbox
-        self.mode_tools_noise = QtGui.QWidget()
-        self.mode_tools_noise.setLayout(QtGui.QHBoxLayout())
-        self.top_row_l.addWidget(self.mode_tools_noise)
-
-        self.noise_nodes_confirm_b = QtGui.QPushButton('remove selected')
-        self.noise_nodes_confirm_b.clicked.connect(self.remove_noise)
-        self.mode_tools_noise.layout().addWidget(self.noise_nodes_confirm_b)
-
-        self.noise_nodes_back_b = QtGui.QPushButton('back')
-        self.noise_nodes_back_b.clicked.connect(self.remove_noise_back)
-        self.mode_tools_noise.layout().addWidget(self.noise_nodes_back_b)
-        self.mode_tools_noise.hide()
-
-        self.top_row_l.addWidget(self.mode_tools_noise)
-
-        # global view toolbox
-        self.mode_tools_gv = QtGui.QWidget()
-        self.mode_tools_gv.setLayout(QtGui.QHBoxLayout())
-
-        self.gv_chunk_len_threshold = QtGui.QSpinBox()
-        self.gv_chunk_len_threshold.setMinimum(0)
-        self.gv_chunk_len_threshold.setMaximum(100000)
-        self.gv_chunk_len_threshold.setValue(10)
-        self.mode_tools_gv.layout().addWidget(QtGui.QLabel('min chunk length: '))
-        self.mode_tools_gv.layout().addWidget(self.gv_chunk_len_threshold)
-
-        self.gv_start_t = QtGui.QSpinBox()
-        self.gv_start_t.setMinimum(-1)
-        self.gv_start_t.setMaximum(vid.total_frame_count()-1)
-        self.gv_start_t.setValue(-1)
-        self.mode_tools_gv.layout().addWidget(QtGui.QLabel('start t:'))
-        self.mode_tools_gv.layout().addWidget(self.gv_start_t)
-        
-        self.gv_end_t = QtGui.QSpinBox()
-        self.gv_end_t.setMinimum(-1)
-        self.gv_end_t.setMaximum(vid.total_frame_count())
-        self.gv_end_t.setValue(-1)
-        self.mode_tools_gv.layout().addWidget(QtGui.QLabel('end t:'))
-        self.mode_tools_gv.layout().addWidget(self.gv_end_t)
-
-        self.gv_show_now = QtGui.QPushButton('show')
-        self.gv_show_now.clicked.connect(self.show_global_view)
-        self.mode_tools_gv.layout().addWidget(self.gv_show_now)
-
-        self.top_row_l.addWidget(self.mode_tools_gv)
 
         self.noise_nodes_widget = None
         self.progress_bar = None
@@ -113,7 +38,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.scroll_.setWidget(self.scenes_widget)
         self.layout().addWidget(self.scroll_)
 
-        self.graph_visu_callback = graph_visu_callback
         self.solver = solver
         self.project = solver.project
         self.vid = vid
@@ -151,24 +75,21 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.layout().setContentsMargins(0, 0, 0, 0)
 
-        self.mode_changed()
+        self.order_by_sb = None
+        self.tool_w = self.create_tool_w()
 
-    def mode_changed(self):
-        self.clear_scenew_widget()
+    def create_tool_w(self):
+        w = QtGui.QWidget()
+        w.setLayout(QtGui.QHBoxLayout())
 
-        self.mode_tools_noise.hide()
-        self.mode_tools_sbs.hide()
-        self.mode_tools_gv.hide()
+        self.order_by_sb = QtGui.QComboBox()
+        self.order_by_sb.addItem('frame')
+        self.order_by_sb.addItem('chunk length')
+        self.order_by_sb.currentIndexChanged.connect(self.next_case)
+        w.layout().addWidget(QtGui.QLabel('order by: '))
+        w.layout().addWidget(self.order_by_sb)
 
-        ct = self.mode_selectbox.currentText()
-        if ct == 'step by step':
-            self.mode_tools_sbs.show()
-            self.next_case()
-        elif ct == 'global view':
-            self.mode_tools_gv.show()
-        elif ct == 'noise filter':
-            self.mode_tools_noise.show()
-            self.noise_nodes_filter()
+        return w
 
     def save(self, autosave=False):
         wd = self.solver.project.working_directory
@@ -344,7 +265,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.active_cw.active_node = None
             self.scenes_widget.layout().addWidget(self.active_cw)
 
-            # self.graph_visu_callback(500, 600)
 
     def best_greedy_config(self, nodes_groups):
         config = {}

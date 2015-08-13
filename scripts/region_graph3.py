@@ -120,7 +120,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         self.connect_action = QtGui.QAction('connect', self)
         self.connect_action.triggered.connect(self.connect_chunks)
-        self.connect_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_L))
+        self.connect_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_J))
         self.addAction(self.connect_action)
 
         self.info_label_lower = QtGui.QLabel()

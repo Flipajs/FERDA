@@ -32,12 +32,12 @@ class ChunksOnFrame(QtGui.QWidget):
 
         self.next_action = QtGui.QAction('next', self)
         self.next_action.triggered.connect(self.next_frame)
-        self.next_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_U))
+        self.next_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
         self.addAction(self.next_action)
 
         self.prev_action = QtGui.QAction('prev', self)
         self.prev_action.triggered.connect(self.prev_frame)
-        self.prev_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Y))
+        self.prev_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B))
         self.addAction(self.prev_action)
 
         self.marker_its = []
