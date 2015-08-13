@@ -15,8 +15,8 @@ from core.project import Project
 from utils.misc import is_flipajs_pc
 
 
-def call_visualizer(t_start, t_end, project, min_chunk_len, update_callback=None):
-    solver = project.saved_progress['solver']
+def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callback=None):
+    solver = solver
     if t_start == t_end == -1:
         sub_g = solver.g
     else:
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     # show()
 
     # ex = call_visualizer(-1, -1, project)
-    ex = call_visualizer(0, 700, project, 10)
+    ex = call_visualizer(0, 700, project, project.saved_progress['solver'], 10)
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()
