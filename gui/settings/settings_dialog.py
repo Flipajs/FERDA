@@ -128,7 +128,10 @@ class KeyBindingsTab(QtGui.QWidget):
             'next_case',
             'prev_case',
             'confirm',
-            'partially_confirm'
+            'partially_confirm',
+
+            'global_view_join_chunks'
+            'global_view_remove_chunk'
         ]
 
         super(KeyBindingsTab, self).__init__(parent)

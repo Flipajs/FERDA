@@ -15,6 +15,7 @@ from gui.custom_line_selectable import Custom_Line_Selectable
 from gui.pixmap_selectable import Pixmap_Selectable
 from gui.plot.plot_chunks import PlotChunks
 from gui.view.chunks_on_frame import ChunksOnFrame
+from core.settings import Settings as S_
 
 # Number of max boxes below graph, max is six
 BOX_NUM = 6
@@ -120,8 +121,13 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         self.connect_action = QtGui.QAction('connect', self)
         self.connect_action.triggered.connect(self.connect_chunks)
-        self.connect_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_J))
+        self.connect_action.setShortcut(S_.controls.global_view_join_chunks)
         self.addAction(self.connect_action)
+
+        self.remove_action = QtGui.QAction('remove', self)
+        self.remove_action.triggered.connect(self.remove_chunk)
+        self.remove_action.setShortcut(S_.controls.global_view_remove_chunk)
+        self.addAction(self.remove_action)
 
         self.info_label_lower = QtGui.QLabel()
         self.info_label_lower.setStyleSheet(self.stylesheet_info_label)
@@ -520,6 +526,9 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         ch1.merge_and_interpolate(ch2, self.solver)
 
+        self.update_view(n1, n2)
+
+    def update_view(self, n1=None, n2=None):
         self.view.setParent(None)
         self.view = QtGui.QGraphicsView(self)
 
@@ -529,19 +538,31 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         self.layout().addWidget(self.view)
 
-        self.regions[n1.frame_].remove(n1)
-        if not self.regions[n1.frame_]:
-            del self.regions[n1.frame_]
+        if n1:
+            self.regions[n1.frame_].remove(n1)
+            if not self.regions[n1.frame_]:
+                del self.regions[n1.frame_]
 
-        self.regions[n2.frame_].remove(n2)
-        if not self.regions[n2.frame_]:
-            del self.regions[n2.frame_]
+        if n2:
+            self.regions[n2.frame_].remove(n2)
+            if not self.regions[n2.frame_]:
+                del self.regions[n2.frame_]
 
         self.clear_all_button_function()
         for i in range(BOX_NUM):
             self.boxes[i][3] = None
 
         self.visualize()
+
+    def remove_chunk(self):
+        n1 = self.boxes[0][3]
+
+        if not n1:
+            self.clear_all_button_function()
+            return
+
+        self.solver.strong_remove(n1)
+        self.update_view(n1)
 
     def onpick(self, event):
         print self.lines.index(event.artist)

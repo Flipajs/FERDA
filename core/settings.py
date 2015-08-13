@@ -108,6 +108,11 @@ class Controls:
     partially_confirm = Item('controls/sbs/partially_confirm', QtGui.QKeySequence(QtCore.Qt.Key_C))
 
 
+    # global view
+    global_view_join_chunks = Item('controls/gv/join_chunks', QtGui.QKeySequence(QtCore.Qt.Key_J))
+    global_view_remove_chunk = Item('controls/gv/remove_chunk', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Backspace))
+
+
 class Settings:
     cache = Cache
     colormarks = Colormarks
