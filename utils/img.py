@@ -103,7 +103,7 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
     if grayscale_speedup:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    if project.arena_model:
+    if project.arena_model is not None:
         img = project.arena_model.mask_image(img)
 
     if project.mser_parameters.gaussian_kernel_std > 0:

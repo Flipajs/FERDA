@@ -18,10 +18,10 @@ class Model(object):
             fill = fill[0]
         elif img.shape[2] == 1:
             fill = fill[0]
-            
+
         processed = np.copy(img)
         processed[self.mask_idx_] = fill
-
-        #TODO if self.weights:
-
+        #
+        # #TODO if self.weights:
+        #
         return processed

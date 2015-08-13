@@ -28,9 +28,9 @@ from core.settings import Settings as S_
 
 
 class CaseWidget(QtGui.QWidget):
-    def __init__(self, G, node_groups, suggested_config, vid, parent_widget, color_assignments=None):
+    def __init__(self, G, project, node_groups, suggested_config, vid, parent_widget, color_assignments=None):
         super(CaseWidget, self).__init__()
-
+        self.project = project
         self.G = G
         self.nodes_groups = node_groups
         self.parent = parent_widget

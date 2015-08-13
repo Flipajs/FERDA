@@ -261,7 +261,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
             config = self.best_greedy_config(nodes_groups)
 
-            self.active_cw = CaseWidget(self.solver.g, nodes_groups, config, self.vid, self)
+            self.active_cw = CaseWidget(self.solver.g, self.project, nodes_groups, config, self.vid, self)
             self.active_cw.active_node = None
             self.scenes_widget.layout().addWidget(self.active_cw)
 
@@ -344,7 +344,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         config = self.best_greedy_config(nodes_groups)
 
-        self.active_cw = CaseWidget(self.solver.g, nodes_groups, config, self.vid, self)
+        self.active_cw = CaseWidget(self.solver.g, self.project, nodes_groups, config, self.vid, self)
         self.active_cw.active_node = None
         self.scenes_widget.layout().addWidget(self.active_cw)
 
@@ -475,8 +475,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.next_case()
 
     def join_regions_pick_second(self):
-        self.join_regions_active = True
-        self.join_regions_n1 = self.active_cw.active_node
+        self.active_cw.join_with_()
 
     def join_regions(self, n1, n2):
         if n1.area() < n2.area():

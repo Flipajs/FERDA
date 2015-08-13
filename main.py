@@ -18,8 +18,8 @@ S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 if is_flipajs_pc():
-    # project.load('/Users/flipajs/Documents/wd/eight_barbara_bug/eight.fproj')
-    # ex.widget_control('load_project', project)
+    project.load('/Users/flipajs/Documents/wd/test21/asda.fproj')
+    ex.widget_control('load_project', project)
     pass
 
 app.exec_()
