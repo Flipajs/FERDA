@@ -15,6 +15,7 @@ from gui.gui_utils import SelectableQLabel
 from core.settings import Settings as S_
 from utils.img import prepare_for_segmentation
 import time
+import cv2
 
 
 class SetMSERs(QtGui.QWidget):
@@ -39,8 +40,12 @@ class SetMSERs(QtGui.QWidget):
         self.w_.layout().addLayout(self.top_row)
 
         self.vid = get_auto_video_manager(project.video_paths)
-        self.im = self.vid.move2_next()
+        self.im = cv2.imread('/Users/flipajs/Desktop/red_vid.png')
+        # self.im = self.vid.move2_next()
         # self.im = self.vid.seek_frame(659)
+
+        self.project.arena_model = None
+        self.project.bg_model = None
 
         im = self.im
         if self.project.bg_model:
@@ -109,9 +114,13 @@ class SetMSERs(QtGui.QWidget):
     def update(self):
         img_ = self.im.copy()
 
-        img_ = prepare_for_segmentation(img_, self.project, grayscale_speedup=False)
+        img2_ = img_[:,:,2].copy()
+        # cv2.imshow('gray', img_)
+        # cv2.waitKey(0)
 
-        m = get_msers_(img_, self.project)
+        img2_ = prepare_for_segmentation(img2_, self.project, grayscale_speedup=False)
+
+        m = get_msers_(img2_, self.project)
         groups = get_region_groups(m)
         ids = margin_filter(m, groups)
         # TODO:
