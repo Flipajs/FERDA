@@ -2,20 +2,17 @@ import sys
 
 __author__ = 'filip@naiser.cz'
 
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from gui.gui_utils import get_image_label
 from utils.video_manager import get_auto_video_manager
-from core.project import Project
+from core.project.project import Project
 from core.region.mser import get_msers_
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from utils.drawing.points import draw_points_crop, draw_points, get_contour
 from PIL import ImageQt
 from gui.gui_utils import SelectableQLabel
-from skimage.transform import rescale
-import numpy as np
 from core.settings import Settings as S_
-import scipy
 from utils.img import prepare_for_segmentation
 import time
 
@@ -64,21 +61,21 @@ class SetMSERs(QtGui.QWidget):
         self.mser_max_area.setSingleStep(0.0001)
         self.mser_max_area.setMaximum(1.0)
         self.mser_max_area.setDecimals(6)
-        self.mser_max_area.setValue(S_.mser.max_area)
+        self.mser_max_area.setValue(project.mser_parameters.max_area)
         self.mser_max_area.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('MSER Max relative area', self.mser_max_area)
 
         self.mser_min_area = QtGui.QSpinBox()
         self.mser_min_area.setMinimum(0)
         self.mser_min_area.setMaximum(1000)
-        self.mser_min_area.setValue(S_.mser.min_area)
+        self.mser_min_area.setValue(project.mser_parameters.min_area)
         self.mser_min_area.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('MSER Min area', self.mser_min_area)
 
         self.mser_min_margin = QtGui.QSpinBox()
         self.mser_min_margin.setMinimum(3)
         self.mser_min_margin.setMaximum(100)
-        self.mser_min_margin.setValue(S_.mser.min_margin)
+        self.mser_min_margin.setValue(project.mser_parameters.min_margin)
         self.mser_min_margin.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('MSER Min margin', self.mser_min_margin)
 
@@ -86,7 +83,7 @@ class SetMSERs(QtGui.QWidget):
         self.mser_img_subsample.setMinimum(1.0)
         self.mser_img_subsample.setMaximum(12.0)
         self.mser_img_subsample.setSingleStep(0.1)
-        self.mser_img_subsample.setValue(S_.mser.img_subsample_factor)
+        self.mser_img_subsample.setValue(project.other_parameters.img_subsample_factor)
         self.mser_img_subsample.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('MSER image subsample factor', self.mser_img_subsample)
 
@@ -94,7 +91,7 @@ class SetMSERs(QtGui.QWidget):
         self.blur_kernel_size.setMinimum(0.0)
         self.blur_kernel_size.setMaximum(5.0)
         self.blur_kernel_size.setSingleStep(0.1)
-        self.blur_kernel_size.setValue(S_.mser.gaussian_kernel_std)
+        self.blur_kernel_size.setValue(project.mser_parameters.gaussian_kernel_std)
         self.blur_kernel_size.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('Gblur kernel size', self.blur_kernel_size)
 
@@ -112,20 +109,12 @@ class SetMSERs(QtGui.QWidget):
     def update(self):
         img_ = self.im.copy()
 
-        start = time.time()
         img_ = prepare_for_segmentation(img_, self.project, grayscale_speedup=False)
 
-        # if S_.mser.gaussian_kernel_std > 0:
-        #     img_ = scipy.ndimage.gaussian_filter(img_, sigma=S_.mser.gaussian_kernel_std)
-        #
-        # if S_.mser.img_subsample_factor > 1.0:
-        #     img_ = np.asarray(rescale(img_, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
-
-        m = get_msers_(img_)
+        m = get_msers_(img_, self.project)
         groups = get_region_groups(m)
         ids = margin_filter(m, groups)
         # TODO:
-        # min_area = self.project.stats.area_median * 0.2
         min_area = 30
         ids = area_filter(m, ids, min_area)
         ids = children_filter(m, ids)
@@ -141,7 +130,7 @@ class SetMSERs(QtGui.QWidget):
 
             if self.project.stats:
                 prob = self.project.stats.antlikeness_svm.get_prob(r)
-                if prob[1] < S_.solver.antlikeness_threshold * 0.5:
+                if prob[1] < self.project.solver_parameters.antlikeness_threshold * 0.5:
                     continue
 
             cont = get_contour(r.pts())
@@ -164,11 +153,11 @@ class SetMSERs(QtGui.QWidget):
         self.top_row.insertWidget(0, self.img_preview)
 
     def val_changed(self):
-        S_.mser.img_subsample_factor = self.mser_img_subsample.value()
-        S_.mser.min_area = self.mser_min_area.value()
-        S_.mser.max_area = self.mser_max_area.value()
-        S_.mser.min_margin = self.mser_min_margin.value()
-        S_.mser.gaussian_kernel_std = self.blur_kernel_size.value()
+        self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
+        self.project.mser_parameters.min_area = self.mser_min_area.value()
+        self.project.mser_parameters.max_area = self.mser_max_area.value()
+        self.project.mser_parameters.min_margin = self.mser_min_margin.value()
+        self.project.mser_parameters.gaussian_kernel_std = self.blur_kernel_size.value()
 
         self.update()
 

@@ -2,16 +2,17 @@ __author__ = 'flipajs'
 
 
 # for some reason on MAC machines it is necessary to import it, else there is problem with loading MSER DLLs
-import networkx as nx
 
 import sys
+
 from PyQt4 import QtGui
+import numpy as np
+from skimage.transform import rescale
+
 from scripts.region_graph3 import NodeGraphVisualizer, visualize_nodes
 from core.settings import Settings as S_
 from utils.video_manager import get_auto_video_manager, optimize_frame_access
-import numpy as np
-from skimage.transform import rescale
-from core.project import Project
+from core.project.project import Project
 from utils.misc import is_flipajs_pc
 
 
@@ -53,8 +54,9 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
         if 'img' not in solver.g.node[n]:
             im = vid.get_frame(n.frame_, sequence_access=seq)
 
-            if S_.mser.img_subsample_factor > 1.0:
-                im = np.asarray(rescale(im, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
+            sf = project.other_parameters.img_subsample_factor
+            if sf > 1.0:
+                im = np.asarray(rescale(im, 1/sf) * 255, dtype=np.uint8)
 
             solver.g.node[n]['img'] = visualize_nodes(im, n)
 

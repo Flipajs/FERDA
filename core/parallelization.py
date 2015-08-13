@@ -1,22 +1,20 @@
 __author__ = 'fnaiser'
-import os,sys,inspect
+import os
+import sys
+import inspect
+
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 
 import sys
-from sklearn import svm
 from utils.video_manager import get_auto_video_manager
 import cPickle as pickle
 from core.region.mser import ferda_filtered_msers
 from core.graph.solver import Solver
-from core.project import Project
+from core.project.project import Project
 from core.settings import Settings as S_
-from skimage.transform import rescale
-import numpy as np
-import scipy
 from utils.img import prepare_for_segmentation
-import time
 
 if __name__ == '__main__':
     working_dir = sys.argv[1]
@@ -29,8 +27,6 @@ if __name__ == '__main__':
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
     S_.general.log_graph_edits = False
-
-    S_.mser.min_area = 26
 
     vid = get_auto_video_manager(proj.video_paths)
     if id*frames_in_row > 0:

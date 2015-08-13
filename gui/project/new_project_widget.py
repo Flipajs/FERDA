@@ -7,7 +7,7 @@ from PyQt4 import QtGui, QtCore
 import numpy as np
 import skimage.transform
 
-import core.project
+import core.project.project
 import gui.gui_utils
 import utils.video_manager
 import utils.misc
@@ -17,7 +17,7 @@ from core.bg_model.max_intensity import MaxIntensity
 from core.settings import Settings as S_
 from gui.project.import_widget import ImportWidget
 from gui.init.set_msers import SetMSERs
-from core.project import Project
+from core.project.project import Project
 
 
 class BGSub(threading.Thread):
@@ -188,7 +188,7 @@ class NewProjectWidget(QtGui.QWidget):
             self.finish_callback('project_created', project)
 
     def get_project(self):
-        project = core.project.Project()
+        project = core.project.project.Project()
         project.name = self.project_name.text()
         if not len(project.name):
             project.name = "untitled"

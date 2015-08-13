@@ -1,13 +1,16 @@
 __author__ = 'fnaiser'
 
 import sys
+
 from PyQt4 import QtGui, QtCore
+
 from gui.init.init_widget import InitWidget
 from gui.project import project_widget, new_project_widget
 from gui.main_tab_widget import MainTabWidget
-import core.project
+import core.project.project
 from gui.settings.settings_dialog import SettingsDialog
 from core.settings import Settings as S_
+
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
@@ -65,7 +68,7 @@ class MainWindow(QtGui.QMainWindow):
             self.central_widget.setCurrentWidget(self.new_project_widget)
 
         if state == 'load_project':
-            if isinstance(values, core.project.Project):
+            if isinstance(values, core.project.project.Project):
                 self.project = values
                 self.statusBar().showMessage("The project was successfully loaded.")
                 self.setWindowTitle('FERDA - '+self.project.name)
@@ -77,7 +80,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.statusBar().showMessage("Something went wrong during project loading!")
 
         if state == 'project_created':
-            if isinstance(values, core.project.Project):
+            if isinstance(values, core.project.project.Project):
                 self.project = values
                 self.project.save()
                 self.statusBar().showMessage("The project was successfully created.")
@@ -95,10 +98,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if state == 'initialization_finished':
             self.project.save()
-            print "min_area", S_.mser.min_area
-
             self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
-            print "min_area", S_.mser.min_area
 
             self.main_tab_widget = MainTabWidget(self.widget_control, self.project)
             self.central_widget.addWidget(self.main_tab_widget)
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     ex = MainWindow()
     ex.raise_()
     ex.activateWindow()
-    from core.project import Project
+    from core.project.project import Project
     proj = Project()
     proj.load('/Users/fnaiser/Documents/work_dir/eight/eight.fproj')
     ex.widget_control('load_project', proj)

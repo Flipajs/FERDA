@@ -11,7 +11,7 @@ from skimage.transform import rescale
 from core.graph.configuration import get_length_of_longest_chunk
 from utils.video_manager import optimize_frame_access
 from gui.correction.global_view import GlobalView
-
+from gui.loading_widget import LoadingWidget
 
 class TrackerWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -20,9 +20,6 @@ class TrackerWidget(QtGui.QWidget):
 
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
-
-        self.mser_progress_label = QtGui.QLabel('MSER computation progress')
-        self.vbox.addWidget(self.mser_progress_label)
 
         self.solver = None
         self.certainty_visualizer = None
@@ -57,15 +54,13 @@ class TrackerWidget(QtGui.QWidget):
 
         self.tool_row.addWidget(self.mode_tools_noise)
 
-
         self.tool = QtGui.QVBoxLayout()
         self.layout().addLayout(self.tool)
 
-        self.global_view = None
+        self.progress_w = LoadingWidget(text='Computing MSERs and constructing graph...')
+        self.layout().addWidget(self.progress_w)
         self.noise_filter = None
 
-        self.graph_widget = QtGui.QWidget()
-        self.layout().addWidget(self.graph_widget)
         self.layout().setContentsMargins(0, 0, 0, 0)
 
     def clear_layout(self, layout):
@@ -73,15 +68,6 @@ class TrackerWidget(QtGui.QWidget):
             it = layout.itemAt(0)
             layout.removeItem(it)
             it.widget().setParent(None)
-
-    def clear_tool_row(self):
-        if self.tool_row.count():
-            it = self.tool_row.itemAt(0)
-            self.tool_row.removeItem(it)
-            it.widget().setParent(None)
-
-    def clear_tool_w(self):
-        pass
 
     def mode_changed(self):
         self.clear_layout(self.tool_row)
@@ -107,65 +93,12 @@ class TrackerWidget(QtGui.QWidget):
         self.tool.addWidget(global_view)
         self.tool_row.addWidget(global_view.tool_w)
 
-    def bc_update(self, text):
-        self.mser_progress_label.setText('MSER computation progress'+text)
-
-    def region_ccs_refs(self, ccs):
-        refs = {}
-        for c_ in ccs:
-            for r in c_['c1']:
-                if r in refs:
-                    refs[r].append(c_)
-
-    def update_graph_visu(self, t_start=-1, t_end=-1):
-        if t_start == t_end == -1:
-            sub_g = self.solver.g
-        else:
-            nodes = []
-            for n in self.solver.g.nodes():
-                if t_start <= n.frame_ < t_end:
-                    nodes.append(n)
-
-            sub_g = self.solver.g.subgraph(nodes)
-
-        vid = get_auto_video_manager(self.project.video_paths)
-        regions = {}
-
-        optimized = optimize_frame_access(sub_g.nodes())
-
-        for n, seq, _ in optimized:
-            if n.frame_ in regions:
-                regions[n.frame_].append(n)
-            else:
-                regions[n.frame_] = [n]
-
-            if 'img' not in self.solver.g.node[n]:
-                if seq:
-                    while vid.frame_number() < n.frame_:
-                        vid.move2_next()
-
-                    im = vid.img()
-                else:
-                    im = vid.seek_frame(n.frame_)
-
-                if S_.mser.img_subsample_factor > 1.0:
-                    im = np.asarray(rescale(im, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
-
-                self.solver.g.node[n]['img'] = visualize_nodes(im, n)
-                sub_g.node[n]['img'] = self.solver.g.node[n]['img']
-
-        ngv = NodeGraphVisualizer(sub_g, [], regions)
-        ngv.visualize()
-        self.layout().removeWidget(self.graph_widget)
-        self.graph_widget.setParent(None)
-        self.graph_widget = ngv
-        # self.layout().addWidget(self.graph_widget)
-        self.graph_widget.showMaximized()
-        # self.graph_widget.setFixedHeight(300)
+    def bc_update(self, val):
+        self.progress_w.update_progress(val)
 
     def prepare_corrections(self, solver):
         self.solver = solver
-        self.mser_progress_label.setParent(None)
+        self.progress_w.hide()
         self.mode_changed()
 
     def apply_actions(self, actions):

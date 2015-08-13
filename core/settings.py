@@ -60,16 +60,6 @@ class Cache(object):
     use = Item('cache/use', True, 'There will be stored information in working directory to speed up mainly the correction tool.')
     mser = Item('cache/mser', True, 'Storing MSERs have huge impact on speed but it also needs huge space amount.')
 
-
-class MSER:
-    __metaclass__ = SettingsType
-    max_area = Item('mser/max_area', 0.005)
-    min_area = Item('mser/min_area', 5)
-    min_margin = Item('mser/min_margin', 5)
-    img_subsample_factor = Item('mser/img_subsample_factor', 1.0, 'If set to 1, no subsampling is used, else the image used for mser computation will be smaller by this factor')
-    gaussian_kernel_std = Item('mser/gauss_kernel_std', 0.0, '...')
-
-
 class Colormarks:
     __metaclass__ = SettingsType
     use = Item('colormarks/use', True)
@@ -86,14 +76,6 @@ class Visualization:
     __metaclass__ = SettingsType
     default_region_color = Item('visualization/default_region_color', QtGui.QColor(0, 255, 255, 50), '')
     basic_marker_opacity = Item('visualization/basic_marker_opacity', 0.8, '...')
-
-
-class Solver:
-    __metaclass__ = SettingsType
-    max_edge_distance_in_ant_length = Item('solver/max_edge_distance_in_ant_length', 2.5, 'Used to simplify graph based on distance between nodes')
-    antlikeness_threshold = Item('solver/antlikeness_threshold', 0.1, 'removes all nodes with antlikness below threshold')
-    certainty_threshold = Item('solver/certainty_threshold', 0.5, 'connected component can be solved ony if certainty is higher then this threshold')
-
 
 class Parallelization:
     __metaclass__ = SettingsType
@@ -125,14 +107,9 @@ class Controls:
 
 class Settings:
     cache = Cache
-    mser = MSER
     colormarks = Colormarks
     visualization = Visualization
-    solver = Solver
     parallelization = Parallelization
     temp = Temp
     general = General
     controls = Controls
-
-if __name__ == '__main__':
-    print Settings.solver.max_edge_distance_in_ant_length

@@ -2,8 +2,10 @@ __author__ = 'fnaiser'
 
 import sys
 import os
+
 from PyQt4 import QtGui
-import core.project
+
+import core.project.project
 import gui.gui_utils
 from core.settings import Settings as S_
 
@@ -36,7 +38,7 @@ class ProjectWidget(QtGui.QWidget):
         files = gui.gui_utils.file_names_dialog(self, 'Select FERDA project', filter_="Project (*.fproj)", path=path)
         if len(files) == 1:
             f = files[0]
-            project = core.project.Project()
+            project = core.project.project.Project()
             project.load(f)
 
             if self.finish_callback:

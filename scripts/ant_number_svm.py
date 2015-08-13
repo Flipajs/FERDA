@@ -199,7 +199,6 @@ def test():
     im = vid.move2_next()
     im = vid.move2_next()
 
-
     msers = get_msers_(im)
     groups = get_region_groups(msers)
     ids = margin_filter(msers, groups)

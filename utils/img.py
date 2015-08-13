@@ -106,11 +106,11 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
     if project.arena_model:
         img = project.arena_model.mask_image(img)
 
-    if S_.mser.gaussian_kernel_std > 0:
-        img = scipy.ndimage.gaussian_filter(img, sigma=S_.mser.gaussian_kernel_std)
+    if project.mser_parameters.gaussian_kernel_std > 0:
+        img = scipy.ndimage.gaussian_filter(img, sigma=project.mser_parameters.gaussian_kernel_std)
 
-    if S_.mser.img_subsample_factor > 1.0:
-        img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
+    if project.other_parameters.img_subsample_factor > 1.0:
+        img = np.asarray(rescale(img, 1/project.other_parameters.img_subsample_factor) * 255, dtype=np.uint8)
 
     return img
 

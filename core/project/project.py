@@ -8,7 +8,9 @@ from PyQt4 import QtCore
 from core.bg_model.model import Model
 from core.graph.solver import Solver
 from core.log import Log
-
+from core.project.mser_parameters import MSERParameters
+from core.project.other_parameters import OtherParameters
+from core.project.solver_parameters import SolverParameters
 
 class Project:
     """
@@ -27,6 +29,9 @@ class Project:
         self.animals = None
         self.stats = None
         self.saved_progress = None
+        self.mser_parameters = MSERParameters()
+        self.other_parameters = OtherParameters()
+        self.solver_parameters = SolverParameters()
         self.log = Log()
         self.version = "2.1.1"
 

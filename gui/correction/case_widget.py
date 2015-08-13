@@ -609,8 +609,9 @@ class CaseWidget(QtGui.QWidget):
             else:
                 im = self.vid.move2_next()
 
-            if S_.mser.img_subsample_factor > 1.0:
-                im = np.asarray(rescale(im, 1 / S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
+            sf = self.project.other_parameters.img_subsample_factor
+            if sf > 1.0:
+                im = np.asarray(rescale(im, 1 / sf) * 255, dtype=np.uint8)
 
             self.frame_cache.append(im)
 

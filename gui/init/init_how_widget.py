@@ -19,8 +19,7 @@ from gui.img_grid.img_grid_widget import ImgGridWidget
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from core.classes_stats import ClassesStats
 from core.settings import Settings as S_
-from skimage.transform import rescale
-import scipy
+from utils.img import prepare_for_segmentation
 
 
 class InitHowWidget(QtGui.QWidget):
@@ -61,23 +60,10 @@ class InitHowWidget(QtGui.QWidget):
         r_id = 0
         for i in range(3):
             img = vid.move2_next()
+            img = prepare_for_segmentation(img, project, grayscale_speedup=False)
+            img_ = img.copy()
 
-            if project.bg_model:
-                img_ = project.bg_model.bg_subtraction(img)
-            else:
-                img_ = img.copy()
-
-            if project.arena_model:
-                img_ = project.arena_model.mask_image(img_)
-
-            if S_.mser.gaussian_kernel_std > 0:
-                img_ = scipy.ndimage.gaussian_filter(img_, sigma=S_.mser.gaussian_kernel_std)
-
-            if S_.mser.img_subsample_factor > 1.0:
-                img_ = np.asarray(rescale(img_, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
-                img = np.asarray(rescale(img, 1/S_.mser.img_subsample_factor) * 255, dtype=np.uint8)
-
-            msers = get_msers_(img_)
+            msers = get_msers_(img_, self.project)
             groups = get_region_groups(msers)
             ids = margin_filter(msers, groups)
 
@@ -99,7 +85,7 @@ class InitHowWidget(QtGui.QWidget):
             self.classes[i] = 1
 
         self.class_stats.compute_stats(self.regions, self.classes)
-        S_.mser.min_area = int(self.class_stats.area_median * 0.2)
+        self.project.mser_parameters.min_area = int(self.class_stats.area_median * 0.2)
 
         self.finish_callback('init_how_finished', [self.class_stats])
 
@@ -147,27 +133,21 @@ class InitHowWidget(QtGui.QWidget):
     def init_ants(self, img):
         img_ = self.project.bg_model.bg_subtraction(img)
 
-        msers = get_msers_(img_)
+        msers = get_msers_(img_, self.project)
 
         margin_score = np.array([self.margin_score(r) for r in msers])
 
-        # for a_id in range(len(self.project.animals)):
         for a_id in range(1):
             a = self.project.animals[a_id]
 
-            d_score = np.array([self.dist_score(a, r) for r in msers])
             axis_score = np.array([self.axis_length_score(a, r) for r in msers])
 
-            # s = margin_score * d_score * axis_score
             s = margin_score * axis_score
-            # s = d_score * margin_score
             order = np.argsort(-s)
 
             for i in range(len(msers)):
                 item = self.get_img_qlabel(msers[order[i]].pts(), img, a_id)
                 self.items.append(item)
-            #
-            # self.image_grid_widget.add_item(item)
 
     def get_img_qlabel(self, pts, img, id, height=100, width=100):
         cont = get_contour(pts)

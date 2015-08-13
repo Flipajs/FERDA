@@ -180,9 +180,10 @@ class ResultsWidget(QtGui.QWidget):
         pass
 
     def update_marker_position(self, marker, c):
-        if S_.mser.img_subsample_factor > 1.0:
-            c[0] *= S_.mser.img_subsample_factor
-            c[1] *= S_.mser.img_subsample_factor
+        sf = self.project.other_parameters.img_subsample_factor
+        if sf > 1.0:
+            c[0] *= sf
+            c[1] *= sf
 
         marker.setVisible(True)
         marker.setPos(c[1] - MARKER_SIZE / 2, c[0] - MARKER_SIZE/2)

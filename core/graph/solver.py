@@ -5,7 +5,7 @@ import numpy as np
 from core.settings import Settings as S_
 from core.graph.graph_utils import *
 from utils.video_manager import get_auto_video_manager
-from core.region.mser import get_mser_by_id, get_msers_
+from core.region.mser import get_msers_
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from core.settings import Settings as S_
 from skimage.transform import rescale
@@ -28,7 +28,7 @@ class Solver:
         self.end_t = -1
 
         self.major_axis_median = project.stats.major_axis_median
-        self.max_distance = S_.solver.max_edge_distance_in_ant_length * self.major_axis_median
+        self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * self.major_axis_median
         self.antlikeness = project.stats.antlikeness_svm
 
         # TODO: add to config
@@ -156,7 +156,7 @@ class Solver:
     def add_regions_in_t(self, regions, t, fast=False):
         for r in regions:
             if self.antlike_filter:
-                if self.get_antlikeness(r) < S_.solver.antlikeness_threshold:
+                if self.get_antlikeness(r) < self.project.solver_parameters.antlikeness_threshold:
                     continue
 
             self.add_node(r)
@@ -236,7 +236,7 @@ class Solver:
             return []
 
         vals_in, best_in = get_best_n_in_nodes(self.g, best_out[0], 2)
-        if best_in[0] == n and vals_out[0] < -S_.solver.certainty_threshold:
+        if best_in[0] == n and vals_out[0] < -self.project.solver_parameters.certainty_threshold:
             cert = -vals_out[0]
             n1 = n
             n2 = best_out[0]
@@ -256,7 +256,7 @@ class Solver:
                 cert = abs(s) * abs(s - (min(s_out, s_in)))
                 self.g[n1][n2]['certainty'] = cert
 
-            if cert > S_.solver.certainty_threshold:
+            if cert > self.project.solver_parameters.certainty_threshold:
                 for _, n2_ in self.g.out_edges(n1):
                     if n2_ != n2:
                         self.remove_edge(n1, n2_)
@@ -352,7 +352,7 @@ class Solver:
                 n_ = float(len(s1))
                 cert = abs(sc1 / n_) * (abs(sc1-sc2))
 
-            if cert >= S_.solver.certainty_threshold:
+            if cert >= self.project.solver_parameters.certainty_threshold:
                 for n1, n2 in configs[0]:
                     if n1 and n2:
                         for _, n2_ in self.g.out_edges(n1):

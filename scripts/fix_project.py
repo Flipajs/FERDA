@@ -1,6 +1,6 @@
 __author__ = 'flipajs'
 
-from core.project import Project
+from core.project.project import Project
 
 
 p = Project()

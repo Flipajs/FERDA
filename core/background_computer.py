@@ -91,7 +91,6 @@ class BackgroundComputer():
         if self.finished.all():
             self.check_parallelization_timer.stop()
             self.piece_results_together()
-            self.update_callback(' MSER COMPUTATION FINISHED, preparing data for correction')
 
     def piece_results_together(self):
         end_nodes_prev = []
@@ -164,7 +163,7 @@ class BackgroundComputer():
                     try:
                         i = int(str_)
                         s = str((int(i) / float(self.frames_in_row_last)*100))
-                        self.update_callback(' '+s[0:4]+'%')
+                        # self.update_callback(' '+s[0:4]+'%')
                     except:
                         print str_
                 break
@@ -181,6 +180,13 @@ class BackgroundComputer():
             try:
                 end = time.time()
                 self.finished[p_id] = True
+                num_finished = 0
+                for i in self.finished:
+                    if i:
+                        num_finished += 1
+
+                self.update_callback(num_finished/float(self.part_num))
+
                 print "PART "+str(p_id+1)+"/"+str(self.part_num)+" FINISHED MSERS, takes ", end - self.start, " seconds which is ", (end-self.start) / (self.process_n * self.frames_in_row * int((p_id+self.process_n)/self.process_n)), " seconds per frame"
 
                 self.processes[p_id][2] = self.FINISHED

@@ -1,17 +1,17 @@
 __author__ = 'flipajs'
 
 import sys
+import math
+
 from PyQt4 import QtGui, QtCore
+
 from gui.img_controls.my_view import MyView
 from utils.video_manager import get_auto_video_manager
 from gui.img_controls.utils import cvimg2qtpixmap
-import math
-import cv2
 from viewer.gui.img_controls import markers
 from core.animal import colors_
 from core.settings import Settings as S_
-from core.project import Project
-
+from core.project.project import Project
 
 MARKER_SIZE = 15
 
@@ -239,28 +239,8 @@ class CropVideoWidget(QtGui.QWidget):
         self.markers = []
         self.items = []
 
-
     def marker_changed(self):
         pass
-
-    def update_positions(self, frame):
-        i = 0
-        for n, n2, ch in self.chunks:
-            c = ch.get_centroid_in_time(frame)
-
-            if c is None:
-                self.items[i].setVisible(False)
-            else:
-                c = c.copy()
-
-                if S_.mser.img_subsample_factor > 1.0:
-                    c[0] *= S_.mser.img_subsample_factor
-                    c[1] *= S_.mser.img_subsample_factor
-
-                self.items[i].setVisible(True)
-                self.items[i].setPos(c[1] - MARKER_SIZE / 2, c[0] - MARKER_SIZE/2)
-
-            i += 1
 
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""
@@ -302,8 +282,6 @@ class CropVideoWidget(QtGui.QWidget):
 
             i += 1
 
-        self.update_positions(0)
-
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""
         self.forward.clicked.connect(self.load_next_frame)
@@ -342,7 +320,6 @@ class CropVideoWidget(QtGui.QWidget):
                 item = self.scene.addPixmap(self.pixMap)
                 self.pixMapItem = item
                 self.update_frame_number()
-                self.update_positions(self.video.frame_number())
             else:
                 self.out_of_frames()
 
@@ -358,7 +335,6 @@ class CropVideoWidget(QtGui.QWidget):
                 item = self.scene.addPixmap(self.pixMap)
                 self.pixMapItem = item
                 self.update_frame_number()
-                self.update_positions(self.video.frame_number())
 
     def play_pause(self):
         """Method of playPause button."""
@@ -407,7 +383,6 @@ class CropVideoWidget(QtGui.QWidget):
                 item = self.scene.addPixmap(self.pixMap)
                 self.pixMapItem = item
                 self.update_frame_number()
-                self.update_positions(self.video.frame_number())
             else:
                 self.out_of_frames()
 

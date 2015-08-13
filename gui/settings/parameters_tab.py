@@ -43,29 +43,6 @@ class ParametersTab(QtGui.QWidget):
         self.frame_layout = QtGui.QFormLayout()
         self.vbox.addLayout(self.frame_layout)
 
-        self.mser_max_area = QtGui.QDoubleSpinBox()
-        self.mser_max_area.setMinimum(0.0001)
-        self.mser_max_area.setSingleStep(0.0001)
-        self.mser_max_area.setMaximum(1.0)
-        self.mser_max_area.setDecimals(6)
-        self.frame_layout.addRow('MSER Max relative area', self.mser_max_area)
-
-        self.mser_min_area = QtGui.QSpinBox()
-        self.mser_min_area.setMinimum(0)
-        self.mser_min_area.setMaximum(1000)
-        self.frame_layout.addRow('MSER Min area', self.mser_min_area)
-
-        self.mser_min_margin = QtGui.QSpinBox()
-        self.mser_min_margin.setMinimum(1)
-        self.mser_min_margin.setMaximum(100)
-        self.frame_layout.addRow('MSER Min margin', self.mser_min_margin)
-
-        self.mser_img_subsample = QtGui.QDoubleSpinBox()
-        self.mser_img_subsample.setMinimum(1.0)
-        self.mser_img_subsample.setMaximum(12.0)
-        self.mser_img_subsample.setSingleStep(0.1)
-        self.frame_layout.addRow('MSER image subsample factor', self.mser_img_subsample)
-
         self.blur_kernel_size = QtGui.QDoubleSpinBox()
         self.blur_kernel_size.setMinimum(0.0)
         self.blur_kernel_size.setMaximum(5.0)
@@ -77,11 +54,6 @@ class ParametersTab(QtGui.QWidget):
 
     def populate(self):
         self.colormarks_box.setChecked(S_.colormarks.use)
-        self.mser_max_area.setValue(S_.mser.max_area)
-        self.mser_min_area.setValue(S_.mser.min_area)
-        self.mser_min_margin.setValue(S_.mser.min_margin)
-        self.mser_img_subsample.setValue(S_.mser.img_subsample_factor)
-        self.blur_kernel_size.setValue(S_.mser.gaussian_kernel_std)
 
         # self.igbr_i_weight.setValue(S_.colormarks.igbr_i_weight)
 
@@ -92,8 +64,3 @@ class ParametersTab(QtGui.QWidget):
     def harvest(self):
         # TODO:
         S_.colormarks.use = self.colormarks_box.isChecked()
-        S_.mser.max_area = self.mser_max_area.value()
-        S_.mser.min_area = self.mser_min_area.value()
-        S_.mser.min_margin = self.mser_min_margin.value()
-        S_.mser.img_subsample_factor = self.mser_img_subsample.value()
-        S_.mser.gaussian_kernel_std = self.blur_kernel_size.value()

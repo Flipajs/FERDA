@@ -101,25 +101,21 @@ def get_all_msers(frame_number, video_paths, working_dir):
         return get_msers_(vid.seek_frame(frame_number))
 
 
-def get_msers_(img, frame=-1):
+def get_msers_(img, project, frame=-1):
     """
     Returns msers using MSER algorithm with default settings.
 
     """
+    max_area = project.mser_parameters.max_area
+    min_area = project.mser_parameters.min_area
+    min_margin = project.mser_parameters.min_margin
 
-    mser = Mser(max_area=S_.mser.max_area, min_margin=S_.mser.min_margin, min_area=S_.mser.min_area)
+    mser = Mser(max_area=max_area, min_margin=min_margin, min_area=min_area)
     return mser.process_image(img, frame)
 
 
-def get_mser_by_id(img, id, frame=-1):
-    msers = get_msers_(img, frame)
-    for r in msers:
-        if r.id_ == id:
-            return r
-
-
 def ferda_filtered_msers(img, project, frame=-1):
-    m = get_msers_(img, frame)
+    m = get_msers_(img, project, frame)
     groups = get_region_groups(m)
     ids = margin_filter(m, groups)
     # min_area = project.stats.area_median * 0.2

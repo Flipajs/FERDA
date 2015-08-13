@@ -1,10 +1,12 @@
 __author__ = 'fnaiser'
 
-from core.project import Project
-from PyQt4 import QtGui
 import os.path
 import sys
 import pickle
+
+from PyQt4 import QtGui
+
+from core.project.project import Project
 
 
 class ImportWidget(QtGui.QWidget):

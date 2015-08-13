@@ -22,17 +22,12 @@ class InitWidget(QtGui.QWidget):
 
         self.tabs = QtGui.QTabWidget()
         self.where_tab = InitWhereWidget(self.widget_control, project)
-        self.what_tab = InitWhatWidget(self.widget_control, project)
-        self.how_tab = InitHowWidget(self.widget_control, project)
+        self.what_tab = None
+        self.how_tab = None
 
         self.finish_callback = finish_callback
 
         self.tabs.addTab(self.where_tab, "Where")
-        self.tabs.addTab(self.what_tab, "What")
-        self.tabs.addTab(self.how_tab, "How")
-        self.tabs.setTabEnabled(1, False)
-        self.tabs.setTabEnabled(2, False)
-
         self.vbox.addWidget(self.tabs)
 
         if SKIP_WHAT:
@@ -42,18 +37,16 @@ class InitWidget(QtGui.QWidget):
         elif SKIP_WHERE:
             self.widget_control('init_where_finished')
 
-
     def widget_control(self, state, values=None):
         if state == 'init_where_finished':
             with open(self.project.working_directory+'/bg_model.pkl', 'wb') as f:
                 pickle.dump(self.project.bg_model, f)
-                print "SAVING BG_MODEL"
 
             with open(self.project.working_directory+'/arena_model.pkl', 'wb') as f:
                 pickle.dump(self.project.arena_model, f)
 
-
-            self.tabs.setTabEnabled(1, True)
+            self.what_tab = InitWhatWidget(self.widget_control, self.project)
+            self.tabs.addTab(self.what_tab, "What")
             self.tabs.setCurrentIndex(1)
             self.tabs.setTabEnabled(0, False)
 
@@ -67,7 +60,6 @@ class InitWidget(QtGui.QWidget):
             with open(self.project.working_directory+'/animals.pkl', 'wb') as f:
                 pickle.dump(self.project.animals, f)
 
-            self.tabs.removeTab(2)
             self.how_tab = InitHowWidget(self.widget_control, self.project)
             self.tabs.addTab(self.how_tab, "How")
 
