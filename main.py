@@ -19,8 +19,7 @@ S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 if is_flipajs_pc():
-    # project.load('/Users/flipajs/Documents/wd/camclip1/camclip.fproj')
-    # project.mser_parameters.min_margin = 5
+    # project.load('/Users/flipajs/Documents/wd/F1C51/f1c51.fproj')
     #
     # ex.widget_control('load_project', project)
 

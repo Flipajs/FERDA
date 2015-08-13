@@ -126,7 +126,9 @@ class KeyBindingsTab(QtGui.QWidget):
         settable_buttons = [
             'show_settings',
             'next_case',
-            'prev_case'
+            'prev_case',
+            'confirm',
+            'partially_confirm'
         ]
 
         super(KeyBindingsTab, self).__init__(parent)
@@ -164,7 +166,6 @@ class KeyBindingsTab(QtGui.QWidget):
             # print S_.controls.__getattribute__('show_settings')
             # S_.controls.__setattr__(self.buttons[i], QtGui.QKeySequence(self.table.item(i, 1).text()))
             # self.buttons[i][0] = QtGui.QKeySequence(self.table.item(i, 1).text())
-
 
     def translate(self, key_name):
         k = key_name

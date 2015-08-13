@@ -637,12 +637,12 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.confirm_cc_action = QtGui.QAction('confirm', self)
         self.confirm_cc_action.triggered.connect(self.confirm_cc)
-        self.confirm_cc_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Space))
+        self.confirm_cc_action.setShortcut(S_.controls.confirm)
         self.addAction(self.confirm_cc_action)
 
         self.partially_confirm_action = QtGui.QAction('partially confirm', self)
         self.partially_confirm_action.triggered.connect(self.partially_confirm)
-        self.partially_confirm_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
+        self.partially_confirm_action.setShortcut(S_.controls.partially_confirm)
         self.addAction(self.partially_confirm_action)
 
         self.path_confirm_action = QtGui.QAction('path confirm', self)
