@@ -120,7 +120,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         self.connect_action = QtGui.QAction('connect', self)
         self.connect_action.triggered.connect(self.connect_chunks)
-        self.connect_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
+        self.connect_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_L))
         self.addAction(self.connect_action)
 
         self.info_label_lower = QtGui.QLabel()
@@ -145,11 +145,11 @@ class NodeGraphVisualizer(QtGui.QWidget):
             label.hide()
             self.boxes.append([label, None, None, None])
             self.node_info_layout.addWidget(label)
-        self.clear_all_button = QtGui.QPushButton("Clear All (c)")
+        self.clear_all_button = QtGui.QPushButton("Clear All (x)")
         self.clear_all_button.setStyleSheet("background-color: grey; border-style:outset; border-width: 2px;\
                             border-color: beige; font: bold 14px;min-width:10em; border-radius:25px; padding 6px")
         self.clear_all_button.setFixedHeight(HEIGHT)
-        self.clear_all_button.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
+        self.clear_all_button.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_X))
         self.clear_all_button.clicked.connect(self.clear_all_button_function)
         self.clear_all_button.setFixedHeight(HEIGHT)
         self.node_info_layout.addWidget(self.clear_all_button)
@@ -197,7 +197,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
                 dist = round(np.linalg.norm(node.centroid() - compare_n.centroid()), 2)
 
                 label.setText(str(node.frame_ - compare_n.frame_) + "\n" +
-                              str(dist) + "\n" + str(Region.area(node)))
+                              str(dist) + "\n" + str(node.area()-compare_n.area()))
             else:
                 c = node.centroid()
                 x = round(c[1], 2)
