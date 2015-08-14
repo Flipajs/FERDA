@@ -3,11 +3,26 @@ __author__ = 'fnaiser'
 import sys
 import os
 
-from PyQt4 import QtGui
-
+from PyQt4 import QtGui, QtCore
 import core.project.project
 import gui.gui_utils
 from core.settings import Settings as S_
+from gui.loading_widget import LoadingWidget
+from functools import partial
+
+
+class ProjectLoader(QtCore.QThread):
+    proc_done = QtCore.pyqtSignal(bool)
+
+    def __init__(self, project, path):
+        super(ProjectLoader, self).__init__()
+
+        self.project = project
+        self.path = path
+
+    def run(self):
+        self.project.load(self.path)
+        self.proc_done.emit(True)
 
 
 class ProjectWidget(QtGui.QWidget):
@@ -25,11 +40,18 @@ class ProjectWidget(QtGui.QWidget):
         self.layout.addWidget(self.load_project_button)
         self.load_project_button.clicked.connect(self.load_project)
 
+        self.new_project_button.setFixedHeight(100)
+        self.load_project_button.setFixedHeight(100)
+
         self.update()
 
     def new_project(self):
         if self.finish_callback:
             self.finish_callback('new_project')
+
+    def loading_finished(self, project, w):
+        w.hide()
+        self.finish_callback('load_project', project)
 
     def load_project(self):
         path = ''
@@ -39,10 +61,18 @@ class ProjectWidget(QtGui.QWidget):
         if len(files) == 1:
             f = files[0]
             project = core.project.project.Project()
-            project.load(f)
 
-            if self.finish_callback:
-                self.finish_callback('load_project', project)
+            loading_w = LoadingWidget(text='Loading project... Probably the progress bar won\'t move... But at least this will prevent window freezing')
+            self.layout.addWidget(loading_w)
+            QtGui.QApplication.processEvents()
+
+            project.load(f)
+            self.loading_finished(project, loading_w)
+
+            # pl = ProjectLoader(project, f)
+            # pl.proc_done.connect(partial(self.loading_finished, project, loading_w))
+            # pl.start()
+
 
 
 if __name__ == "__main__":

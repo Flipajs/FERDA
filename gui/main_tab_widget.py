@@ -7,7 +7,6 @@ from gui.statistics.statistics_widget import StatisticsWidget
 
 from core.background_computer import BackgroundComputer
 
-
 class MainTabWidget(QtGui.QWidget):
     def __init__(self, finish_callback, project):
         super(MainTabWidget, self).__init__()

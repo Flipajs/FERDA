@@ -512,6 +512,10 @@ class NodeGraphVisualizer(QtGui.QWidget):
         n1 = self.boxes[0][3]
         n2 = self.boxes[1][3]
 
+        if n1.frame_ > n2.frame_:
+            self.boxes[0][3], self.boxes[1][3] = self.boxes[1][3], self.boxes[0][3]
+            self.connect_chunks()
+
         if not n1 or not n2:
             self.clear_all_button_function()
             return
@@ -521,6 +525,11 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         # there is not a end and start of chunks, so no way how to connect them...
         if t_reversed1 == t_reversed2:
+            self.clear_all_button_function()
+            return
+
+        if ch2.start_t() <= ch1.end_t():
+            "You are a nasty USER! This action is irrational..."
             self.clear_all_button_function()
             return
 
