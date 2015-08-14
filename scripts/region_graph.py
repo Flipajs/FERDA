@@ -655,7 +655,7 @@ if __name__ == '__main__':
 
 
     for frame in range(1, n_frames+2):
-        im = vid.move2_next()
+        im = vid.next_frame()
 
         msers = select_msers_cached(frame + frame_offset)
 

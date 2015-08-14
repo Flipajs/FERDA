@@ -12,7 +12,7 @@ bg = None
 i = -1
 while True:
     i += 1
-    img = vid.move2_next()
+    img = vid.next_frame()
 
     if img is None:
         break

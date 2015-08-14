@@ -227,7 +227,7 @@ class CropVideoWidget(QtGui.QWidget):
 
         self.connect_GUI()
 
-        img = self.video.move2_next()
+        img = self.video.next_frame()
 
         if img is not None:
             self.pixMap = cvimg2qtpixmap(img)
@@ -311,7 +311,7 @@ class CropVideoWidget(QtGui.QWidget):
             #     self.change_frame(self.start_frame)
 
         if self.video is not None:
-            img = self.video.move2_next()
+            img = self.video.next_frame()
             if img is not None:
                 if self.pixMapItem is not None:
                     self.scene.removeItem(self.pixMapItem)
@@ -326,7 +326,7 @@ class CropVideoWidget(QtGui.QWidget):
     def load_previous_frame(self):
         """Loads previous frame of the video if there is such and displays it"""
         if self.video is not None:
-            img = self.video.move2_prev()
+            img = self.video.previous_frame()
             if img is not None:
                 if self.pixMapItem is not None:
                     self.scene.removeItem(self.pixMapItem)

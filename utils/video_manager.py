@@ -4,6 +4,7 @@ import cv2
 import cv_compatibility
 from utils.ferda_compressed_video_manager import FerdaCompressedVideoManager
 from random import randint
+import numpy as np
 
 
 class VideoType:
@@ -22,12 +23,15 @@ class VideoManager():
     this class encapsulates video capturing using OpenCV class VideoCapture
     """
 
-    def __init__(self, video_path, buffer_length=51):
+    def __init__(self, video_path, start_t=0, end_t=np.inf, buffer_length=51):
         """
         :type video_path: str,
         :type buffer_length: int, determines internal buffer length, which allows going back into history without
         frame seeking.
         """
+
+        self.start_t = start_t
+        self.end_t = end_t
 
         self.capture = cv2.VideoCapture(video_path)  # OpenCV video capture class
         self.video_path = video_path
@@ -39,6 +43,9 @@ class VideoManager():
 
         if not self.capture.isOpened():
             raise Exception("Cannot open video! Path: " + video_path)
+
+        if self.start_t > 0:
+            self.seek_frame(self.start_t)
 
     def inc_pos_(self, pos, volume=1):
         if pos + volume > self.buffer_length_ - 1:
@@ -56,12 +63,13 @@ class VideoManager():
 
         return pos
 
-    def move2_next(self):
+    def next_frame(self):
         # continue reading new frames
         if self.dec_pos_(self.buffer_position_) == self.view_position_:
             f, self.buffer_[self.buffer_position_] = self.capture.read()
-            if not f:
-                print "No more frames > video_manager.py"
+
+            if not f or self.end_t == self.position_+1:
+                print "No more frames, end of video file. (video_manager.py)"
                 return None
 
             self.buffer_position_ = self.inc_pos_(self.buffer_position_)
@@ -70,8 +78,8 @@ class VideoManager():
         self.position_ += 1
         return self.buffer_[self.view_position_]
 
-    def move2_prev(self):
-        if self.position_ > 0:
+    def previous_frame(self):
+        if self.position_ > self.start_t:
             self.position_ -= 1
             view_dec = self.dec_pos_(self.view_position_)
             if (view_dec == self.buffer_position_) or (self.buffer_[view_dec] is None):
@@ -83,56 +91,27 @@ class VideoManager():
                 self.view_position_ = view_dec
                 return self.buffer_[self.view_position_]
 
-    def get_prev_img(self):
-        """
-        this method allows to get previous frame from buffer without moving
-        actual position.
-        """
-
-        view_dec = self.dec_pos_(self.view_position_)
-        if view_dec == self.buffer_position_:
-            print "No more frames in buffer"
-            return None
-        elif self.buffer_[view_dec] is None:
-            print "No more frames in buffer"
-            return None
-        else:
-            ret = self.buffer_[view_dec]
-            return ret
-
     def seek_frame(self, frame_number):
         if frame_number < 0 or frame_number >= self.total_frame_count():
             raise Exception("Frame_number is invalid: "+str(frame_number))
 
-        # Reset buffer as buffered images are now from other part of the video
-        self.buffer_position_ = 0
-        self.view_position_ = self.buffer_length_ - 1
-        self.buffer_ = [None] * self.buffer_length_
+        self.reset_buffer()
 
         self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
 
-        # because in move2_next it will be increased by one as usual
+        # because in next_frame it will be increased by one as usual
         self.position_ = frame_number - 1
 
-        return self.move2_next()
-
-        # position_to_set = frame_number
-        # pos = -1
-        # self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
-        # while pos < frame_number:
-        #     pos = self.capture.get(cv_compatibility.cv_CAP_PROP_POS_FRAMES)
-        #     ret, image = self.capture.read()
-        #     if pos == frame_number:
-        #         return image
-        #     elif pos > frame_number:
-        #         position_to_set -= 1
-        #         self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, position_to_set)
-        #         pos = -1
+        return self.next_frame()
 
     def img(self):
         return self.buffer_[self.view_position_]
 
     def random_frame(self):
+        """
+        gives completely random frame from video
+        :return:
+        """
         frame_num = self.capture.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
         random_f = randint(0, frame_num)
 
@@ -159,19 +138,6 @@ class VideoManager():
         self.buffer_ = [None] * self.buffer_length_
         self.position_ = -1
 
-
-        # def move2_prev(self):
-        # view_dec = self.dec_pos(self.view_pos)
-        # if view_dec == self.buffer_pos:
-        # print "No more frames in buffer"
-        # return None
-        #     elif self.buffer[view_dec] is None:
-        #         print "No more frames in buffer"
-        #         return None
-        #     else:
-        #         self.view_pos = view_dec
-        #         return self.buffer[self.view_pos]
-
     def get_manager_copy(self):
         """
         returns copy of VideoManager, might be useful in cases of asynchronous operations (mainly seeking) on video
@@ -182,8 +148,12 @@ class VideoManager():
 
         return vid
 
-    # TODO: add this and other functions into prototype class...
     def get_frame(self, frame, sequence_access=False, auto=False):
+        """
+        If you ask for given frame, it will access it sequentially or by random access, depending on what is "cheaper"
+        With sequence_access = auto = False it behaves the same as frame_seek
+        """
+
         if auto:
             if abs(frame - self.frame_number()) < 15:
                 sequence_access = True
@@ -195,10 +165,10 @@ class VideoManager():
         if sequence_access:
             if reversed:
                 while self.frame_number() > frame:
-                    self.move2_prev()
+                    self.previous_frame()
             else:
                 while self.frame_number() < frame:
-                    self.move2_next()
+                    self.next_frame()
 
             return self.img()
         else:
@@ -222,10 +192,10 @@ def get_auto_video_manager(file_paths):
         lossless = file_paths[1]
 
         c_v = VideoManager(compressed)
-        c_img = c_v.move2_next()
+        c_img = c_v.next_frame()
 
         l_v = VideoManager(lossless)
-        l_img = l_v.move2_next()
+        l_img = l_v.next_frame()
 
         c_mask = (c_img[:, :, 0] == 255) & (c_img[:, :, 1] == 255) & (c_img[:, :, 2] == 255)
         l_mask = (l_img[:, :, 0] == 255) & (l_img[:, :, 1] == 255) & (l_img[:, :, 2] == 255)

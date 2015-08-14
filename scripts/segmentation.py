@@ -25,7 +25,7 @@ frame = 0
 while(True):
     print frame
 
-    img = vid.move2_next()
+    img = vid.next_frame()
     if img is None:
         break
 

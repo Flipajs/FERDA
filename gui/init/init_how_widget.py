@@ -34,7 +34,7 @@ class InitHowWidget(QtGui.QWidget):
 
         vid = get_auto_video_manager(project.video_paths)
 
-        img = vid.move2_next()
+        img = vid.next_frame()
         # img = self.fill_colormarks(img)
 
         self.items = []
@@ -59,7 +59,7 @@ class InitHowWidget(QtGui.QWidget):
 
         r_id = 0
         for i in range(3):
-            img = vid.move2_next()
+            img = vid.next_frame()
             img = prepare_for_segmentation(img, project, grayscale_speedup=False)
             img_ = img.copy()
 

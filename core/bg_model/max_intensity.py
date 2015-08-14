@@ -26,7 +26,7 @@ class MaxIntensity(Model):
 
     def compute_model(self):
         frame_num = self.video.total_frame_count()
-        im = self.video.move2_next()
+        im = self.video.next_frame()
         self.bg_model = np.zeros(im.shape, dtype=np.uint8)
 
         step = int(floor(frame_num / float(self.iterations)))

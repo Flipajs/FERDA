@@ -79,7 +79,7 @@ if __name__ == '__main__':
     #
     #         r1 = r2
 
-    im = vid.move2_next()
+    im = vid.next_frame()
     msers = get_msers_(im)
     groups = get_region_groups(msers)
     ids = margin_filter(msers, groups)

@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
 
     vid = get_auto_video_manager(vid_path)
-    im = vid.move2_next()
+    im = vid.next_frame()
 
     h_, w_, _ = im.shape
     color1 = (0, 255, 0, 0.8)

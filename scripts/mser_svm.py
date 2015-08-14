@@ -89,7 +89,7 @@ def init():
 
     id = 0
     for f in range(init_frames):
-        im = vid.move2_next()
+        im = vid.next_frame()
         msers = select_msers_cached(f)
 
         for m in msers:
@@ -131,7 +131,7 @@ def get_svm_model():
     X = []
 
     for f in range(init_frames):
-        im = vid.move2_next()
+        im = vid.next_frame()
         # im_gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
         for m in select_msers_cached(f):
             m.id_ = id
@@ -160,7 +160,7 @@ if __name__ == '__main__':
         perc = 3
 
         for f in range(init_frames):
-            im = vid.move2_next()
+            im = vid.next_frame()
             im_gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
             for m in select_msers_cached(f):
                 m.id_ = id
@@ -180,7 +180,7 @@ if __name__ == '__main__':
         dial.img_grid.reshape(15, element_width=70)
 
         for f in range(num_frames):
-            im = vid.move2_next()
+            im = vid.next_frame()
             msers = select_msers_cached(f)
 
             im2 = np.copy(im)

@@ -36,7 +36,7 @@ class NoiseFilterComputer(QtCore.QThread):
         for n, seq, _ in optimized:
             if seq:
                 while vid.frame_number() < n.frame_:
-                    vid.move2_next()
+                    vid.next_frame()
 
                 img = vid.img()
             else:

@@ -32,7 +32,7 @@ if __name__ == '__main__':
     if id*frames_in_row > 0:
         img = vid.seek_frame(id*frames_in_row)
     else:
-        img = vid.move2_next()
+        img = vid.next_frame()
 
     img = prepare_for_segmentation(img, proj)
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
         msers = ferda_filtered_msers(img, proj, frame)
 
-        img = vid.move2_next()
+        img = vid.next_frame()
         if img is None:
             break
 

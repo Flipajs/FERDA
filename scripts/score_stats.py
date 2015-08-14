@@ -51,11 +51,11 @@ if __name__ == '__main__':
 
     a_ = np.zeros((ids, num_))
 
-    img1 = vid.move2_next()
+    img1 = vid.next_frame()
     img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
 
     for i in range(num_):
-        img2 = vid.move2_next()
+        img2 = vid.next_frame()
         img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 
         for id in range(ids):

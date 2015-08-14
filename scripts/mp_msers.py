@@ -21,11 +21,11 @@ N_FRAMES = 200
 vid = get_auto_video_manager('/Users/fnaiser/Documents/eight.m4v')
 
 # Setup a list of processes that we want to run
-# processes = [mp.Process(target=compute_msers, args=(i, vid.move2_next().copy(), output)) for i in range(N_FRAMES)]
+# processes = [mp.Process(target=compute_msers, args=(i, vid.next_frame().copy(), output)) for i in range(N_FRAMES)]
 
 pool = mp.Pool()
 
-frames = [vid.move2_next().copy() for i in range(N_FRAMES)]
+frames = [vid.next_frame().copy() for i in range(N_FRAMES)]
 print "INIT DONE"
 
 start = time.time()

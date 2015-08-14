@@ -116,7 +116,7 @@ class InitWhatWidget(QtGui.QWidget):
         self.graphics_view = my_view.MyView()
         self.graphics_view.setScene(self.scene)
 
-        self.img = self.video.move2_next()
+        self.img = self.video.next_frame()
         self.scene.addPixmap(gui.gui_utils.cvimg2qtpixmap(self.img))
         self.right_layout.addWidget(self.graphics_view)
 

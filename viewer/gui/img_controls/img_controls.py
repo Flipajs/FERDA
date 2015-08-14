@@ -300,7 +300,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         # self.video = video_manager.VideoManager('/home/flipajs/Dropbox/PycharmProjects/data/NoPlasterNoLid800/NoPlasterNoLid800.m4v')
         # self.video = video_manager.VideoManager('/home/flipajs/my_video-16_c.mkv')
         self.video = video_manager.VideoManager('/home/flipajs/Downloads/c_bigLense_colormarks3_corrected.avi')
-        image = self.video.move2_next()
+        image = self.video.next_frame()
         self.pixMap = img_control_utils.cvimg2qtpixmap(image)
         img_control_utils.view_add_bg_image(self.graphics_view, self.pixMap)
         item = self.scene.addPixmap(self.pixMap)
@@ -321,7 +321,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
     def load_next_frame(self):
         """Loads next frame of the video and displays it. If there is no next frame, calls self.out_of_frames"""
         if self.video is not None:
-            img = self.video.move2_next()
+            img = self.video.next_frame()
             if not img is None:
                 if self.pixMapItem is not None:
                     self.scene.removeItem(self.pixMapItem)
@@ -340,7 +340,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
     def load_previous_frame(self):
         """Loads previous frame of the video if there is such and displays it"""
         if self.video is not None:
-            img = self.video.move2_prev()
+            img = self.video.previous_frame()
             if not img is None:
                 if self.pixMapItem is not None:
                     self.scene.removeItem(self.pixMapItem)
@@ -1129,7 +1129,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         # ant.state.position.y = res['cy']
         #
         # for i in range(frame, frame+length):
-        #     img = vid.move2_next()
+        #     img = vid.next_frame()
         #     regions, idx = mser_operations.MserOperations(params).process_image(img, ignore_arena=True)
         #
         #     r_id = assignment.ant2region_assignment(ant, regions, params, score_functions, expression, idx)

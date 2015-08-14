@@ -20,6 +20,8 @@ class Project:
         self.name = ''
         self.description = ''
         self.video_paths = []
+        self.video_start_t = -1
+        self.video_end_t = -1
         self.working_directory = ''
 
         self.bg_model = None

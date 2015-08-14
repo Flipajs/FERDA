@@ -135,7 +135,7 @@ class ImgSequenceWidget(QtGui.QWidget):
                 if self.grid_j < 10:
                     gui()
 
-                img = self.local_vid.move2_next()
+                img = self.local_vid.next_frame()
 
             gui()
 
@@ -233,8 +233,7 @@ class ImgSequenceWidget(QtGui.QWidget):
             if self.grid_j < 20:
                 gui()
 
-            img = self.local_vid.move2_next()
-
+            img = self.local_vid.next_frame()
 
     def update_sequence(self, frame, length, id_manager, ant_id, width=200, height=200):
         #storing these values so they can be used when it is asked for more self.frames
@@ -247,7 +246,6 @@ class ImgSequenceWidget(QtGui.QWidget):
         self.ant_id = ant_id
         self.im_width_ = width
         self.im_height_ = height
-        
 
         gui = QtGui.QApplication.processEvents
 
@@ -298,7 +296,7 @@ class ImgSequenceWidget(QtGui.QWidget):
             if self.grid_j < 10:
                 gui()
 
-            img = self.local_vid.move2_next()
+            img = self.local_vid.next_frame()
 
         self.frame = self.frame + length
 

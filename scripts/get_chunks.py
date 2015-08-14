@@ -191,7 +191,7 @@ if __name__ == '__main__':
 
         for i in range(1000):
             print i
-            im = vid.move2_next()
+            im = vid.next_frame()
             msers = mser.get_all_msers(i, vid_path, working_dir)
 
             margin_score_ = np.array([margin_score(r) for r in msers])

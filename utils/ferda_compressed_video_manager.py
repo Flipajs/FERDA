@@ -5,9 +5,10 @@ __author__ = 'filip@naiser.cz'
 import cv2
 import utils.misc
 from random import randint
+from utils.video_manager import VideoManager
+import numpy as np
 
-
-class FerdaCompressedVideoManager():
+class FerdaCompressedVideoManager(VideoManager):
     """
     this class arranges easy operations with FERDA compressed video files.
 
@@ -54,7 +55,7 @@ class FerdaCompressedVideoManager():
         This approach allows reducing the size while maintaining original quality in interesting parts.
     """
 
-    def __init__(self, compressed_file, lossless_file, r=255, g=255, b=255):
+    def __init__(self, compressed_file, lossless_file, start_t=0, end_t=np.inf, r=255, g=255, b=255):
         """
         :type compressed_file: str,
         :type lossless_file: str,
@@ -62,6 +63,9 @@ class FerdaCompressedVideoManager():
         :type g: int,
         :type b: int
         """
+
+        self.start_t = start_t
+        self.end_t = end_t
 
         self.compressed_file_ = compressed_file
         self.lossless_file_ = lossless_file
@@ -81,6 +85,9 @@ class FerdaCompressedVideoManager():
 
         self.capture_init_()
 
+        if self.start_t > 0:
+            self.seek_frame(self.start_t)
+
     def capture_init_(self):
         self.capture_compressed_ = cv2.VideoCapture(self.compressed_file_)
         self.capture_lossless_ = cv2.VideoCapture(self.lossless_file_)
@@ -91,18 +98,22 @@ class FerdaCompressedVideoManager():
         if not self.capture_lossless_.isOpened():
             raise Exception("Cannot open lossless video! Path: " + self.lossless_file_)
 
-    def move2_next(self):
+    def next_frame(self):
         """
         returns next next combined image if exists, else raises exception
         """
 
         f, self.lossless_img_ = self.capture_lossless_.read()
-        if not f:
-            raise Exception("No more frames (" + str(self.position_) + ") in file: " + self.lossless_file_)
+        if not f or self.end_t == self.position_ + 1:
+            print "No more frames, end of video file. (ferda_compressed_video_manager.py)"
+            return None
+            # raise Exception("No more frames (" + str(self.position_) + ") in file: " + self.lossless_file_)
 
         f, self.compressed_img_ = self.capture_compressed_.read()
         if not f:
-            raise Exception("No more frames (" + str(self.position_) + ") in file: " + self.lossless_file_)
+            print "No more frames, end of video file. (ferda_compressed_video_manager.py)"
+            return None
+            # raise Exception("No more frames (" + str(self.position_) + ") in file: " + self.lossless_file_)
 
         l = self.lossless_img_
         mask = (l[:, :, 0] != self.r_) & (l[:, :, 1] != self.g_) & (l[:, :, 2] != self.b_)
@@ -112,6 +123,12 @@ class FerdaCompressedVideoManager():
 
         self.position_ += 1
         return self.combined_img_
+
+    def previous_frame(self):
+        # TODO: not optimal solution
+        if self.position_ > self.start_t:
+            self.position_ -= 1
+            return self.seek_frame(self.position_)
 
     def seek_frame(self, frame_number):
         """
@@ -125,10 +142,10 @@ class FerdaCompressedVideoManager():
         self.capture_compressed_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
         self.capture_lossless_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
 
-        # because in move2_next it will be increased by one
+        # because in next_frame it will be increased by one
         self.position_ = frame_number - 1
 
-        return self.move2_next()
+        return self.next_frame()
 
     def reset(self):
         self.position_ = -1
@@ -138,32 +155,14 @@ class FerdaCompressedVideoManager():
 
         self.capture_init_()
 
-    def frame_number(self):
-        return self.position_
-
     def img(self):
         return self.combined_img_
-
-    def random_frame(self):
-        frame_num = self.capture_lossless_.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
-        random_f = randint(0, frame_num)
-
-        return self.seek_frame(random_f)
 
     def compressed_img(self):
         return self.compressed_img_
 
     def lossless_img(self):
         return self.lossless_img_
-
-    def total_frame_count(self):
-        return int(self.capture_compressed_.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT))
-
-    def fps(self):
-        return self.capture_compressed_.get(cv_compatibility.cv_CAP_PROP_FPS)
-
-    def frame_number(self):
-        return self.capture_lossless_.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT)
 
     def get_manager_copy(self):
         """
@@ -174,27 +173,6 @@ class FerdaCompressedVideoManager():
         vid.seek_frame(self.frame_number())
 
         return vid
-
-    def get_frame(self, frame, sequence_access=False, auto=False):
-        if auto:
-            if abs(frame - self.frame_number()) < 15:
-                sequence_access = True
-
-        reversed = False
-        if frame < self.frame_number():
-            reversed = True
-
-        if sequence_access:
-            if reversed:
-                while self.frame_number() > frame:
-                    self.move2_prev()
-            else:
-                while self.frame_number() < frame:
-                    self.move2_next()
-
-            return self.img()
-        else:
-            return self.seek_frame(frame)
 
 
 if __name__ == "__main__":

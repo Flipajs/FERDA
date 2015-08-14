@@ -34,7 +34,7 @@ while True:
     # if img is None:
     #     break
 
-    img10_r = vid18_r.move2_next()
+    img10_r = vid18_r.next_frame()
 
     if frame % 13 == 0 or frame % 27 == 0:
         print frame

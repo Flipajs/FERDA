@@ -1201,7 +1201,7 @@ def run_():
     # imgs_gray = {}
     # vid = get_auto_video_manager(vid_path)
     for f in range(init_frames):
-        # im = vid.move2_next()
+        # im = vid.next_frame()
         f_regions[f] = select_msers_cached(f, use_area_filter=False, use_sort=False)
         # imgs_gray[f] = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
@@ -1266,7 +1266,7 @@ def run_():
     # vid = get_auto_video_manager(vid_path)
 
     # for frame in regions:
-    #     im = vid.move2_next()
+    #     im = vid.next_frame()
     #
     #     results = []
     #     for r in regions[frame]:
@@ -1276,7 +1276,7 @@ def run_():
     #         g.node[r]['img'] = p.()
 
     # for frame in regions:
-    #     im = vid.move2_next()
+    #     im = vid.next_frame()
     #
     #     # results = []
     #     # for r in regions[frame]:

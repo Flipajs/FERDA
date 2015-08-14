@@ -169,8 +169,6 @@ class Chunk:
         self.add_to_reduced_(n, solver)
         solver.remove_node(n, False)
 
-        print "N in g", (n in solver.g), n1 in solver.g, n1.frame_, n.frame_
-
         self.is_sorted = False
         self.if_not_sorted_sort_()
 

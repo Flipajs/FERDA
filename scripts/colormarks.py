@@ -226,7 +226,7 @@ def init(path):
     global init_means
 
     vid = video_manager.get_auto_video_manager(path)
-    im = vid.move2_next()
+    im = vid.next_frame()
 
     mser = Mser(max_area=0.1, min_area=MSER_MIN_SIZE, min_margin=MSER_MIN_MARGIN)
 
@@ -562,7 +562,7 @@ if __name__ == "__main__":
     previous_position = init_positions
     while frame_i < 3000:
         print frame_i
-        im = vid.move2_next()
+        im = vid.next_frame()
 
         cv2.imwrite(output_folder + '/imgs/' + str(frame_i) + '.png', im)
 
@@ -617,4 +617,4 @@ if __name__ == "__main__":
         # break
 
         frame_i += 1
-        im = vid.move2_next()
+        im = vid.next_frame()

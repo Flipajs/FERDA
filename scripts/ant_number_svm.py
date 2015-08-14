@@ -194,10 +194,10 @@ def test():
     dial = ImgGridDialog()
     dial.img_grid.reshape(15, element_width=100)
     vid = get_auto_video_manager('/Users/fnaiser/Documents/smallLense_colony1_1min.avi')
-    im = vid.move2_next()
-    im = vid.move2_next()
-    im = vid.move2_next()
-    im = vid.move2_next()
+    im = vid.next_frame()
+    im = vid.next_frame()
+    im = vid.next_frame()
+    im = vid.next_frame()
 
     msers = get_msers_(im)
     groups = get_region_groups(msers)
@@ -343,7 +343,7 @@ if __name__ == '__main__':
     # # for f in range(200, 220) + range(460, 480) + range(630, 700):
     # for f in range(30):
     #     print f
-    #     # im = vid.move2_next()
+    #     # im = vid.next_frame()
     #     im = vid.seek_frame(f)
     #     msers = select_msers_cached(f)
     #

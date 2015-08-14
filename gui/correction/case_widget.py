@@ -607,7 +607,7 @@ class CaseWidget(QtGui.QWidget):
             if i == 0:
                 im = self.vid.seek_frame(self.frame_t)
             else:
-                im = self.vid.move2_next()
+                im = self.vid.next_frame()
 
             sf = self.project.other_parameters.img_subsample_factor
             if sf > 1.0:

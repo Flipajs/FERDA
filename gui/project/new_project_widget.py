@@ -18,7 +18,8 @@ from core.settings import Settings as S_
 from gui.project.import_widget import ImportWidget
 from gui.init.set_msers import SetMSERs
 from core.project.project import Project
-# from
+from gui.init.crop_video_widget import CropVideoWidget
+from functools import partial
 
 
 class BGSub(threading.Thread):
@@ -101,6 +102,9 @@ class NewProjectWidget(QtGui.QWidget):
         self.bg_progress_bar.setRange(0, 100)
 
         self.bg_computation = None
+
+        self.video_start_t = -1
+        self.video_end_t = -1
 
         self.video_preview_layout = QtGui.QFormLayout()
         self.hbox.addLayout(self.video_preview_layout)
@@ -199,11 +203,15 @@ class NewProjectWidget(QtGui.QWidget):
 
         project.bg_model = self.bg_computation
 
+        project.video_start_t = self.video_start_t
+        project.video_end_t = self.video_end_t
+
         return project
 
     def create_project(self):
         if self.working_directory == '':
-            raise Exception('WORKING DIRECTORY WAS NOT SELECTED in new_project_widget.py')
+            QtGui.QMessageBox.warning(self, "Warning", "Please choose working directory", QtGui.QMessageBox.Ok)
+            return
 
         project = self.get_project()
 
@@ -220,10 +228,27 @@ class NewProjectWidget(QtGui.QWidget):
             sm = SetMSERs(p)
             self.d_.layout().addWidget(sm)
             self.d_.showMaximized()
-            # self.d_.setFixedWidth(500)
-            # self.d_.setFixedHeight(500)
-            # self.d_.show()
             self.d_.exec_()
+        else:
+            QtGui.QMessageBox.warning(self, "Warning", "Choose video path first", QtGui.QMessageBox.Ok)
+
+    def video_boundaries_confirmed(self, w):
+        start_t = w.start_frame + 1
+        end_t = w.end.frame
+
+        w.hide()
+        w.setParent(None)
 
     def set_video_bounds(self):
-        pass
+        p = Project()
+        if self.video_files:
+            p.video_paths = self.video_files
+        else:
+            QtGui.QMessageBox.warning(self, "Warning", "Choose video path first", QtGui.QMessageBox.Ok)
+            return
+
+        w = CropVideoWidget(p)
+        button = QtGui.QPushButton('confirm boundaries')
+        button.clicked.connect(partial(self.video_boundaries_confirmed, w))
+        w.layout().addWidget(button)
+        self.layout().addWidget(w)

@@ -81,7 +81,6 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
     return ngv
 
 
-
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
@@ -97,7 +96,7 @@ if __name__ == "__main__":
 
     # from utils.video_manager import get_auto_video_manager
     # vid = get_auto_video_manager(project.video_paths)
-    # img = vid.move2_next()
+    # img = vid.next_frame()
     #
     # from pylab import ogrid, gca, show
     # from mpl_toolkits.mplot3d import Axes3D
