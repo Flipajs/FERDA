@@ -100,19 +100,6 @@ class MainWindow(QtGui.QMainWindow):
             self.central_widget.addWidget(self.main_tab_widget)
             self.central_widget.setCurrentWidget(self.main_tab_widget)
 
-    def start_ferda(self):
-        self.control_widget.set_exit_callback(self.control_widget_exit)
-
-        self.central_widget.addWidget(self.control_widget)
-        self.central_widget.setCurrentWidget(self.control_widget)
-
-        x = self.x()
-        y = self.y()
-        w = 350
-        h = 299
-
-        self.setGeometry(QtCore.QRect(x, y, w, h))
-
     def show_settings(self):
         dialog = SettingsDialog(self)
         dialog.exec_()

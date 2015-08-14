@@ -143,8 +143,6 @@ class Chunk:
             second_chunk.merge_and_interpolate(self, solver, undo_action)
             return
 
-        print "CONNECTING: ", self, second_chunk
-
         gap_len = second_chunk.start_t() - self.end_t() - 1
         if gap_len > 0:
             c_diff_part = (second_chunk.start_n.centroid() - self.end_n.centroid()) / gap_len
@@ -154,7 +152,6 @@ class Chunk:
                 r = Region(frame=f)
                 r.is_virtual = True
                 c = self.end_n.centroid() + np.array(c_diff_part * i)
-                print c
                 r.centroid_ = c.copy()
 
                 # TODO: log...
