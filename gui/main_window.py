@@ -32,9 +32,9 @@ class MainWindow(QtGui.QMainWindow):
         self.project_widget = project_widget.ProjectWidget(self.widget_control)
         self.central_widget.addWidget(self.project_widget)
 
-        self.settings_button = QtGui.QPushButton('Settings', self)
+        self.settings_button = QtGui.QPushButton('Settings')
         self.settings_button.clicked.connect(self.show_settings)
-        self.layout().addWidget(self.settings_button)
+        self.central_widget.addWidget(self.settings_button)
 
         self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
         self.setWindowTitle('FERDA')

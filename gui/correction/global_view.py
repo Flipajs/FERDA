@@ -91,8 +91,8 @@ class GlobalView(QtGui.QWidget):
     def start_preparation(self):
         # clear
         while self.layout().count():
-            it = self.scenes_widget.layout().itemAt(0)
-            self.scenes_widget.layout().removeItem(it)
+            it = self.layout().layout().itemAt(0)
+            self.layout().removeItem(it)
             it.widget().setParent(None)
 
         w_loading = LoadingWidget()

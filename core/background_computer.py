@@ -26,7 +26,8 @@ class BackgroundComputer():
         self.project = project
         self.process_n = S_.parallelization.processes_num
         self.results = []
-        self.update_callback = update_callback
+        self.\
+            update_callback = update_callback
         self.finished_callback = finished_callback
         self.start = 0
 
@@ -128,20 +129,14 @@ class BackgroundComputer():
                 end_nodes_prev = end_nodes
 
             self.update_callback((i+1)/float(part_num))
-            print str(i+1) + " / " + str(part_num)
-
-        # with open(self.project.working_directory+'/solver.pkl', 'wb') as f:
-        #     p = pickle.Pickler(f)
-        #     p.dump(self.solver.g)
 
         S_.general.log_graph_edits = False
-        print "NODES: ", len(self.solver.g.nodes())
         self.solver.update_nodes_in_t_refs()
-        print "SIMPLIFYING"
+        self.update_callback(-1, 'Simplifying...')
         self.solver.simplify(nodes_to_process)
-        print "CHUNK CONSTRUCTION"
+        self.update_callback(-1, 'CHUNKS reduction')
         self.solver.simplify_to_chunks(nodes_to_process)
-        print "DONE"
+        self.update_callback(-1, 'DONE...')
 
         S_.general.log_graph_edits = True
 
