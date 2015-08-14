@@ -88,6 +88,9 @@ class FerdaCompressedVideoManager(VideoManager):
         self.capture_compressed_ = cv2.VideoCapture(self.compressed_file_)
         self.capture_lossless_ = cv2.VideoCapture(self.lossless_file_)
 
+        self.start_t = self.start_t if self.start_t > 0 else 0
+        self.end_t = self.end_t if self.start_t < self.end_t <= self.video_frame_count_without_bounds() else np.inf
+
         if not self.capture_compressed_.isOpened():
             raise Exception("Cannot open compressed video! Path: " + self.compressed_file_)
 

@@ -29,10 +29,10 @@ class VideoManager():
         frame seeking.
         """
 
-        self.start_t = start_t
-        self.end_t = end_t
-
         self.capture = cv2.VideoCapture(video_path)  # OpenCV video capture class
+        self.start_t = start_t if start_t > 0 else 0
+        self.end_t = end_t if start_t < end_t <= self.video_frame_count_without_bounds() else np.inf
+
         self.video_path = video_path
         self.buffer_position_ = 0
         self.buffer_length_ = buffer_length  #
@@ -139,6 +139,9 @@ class VideoManager():
             vid_frame_num -= self.start_t
 
         return vid_frame_num
+
+    def video_frame_count_without_bounds(self):
+        return int(self.capture.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT))
 
     def reset(self):
         """
@@ -258,5 +261,8 @@ if __name__ == '__main__':
     from core.project.project import Project
     p = Project()
     p.load('/Users/flipajs/Documents/wd/video_bounds_test/test.fproj')
+
+    p.video_start_t = -1
+    p.video_end_t = -1
 
     vid = get_auto_video_manager(p)

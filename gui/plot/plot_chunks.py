@@ -13,6 +13,7 @@ from gui.plot.plot_utils import line_picker
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from utils.img import DistinguishableColors
 import time
+from core.settings import Settings as S_
 
 
 class PlotChunks(QtGui.QWidget):
