@@ -66,6 +66,7 @@ class MainWindow(QtGui.QMainWindow):
             self.new_project_widget = new_project_widget.NewProjectWidget(self.widget_control)
             self.central_widget.addWidget(self.new_project_widget)
             self.central_widget.setCurrentWidget(self.new_project_widget)
+            self.new_project_widget.select_video_files.setFocus(True)
 
         if state == 'load_project':
             if isinstance(values, core.project.project.Project):

@@ -6,7 +6,7 @@ from core.region.region import Region
 import numpy as np
 
 
-# path to some testing image...
+# path to some testing image...d
 im = cv2.imread('/Users/flipajs/Desktop/red_vid.png')
 
 r = Region()

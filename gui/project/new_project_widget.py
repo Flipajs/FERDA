@@ -18,6 +18,7 @@ from core.settings import Settings as S_
 from gui.project.import_widget import ImportWidget
 from gui.init.set_msers import SetMSERs
 from core.project.project import Project
+# from
 
 
 class BGSub(threading.Thread):
@@ -26,7 +27,6 @@ class BGSub(threading.Thread):
         self.running = False
         self.vid = vid
         self.update_callback = update_callback
-
 
     def run(self):
         print "COMPUTING BG...."
@@ -58,6 +58,10 @@ class NewProjectWidget(QtGui.QWidget):
         self.select_video_files = QtGui.QPushButton('Browse')
         self.select_video_files.clicked.connect(self.select_video_files_clicked)
         self.form_layout.addRow(label, self.select_video_files)
+
+        self.video_bounds_b = QtGui.QPushButton('Set video bounds')
+        self.video_bounds_b.clicked.connect(self.set_video_bounds)
+        self.form_layout.addRow('', self.video_bounds_b)
 
         label = QtGui.QLabel('Working directory')
         self.select_working_directory = QtGui.QPushButton('Browse')
@@ -100,10 +104,6 @@ class NewProjectWidget(QtGui.QWidget):
 
         self.video_preview_layout = QtGui.QFormLayout()
         self.hbox.addLayout(self.video_preview_layout)
-        self.update()
-        self.show()
-        self.activateWindow()
-        self.select_video_files.setFocus()
 
     def select_video_files_clicked(self):
         path = ''
@@ -134,11 +134,6 @@ class NewProjectWidget(QtGui.QWidget):
             layout.setWordWrap(True)
             self.video_preview_layout.addRow(None, layout)
 
-            self.bg_computation = MaxIntensity(self.video_files)
-            self.connect(self.bg_computation, QtCore.SIGNAL("update(int)"), self.update_progress_label)
-            self.bg_computation.start()
-            self.activateWindow()
-
             self.select_working_directory.setFocus()
 
         except Exception as e:
@@ -152,6 +147,11 @@ class NewProjectWidget(QtGui.QWidget):
         self.bg_progress_bar.setValue(val)
 
     def select_working_directory_clicked(self):
+        self.bg_computation = MaxIntensity(self.video_files)
+        self.connect(self.bg_computation, QtCore.SIGNAL("update(int)"), self.update_progress_label)
+        self.bg_computation.start()
+        self.activateWindow()
+
         path = ''
         if os.path.isdir(S_.temp.last_wd_path):
             path = S_.temp.last_wd_path
@@ -224,3 +224,6 @@ class NewProjectWidget(QtGui.QWidget):
             # self.d_.setFixedHeight(500)
             # self.d_.show()
             self.d_.exec_()
+
+    def set_video_bounds(self):
+        pass
