@@ -118,7 +118,7 @@ class VideoManager():
         gives completely random frame from video
         :return:
         """
-        frame_num = self.capture.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
+        frame_num = self.total_frame_count()
         random_f = randint(0, frame_num)
 
         return self.seek_frame(random_f)

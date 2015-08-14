@@ -70,7 +70,7 @@ class GlobalView(QtGui.QWidget):
         self.node_size = QtGui.QSpinBox()
         self.node_size.setMinimum(5)
         self.node_size.setMaximum(500)
-        self.node_size.setValue(30)
+        self.node_size.setValue(100)
         w.layout().addWidget(QtGui.QLabel('node size: '))
         w.layout().addWidget(self.node_size)
 
@@ -78,7 +78,7 @@ class GlobalView(QtGui.QWidget):
         self.relative_margin.setMinimum(0)
         self.relative_margin.setMaximum(5)
         self.relative_margin.setSingleStep(0.05)
-        self.relative_margin.setValue(0.7)
+        self.relative_margin.setValue(1.7)
         w.layout().addWidget(QtGui.QLabel('node relative margin: '))
         w.layout().addWidget(self.relative_margin)
 

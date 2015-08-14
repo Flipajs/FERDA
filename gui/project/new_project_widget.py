@@ -123,6 +123,22 @@ class NewProjectWidget(QtGui.QWidget):
         self.bg_progress_bar.setValue(val)
 
     def select_working_directory_clicked(self):
+        path = ''
+        if os.path.isdir(S_.temp.last_wd_path):
+            path = S_.temp.last_wd_path
+
+        working_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select working directory", path, QtGui.QFileDialog.ShowDirsOnly))
+
+        S_.temp.last_wd_path = os.path.dirname(working_directory)
+
+        if os.path.isdir(working_directory):
+            filenames = os.listdir(working_directory)
+            for f in filenames:
+                if os.path.isfile(working_directory+'/'+f) and f.endswith('.fproj'):
+                    QtGui.QMessageBox.information(None, '', 'This folder is already used for FERDA project, choose different one, please')
+                    self.select_working_directory_clicked()
+                    return
+
         if not self.project.video_paths:
             QtGui.QMessageBox.warning(self, "Warning", "Choose video path first", QtGui.QMessageBox.Ok)
             return
@@ -152,22 +168,6 @@ class NewProjectWidget(QtGui.QWidget):
         layout = QtGui.QLabel('Video pre-processing in progress running in background... But don\'t worry, you can continue with your project creation and initialization meanwhile it will be finished.')
         layout.setWordWrap(True)
         self.video_preview_layout.addRow(None, layout)
-
-        path = ''
-        if os.path.isdir(S_.temp.last_wd_path):
-            path = S_.temp.last_wd_path
-
-        working_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select working directory", path, QtGui.QFileDialog.ShowDirsOnly))
-
-        S_.temp.last_wd_path = os.path.dirname(working_directory)
-
-        if os.path.isdir(working_directory):
-            filenames = os.listdir(working_directory)
-            for f in filenames:
-                if os.path.isfile(working_directory+'/'+f) and f.endswith('.fproj'):
-                    QtGui.QMessageBox.information(None, '', 'This folder is already used for FERDA project, choose different one, please')
-                    self.select_working_directory_clicked()
-                    return
 
         self.project.working_directory = working_directory
 
