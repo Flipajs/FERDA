@@ -93,34 +93,14 @@ class TrackerWidget(QtGui.QWidget):
         self.tool.addWidget(global_view)
         self.tool_row.addWidget(global_view.tool_w)
 
-    def bc_update(self, val):
-        self.progress_w.update_progress(val)
+    def bc_update(self, val=-1, text=''):
+        if len(text):
+            self.progress_w.update_text(text)
+
+        if val >= 0:
+            self.progress_w.update_progress(val)
 
     def prepare_corrections(self, solver):
         self.solver = solver
         self.progress_w.hide()
         self.mode_changed()
-
-    def apply_actions(self, actions):
-        for action_name, data in actions:
-            if action_name == 'new_region':
-                self.certainty_visualizer.new_region_finished(data[0], data[1])
-            elif action_name == 'remove_region':
-                self.certainty_visualizer.remove_region()
-            elif action_name == 'choose_node':
-                self.certainty_visualizer.choose_node(data)
-            elif action_name == 'next':
-                self.certainty_visualizer.next()
-            elif action_name == 'prev':
-                self.certainty_visualizer.prev()
-            elif action_name == 'fitting':
-                self.certainty_visualizer.fitting()
-            elif action_name == 'partially_confirm':
-                self.certainty_visualizer.partially_confirm()
-            elif action_name == 'confirm_edges':
-                self.certainty_visualizer.confirm_edges(data)
-            elif action_name == 'merged':
-                self.certainty_visualizer.merged(data[0], data[1], data[2])
-            else:
-                # TODO: raise EXCEPTION
-                print "APPLY ACTIONS ERROR: unknown ACTION"

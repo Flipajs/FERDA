@@ -45,6 +45,7 @@ class BackgroundComputer():
         self.check_parallelization_timer = QtCore.QTimer()
         self.check_parallelization_timer.timeout.connect(self.check_parallelization)
         self.check_parallelization_timer.start(100)
+        self.precomputed = False
 
     def set_frames_in_row(self):
         vid = get_auto_video_manager(self.project)
@@ -84,11 +85,10 @@ class BackgroundComputer():
 
             S_.general.log_graph_edits = True
         else:
-            self.piece_results_together()
-            self.check_parallelization_timer.stop()
+            self.precomputed = True
 
     def check_parallelization(self):
-        if self.finished.all():
+        if self.finished.all() or self.precomputed:
             self.check_parallelization_timer.stop()
             self.piece_results_together()
 
@@ -98,7 +98,8 @@ class BackgroundComputer():
 
         self.solver = Solver(self.project)
 
-        print "ASSEMBLING SOLUTION"
+        self.update_callback(0, 'Assembling solution...')
+
         part_num = self.part_num
         # compability...
         if self.project.version_is_le("2.0.1"):
@@ -126,6 +127,7 @@ class BackgroundComputer():
                 self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
                 end_nodes_prev = end_nodes
 
+            self.update_callback((i+1)/float(part_num))
             print str(i+1) + " / " + str(part_num)
 
         # with open(self.project.working_directory+'/solver.pkl', 'wb') as f:

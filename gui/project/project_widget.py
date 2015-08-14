@@ -13,6 +13,7 @@ from functools import partial
 
 class ProjectLoader(QtCore.QThread):
     proc_done = QtCore.pyqtSignal(bool)
+    part_done = QtCore.pyqtSignal(float)
 
     def __init__(self, project, path):
         super(ProjectLoader, self).__init__()
@@ -43,6 +44,7 @@ class ProjectWidget(QtGui.QWidget):
         self.new_project_button.setFixedHeight(100)
         self.load_project_button.setFixedHeight(100)
 
+        self.loading_thread = None
         self.update()
 
     def new_project(self):
@@ -66,12 +68,13 @@ class ProjectWidget(QtGui.QWidget):
             self.layout.addWidget(loading_w)
             QtGui.QApplication.processEvents()
 
-            project.load(f)
-            self.loading_finished(project, loading_w)
+            # project.load(f)
+            # self.loading_finished(project, loading_w)
 
-            # pl = ProjectLoader(project, f)
-            # pl.proc_done.connect(partial(self.loading_finished, project, loading_w))
-            # pl.start()
+            self.loading_thread = ProjectLoader(project, f)
+            self.loading_thread.proc_done.connect(partial(self.loading_finished, project, loading_w))
+            self.loading_thread.part_done.connect(loading_w.update_progress)
+            self.loading_thread.start()
 
 
 
