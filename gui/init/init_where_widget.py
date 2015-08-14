@@ -33,7 +33,7 @@ class InitWhereWidget(QtGui.QWidget):
         self.top_stripe_layout = QtGui.QHBoxLayout()
         self.vbox.addLayout(self.top_stripe_layout)
 
-        self.video = video_manager.get_auto_video_manager(project.video_paths)
+        self.video = video_manager.get_auto_video_manager(project)
         self.first_frame = self.video.next_frame()
 
         self.label_instructions = QtGui.QLabel('Please select arena or confirm the suggested one.')

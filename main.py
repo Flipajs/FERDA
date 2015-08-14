@@ -5,7 +5,6 @@ from PyQt4 import QtGui
 from gui import main_window
 from core.settings import Settings as S_
 from utils.misc import is_flipajs_pc
-from utils.video_manager import get_auto_video_manager
 
 app = QtGui.QApplication(sys.argv)
 ex = main_window.MainWindow()

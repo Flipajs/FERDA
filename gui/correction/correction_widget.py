@@ -94,7 +94,7 @@ class ResultsWidget(QtGui.QWidget):
         self.vbox = QtGui.QVBoxLayout()
         self.solver = None
         self.project = project
-        self.video = get_auto_video_manager(project.video_paths)
+        self.video = get_auto_video_manager(project)
 
         self.frame_rate = 30
         self.timer = QtCore.QTimer()

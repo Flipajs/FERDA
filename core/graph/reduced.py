@@ -15,7 +15,7 @@ class Reduced:
         return np.copy(self.centroid_)
 
     def reconstruct(self, project):
-        vid = get_auto_video_manager(project.video_paths)
+        vid = get_auto_video_manager(project)
         img = vid.seek_frame(self.frame_)
         img = prepare_for_segmentation(img, project)
         msers = ferda_filtered_msers(img, project, self.frame_)

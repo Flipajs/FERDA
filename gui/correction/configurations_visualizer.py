@@ -756,27 +756,3 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.addAction(self.new_region_t_action)
 
         self.d_ = None
-
-if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
-
-    with open('/Volumes/Seagate Expansion Drive/mser_svm/eight/certainty_visu.pkl', 'rb') as f:
-        up = pickle.Unpickler(f)
-        g = up.load()
-        ccs = up.load()
-        vid_path = up.load()
-
-    cv = ConfigurationsVisualizer(g, get_auto_video_manager(vid_path))
-
-    i = 0
-    for c_ in ccs:
-        # if i == 10:
-        #     break
-
-        cv.add_configuration(c_)
-        i += 1
-
-    cv.showMaximized()
-
-    app.exec_()
-    sys.exit()

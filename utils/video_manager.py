@@ -177,14 +177,16 @@ class VideoManager():
             return self.seek_frame(frame)
 
 
-def get_auto_video_manager(file_paths):
+def get_auto_video_manager(project):
     """
     based on file_paths return VideoManager or FerdaCompressedVideoManager instance
     :type file_paths: [str]
     """
 
+    file_paths = project.video_paths
+
     if not isinstance(file_paths, list):
-        return VideoManager(file_paths)
+        return VideoManager(file_paths, start_t=project.video_start_t, end_t=project.video_end_t)
 
     if len(file_paths) == 1:
         return VideoManager(file_paths[0])
@@ -207,7 +209,7 @@ def get_auto_video_manager(file_paths):
             lossless = file_paths[0]
 
         from utils.ferda_compressed_video_manager import FerdaCompressedVideoManager
-        return FerdaCompressedVideoManager(compressed, lossless)
+        return FerdaCompressedVideoManager(compressed, lossless, start_t=project.video_start_t, end_t=project.video_end_t)
 
 
 def optimize_frame_access(list_data, ra_n_times_slower=40):
@@ -239,13 +241,3 @@ def optimize_frame_access(list_data, ra_n_times_slower=40):
         prev_frame = frame
 
     return result
-
-
-if __name__ == "__main__":
-    # test lossless detection:
-
-    compressed = "/home/flipajs/segmentation/camera1_test_c25.avi"
-    lossless = "/home/flipajs/segmentation/out.avi"
-    file_paths = [compressed, lossless]
-
-    get_auto_video_manager(file_paths)

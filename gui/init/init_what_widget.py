@@ -28,7 +28,7 @@ class InitWhatWidget(QtGui.QWidget):
             self.project.animals = []
 
         self.finish_callback = finish_callback
-        self.video = video_manager.get_auto_video_manager(project.video_paths)
+        self.video = video_manager.get_auto_video_manager(project)
 
         self.active_id = 0
         self.identities_widgets = []

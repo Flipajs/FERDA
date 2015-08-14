@@ -13,9 +13,9 @@ from utils import video_manager
 
 
 class MaxIntensity(Model):
-    def __init__(self, video_paths, iterations=20, random_frames=False, update_callback=None):
+    def __init__(self, project, iterations=20, random_frames=False, update_callback=None):
         super(MaxIntensity, self).__init__()
-        self.video = video_manager.get_auto_video_manager(video_paths)
+        self.video = video_manager.get_auto_video_manager(project)
         self.iterations = iterations
         self.random_frames = random_frames
         self.update_callback = update_callback

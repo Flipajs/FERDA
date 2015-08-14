@@ -28,7 +28,7 @@ class NoiseFilterComputer(QtCore.QThread):
                 to_process.append(n)
 
         optimized = optimize_frame_access(to_process)
-        vid = get_auto_video_manager(self.project.video_paths)
+        vid = get_auto_video_manager(self.project)
 
         self.set_range.emit(len(optimized))
 

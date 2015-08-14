@@ -331,7 +331,8 @@ if __name__ == '__main__':
     with open('/Volumes/Seagate Expansion Drive/regions-merged/74.pkl', 'rb') as f:
         data = pickle.load(f)
 
-    vid = get_auto_video_manager('/Volumes/Seagate Expansion Drive/FERDA-DATA/data/NoPlasterNoLid800.m4v')
+    # project = ...
+    # vid = get_auto_video_manager(project)
     im = vid.seek_frame(74)
 
     for r in data['ants'][0].state.region['rle']:

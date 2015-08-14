@@ -116,32 +116,8 @@ class NewProjectWidget(QtGui.QWidget):
         self.video_files = gui.gui_utils.file_names_dialog(self, 'Select video files', filter_="Videos (*.avi *.mkv *.mp4 *.m4v)", path=path)
         if self.video_files:
             S_.temp.last_vid_path = os.path.dirname(self.video_files[0])
-        try:
-            vid = utils.video_manager.get_auto_video_manager(self.video_files)
-            im = vid.random_frame()
-            h, w, _ = im.shape
-            im = np.asarray(skimage.transform.resize(im, (100, 100))*255, dtype=np.uint8)
 
-            img_label = QtGui.QLabel()
-            img_label.setPixmap(utils.img.get_pixmap_from_np_bgr(im))
-            layout = QtGui.QLabel('preview: ')
-            self.video_preview_layout.addRow(layout, img_label)
-            layout = QtGui.QLabel('#frames: ')
-            value_layout = QtGui.QLabel(str(vid.total_frame_count()))
-            self.video_preview_layout.addRow(layout, value_layout)
-
-            layout = QtGui.QLabel('resolution: ')
-            value_layout = QtGui.QLabel(str(w)+'x'+str(h)+'px')
-            self.video_preview_layout.addRow(layout, value_layout)
-            self.video_preview_layout.addRow(None, self.bg_progress_bar)
-            layout = QtGui.QLabel('Video pre-processing in progress running in background... But don\'t worry, you can continue with your project creation and initialization meanwhile it will be finished.')
-            layout.setWordWrap(True)
-            self.video_preview_layout.addRow(None, layout)
-
-            self.select_working_directory.setFocus()
-
-        except Exception as e:
-            utils.misc.print_exception(e)
+        self.select_working_directory.setFocus()
 
     def back_button_clicked(self):
         self.finish_callback('new_project_back')
@@ -151,10 +127,40 @@ class NewProjectWidget(QtGui.QWidget):
         self.bg_progress_bar.setValue(val)
 
     def select_working_directory_clicked(self):
-        self.bg_computation = MaxIntensity(self.video_files)
+        p = Project()
+        if self.video_files:
+            p.video_paths = self.video_files
+            p.video_start_t = self.video_start_t
+            p.video_end_t = self.video_end_t
+        else:
+            QtGui.QMessageBox.warning(self, "Warning", "Choose video path first", QtGui.QMessageBox.Ok)
+            return
+
+        self.bg_computation = MaxIntensity(p)
         self.connect(self.bg_computation, QtCore.SIGNAL("update(int)"), self.update_progress_label)
         self.bg_computation.start()
         self.activateWindow()
+
+        vid = utils.video_manager.get_auto_video_manager(p)
+        im = vid.random_frame()
+        h, w, _ = im.shape
+        im = np.asarray(skimage.transform.resize(im, (100, 100))*255, dtype=np.uint8)
+
+        img_label = QtGui.QLabel()
+        img_label.setPixmap(utils.img.get_pixmap_from_np_bgr(im))
+        layout = QtGui.QLabel('preview: ')
+        self.video_preview_layout.addRow(layout, img_label)
+        layout = QtGui.QLabel('#frames: ')
+        value_layout = QtGui.QLabel(str(vid.total_frame_count()))
+        self.video_preview_layout.addRow(layout, value_layout)
+
+        layout = QtGui.QLabel('resolution: ')
+        value_layout = QtGui.QLabel(str(w)+'x'+str(h)+'px')
+        self.video_preview_layout.addRow(layout, value_layout)
+        self.video_preview_layout.addRow(None, self.bg_progress_bar)
+        layout = QtGui.QLabel('Video pre-processing in progress running in background... But don\'t worry, you can continue with your project creation and initialization meanwhile it will be finished.')
+        layout.setWordWrap(True)
+        self.video_preview_layout.addRow(None, layout)
 
         path = ''
         if os.path.isdir(S_.temp.last_wd_path):
@@ -222,6 +228,8 @@ class NewProjectWidget(QtGui.QWidget):
         p = Project()
         if self.video_files:
             p.video_paths = self.video_files
+            p.video_start_t = self.video_start_t
+            p.video_end_t = self.video_end_t
 
             self.d_ = QtGui.QDialog()
             self.d_.setLayout(QtGui.QVBoxLayout())
@@ -233,8 +241,8 @@ class NewProjectWidget(QtGui.QWidget):
             QtGui.QMessageBox.warning(self, "Warning", "Choose video path first", QtGui.QMessageBox.Ok)
 
     def video_boundaries_confirmed(self, w):
-        start_t = w.start_frame + 1
-        end_t = w.end.frame
+        self.video_start_t= w.start_frame + 1
+        self.video_end_t = w.end_frame
 
         w.hide()
         w.setParent(None)

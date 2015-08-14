@@ -67,29 +67,20 @@ def get_all_msers(frame_number, project):
     """
     Tries to use cached MSERs, if cache is empty, MSERs are computed and if caching is allowed, then stored.
     Returns all regions
-
-    """
-    return get_all_msers(frame_number, project.video_paths, project.working_directory)
-
-def get_all_msers(frame_number, video_paths, working_dir):
-    """
-    Tries to use cached MSERs, if cache is empty, MSERs are computed and if caching is allowed, then stored.
-    Returns all regions
-
     """
 
     if S_.cache.mser:
         try:
-            with open(working_dir+'/mser/'+str(frame_number)+'.pkl', 'rb') as f:
+            with open(project.working_directory+'/mser/'+str(frame_number)+'.pkl', 'rb') as f:
                 msers = pickle.load(f)
 
             return msers
         except IOError:
-            vid = get_auto_video_manager(video_paths)
+            vid = get_auto_video_manager(project)
             msers = get_msers_(vid.seek_frame(frame_number), frame_number)
 
             try:
-                with open(working_dir+'/mser/'+str(frame_number)+'.pkl', 'wb') as f:
+                with open(project.working_directory+'/mser/'+str(frame_number)+'.pkl', 'wb') as f:
                     pickle.dump(msers, f)
             except IOError:
                 pass
@@ -97,7 +88,7 @@ def get_all_msers(frame_number, video_paths, working_dir):
             return msers
 
     else:
-        vid = get_auto_video_manager(video_paths)
+        vid = get_auto_video_manager(project)
         return get_msers_(vid.seek_frame(frame_number))
 
 

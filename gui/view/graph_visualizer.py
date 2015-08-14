@@ -28,7 +28,7 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
 
         sub_g = solver.g.subgraph(nodes)
 
-    vid = get_auto_video_manager(project.video_paths)
+    vid = get_auto_video_manager(project)
     regions = {}
 
     nodes = []
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         project.load('/home/simon/Documents/res/c3_1h30/c3_1h30.fproj')
 
     # from utils.video_manager import get_auto_video_manager
-    # vid = get_auto_video_manager(project.video_paths)
+    # vid = get_auto_video_manager(project)
     # img = vid.next_frame()
     #
     # from pylab import ogrid, gca, show

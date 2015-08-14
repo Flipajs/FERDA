@@ -8,7 +8,6 @@ from skimage.transform import resize
 from utils.roi import ROI, get_roi
 from gui.gui_utils import get_image_label
 from utils.drawing.points import draw_points_crop, draw_points
-from utils.video_manager import get_auto_video_manager
 from core.region.mser import get_msers_, get_all_msers
 from skimage.transform import resize
 from gui.img_controls.my_view import MyView

@@ -38,7 +38,7 @@ class SetMSERs(QtGui.QWidget):
         self.w_.layout().addLayout(self.bottom_row)
         self.w_.layout().addLayout(self.top_row)
 
-        self.vid = get_auto_video_manager(project.video_paths)
+        self.vid = get_auto_video_manager(project)
         self.im = self.vid.next_frame()
         # self.im = self.vid.seek_frame(659)
 

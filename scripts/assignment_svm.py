@@ -2,7 +2,6 @@ __author__ = 'fnaiser'
 
 import pickle
 import numpy as np
-from utils.video_manager import get_auto_video_manager
 from utils.drawing.points import draw_points, draw_points_crop, draw_points_crop_binary
 import cv2
 from math import sin, cos

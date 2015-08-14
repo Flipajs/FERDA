@@ -44,7 +44,7 @@ class GlobalView(QtGui.QWidget):
         w = QtGui.QWidget()
         w.setLayout(QtGui.QHBoxLayout())
 
-        vid = get_auto_video_manager(self.project.video_paths)
+        vid = get_auto_video_manager(self.project)
 
         self.chunk_len_threshold = QtGui.QSpinBox()
         self.chunk_len_threshold.setMinimum(0)

@@ -47,7 +47,7 @@ class BackgroundComputer():
         self.check_parallelization_timer.start(100)
 
     def set_frames_in_row(self):
-        vid = get_auto_video_manager(self.project.video_paths)
+        vid = get_auto_video_manager(self.project)
         frame_num = int(vid.total_frame_count())
 
         self.part_num = int(frame_num / self.frames_in_row)

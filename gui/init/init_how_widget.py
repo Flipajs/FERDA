@@ -32,7 +32,7 @@ class InitHowWidget(QtGui.QWidget):
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
 
-        vid = get_auto_video_manager(project.video_paths)
+        vid = get_auto_video_manager(project)
 
         img = vid.next_frame()
         # img = self.fill_colormarks(img)

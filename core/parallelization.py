@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     S_.general.log_graph_edits = False
 
-    vid = get_auto_video_manager(proj.video_paths)
+    vid = get_auto_video_manager(proj)
     if id*frames_in_row > 0:
         img = vid.seek_frame(id*frames_in_row)
     else:

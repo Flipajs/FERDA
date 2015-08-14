@@ -31,7 +31,6 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
         self.lines_layout.addWidget(self.informationLabel)
 
-
         graphics_view_widget = QtGui.QWidget()
         self.graphics_view = MyView(graphics_view_widget)
         self.scene = QtGui.QGraphicsScene()

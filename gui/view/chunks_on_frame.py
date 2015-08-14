@@ -29,7 +29,7 @@ class ChunksOnFrame(QtGui.QWidget):
         self.scene = QtGui.QGraphicsScene()
         self.view.setScene(self.scene)
 
-        self.vid = get_auto_video_manager(self.project.video_paths)
+        self.vid = get_auto_video_manager(self.project)
         self.frame_it = None
 
         self.next_action = QtGui.QAction('next', self)
