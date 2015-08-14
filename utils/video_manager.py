@@ -80,7 +80,8 @@ class VideoManager():
         if self.position_ > 0:
             self.position_ -= 1
             view_dec = self.dec_pos_(self.view_position_)
-            if (view_dec == self.buffer_position_) or (self.buffer_[view_dec] is None):
+            # if (view_dec == self.buffer_position_) or (self.buffer_[view_dec] is None):
+            if True:
                 self.buffer_position_ = self.dec_pos_(self.buffer_position_)
                 self.view_position_ = self.dec_pos_(self.view_position_)
                 self.buffer_[self.view_position_] = self.seek_frame(self.position_)
@@ -98,12 +99,13 @@ class VideoManager():
         if frame_number < 0 or frame_number >= self.total_frame_count():
             raise Exception("Frame_number is invalid: "+str(frame_number))
 
+        frame_number_ = frame_number + self.start_t
         # Reset buffer as buffered images are now from other part of the video
         self.buffer_position_ = 0
         self.view_position_ = self.buffer_length_ - 1
         self.buffer_ = [None] * self.buffer_length_
 
-        self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
+        self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number_)
 
         # because in next_frame it will be increased by one as usual
         self.position_ = frame_number - 1

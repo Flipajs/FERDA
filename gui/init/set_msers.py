@@ -107,7 +107,16 @@ class SetMSERs(QtGui.QWidget):
         self.show()
 
     def choose_random_frame(self):
-        self.im = self.vid.random_frame()
+        im = self.vid.random_frame()
+
+        if self.project.bg_model:
+            im = self.project.bg_model.bg_subtraction(im)
+
+        if self.project.arena_model:
+            im = self.project.arena_model.mask_image(im)
+
+        self.im = im
+
         self.update()
 
     def update(self):

@@ -142,8 +142,10 @@ class FerdaCompressedVideoManager(VideoManager):
         if frame_number < 0 or frame_number >= self.total_frame_count():
             raise Exception("Frame_number is invalid")
 
-        self.capture_compressed_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
-        self.capture_lossless_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
+        frame_number_ = frame_number + self.start_t
+
+        self.capture_compressed_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number_)
+        self.capture_lossless_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number_)
 
         # because in next_frame it will be increased by one
         self.position_ = frame_number - 1
