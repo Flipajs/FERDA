@@ -4,7 +4,6 @@ __author__ = 'filip@naiser.cz'
 
 import cv2
 import utils.misc
-from random import randint
 from utils.video_manager import VideoManager
 import numpy as np
 

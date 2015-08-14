@@ -2,7 +2,6 @@ __author__ = 'filip@naiser.cz'
 
 import cv2
 import cv_compatibility
-from utils.ferda_compressed_video_manager import FerdaCompressedVideoManager
 from random import randint
 import numpy as np
 
@@ -95,7 +94,10 @@ class VideoManager():
         if frame_number < 0 or frame_number >= self.total_frame_count():
             raise Exception("Frame_number is invalid: "+str(frame_number))
 
-        self.reset_buffer()
+        # Reset buffer as buffered images are now from other part of the video
+        self.buffer_position_ = 0
+        self.view_position_ = self.buffer_length_ - 1
+        self.buffer_ = [None] * self.buffer_length_
 
         self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number)
 
@@ -204,6 +206,7 @@ def get_auto_video_manager(file_paths):
             compressed = lossless
             lossless = file_paths[0]
 
+        from utils.ferda_compressed_video_manager import FerdaCompressedVideoManager
         return FerdaCompressedVideoManager(compressed, lossless)
 
 
