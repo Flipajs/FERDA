@@ -40,8 +40,9 @@ SPLIT = 'split'
 
 
 class NodeGraphVisualizer(QtGui.QWidget):
-    def __init__(self, solver, g, regions, chunks, node_size=30):
+    def __init__(self, solver, g, regions, chunks, node_size=30, show_in_visualize_callback=None):
         super(NodeGraphVisualizer, self).__init__()
+        self.show_in_visualizer_callback = show_in_visualize_callback
         self.solver = solver
         self.g = g
         self.regions = regions
@@ -157,6 +158,12 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.clear_all_button.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_X))
         self.clear_all_button.clicked.connect(self.clear_all_button_function)
         self.clear_all_button.setFixedHeight(HEIGHT)
+
+        self.show_in_visualizer_action = QtGui.QAction('show in visualizer', self)
+        self.show_in_visualizer_action.triggered.connect(self.show_in_visualizer)
+        self.show_in_visualizer_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_V))
+        self.addAction(self.show_in_visualizer_action)
+
         self.node_info_layout.addWidget(self.clear_all_button)
         self.lower_widgets = [self.clear_all_button, self.info_label_lower, self.aux_space_lower]
         self.widgets_hide(self.lower_widgets)
@@ -507,6 +514,13 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.plot_chunks_w.hide()
         self.chunks_w.hide()
         self.view.show()
+
+    def show_in_visualizer(self):
+        n = self.boxes[0][3]
+        if not n:
+            return
+
+        self.show_in_visualizer_callback(n)
 
     def connect_chunks(self):
         n1 = self.boxes[0][3]

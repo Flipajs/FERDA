@@ -17,7 +17,7 @@ class MainTabWidget(QtGui.QWidget):
         self.solver = None
 
         self.tabs = QtGui.QTabWidget()
-        self.tracker_tab = TrackerWidget(project)
+        self.tracker_tab = TrackerWidget(project, show_in_visualizer_callback=self.show_in_visualizer)
         self.results_tab = ResultsWidget(project)
         self.statistics_tab = StatisticsWidget(project)
 
@@ -32,6 +32,7 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.setTabEnabled(1, False)
         self.tabs.setTabEnabled(2, False)
 
+        self.ignore_tab_change = False
         self.tabs.currentChanged.connect(self.tab_changed)
 
         print "LOADING GRAPH..."
@@ -42,6 +43,11 @@ class MainTabWidget(QtGui.QWidget):
         else:
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)
             self.bc_msers.run()
+
+    def show_in_visualizer(self, node):
+        self.tabs.setCurrentIndex(1)
+        self.results_tab.change_frame(node.frame_)
+        self.results_tab.highlight_area(node.centroid(), radius=100)
 
     def background_computer_finished(self, solver):
         print "GRAPH LOADED"
@@ -54,9 +60,20 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.setTabEnabled(2, True)
 
     def tab_changed(self, i):
+        if self.ignore_tab_change:
+            return
+
         if i == 1:
+            self.ignore_tab_change = True
+            self.tabs.removeTab(1)
+            self.results_tab.setParent(None)
+
+            self.results_tab = ResultsWidget(self.project)
             self.results_tab.add_data(self.solver)
             self.results_tab.update_positions(self.results_tab.video.frame_number(), optimized=False)
+            self.tabs.insertTab(1, self.results_tab, 'results viewer')
+            self.tabs.setCurrentIndex(1)
+            self.ignore_tab_change = False
         if i == 2:
             self.statistics_tab.update_data(self.solver)
 

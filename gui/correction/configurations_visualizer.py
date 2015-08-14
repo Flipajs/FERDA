@@ -106,6 +106,36 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         print "PROGRESS SAVED"
 
+    def save_progress_only_chunks(self):
+        wd = self.solver.project.working_directory
+
+        name = '/progress_save.pkl'
+
+        to_remove = []
+        for n in self.solver.g:
+            is_ch, t_reversed, ch = self.solver.is_chunk(n)
+            if not is_ch or ch.length() < self.project.solver_parameters.global_view_min_chunk_len:
+                to_remove.append(n)
+
+        print "NODES", len(self.solver.g)
+        S_.general.log_graph_edits = False
+        for n in to_remove:
+            try:
+                self.solver.strong_remove(n)
+            except:
+                pass
+
+        print "NODES", len(self.solver.g)
+        S_.general.log_graph_edits = True
+
+        with open(wd+name, 'wb') as f:
+            pc = pickle.Pickler(f)
+            pc.dump(self.solver.g)
+            pc.dump(self.solver.project.log)
+            pc.dump(self.solver.ignored_nodes)
+
+        print "ONLY CHUNKS PROGRESS SAVED"
+
     def set_nodes_queue(self, nodes):
         for n in nodes:
             if n.frame_ != self.solver.start_t and n.frame_ != self.solver.end_t:
@@ -739,6 +769,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.save_progress.triggered.connect(self.save)
         self.save_progress.setShortcut(S_.controls.save)
         self.addAction(self.save_progress)
+
+        self.save_progress_only_chunks_action = QtGui.QAction('save', self)
+        self.save_progress_only_chunks_action.triggered.connect(self.save_progress_only_chunks)
+        self.save_progress_only_chunks_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_S))
+        self.addAction(self.save_progress_only_chunks_action)
 
         self.undo_action = QtGui.QAction('undo', self)
         self.undo_action.triggered.connect(self.undo)

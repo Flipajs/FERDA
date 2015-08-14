@@ -14,9 +14,11 @@ from gui.correction.global_view import GlobalView
 from gui.loading_widget import LoadingWidget
 
 class TrackerWidget(QtGui.QWidget):
-    def __init__(self, project):
+    def __init__(self, project, show_in_visualizer_callback=None):
         super(TrackerWidget, self).__init__()
         self.project = project
+
+        self.show_in_visualizer_callback = show_in_visualizer_callback
 
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
@@ -89,7 +91,7 @@ class TrackerWidget(QtGui.QWidget):
         step_by_step.next_case()
 
     def show_global_view(self):
-        global_view = GlobalView(self.project, self.solver)
+        global_view = GlobalView(self.project, self.solver, show_in_visualizer_callback=self.show_in_visualizer_callback)
         self.tool.addWidget(global_view)
         self.tool_row.addWidget(global_view.tool_w)
 

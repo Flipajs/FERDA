@@ -23,11 +23,11 @@ from gui.loading_widget import LoadingWidget
 
 
 class GlobalView(QtGui.QWidget):
-    def __init__(self, project, solver):
+    def __init__(self, project, solver, show_in_visualizer_callback=None):
         super(GlobalView, self).__init__()
 
         self.setLayout(QtGui.QVBoxLayout())
-
+        self.show_in_visualizer_callback = show_in_visualizer_callback
         self.project = project
         self.solver = solver
 
@@ -103,9 +103,11 @@ class GlobalView(QtGui.QWidget):
         end_t = self.end_t.value()
         min_chunk_len = self.chunk_len_threshold.value()
 
+        self.project.solver_parameters.global_view_min_chunk_len = min_chunk_len
+
         node_size = self.node_size.value()
         margin = self.relative_margin.value()
 
-        w = call_visualizer(start_t, end_t, self.project, self.solver, min_chunk_len, w_loading.update_progress, node_size=node_size, node_margin=margin)
+        w = call_visualizer(start_t, end_t, self.project, self.solver, min_chunk_len, w_loading.update_progress, node_size=node_size, node_margin=margin, show_in_visualizer_callback=self.show_in_visualizer_callback)
         w_loading.hide()
         self.layout().addWidget(w)

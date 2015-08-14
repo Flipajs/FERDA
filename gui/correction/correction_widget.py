@@ -85,7 +85,7 @@ class SelectAllLineEdit(QtGui.QLineEdit):
 
 
 class ResultsWidget(QtGui.QWidget):
-    def __init__(self, project):
+    def __init__(self, project, start_on_frame=-1):
         super(ResultsWidget, self).__init__()
 
         self.vbox = QtGui.QVBoxLayout()
@@ -174,6 +174,28 @@ class ResultsWidget(QtGui.QWidget):
 
         self.active_markers = []
 
+        self.highlight_marker = None
+        self.highlight_timer = QtCore.QTimer()
+        self.highlight_timer.timeout.connect(self.decrease_highlight_marker_opacity)
+
+    def decrease_highlight_marker_opacity(self):
+        op = self.highlight_marker.opacity()
+
+        dec_fact = 0.02
+        if op > 0:
+            if op < 0.2:
+                dec_fact = 0.04
+
+            self.highlight_marker.setOpacity(op - dec_fact)
+
+            # self.highlight_marker.setVisible(False)
+            # self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(255, 255, 0), 0, self.marker_changed)
+            # self.highlight_marker.setOpacity(0.40)
+            # self.highlight_marker.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
+            # self.scene.addItem(self.highlight_marker)
+        else:
+            self.highlight_timer.stop()
+
     def marker_changed(self):
         pass
 
@@ -185,6 +207,13 @@ class ResultsWidget(QtGui.QWidget):
 
         marker.setVisible(True)
         marker.setPos(c[1] - MARKER_SIZE / 2, c[0] - MARKER_SIZE/2)
+
+    def highlight_area(self, centroid, radius=50):
+        self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(167, 255, 36), 0, self.marker_changed)
+        self.highlight_marker.setOpacity(0.40)
+        self.highlight_marker.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
+        self.scene.addItem(self.highlight_marker)
+        self.highlight_timer.start(50)
 
     def update_positions_optimized(self, frame):
         new_active_markers = []
