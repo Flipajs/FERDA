@@ -43,12 +43,12 @@ class InitWhatWidget(QtGui.QWidget):
 
         # ACTIONS
         self.esc_action = QtGui.QAction("ESC", self)
-        self.esc_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Escape))
+        self.esc_action.setShortcut(S_.controls.stop_action)
         self.esc_action.triggered.connect(self.esc_action_)
         self.addAction(self.esc_action)
 
-        self.random_frame_action = QtGui.QAction("random fram", self)
-        self.random_frame_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_R))
+        self.random_frame_action = QtGui.QAction("random frame", self)
+        self.random_frame_action.setShortcut(S_.controls.video_random_frame)
         self.random_frame_action.triggered.connect(self.random_frame_action_)
         self.addAction(self.random_frame_action)
 

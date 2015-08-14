@@ -133,11 +133,11 @@ class ResultsWidget(QtGui.QWidget):
         self.speedSlider.setMaximum(99)
 
         self.backward = QtGui.QPushButton('back')
-        self.backward.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B))
+        self.backward.setShortcut(S_.controls.video_prev)
         self.playPause = QtGui.QPushButton('play')
-        self.playPause.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
+        self.playPause.setShortcut(S_.controls.video_play_pause)
         self.forward = QtGui.QPushButton('forward')
-        self.forward.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
+        self.forward.setShortcut(S_.controls.video_next)
         self.frameEdit = SelectAllLineEdit()
         self.showFrame = QtGui.QPushButton('show')
         self.fpsLabel = QtGui.QLabel()
@@ -321,11 +321,11 @@ class ResultsWidget(QtGui.QWidget):
             if self.timer.isActive():
                 self.timer.stop()
                 self.playPause.setText("play")
-                self.playPause.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
+                self.playPause.setShortcut(S_.controls.video_play_pause)
             else:
                 self.timer.start()
                 self.playPause.setText("pause")
-                self.playPause.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
+                self.playPause.setShortcut(S_.controls.video_play_pause)
 
     def update_frame_number(self):
         """Updates values of components displaying frame number"""

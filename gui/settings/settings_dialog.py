@@ -129,9 +129,26 @@ class KeyBindingsTab(QtGui.QWidget):
             'prev_case',
             'confirm',
             'partially_confirm',
+            'confirm_path',
+            'fitting_from_left',
+            'remove_region',
+            'remove_chunk',
+            'join_regions',
+            'new_region',
+            'ignore_case',
+
+            'stop_action',
+            'save',
+            'undo',
+            'get_info',
+            'hide_show',
+
+            'video_next',
+            'video_prev',
+            'video_play_pause',
+            'video_random_frame',
 
             'global_view_join_chunks',
-            'global_view_remove_chunk'
         ]
 
         super(KeyBindingsTab, self).__init__(parent)
@@ -149,6 +166,8 @@ class KeyBindingsTab(QtGui.QWidget):
             self.table.setItem(i, 1, QtGui.QTableWidgetItem(s))
             self.table.item(i, 1).setFlags(QtCore.Qt.NoItemFlags | QtCore.Qt.ItemIsEnabled)
         self.table.itemDoubleClicked.connect(self.bind_new_key)
+
+        self.main_layout.addWidget(QtGui.QLabel('To guarantee the functionality of new shortcuts, please restart application after hitting OK button.'))
 
     def bind_new_key(self, item):
         dialog = KeyBindingDialog(self)

@@ -647,42 +647,42 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.path_confirm_action = QtGui.QAction('path confirm', self)
         self.path_confirm_action.triggered.connect(self.path_confirm)
-        self.path_confirm_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_C))
+        self.path_confirm_action.setShortcut(S_.controls.confirm_path)
         self.addAction(self.path_confirm_action)
 
         self.fitting_action = QtGui.QAction('fitting', self)
         self.fitting_action.triggered.connect(partial(self.fitting, False))
-        self.fitting_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_F))
+        self.fitting_action.setShortcut(S_.controls.fitting_from_left)
         self.addAction(self.fitting_action)
 
         self.fitting_rev_action = QtGui.QAction('fitting rev', self)
         self.fitting_rev_action.triggered.connect(partial(self.fitting, True))
-        self.fitting_rev_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_G))
+        self.fitting_rev_action.setShortcut(S_.controls.fitting_from_right)
         self.addAction(self.fitting_rev_action)
 
-        self.new_region_t1_action = QtGui.QAction('new region t1', self)
-        self.new_region_t1_action.triggered.connect(partial(self.new_region, 0))
-        self.new_region_t1_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
-        self.addAction(self.new_region_t1_action)
-
-        self.new_region_t2_action = QtGui.QAction('new region t2', self)
-        self.new_region_t2_action.triggered.connect(partial(self.new_region, 1))
-        self.new_region_t2_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
-        self.addAction(self.new_region_t2_action)
+        # self.new_region_t1_action = QtGui.QAction('new region t1', self)
+        # self.new_region_t1_action.triggered.connect(partial(self.new_region, 0))
+        # self.new_region_t1_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
+        # self.addAction(self.new_region_t1_action)
+        #
+        # self.new_region_t2_action = QtGui.QAction('new region t2', self)
+        # self.new_region_t2_action.triggered.connect(partial(self.new_region, 1))
+        # self.new_region_t2_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
+        # self.addAction(self.new_region_t2_action)
 
         self.remove_region_action = QtGui.QAction('remove region', self)
         self.remove_region_action.triggered.connect(self.remove_region)
-        self.remove_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Backspace))
+        self.remove_region_action.setShortcut(S_.controls.remove_region)
         self.addAction(self.remove_region_action)
 
         self.strong_remove_action = QtGui.QAction('strong remove', self)
         self.strong_remove_action.triggered.connect(self.strong_remove_region)
-        self.strong_remove_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Backspace))
+        self.strong_remove_action.setShortcut(S_.controls.remove_chunk)
         self.addAction(self.strong_remove_action)
 
         self.join_regions_action = QtGui.QAction('join regions', self)
         self.join_regions_action.triggered.connect(self.join_regions_pick_second)
-        self.join_regions_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_J))
+        self.join_regions_action.setShortcut(S_.controls.join_regions)
         self.addAction(self.join_regions_action)
 
         self.action0 = QtGui.QAction('0', self)
@@ -737,22 +737,22 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.save_progress = QtGui.QAction('save', self)
         self.save_progress.triggered.connect(self.save)
-        self.save_progress.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
+        self.save_progress.setShortcut(S_.controls.save)
         self.addAction(self.save_progress)
 
         self.undo_action = QtGui.QAction('undo', self)
         self.undo_action.triggered.connect(self.undo)
-        self.undo_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Z))
+        self.undo_action.setShortcut(S_.controls.undo)
         self.addAction(self.undo_action)
 
         self.ignore_action = QtGui.QAction('ignore', self)
         self.ignore_action.triggered.connect(self.ignore_node)
-        self.ignore_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
+        self.ignore_action.setShortcut(S_.controls.ignore_case)
         self.addAction(self.ignore_action)
 
         self.new_region_t_action = QtGui.QAction('new region', self)
         self.new_region_t_action.triggered.connect(partial(self.new_region, -1))
-        self.new_region_t_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_R))
+        self.new_region_t_action.setShortcut(S_.controls.new_region)
         self.addAction(self.new_region_t_action)
 
         self.d_ = None

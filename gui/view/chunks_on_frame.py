@@ -6,6 +6,8 @@ from gui.img_controls.utils import cvimg2qtpixmap
 from skimage.transform import resize
 import numpy as np
 from viewer.gui.img_controls import markers
+from core.settings import Settings as S_
+
 
 class ChunksOnFrame(QtGui.QWidget):
     def __init__(self, project, plot_w, start_t, end_t, close_callback):
@@ -32,12 +34,12 @@ class ChunksOnFrame(QtGui.QWidget):
 
         self.next_action = QtGui.QAction('next', self)
         self.next_action.triggered.connect(self.next_frame)
-        self.next_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
+        self.next_action.setShortcut(S_.controls.video_next)
         self.addAction(self.next_action)
 
         self.prev_action = QtGui.QAction('prev', self)
         self.prev_action.triggered.connect(self.prev_frame)
-        self.prev_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B))
+        self.prev_action.setShortcut(S_.controls.video_prev)
         self.addAction(self.prev_action)
 
         self.marker_its = []

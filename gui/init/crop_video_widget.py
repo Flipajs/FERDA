@@ -147,11 +147,11 @@ class CropVideoWidget(QtGui.QWidget):
         self.speedSlider.setMaximum(99)
 
         self.backward = QtGui.QPushButton('Back')
-        self.backward.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B))
+        self.backward.setShortcut(S_.controls.video_prev)
         self.playPause = QtGui.QPushButton('Play')
-        self.playPause.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
+        self.playPause.setShortcut(S_.controls.video_play_pause)
         self.forward = QtGui.QPushButton('Forward')
-        self.forward.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
+        self.forward.setShortcut(S_.controls.video_next)
         self.mark_start = QtGui.QPushButton('Mark start')
         # self.mark_start.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
         self.mark_stop = QtGui.QPushButton('Mark stop')
@@ -343,11 +343,11 @@ class CropVideoWidget(QtGui.QWidget):
             if self.timer.isActive():
                 self.timer.stop()
                 self.playPause.setText("play")
-                self.playPause.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
+                self.playPause.setShortcut(S_.controls.video_play_pause)
             else:
                 self.timer.start()
                 self.playPause.setText("pause")
-                self.playPause.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
+                self.playPause.setShortcut(S_.controls.video_play_pause)
 
     def update_frame_number(self):
         """Updates values of components displaying frame number"""

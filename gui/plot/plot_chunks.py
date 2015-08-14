@@ -41,7 +41,7 @@ class PlotChunks(QtGui.QWidget):
 
         self.update_plot_action = QtGui.QAction('update_plot', self)
         self.update_plot_action.triggered.connect(self.update_plot_switch)
-        self.update_plot_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
+        self.update_plot_action.setShortcut(S_.controls.hide_show)
         self.addAction(self.update_plot_action)
 
         # self.show()

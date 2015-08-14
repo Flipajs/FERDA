@@ -123,7 +123,7 @@ class CaseWidget(QtGui.QWidget):
 
         self.get_info_action = QtGui.QAction('get info', self)
         self.get_info_action.triggered.connect(self.get_info)
-        self.get_info_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_I))
+        self.get_info_action.setShortcut(S_.controls.get_info)
         self.addAction(self.get_info_action)
 
         # ARROW KEYS
@@ -149,7 +149,7 @@ class CaseWidget(QtGui.QWidget):
 
         self.hide_visualization_a = QtGui.QAction('hide visualization', self)
         self.hide_visualization_a.triggered.connect(self.hide_visualization)
-        self.hide_visualization_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
+        self.hide_visualization_a.setShortcut(S_.controls.hide_show)
         self.addAction(self.hide_visualization_a)
 
         self.pop_menu_node.addAction(self.action_remove_node)

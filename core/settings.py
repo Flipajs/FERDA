@@ -106,11 +106,29 @@ class Controls:
     prev_case = Item('controls/sbs/prev_case', QtGui.QKeySequence(QtCore.Qt.Key_B))
     confirm = Item('controls/sbs/confirm', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Space))
     partially_confirm = Item('controls/sbs/partially_confirm', QtGui.QKeySequence(QtCore.Qt.Key_C))
+    confirm_path = Item('controls/sbs/confirm_path', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_C))
+    fitting_from_left = Item('controls/sbs/fitting_from_left', QtGui.QKeySequence(QtCore.Qt.Key_F))
+    fitting_from_right = Item('controls/sbs/fitting_from_right', QtGui.QKeySequence(QtCore.Qt.Key_G))
+    remove_region = Item('controls/sbs/remove_region', QtGui.QKeySequence(QtCore.Qt.Key_Backspace))
+    remove_chunk = Item('controls/remove_chunk', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Backspace))
+    join_regions = Item('controls/join_regions', QtGui.QKeySequence(QtCore.Qt.Key_J))
+    new_region = Item('controls/ignore_case', QtGui.QKeySequence(QtCore.Qt.Key_R))
+    ignore_case = Item('controls/ignore_case', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
 
+    stop_action = Item('controls/stop_action', QtGui.QKeySequence(QtCore.Qt.Key_Escape))
+    save = Item('controls/save', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
+    undo = Item('controls/undo', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Z))
+    get_info = Item('controls/get_info', QtGui.QKeySequence(QtCore.Qt.Key_I))
+
+    video_next = Item('controls/video_next', QtGui.QKeySequence(QtCore.Qt.Key_N))
+    video_prev = Item('controls/video_prev', QtGui.QKeySequence(QtCore.Qt.Key_B))
+    video_play_pause = Item('controls/video_play_pause', QtGui.QKeySequence(QtCore.Qt.Key_Space))
+    video_random_frame = Item('controls/video_random_frame', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_R))
+
+    hide_show = Item('controls/hide_show', QtGui.QKeySequence(QtCore.Qt.Key_H))
 
     # global view
     global_view_join_chunks = Item('controls/gv/join_chunks', QtGui.QKeySequence(QtCore.Qt.Key_J))
-    global_view_remove_chunk = Item('controls/gv/remove_chunk', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Backspace))
 
 
 class Settings:
