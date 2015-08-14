@@ -119,13 +119,12 @@ class Controls:
     save = Item('controls/save', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
     undo = Item('controls/undo', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Z))
     get_info = Item('controls/get_info', QtGui.QKeySequence(QtCore.Qt.Key_I))
+    hide_show = Item('controls/hide_show', QtGui.QKeySequence(QtCore.Qt.Key_H))
 
     video_next = Item('controls/video_next', QtGui.QKeySequence(QtCore.Qt.Key_N))
     video_prev = Item('controls/video_prev', QtGui.QKeySequence(QtCore.Qt.Key_B))
     video_play_pause = Item('controls/video_play_pause', QtGui.QKeySequence(QtCore.Qt.Key_Space))
     video_random_frame = Item('controls/video_random_frame', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_R))
-
-    hide_show = Item('controls/hide_show', QtGui.QKeySequence(QtCore.Qt.Key_H))
 
     # global view
     global_view_join_chunks = Item('controls/gv/join_chunks', QtGui.QKeySequence(QtCore.Qt.Key_J))
