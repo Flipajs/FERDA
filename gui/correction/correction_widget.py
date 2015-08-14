@@ -9,7 +9,6 @@ import cv2
 from viewer.gui.img_controls import markers
 from core.animal import colors_
 from core.settings import Settings as S_
-import time
 
 
 MARKER_SIZE = 15
@@ -88,8 +87,6 @@ class SelectAllLineEdit(QtGui.QLineEdit):
 class ResultsWidget(QtGui.QWidget):
     def __init__(self, project):
         super(ResultsWidget, self).__init__()
-
-        self.time_last = time.time()
 
         self.vbox = QtGui.QVBoxLayout()
         self.solver = None
@@ -274,18 +271,10 @@ class ResultsWidget(QtGui.QWidget):
         self.videoSlider.valueChanged.connect(self.video_slider_changed)
         self.timer.timeout.connect(self.load_next_frame)
 
-    def print_time(self):
-        print time.time() - self.time_last
-        time_last = time.time()
-
     def load_next_frame(self):
-        print time.time()-self.time_last, self.timer.interval()
-        self.time_last = time.time()
-
         """Loads next frame of the video and displays it. If there is no next frame, calls self.out_of_frames"""
         if self.video is not None:
             img = self.video.next_frame()
-            # print "NEXT... ", time.time()-start
             if img is not None:
                 if self.pixMapItem is not None:
                     self.scene.removeItem(self.pixMapItem)
@@ -295,13 +284,9 @@ class ResultsWidget(QtGui.QWidget):
                 item = self.scene.addPixmap(self.pixMap)
                 self.pixMapItem = item
                 self.update_frame_number()
-                # print "... ", time.time()-start
                 self.update_positions(self.video.frame_number())
-                # print "UPDATE... ", time.time() - start
             else:
                 self.out_of_frames()
-
-        # print "TAKES...", time.time() - start
 
     def load_previous_frame(self):
         """Loads previous frame of the video if there is such and displays it"""

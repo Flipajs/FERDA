@@ -22,11 +22,19 @@ class BaseMarker(QtGui.QGraphicsEllipseItem, object):
         self.changeHandler = changeHandler
         self.recently_changed = False
 
-        pen = QtGui.QPen(QtCore.Qt.NoPen)
+        darkness = 1-(0.299*color.red() + 0.587*color.green() + 0.114*color.blue())/255
+        if darkness > 0.5:
+            pen = QtGui.QPen(QtGui.QColor(0xFF, 0xFF, 0xFF, 0xFF))
+        else:
+            pen = QtGui.QPen(QtGui.QColor(0x00, 0x00, 0x00, 0xFF))
+
+        pen.setWidth(1)
+        self.setPen(pen)
+
         dotsize = float(2)
         self.dot = QtGui.QGraphicsEllipseItem(self.rect().center().x() - dotsize/2, self.rect().center().y() - dotsize/2, dotsize, dotsize, self)
         self.dot.setBrush(brush)
-        self.dot.setPen(pen)
+        # self.dot.setPen(pen)
         self.dot.setFlag(QtGui.QGraphicsItem.ItemIgnoresParentOpacity, True)
         self.dot.setOpacity(0)
 

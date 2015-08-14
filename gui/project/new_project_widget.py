@@ -119,7 +119,6 @@ class NewProjectWidget(QtGui.QWidget):
         self.finish_callback('new_project_back')
 
     def update_progress_label(self, val):
-        print val
         self.bg_progress_bar.setValue(val)
 
     def select_working_directory_clicked(self):

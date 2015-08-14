@@ -433,12 +433,13 @@ class NodeGraphVisualizer(QtGui.QWidget):
         for e in self.g.edges():
             try:
                 if e[0] in visited and e[1] in visited:
-                    self.draw_edge_selectable(e[0], e[1])
+                    if 'chunk_ref' in self.g[e[0]][e[1]]:
+                        self.draw_edge_selectable(e[0], e[1])
                 else:
                     if 'chunk_ref' in self.g[e[0]][e[1]]:
                         if e[0] in visited:
                             self.draw_chunk_residual_edge(e[0], e[1], outgoing=True)
-                        else:
+                        elif e[1] in visited:
                             self.draw_chunk_residual_edge(e[0], e[1], outgoing=False)
             except:
                 pass

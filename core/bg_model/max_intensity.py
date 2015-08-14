@@ -49,7 +49,6 @@ class MaxIntensity(Model):
         if self.update_callback:
             self.update_callback(int(100*(i+1)/float(self.iterations)))
 
-
     def is_computed(self):
         return self.model_ready
 
