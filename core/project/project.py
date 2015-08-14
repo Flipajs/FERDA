@@ -23,6 +23,8 @@ class Project:
         self.video_start_t = -1
         self.video_end_t = -1
         self.working_directory = ''
+        self.date_created = -1
+        self.date_last_modifiaction = -1
 
         self.bg_model = None
         self.arena_model = None
@@ -93,6 +95,17 @@ class Project:
         p.description = self.description
         p.video_paths = self.video_paths
         p.working_directory = self.working_directory
+        p.video_start_t = self.video_start_t
+        p.video_end_t = self.video_end_t
+
+        p.mser_parameters = self.mser_parameters
+        p.other_parameters = self.other_parameters
+        p.solver_parameters = self.solver_parameters
+        p.version = self.version = "2.1.1"
+
+        p.date_created = self.date_created
+        import time
+        p.date_last_modifiaction = time.time()
 
         with open(self.working_directory+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)

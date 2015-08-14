@@ -84,9 +84,6 @@ class FerdaCompressedVideoManager(VideoManager):
 
         self.capture_init_()
 
-        if self.start_t > 0:
-            self.seek_frame(self.start_t)
-
     def capture_init_(self):
         self.capture_compressed_ = cv2.VideoCapture(self.compressed_file_)
         self.capture_lossless_ = cv2.VideoCapture(self.lossless_file_)
@@ -97,13 +94,17 @@ class FerdaCompressedVideoManager(VideoManager):
         if not self.capture_lossless_.isOpened():
             raise Exception("Cannot open lossless video! Path: " + self.lossless_file_)
 
+        if self.start_t > 0:
+            self.capture_compressed_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, self.start_t)
+            self.capture_lossless_.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, self.start_t)
+
     def next_frame(self):
         """
         returns next next combined image if exists, else raises exception
         """
 
         f, self.lossless_img_ = self.capture_lossless_.read()
-        if not f or self.end_t == self.position_ + 1:
+        if not f or self.position_ >= self.total_frame_count():
             print "No more frames, end of video file. (ferda_compressed_video_manager.py)"
             return None
             # raise Exception("No more frames (" + str(self.position_) + ") in file: " + self.lossless_file_)
@@ -125,7 +126,7 @@ class FerdaCompressedVideoManager(VideoManager):
 
     def previous_frame(self):
         # TODO: not optimal solution
-        if self.position_ > self.start_t:
+        if self.position_ > 0:
             self.position_ -= 1
             return self.seek_frame(self.position_)
 

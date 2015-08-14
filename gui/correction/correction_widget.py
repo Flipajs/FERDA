@@ -119,9 +119,11 @@ class ResultsWidget(QtGui.QWidget):
         self.video_control_layout = QtGui.QVBoxLayout()
         self.video_control_widget.setLayout(self.video_control_layout)
         self.video_control_widget.setMaximumHeight(70)
+        self.video_control_widget.setContentsMargins(0, 0, 0, 0)
 
         self.video_control_buttons_widget = QtGui.QWidget()
         self.video_control_buttons_layout = QtGui.QHBoxLayout()
+        self.video_control_buttons_layout.setContentsMargins(0, 0, 0, 0)
         self.video_control_buttons_widget.setLayout(self.video_control_buttons_layout)
 
         self.video_layout.addWidget(self.graphics_view)
@@ -145,7 +147,7 @@ class ResultsWidget(QtGui.QWidget):
         self.videoSlider = VideoSlider()
         self.videoSlider.setOrientation(QtCore.Qt.Horizontal)
         self.videoSlider.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.videoSlider.setMaximumHeight(10)
+        self.videoSlider.setMaximumHeight(15)
         self.videoSlider.setMaximum(self.video.total_frame_count())
 
         self.video_control_layout.addWidget(self.videoSlider)
@@ -254,8 +256,9 @@ class ResultsWidget(QtGui.QWidget):
             self.scene.addItem(item)
 
             self.starting_frames.setdefault(ch.start_n.frame_, []).append((ch, i))
-            if ch.start_n.frame_ != 0:
-                item.setVisible(False)
+            # if ch.start_n.frame_ != 0:
+
+            item.setVisible(False)
 
             i += 1
 

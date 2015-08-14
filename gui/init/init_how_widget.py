@@ -86,6 +86,7 @@ class InitHowWidget(QtGui.QWidget):
 
         self.class_stats.compute_stats(self.regions, self.classes)
         self.project.mser_parameters.min_area = int(self.class_stats.area_median * 0.2)
+        self.project.stats = self.class_stats
 
         self.finish_callback('init_how_finished', [self.class_stats])
 

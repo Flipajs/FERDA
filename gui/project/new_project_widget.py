@@ -43,9 +43,6 @@ class NewProjectWidget(QtGui.QWidget):
         super(NewProjectWidget, self).__init__()
         self.finish_callback = finish_callback
 
-        self.video_files = None
-        self.working_directory = ''
-
         self.hbox = QtGui.QHBoxLayout()
         self.setLayout(self.hbox)
 
@@ -103,19 +100,18 @@ class NewProjectWidget(QtGui.QWidget):
 
         self.bg_computation = None
 
-        self.video_start_t = -1
-        self.video_end_t = -1
-
         self.video_preview_layout = QtGui.QFormLayout()
         self.hbox.addLayout(self.video_preview_layout)
+
+        self.project = Project()
 
     def select_video_files_clicked(self):
         path = ''
         if os.path.isdir(S_.temp.last_vid_path):
             path = S_.temp.last_vid_path
-        self.video_files = gui.gui_utils.file_names_dialog(self, 'Select video files', filter_="Videos (*.avi *.mkv *.mp4 *.m4v)", path=path)
-        if self.video_files:
-            S_.temp.last_vid_path = os.path.dirname(self.video_files[0])
+        self.project.video_paths = gui.gui_utils.file_names_dialog(self, 'Select video files', filter_="Videos (*.avi *.mkv *.mp4 *.m4v)", path=path)
+        if self.project.video_paths:
+            S_.temp.last_vid_path = os.path.dirname(self.project.video_paths[0])
 
         self.select_working_directory.setFocus()
 
@@ -127,21 +123,16 @@ class NewProjectWidget(QtGui.QWidget):
         self.bg_progress_bar.setValue(val)
 
     def select_working_directory_clicked(self):
-        p = Project()
-        if self.video_files:
-            p.video_paths = self.video_files
-            p.video_start_t = self.video_start_t
-            p.video_end_t = self.video_end_t
-        else:
+        if not self.project.video_paths:
             QtGui.QMessageBox.warning(self, "Warning", "Choose video path first", QtGui.QMessageBox.Ok)
             return
 
-        self.bg_computation = MaxIntensity(p)
+        self.bg_computation = MaxIntensity(self.project)
         self.connect(self.bg_computation, QtCore.SIGNAL("update(int)"), self.update_progress_label)
         self.bg_computation.start()
         self.activateWindow()
 
-        vid = utils.video_manager.get_auto_video_manager(p)
+        vid = utils.video_manager.get_auto_video_manager(self.project)
         im = vid.random_frame()
         h, w, _ = im.shape
         im = np.asarray(skimage.transform.resize(im, (100, 100))*255, dtype=np.uint8)
@@ -166,16 +157,19 @@ class NewProjectWidget(QtGui.QWidget):
         if os.path.isdir(S_.temp.last_wd_path):
             path = S_.temp.last_wd_path
 
-        self.working_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select working directory", path, QtGui.QFileDialog.ShowDirsOnly))
+        working_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select working directory", path, QtGui.QFileDialog.ShowDirsOnly))
 
-        S_.temp.last_wd_path = os.path.dirname(self.working_directory)
+        S_.temp.last_wd_path = os.path.dirname(working_directory)
 
-        if os.path.isdir(self.working_directory):
-            filenames = os.listdir(self.working_directory)
+        if os.path.isdir(working_directory):
+            filenames = os.listdir(working_directory)
             for f in filenames:
-                if os.path.isfile(self.working_directory+'/'+f) and f.endswith('.fproj'):
+                if os.path.isfile(working_directory+'/'+f) and f.endswith('.fproj'):
                     QtGui.QMessageBox.information(None, '', 'This folder is already used for FERDA project, choose different one, please')
                     self.select_working_directory_clicked()
+                    return
+
+        self.project.working_directory = working_directory
 
         self.project_name.setFocus()
 
@@ -197,43 +191,34 @@ class NewProjectWidget(QtGui.QWidget):
         if self.finish_callback:
             self.finish_callback('project_created', project)
 
-    def get_project(self):
-        project = core.project.project.Project()
-        project.name = self.project_name.text()
-        if not len(project.name):
-            project.name = "untitled"
+    def update_project(self):
+        self.project.name = self.project_name.text()
+        if not len(self.project.name):
+            self.project.name = "untitled"
 
-        project.description = str(self.project_description.toPlainText())
-        project.video_paths = self.video_files
-        project.working_directory = self.working_directory
+        self.project.description = str(self.project_description.toPlainText())
 
-        project.bg_model = self.bg_computation
+        self.project.bg_model = self.bg_computation
 
-        project.video_start_t = self.video_start_t
-        project.video_end_t = self.video_end_t
-
-        return project
+        import time
+        self.project.date_created = time.time()
+        self.project.date_last_modifiaction = time.time()
 
     def create_project(self):
-        if self.working_directory == '':
+        if self.project.working_directory == '':
             QtGui.QMessageBox.warning(self, "Warning", "Please choose working directory", QtGui.QMessageBox.Ok)
             return
 
-        project = self.get_project()
+        self.update_project()
 
         if self.finish_callback:
-            self.finish_callback('project_created', project)
+            self.finish_callback('project_created', self.project)
 
     def set_msers(self):
-        p = Project()
-        if self.video_files:
-            p.video_paths = self.video_files
-            p.video_start_t = self.video_start_t
-            p.video_end_t = self.video_end_t
-
+        if self.project.video_paths:
             self.d_ = QtGui.QDialog()
             self.d_.setLayout(QtGui.QVBoxLayout())
-            sm = SetMSERs(p)
+            sm = SetMSERs(self.project)
             self.d_.layout().addWidget(sm)
             self.d_.showMaximized()
             self.d_.exec_()
@@ -241,21 +226,18 @@ class NewProjectWidget(QtGui.QWidget):
             QtGui.QMessageBox.warning(self, "Warning", "Choose video path first", QtGui.QMessageBox.Ok)
 
     def video_boundaries_confirmed(self, w):
-        self.video_start_t= w.start_frame + 1
-        self.video_end_t = w.end_frame
+        self.project.video_start_t = w.start_frame + 1
+        self.project.video_end_t = w.end_frame
 
         w.hide()
         w.setParent(None)
 
     def set_video_bounds(self):
-        p = Project()
-        if self.video_files:
-            p.video_paths = self.video_files
-        else:
+        if not self.project.video_paths:
             QtGui.QMessageBox.warning(self, "Warning", "Choose video path first", QtGui.QMessageBox.Ok)
             return
 
-        w = CropVideoWidget(p)
+        w = CropVideoWidget(self.project)
         button = QtGui.QPushButton('confirm boundaries')
         button.clicked.connect(partial(self.video_boundaries_confirmed, w))
         w.layout().addWidget(button)

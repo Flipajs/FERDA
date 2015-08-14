@@ -43,8 +43,7 @@ class VideoManager():
         if not self.capture.isOpened():
             raise Exception("Cannot open video! Path: " + video_path)
 
-        if self.start_t > 0:
-            self.seek_frame(self.start_t)
+        self.init_video()
 
     def inc_pos_(self, pos, volume=1):
         if pos + volume > self.buffer_length_ - 1:
@@ -67,7 +66,7 @@ class VideoManager():
         if self.dec_pos_(self.buffer_position_) == self.view_position_:
             f, self.buffer_[self.buffer_position_] = self.capture.read()
 
-            if not f or self.end_t == self.position_+1:
+            if not f or self.position_ >= self.total_frame_count():
                 print "No more frames, end of video file. (video_manager.py)"
                 return None
 
@@ -78,7 +77,7 @@ class VideoManager():
         return self.buffer_[self.view_position_]
 
     def previous_frame(self):
-        if self.position_ > self.start_t:
+        if self.position_ > 0:
             self.position_ -= 1
             view_dec = self.dec_pos_(self.view_position_)
             if (view_dec == self.buffer_position_) or (self.buffer_[view_dec] is None):
@@ -89,6 +88,11 @@ class VideoManager():
             else:
                 self.view_position_ = view_dec
                 return self.buffer_[self.view_position_]
+
+    def init_video(self):
+        if self.start_t > 0:
+            # that is enough... when next_frame is called, the position will be processed
+            self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, self.start_t)
 
     def seek_frame(self, frame_number):
         if frame_number < 0 or frame_number >= self.total_frame_count():
@@ -127,7 +131,14 @@ class VideoManager():
         return self.capture.get(cv_compatibility.cv_CAP_PROP_FPS)
 
     def total_frame_count(self):
-        return int(self.capture.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT))
+        vid_frame_num = int(self.capture.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT))
+        if self.end_t < np.inf:
+            vid_frame_num -= vid_frame_num - self.end_t
+
+        if self.start_t > 0:
+            vid_frame_num -= self.start_t
+
+        return vid_frame_num
 
     def reset(self):
         """
@@ -145,7 +156,7 @@ class VideoManager():
         returns copy of VideoManager, might be useful in cases of asynchronous operations (mainly seeking) on video
         while you want to maintain right position in original one.
         """
-        vid = VideoManager(self.video_path)
+        vid = VideoManager(self.video_path, start_t=self.start_t, end_t=self.end_t)
         vid.seek_frame(self.frame_number())
 
         return vid
@@ -185,31 +196,31 @@ def get_auto_video_manager(project):
 
     file_paths = project.video_paths
 
+    if isinstance(file_paths, list) and len(file_paths) == 1:
+        file_paths = file_paths[0]
+
     if not isinstance(file_paths, list):
         return VideoManager(file_paths, start_t=project.video_start_t, end_t=project.video_end_t)
 
-    if len(file_paths) == 1:
-        return VideoManager(file_paths[0])
-    else:
-        # test which one is the lossless one
-        compressed = file_paths[0]
-        lossless = file_paths[1]
+    # test which one is the lossless one
+    compressed = file_paths[0]
+    lossless = file_paths[1]
 
-        c_v = VideoManager(compressed)
-        c_img = c_v.next_frame()
+    c_v = VideoManager(compressed, start_t=project.video_start_t, end_t=project.video_end_t)
+    c_img = c_v.next_frame()
 
-        l_v = VideoManager(lossless)
-        l_img = l_v.next_frame()
+    l_v = VideoManager(lossless, start_t=project.video_start_t, end_t=project.video_end_t)
+    l_img = l_v.next_frame()
 
-        c_mask = (c_img[:, :, 0] == 255) & (c_img[:, :, 1] == 255) & (c_img[:, :, 2] == 255)
-        l_mask = (l_img[:, :, 0] == 255) & (l_img[:, :, 1] == 255) & (l_img[:, :, 2] == 255)
+    c_mask = (c_img[:, :, 0] == 255) & (c_img[:, :, 1] == 255) & (c_img[:, :, 2] == 255)
+    l_mask = (l_img[:, :, 0] == 255) & (l_img[:, :, 1] == 255) & (l_img[:, :, 2] == 255)
 
-        if sum(sum(c_mask)) > sum(sum(l_mask)):
-            compressed = lossless
-            lossless = file_paths[0]
+    if sum(sum(c_mask)) > sum(sum(l_mask)):
+        compressed = lossless
+        lossless = file_paths[0]
 
-        from utils.ferda_compressed_video_manager import FerdaCompressedVideoManager
-        return FerdaCompressedVideoManager(compressed, lossless, start_t=project.video_start_t, end_t=project.video_end_t)
+    from utils.ferda_compressed_video_manager import FerdaCompressedVideoManager
+    return FerdaCompressedVideoManager(compressed, lossless, start_t=project.video_start_t, end_t=project.video_end_t)
 
 
 def optimize_frame_access(list_data, ra_n_times_slower=40):
@@ -241,3 +252,11 @@ def optimize_frame_access(list_data, ra_n_times_slower=40):
         prev_frame = frame
 
     return result
+
+
+if __name__ == '__main__':
+    from core.project.project import Project
+    p = Project()
+    p.load('/Users/flipajs/Documents/wd/video_bounds_test/test.fproj')
+
+    vid = get_auto_video_manager(p)
