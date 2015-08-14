@@ -55,6 +55,7 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
         else:
             regions[n.frame_] = [n]
 
+        # TODO: use cache again and invalidate it only in case when node margin has changed...
         # if 'img' not in solver.g.node[n]:
         if True:
             im = vid.get_frame(n.frame_, sequence_access=seq)
