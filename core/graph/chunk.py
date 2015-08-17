@@ -9,11 +9,16 @@ from core.region.region import Region
 
 
 class Chunk:
-    def __init__(self, start_n=None, end_n=None, solver=None):
+    def __init__(self, start_n=None, end_n=None, solver=None, store_area=False):
         self.reduced = []
         self.is_sorted = False
         self.start_n = None
         self.end_n = None
+
+        self.statistics = {}
+
+        if store_area:
+            pass
 
         if solver:
             self.set_start(start_n, solver)

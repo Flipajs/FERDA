@@ -39,6 +39,9 @@ class Project:
         self.log = Log()
         self.version = "2.1.1"
 
+        # so for new projects it is True as default but it will still works for the older ones without this support...
+        self.other_parameters.store_area_info = True
+
     def version_is_le(self, ver):
         # returns true if self.version is lower or equal then version
         l1 = string.split(self.version, '.')
