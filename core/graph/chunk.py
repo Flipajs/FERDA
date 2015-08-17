@@ -14,11 +14,12 @@ class Chunk:
         self.is_sorted = False
         self.start_n = None
         self.end_n = None
-
+        self.store_area = store_area
         self.statistics = {}
 
         if store_area:
-            pass
+            self.statistics['area_sum'] = 0
+            self.statistics['area2_sum'] = 0
 
         if solver:
             self.set_start(start_n, solver)
@@ -107,6 +108,10 @@ class Chunk:
         else:
             self.reduced.insert(i, it)
 
+        if self.store_area:
+            self.statistics['area_sum'] += r.area()
+            self.statistics['area2_sum'] += r.area()**2
+
         solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_ADD_TO_REDUCED, {'chunk': self, 'node': r, 'index': i})
         # self.is_sorted = False
 
@@ -116,6 +121,11 @@ class Chunk:
         else:
             r = self.reduced.pop(i)
         solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_REMOVE_FROM_REDUCED, {'chunk': self, 'node': r, 'index': i})
+
+        if self.store_area:
+            self.statistics['area_sum'] -= r.area()
+            self.statistics['area2_sum'] -= r.area()**2
+
         return r
 
     def merge(self, second_chunk, solver, undo_action=False):
@@ -369,13 +379,19 @@ class Chunk:
         else:
             raise Exception("t is out of range of this chunk in chunk.py/split_at_t")
 
+    def get_area_stats(self):
+        """
+        returns mean and standard deviation of area of regions in given chunk
+        :return: (mean, std)
+        """
 
+        n = self.length()
+        sa = self.start_n.area()
+        se = self.end_n.area()
+        a1 = self.statistics['area_sum'] + sa + se
+        a2 = self.statistics['area2_sum'] + sa**2 + se**2
 
-
-
-
-
-
-
-
-
+        mean = a1
+        std = ((n*a2 - a1**2) / (n**2))**0.5
+        # std = ((n*a2 - a1**2) / (n*(n-1))**0.5
+        return mean, std

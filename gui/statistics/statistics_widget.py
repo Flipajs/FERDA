@@ -101,6 +101,9 @@ class StatisticsWidget(QtGui.QWidget):
         for ch in chunks:
             d = {'x': [], 'y': [], 'frame': []}
 
+            if self.project.other_parameters.store_area_info:
+                d['area_mean'], d['area_std'] = ch.get_area_stats()
+
             self.add_line_mat(d, ch.start_n)
             for r in ch.reduced:
                 self.add_line_mat(d, r)

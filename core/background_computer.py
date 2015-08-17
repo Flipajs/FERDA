@@ -31,7 +31,7 @@ class BackgroundComputer():
         self.start = 0
 
         # TODO: Settings
-        self.frames_in_row = S_.parallelization.frames_in_row
+        self.frames_in_row = project.solver_parameters.frames_in_row
         self.frames_in_row_last = -1
         self.part_num = -1
 

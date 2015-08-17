@@ -7,3 +7,4 @@ class SolverParameters():
         self.antlikeness_threshold = 0.1
         self.certainty_threshold = 0.3
         self.global_view_min_chunk_len = 0
+        self.frames_in_row = 100
