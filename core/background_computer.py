@@ -26,8 +26,7 @@ class BackgroundComputer():
         self.project = project
         self.process_n = S_.parallelization.processes_num
         self.results = []
-        self.\
-            update_callback = update_callback
+        self.update_callback = update_callback
         self.finished_callback = finished_callback
         self.start = 0
 
@@ -124,6 +123,16 @@ class BackgroundComputer():
                     nodes_to_process += start_nodes
 
                 nodes_to_process += end_nodes
+
+                # check last and start frames...
+                start_t = self.project.solver_parameters.frames_in_row * i
+                for n in end_nodes_prev:
+                    if n.frame_ != start_t - 1:
+                        end_nodes_prev.remove(n)
+
+                for n in start_nodes:
+                    if n.frame_ != start_t:
+                        start_nodes.remove(n)
 
                 self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
                 end_nodes_prev = end_nodes
