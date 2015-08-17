@@ -8,8 +8,11 @@ from PyQt4 import QtGui, QtCore
 
 
 class MSERTree(QtGui.QWidget):
-    def __init__(self, img):
+    def __init__(self, img, project):
         super(MSERTree, self).__init__()
+
+        self.img = img
+        self.project = project
 
         self.setLayout(QtGui.QVBoxLayout())
 
@@ -25,6 +28,11 @@ class MSERTree(QtGui.QWidget):
 
         pass
 
+    def get_regions(self):
+        regions = get_msers_(self.img, self.project)
+
+        for r in regions:
+            print r.area(), r.label()
 
 
 if __name__ == "__main__":
@@ -36,12 +44,7 @@ if __name__ == "__main__":
     p.mser_parameters.min_area = 30
     p.mser_parameters.min_margin = 5
 
-    regions = get_msers_(im, p)
-
-    for r in regions:
-        print r.area(), r.label()
-
-    ex = MSERTree(None)
+    ex = MSERTree(im, p)
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()
