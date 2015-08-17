@@ -103,7 +103,7 @@ class FerdaCompressedVideoManager(VideoManager):
 
     def next_frame(self):
         """
-        returns next next combined image if exists, else raises exception
+        returns next combined image if exists, else raises exception
         """
 
         f, self.lossless_img_ = self.capture_lossless_.read()
@@ -128,6 +128,10 @@ class FerdaCompressedVideoManager(VideoManager):
         return self.combined_img_
 
     def previous_frame(self):
+        """
+
+        :return:
+        """
         # TODO: not optimal solution
         if self.position_ > 0:
             self.position_ -= 1
@@ -135,8 +139,10 @@ class FerdaCompressedVideoManager(VideoManager):
 
     def seek_frame(self, frame_number):
         """
-        :type frame_number: int
         returns sought frame if exists, else raises exception
+
+        :param frame_number: int
+        :return: img
         """
 
         if frame_number < 0 or frame_number >= self.total_frame_count():
