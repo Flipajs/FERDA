@@ -463,7 +463,7 @@ class Solver:
                             ch_in.append_right(n, self)
                             ch_in.append_right(out_n, self)
                         else:
-                            chunk = Chunk(in_n, n, self)
+                            chunk = Chunk(in_n, n, self, store_area=self.project.other_parameters.store_area_info)
                             chunk.append_right(out_n, self)
             # except:
             #     pass

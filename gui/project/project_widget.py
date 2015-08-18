@@ -13,7 +13,7 @@ from gui.settings.settings_dialog import SettingsDialog
 from core.project.compatibility_solver import CompatibilitySolver
 
 class ProjectLoader(QtCore.QThread):
-    proc_done = QtCore.pyqtSignal(bool)
+    proc_done = QtCore.pyqtSignal(object)
     part_done = QtCore.pyqtSignal(float)
 
     def __init__(self, project, path):
@@ -26,7 +26,7 @@ class ProjectLoader(QtCore.QThread):
         self.project.load(self.path)
         cs = CompatibilitySolver(self.project)
         self.project.load(self.path)
-        self.proc_done.emit(True)
+        self.proc_done.emit(self.project)
 
 
 class ProjectWidget(QtGui.QWidget):
@@ -61,8 +61,8 @@ class ProjectWidget(QtGui.QWidget):
         if self.finish_callback:
             self.finish_callback('new_project')
 
-    def loading_finished(self, project, w):
-        w.hide()
+    def loading_finished(self, project):
+        # w.hide()
         self.finish_callback('load_project', project)
 
     def load_project(self):
@@ -79,7 +79,8 @@ class ProjectWidget(QtGui.QWidget):
             QtGui.QApplication.processEvents()
 
             self.loading_thread = ProjectLoader(project, f)
-            self.loading_thread.proc_done.connect(partial(self.loading_finished, project, loading_w))
+            # self.loading_thread.proc_done.connect(partial(self.loading_finished, project, loading_w))
+            self.loading_thread.proc_done.connect(self.loading_finished)
             self.loading_thread.part_done.connect(loading_w.update_progress)
             self.loading_thread.start()
 

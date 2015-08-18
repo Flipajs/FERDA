@@ -37,7 +37,7 @@ class Project:
         self.other_parameters = OtherParameters()
         self.solver_parameters = SolverParameters()
         self.log = Log()
-        self.version = "2.2.1"
+        self.version = "2.2.2"
 
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
@@ -104,7 +104,7 @@ class Project:
         p.mser_parameters = self.mser_parameters
         p.other_parameters = self.other_parameters
         p.solver_parameters = self.solver_parameters
-        p.version = self.version = "2.1.1"
+        p.version = self.version
 
         p.date_created = self.date_created
         import time

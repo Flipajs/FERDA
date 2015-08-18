@@ -341,7 +341,7 @@ class Chunk:
                 # ----- building second chunk -----
 
                 # remove node_t we already have
-                ch2 = Chunk()
+                ch2 = Chunk(store_area=self.store_area)
                 ch2.start_n = self.reduced.pop(pos+1)
                 ch2.start_n = self.reconstruct(ch2.start_n, solver.project)
                 ch2.end_n = self.end_n

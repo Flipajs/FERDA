@@ -101,15 +101,16 @@ class StatisticsWidget(QtGui.QWidget):
         for ch in chunks:
             d = {'x': [], 'y': [], 'frame': []}
 
-            if self.project.other_parameters.store_area_info:
-                d['area_mean'], d['area_std'] = ch.get_area_stats()
-
             self.add_line_mat(d, ch.start_n)
             for r in ch.reduced:
                 self.add_line_mat(d, r)
 
             self.add_line_mat(d, ch.end_n)
-            obj_arr.append({'id': id_, 'x': np.array(d['x']), 'y': np.array(d['y']), 'frame': np.array(d['frame'])})
+            if self.project.other_parameters.store_area_info:
+                mean, std = ch.get_area_stats()
+                obj_arr.append({'id': id_, 'x': np.array(d['x']), 'y': np.array(d['y']), 'frame': np.array(d['frame']), 'area_mean': mean, 'area_std': std})
+            else:
+                obj_arr.append({'id': id_, 'x': np.array(d['x']), 'y': np.array(d['y']), 'frame': np.array(d['frame'])})
             id_ += 1
 
         with open(self.get_out_path()+'.mat', 'wb') as f:

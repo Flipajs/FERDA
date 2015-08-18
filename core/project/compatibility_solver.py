@@ -8,10 +8,10 @@ class CompatibilitySolver():
     def __init__(self, project):
         self.project = project
 
-        if project.version_is_le('2.1.1'):
-            print "PROJECT version is < 2.2.1"
+        if project.version_is_le('2.2.1'):
+            print "PROJECT version is <= 2.2.1, there were changes in chunks in recent versions... Will try to solve it..."
             self.fix_chunks()
-            self.project.version = "2.2.1"
+            self.project.version = "2.2.2"
             self.project.save()
 
     def fix_chunks(self):
