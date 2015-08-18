@@ -1,11 +1,13 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from gui.tracker.tracker_widget import TrackerWidget
 from gui.correction.correction_widget import ResultsWidget
 from gui.statistics.statistics_widget import StatisticsWidget
 
 from core.background_computer import BackgroundComputer
+from functools import partial
+
 
 class MainTabWidget(QtGui.QWidget):
     def __init__(self, finish_callback, project):
@@ -26,6 +28,11 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.addTab(self.tracker_tab, "tracking")
         self.tabs.addTab(self.results_tab, "results viewer")
         self.tabs.addTab(self.statistics_tab, "stats && results")
+
+        self.switch_to_tracking_window_action = QtGui.QAction('switch tab to tracking', self)
+        self.switch_to_tracking_window_action.triggered.connect(partial(self.tabs.setCurrentIndex, 0))
+        self.switch_to_tracking_window_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
+        self.addAction(self.switch_to_tracking_window_action)
         
         self.vbox.addWidget(self.tabs)
 
