@@ -14,9 +14,12 @@ class CompatibilitySolver():
             self.project.version = "2.2.2"
             # self.project.save()
 
+        elif project.version_is_le('2.2.2'):
+            print "PROJECT version is <= 2.2.2, there was major speedup of saving and loading in recent versions... Hold on, the project will be repaired."
+            self.resave_with_new_protocol()
+
     def fix_chunks(self):
         "PRINT compatibility fix in progress..."
-
         try:
             val = self.project.solver_parameters.frames_in_row
         except:
@@ -53,7 +56,39 @@ class CompatibilitySolver():
                             ch.store_area = False
 
                 with open(self.project.working_directory+'/temp/g_simplified'+str(id)+'.pkl', 'wb') as f:
-                    p = pickle.Pickler(f)
+                    p = pickle.Pickler(f, -1)
+                    p.dump(g_)
+                    p.dump(start_nodes)
+                    p.dump(end_nodes)
+
+            except:
+                pass
+
+        self.project.saved_progress
+
+    def resave_with_new_protocol(self):
+        # fix saved progress...
+        if self.project.saved_progress:
+            solver = self.project.saved_progress['solver']
+            g = solver.g
+
+            solver.save()
+
+        # fix temp files...
+        vid = get_auto_video_manager(self.project)
+        frame_num = int(vid.total_frame_count())
+        part_num = int(frame_num / self.project.solver_parameters.frames_in_row)
+
+        for i in range(part_num):
+            try:
+                with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
+                    up = pickle.Unpickler(f)
+                    g_ = up.load()
+                    start_nodes = up.load()
+                    end_nodes = up.load()
+
+                with open(self.project.working_directory+'/temp/g_simplified'+str(id)+'.pkl', 'wb') as f:
+                    p = pickle.Pickler(f, -1)
                     p.dump(g_)
                     p.dump(start_nodes)
                     p.dump(end_nodes)
