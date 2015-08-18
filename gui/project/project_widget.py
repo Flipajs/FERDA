@@ -25,7 +25,7 @@ class ProjectLoader(QtCore.QThread):
     def run(self):
         self.project.load(self.path)
         cs = CompatibilitySolver(self.project)
-        self.project.load(self.path)
+        # self.project.load(self.path)
         self.proc_done.emit(self.project)
 
 
