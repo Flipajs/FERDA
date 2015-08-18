@@ -44,6 +44,8 @@ class GlobalView(QtGui.QWidget):
         self.addAction(self.save_progress)
         
         self.tool_w = self.create_tool_w()
+        self.last_margin = -1
+        self.last_node_size = -1
 
     def create_tool_w(self):
         w = QtGui.QWidget()
@@ -113,6 +115,13 @@ class GlobalView(QtGui.QWidget):
         node_size = self.node_size.value()
         margin = self.relative_margin.value()
 
-        w = call_visualizer(start_t, end_t, self.project, self.solver, min_chunk_len, w_loading.update_progress, node_size=node_size, node_margin=margin, show_in_visualizer_callback=self.show_in_visualizer_callback)
+        reset_cache = False
+        if self.last_node_size != node_size or self.last_margin != margin:
+            reset_cache = True
+
+        self.last_node_size = node_size
+        self.last_margin = margin
+
+        w = call_visualizer(start_t, end_t, self.project, self.solver, min_chunk_len, w_loading.update_progress, node_size=node_size, node_margin=margin, show_in_visualizer_callback=self.show_in_visualizer_callback, reset_cache=reset_cache)
         w_loading.hide()
         self.layout().addWidget(w)

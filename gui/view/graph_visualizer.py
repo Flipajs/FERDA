@@ -16,7 +16,7 @@ from core.project.project import Project
 from utils.misc import is_flipajs_pc
 
 
-def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callback=None, node_size=30, node_margin=0.1, show_in_visualizer_callback=None):
+def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callback=None, node_size=30, node_margin=0.1, show_in_visualizer_callback=None, reset_cache=True):
     solver = solver
     if t_start == t_end == -1:
         sub_g = solver.g
@@ -55,9 +55,7 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
         else:
             regions[n.frame_] = [n]
 
-        # TODO: use cache again and invalidate it only in case when node margin has changed...
-        # if 'img' not in solver.g.node[n]:
-        if True:
+        if reset_cache or 'img' not in solver.g.node[n]:
             im = vid.get_frame(n.frame_, sequence_access=seq)
 
             sf = project.other_parameters.img_subsample_factor

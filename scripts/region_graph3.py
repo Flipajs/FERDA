@@ -509,8 +509,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
             # TODO: remove constant...
             to_x = from_x + 50
         else:
-            to_x = from_x
-            from_x -= 50
+            to_x = from_x - self.node_size
+            from_x = to_x - 50
 
         n = n1 if outgoing else n2
         from_y = self.y_step * self.positions[n] + self.node_size / 2
