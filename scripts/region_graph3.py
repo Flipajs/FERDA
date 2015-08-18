@@ -528,6 +528,18 @@ class NodeGraphVisualizer(QtGui.QWidget):
         print "picked ", picked
         print "best_match", best_match
 
+        picked_it = None
+        for it, n in self.nodes_obj.items():
+            if n == picked:
+                picked_it = it
+                break
+
+        if picked_it:
+            try:
+                self.view.centerOn(picked_it.pos())
+            except:
+                pass
+
     def draw_chunk_residual_edge(self, n1, n2, outgoing):
         t = n1.frame_ if outgoing else n2.frame_
         t_framenum = self.frames.index(t) * GRAPH_WIDTH

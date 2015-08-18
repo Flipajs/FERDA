@@ -716,7 +716,7 @@ class Solver:
             name = '/temp/__autosave.pkl'
 
         with open(wd+name, 'wb') as f:
-            pc = pickle.Pickler(f)
+            pc = pickle.Pickler(f, -1)
             pc.dump(self.g)
             pc.dump(self.project.log)
             pc.dump(self.ignored_nodes)

@@ -114,7 +114,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         S_.general.log_graph_edits = True
 
         with open(wd+name, 'wb') as f:
-            pc = pickle.Pickler(f)
+            pc = pickle.Pickler(f, -1)
             pc.dump(self.solver.g)
             pc.dump(self.solver.project.log)
             pc.dump(self.solver.ignored_nodes)

@@ -65,7 +65,7 @@ if __name__ == '__main__':
         os.mkdir(proj.working_directory+'/temp')
 
     with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.pkl', 'wb') as f:
-        p = pickle.Pickler(f)
+        p = pickle.Pickler(f, -1)
         p.dump(solver.g)
         p.dump(solver.start_nodes())
         p.dump(solver.end_nodes())
