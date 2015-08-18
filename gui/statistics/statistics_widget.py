@@ -24,7 +24,7 @@ class StatisticsWidget(QtGui.QWidget):
         self.num_of_chunks = QtGui.QLabel('-1')
         self.fbox.addRow('Chunks num:', self.num_of_chunks)
 
-        self.fbox.addRow('Min certainty value: ', self.project.other_parameters.certainty_threshold)
+        self.fbox.addRow('Min certainty value: ', self.project.solver_parameters.certainty_threshold)
 
         self.export_fbox = QtGui.QFormLayout()
         self.vbox.addLayout(self.export_fbox)
