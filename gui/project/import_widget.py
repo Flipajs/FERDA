@@ -2,7 +2,7 @@ __author__ = 'fnaiser'
 
 import os.path
 import sys
-import pickle
+import cPickle as pickle
 
 from PyQt4 import QtGui
 

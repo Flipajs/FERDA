@@ -12,10 +12,15 @@ class CompatibilitySolver():
             print "PROJECT version is <= 2.2.1, there were changes in chunks in recent versions... Will try to solve it..."
             self.fix_chunks()
             self.project.version = "2.2.2"
-            self.project.save()
+            # self.project.save()
 
     def fix_chunks(self):
         "PRINT compatibility fix in progress..."
+
+        try:
+            val = self.project.solver_parameters.frames_in_row
+        except:
+            self.project.solver_parameters.frames_in_row = 100
 
         # fix saved progress...
         if self.project.saved_progress:

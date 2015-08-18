@@ -1,6 +1,6 @@
 __author__ = 'filip@naiser.cz'
 
-import pickle
+import cPickle as pickle
 import string
 
 from PyQt4 import QtCore
