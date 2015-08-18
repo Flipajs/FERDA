@@ -10,7 +10,7 @@ from core.settings import Settings as S_
 from gui.loading_widget import LoadingWidget
 from functools import partial
 from gui.settings.settings_dialog import SettingsDialog
-
+from core.project.compatibility_solver import CompatibilitySolver
 
 class ProjectLoader(QtCore.QThread):
     proc_done = QtCore.pyqtSignal(bool)
@@ -23,6 +23,8 @@ class ProjectLoader(QtCore.QThread):
         self.path = path
 
     def run(self):
+        self.project.load(self.path)
+        cs = CompatibilitySolver(self.project)
         self.project.load(self.path)
         self.proc_done.emit(True)
 

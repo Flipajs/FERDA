@@ -65,7 +65,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.layout().addWidget(self.cc_number_label)
 
         self.autosave_timer = QtCore.QTimer()
-        self.autosave_timer.timeout.connect(partial(self.save, True))
+        self.autosave_timer.timeout.connect(partial(self.solver.save, True))
         # TODO: add interval to settings
         # self.autosave_timer.start(1000*60*10)
         self.order_by = 'time'
@@ -90,21 +90,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         w.layout().addWidget(self.order_by_sb)
 
         return w
-
-    def save(self, autosave=False):
-        wd = self.solver.project.working_directory
-
-        name = '/progress_save.pkl'
-        if autosave:
-            name = '/temp/__autosave.pkl'
-
-        with open(wd+name, 'wb') as f:
-            pc = pickle.Pickler(f)
-            pc.dump(self.solver.g)
-            pc.dump(self.solver.project.log)
-            pc.dump(self.solver.ignored_nodes)
-
-        print "PROGRESS SAVED"
 
     def save_progress_only_chunks(self):
         wd = self.solver.project.working_directory
@@ -766,7 +751,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.addAction(self.action9)
 
         self.save_progress = QtGui.QAction('save', self)
-        self.save_progress.triggered.connect(self.save)
+        self.save_progress.triggered.connect(self.solver.save)
         self.save_progress.setShortcut(S_.controls.save)
         self.addAction(self.save_progress)
 

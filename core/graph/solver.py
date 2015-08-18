@@ -704,3 +704,21 @@ class Solver:
             raise Exception("ERROR in solver... len(chunks) != len(set(chunks))")
 
         return chunks
+
+    def save(self, autosave=False):
+        print "SAVING PROGRESS... Wait please"
+        import cPickle as pickle
+
+        wd = self.project.working_directory
+
+        name = '/progress_save.pkl'
+        if autosave:
+            name = '/temp/__autosave.pkl'
+
+        with open(wd+name, 'wb') as f:
+            pc = pickle.Pickler(f)
+            pc.dump(self.g)
+            pc.dump(self.project.log)
+            pc.dump(self.ignored_nodes)
+
+        print "PROGRESS SAVED"
