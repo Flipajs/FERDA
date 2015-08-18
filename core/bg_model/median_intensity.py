@@ -92,7 +92,7 @@ if __name__ == '__main__':
     while True:
         im = vid.random_frame()
         cv2.imshow('orig', im)
-        processed = np.subtract(np.asarray(bg.bg_model, dtype=np.int32), np.asarray(im, dtype=np.int32))
+        processed = np.subtract(0.8 * np.asarray(bg.bg_model, dtype=np.int32), np.asarray(im, dtype=np.int32))
         processed += -np.min(processed)
         print np.min(processed), np.max(processed)
 
