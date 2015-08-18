@@ -22,22 +22,6 @@ from gui.init.crop_video_widget import CropVideoWidget
 from functools import partial
 
 
-class BGSub(threading.Thread):
-    def __init__(self, vid, update_callback):
-        super(BGSub, self).__init__()
-        self.running = False
-        self.vid = vid
-        self.update_callback = update_callback
-
-    def run(self):
-        print "COMPUTING BG...."
-        num_of_steps = 50
-        for i in range(num_of_steps):
-            self.update_callback(int(100*(i+1)/float(num_of_steps)))
-
-            im = self.vid.random_frame()
-
-
 class NewProjectWidget(QtGui.QWidget):
     def __init__(self, finish_callback):
         super(NewProjectWidget, self).__init__()
