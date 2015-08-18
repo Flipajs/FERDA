@@ -9,6 +9,7 @@ import gui.gui_utils
 from core.settings import Settings as S_
 from gui.loading_widget import LoadingWidget
 from functools import partial
+from gui.settings.settings_dialog import SettingsDialog
 
 
 class ProjectLoader(QtCore.QThread):
@@ -29,16 +30,19 @@ class ProjectLoader(QtCore.QThread):
 class ProjectWidget(QtGui.QWidget):
     def __init__(self, finish_callback=None):
         super(ProjectWidget, self).__init__()
-        self.layout = QtGui.QVBoxLayout(self)
-        self.setLayout(self.layout)
+        self.setLayout(QtGui.QVBoxLayout())
         self.finish_callback = finish_callback
 
+        self.settings_button = QtGui.QPushButton('Settings')
+        self.settings_button.clicked.connect(self.show_settings)
+        self.layout().addWidget(self.settings_button)
+        
         self.new_project_button = QtGui.QPushButton('New Project', self)
-        self.layout.addWidget(self.new_project_button)
+        self.layout().addWidget(self.new_project_button)
         self.new_project_button.clicked.connect(self.new_project)
 
         self.load_project_button = QtGui.QPushButton('LoadProject', self)
-        self.layout.addWidget(self.load_project_button)
+        self.layout().addWidget(self.load_project_button)
         self.load_project_button.clicked.connect(self.load_project)
 
         self.new_project_button.setFixedHeight(100)
@@ -46,6 +50,10 @@ class ProjectWidget(QtGui.QWidget):
 
         self.loading_thread = None
         self.update()
+
+    def show_settings(self):
+        dialog = SettingsDialog(self)
+        dialog.exec_()
 
     def new_project(self):
         if self.finish_callback:
@@ -65,7 +73,7 @@ class ProjectWidget(QtGui.QWidget):
             project = core.project.project.Project()
 
             loading_w = LoadingWidget(text='Loading project... Probably the progress bar won\'t move... But at least this will prevent window freezing')
-            self.layout.addWidget(loading_w)
+            self.layout().addWidget(loading_w)
             QtGui.QApplication.processEvents()
 
             # project.load(f)

@@ -8,8 +8,8 @@ from gui.init.init_widget import InitWidget
 from gui.project import project_widget, new_project_widget
 from gui.main_tab_widget import MainTabWidget
 import core.project.project
-from gui.settings.settings_dialog import SettingsDialog
 from core.settings import Settings as S_
+from gui.settings.settings_dialog import SettingsDialog
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -32,13 +32,9 @@ class MainWindow(QtGui.QMainWindow):
         self.project_widget = project_widget.ProjectWidget(self.widget_control)
         self.central_widget.addWidget(self.project_widget)
 
-        self.settings_button = QtGui.QPushButton('Settings')
-        self.settings_button.clicked.connect(self.show_settings)
-        self.layout().addWidget(self.settings_button)
-
         self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
         self.setWindowTitle('FERDA')
-        self.setGeometry(100, 100, 700, 400)
+        # self.setGeometry(100, 100, 700, 400)
 
         self.settings_action = QtGui.QAction('&Settings', self.centralWidget())
         self.settings_action.triggered.connect(self.show_settings)
@@ -57,7 +53,6 @@ class MainWindow(QtGui.QMainWindow):
         event.accept()
 
     def widget_control(self, state, values=None):
-        self.settings_button.hide()
         if state == 'new_project':
             self.new_project_widget = new_project_widget.NewProjectWidget(self.widget_control)
             self.central_widget.addWidget(self.new_project_widget)
@@ -91,7 +86,6 @@ class MainWindow(QtGui.QMainWindow):
 
         if state == 'new_project_back':
             self.central_widget.setCurrentWidget(self.project_widget)
-            self.settings_button.show()
 
         if state == 'initialization_finished':
             self.project.save()
@@ -100,12 +94,12 @@ class MainWindow(QtGui.QMainWindow):
             self.central_widget.addWidget(self.main_tab_widget)
             self.central_widget.setCurrentWidget(self.main_tab_widget)
 
+    def control_widget_exit(self):
+        self.close()
+
     def show_settings(self):
         dialog = SettingsDialog(self)
         dialog.exec_()
-
-    def control_widget_exit(self):
-        self.close()
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
