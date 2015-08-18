@@ -168,6 +168,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.lower_widgets = [self.clear_all_button, self.info_label_lower, self.aux_space_lower]
         self.widgets_hide(self.lower_widgets)
 
+        self.suggest_node = True
+
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
         self.selected_edge[1] = click_pos
@@ -459,6 +461,45 @@ class NodeGraphVisualizer(QtGui.QWidget):
                 t_.setPos(self.x_step * f_num + self.node_size * 0.2, -20)
                 self.scene.addItem(t_)
 
+        if self.suggest_node:
+            self.auto_pick_node(nodes_queue)
+
+    def auto_pick_node(self, nodes):
+        picked = None
+        for n in nodes:
+            is_ch, t_reversed, ch = self.solver.is_chunk(n)
+
+            if is_ch and t_reversed:
+                if not picked:
+                    picked = n
+                elif picked.frame_ > n.frame_:
+                    picked = n
+
+        best_match = None
+        dist_t = np.inf
+        dist_e = np.inf
+
+        for n in nodes:
+            if n == picked:
+                continue
+
+            is_ch, t_reversed, ch = self.solver.is_chunk(n)
+            if t_reversed:
+                continue
+
+            dt = n.frame_ - picked.frame_
+            if 0 < dt <= dist_t:
+                de = np.linalg.norm(n.centroid() - picked.centroid())
+                if dist_e >= de:
+                    dist_e = de
+                    dist_t = dt
+                    best_match = n
+
+        self.node_label_update(picked)
+        self.node_label_update(best_match)
+        print "picked ", picked
+        print "best_match", best_match
+
     def draw_chunk_residual_edge(self, n1, n2, outgoing):
         t = n1.frame_ if outgoing else n2.frame_
         t_framenum = self.frames.index(t) * GRAPH_WIDTH
@@ -523,6 +564,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.show_in_visualizer_callback(n)
 
     def connect_chunks(self):
+        print "connecting"
         n1 = self.boxes[0][3]
         n2 = self.boxes[1][3]
 

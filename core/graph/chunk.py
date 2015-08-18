@@ -108,9 +108,13 @@ class Chunk:
         else:
             self.reduced.insert(i, it)
 
+        # TODO: remove this hack... we don't know reduced area...
         if self.store_area:
-            self.statistics['area_sum'] += r.area()
-            self.statistics['area2_sum'] += r.area()**2
+            # self.statistics['area_sum'] += r.area()
+            # self.statistics['area2_sum'] += r.area()**2
+            ma = self.statistics['area_sum'] / (self.length()-1)
+            self.statistics['area_sum'] += ma
+            self.statistics['area2_sum'] += ma**2
 
         solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_ADD_TO_REDUCED, {'chunk': self, 'node': r, 'index': i})
         # self.is_sorted = False
@@ -122,9 +126,14 @@ class Chunk:
             r = self.reduced.pop(i)
         solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_REMOVE_FROM_REDUCED, {'chunk': self, 'node': r, 'index': i})
 
+        # TODO: remove this hack... we don't know reduced area...
         if self.store_area:
-            self.statistics['area_sum'] -= r.area()
-            self.statistics['area2_sum'] -= r.area()**2
+            # self.statistics['area_sum'] -= r.area()
+            # self.statistics['area2_sum'] -= r.area()**2
+
+            ma = self.statistics['area_sum'] / (self.length()+1)
+            self.statistics['area_sum'] -= ma
+            self.statistics['area2_sum'] -= ma**2
 
         return r
 
