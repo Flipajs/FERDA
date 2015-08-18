@@ -15,6 +15,7 @@ from gui.gui_utils import SelectableQLabel
 from core.settings import Settings as S_
 from utils.img import prepare_for_segmentation
 import time
+import numpy as np
 
 
 class SetMSERs(QtGui.QWidget):
@@ -124,7 +125,7 @@ class SetMSERs(QtGui.QWidget):
 
         img_ = prepare_for_segmentation(img_, self.project, grayscale_speedup=True)
 
-        img_vis = self.im.copy()
+        img_vis = np.zeros((img_.shape[0], img_.shape[1], 3), dtype=np.uint8)
         img_vis[:,:,0] = img_
         img_vis[:,:,1] = img_
         img_vis[:,:,2] = img_
