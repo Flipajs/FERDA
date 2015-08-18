@@ -36,7 +36,7 @@ class ProjectWidget(QtGui.QWidget):
         self.settings_button = QtGui.QPushButton('Settings')
         self.settings_button.clicked.connect(self.show_settings)
         self.layout().addWidget(self.settings_button)
-        
+
         self.new_project_button = QtGui.QPushButton('New Project', self)
         self.layout().addWidget(self.new_project_button)
         self.new_project_button.clicked.connect(self.new_project)
@@ -75,9 +75,6 @@ class ProjectWidget(QtGui.QWidget):
             loading_w = LoadingWidget(text='Loading project... Probably the progress bar won\'t move... But at least this will prevent window freezing')
             self.layout().addWidget(loading_w)
             QtGui.QApplication.processEvents()
-
-            # project.load(f)
-            # self.loading_finished(project, loading_w)
 
             self.loading_thread = ProjectLoader(project, f)
             self.loading_thread.proc_done.connect(partial(self.loading_finished, project, loading_w))

@@ -86,6 +86,14 @@ class NewProjectWidget(QtGui.QWidget):
         self.import_widget.import_button.clicked.connect(self.finish_import)
         self.import_widget.hide()
 
+        self.certainty_slider = QtGui.QDoubleSpinBox()
+        self.certainty_slider.setMinimum(0)
+        self.certainty_slider.setMaximum(1)
+        self.certainty_slider.setSingleStep(0.01)
+        self.certainty_slider.setValue(0.5)
+        self.form_layout.addRow('min certainty: ', self.certainty_slider)
+        self.form_layout.addRow(QtGui.QLabel('0 means try to solve everything...'))
+
         self.create_project_button = QtGui.QPushButton('Create new project', self)
         self.create_project_button.clicked.connect(self.create_project)
 
