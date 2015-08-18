@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 
 from PyQt4 import QtGui
+from PyQt4 import QtCore
 from skimage.transform import resize
 from core.region.mser import get_msers_
 from core.project.project import Project
@@ -56,7 +57,15 @@ class MSERTree(QtGui.QWidget):
                 tmp = 0
 
             # draw image at specified position
-            it.setPos((image_spacing + image_width)*r.label(), (image_spacing + image_width)*tmp)
+            pos_x = (image_spacing + image_width)*r.label()
+            pos_y = (2*image_spacing + image_width)*tmp
+            it.setPos(pos_x, pos_y)
+
+            # add 'margin = ...' text under each image
+            text = QtCore.QString("m = %s" % r.margin_)
+            text_item = QtGui.QGraphicsSimpleTextItem(text, scene=self.scene)
+            text_item.setPos(pos_x, pos_y + image_width)
+
             tmp += 1
 
 
