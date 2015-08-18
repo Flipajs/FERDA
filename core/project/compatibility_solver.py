@@ -17,6 +17,9 @@ class CompatibilitySolver():
         elif project.version_is_le('2.2.2'):
             print "PROJECT version is <= 2.2.2, there was major speedup of saving and loading in recent versions... Hold on, the project will be repaired."
             self.resave_with_new_protocol()
+            self.project.version = "2.2.3"
+            # as the files were opened and resaved, it is solved, so save the new version...
+            self.project.save_project_file_()
 
     def fix_chunks(self):
         "PRINT compatibility fix in progress..."

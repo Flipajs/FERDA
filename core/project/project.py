@@ -53,6 +53,27 @@ class Project:
 
         return True
 
+    def save_project_file_(self):
+        p = Project()
+        p.name = self.name
+        p.description = self.description
+        p.video_paths = self.video_paths
+        p.working_directory = self.working_directory
+        p.video_start_t = self.video_start_t
+        p.video_end_t = self.video_end_t
+
+        p.mser_parameters = self.mser_parameters
+        p.other_parameters = self.other_parameters
+        p.solver_parameters = self.solver_parameters
+        p.version = self.version
+
+        p.date_created = self.date_created
+        import time
+        p.date_last_modifiaction = time.time()
+
+        with open(self.working_directory+'/'+self.name+'.fproj', 'wb') as f:
+            pickle.dump(p.__dict__, f, 2)
+
     def save(self):
         # BG MODEL
         if self.bg_model:
@@ -93,25 +114,7 @@ class Project:
 
         self.save_qsettings()
 
-        p = Project()
-        p.name = self.name
-        p.description = self.description
-        p.video_paths = self.video_paths
-        p.working_directory = self.working_directory
-        p.video_start_t = self.video_start_t
-        p.video_end_t = self.video_end_t
-
-        p.mser_parameters = self.mser_parameters
-        p.other_parameters = self.other_parameters
-        p.solver_parameters = self.solver_parameters
-        p.version = self.version
-
-        p.date_created = self.date_created
-        import time
-        p.date_last_modifiaction = time.time()
-
-        with open(self.working_directory+'/'+self.name+'.fproj', 'wb') as f:
-            pickle.dump(p.__dict__, f, 2)
+        self.save_project_file_()
 
     def save_qsettings(self):
         s = QtCore.QSettings('FERDA')
