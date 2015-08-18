@@ -75,8 +75,6 @@ if __name__ == '__main__':
     bg = MedianIntensity(p, iterations=num_steps)
     bg.compute_model()
 
-
-
     # mi = MaxIntensity(p, iterations=num_steps)
     # mi.compute_model()
 

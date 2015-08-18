@@ -23,6 +23,11 @@ class CompatibilitySolver:
         except:
             self.project.solver_parameters.frames_in_row = 100
 
+        try:
+            val = self.project.other_parameters.store_area_info
+        except:
+            self.project.other_parameters.store_area_info = False
+
         # fix saved progress...
         if self.project.saved_progress:
             solver = self.project.saved_progress['solver']
