@@ -105,6 +105,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         print "NODES", len(self.solver.g)
         S_.general.log_graph_edits = False
         for n in to_remove:
+            if n not in self.solver.g:
+                continue
+
             try:
                 self.solver.strong_remove(n)
             except:

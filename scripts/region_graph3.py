@@ -169,6 +169,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.widgets_hide(self.lower_widgets)
 
         self.suggest_node = True
+        self.node_positions = {}
 
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
@@ -328,6 +329,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         it = self.scene.addPixmap(cvimg2qtpixmap(vis))
         it.setPos(self.x_step * t_num, self.y_step * pos)
+        self.node_positions[n] = (self.x_step * t_num, self.y_step * pos)
         self.nodes_obj[it] = n
         it_ = Pixmap_Selectable(it, self.node_size)
         self.pixmaps[n] = it_
@@ -525,20 +527,9 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         self.node_label_update(picked)
         self.node_label_update(best_match)
-        print "picked ", picked
-        print "best_match", best_match
 
-        # picked_it = None
-        # for it, n in self.nodes_obj.items():
-        #     if n == picked:
-        #         picked_it = it
-        #         break
-        #
-        # if picked_it:
-        #     try:
-        #         self.view.centerOn(picked_it.pos())
-        #     except:
-        #         pass
+        QtGui.QApplication.processEvents()
+        self.view.centerOn(self.pixmaps[picked].scenePos())
 
     def draw_chunk_residual_edge(self, n1, n2, outgoing):
         t = n1.frame_ if outgoing else n2.frame_
@@ -641,7 +632,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.view.setScene(self.scene)
         self.scene.clicked.connect(self.scene_clicked)
 
-        self.layout().addWidget(self.view)
+        self.layout().insertWidget(1, self.view)
 
         if n1:
             self.regions[n1.frame_].remove(n1)
