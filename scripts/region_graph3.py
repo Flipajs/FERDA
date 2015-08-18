@@ -352,6 +352,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.edges_obj[custom_line_] = (n1, n2)
 
     def prepare_positions(self, frames):
+        process_at_the_end = []
         for f in frames:
             for n1 in self.regions[f]:
                 if n1 not in self.g.node:
@@ -359,29 +360,48 @@ class NodeGraphVisualizer(QtGui.QWidget):
                 if n1 in self.positions:
                     continue
 
-                for _, n2, d in self.g.out_edges(n1, data=True):
-                        if n2 in self.positions:
-                            continue
+                is_ch, t_reversed, ch = self.solver.is_chunk(n1)
+                if t_reversed:
+                    continue
 
-                        t1 = n1.frame_
-                        t2 = n2.frame_
+                n2 = ch.end_n
+                # for _, n2, d in self.g.out_edges(n1, data=True):
+                if n2 in self.positions:
+                    continue
 
-                        if t1 not in self.frames or t2 not in self.frames:
-                            continue
+                t1 = n1.frame_
+                t2 = n2.frame_
 
-                        t1_framenum = self.frames.index(t1) * GRAPH_WIDTH
-                        t2_framenum = self.frames.index(t2) * GRAPH_WIDTH
-                        p1 = self.get_nearest_free_slot(t1_framenum, 0)
-                        p2 = self.get_nearest_free_slot(t2_framenum, p1)
+                if t1 not in self.frames:
+                    if t2 in self.frames:
+                        process_at_the_end.append(n2)
+                    continue
 
-                        self.positions[n1] = p1
-                        self.positions[n2] = p2
+                if t2 not in self.frames:
+                    if t1 in self.frames:
+                        process_at_the_end.append(n1)
+                    continue
 
-                        for t in range(t1_framenum, t2_framenum):
-                            if t in self.used_rows:
-                                self.used_rows[t][p1] = True
-                            else:
-                                self.used_rows[t] = {p1: True}
+                # t1_framenum = self.frames.index(t1) * GRAPH_WIDTH
+                # t2_framenum = self.frames.index(t2) * GRAPH_WIDTH
+                p1 = self.get_nearest_free_slot(t1, 0)
+                p2 = self.get_nearest_free_slot(t2, p1)
+
+                self.positions[n1] = p1
+                self.positions[n2] = p2
+
+                for t in range(t1, t2):
+                    if t in self.used_rows:
+                        self.used_rows[t][p1] = True
+                    else:
+                        self.used_rows[t] = {p1: True}
+
+        for n in process_at_the_end:
+            t = n.frame_
+            # t_framenum = self.frames.index(t) * GRAPH_WIDTH
+
+            p = self.get_nearest_free_slot(t, 0)
+            self.positions[n] = p
 
     def get_nearest_free_slot(self, t, pos):
         if t in self.used_rows:
@@ -391,9 +411,11 @@ class NodeGraphVisualizer(QtGui.QWidget):
                 if test_pos > -1 and test_pos not in self.used_rows[t]:
                     self.used_rows[t][test_pos] = True
                     return test_pos
-                if pos + step not in self.used_rows[t]:
-                    self.used_rows[t][pos + step] = True
-                    return pos + step
+
+                test_pos = pos + step
+                if test_pos not in self.used_rows[t]:
+                    self.used_rows[t][test_pos] = True
+                    return test_pos
                 step += 1
         else:
             self.used_rows[t] = {pos: True}
@@ -405,7 +427,6 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         k = np.array(self.regions.keys())
         self.frames = np.sort(k).tolist()
-        self.prepare_positions(self.frames)
 
         nodes_queue = []
 
@@ -430,8 +451,15 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
                     visited[n] = True
                     nodes_queue.append(n)
-                    for e_ in self.g.out_edges(n):
-                        temp_queue.append(e_[1])
+                    if n.frame_ not in self.regions:
+                        self.regions[n.frame_] = [n]
+                    elif n not in self.regions[n.frame_]:
+                        self.regions[n.frame_].append(n)
+
+                    # for e_ in self.g.out_edges(n):
+                    #     temp_queue.append(e_[1])
+
+        self.prepare_positions(self.frames)
 
         for n in nodes_queue:
             try:
