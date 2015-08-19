@@ -89,6 +89,11 @@ if __name__ == '__main__':
     img = scipy.ndimage.gaussian_filter(model, sigma=5)
     cv2.imshow('bg', model)
 
+    from PyQt4 import QtGui, QtCore
+    import sys
+    app = QtGui.QApplication(sys.argv)
+    from gui.view.mser_tree import MSERTree
+
     while True:
         im = vid.random_frame()
         cv2.imshow('orig', im)
@@ -101,5 +106,15 @@ if __name__ == '__main__':
         processed = np.asarray(processed, dtype=np.uint8)
         processed = np.invert(processed)
 
+        ex = MSERTree(processed, p)
+        ex.show()
+        ex.move(-500, -500)
+        ex.showMaximized()
+        ex.setFocus()
+
         cv2.imshow('sub', processed)
         cv2.waitKey(0)
+
+    app.exec_()
+    app.deleteLater()
+    sys.exit()

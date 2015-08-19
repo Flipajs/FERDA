@@ -111,7 +111,7 @@ class MSERTree(QtGui.QWidget):
 
     def focus_on(self, items):
         for item in items:
-            if item is not instance(item, QtGui.QGraphicsPixmapItem):
+            if item is not isinstance(item, QtGui.QGraphicsPixmapItem):
                 items.remove(item)
 
         # create a rectangle with covering all points

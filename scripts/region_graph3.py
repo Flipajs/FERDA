@@ -129,6 +129,16 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.remove_action.setShortcut(S_.controls.remove_chunk)
         self.addAction(self.remove_action)
 
+        self.stop_following_action = QtGui.QAction('stop following', self)
+        self.stop_following_action.triggered.connect(self.stop_following)
+        self.stop_following_action.setShortcut(S_.controls.global_view_stop_following)
+        self.addAction(self.stop_following_action)
+
+        self.ignore_during_suggestions_action = QtGui.QAction('ignore during suggestion', self)
+        self.ignore_during_suggestions_action.triggered.connect(self.ignore_during_suggestions)
+        self.ignore_during_suggestions_action.setShortcut(S_.controls.ignore_case)
+        self.addAction(self.ignore_during_suggestions_action)
+
         self.info_label_lower = QtGui.QLabel()
         self.info_label_lower.setStyleSheet(self.stylesheet_info_label)
         self.info_label_lower.setText("Frame:\nCentroid:\nArea:")
@@ -170,6 +180,17 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         self.suggest_node = True
         self.node_positions = {}
+
+        self.picked_node = None
+        self.ignored_nodes = {}
+
+    def stop_following(self):
+        self.picked_node = None
+
+    def ignore_during_suggestions(self):
+        n1 = self.boxes[0][3]
+        self.ignored_nodes[n1] = True
+        self.update_view()
 
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
@@ -494,16 +515,21 @@ class NodeGraphVisualizer(QtGui.QWidget):
         if self.suggest_node:
             self.auto_pick_node(nodes_queue)
 
-    def auto_pick_node(self, nodes):
-        picked = None
-        for n in nodes:
-            is_ch, t_reversed, ch = self.solver.is_chunk(n)
+    def auto_pick_node(self, nodes, second_try=False):
+        picked = self.picked_node
+        if not self.picked_node:
+            picked = None
+            for n in nodes:
+                if n in self.ignored_nodes:
+                    continue
 
-            if is_ch and t_reversed:
-                if not picked:
-                    picked = n
-                elif picked.frame_ > n.frame_:
-                    picked = n
+                is_ch, t_reversed, ch = self.solver.is_chunk(n)
+
+                if is_ch and t_reversed:
+                    if not picked:
+                        picked = n
+                    elif picked.frame_ > n.frame_:
+                        picked = n
 
         best_match = None
         dist_t = np.inf
@@ -511,6 +537,9 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         for n in nodes:
             if n == picked:
+                continue
+
+            if n in self.ignored_nodes:
                 continue
 
             is_ch, t_reversed, ch = self.solver.is_chunk(n)
@@ -524,6 +553,11 @@ class NodeGraphVisualizer(QtGui.QWidget):
                     dist_e = de
                     dist_t = dt
                     best_match = n
+
+        if not best_match and not second_try:
+            self.picked_node = None
+            self.auto_pick_node(nodes, True)
+            return
 
         self.node_label_update(picked)
         self.node_label_update(best_match)
@@ -622,6 +656,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         ch1.merge_and_interpolate(ch2, self.solver)
 
+        self.picked_node = ch1.end_n
         self.update_view(n1, n2)
 
     def update_view(self, n1=None, n2=None):
@@ -658,6 +693,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
             return
 
         self.solver.strong_remove(n1)
+        self.picked_node = None
         self.update_view(n1)
 
     def onpick(self, event):

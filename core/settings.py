@@ -128,6 +128,7 @@ class Controls:
 
     # global view
     global_view_join_chunks = Item('controls/gv/join_chunks', QtGui.QKeySequence(QtCore.Qt.Key_J))
+    global_view_stop_following = Item('controls/gv/stop_following', QtGui.QKeySequence(QtCore.Qt.Key_S))
 
 
 class Settings:
