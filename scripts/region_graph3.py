@@ -185,9 +185,11 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.ignored_nodes = {}
 
     def stop_following(self):
+        print "STOP following"
         self.picked_node = None
 
     def ignore_during_suggestions(self):
+        print "ignore..."
         n1 = self.boxes[0][3]
         self.ignored_nodes[n1] = True
         self.update_view()
