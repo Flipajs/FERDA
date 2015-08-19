@@ -33,7 +33,6 @@ class MSERTree(QtGui.QWidget):
 
         regions = self.get_regions()
 
-
         # set image size manually
         image_width = 60
         # set image spacing manually
