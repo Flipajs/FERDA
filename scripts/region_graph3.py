@@ -185,13 +185,13 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.ignored_nodes = {}
 
     def stop_following(self):
-        print "STOP following"
         self.picked_node = None
+        self.update_view()
 
     def ignore_during_suggestions(self):
-        print "ignore..."
         n1 = self.boxes[0][3]
         self.ignored_nodes[n1] = True
+        self.picked_node = None
         self.update_view()
 
     def scene_clicked(self, click_pos):
@@ -243,11 +243,11 @@ class NodeGraphVisualizer(QtGui.QWidget):
                 label.setText(str(node.frame_) + "\n" +
                               str(x) + ", " + str(y) + "\n" + str(Region.area(node)))
 
-            if self.box_aux_count % 2 == 0:
-                self.boxes[self.box_aux_count][1] = color = random_hex_color_str()
-            else:
-                self.boxes[self.box_aux_count][1] = color = \
-                    inverted_hex_color_str(self.boxes[self.box_aux_count - 1][1])
+            # if self.box_aux_count % 2 == 0:
+            self.boxes[self.box_aux_count][1] = color = random_hex_color_str()
+            # else:
+            #     self.boxes[self.box_aux_count][1] = color = \
+            #         inverted_hex_color_str(self.boxes[self.box_aux_count - 1][1])
 
             color_alpha = hex2rgb_opacity_tuple(color)
             stylesheet = "font: %spx; color: black; background-color: rgba%s; border-style: dashed; \
@@ -711,13 +711,14 @@ def visualize_nodes(im, r, margin=0.1):
 def random_hex_color_str():
     # color = "#%06x" % random.randint(0, 0xFFFFFF)
     rand_num = random.randint(1, 3)
-    l1 = "0123456789abcdef"
+    l1 = "0123456789ab"
     color = "#"
     for i in range(1, 4):
         if i == rand_num:
             color += "ff"
         else:
-            color += (l1[random.randint(0, 15)] + l1[random.randint(0, 15)])
+            color += (l1[random.randint(0, len(l1)-1)] + l1[random.randint(0, len(l1)-1)])
+
     return color
 
 
