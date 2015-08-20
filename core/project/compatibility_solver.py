@@ -8,6 +8,9 @@ class CompatibilitySolver:
     def __init__(self, project):
         self.project = project
 
+        if project.version_is_le('2.2.4'):
+            raise Exception("Project version is < 2.2.5, if necessary, there will be compability solver implemented in future...")
+
         if project.version_is_le('2.2.2'):
             print "PROJECT version is <= 2.2.2, there was major speedup of saving and loading in recent versions... Hold on, the project will be repaired."
             self.fix_chunks()

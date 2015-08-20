@@ -463,7 +463,7 @@ class Solver:
                             ch_in.append_right(n, self)
                             ch_in.append_right(out_n, self)
                         else:
-                            chunk = Chunk(in_n, n, self, store_area=self.project.other_parameters.store_area_info)
+                            chunk = Chunk(in_n, n, self, store_area=self.project.other_parameters.store_area_info, id=self.project.solver_parameters.new_chunk_id())
                             chunk.append_right(out_n, self)
             # except:
             #     pass
@@ -692,6 +692,16 @@ class Solver:
 
     def end_nodes(self):
         return self.nodes_in_t[self.end_t]
+
+    def chunks_in_frame(self, frame):
+        chunks = self.chunk_list()
+
+        in_frame = []
+        for ch in chunks:
+            if ch.start_t() <= frame <= ch.end_t():
+                in_frame.append(ch)
+
+        return in_frame
 
     def chunk_list(self):
         chunks = []

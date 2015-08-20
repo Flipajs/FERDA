@@ -4,7 +4,7 @@ from PyQt4 import QtGui
 import csv
 import scipy.io as sio
 import numpy as np
-
+from region_reconstruction import RegionReconstruction
 
 class StatisticsWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -51,6 +51,9 @@ class StatisticsWidget(QtGui.QWidget):
         self.export_b = QtGui.QPushButton('export')
         self.export_b.clicked.connect(self.export)
         self.export_fbox.addRow(self.export_b)
+
+        self.region_reconstruction = RegionReconstruction(project, solver=None)
+        self.vbox.addWidget(self.region_reconstruction)
 
     def export(self):
         ftype = self.file_type.currentText()
@@ -168,3 +171,5 @@ class StatisticsWidget(QtGui.QWidget):
         self.solver = solver
         self.num_of_single_nodes.setText(str(len(solver.g.nodes())))
         self.num_of_chunks.setText(str(len(solver.chunk_list())))
+
+        self.region_reconstruction.solver = solver

@@ -9,7 +9,8 @@ from core.region.region import Region
 
 
 class Chunk:
-    def __init__(self, start_n=None, end_n=None, solver=None, store_area=False):
+    def __init__(self, start_n=None, end_n=None, solver=None, store_area=False, id=-1):
+        self.id = id
         self.reduced = []
         self.is_sorted = False
         self.start_n = None
@@ -360,7 +361,7 @@ class Chunk:
                 # ----- building second chunk -----
 
                 # remove node_t we already have
-                ch2 = Chunk(store_area=self.store_area)
+                ch2 = Chunk(store_area=self.store_area, id=solver.project.solver_parameters.new_chunk_id())
                 ch2.start_n = self.reduced.pop(pos+1)
                 ch2.start_n = self.reconstruct(ch2.start_n, solver.project)
                 ch2.end_n = self.end_n
@@ -414,3 +415,17 @@ class Chunk:
         mean = a1 / n
         std = ((n*a2 - a1**2) / (n**2))**0.5
         return mean, std
+
+    def is_virtual_in_time(self, t):
+        red = self.get_reduced_at(t)
+        if red is not None:
+            if isinstance(red, Reduced):
+                return False
+            else:
+                return red.is_virtual
+
+        if self.start_t() == t:
+            return self.start_n.is_virtual
+        elif self.end_t() == t:
+            return self.end_n.is_virtual
+
