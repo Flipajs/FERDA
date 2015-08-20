@@ -38,21 +38,29 @@ if __name__ == '__main__':
 
     img = prepare_for_segmentation(img, proj)
 
-    
+    msers_t = 0
+    solver_t = 0
+    vid_t = 0
 
     solver = Solver(proj)
     for i in range(frames_in_row + last_n_frames):
         frame = id*frames_in_row + i
 
+        s = time.time()
         msers = ferda_filtered_msers(img, proj, frame)
+        msers_t += time.time()-s
 
+        s = time.time()
         img = vid.next_frame()
         if img is None:
             break
 
         img = prepare_for_segmentation(img, proj)
+        vid_t += time.time() - s
 
+        s = time.time()
         solver.add_regions_in_t(msers, frame, fast=True)
+        solver_t += time.time() - s
 
         # if i % 20 == 0:
         #     print
@@ -62,8 +70,12 @@ if __name__ == '__main__':
     # solver.simplify(first_run=True)
     # solver.simplify_to_chunks()
 
+    s = time.time()
     solver.simplify()
     solver.simplify_to_chunks()
+    solver_t += time.time() - s
+
+    print "MSERS t:", msers_t, "SOLVER t: ",solver_t, "VIDEO t:", vid_t
 
     if not os.path.exists(proj.working_directory+'/temp'):
         os.mkdir(proj.working_directory+'/temp')
