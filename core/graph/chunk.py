@@ -18,7 +18,6 @@ class Chunk:
         self.statistics = {}
 
         if store_area:
-            self.areas = []
             self.statistics['num_of_reasonable_regions'] = 0
             self.statistics['area_sum'] = 0
             self.statistics['area2_sum'] = 0
@@ -121,7 +120,6 @@ class Chunk:
             else:
                 ma = r.area()
 
-            self.areas.append(ma)
             self.statistics['num_of_reasonable_regions'] += 1
             self.statistics['area_sum'] += ma
             self.statistics['area2_sum'] += ma**2
@@ -415,5 +413,4 @@ class Chunk:
 
         mean = a1 / n
         std = ((n*a2 - a1**2) / (n**2))**0.5
-        # std = ((n*a2 - a1**2) / (n*(n-1))**0.5
         return mean, std

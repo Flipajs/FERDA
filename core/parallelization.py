@@ -16,7 +16,7 @@ from core.project.project import Project
 from core.settings import Settings as S_
 from utils.img import prepare_for_segmentation
 
-
+import time
 
 if __name__ == '__main__':
     working_dir = sys.argv[1]
@@ -37,6 +37,8 @@ if __name__ == '__main__':
         img = vid.next_frame()
 
     img = prepare_for_segmentation(img, proj)
+
+    
 
     solver = Solver(proj)
     for i in range(frames_in_row + last_n_frames):
