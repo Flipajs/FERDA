@@ -14,7 +14,7 @@ class MyEllipse(QtGui.QGraphicsEllipseItem):
         # self.update_geometry()
 
         if self.update_callback:
-            self.update_callback()
+            self.update_callback(self)
 
 
         return super(MyEllipse, self).mouseReleaseEvent(e)

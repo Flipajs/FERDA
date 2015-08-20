@@ -14,13 +14,9 @@ class ArenaEditor(QtGui.QWidget):
     def __init__(self, img, project):
         super(ArenaEditor, self).__init__()
 
-        # TODO: 1) fix the 'map_to_scene() function', it behaves strangely and sometimes returns wrong numbers
-        # TODO: 2) all '*_items' lists get erased when polygon's shape is modified (callback to 'repaint_polygons()'
-        # TODO:        from 'my_ellipse.py'), although they are still full when the method returns. This causes the
-        # TODO:        modified polygons to be un-erasable
-        # TODO: 3) a warning is thrown when removing items from scene:
-        # TODO:        QGraphicsScene::removeItem: item 0xXXXX's scene (0x0) is different from this scene (0xXXXX)
-        # TODO: 4) the callback in 'my_ellipse' had to be changed to 'mouseReleaseEvent', otherwise it doesn't work
+        # TODO: 1) fix the 'get_scene_pos() function', it behaves strangely and sometimes returns wrong numbers
+        # TODO: 2) when independent points are moved, they get erased
+        # TODO: 3) the callback in 'my_ellipse' had to be changed to 'mouseReleaseEvent', otherwise it doesn't work
 
         self.img = img
         self.project = project
@@ -50,10 +46,10 @@ class ArenaEditor(QtGui.QWidget):
         # self.mode_item =
 
         # draw chosen polygon when 'D' is pressed
-        self.action_draw_polygon = QtGui.QAction('draw_polygon', self)
-        self.action_draw_polygon.triggered.connect(self.draw_polygon)
-        self.action_draw_polygon.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
-        self.addAction(self.action_draw_polygon)
+        self.action_paint_polygon = QtGui.QAction('paint_polygon', self)
+        self.action_paint_polygon.triggered.connect(self.paint_polygon)
+        self.action_paint_polygon.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
+        self.addAction(self.action_paint_polygon)
 
         # clear all that has been drawn and all selected points when 'C' is pressed
         self.action_clear = QtGui.QAction('clear', self)
@@ -91,7 +87,7 @@ class ArenaEditor(QtGui.QWidget):
         for point in self.point_items:
             self.scene.removeItem(point)
 
-        self.debug()
+        # self.debug()
 
     def reset(self):
         # clear view
@@ -102,9 +98,42 @@ class ArenaEditor(QtGui.QWidget):
         self.ellipses_items = []
         self.polygon_items = []
 
-        self.debug()
+        # self.debug()
 
-    def draw_polygon(self):
+    def mousePressEvent(self, event):
+        cursor = QtGui.QCursor()
+        # pos = self.get_scene_pos(cursor.pos())
+        pos = cursor.pos()
+        precision = 20
+
+        ok = True
+        """
+        for pt in self.point_items:
+            # check if the clicked pos isn't too close to any other already chosen point
+            dist = self.get_distance(pt, pos)
+            # print "Distance is: %s" % dist
+            if dist < precision:
+                ok = False
+        """
+        if ok:
+            self.point_items.append(self.paint_point(self.get_scene_pos(pos), precision))
+            # print "Adding [%s, %s] to points" % (pos.x(), pos.y())
+        # else:
+            # print "Point [%s, %s] has already been chosen, ignoring" % (pos.x(), pos.y())
+
+    def get_distance(self, pt_a, pt_b):
+        return math.sqrt((pt_b.x() - pt_a.x()) ** 2 + (pt_b.y() - pt_a.y()) ** 2)
+
+    def paint_point(self, position, size):
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        ellipse = MyEllipse(QtGui.QGraphicsEllipseItem(position.x() - size / 2, position.y() - size / 2, size, size),
+                            update_callback=self.repaint_polygons)
+        ellipse.setBrush(brush)
+        ellipse.setPos(QtCore.QPoint(position.x(), position.y()))
+        self.scene.addItem(ellipse)
+        return ellipse
+
+    def paint_polygon(self):
         # check if polygon can be created
         if len(self.point_items) > 2:
             print "Polygon complete, drawing it"
@@ -116,7 +145,7 @@ class ArenaEditor(QtGui.QWidget):
                 polygon.append(QtCore.QPointF(el.x(), el.y()))
 
             # input the polygon into all polygons' list and draw it
-            self.polygon_items.append(self.draw_polygon_(polygon))
+            self.polygon_items.append(self.paint_polygon_(polygon))
 
             # store all the points (ellipses), too
             self.ellipses_items.append(self.point_items)
@@ -126,63 +155,46 @@ class ArenaEditor(QtGui.QWidget):
         else:
             print "Polygon is too small, pick at least 3 points"
 
-    def draw_polygon_(self, polygon):
+    def paint_polygon_(self, polygon):
         brush = QtGui.QBrush(QtGui.QColor(0, 255, 0))
         brush.setStyle(QtCore.Qt.Dense5Pattern)
         return self.scene.addPolygon(polygon, brush=brush)
 
-    def repaint_polygons(self):
-        print "repainting.."
+    def repaint_polygons(self, my_ellipse):
+        new_pos = QtCore.QPoint(my_ellipse.x(), my_ellipse.y())
+        my_ellipse.setPos(new_pos)
+
         # clear the canvas
         self.clear()
 
-        self.debug()
+        # self.debug()
+        self.polygon_items = []
+        tmp_ellipses = []
+        tmp_points = []
 
         # go through all saved points and recreate the polygons according to the new points' position
         for points in self.ellipses_items:
             polygon = QtGui.QPolygonF()
+            tmp_ellipse = []
             for point in points:
-                polygon.append(QtCore.QPointF(point.x(), point.y()))
-                self.paint_point(QtCore.QPointF(point.x(), point.y()), 10)
-            self.draw_polygon_(polygon)
-        self.debug()
+                qpt = QtCore.QPointF(point.x(), point.y())
+                polygon.append(qpt)
+                tmp_ellipse.append(self.paint_point(qpt, 10))
+            self.polygon_items.append(self.paint_polygon_(polygon))
+            tmp_ellipses.append(tmp_ellipse)
+        self.ellipses_items = tmp_ellipses
 
-    def mousePressEvent(self, event):
-        cursor = QtGui.QCursor()
-        pos = self.map_to_scene(cursor.pos())
+        for point in self.point_items:
+            tmp_points.append(self.paint_point(point, 10))
+        self.point_items = tmp_points
+        # self.debug()
 
-        precision = 20
-
-        ok = True
-        for pt in self.point_items:
-            # check if the clicked pos isn't too close to any other already chosen point
-            dist = self.get_distance(pt, pos)
-            # print "Distance is: %s" % dist
-            if dist < precision:
-                ok = False
-        if ok:
-            self.point_items.append(self.paint_point(pos, precision))
-            print "Adding [%s, %s] to points" % (pos.x(), pos.y())
-        else:
-            print "Point [%s, %s] has already been chosen, ignoring" % (pos.x(), pos.y())
-
-    def get_distance(self, pt_a, pt_b):
-        return math.sqrt((pt_b.x() - pt_a.x()) ** 2 + (pt_b.y() - pt_a.y()) ** 2)
-
-    def paint_point(self, position, size):
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        ellipse = MyEllipse(QtGui.QGraphicsEllipseItem(position.x() - size / 2, position.y() - size / 2, size, size),
-                            update_callback=self.repaint_polygons)
-        ellipse.setBrush(brush)
-        ellipse.setPos(position.x(), position.y())
-        self.scene.addItem(ellipse)
-        return ellipse
-
-    def map_to_scene(self, point):
-        map_pos = self.view.mapToScene(point.x(), point.y())
-        # hotfix
-        map_pos.setY(map_pos.y() - 85)
-        map_pos.setX(map_pos.x() - 15)
+    def get_scene_pos(self, point):
+        map_pos = self.view.mapFromGlobal(point)
+        scene_pos = self.view.mapFromScene(QtCore.QPoint(0, 0))
+        map_pos.setY(map_pos.y() - scene_pos.y())
+        map_pos.setX(map_pos.x() - scene_pos.x())
+        print "Adjusting position of [%s, %s] to [%s, %s]" % (point.x(), point.y(), map_pos.x(), map_pos.y())
         return map_pos
 
     def debug(self):
