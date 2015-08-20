@@ -13,4 +13,3 @@ class MyEllipse(QtGui.QGraphicsEllipseItem):
 
         if self.update_callback:
             self.update_callback(self)
-            
