@@ -109,7 +109,7 @@ class ArenaEditor(QtGui.QWidget):
         self.layout().addWidget(widget)
 
         self.layout().addWidget(self.view)
-        """
+
         self.mask = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
         self.mask[0,0,self.RED] = 255
         #self.mask[0,0, self.ALPHA] = 255
@@ -117,8 +117,8 @@ class ArenaEditor(QtGui.QWidget):
         self.mask[0:100, 0:100, self.RED] = 255
        # self.mask[0:100, 0:100, self.ALPHA] = 255
 
-        self.scene.addPixmap(utils.cvimg2qtpixmap(self.mask))
-        """
+        self.scene.addPixmap(utils.cvimg2qtpixmap(self.mask, transparent=True))
+
 
 
     def switch(self):
