@@ -521,8 +521,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         i = 0
         ignore_node = False
         for a in last_actions:
-            # if a.action_name != ActionNames.CHUNK_REMOVE_FROM_REDUCED and a.action_name != ActionNames.CHUNK_ADD_TO_REDUCED:
-            #     print a
             if a.action_name == ActionNames.ADD_NODE:
                 solver.remove_node(a.data)
             elif a.action_name == ActionNames.REMOVE_NODE:

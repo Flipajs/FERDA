@@ -46,30 +46,31 @@ class CompatibilitySolver:
         part_num = int(frame_num / self.project.solver_parameters.frames_in_row)
 
         for i in range(part_num):
-            with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
-                up = pickle.Unpickler(f)
-                g_ = up.load()
-                start_nodes = up.load()
-                end_nodes = up.load()
+            try:
+                with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
+                    up = pickle.Unpickler(f)
+                    g_ = up.load()
+                    start_nodes = up.load()
+                    end_nodes = up.load()
 
-                from core.graph.solver import Solver
+                    from core.graph.solver import Solver
 
-                solver = Solver(self.project)
-                solver.g = g_
+                    solver = Solver(self.project)
+                    solver.g = g_
 
-                for n in g_:
-                    is_ch, t_reversed, ch = solver.is_chunk(n)
-                    if is_ch and not t_reversed:
-                        ch.store_area = False
+                    for n in g_:
+                        is_ch, t_reversed, ch = solver.is_chunk(n)
+                        if is_ch and not t_reversed:
+                            ch.store_area = False
 
-            with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'wb') as f:
-                p = pickle.Pickler(f, -1)
-                p.dump(g_)
-                p.dump(start_nodes)
-                p.dump(end_nodes)
+                with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'wb') as f:
+                    p = pickle.Pickler(f, -1)
+                    p.dump(g_)
+                    p.dump(start_nodes)
+                    p.dump(end_nodes)
 
-            print i / float(part_num)
-            # except:
-            #     pass
+                print i / float(part_num)
+            except:
+                pass
 
         self.project.saved_progress

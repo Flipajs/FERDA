@@ -18,6 +18,8 @@ class Chunk:
         self.statistics = {}
 
         if store_area:
+            self.areas = []
+            self.statistics['num_of_reasonable_regions'] = 0
             self.statistics['area_sum'] = 0
             self.statistics['area2_sum'] = 0
 
@@ -112,7 +114,15 @@ class Chunk:
         if self.store_area:
             # self.statistics['area_sum'] += r.area()
             # self.statistics['area2_sum'] += r.area()**2
-            ma = self.statistics['area_sum'] / (self.length()-1)
+            n = self.statistics['num_of_reasonable_regions']
+
+            if r.is_virtual:
+                ma = self.statistics['area_sum'] / n
+            else:
+                ma = r.area()
+
+            self.areas.append(ma)
+            self.statistics['num_of_reasonable_regions'] += 1
             self.statistics['area_sum'] += ma
             self.statistics['area2_sum'] += ma**2
 
@@ -131,7 +141,9 @@ class Chunk:
             # self.statistics['area_sum'] -= r.area()
             # self.statistics['area2_sum'] -= r.area()**2
 
-            ma = self.statistics['area_sum'] / (self.length()+1)
+            n = self.statistics['num_of_reasonable_regions']
+            ma = self.statistics['area_sum'] / n
+            self.statistics['num_of_reasonable_regions'] -= 1
             self.statistics['area_sum'] -= ma
             self.statistics['area2_sum'] -= ma**2
 
@@ -394,13 +406,14 @@ class Chunk:
         :return: (mean, std)
         """
 
-        n = self.length()
+        # +2 for start and end nodes
+        n = self.statistics['num_of_reasonable_regions'] + 2
         sa = self.start_n.area()
         se = self.end_n.area()
         a1 = self.statistics['area_sum'] + sa + se
         a2 = self.statistics['area2_sum'] + sa**2 + se**2
 
-        mean = a1
+        mean = a1 / n
         std = ((n*a2 - a1**2) / (n**2))**0.5
         # std = ((n*a2 - a1**2) / (n*(n-1))**0.5
         return mean, std

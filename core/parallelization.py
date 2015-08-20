@@ -16,6 +16,8 @@ from core.project.project import Project
 from core.settings import Settings as S_
 from utils.img import prepare_for_segmentation
 
+
+
 if __name__ == '__main__':
     working_dir = sys.argv[1]
     proj_name = sys.argv[2]
