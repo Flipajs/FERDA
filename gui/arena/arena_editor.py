@@ -104,19 +104,20 @@ class ArenaEditor(QtGui.QWidget):
         cursor = QtGui.QCursor()
         # pos = self.get_scene_pos(cursor.pos())
         pos = cursor.pos()
+        pos = self.get_scene_pos(pos)
         precision = 20
 
         ok = True
-        """
         for pt in self.point_items:
             # check if the clicked pos isn't too close to any other already chosen point
             dist = self.get_distance(pt, pos)
             # print "Distance is: %s" % dist
             if dist < precision:
                 ok = False
-        """
+
         if ok:
-            self.point_items.append(self.paint_point(self.get_scene_pos(pos), precision))
+            print "OK"
+            self.point_items.append(self.paint_point(pos, 10))
             # print "Adding [%s, %s] to points" % (pos.x(), pos.y())
         # else:
             # print "Point [%s, %s] has already been chosen, ignoring" % (pos.x(), pos.y())
@@ -126,8 +127,7 @@ class ArenaEditor(QtGui.QWidget):
 
     def paint_point(self, position, size):
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        ellipse = MyEllipse(QtGui.QGraphicsEllipseItem(position.x() - size / 2, position.y() - size / 2, size, size),
-                            update_callback=self.repaint_polygons)
+        ellipse = MyEllipse(update_callback=self.repaint_polygons)
         ellipse.setBrush(brush)
         ellipse.setPos(QtCore.QPoint(position.x(), position.y()))
         self.scene.addItem(ellipse)
@@ -162,7 +162,7 @@ class ArenaEditor(QtGui.QWidget):
 
     def repaint_polygons(self, my_ellipse):
         new_pos = QtCore.QPoint(my_ellipse.x(), my_ellipse.y())
-        my_ellipse.setPos(new_pos)
+        # my_ellipse.setPos(new_pos)
 
         # clear the canvas
         self.clear()
@@ -185,7 +185,8 @@ class ArenaEditor(QtGui.QWidget):
         self.ellipses_items = tmp_ellipses
 
         for point in self.point_items:
-            tmp_points.append(self.paint_point(point, 10))
+            pos = QtCore.QPoint(point.x(), point.y())
+            tmp_points.append(self.paint_point(pos, 10))
         self.point_items = tmp_points
         # self.debug()
 
@@ -206,7 +207,8 @@ class ArenaEditor(QtGui.QWidget):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
-    im = cv2.imread('/home/dita/PycharmProjects/sample2.png')
+    # im = cv2.imread('/home/dita/PycharmProjects/sample2.png')
+    im = cv2.imread('/Users/flipajs/Desktop/red_vid.png')
     p = Project()
 
     ex = ArenaEditor(im, p)
