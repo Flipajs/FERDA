@@ -200,11 +200,14 @@ class NodeGraphVisualizer(QtGui.QWidget):
         item = self.scene.itemAt(click_pos)
         self.selected_edge[1] = click_pos
 
+        # self.clear_all_button_function()
+
         if not item:
             self.widgets_hide(self.upper_widgets)
             self.widgets_hide(self.lower_widgets)
             for box in self.boxes:
                 box[0].hide()
+
                 # if box[2] != None:
                 #     box[2].setClipped(None)
 
@@ -222,6 +225,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
             parent_pixmap = item.parent_pixmap
             n_ = self.nodes_obj[parent_pixmap]
             self.node_label_update(n_)
+        else:
+            self.clear_all_button_function()
 
     def node_label_update(self, node):
         if self.info_label_lower.isHidden():
@@ -323,6 +328,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
     def clear_all_button_function(self):
         for box in self.boxes:
             box[0].hide()
+            box[3] = None
             if box[2] is not None:
                 box[2].setClipped(None)
 
@@ -627,10 +633,11 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
     def show_in_visualizer(self):
         n = self.boxes[0][3]
+        n2 = self.boxes[1][3]
         if not n:
             return
 
-        self.show_in_visualizer_callback(n)
+        self.show_in_visualizer_callback({'n1': n, 'n2': n2})
 
     def connect_chunks(self):
         n1 = self.boxes[0][3]

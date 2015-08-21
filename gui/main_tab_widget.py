@@ -51,10 +51,10 @@ class MainTabWidget(QtGui.QWidget):
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)
             self.bc_msers.run()
 
-    def show_in_visualizer(self, node):
+    def show_in_visualizer(self, data):
         self.tabs.setCurrentIndex(1)
-        self.results_tab.change_frame(node.frame_)
-        self.results_tab.highlight_area(node.centroid(), radius=100)
+        self.results_tab.change_frame(data['n1'].frame_)
+        self.results_tab.highlight_area(data, radius=100)
 
     def background_computer_finished(self, solver):
         print "GRAPH LOADED"

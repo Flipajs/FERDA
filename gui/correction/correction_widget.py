@@ -184,27 +184,51 @@ class ResultsWidget(QtGui.QWidget):
         self.highlight_timer = QtCore.QTimer()
         self.highlight_timer.timeout.connect(self.decrease_highlight_marker_opacity)
 
+        self.highlight_marker2nd = None
+        self.highlight_marker2nd_frame = -1
+        self.highlight_timer2nd = QtCore.QTimer()
+        from functools import partial
+        self.highlight_timer2nd.timeout.connect(partial(self.decrease_highlight_marker_opacity, True))
+
     def frame_jump(self):
         f = int(self.frameEdit.text())
         self.change_frame(f)
 
-    def decrease_highlight_marker_opacity(self):
-        op = self.highlight_marker.opacity()
+    def decrease_highlight_marker_opacity(self, second=False):
+        if second:
+            op = self.highlight_marker2nd.opacity()
 
-        dec_fact = 0.02
-        if op > 0:
-            if op < 0.2:
-                dec_fact = 0.04
+            dec_fact = 0.02
+            if op > 0:
+                if op < 0.2:
+                    dec_fact = 0.04
 
-            self.highlight_marker.setOpacity(op - dec_fact)
+                self.highlight_marker2nd.setOpacity(op - dec_fact)
 
-            # self.highlight_marker.setVisible(False)
-            # self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(255, 255, 0), 0, self.marker_changed)
-            # self.highlight_marker.setOpacity(0.40)
-            # self.highlight_marker.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
-            # self.scene.addItem(self.highlight_marker)
+                # self.highlight_marker.setVisible(False)
+                # self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(255, 255, 0), 0, self.marker_changed)
+                # self.highlight_marker.setOpacity(0.40)
+                # self.highlight_marker.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
+                # self.scene.addItem(self.highlight_marker)
+            else:
+                self.highlight_timer2nd.stop()
         else:
-            self.highlight_timer.stop()
+            op = self.highlight_marker.opacity()
+
+            dec_fact = 0.02
+            if op > 0:
+                if op < 0.2:
+                    dec_fact = 0.04
+
+                self.highlight_marker.setOpacity(op - dec_fact)
+
+                # self.highlight_marker.setVisible(False)
+                # self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(255, 255, 0), 0, self.marker_changed)
+                # self.highlight_marker.setOpacity(0.40)
+                # self.highlight_marker.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
+                # self.scene.addItem(self.highlight_marker)
+            else:
+                self.highlight_timer.stop()
 
     def marker_changed(self):
         pass
@@ -218,12 +242,20 @@ class ResultsWidget(QtGui.QWidget):
         marker.setVisible(True)
         marker.setPos(c[1] - MARKER_SIZE / 2, c[0] - MARKER_SIZE/2)
 
-    def highlight_area(self, centroid, radius=50):
+    def highlight_area(self, data, radius=50):
+        centroid = data['n1'].centroid()
         self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(167, 255, 36), 0, self.marker_changed)
         self.highlight_marker.setOpacity(0.40)
         self.highlight_marker.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
         self.scene.addItem(self.highlight_marker)
         self.highlight_timer.start(50)
+
+        if data['n2']:
+            self.highlight_marker2nd = markers.CenterMarker(0, 0, radius, QtGui.QColor(36, 255, 167), 0, self.marker_changed)
+            self.highlight_marker2nd.setOpacity(0.40)
+            centroid = data['n2'].centroid()
+            self.highlight_marker2nd.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
+            self.highlight_marker2nd_frame = data['n2'].frame_
 
     def update_positions_optimized(self, frame):
         new_active_markers = []
@@ -325,6 +357,12 @@ class ResultsWidget(QtGui.QWidget):
                 self.update_positions(self.video.frame_number())
             else:
                 self.out_of_frames()
+
+        if self.video.frame_number() == self.highlight_marker2nd_frame:
+            print "SHOW"
+            self.scene.addItem(self.highlight_marker2nd)
+            self.highlight_timer2nd.start(50)
+            self.highlight_marker2nd_frame = -1
 
     def load_previous_frame(self):
         """Loads previous frame of the video if there is such and displays it"""
