@@ -108,6 +108,14 @@ class SetMSERs(QtGui.QWidget):
         self.intensity_threshold.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('intensity threshold (ignore pixels above)', self.intensity_threshold)
 
+        self.min_area_relative = QtGui.QDoubleSpinBox()
+        self.min_area_relative.setMinimum(0.0)
+        self.min_area_relative.setMaximum(1.0)
+        self.min_area_relative.setValue(0.2)
+        self.min_area_relative.setSingleStep(0.02)
+        self.min_area_relative.valueChanged.connect(self.val_changed())
+        self.bottom_row.addRow('min_area = (median of selected regions) * ', self.min_area_relative)
+
         self.random_frame = QtGui.QPushButton('random frame')
         self.random_frame.clicked.connect(self.choose_random_frame)
         self.bottom_row.addRow('', self.random_frame)
