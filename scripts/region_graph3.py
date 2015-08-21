@@ -631,7 +631,6 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.show_in_visualizer_callback(n)
 
     def connect_chunks(self):
-        print "connecting"
         n1 = self.boxes[0][3]
         n2 = self.boxes[1][3]
 
@@ -709,7 +708,6 @@ def visualize_nodes(im, r, margin=0.1):
 
 
 def random_hex_color_str():
-    # color = "#%06x" % random.randint(0, 0xFFFFFF)
     rand_num = random.randint(1, 3)
     l1 = "0123456789ab"
     color = "#"
