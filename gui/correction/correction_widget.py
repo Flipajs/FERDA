@@ -149,6 +149,9 @@ class ResultsWidget(QtGui.QWidget):
         self.video_control_layout.addWidget(self.videoSlider)
         self.video_control_layout.addWidget(self.video_control_buttons_widget)
 
+        self.frame_jump_button = QtGui.QPushButton('jump')
+        self.frame_jump_button.clicked.connect(self.frame_jump)
+
         self.video_control_buttons_layout.addWidget(self.speedSlider)
         self.video_control_buttons_layout.addWidget(self.fpsLabel)
         self.video_control_buttons_layout.addWidget(self.backward)
@@ -156,6 +159,9 @@ class ResultsWidget(QtGui.QWidget):
         self.video_control_buttons_layout.addWidget(self.forward)
         self.video_control_buttons_layout.addWidget(self.showFrame)
         self.video_control_buttons_layout.addWidget(self.frameEdit)
+        self.video_control_buttons_layout.addWidget(self.frame_jump_button)
+
+        self.setTabOrder(self.frameEdit, self.frame_jump_button)
 
         self.connect_GUI()
 
@@ -177,6 +183,10 @@ class ResultsWidget(QtGui.QWidget):
         self.highlight_marker = None
         self.highlight_timer = QtCore.QTimer()
         self.highlight_timer.timeout.connect(self.decrease_highlight_marker_opacity)
+
+    def frame_jump(self):
+        f = int(self.frameEdit.text())
+        self.change_frame(f)
 
     def decrease_highlight_marker_opacity(self):
         op = self.highlight_marker.opacity()

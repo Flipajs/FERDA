@@ -312,6 +312,10 @@ class CaseWidget(QtGui.QWidget):
         cols = len(self.nodes_groups)
         self.cols = cols
 
+        # in case when there is only end of chunk missing region...
+        if self.cols == 1:
+            self.cols += 1
+
         whole_grid = False
         light_stripes = False
 

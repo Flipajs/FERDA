@@ -283,7 +283,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.active_cw.active_node = None
             self.scenes_widget.layout().addWidget(self.active_cw)
 
-
     def best_greedy_config(self, nodes_groups):
         config = {}
         for i in range(len(nodes_groups) - 1):
@@ -390,7 +389,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         return objects
 
-    def fitting(self, t_reversed=False):
+    def fitting(self, t_reversed=False, one_step=False):
         if self.active_cw.active_node:
             self.project.log.add(LogCategories.USER_ACTION,
                                  ActionNames.MERGED_SELECTED,
@@ -431,6 +430,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                     model = deepcopy(f.animals)
                     for m in model:
                         m.frame_ += -1 if t_reversed else 1
+
+                    if one_step:
+                        break
 
                     i += 1
 
@@ -775,5 +777,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.new_region_t_action.triggered.connect(partial(self.new_region, -1))
         self.new_region_t_action.setShortcut(S_.controls.new_region)
         self.addAction(self.new_region_t_action)
+
+        self.fitting_one_step_a = QtGui.QAction('fitting one step', self)
+        self.fitting_one_step_a.triggered.connect(partial(self.fitting, False, True))
+        self.fitting_one_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_F))
+        self.addAction(self.fitting_one_step_a)
 
         self.d_ = None

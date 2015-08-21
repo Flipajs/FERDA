@@ -582,11 +582,11 @@ class Solver:
 
             self.g[n1][n2]['type'] = EDGE_CONFIRMED
 
-        affected = list(affected)
-        all_affected = list(self.simplify(affected[:], return_affected=True))
-        all_affected = list(set(all_affected + affected))
-
-        self.simplify_to_chunks(all_affected)
+        # affected = list(affected)
+        # all_affected = list(self.simplify(affected[:], return_affected=True))
+        # all_affected = list(set(all_affected + affected))
+        #
+        self.simplify_to_chunks()
 
     def get_chunk_node_partner(self, n):
         for n_, _, d in self.g.in_edges(n, data=True):

@@ -116,10 +116,19 @@ class Chunk:
             # self.statistics['area2_sum'] += r.area()**2
             n = self.statistics['num_of_reasonable_regions']
 
-            if r.is_virtual:
-                ma = self.statistics['area_sum'] / n
+            if isinstance(r, Reduced):
+                if n == 0:
+                    ma = (self.start_n.area() + self.end_n.area()) / 2
+                else:
+                    ma = self.statistics['area_sum'] / n
             else:
-                ma = r.area()
+                if r.is_virtual:
+                    if n == 0:
+                        ma = (self.start_n.area() + self.end_n.area()) / 2
+                    else:
+                        ma = self.statistics['area_sum'] / n
+                else:
+                    ma = r.area()
 
             self.statistics['num_of_reasonable_regions'] += 1
             self.statistics['area_sum'] += ma
@@ -141,7 +150,11 @@ class Chunk:
             # self.statistics['area2_sum'] -= r.area()**2
 
             n = self.statistics['num_of_reasonable_regions']
-            ma = self.statistics['area_sum'] / n
+            if n == 0:
+                ma = (self.start_n.area() + self.end_n.area()) / 2
+            else:
+                ma = self.statistics['area_sum'] / n
+
             self.statistics['num_of_reasonable_regions'] -= 1
             self.statistics['area_sum'] -= ma
             self.statistics['area2_sum'] -= ma**2
