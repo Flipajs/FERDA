@@ -2,11 +2,15 @@ __author__ = 'flipajs'
 
 from utils.video_manager import get_auto_video_manager
 import cPickle as pickle
+from core.project.mser_parameters import MSERParameters
 
 
 class CompatibilitySolver:
     def __init__(self, project):
         self.project = project
+
+        if project.version == '2.2.5':
+            self.fix_225()
 
         if project.version_is_le('2.2.4'):
             raise Exception("Project version is < 2.2.5, if necessary, there will be compability solver implemented in future...")
@@ -17,6 +21,11 @@ class CompatibilitySolver:
             self.project.version = "2.2.3"
             # as the files were opened and resaved, it is solved, so save the new version...
             self.project.save_project_file_()
+
+    def fix_225(self):
+        self.project.mser_parameters = MSERParameters(refresh=self.project)
+        self.project.version = '2.2.6'
+        self.project.save_project_file_()
 
     def fix_chunks(self):
         "fix chunks and resave with new protocol"
