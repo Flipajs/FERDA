@@ -100,6 +100,14 @@ class SetMSERs(QtGui.QWidget):
         self.use_only_red_ch.stateChanged.connect(self.val_changed)
         self.bottom_row.addRow('use only red channel in img', self.use_only_red_ch)
 
+        self.intensity_threshold = QtGui.QSpinBox()
+        self.intensity_threshold.setMinimum(0)
+        self.intensity_threshold.setMaximum(256)
+        self.intensity_threshold.setSingleStep(1)
+        self.intensity_threshold.setValue(256)
+        self.intensity_threshold.valueChanged.connect(self.val_changed)
+        self.bottom_row.addRow('intensity threshold (ignore pixels above)', self.intensity_threshold)
+
         self.random_frame = QtGui.QPushButton('random frame')
         self.random_frame.clicked.connect(self.choose_random_frame)
         self.bottom_row.addRow('', self.random_frame)
@@ -130,7 +138,11 @@ class SetMSERs(QtGui.QWidget):
         img_vis[:,:,1] = img_
         img_vis[:,:,2] = img_
 
+        import time
+        s = time.time()
         m = get_msers_(img_, self.project)
+        print "mser takes: ", time.time() - s
+
         groups = get_region_groups(m)
         ids = margin_filter(m, groups)
         # TODO:
@@ -178,6 +190,7 @@ class SetMSERs(QtGui.QWidget):
         self.project.mser_parameters.min_margin = self.mser_min_margin.value()
         self.project.mser_parameters.gaussian_kernel_std = self.blur_kernel_size.value()
         self.project.other_parameters.use_only_red_channel = self.use_only_red_ch.isChecked()
+        self.project.mser_parameters.intensity_threshold = self.intensity_threshold.value()
 
         self.update()
 

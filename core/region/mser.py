@@ -20,8 +20,8 @@ class Mser():
         self.mser.set_min_size(min_area)
 
     def process_image(self, img, frame=-1, intensity_threshold=256):
-        if is_flipajs_pc():
-            intensity_threshold = 200
+        # if is_flipajs_pc():
+        #     intensity_threshold = 200
 
         if len(img.shape) > 2:
             if img.shape[2] > 1:
@@ -102,7 +102,7 @@ def get_msers_(img, project, frame=-1):
     min_margin = project.mser_parameters.min_margin
 
     mser = Mser(max_area=max_area, min_margin=min_margin, min_area=min_area)
-    return mser.process_image(img, frame)
+    return mser.process_image(img, frame, intensity_threshold=project.mser_parameters.intensity_threshold)
 
 
 def ferda_filtered_msers(img, project, frame=-1):

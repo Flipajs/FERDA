@@ -193,7 +193,7 @@ class BackgroundComputer():
 
                 self.update_callback(num_finished/float(self.part_num))
 
-                print "PART "+str(p_id+1)+"/"+str(self.part_num)+" FINISHED MSERS, takes ", end - self.start, " seconds which is ", (end-self.start) / (self.process_n * self.frames_in_row * int((p_id+self.process_n)/self.process_n)), " seconds per frame"
+                print "PART "+str(p_id+1)+"/"+str(self.part_num)+" FINISHED MSERS, takes ", round(end - self.start, 2), " seconds which is ", round((end-self.start) / (self.process_n * self.frames_in_row * int((p_id+self.process_n)/self.process_n)), 4), " seconds per frame"
 
                 self.processes[p_id][2] = self.FINISHED
 
