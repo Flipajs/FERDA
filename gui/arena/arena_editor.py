@@ -1,4 +1,5 @@
 from gui.arena.my_ellipse import MyEllipse
+from gui.arena.my_popup import MyPopup
 from gui.arena.my_view    import MyView
 
 __author__ = 'flipajs'
@@ -17,7 +18,10 @@ class ArenaEditor(QtGui.QWidget):
     RED = 0
     GREEN = 1
     ALPHA = 3
+
     def __init__(self, img, project):
+        # TODO: 1) points can be dragged off the scene
+
         super(ArenaEditor, self).__init__()
 
         self.setMouseTracking(True)
@@ -29,25 +33,24 @@ class ArenaEditor(QtGui.QWidget):
         self.scene = QtGui.QGraphicsScene()
 
         self.view.setScene(self.scene)
-        self.scene.addPixmap(utils.cvimg2qtpixmap(img))
+        # background image
+        self.scene.addPixmap(utils.cvimg2qtpixmap(self.background))
         self.view.setMouseTracking(True)
 
         # store the current paint mode "polygons" or "paint"
         self.mode = "polygons"
+        self.color = "blue"
 
         ##########################
         #  PAINT MODE VARIABLES  #
         ##########################
-        self.pen_color = QtCore.Qt.blue
         self.pen_size = 10
-        self.color = "blue"
-        self.last_pos = QtCore.QPoint()
         bg_height, bg_width = self.background.shape[:2]
         bg_size = QtCore.QSize(bg_width, bg_height)
         fmt = QtGui.QImage.Format_ARGB32
-        self.image = QtGui.QImage(bg_size, fmt)
-        self.image.fill(QtGui.qRgba(0, 0, 0, 0))
-        self.img_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.image))
+        self.paint_image = QtGui.QImage(bg_size, fmt)
+        self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
+        self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
 
         ##########################
         # POLYGON MODE VARIABLES #
@@ -58,11 +61,18 @@ class ArenaEditor(QtGui.QWidget):
 
         # QPolygonItem[]
         # holds instances of QPolygonItems
-        self.polygon_items = []
+        self.polygon_colors = []
 
         # MyEllipse[][]
         # holds sets of all used points. Each list corresponds to one polygon
         self.ellipses_items = []
+
+        bg_height, bg_width = self.background.shape[:2]
+        bg_size = QtCore.QSize(bg_width, bg_height)
+        fmt = QtGui.QImage.Format_ARGB32
+        self.poly_image = QtGui.QImage(bg_size, fmt)
+        self.poly_image.fill(QtGui.qRgba(0, 0, 0, 0))
+        self.poly_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.poly_image))
 
         ##########################
         #          GUI           #
@@ -75,7 +85,7 @@ class ArenaEditor(QtGui.QWidget):
         widget = QtGui.QWidget()
         widget.setLayout(QtGui.QVBoxLayout())
         widget.layout().setAlignment(QtCore.Qt.AlignTop)
-        #set width to 300px
+        # set left panel widget width to 300px
         widget.setMaximumWidth(300)
         widget.setMinimumWidth(300)
 
@@ -99,6 +109,12 @@ class ArenaEditor(QtGui.QWidget):
         self.clear_button.clicked.connect(self.reset)
         widget.layout().addWidget(self.clear_button)
 
+        # COLOR SWITCH button (no shortcut yet)
+        self.color_button = QtGui.QPushButton("Switch color to red")
+        self.color_button.clicked.connect(self.switch_color)
+        self.color_button.setVisible(True)
+        widget.layout().addWidget(self.color_button)
+
         self.label = QtGui.QLabel()
         self.set_label_text()
         widget.layout().addWidget(self.label)
@@ -112,12 +128,6 @@ class ArenaEditor(QtGui.QWidget):
         self.poly_button.clicked.connect(self.paint_polygon)
         widget.layout().addWidget(self.poly_button)
 
-        # COLOR SWITCH button (no shortcut yet)
-        self.color_button = QtGui.QPushButton("Switch color to red")
-        self.color_button.clicked.connect(self.switch_color)
-        self.color_button.setVisible(False)
-        widget.layout().addWidget(self.color_button)
-
         # PEN SIZE slider
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
         self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
@@ -129,6 +139,11 @@ class ArenaEditor(QtGui.QWidget):
         self.slider.setVisible(False)
         widget.layout().addWidget(self.slider)
 
+        # POPUP button
+        self.popup_button = QtGui.QPushButton("Pop-Up test")
+        self.popup_button.clicked.connect(self.popup)
+        widget.layout().addWidget(self.popup_button)
+
         # complete the gui
         self.layout().addWidget(widget)
         self.layout().addWidget(self.view)
@@ -139,15 +154,41 @@ class ArenaEditor(QtGui.QWidget):
             self.mode = "paint"
             # display only the necessary widgets in the left panel
             self.poly_button.setVisible(False)
-            self.color_button.setVisible(True)
             self.slider.setVisible(True)
+
+            for point_items in self.ellipses_items:
+                for point in point_items:
+                    point.setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
+                    point.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
+
+            for point in self.point_items:
+                point.setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
+                point.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
         else:
             self.mode = "polygons"
             self.poly_button.setVisible(True)
-            self.color_button.setVisible(False)
             self.slider.setVisible(False)
+            for point_items in self.ellipses_items:
+                for point in point_items:
+                    point.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
+                    point.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+
+            for point in self.point_items:
+                point.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
+                point.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
         # refresh text in QLabel
         self.set_label_text()
+
+    def popup(self):
+
+        print "Opening a new popup window..."
+        print type(self.poly_image)
+        print type(self.paint_image)
+
+        self.w = MyPopup(self.poly_image, self.paint_image)
+        self.w.show()
+        self.w.showMaximized()
+        self.w.setFocus()
 
     def switch_color(self):
         # change colors
@@ -168,45 +209,50 @@ class ArenaEditor(QtGui.QWidget):
 
     def set_label_text(self):
         if self.mode == "polygons":
-            self.label.setText("Mode: Polygons")
+            self.label.setText("Mode: Polygons \nColor: %s " % self.color)
         else:
             self.label.setText("Mode: Paint \nColor: %s \nPen size: %s" % (self.color, self.pen_size))
 
-    def clear_image(self):
+    def clear_paint_image(self):
         # remove all drawn lines
-        self.image.fill(QtGui.qRgba(0, 0, 0, 0))
+        self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         # remove the old pixmap from scene
-        self.scene.removeItem(self.img_pixmap)
+        self.scene.removeItem(self.paint_pixmap)
         # create a new pixmap
-        self.img_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.image))
+        self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
+
+    def clear_poly_image(self):
+        # remove all drawn polygons
+        self.poly_image.fill(QtGui.qRgba(0, 0, 0, 0))
+        # remove the old pixmap from scene
+        self.scene.removeItem(self.poly_pixmap)
+        # create a new pixmap
+        self.poly_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.poly_image))
 
     def clear(self):
-        print "Clearing the area"
+        if self.mode == "polygons":
+            # erase all points from polygons
+            for point_items in self.ellipses_items:
+                for point in point_items:
+                    self.scene.removeItem(point)
 
-        # erase all polygons
-        for polygon_item in self.polygon_items:
-            self.scene.removeItem(polygon_item)
-
-        # erase all points from polygons
-        for point_items in self.ellipses_items:
-            for point in point_items:
+            # erase all independent points
+            for point in self.point_items:
                 self.scene.removeItem(point)
 
-        # erase all independent points
-        for point in self.point_items:
-            self.scene.removeItem(point)
-
-        # clear the image
-        self.clear_image()
+            # clear the image
+            self.clear_poly_image()
+        else:
+            # clear the image
+            self.clear_paint_image()
 
     def reset(self):
         # clear view
         self.clear()
-
-        # clear all lists
-        self.point_items = []
-        self.ellipses_items = []
-        self.polygon_items = []
+        if self.mode == "polygons":
+            # clear all lists
+            self.point_items = []
+            self.ellipses_items = []
 
     def mousePressEvent(self, event):
         # get event position and calibrate to scene
@@ -251,11 +297,11 @@ class ArenaEditor(QtGui.QWidget):
         # paint the area around the point position
         for i in range(point.x() - self.pen_size/2, point.x() + self.pen_size/2):
             for j in range(point.y() - self.pen_size/2, point.y() + self.pen_size/2):
-                self.image.setPixel(i, j, value)
+                self.paint_image.setPixel(i, j, value)
 
         # set new image and pixmap
-        self.scene.removeItem(self.img_pixmap)
-        self.img_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.image))
+        self.scene.removeItem(self.paint_pixmap)
+        self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
 
     def get_distance(self, pt_a, pt_b):
         # simple method that returns the absolute distance of two points
@@ -281,8 +327,9 @@ class ArenaEditor(QtGui.QWidget):
                 # use all selected points
                 polygon.append(QtCore.QPointF(el.x(), el.y()))
 
-            # input the polygon into all polygons' list and draw it
-            self.polygon_items.append(self.paint_polygon_(polygon))
+            # draw the polygon and save it's color
+            self.paint_polygon_(polygon, self.color)
+            self.polygon_colors.append(self.color)
 
             # store all the points (ellipses), too
             self.ellipses_items.append(self.point_items)
@@ -292,21 +339,34 @@ class ArenaEditor(QtGui.QWidget):
         else:
             print "Polygon is too small, pick at least 3 points"
 
-    def paint_polygon_(self, polygon):
-        brush = QtGui.QBrush(QtGui.QColor(0, 255, 0))
-        brush.setStyle(QtCore.Qt.Dense5Pattern)
-        return self.scene.addPolygon(polygon, brush=brush)
+    def paint_polygon_(self, polygon, color):
+        # setup the painter
+        painter = QtGui.QPainter()
+        painter.begin(self.poly_image)
+        brush = QtGui.QBrush()
+        # paint the polygon
+        if color == "red":
+            brush.setColor(QtGui.QColor(255, 0, 0, 100))
+        else:
+            brush.setColor(QtGui.QColor(0, 0, 255, 100))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        painter.setBrush(brush)
+        painter.drawPolygon(polygon)
+        painter.end()
+
+        # refresh the image
+        self.scene.removeItem(self.poly_pixmap)
+        self.poly_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.poly_image))
 
     def repaint_polygons(self, my_ellipse):
         # clear the canvas
         self.clear()
 
-        # self.debug()
-        self.polygon_items = []
         tmp_ellipses = []
         tmp_points = []
 
         # go through all saved points and recreate the polygons according to the new points' position
+        i = 0
         for points in self.ellipses_items:
             polygon = QtGui.QPolygonF()
             tmp_ellipse = []
@@ -314,7 +374,8 @@ class ArenaEditor(QtGui.QWidget):
                 qpt = QtCore.QPointF(point.x(), point.y())
                 polygon.append(qpt)
                 tmp_ellipse.append(self.pick_point(qpt, 10))
-            self.polygon_items.append(self.paint_polygon_(polygon))
+            self.paint_polygon_(polygon, self.polygon_colors[i])
+            i += 1
             tmp_ellipses.append(tmp_ellipse)
         self.ellipses_items = tmp_ellipses
 
@@ -340,6 +401,12 @@ class ArenaEditor(QtGui.QWidget):
             return True
         else:
             return False
+
+    def is_in_polygon(self, polygon, point):
+        return polygon.contains(point)
+
+    def paintEvent(self, event):
+        print "Paint event"
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
