@@ -12,3 +12,14 @@ class MSERParameters():
 
         if refresh:
             self.__dict__.update(refresh.__dict__)
+
+    def __str__(self):
+        s = "MSER parameters:\n"
+        s += "max_area: "+str(self.max_area)+"\n"
+        s += "min_area: "+str(self.min_area)+"\n"
+        s += "min_margin: "+str(self.min_margin)+"\n"
+        s += "gaussian_kernel_std: "+str(self.gaussian_kernel_std)+"\n"
+        s += "intensity_threshold: "+str(self.intensity_threshold)+"\n"
+        s += "min_area_relative: "+str(self.min_area_relative)+"\n"
+
+        return s

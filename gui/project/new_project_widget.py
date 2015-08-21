@@ -194,6 +194,7 @@ class NewProjectWidget(QtGui.QWidget):
         import time
         self.project.date_created = time.time()
         self.project.date_last_modifiaction = time.time()
+        self.project.solver_parameters.certainty_threshold = self.certainty_slider.value()
 
     def create_project(self):
         if self.project.working_directory == '':

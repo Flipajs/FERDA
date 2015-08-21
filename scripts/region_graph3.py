@@ -16,6 +16,7 @@ from gui.pixmap_selectable import Pixmap_Selectable
 from gui.plot.plot_chunks import PlotChunks
 from gui.view.chunks_on_frame import ChunksOnFrame
 from core.settings import Settings as S_
+from core.log import LogCategories, ActionNames
 
 # Number of max boxes below graph, max is six
 BOX_NUM = 6
@@ -44,6 +45,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         super(NodeGraphVisualizer, self).__init__()
         self.show_in_visualizer_callback = show_in_visualize_callback
         self.solver = solver
+        self.project = solver.project
         self.g = g
         self.regions = regions
         self.edges_obj = {}
@@ -655,6 +657,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
             self.clear_all_button_function()
             return
 
+        self.project.log.add(LogCategories.USER_ACTION, ActionNames.JOIN_CHUNKS, {'ch1': ch1, 'ch2': ch2})
+
         ch1.merge_and_interpolate(ch2, self.solver)
 
         self.picked_node = ch1.end_n
@@ -693,6 +697,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
             self.clear_all_button_function()
             return
 
+        self.project.log.add(LogCategories.USER_ACTION, ActionNames.STRONG_REMOVE, n1)
         self.solver.strong_remove(n1)
         self.picked_node = None
         self.update_view(n1)

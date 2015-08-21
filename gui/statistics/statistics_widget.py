@@ -56,6 +56,7 @@ class StatisticsWidget(QtGui.QWidget):
         self.vbox.addWidget(self.region_reconstruction)
 
     def export(self):
+        print "exporting..."
         ftype = self.file_type.currentText()
         if ftype == '.txt':
             self.export_txt()
@@ -64,7 +65,7 @@ class StatisticsWidget(QtGui.QWidget):
         elif ftype == '.mat':
             self.export_mat()
 
-        print "exporting..."
+        print "done"
 
     def write_line_csv(self, f, r):
         a, b = self.centroid_in_right_order(r)

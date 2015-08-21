@@ -45,12 +45,15 @@ class RegionReconstruction(QtGui.QWidget):
         self.fbox.addRow('', self.export_results)
 
     def export(self):
+        print "reconstructin & exporting..."
         frames = self.query.text().split(' ')
         frames = map(int, frames)
         reconstructed = self.reconstruct(frames)
 
         with open(self.project.working_directory+'/'+self.out_name.text()+'.mat', 'wb') as f:
             sio.savemat(f, {'FERDA_regions': reconstructed})
+
+        print "done"
 
     def reconstruct(self, frames):
         frames = sorted(frames)

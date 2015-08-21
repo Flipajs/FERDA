@@ -51,6 +51,7 @@ class ActionNames:
     STRONG_REMOVE = 'strong_remove'
     NEW_REGION = 'new_region'
     MERGED_SELECTED = 'merged_selected'
+    JOIN_CHUNKS = 'join_chunks'
 
 class LogEntry:
     def __init__(self, category, action_name, data=None):

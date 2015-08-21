@@ -113,7 +113,7 @@ class SetMSERs(QtGui.QWidget):
         self.min_area_relative.setMaximum(1.0)
         self.min_area_relative.setValue(0.2)
         self.min_area_relative.setSingleStep(0.02)
-        self.min_area_relative.valueChanged.connect(self.val_changed())
+        self.min_area_relative.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('min_area = (median of selected regions) * ', self.min_area_relative)
 
         self.random_frame = QtGui.QPushButton('random frame')
@@ -199,6 +199,7 @@ class SetMSERs(QtGui.QWidget):
         self.project.mser_parameters.gaussian_kernel_std = self.blur_kernel_size.value()
         self.project.other_parameters.use_only_red_channel = self.use_only_red_ch.isChecked()
         self.project.mser_parameters.intensity_threshold = self.intensity_threshold.value()
+        self.project.mser_parameters.min_area_relative = self.min_area_relative.value()
 
         self.update()
 
