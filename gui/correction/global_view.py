@@ -93,6 +93,8 @@ class GlobalView(QtGui.QWidget):
         self.show_b.clicked.connect(self.start_preparation)
         w.layout().addWidget(self.show_b)
 
+        self.visualizer = None
+
         return w
 
     def start_preparation(self):
@@ -122,6 +124,10 @@ class GlobalView(QtGui.QWidget):
         self.last_node_size = node_size
         self.last_margin = margin
 
-        w = call_visualizer(start_t, end_t, self.project, self.solver, min_chunk_len, w_loading.update_progress, node_size=node_size, node_margin=margin, show_in_visualizer_callback=self.show_in_visualizer_callback, reset_cache=reset_cache)
+        self.visualizer = call_visualizer(start_t, end_t, self.project, self.solver, min_chunk_len, w_loading.update_progress, node_size=node_size, node_margin=margin, show_in_visualizer_callback=self.show_in_visualizer_callback, reset_cache=reset_cache)
         w_loading.hide()
-        self.layout().addWidget(w)
+        self.layout().addWidget(self.visualizer)
+
+    def update_content(self):
+        self.start_preparation()
+        # self.visualizer.update_view()

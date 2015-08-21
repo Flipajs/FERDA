@@ -512,51 +512,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.solver.add_virtual_region(n_new)
         self.next_case()
 
-    def undo(self):
-        S_.general.log_graph_edits = False
-
-        log = self.solver.project.log
-        last_actions = log.pop_last_user_action()
-
-        solver = self.solver
-
-        i = 0
-        ignore_node = False
-        for a in last_actions:
-            if a.action_name == ActionNames.ADD_NODE:
-                solver.remove_node(a.data)
-            elif a.action_name == ActionNames.REMOVE_NODE:
-                solver.add_node(a.data)
-            elif a.action_name == ActionNames.ADD_EDGE:
-                try:
-                    solver.remove_edge(a.data['n1'], a.data['n2'])
-                except:
-                    print "NOT EXISTING EDGE"
-            elif a.action_name == ActionNames.REMOVE_EDGE:
-                solver.add_edge(a.data['n1'], a.data['n2'], **a.data['data'])
-            elif a.action_name == ActionNames.CHUNK_ADD_TO_REDUCED:
-                a.data['chunk'].remove_from_reduced_(-1, self.solver)
-                a.data['chunk'].is_sorted = False
-            elif a.action_name == ActionNames.CHUNK_REMOVE_FROM_REDUCED:
-                a.data['chunk'].add_to_reduced_(a.data['node'], self.solver, a.data['index'])
-                a.data['chunk'].is_sorted = False
-            elif a.action_name == ActionNames.CHUNK_SET_START:
-                a.data['chunk'].set_start(a.data['old_start_n'], self.solver)
-            elif a.action_name == ActionNames.CHUNK_SET_END:
-                a.data['chunk'].set_end(a.data['old_end_n'], self.solver)
-            elif a.action_name == ActionNames.IGNORE_NODE:
-                del self.solver.ignored_nodes[a.data]
-                ignore_node = True
-
-            i += 1
-
-        S_.general.log_graph_edits = True
-
-        if ignore_node:
-            self.active_node_id -= 1
-
-        self.next_case()
-
     def noise_part_done(self, val, img, n):
         elem_width = 200
         self.progress_bar.setValue(val)
@@ -763,11 +718,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.save_progress_only_chunks_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_S))
         self.addAction(self.save_progress_only_chunks_action)
 
-        self.undo_action = QtGui.QAction('undo', self)
-        self.undo_action.triggered.connect(self.undo)
-        self.undo_action.setShortcut(S_.controls.undo)
-        self.addAction(self.undo_action)
-
         self.ignore_action = QtGui.QAction('ignore', self)
         self.ignore_action.triggered.connect(self.ignore_node)
         self.ignore_action.setShortcut(S_.controls.ignore_case)
@@ -784,3 +734,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.addAction(self.fitting_one_step_a)
 
         self.d_ = None
+
+    def update_content(self):
+        self.next_case()

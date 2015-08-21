@@ -12,6 +12,8 @@ from core.graph.configuration import get_length_of_longest_chunk
 from utils.video_manager import optimize_frame_access
 from gui.correction.global_view import GlobalView
 from gui.loading_widget import LoadingWidget
+from core.log import LogCategories, ActionNames
+
 
 class TrackerWidget(QtGui.QWidget):
     def __init__(self, project, show_in_visualizer_callback=None):
@@ -63,7 +65,62 @@ class TrackerWidget(QtGui.QWidget):
         self.layout().addWidget(self.progress_w)
         self.noise_filter = None
 
+        self.undo_action = QtGui.QAction('undo', self)
+        self.undo_action.triggered.connect(self.undo)
+        self.undo_action.setShortcut(S_.controls.undo)
+        self.addAction(self.undo_action)
+
         self.layout().setContentsMargins(0, 0, 0, 0)
+
+    def undo(self):
+        S_.general.log_graph_edits = False
+
+        log = self.solver.project.log
+        last_actions = log.pop_last_user_action()
+
+        solver = self.solver
+
+        i = 0
+        ignore_node = False
+        for a in last_actions:
+            if a.action_name == ActionNames.ADD_NODE:
+                solver.remove_node(a.data)
+            elif a.action_name == ActionNames.REMOVE_NODE:
+                solver.add_node(a.data)
+            elif a.action_name == ActionNames.ADD_EDGE:
+                try:
+                    solver.remove_edge(a.data['n1'], a.data['n2'])
+                except:
+                    print "NOT EXISTING EDGE"
+            elif a.action_name == ActionNames.REMOVE_EDGE:
+                solver.add_edge(a.data['n1'], a.data['n2'], **a.data['data'])
+            elif a.action_name == ActionNames.CHUNK_ADD_TO_REDUCED:
+                a.data['chunk'].remove_from_reduced_(-1, self.solver)
+                a.data['chunk'].is_sorted = False
+            elif a.action_name == ActionNames.CHUNK_REMOVE_FROM_REDUCED:
+                a.data['chunk'].add_to_reduced_(a.data['node'], self.solver, a.data['index'])
+                a.data['chunk'].is_sorted = False
+            elif a.action_name == ActionNames.CHUNK_SET_START:
+                a.data['chunk'].set_start(a.data['old_start_n'], self.solver)
+            elif a.action_name == ActionNames.CHUNK_SET_END:
+                a.data['chunk'].set_end(a.data['old_end_n'], self.solver)
+            elif a.action_name == ActionNames.IGNORE_NODE:
+                del self.solver.ignored_nodes[a.data]
+                ignore_node = True
+
+            i += 1
+
+        S_.general.log_graph_edits = True
+
+        if ignore_node:
+            self.active_node_id -= 1
+
+        tool_w = self.tool.itemAt(0).widget()
+
+        if isinstance(tool_w, ConfigurationsVisualizer):
+            tool_w.update_content()
+        elif isinstance(tool_w, GlobalView):
+            tool_w.update_content()
 
     def clear_layout(self, layout):
         while layout.count():
