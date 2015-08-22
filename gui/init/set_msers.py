@@ -101,7 +101,8 @@ class SetMSERs(QtGui.QWidget):
         self.bottom_row.addRow('use only red channel in img', self.use_only_red_ch)
 
         self.use_children_filter = QtGui.QCheckBox()
-        self.use_children_filter.stateChanged.connnect(self.val_changed)
+        self.use_children_filter.stateChanged.connect(self.val_changed)
+        self.use_children_filter.setChecked(self.project.mser_parameters.use_children_filter)
         self.bottom_row.addRow('use children filter', self.use_children_filter)
 
         self.intensity_threshold = QtGui.QSpinBox()
