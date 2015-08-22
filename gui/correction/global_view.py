@@ -89,6 +89,11 @@ class GlobalView(QtGui.QWidget):
         w.layout().addWidget(QtGui.QLabel('node relative margin: '))
         w.layout().addWidget(self.relative_margin)
 
+        self.show_vertically = QtGui.QCheckBox()
+        self.show_vertically.setChecked(False)
+        w.layout().addWidget(QtGui.QLabel('show vertically:'))
+        w.layout().addWidget(self.show_vertically)
+
         self.show_b = QtGui.QPushButton('show')
         self.show_b.clicked.connect(self.start_preparation)
         w.layout().addWidget(self.show_b)
@@ -124,7 +129,8 @@ class GlobalView(QtGui.QWidget):
         self.last_node_size = node_size
         self.last_margin = margin
 
-        self.visualizer = call_visualizer(start_t, end_t, self.project, self.solver, min_chunk_len, w_loading.update_progress, node_size=node_size, node_margin=margin, show_in_visualizer_callback=self.show_in_visualizer_callback, reset_cache=reset_cache)
+        show_vertically = self.show_vertically.isChecked()
+        self.visualizer = call_visualizer(start_t, end_t, self.project, self.solver, min_chunk_len, w_loading.update_progress, node_size=node_size, node_margin=margin, show_in_visualizer_callback=self.show_in_visualizer_callback, reset_cache=reset_cache, show_vertically=show_vertically)
         w_loading.hide()
         self.layout().addWidget(self.visualizer)
 

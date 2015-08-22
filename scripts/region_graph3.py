@@ -41,7 +41,7 @@ SPLIT = 'split'
 
 
 class NodeGraphVisualizer(QtGui.QWidget):
-    def __init__(self, solver, g, regions, chunks, node_size=30, show_in_visualize_callback=None):
+    def __init__(self, solver, g, regions, chunks, node_size=30, show_in_visualize_callback=None, show_vertically=False):
         super(NodeGraphVisualizer, self).__init__()
         self.show_in_visualizer_callback = show_in_visualize_callback
         self.solver = solver
@@ -62,6 +62,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.y_step = self.node_size + 2
         self.x_step = self.node_size + 200
         self.availability = np.zeros(len(regions))
+
+        self.show_vertically = show_vertically
 
         self.chunks = chunks
 
@@ -359,8 +361,13 @@ class NodeGraphVisualizer(QtGui.QWidget):
             vis = z
 
         it = self.scene.addPixmap(cvimg2qtpixmap(vis))
-        it.setPos(self.x_step * t_num, self.y_step * pos)
-        self.node_positions[n] = (self.x_step * t_num, self.y_step * pos)
+        x = self.x_step * t_num
+        y = self.y_step * pos
+        if self.show_vertically:
+            x, y = y, x
+
+        it.setPos(x, y)
+        self.node_positions[n] = (x, y)
         self.nodes_obj[it] = n
         it_ = Pixmap_Selectable(it, self.node_size)
         self.pixmaps[n] = it_
@@ -377,6 +384,10 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         from_y = self.y_step * self.positions[n1] + self.node_size / 2
         to_y = self.y_step * self.positions[n2] + self.node_size / 2
+
+        if self.show_vertically:
+            from_x, from_y = from_y, from_x
+            to_x, to_y = to_y, to_x
 
         line_ = QtCore.QLineF(from_x, from_y, to_x, to_y)
         custom_line_ = Custom_Line_Selectable(line_)
@@ -519,7 +530,13 @@ class NodeGraphVisualizer(QtGui.QWidget):
                 f_num = self.frames.index(f) * GRAPH_WIDTH
                 t_ = QtGui.QGraphicsTextItem(str(f))
 
-                t_.setPos(self.x_step * f_num + self.node_size * 0.2, -20)
+                x = self.x_step * f_num + self.node_size * 0.2
+                y = -20
+                if self.show_vertically:
+                    x, y = y, x
+                    x = -50
+
+                t_.setPos(x, y)
                 self.scene.addItem(t_)
 
         if self.suggest_node:
@@ -591,6 +608,10 @@ class NodeGraphVisualizer(QtGui.QWidget):
         n = n1 if outgoing else n2
         from_y = self.y_step * self.positions[n] + self.node_size / 2
         to_y = from_y
+
+        if self.show_vertically:
+            from_x, from_y = from_y, from_x
+            to_x, to_y = to_y, to_x
 
         line_ = QtCore.QLineF(from_x, from_y, to_x, to_y)
         custom_line_ = Custom_Line_Selectable(line_, style='chunk_residual')

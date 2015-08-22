@@ -16,7 +16,7 @@ from core.project.project import Project
 from utils.misc import is_flipajs_pc
 
 
-def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callback=None, node_size=30, node_margin=0.1, show_in_visualizer_callback=None, reset_cache=True):
+def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callback=None, node_size=30, node_margin=0.1, show_in_visualizer_callback=None, reset_cache=True, show_vertically=False):
     solver = solver
     if t_start == t_end == -1:
         sub_g = solver.g
@@ -73,7 +73,7 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
         if update_callback is not None and i % part_ == 0:
             update_callback(i / float(len(optimized)))
 
-    ngv = NodeGraphVisualizer(solver, solver.g, regions, list(chunks), node_size=node_size, show_in_visualize_callback=show_in_visualizer_callback)
+    ngv = NodeGraphVisualizer(solver, solver.g, regions, list(chunks), node_size=node_size, show_in_visualize_callback=show_in_visualizer_callback, show_vertically=show_vertically)
     ngv.visualize()
 
     return ngv
