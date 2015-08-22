@@ -37,7 +37,7 @@ class Project:
         self.other_parameters = OtherParameters()
         self.solver_parameters = SolverParameters()
         self.log = Log()
-        self.version = "2.2.8"
+        self.version = "2.2.9"
 
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True

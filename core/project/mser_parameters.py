@@ -10,6 +10,7 @@ class MSERParameters():
         self.intensity_threshold = 256
         self.min_area_relative = 0.2
         self.region_min_intensity = 256
+        self.use_children_filter = True
 
         if refresh:
             self.__dict__.update(refresh.__dict__)
@@ -23,5 +24,6 @@ class MSERParameters():
         s += "intensity_threshold: "+str(self.intensity_threshold)+"\n"
         s += "min_area_relative: "+str(self.min_area_relative)+"\n"
         s += "region_min_intensity: "+str(self.region_min_intensity)+"\n"
+        s += "use_children_filter: "+str(self.use_children_filter)+"\n"
 
         return s

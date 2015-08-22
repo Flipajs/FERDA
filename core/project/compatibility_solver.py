@@ -9,7 +9,7 @@ class CompatibilitySolver:
     def __init__(self, project):
         self.project = project
 
-        if project.version == '2.2.7' or project.version == '2.2.6' or project.version == '2.2.5':
+        if project.version == '2.2.8' or project.version == '2.2.7' or project.version == '2.2.6' or project.version == '2.2.5':
             self.fix_225()
 
         if project.version_is_le('2.2.4'):
@@ -24,7 +24,7 @@ class CompatibilitySolver:
 
     def fix_225(self):
         self.project.mser_parameters = MSERParameters(refresh=self.project)
-        self.project.version = '2.2.8'
+        self.project.version = '2.2.9'
         self.project.save_project_file_()
 
     def fix_chunks(self):

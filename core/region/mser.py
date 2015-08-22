@@ -118,13 +118,15 @@ def get_msers_(img, project, frame=-1, prefiltered=False):
 
 
 def ferda_filtered_msers(img, project, frame=-1):
-    m = get_msers_(img, project, frame, prefiltered=True)
-    return m
+    if project.mser_parameters.use_children_filter:
+        m = get_msers_(img, project, frame, prefiltered=True)
+        groups = get_region_groups(m)
+        ids = margin_filter(m, groups)
+        # # min_area = project.stats.area_median * 0.2
+        # # ids = area_filter(m, ids, min_area)
+        ids = children_filter(m, ids)
 
-    # groups = get_region_groups(m)
-    # ids = margin_filter(m, groups)
-    # # # min_area = project.stats.area_median * 0.2
-    # # # ids = area_filter(m, ids, min_area)
-    # ids = children_filter(m, ids)
-    #
-    # return [m[id] for id in ids]
+        return [m[id] for id in ids]
+    else:
+        return get_msers_(img, project, frame, prefiltered=True)
+

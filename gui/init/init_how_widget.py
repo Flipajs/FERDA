@@ -153,7 +153,7 @@ class InitHowWidget(QtGui.QWidget):
 
     def get_img_qlabel(self, pts, img, id, height=100, width=100):
         cont = get_contour(pts)
-        crop = draw_points_crop(img, cont, (0, 0, 255, 0.5), square=True)
+        crop = draw_points_crop(img.copy(), cont, (0, 0, 255, 0.5), square=True)
 
         img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
         pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
