@@ -42,6 +42,8 @@ class MainTabWidget(QtGui.QWidget):
         self.ignore_tab_change = False
         self.tabs.currentChanged.connect(self.tab_changed)
 
+        self.show_results_only_around_frame = -1
+
         print "LOADING GRAPH..."
         if project.saved_progress:
             solver = project.saved_progress['solver']
@@ -52,7 +54,9 @@ class MainTabWidget(QtGui.QWidget):
             self.bc_msers.run()
 
     def show_in_visualizer(self, data):
+        self.show_results_only_around_frame = data['n1'].frame_
         self.tabs.setCurrentIndex(1)
+        self.show_results_only_around_frame = -1
         self.results_tab.change_frame(data['n1'].frame_)
         self.results_tab.highlight_area(data, radius=100)
 
@@ -76,7 +80,7 @@ class MainTabWidget(QtGui.QWidget):
             self.results_tab.setParent(None)
 
             self.results_tab = ResultsWidget(self.project)
-            self.results_tab.add_data(self.solver)
+            self.results_tab.add_data(self.solver, self.show_results_only_around_frame)
             self.results_tab.update_positions(self.results_tab.video.frame_number(), optimized=False)
             self.tabs.insertTab(1, self.results_tab, 'results viewer')
             self.tabs.setCurrentIndex(1)

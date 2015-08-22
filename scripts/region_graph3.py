@@ -545,35 +545,36 @@ class NodeGraphVisualizer(QtGui.QWidget):
         dist_t = np.inf
         dist_e = np.inf
 
-        for n in nodes:
-            if n == picked:
-                continue
+        if picked:
+            for n in nodes:
+                if n == picked:
+                    continue
 
-            if n in self.ignored_nodes:
-                continue
+                if n in self.ignored_nodes:
+                    continue
 
-            is_ch, t_reversed, ch = self.solver.is_chunk(n)
-            if t_reversed:
-                continue
+                is_ch, t_reversed, ch = self.solver.is_chunk(n)
+                if t_reversed:
+                    continue
 
-            dt = n.frame_ - picked.frame_
-            if 0 < dt <= dist_t:
-                de = np.linalg.norm(n.centroid() - picked.centroid())
-                if dist_e >= de:
-                    dist_e = de
-                    dist_t = dt
-                    best_match = n
+                dt = n.frame_ - picked.frame_
+                if 0 < dt <= dist_t:
+                    de = np.linalg.norm(n.centroid() - picked.centroid())
+                    if dist_e >= de:
+                        dist_e = de
+                        dist_t = dt
+                        best_match = n
 
-        if not best_match and not second_try:
-            self.picked_node = None
-            self.auto_pick_node(nodes, True)
-            return
+            if not best_match and not second_try:
+                self.picked_node = None
+                self.auto_pick_node(nodes, True)
+                return
 
-        self.node_label_update(picked)
-        self.node_label_update(best_match)
+            self.node_label_update(picked)
+            self.node_label_update(best_match)
 
-        QtGui.QApplication.processEvents()
-        self.view.centerOn(self.pixmaps[picked].scenePos())
+            QtGui.QApplication.processEvents()
+            self.view.centerOn(self.pixmaps[picked].scenePos())
 
     def draw_chunk_residual_edge(self, n1, n2, outgoing):
         t = n1.frame_ if outgoing else n2.frame_

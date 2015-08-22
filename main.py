@@ -21,10 +21,11 @@ if is_flipajs_pc():
     # project.load('/Users/flipajs/Documents/wd/F1C51/f1c51.fproj')
     # project.load('/Users/flipajs/Documents/wd/video_bounds_test/test.fproj')
     # project.load('/Users/flipajs/Documents/wd/small_lenses_colony1/small_lenses    .fproj')
+    project.load('/Users/flipajs/Documents/wd/colonies1_30m/colonies30m.fproj')
     # project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
     # # # # # #
 
-    # ex.widget_control('load_project', project)
+    ex.widget_control('load_project', project)
 
     pass
 

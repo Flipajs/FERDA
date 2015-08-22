@@ -309,25 +309,48 @@ class ResultsWidget(QtGui.QWidget):
         self.timer.setInterval(1000 / self.frame_rate)
         self.fpsLabel.setText(str(self.frame_rate) + ' fps')
 
-    def add_data(self, solver):
+    def add_data(self, solver, just_around_frame=-1, margin=1000):
         self.solver = solver
         self.chunks = self.solver.chunk_list()
-
         i = 0
 
-        for ch in self.chunks:
-            r, g, b = colors_[i % len(colors_)]
-            item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
-            item.setZValue(0.5)
-            self.items.append(item)
-            self.scene.addItem(item)
+        t1 = just_around_frame - margin
+        t2 = just_around_frame + margin
 
-            self.starting_frames.setdefault(ch.start_n.frame_, []).append((ch, i))
-            # if ch.start_n.frame_ != 0:
+        if just_around_frame > -1:
+            chs = []
+            for ch in self.chunks:
+                if t1 < ch.start_t() < t2 or t1 < ch.end_t() < t2:
+                    r, g, b = colors_[i % len(colors_)]
+                    item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
+                    item.setZValue(0.5)
+                    self.items.append(item)
+                    self.scene.addItem(item)
 
-            item.setVisible(False)
+                    self.starting_frames.setdefault(ch.start_n.frame_, []).append((ch, i))
+                    # if ch.start_n.frame_ != 0:
 
-            i += 1
+                    item.setVisible(False)
+
+                    chs.append(ch)
+                    i += 1
+
+            self.chunks = chs
+        else:
+            for ch in self.chunks:
+                r, g, b = colors_[i % len(colors_)]
+                item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
+                item.setZValue(0.5)
+                self.items.append(item)
+                self.scene.addItem(item)
+
+                self.starting_frames.setdefault(ch.start_n.frame_, []).append((ch, i))
+                # if ch.start_n.frame_ != 0:
+
+                item.setVisible(False)
+
+                i += 1
+
 
         self.update_positions(0, optimized=False)
 
