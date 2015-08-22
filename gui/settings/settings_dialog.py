@@ -181,10 +181,10 @@ class KeyBindingsTab(QtGui.QWidget):
 
     def harvest(self):
         for i in range(len(self.buttons)):
-
             # s = 'S_.controls.'+self.buttons[i]+' = QtGui.QKeySequence(QtCore.Qt.Key_'+self.table.item(i, 1).text()+')'
             print self.buttons[i], self.table.item(i, 1).text()
             s = 'S_.controls.'+self.buttons[i]+' = QtGui.QKeySequence(\''+self.table.item(i, 1).text()+'\')'
+            print s
             exec(str(s))
             # print S_.controls.__getattribute__('show_settings')
             # S_.controls.__setattr__(self.buttons[i], QtGui.QKeySequence(self.table.item(i, 1).text()))
