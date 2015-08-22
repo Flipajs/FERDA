@@ -10,6 +10,7 @@ from core.settings import Settings as S_
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 import time
 from utils.misc import is_flipajs_pc
+from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_
 
 
 class Mser():
@@ -34,24 +35,16 @@ class Mser():
         if intensity_threshold > 256:
             intensity_threshold = 256
 
-        import time
-        s = time.time()
         self.mser.process_image(gray, intensity_threshold)
-        print "PROCESS IMAGE t: ", time.time()-s
-        s = time.time()
         regions = self.mser.get_regions()
-        print "GET REGIONS t: ", time.time()-s
 
         if prefiltered:
-            s = time.time()
-            from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_
             groups = get_region_groups_dict_(regions)
             ids = margin_filter_dict_(regions, groups)
             if region_min_intensity is not None and region_min_intensity < 256:
                 ids = min_intensity_filter_dict_(regions, ids, region_min_intensity)
 
             regions = [Region(regions[id], frame, id) for id in ids]
-            print "CONSTRUCT REGIONS t: ", time.time()-s
         else:
             regions = [Region(dr, frame, id) for dr, id in zip(regions, range(len(regions)))]
 
@@ -126,7 +119,7 @@ def get_msers_(img, project, frame=-1, prefiltered=False):
 
 def ferda_filtered_msers(img, project, frame=-1):
     m = get_msers_(img, project, frame, prefiltered=True)
-    return m
+    # return m
 
     groups = get_region_groups(m)
     ids = margin_filter(m, groups)

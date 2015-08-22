@@ -22,5 +22,6 @@ class MSERParameters():
         s += "gaussian_kernel_std: "+str(self.gaussian_kernel_std)+"\n"
         s += "intensity_threshold: "+str(self.intensity_threshold)+"\n"
         s += "min_area_relative: "+str(self.min_area_relative)+"\n"
+        s += "region_min_intensity: "+str(self.region_min_intensity)+"\n"
 
         return s

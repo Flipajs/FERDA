@@ -41,6 +41,7 @@ if __name__ == '__main__':
     msers_t = 0
     solver_t = 0
     vid_t = 0
+    file_t = 0
 
     solver = Solver(proj)
     for i in range(frames_in_row + last_n_frames):
@@ -72,13 +73,10 @@ if __name__ == '__main__':
 
     s = time.time()
     solver.simplify()
-    print "SIMPLIFIED ", time.time()-s
-    s = time.time()
     solver.simplify_to_chunks()
     solver_t += time.time() - s
 
-    print "MSERS t:", msers_t, "SOLVER t: ",solver_t, "VIDEO t:", vid_t
-
+    s = time.time()
     if not os.path.exists(proj.working_directory+'/temp'):
         os.mkdir(proj.working_directory+'/temp')
 
@@ -87,3 +85,7 @@ if __name__ == '__main__':
         p.dump(solver.g)
         p.dump(solver.start_nodes())
         p.dump(solver.end_nodes())
+
+    file_t = time.time() - s
+
+    print "MSERS t:", msers_t, "SOLVER t: ",solver_t, "VIDEO t:", vid_t, "FILE t: ", file_t, "SUM t / frames_in_row:", (msers_t + solver_t+vid_t+file_t)/float(frames_in_row)

@@ -78,6 +78,13 @@ class NewProjectWidget(QtGui.QWidget):
         self.form_layout.addRow('min certainty: ', self.certainty_slider)
         self.form_layout.addRow(QtGui.QLabel('0 means try to solve everything...'))
 
+        self.max_edge_distance = QtGui.QDoubleSpinBox()
+        self.max_edge_distance.setMinimum(0.1)
+        self.max_edge_distance.setMaximum(10)
+        self.max_edge_distance.setValue(2.5)
+        self.max_edge_distance.setSingleStep(0.05)
+        self.form_layout.addRow('max edge distance (in ant body length)', self.max_edge_distance)
+
         self.create_project_button = QtGui.QPushButton('Create new project', self)
         self.create_project_button.clicked.connect(self.create_project)
 
@@ -195,6 +202,8 @@ class NewProjectWidget(QtGui.QWidget):
         self.project.date_created = time.time()
         self.project.date_last_modifiaction = time.time()
         self.project.solver_parameters.certainty_threshold = self.certainty_slider.value()
+
+        self.project.solver_parameters.max_edge_distance_in_ant_length = self.max_edge_distance.value()
 
     def create_project(self):
         if self.project.working_directory == '':
