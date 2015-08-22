@@ -42,13 +42,13 @@ class Item():
         if type_:
             t = type_
 
-        settings = QtCore.QSettings('FERDA')
+        settings = QtCore.QSettings('ferda1')
         QtCore.QSettings()
 
         return settings.value(self.key_, self.val_, t)
 
     def set(self, val):
-        settings = QtCore.QSettings('FERDA')
+        settings = QtCore.QSettings('ferda1')
         settings.setValue(self.key_, val)
 
     def tooltip(self):
