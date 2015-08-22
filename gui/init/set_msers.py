@@ -7,7 +7,7 @@ from gui.img_grid.img_grid_widget import ImgGridWidget
 from gui.gui_utils import get_image_label
 from utils.video_manager import get_auto_video_manager
 from core.project.project import Project
-from core.region.mser import get_msers_
+from core.region.mser import get_msers_, ferda_filtered_msers
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from utils.drawing.points import draw_points_crop, draw_points, get_contour
 from PIL import ImageQt
@@ -116,6 +116,14 @@ class SetMSERs(QtGui.QWidget):
         self.min_area_relative.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('min_area = (median of selected regions) * ', self.min_area_relative)
 
+        self.region_min_intensity = QtGui.QSpinBox()
+        self.region_min_intensity.setMaximum(256)
+        self.region_min_intensity.setValue(256)
+        self.region_min_intensity.setMinimum(0)
+        self.region_min_intensity.setSingleStep(1)
+        self.region_min_intensity.valueChanged.connect(self.val_changed)
+        self.bottom_row.addRow('region min intensity', self.region_min_intensity)
+
         self.random_frame = QtGui.QPushButton('random frame')
         self.random_frame.clicked.connect(self.choose_random_frame)
         self.bottom_row.addRow('', self.random_frame)
@@ -148,15 +156,8 @@ class SetMSERs(QtGui.QWidget):
 
         import time
         s = time.time()
-        m = get_msers_(img_, self.project)
+        msers = ferda_filtered_msers(img_, self.project)
         print "mser takes: ", time.time() - s
-
-        groups = get_region_groups(m)
-        ids = margin_filter(m, groups)
-        # TODO:
-        min_area = 30
-        ids = area_filter(m, ids, min_area)
-        ids = children_filter(m, ids)
 
         self.img_grid.setParent(None)
         self.img_grid = ImgGridWidget()
@@ -164,9 +165,7 @@ class SetMSERs(QtGui.QWidget):
         self.img_grid.cols = 5
         self.top_row.addWidget(self.img_grid)
 
-        for id in ids:
-            r = m[id]
-
+        for r, id in zip(msers, range(len(msers))):
             if self.project.stats:
                 prob = self.project.stats.antlikeness_svm.get_prob(r)
                 if prob[1] < self.project.solver_parameters.antlikeness_threshold * 0.5:
@@ -200,6 +199,7 @@ class SetMSERs(QtGui.QWidget):
         self.project.other_parameters.use_only_red_channel = self.use_only_red_ch.isChecked()
         self.project.mser_parameters.intensity_threshold = self.intensity_threshold.value()
         self.project.mser_parameters.min_area_relative = self.min_area_relative.value()
+        self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
 
         self.update()
 
@@ -208,7 +208,8 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
 
-    proj.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+    # proj.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+    proj.video_paths = ['/Users/flipajs/Downloads/fullf9c5test.avi']
     proj.arena_model = None
     proj.bg_model = None
     # proj.video_paths = '/home/flipajs/Downloads/Camera 1_biglense1.avi'

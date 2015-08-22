@@ -72,6 +72,8 @@ if __name__ == '__main__':
 
     s = time.time()
     solver.simplify()
+    print "SIMPLIFIED ", time.time()-s
+    s = time.time()
     solver.simplify_to_chunks()
     solver_t += time.time() - s
 

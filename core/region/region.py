@@ -51,16 +51,22 @@ class Region():
         return s
 
     def from_dict_(self, data):
-        pts = []
+        pts = np.zeros((data['area'], 2), dtype=np.int)
         if 'rle' in data:
+            i = 0
             for row in data['rle']:
-                pts.extend([[row['line'], c] for c in range(row['col1'], row['col2'] + 1)])
+                for c in xrange(row['col1'], row['col2'] + 1):
+                    pts[i, 0] = row['line']
+                    pts[i, 1] = c
+                # pts.extend([[row['line'], c] for c in range(row['col1'], row['col2'] + 1)])
+                    i += 1
         else:
             raise Exception('wrong data format',
                             'Wrong data format in from_dict_ in region.points.py. Expected dictionary with "rle" key.')
 
         self.centroid_ = np.array([data['cy'], data['cx']])
-        self.pts_ = np.array(pts)
+        self.pts_ = pts
+        # self.pts_ = np.array(pts)
         self.label_ = data['label']
         self.margin_ = data['margin']
         self.min_intensity_ = data['minI']

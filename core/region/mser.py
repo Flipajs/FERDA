@@ -19,7 +19,7 @@ class Mser():
         self.mser.set_max_area(max_area)
         self.mser.set_min_size(min_area)
 
-    def process_image(self, img, frame=-1, intensity_threshold=256):
+    def process_image(self, img, frame=-1, intensity_threshold=256, prefiltered=False, region_min_intensity=None):
         # if is_flipajs_pc():
         #     intensity_threshold = 200
 
@@ -34,9 +34,26 @@ class Mser():
         if intensity_threshold > 256:
             intensity_threshold = 256
 
+        import time
+        s = time.time()
         self.mser.process_image(gray, intensity_threshold)
+        print "PROCESS IMAGE t: ", time.time()-s
+        s = time.time()
         regions = self.mser.get_regions()
-        regions = [Region(dr, frame, id) for dr, id in zip(regions, range(len(regions)))]
+        print "GET REGIONS t: ", time.time()-s
+
+        if prefiltered:
+            s = time.time()
+            from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_
+            groups = get_region_groups_dict_(regions)
+            ids = margin_filter_dict_(regions, groups)
+            if region_min_intensity is not None and region_min_intensity < 256:
+                ids = min_intensity_filter_dict_(regions, ids, region_min_intensity)
+
+            regions = [Region(regions[id], frame, id) for id in ids]
+            print "CONSTRUCT REGIONS t: ", time.time()-s
+        else:
+            regions = [Region(dr, frame, id) for dr, id in zip(regions, range(len(regions)))]
 
         return regions
 
@@ -92,7 +109,7 @@ def get_all_msers(frame_number, project):
         return get_msers_(vid.seek_frame(frame_number))
 
 
-def get_msers_(img, project, frame=-1):
+def get_msers_(img, project, frame=-1, prefiltered=False):
     """
     Returns msers using MSER algorithm with default settings.
 
@@ -101,16 +118,20 @@ def get_msers_(img, project, frame=-1):
     min_area = project.mser_parameters.min_area
     min_margin = project.mser_parameters.min_margin
 
+    region_min_intensity = project.mser_parameters.region_min_intensity
+
     mser = Mser(max_area=max_area, min_margin=min_margin, min_area=min_area)
-    return mser.process_image(img, frame, intensity_threshold=project.mser_parameters.intensity_threshold)
+    return mser.process_image(img, frame, intensity_threshold=project.mser_parameters.intensity_threshold, prefiltered=prefiltered, region_min_intensity=region_min_intensity)
 
 
 def ferda_filtered_msers(img, project, frame=-1):
-    m = get_msers_(img, project, frame)
+    m = get_msers_(img, project, frame, prefiltered=True)
+    return m
+
     groups = get_region_groups(m)
     ids = margin_filter(m, groups)
-    # min_area = project.stats.area_median * 0.2
-    # ids = area_filter(m, ids, min_area)
+    # # min_area = project.stats.area_median * 0.2
+    # # ids = area_filter(m, ids, min_area)
     ids = children_filter(m, ids)
 
     return [m[id] for id in ids]
