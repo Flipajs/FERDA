@@ -63,6 +63,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.x_step = self.node_size + 200
         self.availability = np.zeros(len(regions))
 
+        self.toggled = []
+
         self.show_vertically = show_vertically
 
         self.chunks = chunks
@@ -227,6 +229,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
             parent_pixmap = item.parent_pixmap
             n_ = self.nodes_obj[parent_pixmap]
             self.node_label_update(n_)
+            self.toggle_n(n_)
         else:
             self.clear_all_button_function()
 
@@ -333,6 +336,11 @@ class NodeGraphVisualizer(QtGui.QWidget):
             box[3] = None
             if box[2] is not None:
                 box[2].setClipped(None)
+
+        for it in self.toggled:
+            self.scene.removeItem(it)
+
+        self.toggled = []
 
         self.box_aux_count = 0
 
@@ -590,6 +598,9 @@ class NodeGraphVisualizer(QtGui.QWidget):
             self.node_label_update(picked)
             self.node_label_update(best_match)
 
+            self.toggle_n(picked)
+            self.toggle_n(best_match)
+
             QtGui.QApplication.processEvents()
             self.view.centerOn(self.pixmaps[picked].scenePos())
 
@@ -733,6 +744,33 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
     def onpick(self, event):
         print self.lines.index(event.artist)
+
+    def toggle_n(self, n):
+        from utils.video_manager import get_auto_video_manager
+        vid = get_auto_video_manager(self.project)
+        im = vid.get_frame(n.frame_, auto=True)
+        vis = visualize_nodes(im, n, margin=3.0)
+
+        ns = self.node_size * 2
+        if vis.shape[0] > self.node_size or vis.shape[1] > ns:
+            vis = np.asarray(resize(vis, (ns, ns)) * 255, dtype=np.uint8)
+        else:
+            z = np.zeros((ns, ns, 3), dtype=np.uint8)
+            z[0:vis.shape[0], 0:vis.shape[1]] = vis
+            vis = z
+
+        it = self.scene.addPixmap(cvimg2qtpixmap(vis))
+        pm = self.pixmaps[n]
+
+        ds2 = (ns - self.node_size) / 2
+
+        x = pm.scenePos().x() - ds2
+        y = pm.scenePos().y() - ds2
+        it.setPos(x, y)
+        self.scene.addItem(it)
+
+        self.toggled.append(it)
+
 
 def visualize_nodes(im, r, margin=0.1):
     vis = draw_points_crop(im, r.pts(), margin=margin, square=True, color=(0, 255, 0, 0.35))

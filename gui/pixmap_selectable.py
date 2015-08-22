@@ -55,8 +55,3 @@ class Pixmap_Selectable(QtGui.QGraphicsPixmapItem):
     def setClipped(self, color):
         self.clipped = False if color == None else True
         self.color = color
-
-
-
-
-
