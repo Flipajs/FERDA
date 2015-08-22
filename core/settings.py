@@ -112,7 +112,7 @@ class Controls:
     remove_region = Item('controls/sbs/remove_region', QtGui.QKeySequence(QtCore.Qt.Key_Backspace))
     remove_chunk = Item('controls/remove_chunk', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Backspace))
     join_regions = Item('controls/join_regions', QtGui.QKeySequence(QtCore.Qt.Key_J))
-    new_region = Item('controls/ignore_case', QtGui.QKeySequence(QtCore.Qt.Key_R))
+    new_region = Item('controls/new_region', QtGui.QKeySequence(QtCore.Qt.Key_R))
     ignore_case = Item('controls/ignore_case', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
 
     stop_action = Item('controls/stop_action', QtGui.QKeySequence(QtCore.Qt.Key_Escape))
