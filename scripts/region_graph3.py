@@ -231,7 +231,10 @@ class NodeGraphVisualizer(QtGui.QWidget):
             self.node_label_update(n_)
             self.toggle_n(n_)
         else:
-            self.clear_all_button_function()
+            # self.clear_all_button_function()
+            self.suggest_node = False
+            self.update_view(None, None)
+            self.suggest_node = True
 
     def node_label_update(self, node):
         if self.info_label_lower.isHidden():
@@ -337,8 +340,10 @@ class NodeGraphVisualizer(QtGui.QWidget):
             if box[2] is not None:
                 box[2].setClipped(None)
 
-        for it in self.toggled:
-            self.scene.removeItem(it)
+        # for it in self.toggled:
+        #     # it.hide()
+        #     self.scene.removeItem(it)
+        #     del it
 
         self.toggled = []
 
@@ -761,13 +766,11 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         it = self.scene.addPixmap(cvimg2qtpixmap(vis))
         pm = self.pixmaps[n]
-
         ds2 = (ns - self.node_size) / 2
 
         x = pm.scenePos().x() - ds2
         y = pm.scenePos().y() - ds2
         it.setPos(x, y)
-        self.scene.addItem(it)
 
         self.toggled.append(it)
 
