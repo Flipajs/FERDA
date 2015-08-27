@@ -1,27 +1,25 @@
 from PyQt4 import QtGui, QtCore
+from matplotlib import colors
+from matplotlib import cm as cmx
 
 import sys
 import math
 import random
 
 class ColorManager():
-    def __init__(self, lenght, limit):
+    def __init__(self, length, limit, cmap='Accent'):
+        # TODO: http://llllll.li/randomColor/ has a distinguishable color generator on his todo list, check it later
         self.tracks = []
         #lenght of the video
-        self.lenght = lenght
+        self.length = length
         # max count of colors
         self.limit = limit
 
         random.seed()
         self.id = 0
 
-    def get_cmap_colors(self, count):
-        colors = []
-        for i in range (0, count):
-            c = self.scalar_map.to_rgba(i)
-            result = QtGui.QColor().fromRgbF(c[0], c[1], c[2])
-            colors.append(result)
-        return colors
+        color_norm = colors.Normalize(vmin=0, vmax=limit)
+        self.scalar_map = cmx.ScalarMappable(norm=color_norm, cmap=cmap)
 
     def get_next_id(self):
         # return current id and raise it by one
@@ -32,9 +30,10 @@ class ColorManager():
         # create a new track
         track = Track(start, stop, self.get_next_id(), QtGui.QColor().fromRgb(0, 0, 0))
         # add it in the tracks list
-        self.tracks.append(track)
         # find a suitable color for it
-        color = self.find_color(track)
+        #color = self.find_color(track)
+        color = self.find_color_cmap(track)
+        self.tracks.append(track)
         track.set_color(color)
 
     def delete(self, id):
@@ -74,6 +73,7 @@ class ColorManager():
 
     def find_color(self, track):
         i = 0
+        # 0.7 seems to be the ideal value (distinguishable, yet not too hard to achieve)
         limit = 0.7
         while True:
             ok = True
@@ -100,6 +100,22 @@ class ColorManager():
             i += 1
             # try to make the choosing easier by enlarging the limit each time a wrong color is picked
             limit += 0.02
+
+    def find_color_cmap(self, track):
+        while(True):
+            ok = True
+            # try to pick a random color position
+            i = random.randint(0, self.limit)
+            for t in self.tracks:
+                # if a colliding track already uses it, try again
+                if self.collide(track, t) > 0 and i == t.color_id:
+                    i = (i + 1) % self.limit
+                    ok = False
+                    break
+            if ok:
+                tmp_color = self.scalar_map.to_rgba(i)
+                track.set_color_id(i)
+                return QtGui.QColor().fromRgbF(tmp_color[0], tmp_color[1], tmp_color[2])
 
     def get_yuv_distance(self, c1, c2):
         # returns the "distance" of two colors in the YUV color system, which corresponds best with human perception
@@ -130,6 +146,12 @@ class TempGui(QtGui.QWidget):
         widget.layout().addWidget(self.text_field)
         widget.layout().addWidget(self.button)
         self.layout().addWidget(widget)
+
+        self.setAutoFillBackground(True)
+
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QtCore.Qt.black)
+        self.setPalette(p)
 
         tracks = []
         for i in range (0, self.const):
@@ -184,6 +206,8 @@ class Track():
         self.color = color
     def get_len(self):
         return self.stop - self.start
+    def set_color_id(self, color_id):
+        self.color_id = color_id
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
