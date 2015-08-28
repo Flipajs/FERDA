@@ -40,7 +40,7 @@ def scatter(values):
                 color = rgb
             else:
                 color = black
-            pos[k] = (pos_x, pos_y, i)
+            pos[k] = (pos_x, pos_y, i/2)
             size[k] = 2
             colors[k] = color
             k += 1
@@ -127,6 +127,8 @@ w.show()
 c = pq.mkColor(0, 0, 0)
 w.setBackgroundColor(c)
 w.setWindowTitle('Pyqtgraph test')
+w.showMaximized()
+
 
 
 # WARN: Do not touch the grids, they seem weird, but they work
@@ -149,10 +151,26 @@ x.rotate(90, 1, 0, 0)
 x.translate(0, -x_size/2, z_size/2)
 w.addItem(x)
 
+"""
+# These methods do not work when there is a GridItem in the view. Also, Z axis is never shown, even when it's added
+# first. Perhaps it is black so it's just invisible?
+axis_x = gl.GLAxisItem()
+axis_x.setSize(x=x_size, y=0, z=0)
+w.addItem(axis_x)
+axis_y = gl.GLAxisItem()
+axis_y.setSize(x=0, y=y_size, z=0)
+w.addItem(axis_y)
+axis_z = gl.GLAxisItem()
+axis_z.setSize(x=0, y=0, z=z_size)
+w.addItem(axis_z)
+"""
 
 values = data._old_vals
-#scatter(values)
-lines(values)
+scatter(values)
+#lines(values)
+
+w.setCameraPosition(elevation=20, distance=2100)
+w.pan(0, 0, z_size/3)
 
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
