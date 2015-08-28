@@ -1,5 +1,6 @@
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph.opengl as gl
+import pyqtgraph as pq
 import numpy as np
 import scripts.trajectories_data.eight_gt as data
 
@@ -46,7 +47,7 @@ def scatter(values):
             #print "[x: %s, y: %s, z: %s]" % (pos_x, pos_y, i)
 
     sp1 = gl.GLScatterPlotItem(pos=pos, size=size, color=colors, pxMode=False)
-    sp1.translate(-500, -500, 0)
+    sp1.translate(-x_size/2, -y_size/2, 0)
     w.addItem(sp1)
 
 def lines(values):
@@ -74,21 +75,21 @@ def lines(values):
             pos_x = values[i][j][0]
             pos_y = values[i][j][1]
             if j == 0:
-                pos1[k] = (pos_x, pos_y, i)
+                pos1[k] = (pos_x, pos_y, i/2)
             elif j == 1:
-                pos2[k] = (pos_x, pos_y, i)
+                pos2[k] = (pos_x, pos_y, i/2)
             elif j == 2:
-                pos3[k] = (pos_x, pos_y, i)
+                pos3[k] = (pos_x, pos_y, i/2)
             elif j == 3:
-                pos4[k] = (pos_x, pos_y, i)
+                pos4[k] = (pos_x, pos_y, i/2)
             elif j == 4:
-                pos5[k] = (pos_x, pos_y, i)
+                pos5[k] = (pos_x, pos_y, i/2)
             elif j == 5:
-                pos6[k] = (pos_x, pos_y, i)
+                pos6[k] = (pos_x, pos_y, i/2)
             elif j == 6:
-                pos7[k] = (pos_x, pos_y, i)
+                pos7[k] = (pos_x, pos_y, i/2)
             else:
-                pos8[k] = (pos_x, pos_y, i)
+                pos8[k] = (pos_x, pos_y, i/2)
         k += 1
     l1 = gl.GLLinePlotItem(pos=pos1, width=1.6, color=r)
     l2 = gl.GLLinePlotItem(pos=pos2, width=1.6, color=g)
@@ -98,14 +99,14 @@ def lines(values):
     l6 = gl.GLLinePlotItem(pos=pos6, width=1.6, color=rb)
     l7 = gl.GLLinePlotItem(pos=pos7, width=1.6, color=rgb)
     l8 = gl.GLLinePlotItem(pos=pos8, width=1.6, color=black)
-    l1.translate(-500, -500, 0)
-    l2.translate(-500, -500, 0)
-    l3.translate(-500, -500, 0)
-    l4.translate(-500, -500, 0)
-    l5.translate(-500, -500, 0)
-    l6.translate(-500, -500, 0)
-    l7.translate(-500, -500, 0)
-    l8.translate(-500, -500, 0)
+    l1.translate(-x_size/2, -y_size/2, 0)
+    l2.translate(-x_size/2, -y_size/2, 0)
+    l3.translate(-x_size/2, -y_size/2, 0)
+    l4.translate(-x_size/2, -y_size/2, 0)
+    l5.translate(-x_size/2, -y_size/2, 0)
+    l6.translate(-x_size/2, -y_size/2, 0)
+    l7.translate(-x_size/2, -y_size/2, 0)
+    l8.translate(-x_size/2, -y_size/2, 0)
     w.addItem(l1)
     w.addItem(l2)
     w.addItem(l3)
@@ -117,12 +118,37 @@ def lines(values):
 
 app = QtGui.QApplication([])
 w = gl.GLViewWidget()
-w.opts['distance'] = 100
+x_size = 1280
+y_size = 1024
+z_size = 1506
+scale = 100
+w.opts['distance'] = 2*x_size
 w.show()
-w.setWindowTitle('pyqtgraph example: GLScatterPlotItem')
+c = pq.mkColor(0, 0, 0)
+w.setBackgroundColor(c)
+w.setWindowTitle('Pyqtgraph test')
 
-g = gl.GLGridItem()
-w.addItem(g)
+
+# WARN: Do not touch the grids, they seem weird, but they work
+z = gl.GLGridItem()
+z.setSize(y_size, x_size, 0)
+z.setSpacing(scale, scale, scale)
+w.addItem(z)
+
+y = gl.GLGridItem()
+y.setSize(z_size, x_size, 0)
+y.setSpacing(scale, scale, scale)
+y.rotate(90, 0, 1, 0)
+y.translate(-y_size/2, 0, z_size/2)
+w.addItem(y)
+
+x = gl.GLGridItem()
+x.setSize(y_size, z_size, 0)
+x.setSpacing(scale, scale, scale)
+x.rotate(90, 1, 0, 0)
+x.translate(0, -x_size/2, z_size/2)
+w.addItem(x)
+
 
 values = data._old_vals
 #scatter(values)
