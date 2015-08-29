@@ -59,7 +59,11 @@ class BackgroundComputer():
             if not S_.general.log_in_bg_computation:
                 S_.general.log_graph_edits = False
             self.start = time.time()
-            for i in range(self.part_num):
+
+            for i in range(1615):
+                self.processes.append(None)
+
+            for i in range(1615, self.part_num):
                 p = QtCore.QProcess()
 
                 p.finished.connect(partial(self.onFinished, i))
@@ -75,7 +79,7 @@ class BackgroundComputer():
                 ex_str = str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
                 print ex_str
                 status = self.WAITING
-                if i < self.process_n:
+                if i < 1615 + self.process_n:
                     status = self.RUNNING
                     p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
 

@@ -351,7 +351,6 @@ class ResultsWidget(QtGui.QWidget):
 
                 i += 1
 
-
         self.update_positions(0, optimized=False)
 
     def connect_GUI(self):
