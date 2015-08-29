@@ -60,10 +60,13 @@ class BackgroundComputer():
                 S_.general.log_graph_edits = False
             self.start = time.time()
 
-            for i in range(1615):
+            # change this if parallelisation stopped working and you want to run it from given part
+            skip_n_first_parts = 0
+            
+            for i in range(skip_n_first_parts):
                 self.processes.append(None)
 
-            for i in range(1615, self.part_num):
+            for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
 
                 p.finished.connect(partial(self.onFinished, i))
@@ -71,7 +74,7 @@ class BackgroundComputer():
                 p.readyReadStandardOutput.connect(partial(self.OnProcessOutputReady, i))
 
                 f_num = self.frames_in_row
-                # f_num = 100
+
                 last_n_frames = 0
                 if i == self.part_num - 1:
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
@@ -79,7 +82,7 @@ class BackgroundComputer():
                 ex_str = str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
                 print ex_str
                 status = self.WAITING
-                if i < 1615 + self.process_n:
+                if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
                     p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
 
