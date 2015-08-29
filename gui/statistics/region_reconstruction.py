@@ -82,9 +82,10 @@ class RegionReconstruction(QtGui.QWidget):
 
                 xs = []
                 ys = []
-                for p in r_best_match.pts_:
-                    xs.append(p[1])
-                    ys.append(p[0])
+                if r_best_match:
+                    for p in r_best_match.pts_:
+                        xs.append(p[1])
+                        ys.append(p[0])
 
                 reconstructed.append({'frame': f, 'chunk_id': ch.id, 'px': xs, 'py': ys})
 
