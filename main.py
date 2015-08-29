@@ -25,7 +25,6 @@ if is_flipajs_pc():
     project.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
     # project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
     # # # # # #
-
     ex.widget_control('load_project', project)
 
     pass

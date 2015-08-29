@@ -48,10 +48,11 @@ class Project:
         l2 = string.split(ver, '.')
 
         for a, b in zip(l1, l2):
-            if a > b:
+            if int(a) > int(b):
                 return False
 
         return True
+
 
     def save_project_file_(self):
         p = Project()

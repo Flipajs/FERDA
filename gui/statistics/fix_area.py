@@ -110,15 +110,6 @@ class FixArea(QtGui.QWidget):
         self.fbox.addRow('', self.fix_b)
 
         self.loading_w = None
-        # print "BEFORE"
-        # self.test_print(50)
-
-    def test_print(self, best_n):
-        chunks = self.solver.chunk_list()
-        chunks = sorted(chunks, key=lambda x: -x.length())
-
-        for i in range(best_n):
-            print chunks[i].length(), chunks[i].get_area_stats()
 
     def fix(self):
         self.form.hide()
@@ -139,8 +130,7 @@ class FixArea(QtGui.QWidget):
         self.solver.save()
         self.vbox.addWidget(QtGui.QLabel('AREA info is updated now... Project and progress was saved.'))
         self.project.version = "2.2.10"
-        # print "AFTER:"
-        # self.test_print(50)
+        self.project.save()
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

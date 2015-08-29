@@ -57,9 +57,10 @@ class StatisticsWidget(QtGui.QWidget):
         self.region_reconstruction = RegionReconstruction(project, solver=None)
         self.vbox.addWidget(self.region_reconstruction)
 
-        if project.version_is_le('2.2.9'):
-            self.fix_area = FixArea(project, solver=None)
-            self.vbox.addWidget(self.fix_area)
+        self.fix_area = FixArea(project, solver=None)
+        self.vbox.addWidget(self.fix_area)
+        if not project.version_is_le('2.2.9'):
+            self.fix_area.vbox.addWidget(QtGui.QLabel('AREA WAS ALREADY UPDATED!'))
 
     def export(self):
         print "exporting..."
