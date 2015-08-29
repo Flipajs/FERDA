@@ -126,18 +126,15 @@ class BackgroundComputer():
                 for n1, n2, d in g_.edges(data=True):
                     self.solver.g.add_edge(n1, n2, d)
 
-                if i < self.process_n - 1:
-                    nodes_to_process += start_nodes
-
                 nodes_to_process += end_nodes
 
                 # check last and start frames...
                 start_t = self.project.solver_parameters.frames_in_row * i
-                for n in end_nodes_prev:
+                for n in end_nodes_prev[:]:
                     if n.frame_ != start_t - 1:
                         end_nodes_prev.remove(n)
 
-                for n in start_nodes:
+                for n in start_nodes[:]:
                     if n.frame_ != start_t:
                         start_nodes.remove(n)
 
