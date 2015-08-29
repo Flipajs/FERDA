@@ -46,8 +46,8 @@ class RegionReconstruction(QtGui.QWidget):
 
     def export(self):
         print "reconstructin & exporting..."
-        frames = self.query.text().split(' ')
-        frames = map(int, frames)
+        query = self.query.text()
+        frames = self.process_input(query)
         reconstructed = self.reconstruct(frames)
 
         with open(self.project.working_directory+'/'+self.out_name.text()+'.mat', 'wb') as f:
@@ -91,6 +91,41 @@ class RegionReconstruction(QtGui.QWidget):
 
         return reconstructed
 
+    def process_input(self, s):
+        """
+        returns list of frames
+        supported formats
+        1 2 3 4
+        1, 2, 3, 4
+        1,2,3,4
+        1:1000 (returns list of 1, 2, 3,..., 999, 1000
+        1:3:1000 (returns list of 1, 4, 7, .... )
+        :param s:
+        :return:
+        """
+        frames = []
+
+        # test 1:1000 or 1:3:1000 format
+        if ':' in s:
+            query = s.split(':')
+            if len(query) == 2:
+                start_t = int(query[0])
+                end_t = int(query[1]) + 1
+                frames = range(start_t, end_t)
+            elif len(query) == 3:
+                start_t = int(query[0])
+                step = int(query[1])
+                end_t = int(query[2]) + 1
+                frames = range(start_t, end_t, step)
+        else:
+            frames = s.split(',')
+            if len(frames) == 1:
+                frames = s.split(' ')
+
+            frames = map(int, frames)
+
+        return frames
+
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
@@ -99,6 +134,11 @@ if __name__ == "__main__":
     p.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
 
     ex = RegionReconstruction(p, p.saved_progress['solver'])
+    print ex.process_input('1 2 3 4')
+    print ex.process_input('1, 2, 3, 4')
+    print ex.process_input('1,2,3,4')
+    print ex.process_input('1:30')
+    print ex.process_input('1:3:30')
     # print ex.reconstruct([100, 3, 500])
     ex.show()
     ex.move(-500, -500)
