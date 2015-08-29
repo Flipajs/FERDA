@@ -89,28 +89,27 @@ class RegionReconstruction(QtGui.QWidget):
 
                 xs = []
                 ys = []
+
                 if r_best_match:
                     for p in r_best_match.pts_:
                         xs.append(p[1])
                         ys.append(p[0])
 
                 if self.add_convex_hull.isChecked():
-                    start = time.time()
                     ch_xs = []
                     ch_ys = []
-                    convex_hull = ConvexHull(r_best_match.pts_)
-                    for v_id in convex_hull.vertices:
-                        p = r_best_match.pts_[v_id]
-                        ch_xs.append(p[1])
-                        ch_ys.append(p[0])
 
-                    convex_t += time.time()-start
+                    if r_best_match:
+                        convex_hull = ConvexHull(r_best_match.pts_)
+                        for v_id in convex_hull.vertices:
+                            p = r_best_match.pts_[v_id]
+                            ch_xs.append(p[1])
+                            ch_ys.append(p[0])
 
                     reconstructed.append({'frame': f, 'chunk_id': ch.id, 'px': xs, 'py': ys, 'convex_hull_x': ch_xs, 'convex_hull_y': ch_ys})
                 else:
                     reconstructed.append({'frame': f, 'chunk_id': ch.id, 'px': xs, 'py': ys})
 
-        print "convex hull time: ", convex_t
         return reconstructed
 
     def process_input(self, s):
