@@ -89,7 +89,7 @@ if __name__ == "__main__":
     # set this:
     project_path = '/Users/flipajs/Documents/wd/eight_22/eight22.fproj'
 
-    # let it empty if the format of parts is in following format:
+    # leave it empty if the format of parts is in following format:
     # part_#_progress_save.pkl where # is a number
     # else add the names of files in right order into part_names list:
     # e.g. part_names = ['1_progress_save.pkl', 'different_name.pkl', ...]
