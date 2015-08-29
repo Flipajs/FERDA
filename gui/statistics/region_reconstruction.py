@@ -16,6 +16,8 @@ from utils.video_manager import get_auto_video_manager
 from core.region.mser import get_msers_
 from core.graph.reduced import Reduced
 import scipy.io as sio
+from scipy.spatial import ConvexHull
+import time
 
 
 class RegionReconstruction(QtGui.QWidget):
@@ -38,7 +40,10 @@ class RegionReconstruction(QtGui.QWidget):
         self.fbox.addRow('output name: ', self.out_name)
 
         self.query = QtGui.QLineEdit('1 2')
-        self.fbox.addRow('query (frame numbers separated by space', self.query)
+        self.fbox.addRow('query in following format:\n1 2 3 4 \n1, 2, 3, 4 \n1,2,3,4\n1:1000 (returns list of 1, 2, 3,..., 999, 1000\n1:3:1000 (returns list of 1, 4, 7, .... )', self.query)
+
+        self.add_convex_hull = QtGui.QCheckBox()
+        self.fbox.addRow('add convex hull', self.add_convex_hull)
 
         self.export_results = QtGui.QPushButton('export')
         self.export_results.clicked.connect(self.export)
@@ -60,6 +65,8 @@ class RegionReconstruction(QtGui.QWidget):
 
         reconstructed = []
         vid = get_auto_video_manager(self.project)
+
+        convex_t = 0
 
         for f in frames:
             ch_in_frame = self.solver.chunks_in_frame(f)
@@ -87,8 +94,23 @@ class RegionReconstruction(QtGui.QWidget):
                         xs.append(p[1])
                         ys.append(p[0])
 
-                reconstructed.append({'frame': f, 'chunk_id': ch.id, 'px': xs, 'py': ys})
+                if self.add_convex_hull.isChecked():
+                    start = time.time()
+                    ch_xs = []
+                    ch_ys = []
+                    convex_hull = ConvexHull(r_best_match.pts_)
+                    for v_id in convex_hull.vertices:
+                        p = r_best_match.pts_[v_id]
+                        ch_xs.append(p[1])
+                        ch_ys.append(p[0])
 
+                    convex_t += time.time()-start
+
+                    reconstructed.append({'frame': f, 'chunk_id': ch.id, 'px': xs, 'py': ys, 'convex_hull_x': ch_xs, 'convex_hull_y': ch_ys})
+                else:
+                    reconstructed.append({'frame': f, 'chunk_id': ch.id, 'px': xs, 'py': ys})
+
+        print "convex hull time: ", convex_t
         return reconstructed
 
     def process_input(self, s):
@@ -131,7 +153,7 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+    p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
 
     ex = RegionReconstruction(p, p.saved_progress['solver'])
     print ex.process_input('1 2 3 4')

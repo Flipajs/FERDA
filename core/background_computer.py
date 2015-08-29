@@ -62,7 +62,7 @@ class BackgroundComputer():
 
             # change this if parallelisation stopped working and you want to run it from given part
             skip_n_first_parts = 0
-            
+
             for i in range(skip_n_first_parts):
                 self.processes.append(None)
 
