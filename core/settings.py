@@ -117,6 +117,7 @@ class Controls:
 
     stop_action = Item('controls/stop_action', QtGui.QKeySequence(QtCore.Qt.Key_Escape))
     save = Item('controls/save', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
+    save_only_long_enough = Item('controls/save_only_long_enough', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_S))
     undo = Item('controls/undo', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Z))
     get_info = Item('controls/get_info', QtGui.QKeySequence(QtCore.Qt.Key_I))
     hide_show = Item('controls/hide_show', QtGui.QKeySequence(QtCore.Qt.Key_H))

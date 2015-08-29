@@ -139,6 +139,7 @@ class KeyBindingsTab(QtGui.QWidget):
 
             'stop_action',
             'save',
+            'save_only_long_enough',
             'undo',
             'get_info',
             'hide_show',

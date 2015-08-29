@@ -163,3 +163,13 @@ class TrackerWidget(QtGui.QWidget):
         self.solver = solver
         self.progress_w.hide()
         self.mode_changed()
+
+        self.save_progress = QtGui.QAction('save', self)
+        self.save_progress.triggered.connect(self.solver.save)
+        self.save_progress.setShortcut(S_.controls.save)
+        self.addAction(self.save_progress)
+
+        self.save_progress_only_chunks_action = QtGui.QAction('save only chunks', self)
+        self.save_progress_only_chunks_action.triggered.connect(self.solver.save_progress_only_chunks)
+        self.save_progress_only_chunks_action.setShortcut(S_.controls.save_only_long_enough)
+        self.addAction(self.save_progress_only_chunks_action)
