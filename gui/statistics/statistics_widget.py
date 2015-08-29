@@ -5,6 +5,8 @@ import csv
 import scipy.io as sio
 import numpy as np
 from region_reconstruction import RegionReconstruction
+from fix_area import FixArea
+
 
 class StatisticsWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -54,6 +56,10 @@ class StatisticsWidget(QtGui.QWidget):
 
         self.region_reconstruction = RegionReconstruction(project, solver=None)
         self.vbox.addWidget(self.region_reconstruction)
+
+        if project.version_is_le('2.2.9'):
+            self.fix_area = FixArea(project, solver=None)
+            self.vbox.addWidget(self.fix_area)
 
     def export(self):
         print "exporting..."
@@ -174,3 +180,4 @@ class StatisticsWidget(QtGui.QWidget):
         self.num_of_chunks.setText(str(len(solver.chunk_list())))
 
         self.region_reconstruction.solver = solver
+        self.fix_area.solver = solver

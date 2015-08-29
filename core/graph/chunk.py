@@ -112,8 +112,6 @@ class Chunk:
 
         # TODO: remove this hack... we don't know reduced area...
         if self.store_area:
-            # self.statistics['area_sum'] += r.area()
-            # self.statistics['area2_sum'] += r.area()**2
             n = self.statistics['num_of_reasonable_regions']
 
             if isinstance(r, Reduced):

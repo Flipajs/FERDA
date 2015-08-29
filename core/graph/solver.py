@@ -673,7 +673,7 @@ class Solver:
                 affected.add(n_)
 
         affected = list(affected)
-        if r in affected:
+        if r in affected[:]:
             affected.remove(r)
 
         self.remove_node(r)
