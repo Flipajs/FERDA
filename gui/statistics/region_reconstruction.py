@@ -158,7 +158,7 @@ if __name__ == "__main__":
     print ex.process_input('1 2 3 4')
     print ex.process_input('1, 2, 3, 4')
     print ex.process_input('1,2,3,4')
-    print ex.process_input('1:30')
+    print ex.process_input('1:27')
     print ex.process_input('1:3:30')
     # print ex.reconstruct([100, 3, 500])
     ex.show()
