@@ -15,7 +15,7 @@ FERDA is a multi object tracker developed mainly to meet the needs of biologists
 
 ## Team ##
 * **author:** Filip Naiser (naisefil@cmp.felk.cvut.cz)
-* **biologist consultant, tester: ** Barbara Casillas Perez
+* **collaborator: ** Barbara Casillas Perez
 * **supervisor:** Prof. Jiří Matas
 
 ## Acknowledgement ##
