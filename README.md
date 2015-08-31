@@ -1,5 +1,5 @@
 # README #
-## FERDA - Fast Extremal Region Detecto of Ants ##
+## FERDA - Fast Extremal Region Detector of Ants ##
 version 2.2.10
 FERDA is a multi object tracker developed mainly to meet the needs of biologists analysing video sequences of their animal experiments.
 
