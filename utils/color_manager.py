@@ -7,19 +7,33 @@ import math
 import random
 
 class ColorManager():
-    def __init__(self, length, limit, cmap='Accent'):
+    def __init__(self, length, limit, mode="rand", cmap='Accent'):
+        """
+        :param length: the length of the video (frames)
+        :param limit: the max number of colors to be used
+        :param mode: "cmap" or "rand", chooses the colors randomly or from a cmap
+        :param cmap: the cmap to be used in "cmap" mode
+        """
+
         # TODO: http://llllll.li/randomColor/ has a distinguishable color generator on his todo list, check it later
+        # list to store all the tracks
         self.tracks = []
+
         #lenght of the video
         self.length = length
+
         # max count of colors
         self.limit = limit
 
+        if mode == "cmap":
+            self.mode = "cmap"
+            color_norm = colors.Normalize(vmin=0, vmax=limit)
+            self.scalar_map = cmx.ScalarMappable(norm=color_norm, cmap=cmap)
+        else:
+            self.mode = "rand"
+
         random.seed()
         self.id = 0
-
-        color_norm = colors.Normalize(vmin=0, vmax=limit)
-        self.scalar_map = cmx.ScalarMappable(norm=color_norm, cmap=cmap)
 
     def get_next_id(self):
         # return current id and raise it by one
@@ -27,20 +41,45 @@ class ColorManager():
         return self.id - 1
 
     def new_track(self, start, stop):
+        """
+        Adds a new track to the color manager
+        :param start: the first frame of the track
+        :param stop: the last frame
+        :return: tuple: (color, id)
+        """
+
         # create a new track
         track = Track(start, stop, self.get_next_id(), QtGui.QColor().fromRgb(0, 0, 0))
-        # add it in the tracks list
+
         # find a suitable color for it
-        #color = self.find_color(track)
-        color = self.find_color_cmap(track)
-        self.tracks.append(track)
+        if self.mode == "cmap":
+            color = self.find_color_cmap(track)
+        else:
+            color = self.find_color(track)
         track.set_color(color)
 
-    def delete(self, id):
+        # add it in the tracks list
+        self.tracks.append(track)
+
+        return color, self.id
+
+    def delete_(self, id):
+        """
+        Delete the track from CM. To merge two tracks, use ColorManager.merge().
+        :param id:
+        :return: None
+        """
         self.tracks.remove(self.find_by_id(id))
 
     def merge(self, id1, id2):
-        # merges two tracks into the first one. All free space between the tracks is added to the first track, too.
+        """
+        Merges two tracks into the first one. All free space between the tracks is added to the first track, too. The
+        new track will have the color and id of the first track.
+        :param id1: id of the first track
+        :param id2: id of the second one
+        :return: None
+        """
+
         t1 = self.find_by_id(id1)
         t2 = self.find_by_id(id2)
 
@@ -81,25 +120,30 @@ class ColorManager():
             r = random.randint(0, 255)
             g = random.randint(0, 255)
             b = random.randint(0, 255)
-            c1 = QtGui.QColor().fromRgb(r, g, b)
-            for t in self.tracks:
-                # it must be different from any other track color
-                c2 = t.get_color()
-                # the more frames the tracks share, the more different (distant) they must be
-                value = self.collide(t, track) / self.get_yuv_distance(c1, c2)
-                if value > limit:
-                    ok = False
-            if ok:
-                print i
-                return QtGui.QColor().fromRgb(r, g, b)
+            # do not use colors, that are too close to black
+            if (r + g + b) < 70:
+                continue
+            else:
+                c1 = QtGui.QColor().fromRgb(r, g, b)
+                for t in self.tracks:
+                    # it must be different from any other track color
+                    c2 = t.get_color()
+                    # the more frames the tracks share, the more different (distant) they must be
+                    value = self.collide(t, track) / self.get_yuv_distance(c1, c2)
+                    if value > limit:
+                        ok = False
+                if ok:
+                    print i
+                    return QtGui.QColor().fromRgb(r, g, b)
 
-            if i > 500:
-                # return black if no color was found in 500 laps
-                print "No color found"
-                return QtGui.QColor().fromRgb(0, 0, 0)
-            i += 1
-            # try to make the choosing easier by enlarging the limit each time a wrong color is picked
-            limit += 0.02
+                if i > 500:
+                    # if co color was found in 500 laps, return the current color
+                    print "No color found"
+                    # return QtGui.QColor().fromRgb(0, 0, 0)
+                    return QtGui.QColor().fromRgb(r, g, b)
+                i += 1
+                # try to make the choosing easier by enlarging the limit each time a wrong color is picked
+                limit += 0.02
 
     def find_color_cmap(self, track):
         while(True):
@@ -118,7 +162,8 @@ class ColorManager():
                 return QtGui.QColor().fromRgbF(tmp_color[0], tmp_color[1], tmp_color[2])
 
     def get_yuv_distance(self, c1, c2):
-        # returns the "distance" of two colors in the YUV color system, which corresponds best with human perception
+        # returns the "distance" of two colors in the YUV color system, which corresponds best to human perception
+        # formulas to convert RGB to YUV (from wikipedia)
         y1 =  0.299 * c1.red() + 0.587 * c1.green() + 0.114 * c1.blue()
         u1 = -0.147 * c1.red() - 0.289 * c1.green() + 0.436 * c1.blue()
         v1 =  0.615 * c1.red() - 0.515 * c1.green() - 0.100 * c1.blue()
@@ -126,6 +171,7 @@ class ColorManager():
         u2 = -0.147 * c2.red() - 0.289 * c2.green() + 0.436 * c2.blue()
         v2 =  0.615 * c2.red() - 0.515 * c2.green() - 0.100 * c2.blue()
         # distance of 2 points in 3D area (YUV cube)
+        # the U and V distances are enlarged, because they are harder to see for humans
         distance = math.sqrt((y1-y2)**2 + 3*(u1-u2)**2 + 3*(v1-v2)**2)
         return distance
 
@@ -164,7 +210,7 @@ class TempGui(QtGui.QWidget):
             track = Track(start, stop, 0, color)
             tracks.append(track)
 
-        # tracks.sort(key=lambda x: x.len)
+        tracks.sort(key=lambda x: x.len)
 
         for track in tracks:
             self.cm.new_track(track.start, track.stop)
