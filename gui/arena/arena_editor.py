@@ -19,10 +19,8 @@ class ArenaEditor(QtGui.QWidget):
     ALPHA = 3
 
     def __init__(self, img, project):
-        # TODO: 1) points can be dragged off the scene
-        # TODO: 2) dragging points in polygons will delete everything else
-        # TODO: 3) when displaying the final image, RGB values of pixels are (0, 0, 254) instead (0, 0, 255) that was set
-        # TODO: 4) add support for the original arena editor (circle)
+        # TODO: 1) when displaying the final image, RGB values of pixels are (0, 0, 254) instead (0, 0, 255) that was set
+        # TODO: 2) add support for the original arena editor (circle)
 
         super(ArenaEditor, self).__init__()
 
@@ -41,7 +39,8 @@ class ArenaEditor(QtGui.QWidget):
         self.view.setMouseTracking(True)
 
         # store the current paint mode "polygons" or "paint"
-        self.mode = "polygons"
+        # self.mode = "polygons"
+        self.mode = ""
         self.color = "Blue"
 
         # store last 10 QImages to support the "undo" function
@@ -73,6 +72,10 @@ class ArenaEditor(QtGui.QWidget):
         # MyEllipse[][]
         # holds sets of all used points. Each list corresponds to one polygon
         self.ellipses_items = []
+
+        self.poly_image = QtGui.QImage(bg_size, fmt)
+        self.poly_image.fill(QtGui.qRgba(0, 0, 0, 0))
+        self.poly_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.poly_image))
 
         ##########################
         #          GUI           #
@@ -215,10 +218,18 @@ class ArenaEditor(QtGui.QWidget):
 
     def switch_mode(self):
         value = self.sender().text()
-        print value
         if value == "Paint mode":
+            if self.mode == "paint":
+                return
+            print value
+            # clean after polygon drawing
+            self.merge_images()
+            self.poly_image.fill(QtGui.qRgba(0, 0, 0, 0))
+            self.refresh_poly_image()
+
             self.clear()
             self.mode = "paint"
+            self.polygon_colors = []
             # display only the necessary widgets in the left panel
             self.poly_button.setVisible(False)
             self.undo_button.setVisible(True)
@@ -231,6 +242,9 @@ class ArenaEditor(QtGui.QWidget):
             self.circle_label.setVisible(False)
             self.set_label_text()
         elif value == "Polygon mode":
+            if self.mode == "polygons":
+                return
+            print value
             self.mode = "polygons"
             self.reset()
             self.poly_button.setVisible(True)
@@ -248,7 +262,6 @@ class ArenaEditor(QtGui.QWidget):
             self.clear_button.setVisible(True)
             self.popup_button.setVisible(True)
         else:
-            print "test"
             self. mode = "circle"
             self.poly_button.setVisible(False)
             self.undo_button.setVisible(False)
@@ -305,6 +318,12 @@ class ArenaEditor(QtGui.QWidget):
         self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.refresh_image(self.paint_image)
 
+    def clear_poly_image(self):
+        self.clear()
+        # remove all drawn lines
+        self.poly_image.fill(QtGui.qRgba(0, 0, 0, 0))
+        self.refresh_poly_image()
+
     def clear(self):
         # erase all points from polygons
         for point_items in self.ellipses_items:
@@ -327,7 +346,7 @@ class ArenaEditor(QtGui.QWidget):
         pos = self.get_scene_pos(pos)
         if type(pos) != QtCore.QPoint:
             return
-        
+
         if self.mode == "polygons":
             # in the polygons mode, try to pick one point
             precision = 20
@@ -359,14 +378,14 @@ class ArenaEditor(QtGui.QWidget):
             if self.is_in_scene(point):
                 self.draw(point)
         # do nothing in "polygons" mode
-                
+
     def save(self):
         # save last 10 images
         img = self.paint_image.copy()
         self.backup.append(img)
         if len(self.backup) > 10:
             self.backup.pop(0)
-        
+
     def undo(self):
         if self.mode == "paint":
             lenght = len(self.backup)
@@ -378,6 +397,10 @@ class ArenaEditor(QtGui.QWidget):
         self.paint_image = img
         self.scene.removeItem(self.paint_pixmap)
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(img))
+
+    def refresh_poly_image(self):
+        self.scene.removeItem(self.poly_pixmap)
+        self.poly_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.poly_image))
 
     def draw(self, point):
         # change float to int (QPointF -> QPoint)
@@ -442,7 +465,7 @@ class ArenaEditor(QtGui.QWidget):
         self.save()
         # setup the painter
         painter = QtGui.QPainter()
-        painter.begin(self.paint_image)
+        painter.begin(self.poly_image)
         brush = QtGui.QBrush()
         # paint the polygon
         if color == "Red":
@@ -456,14 +479,13 @@ class ArenaEditor(QtGui.QWidget):
         painter.setPen(pen)
         painter.drawPolygon(polygon)
         painter.end()
-
         # refresh the image
-        self.refresh_image(self.paint_image)
+        self.refresh_poly_image()
 
     def repaint_polygons(self, my_ellipse):
         # clear the canvas
         self.clear()
-        self.clear_paint_image()
+        self.clear_poly_image()
 
         tmp_ellipses = []
         tmp_points = []
@@ -486,6 +508,21 @@ class ArenaEditor(QtGui.QWidget):
             pos = QtCore.QPoint(point.x(), point.y())
             tmp_points.append(self.pick_point(pos, 10))
         self.point_items = tmp_points
+
+
+    def merge_images(self):
+        bg_height, bg_width = self.background.shape[:2]
+        bg_size = QtCore.QSize(bg_width, bg_height)
+        fmt = QtGui.QImage.Format_ARGB32
+        result = QtGui.QImage(bg_size, fmt)
+        result.fill(QtGui.qRgba(0, 0, 0, 0))
+        p = QtGui.QPainter()
+        p.begin(result)
+        p.drawImage(0, 0, self.poly_image)
+        p.drawImage(0, 0, self.paint_image)
+        p.end()
+        self.refresh_image(result)
+
 
     def get_scene_pos(self, point):
         map_pos = self.view.mapFromGlobal(point)
