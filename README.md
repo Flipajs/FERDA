@@ -7,7 +7,7 @@ FERDA is a multi object tracker developed mainly to meet the needs of biologists
 ###Dependencies:###
 * python 2.7.\*
 * opencv for python (pycv) builded with FFMPEG support
-* numpy [http://www.numpy.org]
+* [http://www.numpy.org](numpy)
 * scipy
 * networkx
 * sklearn
