@@ -225,7 +225,7 @@ class ArenaEditor(QtGui.QWidget):
             if self.mode == "paint":
                 return
             # clean after polygon drawing
-            self.merge_images()
+            self.refresh_image(self.merge_images())
             self.poly_image.fill(QtGui.qRgba(0, 0, 0, 0))
             self.refresh_poly_image()
             self.remove_items()
@@ -287,10 +287,9 @@ class ArenaEditor(QtGui.QWidget):
 
 
     def popup(self):
-        self.merge_images()
+        img = self.merge_images().copy()
+        self.refresh_image(img)
         bg_height, bg_width = self.background.shape[:2]
-
-        img = self.paint_image.copy()
 
         r = QtGui.qRgba(255, 0, 0, 100)
         b = QtGui.qRgba(0, 0, 255, 100)
@@ -533,7 +532,7 @@ class ArenaEditor(QtGui.QWidget):
         p.drawImage(0, 0, self.poly_image)
         p.drawImage(0, 0, self.paint_image)
         p.end()
-        self.refresh_image(result)
+        return result
 
 
     def get_scene_pos(self, point):
