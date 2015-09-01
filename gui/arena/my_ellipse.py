@@ -12,4 +12,4 @@ class MyEllipse(QtGui.QGraphicsEllipseItem):
         super(MyEllipse, self).mouseReleaseEvent(e)
 
         if self.update_callback:
-            self.update_callback(self)
+            self.update_callback()
