@@ -210,6 +210,7 @@ class ArenaEditor(QtGui.QWidget):
 
     def switch_color(self):
         text = self.sender().text()
+        print "Setting color to %s" % text
         # make sure no other button stays pushed
         for button in self.color_buttons:
             if button.text() != text:
@@ -229,6 +230,7 @@ class ArenaEditor(QtGui.QWidget):
             self.poly_image.fill(QtGui.qRgba(0, 0, 0, 0))
             self.refresh_poly_image()
             self.remove_items()
+            print "cleaning polygon colors!"
             self.polygon_colors = []
 
             self.mode = "paint"
@@ -257,6 +259,8 @@ class ArenaEditor(QtGui.QWidget):
             self.clear_poly_image()
             self.point_items = []
             self.ellipses_items = []
+            self.polygon_colors = []
+
             # self.reset()
 
             self.poly_button.setVisible(True)
@@ -289,29 +293,25 @@ class ArenaEditor(QtGui.QWidget):
     def popup(self):
         img = self.merge_images().copy()
         self.refresh_image(img)
+
         bg_height, bg_width = self.background.shape[:2]
 
-        r = QtGui.qRgba(255, 0, 0, 100)
-        b = QtGui.qRgba(0, 0, 255, 100)
-        none = QtGui.QColor(0, 0, 0, 255)
+        arena_mask = np.zeros((bg_height, bg_width), dtype=np.bool)
+        occultation_mask = np.zeros((bg_height, bg_width), dtype=np.bool)
 
         for i in range(0, bg_width):
             for j in range(0, bg_height):
                 color = QtGui.QColor(img.pixel(i, j))
-                if color.blue() > 250 and color.red() == 0:
-                    print "(%s, %s, %s, %s)" % (color.red(), color.green(), color.blue(), color.alpha())
-                    img.setPixel(i, j, b)
-                elif color.red() > 250 and color.blue() == 0:
-                    print "(%s, %s, %s, %s)" % (color.red(), color.green(), color.blue(), color.alpha())
-                    img.setPixel(i, j, r)
-                elif color != none:
-                    print "(%s, %s, %s, %s)" % (color.red(), color.green(), color.blue(), color.alpha())
-                    img.setPixel(i, j, r)
+                if color.blue() > 250:
+                    occultation_mask[j, i] = True
+                if color.red() > 250:
+                    arena_mask[j, i] = True
 
         self.w = MyPopup(img)
         self.w.show()
         self.w.showMaximized()
         self.w.setFocus()
+        return arena_mask, occultation_mask
 
     def change_value(self, value):
         # change pen size
@@ -349,6 +349,7 @@ class ArenaEditor(QtGui.QWidget):
         self.clear_paint_image()
         self.point_items = []
         self.ellipses_items = []
+        self.polygon_colors = []
 
     def mousePressEvent(self, event):
         # get event position and calibrate to scene
@@ -473,6 +474,9 @@ class ArenaEditor(QtGui.QWidget):
             print "Polygon is too small, pick at least 3 points"
 
     def paint_polygon_(self, polygon, color):
+        for c in self.polygon_colors:
+            print c
+        print "-------"
         self.save()
         # setup the painter
         painter = QtGui.QPainter()
