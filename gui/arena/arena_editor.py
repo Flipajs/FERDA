@@ -294,26 +294,20 @@ class ArenaEditor(QtGui.QWidget):
 
         r = QtGui.qRgba(255, 0, 0, 100)
         b = QtGui.qRgba(0, 0, 255, 100)
-
-        red = QtGui.QColor(254, 0, 0, 255)
-        blue = QtGui.QColor(0, 0, 254, 255)
-        blue2 = QtGui.QColor(0, 0, 255, 255)
         none = QtGui.QColor(0, 0, 0, 255)
 
         for i in range(0, bg_width):
             for j in range(0, bg_height):
                 color = QtGui.QColor(img.pixel(i, j))
-                if color != red and color != blue and color != blue2 and color != none:
-                    # distance from red
-                    r_distance = math.sqrt((color.red() - 255)**2 + color.green()**2 + color.blue()**2)
-                    # distance from blue
-                    b_distance = math.sqrt(color.red()**2 + color.green()**2 + (color.blue() - 255)**2)
-                    print "r %s, b %s" %(r_distance, b_distance)
-                    if r_distance > b_distance:
-                        img.setPixel(i, j, b)
-                    else:
-                        img.setPixel(i, j, r)
-
+                if color.blue() > 250 and color.red() == 0:
+                    print "(%s, %s, %s, %s)" % (color.red(), color.green(), color.blue(), color.alpha())
+                    img.setPixel(i, j, b)
+                elif color.red() > 250 and color.blue() == 0:
+                    print "(%s, %s, %s, %s)" % (color.red(), color.green(), color.blue(), color.alpha())
+                    img.setPixel(i, j, r)
+                elif color != none:
+                    print "(%s, %s, %s, %s)" % (color.red(), color.green(), color.blue(), color.alpha())
+                    img.setPixel(i, j, r)
 
         self.w = MyPopup(img)
         self.w.show()
