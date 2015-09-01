@@ -39,7 +39,6 @@ class ArenaEditor(QtGui.QWidget):
         self.view.setMouseTracking(True)
 
         # store the current paint mode "polygons" or "paint"
-        # self.mode = "polygons"
         self.mode = ""
         self.color = "Blue"
 
@@ -50,6 +49,7 @@ class ArenaEditor(QtGui.QWidget):
         #  PAINT MODE VARIABLES  #
         ##########################
         self.pen_size = 30
+        # image to store all progress
         bg_height, bg_width = self.background.shape[:2]
         bg_size = QtCore.QSize(bg_width, bg_height)
         fmt = QtGui.QImage.Format_ARGB32
@@ -73,6 +73,7 @@ class ArenaEditor(QtGui.QWidget):
         # holds sets of all used points. Each list corresponds to one polygon
         self.ellipses_items = []
 
+        # temporary image to work with polygons
         self.poly_image = QtGui.QImage(bg_size, fmt)
         self.poly_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.poly_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.poly_image))
@@ -125,19 +126,19 @@ class ArenaEditor(QtGui.QWidget):
         blue_button = QtGui.QPushButton("Blue")
         blue_button.setCheckable(True)
         blue_button.setChecked(True)
-        blue_button.clicked.connect(self.color_test)
+        blue_button.clicked.connect(self.switch_color)
         color_widget.layout().addWidget(blue_button)
         self.color_buttons.append(blue_button)
 
         red_button = QtGui.QPushButton("Red")
         red_button.setCheckable(True)
-        red_button.clicked.connect(self.color_test)
+        red_button.clicked.connect(self.switch_color)
         color_widget.layout().addWidget(red_button)
         self.color_buttons.append(red_button)
 
         eraser_button = QtGui.QPushButton("Eraser")
         eraser_button.setCheckable(True)
-        eraser_button.clicked.connect(self.color_test)
+        eraser_button.clicked.connect(self.switch_color)
         color_widget.layout().addWidget(eraser_button)
         self.color_buttons.append(eraser_button)
 
@@ -187,12 +188,12 @@ class ArenaEditor(QtGui.QWidget):
 
         # CLEAR button and key shortcut
         self.action_clear = QtGui.QAction('clear', self)
-        self.action_clear.triggered.connect(self.clear_paint_image)
+        self.action_clear.triggered.connect(self.reset)
         self.action_clear.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
         self.addAction(self.action_clear)
 
         self.clear_button = QtGui.QPushButton("Clear paint area \n (key_C)")
-        self.clear_button.clicked.connect(self.clear_paint_image)
+        self.clear_button.clicked.connect(self.reset)
         widget.layout().addWidget(self.clear_button)
 
         self.popup_button = QtGui.QPushButton("Done!")
@@ -207,8 +208,9 @@ class ArenaEditor(QtGui.QWidget):
         self.layout().addWidget(widget)
         self.layout().addWidget(self.view)
 
-    def color_test(self):
+    def switch_color(self):
         text = self.sender().text()
+        # make sure no other button stays pushed
         for button in self.color_buttons:
             if button.text() != text:
                 button.setChecked(False)
@@ -219,17 +221,18 @@ class ArenaEditor(QtGui.QWidget):
     def switch_mode(self):
         value = self.sender().text()
         if value == "Paint mode":
+            # don't do anything if paint mode is already active
             if self.mode == "paint":
                 return
-            print value
             # clean after polygon drawing
             self.merge_images()
             self.poly_image.fill(QtGui.qRgba(0, 0, 0, 0))
             self.refresh_poly_image()
-
-            self.clear()
-            self.mode = "paint"
+            self.remove_items()
             self.polygon_colors = []
+
+            self.mode = "paint"
+
             # display only the necessary widgets in the left panel
             self.poly_button.setVisible(False)
             self.undo_button.setVisible(True)
@@ -241,12 +244,21 @@ class ArenaEditor(QtGui.QWidget):
             self.pen_label.setVisible(True)
             self.circle_label.setVisible(False)
             self.set_label_text()
+
         elif value == "Polygon mode":
+            # don't do anything if polygons mode is already active
             if self.mode == "polygons":
                 return
-            print value
+
             self.mode = "polygons"
-            self.reset()
+
+            # cleanup after paint mode
+            self.remove_items()
+            self.clear_poly_image()
+            self.point_items = []
+            self.ellipses_items = []
+            # self.reset()
+
             self.poly_button.setVisible(True)
             self.undo_button.setVisible(False)
             self.slider.setVisible(False)
@@ -275,27 +287,33 @@ class ArenaEditor(QtGui.QWidget):
 
 
     def popup(self):
+        self.merge_images()
+        bg_height, bg_width = self.background.shape[:2]
 
         img = self.paint_image.copy()
 
         r = QtGui.qRgba(255, 0, 0, 100)
+        b = QtGui.qRgba(0, 0, 255, 100)
 
         red = QtGui.QColor(254, 0, 0, 255)
-        print red
         blue = QtGui.QColor(0, 0, 254, 255)
         blue2 = QtGui.QColor(0, 0, 255, 255)
-        print blue
         none = QtGui.QColor(0, 0, 0, 255)
-        print none
 
-        bg_height, bg_width = self.background.shape[:2]
         for i in range(0, bg_width):
             for j in range(0, bg_height):
                 color = QtGui.QColor(img.pixel(i, j))
-                if color == red or color == blue or color == blue2 or color == none:
-                    k = 3
-                else:
-                    img.setPixel(i, j, r)
+                if color != red and color != blue and color != blue2 and color != none:
+                    # distance from red
+                    r_distance = math.sqrt((color.red() - 255)**2 + color.green()**2 + color.blue()**2)
+                    # distance from blue
+                    b_distance = math.sqrt(color.red()**2 + color.green()**2 + (color.blue() - 255)**2)
+                    print "r %s, b %s" %(r_distance, b_distance)
+                    if r_distance > b_distance:
+                        img.setPixel(i, j, b)
+                    else:
+                        img.setPixel(i, j, r)
+
 
         self.w = MyPopup(img)
         self.w.show()
@@ -313,18 +331,16 @@ class ArenaEditor(QtGui.QWidget):
             self.pen_label.setText("Pen size: %s" % self.pen_size)
 
     def clear_paint_image(self):
-        self.clear()
         # remove all drawn lines
         self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.refresh_image(self.paint_image)
 
     def clear_poly_image(self):
-        self.clear()
         # remove all drawn lines
         self.poly_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.refresh_poly_image()
 
-    def clear(self):
+    def remove_items(self):
         # erase all points from polygons
         for point_items in self.ellipses_items:
             for point in point_items:
@@ -335,7 +351,9 @@ class ArenaEditor(QtGui.QWidget):
             self.scene.removeItem(point)
 
     def reset(self):
-        self.clear()
+        self.remove_items()
+        self.clear_poly_image()
+        self.clear_paint_image()
         self.point_items = []
         self.ellipses_items = []
 
@@ -484,7 +502,7 @@ class ArenaEditor(QtGui.QWidget):
 
     def repaint_polygons(self, my_ellipse):
         # clear the canvas
-        self.clear()
+        self.remove_items()
         self.clear_poly_image()
 
         tmp_ellipses = []
