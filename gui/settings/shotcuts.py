@@ -6,6 +6,7 @@ class Node():
         self.depth = depth
         self.id = id
         self.children = []
+        self.children_limit = random.randint(0, 3)
 
     def add_child(self, node):
         self.children.append(node)
@@ -13,7 +14,16 @@ class Node():
     def children_count(self):
         return len(self.children)
 
-n = Node(0, "root")
+def pop(stack):
+    return stack.pop()
+
+def peek(stack):
+    n = stack.pop()
+    stack.append(n)
+    return n
+
+root = Node(0, "root")
+n = copy.copy(root)
 stack = []
 stack.append(n)
 
@@ -26,13 +36,11 @@ while len(stack) > 0:
     # print depth, len(stack), id
     if depth > 4:
         # print "We do not have to go deeper than %s" % depth
-        n = stack.pop()
-        # peek
-        n = stack.pop()
-        stack.append(n)
+        pop(stack)
+        n = peek(stack)
         depth -= 1
     else:
-        if n.children_count() < 2:
+        if n.children_count() < n.children_limit:
             # add a child
             new = Node(depth, id)
             n.add_child(new)
@@ -44,7 +52,13 @@ while len(stack) > 0:
         else:
             # close this node
             # print "%s already has %s children" % (n.id, n.children_count())
-            n = stack.pop()
-            n = stack.pop()
-            stack.append(n)
+
+            try:
+                pop(stack)
+                n = peek(stack)
+            except IndexError:
+                break
+
             depth -= 1
+
+print "Total children created: %s" % id
