@@ -73,15 +73,18 @@ class SettingsDialog(QtGui.QDialog):
         # self.controls_tab.harvest()
         # self.appearance_tab.harvest()
         # self.test_tab.harvest()
-        self.key_binding_tab.harvest()
+        return self.key_binding_tab.harvest()
 
     def restore_defaults(self):
         self.tabWidget.currentWidget().restore_defaults()
 
     def done(self, p_int):
+        success = True
         if p_int == QtGui.QDialog.Accepted:
-            self.harvest_results()
-        super(SettingsDialog, self).done(p_int)
+            if not self.harvest_results():
+                success = False
+        if success:
+            super(SettingsDialog, self).done(p_int)
 
 
 class KeyBindingDialog(QtGui.QDialog):
@@ -186,13 +189,14 @@ class KeyBindingsTab(QtGui.QWidget):
 
         if len(conflicts) > 0:
             for shortcut, id in conflicts:
-                print "The shortcut for '%s' in %s can't be set to %s. That key is already used in %s" % (shortcut.usage, shortcut.parent.name, shortcut.value, id)
                 self.restore_defaults()
+                QtGui.QMessageBox.about(self, "Invalid shortcuts", "Sorry, the shortcut for '%s' in %s can't be set to %s. That key is already used in %s" % (shortcut.usage, shortcut.parent.name, shortcut.value, id))
+                return False
         else:
-            print "New shortcuts are OK"
             for i in range(len(self.buttons)):
                 s = "S_.controls."+self.buttons[i]+" = QtGui.QKeySequence('"+self.table.item(i, 1).text()+"')"
                 exec(str(s))
+                return True
 
     def translate(self, key_name):
         k = key_name
