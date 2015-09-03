@@ -79,7 +79,7 @@ class Visualization:
 
 class Parallelization:
     __metaclass__ = SettingsType
-    processes_num = Item('parallelization/processes_num', 8, 'The number of processes. It is good idea to set it <= num of CPUs')
+    processes_num = Item('parallelization/processes_num', 1, 'The number of processes. It is good idea to set it <= num of CPUs')
     use = Item('parallelization/use', True, '...')
     frames_in_row = Item('parallelization/frames_in_row', 100, 'num of frames in one part into which the whole video is divided...')
 
