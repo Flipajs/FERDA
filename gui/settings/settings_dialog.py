@@ -124,32 +124,32 @@ class KeyBindingsTab(QtGui.QWidget):
 
     def __init__(self, settable_buttons=[], parent=None):
         settable_buttons = [
-            'show_settings',
-            'next_case',
-            'prev_case',
-            'confirm',
-            'partially_confirm',
-            'confirm_path',
-            'fitting_from_left',
-            'remove_region',
-            'remove_chunk',
-            'join_regions',
-            'new_region',
-            'ignore_case',
+            'show_settings', # FERDA
+            'next_case', # step by step conrrection tool
+            'prev_case', # step by step conrrection tool
+            'confirm', # step by step conrrection tool
+            'partially_confirm', # step by step conrrection tool
+            'confirm_path', # Step by step conrrection tool
+            'fitting_from_left', # Step by step conrrection tool
+            'remove_region', # Step by step conrrection tool
+            'remove_chunk', # Step by step conrrection tool, Global view
+            'join_regions', # Step by step conrrection tool
+            'new_region', # Step by step conrrection tool
+            'ignore_case', # Step by step conrrection tool, Global view
 
-            'stop_action',
-            'save',
-            'save_only_long_enough',
-            'undo',
-            'get_info',
-            'hide_show',
+            'stop_action', # Step by step conrrection tool
+            'save', # FERDA
+            'save_only_long_enough', # FERDA
+            'undo', # step by step conrrection tool, global view
+            'get_info', # others
+            'hide_show', # others
 
-            'video_next',
-            'video_prev',
-            'video_play_pause',
-            'video_random_frame',
+            'video_next', # viewer
+            'video_prev', # viewer
+            'video_play_pause', # viewer
+            'video_random_frame', # others
 
-            'global_view_join_chunks',
+            'global_view_join_chunks', # global view
         ]
 
         super(KeyBindingsTab, self).__init__(parent)
