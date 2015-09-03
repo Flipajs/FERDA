@@ -13,21 +13,52 @@ class ImgManager:
         self.project = project
         self.vid = get_auto_video_manager(project)
         self.whole_images_cache = {}
+        self.whole_images_frames = []  # since dictionary changes its' order, list must be used to hold it
+        self.crop_cache = {}
+        self.crop_frames = []
 
     def get_whole_img(self, frame):
+        print "Saved frames: %s" % self.whole_images_frames
         for f, img in self.whole_images_cache.items():
             if f == frame:
-                # remove it from the distionary
-                self.whole_images_cache.pop(f)
+                # remove it from the frames list
+                self.whole_images_frames.remove(f)
                 # add it again so it doesn't get erased as unused
-                self.whole_images_cache[f] = img
+                self.whole_images_frames.append(f)
                 print "Image %s was cached" % f
                 return img.copy()
         # if the image isn't in the cache, load it and add it
         image = prepare_for_visualisation(self.vid.get_frame(frame), self.project)
+
+        # only save last 5 images
+        if len(self.whole_images_cache) > 4:
+            self.whole_images_cache.pop(self.whole_images_frames.pop(0), None)
+        self.whole_images_frames.append(frame)
         self.whole_images_cache[frame] = image
         print "Image %s wasn't cached" % frame
         return image
+
+    def get_ccrop(self, frame, x0, y0, x1, y1):
+        fm = Frame(frame, x0, y0, x1, y1)
+        for f, crop in self.crop_cache.items():
+            if f.equals(fm):
+                # remove it from the frames list
+                self.crop_frames.remove(f)
+                # add it again so it doesn't get erased as unused
+                self.crop_frames.append(f)
+                print "Crop %s was cached" % f.frame
+                return crop.copy()
+        # if the image isn't in the cache, load it and add it
+        image = prepare_for_visualisation(self.vid.get_frame(fm.frame), self.project)
+        result = image[y0:y1,x0:x1]
+
+        # only save last 5 images
+        if len(self.crop_cache) > 4:
+            self.crop_cache.pop(self.crop_frames.pop(0), None)
+        self.crop_frames.append(fm)
+        self.crop_cache[fm] = result
+        print "Crop %s wasn't cached" % fm.frame
+        return result
 
     def get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, max_width=-1, max_height=-1,
                  min_width=-1, min_height=-1, visualise=False, regions=[], colors=[], default_color=(255, 255, 255, 0.8), constant_propotions=True, fill_color=(0, 0, 0)):
@@ -95,8 +126,18 @@ class ImgManager:
         return crop
 
 
-class QtCore(object):
-    pass
+class Frame:
+    def __init__(self, frame, x0, y0, x1, y1):
+        self.frame = frame
+        self.x0 = x0
+        self.y0 = y0
+        self.x1 = x1
+        self.y1 = y1
+
+    def equals (self, crop):
+        if self.frame == crop.frame and self.x0 == crop.x0 and self.y0 == crop.y0 and self.x1 == crop.x1 and self.y1 == crop.y1:
+            return True
+        return False
 
 
 if __name__ == "__main__":
@@ -124,7 +165,7 @@ if __name__ == "__main__":
 
         import time
         t = time.time()
-        im = im_manager.get_whole_img(rnd)
+        im = im_manager.get_ccrop(rnd, 400, 400, 800, 800)
         print "Time taken: %s" % (time.time() - t)
         cv2.imshow("im", im)
         key = cv2.waitKey(0)
