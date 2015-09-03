@@ -15,10 +15,19 @@ class ImgManager:
         self.whole_images_cache = {}
 
     def get_whole_img(self, frame):
-        im = prepare_for_visualisation(self.vid.get_frame(frame), self.project)
-
-        # TODO: if it is from cache, return .copy()
-        return im
+        for f, img in self.whole_images_cache.items():
+            if f == frame:
+                # remove it from the distionary
+                self.whole_images_cache.pop(f)
+                # add it again so it doesn't get erased as unused
+                self.whole_images_cache[f] = img
+                print "Image %s was cached" % f
+                return img.copy()
+        # if the image isn't in the cache, load it and add it
+        image = prepare_for_visualisation(self.vid.get_frame(frame), self.project)
+        self.whole_images_cache[frame] = image
+        print "Image %s wasn't cached" % frame
+        return image
 
     def get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, max_width=-1, max_height=-1,
                  min_width=-1, min_height=-1, visualise=False, regions=[], colors=[], default_color=(255, 255, 255, 0.8), constant_propotions=True, fill_color=(0, 0, 0)):
@@ -86,16 +95,37 @@ class ImgManager:
         return crop
 
 
+class QtCore(object):
+    pass
+
+
 if __name__ == "__main__":
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
+    #p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
+    p.load('/home/dita/PycharmProjects/eight/eight.fproj')
 
     im_manager = ImgManager(p)
 
     import cv2
-    solver = p.saved_progress['solver']
-    nodes = solver.nodes_in_t[0]
+    #solver = p.saved_progress['solver']
+    #nodes = solver.nodes_in_t[0]
 
-    im = im_manager.get_crop(0, nodes[0:3], regions=nodes, relative_margin=0.1)
+    import random
+    rnd = random.randint(0, 10)
+    rnd *= 100
+    #im = im_manager.get_crop(0, nodes[0:3], regions=nodes, relative_margin=0.1)
+    im = im_manager.get_whole_img(rnd)
     cv2.imshow("im", im)
-    cv2.waitKey(0)
+    print "Press SPACE to show another image"
+    key = cv2.waitKey(0)
+    while key == 1048608:
+        rnd = random.randint(0, 10)
+        rnd *= 100
+
+        import time
+        t = time.time()
+        im = im_manager.get_whole_img(rnd)
+        print "Time taken: %s" % (time.time() - t)
+        cv2.imshow("im", im)
+        key = cv2.waitKey(0)
+    print "done"
