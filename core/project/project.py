@@ -53,7 +53,6 @@ class Project:
 
         return True
 
-
     def save_project_file_(self):
         p = Project()
         p.name = self.name
