@@ -9,9 +9,10 @@ import numpy as np
 
 
 class ImgManager:
-    def __init__(self, project):
+    def __init__(self, project, max_num_of_instances=-1, max_size_mb=-1):
         self.project = project
         self.vid = get_auto_video_manager(project)
+        self.whole_images_cache = {}
 
     def get_whole_img(self, frame):
         im = prepare_for_visualisation(self.vid.get_frame(frame), self.project)
