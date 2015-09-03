@@ -1,3 +1,5 @@
+__author__ = 'flipajs'
+
 __author__ = 'fnaiser'
 
 from PyQt4 import QtGui, QtCore
@@ -353,6 +355,24 @@ class ResultsWidget(QtGui.QWidget):
 
         self.update_positions(0, optimized=False)
 
+    def add_data_mat(self, chunks):
+        i = 0
+        self.chunks = chunks
+        for ch in self.chunks:
+            r, g, b = colors_[i % len(colors_)]
+            item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
+            item.setZValue(0.5)
+            self.items.append(item)
+            self.scene.addItem(item)
+
+            self.starting_frames.setdefault(ch.start_n.frame_, []).append((ch, i))
+
+            item.setVisible(False)
+
+            i += 1
+
+        self.update_positions(0, optimized=False)
+
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""
         self.forward.clicked.connect(self.load_next_frame)
@@ -468,3 +488,67 @@ def view_add_bg_image(g_view, pix_map):
         else:
             val = math.floor((gv_h / float(im_h))*100) / 100
             g_view.scale(val, val)
+
+def get_chunks_from_mat(mat):
+    from core.graph.chunk import Chunk
+    from core.region.region import Region
+    import numpy as np
+    from core.graph.reduced import Reduced
+
+    chunks = []
+    for ch in mat['FERDA'][0]:
+        new_ch = Chunk()
+
+        if len(ch['x']) > 0:
+            start_n = Region()
+            y = ch['y'][0][0][0]
+            x = ch['x'][0][0][0]
+            frame = ch['frame'][0][0][0]
+
+            start_n.centroid_ = np.array([y[0], x[0]])
+            start_n.frame_ = frame[0]
+            new_ch.start_n = start_n
+
+            for i in range(1, len(x)):
+                r = Reduced()
+                r.centroid_ = np.array([y[i], x[i]])
+                r.frame_ = frame[i]
+                new_ch.reduced.append(r)
+
+            end_n = Region()
+            end_n.centroid_ = np.array([y[-1], x[-1]])
+            end_n.frame_ = frame [-1]
+            new_ch.end_n = end_n
+
+        chunks.append(new_ch)
+
+    return chunks
+
+if __name__ == "__main__":
+    import sys
+    from core.project.project import Project
+    import scipy.io as sio
+
+    # CHANGE THIS:
+    project_path = '/Users/flipajs/Documents/wd/eight_22/eight22.fproj'
+    mat_path = '/Users/flipajs/Documents/wd/eight_22/out.mat'
+
+    app = QtGui.QApplication(sys.argv)
+
+    p = Project()
+    p.load(project_path)
+
+    ex = ResultsWidget(p)
+
+    mat = sio.loadmat(mat_path)
+
+    chunks = get_chunks_from_mat(mat)
+    ex.add_data_mat(chunks)
+    ex.show()
+    ex.move(-500, -500)
+    ex.showMaximized()
+    ex.setFocus()
+
+    app.exec_()
+    app.deleteLater()
+    sys.exit()

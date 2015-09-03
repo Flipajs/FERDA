@@ -31,7 +31,7 @@ class EditablePixmap:
         self.update_pixmap()
 
     def remove_points(self, new_pts):
-        for pt in new_pts:
+        for pt in new_pts[:]:
             try:
                 self.pts.remove([pt[0], pt[1]])
             except ValueError:

@@ -109,7 +109,7 @@ class MSERTree(QtGui.QWidget):
         return regions
 
     def focus_on(self, items):
-        for item in items:
+        for item in items[:]:
             if item is not isinstance(item, QtGui.QGraphicsPixmapItem):
                 items.remove(item)
 

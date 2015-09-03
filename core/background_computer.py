@@ -59,7 +59,14 @@ class BackgroundComputer():
             if not S_.general.log_in_bg_computation:
                 S_.general.log_graph_edits = False
             self.start = time.time()
-            for i in range(self.part_num):
+
+            # change this if parallelisation stopped working and you want to run it from given part
+            skip_n_first_parts = 0
+
+            for i in range(skip_n_first_parts):
+                self.processes.append(None)
+
+            for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
 
                 p.finished.connect(partial(self.onFinished, i))
@@ -67,7 +74,7 @@ class BackgroundComputer():
                 p.readyReadStandardOutput.connect(partial(self.OnProcessOutputReady, i))
 
                 f_num = self.frames_in_row
-                # f_num = 100
+
                 last_n_frames = 0
                 if i == self.part_num - 1:
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
@@ -75,7 +82,7 @@ class BackgroundComputer():
                 ex_str = str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
                 print ex_str
                 status = self.WAITING
-                if i < self.process_n:
+                if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
                     p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
 
@@ -119,18 +126,15 @@ class BackgroundComputer():
                 for n1, n2, d in g_.edges(data=True):
                     self.solver.g.add_edge(n1, n2, d)
 
-                if i < self.process_n - 1:
-                    nodes_to_process += start_nodes
-
                 nodes_to_process += end_nodes
 
                 # check last and start frames...
                 start_t = self.project.solver_parameters.frames_in_row * i
-                for n in end_nodes_prev:
+                for n in end_nodes_prev[:]:
                     if n.frame_ != start_t - 1:
                         end_nodes_prev.remove(n)
 
-                for n in start_nodes:
+                for n in start_nodes[:]:
                     if n.frame_ != start_t:
                         start_nodes.remove(n)
 
