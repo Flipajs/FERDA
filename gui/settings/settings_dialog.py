@@ -124,32 +124,32 @@ class KeyBindingsTab(QtGui.QWidget):
 
     def __init__(self, settable_buttons=[], parent=None):
         settable_buttons = [
-            'show_settings', # FERDA
-            'next_case', # step by step conrrection tool
-            'prev_case', # step by step conrrection tool
-            'confirm', # step by step conrrection tool
-            'partially_confirm', # step by step conrrection tool
-            'confirm_path', # Step by step conrrection tool
-            'fitting_from_left', # Step by step conrrection tool
-            'remove_region', # Step by step conrrection tool
-            'remove_chunk', # Step by step conrrection tool, Global view
-            'join_regions', # Step by step conrrection tool
-            'new_region', # Step by step conrrection tool
-            'ignore_case', # Step by step conrrection tool, Global view
+            'show_settings',  # FERDA
+            'next_case',  # step by step conrrection tool
+            'prev_case',  # step by step conrrection tool
+            'confirm',  # step by step conrrection tool
+            'partially_confirm',  # step by step conrrection tool
+            'confirm_path',  # Step by step conrrection tool
+            'fitting_from_left',  # Step by step conrrection tool
+            'remove_region',  # Step by step conrrection tool
+            'remove_chunk',  # Step by step conrrection tool, Global view
+            'join_regions',  # Step by step conrrection tool
+            'new_region',  # Step by step conrrection tool
+            'ignore_case',  # Step by step conrrection tool, Global view
 
-            'stop_action', # Step by step conrrection tool
-            'save', # FERDA
-            'save_only_long_enough', # FERDA
-            'undo', # step by step conrrection tool, global view
-            'get_info', # others
-            'hide_show', # others
+            'stop_action',  # Step by step conrrection tool
+            'save',  # FERDA
+            'save_only_long_enough',  # FERDA
+            'undo',  # step by step conrrection tool, global view
+            'get_info',  # others
+            'hide_show',  # others
 
-            'video_next', # viewer
-            'video_prev', # viewer
-            'video_play_pause', # viewer
-            'video_random_frame', # others
+            'video_next',  # viewer
+            'video_prev',  # viewer
+            'video_play_pause',  # viewer
+            'video_random_frame',  # others
 
-            'global_view_join_chunks', # global view
+            'global_view_join_chunks',  # global view
         ]
 
         super(KeyBindingsTab, self).__init__(parent)
@@ -160,15 +160,11 @@ class KeyBindingsTab(QtGui.QWidget):
         self.main_layout.addWidget(self.table)
         self.table.horizontalHeader().setVisible(False)
         self.table.verticalHeader().setVisible(False)
-        for i in range(len(settable_buttons)):
-            self.table.setItem(i, 0, QtGui.QTableWidgetItem(self.translate(settable_buttons[i])))
-            self.table.item(i, 0).setFlags(QtCore.Qt.NoItemFlags)
-            s = eval('S_.controls.'+settable_buttons[i]).toString()
-            self.table.setItem(i, 1, QtGui.QTableWidgetItem(s))
-            self.table.item(i, 1).setFlags(QtCore.Qt.NoItemFlags | QtCore.Qt.ItemIsEnabled)
+        self.restore_defaults()
         self.table.itemDoubleClicked.connect(self.bind_new_key)
 
-        self.main_layout.addWidget(QtGui.QLabel('To guarantee the functionality of new shortcuts, please restart application after hitting OK button.'))
+        self.main_layout.addWidget(QtGui.QLabel('To guarantee the functionality of new shortcuts, please restart \
+        application after hitting OK button.'))
 
     def bind_new_key(self, item):
         dialog = KeyBindingDialog(self)
@@ -178,16 +174,25 @@ class KeyBindingsTab(QtGui.QWidget):
 
     def restore_defaults(self):
         for i in range(len(self.buttons)):
-            self.table.item(i, 1).setText('test')
+            self.table.setItem(i, 0, QtGui.QTableWidgetItem(self.translate(self.buttons[i])))
+            self.table.item(i, 0).setFlags(QtCore.Qt.NoItemFlags)
+            s = eval('S_.controls.'+self.buttons[i]).toString()
+            self.table.setItem(i, 1, QtGui.QTableWidgetItem(s))
+            self.table.item(i, 1).setFlags(QtCore.Qt.NoItemFlags | QtCore.Qt.ItemIsEnabled)
 
     def harvest(self):
-        for i in range(len(self.buttons)):
-            # s = 'S_.controls.'+self.buttons[i]+' = QtGui.QKeySequence(QtCore.Qt.Key_'+self.table.item(i, 1).text()+')'
-            s = "S_.controls."+self.buttons[i]+" = QtGui.QKeySequence('"+self.table.item(i, 1).text()+"')"
-            exec(str(s))
-            # print S_.controls.__getattribute__('show_settings')
-            # S_.controls.__setattr__(self.buttons[i], QtGui.QKeySequence(self.table.item(i, 1).text()))
-            # self.buttons[i][0] = QtGui.QKeySequence(self.table.item(i, 1).text())
+        graph = self.make_graph()
+        conflicts = ConflictFinder().get_conflicts(graph)
+
+        if len(conflicts) > 0:
+            for shortcut, id in conflicts:
+                print "The shortcut for '%s' in %s can't be set to %s. That key is already used in %s" % (shortcut.usage, shortcut.parent.name, shortcut.value, id)
+                self.restore_defaults()
+        else:
+            print "New shortcuts are OK"
+            for i in range(len(self.buttons)):
+                s = "S_.controls."+self.buttons[i]+" = QtGui.QKeySequence('"+self.table.item(i, 1).text()+"')"
+                exec(str(s))
 
     def translate(self, key_name):
         k = key_name
@@ -197,3 +202,118 @@ class KeyBindingsTab(QtGui.QWidget):
         # elif k == 'next_case':
 
         return k.replace('_', ' ')
+
+    def make_graph(self):
+        """
+        load all shortcuts into a graph that describes their relations
+        :return: first Node of the graph
+        """
+
+        root = Node("root", None)
+
+        ferda = Node("FERDA", root)
+        root.children.append(ferda)
+
+        stbs = Node("Step by step", ferda)
+        ferda.children.append(stbs)
+
+        glob = Node("Global view", ferda)
+        ferda.children.append(glob)
+
+        view = Node("Viewer", ferda)
+        ferda.children.append(view)
+
+        othr = Node("Others", ferda)
+        ferda.children.append(othr)
+
+        for i in range(len(self.buttons)):
+            value = self.table.item(i, 1).text()
+            name = self.table.item(i, 0).text()
+
+            ferda_commands = ["show settings", "save", "save only long enough"]
+            stbs_commands = ["next case", "prev case", "confirm", "partially confirm", "confirm path", "fitting from left",
+                "remove region", "remove chunk", "join regions", "new region", "ignore case", "stop action", "undo"]
+            othr_commands = ["get info", "hide show", "video random frame"]
+            view_commands = ["video next", "video prev", "video play pause"]
+            glob_commands = ["remove chunk", "ignore case", "undo", "global view join chunks"]
+
+            if name in ferda_commands:
+                # print "Adding key %s (%s) to FERDA" % (value, name)
+                ferda.shortcuts.append(Key(value, ferda, name))
+            if name in stbs_commands:
+                # print "Adding key %s (%s) to stbs" % (value, name)
+                stbs.shortcuts.append(Key(value, stbs, name))
+            if name in othr_commands:
+                # print "Adding key %s (%s) to othr" % (value, name)
+                othr.shortcuts.append(Key(value, othr, name))
+            if name in view_commands:
+                # print "Adding key %s (%s) to view" % (value, name)
+                view.shortcuts.append(Key(value, view, name))
+            if name in glob_commands:
+                # print "Adding key %s (%s) to glob" % (value, name)
+                glob.shortcuts.append(Key(value, glob, name))
+
+        return root
+
+class ConflictFinder():
+    def __init__(self):
+        self.conflicts = []
+
+    def get_conflicts(self, graph):
+        self.search_graph_(graph)
+        return self.conflicts
+
+    def contains(self, shortcuts, value):
+        for sh in shortcuts:
+            if sh.value == value:
+                return True
+        return False
+
+    def search_graph_(self, parent):
+        # temporary storage for all children's shortcuts
+        short = []
+        for child in parent.children:
+
+            seen = []
+            for sh in child.shortcuts:
+                if sh.value not in seen:
+                    seen.append(sh.value)
+                else:
+                    # print "Conflict! The key %s can be used only once in %s. (%s)" % (sh.value, child.name, sh.usage)
+                    self.conflicts.append((sh, child.name))
+                    child.shortcuts.remove(sh)
+
+            if len(child.children) > 0:
+                # load child's children
+                shortcuts = self.search_graph_(child)
+                # check all shortcuts
+                for sh in shortcuts:
+                    # check if it collides with any key in child.shortcuts
+                    if self.contains(child.shortcuts, sh.value):
+                        # print "Conflict! The key %s from %s can't be used also in %s. (%s)" % (sh.value, child.name, sh.parent.name, sh.usage)
+                        self.conflicts.append((sh, child.name))
+                    # add it to short
+                    if not self.contains(short, sh):
+                        short.append(sh)
+
+            for sh in child.shortcuts:
+                if not self.contains(short, sh):
+                    short.append(sh)
+
+        # short.sort()
+        return short
+
+
+class Node:
+    def __init__(self, name, parent):
+        self.name = name
+        self.parent = parent
+        self.shortcuts = []
+        self.children = []
+
+
+class Key:
+    def __init__(self, value, parent, usage=""):
+        self.value = value
+        self.parent = parent
+        self.usage = usage
