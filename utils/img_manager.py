@@ -61,27 +61,26 @@ class ImgManager:
         return result
 
     def get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, max_width=-1, max_height=-1,
-                 min_width=-1, min_height=-1, visualise=False, regions=[], colors=[], default_color=(255, 255, 255, 0.8), constant_propotions=True, fill_color=(0, 0, 0)):
+                 min_width=-1, min_height=-1, regions=[], colors={}, default_color=(255, 255, 255, 0.8), constant_propotions=True, fill_color=(0, 0, 0)):
         """
-        roi list of regions or (y, x, height, width) or class ROI
-        margin - in pixels
-        relative_margin - <0, inf>, relative to the ROI (region of interest / bounding box) computed from regions
 
-        (min/max) width/height - result image will be scaled into these.
-        If none is set, it will stay as it is.
-        if width and height is set, it will be strictly scaled to this shape...
-
-        regions - empty -> no visualisation
-        colors - empty -> default colors, else it is a dict.... colors[region[0]] ...
-
-        constant_proportions ... if True the max(width, heigth) will be choosen and the rest will be filled with fill_color
-        fill_color - see previous line...
-
-
-        :param regions:
-        :param margin:
-        :param relative_margin:
-        :return:
+        :param frame:
+        :param roi: list of regions or (y, x, height, width) or class ROI
+        :param margin: in pixels
+        :param relative_margin: <0, inf>, relative to the ROI (region of interest / bounding box) computed from regions
+        :param width:
+        :param height:
+        :param max_width: result image will be scaled into these. If none is set, it will stay as it is. If width and
+        height is set, it will be strictly scaled to this shape...
+        :param max_height:
+        :param min_width:
+        :param min_height:
+        :param regions: empty -> no visualisation
+        :param colors: empty -> default colors, else it is a dict.... colors[region[0]] ...
+        :param default_color:
+        :param constant_propotions: if True the max(width, heigth) will be choosen and the rest will be filled with fill_color
+        :param fill_color: see previous line
+        :return: cropped image
         """
 
         # list of regions
@@ -91,6 +90,7 @@ class ImgManager:
                 pts = np.append(pts, r.pts(), axis=0)
 
             roi = get_roi(pts)
+
         elif isinstance(roi, tuple):
             roi = ROI(roi[0], roi[1], roi[2], roi[3])
 
@@ -109,9 +109,10 @@ class ImgManager:
 
                 draw_points(im, r.pts(), c)
 
+
         if relative_margin > 0:
             m_ = max(width, height)
-            margin = m_ * margin
+            margin = m_ * relative_margin
 
         y_ = roi.y() - margin
         x_ = roi.x() - margin
@@ -123,7 +124,25 @@ class ImgManager:
         # resize TODO...
         # h_, w_, _ = crop.shape()
 
-        return crop
+
+
+        if height <= 0:
+            scalex = 1
+        else:
+            scalex = width / (roi.height() + margin + 0.0)
+
+        if width <= 0:
+            scaley = 1
+        else:
+            scaley = height / (roi.width() + margin + 0.0)
+
+        print "roi width: %s, roi height: %s, margin: %s" % (roi.width(), roi.height(),
+                                                             margin)
+        print "xscale: %s, yscale: %s" % (scalex, scaley)
+
+        dst = cv2.resize(crop, (0,0), fx=scalex, fy=scaley)
+
+        return dst
 
 
 class Frame:
@@ -134,7 +153,7 @@ class Frame:
         self.x1 = x1
         self.y1 = y1
 
-    def equals (self, crop):
+    def equals(self, crop):
         if self.frame == crop.frame and self.x0 == crop.x0 and self.y0 == crop.y0 and self.x1 == crop.x1 and self.y1 == crop.y1:
             return True
         return False
@@ -154,18 +173,21 @@ if __name__ == "__main__":
     import random
     rnd = random.randint(0, 10)
     rnd *= 100
-    #im = im_manager.get_crop(0, nodes[0:3], regions=nodes, relative_margin=0.1)
+    # im = im_manager.get_crop(0, nodes[0:3], regions=nodes, relative_margin=0.1)
     im = im_manager.get_whole_img(rnd)
     cv2.imshow("im", im)
     print "Press SPACE to show another image"
     key = cv2.waitKey(0)
-    while key == 1048608:
+    while key == 32:
         rnd = random.randint(0, 10)
         rnd *= 100
 
         import time
         t = time.time()
-        im = im_manager.get_ccrop(rnd, 400, 400, 800, 800)
+        r = ROI(400, 400, 400, 400)
+        im = im_manager.get_crop(rnd, r, width=100, height=300)
+        #im = im_manager.get_ccrop(rnd, 400, 400, 800, 800)
+        #im = im_manager.get_whole_img(rnd)
         print "Time taken: %s" % (time.time() - t)
         cv2.imshow("im", im)
         key = cv2.waitKey(0)
