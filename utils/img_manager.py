@@ -16,6 +16,7 @@ class ImgManager:
         self.vid = get_auto_video_manager(project)
         self.crop_cache = {}
         self.crop_properties = []
+        self.max_size_mb = max_size_mb
 
     def get_whole_img(self, frame):
 
@@ -34,9 +35,7 @@ class ImgManager:
         # if the image isn't in the cache, load it and add it
         image = prepare_for_visualisation(self.vid.get_frame(frame), self.project)
 
-        # only save last 10 images
-        if len(self.crop_cache) > 9:
-            self.crop_cache.pop(self.crop_properties.pop(0), None)
+        self.check_cache_size()
         self.crop_properties.append(props)
         self.crop_cache[props] = image
         return image
@@ -168,11 +167,21 @@ class ImgManager:
             border_width = (wrap_width - width) / 2.0
             scaled = make_border(scaled, 0, 0, int(border_width), int(border_width), cv2.BORDER_CONSTANT,value=border_color)
 
-        if len(self.crop_properties) > 9:
-            self.crop_cache.pop(self.crop_properties.pop(0), None)
+        self.check_cache_size()
         self.crop_cache[props] = scaled
         self.crop_properties.append(props)
         return scaled
+
+    def check_cache_size(self):
+        size = 0
+        for props, image in self.crop_cache.items():
+            size += image.nbytes
+
+        print "Size: %s" % size
+
+        # TODO Convert bytes to mbytes
+        if self.max_size_mb != -1 and size > self.max_size_mb:
+            self.crop_cache.pop(self.crop_properties.pop(0), None)
 
 
 class Frame:
