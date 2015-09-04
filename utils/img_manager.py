@@ -6,6 +6,8 @@ from utils.video_manager import get_auto_video_manager
 from utils.drawing.points import draw_points
 from utils.roi import ROI, get_roi
 import numpy as np
+import cv2
+from cv2 import copyMakeBorder as make_border
 
 
 class ImgManager:
@@ -60,7 +62,7 @@ class ImgManager:
         print "Crop %s wasn't cached" % fm.frame
         return result
 
-    def get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, max_width=-1, max_height=-1,
+    def get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, wrap_width=-1, wrap_height=-1, border_color=[0, 0, 0], max_width=-1, max_height=-1,
                  min_width=-1, min_height=-1, regions=[], colors={}, default_color=(255, 255, 255, 0.8), constant_propotions=True, fill_color=(0, 0, 0)):
         """
 
@@ -144,9 +146,18 @@ class ImgManager:
 
         print scalex, scaley
 
-        dst = cv2.resize(crop, (0,0), fx=scalex, fy=scaley)
+        scaled = cv2.resize(crop, (0,0), fx=scalex, fy=scaley)
+        height = scaled.shape[0]
+        width = scaled.shape[1]
 
-        return dst
+        if wrap_height > height:
+            border_height = (wrap_height - height) / 2.0
+            scaled = make_border(scaled, int(border_height), int(border_height), 0, 0, cv2.BORDER_CONSTANT,value=border_color)
+        if wrap_width > width:
+            border_width = (wrap_width - width) / 2.0
+            scaled = make_border(scaled, 0, 0, int(border_width), int(border_width), cv2.BORDER_CONSTANT,value=border_color)
+
+        return scaled
 
 
 class Frame:
@@ -170,7 +181,6 @@ if __name__ == "__main__":
 
     im_manager = ImgManager(p)
 
-    import cv2
     #solver = p.saved_progress['solver']
     #nodes = solver.nodes_in_t[0]
 
@@ -188,8 +198,8 @@ if __name__ == "__main__":
 
         import time
         t = time.time()
-        r = ROI(200, 200, 500, 800)
-        im = im_manager.get_crop(rnd, r, height=300, width = 550)
+        r = ROI(200, 200, 300, 300)
+        im = im_manager.get_crop(rnd, r, wrap_width=400, wrap_height=400)
         #im = im_manager.get_ccrop(rnd, 400, 400, 800, 800)
         #im = im_manager.get_whole_img(rnd)
         print "Time taken: %s" % (time.time() - t)
