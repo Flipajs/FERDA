@@ -116,29 +116,33 @@ class ImgManager:
 
         y_ = roi.y() - margin
         x_ = roi.x() - margin
-        height_ = roi.height() + 2 * margin
-        width_ = roi.width() + 2 * margin
+        height_ = roi.width() + 2 * margin
+        width_ = roi.height() + 2 * margin
 
         crop = get_safe_selection(im, y_, x_, height_, width_, fill_color=fill_color)
 
         # resize TODO...
         # h_, w_, _ = crop.shape()
 
-
-
-        if height <= 0:
+        # no scaling
+        if width <= 0 and height <= 0:
             scalex = 1
-        else:
-            scalex = width / (roi.height() + margin + 0.0)
-
-        if width <= 0:
             scaley = 1
         else:
-            scaley = height / (roi.width() + margin + 0.0)
+            # scale only width
+            if width > 0 and height <= 0:
+                scalex = width / (width_ + 0.0)
+                scaley = scalex
+            # scale only height
+            elif height > 0 and width <= 0:
+                scaley = height / (height_ + 0.0)
+                scalex = scaley
+            # scale both
+            else:
+                scaley = height / (height_ + 0.0)
+                scalex = width / (width_ + 0.0)
 
-        print "roi width: %s, roi height: %s, margin: %s" % (roi.width(), roi.height(),
-                                                             margin)
-        print "xscale: %s, yscale: %s" % (scalex, scaley)
+        print scalex, scaley
 
         dst = cv2.resize(crop, (0,0), fx=scalex, fy=scaley)
 
@@ -184,8 +188,8 @@ if __name__ == "__main__":
 
         import time
         t = time.time()
-        r = ROI(400, 400, 400, 400)
-        im = im_manager.get_crop(rnd, r, width=100, height=300)
+        r = ROI(200, 200, 500, 800)
+        im = im_manager.get_crop(rnd, r, height=300, width = 550)
         #im = im_manager.get_ccrop(rnd, 400, 400, 800, 800)
         #im = im_manager.get_whole_img(rnd)
         print "Time taken: %s" % (time.time() - t)
