@@ -11,7 +11,7 @@ from cv2 import copyMakeBorder as make_border
 
 
 class ImgManager:
-    def __init__(self, project, max_num_of_instances=-1, max_size_mb=-1):
+    def __init__(self, project, max_num_of_instances=-1, max_size_mb=15):
         self.project = project
         self.vid = get_auto_video_manager(project)
         self.crop_cache = {}
@@ -31,7 +31,7 @@ class ImgManager:
         # if the image isn't in the cache, load it and add it
         image = prepare_for_visualisation(self.vid.get_frame(frame), self.project)
 
-        self.check_cache_size()
+        self.check_cache_size(image.nbytes)
         self.crop_properties.append(props)
         self.crop_cache[props] = image
         return image
@@ -101,7 +101,7 @@ class ImgManager:
         scaled = self.scale_crop(crop, width, height, max_width, max_height, min_width, min_height, constant_propotions=constant_propotions)
 
 
-        self.check_cache_size()
+        self.check_cache_size(scaled.nbytes)
         self.crop_cache[props] = scaled
         self.crop_properties.append(props)
         return scaled
@@ -233,7 +233,7 @@ class ImgManager:
             border_width = (wrap_width - width) / 2.0
             scaled = make_border(scaled, 0, 0, int(border_width), int(border_width), cv2.BORDER_CONSTANT,value=border_color)
 
-        self.check_cache_size()
+        self.check_cache_size(scaled.nbytes)
         self.crop_cache[props] = scaled
         self.crop_properties.append(props)
         return scaled
@@ -289,17 +289,22 @@ class ImgManager:
 
         return crop
 
-    def check_cache_size(self):
-        size = 0
-        for props, image in self.crop_cache.items():
-            size += (image.nbytes/1048576.0)
+    def check_cache_size(self, file_size):
+        tmp_size = self.get_cache_size_bytes()
+        while(tmp_size + file_size > self.max_size_mb*1048576.0):
+            self.crop_cache.pop(self.crop_properties.pop(0), None)
+            tmp_size = self.get_cache_size_bytes()
 
         if self.max_size_mb != -1:
-            print "Cache size: %.2f/%s MB" % (size, self.max_size_mb)
-            if size > self.max_size_mb:
-                self.crop_cache.pop(self.crop_properties.pop(0), None)
+            print "Cache size: %.2f/%s MB" % (tmp_size/1048576.0, self.max_size_mb)
         else:
-            print "Cache size: %.2f MB" % size
+            print "Cache size: %.2f MB" % tmp_size/1048576.0
+
+    def get_cache_size_bytes(self):
+        size = 0
+        for props, image in self.crop_cache.items():
+            size += (image.nbytes)
+        return size
 
 
 class Frame:
