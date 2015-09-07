@@ -190,7 +190,7 @@ class KeyBindingsTab(QtGui.QWidget):
             for i in range(len(self.buttons)):
                 s = "S_.controls."+self.buttons[i]+" = QtGui.QKeySequence('"+self.table.item(i, 1).text()+"')"
                 exec(str(s))
-                return True
+            return True
 
     def translate(self, key_name):
         k = key_name
