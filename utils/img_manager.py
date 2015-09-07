@@ -20,10 +20,6 @@ class ImgManager:
 
     def get_whole_img(self, frame):
 
-        # TODO When this method is called from get_crop, it again searches if the frame is saved and saves it.
-        # TODO   Therefore, frame properties are saved twice. Once as simple frame and once as crop. How should
-        # TODO   this be solved? Keep both or don't save the simple frame?
-
         props = Properties(frame, False)
         for p, img in self.crop_cache.items():
             if p.__eq__(props):
@@ -39,6 +35,76 @@ class ImgManager:
         self.crop_properties.append(props)
         self.crop_cache[props] = image
         return image
+
+    def new_get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, border_color=[255, 255, 255],
+                 max_width=-1, max_height=-1,  min_width=-1, min_height=-1, regions=[], colors={},
+                 default_color=(255, 255, 255, 0.8), constant_propotions=True, fill_color=(0, 0, 0)):
+        cache = ""
+        for p in self.crop_properties:
+            cache += (str(p.frame) + " ")
+        print cache
+
+
+        # list of regions
+        if isinstance(roi, list):
+            pts = np.empty((0, 2), int)
+            for r in roi:
+                pts = np.append(pts, r.pts(), axis=0)
+
+            roi = get_roi(pts)
+
+        elif isinstance(roi, tuple):
+            roi = ROI(roi[0], roi[1], roi[2], roi[3])
+
+        props = Properties(frame, True, roi, margin, relative_margin, width, height, 0, 0,
+                           border_color, regions, colors, default_color, fill_color)
+
+        for p in self.crop_properties:
+            if props.__eq__(p):
+                print "Already in cache!"
+                # remove it from the frames list
+                self.crop_properties.remove(p)
+                # add it again so it doesn't get erased as unused
+                self.crop_properties.append(p)
+
+                return self.crop_cache[props]
+
+        print "Not in cache"
+
+        im = self.get_whole_img(frame)
+
+        # is there anything to visualise?
+        if regions:
+            for r in regions:
+                c = default_color
+                if r in colors:
+                    c = colors[r]
+
+                # # TODO: deal with opacity...
+                # if len(c) > 4:
+                #     c = c[0:3]
+
+                draw_points(im, r.pts(), c)
+
+
+        if relative_margin > 0:
+            m_ = max(width, height)
+            margin = m_ * relative_margin
+
+        y_ = roi.y() - margin
+        x_ = roi.x() - margin
+        height_ = roi.width() + 2 * margin
+        width_ = roi.height() + 2 * margin
+
+        crop = get_safe_selection(im, y_, x_, height_, width_, fill_color=fill_color)
+
+        scaled = self.scale_crop(crop, width, height, max_width, max_height, min_width, min_height, constant_propotions=constant_propotions)
+
+
+        self.check_cache_size()
+        self.crop_cache[props] = scaled
+        self.crop_properties.append(props)
+        return scaled
 
     def get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, wrap_width=-1, wrap_height=-1, border_color=[255, 255, 255], max_width=-1, max_height=-1,
                  min_width=-1, min_height=-1, regions=[], colors={}, default_color=(255, 255, 255, 0.8), constant_propotions=True, fill_color=(0, 0, 0)):
@@ -172,6 +238,60 @@ class ImgManager:
         self.crop_properties.append(props)
         return scaled
 
+    def scale_crop(self, crop, width=-1, height=-1, max_width=-1, max_height=-1, min_width=-1, min_height=-1,
+                constant_propotions=True, fill_color=(0, 0, 0)):
+        cr_height = crop.shape[0]
+        cr_width = crop.shape[1]
+        if width > 0 and height > 0:
+            scaley = height / (cr_height + 0.0)
+            scalex = width / (cr_width + 0.0)
+            if constant_propotions and scaley != scalex:
+                #return nothing if image proportions would change
+                print "ERROR: Invalid arguments! Constant proportions can't be used when width and height are set!"
+                return False
+            return cv2.resize(crop, (0,0), fx=scalex, fy=scaley)
+
+        # if max dimensions are set
+        if max_height > 0 or max_width > 0:
+            # set default scaling
+            scalex = 1
+            scaley = 1
+            # get scale values needed
+            if cr_height > max_height and max_height > 0:
+                scaley = max_height / (cr_height + 0.0)
+            if cr_width > max_width and max_width > 0:
+                scalex = max_width / (cr_width + 0.0)
+            print "scalex: %s, scaley: %s" % (scalex, scaley)
+
+            if not constant_propotions:
+                # scale exactly to [max_height, or max_width]
+                return cv2.resize(crop, (0,0), fx=scalex, fy=scaley)
+            # else choose the smaller scale (so image fits in both dimensions if set)
+            elif scalex < scaley:
+                return cv2.resize(crop, (0,0), fx=scalex, fy=scalex)
+            else:
+                return cv2.resize(crop, (0,0), fx=scaley, fy=scaley)
+
+        if min_height > 0 or min_width > 0:
+            scalex = 1
+            scaley = 1
+            if cr_height < min_height and min_height > 0:
+                scaley = min_height / (cr_height + 0.0)
+            if cr_width > min_width and min_width > 0:
+                scalex = min_width / (cr_width + 0.0)
+
+            if not constant_propotions:
+                return cv2.resize(crop, (0,0), fx=scalex, fy=scaley)
+            elif scalex > scaley:
+                return cv2.resize(crop, (0,0), fx=scalex, fy=scalex)
+            else:
+                return cv2.resize(crop, (0,0), fx=scaley, fy=scaley)
+
+        return crop
+
+
+
+
     def check_cache_size(self):
         size = 0
         for props, image in self.crop_cache.items():
@@ -240,7 +360,12 @@ class Properties:
 
 
 def get_image(im_manager):
-    rnd = random.randint(0, 1)
+    rnd = random.randint(0, 10)
+
+    rnd *= 100
+    r = ROI(200, 200, 400, 400)
+    im = im_manager.new_get_crop(rnd, r, min_height=600, min_width=500, constant_propotions=True)
+    """
     if rnd == 1:
         print "Getting whole image"
         rnd = random.randint(0, 10)
@@ -253,13 +378,14 @@ def get_image(im_manager):
         rnd *= 100
         r = ROI(200, 200, 400, 400)
         im = im_manager.get_crop(rnd, r, width= 300, height=300, wrap_width=400, wrap_height=400)
-        return im
+        return im"""
+    return im
 
 
 if __name__ == "__main__":
     p = Project()
     # p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
-    p.load('/home/dita/PycharmProjects/eight/eight.fproj')
+    p.load('/home/dita/PycharmProjects/eight_22/eight22.fproj')
 
     im_manager = ImgManager(p)
 
