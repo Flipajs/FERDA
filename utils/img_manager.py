@@ -11,7 +11,15 @@ from cv2 import copyMakeBorder as make_border
 
 
 class ImgManager:
-    def __init__(self, project, max_num_of_instances=9, max_size_mb=-1):
+    def __init__(self, project, max_size_mb=-1, max_num_of_instances=-1):
+        """
+        This class can be used to load images from FERDA videos. It keeps used images in cache and is able to provide
+        them quickly. It also offers methods that crop images if necessary.
+
+        :param project: project to load images from
+        :param max_size_mb: max volume of images kept in cache (unlimited by default)
+        :param max_num_of_instances: max count of images kept in cache (unlimited by default, only used when max_size_mb is not set)
+        """
         self.project = project
         self.vid = get_auto_video_manager(project)
         self.crop_cache = {}
@@ -20,31 +28,70 @@ class ImgManager:
         self.max_num_of_instances = max_num_of_instances
 
     def get_whole_img(self, frame):
+        """
+        Load a frame from project video/cache, add it to cache and
+        :param frame: int <0, len(video)> frame to load
+        :return: numpy uint8 array
+        """
 
+        # create properties to describe the image
         props = Properties(frame, False)
+
+        # check if these properties are already saved
         for p, img in self.crop_cache.items():
+            # if so:
             if p.__eq__(props):
+                # re-append it to the end of self.crop_properties list (used recently)
                 # remove it from the frames list
                 self.crop_properties.remove(props)
-                # add it again so it doesn't get erased as unused
+                # add it again
                 self.crop_properties.append(props)
+                # return a copy
                 return img.copy()
+
         # if the image isn't in the cache, load it and add it
         image = prepare_for_visualisation(self.vid.get_frame(frame), self.project)
 
+        # check if cache isn't full (and maybe clean it)
         self.check_cache_size(image.nbytes)
+
+        # add new image and it's properties to list and dictionary
         self.crop_properties.append(props)
         self.crop_cache[props] = image
         return image
 
-    def get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, border_color=[255, 255, 255],
+    def get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, fill_color=(0, 0, 0),
                  max_width=-1, max_height=-1,  min_width=-1, min_height=-1, regions=[], colors={},
-                 default_color=(255, 255, 255, 0.8), constant_propotions=True, fill_color=(0, 0, 0)):
-        cache = ""
-        for p in self.crop_properties:
-            cache += (str(p.frame) + " ")
-        print cache
-
+                 default_color=(255, 255, 255, 0.8), constant_propotions=True):
+        """
+        Gets a crop around the given ROI. The crop can be modified with the following parameters.
+        :param frame:                         int (<0, len(video)>)
+        Frame number to make the crop from
+        :param roi:                           list of ROI, or tuple with ROI parameters
+        Regions of interest
+        :param margin:                        int (<0, infinity>)           default=-1
+        Absolute margin in px
+        :param relative_margin:               float (<0, infinity>)         default=-1
+        Margin relative to roi size. It overrides "regular" margin
+        :param constant_propotions:           boolean                       default=True
+        Keep proportions when scaling image
+        :param width, height:                 int (<0, infinity>)           default=-1
+        Scale image to width (px). If constant_proportions is False and both width and height are set, the image is
+        deformed and stretched to fit the dimensions exactly.
+        :param fill_color:                    tuple(0-255, 0-255, 0-255)    default=(0, 0, 0)
+        If width and height are both set and constant_proportions is True, image is scaled to one of the dimensions and
+        the rest is filled with fill_color. Fill color should be in (r, g, b) format.
+        :param max_width, max_height:         int (<0, infinity>)           default=-1
+        The image will be scaled to be at least the given size. If constant proportions are set, it will be expanded to
+        fit both max_width and max_height, otherwise it will be deformed and stretched to exactly [max_width,max_height]
+        :param min_width, min_height:         int (<0, infinity>)           default=-1
+        The image will be scaled to be smaller than the given size. If constant proportions are set, it will be shrunk
+        to be smaller than min_width, min_height. Otherwise it will be deformed and stretched to [min_width,min_height]
+        :param regions:
+        :param colors:
+        :param default_color:
+        :return: numpy uint8 array
+        """
 
         # list of regions
         if isinstance(roi, list):
@@ -57,21 +104,19 @@ class ImgManager:
         elif isinstance(roi, tuple):
             roi = ROI(roi[0], roi[1], roi[2], roi[3])
 
+        # create properties to describe the crop
         props = Properties(frame, True, roi, margin, relative_margin, width, height, 0, 0,
-                           border_color, regions, colors, default_color, fill_color)
+                           regions, colors, default_color, fill_color)
 
+        # check if this crop is already cached
         for p in self.crop_properties:
             if props.__eq__(p):
-                print "Already in cache!"
-                # remove it from the frames list
                 self.crop_properties.remove(p)
-                # add it again so it doesn't get erased as unused
                 self.crop_properties.append(p)
+                # return it if so
+                return self.crop_cache[props].copy()
 
-                return self.crop_cache[props]
-
-        print "Not in cache"
-
+        # otherwise load the frame and modify it
         im = self.get_whole_img(frame)
 
         # is there anything to visualise?
@@ -88,6 +133,7 @@ class ImgManager:
                 draw_points(im, r.pts(), c)
 
 
+        # expand the ROI by margin
         if relative_margin > 0:
             m_ = max(width, height)
             margin = m_ * relative_margin
@@ -97,12 +143,16 @@ class ImgManager:
         height_ = roi.width() + 2 * margin
         width_ = roi.height() + 2 * margin
 
+        # get image with the crop
         crop = get_safe_selection(im, y_, x_, height_, width_, fill_color=fill_color)
 
+        # scale the crop
         scaled = self.scale_crop(crop, width, height, max_width, max_height, min_width, min_height, constant_propotions=constant_propotions)
 
-
+        # check if cache isn't full (and maybe clean it)
         self.check_cache_size(scaled.nbytes)
+
+        # add new image and it's properties to list and dictionary
         self.crop_cache[props] = scaled
         self.crop_properties.append(props)
         return scaled
@@ -110,32 +160,58 @@ class ImgManager:
 
     def scale_crop(self, crop, width=-1, height=-1, max_width=-1, max_height=-1, min_width=-1, min_height=-1,
                 constant_propotions=True, fill_color=(0, 0, 0)):
+        """
+        Scales the crop according to the parameters.
+        :param crop:                          numpy uint8 array
+        Image or crop to work with
+        :param constant_propotions:           boolean                       default=True
+        Keep proportions when scaling image
+        :param width, height:                 int (<0, infinity>)           default=-1
+        Scale image to width (px). If constant_proportions is False and both width and height are set, the image is
+        deformed and stretched to fit the dimensions exactly.
+        :param fill_color:                    tuple(0-255, 0-255, 0-255)    default=(0, 0, 0)
+        If width and height are both set and constant_proportions is True, image is scaled to one of the dimensions and
+        the rest is filled with fill_color. Fill color should be in (r, g, b) format.
+        :param max_width, max_height:         int (<0, infinity>)           default=-1
+        The image will be scaled to be at least the given size. If constant proportions are set, it will be expanded to
+        fit both max_width and max_height, otherwise it will be deformed and stretched to exactly [max_width,max_height]
+        :param min_width, min_height:         int (<0, infinity>)           default=-1
+        The image will be scaled to be smaller than the given size. If constant proportions are set, it will be shrunk
+        to be smaller than min_width, min_height. Otherwise it will be deformed and stretched to [min_width,min_height]
+        :return: scaled crop (numpy uint8 array)
+        """
+
+        # convert BGR <-> RGB
         b = fill_color[0]
         g = fill_color[1]
         r = fill_color[2]
         fill_color=(r, g, b)
+
+        # make variables with shape to have easier access
         cr_height = crop.shape[0]
         cr_width = crop.shape[1]
+
+        # if both width and height are set
         if width > 0 and height > 0:
-            scaley = height / (cr_height + 0.0)
-            scalex = width / (cr_width + 0.0)
+            scaley = width / (cr_width + 0.0)
+            scalex = height / (cr_height + 0.0)
+            # if the image should not be deformed
             if constant_propotions and scaley != scalex:
                 new_image = np.zeros((height, width, 3), dtype=np.uint8)
                 new_image[:] = fill_color
                 if scaley < scalex:
+                    # create top and bottom borders
                     resized = cv2.resize(crop, (0,0), fx=scaley, fy=scaley)
-                    border = (width - resized.shape[1])/2
-                    print "border width: %s" % border
-                    new_image[:, border:border+resized.shape[1]] = resized
-
+                    border = (height - resized.shape[1])/2.0
+                    new_image[border:border+resized.shape[0], :] = resized
                     return new_image
                 else:
+                    # create left and right borders
                     resized = cv2.resize(crop, (0,0), fx=scalex, fy=scalex)
-                    border = (height - resized.shape[0])/2
-                    print "border width: %s" % border
-                    new_image[border:border+resized.shape[0], :] = resized
-
+                    border = (width - resized.shape[0])/2.0
+                    new_image[:, border:border+resized.shape[1]] = resized
                     return new_image
+            # return deformed image
             return cv2.resize(crop, (0,0), fx=scalex, fy=scaley)
 
         # if max dimensions are set
@@ -159,6 +235,7 @@ class ImgManager:
             else:
                 return cv2.resize(crop, (0,0), fx=scaley, fy=scaley)
 
+        # no comments needed here, it works exactly the same way as max_height and max_width check
         if min_height > 0 or min_width > 0:
             scalex = 1
             scaley = 1
@@ -177,25 +254,35 @@ class ImgManager:
         return crop
 
     def check_cache_size(self, file_size):
+        """
+        This method cleans cache so the file with file_size can fit in there.
+        :param file_size: size of file in bytes
+        :return: None
+        """
+        # check MB size if it is given
         if self.max_size_mb > 0:
             tmp_size = self.get_cache_size_bytes()
+            # remove files from cache until there is enough space for "file_size"
             while(tmp_size + file_size > self.max_size_mb*1048576.0):
                 self.crop_cache.pop(self.crop_properties.pop(0), None)
                 tmp_size = self.get_cache_size_bytes()
-            print "Cache size: %.2f/%s MB, %s items" % (tmp_size/1048576.0, self.max_size_mb, len(self.crop_cache))
+            # print "Cache size: %.2f/%s MB, %s items" % (tmp_size/1048576.0, self.max_size_mb, len(self.crop_cache))
 
+        # if MB size is not set, try to use cache length limit
         elif self.max_num_of_instances > 0:
             if len(self.crop_cache) > self.max_num_of_instances:
                 self.crop_cache.pop(self.crop_properties.pop(0), None)
-            print "Cache size: %.2f MB, %s/%s items" % (self.get_cache_size_bytes()/1048576.0, len(self.crop_cache), self.max_num_of_instances)
+            # print "Cache size: %.2f MB, %s/%s items" % (self.get_cache_size_bytes()/1048576.0, len(self.crop_cache), self.max_num_of_instances)
 
+        # if limits aren't set, do nothing
         else:
-            print "Cache size: %.2f MB, %s items" % (self.get_cache_size_bytes()/1048576.0, len(self.crop_cache))
+            # print "Cache size: %.2f MB, %s items" % (self.get_cache_size_bytes()/1048576.0, len(self.crop_cache))
+            pass
 
     def get_cache_size_bytes(self):
         size = 0
         for props, image in self.crop_cache.items():
-            size += (image.nbytes)
+            size += image.nbytes
         return size
 
 
@@ -212,7 +299,7 @@ class Frame:
 
 class Properties:
     def __init__(self, frame, is_crop, roi=ROI(), margin=0, relative_margin=0, width=-1, height=-1, wrap_width=-1,
-                wrap_height=-1, border_color=[255, 255, 255], regions=[], colors={}, default_color=(255, 255, 255, 0.8),
+                wrap_height=-1, regions=[], colors={}, default_color=(255, 255, 255, 0.8),
                 fill_color=(0, 0, 0)):
         self.frame = frame
         self.roi = roi
@@ -223,7 +310,6 @@ class Properties:
         self.height = height
         self.wrap_width = wrap_width
         self.wrap_height = wrap_height
-        self.border_color = border_color
         self.regions = regions
         self.colors = colors
         self.default_color = default_color
@@ -243,7 +329,7 @@ class Properties:
         if self.is_crop and prop.is_crop:
             return self.frame == prop.frame and self.margin == prop.margin and self.relative_margin == prop.relative_margin \
                 and self.width == prop.width and self.height == prop.height and self.wrap_height == prop.wrap_height \
-                and self.wrap_width == prop.wrap_width and self.border_color == prop.border_color \
+                and self.wrap_width == prop.wrap_width \
                 and self.regions == prop.regions and self.colors == prop.colors \
                 and self.default_color == prop.default_color and self.fill_color == prop.fill_color \
                 and self.roi.width() == prop.roi.width() and self.roi.height() == prop.roi.height() \
