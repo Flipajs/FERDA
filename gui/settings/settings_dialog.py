@@ -69,22 +69,15 @@ class SettingsDialog(QtGui.QDialog):
     def harvest_results(self):
         self.general_tab.harvest()
         self.parameters_tab.harvest()
-        # self.
-        # self.controls_tab.harvest()
-        # self.appearance_tab.harvest()
-        # self.test_tab.harvest()
-        return self.key_binding_tab.harvest()
+        #self.key_binding_tab.harvest()
 
     def restore_defaults(self):
         self.tabWidget.currentWidget().restore_defaults()
 
     def done(self, p_int):
-        success = True
         if p_int == QtGui.QDialog.Accepted:
-            if not self.harvest_results():
-                success = False
-        if success:
-            super(SettingsDialog, self).done(p_int)
+            self.harvest_results()
+        super(SettingsDialog, self).done(p_int)
 
 
 class KeyBindingDialog(QtGui.QDialog):
@@ -174,6 +167,7 @@ class KeyBindingsTab(QtGui.QWidget):
         dialog.exec_()
         if dialog.Accepted:
             item.setText(dialog.shortcut.toString())
+        self.harvest()
 
     def restore_defaults(self):
         for i in range(len(self.buttons)):
