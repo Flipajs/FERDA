@@ -58,7 +58,7 @@ class ImgManager:
         # add new image and it's properties to list and dictionary
         self.crop_properties.append(props)
         self.crop_cache[props] = image
-        return image
+        return image.copy()
 
     def get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, fill_color=(0, 0, 0),
                  max_width=-1, max_height=-1,  min_width=-1, min_height=-1, regions=[], colors={},
@@ -76,7 +76,7 @@ class ImgManager:
         :param constant_propotions:           boolean                       default=True
         Keep proportions when scaling image
         :param width, height:                 int (<0, infinity>)           default=-1
-        Scale image to width (px). If constant_proportions is False and both width and height are set, the image is
+        Scale image to width (px). Both variables have to be set. If constant_proportions is False, the image is
         deformed and stretched to fit the dimensions exactly.
         :param fill_color:                    tuple(0-255, 0-255, 0-255)    default=(0, 0, 0)
         If width and height are both set and constant_proportions is True, image is scaled to one of the dimensions and
@@ -97,7 +97,7 @@ class ImgManager:
         if isinstance(roi, list):
             pts = np.empty((0, 2), int)
             for r in roi:
-                pts = np.append(pts, r.pts(), axis=0)
+                pts = np.append(pts, r.corner_pts(), axis=0)
 
             roi = get_roi(pts)
 
@@ -125,10 +125,10 @@ class ImgManager:
                 c = default_color
                 if r in colors:
                     c = colors[r]
-
-                # # TODO: deal with opacity...
-                # if len(c) > 4:
-                #     c = c[0:3]
+                    # TODO: deal with opacity...
+                    # dita: It seems to be working fine even without it
+                    # if len(c) > 4:
+                    #     c = c[0:3]
 
                 draw_points(im, r.pts(), c)
 
@@ -157,7 +157,6 @@ class ImgManager:
         self.crop_properties.append(props)
         return scaled
 
-
     def scale_crop(self, crop, width=-1, height=-1, max_width=-1, max_height=-1, min_width=-1, min_height=-1,
                 constant_propotions=True, fill_color=(0, 0, 0)):
         """
@@ -167,7 +166,7 @@ class ImgManager:
         :param constant_propotions:           boolean                       default=True
         Keep proportions when scaling image
         :param width, height:                 int (<0, infinity>)           default=-1
-        Scale image to width (px). If constant_proportions is False and both width and height are set, the image is
+        Scale image to width (px). Both variables have to be set. If constant_proportions is False, the image is
         deformed and stretched to fit the dimensions exactly.
         :param fill_color:                    tuple(0-255, 0-255, 0-255)    default=(0, 0, 0)
         If width and height are both set and constant_proportions is True, image is scaled to one of the dimensions and
@@ -343,17 +342,17 @@ class Properties:
 def get_image(im_manager):
     rnd = random.randint(0, 10)
     if rnd == 1:
-        print "Getting whole image"
         rnd = random.randint(0, 10)
         rnd *= 100
         im = im_manager.get_whole_img(rnd)
         return im
     else:
-        print "Getting crop"
         rnd = random.randint(0, 10)
         rnd *= 100
-        r = ROI(200, 200, 400, 400)
-        im = im_manager.get_crop(rnd, r, width=300, height=250)
+        roi = []
+        roi.append(ROI(200, 200, 400, 400))
+        roi.append(ROI(500, 500, 400, 400))
+        im = im_manager.get_crop(rnd, roi, width=250, height=300)
         return im
     return im
 
@@ -365,9 +364,6 @@ if __name__ == "__main__":
 
     im_manager = ImgManager(p)
 
-    # solver = p.saved_progress['solver']
-    # nodes = solver.nodes_in_t[0]
-
     import random
     image = get_image(im_manager)
     cv2.imshow("im", image)
@@ -377,10 +373,10 @@ if __name__ == "__main__":
         rnd = random.randint(0, 10)
         rnd *= 100
 
-        import time
-        t = time.time()
+        # import time
+        # t = time.time()
         image = get_image(im_manager)
-        #print "Time taken: %s" % (time.time() - t)
+        # print "Time taken: %s" % (time.time() - t)
         cv2.imshow("im", image)
         key = cv2.waitKey(0)
     print "done"
