@@ -289,19 +289,17 @@ class ImgManager:
 
         return crop
 
-
-
-
     def check_cache_size(self):
         size = 0
         for props, image in self.crop_cache.items():
-            size += image.nbytes
+            size += (image.nbytes/1048576.0)
 
-        print "Size: %s" % size
-
-        # TODO Convert bytes to mbytes
-        if self.max_size_mb != -1 and size > self.max_size_mb:
-            self.crop_cache.pop(self.crop_properties.pop(0), None)
+        if self.max_size_mb != -1:
+            print "Cache size: %.2f/%s MB" % (size, self.max_size_mb)
+            if size > self.max_size_mb:
+                self.crop_cache.pop(self.crop_properties.pop(0), None)
+        else:
+            print "Cache size: %.2f MB" % size
 
 
 class Frame:
@@ -364,7 +362,7 @@ def get_image(im_manager):
 
     rnd *= 100
     r = ROI(200, 200, 400, 400)
-    im = im_manager.new_get_crop(rnd, r, min_height=600, min_width=500, constant_propotions=True)
+    im = im_manager.new_get_crop(rnd, r, max_height=160, constant_propotions=True)
     """
     if rnd == 1:
         print "Getting whole image"
@@ -404,7 +402,7 @@ if __name__ == "__main__":
         import time
         t = time.time()
         image = get_image(im_manager)
-        print "Time taken: %s" % (time.time() - t)
+        #print "Time taken: %s" % (time.time() - t)
         cv2.imshow("im", image)
         key = cv2.waitKey(0)
     print "done"
