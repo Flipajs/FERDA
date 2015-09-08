@@ -37,8 +37,8 @@ class GraphVisualizer():
         self.prepare_columns(frames)
         self.edges = sort_edges_by_length_ascending(self.edges, frames)
 
-    def compute_positions(self):
-        for edge in self.edges:
+    def compute_positions(self, edges):
+        for edge in edges:
 
             position = 0
             while True:
@@ -94,6 +94,7 @@ class GraphVisualizer():
                 self.regions.apend(object)
             elif isinstance(object, tuple):
                 if isinstance(object[0], Region) and isinstance(object[1], Region):
+                    #a co partial edge?
                     self.edges.apend(object)
 
         #prekreslit, prepocitat, pouze od urcite polohy, zeptat se Filipa, neprepocitavat po kazdem pridanem objektu
