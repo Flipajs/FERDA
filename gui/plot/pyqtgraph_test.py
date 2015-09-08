@@ -8,24 +8,46 @@ import scripts.trajectories_data.eight_gt as data
 import utils.img_manager as imm
 
 
+class FrameLoader(QtCore.QThread):
+    proc_done = QtCore.pyqtSignal(object)
+    part_done = QtCore.pyqtSignal(float)
+
+    def __init__(self, imm, frame, limit):
+        super(FrameLoader, self).__init__()
+
+        self.imm = imm
+        self.frame = frame
+        self.limit = limit
+
+    def set_frame(self, frame):
+        self.frame = frame
+
+    def run(self):
+        for i in range (self.frame, self.frame+self.limit):
+            self.imm.get_whole_img(i)
+
 class MyView(QtGui.QWidget):
     def __init__(self, project):
         super(MyView, self).__init__()
 
         self.w = gl.GLViewWidget()
-        self.imm = imm.ImgManager(project)
+        self.imm = imm.ImgManager(project, max_size_mb=500)
         self.w.setCameraPosition(elevation=20, distance=2100)
         self.w.setVisible(True)
 
-        self.x_size = 1280
-        self.y_size = 1024
+        tmp_img = self.imm.get_whole_img(0)
+        self.x_size = tmp_img.shape[0]
+        self.y_size = tmp_img.shape[1]
         self.z_size = 1506
         self.scale = 100
+
         self.frame = 0
+        self.is_loading = False
 
         self.values = data._inverted_vals
 
         self.lines()
+        self.add_grids()
         self.move_image()
         self.frame_scatter()
 
@@ -40,6 +62,11 @@ class MyView(QtGui.QWidget):
         self.slider.setValue(0)
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.change_frame)
+        self.slider.sliderReleased.connect(self.load_frames)
+
+        self.loading_thread = FrameLoader(self.imm, self.frame, 10)
+        self.loading_thread.proc_done.connect(self.loading_done)
+        self.load_frames()
 
         print type(self.w)
         self.w.setSizePolicy(pg.QtGui.QSizePolicy.Expanding, pg.QtGui.QSizePolicy.Expanding)
@@ -65,8 +92,8 @@ class MyView(QtGui.QWidget):
         k = 0
         for i in range(0, len(values)-1):
             for j in range(0, 8):
-                pos_x = values[i][j][0]
-                pos_y = values[i][j][1]
+                pos_y = values[i][j][0]
+                pos_x = values[i][j][1]
                 if j == 0:
                     color = r
                 elif j == 1:
@@ -124,9 +151,9 @@ class MyView(QtGui.QWidget):
             elif j == 3:
                 color = rg
             elif j == 4:
-                color = rb
-            elif j == 5:
                 color = gb
+            elif j == 5:
+                color = rb
             elif j == 6:
                 color = rgb
             else:
@@ -162,8 +189,8 @@ class MyView(QtGui.QWidget):
         k = 0
         for i in range(0, len(self.values)-1):
             for j in range(0, 8):
-                pos_x = self.values[i][j][0]
-                pos_y = self.values[i][j][1]
+                pos_y = self.values[i][j][0]
+                pos_x = self.values[i][j][1]
                 if j == 0:
                     pos1[k] = (pos_x, pos_y, i)
                 elif j == 1:
@@ -237,42 +264,87 @@ class MyView(QtGui.QWidget):
             self.w.removeItem(self.image)
         except:
             pass
+        #print "Time taken to delete old image: %s" % (time.time() - t)
+        t = time.time()
+
         source_img = self.imm.get_whole_img(self.frame)
         # convert image from uint8 to ubyte
         source_img = source_img.astype("ubyte")
 
         # convert image to pyqtgraph-readable format and make it partially transparent
         texture = pg.makeRGBA(source_img)[0]
-        texture[:,:,3] = 128
+        texture[:,:,3] = 190
+        #print "Time taken to get image %s from imm and modify it: %s" % (self.frame, time.time() - t)
+        t = time.time()
 
         # create three image items from textures, add to view
         v1 = gl.GLImageItem(texture)
         v1.translate(0, 0, self.frame)
-        print "Time taken to draw image %s: %s" % (self.frame, time.time() - t)
 
         self.image = v1
         self.w.addItem(v1)
+        #print "Time taken to draw image to plot: %s" % (time.time() - t)
 
     def add_grids(self):
-        # WARN: Do not touch the grids, they seem weird, but they work
-        z = gl.GLGridItem()
-        z.setSize(self.y_size, self.x_size, 0)
-        z.setSpacing(self.scale, self.scale, self.scale)
-        self.w.addItem(z)
+        x_grid = np.zeros((self.y_size, self.z_size), dtype="ubyte")
+        #x_grid.astype()
+        x_grid = pg.makeRGBA(x_grid)[0]
+        x_grid[:,:,0] = 250
+        x_grid[:,:,1] = 230
+        x_grid[:,:,2] = 150
+        x_grid[:,:,3] = 190
 
-        y = gl.GLGridItem()
-        y.setSize(self.z_size, self.x_size, 0)
-        y.setSpacing(self.scale, self.scale, self.scale)
-        y.rotate(90, 0, 1, 0)
-        y.translate(-self.y_size/2, 0, self.z_size/2)
-        self.w.addItem(y)
+        for i in range(0, self.z_size, self.scale):
+            try:
+                x_grid[:, i, 0] = 0
+                x_grid[:, i, 1] = 0
+                x_grid[:, i, 2] = 0
+            except:
+                pass
+        for i in range(0, self.y_size, self.scale):
+            try:
+                x_grid[i, :, 0] = 0
+                x_grid[i, :, 1] = 0
+                x_grid[i, :, 2] = 0
+            except:
+                pass
+        # create three image items from textures, add to view
+        x_g = gl.GLImageItem(x_grid)
+        x_g.translate(0, 0, 0)
+        x_g.rotate(90, 0, 0, 1)
+        x_g.rotate(90, 0, 1, 0)
 
-        x = gl.GLGridItem()
-        x.setSize(self.y_size, self.z_size, 0)
-        x.setSpacing(self.scale, self.scale,self.scale)
-        x.rotate(90, 1, 0, 0)
-        x.translate(0, -self.x_size/2, self.z_size/2)
-        self.w.addItem(x)
+        self.w.addItem(x_g)
+
+
+        y_grid = np.zeros((self.x_size, self.z_size), dtype="ubyte")
+        #y_grid.astype()
+        y_grid = pg.makeRGBA(y_grid)[0]
+        y_grid[:,:,0] = 250
+        y_grid[:,:,1] = 230
+        y_grid[:,:,2] = 150
+        y_grid[:,:,3] = 190
+
+        for i in range(0, self.z_size, self.scale):
+            try:
+                y_grid[:, i, 0] = 0
+                y_grid[:, i, 1] = 0
+                y_grid[:, i, 2] = 0
+            except:
+                pass
+        for i in range(0, self.x_size, self.scale):
+            try:
+                y_grid[i, :, 0] = 0
+                y_grid[i, :, 1] = 0
+                y_grid[i, :, 2] = 0
+            except:
+                pass
+        # create three image items from textures, add to view
+        y_g = gl.GLImageItem(y_grid)
+        y_g.translate(0, 0, 0)
+        y_g.rotate(90, 1, 0, 0)
+
+        self.w.addItem(y_g)
 
     def add_axis(self):
         """
@@ -292,11 +364,23 @@ class MyView(QtGui.QWidget):
         pass
 
     def change_frame(self, value):
+        import time
+        t = time.time()
         self.frame = value
         self.move_image()
         self.frame_scatter()
+        print "Total time taken: %s" % (time.time() - t)
         # refresh text in QLabel
         #self.set_label_text()
+
+    def load_frames(self):
+        if not self.is_loading:
+            self.is_loading = True
+            self.loading_thread.set_frame(self.frame)
+            self.loading_thread.start()
+
+    def loading_done(self):
+        self.is_loading = False
 
 if __name__ == "__main__":
     import sys
