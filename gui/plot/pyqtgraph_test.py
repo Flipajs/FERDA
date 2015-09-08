@@ -116,13 +116,82 @@ def lines(values):
     w.addItem(l7)
     w.addItem(l8)
 
+def image(file):
+    import cv2
+    import pyqtgraph as pg
+    im = cv2.imread(file)
+    im.astype("ubyte")
+    pg.makeRGBA(im)
+    print im.shape[2]
+    cv2.imshow("test", im)
+    cv2.waitKey(0)
+    im_item = gl.GLImageItem(im)
+    #im_item = pq.ImageItem(image=im)
+    w.addItem(im_item)
+
+def test():
+    import pyqtgraph as pg
+    ## create volume data set to slice three images from
+    shape = (100,100, 3)
+    #data = np.array((200, 200, 4), dtype="ubyte")
+    data1 = np.array(shape, dtype="ubyte")
+    data1[:] = (255, 0, 0)
+
+    ## slice out three planes, convert to RGBA for OpenGL texture
+    levels = (-0.08, 0.08)
+    tex1 = pg.makeRGBA(data1[2], levels=levels)[0]       # yz plane
+
+
+
+
+    ## Create three image items from textures, add to view
+    v1 = gl.GLImageItem(tex1)
+    #v1.translate(-shape[1]/2, -shape[2]/2, 0)
+    v1.rotate(90, 0,0,1)
+    v1.rotate(-90, 0,1,0)
+    w.addItem(v1)
+
+    ax = gl.GLAxisItem()
+    w.addItem(ax)
+
+def test2(file):
+    import pyqtgraph as pg
+    import cv2
+
+    im = cv2.imread(file)
+    im = im.astype("ubyte")
+
+    print im
+
+    ## slice out three planes, convert to RGBA for OpenGL texture
+    tex1 = pg.makeRGBA(im)[0]
+
+    ## Create three image items from textures, add to view
+    v1 = gl.GLImageItem(tex1)
+    v1.translate(-im.shape[0]/2, -im.shape[1]/2, 0)
+    v1.rotate(90, 0,0,1)
+    v1.rotate(-90, 0,1,0)
+    w.addItem(v1)
+    """
+    v2 = gl.GLImageItem(tex2)
+    v2.translate(-shape[0]/2, -shape[2]/2, 0)
+    v2.rotate(-90, 1,0,0)
+    w.addItem(v2)
+    v3 = gl.GLImageItem(tex3)
+    v3.translate(-shape[0]/2, -shape[1]/2, 0)
+    w.addItem(v3)
+    """
+
+    ax = gl.GLAxisItem()
+    w.addItem(ax)
+
 app = QtGui.QApplication([])
 w = gl.GLViewWidget()
 x_size = 1280
 y_size = 1024
 z_size = 1506
 scale = 100
-w.opts['distance'] = 2*x_size
+#w.opts['distance'] = 2*x_size
 w.show()
 c = pq.mkColor(0, 0, 0)
 w.setBackgroundColor(c)
@@ -130,7 +199,7 @@ w.setWindowTitle('Pyqtgraph test')
 w.showMaximized()
 
 
-
+"""
 # WARN: Do not touch the grids, they seem weird, but they work
 z = gl.GLGridItem()
 z.setSize(y_size, x_size, 0)
@@ -150,6 +219,7 @@ x.setSpacing(scale, scale, scale)
 x.rotate(90, 1, 0, 0)
 x.translate(0, -x_size/2, z_size/2)
 w.addItem(x)
+"""
 
 """
 # These methods do not work when there is a GridItem in the view. Also, Z axis is never shown, even when it's added
@@ -159,6 +229,7 @@ axis_x.setSize(x=x_size, y=0, z=0)
 w.addItem(axis_x)
 axis_y = gl.GLAxisItem()
 axis_y.setSize(x=0, y=y_size, z=0)
+
 w.addItem(axis_y)
 axis_z = gl.GLAxisItem()
 axis_z.setSize(x=0, y=0, z=z_size)
@@ -166,11 +237,13 @@ w.addItem(axis_z)
 """
 
 values = data._old_vals
-scatter(values)
-#lines(values)
+# scatter(values)
+# lines(values)
+#image("/home/dita/PycharmProjects/sample.png")
+test2("/home/dita/PycharmProjects/sample.png")
 
-w.setCameraPosition(elevation=20, distance=2100)
-w.pan(0, 0, z_size/3)
+#w.setCameraPosition(elevation=20, distance=2100)
+#w.pan(0, 0, z_size/3)
 
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
