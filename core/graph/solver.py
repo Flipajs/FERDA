@@ -16,6 +16,7 @@ from core.log import LogCategories, ActionNames
 from utils.img import prepare_for_segmentation
 from utils.constants import EDGE_CONFIRMED
 import time
+import cPickle as pickle
 
 
 class Solver:
@@ -672,7 +673,7 @@ class Solver:
                 affected.add(n_)
 
         affected = list(affected)
-        if r in affected:
+        if r in affected[:]:
             affected.remove(r)
 
         self.remove_node(r)
@@ -717,7 +718,6 @@ class Solver:
 
     def save(self, autosave=False):
         print "SAVING PROGRESS... Wait please"
-        import cPickle as pickle
 
         wd = self.project.working_directory
 
@@ -732,3 +732,36 @@ class Solver:
             pc.dump(self.ignored_nodes)
 
         print "PROGRESS SAVED"
+
+    def save_progress_only_chunks(self):
+        wd = self.project.working_directory
+
+        name = '/progress_save.pkl'
+
+        to_remove = []
+        for n in self.g:
+            is_ch, t_reversed, ch = self.is_chunk(n)
+            if not is_ch or ch.length() < self.project.solver_parameters.global_view_min_chunk_len:
+                to_remove.append(n)
+
+        print "NODES", len(self.g)
+        S_.general.log_graph_edits = False
+        for n in to_remove:
+            if n not in self.g:
+                continue
+
+            try:
+                self.strong_remove(n)
+            except:
+                pass
+
+        print "NODES", len(self.g)
+        S_.general.log_graph_edits = True
+
+        with open(wd+name, 'wb') as f:
+            pc = pickle.Pickler(f, -1)
+            pc.dump(self.g)
+            pc.dump(self.project.log)
+            pc.dump(self.ignored_nodes)
+
+        print "ONLY CHUNKS PROGRESS SAVED"

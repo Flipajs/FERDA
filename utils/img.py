@@ -96,6 +96,12 @@ def get_igbr_normalised(im):
 
     return igbr
 
+def prepare_for_visualisation(img, project):
+    if project.other_parameters.img_subsample_factor > 1.0:
+        img = np.asarray(rescale(img, 1/project.other_parameters.img_subsample_factor) * 255, dtype=np.uint8)
+
+    return img
+
 def prepare_for_segmentation(img, project, grayscale_speedup=True):
     if project.bg_model:
         img = project.bg_model.bg_subtraction(img)

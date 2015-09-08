@@ -190,6 +190,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.picked_node = None
         self.ignored_nodes = {}
 
+        self.use_img_toggle = True
+
     def stop_following(self):
         self.picked_node = None
         self.update_view()
@@ -212,10 +214,9 @@ class NodeGraphVisualizer(QtGui.QWidget):
             for box in self.boxes:
                 box[0].hide()
 
-                # if box[2] != None:
-                #     box[2].setClipped(None)
+            return
 
-        if item and isinstance(item, Custom_Line_Selectable):
+        if isinstance(item, Custom_Line_Selectable):
             e_ = self.edges_obj[item]
             self.selected_edge[0] = e_
             e = self.g[e_[0]][e_[1]]
@@ -224,12 +225,15 @@ class NodeGraphVisualizer(QtGui.QWidget):
             except KeyError:
                 chunk = None
             self.edge_labels_update(e_, chunk)
-
-        if item and isinstance(item, Pixmap_Selectable):
+        if isinstance(item, Pixmap_Selectable):
             parent_pixmap = item.parent_pixmap
             n_ = self.nodes_obj[parent_pixmap]
             self.node_label_update(n_)
-            self.toggle_n(n_)
+            if self.use_img_toggle:
+                self.toggle_n(n_)
+        elif isinstance(item, QtGui.QGraphicsPixmapItem):
+            # toggled item...
+            return
         else:
             # self.clear_all_button_function()
             self.suggest_node = False
@@ -603,8 +607,9 @@ class NodeGraphVisualizer(QtGui.QWidget):
             self.node_label_update(picked)
             self.node_label_update(best_match)
 
-            self.toggle_n(picked)
-            self.toggle_n(best_match)
+            if self.use_img_toggle:
+                self.toggle_n(picked)
+                self.toggle_n(best_match)
 
             QtGui.QApplication.processEvents()
             self.view.centerOn(self.pixmaps[picked].scenePos())

@@ -38,11 +38,6 @@ class GlobalView(QtGui.QWidget):
         self.node_size = None
         self.relative_margin = None
 
-        self.save_progress = QtGui.QAction('save', self)
-        self.save_progress.triggered.connect(self.solver.save)
-        self.save_progress.setShortcut(S_.controls.save)
-        self.addAction(self.save_progress)
-        
         self.tool_w = self.create_tool_w()
         self.last_margin = -1
         self.last_node_size = -1

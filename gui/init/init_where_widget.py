@@ -98,7 +98,6 @@ class InitWhereWidget(QtGui.QWidget):
             self.confirm_arena_selection_clicked()
             return
 
-
         self.label_instructions.setText('To support FERDA performance, we are using background model. Bellow you can see background model. There should be no tracked object visible. If they are, please fix them by selecting problematic area in image. Then click f and by draggin move the green selection to area with background only. Press ctrl+z if you don\'t like the result for new selection."')
         self.confirm_arena_selection.setHidden(True)
 
@@ -123,7 +122,6 @@ class InitWhereWidget(QtGui.QWidget):
 
         brush.setColor(QtGui.QColor(0, 0xFF, 0, 0x55))
         self.arena_ellipse.setBrush(brush)
-
 
         self.arena_ellipse.add_points(self.c_center, self.c_radius)
         self.arena_ellipse.update_geometry()
