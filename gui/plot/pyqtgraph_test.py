@@ -46,9 +46,13 @@ class MyView(QtGui.QWidget):
 
         self.values = data._inverted_vals
 
-        self.lines()
+        # color has to be black, unfortunately. White (or any other color lighter than black) hides all the plot data.
+        c = pg.mkColor(0, 0, 0)
+        self.w.setBackgroundColor(c)
+
         self.add_grids()
         self.move_image()
+        self.lines()
         self.frame_scatter()
 
         self.setLayout(QtGui.QVBoxLayout())
@@ -57,8 +61,8 @@ class MyView(QtGui.QWidget):
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
         self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider.setGeometry(30, 40, 50, 30)
-        self.slider.setRange(0, 1000)
-        self.slider.setTickInterval(5)
+        self.slider.setRange(0, self.z_size)
+        self.slider.setTickInterval(50)
         self.slider.setValue(0)
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.change_frame)
@@ -177,14 +181,15 @@ class MyView(QtGui.QWidget):
         gb = (0, 1, 1, 1)
         rgb = (1, 1, 1, 1)
         black = (0, 0, 0, 1)
-        pos1 = np.zeros((len(self.values)-1, 3))
-        pos2 = np.zeros((len(self.values)-1, 3))
-        pos3 = np.zeros((len(self.values)-1, 3))
-        pos4 = np.zeros((len(self.values)-1, 3))
-        pos5 = np.zeros((len(self.values)-1, 3))
-        pos6 = np.zeros((len(self.values)-1, 3))
-        pos7 = np.zeros((len(self.values)-1, 3))
-        pos8 = np.zeros((len(self.values)-1, 3))
+        length = len(self.values)
+        pos1 = np.zeros((length-1, 3))
+        pos2 = np.zeros((length-1, 3))
+        pos3 = np.zeros((length-1, 3))
+        pos4 = np.zeros((length-1, 3))
+        pos5 = np.zeros((length-1, 3))
+        pos6 = np.zeros((length-1, 3))
+        pos7 = np.zeros((length-1, 3))
+        pos8 = np.zeros((length-1, 3))
 
         k = 0
         for i in range(0, len(self.values)-1):
@@ -207,24 +212,6 @@ class MyView(QtGui.QWidget):
                     pos7[k] = (pos_x, pos_y, i)
                 else:
                     pos8[k] = (pos_x, pos_y, i)
-                    """
-                if j == 0:
-                    pos1[k] = (pos_x, pos_y, i/2)
-                elif j == 1:
-                    pos2[k] = (pos_x, pos_y, i/2)
-                elif j == 2:
-                    pos3[k] = (pos_x, pos_y, i/2)
-                elif j == 3:
-                    pos4[k] = (pos_x, pos_y, i/2)
-                elif j == 4:
-                    pos5[k] = (pos_x, pos_y, i/2)
-                elif j == 5:
-                    pos6[k] = (pos_x, pos_y, i/2)
-                elif j == 6:
-                    pos7[k] = (pos_x, pos_y, i/2)
-                else:
-                    pos8[k] = (pos_x, pos_y, i/2)
-                    """
             k += 1
         l1 = gl.GLLinePlotItem(pos=pos1, width=1.6, color=r)
         l2 = gl.GLLinePlotItem(pos=pos2, width=1.6, color=g)
@@ -234,16 +221,6 @@ class MyView(QtGui.QWidget):
         l6 = gl.GLLinePlotItem(pos=pos6, width=1.6, color=rb)
         l7 = gl.GLLinePlotItem(pos=pos7, width=1.6, color=rgb)
         l8 = gl.GLLinePlotItem(pos=pos8, width=1.6, color=black)
-        """
-        l1.translate(-self.x_size/2, -self.y_size/2, 0)
-        l2.translate(-self.x_size/2, -self.y_size/2, 0)
-        l3.translate(-self.x_size/2, -self.y_size/2, 0)
-        l4.translate(-self.x_size/2, -self.y_size/2, 0)
-        l5.translate(-self.x_size/2, -self.y_size/2, 0)
-        l6.translate(-self.x_size/2, -self.y_size/2, 0)
-        l7.translate(-self.x_size/2, -self.y_size/2, 0)
-        l8.translate(-self.x_size/2, -self.y_size/2, 0)
-        """
         self.w.addItem(l1)
         self.w.addItem(l2)
         self.w.addItem(l3)
@@ -289,23 +266,23 @@ class MyView(QtGui.QWidget):
         x_grid = np.zeros((self.y_size, self.z_size), dtype="ubyte")
         #x_grid.astype()
         x_grid = pg.makeRGBA(x_grid)[0]
-        x_grid[:,:,0] = 250
-        x_grid[:,:,1] = 230
-        x_grid[:,:,2] = 150
+        x_grid[:,:,0] = 100
+        x_grid[:,:,1] = 100
+        x_grid[:,:,2] = 100
         x_grid[:,:,3] = 190
 
         for i in range(0, self.z_size, self.scale):
             try:
-                x_grid[:, i, 0] = 0
-                x_grid[:, i, 1] = 0
-                x_grid[:, i, 2] = 0
+                x_grid[:, i:i+3, 0] = 0
+                x_grid[:, i:i+3, 1] = 0
+                x_grid[:, i:i+3, 2] = 0
             except:
                 pass
         for i in range(0, self.y_size, self.scale):
             try:
-                x_grid[i, :, 0] = 0
-                x_grid[i, :, 1] = 0
-                x_grid[i, :, 2] = 0
+                x_grid[i:i+3, :, 0] = 0
+                x_grid[i:i+3, :, 1] = 0
+                x_grid[i:i+3, :, 2] = 0
             except:
                 pass
         # create three image items from textures, add to view
@@ -320,23 +297,23 @@ class MyView(QtGui.QWidget):
         y_grid = np.zeros((self.x_size, self.z_size), dtype="ubyte")
         #y_grid.astype()
         y_grid = pg.makeRGBA(y_grid)[0]
-        y_grid[:,:,0] = 250
-        y_grid[:,:,1] = 230
-        y_grid[:,:,2] = 150
+        y_grid[:,:,0] = 100
+        y_grid[:,:,1] = 100
+        y_grid[:,:,2] = 100
         y_grid[:,:,3] = 190
 
         for i in range(0, self.z_size, self.scale):
             try:
-                y_grid[:, i, 0] = 0
-                y_grid[:, i, 1] = 0
-                y_grid[:, i, 2] = 0
+                y_grid[:, i:i+3, 0] = 0
+                y_grid[:, i:i+3, 1] = 0
+                y_grid[:, i:i+3, 2] = 0
             except:
                 pass
         for i in range(0, self.x_size, self.scale):
             try:
-                y_grid[i, :, 0] = 0
-                y_grid[i, :, 1] = 0
-                y_grid[i, :, 2] = 0
+                y_grid[i:i+3, :, 0] = 0
+                y_grid[i:i+3, :, 1] = 0
+                y_grid[i:i+3, :, 2] = 0
             except:
                 pass
         # create three image items from textures, add to view
