@@ -4,13 +4,38 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QImage
 # import ImageQt
 import math
+import numpy as np
 
 
-def cvimg2qtpixmap(img):
-    img_q = QImage(img.data, img.shape[1], img.shape[0], img.shape[1]*3, 13)
-    pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
+def cvimg2qtpixmap(img, transparent=False):
+    if transparent:
+        img_q = QImage(img.data, img.shape[1], img.shape[0], img.shape[1]*3, 13)
+        pix_map = QtGui.QPixmap.fromImage(img_q)
+        # img_q =
+        """
+        bmp = QtGui.QBitmap()
+        bmp.fromImage(img_q.createAlphaMask())
+        pix_map.setMask(bmp)
+        """
+        """
+        qcolor = QtGui.QColor()
+        qcolor.setAlpha(200)
+        pixmap = QtGui.QPixmap.fromImage(img_q.createAlphaMask())
+        pixmap.fill(qcolor)
+        """
+        """
+        for x in range(0,120):
+            for y in range(0,120):
+                c = pix_map.toImage().pixel(x,y)
+                colors = QtGui.QColor(c).getRgbF()
+                print "(%s,%s) = %s" % (x, y, colors)
+        """
 
-    return pix_map
+        return pix_map
+    else:
+        img_q = QImage(img.data, img.shape[1], img.shape[0], img.shape[1]*3, 13)
+        pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
+        return pix_map
 
 
 def view_add_bg_image(g_view, pix_map):
