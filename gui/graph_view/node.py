@@ -6,13 +6,11 @@ from PyQt4 import QtGui, QtCore, Qt
 
 class Node(QtGui.QGraphicsPixmapItem):
 
-    def __init__(self, graph_visualizer, region, parent_pixmap, size):
+    def __init__(self, region, parent_pixmap, size):
         super(Node, self).__init__(parent_pixmap)
 
-        self.graph_visualizer = graph_visualizer
         self.region = region
         self.img = None
-        self.edges = None
 
         self.parent_pixmap = parent_pixmap
         self.x = self.parent_pixmap.offset().x()
@@ -27,13 +25,13 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.toggled = False if self.toggle() else True
         self.visualize()
 
-    def visualize(self):
-        if self.toggled:
-            #IMG MAKER -
-        if self.graph_visualizer.show_vertically:
-            #prohodit x, y
-
-        self.paint()
+    # def visualize(self):
+    #     if self.toggled:
+    #         #IMG MAKER -
+    #     if self.graph_visualizer.show_vertically:
+    #         #prohodit x, y
+    #
+    #     self.paint()
 
     def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget = None):
         self.parent_pixmap.paint(QPainter, QStyleOptionGraphicsItem, None)
