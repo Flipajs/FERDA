@@ -25,7 +25,7 @@ class Edge():
 class Edge_Graphical(QtGui.QGraphicsLineItem):
     def __init__(self, parent_line, style, graph_obj):
         super(Edge_Graphical, self).__init__(parent_line)
-        self.graph_obj - graph_obj
+        self.graph_obj = graph_obj
         self.parent_line = parent_line
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
         self.selection_offset = SELECTION_OFFSET
@@ -34,8 +34,18 @@ class Edge_Graphical(QtGui.QGraphicsLineItem):
         self.style = style
 
     def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget=None):
-        if self.style == 'chunk' or self.style == 'line':
+        if self.style == 'chunk':
             pen = QtGui.QPen(Qt.darkGray, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+            QPainter.setPen(pen)
+            QPainter.drawLine(self.parent_line)
+            if self.isSelected():
+                pen = QtGui.QPen(Qt.black, SELECTION_OFFSET, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
+                QPainter.setPen(pen)
+                QPainter.drawPolygon(self.selection_polygon)
+            #TODO opacity
+
+        if self.style == 'line':
+            pen = QtGui.QPen(Qt.green, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
             QPainter.setPen(pen)
             QPainter.drawLine(self.parent_line)
             if self.isSelected():

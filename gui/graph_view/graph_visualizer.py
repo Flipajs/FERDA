@@ -18,6 +18,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.regions = []
         self.edges = []
         self.frames_columns = {}
+        self.columns = []
 
         self.img_manager = img_manager
 
@@ -59,8 +60,11 @@ class GraphVisualizer(QtGui.QWidget):
         for edge in self.edges:
             if edge[2] == "chunk":
                 self.find_suitable_position_chunk(edge)
+
             elif edge[2] == "line":
-                self.find_suitable_position_line(edge)
+                pass
+                # self.find_suitable_position_line(edge)
+
             else:
                 self.find_suitable_position_partial(edge)
 
@@ -84,9 +88,9 @@ class GraphVisualizer(QtGui.QWidget):
         position = 0
         while True:
             if self.is_line_free(position, node_1.frame_, node_2.frame_):
-                start = node_1.frame_
+                start = node_1.frame_ + 1
                 end = node_2.frame_
-                while start < end:
+                while start <= end:
                     try:
                         column = self.frames_columns[start]
                     except:
@@ -94,8 +98,8 @@ class GraphVisualizer(QtGui.QWidget):
                         start = column.frame[1] + 1
                     column.add_object(edge, position)
                     start += 1
-                self.add_node_to_column(node_1, node_1.frame_, position)
-                self.add_node_to_column(node_2, node_2.frame_, position)
+                # self.add_node_to_column(node_1, node_1.frame_, position)
+                # self.add_node_to_column(node_2, node_2.frame_, position)
                 break
             else:
                 position += 1
@@ -120,8 +124,16 @@ class GraphVisualizer(QtGui.QWidget):
         node_2 = edge[1]
         if self.frames_columns[node_1.frame_].contains(node_1):
             position_1, position_2 = self.find_nearest_free_slot(node_1, node_2)
+            #2
+            self.frames_columns[node_1.frame_].add_object(edge, position_1)
+            self.frames_columns[node_2.frame_].add_object(edge, position_2)
+
         elif self.frames_columns[node_2.frame_].contains(node_2):
-            position_1, position_2 = self.find_nearest_free_slot(node_2, node_1)
+            position_2, position_1 = self.find_nearest_free_slot(node_2, node_1)
+            #2
+            self.frames_columns[node_1.frame_].add_object(edge, position_1)
+            self.frames_columns[node_2.frame_].add_object(edge, position_2)
+
         else:
             position_1 = 0
             position_2 = None
@@ -134,8 +146,12 @@ class GraphVisualizer(QtGui.QWidget):
 
                 position_1 += 1
 
-        self.add_node_to_column(node_1, node_1.frame_, position_1)
-        self.add_node_to_column(node_2, node_2.frame_, position_2)
+        # self.add_node_to_column(node_1, node_1.frame_, position_1)
+        # self.add_node_to_column(node_2, node_2.frame_, position_2)
+
+        #2
+        self.frames_columns[node_1.frame_].add_object(edge, position_1)
+        self.frames_columns[node_2.frame_].add_object(edge, position_2)
 
     def find_suitable_position_partial(self, edge):
         node, direction = None, None
@@ -159,7 +175,7 @@ class GraphVisualizer(QtGui.QWidget):
                     occupied = False
                 position += 1
 
-            column.add_object(node, position)
+            column.add_object(edge, position)
             next_column.add_object(edge, position)
 
     def find_nearest_free_slot(self, node_placed, node_free):
@@ -186,11 +202,12 @@ class GraphVisualizer(QtGui.QWidget):
 
     def draw_columns(self, first_frame, last_frame, scene):
         next_x = 0
-        for frame, column in self.frames_columns.items():
-            if not (frame < first_frame or frame > last_frame):
+        for column in self.columns:
+            if isinstance(column.frame, tuple) or (not (column.frame < first_frame or column.frame > last_frame)) :
                 column.set_x(next_x)
-                print(frame)
+                print(column.frame)
                 # column.add_crop_to_col(im_manager, STEP)
+                # uplatnit, kdyz chci multithread
                 print("pixmap added")
                 column.draw(self.show_vertically, scene, self.frames_columns)
                 print("column done")
@@ -203,40 +220,43 @@ class GraphVisualizer(QtGui.QWidget):
             # if not self.frames_columns.get(x, None) is None:
             #     continue
             if x in frames:
-                if empty_frame_count == 0:
-                    column = Column(x)
-                    self.frames_columns[x] = column
-                else:
+                if empty_frame_count > 0:
                     if empty_frame_count == 1:
-                        column = Column(x - 1, True)
-                        self.frames_columns[(x - 1)] = column
+                        column = Column(x - 1)
+                        self.frames_columns[x - 1] = column
+                        self.columns.append(column)
                     else:
                         column = Column(((x - empty_frame_count), x - 1), True)
                         self.frames_columns[((x - empty_frame_count), x - 1)] = column
-                    for y in range(x - empty_frame_count, x):
-                        self.frames_columns[x] = column
+                        self.columns.append(column)
+
                     column = Column(x)
                     self.frames_columns[x] = column
+                    self.columns.append(column)
+
+                else:
+                    column = Column(x)
+                    self.frames_columns[x] = column
+                    self.columns.append(column)
+
                 empty_frame_count = 0
             else:
                 empty_frame_count += 1
 
     def add_objects(self, nodes, edges):
         print("Sorting and preparing data")
+        frames = []
         for node in nodes:
             if node not in self.regions:
                 self.regions.append(node)
+                if not node.frame_ in frames:
+                    frames.append(node.frame_)
 
         for edge in edges:
             if edge not in self.edges:
                 self.edges.append(edge)
 
-        frames = []
-        for node in self.regions:
-            if not node.frame_ in frames:
-                frames.append(node.frame_)
         frames.sort()
-
         first_frame, last_frame = frames[0], frames[len(frames) -  1]
 
         self.prepare_columns(frames)

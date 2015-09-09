@@ -42,7 +42,7 @@ class Column():
         if isinstance(self.objects[position], (Region, Node)):
             return False
         elif isinstance(self.objects[position], tuple):
-            if self.objects[position][2] == "chunk":
+            if self.objects[position][2] == "chunk" or self.objects[position][2] == "line":
                 return False
         return True
 
@@ -69,27 +69,48 @@ class Column():
     def draw(self, vertically, scene, frame_columns):
         #vyresit vertically
         # self.get_position()
+
+        # p1 = QtCore.QPointF(self.x, 0)
+        # p2 = QtCore.QPointF(self.x + STEP, 0)
+        # p4 = QtCore.QPointF(self.x, STEP*len(self.objects))
+        # p3 = QtCore.QPointF(self.x + STEP, STEP*len(self.objects))
+        # polygon = QtGui.QGraphicsRectItem(QtCore.QRectF(p1, p4))
+        # scene.addItem(polygon)
+
         if self.empty:
             self.compress_marker.setPos(self.x + STEP/4, 0)
-            self.compress_marker.show()
+            scene.addItem(self.compress_marker)
         else:
             self.show_frame_number(vertically, scene)
             for object in self.objects:
-                if isinstance(object, Region):
+                if isinstance(object, Node):
                     pass
                     # object.set_x(self.x)
                     # vertically
                     # nastavit pos
+                    #pridat pixmapu
                     # object.draw()
+                elif object is None or isinstance(object, Region):
+                    pass
+
                 elif isinstance(object, tuple) and object[1].frame_ == self.frame:
-                    to_x = self.x
-                    to_y = self.get_position_object(object[1]) * STEP + STEP/2
-                    from_x = frame_columns[object[0]._frame].get_x() + STEP
-                    from_y = frame_columns[object[0]._frame].get_position_object(object) * STEP + STEP/2
-                    if vertically:
-                        from_x, from_y = from_y, from_x
-                    edge = Edge(from_x, from_y, to_x, to_y, object)
-                    scene.addItem(edge)
+                    from_x = self.x
+                    from_y = self.get_position_object(object[1]) * STEP + STEP/2
+                    to_x = frame_columns[object[0].frame_].get_x() + STEP
+                    try:
+                        to_y = frame_columns[object[0].frame_].get_position_object(object) * STEP + STEP/2
+
+                        if vertically:
+                            from_x, from_y = from_y, from_x
+                        edge = Edge(from_x, from_y, to_x, to_y, object)
+                        scene.addItem(edge.graphical_object)
+
+                    except:
+                        pass
+                    #vykreslit i nody se kteryma sousedi
+                    #partial?
+                else:
+                    pass
 
     def show_frame_number(self, vertically, scene):
         text = Qt.QGraphicsTextItem(str(self.frame))
