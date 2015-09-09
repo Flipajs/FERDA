@@ -102,7 +102,7 @@ class ImgManager:
         elif isinstance(roi, list):
             pts = np.empty((0, 2), int)
             for r in roi:
-                pts = np.append(pts, r.pts(), axis=0)
+                pts = np.append(pts, r.roi.corner_pts(), axis=0)
 
             roi = get_roi(pts)
 
