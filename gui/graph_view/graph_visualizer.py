@@ -2,7 +2,7 @@ from gui.graph_view.edge import Edge_Graphical
 
 __author__ = 'Simon Mandlik'
 
-STEP = 20
+STEP = 50
 
 from gui.img_controls.my_scene import MyScene
 from PyQt4 import QtGui, Qt, QtCore
@@ -190,7 +190,7 @@ class GraphVisualizer(QtGui.QWidget):
             if not (frame < first_frame or frame > last_frame):
                 column.set_x(next_x)
                 print(frame)
-                column.add_crop_to_col(im_manager, STEP)
+                # column.add_crop_to_col(im_manager, STEP)
                 print("pixmap added")
                 column.draw(self.show_vertically, scene, self.frames_columns)
                 print("column done")
@@ -261,8 +261,6 @@ class GraphVisualizer(QtGui.QWidget):
         return self.selected
 
 if __name__ == '__main__':
-    execfile('/home/ferda/FERDA/scripts/fix_project.py')
-
     p = Project()
     p.load('/home/ferda/PROJECTS/eight_22/eight22.fproj')
 
