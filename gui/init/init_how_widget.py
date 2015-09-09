@@ -49,7 +49,16 @@ class InitHowWidget(QtGui.QWidget):
         elem_width = 70
         self.img_grid = ImgGridWidget()
         self.img_grid.reshape(10, elem_width)
-        self.hlayout.addWidget(self.img_grid)
+        # self.hlayout.addWidget(self.img_grid)
+
+        self.im_grid_layout = QtGui.QVBoxLayout()
+        self.hlayout.addLayout(self.im_grid_layout)
+
+        self.inverse_selection_b = QtGui.QPushButton('inverse selection')
+        self.inverse_selection_b.clicked.connect(self.img_grid.swap_selection)
+
+        self.im_grid_layout.addWidget(self.inverse_selection_b)
+        self.im_grid_layout.addWidget(self.img_grid)
 
         self.finish_how = QtGui.QPushButton('confirm selection and finish initialization')
         self.finish_how.clicked.connect(self.finish)
@@ -153,7 +162,7 @@ class InitHowWidget(QtGui.QWidget):
 
     def get_img_qlabel(self, pts, img, id, height=100, width=100):
         cont = get_contour(pts)
-        crop = draw_points_crop(img.copy(), cont, (0, 0, 255, 0.5), square=True)
+        crop = draw_points_crop(img.copy(), cont, (0, 0, 255, 0.5), square=True, margin=0.3)
 
         img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
         pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())

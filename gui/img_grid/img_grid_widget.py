@@ -81,3 +81,7 @@ class ImgGridWidget(QtGui.QWidget):
                 ids.append(self.items[i].id_)
 
         return ids
+
+    def swap_selection(self):
+        for i in range(len(self.items)):
+            self.items[i].set_selected(not self.items[i].selected)

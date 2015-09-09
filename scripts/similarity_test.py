@@ -54,6 +54,7 @@ def similarity_loss(r1, r2):
 
     return s
 
+
 if __name__ == '__main__':
     # chunks = load_chunks()
     vid = get_auto_video_manager(WORKING_DIR+'/eight.m4v')

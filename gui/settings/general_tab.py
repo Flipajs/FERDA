@@ -23,7 +23,6 @@ class GeneralTab(QtGui.QWidget):
         self.cache_box.setAlignment(QtCore.Qt.AlignLeft)
         self.cache_box.setLayout(QtGui.QFormLayout())
 
-
         self.cache_mser = gui_utils.get_checkbox('', 'cache_mser')
         self.cache_box.layout().addRow('store MSERS', self.cache_mser)
 
@@ -43,7 +42,6 @@ class GeneralTab(QtGui.QWidget):
         self.use_parallelization = QtGui.QCheckBox()
         self.form_layout.addRow('use parallelization', self.use_parallelization)
         self.form_layout.addRow('number of cores: ', self.number_of_processes)
-
 
         self.populate()
 
