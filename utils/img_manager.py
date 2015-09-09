@@ -8,6 +8,7 @@ from utils.roi import ROI, get_roi
 import numpy as np
 import cv2
 from cv2 import copyMakeBorder as make_border
+from core.region.region import Region
 
 
 class ImgManager:
@@ -93,11 +94,15 @@ class ImgManager:
         :return: numpy uint8 array
         """
 
+        # one region
+        if isinstance(roi, Region):
+            roi = get_roi(roi.pts())
+
         # list of regions
-        if isinstance(roi, list):
+        elif isinstance(roi, list):
             pts = np.empty((0, 2), int)
             for r in roi:
-                pts = np.append(pts, r.corner_pts(), axis=0)
+                pts = np.append(pts, r.pts(), axis=0)
 
             roi = get_roi(pts)
 
