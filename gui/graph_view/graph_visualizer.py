@@ -55,16 +55,6 @@ class GraphVisualizer(QtGui.QWidget):
             self.update_view(None, None)
             self.suggest_node = True
 
-    def prepare_data(self):
-        frames = []
-        for node in self.regions:
-            if not node.frame_ in frames:
-                frames.append(node.frame_)
-        frames.sort()
-
-        self.prepare_columns(frames)
-        self.edges = comp.sort_edges(self.edges, self.regions, frames)
-
     def compute_positions(self):
         for edge in self.edges:
             if edge[2] == "chunk":
@@ -232,27 +222,30 @@ class GraphVisualizer(QtGui.QWidget):
                 empty_frame_count += 1
 
     def add_objects(self, nodes, edges):
-        first_frame, last_frame = 0, 0
+        print("Sorting and preparing data")
         for node in nodes:
             if node not in self.regions:
                 self.regions.append(node)
-                if node.frame_ < first_frame:
-                    first_frame = node.frame_
-                elif node.frame_ > last_frame:
-                    last_frame = node.frame_
+
         for edge in edges:
             if edge not in self.edges:
                 self.edges.append(edge)
-                for x in range(2):
-                    node = edge[x]
-                    if node.frame_ < first_frame:
-                        first_frame = node.frame_
-                    elif node.frame_ > last_frame:
-                        last_frame = node.frame_
 
-        self.prepare_data()
+        frames = []
+        for node in self.regions:
+            if not node.frame_ in frames:
+                frames.append(node.frame_)
+        frames.sort()
+
+        first_frame, last_frame = frames[0], frames[len(frames) -  1]
+
+        self.prepare_columns(frames)
+        self.edges = comp.sort_edges(self.edges, self.regions, frames)
+        print("Computing positions for edges")
         self.compute_positions()
+        print("Adding remaining nodes")
         self.add_sole_nodes()
+        print("Drawing")
         self.draw_columns(first_frame, last_frame, self.scene)
 
         #prepocitat, pouze od urcite polohy prekreslit, zeptat se Filipa, neprepocitavat po kazdem pridanem objektu
