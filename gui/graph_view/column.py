@@ -23,11 +23,22 @@ class Column():
             self.objects.append(0)
 
     def add_object(self, object, position):
-        self.objects[position] = object
+        if position < len(self.objects):
+            try:
+                self.objects[position] = object
+            except:
+                pass
+        else:
+            while len(self.objects) < position:
+                self.objects.append(None)
+            else:
+                self.objects.append(object)
 
     def is_free(self, position=0):
         if position < 0:
             return False
+        elif position > len(self.objects) - 1:
+            return True
         if isinstance(self.objects[position], (Region, Node)):
             return False
         elif isinstance(self.objects[position], tuple):
@@ -44,12 +55,12 @@ class Column():
     def get_x(self):
         return self.x
 
-    def add_crop_to_col(self, im_manager):
+    def add_crop_to_col(self, im_manager, size):
         for object in self.objects:
             if isinstance(object, Region):
-                img = im_manager.get_crop(object._frame, object)
+                img = im_manager.get_crop(object.frame_, [object])
                 pixmap = cvimg2qtpixmap(img)
-                node = Node(pixmap)
+                node = Node(object, pixmap, size)
                 self.objects[self.objects.index(object)] = node
 
     def set_x(self, x):
@@ -57,7 +68,7 @@ class Column():
 
     def draw(self, vertically, scene, frame_columns):
         #vyresit vertically
-        self.get_position()
+        # self.get_position()
         if self.empty:
             self.compress_marker.setPos(self.x + STEP/4, 0)
             self.compress_marker.show()
@@ -65,11 +76,12 @@ class Column():
             self.show_frame_number(vertically, scene)
             for object in self.objects:
                 if isinstance(object, Region):
-
+                    pass
                     # object.set_x(self.x)
+                    # vertically
                     # nastavit pos
-                    object.draw()
-                elif isinstance(object, tuple) and object[1]._frame == self.frame:
+                    # object.draw()
+                elif isinstance(object, tuple) and object[1].frame_ == self.frame:
                     to_x = self.x
                     to_y = self.get_position_object(object[1]) * STEP + STEP/2
                     from_x = frame_columns[object[0]._frame].get_x() + STEP

@@ -6,21 +6,24 @@ from PyQt4 import QtGui, QtCore, Qt
 
 class Node(QtGui.QGraphicsPixmapItem):
 
-    def __init__(self, region, parent_pixmap, size):
+    def __init__(self, region, parent_pixmap, size=30):
         super(Node, self).__init__(parent_pixmap)
 
         self.region = region
         self.img = None
 
         self.parent_pixmap = parent_pixmap
-        self.x = self.parent_pixmap.offset().x()
-        self.y = self.parent_pixmap.offset().y()
+        self.x = 0
+        self.y = 0
         self.size = size
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
         self.selection_polygon = self.create_selection_polygon()
 
         self.toggled = False
 
+    def set_pos(self, x, y):
+        self.x = x
+        self.y = y
     def toggle(self):
         self.toggled = False if self.toggle() else True
         self.visualize()

@@ -13,26 +13,24 @@ def sort_edges(edges, regions, used_frames_sorted,):
     If no type is given, edge is considered as line with minimal sureness.
     :return:
     """
-
-    result = []
     partial = []
     lines = []
     chunks = []
 
     for edge in edges:
-        if (edge[0] is None or edge[0] not in regions) or (edge[1] is None or edge[1] not in regions):
-            edge[2] = "partial"
-            partial.append(edge)
+        if edge[0] is None or not (edge[0] in regions) or edge[1] is None or not (edge[1] in regions) or edge[2] == "partial":
+            new_edge_tuple = edge[:2] + ("partial",) + edge[3:]
+            partial.append(new_edge_tuple)
         else:
-            length = used_frames_sorted.index(edge[0]._frame) - used_frames_sorted.index(edge[1]._frame)
-            if edge[3] == "chunk" or edge[4] == "1":
-                edge[2] = "chunk"
-                chunks.insert(edge, length)
-            elif edge[3] == "line" or int(edge[4]) < 1:
-                edge[2] = "line"
-                lines.insert(edge, length)
+            length = used_frames_sorted.index(edge[1].frame_) - used_frames_sorted.index(edge[0].frame_)
+            if edge[2] == "chunk":
+                # or edge[3] == 1
+                new_edge_tuple = edge[:2] + ("chunk",) + edge[3:]
+                chunks.insert(length, new_edge_tuple)
+            elif edge[2] == "line":
+                # or edge[3] < 1
+                new_edge_tuple = edge[:2] + ("line",) + edge[3:]
+                lines.insert(length, new_edge_tuple)
 
-    result.append(chunks, lines, partial)
+    result = [] + chunks + lines + partial
     return result
-
-

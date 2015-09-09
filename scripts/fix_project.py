@@ -7,7 +7,7 @@ p = Project()
 p.load('/home/ferda/PROJECTS/eight_22/eight22.fproj')
 
 p.video_paths = ['/home/ferda/PROJECTS/eight.m4v']
-p.working_directory = '/home/ferda/FERDA'
+p.working_directory = '/home/ferda/PROJECTS/eight_22'
 
 for it in p.log.data_:
     print it.action_name, it.data
