@@ -91,6 +91,7 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
     ex = ProjectWidget()
+    ex.show()
 
     app.exec_()
     app.deleteLater()
