@@ -62,13 +62,13 @@ def get_regions(project, solver, from_t, to_t):
 
 def warp_region(r, im, dst_h=16, dst_w=48):
     roi = get_roi(r.pts())
-    tl = roi.top_left_corner()-np.array([1, 1])
-    br = roi.bottom_right_corner()+np.array([1, 1])
+    # tl = roi.top_left_corner()-np.array([1, 1])
+    # br = roi.bottom_right_corner()+np.array([1, 1])
 
-    # im_ = np.zeros_like(im)
-    # im_[r.pts()[:, 0], r.pts()[:, 1]] = im_[r.pts()[:, 0], r.pts()[:, 1]]
+    im_ = np.ones_like(im)
+    im_[r.pts()[:, 0], r.pts()[:, 1]] = im[r.pts()[:, 0], r.pts()[:, 1]]
 
-    crop = im[tl[0]:br[0], tl[1]:br[1]].copy()
+    # crop = im[tl[0]:br[0], tl[1]:br[1]].copy()
 
     p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
     head = np.ceil(r.centroid() + p_) + np.array([1, 1])
@@ -84,35 +84,69 @@ def warp_region(r, im, dst_h=16, dst_w=48):
     bl_c = back - p_
     br_c = head - p_
 
-    # src_pts = np.float32(np.array([tl_c, tr_c, br_c, bl_c]))
-    # # srcP = np.float32(np.array([[0, 0], [dst_h, 0], [dst_h, dst_w], [0, dst_w]]))
-    # dst_pts = np.float32(np.array([[0, 0], [0, dst_w], [dst_h, dst_w], [dst_h, 0]]))
-    # # dstP = np.float32(np.array([[-30, 50], [m-50, -50], [m+80, n-100], [150, n+50]]))
-    #
+    src_pts = np.float32(np.array([tl_c, tr_c, br_c, bl_c]))
+    # srcP = np.float32(np.array([[0, 0], [dst_h, 0], [dst_h, dst_w], [0, dst_w]]))
+    dst_pts = np.float32(np.array([[0, 0], [0, dst_w], [dst_h, dst_w], [dst_h, 0]]))
+    # dstP = np.float32(np.array([[-30, 50], [m-50, -50], [m+80, n-100], [150, n+50]]))
+
+    src_pts[:, 0], src_pts[:, 1] = src_pts[:, 1].copy(), src_pts[:, 0].copy()
+    dst_pts[:, 0], dst_pts[:, 1] = dst_pts[:, 1].copy(), dst_pts[:, 0].copy()
+
+    # src_pts = np.float32(np.array([[tl_c[1], tl_c[0]], [tr_c[1], tr_c[0]], [br_c[1], br_c[0]], [bl_c[1], bl_c[0]]]))
+    # # dst_pts = np.float32(np.array([[0, 0], [dst_w, 0], [dst_w, dst_h], [0, dst_h]]))
+    # dst_pts = np.float32(np.array([[0, dst_h], [dst_w, dst_h], [dst_w, 0], [0, 0]]))
+
     # src_pts[:, 0], src_pts[:, 1] = src_pts[:, 1].copy(), src_pts[:, 0].copy()
     # dst_pts[:, 0], dst_pts[:, 1] = dst_pts[:, 1].copy(), dst_pts[:, 0].copy()
-
-    src_pts = np.float32(np.array([[tl_c[1], tl_c[0]], [tr_c[1], tr_c[0]], [br_c[1], br_c[0]], [bl_c[1], bl_c[0]]]))
-    # dst_pts = np.float32(np.array([[0, 0], [dst_w, 0], [dst_w, dst_h], [0, dst_h]]))
-    dst_pts = np.float32(np.array([[0, dst_h], [dst_w, dst_h], [dst_w, 0], [0, 0]]))
-
-    # src_pts[:, 0], src_pts[:, 1] = src_pts[:, 1].copy(), src_pts[:, 0].copy()
-    # dst_pts[:, 0], dst_pts[:, 1] = dst_pts[:, 1].copy(), dst_pts[:, 0].copy()
-
-    print src_pts
-    print dst_pts
 
     A = cv2.getAffineTransform(src_pts[0:3], dst_pts[0:3])
     # A = np.array([[1, 0, 30], [0, 1, 50]], dtype=np.float32)
 
-    crop = np.asarray(crop*255, dtype=np.uint8)
+    # crop = np.asarray(crop*255, dtype=np.uint8)
     # im2 = cv2.warpAffine(crop, A, (dst_w, dst_h))
-    A[0, 2] = dst_h
-    A[1, 2] = dst_w
+    # A[0, 2] = dst_h
+    # A[1, 2] = dst_w
 
-    im2 = cv2.warpAffine(crop, A, (1000, 1000))
+    im2 = cv2.warpAffine(im_, A, (dst_w, dst_h))
 
     return im2
+
+def hogs_test(p, chunks):
+    hogs = {}
+    for ch in chunks:
+        with open(p.working_directory+'/chunk'+str(ch)+'/hogs.pkl', 'rb') as f:
+            up = pickle.Unpickler(f)
+            hogs[ch] = up.load()
+
+    t = 20
+
+    for compare_with in chunks:
+        right = 0
+        wrong = 0
+
+        for step in [10]:
+            for t in range(0, 500-step, 10):
+                try:
+                    h = hogs[compare_with][t]
+
+                    best_match_d = np.inf
+                    best_match_ch = -1
+
+                    for ch in chunks:
+                        d = np.linalg.norm(h-hogs[ch][t+step])
+                        if d < best_match_d:
+                            best_match_d = d
+                            best_match_ch = ch
+
+                    if best_match_ch == compare_with:
+                        right += 1
+                    else:
+                        wrong += 1
+
+                except KeyError:
+                    pass
+
+        print compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", right / float(right+wrong)
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
@@ -122,53 +156,75 @@ if __name__ == "__main__":
     p.video_paths = ['/Users/flipajs/Documents/wd/c4_0h30m-0h33m.avi']
     # p.load('/Users/flipajs/Documents/wd/c4/c4.fproj')
 
-    # solver = p.saved_progress['solver']
-    solver = None
-    regions = get_regions(p, solver, 0, 500)
+    hogs_test(p, [3, 4, 5])
 
-    vid = get_auto_video_manager(p)
+    if True:
+        # solver = p.saved_progress['solver']
+        solver = None
+        regions = get_regions(p, solver, 0, 500)
 
-    chunk_id = 3
-    for f in range(0, 100, 10):
-        print f
-        im = vid.get_frame(f)
-        gray = color.rgb2gray(im)
+        vid = get_auto_video_manager(p)
 
-        reg = None
-        for r in regions[f]:
-            if r['chunk_id'] == chunk_id:
-                reg = r['region']
+        for chunk_id in range(3, 10):
+            hogs = {}
 
-        im_ = warp_region(reg, gray)
-        # im_ = np.asarray(im_*255, dtype=np.uint8)
-        cv2.imshow('im_', im_)
-        cv2.moveWindow('im_', 0, 0)
-        cv2.waitKey(0)
+            import os
+            try:
+                os.mkdir(p.working_directory+'/chunk'+str(chunk_id))
+            except OSError:
+                pass
 
+            for f in range(500):
+                im = vid.get_frame(f)
+                gray = color.rgb2gray(im)
 
+                reg = None
+                for r in regions[f]:
+                    if r['chunk_id'] == chunk_id:
+                        reg = r['region']
 
-    # im = vid.next_frame()
-    #
-    # fd, hog_image = hog(im2, orientations=9, pixels_per_cell=(8, 8),
-    #                     cells_per_block=(1, 1), visualise=True)
-    #
-    # fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 4))
-    #
-    # ax1.axis('off')
-    # ax1.imshow(crop, cmap=plt.cr.gray)
-    # ax1.set_title('Input image')
-    #
-    # ax2.axis('off')
-    # ax2.imshow(im2, cmap=plt.cr.gray)
-    # ax2.set_title('warped')
-    #
-    # # Rescale histogram for better display
-    # hog_image_rescaled = exposure.rescale_intensity(hog_image, in_range=(0, 0.02))
-    #
-    # ax3.axis('off')
-    # ax3.imshow(hog_image_rescaled, cmap=plt.cr.gray)
-    # ax3.set_title('Histogram of Oriented Gradients')
-    # plt.show()
+                if not reg:
+                    continue
+
+                im_ = warp_region(reg, gray)
+                cv2.imwrite(p.working_directory+'/chunk'+str(chunk_id)+'/'+str(f)+'.png', np.asarray(im_*255, dtype=np.uint8))
+
+                fd, hog_image = hog(im_, orientations=9, pixels_per_cell=(8, 8),
+                                cells_per_block=(1, 1), visualise=True)
+
+                hogs[f] = fd
+
+                # im_ = np.asarray(im_*255, dtype=np.uint8)
+                # cv2.imshow('im_', im_)
+                # cv2.moveWindow('im_', 0, 0)
+                # cv2.waitKey(0)
+
+            with open(p.working_directory+'/chunk'+str(chunk_id)+'/hogs.pkl', 'wb') as f:
+                p = pickle.Pickler(f, -1)
+                p.dump(hogs)
+
+        # im = vid.next_frame()
+        #
+        # fd, hog_image = hog(im2, orientations=9, pixels_per_cell=(8, 8),
+        #                     cells_per_block=(1, 1), visualise=True)
+        #
+        # fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 4))
+        #
+        # ax1.axis('off')
+        # ax1.imshow(crop, cmap=plt.cr.gray)
+        # ax1.set_title('Input image')
+        #
+        # ax2.axis('off')
+        # ax2.imshow(im2, cmap=plt.cr.gray)
+        # ax2.set_title('warped')
+        #
+        # # Rescale histogram for better display
+        # hog_image_rescaled = exposure.rescale_intensity(hog_image, in_range=(0, 0.02))
+        #
+        # ax3.axis('off')
+        # ax3.imshow(hog_image_rescaled, cmap=plt.cr.gray)
+        # ax3.set_title('Histogram of Oriented Gradients')
+        # plt.show()
 
     app.exec_()
     app.deleteLater()
