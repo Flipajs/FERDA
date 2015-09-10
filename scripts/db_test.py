@@ -19,7 +19,7 @@ def regions(array):
     for i in range(0, len(array)):
         yield (i, array[i])
 
-con = lite.connect('regions.db')
+con = lite.connect('/home/dita/PycharmProjects/regions.db')
 
 with con:
 
