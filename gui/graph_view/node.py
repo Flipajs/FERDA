@@ -4,13 +4,15 @@ SELECTION_LINE_WIDTH = 2
 
 from PyQt4 import QtGui, QtCore, Qt
 
+
 class Node(QtGui.QGraphicsPixmapItem):
 
-    def __init__(self, region, parent_pixmap, size=30):
+    def __init__(self, region, parent_pixmap, size, img):
         super(Node, self).__init__(parent_pixmap)
 
         self.region = region
-        self.img = None
+        self.img = img
+        self.img_toggled = None
 
         self.parent_pixmap = parent_pixmap
         self.x = 0
@@ -24,17 +26,11 @@ class Node(QtGui.QGraphicsPixmapItem):
     def set_pos(self, x, y):
         self.x = x
         self.y = y
+
     def toggle(self):
+        #TODO
         self.toggled = False if self.toggle() else True
         self.visualize()
-
-    # def visualize(self):
-    #     if self.toggled:
-    #         #IMG MAKER -
-    #     if self.graph_visualizer.show_vertically:
-    #         #prohodit x, y
-    #
-    #     self.paint()
 
     def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget = None):
         self.parent_pixmap.paint(QPainter, QStyleOptionGraphicsItem, None)

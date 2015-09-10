@@ -3,6 +3,8 @@ from gui.graph_view.edge import Edge_Graphical
 __author__ = 'Simon Mandlik'
 
 STEP = 50
+FROM_TOP = STEP / 2
+SPACE_BETWEEN = STEP
 
 from gui.img_controls.my_scene import MyScene
 from PyQt4 import QtGui, Qt, QtCore
@@ -10,6 +12,7 @@ import computer as comp
 from core.project.project import Project
 from gui.graph_view.column import Column
 from utils.img_manager import ImgManager
+from edge import Edge
 
 class GraphVisualizer(QtGui.QWidget):
 
@@ -60,13 +63,11 @@ class GraphVisualizer(QtGui.QWidget):
         for edge in self.edges:
             if edge[2] == "chunk":
                 self.find_suitable_position_chunk(edge)
-
             elif edge[2] == "line":
-                pass
-                # self.find_suitable_position_line(edge)
-
+                self.find_suitable_position_line(edge)
             else:
-                self.find_suitable_position_partial(edge)
+                pass
+                # self.find_suitable_position_partial(edge)
 
     def add_sole_nodes(self):
         for node in self.regions:
@@ -75,7 +76,7 @@ class GraphVisualizer(QtGui.QWidget):
                    break
             else:
                 position = 0
-                while not self.frames_columns[node.frame_].is_free(position):
+                while not self.frames_columns[node.frame_].is_free(position, node):
                     position += 1
                 else:
                     self.add_node_to_column(node, node.frame_, position)
@@ -88,25 +89,22 @@ class GraphVisualizer(QtGui.QWidget):
         position = 0
         while True:
             if self.is_line_free(position, node_1.frame_, node_2.frame_):
-                start = node_1.frame_ + 1
+                start = node_1.frame_
                 end = node_2.frame_
                 while start <= end:
                     try:
                         column = self.frames_columns[start]
                     except:
                         column = self.get_next_to_column(start - 1, "right")
-                        start = column.frame[1] + 1
+                        start = column.frame[1]
                     column.add_object(edge, position)
                     start += 1
-                # self.add_node_to_column(node_1, node_1.frame_, position)
-                # self.add_node_to_column(node_2, node_2.frame_, position)
                 break
             else:
                 position += 1
 
     def is_line_free(self, position, start_frame, end_frame):
-        free = True
-        while start_frame < end_frame:
+        while start_frame <= end_frame:
             try:
                 column = self.frames_columns[start_frame]
                 start_frame += 1
@@ -115,43 +113,41 @@ class GraphVisualizer(QtGui.QWidget):
                 start_frame = column.frame[1] + 1
 
             if not column.is_free(position):
-                free = False
-                break
-        return free
+                return False
+        return True
 
     def find_suitable_position_line(self, edge):
         node_1 = edge[0]
         node_2 = edge[1]
-        if self.frames_columns[node_1.frame_].contains(node_1):
+        contains_1 = self.frames_columns[node_1.frame_].contains(node_1)
+        contains_2 = self.frames_columns[node_2.frame_].contains(node_2)
+        if  contains_1 and contains_2 :
+            return
+        elif contains_1:
             position_1, position_2 = self.find_nearest_free_slot(node_1, node_2)
-            #2
-            self.frames_columns[node_1.frame_].add_object(edge, position_1)
-            self.frames_columns[node_2.frame_].add_object(edge, position_2)
-
-        elif self.frames_columns[node_2.frame_].contains(node_2):
+        elif contains_2:
             position_2, position_1 = self.find_nearest_free_slot(node_2, node_1)
-            #2
-            self.frames_columns[node_1.frame_].add_object(edge, position_1)
-            self.frames_columns[node_2.frame_].add_object(edge, position_2)
-
         else:
-            position_1 = 0
+            position_1 = -1
             position_2 = None
-            offset_list = [0, 1, -1]
+            offset_list = [0, 1, -1, 2, -2]
             while position_2 is None:
+                position_1 += 1
                 for num in offset_list:
-                    if self.is_line_free(position_1, node_1.frame_, node_2.frame_) and \
+                    if node_2.frame_ - node_1.frame_ == 1:
+                        if self.frames_columns[node_1.frame_].is_free(position_1, node_1) and \
+                          self.frames_columns[node_2.frame_].is_free(position_1 + num, node_2):
+                            position_2 = position_1 + num
+                            break
+                    elif self.is_line_free(position_1, node_1.frame_, node_2.frame_) and \
                         self.is_line_free(position_1 + num, node_1.frame_, node_2.frame_):
                         position_2 = position_1 + num
+                        break
 
-                position_1 += 1
 
-        # self.add_node_to_column(node_1, node_1.frame_, position_1)
-        # self.add_node_to_column(node_2, node_2.frame_, position_2)
 
-        #2
-        self.frames_columns[node_1.frame_].add_object(edge, position_1)
-        self.frames_columns[node_2.frame_].add_object(edge, position_2)
+        self.add_node_to_column(node_1, node_1.frame_, position_1)
+        self.add_node_to_column(node_2, node_2.frame_, position_2)
 
     def find_suitable_position_partial(self, edge):
         node, direction = None, None
@@ -165,9 +161,7 @@ class GraphVisualizer(QtGui.QWidget):
         column = self.frames_columns[node.frame_]
         next_column = self.get_next_to_column(node.frame_, direction)
 
-        if column.contains(node):
-            next_column.add_object(edge, column.get_position_object(node))
-        else:
+        if not column.contains(node):
             position = 0
             occupied = True
             while occupied:
@@ -175,8 +169,8 @@ class GraphVisualizer(QtGui.QWidget):
                     occupied = False
                 position += 1
 
-            column.add_object(edge, position)
-            next_column.add_object(edge, position)
+            column.add_object(node, position)
+            # next_column.add_object(edge, position)
 
     def find_nearest_free_slot(self, node_placed, node_free):
         position = self.frames_columns[node_placed.frame_].get_position_object(node_placed)
@@ -184,7 +178,7 @@ class GraphVisualizer(QtGui.QWidget):
         occupied = True
         column_free = self.frames_columns[node_free.frame_]
         while occupied:
-            if column_free.is_free(position + offset):
+            if column_free.is_free(position + offset, node_free):
                 occupied = False
             else:
                 offset = (-1) * offset if offset < 0 else (-1)*(offset + 1)
@@ -205,14 +199,49 @@ class GraphVisualizer(QtGui.QWidget):
         for column in self.columns:
             if isinstance(column.frame, tuple) or (not (column.frame < first_frame or column.frame > last_frame)) :
                 column.set_x(next_x)
-                print(column.frame)
+                # print(column.frame)
+                # print("Jsem na " + str(column.frame) + "framu, mam v sobe tyto objekty:")
+                # for object in column.objects:
+                #     print(str(object))
+                #     if isinstance(object, tuple):
+                #         print(str(object[0].frame_) + " Do: "  + str(object[1].frame_))
                 # column.add_crop_to_col(im_manager, STEP)
                 # uplatnit, kdyz chci multithread
-                print("pixmap added")
+                # print("pixmap added")
                 column.draw(self.show_vertically, scene, self.frames_columns)
-                print("column done")
+                # print("column done")
                 next_x += STEP/2 if column.empty else STEP
-                next_x += STEP/4 #At je mezi cols nejaka pauza
+                next_x += SPACE_BETWEEN #At je mezi cols nejaka pauza
+
+    def draw_lines(self, edges):
+        for edge in edges:
+            if not edge[2] == "chunk":
+                if edge[2] == "line":
+                    try:
+                        from_x = self.frames_columns[edge[1].frame_].x
+                        to_x = self.frames_columns[edge[0].frame_].x + STEP
+
+                        to_y = FROM_TOP + self.frames_columns[edge[0].frame_].get_position_object(edge[0]) * STEP + STEP/2
+                        from_y = FROM_TOP + self.frames_columns[edge[1].frame_].get_position_object(edge[1]) * STEP + STEP/2
+                    except:
+                        print("oops")
+
+                elif edge[2] == "partial":
+                    try:
+                        dir, node = "left", edge[1] if edge[0] is None or not edge[0] in self.regions else "right", edge[0]
+                        from_y = to_y = FROM_TOP + self.frames_columns[node.frame_].get_position_object(node) * STEP + STEP/2
+                        from_x = self.frames_columns[node.frame_].x
+                        to_x = self.frames_columns[node.frame_].x - STEP / 2
+                        if not dir =="left":
+                            from_x += STEP
+                            to_x += 2 * STEP
+                    except:
+                        print("oops")
+
+                if self.show_vertically:
+                    from_x, from_y = from_y, from_x
+                edge = Edge(from_x, from_y, to_x, to_y, edge)
+                self.scene.addItem(edge.graphical_object)
 
     def prepare_columns(self, frames):
         empty_frame_count = 0
@@ -222,7 +251,7 @@ class GraphVisualizer(QtGui.QWidget):
             if x in frames:
                 if empty_frame_count > 0:
                     if empty_frame_count == 1:
-                        column = Column(x - 1)
+                        column = Column(x - 1, True)
                         self.frames_columns[x - 1] = column
                         self.columns.append(column)
                     else:
@@ -253,8 +282,19 @@ class GraphVisualizer(QtGui.QWidget):
                     frames.append(node.frame_)
 
         for edge in edges:
-            if edge not in self.edges:
-                self.edges.append(edge)
+            if 'chunk_ref' in edge[2].keys():
+                type = "chunk"
+            elif edge[0] is None or edge[1] is None or not edge[0] in nodes or not edge[1] in nodes:
+                type = "partial"
+            else:
+                type = "line"
+
+            #TODO sureness - dodelat, zatim se generuje nahodne
+            import random
+            sureness = random.randint(0, 101) / float(100)
+
+            new_tuple = (edge[0], edge[1]) + (type, sureness)
+            self.edges.append(new_tuple)
 
         frames.sort()
         first_frame, last_frame = frames[0], frames[len(frames) -  1]
@@ -266,9 +306,10 @@ class GraphVisualizer(QtGui.QWidget):
         print("Adding remaining nodes")
         self.add_sole_nodes()
         print("Drawing")
-        self.draw_columns(first_frame, last_frame, self.scene)
 
-        #prepocitat, pouze od urcite polohy prekreslit, zeptat se Filipa, neprepocitavat po kazdem pridanem objektu
+        #TODO nefunguje paramter last ani frist frame
+        self.draw_columns(first_frame, last_frame, self.scene)
+        self.draw_lines(self.edges)
 
     def add_node_to_column(self, node, column_frame, position):
         self.frames_columns[column_frame].add_object(node, position)
@@ -289,22 +330,11 @@ if __name__ == '__main__':
     import cv2
     solver = p.saved_progress['solver']
     nodes = solver.g.nodes()
-    edges = solver.g.edges()
-    edges_4_tuple = []
-    import random
-    for edge in edges:
-        type = random.choice(["chunk", "line"])
-        if type == "chunk":
-            sureness = 1
-        else:
-            sureness = random.randint(0, 101) / float(100)
-
-        new_tuple = edge + (type, sureness)
-        edges_4_tuple.append(new_tuple)
+    edges = solver.g.edges(data = True)
 
     import sys
     app = QtGui.QApplication(sys.argv)
-    g = GraphVisualizer(nodes, edges_4_tuple, im_manager)
+    g = GraphVisualizer(nodes, edges, im_manager)
     g.show()
     app.exec_()
     cv2.waitKey(0)
