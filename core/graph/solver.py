@@ -436,6 +436,11 @@ class Solver:
         return s, ds, 0, antlikeness_diff
 
     def simplify_to_chunks(self, nodes=None):
+        """
+        Goes through given nodes and check if outgoing edge is confirmed, if yes, the node is added into chunk.
+        If there are no nodes given, it goes trough whole graph.
+        """
+
         if not nodes:
             nodes = self.g.nodes()
 
@@ -445,29 +450,22 @@ class Solver:
             if n not in self.g:
                 continue
 
-            # try:
-            in_num, in_n = num_in_edges_of_type(self.g, n, EDGE_CONFIRMED)
-            if in_num == 1:
-                out_num, out_n = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
+            out_num, out_n = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
+            if out_num == 1:
+                is_ch, _, chunk = self.is_chunk(n)
 
-                if out_num == 1:
-                    # self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ASSEMBLE_CHUNK, {'n': n})
-                    if 'chunk_ref' in self.g[in_n][n]:
-                        chunk = self.g[in_n][n]['chunk_ref']
-                        chunk.append_right(out_n, self)
-                    elif 'chunk_ref' in self.g[n][out_n]:
-                        chunk = self.g[n][out_n]['chunk_ref']
-                        chunk.append_left(in_n, self)
+                if is_ch:
+                    #check if it is the same chunk
+                    if chunk.end_n == out_n:
+                        continue
+
+                    chunk.append_right(out_n, self)
+                else:
+                    is_ch_out, _, chunk_out = self.is_chunk(out_n)
+                    if is_ch_out:
+                        chunk_out.append_left(n, self)
                     else:
-                        is_ch, _, ch_in = self.is_chunk(in_n)
-                        if is_ch:
-                            ch_in.append_right(n, self)
-                            ch_in.append_right(out_n, self)
-                        else:
-                            chunk = Chunk(in_n, n, self, store_area=self.project.other_parameters.store_area_info, id=self.project.solver_parameters.new_chunk_id())
-                            chunk.append_right(out_n, self)
-            # except:
-            #     pass
+                        Chunk(n, out_n, self, store_area=self.project.other_parameters.store_area_info, id=self.project.solver_parameters.new_chunk_id())
 
     def get_ccs(self, queue=[]):
         if not queue:
@@ -586,8 +584,8 @@ class Solver:
         # affected = list(affected)
         # all_affected = list(self.simplify(affected[:], return_affected=True))
         # all_affected = list(set(all_affected + affected))
-        #
-        self.simplify_to_chunks()
+
+        self.simplify_to_chunks(affected)
 
     def get_chunk_node_partner(self, n):
         for n_, _, d in self.g.in_edges(n, data=True):

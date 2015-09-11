@@ -26,7 +26,7 @@ class Chunk:
         if solver:
             self.set_start(start_n, solver)
             self.set_end(end_n, solver)
-            self.simple_reconnect_(solver)
+            self.chunk_reconnect_(solver)
 
     def __str__(self):
         s = "CHUNK --- start_t: "+str(self.start_n.frame_)+" end_t: "+str(self.end_n.frame_)+" reduced_len: "+str(len(self.reduced))+"\n"
@@ -92,9 +92,6 @@ class Chunk:
 
     def chunk_reconnect_(self, solver):
         solver.add_edge(self.start_n, self.end_n, type=EDGE_CONFIRMED, chunk_ref=self, score=1.0)
-
-    def simple_reconnect_(self, solver):
-        solver.add_edge(self.start_n, self.end_n, type=EDGE_CONFIRMED, score=1.0)
 
     def add_to_reduced_(self, r, solver, i=-1):
         it = Reduced(r)
@@ -263,9 +260,6 @@ class Chunk:
         if not undo_action:
             if self.reduced:
                 self.chunk_reconnect_(solver)
-            else:
-                # it is not a chunk anymore
-                self.simple_reconnect_(solver)
 
         return first
 
@@ -304,8 +298,6 @@ class Chunk:
 
             if self.reduced:
                 self.chunk_reconnect_(solver)
-            else:
-                self.simple_reconnect_(solver)
 
         return last
 
@@ -397,15 +389,8 @@ class Chunk:
 
                 # ----- test if we still have 2 chunks and reconnect first and last ---
                 if not undo_action:
-                    if self.reduced:
-                        self.chunk_reconnect_(solver)
-                    else:
-                        self.simple_reconnect_(solver)
-
-                    if ch2.reduced:
-                        ch2.chunk_reconnect_(solver)
-                    else:
-                        ch2.simple_reconnect_(solver)
+                    self.chunk_reconnect_(solver)
+                    ch2.chunk_reconnect_(solver)
 
         else:
             raise Exception("t is out of range of this chunk in chunk.py/split_at_t")
