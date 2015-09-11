@@ -26,6 +26,7 @@ class Node(QtGui.QGraphicsPixmapItem):
     def set_pos(self, x, y):
         self.x = x
         self.y = y
+        #TODO
 
     def toggle(self):
         #TODO

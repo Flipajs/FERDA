@@ -1,22 +1,29 @@
-from gui.graph_view.edge import Edge_Graphical
-
-__author__ = 'Simon Mandlik'
-
-STEP = 50
-FROM_TOP = STEP / 2
-SPACE_BETWEEN = STEP
-
+from gui.graph_view.node import Node
 from gui.img_controls.my_scene import MyScene
 from PyQt4 import QtGui, Qt, QtCore
 import computer as comp
 from core.project.project import Project
 from gui.graph_view.column import Column
 from utils.img_manager import ImgManager
-from edge import Edge
+from gui.graph_view.edge import Edge_Graphical
+
+__author__ = 'Simon Mandlik'
+
+# the size of a node
+STEP = 50
+# distance of the whole visualization from the top of the widget
+FROM_TOP = 0
+# space between each of the columns
+SPACE_BETWEEN_HOR = 20
+# space between nodes in column
+SPACE_BETWEEN_VER = 5
+# gap between frame_numbers and first node in columns
+GAP = 50
+
 
 class GraphVisualizer(QtGui.QWidget):
 
-    def __init__(self, regions, edges, img_manager, show_vertically=False, node_size=30):
+    def __init__(self, regions, edges, img_manager, show_vertically=False):
         super(GraphVisualizer, self).__init__()
         self.regions = []
         self.edges = []
@@ -43,21 +50,14 @@ class GraphVisualizer(QtGui.QWidget):
 
         if item is None:
             self.selected = []
-        else:
-            self.selected.append(item.graph_obj)
+        # else:
+            # self.selected.append(item.core_obj)
 
         if isinstance(item, Edge_Graphical):
+            print(item.core_obj)
+            print(item.core_obj[0].frame_, item.core_obj[1].frame_)
+        elif isinstance(item, Node):
             pass
-        # if isinstance(item, Pixmap_Selectable):
-            pass
-        elif isinstance(item, QtGui.QGraphicsPixmapItem):
-            # toggled item...
-            return
-        else:
-            # self.clear_all_button_function()
-            self.suggest_node = False
-            self.update_view(None, None)
-            self.suggest_node = True
 
     def compute_positions(self):
         for edge in self.edges:
@@ -73,7 +73,7 @@ class GraphVisualizer(QtGui.QWidget):
         for node in self.regions:
             for col in self.frames_columns.values():
                 if col.contains(node):
-                   break
+                    break
             else:
                 position = 0
                 while not self.frames_columns[node.frame_].is_free(position, node):
@@ -111,7 +111,6 @@ class GraphVisualizer(QtGui.QWidget):
             except:
                 column = self.get_next_to_column(start_frame - 1, "right")
                 start_frame = column.frame[1] + 1
-
             if not column.is_free(position):
                 return False
         return True
@@ -121,7 +120,7 @@ class GraphVisualizer(QtGui.QWidget):
         node_2 = edge[1]
         contains_1 = self.frames_columns[node_1.frame_].contains(node_1)
         contains_2 = self.frames_columns[node_2.frame_].contains(node_2)
-        if  contains_1 and contains_2 :
+        if contains_1 and contains_2:
             return
         elif contains_1:
             position_1, position_2 = self.find_nearest_free_slot(node_1, node_2)
@@ -136,22 +135,19 @@ class GraphVisualizer(QtGui.QWidget):
                 for num in offset_list:
                     if node_2.frame_ - node_1.frame_ == 1:
                         if self.frames_columns[node_1.frame_].is_free(position_1, node_1) and \
-                          self.frames_columns[node_2.frame_].is_free(position_1 + num, node_2):
+                         self.frames_columns[node_2.frame_].is_free(position_1 + num, node_2):
                             position_2 = position_1 + num
                             break
                     elif self.is_line_free(position_1, node_1.frame_, node_2.frame_) and \
-                        self.is_line_free(position_1 + num, node_1.frame_, node_2.frame_):
+                            self.is_line_free(position_1 + num, node_1.frame_, node_2.frame_):
                         position_2 = position_1 + num
                         break
-
-
 
         self.add_node_to_column(node_1, node_1.frame_, position_1)
         self.add_node_to_column(node_2, node_2.frame_, position_2)
 
     def find_suitable_position_partial(self, edge):
-        node, direction = None, None
-        if edge[0] is None or not edge[0] in self.regions :
+        if edge[0] is None or not edge[0] in self.regions:
             node = edge[1]
             direction = "left"
         else:
@@ -194,54 +190,34 @@ class GraphVisualizer(QtGui.QWidget):
                 if tup[0 if direction == "right" else 1] == frame_from + (1 if direction == "right" else -1):
                     return self.frames_columns[tup]
 
-    def draw_columns(self, first_frame, last_frame, scene):
+    def draw_columns(self, first_frame, last_frame):
         next_x = 0
         for column in self.columns:
-            if isinstance(column.frame, tuple) or (not (column.frame < first_frame or column.frame > last_frame)) :
-                column.set_x(next_x)
-                # print(column.frame)
-                # print("Jsem na " + str(column.frame) + "framu, mam v sobe tyto objekty:")
-                # for object in column.objects:
-                #     print(str(object))
-                #     if isinstance(object, tuple):
-                #         print(str(object[0].frame_) + " Do: "  + str(object[1].frame_))
+            column.set_x(next_x)
+            next_x += STEP/2 if column.empty else STEP
+            next_x += SPACE_BETWEEN_HOR
+            frame_a = frame_b = column.frame
+            if isinstance(column.frame, tuple):
+                frame_a, frame_b = column.frame[0], column.frame[1]
+            if not (frame_a < first_frame or frame_b > last_frame):
                 # column.add_crop_to_col(im_manager, STEP)
-                # uplatnit, kdyz chci multithread
+                # # uplatnit, kdyz chci multithread
                 # print("pixmap added")
-                column.draw(self.show_vertically, scene, self.frames_columns)
-                # print("column done")
-                next_x += STEP/2 if column.empty else STEP
-                next_x += SPACE_BETWEEN #At je mezi cols nejaka pauza
+                column.draw(self.show_vertically, self.scene, self.frames_columns)
 
-    def draw_lines(self, edges):
-        for edge in edges:
-            if not edge[2] == "chunk":
-                if edge[2] == "line":
-                    try:
-                        from_x = self.frames_columns[edge[1].frame_].x
-                        to_x = self.frames_columns[edge[0].frame_].x + STEP
-
-                        to_y = FROM_TOP + self.frames_columns[edge[0].frame_].get_position_object(edge[0]) * STEP + STEP/2
-                        from_y = FROM_TOP + self.frames_columns[edge[1].frame_].get_position_object(edge[1]) * STEP + STEP/2
-                    except:
-                        print("oops")
-
+    def draw_lines(self, edges_to_draw, first_frame, last_frame):
+        for edge in edges_to_draw:
+            # if not edge[2] == "chunk":
+                if edge[2] == "line" or edge[2] == "chunk":
+                    if first_frame <= edge[0].frame_ and edge[1].frame_ <= last_frame:
+                        col = self.frames_columns[edge[1].frame_]
+                        col.show_edge(edge, self.frames_columns, self.show_vertically, self.scene)
                 elif edge[2] == "partial":
-                    try:
-                        dir, node = "left", edge[1] if edge[0] is None or not edge[0] in self.regions else "right", edge[0]
-                        from_y = to_y = FROM_TOP + self.frames_columns[node.frame_].get_position_object(node) * STEP + STEP/2
-                        from_x = self.frames_columns[node.frame_].x
-                        to_x = self.frames_columns[node.frame_].x - STEP / 2
-                        if not dir =="left":
-                            from_x += STEP
-                            to_x += 2 * STEP
-                    except:
-                        print("oops")
-
-                if self.show_vertically:
-                    from_x, from_y = from_y, from_x
-                edge = Edge(from_x, from_y, to_x, to_y, edge)
-                self.scene.addItem(edge.graphical_object)
+                    direction = "left" if (edge[0] is None or not (edge[0] in self.regions)) else "right"
+                    node = edge[1] if direction == "left" else edge[0]
+                    if first_frame <= node.frame_ <= last_frame:
+                        col = self.frames_columns[node.frame_]
+                        col.show_edge(edge, self.frames_columns, self.show_vertically, self.scene, direction, node)
 
     def prepare_columns(self, frames):
         empty_frame_count = 0
@@ -272,32 +248,30 @@ class GraphVisualizer(QtGui.QWidget):
             else:
                 empty_frame_count += 1
 
-    def add_objects(self, nodes, edges):
+    def add_objects(self, added_nodes, added_edges):
         print("Sorting and preparing data")
         frames = []
-        for node in nodes:
+        for node in added_nodes:
             if node not in self.regions:
                 self.regions.append(node)
-                if not node.frame_ in frames:
+                if node.frame_ not in frames:
                     frames.append(node.frame_)
-
-        for edge in edges:
+        for edge in added_edges:
             if 'chunk_ref' in edge[2].keys():
-                type = "chunk"
-            elif edge[0] is None or edge[1] is None or not edge[0] in nodes or not edge[1] in nodes:
-                type = "partial"
+                type_edge = "chunk"
+            elif edge[0] is None or edge[1] is None or not edge[0] in added_nodes or not edge[1] in added_nodes:
+                type_edge = "partial"
             else:
-                type = "line"
+                type_edge = "line"
 
-            #TODO sureness - dodelat, zatim se generuje nahodne
+            # TODO sureness - dodelat, zatim se generuje nahodne
             import random
-            sureness = random.randint(0, 101) / float(100)
-
-            new_tuple = (edge[0], edge[1]) + (type, sureness)
+            sureness = random.randint(0, 100) / float(100)
+            new_tuple = (edge[0], edge[1]) + (type_edge, sureness)
             self.edges.append(new_tuple)
 
         frames.sort()
-        first_frame, last_frame = frames[0], frames[len(frames) -  1]
+        first_frame, last_frame = frames[0], frames[len(frames) - 1]
 
         self.prepare_columns(frames)
         self.edges = comp.sort_edges(self.edges, self.regions, frames)
@@ -307,9 +281,8 @@ class GraphVisualizer(QtGui.QWidget):
         self.add_sole_nodes()
         print("Drawing")
 
-        #TODO nefunguje paramter last ani frist frame
-        self.draw_columns(first_frame, last_frame, self.scene)
-        self.draw_lines(self.edges)
+        self.draw_columns(first_frame, last_frame)
+        self.draw_lines(self.edges, first_frame, last_frame)
 
     def add_node_to_column(self, node, column_frame, position):
         self.frames_columns[column_frame].add_object(node, position)
@@ -329,13 +302,12 @@ if __name__ == '__main__':
 
     import cv2
     solver = p.saved_progress['solver']
-    nodes = solver.g.nodes()
-    edges = solver.g.edges(data = True)
+    n = solver.g.nodes()
+    e = solver.g.edges(data=True)
 
     import sys
     app = QtGui.QApplication(sys.argv)
-    g = GraphVisualizer(nodes, edges, im_manager)
+    g = GraphVisualizer(n, e, im_manager)
     g.show()
     app.exec_()
     cv2.waitKey(0)
-

@@ -14,59 +14,50 @@ SENSITIVITY_CONSTANT = SELECTION_OFFSET * 2
 
 class Edge():
 
-    def __init__(self, from_x, from_y, to_x, to_y, tuple):
-        self.tuple = tuple
-        self.style = tuple[2]
-        self.sureness = tuple[3]
+    def __init__(self, from_x, from_y, to_x, to_y, core_obj):
+        self.core_obj = core_obj
 
-        self.graphical_object = Edge_Graphical(QtCore.QLineF(from_x, from_y, to_x, to_y), self.style, tuple)
+        # self.from_x = from_x
+        # self.from_y = from_y
+        # self.to_x = to_x
+        # self.to_y = to_y
+
+        self.graphical_object = Edge_Graphical(QtCore.QLineF(from_x, from_y, to_x, to_y), core_obj)
+
+    # def set_pos(self, from_x, from_y, to_x, to_y):
+    #     self.from_x = from_x
+    #     self.from_y = from_y
+    #     self.to_x = to_x
+    #     self.to_y = to_y
 
 
 class Edge_Graphical(QtGui.QGraphicsLineItem):
-    def __init__(self, parent_line, style, graph_obj):
+    def __init__(self, parent_line, core_obj):
         super(Edge_Graphical, self).__init__(parent_line)
-        self.graph_obj = graph_obj
+        self.core_obj = core_obj
         self.parent_line = parent_line
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
         self.selection_offset = SELECTION_OFFSET
         self.selection_polygon = self.create_selection_polygon()
         self.pick_polygon = self.create_pick_polygon()
-        self.style = style
+        self.style = core_obj[2]
 
     def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget=None):
+        opacity = 100 + 155 * float(self.core_obj[3])
         if self.style == 'chunk':
-            pen = QtGui.QPen(Qt.darkGray, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
-            QPainter.setPen(pen)
-            QPainter.drawLine(self.parent_line)
-            if self.isSelected():
-                pen = QtGui.QPen(Qt.black, SELECTION_OFFSET, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
-                QPainter.setPen(pen)
-                QPainter.drawPolygon(self.selection_polygon)
-            #TODO opacity
-
-        if self.style == 'line':
-            pen = QtGui.QPen(Qt.green, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
-            QPainter.setPen(pen)
-            QPainter.drawLine(self.parent_line)
-            if self.isSelected():
-                pen = QtGui.QPen(Qt.black, SELECTION_OFFSET, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
-                QPainter.setPen(pen)
-                QPainter.drawPolygon(self.selection_polygon)
-            #TODO opacity
-
+            pen = QtGui.QPen(QtGui.QColor(0, 0, 0, opacity), LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+        elif self.style == 'line':
+            pen = QtGui.QPen(QtGui.QColor(0, 255, 0, opacity), LINE_WIDTH / 1.5, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
         elif self.style == 'partial':
-            pen = QtGui.QPen(QtCore.Qt.DotLine)
-            pen.setColor(QtGui.QColor(255, 0, 0, 0x78))
-            pen.setWidth(2)
-            # pen = QtGui.QPen(Qt.darkGray, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
-            QPainter.setPen(pen)
-            QPainter.drawLine(self.parent_line)
-            if self.isSelected():
-                pen = QtGui.QPen(Qt.black, SELECTION_OFFSET, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
-                QPainter.setPen(pen)
-                QPainter.drawPolygon(self.selection_polygon)
+            pen = QtGui.QPen(QtGui.QColor(255, 0, 0, opacity), LINE_WIDTH / 1.5, Qt.DotLine, Qt.SquareCap, Qt.RoundJoin)
 
-            #lines
+        QPainter.setPen(pen)
+        QPainter.drawLine(self.parent_line)
+
+        if self.isSelected():
+            pen = QtGui.QPen(Qt.black, SELECTION_OFFSET, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
+            QPainter.setPen(pen)
+            QPainter.drawPolygon(self.selection_polygon)
 
     def create_selection_polygon(self):
         pi = math.pi
