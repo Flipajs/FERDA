@@ -90,8 +90,7 @@ if __name__ == "__main__":
         # EDIT HERE....
 
         project = Project()
-        project.load('/home/dita/PycharmProjects/eight_22/eight22.fproj')
-        #project.load('/home/simon/Documents/res/c3_1h30/c3_1h30.fproj')
+        project.load('/home/simon/Documents/res/c3_1h30/c3_1h30.fproj')
 
     # from utils.video_manager import get_auto_video_manager
     # vid = get_auto_video_manager(project)
