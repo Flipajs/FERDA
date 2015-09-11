@@ -126,7 +126,6 @@ class RegionReconstruction(QtGui.QWidget):
             im = vid.get_frame(f, auto=True)
             regions = get_msers_(im, self.project, frame=f)
 
-
             for ch in ch_in_frame:
                 c = ch.get_centroid_in_time(f)
                 is_virtual = ch.is_virtual_in_time(f)

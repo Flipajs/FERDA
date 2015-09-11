@@ -289,7 +289,7 @@ class Solver:
             if 'chunk_ref' in d:
                 continue
 
-            self.get_cc_rec(n1, depth+1, node_groups)
+            self.get_cc_rec(n1, depth-1, node_groups)
 
         for _, n2, d in self.g.out_edges(n, data=True):
             if 'chunk_ref' in d:

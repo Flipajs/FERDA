@@ -118,14 +118,12 @@ def hogs_test(p, chunks):
             up = pickle.Unpickler(f)
             hogs[ch] = up.load()
 
-    t = 20
-
     for compare_with in chunks:
         right = 0
         wrong = 0
 
-        for step in [10]:
-            for t in range(0, 500-step, 10):
+        for time_step in [20]:
+            for t in range(0, 500-time_step):
                 try:
                     h = hogs[compare_with][t]
 
@@ -133,7 +131,7 @@ def hogs_test(p, chunks):
                     best_match_ch = -1
 
                     for ch in chunks:
-                        d = np.linalg.norm(h-hogs[ch][t+step])
+                        d = np.linalg.norm(h-hogs[ch][t+time_step])
                         if d < best_match_d:
                             best_match_d = d
                             best_match_ch = ch
@@ -146,7 +144,76 @@ def hogs_test(p, chunks):
                 except KeyError:
                     pass
 
-        print compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", right / float(right+wrong)
+        if right+wrong:
+            print compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", round(right / float(right+wrong), 2)
+        else:
+            print "none"
+
+
+def hogs_test2(p, chunks):
+    hogs = {}
+    for ch in chunks:
+        with open(p.working_directory+'/chunk'+str(ch)+'/hogs.pkl', 'rb') as f:
+            up = pickle.Unpickler(f)
+            hogs[ch] = up.load()
+
+    search_range = 7
+    k_best = 5
+
+    for compare_with in chunks:
+        right = 0
+        wrong = 0
+
+        for time_step in [50]:
+            for t in range(search_range, 500-time_step):
+                try:
+                    h = hogs[compare_with][t]
+
+                    distances = []
+
+                    for ch in chunks:
+                        for t_ in range(t+time_step-search_range, t+time_step+search_range):
+                            d = np.linalg.norm(h-hogs[ch][t_])
+                            distances.append((ch, d))
+
+                    distances = sorted(distances, key=lambda x: x[1])
+
+                    v = 0
+                    for i in range(k_best):
+                        if distances[i][0] == compare_with:
+                            v += 1
+
+                    if v >= 3:
+                        right += 1
+                    else:
+                        wrong += 1
+
+                except KeyError:
+                    pass
+
+        if right+wrong:
+            print compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", round(right / float(right+wrong), 2)
+        else:
+            print "none"
+
+def head_test(im_):
+    """
+    try if left half of image has more white pixels then right one if yes, flip image so the head is in right part of image.
+    :param im_:
+    :return:
+    """
+    h, w = im_.shape
+
+    left_ = im_[:, 0:w/2]
+    right_ = im_[:, w/2:]
+
+    left_ = np.sum(left_[left_ == 255])
+    right_ = np.sum(right_[right_ == 255])
+
+    if left_ > right_:
+        im_ = np.fliplr(im_)
+
+    return im_
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
@@ -156,9 +223,22 @@ if __name__ == "__main__":
     p.video_paths = ['/Users/flipajs/Documents/wd/c4_0h30m-0h33m.avi']
     # p.load('/Users/flipajs/Documents/wd/c4/c4.fproj')
 
-    hogs_test(p, [3, 4, 5])
+    # for i in range(3, 10):
+    #     for j in range(i+1, 10):
+    #         for k in range(j+1, 10):
+    #             print i, "vs", j, "vs ", k
+    #             hogs_test2(p, [i, j, k])
 
-    if True:
+    for i in range(3, 10):
+        for j in range(i+1, 10):
+            print i, "vs", j
+            hogs_test2(p, [i, j])
+
+    # hogs_test(p, [4, 5])
+    # hogs_test(p, [4, 5])
+    # hogs_test(p, [4, 5])
+
+    if False:
         # solver = p.saved_progress['solver']
         solver = None
         regions = get_regions(p, solver, 0, 500)
@@ -166,6 +246,7 @@ if __name__ == "__main__":
         vid = get_auto_video_manager(p)
 
         for chunk_id in range(3, 10):
+            print chunk_id
             hogs = {}
 
             import os
@@ -187,6 +268,8 @@ if __name__ == "__main__":
                     continue
 
                 im_ = warp_region(reg, gray)
+                im_ = head_test(im_)
+
                 cv2.imwrite(p.working_directory+'/chunk'+str(chunk_id)+'/'+str(f)+'.png', np.asarray(im_*255, dtype=np.uint8))
 
                 fd, hog_image = hog(im_, orientations=9, pixels_per_cell=(8, 8),
@@ -200,8 +283,8 @@ if __name__ == "__main__":
                 # cv2.waitKey(0)
 
             with open(p.working_directory+'/chunk'+str(chunk_id)+'/hogs.pkl', 'wb') as f:
-                p = pickle.Pickler(f, -1)
-                p.dump(hogs)
+                p_ = pickle.Pickler(f, -1)
+                p_.dump(hogs)
 
         # im = vid.next_frame()
         #
