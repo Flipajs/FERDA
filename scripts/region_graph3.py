@@ -780,8 +780,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.toggled.append(it)
 
 
-def visualize_nodes(im, r, margin=0.1):
-    vis = draw_points_crop(im, r.pts(), margin=margin, square=True, color=(0, 255, 0, 0.35))
+def visualize_nodes(im, r, margin=0.1, color=(0, 255, 0, 0.35)):
+    vis = draw_points_crop(im, r.pts(), margin=margin, square=True, color=color)
     # cv2.putText(vis, str(r.id_), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
 
     return vis

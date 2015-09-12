@@ -189,7 +189,7 @@ if __name__ == "__main__":
     p = Project()
     p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
 
-    ex = RegionReconstruction(p, p.saved_progress['solver'])
+    ex = RegionReconstruction(p, p.solver)
     print ex.process_input('1 2 3 4')
     print ex.process_input('1, 2, 3, 4')
     print ex.process_input('1,2,3,4')

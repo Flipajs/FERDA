@@ -66,7 +66,11 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
                 else:
                     im = cache[n.frame_]
 
-            solver.g.node[n]['img'] = visualize_nodes(im, n, margin=node_margin)
+            # TODO: optimize... and add opacity parameter
+            _, _, ch = solver.is_chunk(n)
+            c = (ch.color.blue(), ch.color.green(), ch.color.red(), 0.9)
+
+            solver.g.node[n]['img'] = visualize_nodes(im, n, margin=node_margin, color=c)
 
         i += 1
 
@@ -108,7 +112,7 @@ if __name__ == "__main__":
     # show()
 
     # ex = call_visualizer(-1, -1, project)
-    ex = call_visualizer(0, 700, project, project.saved_progress['solver'], 10)
+    ex = call_visualizer(0, 700, project, project.solver, 10)
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()

@@ -11,6 +11,8 @@ from core.log import Log
 from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
+from utils.color_manager import ColorManager
+
 
 class Project:
     """
@@ -32,12 +34,13 @@ class Project:
         self.groups = None
         self.animals = None
         self.stats = None
-        self.saved_progress = None
         self.mser_parameters = MSERParameters()
         self.other_parameters = OtherParameters()
         self.solver_parameters = SolverParameters()
+        self.color_manager = None
         self.log = Log()
-        self.version = "2.2.9"
+        self.solver = None
+        self.version = "2.3.0"
 
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
@@ -68,6 +71,7 @@ class Project:
         p.version = self.version
 
         p.date_created = self.date_created
+        p.color_manager = self.color_manager
         import time
         p.date_last_modifiaction = time.time()
 
@@ -214,7 +218,7 @@ class Project:
                 solver.g = g
                 solver.ignored_nodes = ignored_nodes
                 solver.update_nodes_in_t_refs()
-                self.saved_progress = {'solver': solver}
+                self.solver = solver
                 self.log = log
         except:
             pass

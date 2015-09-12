@@ -321,8 +321,7 @@ class ResultsWidget(QtGui.QWidget):
             chs = []
             for ch in self.chunks:
                 if t1 < ch.start_t() < t2 or t1 < ch.end_t() < t2:
-                    r, g, b = colors_[i % len(colors_)]
-                    item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
+                    item = markers.CenterMarker(0, 0, MARKER_SIZE, ch.color, i, self.marker_changed)
                     item.setZValue(0.5)
                     self.items.append(item)
                     self.scene.addItem(item)
@@ -338,8 +337,7 @@ class ResultsWidget(QtGui.QWidget):
             self.chunks = chs
         else:
             for ch in self.chunks:
-                r, g, b = colors_[i % len(colors_)]
-                item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
+                item = markers.CenterMarker(0, 0, MARKER_SIZE, ch.color, i, self.marker_changed)
                 item.setZValue(0.5)
                 self.items.append(item)
                 self.scene.addItem(item)

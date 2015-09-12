@@ -153,6 +153,12 @@ class BackgroundComputer():
 
         S_.general.log_graph_edits = True
 
+        self.project.solver = self.solver
+
+        from utils.color_manager import colorize_project
+        colorize_project(self.project)
+        self.solver.save()
+
         self.finished_callback(self.solver)
 
     def connect_graphs(self, g, t1, t2):

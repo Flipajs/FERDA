@@ -90,10 +90,21 @@ class CaseWidget(QtGui.QWidget):
             self.color_assignments = {}
 
             i = 0
+            chunk_nodes = set()
             for g in self.nodes_groups:
                 for n in g:
-                    self.color_assignments[n] = colors_[i%len(colors_)] + (self.opacity, )
+                    is_ch, _, ch = self.project.solver.is_chunk(n)
+                    if is_ch:
+                        chunk_nodes.add(n)
+                        self.color_assignments[n] = (ch.color.blue(), ch.color.green(), ch.color.red(), self.opacity)
+                    else:
+                        self.color_assignments[n] = colors_[i%len(colors_)] + (self.opacity, )
                     i += 1
+            
+            for _, n1, n2 in reversed(self.suggested_config):
+                if n2 in chunk_nodes and n1 not in chunk_nodes:
+                    self.color_assignments[n1] = self.color_assignments[n2]
+                    chunk_nodes.add(n1)
 
             for _, n1, n2 in self.suggested_config:
                 self.color_assignments[n2] = self.color_assignments[n1]

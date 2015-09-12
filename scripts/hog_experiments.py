@@ -239,7 +239,7 @@ if __name__ == "__main__":
     # hogs_test(p, [4, 5])
 
     if False:
-        # solver = p.saved_progress['solver']
+        # solver = p.solver
         solver = None
         regions = get_regions(p, solver, 0, 500)
 

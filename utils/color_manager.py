@@ -133,12 +133,12 @@ class ColorManager():
                     if value > limit:
                         ok = False
                 if ok:
-                    print i
+                    # print i
                     return QtGui.QColor().fromRgb(r, g, b)
 
                 if i > 500:
                     # if co color was found in 500 laps, return the current color
-                    print "No color found"
+                    # print "No color found"
                     # return QtGui.QColor().fromRgb(0, 0, 0)
                     return QtGui.QColor().fromRgb(r, g, b)
                 i += 1
@@ -258,6 +258,16 @@ class Track():
 
     def set_color_id(self, color_id):
         self.color_id = color_id
+
+def colorize_project(project):
+    from utils.video_manager import get_auto_video_manager
+    vid = get_auto_video_manager(project)
+
+    limit = 2*project.solver.nodes_in_t[0]
+
+    project.color_manager = ColorManager(vid.total_frame_count(), limit)
+    for ch in project.solver.chunk_list():
+        ch.color, _ = project.color_manager.new_track(ch.start_t(), ch.end_t())
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

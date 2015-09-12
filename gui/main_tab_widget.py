@@ -45,8 +45,9 @@ class MainTabWidget(QtGui.QWidget):
         self.show_results_only_around_frame = -1
 
         print "LOADING GRAPH..."
-        if project.saved_progress:
-            solver = project.saved_progress['solver']
+        if project.solver:
+            solver = project.solver
+            # TODO: is it necessary?
             solver.update_nodes_in_t_refs()
             self.background_computer_finished(solver)
         else:
