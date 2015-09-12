@@ -17,6 +17,7 @@ class Chunk:
         self.end_n = None
         self.store_area = store_area
         self.statistics = {}
+        
 
         if store_area:
             self.statistics['num_of_reasonable_regions'] = 0

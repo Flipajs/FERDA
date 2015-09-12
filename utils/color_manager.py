@@ -246,12 +246,16 @@ class Track():
             self.stop = stop
         self.id = id
         self.len = stop - start
+
     def get_color(self):
         return self.color
+
     def set_color(self, color):
         self.color = color
+
     def get_len(self):
         return self.stop - self.start
+
     def set_color_id(self, color_id):
         self.color_id = color_id
 
