@@ -650,6 +650,8 @@ class Solver:
         # returns (bool, bool, ref) where first is true if node is in chunk and the second returns True if it is t_reversed, and ref is None or reference to chunk
         for n1, _, d in self.g.in_edges(n, data=True):
             if 'chunk_ref' in d:
+                if d['chunk_ref'] is None:
+                    raise Exception("CHUNK REF IS NONE!")
                 return True, True, d['chunk_ref']
 
         for _, n2, d in self.g.out_edges(n, data=True):
