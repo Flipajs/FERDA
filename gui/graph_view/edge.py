@@ -17,19 +17,11 @@ class Edge():
     def __init__(self, from_x, from_y, to_x, to_y, core_obj):
         self.core_obj = core_obj
 
-        # self.from_x = from_x
-        # self.from_y = from_y
-        # self.to_x = to_x
-        # self.to_y = to_y
-
+        self.from_x = from_x
+        self.from_y = from_y
+        self.to_x = to_x
+        self.to_y = to_y
         self.graphical_object = Edge_Graphical(QtCore.QLineF(from_x, from_y, to_x, to_y), core_obj)
-
-    # def set_pos(self, from_x, from_y, to_x, to_y):
-    #     self.from_x = from_x
-    #     self.from_y = from_y
-    #     self.to_x = to_x
-    #     self.to_y = to_y
-
 
 class Edge_Graphical(QtGui.QGraphicsLineItem):
     def __init__(self, parent_line, core_obj):

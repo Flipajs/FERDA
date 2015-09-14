@@ -25,8 +25,8 @@ class GraphVisualizer(QtGui.QWidget):
 
     def __init__(self, regions, edges, img_manager, show_vertically=False):
         super(GraphVisualizer, self).__init__()
-        self.regions = []
-        self.edges = []
+        self.regions = set()
+        self.edges = set()
         self.frames_columns = {}
         self.columns = []
 
@@ -41,6 +41,11 @@ class GraphVisualizer(QtGui.QWidget):
         self.layout().addWidget(self.view)
 
         self.show_vertically = show_vertically
+        self.show_vertically_action = QtGui.QAction('show vertically', self)
+        self.show_vertically_action.triggered.connect(self.toggle_show_vertically)
+        self.show_vertically_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_V))
+        self.addAction(self.show_vertically_action)
+
         self.selected = []
 
         self.add_objects(regions, edges)
@@ -66,8 +71,7 @@ class GraphVisualizer(QtGui.QWidget):
             elif edge[2] == "line":
                 self.find_suitable_position_line(edge)
             else:
-                pass
-                # self.find_suitable_position_partial(edge)
+                self.find_suitable_position_partial(edge)
 
     def add_sole_nodes(self):
         for node in self.regions:
@@ -166,7 +170,6 @@ class GraphVisualizer(QtGui.QWidget):
                 position += 1
 
             column.add_object(node, position)
-            # next_column.add_object(edge, position)
 
     def find_nearest_free_slot(self, node_placed, node_free):
         position = self.frames_columns[node_placed.frame_].get_position_object(node_placed)
@@ -200,24 +203,24 @@ class GraphVisualizer(QtGui.QWidget):
             if isinstance(column.frame, tuple):
                 frame_a, frame_b = column.frame[0], column.frame[1]
             if not (frame_a < first_frame or frame_b > last_frame):
-                # column.add_crop_to_col(im_manager, STEP)
+                print(str(frame_a))
+                column.add_crop_to_col(im_manager, STEP)
                 # # uplatnit, kdyz chci multithread
-                # print("pixmap added")
-                column.draw(self.show_vertically, self.scene, self.frames_columns)
+                print("pixmap added")
+                column.draw(self.show_vertically)
 
     def draw_lines(self, edges_to_draw, first_frame, last_frame):
         for edge in edges_to_draw:
-            # if not edge[2] == "chunk":
                 if edge[2] == "line" or edge[2] == "chunk":
                     if first_frame <= edge[0].frame_ and edge[1].frame_ <= last_frame:
                         col = self.frames_columns[edge[1].frame_]
-                        col.show_edge(edge, self.frames_columns, self.show_vertically, self.scene)
+                        col.show_edge(edge, self.frames_columns, self.show_vertically)
                 elif edge[2] == "partial":
                     direction = "left" if (edge[0] is None or not (edge[0] in self.regions)) else "right"
                     node = edge[1] if direction == "left" else edge[0]
                     if first_frame <= node.frame_ <= last_frame:
                         col = self.frames_columns[node.frame_]
-                        col.show_edge(edge, self.frames_columns, self.show_vertically, self.scene, direction, node)
+                        col.show_edge(edge, self.frames_columns, self.show_vertically, direction, node)
 
     def prepare_columns(self, frames):
         empty_frame_count = 0
@@ -227,22 +230,17 @@ class GraphVisualizer(QtGui.QWidget):
             if x in frames:
                 if empty_frame_count > 0:
                     if empty_frame_count == 1:
-                        column = Column(x - 1, True)
+                        column = Column(x - 1, self.scene, self.img_manager, True)
                         self.frames_columns[x - 1] = column
                         self.columns.append(column)
                     else:
-                        column = Column(((x - empty_frame_count), x - 1), True)
+                        column = Column(((x - empty_frame_count), x - 1), self.scene, self.img_manager, True)
                         self.frames_columns[((x - empty_frame_count), x - 1)] = column
                         self.columns.append(column)
 
-                    column = Column(x)
-                    self.frames_columns[x] = column
-                    self.columns.append(column)
-
-                else:
-                    column = Column(x)
-                    self.frames_columns[x] = column
-                    self.columns.append(column)
+                column = Column(x, self.scene, self.img_manager)
+                self.frames_columns[x] = column
+                self.columns.append(column)
 
                 empty_frame_count = 0
             else:
@@ -250,16 +248,16 @@ class GraphVisualizer(QtGui.QWidget):
 
     def add_objects(self, added_nodes, added_edges):
         print("Sorting and preparing data")
-        frames = []
+        frames = set()
         for node in added_nodes:
             if node not in self.regions:
-                self.regions.append(node)
+                self.regions.add(node)
                 if node.frame_ not in frames:
-                    frames.append(node.frame_)
+                    frames.add(node.frame_)
         for edge in added_edges:
             if 'chunk_ref' in edge[2].keys():
                 type_edge = "chunk"
-            elif edge[0] is None or edge[1] is None or not edge[0] in added_nodes or not edge[1] in added_nodes:
+            elif edge[0] is None or edge[1] is None or not edge[0] in self.regions or not edge[1] in self.regions:
                 type_edge = "partial"
             else:
                 type_edge = "line"
@@ -268,8 +266,9 @@ class GraphVisualizer(QtGui.QWidget):
             import random
             sureness = random.randint(0, 100) / float(100)
             new_tuple = (edge[0], edge[1]) + (type_edge, sureness)
-            self.edges.append(new_tuple)
+            self.edges.add(new_tuple)
 
+        frames = list(frames)
         frames.sort()
         first_frame, last_frame = frames[0], frames[len(frames) - 1]
 
@@ -289,7 +288,8 @@ class GraphVisualizer(QtGui.QWidget):
 
     def toggle_show_vertically(self):
         self.show_vertically = False if self.show_vertically else True
-        self.draw_columns(0, len(self.frames_columns))
+        self.draw_columns(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+        self.draw_lines(self.edges, self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
 
     def get_selected(self):
         return self.selected

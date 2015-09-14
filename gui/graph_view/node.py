@@ -2,31 +2,24 @@ __author__ = 'Simon Mandlik'
 
 SELECTION_LINE_WIDTH = 2
 
-from PyQt4 import QtGui, QtCore, Qt
-
+from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import Qt
 
 class Node(QtGui.QGraphicsPixmapItem):
 
-    def __init__(self, region, parent_pixmap, size, img):
+    def __init__(self, parent_pixmap, img):
         super(Node, self).__init__(parent_pixmap)
 
-        self.region = region
         self.img = img
         self.img_toggled = None
 
         self.parent_pixmap = parent_pixmap
         self.x = 0
         self.y = 0
-        self.size = size
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
         self.selection_polygon = self.create_selection_polygon()
 
         self.toggled = False
-
-    def set_pos(self, x, y):
-        self.x = x
-        self.y = y
-        #TODO
 
     def toggle(self):
         #TODO

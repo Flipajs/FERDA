@@ -9,16 +9,18 @@ from gui.img_controls.utils import cvimg2qtpixmap
 
 class Column():
 
-    def __init__(self, frame, empty=False):
+    def __init__(self, frame, scene, im_manager, empty=False):
 
+        self.scene = scene
+        self.im_manager = im_manager
         self.empty = empty
         self.x = 0
         self.frame = frame
+        self.frame_sign = None
+        self.compress_marker = None
         self.objects = []
-
-        if self.empty:
-            self.compress_marker = QtGui.QGraphicsTextItem('. . .')
-            self.objects.append(0)
+        self.edges = {}
+        self.nodes = {}
 
     def add_object(self, object, position):
         if position < len(self.objects):
@@ -75,7 +77,8 @@ class Column():
     def get_x(self):
         return self.x
 
-    def add_crop_to_col(self, im_manager, size):
+    def add_crop_to_col(self):
+        from graph_visualizer import STEP
         for object in self.objects:
             if isinstance(object, Region):
 
@@ -97,46 +100,32 @@ class Column():
                 # end = time.time()
                 # print ("self.objects[self.objects.index(object)] = node  Exectime: " + str(end - start))
 
-                img = im_manager.get_crop(object.frame_, [object])
+                img = im_manager.get_crop(self.frame, [object], width=STEP, height=STEP)
                 pixmap = cvimg2qtpixmap(img)
-                node = Node(object, pixmap, size, img)
-                self.objects[self.objects.index(object)] = node
+                node = Node(self.scene.addPixmap(pixmap), img)
+                self.nodes[object] = node
+
+            elif isinstance(object, tuple):
+                img = im_manager.get_crop(self.frame, [object[0]], width=STEP, height=STEP)
+                pixmap = cvimg2qtpixmap(img)
+                node = Node(self.scene.addPixmap(pixmap), size, img)
+                self.nodes[object] = node
 
     def set_x(self, x):
         self.x = x
 
-    def draw(self, vertically, scene, frame_columns):
-        # #TODO pak smazat, vyvojove ucely
-        # from graph_visualizer import STEP, FROM_TOP
-        # if not self.empty:
-        #     if vertically:
-        #         p1 = QtCore.QPointF(0, self.x)
-        #         p4 = QtCore.QPointF(STEP*len(self.objects), self.x + STEP)
-        #     else:
-        #         p1 = QtCore.QPointF(self.x, FROM_TOP)
-        #         p4 = QtCore.QPointF(self.x + STEP, STEP*len(self.objects) + FROM_TOP)
-        #     polygon = QtGui.QGraphicsRectItem(QtCore.QRectF(p1, p4))
-        #     scene.addItem(polygon)
-
+    def draw(self, vertically):
         if self.empty:
-            self.show_compress_marker(vertically, scene)
+            self.show_compress_marker(vertically)
         else:
-            self.show_frame_number(vertically, scene)
+            self.show_frame_number(vertically)
 
             for object in self.objects:
-                if isinstance(object, Node):
-                    self.show_node(self, object, vertically, scene)
+                if isinstance(object, Region):
+                    self.show_node(self, object, vertically)
 
-                elif object is None or isinstance(object, Region):
-                    #TODO MUZE SE TO STAT? CO PAK?
-                    self.show_node(self, object, vertically, scene)
-                #
-                # elif isinstance(object, tuple) and object[1].frame_ == self.frame:
-                #     self.show_edge(object, frame_columns, vertically, scene)
-
-    def show_edge(self, edge, frame_columns, vertically, scene, dir=None, node=None):
+    def show_edge(self, edge, frame_columns, vertically, dir=None, node=None):
         from graph_visualizer import STEP, FROM_TOP, SPACE_BETWEEN_VER, SPACE_BETWEEN_HOR, GAP
-
         from_x = self.x
         if node is None:
             node = edge[1]
@@ -148,27 +137,29 @@ class Column():
             position = column_left.get_position_object(edge[0])
             to_x = column_left.x + STEP
             to_y = GAP + FROM_TOP + position * STEP + STEP/2 + SPACE_BETWEEN_VER * position
-            self.show_node(column_left, edge[0], vertically, scene)
-            #TODO co kdyz sem prijde volani od line a PARTIAL a node je uz vykreslena, co kdyz je uz vykreslena
-
+            self.show_node(column_left, edge[0], vertically)
         elif edge[2] == "partial" :
             to_y = from_y
             to_x = self.x - SPACE_BETWEEN_HOR / 2
             if not dir == "left":
                 from_x += STEP
                 to_x += STEP + SPACE_BETWEEN_HOR
-            #TODO co kdyz sem prijde volani od line a PARTIAL a node je uz vykreslena, co kdyz je uz vykreslena
 
-        self.show_node(self, node, vertically, scene)
+        self.show_node(self, node, vertically)
 
         if vertically:
             from_x, from_y, to_x, to_y = from_y, from_x, to_y, to_x
-        edge = Edge(from_x, from_y, to_x, to_y, edge)
-        scene.addItem(edge.graphical_object)
 
-    def show_node(self, col, object, vertically, scene):
+        if edge in self.edges.keys():
+            self.scene.removeItem(self.edges[edge].graphical_object)
+
+        edge_obj = Edge(from_x, from_y, to_x, to_y, edge)
+        self.edges[edge] = edge_obj
+        self.scene.addItem(edge_obj.graphical_object)
+
+    def show_node(self, col, region, vertically):
         from graph_visualizer import STEP, FROM_TOP, SPACE_BETWEEN_VER, GAP
-        position = col.get_position_object(object)
+        position = col.get_position_object(region)
 
         x = col.x
         y = GAP + FROM_TOP + position * STEP + SPACE_BETWEEN_VER * position
@@ -176,55 +167,47 @@ class Column():
         if vertically:
             x, y = y, x
 
-        if isinstance(object, Node):
-            object.set_pos(x, y)
-            scene.addItem(object)
-            # pridat pixmapu, zjisti, jestli uz je atd..
-
-            if not (object.x == x and object.y == y):
-                object.set_pos(x, y)
-            #zobrazit
-
         #TODO pak smazat vyvojove ucely
         p1 = QtCore.QPointF(x, y)
         p4 = QtCore.QPointF(x + STEP, y + STEP)
         polygon = QtGui.QGraphicsRectItem(QtCore.QRectF(p1, p4))
-        scene.addItem(polygon)
+        self.scene.addItem(polygon)
 
-    def show_compress_marker(self, vertically, scene):
+
+        if region in self.nodes.keys():
+            self.nodes[region].setPos(x, y)
+        else:
+            img = im_manager.get_crop(self.frame, object[0], width=STEP, height=STEP)
+            pixmap = cvimg2qtpixmap(img)
+            node = Node(self.scene.addPixmap(pixmap), size, img)
+            self.nodes[object] = node
+
+
+    def show_compress_marker(self, vertically):
         from graph_visualizer import STEP, FROM_TOP
         if isinstance(self.frame, tuple):
+            if self.compress_marker is None:
+                self.compress_marker = QtGui.QGraphicsTextItem()
+                self.objects.append(0)
+                self.compress_marker.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
+                self.scene.addItem(self.compress_marker)
             x = self.x + STEP/4 - 12.5
             y = FROM_TOP
             if vertically:
                 x, y = y, x - 17.5
                 string_len = len(str(self.frame[0] if isinstance(self.frame, tuple) else self.frame)) / 2
                 self.compress_marker.setPlainText((" " * string_len + ".\n") * 3)
+            else:
+                self.compress_marker.setPlainText(". . .")
             self.compress_marker.setPos(x, y)
-            self.compress_marker.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
-            scene.addItem(self.compress_marker)
-        else:
-            self.show_frame_number(vertically, scene, True)
 
-    def show_compress_marker(self, vertically, scene):
-        from graph_visualizer import STEP, FROM_TOP
-        if isinstance(self.frame, tuple):
-            x = self.x + STEP/4 - 12.5
-            y = FROM_TOP
-            if vertically:
-                x, y = y, x - 17.5
-                string_len = len(str(self.frame[0] if isinstance(self.frame, tuple) else self.frame)) / 2
-                self.compress_marker.setPlainText((" " * string_len + ".\n") * 3)
-            self.compress_marker.setPos(x, y)
-            self.compress_marker.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
-            scene.addItem(self.compress_marker)
         else:
-            self.show_frame_number(vertically, scene, True)
+            self.show_frame_number(vertically, True)
 
-    def show_frame_number(self, vertically, scene, empty = False):
+    def show_frame_number(self, vertically, empty = False):
         from graph_visualizer import STEP, FROM_TOP
         text = str(self.frame)
-        text_obj = QtGui.QGraphicsTextItem(text)
+        text_obj = QtGui.QGraphicsTextItem(text) if self.frame_sign is None else self.frame_sign
         y = FROM_TOP
         if empty:
             text_obj.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
@@ -234,8 +217,13 @@ class Column():
             x, y = y, x - 10
         else:
             x -= (len(text)) / 2.0 * 10
-        text_obj.setPos(x, y)
-        scene.addItem(text_obj)
+
+        if self.frame_sign is None:
+            text_obj.setPos(x, y)
+            self.frame_sign = text_obj
+            self.scene.addItem(text_obj)
+        else:
+            self.frame_sign.setPos(x, y)
 
 
 
