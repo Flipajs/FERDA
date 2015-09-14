@@ -193,3 +193,49 @@ print "igraph search: %s" % (time.time()-t)
 t = time.time()
 delete_edges_igraph(igraph, igraph_edges, rnd_array)
 print "igraph edges deletion: %s" % (time.time()-t)
+
+# alternativy metod z networkx v graph_tool
+"""
+g = DiGraph() -> g = Graph(directed=True)
+g.add_node(hashable n) -> v = g.add_vertex() # graph_tool's add vertex method returns the vertex. It can be used to
+  create multiple (M) vertices at a time by calling g.add_vertex(n=M). In that case, it returns iterator over them.
+g.add_edge(n1, n2) -> e = g.add_node(v1, v2)
+g.in_edges(hasheble n) -> v.in_edges() # return an iterator over the in-edges
+g.out_edges(hashable n) -> v.out_edges() # return an iterator over the out-edges
+g.remove_node(hashable n) -> g.remove_vertex(v) # v can also be an iterator
+g.get_edge_data(n1, n2) -> # there is no such method in graph_tool, since it's edges have no data but source and target
+g.remove_edge(n1, n2) -> g.remove_edge(e)
+g.in_degree(n) -> v.in_degree()
+g.out_degree(n) -> v.out_degree(
+g.nodes() -> g.vertices()
+Edge/vertex can be found by id using g.vertex(id)
+
+
+
+
+
+
+
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
