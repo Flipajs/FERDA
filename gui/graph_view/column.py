@@ -1,10 +1,11 @@
 __author__ = 'Simon Mandlik'
 
-from PyQt4 import Qt, QtCore, QtGui
+from PyQt4 import QtCore, QtGui
 from core.region.region import Region
 from gui.graph_view.node import Node
 from gui.graph_view.edge import Edge
 from gui.img_controls.utils import cvimg2qtpixmap
+import numpy as np
 
 
 class Column():
@@ -80,36 +81,47 @@ class Column():
     def add_crop_to_col(self):
         from graph_visualizer import STEP
         for object in self.objects:
-            if isinstance(object, Region):
+            if object not in self.nodes.keys():
+                if isinstance(object, Region):
 
-                import time
-                # start = time.time()
-                # img = im_manager.get_crop(object.frame_, [object])
-                # end = time.time()
-                # print ("img = im_manager.get_crop(object.frame_, [object])  Exectime: " + str(end - start))
-                # start = time.time()
-                # pixmap = cvimg2qtpixmap(img)
-                # end = time.time()
-                # print ("pixmap = cvimg2qtpixmap(img)  Exectime: " + str(end - start))
-                # start = time.time()
-                # node = Node(object, pixmap, size, img)
-                # end = time.time()
-                # print ("node = Node(object, pixmap, size, img)  Exectime: " + str(end - start))
-                # start = time.time()
-                # self.objects[self.objects.index(object)] = node
-                # end = time.time()
-                # print ("self.objects[self.objects.index(object)] = node  Exectime: " + str(end - start))
+                    import time
+                    # start = time.time()
+                    # img = im_manager.get_crop(object.frame_, [object])
+                    # end = time.time()
+                    # print ("img = im_manager.get_crop(object.frame_, [object])  Exectime: " + str(end - start))
+                    # start = time.time()
+                    # pixmap = cvimg2qtpixmap(img)
+                    # end = time.time()
+                    # print ("pixmap = cvimg2qtpixmap(img)  Exectime: " + str(end - start))
+                    # start = time.time()
+                    # node = Node(object, pixmap, size, img)
+                    # end = time.time()
+                    # print ("node = Node(object, pixmap, size, img)  Exectime: " + str(end - start))
+                    # start = time.time()
+                    # self.objects[self.objects.index(object)] = node
+                    # end = time.time()
+                    # print ("self.objects[self.objects.index(object)] = node  Exectime: " + str(end - start))
 
-                img = im_manager.get_crop(self.frame, [object], width=STEP, height=STEP)
-                pixmap = cvimg2qtpixmap(img)
-                node = Node(self.scene.addPixmap(pixmap), img)
-                self.nodes[object] = node
+                    # img = self.im_manager.get_crop(self.frame, [object], width=STEP, height=STEP)
+                    img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
+                    img[:,:,0] = 255
+                    pixmap = cvimg2qtpixmap(img)
+                    node = Node(self.scene.addPixmap(pixmap), self.scene, object, img, STEP)
+                    self.nodes[object] = node
+                    self.nodes[object].setPos(50, 50)
 
-            elif isinstance(object, tuple):
-                img = im_manager.get_crop(self.frame, [object[0]], width=STEP, height=STEP)
-                pixmap = cvimg2qtpixmap(img)
-                node = Node(self.scene.addPixmap(pixmap), size, img)
-                self.nodes[object] = node
+                elif isinstance(object, tuple):
+                    if object[0].frame_ == self.frame or object[1].frame_ == self.frame:
+                        region = object[0] if (object[0].frame_ == self.frame) else object[1]
+                        if region in self.nodes.keys():
+                            return
+                        # img = self.im_manager.get_crop(self.frame, [region], width=STEP, height=STEP)
+                        img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
+                        img[:,:,0] = 255
+                        pixmap = cvimg2qtpixmap(img)
+                        node = Node(self.scene.addPixmap(pixmap) , self.scene, region, img, STEP)
+                        self.nodes[region] = node
+                        self.nodes[region].setPos(50, 50)
 
     def set_x(self, x):
         self.x = x
@@ -119,7 +131,6 @@ class Column():
             self.show_compress_marker(vertically)
         else:
             self.show_frame_number(vertically)
-
             for object in self.objects:
                 if isinstance(object, Region):
                     self.show_node(self, object, vertically)
@@ -167,20 +178,29 @@ class Column():
         if vertically:
             x, y = y, x
 
-        #TODO pak smazat vyvojove ucely
-        p1 = QtCore.QPointF(x, y)
-        p4 = QtCore.QPointF(x + STEP, y + STEP)
-        polygon = QtGui.QGraphicsRectItem(QtCore.QRectF(p1, p4))
-        self.scene.addItem(polygon)
+        # #TODO pak smazat vyvojove ucely
+        # p1 = QtCore.QPointF(x, y)
+        # p4 = QtCore.QPointF(x + STEP, y + STEP)
+        # polygon = QtGui.QGraphicsRectItem(QtCore.QRectF(p1, p4))
+        #
+        # if region in self.nodes.keys():
+        #     self.scene.removeItem(self.nodes[region])
+        # self.nodes[region] = polygon
+        # self.scene.addItem(polygon)
 
 
-        if region in self.nodes.keys():
-            self.nodes[region].setPos(x, y)
-        else:
-            img = im_manager.get_crop(self.frame, object[0], width=STEP, height=STEP)
+        if not (region in self.nodes.keys()):
+            # img = self.im_manager.get_crop(self.frame, region, width=STEP, height=STEP)
+            img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
+            img[:,:,0] = 255
             pixmap = cvimg2qtpixmap(img)
-            node = Node(self.scene.addPixmap(pixmap), size, img)
-            self.nodes[object] = node
+            node = Node(self.scene.addPixmap(pixmap), self.scene, region, img, STEP)
+            self.scene.addPixmap(pixmap)
+            self.nodes[region] = node
+
+        # self.nodes[region].setPos(x, y)
+        self.nodes[region].setPos(50, 50)
+        # self.nodes[region].parent_pixmap.show()
 
 
     def show_compress_marker(self, vertically):

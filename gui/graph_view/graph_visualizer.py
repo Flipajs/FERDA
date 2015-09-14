@@ -1,3 +1,4 @@
+import time
 from gui.graph_view.node import Node
 from gui.img_controls.my_scene import MyScene
 from PyQt4 import QtGui, Qt, QtCore
@@ -19,11 +20,12 @@ SPACE_BETWEEN_HOR = 20
 SPACE_BETWEEN_VER = 5
 # gap between frame_numbers and first node in columns
 GAP = 50
-
+# number of columns to be displayed before dynamic loading
+MINIMUM = 30
 
 class GraphVisualizer(QtGui.QWidget):
 
-    def __init__(self, regions, edges, img_manager, show_vertically=False):
+    def __init__(self, regions, edges, img_manager, show_vertically=False, dynamically=True):
         super(GraphVisualizer, self).__init__()
         self.regions = set()
         self.edges = set()
@@ -46,6 +48,8 @@ class GraphVisualizer(QtGui.QWidget):
         self.show_vertically_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_V))
         self.addAction(self.show_vertically_action)
 
+        self.l_dynamically = dynamically
+
         self.selected = []
 
         self.add_objects(regions, edges)
@@ -55,14 +59,15 @@ class GraphVisualizer(QtGui.QWidget):
 
         if item is None:
             self.selected = []
-        # else:
-            # self.selected.append(item.core_obj)
+
 
         if isinstance(item, Edge_Graphical):
-            print(item.core_obj)
-            print(item.core_obj[0].frame_, item.core_obj[1].frame_)
-        elif isinstance(item, Node):
             pass
+        elif isinstance(item, Node):
+            print(str(item.region.frame_))
+            # item.toggle(self.img_manager)
+        else:
+            print(str(type(item)))
 
     def compute_positions(self):
         for edge in self.edges:
@@ -193,7 +198,7 @@ class GraphVisualizer(QtGui.QWidget):
                 if tup[0 if direction == "right" else 1] == frame_from + (1 if direction == "right" else -1):
                     return self.frames_columns[tup]
 
-    def draw_columns(self, first_frame, last_frame):
+    def draw_columns(self, first_frame, last_frame, minimum):
         next_x = 0
         for column in self.columns:
             column.set_x(next_x)
@@ -203,10 +208,11 @@ class GraphVisualizer(QtGui.QWidget):
             if isinstance(column.frame, tuple):
                 frame_a, frame_b = column.frame[0], column.frame[1]
             if not (frame_a < first_frame or frame_b > last_frame):
-                print(str(frame_a))
-                column.add_crop_to_col(im_manager, STEP)
-                # # uplatnit, kdyz chci multithread
-                print("pixmap added")
+                # print(str(frame_a))
+                # if self.l_dynamically:
+                column.add_crop_to_col()
+                # uplatnit, kdyz chci multithread
+                # print("pixmap added")
                 column.draw(self.show_vertically)
 
     def draw_lines(self, edges_to_draw, first_frame, last_frame):
@@ -279,8 +285,7 @@ class GraphVisualizer(QtGui.QWidget):
         print("Adding remaining nodes")
         self.add_sole_nodes()
         print("Drawing")
-
-        self.draw_columns(first_frame, last_frame)
+        self.draw_columns(first_frame, last_frame, MINIMUM)
         self.draw_lines(self.edges, first_frame, last_frame)
 
     def add_node_to_column(self, node, column_frame, position):
@@ -288,8 +293,9 @@ class GraphVisualizer(QtGui.QWidget):
 
     def toggle_show_vertically(self):
         self.show_vertically = False if self.show_vertically else True
-        self.draw_columns(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+        self.draw_columns(self.columns[0].frame, self.columns[len(self.columns) - 1].frame, MINIMUM)
         self.draw_lines(self.edges, self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+        self.scene.setSceneRect(self.scene.itemsBoundingRect())
 
     def get_selected(self):
         return self.selected
@@ -307,7 +313,7 @@ if __name__ == '__main__':
 
     import sys
     app = QtGui.QApplication(sys.argv)
-    g = GraphVisualizer(n, e, im_manager)
+    g = GraphVisualizer(n, e, im_manager, show_vertically=True, dynamically=True)
     g.show()
     app.exec_()
     cv2.waitKey(0)

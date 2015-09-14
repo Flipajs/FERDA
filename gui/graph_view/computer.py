@@ -16,15 +16,15 @@ def sort_edges(edges, regions, used_frames_sorted,):
             elif edge[2] == "line":
                 lines.insert(length, edge)
 
-    #TODO smazat - testovaci ucely
-    for a in [3, 10, 13, 14]:
-        edge = lines.pop(a)
-        partial.append((None, edge[1], "partial", 0))
-        print(edge[1].frame_)
-    for b in [1, 5, 7, 12]:
-        edge = lines.pop(b)
-        partial.append((edge[0], None, "partial", 0))
-        print(edge[0].frame_)
+    # #TODO smazat - testovaci ucely
+    # for a in [3, 10, 13, 14]:
+    #     edge = lines.pop(a)
+    #     partial.append((None, edge[1], "partial", 0))
+    #     print(edge[1].frame_)
+    # for b in [1, 5, 7, 12]:
+    #     edge = lines.pop(b)
+    #     partial.append((edge[0], None, "partial", 0))
+    #     print(edge[0].frame_)
 
     result = list(reversed(chunks)) + list(reversed(lines)) + partial
     return result
