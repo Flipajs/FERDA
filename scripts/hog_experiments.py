@@ -13,6 +13,12 @@ from PIL import Image
 from scipy import ndimage
 from pylab import *
 from utils.drawing.points import draw_points
+import cv2
+from PyQt4 import QtGui, QtCore
+import sys
+import cPickle as pickle
+from utils.roi import get_roi
+
 
 def get_mser(im, p):
     p.mser_parameters.max_area = 0.99
@@ -31,95 +37,139 @@ def get_mser(im, p):
 
     return msers[0]
 
-def Haffine_from_points(fp,tp):
-    """ find H, affine transformation, such that
-        tp is affine transf of fp"""
+def get_regions(project, solver, from_t, to_t):
+    try:
+        with open(project.working_directory+'/regions.pkl', 'rb') as f:
+            up = pickle.Unpickler(f)
+            reconstructed = up.load()
 
-    if fp.shape != tp.shape:
-        raise RuntimeError, 'number of points do not match'
+    except IOError:
+        nodes = solver.nodes_in_t[0]
+        nodes = sorted(nodes, key=lambda x: x.area())
 
-    #condition points
-    #-from points-
-    m = mean(fp[:2], axis=1)
-    maxstd = max(std(fp[:2], axis=1))
-    C1 = diag([1/maxstd, 1/maxstd, 1])
-    C1[0][2] = -m[0]/maxstd
-    C1[1][2] = -m[1]/maxstd
-    fp_cond = dot(C1,fp)
+        from gui.statistics.region_reconstruction import RegionReconstruction
+        rr = RegionReconstruction(project, solver)
+        frames = range(from_t, to_t)
+        reconstructed = rr.reconstruct_regions(frames)
 
-    #-to points-
-    m = mean(tp[:2], axis=1)
-    C2 = C1.copy() #must use same scaling for both point sets
-    C2[0][2] = -m[0]/maxstd
-    C2[1][2] = -m[1]/maxstd
-    tp_cond = dot(C2,tp)
+        with open(project.working_directory+'/regions.pkl', 'wb') as f:
+            p = pickle.Pickler(f, -1)
+            p.dump(reconstructed)
 
-    #conditioned points have mean zero, so translation is zero
-    A = concatenate((fp_cond[:2],tp_cond[:2]), axis=0)
-    U,S,V = linalg.svd(A.T)
+        print "RECONSTRUCTION DONE"
 
-    #create B and C matrices as Hartley-Zisserman (2:nd ed) p 130.
-    tmp = V[:2].T
-    B = tmp[:2]
-    C = tmp[2:4]
+    return reconstructed
 
-    tmp2 = concatenate((dot(C,linalg.pinv(B)),zeros((2,1))), axis=1)
-    H = vstack((tmp2,[0,0,1]))
+def warp_region(r, im, dst_h=16, dst_w=48):
+    roi = get_roi(r.pts())
+    tl = roi.top_left_corner()-np.array([1, 1])
+    br = roi.bottom_right_corner()+np.array([1, 1])
 
-    #decondition
-    H = dot(linalg.inv(C2),dot(H,C1))
+    # im_ = np.zeros_like(im)
+    # im_[r.pts()[:, 0], r.pts()[:, 1]] = im_[r.pts()[:, 0], r.pts()[:, 1]]
 
-    return H / H[2][2]
+    crop = im[tl[0]:br[0], tl[1]:br[1]].copy()
+
+    p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
+    head = np.ceil(r.centroid() + p_) + np.array([1, 1])
+    back = np.ceil(r.centroid() - p_) - np.array([1, 1])
+
+    if head[0] < back[0]:
+        head, back = back, head
+    
+    b_ = r.b_*2.5
+    p_ = np.array([b_*math.sin(-r.theta_+np.pi+np.pi/2), b_*math.cos(-r.theta_+np.pi+np.pi/2)])
+    tl_c = back + p_
+    tr_c = head + p_
+    bl_c = back - p_
+    br_c = head - p_
+
+    # src_pts = np.float32(np.array([tl_c, tr_c, br_c, bl_c]))
+    # # srcP = np.float32(np.array([[0, 0], [dst_h, 0], [dst_h, dst_w], [0, dst_w]]))
+    # dst_pts = np.float32(np.array([[0, 0], [0, dst_w], [dst_h, dst_w], [dst_h, 0]]))
+    # # dstP = np.float32(np.array([[-30, 50], [m-50, -50], [m+80, n-100], [150, n+50]]))
+    #
+    # src_pts[:, 0], src_pts[:, 1] = src_pts[:, 1].copy(), src_pts[:, 0].copy()
+    # dst_pts[:, 0], dst_pts[:, 1] = dst_pts[:, 1].copy(), dst_pts[:, 0].copy()
+
+    src_pts = np.float32(np.array([[tl_c[1], tl_c[0]], [tr_c[1], tr_c[0]], [br_c[1], br_c[0]], [bl_c[1], bl_c[0]]]))
+    # dst_pts = np.float32(np.array([[0, 0], [dst_w, 0], [dst_w, dst_h], [0, dst_h]]))
+    dst_pts = np.float32(np.array([[0, dst_h], [dst_w, dst_h], [dst_w, 0], [0, 0]]))
+
+    # src_pts[:, 0], src_pts[:, 1] = src_pts[:, 1].copy(), src_pts[:, 0].copy()
+    # dst_pts[:, 0], dst_pts[:, 1] = dst_pts[:, 1].copy(), dst_pts[:, 0].copy()
+
+    print src_pts
+    print dst_pts
+
+    A = cv2.getAffineTransform(src_pts[0:3], dst_pts[0:3])
+    # A = np.array([[1, 0, 30], [0, 1, 50]], dtype=np.float32)
+
+    crop = np.asarray(crop*255, dtype=np.uint8)
+    # im2 = cv2.warpAffine(crop, A, (dst_w, dst_h))
+    A[0, 2] = dst_h
+    A[1, 2] = dst_w
+
+    im2 = cv2.warpAffine(crop, A, (1000, 1000))
+
+    return im2
 
 if __name__ == "__main__":
+    app = QtGui.QApplication(sys.argv)
+
     p = Project()
+    p.working_directory = '/Users/flipajs/Documents/wd/c4'
     p.video_paths = ['/Users/flipajs/Documents/wd/c4_0h30m-0h33m.avi']
+    # p.load('/Users/flipajs/Documents/wd/c4/c4.fproj')
+
+    # solver = p.saved_progress['solver']
+    solver = None
+    regions = get_regions(p, solver, 0, 500)
+
     vid = get_auto_video_manager(p)
 
-    im = vid.next_frame()
-    crop = im[746:801, 540:611, :]
-    image = color.rgb2gray(crop)
+    chunk_id = 3
+    for f in range(0, 100, 10):
+        print f
+        im = vid.get_frame(f)
+        gray = color.rgb2gray(im)
 
-    m = get_mser(image, p)
-    crop = draw_points(crop, m.pts())
+        reg = None
+        for r in regions[f]:
+            if r['chunk_id'] == chunk_id:
+                reg = r['region']
 
-    head = np.array([m.a_*math.sin(-m.theta_), m.a_*math.cos(-m.theta_)]) + m.centroid()
-    back = np.array([m.a_*math.sin(-m.theta_+np.pi), m.a_*math.cos(-m.theta_+np.pi)]) + m.centroid()
-    print head, back
-    crop[head[0], head[1], :] = (0, 0, 255)
-    crop[back[0], back[1], :] = (0, 255, 0)
+        im_ = warp_region(reg, gray)
+        # im_ = np.asarray(im_*255, dtype=np.uint8)
+        cv2.imshow('im_', im_)
+        cv2.moveWindow('im_', 0, 0)
+        cv2.waitKey(0)
 
-    # H = np.array([[1.4,0.05,-100],[0.05,1.5,-100],[0,0,1]])
-    n, m = image.shape
 
-    # H = Haffine_from_points(fp, tp)
-    import cv2
 
-    if True:
-        srcP = np.float32(np.array([[0, 0], [m, 0], [m, n], [0, n]]))
-        dstP = np.float32(np.array([[-30, 50], [m-50, -50], [m+80, n-100], [150, n+50]]))
+    # im = vid.next_frame()
+    #
+    # fd, hog_image = hog(im2, orientations=9, pixels_per_cell=(8, 8),
+    #                     cells_per_block=(1, 1), visualise=True)
+    #
+    # fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8, 4))
+    #
+    # ax1.axis('off')
+    # ax1.imshow(crop, cmap=plt.cr.gray)
+    # ax1.set_title('Input image')
+    #
+    # ax2.axis('off')
+    # ax2.imshow(im2, cmap=plt.cr.gray)
+    # ax2.set_title('warped')
+    #
+    # # Rescale histogram for better display
+    # hog_image_rescaled = exposure.rescale_intensity(hog_image, in_range=(0, 0.02))
+    #
+    # ax3.axis('off')
+    # ax3.imshow(hog_image_rescaled, cmap=plt.cr.gray)
+    # ax3.set_title('Histogram of Oriented Gradients')
+    # plt.show()
 
-        H = cv2.findHomography(srcP, dstP, 0)
-        # M = np.float32([[0.8,0.5,10],[0,1,5]])
-        im2 = cv2.warpAffine(image, H[0][0:2, :], (m, n))
-        if True:
-            cv2.imshow('dst', im2)
-        # im2 = np.asarray(im2, dtype=np.uint8)
-    # im2 = scipy.ndimage.affine_transform(image, H)
-
-    fd, hog_image = hog(image, orientations=9, pixels_per_cell=(8, 8),
-                        cells_per_block=(1, 1), visualise=True)
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
-
-    ax1.axis('off')
-    ax1.imshow(crop, cmap=plt.cm.gray)
-    ax1.set_title('Input image')
-
-    # Rescale histogram for better display
-    hog_image_rescaled = exposure.rescale_intensity(hog_image, in_range=(0, 0.02))
-
-    ax2.axis('off')
-    ax2.imshow(hog_image_rescaled, cmap=plt.cm.gray)
-    ax2.set_title('Histogram of Oriented Gradients')
-    plt.show()
+    app.exec_()
+    app.deleteLater()
+    sys.exit()

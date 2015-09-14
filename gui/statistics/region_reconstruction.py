@@ -112,6 +112,42 @@ class RegionReconstruction(QtGui.QWidget):
 
         return reconstructed
 
+    def reconstruct_regions(self, frames):
+        frames = sorted(frames)
+
+        reconstructed = {}
+        vid = get_auto_video_manager(self.project)
+
+        convex_t = 0
+
+        for f in frames:
+            reconstructed[f] = []
+            ch_in_frame = self.solver.chunks_in_frame(f)
+            im = vid.get_frame(f, auto=True)
+            regions = get_msers_(im, self.project, frame=f)
+
+
+            for ch in ch_in_frame:
+                c = ch.get_centroid_in_time(f)
+                is_virtual = ch.is_virtual_in_time(f)
+
+                r_best_match = None
+                r_best_dist = 5
+
+                if not is_virtual:
+                    for r in regions:
+                        d = np.linalg.norm(r.centroid() - c)
+                        if d < r_best_dist:
+                            r_best_dist = d
+                            r_best_match = r
+
+                xs = []
+                ys = []
+
+                reconstructed[f].append({'chunk_id': ch.id, 'region': r_best_match})
+
+        return reconstructed
+
     def process_input(self, s):
         """
         returns list of frames
