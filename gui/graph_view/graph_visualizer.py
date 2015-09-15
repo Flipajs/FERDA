@@ -1,7 +1,7 @@
 import time
 from gui.graph_view.node import Node
 from gui.img_controls.my_scene import MyScene
-from PyQt4 import QtGui, Qt, QtCore
+from PyQt4 import QtGui, QtCore
 import computer as comp
 from core.project.project import Project
 from gui.graph_view.column import Column
@@ -25,7 +25,7 @@ MINIMUM = 30
 
 class GraphVisualizer(QtGui.QWidget):
 
-    def __init__(self, regions, edges, img_manager, show_vertically=False, dynamically=True):
+    def __init__(self, regions, edges, img_manager, show_vertically=False, compress_axis = True, dynamically=True):
         super(GraphVisualizer, self).__init__()
         self.regions = set()
         self.edges = set()
@@ -48,26 +48,34 @@ class GraphVisualizer(QtGui.QWidget):
         self.show_vertically_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_V))
         self.addAction(self.show_vertically_action)
 
+        self.compress_axis = compress_axis
+        self.compress_axis_action = QtGui.QAction('compress axis', self)
+        self.compress_axis_action.triggered.connect(self.compress_axis_toggle)
+        self.compress_axis_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
+        self.addAction(self.compress_axis_action)
+
         self.l_dynamically = dynamically
 
         self.selected = []
+        self.toggled = []
+
+        self.wheel = None
+        self.wheel_count = 1
 
         self.add_objects(regions, edges)
 
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
-
         if item is None:
             self.selected = []
-
+            while self.toggled:
+                self.toggled.pop().toggle()
 
         if isinstance(item, Edge_Graphical):
             pass
         elif isinstance(item, Node):
-            print(str(item.region.frame_))
-            # item.toggle(self.img_manager)
-        else:
-            print(str(type(item)))
+            item.toggle()
+            self.toggled.append(item)
 
     def compute_positions(self):
         for edge in self.edges:
@@ -80,17 +88,15 @@ class GraphVisualizer(QtGui.QWidget):
 
     def add_sole_nodes(self):
         for node in self.regions:
-            for col in self.frames_columns.values():
-                if col.contains(node):
-                    break
+            col = self.frames_columns[node.frame_]
+            if col.contains(node):
+                continue
             else:
                 position = 0
                 while not self.frames_columns[node.frame_].is_free(position, node):
                     position += 1
                 else:
                     self.add_node_to_column(node, node.frame_, position)
-                    continue
-            break
 
     def find_suitable_position_chunk(self, edge):
         node_1 = edge[0]
@@ -201,22 +207,28 @@ class GraphVisualizer(QtGui.QWidget):
     def draw_columns(self, first_frame, last_frame, minimum):
         next_x = 0
         for column in self.columns:
+            app.processEvents()
             column.set_x(next_x)
-            next_x += STEP/2 if column.empty else STEP
+            if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
+                next_x += STEP * (column.frame[1] - column.frame[0])
+            else:
+                next_x += STEP / 2 if column.empty else STEP
             next_x += SPACE_BETWEEN_HOR
             frame_a = frame_b = column.frame
             if isinstance(column.frame, tuple):
                 frame_a, frame_b = column.frame[0], column.frame[1]
             if not (frame_a < first_frame or frame_b > last_frame):
-                # print(str(frame_a))
-                # if self.l_dynamically:
-                column.add_crop_to_col()
+                print(str(frame_a))
+                if self.l_dynamically:
+                    minimum -= 1
+                    if minimum < 0:
+                        column.add_crop_to_col()
                 # uplatnit, kdyz chci multithread
-                # print("pixmap added")
-                column.draw(self.show_vertically)
+                    column.draw(self.compress_axis, self.show_vertically)
+                    self.wheel_turn()
 
-    def draw_lines(self, edges_to_draw, first_frame, last_frame):
-        for edge in edges_to_draw:
+    def draw_lines(self, first_frame, last_frame):
+        for edge in self.edges:
                 if edge[2] == "line" or edge[2] == "chunk":
                     if first_frame <= edge[0].frame_ and edge[1].frame_ <= last_frame:
                         col = self.frames_columns[edge[1].frame_]
@@ -231,8 +243,6 @@ class GraphVisualizer(QtGui.QWidget):
     def prepare_columns(self, frames):
         empty_frame_count = 0
         for x in range(frames[0], frames[len(frames) - 1] + 1):
-            # if not self.frames_columns.get(x, None) is None:
-            #     continue
             if x in frames:
                 if empty_frame_count > 0:
                     if empty_frame_count == 1:
@@ -285,20 +295,52 @@ class GraphVisualizer(QtGui.QWidget):
         print("Adding remaining nodes")
         self.add_sole_nodes()
         print("Drawing")
-        self.draw_columns(first_frame, last_frame, MINIMUM)
-        self.draw_lines(self.edges, first_frame, last_frame)
+        self.redraw(first_frame, last_frame)
+        print("Viewing")
 
     def add_node_to_column(self, node, column_frame, position):
         self.frames_columns[column_frame].add_object(node, position)
 
     def toggle_show_vertically(self):
         self.show_vertically = False if self.show_vertically else True
-        self.draw_columns(self.columns[0].frame, self.columns[len(self.columns) - 1].frame, MINIMUM)
-        self.draw_lines(self.edges, self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+        self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+
+    def compress_axis_toggle(self):
+        self.compress_axis = False if self.compress_axis else True
+        self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+
+    def redraw(self, first_frame, last_frame):
+        self.view.setEnabled(False)
+        self.scene.setForegroundBrush(QtCore.Qt.lightGray)
+        self.wheel_init()
+        self.draw_columns(first_frame, last_frame, MINIMUM)
+        self.draw_lines(first_frame, last_frame)
+        self.hide_wheel()
+        self.scene.setForegroundBrush(QtCore.Qt.transparent)
+        self.view.setEnabled(True)
         self.scene.setSceneRect(self.scene.itemsBoundingRect())
 
     def get_selected(self):
         return self.selected
+
+    def wheel_init(self):
+        # TODO make it prettier
+        if self.wheel is None:
+            self.wheel = QtGui.QLabel()
+            self.wheel.setAlignment(QtCore.Qt.AlignCenter)
+            stylesheet = "font: 25px"
+            self.wheel.setStyleSheet(stylesheet)
+        self.layout().addWidget(self.wheel)
+        self.wheel.show()
+
+    def wheel_turn(self):
+        self.wheel_count += 1 if self.wheel_count is not 3 else -2
+        text = self.wheel_count * ". " + "Loading " + self.wheel_count * " ."
+        self.wheel.setText(text)
+
+    def hide_wheel(self):
+        self.layout().removeWidget(self.wheel)
+        self.wheel.hide()
 
 if __name__ == '__main__':
     p = Project()
@@ -311,9 +353,12 @@ if __name__ == '__main__':
     n = solver.g.nodes()
     e = solver.g.edges(data=True)
 
+    # n = n[:100:]
+    # e = e[:100:]
+
     import sys
     app = QtGui.QApplication(sys.argv)
-    g = GraphVisualizer(n, e, im_manager, show_vertically=True, dynamically=True)
+    g = GraphVisualizer(n, e, im_manager, show_vertically=False, compress_axis=False, dynamically=True)
     g.show()
     app.exec_()
     cv2.waitKey(0)
