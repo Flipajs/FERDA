@@ -32,7 +32,11 @@ class Node(QtGui.QGraphicsPixmapItem):
                 img_toggled[:, 0, :] = 255
                 pixmap = cvimg2qtpixmap(img_toggled)
                 self.pixmap_toggled = self.scene.addPixmap(pixmap)
-                self.pixmap_toggled.setPos(self.parent_pixmap.pos().x() + STEP / 2, self.parent_pixmap.pos().y() + STEP / 2)
+                width, height = self.scene.width(), self.scene.height()
+                multiplier_x = 0 if self.parent_pixmap.pos().x() < width / 2 else -6
+                multiplier_y = 0 if self.parent_pixmap.pos().y() < height / 2 else -6
+                self.pixmap_toggled.setPos(self.parent_pixmap.pos().x() + (multiplier_x + 1) * STEP / 2, \
+                                           self.parent_pixmap.pos().y() + (multiplier_y + 1) * STEP / 2)
                 self.pixmap_toggled.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
             else:
                 self.scene.addItem(self.pixmap_toggled)

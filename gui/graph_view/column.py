@@ -7,6 +7,7 @@ from gui.graph_view.edge import Edge
 from gui.img_controls.utils import cvimg2qtpixmap
 import numpy as np
 import time
+from graph_visualizer import STEP, FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 
 
 class Column():
@@ -23,6 +24,7 @@ class Column():
         self.objects = []
         self.edges = {}
         self.nodes = {}
+        self.nodes_imgs = {}
 
     def add_object(self, object, position):
         if position < len(self.objects):
@@ -79,14 +81,38 @@ class Column():
     def get_x(self):
         return self.x
 
+    def prepare_imgs(self, event):
+        for object in self.objects:
+            if object not in (self.nodes.keys() + self.nodes_imgs.keys()) and (isinstance(object, Region) or isinstance(object,tuple)):
+                if isinstance(object, tuple):
+                    if object[0].frame_ == self.frame:
+                        node = object[0]
+                    elif object[1].frame_ == self.frame:
+                        node = object[1]
+                    else:
+                        continue
+                else:
+                    node = object
+                    # frame = self.frame
+                if node in self.nodes.keys():
+                    continue
+                print(str(self.frame))
+                # img = self.im_manager.get_crop(self.frame, [node], width=STEP, height=STEP)
+                img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
+                self.nodes_imgs[node] = img
+                # time.sleep(.2)
+            event.set()
+
     def add_crop_to_col(self):
-        from graph_visualizer import STEP
         for object in self.objects:
             if object not in self.nodes.keys():
                 if isinstance(object, Region):
-                    # img = self.im_manager.get_crop(self.frame, [object], width=STEP, height=STEP)
-                    img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
-                    img[:,:,0] = 255
+                    if object not in self.nodes_imgs.keys():
+                        # img = self.im_manager.get_crop(self.frame, [object], width=STEP, height=STEP)
+                        img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
+                        img[:, :, 0] = 255
+                    else:
+                        img = self.nodes_imgs[object]
                     pixmap = cvimg2qtpixmap(img)
                     node = Node(self.scene.addPixmap(pixmap), self.scene, object, self.im_manager, STEP)
                     self.nodes[object] = node
@@ -94,14 +120,21 @@ class Column():
                 elif isinstance(object, tuple):
                     if object[0].frame_ == self.frame:
                         region = object[0]
-                        if region in self.nodes.keys():
-                            return
-                        # img = self.im_manager.get_crop(self.frame, [region], width=STEP, height=STEP)
+                    elif object[1].frame_ == self.frame:
+                        region = object[0]
+                    else:
+                        continue
+                    if region in self.nodes.keys():
+                        continue
+                    if region not in self.nodes_imgs.keys():
+                         # img = self.im_manager.get_crop(self.frame, [region], width=STEP, height=STEP)
                         img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
                         img[:,:,0] = 255
-                        pixmap = cvimg2qtpixmap(img)
-                        node = Node(self.scene.addPixmap(pixmap), self.scene, region, self. im_manager, STEP)
-                        self.nodes[region] = node
+                    else:
+                        img = self.nodes_imgs[region]
+                    pixmap = cvimg2qtpixmap(img)
+                    node = Node(self.scene.addPixmap(pixmap), self.scene, region, self. im_manager, STEP)
+                    self.nodes[region] = node
 
     def set_x(self, x):
         self.x = x
@@ -149,7 +182,6 @@ class Column():
         self.scene.addItem(edge_obj.graphical_object)
 
     def show_node(self, region, vertically):
-        from graph_visualizer import STEP, FROM_TOP, SPACE_BETWEEN_VER, GAP
         position = self.get_position_object(region)
 
         x = self.x
@@ -158,10 +190,13 @@ class Column():
         if vertically:
             x, y = y, x
 
-        if not (region in self.nodes.keys()):
-            # img = self.im_manager.get_crop(self.frame, region, width=STEP, height=STEP)
-            img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
-            img[:, :, 0] = 255
+        if region not in self.nodes.keys():
+            if region not in self.nodes_imgs.keys():
+                # img = self.im_manager.get_crop(self.frame, region, width=STEP, height=STEP)
+                img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
+                img[0:, :, 0] = 255
+            else:
+                img = self.nodes_imgs[region]
             pixmap = cvimg2qtpixmap(img)
             node = Node(self.scene.addPixmap(pixmap), self.scene, region, self.im_manager, STEP)
             node.hide()
@@ -171,7 +206,6 @@ class Column():
         self.nodes[region].show()
 
     def show_compress_marker(self, compress_axis, vertically):
-        from graph_visualizer import STEP, FROM_TOP
         if isinstance(self.frame, tuple):
             if self.compress_marker is None:
                 self.compress_marker = QtGui.QGraphicsTextItem()
@@ -194,7 +228,6 @@ class Column():
             self.show_frame_number(vertically, compress_axis, True)
 
     def show_frame_number(self, vertically, compress_axis=True, empty = False):
-        from graph_visualizer import STEP, FROM_TOP
         text = str(self.frame)
         text_obj = QtGui.QGraphicsTextItem(text) if self.frame_sign is None else self.frame_sign
         y = FROM_TOP
