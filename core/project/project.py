@@ -40,7 +40,7 @@ class Project:
         self.color_manager = None
         self.log = Log()
         self.solver = None
-        self.version = "2.3.0"
+        self.version = "3.0.0"
 
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
