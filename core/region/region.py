@@ -128,7 +128,11 @@ class Region():
 
         return self.contour_
 
-def RLE_encoding(pts):
+def encode_RLE(pts):
+    """
+    returns list of dictionaries
+    {'col1': , 'col2':, 'line':}
+    """
     pass
 
 
