@@ -1,22 +1,12 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui, QtCore
-from gui.img_controls.my_scene import MyScene
-from gui.gui_utils import cvimg2qtpixmap
-import numpy as np
-from skimage.transform import resize
 from utils.roi import ROI, get_roi
-from gui.gui_utils import get_image_label
 from utils.drawing.points import draw_points_crop, draw_points
-from core.region.mser import get_msers_, get_all_msers
 from skimage.transform import resize
-from gui.img_controls.my_view import MyView
 from gui.img_controls.my_scene import MyScene
-import sys
 from PyQt4 import QtGui, QtCore
 from gui.img_controls.utils import cvimg2qtpixmap
 import numpy as np
-import pickle
 from functools import partial
 from core.animal import colors_
 from core.region.fitting import Fitting
@@ -447,12 +437,9 @@ class CaseWidget(QtGui.QWidget):
         self.join_with_active = True
 
     def highlight_node(self, node):
-        #print self.active_node
         self.dehighlight_node()
 
-        print "Highlighting %s" % node
         self.active_node = node
-        print "Active node: %s" % self.active_node
         it = self.get_node_item(node)
         it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
         it.setSelected(True)
@@ -461,9 +448,7 @@ class CaseWidget(QtGui.QWidget):
         if not node:
             node = self.active_node
 
-        print "Active node: %s" % node
         if node:
-            print "Dehighlighting..."
             it = self.get_node_item(node)
             it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
             it.setSelected(False)
@@ -509,9 +494,11 @@ class CaseWidget(QtGui.QWidget):
                 QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
 
             else:
-                # dehighligt is not needed, self.active_node gets dehighlighted with each new highlight
-                # self.dehighlight_node(n1)
-                self.highlight_node(n2)
+                self.active_row = int(round((it.pos().y() - self.top_margin) / (self.h_ + 0.0)))
+                self.active_col = int(round(it.pos().x() / (self.w_ + 0.0)))
+                print self.active_row, self.active_col
+                self.draw_selection_rect()
+                #self.highlight_node(n2)
 
             self.active_node = self.it_nodes[it]
         else:
@@ -519,7 +506,7 @@ class CaseWidget(QtGui.QWidget):
             self.connect_with_active = False
             self.join_with_active = False
             QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
-            self.active_node = None
+            # self.active_node = None
 
     def confirm_clicked(self):
         if len(self.nodes_groups) < 1:
