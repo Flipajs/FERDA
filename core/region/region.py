@@ -128,6 +128,9 @@ class Region():
 
         return self.contour_
 
+def RLE_encoding(pts):
+    pass
+
 
 def compute_region_axis_(sxx, syy, sxy):
     la = (sxx + syy) / 2
