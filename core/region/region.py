@@ -130,6 +130,7 @@ class Region():
 
 def encode_RLE(pts):
     """
+    Run Length Encoding
     returns list of dictionaries
     {'col1': , 'col2':, 'line':}
     """

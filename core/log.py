@@ -67,8 +67,10 @@ class LogEntry:
         return s
 
 class Log:
-    def __init__(self):
+    def __init__(self, wd):
         self.data_ = []
+        # log.db
+        # mute_option
 
     def add(self, category, action_name, data=None):
         if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
@@ -89,3 +91,17 @@ class Log:
                 actions.append(a)
 
         return actions
+
+    def pickle_example(self, data):
+        # REMOVE....
+        import cPickle as pickle
+
+        serialized = pickle.dumps(data, -1)
+
+        # DB:
+        # ID
+        # time, SORTED / indexed
+        # category, indexed
+        # action, indexed
+        # data .. serialized
+        # active
