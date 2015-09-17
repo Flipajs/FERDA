@@ -1,16 +1,15 @@
-__author__ = 'Simon Mandlik'
-
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtGui
 from core.region.region import Region
 from gui.graph_view.node import Node
 from gui.graph_view.edge import Edge
 from gui.img_controls.utils import cvimg2qtpixmap
 import numpy as np
-import time
 from graph_visualizer import STEP, FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 
+__author__ = 'Simon Mandlik'
 
-class Column():
+
+class Column:
 
     def __init__(self, frame, scene, im_manager, empty=False):
 
@@ -19,199 +18,179 @@ class Column():
         self.empty = empty
         self.x = 0
         self.frame = frame
+
         self.frame_sign = None
-        self.compress_marker = None
+
         self.objects = []
         self.edges = {}
-        self.nodes = {}
-        self.nodes_imgs = {}
+        self.items_nodes = {}
+        self.regions_images = {}
 
-    def add_object(self, object, position):
+        self.compress_marker = QtGui.QGraphicsTextItem()
+        self.objects.append(0)
+        self.compress_marker.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
+        self.scene.addItem(self.compress_marker)
+
+    def add_object(self, to_add, position):
         if position < len(self.objects):
-            if self.objects[position] == object or isinstance(self.objects[position], tuple):
-                pass
-            else:
-                self.objects[position] = object
+            if not(self.objects[position] == to_add or isinstance(self.objects[position], tuple)):
+                self.objects[position] = to_add
         else:
             while len(self.objects) < position:
                 self.objects.append(None)
             else:
-                self.objects.append(object)
+                self.objects.append(to_add)
 
-    def is_free(self, position=0, object=None):
+    def is_free(self, position=0, item=None):
         if position < 0:
             return False
         elif position > len(self.objects) - 1:
             return True
-        elif object == self.objects[position]:
+        elif item == self.objects[position]:
             return True
         elif isinstance(self.objects[position], (Region, Node)):
             return False
         elif isinstance(self.objects[position], tuple):
             if self.objects[position][2] == "chunk":
                 return False
-        else:
-            return True
+        return True
 
     def contains(self, item):
         if item in self.objects:
             return True
         else:
-            for object in self.objects:
-                if isinstance(object, tuple):
-                    if object[0] is item or object[1] is item:
-                        return True
-                if isinstance(object, Node):
-                    if item is Node.region:
+            for obj in self.objects:
+                if isinstance(obj, tuple):
+                    if obj[0] is item or obj[1] is item:
                         return True
         return False
 
-    def get_position_object(self, object):
-        try:
-            return self.objects.index(object)
-        except:
+    def get_position_item(self, item_to_locate):
+        if item_to_locate in self.objects:
+            return self.objects.index(item_to_locate)
+        else:
             for item in self.objects:
                 if isinstance(item, tuple):
-                    if item[0] == object or item[1] == object:
+                    if item[0] == item_to_locate or item[1] == item_to_locate:
                             return self.objects.index(item)
                 elif isinstance(item, Node):
-                    if object == item.region:
+                    if item_to_locate == item.region:
                         return self.objects.index(item)
 
-    def get_x(self):
-        return self.x
-
-    def prepare_imgs(self, event):
-        for object in self.objects:
-            if object not in (self.nodes.keys() + self.nodes_imgs.keys()) and (isinstance(object, Region) or isinstance(object,tuple)):
-                if isinstance(object, tuple):
-                    if object[0].frame_ == self.frame:
-                        node = object[0]
-                    elif object[1].frame_ == self.frame:
-                        node = object[1]
+    def prepare_images(self):
+        for item in self.objects:
+            if not (item in (self.items_nodes.keys() + self.regions_images.keys()) or item is None):
+                if isinstance(item, tuple):
+                    if item[0].frame_ == self.frame:
+                        region = item[0]
+                    elif item[1].frame_ == self.frame:
+                        region = item[1]
                     else:
                         continue
                 else:
-                    node = object
-                    # frame = self.frame
-                if node in self.nodes.keys():
+                    region = item
+                if region in self.items_nodes.keys():
                     continue
-                print(str(self.frame))
-                # img = self.im_manager.get_crop(self.frame, [node], width=STEP, height=STEP)
+                # img = self.im_manager.get_crop(self.frame, [region], width=STEP, height=STEP)
                 img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
-                self.nodes_imgs[node] = img
-                # time.sleep(.2)
-            event.set()
+                self.regions_images[region] = img
 
     def add_crop_to_col(self):
-        for object in self.objects:
-            if object not in self.nodes.keys():
-                if isinstance(object, Region):
-                    if object not in self.nodes_imgs.keys():
-                        # img = self.im_manager.get_crop(self.frame, [object], width=STEP, height=STEP)
-                        img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
-                        img[:, :, 0] = 255
-                    else:
-                        img = self.nodes_imgs[object]
-                    pixmap = cvimg2qtpixmap(img)
-                    node = Node(self.scene.addPixmap(pixmap), self.scene, object, self.im_manager, STEP)
-                    self.nodes[object] = node
-
-                elif isinstance(object, tuple):
-                    if object[0].frame_ == self.frame:
-                        region = object[0]
-                    elif object[1].frame_ == self.frame:
-                        region = object[0]
+        for item in self.objects:
+            if item not in self.items_nodes.keys():
+                if isinstance(item, tuple):
+                    if item[0].frame_ == self.frame:
+                        item = item[0]
+                    elif item[1].frame_ == self.frame:
+                        item = item[0]
                     else:
                         continue
-                    if region in self.nodes.keys():
+                    if item in self.items_nodes.keys():
                         continue
-                    if region not in self.nodes_imgs.keys():
-                         # img = self.im_manager.get_crop(self.frame, [region], width=STEP, height=STEP)
-                        img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
-                        img[:,:,0] = 255
-                    else:
-                        img = self.nodes_imgs[region]
-                    pixmap = cvimg2qtpixmap(img)
-                    node = Node(self.scene.addPixmap(pixmap), self.scene, region, self. im_manager, STEP)
-                    self.nodes[region] = node
+                if item not in self.regions_images.keys():
+                    # img = self.im_manager.get_crop(self.frame, [object], width=STEP, height=STEP)
+                    img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
+                    img[:, :, 0] = 255
+                else:
+                    img = self.regions_images[item]
+                pixmap = cvimg2qtpixmap(img)
+                node = Node(self.scene.addPixmap(pixmap), self.scene, item, self. im_manager, STEP)
+                node.parent_pixmap.hide()
+                self.items_nodes[item] = node
 
     def set_x(self, x):
         self.x = x
 
-    def draw(self, compress_axis, vertically):
+    def draw(self, compress_axis, vertically, frames_columns):
         if self.empty:
             self.show_compress_marker(compress_axis, vertically)
         else:
             self.show_frame_number(vertically)
-            for object in self.objects:
-                if isinstance(object, Region):
-                    self.show_node(object, vertically)
+            for item in self.objects:
+                if isinstance(item, Region):
+                    self.show_node(item, vertically)
+                elif isinstance(item, tuple):
+                    if item[0].frame_ == self.frame:
+                        self.show_node(item[0], vertically)
+                    elif item[1].frame_ == self.frame:
+                        self.show_node(item[1], vertically)
+                        self.show_edge(item, frames_columns, vertically)
 
-    def show_edge(self, edge, frame_columns, vertically, dir=None, node=None):
-        from graph_visualizer import STEP, FROM_TOP, SPACE_BETWEEN_VER, SPACE_BETWEEN_HOR, GAP
+    def show_edge(self, edge, frame_columns, vertically, direction=None, node=None):
         from_x = self.x
         if node is None:
             node = edge[1]
-        position = self.get_position_object(node)
+        position = self.get_position_item(node)
         from_y = GAP + FROM_TOP + position * STEP + STEP / 2 + SPACE_BETWEEN_VER * position
 
         if not (edge[2] is "partial"):
             column_left = frame_columns[edge[0].frame_]
-            position = column_left.get_position_object(edge[0])
+            position = column_left.get_position_item(edge[0])
             to_x = column_left.x + STEP
             to_y = GAP + FROM_TOP + position * STEP + STEP/2 + SPACE_BETWEEN_VER * position
-            column_left.show_node(edge[0], vertically)
-        elif edge[2] == "partial" :
+        else:
             to_y = from_y
             to_x = self.x - SPACE_BETWEEN_HOR / 2
-            if not dir == "left":
+            if not direction == "left":
                 from_x += STEP
                 to_x += STEP + SPACE_BETWEEN_HOR
 
-        self.show_node(node, vertically)
-
         if vertically:
             from_x, from_y, to_x, to_y = from_y, from_x, to_y, to_x
-
         if edge in self.edges.keys():
             self.scene.removeItem(self.edges[edge].graphical_object)
-
         edge_obj = Edge(from_x, from_y, to_x, to_y, edge)
         self.edges[edge] = edge_obj
+
+        if edge[2] is "chunk":
+            edge_obj.graphical_object.setZValue(-1)
+        else:
+            edge_obj.graphical_object.setZValue(-2)
+
         self.scene.addItem(edge_obj.graphical_object)
 
     def show_node(self, region, vertically):
-        position = self.get_position_object(region)
-
+        position = self.get_position_item(region)
         x = self.x
         y = GAP + FROM_TOP + position * STEP + SPACE_BETWEEN_VER * position
 
         if vertically:
             x, y = y, x
-
-        if region not in self.nodes.keys():
-            if region not in self.nodes_imgs.keys():
-                # img = self.im_manager.get_crop(self.frame, region, width=STEP, height=STEP)
+        if region not in self.items_nodes.keys():
+            if region not in self.regions_images.keys():
+                # img = self.im_manager.get_crop(self.frame, [region], width=STEP, height=STEP)
                 img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
                 img[0:, :, 0] = 255
             else:
-                img = self.nodes_imgs[region]
+                img = self.regions_images[region]
             pixmap = cvimg2qtpixmap(img)
             node = Node(self.scene.addPixmap(pixmap), self.scene, region, self.im_manager, STEP)
-            node.hide()
-            self.nodes[region] = node
-
-        self.nodes[region].setPos(x, y)
-        self.nodes[region].show()
+            self.items_nodes[region] = node
+        self.items_nodes[region].setPos(x, y)
+        self.items_nodes[region].parent_pixmap.show()
 
     def show_compress_marker(self, compress_axis, vertically):
         if isinstance(self.frame, tuple):
-            if self.compress_marker is None:
-                self.compress_marker = QtGui.QGraphicsTextItem()
-                self.objects.append(0)
-                self.compress_marker.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
-                self.scene.addItem(self.compress_marker)
             x = self.x + STEP / 4 - 12.5
             y = FROM_TOP
             if vertically:
@@ -227,7 +206,7 @@ class Column():
         else:
             self.show_frame_number(vertically, compress_axis, True)
 
-    def show_frame_number(self, vertically, compress_axis=True, empty = False):
+    def show_frame_number(self, vertically, compress_axis=True, empty=False):
         text = str(self.frame)
         text_obj = QtGui.QGraphicsTextItem(text) if self.frame_sign is None else self.frame_sign
         y = FROM_TOP
@@ -249,7 +228,3 @@ class Column():
             self.frame_sign.show()
         if not compress_axis:
             self.frame_sign.hide()
-
-
-
-
