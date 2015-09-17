@@ -139,11 +139,8 @@ def encode_RLE(pts):
     roi = get_roi(pts)
     result = np.zeros((roi.height(), roi.width()), dtype="uint8")
 
-    
-    for i in range(0, pts.shape[0]):
-        x = pts[i][0] - roi.top_left_corner()[0]
-        y = pts[i][1] - roi.top_left_corner()[1]
-        result[x][y] = 1
+    pts2 = pts - roi.top_left_corner()
+    result[pts2[:,0], pts2[:,1]] = 1
 
     rle = []
     for i in range(0, result.shape[0]):
@@ -194,17 +191,6 @@ def get_orientation(sxx, syy, sxy):
 if __name__ == '__main__':
     import cPickle as pickle
     import numpy as np
-    np.set_printoptions(threshold=np.nan)
-    """
-    from core.project.project import Project
-    proj = Project()
-    proj.load("/home/dita/PycharmProjects/c5__/c5__.fproj")
-    regions = proj.solver.nodes_in_t[0]
-
-    with open('/home/dita/PycharmProjects/c5regions.pkl', 'wb') as f:
-        pickle.dump(regions, f, -1)
-    """
-
     f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
     up = pickle.Unpickler(f)
     regions = up.load()
