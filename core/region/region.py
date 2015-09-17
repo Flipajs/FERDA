@@ -1,5 +1,6 @@
 __author__ = 'fnaiser'
 
+from utils.video_manager import get_auto_video_manager
 import numpy as np
 import math
 from utils.roi import get_roi
@@ -133,7 +134,40 @@ def encode_RLE(pts):
     returns list of dictionaries
     {'col1': , 'col2':, 'line':}
     """
-    pass
+    import time
+    t = time.time()
+    roi = get_roi(pts)
+    result = np.zeros((roi.height(), roi.width()), dtype="uint8")
+
+    
+    for i in range(0, pts.shape[0]):
+        x = pts[i][0] - roi.top_left_corner()[0]
+        y = pts[i][1] - roi.top_left_corner()[1]
+        result[x][y] = 1
+
+    rle = []
+    for i in range(0, result.shape[0]):
+        run = {}
+        running = False
+        for j in range(0, result.shape[1]):
+            if result[i][j] == 1 and not running:
+                run['col1'] = j
+                run['line'] = i
+                running = True
+            if result[i][j] == 0 and running:
+                run['col2'] = j - 1
+                rle.append(run)
+                run = {}
+                running = False
+        if running:
+            run['col2'] = j - 1
+            rle.append(run)
+    print time.time() - t
+
+    for run in rle:
+        print "line %s: [%s - %s]" % (run["line"], run["col1"], run["col2"])
+
+
 
 
 def compute_region_axis_(sxx, syy, sxy):
@@ -157,6 +191,25 @@ def get_orientation(sxx, syy, sxy):
     return theta
 
 
-
 if __name__ == '__main__':
-    print "test"
+    import cPickle as pickle
+    import numpy as np
+    np.set_printoptions(threshold=np.nan)
+    """
+    from core.project.project import Project
+    proj = Project()
+    proj.load("/home/dita/PycharmProjects/c5__/c5__.fproj")
+    regions = proj.solver.nodes_in_t[0]
+
+    with open('/home/dita/PycharmProjects/c5regions.pkl', 'wb') as f:
+        pickle.dump(regions, f, -1)
+    """
+
+    f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
+    up = pickle.Unpickler(f)
+    regions = up.load()
+    f.close()
+
+    r = regions[0]
+    pts = r.pts_copy()
+    encode_RLE(pts)
