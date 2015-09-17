@@ -443,6 +443,7 @@ class CaseWidget(QtGui.QWidget):
         it = self.get_node_item(node)
         it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
         it.setSelected(True)
+        self.v.centerOn(QtCore.QPointF(it.pos().x(), it.pos().y()))
 
     def dehighlight_node(self, node=None):
         if not node:
