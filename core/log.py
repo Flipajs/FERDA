@@ -55,10 +55,10 @@ class ActionNames:
     JOIN_CHUNKS = 'join_chunks'
 
 class LogEntry:
-    def __init__(self, category, action_name, data=None):
+    def __init__(self, category, action_name, time=time.time(), data=None):
         self.category = category
         self.action_name = action_name
-        self.time = time.time()
+        self.time = time
         self.data = data
 
     def __str__(self):
@@ -107,7 +107,7 @@ class Log:
             time TIMESTAMP DEFAULT (DATETIME('now')), \
             category TINYINT, \
             action STRING, \
-            data STRING, \
+            data BLOB, \
             active BOOLEAN);")
         self.cur.execute("CREATE INDEX IF NOT EXISTS log_index ON log(id, time, category, action);")
 
@@ -121,43 +121,55 @@ class Log:
         if data == None:
             data = ""
         else:
-            data = buffer(pickle.dumps(data, -1))
+            data = pickle.dumps(data, -1)
 
         cmd = "INSERT INTO log (category, action, data, active) VALUES (?, ?, ?, 1);"
         cmd_ = "INSERT INTO log (category, action, data, active) VALUES (%s, %s, pickled_data, 1);" % (category, action_name)
 
-        print cmd_
+        #print cmd_
         try:
-            self.cur.execute(cmd, (category, action_name, data))
+            self.cur.execute(cmd, (category, action_name, sql.Binary(data)))
         except sql.ProgrammingError:
             self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
-            self.cur.execute(cmd, (category, action_name, data))
+            self.cur.execute(cmd, (category, action_name, sql.Binary(data)))
+
+
+    def add_many(self, iter):
+        print "adding many"
+
+        cmd = "INSERT INTO log (category, action, data, active) VALUES (?, ?, ?, 1);"
+
+        try:
+            self.cur.executemany(cmd, iter)
+        except sql.ProgrammingError:
+            self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
+            self.cur.executemany(cmd, iter)
 
 
 
     def pop_last_user_action(self):
-        get_last_uset_action_cmd = "SELECT id FROM log WHERE category = 1 ORDER BY id DESC LIMIT 1"
-        #get_last_uset_action_cmd = "SELECT * FROM log;"
+        # get_last_uset_action_cmd = "SELECT id FROM log WHERE category = 1 ORDER BY id DESC LIMIT 1"
+        get_undo = "SELECT \
+            (SELECT id FROM log WHERE category = 1 ORDER BY id DESC LIMIT 1) as last,\
+            * FROM log WHERE id >= last;"
+
         try:
-            self.cur.execute(get_last_uset_action_cmd)
+            self.cur.execute(get_undo)
             print type(self.cur)
-            row = self.cur.fetchall()
+            rows = self.cur.fetchall()
         except sql.ProgrammingError:
             self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
-            self.cur.execute(get_last_uset_action_cmd)
+            self.cur.execute(get_undo)
             print type(self.cur)
-            row = self.cur.fetchall()
+            rows = self.cur.fetchall()
 
-        print row
-        # print "Last user action has the id %s" % id
         actions = []
-        """
-        while self.data_:
-            a = self.data_.pop()
-            if a.category == LogCategories.USER_ACTION:
-                return actions
-            if a.category == LogCategories.GRAPH_EDIT:
-                actions.append(a)
-        """
+        for row in rows:
+            # l_id    id      time    cat     act     data
+            # row[0], row[1], row[2], row[3], row[4], row[5]
+            data = str(row[5])
+
+            print "Rollback data - category %s, action %s, time %s, data %s" % (row[3], row[4], row[2], pickle.loads(data))
+            actions.append(LogEntry(row[3], row[4], data=pickle.loads(data), time=row[2]))
 
         return actions

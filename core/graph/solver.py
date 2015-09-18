@@ -17,6 +17,7 @@ from utils.img import prepare_for_segmentation
 from utils.constants import EDGE_CONFIRMED
 import time
 import cPickle as pickle
+import sqlite3 as sql
 
 
 class Solver:
@@ -60,17 +61,7 @@ class Solver:
                 ch.pop_last(self) if t_reversed else ch.pop_first(self)
 
         # save all edges
-        for n1, n2, d in self.g.in_edges(n, data=True):
-            # if 'chunk_ref' in d:
-            #     continue
-            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
-
-        for n1, n2, d in self.g.out_edges(n, data=True):
-            # if 'chunk_ref' in d:
-            #     continue
-            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
-
-        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, n)
+        self.project.log.add_many(self.edges_iter(n))
 
         self.nodes_in_t[n.frame_].remove(n)
         if not self.nodes_in_t[n.frame_]:
@@ -81,6 +72,17 @@ class Solver:
         # maybe we need to shrink time boundaries...
         if self.end_t == n.frame_ or self.start_t == n.frame_:
             self.update_time_boundaries()
+
+    def edges_iter(self, n):
+        # save all edges
+        for n1, n2, d in self.g.in_edges(n, data=True):
+            #print LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, pickle.dumps({'n1': n1, 'n2': n2, 'data': d})
+            yield (LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, sql.Binary(pickle.dumps({'n1': n1, 'n2': n2, 'data': d})))
+
+        for n1, n2, d in self.g.out_edges(n, data=True):
+            yield (LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, sql.Binary(pickle.dumps({'n1': n1, 'n2': n2, 'data': d})))
+
+        yield (LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, pickle.dumps(n))
 
     def match_if_reconstructed(self, n):
         if n not in self.g:
