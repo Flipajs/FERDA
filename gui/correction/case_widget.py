@@ -29,6 +29,8 @@ from core.settings import Settings as S_
 class CaseWidget(QtGui.QWidget):
     def __init__(self, G, project, node_groups, suggested_config, vid, parent_widget, color_assignments=None):
         super(CaseWidget, self).__init__()
+
+        print "--------------------------------------------"
         self.project = project
         self.G = G
         self.nodes_groups = node_groups
@@ -55,7 +57,6 @@ class CaseWidget(QtGui.QWidget):
 
         self.user_actions = []
 
-        self.active_node = None
         self.connect_with_active = False
         self.join_with_active = False
 
@@ -69,8 +70,8 @@ class CaseWidget(QtGui.QWidget):
         self.crop_clear_frames_items = []
         self.visualization_hidden = False
 
-        self.active_row = -1
-        self.active_col = -1
+        self.active_row = 0
+        self.active_col = 0
         self.active_row_it = None
         self.active_col_it = None
         self.rows = -1
@@ -214,6 +215,9 @@ class CaseWidget(QtGui.QWidget):
         self.draw_grid()
         self.draw_scene()
         self.highlight_chunk_nodes()
+        self.active_node = None
+        # self.highlight_node(self.nodes_groups[self.active_col][self.active_row])
+        #self.draw_selection_rect()
 
         self.v.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self.v, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.on_context_menu)
@@ -235,6 +239,7 @@ class CaseWidget(QtGui.QWidget):
 
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.setStyleSheet("border: 0px")
+        self.draw_selection_rect()
 
     def get_info(self):
         n = self.active_node
@@ -266,52 +271,43 @@ class CaseWidget(QtGui.QWidget):
                                 "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (n.area(), str(n.centroid()), n.margin_, antlikeness, str(virtual), str(best_in), str(best_out), ch_info))
 
     def row_changed(self, off):
-        if -1 < self.active_row + off < self.cols:
-            self.active_row += off
-
-            r = self.active_row
-            it = QtGui.QGraphicsRectItem(self.left_margin - self.node_size / 2,
-                               self.top_margin + self.h_ * r,
-                               self.w_ * self.cols,
-                               self.h_)
-            if self.active_row_it:
-                self.scene.removeItem(self.active_row_it)
-
-            self.active_row_it = it
-            self.scene.addItem(it)
-            it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
-            it.setZValue(-1)
-
-            if self.active_col > -1:
-                try:
-                    n = self.nodes_groups[self.active_col][self.active_row]
-                    self.highlight_node(n)
-                except:
-                    pass
+        self.active_row += off
+        self.active_row = self.active_row % self.rows
+        self.draw_selection_rect()
 
     def col_changed(self, off):
-        if -1 < self.active_col + off < self.cols:
-            self.active_col += off
+        self.active_col += off
+        self.active_col = self.active_col % self.cols
+        self.draw_selection_rect()
 
-            c = self.active_col
-            it = QtGui.QGraphicsRectItem(self.left_margin + self.w_ * c - self.node_size / 2,
-                                   self.top_margin,
-                                   self.w_,
-                                   self.h_ * self.rows)
-            if self.active_col_it:
-                self.scene.removeItem(self.active_col_it)
 
-            self.active_col_it = it
-            self.scene.addItem(it)
-            it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
-            it.setZValue(-1)
+    def draw_selection_rect(self):
+        c = self.active_col
+        r = self.active_row
 
-            if self.active_row > -1:
-                try:
-                    n = self.nodes_groups[self.active_col][self.active_row]
-                    self.highlight_node(n)
-                except:
-                    pass
+        col_it = QtGui.QGraphicsRectItem(self.left_margin + self.w_ * c - self.node_size / 2,
+                               self.top_margin, self.w_, self.h_ * self.rows)
+        if self.active_col_it:
+            self.scene.removeItem(self.active_col_it)
+
+        self.active_col_it = col_it
+        self.scene.addItem(col_it)
+        col_it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
+        col_it.setZValue(-1)
+
+        row_it = QtGui.QGraphicsRectItem(self.left_margin - self.node_size / 2,
+                           self.top_margin + self.h_ * r, self.w_ * self.cols, self.h_)
+
+        if self.active_row_it:
+            self.scene.removeItem(self.active_row_it)
+
+        self.active_row_it = row_it
+        self.scene.addItem(row_it)
+        row_it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
+        row_it.setZValue(-1)
+
+        n = self.nodes_groups[self.active_col][self.active_row]
+        self.highlight_node(n)
 
     def draw_grid(self):
         rows = 0
@@ -462,23 +458,26 @@ class CaseWidget(QtGui.QWidget):
         self.join_with_active = True
 
     def highlight_node(self, node):
-        if self.active_node:
-            self.dehighlight_node()
+        #print self.active_node
+        self.dehighlight_node()
 
-        if node:
-            self.active_node = node
-            it = self.get_node_item(node)
-            it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
-            it.setSelected(True)
+        print "Highlighting %s" % node
+        self.active_node = node
+        print "Active node: %s" % self.active_node
+        it = self.get_node_item(node)
+        it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+        it.setSelected(True)
 
     def dehighlight_node(self, node=None):
         if not node:
             node = self.active_node
 
+        print "Active node: %s" % node
         if node:
+            print "Dehighlighting..."
             it = self.get_node_item(node)
-            it.setSelected(False)
             it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
+            it.setSelected(False)
             self.active_node = None
 
     def on_context_menu(self, point):
@@ -519,12 +518,15 @@ class CaseWidget(QtGui.QWidget):
                 self.parent.join_regions(n1, n2)
                 self.join_with_active = False
                 QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
+
             else:
-                self.dehighlight_node(self.active_node)
+                # dehighligt is not needed, self.active_node gets dehighlighted with each new highlight
+                # self.dehighlight_node(n1)
                 self.highlight_node(n2)
 
             self.active_node = self.it_nodes[it]
         else:
+            print "Fooo"
             self.connect_with_active = False
             self.join_with_active = False
             QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
