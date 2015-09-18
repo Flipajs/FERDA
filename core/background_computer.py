@@ -112,7 +112,7 @@ class BackgroundComputer():
         if self.project.version_is_le("2.0.1"):
             part_num = self.process_n
 
-        for i in range(6):
+        for i in range(part_num):
             with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g_ = up.load()

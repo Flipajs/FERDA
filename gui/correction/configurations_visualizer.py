@@ -192,10 +192,13 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         if self.active_node_id < len(self.nodes):
             n = self.nodes[self.active_node_id]
-            if n in self.solver.ignored_nodes:
-                self.active_node_id += 1
-                self.next_case()
-                return
+            try:
+                if n in self.solver.ignored_nodes:
+                    self.active_node_id += 1
+                    self.next_case()
+                    return
+            except:
+                pass
 
             # test end
             if n.frame_ == self.solver.end_t:
@@ -286,10 +289,13 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         n = self.nodes[self.active_node_id]
 
-        if n in self.solver.ignored_nodes:
-            self.active_node_id -= 1
-            self.prev_case()
-            return
+        try:
+            if n in self.solver.ignored_nodes:
+                self.active_node_id -= 1
+                self.prev_case()
+                return
+        except:
+            pass
 
         if n.frame_ == self.solver.end_t:
             self.active_node_id -= 1

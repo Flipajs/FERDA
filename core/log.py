@@ -1,6 +1,8 @@
 __author__ = 'flipajs'
 
 import time
+import sqlite3 as sql
+import cPickle as pickle
 from core.settings import Settings as S_
 
 
@@ -66,6 +68,7 @@ class LogEntry:
 
         return s
 
+"""
 class Log:
     def __init__(self, wd):
         self.data_ = []
@@ -91,17 +94,70 @@ class Log:
                 actions.append(a)
 
         return actions
+"""
 
-    def pickle_example(self, data):
-        # REMOVE....
-        import cPickle as pickle
 
-        serialized = pickle.dumps(data, -1)
+class Log:
+    def __init__(self, path):
+        self.db_path = path+"/log.db"
+        print "Initializing db at %s " % self.db_path
+        self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
+        self.cur.execute("CREATE TABLE IF NOT EXISTS log(\
+            id INTEGER PRIMARY KEY AUTOINCREMENT, \
+            time TIMESTAMP DEFAULT (DATETIME('now')), \
+            category TINYINT, \
+            action STRING, \
+            data STRING, \
+            active BOOLEAN);")
+        self.cur.execute("CREATE INDEX IF NOT EXISTS log_index ON log(id, time, category, action);")
 
-        # DB:
-        # ID
-        # time, SORTED / indexed
-        # category, indexed
-        # action, indexed
-        # data .. serialized
-        # active
+    def add(self, category, action_name, data=None):
+        if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
+            return
+
+        if S_.general.print_log:
+            print category, action_name, data
+
+        if data == None:
+            data = ""
+        else:
+            data = buffer(pickle.dumps(data, -1))
+
+        cmd = "INSERT INTO log (category, action, data, active) VALUES (?, ?, ?, 1);"
+        cmd_ = "INSERT INTO log (category, action, data, active) VALUES (%s, %s, pickled_data, 1);" % (category, action_name)
+
+        print cmd_
+        try:
+            self.cur.execute(cmd, (category, action_name, data))
+        except sql.ProgrammingError:
+            self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
+            self.cur.execute(cmd, (category, action_name, data))
+
+
+
+    def pop_last_user_action(self):
+        get_last_uset_action_cmd = "SELECT id FROM log WHERE category = 1 ORDER BY id DESC LIMIT 1"
+        #get_last_uset_action_cmd = "SELECT * FROM log;"
+        try:
+            self.cur.execute(get_last_uset_action_cmd)
+            print type(self.cur)
+            row = self.cur.fetchall()
+        except sql.ProgrammingError:
+            self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
+            self.cur.execute(get_last_uset_action_cmd)
+            print type(self.cur)
+            row = self.cur.fetchall()
+
+        print row
+        # print "Last user action has the id %s" % id
+        actions = []
+        """
+        while self.data_:
+            a = self.data_.pop()
+            if a.category == LogCategories.USER_ACTION:
+                return actions
+            if a.category == LogCategories.GRAPH_EDIT:
+                actions.append(a)
+        """
+
+        return actions

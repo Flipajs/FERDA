@@ -38,7 +38,7 @@ class Project:
         self.other_parameters = OtherParameters()
         self.solver_parameters = SolverParameters()
         self.color_manager = None
-        self.log = Log()
+        self.log = None
         self.solver = None
         self.version = "3.0.0"
 
@@ -151,6 +151,7 @@ class Project:
 
         self.__dict__.update(tmp_dict)
 
+        self.log = Log(self.working_directory)
         # BG MODEL
         try:
             with open(self.working_directory+'/bg_model.pkl', 'rb') as f:
@@ -204,9 +205,6 @@ class Project:
             with open(self.working_directory+'/progress_save.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g = up.load()
-                log = up.load()
-                if isinstance(log, list):
-                    log = Log()
 
                 ignored_nodes = {}
                 try:
@@ -219,7 +217,6 @@ class Project:
                 solver.ignored_nodes = ignored_nodes
                 solver.update_nodes_in_t_refs()
                 self.solver = solver
-                self.log = log
         except:
             pass
 
