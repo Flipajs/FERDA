@@ -28,23 +28,27 @@ if __name__ == "__main__":
     nodes = nodes.union(nodes2)
 
     g2 = graph_tool.Graph(directed=True)
-    g2.vp['region'] = g2.new_vertex_property("object")
-    g2.vp['chunk_start'] = g2.new_vertex_property("object")
-    g2.vp['chunk_end'] = g2.new_vertex_property("object")
-    g2.ep['cost'] = g2.new_edge_property("float")
+    # g2.vp['region'] = g2.new_vertex_property("object")
+    # g2.vp['chunk_start'] = g2.new_vertex_property("object")
+    # g2.vp['chunk_end'] = g2.new_vertex_property("object")
+    # g2.ep['cost'] = g2.new_edge_property("float")
 
     region_vertex_refs = {}
     nodes = list(nodes)
     for n in nodes:
         vertex = g2.add_vertex()
-        g2.vp['region'][vertex] = n
+        # g2.vp['region'][vertex] = n
         region_vertex_refs[n] = vertex
 
     edges_ = []
     for n1, n2, d in edges:
         e_ = g2.add_edge(region_vertex_refs[n1], region_vertex_refs[n2])
-        g2.ep['cost'][e_] = d['score']
+        # g2.ep['cost'][e_] = d['score']
         edges_.append(e_)
+
+    import cPickle as pickle
+    with open('/Users/flipajs/Documents/wd/test.pkl', 'wb') as f:
+
 
     # for e in edges_:
     #     try:

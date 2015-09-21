@@ -704,8 +704,8 @@ class ArenaEditor(QtGui.QWidget):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
-    im = cv2.imread('/home/dita/PycharmProjects/sample2.png')
-    # im = cv2.imread('/Users/flipajs/Desktop/red_vid.png')
+    # im = cv2.imread('/home/dita/PycharmProjects/sample2.png')
+    im = cv2.imread('/Users/flipajs/Desktop/red_vid.png')
     p = Project()
 
     ex = ArenaEditor(im, p)

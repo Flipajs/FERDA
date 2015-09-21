@@ -21,7 +21,7 @@ class GraphManager:
         self.g.vp['region'] = self.g.new_vertex_property("object")
         self.g.vp['chunk_start'] = self.g.new_vertex_property("object")
         self.g.vp['chunk_end'] = self.g.new_vertex_property("object")
-        self.g.ep['score'] = self.g.new_edge_property("float")
+        # self.g.ep['score'] = self.g.new_edge_property("float")
 
     def add_vertex(self, region):
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
@@ -31,12 +31,12 @@ class GraphManager:
         vertex = self.g.add_vertex()
 
         self.vertices_in_t.setdefault(region.frame_, []).append(vertex)
-        self.g.vp['region'][vertex] = region
+        self.g.vp['region'][int(vertex)] = region
 
         return vertex
 
     def remove_vertex(self, vertex, disassembly=True):
-        region = self.graph.vp['region'][vertex]
+        region = self.graph.vp['region'][int(vertex)]
         region = self.match_if_reconstructed(region)
         if region is None:
             print "remove node n is None"
@@ -72,11 +72,11 @@ class GraphManager:
         :param n: ref to vertex in g
         :return: (chunk_ref (ref or None), is_chunk_end (True if it is chunk_end))
         """
-        chunk_start = self.g.vp['chunk_start'][vertex]
+        chunk_start = self.g.vp['chunk_start'][int(vertex)]
         if chunk_start:
             return chunk_start, False
 
-        chunk_end = self.g.vp['chunk_end'][vertex]
+        chunk_end = self.g.vp['chunk_end'][int(vertex)]
         if chunk_end:
             return chunk_end, True
 
@@ -98,13 +98,13 @@ class GraphManager:
             self.add_edges_(self.vertices_in_t[t-1], self.vertices_in_t[t], fast=fast)
 
     def region(self, vertex):
-        return self.g.vp['region'][vertex]
+        return self.g.vp['region'][int(vertex)]
 
     def chunk_start(self, vertex):
-        return self.g.vp['chunk_start'][vertex]
+        return self.g.vp['chunk_start'][int(vertex)]
 
     def chunk_end(self, vertex):
-        return self.g.vp['chunk_end'][vertex]
+        return self.g.vp['chunk_end'][int(vertex)]
 
     def add_edges_(self, vertices_t1, vertices_t2, fast=False):
         for v_t1 in vertices_t1:
@@ -149,7 +149,8 @@ class GraphManager:
                 self.remove_edge_(e)
 
     def remove_edge_(self, edge):
-        s = self.g.ep['score'][edge]
+        # s = self.g.ep['score'][edge]
+        s = 0
 
         self.project.log.add(LogCategories.GRAPH_EDIT,
                              ActionNames.REMOVE_EDGE,
@@ -178,12 +179,12 @@ class GraphManager:
                               'v2': target_vertex,
                               's': score})
         e = self.g.add_edge(source_vertex, target_vertex)
-        self.g.ep['score'] = float(score)
+        # self.g.ep['score'][e] = float(score)
 
     def chunk_list(self):
         chunks = []
         for v in self.g.vertices():
-            ch = self.g.vp['chunk_start'][v]
+            ch = self.g.vp['chunk_start'][int(v)]
             if ch:
                 chunks.append(ch)
 
