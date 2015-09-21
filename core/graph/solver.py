@@ -42,7 +42,8 @@ class Solver:
         self.cc_id = 0
 
     def add_node(self, n):
-        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, n)
+        if S_.general.log_graph_edits:
+            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, n)
         self.start_t = min(self.start_t, n.frame_)
         self.end_t = max(self.end_t, n.frame_)
 
@@ -61,7 +62,8 @@ class Solver:
                 ch.pop_last(self) if t_reversed else ch.pop_first(self)
 
         # save all edges
-        self.project.log.add_many(self.edges_iter(n))
+        if S_.general.log_graph_edits:
+            self.project.log.add_many(self.edges_iter(n))
 
         self.nodes_in_t[n.frame_].remove(n)
         if not self.nodes_in_t[n.frame_]:
@@ -103,11 +105,13 @@ class Solver:
 
         d = self.g.get_edge_data(n1, n2)
 
-        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
+        if S_.general.log_graph_edits:
+            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
         self.g.remove_edge(n1, n2)
 
     def add_edge_fast(self, n1, n2, **data):
-        self.project.log.add(LogCategories.GRAPH_EDIT,
+        if S_.general.log_graph_edits:
+            self.project.log.add(LogCategories.GRAPH_EDIT,
                              ActionNames.ADD_EDGE,
                              {'n1': n1,
                               'n2': n2,
