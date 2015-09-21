@@ -79,10 +79,10 @@ class Solver:
         # save all edges
         for n1, n2, d in self.g.in_edges(n, data=True):
             #print LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, pickle.dumps({'n1': n1, 'n2': n2, 'data': d})
-            yield (LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, sql.Binary(pickle.dumps({'n1': n1, 'n2': n2, 'data': d})))
+            yield (int(time.time()), LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, sql.Binary(pickle.dumps({'n1': n1, 'n2': n2, 'data': d})))
 
         for n1, n2, d in self.g.out_edges(n, data=True):
-            yield (LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, sql.Binary(pickle.dumps({'n1': n1, 'n2': n2, 'data': d})))
+            yield (int(time.time()), LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, sql.Binary(pickle.dumps({'n1': n1, 'n2': n2, 'data': d})))
 
         yield (LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, pickle.dumps(n))
 

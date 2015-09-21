@@ -362,7 +362,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         return objects
 
+
     def fitting(self, t_reversed=False, one_step=False):
+        self.project.log.begin()
         if self.active_cw.active_node:
             self.project.log.add(LogCategories.USER_ACTION,
                                  ActionNames.MERGED_SELECTED,
@@ -463,6 +465,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.confirm_edges(edges)
 
     def confirm_edges(self, pairs):
+        self.project.log.begin()
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.CONFIRM, {'pairs': pairs})
         self.solver.confirm_edges(pairs)
         self.next_case()
@@ -471,6 +474,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.active_cw.join_with_()
 
     def join_regions(self, n1, n2):
+        self.project.log.begin()
+
         if n1.area() < n2.area():
             n1, n2 = n2, n1
 

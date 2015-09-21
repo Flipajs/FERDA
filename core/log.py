@@ -74,10 +74,10 @@ class Log:
     def __init__(self, path):
         self.db_path = path+"/log.db"
         print "Initializing db at %s " % self.db_path
-        self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
+        self.cur = sql.connect(self.db_path).cursor()
         self.cur.execute("CREATE TABLE IF NOT EXISTS log(\
             id INTEGER PRIMARY KEY AUTOINCREMENT, \
-            time TIMESTAMP DEFAULT (DATETIME('now')), \
+            time INT, \
             category TINYINT, \
             action STRING, \
             data BLOB, \
@@ -98,26 +98,39 @@ class Log:
         else:
             data = pickle.dumps(data, -1)
 
-        cmd = "INSERT INTO log (category, action, data, active) VALUES (?, ?, ?, 1);"
+        cmd = "INSERT INTO log (time, category, action, data, active) VALUES (?, ?, ?, ?, 1);"
 
         try:
-            self.cur.execute(cmd, (category, action_name, sql.Binary(data)))
+            self.cur.execute(cmd, (int(time.time()), category, action_name, sql.Binary(data)))
         except sql.ProgrammingError:
-            self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
-            self.cur.execute(cmd, (category, action_name, sql.Binary(data)))
+            print "new con"
+            self.cur = sql.connect(self.db_path).cursor()
+            self.begin()
+            self.cur.execute(cmd, (int(time.time()), category, action_name, sql.Binary(data)))
         print time.time() - t
 
 
     def add_many(self, iter):
         t = time.time()
-        cmd = "INSERT INTO log (category, action, data, active) VALUES (?, ?, ?, 1);"
+        cmd = "INSERT INTO log (time, category, action, data, active) VALUES (?, ?, ?, ?, 1);"
 
         try:
             self.cur.executemany(cmd, iter)
         except sql.ProgrammingError:
-            self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
+            print "new con (many)"
+            self.cur = sql.connect(self.db_path).cursor()
+            self.begin()
             self.cur.executemany(cmd, iter)
         print time.time() - t
+
+
+    def begin(self):
+        print "Begining transaction"
+        try:
+            self.cur.execute("BEGIN TRANSACTION")
+        except sql.ProgrammingError:
+            self.cur = sql.connect(self.db_path).cursor()
+            self.cur.execute("BEGIN TRANSACTION")
 
 
     def pop_last_user_action(self):
@@ -125,12 +138,12 @@ class Log:
         # get_last_uset_action_cmd = "SELECT id FROM log WHERE category = 1 ORDER BY id DESC LIMIT 1"
         get_undo = "SELECT \
             (SELECT id FROM log WHERE category = 1 AND active = 1 ORDER BY id DESC LIMIT 1) as last,\
-            * FROM log WHERE id >= last AND active = 1;"
+            * FROM log WHERE id >= last AND active = 1 ORDER BY id DESC;"
         try:
             self.cur.execute(get_undo)
             rows = self.cur.fetchall()
         except sql.ProgrammingError:
-            self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
+            self.cur = sql.connect(self.db_path).cursor()
             self.cur.execute(get_undo)
             rows = self.cur.fetchall()
 
