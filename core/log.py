@@ -3,6 +3,7 @@ __author__ = 'flipajs'
 import time
 import sqlite3 as sql
 import cPickle as pickle
+from PyQt4 import QtCore
 from core.settings import Settings as S_
 
 
@@ -110,13 +111,27 @@ class Log:
             data BLOB, \
             active BOOLEAN);")
         self.cur.execute("CREATE INDEX IF NOT EXISTS log_index ON log(id, time, category, action);")
+        self.logger = Logger(self.db_path)
+        print "Done!"
 
     def add(self, category, action_name, data=None):
+        if data == None:
+            data = ""
+        else:
+            data = pickle.dumps(data, -1)
+        cmd = "INSERT INTO log (category, action, data, active) VALUES (%s, %s, %s, 1);" % (category, action_name, sql.Binary(data))
+
+        self.logger.add_cmd(cmd)
+        print "cmd: %s" % cmd
+        if not self.logger.running:
+            self.logger.start()
+
+        """
         if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
             return
 
         if S_.general.print_log:
-            print category, action_name, data
+            print "c: %s, a: %s, d: %s" % (category, action_name, data)
 
         if data == None:
             data = ""
@@ -132,9 +147,15 @@ class Log:
         except sql.ProgrammingError:
             self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
             self.cur.execute(cmd, (category, action_name, sql.Binary(data)))
-
+        """
 
     def add_many(self, iter):
+        self.logger.add_cmds("INSERT INTO log (category, action, data, active) VALUES (?, ?, ?, 1);", iter)
+        if not self.logger.running:
+            self.logger.start()
+        """
+        for data in iter:
+            print "0: %s" % data[0]
         print "adding many"
 
         cmd = "INSERT INTO log (category, action, data, active) VALUES (?, ?, ?, 1);"
@@ -144,14 +165,17 @@ class Log:
         except sql.ProgrammingError:
             self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
             self.cur.executemany(cmd, iter)
+        """
 
 
 
     def pop_last_user_action(self):
+        # TODO: change flag active to 0, fix udno function (gui/tracker/tracker_widget.py)
         # get_last_uset_action_cmd = "SELECT id FROM log WHERE category = 1 ORDER BY id DESC LIMIT 1"
         get_undo = "SELECT \
             (SELECT id FROM log WHERE category = 1 ORDER BY id DESC LIMIT 1) as last,\
-            * FROM log WHERE id >= last;"
+            * FROM log WHERE id >= last;" \
+            "UPDATE log SET active=0 WHERE id >= last"
 
         try:
             self.cur.execute(get_undo)
@@ -173,3 +197,35 @@ class Log:
             actions.append(LogEntry(row[3], row[4], data=pickle.loads(data), time=row[2]))
 
         return actions
+
+class Logger(QtCore.QThread):
+    def __init__(self, db_path, commands=[]):
+        print "initializing logger"
+        QtCore.QThread.__init__(self)
+        self.running = False
+        self.commands = commands
+        self.db_path = db_path
+        self.cur = None
+
+    def run(self):
+        self.running = True
+        self.cur = sql.connect(self.db_path, isolation_level=None).cursor()
+        print "Starting Logger"
+        while len(self.commands) > 0:
+            print "There are %s commands left to execute" % len(self.commands)
+            for cmd, iter in self.commands:
+                if iter == None:
+                    self.cur.execute(cmd)
+                else:
+                    self.cur.executemany(cmd, iter)
+            # this should leave time to update self.commands if command was added
+            self.yieldCurrentThread()
+        self.running = False
+        print "Thread done!"
+
+
+    def add_cmd(self, cmd):
+        self.commands.append((cmd, None))
+
+    def add_cmds(self, cmd, iter):
+        self.commands.append((cmd, iter))
