@@ -127,8 +127,12 @@ class ProjectWidget(QtGui.QWidget):
         size += os.path.getsize(file)
         file = path+'/stats.pkl'
         size += os.path.getsize(file)
-        file = path+'/progress_save.pkl'
-        size += os.path.getsize(file)
+        try:
+            file = path+'/progress_save.pkl'
+            size += os.path.getsize(file)
+        except OSError:
+            pass
+        
         return size
 
 if __name__ == "__main__":
