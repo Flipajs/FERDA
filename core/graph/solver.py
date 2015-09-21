@@ -25,9 +25,6 @@ class Solver:
         self.g = graph_tool.Graph(directed=True)
         self.project = project
 
-        self.start_t = np.inf
-        self.end_t = -1
-
         self.major_axis_median = project.stats.major_axis_median
         self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * self.major_axis_median
         self.antlikeness = project.stats.antlikeness_svm
@@ -35,70 +32,10 @@ class Solver:
         # TODO: add to config
         self.antlike_filter = True
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
-        self.nodes_in_t = {}
-        self.node_region_refs = {}
 
         self.ignored_nodes = {}
 
         self.cc_id = 0
-
-    def add_properties(self):
-        self.g.vp.region = self.g.new_vertex_property("object")
-        self.g.vp.chunk_start = self.g.new_vertex_property("object")
-        self.g.vp.chunk_end = self.g.new_vertex_property("object")
-        self.g.ep.cost = self.g.new_edge_property("float")
-
-    def add_node(self, region):
-        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
-        self.start_t = min(self.start_t, region.frame_)
-        self.end_t = max(self.end_t, region.frame_)
-
-        node = self.g.add_vertex()
-
-        self.nodes_in_t.setdefault(region.frame_, []).append(node)
-        self.node_region_refs[node] = region
-
-    def add_node_(self, n):
-        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, n)
-        self.start_t = min(self.start_t, n.frame_)
-        self.end_t = max(self.end_t, n.frame_)
-
-        self.g.add_node(n)
-        self.nodes_in_t.setdefault(n.frame_, []).append(n)
-
-    def remove_node(self, n, disassembly=True):
-        n = self.match_if_reconstructed(n)
-        if n is None:
-            print "remove node n is None"
-            return
-
-        if disassembly:
-            is_ch, t_reversed, ch = self.is_chunk(n)
-            if is_ch:
-                ch.pop_last(self) if t_reversed else ch.pop_first(self)
-
-        # save all edges
-        for n1, n2, d in self.g.in_edges(n, data=True):
-            # if 'chunk_ref' in d:
-            #     continue
-            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
-
-        for n1, n2, d in self.g.out_edges(n, data=True):
-            # if 'chunk_ref' in d:
-            #     continue
-            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
-
-        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, n)
-
-        self.nodes_in_t[n.frame_].remove(n)
-        if not self.nodes_in_t[n.frame_]:
-            del self.nodes_in_t[n.frame_]
-
-        self.g.remove_node(n)
-
-        # maybe we need to shrink time boundaries...
-        if self.end_t == n.frame_ or self.start_t == n.frame_:
-            self.update_time_boundaries()
 
     def match_if_reconstructed(self, n):
         if n not in self.g:
@@ -147,14 +84,6 @@ class Solver:
         #     print "n2 not in g.nodes"
 
         self.add_edge_fast(n1, n2, **data)
-
-    def update_time_boundaries(self):
-        self.start_t = np.inf
-        self.end_t = -1
-
-        for n in self.g:
-            self.start_t = min(self.start_t, n.frame_)
-            self.end_t = max(self.end_t, n.frame_)
 
     def update_nodes_in_t_refs(self):
         self.nodes_in_t = {}
