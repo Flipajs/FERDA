@@ -18,15 +18,15 @@ from utils.constants import EDGE_CONFIRMED
 import time
 import cPickle as pickle
 import graph_tool
+from graph_manager import GraphManager
 
 
 class Solver:
     def __init__(self, project):
-        self.g = graph_tool.Graph(directed=True)
+        self.gm = GraphManager(project, self.assignment_score)
         self.project = project
 
         self.major_axis_median = project.stats.major_axis_median
-        self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * self.major_axis_median
         self.antlikeness = project.stats.antlikeness_svm
 
         # TODO: add to config
@@ -43,55 +43,6 @@ class Solver:
 
         return n
 
-    def remove_edge(self, n1, n2):
-        n1 = self.match_if_reconstructed(n1)
-        n2 = self.match_if_reconstructed(n2)
-
-        if n1 is None or n2 is None:
-            if n1 is None:
-                print "remove_edge n1 is None, n2: ", n2
-            else:
-                print "remvoe_edge n2 is None, n1: ", n1
-            return
-
-        d = self.g.get_edge_data(n1, n2)
-
-        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
-        self.g.remove_edge(n1, n2)
-
-    def add_edge_fast(self, n1, n2, **data):
-        self.project.log.add(LogCategories.GRAPH_EDIT,
-                             ActionNames.ADD_EDGE,
-                             {'n1': n1,
-                              'n2': n2,
-                              'data': data})
-        self.g.add_edge(n1, n2, **data)
-
-    def add_edge(self, n1, n2, **data):
-        n1 = self.match_if_reconstructed(n1)
-        n2 = self.match_if_reconstructed(n2)
-        if n1 is None or n2 is None:
-            if n1 is None:
-                print "add_edge n1 is None, n2: ", n2
-            else:
-                print "add_edge n2 is None, n1: ", n1
-            return
-
-        # if n1 not in self.g.nodes():
-        #     print "n1 not in g.nodes"
-        #
-        # if n2 not in self.g.nodes():
-        #     print "n2 not in g.nodes"
-
-        self.add_edge_fast(n1, n2, **data)
-
-    def update_nodes_in_t_refs(self):
-        self.nodes_in_t = {}
-        for n in self.g:
-            self.nodes_in_t.setdefault(n.frame_, []).append(n)
-
-        self.update_time_boundaries()
-
     def get_antlikeness(self, n):
         if n in self.g and 'antlikeness' in self.g.node[n]:
             prob = self.g.node[n]['antlikeness']
@@ -99,54 +50,6 @@ class Solver:
             prob = self.project.stats.antlikeness_svm.get_prob(n)[1]
 
         return prob
-
-    def add_regions_in_t(self, regions, t, fast=False):
-        for r in regions:
-            if self.antlike_filter:
-                if self.get_antlikeness(r) < self.project.solver_parameters.antlikeness_threshold:
-                    continue
-
-            self.add_node(r)
-
-        self.add_edges_to_t(t, fast)
-
-    def is_out_confirmed(self, n):
-        # returns bool if there is outcoming confirmed edge from node n
-        for _, _, d in self.g.out_edges(n, data=True):
-            if 'type' in d and d['type'] == EDGE_CONFIRMED:
-                return True
-
-        return False
-
-    def is_in_confirmed(self, n):
-        for _, _, d in self.g.in_edges(n, data=True):
-            if 'type' in d and d['type'] == EDGE_CONFIRMED:
-                return True
-
-        return False
-
-    def add_edges_(self, regions_t1, regions_t2, fast=False):
-        for r_t1 in regions_t1:
-            for r_t2 in regions_t2:
-                d = np.linalg.norm(r_t1.centroid() - r_t2.centroid())
-
-                if d < self.max_distance:
-                    if self.is_out_confirmed(r_t1):
-                        continue
-
-                    if self.is_in_confirmed(r_t2):
-                        continue
-
-                    s, ds, multi, _ = self.assignment_score(r_t1, r_t2)
-                    # self.add_edge(r_t1, r_t2)
-                    if fast:
-                        self.add_edge_fast(r_t1, r_t2, type='d', score=-s)
-                    else:
-                        self.add_edge(r_t1, r_t2, type='d', score=-s)
-
-    def add_edges_to_t(self, t, fast=False):
-        if t-1 in self.nodes_in_t and t in self.nodes_in_t:
-            self.add_edges_(self.nodes_in_t[t-1], self.nodes_in_t[t], fast=fast)
 
     def simplify(self, queue=None, return_affected=False, first_run=False):
         if queue is None:
@@ -243,14 +146,6 @@ class Solver:
                 continue
 
             self.get_cc_rec(n2, depth+1, node_groups)
-
-        # for n1, n2, d in self.g.edges(n, data=True):
-        #     if 'chunk_ref' in d:
-        #         continue
-        #
-        #     n_ = n1 if n2 == n else n2
-        #
-        #     self.get_cc_rec(n_, depth+1, node_groups)
 
     def get_cc_from_node(self, n):
         node_groups = {}
@@ -588,25 +483,6 @@ class Solver:
         self.add_edges_(r_t_minus, [r])
         self.add_edges_([r], r_t_plus)
 
-        new_ccs, node_representative = self.get_new_ccs(r_t_minus + r_t)
-        new_ccs, node_representative = self.order_ccs_by_size(new_ccs, node_representative)
-
-        return new_ccs, node_representative
-
-    def is_chunk(self, n):
-        # returns (bool, bool, ref) where first is true if node is in chunk and the second returns True if it is t_reversed, and ref is None or reference to chunk
-        for n1, _, d in self.g.in_edges(n, data=True):
-            if 'chunk_ref' in d:
-                if d['chunk_ref'] is None:
-                    raise Exception("CHUNK REF IS NONE!")
-                return True, True, d['chunk_ref']
-
-        for _, n2, d in self.g.out_edges(n, data=True):
-            if 'chunk_ref' in d:
-                return True, False, d['chunk_ref']
-
-        return False, False, None
-
     def remove_region(self, r, strong=False):
         affected = set()
         for n, _ in self.g.in_edges(r):
@@ -634,34 +510,6 @@ class Solver:
             self.remove_node(ch.end_n, False)
         else:
             return self.remove_region(r)
-
-    def start_nodes(self):
-        return self.nodes_in_t[self.start_t]
-
-    def end_nodes(self):
-        return self.nodes_in_t[self.end_t]
-
-    def chunks_in_frame(self, frame):
-        chunks = self.chunk_list()
-
-        in_frame = []
-        for ch in chunks:
-            if ch.start_t() <= frame <= ch.end_t():
-                in_frame.append(ch)
-
-        return in_frame
-
-    def chunk_list(self):
-        chunks = []
-        for n in self.g:
-            for _, _, d in self.g.out_edges(n, data=True):
-                if 'chunk_ref' in d:
-                    chunks.append(d['chunk_ref'])
-
-        if len(chunks) != len(set(chunks)):
-            raise Exception("ERROR in solver... len(chunks) != len(set(chunks))")
-
-        return chunks
 
     def save(self, autosave=False):
         print "SAVING PROGRESS... Wait please"

@@ -217,7 +217,7 @@ class Project:
                 solver = Solver(self)
                 solver.g = g
                 solver.ignored_nodes = ignored_nodes
-                solver.update_nodes_in_t_refs()
+                # solver.update_nodes_in_t_refs()
                 self.solver = solver
                 self.log = log
         except:

@@ -60,6 +60,12 @@ if __name__ == '__main__':
         vid_t += time.time() - s
 
         s = time.time()
+
+        # TODO: test antlikeness before add regions_in_t
+        # if self.antlike_filter:
+        #     if self.get_antlikeness(r) < self.project.solver_parameters.antlikeness_threshold:
+        #         continue
+        #
         solver.add_regions_in_t(msers, frame, fast=True)
         solver_t += time.time() - s
 
