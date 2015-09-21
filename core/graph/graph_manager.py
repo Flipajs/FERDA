@@ -13,6 +13,7 @@ class GraphManager:
         self.vertices_in_t = {}
         self.start_t = np.inf
         self.end_t = -1
+        self.major_axis_median = project.stats.major_axis_median
         self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * self.major_axis_median
         self.assignment_score = assignment_score
 
@@ -31,6 +32,8 @@ class GraphManager:
 
         self.vertices_in_t.setdefault(region.frame_, []).append(vertex)
         self.g.vp['region'][vertex] = region
+
+        return vertex
 
     def remove_vertex(self, vertex, disassembly=True):
         region = self.graph.vp['region'][vertex]
@@ -95,13 +98,13 @@ class GraphManager:
             self.add_edges_(self.vertices_in_t[t-1], self.vertices_in_t[t], fast=fast)
 
     def region(self, vertex):
-        return self.g.vd['region'][vertex]
+        return self.g.vp['region'][vertex]
 
     def chunk_start(self, vertex):
-        return self.g.vd['chunk_start'][vertex]
+        return self.g.vp['chunk_start'][vertex]
 
     def chunk_end(self, vertex):
-        return self.g.vd['chunk_end'][vertex]
+        return self.g.vp['chunk_end'][vertex]
 
     def add_edges_(self, vertices_t1, vertices_t2, fast=False):
         for v_t1 in vertices_t1:
@@ -118,9 +121,9 @@ class GraphManager:
                     s, ds, multi, _ = self.assignment_score(r_t1, r_t2)
 
                     if fast:
-                        self.add_edge_fast(r_t1, r_t2, type='d', score=s)
+                        self.add_edge_fast(v_t1, v_t2, s)
                     else:
-                        self.add_edge(r_t1, r_t2, type='d', score=s)
+                        self.add_edge(v_t1, v_t2, s)
 
     def update_time_boundaries(self):
         self.start_t = np.inf
@@ -146,17 +149,17 @@ class GraphManager:
                 self.remove_edge_(e)
 
     def remove_edge_(self, edge):
-        c = self.g.ep['score'][edge]
+        s = self.g.ep['score'][edge]
 
         self.project.log.add(LogCategories.GRAPH_EDIT,
                              ActionNames.REMOVE_EDGE,
                              {'v1': edge.source(),
                               'v2': edge.target(),
-                              'c': c})
+                              's': s})
 
         self.g.remove_edge(edge)
 
-    def add_edge(self, source_vertex, target_vertex, cost):
+    def add_edge(self, source_vertex, target_vertex, score):
         source_vertex = self.match_if_reconstructed(source_vertex)
         target_vertex = self.match_if_reconstructed(target_vertex)
         if source_vertex is None or target_vertex is None:
@@ -166,15 +169,16 @@ class GraphManager:
                 print "add_edge target_vertex is None, source_vertex: ", source_vertex
             return
 
-        self.add_edge_fast(source_vertex, target_vertex, cost)
+        self.add_edge_fast(source_vertex, target_vertex, score)
 
-    def add_edge_fast(self, source_vertex, target_vertex, cost):
+    def add_edge_fast(self, source_vertex, target_vertex, score):
         self.project.log.add(LogCategories.GRAPH_EDIT,
                              ActionNames.ADD_EDGE,
                              {'v1': source_vertex,
                               'v2': target_vertex,
-                              'c': cost})
-        self.g.add_edge(source_vertex, target_vertex, cost)
+                              's': score})
+        e = self.g.add_edge(source_vertex, target_vertex)
+        self.g.ep['score'] = float(score)
 
     def chunk_list(self):
         chunks = []

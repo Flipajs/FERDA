@@ -255,7 +255,7 @@ class Chunk:
 
         if not undo_action:
             solver.remove_edge(first, self.end_n)
-            prev_nodes, _, _ = solver.get_regions_around(reconstructed.frame_)
+            prev_nodes, _, _ = solver.get_vertices_around_t(reconstructed.frame_)
             solver.add_edges_(prev_nodes, [reconstructed])
 
         if not undo_action:
@@ -294,7 +294,7 @@ class Chunk:
             except:
                 pass
 
-            _, _, next_nodes = solver.get_regions_around(reconstructed.frame_)
+            _, _, next_nodes = solver.get_vertices_around_t(reconstructed.frame_)
             solver.add_edges_([reconstructed], next_nodes)
 
             if self.reduced:
@@ -384,7 +384,7 @@ class Chunk:
                     solver.add_node(self.end_n)
                     solver.add_node(ch2.start_n)
 
-                    t_minus, t, t_plus = solver.get_regions_around(self.end_n.frame_)
+                    t_minus, t, t_plus = solver.get_vertices_around_t(self.end_n.frame_)
                     solver.add_edges_(t, t_plus)
                 # solver.add_edges_(t, t_plus)
 

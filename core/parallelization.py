@@ -66,7 +66,7 @@ if __name__ == '__main__':
         #     if self.get_antlikeness(r) < self.project.solver_parameters.antlikeness_threshold:
         #         continue
         #
-        solver.add_regions_in_t(msers, frame, fast=True)
+        solver.gm.add_regions_in_t(msers, frame, fast=True)
         solver_t += time.time() - s
 
         # if i % 20 == 0:
@@ -78,19 +78,22 @@ if __name__ == '__main__':
     # solver.simplify_to_chunks()
 
     s = time.time()
-    solver.simplify()
-    solver.simplify_to_chunks()
+    # solver.simplify()
+    # solver.simplify_to_chunks()
     solver_t += time.time() - s
 
     s = time.time()
     if not os.path.exists(proj.working_directory+'/temp'):
         os.mkdir(proj.working_directory+'/temp')
 
-    with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.pkl', 'wb') as f:
+    with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.gt', 'wb') as f:
         p = pickle.Pickler(f, -1)
-        p.dump(solver.g)
-        p.dump(solver.start_nodes())
-        p.dump(solver.end_nodes())
+        solver.gm.g.vp = {}
+        solver.gm.g.ep = {}
+        # solver.gm.g.save(f)
+        p.dump(solver.gm)
+        # p.dump(solver.gm.start_nodes())
+        # p.dump(solver.gm.end_nodes())
 
     file_t = time.time() - s
 

@@ -44,10 +44,10 @@ class Solver:
         return n
 
     def get_antlikeness(self, n):
-        if n in self.g and 'antlikeness' in self.g.node[n]:
-            prob = self.g.node[n]['antlikeness']
-        else:
-            prob = self.project.stats.antlikeness_svm.get_prob(n)[1]
+        # if n in self.gm and 'antlikeness' in self.g.node[n]:
+        #     prob = self.g.node[n]['antlikeness']
+        # else:
+        prob = self.project.stats.antlikeness_svm.get_prob(n)[1]
 
         return prob
 
@@ -389,68 +389,61 @@ class Solver:
 
         return new_ccs, node_representative
 
-    def order_ccs_by_size(self, new_ccs, node_representative):
-        cc_sizes = [0 if cc is None else len(cc.regions_t1) for cc in new_ccs]
-        ids = np.argsort(-np.array(cc_sizes))
-        new_ccs = [new_ccs[id] for id in ids]
-        node_representative = [node_representative[id] for id in ids]
-
-        return new_ccs, node_representative
-
     def confirm_edges(self, edge_pairs):
+        """
+        for each pair of edges (v1, v2), removes all the edges going from v1.t -> v2.t except for edge v1 -> v2
+        if there is a chunk, append (right/left) else create new one
+        """
+
         affected = set()
-        for (n1, n2) in edge_pairs:
-            affected.add(n1)
-            affected.add(n2)
+        for (v1, v2) in edge_pairs:
+            affected.add(v1)
+            affected.add(v2)
 
-            for _, n2_ in self.g.out_edges(n1):
-                if n2_ != n2:
-                    self.remove_edge(n1, n2_)
-                    affected.add(n2_)
-                    for n1_, _ in self.g.in_edges(n2_):
-                        if n1_ != n1:
-                            affected.add(n1_)
+            for out_neigh in v1.out_edges():
+                if out_neigh != v2:
+                    self.remove_edge(v1, out_neigh)
+                    affected.add(out_neigh)
 
-            for n1_, _ in self.g.in_edges(n2):
-                if n1_ != n1:
-                    self.remove_edge(n1_, n2)
-                    affected.add(n1_)
+                    for neigh in out_neigh.in_edges():
+                        if neigh != v1:
+                            affected.add(neigh)
 
-            # This will happen when there is edge missing (action connect_with_and_confirm)
-            # in this case add the edge
-            if n2 not in self.g[n1]:
-                self.add_edge(n1, n2, score=-1)
+            for neigh in v2.in_edges():
+                if neigh != v1:
+                    self.remove_edge(neigh, v2)
+                    affected.add(neigh)
 
-            self.g[n1][n2]['type'] = EDGE_CONFIRMED
+            # This will happen when there is an edge missing (action connect_with_and_confirm)
+            if v2 not in self.g[v1]:
+                self.gm.add_edge(v1, v2, 1)
 
-        # affected = list(affected)
+            # test chunk existence, if there is none, create new one.
+            v1_ch = self.gm.chunk_end(v1)
+            v2_ch = self.gm.chunk_start(v2)
+            if v1_ch:
+                v1_ch.append_right(v2)
+            elif v2_ch:
+                v2_ch.append_left(v1)
+            else:
+                Chunk(v1, v2, self, store_area=self.project.other_parameters.store_area_info, id=self.project.solver_parameters.new_chunk_id())
+
+        affected = list(affected)
         # all_affected = list(self.simplify(affected[:], return_affected=True))
         # all_affected = list(set(all_affected + affected))
-
-        self.simplify_to_chunks(affected)
-
-    def get_chunk_node_partner(self, n):
-        for n_, _, d in self.g.in_edges(n, data=True):
-            if 'chunk_ref' in d:
-                return n_
-
-        for _, n_, d in self.g.out_edges(n, data=True):
-            if 'chunk_ref' in d:
-                return n_
-
-        return None
-
-    def split_chunks(self, n, chunk):
-        raise Exception("split_chunks in solver.py not implemented yet!!!")
-        # _, _, chunk = self.is_chunk(n)
+        return affected
 
     def merged(self, new_regions, replace, t_reversed):
-        for n in new_regions:
-            self.add_node(n)
+        """
+        is called when fitting is finished...
+        """
 
-        self.remove_node(replace)
+        for r in new_regions:
+            self.gm.add_vertex(r)
 
-        r_t_minus, r_t, r_t_plus = self.get_regions_around(new_regions[0].frame_)
+        self.gm.remove_vertex(replace)
+
+        r_t_minus, r_t, r_t_plus = self.get_vertices_around_t(new_regions[0].frame_)
 
         # TEST
         for n in new_regions:
@@ -463,53 +456,47 @@ class Solver:
             if not found:
                 raise Exception('new regions not found')
 
-        self.add_edges_(r_t_minus, r_t)
-        self.add_edges_(r_t, r_t_plus)
+        self.gm.add_edges_(r_t_minus, r_t)
+        self.gm.add_edges_(r_t, r_t_plus)
 
-    def get_regions_around(self, t):
+    def get_vertices_around_t(self, t):
         # returns (list, list, list) of nodes in t_minus, t, t+plus
-        r_t_minus = [] if t-1 not in self.nodes_in_t else self.nodes_in_t[t-1]
-        r_t_plus = [] if t+1 not in self.nodes_in_t else self.nodes_in_t[t+1]
-        r_t = [] if t not in self.nodes_in_t else self.nodes_in_t[t]
+        v_t_minus = [] if t-1 not in self.nodes_in_t else self.nodes_in_t[t-1]
+        v_t_plus = [] if t+1 not in self.nodes_in_t else self.nodes_in_t[t+1]
+        v_t = [] if t not in self.nodes_in_t else self.nodes_in_t[t]
 
-        return r_t_minus, r_t, r_t_plus
+        return v_t_minus, v_t, v_t_plus
 
-    def add_virtual_region(self, r):
-        self.add_node(r)
-        t = r.frame_
+    def add_virtual_region(self, region):
+        vertex = self.gm.add_vertex(region)
 
-        r_t_minus, r_t, r_t_plus = self.get_regions_around(t)
+        r_t_minus, r_t, r_t_plus = self.get_vertices_around_t(region.frame_)
 
-        self.add_edges_(r_t_minus, [r])
-        self.add_edges_([r], r_t_plus)
+        self.add_edges_(r_t_minus, [vertex])
+        self.add_edges_([vertex], r_t_plus)
 
-    def remove_region(self, r, strong=False):
-        affected = set()
-        for n, _ in self.g.in_edges(r):
-            affected.add(n)
-            for _, n_ in self.g.out_edges(n):
-                affected.add(n_)
+    def remove_vertex(self, vertex):
+        affected = []
 
-        for _, n in self.g.out_edges(r):
-            affected.add(n)
-            for n_, _ in self.g.in_edges(n):
-                affected.add(n_)
+        for v in vertex.all_edges():
+            affected.append(v)
 
-        affected = list(affected)
-        if r in affected[:]:
-            affected.remove(r)
+        self.gm.remove_vertex(vertex)
 
-        self.remove_node(r)
+        return affected
 
-    def strong_remove(self, r):
-        is_ch, t_reversed, ch = self.is_chunk(r)
+    def strong_remove(self, vertex):
+        ch, _ = self.gm.is_chunk(vertex)
 
-        if is_ch:
-            # TODO: save to log somehow...
-            self.remove_node(ch.start_n, False)
-            self.remove_node(ch.end_n, False)
+        if ch:
+            affected = []
+
+            affected += self.remove_vertex(ch.start_n)
+            affected += self.remove_vertex(ch.end_n)
+
+            return affected
         else:
-            return self.remove_region(r)
+            return self.remove_region(vertex)
 
     def save(self, autosave=False):
         print "SAVING PROGRESS... Wait please"
@@ -523,7 +510,6 @@ class Solver:
         with open(wd+name, 'wb') as f:
             pc = pickle.Pickler(f, -1)
             pc.dump(self.g)
-            pc.dump(self.project.log)
             pc.dump(self.ignored_nodes)
 
         print "PROGRESS SAVED"
@@ -556,7 +542,6 @@ class Solver:
         with open(wd+name, 'wb') as f:
             pc = pickle.Pickler(f, -1)
             pc.dump(self.g)
-            pc.dump(self.project.log)
             pc.dump(self.ignored_nodes)
 
         print "ONLY CHUNKS PROGRESS SAVED"
