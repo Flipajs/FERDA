@@ -150,8 +150,6 @@ class Project:
             tmp_dict = pickle.load(f)
 
         self.__dict__.update(tmp_dict)
-
-        self.log = Log(self.working_directory)
         # BG MODEL
         try:
             with open(self.working_directory+'/bg_model.pkl', 'rb') as f:
@@ -219,6 +217,14 @@ class Project:
                 self.solver = solver
         except:
             pass
+
+    def load_log(self):
+        """
+        Load_log has to be called after the project is loaded. To improve Log (SQLite) performance, always call this
+        method from the main thread.
+        :return: None
+        """
+        self.log = Log(self.working_directory)
 
 
 if __name__ == "__main__":

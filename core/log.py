@@ -1,3 +1,5 @@
+from PyQt4.QtCore import QThread
+
 __author__ = 'flipajs'
 
 import time
@@ -83,9 +85,11 @@ class Log:
             data BLOB, \
             active BOOLEAN);")
         self.cur.execute("CREATE INDEX IF NOT EXISTS log_index ON log(id, time, category, action);")
+        print "Current thread: %s" % int(QThread.currentThreadId())
         print "Done!"
 
     def add(self, category, action_name, data=None):
+        print "Current thread: %s" % int(QThread.currentThreadId())
         t = time.time()
         if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
             return
@@ -100,6 +104,8 @@ class Log:
 
         cmd = "INSERT INTO log (time, category, action, data, active) VALUES (?, ?, ?, ?, 1);"
 
+        self.cur.execute(cmd, (int(time.time()), category, action_name, sql.Binary(data)))
+        """
         try:
             self.cur.execute(cmd, (int(time.time()), category, action_name, sql.Binary(data)))
         except sql.ProgrammingError:
@@ -108,12 +114,16 @@ class Log:
             self.begin()
             self.cur.execute(cmd, (int(time.time()), category, action_name, sql.Binary(data)))
         print time.time() - t
+        """
 
 
     def add_many(self, iter):
+        print "Current thread: %s" % int(QThread.currentThreadId())
         t = time.time()
         cmd = "INSERT INTO log (time, category, action, data, active) VALUES (?, ?, ?, ?, 1);"
 
+        self.cur.executemany(cmd, iter)
+        """
         try:
             self.cur.executemany(cmd, iter)
         except sql.ProgrammingError:
@@ -122,13 +132,16 @@ class Log:
             self.begin()
             self.cur.executemany(cmd, iter)
         print time.time() - t
+        """
 
 
     def begin(self):
+        print "Current thread: %s" % int(QThread.currentThreadId())
         print "Begining transaction"
         try:
             self.cur.execute("BEGIN TRANSACTION")
         except sql.ProgrammingError:
+            print "Creating new SQLite object"
             self.cur = sql.connect(self.db_path).cursor()
             self.cur.execute("BEGIN TRANSACTION")
 
@@ -156,7 +169,11 @@ class Log:
             print "Rollback data - category %s, action %s, time %s, data %s" % (row[3], row[4], row[2], pickle.loads(data))
             actions.append(LogEntry(row[3], row[4], data=pickle.loads(data), time=row[2]))
 
-        cmd = "UPDATE log SET active = 0 WHERE id >= %s" % row[0]
-        self.cur.execute(cmd)
+        if len(rows) > 0:
+            cmd = "UPDATE log SET active = 0 WHERE id >= %s" % row[0]
+            self.cur.execute(cmd)
+            print "Undo successful"
+        else:
+            print "Sorry, can't undo any more"
 
         return actions

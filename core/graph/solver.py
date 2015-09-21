@@ -84,7 +84,7 @@ class Solver:
         for n1, n2, d in self.g.out_edges(n, data=True):
             yield (int(time.time()), LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, sql.Binary(pickle.dumps({'n1': n1, 'n2': n2, 'data': d})))
 
-        yield (LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, pickle.dumps(n))
+        yield (int(time.time()), LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, pickle.dumps(n))
 
     def match_if_reconstructed(self, n):
         if n not in self.g:

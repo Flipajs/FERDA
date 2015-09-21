@@ -103,6 +103,8 @@ class ProjectWidget(QtGui.QWidget):
         self.timer_step = (self.loading_speed + 0.0)/self.get_size(path)
 
     def loading_finished(self, project):
+        # create db connection
+        project.load_log()
         # stop timer and fill the progress bar
         self.loading_w.update_progress(1)
         self.timer.stop()
