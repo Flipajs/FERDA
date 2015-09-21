@@ -17,11 +17,12 @@ from utils.img import prepare_for_segmentation
 from utils.constants import EDGE_CONFIRMED
 import time
 import cPickle as pickle
+import graph_tool
 
 
 class Solver:
     def __init__(self, project):
-        self.g = nx.DiGraph()
+        self.g = graph_tool.Graph(directed=True)
         self.project = project
 
         self.start_t = np.inf
@@ -35,12 +36,29 @@ class Solver:
         self.antlike_filter = True
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
         self.nodes_in_t = {}
+        self.node_region_refs = {}
 
         self.ignored_nodes = {}
 
         self.cc_id = 0
 
-    def add_node(self, n):
+    def add_properties(self):
+        self.g.vp.region = self.g.new_vertex_property("object")
+        self.g.vp.chunk_start = self.g.new_vertex_property("object")
+        self.g.vp.chunk_end = self.g.new_vertex_property("object")
+        self.g.ep.cost = self.g.new_edge_property("float")
+
+    def add_node(self, region):
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
+        self.start_t = min(self.start_t, region.frame_)
+        self.end_t = max(self.end_t, region.frame_)
+
+        node = self.g.add_vertex()
+
+        self.nodes_in_t.setdefault(region.frame_, []).append(node)
+        self.node_region_refs[node] = region
+
+    def add_node_(self, n):
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, n)
         self.start_t = min(self.start_t, n.frame_)
         self.end_t = max(self.end_t, n.frame_)
