@@ -1,8 +1,6 @@
 __author__ = 'fnaiser'
 
 import networkx as nx
-import numpy as np
-from core.settings import Settings as S_
 from core.graph.graph_utils import *
 from core.region.mser import get_msers_
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
@@ -42,8 +40,7 @@ class Solver:
         self.cc_id = 0
 
     def add_node(self, n):
-        if S_.general.log_graph_edits:
-            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, n)
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, n)
         self.start_t = min(self.start_t, n.frame_)
         self.end_t = max(self.end_t, n.frame_)
 
@@ -62,8 +59,7 @@ class Solver:
                 ch.pop_last(self) if t_reversed else ch.pop_first(self)
 
         # save all edges
-        if S_.general.log_graph_edits:
-            self.project.log.add_many(self.edges_iter(n))
+        self.project.log.add_many(self.edges_iter(n))
 
         self.nodes_in_t[n.frame_].remove(n)
         if not self.nodes_in_t[n.frame_]:
@@ -77,11 +73,15 @@ class Solver:
 
     def edges_iter(self, n):
         # save all edges
+        i = 0
         for n1, n2, d in self.g.in_edges(n, data=True):
-            #print LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, pickle.dumps({'n1': n1, 'n2': n2, 'data': d})
+            print "Iterator %s was called. Values(%s, %s, pickle)" % (i, LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE)
+            i += 1
             yield (int(time.time()), LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, sql.Binary(pickle.dumps({'n1': n1, 'n2': n2, 'data': d})))
 
         for n1, n2, d in self.g.out_edges(n, data=True):
+            print "Iterator %s was called. Values(%s, %s, pickle)" % (i, LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE)
+            i += 1
             yield (int(time.time()), LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, sql.Binary(pickle.dumps({'n1': n1, 'n2': n2, 'data': d})))
 
         yield (int(time.time()), LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, pickle.dumps(n))
@@ -100,18 +100,16 @@ class Solver:
             if n1 is None:
                 print "remove_edge n1 is None, n2: ", n2
             else:
-                print "remvoe_edge n2 is None, n1: ", n1
+                print "remove_edge n2 is None, n1: ", n1
             return
 
         d = self.g.get_edge_data(n1, n2)
 
-        if S_.general.log_graph_edits:
-            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
+        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, {'n1': n1, 'n2': n2, 'data': d})
         self.g.remove_edge(n1, n2)
 
     def add_edge_fast(self, n1, n2, **data):
-        if S_.general.log_graph_edits:
-            self.project.log.add(LogCategories.GRAPH_EDIT,
+        self.project.log.add(LogCategories.GRAPH_EDIT,
                              ActionNames.ADD_EDGE,
                              {'n1': n1,
                               'n2': n2,

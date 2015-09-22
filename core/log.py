@@ -1,5 +1,3 @@
-from PyQt4.QtCore import QThread
-
 __author__ = 'flipajs'
 
 import time
@@ -86,13 +84,17 @@ class Log:
             data BLOB, \
             active BOOLEAN);")
         self.cur.execute("CREATE INDEX IF NOT EXISTS log_index ON log(id, time, category, action);")
+        self.cur.execute("PRAGMA synchronous = 1")
+        # TODO: check PRAGMA shrink_memory, temp_store
+
         self.time = 0
-        print "Current thread: %s" % int(QThread.currentThreadId())
+        self.all_time = 0
         print "Done!"
 
     def add(self, category, action_name, data=None):
-        # print "Current thread: %s" % int(QThread.currentThreadId())
+        t = time.time()
         if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
+            print "Not logging %s, %s" % (category, action_name)
             return
 
         if S_.general.print_log:
@@ -106,51 +108,31 @@ class Log:
         cmd = "INSERT INTO log (time, category, action, data, active) VALUES (?, ?, ?, ?, 1);"
 
         self.cur.execute(cmd, (int(time.time()), category, action_name, sql.Binary(data)))
-        """
-        try:
-            self.cur.execute(cmd, (int(time.time()), category, action_name, sql.Binary(data)))
-        except sql.ProgrammingError:
-            print "new con"
-            self.cur = sql.connect(self.db_path).cursor()
-            self.begin()
-            self.cur.execute(cmd, (int(time.time()), category, action_name, sql.Binary(data)))
-        print time.time() - t
-        """
-
+        self.time += time.time() - t
 
     def add_many(self, iter):
-        # print "Current thread: %s" % int(QThread.currentThreadId())
+        action_time, category, action_name, data = iter.next()
+        if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
+            print "Not logging %s, %s" % (category, action_name)
+            return
+        t = time.time()
+        cmd = "INSERT INTO log (time, category, action, data, active) VALUES (?, ?, ?, ?, 1);"
+        self.cur.execute(cmd, (action_time, category, action_name, sql.Binary(data)))
+
         cmd = "INSERT INTO log (time, category, action, data, active) VALUES (?, ?, ?, ?, 1);"
 
         self.cur.executemany(cmd, iter)
-        """
-        try:
-            self.cur.executemany(cmd, iter)
-        except sql.ProgrammingError:
-            print "new con (many)"
-            self.cur = sql.connect(self.db_path).cursor()
-            self.begin()
-            self.cur.executemany(cmd, iter)
-        print time.time() - t
-        """
-
+        self.time += time.time() - t
 
     def begin(self):
-        print "Current thread: %s" % int(QThread.currentThreadId())
-        self.time = time.time()
-        print "Begining transaction in thread %s" % int(QThread.currentThreadId())
+        self.time = 0
+        self.all_time = time.time()
+        print "Begining transaction"
         self.cur.execute("BEGIN TRANSACTION")
-        """
-        try:
-            self.cur.execute("BEGIN TRANSACTION")
-        except sql.ProgrammingError:
-            print "Creating new SQLite object"
-            self.cur = sql.connect(self.db_path).cursor()
-            self.cur.execute("BEGIN TRANSACTION")
-        """
 
     def end(self):
-        print "Ending transaction in thread %s (%ss total)" % (int(QThread.currentThreadId()), time.time() - self.time)
+        t = time.time() - self.all_time
+        print "Ending transaction. Database queries took %.2fs from total %.2fs (%.2f %%)" % (self.time, t, self.time/t*100)
         self.con.commit()
 
         """
