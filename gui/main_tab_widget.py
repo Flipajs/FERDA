@@ -52,6 +52,7 @@ class MainTabWidget(QtGui.QWidget):
             self.background_computer_finished(solver)
         else:
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)
+            project.load_log()
             self.bc_msers.run()
 
     def show_in_visualizer(self, data):

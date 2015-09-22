@@ -94,7 +94,7 @@ class Log:
     def add(self, category, action_name, data=None):
         t = time.time()
         if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
-            print "Not logging %s, %s" % (category, action_name)
+            # print "Not logging %s, %s" % (category, action_name)
             return
 
         if S_.general.print_log:
@@ -113,7 +113,7 @@ class Log:
     def add_many(self, iter):
         action_time, category, action_name, data = iter.next()
         if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
-            print "Not logging %s, %s" % (category, action_name)
+            # print "Not logging %s, %s" % (category, action_name)
             return
         t = time.time()
         cmd = "INSERT INTO log (time, category, action, data, active) VALUES (?, ?, ?, ?, 1);"
@@ -165,7 +165,7 @@ class Log:
             # row[0], row[1], row[2], row[3], row[4], row[5]
             data = str(row[5])
 
-            print "Rollback data - category %s, action %s, time %s, data %s" % (row[3], row[4], row[2], pickle.loads(data))
+            # print "Rollback data - category %s, action %s, time %s, data %s" % (row[3], row[4], row[2], pickle.loads(data))
             actions.append(LogEntry(row[3], row[4], data=pickle.loads(data), time=row[2]))
 
         if len(rows) > 0:

@@ -27,6 +27,7 @@ if __name__ == '__main__':
 
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
+    proj.load_log()
 
     S_.general.log_graph_edits = False
 

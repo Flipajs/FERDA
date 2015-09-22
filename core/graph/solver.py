@@ -75,12 +75,12 @@ class Solver:
         # save all edges
         i = 0
         for n1, n2, d in self.g.in_edges(n, data=True):
-            print "Iterator %s was called. Values(%s, %s, pickle)" % (i, LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE)
+            # print "Iterator %s was called. Values(%s, %s, pickle)" % (i, LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE)
             i += 1
             yield (int(time.time()), LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, sql.Binary(pickle.dumps({'n1': n1, 'n2': n2, 'data': d})))
 
         for n1, n2, d in self.g.out_edges(n, data=True):
-            print "Iterator %s was called. Values(%s, %s, pickle)" % (i, LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE)
+            # print "Iterator %s was called. Values(%s, %s, pickle)" % (i, LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE)
             i += 1
             yield (int(time.time()), LogCategories.GRAPH_EDIT, ActionNames.REMOVE_EDGE, sql.Binary(pickle.dumps({'n1': n1, 'n2': n2, 'data': d})))
 
