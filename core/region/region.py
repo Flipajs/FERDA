@@ -14,6 +14,7 @@ class Region():
     """
 
     def __init__(self, data=None, frame=-1, id=-1):
+        self.id_ = id
         self.pts_ = None
         self.pts_rle_ = None
         self.centroid_ = np.array([-1, -1])
@@ -51,6 +52,9 @@ class Region():
     def __str__(self):
         s = "t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(self.centroid_[0])+", "+str(self.centroid_[1])+"]"
         return s
+
+    def id(self):
+        return self.id_
 
     def from_dict_(self, data):
         pts = np.zeros((data['area'], 2), dtype=np.int)
