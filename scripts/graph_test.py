@@ -65,12 +65,21 @@ def create_graph_tool(nodes, lenght):
     # vertices is a list of Vertex objects
     # edges is a list of Edge objects
     g = gt.Graph(directed=True)
+    g.vp['region'] = g.new_vertex_property("int")
+    g.vp['chunk_start'] = g.new_vertex_property("int")
+    g.vp['chunk_end'] = g.new_vertex_property("int")
+    g.ep['cost'] = g.new_edge_property("float")
+
     vertices = []
     id = 0
     for i in range(0, lenght):
         n = []
         for j in range(0, nodes):
             n.append(g.add_vertex())
+            if i % 3:
+                g.vp['region'][n[-1]] = i
+                g.vp['chunk_start'][n[-1]] = i*13
+                g.vp['chunk_end'][n[-1]] = i*14
             id += 1
         vertices.append(n)
 
@@ -84,6 +93,7 @@ def create_graph_tool(nodes, lenght):
             d1 = random.randint(1, nodes-1)
             n2 = vertices[i+1][d1]
             edges.append(g.add_edge(n1, n2))
+            g.ep['cost'][edges[-1]] = j*i
             id += 1
 
     # print "Graph complete!"
@@ -162,10 +172,10 @@ import time
 rnd_array = get_rnd(1000, 500)
 print "Random done"
 
-lim = 30*60*60
+lim = 30*60*1
 
 t = time.time()
-graph_tool, graph_tool_vertices, graph_tool_edges = create_graph_tool(10, lim)
+graph_tool, graph_tool_vertices, graph_tool_edges = create_graph_tool(50, lim)
 print "graph_tool creation: %s" % (time.time()-t)
 t = time.time()
 search_graph_tool(graph_tool)
@@ -174,15 +184,21 @@ t = time.time()
 delete_edges_graph_tool(graph_tool, graph_tool_edges, rnd_array)
 print "graph_tool edges deletion: %s" % (time.time()-t)
 
-t = time.time()
-networkx, networkx_vertices, networkx_edges = create_networkx(10, lim)
-print "networkx creation: %s" % (time.time()-t)
-t = time.time()
-search_networkx(networkx)
-print "networkx search: %s" % (time.time()-t)
-t = time.time()
-delete_edges_networkx(networkx, networkx_edges, rnd_array)
-print "networkx edges deletion: %s" % (time.time()-t)
+import cPickle as pickle
+s = time.time()
+with open('/Users/flipajs/Documents/wd/graph_test_with_prop_and_values_int_some.pkl', 'wb') as f:
+    pickle.dump(graph_tool, f, -1)
+print "DUMP TIME: ", time.time() - s
+
+# t = time.time()
+# networkx, networkx_vertices, networkx_edges = create_networkx(10, lim)
+# print "networkx creation: %s" % (time.time()-t)
+# t = time.time()
+# search_networkx(networkx)
+# print "networkx search: %s" % (time.time()-t)
+# t = time.time()
+# delete_edges_networkx(networkx, networkx_edges, rnd_array)
+# print "networkx edges deletion: %s" % (time.time()-t)
 
 # t = time.time()
 # igraph, igraph_vertices, igraph_edges = create_igraph(10,lim)
