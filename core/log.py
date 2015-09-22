@@ -76,7 +76,8 @@ class Log:
     def __init__(self, path):
         self.db_path = path+"/log.db"
         print "Initializing db at %s " % self.db_path
-        self.cur = sql.connect(self.db_path).cursor()
+        self.con = sql.connect(self.db_path)
+        self.cur = self.con.cursor()
         self.cur.execute("CREATE TABLE IF NOT EXISTS log(\
             id INTEGER PRIMARY KEY AUTOINCREMENT, \
             time INT, \
@@ -85,12 +86,12 @@ class Log:
             data BLOB, \
             active BOOLEAN);")
         self.cur.execute("CREATE INDEX IF NOT EXISTS log_index ON log(id, time, category, action);")
+        self.time = 0
         print "Current thread: %s" % int(QThread.currentThreadId())
         print "Done!"
 
     def add(self, category, action_name, data=None):
-        print "Current thread: %s" % int(QThread.currentThreadId())
-        t = time.time()
+        # print "Current thread: %s" % int(QThread.currentThreadId())
         if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
             return
 
@@ -118,8 +119,7 @@ class Log:
 
 
     def add_many(self, iter):
-        print "Current thread: %s" % int(QThread.currentThreadId())
-        t = time.time()
+        # print "Current thread: %s" % int(QThread.currentThreadId())
         cmd = "INSERT INTO log (time, category, action, data, active) VALUES (?, ?, ?, ?, 1);"
 
         self.cur.executemany(cmd, iter)
@@ -137,18 +137,35 @@ class Log:
 
     def begin(self):
         print "Current thread: %s" % int(QThread.currentThreadId())
-        print "Begining transaction"
+        self.time = time.time()
+        print "Begining transaction in thread %s" % int(QThread.currentThreadId())
+        self.cur.execute("BEGIN TRANSACTION")
+        """
         try:
             self.cur.execute("BEGIN TRANSACTION")
         except sql.ProgrammingError:
             print "Creating new SQLite object"
             self.cur = sql.connect(self.db_path).cursor()
             self.cur.execute("BEGIN TRANSACTION")
+        """
+
+    def end(self):
+        print "Ending transaction in thread %s (%ss total)" % (int(QThread.currentThreadId()), time.time() - self.time)
+        self.con.commit()
+
+        """
+        try:
+            self.cur.execute("END TRANSACTION")
+        except sql.ProgrammingError:
+            print "Creating new SQLite object"
+            self.cur = sql.connect(self.db_path).cursor()
+            self.cur.execute("END TRANSACTION")
+        """
 
 
     def pop_last_user_action(self):
-        # TODO: change flag active to 0, fix udno function (gui/tracker/tracker_widget.py)
-        # get_last_uset_action_cmd = "SELECT id FROM log WHERE category = 1 ORDER BY id DESC LIMIT 1"
+        # TODO: when project is closed without saving and re-opened, undo can recieve invalid data (nothing got undo-ed
+        # TODO:   while testing this, but it might behave unexpectedly in some cases).
         get_undo = "SELECT \
             (SELECT id FROM log WHERE category = 1 AND active = 1 ORDER BY id DESC LIMIT 1) as last,\
             * FROM log WHERE id >= last AND active = 1 ORDER BY id DESC;"

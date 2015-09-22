@@ -364,8 +364,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
 
     def fitting(self, t_reversed=False, one_step=False):
-        self.project.log.begin()
         if self.active_cw.active_node:
+            self.project.log.begin()
             self.project.log.add(LogCategories.USER_ACTION,
                                  ActionNames.MERGED_SELECTED,
                                  {
@@ -420,6 +420,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 self.solver.merged(f.animals, self.active_cw.active_node, t_reversed)
 
             self.next_case()
+            self.project.log.end()
 
     def partially_confirm(self):
         if self.active_cw.active_node:
@@ -469,6 +470,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.CONFIRM, {'pairs': pairs})
         self.solver.confirm_edges(pairs)
         self.next_case()
+        self.project.log.end()
 
     def join_regions_pick_second(self):
         self.active_cw.join_with_()
@@ -489,6 +491,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.solver.remove_region(n2)
         self.solver.add_virtual_region(n_new)
         self.next_case()
+        self.project.log.end()
 
     def noise_part_done(self, val, img, n):
         elem_width = 200
