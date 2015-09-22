@@ -15,6 +15,7 @@ class Region():
 
     def __init__(self, data=None, frame=-1, id=-1):
         self.pts_ = None
+        self.pts_rle_ = None
         self.centroid_ = np.array([-1, -1])
         self.label_ = -1
         self.margin_ = -1
@@ -54,6 +55,7 @@ class Region():
     def from_dict_(self, data):
         pts = np.zeros((data['area'], 2), dtype=np.int)
         if 'rle' in data:
+            self.pts_rle_ = data['rle']
             i = 0
             for row in data['rle']:
                 for c in xrange(row['col1'], row['col2'] + 1):
