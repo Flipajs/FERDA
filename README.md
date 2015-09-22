@@ -22,3 +22,4 @@ FERDA is a multi object tracker developed mainly to meet the needs of biologists
 
 ## Acknowledgement ##
 * Michael Hlaváček - 1 month intern in CMP, he was working on early version of results visualiser.
+* Šimon Mandlík - 5 weeks intern in CMP, he was working mainly on graph visualiser tools.
