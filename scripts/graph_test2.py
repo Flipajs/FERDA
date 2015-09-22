@@ -11,7 +11,7 @@ if __name__ == "__main__":
     g = project.solver.g
 
     nodes = set()
-    for n in g.nodes()[0:5]:
+    for n in g.nodes()[0:10]:
         nodes.add(n)
 
     edges = []
@@ -39,8 +39,10 @@ if __name__ == "__main__":
 
     region_vertex_refs = {}
     nodes = list(nodes)
+    vertices = []
     for n in nodes:
         vertex = g2.add_vertex()
+        vertices.append(vertex)
         g2.vp['region'][vertex] = ids[n]
         region_vertex_refs[n] = vertex
 
@@ -50,9 +52,9 @@ if __name__ == "__main__":
         g2.ep['cost'][e_] = d['score']
         edges_.append(e_)
 
-    import cPickle as pickle
-    with open('/Users/flipajs/Documents/wd/test.pkl', 'wb') as f:
-        pickle.dump(g2, f, -1)
+    # import cPickle as pickle
+    # with open('/Users/flipajs/Documents/wd/test.pkl', 'wb') as f:
+    #     pickle.dump(g2, f, -1)
 
     # for e in edges_:
     #     try:
@@ -61,7 +63,13 @@ if __name__ == "__main__":
     #         pass
     #
     # print "REMOVING NODE", nodes[4]
-    # g2.remove_vertex(region_vertex_refs[nodes[4]], fast=True)
+    my_node = vertices[-1]
+    print my_node, g2.vp['region'][my_node]
+    g2.remove_vertex(vertices[1], fast=True)
+    g2.remove_vertex(vertices[6], fast=True)
+    g2.remove_vertex(vertices[4], fast=True)
+    print my_node, g2.vp['region'][my_node]
+
     # for e in edges_:
     #     try:
     #         print g2.vp['region'][e.source()], " -> ", g2.vp['region'][e.target()], "COST: ", g2.ep['cost'][e]

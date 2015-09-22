@@ -9,35 +9,110 @@ from core.region.region import Region
 
 
 class Chunk:
-    def __init__(self, start_n=None, end_n=None, solver=None, store_area=False, id=-1):
-        self.id = id
-        self.reduced = []
-        self.is_sorted = False
-        self.start_n = None
-        self.end_n = None
-        self.store_area = store_area
+    def __init__(self, vertices, id_, graph_manager, region_manager, color=None):
+        self.id_ = id_
+        self.vertices_ = vertices
+        self.color = color
         self.statistics = {}
-        self.color = None
+        self.gm = graph_manager
+        self.rm = region_manager
 
-        if store_area:
-            self.statistics['num_of_reasonable_regions'] = 0
-            self.statistics['area_sum'] = 0
-            self.statistics['area2_sum'] = 0
-
-        if solver:
-            self.set_start(start_n, solver)
-            self.set_end(end_n, solver)
-            self.chunk_reconnect_(solver)
+        self.chunk_reconnect_(graph_manager)
 
     def __str__(self):
-        s = "CHUNK --- start_t: "+str(self.start_n.frame_)+" end_t: "+str(self.end_n.frame_)+" reduced_len: "+str(len(self.reduced))+"\n"
+        s = "CHUNK --- start_f: "+str(self.start_frame())+" end_f: "+str(self.end_frame())+" length: "+str(len(self.vertices_))+"\n"
         return s
 
-    def start_t(self):
-        return self.start_n.frame_
+    def append_left(self, vertex, undo_action=False):
+        region = self.rm[vertex]
+        if region.frame() + 1 != self.start_frame():
+            print "DISCONTINUITY in chunk.py/append_left", region.frame(), self.start_frame(), region, self.start_vertex()
+            raise Exception("DISCONTINUITY in chunk.py/append_left")
 
-    def end_t(self):
-        return self.end_n.frame_
+        first = self.start_n
+
+        ch2, _ = self.gm.is_chunk(vertex)
+        if ch2:
+            ch2.merge(self, undo_action=undo_action)
+        else:
+            self.vertices_.insert(0, vertex)
+
+        if not undo_action:
+            self.gm.remove_node(first, False)
+            self.chunk_reconnect_()
+
+    def append_right(self, vertex, solver, undo_action=False):
+        region = self.rm[vertex]
+        if region.frame() != self.end_t() + 1:
+            print "DISCONTINUITY in chunk.py/append_right", region.frame(), self.end_frame(), region, self.end_vertex()
+            raise Exception("DISCONTINUITY in chunk.py/append_right")
+
+        last = self.end_vertex()
+
+        ch2, _ = self.gm.is_chunk(vertex)
+        if ch2:
+            self.merge(ch2, undo_action=undo_action)
+        else:
+            self.vertices_.append(vertex)
+
+        if not undo_action:
+            self.gm.remove_node(last, False)
+            self.chunk_reconnect_()
+
+    def pop_first(self, undo_action=False):
+        first = self.vertices_.pop(0)
+        new_start = self.start_vertex()
+
+        if not undo_action:
+            self.gm.add_vertex(new_start)
+
+        if not undo_action:
+            self.gm.remove_edge(first, self.end_vertex())
+            prev_nodes, _, _ = self.gm.get_vertices_around_t(self.rm[new_start].frame())
+            self.gm.add_edges_(prev_nodes, [new_start])
+
+        if not undo_action:
+            if len(self.vertices_) > 1:
+                self.chunk_reconnect_()
+
+        return first
+
+    def pop_last(self, undo_action=False):
+        last = self.vertices_.pop()
+        new_end = self.end_vertex()
+
+        if not undo_action:
+            self.gm.add_vertex(new_end)
+
+        if not undo_action:
+            self.gm.remove_edge(self.start_vertex(), last)
+
+            _, _, next_nodes = self.gm.get_vertices_around_t(self.rm[new_end].frame())
+            self.gm.add_edges_([new_end], next_nodes)
+
+            self.chunk_reconnect_()
+
+        return last
+
+    def id(self):
+        return self.id_
+
+    def end_vertex(self):
+        return self.vertices_[-1]
+
+    def start_vertex(self):
+        return self.vertices_[0]
+
+    def start_frame(self):
+        return self.rm[self.start_vertex()].frame()
+
+    def end_frame(self):
+        return self.rm[self.end_vertex()].frame()
+
+    def length(self):
+        return len(self.vertices_)
+
+
 
     def set_start(self, n, solver):
         solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_SET_START, {'chunk': self, 'old_start_n': self.start_n, 'new_start_n': n})
@@ -47,115 +122,12 @@ class Chunk:
         solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_SET_END, {'chunk': self, 'old_end_n': self.end_n, 'new_end_n': n})
         self.end_n = n
 
-    def append_left(self, r, solver, undo_action=False):
-        if r.frame_ + 1 != self.start_t():
-            print "DISCONTINUITY in chunk.py/append_left", r.frame_, self.start_t(), r, self.start_n
-            raise Exception("DISCONTINUITY in chunk.py/append_left")
+    def chunk_reconnect_(self):
+        self.gm.add_edge(self.start_vertex(), self.end_vertex())
+        self.gm.g[self.start_vertex()]['chunk_start'] = self.id()
+        self.gm.g[self.end_vertex()]['chunk_end'] = self.id()
 
-        is_ch, t_reversed, ch2 = solver.is_chunk(r)
 
-        first = self.start_n
-
-        self.add_to_reduced_(self.start_n, solver, 0)
-        self.set_start(r, solver)
-
-        if not undo_action:
-            solver.remove_node(first, False)
-
-        if not undo_action:
-            self.chunk_reconnect_(solver)
-
-        # r was already in chunk
-        if is_ch:
-            ch2.merge(self, solver)
-
-    def append_right(self, r, solver, undo_action=False):
-        if r.frame_ != self.end_t() + 1:
-            print "DISCONTINUITY in chunk.py/append_right", r.frame_, self.end_t(), r, self.end_n
-            raise Exception("DISCONTINUITY in chunk.py/append_right")
-
-        is_ch, t_reversed, ch2 = solver.is_chunk(r)
-
-        last = self.end_n
-
-        self.add_to_reduced_(self.end_n, solver)
-        self.set_end(r, solver)
-
-        if not undo_action:
-            solver.remove_node(last, False)
-
-        if not undo_action:
-            self.chunk_reconnect_(solver)
-
-        # r was already in chunk
-        if is_ch:
-            self.merge(ch2, solver)
-
-    def chunk_reconnect_(self, solver):
-        solver.add_edge(self.start_n, self.end_n, type=EDGE_CONFIRMED, chunk_ref=self, score=1.0)
-
-    def add_to_reduced_(self, r, solver, i=-1):
-        it = Reduced(r)
-        try:
-            if r.is_virtual:
-                # in this case, save whole region, it is much easier...
-                it = r
-        except:
-            pass
-
-        if i == -1:
-            self.reduced.append(it)
-        else:
-            self.reduced.insert(i, it)
-
-        # TODO: remove this hack... we don't know reduced area...
-        if self.store_area:
-            n = self.statistics['num_of_reasonable_regions']
-
-            if isinstance(r, Reduced):
-                if n == 0:
-                    ma = (self.start_n.area() + self.end_n.area()) / 2
-                else:
-                    ma = self.statistics['area_sum'] / n
-            else:
-                if r.is_virtual:
-                    if n == 0:
-                        ma = (self.start_n.area() + self.end_n.area()) / 2
-                    else:
-                        ma = self.statistics['area_sum'] / n
-                else:
-                    ma = r.area()
-
-            self.statistics['num_of_reasonable_regions'] += 1
-            self.statistics['area_sum'] += ma
-            self.statistics['area2_sum'] += ma**2
-
-        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_ADD_TO_REDUCED, {'chunk': self, 'node': r, 'index': i})
-        # self.is_sorted = False
-
-    def remove_from_reduced_(self, i, solver):
-        if i < 0:
-            r = self.reduced.pop()
-        else:
-            r = self.reduced.pop(i)
-        solver.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.CHUNK_REMOVE_FROM_REDUCED, {'chunk': self, 'node': r, 'index': i})
-
-        # TODO: remove this hack... we don't know reduced area...
-        if self.store_area:
-            # self.statistics['area_sum'] -= r.area()
-            # self.statistics['area2_sum'] -= r.area()**2
-
-            n = self.statistics['num_of_reasonable_regions']
-            if n == 0:
-                ma = (self.start_n.area() + self.end_n.area()) / 2
-            else:
-                ma = self.statistics['area_sum'] / n
-
-            self.statistics['num_of_reasonable_regions'] -= 1
-            self.statistics['area_sum'] -= ma
-            self.statistics['area2_sum'] -= ma**2
-
-        return r
 
     def merge(self, second_chunk, solver, undo_action=False):
         if self.start_t() > second_chunk.start_t():
@@ -213,6 +185,8 @@ class Chunk:
         self.is_sorted = False
         self.if_not_sorted_sort_()
 
+
+
     def first(self):
         if self.start_n:
             return self.start_n
@@ -228,84 +202,6 @@ class Chunk:
             return self.start_n
 
         return None
-
-    def pop_first(self, solver, reconstructed=None, undo_action=False):
-        if not self.reduced:
-            if self.start_n:
-                first = self.start_n
-                self.set_start(None, solver)
-                return first
-            elif self.end_n:
-                first = self.end_n
-                self.set_end(None, solver)
-                return first
-            else:
-                return None
-
-        first = self.start_n
-
-        popped = self.remove_from_reduced_(0, solver)
-        if reconstructed is None:
-            reconstructed = self.reconstruct(popped, solver.project)
-
-        if not undo_action:
-            solver.add_node(reconstructed)
-
-        self.set_start(reconstructed, solver)
-
-        if not undo_action:
-            solver.remove_edge(first, self.end_n)
-            prev_nodes, _, _ = solver.get_vertices_around_t(reconstructed.frame_)
-            solver.add_edges_(prev_nodes, [reconstructed])
-
-        if not undo_action:
-            if self.reduced:
-                self.chunk_reconnect_(solver)
-
-        return first
-
-    def pop_last(self, solver, reconstructed=None, undo_action=False):
-        if not self.reduced:
-            if self.end_n:
-                last = self.end_n
-                self.set_end(None, solver)
-                return last
-            elif self.start_n:
-                last = self.start_n
-                self.set_start(None, solver)
-                return last
-            else:
-                return None
-
-        last = self.end_n
-
-        popped = self.reduced.pop(len(self.reduced)-1)
-        if reconstructed is None:
-            reconstructed = self.reconstruct(popped, solver.project)
-
-        if not undo_action:
-            solver.add_node(reconstructed)
-
-        self.end_n = reconstructed
-
-        if not undo_action:
-            try:
-                solver.remove_edge(self.start_n, last)
-            except:
-                pass
-
-            _, _, next_nodes = solver.get_vertices_around_t(reconstructed.frame_)
-            solver.add_edges_([reconstructed], next_nodes)
-
-            if self.reduced:
-                self.chunk_reconnect_(solver)
-
-        return last
-
-    def if_not_sorted_sort_(self):
-        if not self.is_sorted:
-            self.reduced = sorted(self.reduced, key=lambda k: k.frame_)
-            self.is_sorted = True
 
     def get_centroid_in_time(self, t):
         if self.start_t() <= t <= self.end_t():
@@ -326,16 +222,6 @@ class Chunk:
             return self.reduced[t]
 
         return None
-
-    def length(self):
-        if self.start_n and self.end_n:
-            return self.end_t() - self.start_t() + 1
-        elif self.start_n:
-            return 1
-        elif self.end_n:
-            return 1
-
-        return 0
 
     @ staticmethod
     def reconstruct(r, project):
@@ -395,23 +281,6 @@ class Chunk:
 
         else:
             raise Exception("t is out of range of this chunk in chunk.py/split_at_t")
-
-    def get_area_stats(self):
-        """
-        returns mean and standard deviation of area of regions in given chunk
-        :return: (mean, std)
-        """
-
-        # +2 for start and end nodes
-        n = self.statistics['num_of_reasonable_regions'] + 2
-        sa = self.start_n.area()
-        se = self.end_n.area()
-        a1 = self.statistics['area_sum'] + sa + se
-        a2 = self.statistics['area2_sum'] + sa**2 + se**2
-
-        mean = a1 / n
-        std = ((n*a2 - a1**2) / (n**2))**0.5
-        return mean, std
 
     def is_virtual_in_time(self, t):
         red = self.get_reduced_at(t)
