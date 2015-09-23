@@ -690,7 +690,25 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.fitting_one_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_F))
         self.addAction(self.fitting_one_step_a)
 
+        self.mark_join_a = QtGui('mark join', self)
+        self.mark_join_a.triggered.connect(self.mark_join)
+        self.mark_join_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Y))
+        self.addAction(self.mark_join_a)
+
+        self.mark_split_a = QtGui('mark split', self)
+        self.mark_split_a.triggered.connect(self.mark_split)
+        self.mark_split_a.setShortcut(QtGui.QKeyEvent(QtCore.Qt.Key_U))
+        self.addAction(self.mark_split_a)
+
         self.d_ = None
+
+    def mark_join(self):
+        self.project.log.add(LogCategories.USER_ACTION, ActionNames.MARK_JOIN)
+        self.next_case()
+
+    def mark_split(self):
+        self.project.log.add(LogCategories.USER_ACTION, ActionNames.MARK_SPLIT)
+        self.next_case()
 
     def update_content(self):
         self.next_case()
