@@ -3,7 +3,17 @@ __author__ = 'flipajs'
 from utils.video_manager import VideoManager
 import cv2
 import numpy as np
+from matplotlib import pyplot as plt
+from skimage.feature import blob_dog, blob_log, blob_doh
+from math import sqrt
+from skimage.color import rgb2gray
+from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
+import argparse
+import utils
+import cv2
+import numpy as np
+
 
 I_NORM = 766 * 3 * 2
 
@@ -20,49 +30,99 @@ def igbr_transformation(im):
 
     return igbr
 
+
+def centroid_histogram(clt):
+    # grab the number of different clusters and create a histogram
+    # based on the number of pixels assigned to each cluster
+    numLabels = np.arange(0, len(np.unique(clt.labels_)) + 1)
+    (hist, _) = np.histogram(clt.labels_, bins = numLabels)
+
+    # normalize the histogram, such that it sums to one
+    hist = hist.astype("float")
+    hist /= hist.sum()
+
+    # return the histogram
+    return hist
+
+def plot_colors(hist, centroids):
+    # initialize the bar chart representing the relative frequency
+    # of each of the colors
+    bar = np.zeros((50, 300, 3), dtype = "uint8")
+    startX = 0
+
+    # loop over the percentage of each cluster and the color of
+    # each cluster
+    for (percent, color) in zip(hist, centroids):
+        # plot the relative percentage of each cluster
+        endX = startX + (percent * 300)
+        cv2.rectangle(bar, (int(startX), 0), (int(endX), 50),
+            color.astype("uint8").tolist(), -1)
+        startX = endX
+
+    # return the bar chart
+    return bar
+
+
 if __name__ == "__main__":
     vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
-    im = vid.next_frame()
 
-    igbr = igbr_transformation(im)
-
-    vis = im.copy()
-
-    mser = cv2.MSER(_min_area=20, _min_margin=0.001, _edge_blur_size=0,
-                    _delta=10, _max_variation=1.0, _min_diversity=0.1, _max_area=1000,
-                    _max_evolution=20000)
-    im__ = igbr[:,:,1:4].copy()
-    im__ = np.asarray(255-(im__*255), dtype=np.uint8)
-    vis = im__.copy()
-
-    # regions = mser.detect(im[:,:,0])
-    regions = mser.detect(im__[:,:,0])
-    hulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in regions]
-    cv2.polylines(vis, hulls, 1, (0, 255, 0))
-    cv2.imshow('img', vis)
-    cv2.waitKey(0)
-
-    cols = 3
-    rows = 3
     fig = plt.figure()
+    # plt.ion()
+    for i in range(0, 1000, 100):
+        im = vid.seek_frame(i)
 
-    i = 1
-    plt.subplot(int(str(cols)+str(rows)+str(i)))
-    im_ = im.copy()
-    im_[:,:,0] = im[:,:,2]
-    im_[:,:,2] = im[:,:,0]
-    plt.imshow(im_)
+        image = im
+        image_gray = rgb2gray(image)
 
-    for i in range(2, 6):
-        plt.subplot(int(str(cols)+str(rows)+str(i)))
-        plt.imshow(igbr[:, :, i-2], cmap='gray')
+        # blobs_log = blob_log(image_gray, max_sigma=30, num_sigma=10, threshold=.1)
+        # # Compute radii in the 3rd column.
+        # blobs_log[:, 2] = blobs_log[:, 2] * sqrt(2)
+        #
+        # blobs_dog = blob_dog(image_gray, max_sigma=30, threshold=.1)
+        # blobs_dog[:, 2] = blobs_dog[:, 2] * sqrt(2)
 
-    from skimage import color
-    lab = color.rgb2lab(im)
+        blobs_dog = blob_dog(image_gray, min_sigma=1, max_sigma=5, threshold=.1)
 
-    for i in range(6, 9):
-        plt.subplot(int(str(cols)+str(rows)+str(i)))
-        plt.imshow(lab[:, :, i-6], cmap='gray')
+        blobs_list = [blobs_dog]
+        colors = ['red']
+        titles = ['Difference of Gaussians']
+        sequence = zip(blobs_list, colors, titles)
 
-    plt.show()
-    plt.waitforbuttonpress()
+        for blobs, color, title in sequence:
+            fig, ax = plt.subplots(1, 1)
+            ax.set_title(title)
+            ax.imshow(image, interpolation='nearest')
+            for blob in blobs:
+                y, x, r = blob
+                c = plt.Circle((x, y), r, color=color, linewidth=2, fill=False)
+                ax.add_patch(c)
+
+        plt.show()
+
+
+
+        igbr = igbr_transformation(im)
+
+        rows = 2
+        cols = 3
+
+        i = 1
+        plt.subplot(int(str(rows)+str(cols)+str(i)))
+        im_ = im.copy()
+        im_[:,:,0] = im[:,:,2]
+        im_[:,:,2] = im[:,:,0]
+        plt.imshow(im_)
+
+        for i in range(2, 6):
+            plt.subplot(int(str(rows)+str(cols)+str(i)))
+            plt.imshow(igbr[:, :, i-2], cmap='gray')
+
+        from skimage import color
+        lab = color.rgb2lab(im)
+
+        # for i in range(6, 9):
+        #     plt.subplot(int(str(cols)+str(rows)+str(i)))
+        #     plt.imshow(lab[:, :, i-6], cmap='gray')
+
+        plt.show()
+        plt.waitforbuttonpress()
