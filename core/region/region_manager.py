@@ -5,6 +5,7 @@ import sqlite3 as sql
 
 class RegionManager:
     def __init__(self, cache_size_limit=-1, db_name=None):
+        k = 2
         """
         # TODO: implement db_name. It can't be optional (at least the path must be given)
         self.db_path = path+"/regions.db"
@@ -32,11 +33,26 @@ class RegionManager:
         pass
 
 
-    def add_(self, region):
-        self.regions_cache_[self.id_] = region
+    def add(self, regions):
+        """
+        Save one or more regions in RegionManager
+        :param regions: (region/list of regions) - regions that should be added into RegionManager.
+        :return (int/list of ints) - ids that were given to appended regions. Regions can be later accessed via there ids
+        """
+        # TODO: maybe check if region is a correct object
+        if isinstance(regions, list):
+            ids = []
+            for r in regions:
+                self.regions_cache_[self.id_] = r
+                ids.append(self.id_)
+                self.id_ += 1
+            return ids
+        self.regions_cache_[self.id_] = regions
         self.id_ += 1
+        return self.id_ - 1
 
     def __getitem__(self, key):
+        print "%s is %s" %(key, type(key))
         if isinstance(key, slice):
             # TODO: check how this example works
             # return [self[ii] for ii in xrange(*key.indices(len(self)))]
@@ -50,6 +66,9 @@ class RegionManager:
             if step == None:
                 step = 1
             result = {}
+            # TODO: check if dictionary can be sliced in a better way
+            # TODO: check if start, stop, step are int's in correct bounds
+            # TODO: add DB check
             for i in range(start, stop, step):
                 result[i] = self.regions_cache_[i]
             return result
@@ -59,9 +78,10 @@ class RegionManager:
             if key in self.regions_cache_:
                 return self.regions_cache_[key]
             else:
-                print "Key %s is not in regions_cache_" % key
                 # TODO: add DB check
                 # raise IndexError, "The index (%d) is out of range." % key
+                print "Key %s is not in regions_cache_" % key
+                return
         raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
 
     def __len__(self):
@@ -90,10 +110,10 @@ class RegionManager:
 
 if __name__ == "__main__":
     rm = RegionManager()
-    rm.add_("zero")
-    rm.add_("one")
-    rm.add_("two")
-    rm.add_("three")
-    rm.add_("four")
-    rm.add_("five")
-    print rm["boo"]
+    #rm.add("zero")
+    rm.add(["zero", "one"])
+    rm.add("two")
+    rm.add("three")
+    rm.add("four")
+    rm.add("five")
+    print rm[10]
