@@ -1,16 +1,22 @@
 __author__ = 'flipajs'
 
+import sqlite3 as sql
+
 
 class RegionManager:
-    def __init__(self, cache_size_limit=-1):
+    def __init__(self, path, cache_size_limit=-1):
+        self.db_path = path+"/regions.db"
+        print "Initializing db at %s " % self.db_path
+        self.con = sql.connect(self.db_path)
+        self.cur = self.con.cursor()
+        self.cur.execute("CREATE TABLE IF NOT EXISTS regions(\
+            id INTEGER PRIMARY KEY AUTOINCREMENT, \
+            data BLOB);")
+        self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON log(id);")
         # cache_size_limit=-1 -> store in cache and always save into DB...
         # cache_size_limit=some_number -> store in cache as queue and always save into DB
         # there might be problem estimating size based on object size... then change it to cache_region_num_limit...
 
-        # region DB should be:
-        # ID | data
-
-        # TODO: initialize database...
         # TODO: prepare cache
 
         # TODO: id parallelisation problems (IGNORE FOR NOW)
