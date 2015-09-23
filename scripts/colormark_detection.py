@@ -71,7 +71,9 @@ def colormarks_labelling(image, colors):
     dists = cdist(im_, colors)
     ids = np.argmin(dists, axis=1)
     labels = ids.reshape((image.shape[0], image.shape[1]))
+    labels = np.asarray(colors[labels], dtype=np.uint8)
 
+    plt.figure()
     plt.imshow(labels)
     plt.show()
 
@@ -81,13 +83,18 @@ def colormarks_labelling(image, colors):
 if __name__ == "__main__":
     vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
 
-    fig = plt.figure()
     # plt.ion()
     for i in range(0, 1000, 100):
+        fig = plt.figure()
         im = vid.seek_frame(i)
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        plt.imshow(im)
 
-        colors = np.array([[0, 0, 0], [255, 255, 255], [0, 0, 255]])
+        colors = np.array([[73, 56, 44], [216, 209, 217], [208, 195, 184], [54, 89, 120], [167, 140, 95], [148, 52, 56]])
         colormarks_labelling(im, colors)
+
+
+
         #
         # # show our image
         # plt.figure()
