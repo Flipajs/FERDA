@@ -697,7 +697,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.mark_split_a = QtGui.QAction('mark split', self)
         self.mark_split_a.triggered.connect(self.mark_split)
-        self.mark_split_a.setShortcut(QtGui.QKeyEvent(QtCore.Qt.Key_U))
+        self.mark_split_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_U))
         self.addAction(self.mark_split_a)
 
         self.d_ = None
