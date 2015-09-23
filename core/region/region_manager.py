@@ -28,6 +28,7 @@ class RegionManager:
             self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
             self.use_db = True
             self.regions_cache_ = {}
+            self.recent_regions_ids = []
             self.cache_size_limit_ = cache_size_limit
             # if database has been used before, get last used ID and continue from it (IDs always have to stay unique)
             try:
@@ -108,15 +109,52 @@ class RegionManager:
                 start = 0
             stop = key.stop
             if stop == None:
-                stop = len(self.regions_cache_)
+                stop = len(self)
             step = key.step
             if step == None:
                 step = 1
+            if start < 0 or start > len(self) or stop > len(self) or stop < 0 or (stop < start and step > 0) or step == 0:
+                raise ValueError("Invalid slice parameters (%s:%s:%s)" % (start, stop, step))
+
             result = {}
+            sql = []
+
             # TODO: check if dictionary can be sliced in a better way
-            # TODO: check if start, stop, step are int's in correct bounds
             for i in range(start, stop, step):
-                result[i] = self.regions_cache_[i]
+                if i in self.regions_cache_:
+                    result[i] = self.regions_cache_[i]
+                else:
+                    sql.append(i)
+
+            l = len(sql)
+            if l == 1:
+                cmd = "SELECT data FROM regions WHERE id = %s" % sql[0]
+                self.cur.execute(cmd)
+                row = self.cur.fetchone()
+                result[sql[0]] = row[0]
+            if l > 1:
+                param = "("
+                for i in range(0, l):
+                    param += str(sql[i])
+                    if i != l-1:
+                        param += ", "
+                param += ")"
+                print param
+                cmd = "SELECT data FROM regions WHERE id IN %s;" % param
+                self.cur.execute(cmd)
+                rows = self.cur.fetchall()
+                i = 0
+                for row in rows:
+                    try:
+                        print "sql "+str(sql[i])+", row "+pickle.loads(str(row[i]))
+                        result[sql[i]] = pickle.loads(str(row[i]))
+                        i += 1
+                    except IndexError:
+                        print "Error at index %s" % i
+                        return
+
+
+
             return result
         if isinstance(key, int):
             if key < 0:  # Handle negative indices
@@ -168,11 +206,11 @@ class RegionManager:
 """
 
 if __name__ == "__main__":
-    rm = RegionManager(db_wd="/home/dita")
+    rm = RegionManager(db_wd="/home/dita", cache_size_limit=20)
     #rm.add("zero")
     rm.add(["zero", "one"])
     rm.add("two")
     rm.add("three")
     rm.add("four")
     rm.add("five")
-    print rm[1]
+    print rm[::]
