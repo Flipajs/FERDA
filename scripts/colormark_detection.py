@@ -65,6 +65,15 @@ def plot_colors(hist, centroids):
 
 
 def colormarks_labelling(image, colors):
+    from scipy.spatial.distance import cdist
+
+    im_ = image.reshape(image.shape[0]*image.shape[1], 3)
+    dists = cdist(im_, colors)
+    ids = np.argmin(dists, axis=1)
+    labels = ids.reshape((image.shape[0], image.shape[1]))
+
+    plt.imshow(labels)
+    plt.show()
 
     pass
 
@@ -77,18 +86,8 @@ if __name__ == "__main__":
     for i in range(0, 1000, 100):
         im = vid.seek_frame(i)
 
-        CLUSTER_N = 10
-
-        image = im
-
-        # load the image and convert it from BGR to RGB so that
-        # we can dispaly it with matplotlib
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        segments = quickshift(image, kernel_size=10, convert2lab=True, max_dist=80, ratio=0.9)
-
-        plt.imshow(segments)
-        plt.show()
-        # pass
+        colors = np.array([[0, 0, 0], [255, 255, 255], [0, 0, 255]])
+        colormarks_labelling(im, colors)
         #
         # # show our image
         # plt.figure()
