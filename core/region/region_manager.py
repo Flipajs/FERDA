@@ -1,58 +1,76 @@
 __author__ = 'flipajs'
 
+import sqlite3 as sql
+
 
 class RegionManager:
     def __init__(self, cache_size_limit=-1, db_name=None):
-        # cache_size_limit=-1 -> store in cache and always save into DB...
-        # cache_size_limit=some_number -> store in cache as queue and always save into DB
+        """
+        # TODO: implement db_name. It can't be optional (at least the path must be given)
+        self.db_path = path+"/regions.db"
+        print "Initializing db at %s " % self.db_path
+        self.con = sql.connect(self.db_path)
+        self.cur = self.con.cursor()
+        self.cur.execute("CREATE TABLE IF NOT EXISTS regions(\
+            id INTEGER PRIMARY KEY AUTOINCREMENT, \
+            data BLOB);")
+        self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON log(id);")
+        """
         # there might be problem estimating size based on object size... then change it to cache_region_num_limit...
 
-        # region DB should be:
-        # ID | data
-
-        # TODO: initialize database...
         # TODO: prepare cache
-
+        # regions_cache dictionary {id: pickled data}
         self.regions_cache_ = {}
         self.cache_size_limit_ = cache_size_limit
-        self.id_ = 1
-
+        # cache_size_limit=-1 -> store in cache and always save into DB...
+        # cache_size_limit=some_number -> store in cache as queue and always save into DB
+        self.id_ = 0
         # TODO: id parallelisation problems (IGNORE FOR NOW)
         # use self.id = 0, increase for each added region...
         # we will solve parallelisation by merging managers in assembly step
 
         pass
 
-    # TODO:
-    # https://docs.python.org/2/reference/datamodel.html#emulating-container-types
-    # slice access
-    def __getitem__(self, key):
-        # return regions with ids in key
 
-        # # example:
+    def add_(self, region):
+        self.regions_cache_[self.id_] = region
+        self.id_ += 1
+
+    def __getitem__(self, key):
         if isinstance(key, slice):
-            pass
-        # #Get the start, stop, and step from the slice
-        #     return [self[ii] for ii in xrange(*key.indices(len(self)))]
-        elif isinstance(key, int):
+            # TODO: check how this example works
+            # return [self[ii] for ii in xrange(*key.indices(len(self)))]
+            start = key.start
+            if start == None:
+                start = 0
+            stop = key.stop
+            if stop == None:
+                stop = len(self.regions_cache_)
+            step = key.step
+            if step == None:
+                step = 1
+            result = {}
+            for i in range(start, stop, step):
+                result[i] = self.regions_cache_[i]
+            return result
+        if isinstance(key, int):
             if key < 0:  # Handle negative indices
                 key += len(self)
-            # + 1 because ids starts from 1
-            if key >= len(self.regions_cache_) + 1:
-                raise IndexError, "The index (%d) is out of range." % key
-
             if key in self.regions_cache_:
                 return self.regions_cache_[key]
             else:
-                # db query...
-                pass
-        # else:
-        #     raise TypeError, "Invalid argument type."
+                print "Key %s is not in regions_cache_" % key
+                # TODO: add DB check
+                # raise IndexError, "The index (%d) is out of range." % key
+        raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
 
-        pass
+    def __len__(self):
+        # TODO: modify this when db access is implemented
+        return len(self.regions_cache_)
 
+"""
     def add(self, regions):
-        # TODO: assign ids (region.id = id...) and store regions,
+        # TODO: assign ids and store regions, return ids
 
         for r in regions:
             if self.cache_size_limit_ < 0:
@@ -67,3 +85,15 @@ class RegionManager:
             # use cPickle for data serialisation
             pass
         pass
+
+"""
+
+if __name__ == "__main__":
+    rm = RegionManager()
+    rm.add_("zero")
+    rm.add_("one")
+    rm.add_("two")
+    rm.add_("three")
+    rm.add_("four")
+    rm.add_("five")
+    print rm["boo"]
