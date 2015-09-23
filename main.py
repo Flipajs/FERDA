@@ -19,6 +19,8 @@ S_.general.print_log = False
 # project.load('/home/dita/PycharmProjects/c5__/c5__.fproj')
 # ex.widget_control('load_project', project)
 # This is development speed up process (kind of fast start). Runs only on developers machines...
+S_.general.print_log = True
+
 if is_flipajs_pc():
     # project.load('/Users/flipajs/Documents/wd/F1C51/f1c51.fproj')
     # project.load('/Users/flipajs/Documents/wd/video_bounds_test/test.fproj')
