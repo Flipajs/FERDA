@@ -11,6 +11,7 @@ class RegionManager:
             if cache_size_limit == -1:
                 self.use_db = False
                 self.regions_cache_ = {}
+                self.recent_regions_ids = []
                 self.cache_size_limit_ = cache_size_limit
                 self.id_ = 1
             else:
@@ -62,7 +63,7 @@ class RegionManager:
             else:
                 ids = []
                 for r in regions:
-                    self.regions_cache_[self.id_] = r
+                    self.add_to_cache(self.id_, r)
                     ids.append(self.id_)
                     self.id_ += 1
                 return ids
@@ -74,13 +75,26 @@ class RegionManager:
                 self.id_ += 1
                 return self.id_ - 1
             else:
-                self.regions_cache_[self.id_] = regions
+                self.add_to_cache(self.id_, regions)
                 self.id_ += 1
                 return self.id_ - 1
 
+    def check_cache_size(self):
+        # if size limit is used and the cache size reached it
+        if self.cache_size_limit_ > 0:
+            # I guess calling a method with 'while' once is better than calling a method with 'if' several times
+            while len(self.regions_cache_) >= self.cache_size_limit_:
+                self.regions_cache_.pop(self.recent_regions_ids.pop(0), None)
+
+    def add_to_cache(self, id, region):
+        if id in self.recent_regions_ids:
+            self.recent_regions_ids.pop(0)
+        self.recent_regions_ids.append(id)
+        self.regions_cache_[id] = region
+
     def add_iter_(self, regions):
         for r in regions:
-            self.regions_cache_[self.id_] = r
+            self.add_to_cache(self.id_, r)
             yield (self.id_, sql.Binary(pickle.dumps(r, -1)))
             self.tmp_ids.append(self.id_)
             self.id_ += 1
