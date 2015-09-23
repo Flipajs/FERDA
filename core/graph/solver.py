@@ -42,7 +42,7 @@ class Solver:
         # TODO: add to config
         self.antlike_filter = True
         # self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
-        self.rules = [self.adaptive_threshold]
+        self.rules = [self.adaptive_threshold, self.symmetric_cc_solver]
 
         self.ignored_nodes = {}
 
@@ -163,13 +163,13 @@ class Solver:
 
         return None
 
-    def symmetric_cc_solver(self, n):
-        s1, s2 = get_cc(self.g, n)
+    def symmetric_cc_solver(self, vertex):
+        s1, s2 = self.gm.get_cc(vertex)
 
         affected = []
         # TODO:
         # in this case, there might be to much combinations....
-        if len(s1) == len(s2) and len(s1) > 1 and len(s1) + len(s2) < 12:
+        if len(s1) == len(s2) and len(s1) < 5:
             scores, configs = best_2_cc_configs(self.g, s1, s2)
             if not scores:
                 return []

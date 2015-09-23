@@ -292,3 +292,33 @@ class GraphManager:
             best_vertices[i] = vertices[ids[i]]
 
         return best_scores, best_vertices
+
+    def get_cc(self, vertex):
+        s_t1 = set()
+        s_t2 = set()
+
+        process = [(vertex, 1)]
+
+        while True:
+            if not process:
+                break
+
+            n_, t_ = process.pop()
+
+            s_test = s_t2
+            if t_ == 1:
+                s_test = s_t1
+
+            if n_ in s_test:
+                continue
+
+            s_test.add(n_)
+
+            if t_ == 1:
+                for n2 in n_.out_neighbours():
+                    process.append((n2, 2))
+            else:
+                for n2 in n_.in_neighbours():
+                    process.append((n2, 1))
+
+        return list(s_t1), list(s_t2)
