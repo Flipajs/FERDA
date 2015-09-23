@@ -28,6 +28,9 @@ class Project:
         self.date_created = -1
         self.date_last_modifiaction = -1
 
+        # REGION MANAGER
+        self.rm = None
+
         self.bg_model = None
         self.arena_model = None
         self.classes = None

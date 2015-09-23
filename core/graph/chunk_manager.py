@@ -5,7 +5,8 @@ import chunk
 
 class ChunkManager:
     def __init__(self):
-        self.id = 0
+        # default value in graph properties will be 0, so we can easily test...
+        self.id = 1
         self.chunks_ = {}
         pass
 

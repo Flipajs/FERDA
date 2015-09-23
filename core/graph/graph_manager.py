@@ -3,11 +3,13 @@ __author__ = 'flipajs'
 import graph_tool
 from core.log import LogCategories, ActionNames
 import numpy as np
+from scipy.spatial.distance import cdist
 
 
 class GraphManager:
     def __init__(self, project, assignment_score):
         self.project = project
+        self.rm = project.rm
         self.g = graph_tool.Graph(directed=True)
         self.graph_add_properties()
         self.vertices_in_t = {}
@@ -18,10 +20,10 @@ class GraphManager:
         self.assignment_score = assignment_score
 
     def graph_add_properties(self):
-        self.g.vp['region'] = self.g.new_vertex_property("object")
-        self.g.vp['chunk_start'] = self.g.new_vertex_property("object")
-        self.g.vp['chunk_end'] = self.g.new_vertex_property("object")
-        # self.g.ep['score'] = self.g.new_edge_property("float")
+        self.g.vp['region_id'] = self.g.new_vertex_property("int")
+        self.g.vp['chunk_start_id'] = self.g.new_vertex_property("int")
+        self.g.vp['chunk_end_id'] = self.g.new_vertex_property("int")
+        self.g.ep['score'] = self.g.new_edge_property("float")
 
     def add_vertex(self, region):
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
@@ -31,12 +33,22 @@ class GraphManager:
         vertex = self.g.add_vertex()
 
         self.vertices_in_t.setdefault(region.frame_, []).append(vertex)
-        self.g.vp['region'][int(vertex)] = region
+        self.g.vp['region_id'][vertex] = region.id()
 
         return vertex
 
+    def add_vertices(self, regions):
+        v_list = self.g.add_vertex(len(regions))
+        for vertex, region in zip(v_list, regions):
+            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
+            self.start_t = min(self.start_t, region.frame_)
+            self.end_t = max(self.end_t, region.frame_)
+
+            self.vertices_in_t.setdefault(region.frame_, []).append(vertex)
+            self.g.vp['region_id'][vertex] = region.id()
+
     def remove_vertex(self, vertex, disassembly=True):
-        region = self.graph.vp['region'][int(vertex)]
+        region = self.rm[self.graph.vp['region_id'][vertex]]
         region = self.match_if_reconstructed(region)
         if region is None:
             print "remove node n is None"
@@ -60,7 +72,9 @@ class GraphManager:
         if not self.vertices_in_t[region.frame_]:
             del self.vertices_in_t[region.frame_]
 
-        self.g.remove_vertex(vertex)
+        # do not remove the vertex it is very slow O(N)
+        # if using fast=True, the node id will be corrupted...
+        # self.g.remove_vertex(vertex)
 
         # maybe we need to shrink time boundaries...
         if self.end_t == region.frame_ or self.start_t == region.frame_:
@@ -72,11 +86,11 @@ class GraphManager:
         :param n: ref to vertex in g
         :return: (chunk_ref (ref or None), is_chunk_end (True if it is chunk_end))
         """
-        chunk_start = self.g.vp['chunk_start'][int(vertex)]
+        chunk_start = self.g.vp['chunk_start_id'][vertex]
         if chunk_start:
             return chunk_start, False
 
-        chunk_end = self.g.vp['chunk_end'][int(vertex)]
+        chunk_end = self.g.vp['chunk_end_id'][vertex]
         if chunk_end:
             return chunk_end, True
 
@@ -91,28 +105,34 @@ class GraphManager:
         self.update_time_boundaries()
 
     def add_regions_in_t(self, regions, t, fast=False):
-        for r in regions:
-            self.add_vertex(r)
+        import time
+        s = time.time()
+        self.add_vertices(regions)
 
+        s = time.time()
         if t-1 in self.vertices_in_t and t in self.vertices_in_t:
             self.add_edges_(self.vertices_in_t[t-1], self.vertices_in_t[t], fast=fast)
 
     def region(self, vertex):
-        return self.g.vp['region'][int(vertex)]
+        return self.rm[self.g.vp['region_id'][vertex]]
 
     def chunk_start(self, vertex):
-        return self.g.vp['chunk_start'][int(vertex)]
+        return self.g.vp['chunk_start_id'][vertex]
 
     def chunk_end(self, vertex):
-        return self.g.vp['chunk_end'][int(vertex)]
+        return self.g.vp['chunk_end_id'][vertex]
 
     def add_edges_(self, vertices_t1, vertices_t2, fast=False):
-        for v_t1 in vertices_t1:
-            r_t1 = self.region(v_t1)
-            for v_t2 in vertices_t2:
-                r_t2 = self.region(v_t2)
+        regions_t1 = [self.region(v) for v in vertices_t1]
+        regions_t2 = [self.region(v) for v in vertices_t2]
 
-                d = np.linalg.norm(r_t1.centroid() - r_t2.centroid())
+        centroids_t1 = np.array([r.centroid() for r in regions_t1])
+        centroids_t2 = np.array([r.centroid() for r in regions_t2])
+
+        dists = cdist(centroids_t1, centroids_t2)
+        for i, v_t1, r_t1 in zip(range(len(vertices_t1)), vertices_t1, regions_t1):
+            for j, v_t2, r_t2 in zip(range(len(vertices_t2)), vertices_t2, regions_t2):
+                d = dists[i, j]
 
                 if d < self.max_distance:
                     if self.chunk_start(v_t1) or self.chunk_end(v_t2):
@@ -149,7 +169,7 @@ class GraphManager:
                 self.remove_edge_(e)
 
     def remove_edge_(self, edge):
-        # s = self.g.ep['score'][edge]
+        s = self.g.ep['score'][edge]
         s = 0
 
         self.project.log.add(LogCategories.GRAPH_EDIT,
@@ -179,12 +199,12 @@ class GraphManager:
                               'v2': target_vertex,
                               's': score})
         e = self.g.add_edge(source_vertex, target_vertex)
-        # self.g.ep['score'][e] = float(score)
+        self.g.ep['score'][e] = float(score)
 
     def chunk_list(self):
         chunks = []
         for v in self.g.vertices():
-            ch = self.g.vp['chunk_start'][int(v)]
+            ch = self.g.vp['chunk_start_id'][int(v)]
             if ch:
                 chunks.append(ch)
 
@@ -205,3 +225,10 @@ class GraphManager:
 
     def end_nodes(self):
         return self.vertices_in_t[self.end_t]
+
+    def get_all_relevant_vertices(self):
+        vertices = []
+        for _, vs_ in self.vertices_in_t.iteritems():
+            vertices.extend(vs_)
+
+        return vertices

@@ -15,6 +15,7 @@ from core.graph.solver import Solver
 from core.project.project import Project
 from core.settings import Settings as S_
 from utils.img import prepare_for_segmentation
+from core.region.region_manager import RegionManager
 
 import time
 
@@ -27,6 +28,8 @@ if __name__ == '__main__':
 
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
+    # proj.arena_model = None
+    proj.rm = RegionManager(db_name=proj.working_directory+'/temp/regions_part_'+str(id)+'.sqlite3')
 
     S_.general.log_graph_edits = False
 
@@ -49,6 +52,7 @@ if __name__ == '__main__':
 
         s = time.time()
         msers = ferda_filtered_msers(img, proj, frame)
+        proj.rm.add(msers)
         msers_t += time.time()-s
 
         s = time.time()
@@ -74,11 +78,8 @@ if __name__ == '__main__':
         #     print i
         #     sys.stdout.flush()
 
-    # solver.simplify(first_run=True)
-    # solver.simplify_to_chunks()
-
     s = time.time()
-    # solver.simplify()
+    solver.simplify()
     # solver.simplify_to_chunks()
     solver_t += time.time() - s
 
@@ -88,13 +89,10 @@ if __name__ == '__main__':
 
     with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.gt', 'wb') as f:
         p = pickle.Pickler(f, -1)
-        solver.gm.g.vp = {}
-        solver.gm.g.ep = {}
         # solver.gm.g.save(f)
-        p.dump(solver.gm)
         # p.dump(solver.gm.start_nodes())
         # p.dump(solver.gm.end_nodes())
 
     file_t = time.time() - s
 
-    print "MSERS t:", msers_t, "SOLVER t: ",solver_t, "VIDEO t:", vid_t, "FILE t: ", file_t, "SUM t / frames_in_row:", (msers_t + solver_t+vid_t+file_t)/float(frames_in_row)
+    print "MSERS t:", round(msers_t, 2), "SOLVER t: ", round(solver_t, 2), "VIDEO t:", round(vid_t, 2), "FILE t: ", round(file_t, 2), "SUM t / frames_in_row:", round((msers_t + solver_t+vid_t+file_t)/float(frames_in_row), 2)

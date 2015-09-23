@@ -27,11 +27,11 @@ class Solver:
         self.project = project
 
         self.major_axis_median = project.stats.major_axis_median
-        self.antlikeness = project.stats.antlikeness_svm
 
         # TODO: add to config
         self.antlike_filter = True
-        self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
+        # self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
+        self.rules = [self.adaptive_threshold]
 
         self.ignored_nodes = {}
 
@@ -51,34 +51,23 @@ class Solver:
 
         return prob
 
-    def simplify(self, queue=None, return_affected=False, first_run=False):
+    def simplify(self, queue=None):
         if queue is None:
-            queue = self.g.nodes()
-
-        all_affected = set()
+            queue = self.gm.get_all_relevant_vertices()
 
         while queue:
-            n = queue.pop()
+            vertex = queue.pop()
 
-            #chunk test
-            num_out, n_out = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
-            if num_out == 1 and 'chunk_ref' in self.g[n][n_out]:
+            # skip the chunks...
+            if self.gm.chunk_end(vertex):
                 continue
 
             for r in self.rules:
-                start = time.time()
-                affected = r(n)
-                if return_affected:
-                    for a in affected:
-                        all_affected.add(a)
-                        # (all_affected.add(x) for x in affected)
-                if not first_run:
-                    queue.extend(affected)
+                affected = r(vertex)
+                queue.extend(affected)
 
-        return all_affected
-
-    def adaptive_threshold(self, n):
-        vals_out, best_out = get_best_n_out_nodes(self.g, n, 2)
+    def adaptive_threshold(self, vertex):
+        vals_out, best_out = get_best_n_out_nodes(self.g, vertex, 2)
         if best_out[0]:
             if self.g[n][best_out[0]]['type'] == EDGE_CONFIRMED:
                 return []
