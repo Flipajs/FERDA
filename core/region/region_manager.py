@@ -12,6 +12,7 @@ class RegionManager:
                 self.use_db = False
                 self.regions_cache_ = {}
                 self.cache_size_limit_ = cache_size_limit
+                self.id_ = 1
             else:
                 raise SyntaxError("Cache limit can only be set when database is used!")
         else:
@@ -23,11 +24,18 @@ class RegionManager:
             self.cur.execute("CREATE TABLE IF NOT EXISTS regions(\
                 id INTEGER PRIMARY KEY, \
                 data BLOB);")
-            self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON log(id);")
+            self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
             self.use_db = True
             self.regions_cache_ = {}
             self.cache_size_limit_ = cache_size_limit
-        self.id_ = 1
+            # if database has been used before, get last used ID and continue from it (IDs always have to stay unique)
+            try:
+                self.cur.execute("SELECT id FROM regions ORDER BY id DESC LIMIT 1;")
+                row = self.cur.fetchone()
+                self.id_ = row[0] + 1
+            except TypeError: # TypeError is raised when row is empty (no IDs were found)
+                self.id_ = 1
+        self.tmp_ids = []
 
         # there might be problem estimating size based on object size... then change it to cache_region_num_limit...
         # TODO: id parallelisation problems (IGNORE FOR NOW)
@@ -46,9 +54,11 @@ class RegionManager:
         # TODO:     cache according to cache_size_limit_.
         if isinstance(regions, list):
             if self.use_db:
-                self.tmpids = []
+                self.tmp_ids = []
+                self.cur.execute("BEGIN TRANSACTION;")
                 self.cur.executemany("INSERT INTO regions VALUES (?, ?)", self.add_iter_(regions))
-                return self.tmpids
+                self.con.commit()
+                return self.tmp_ids
             else:
                 ids = []
                 for r in regions:
@@ -58,7 +68,9 @@ class RegionManager:
                 return ids
         else:
             if self.use_db:
+                self.cur.execute("BEGIN TRANSACTION;")
                 self.cur.execute("INSERT INTO regions VALUES (?, ?)", (self.id_, sql.Binary(pickle.dumps(regions, -1))))
+                self.con.commit()
                 self.id_ += 1
                 return self.id_ - 1
             else:
@@ -69,7 +81,7 @@ class RegionManager:
     def add_iter_(self, regions):
         for r in regions:
             self.regions_cache_[self.id_] = r
-            yield (self.id, sql.Binary(pickle.dumps(r, -1)))
+            yield (self.id_, sql.Binary(pickle.dumps(r, -1)))
             self.tmp_ids.append(self.id_)
             self.id_ += 1
 
@@ -89,25 +101,37 @@ class RegionManager:
             result = {}
             # TODO: check if dictionary can be sliced in a better way
             # TODO: check if start, stop, step are int's in correct bounds
-            # TODO: add DB check
             for i in range(start, stop, step):
                 result[i] = self.regions_cache_[i]
             return result
         if isinstance(key, int):
             if key < 0:  # Handle negative indices
                 key += len(self)
+
+            if key not in self:
+                raise IndexError("Index %s is out of range (1 - %s)" % (key, len(self)))
+
             if key in self.regions_cache_:
                 return self.regions_cache_[key]
-            else:
-                # TODO: add DB check
-                # raise IndexError, "The index (%d) is out of range." % key
-                print "Key %s is not in regions_cache_" % key
-                return
+
+            if self.use_db:
+                print "DB CHECK"
+                self.cur.execute("SELECT data FROM regions WHERE id = %s;" % key)
+                row = self.cur.fetchone()
+                return pickle.loads(str(row[0]))
+
+            raise SyntaxError("Very severe! Key %s wasn't found, but probably is in RM!" % key)
         raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
 
+    def info(self):
+        pass
+
     def __len__(self):
-        # TODO: modify this when db access is implemented
         return self.id_ + 1
+
+    def __contains__(self, item):
+        return isinstance(item, (int, long)) and item < len(self) and item > 0
+
 
 """
     def add(self, regions):
@@ -130,11 +154,11 @@ class RegionManager:
 """
 
 if __name__ == "__main__":
-    rm = RegionManager(cache_size_limit=3)
+    rm = RegionManager(db_wd="/home/dita")
     #rm.add("zero")
     rm.add(["zero", "one"])
     rm.add("two")
     rm.add("three")
     rm.add("four")
     rm.add("five")
-    print rm[10]
+    print rm[1]
