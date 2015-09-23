@@ -28,10 +28,15 @@ if __name__ == "__main__":
 
     vis = im.copy()
 
-    mser = cv2.MSER(_min_area=20, _min_margin=0.0001, _edge_blur_size=0,
-                    _delta=1, _max_variation=0.05, _min_diversity=0.9, _max_area=1000,
+    mser = cv2.MSER(_min_area=20, _min_margin=0.001, _edge_blur_size=0,
+                    _delta=10, _max_variation=1.0, _min_diversity=0.1, _max_area=1000,
                     _max_evolution=20000)
-    regions = mser.detect(im)
+    im__ = igbr[:,:,1:4].copy()
+    im__ = np.asarray(255-(im__*255), dtype=np.uint8)
+    vis = im__.copy()
+
+    # regions = mser.detect(im[:,:,0])
+    regions = mser.detect(im__[:,:,0])
     hulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in regions]
     cv2.polylines(vis, hulls, 1, (0, 255, 0))
     cv2.imshow('img', vis)
