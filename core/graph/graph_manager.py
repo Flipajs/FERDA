@@ -20,10 +20,14 @@ class GraphManager:
         self.assignment_score = assignment_score
 
     def graph_add_properties(self):
+        # In these cases the id 0 means unassigned
+        # thus it is important to start indexing from 1 in region and chunk manager
         self.g.vp['region_id'] = self.g.new_vertex_property("int")
         self.g.vp['chunk_start_id'] = self.g.new_vertex_property("int")
         self.g.vp['chunk_end_id'] = self.g.new_vertex_property("int")
+
         self.g.ep['score'] = self.g.new_edge_property("float")
+        self.g.ep['certainty'] = self.g.new_edge_property("float")
 
     def add_vertex(self, region):
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
@@ -48,8 +52,8 @@ class GraphManager:
             self.g.vp['region_id'][vertex] = region.id()
 
     def remove_vertex(self, vertex, disassembly=True):
-        region = self.rm[self.graph.vp['region_id'][vertex]]
-        region = self.match_if_reconstructed(region)
+        region = self.rm[self.g.vp['region_id'][vertex]]
+        # region = self.match_if_reconstructed(region)
         if region is None:
             print "remove node n is None"
             return
@@ -75,6 +79,9 @@ class GraphManager:
         # do not remove the vertex it is very slow O(N)
         # if using fast=True, the node id will be corrupted...
         # self.g.remove_vertex(vertex)
+
+        self.g.vp['chunk_start_id'][vertex] = 0
+        self.g.vp['chunk_end_id'][vertex] = 0
 
         # maybe we need to shrink time boundaries...
         if self.end_t == region.frame_ or self.start_t == region.frame_:
@@ -114,13 +121,16 @@ class GraphManager:
             self.add_edges_(self.vertices_in_t[t-1], self.vertices_in_t[t], fast=fast)
 
     def region(self, vertex):
-        return self.rm[self.g.vp['region_id'][vertex]]
+        id_ = self.g.vp['region_id'][vertex]
+        return self.project.rm[id_]
 
     def chunk_start(self, vertex):
-        return self.g.vp['chunk_start_id'][vertex]
+        id_ = self.g.vp['chunk_start_id'][vertex]
+        return self.project.chm[id_]
 
     def chunk_end(self, vertex):
-        return self.g.vp['chunk_end_id'][vertex]
+        id_ = self.g.vp['chunk_end_id'][vertex]
+        return self.project.chm[id_]
 
     def add_edges_(self, vertices_t1, vertices_t2, fast=False):
         regions_t1 = [self.region(v) for v in vertices_t1]
@@ -154,8 +164,8 @@ class GraphManager:
             self.end_t = max(self.end_t, frame)
 
     def remove_edge(self, source_vertex, target_vertex):
-        source_vertex = self.match_if_reconstructed(source_vertex)
-        target_vertex = self.match_if_reconstructed(target_vertex)
+        # source_vertex = self.match_if_reconstructed(source_vertex)
+        # target_vertex = self.match_if_reconstructed(target_vertex)
 
         if source_vertex is None or target_vertex is None:
             if source_vertex is None:
@@ -170,7 +180,6 @@ class GraphManager:
 
     def remove_edge_(self, edge):
         s = self.g.ep['score'][edge]
-        s = 0
 
         self.project.log.add(LogCategories.GRAPH_EDIT,
                              ActionNames.REMOVE_EDGE,
@@ -180,9 +189,9 @@ class GraphManager:
 
         self.g.remove_edge(edge)
 
-    def add_edge(self, source_vertex, target_vertex, score):
-        source_vertex = self.match_if_reconstructed(source_vertex)
-        target_vertex = self.match_if_reconstructed(target_vertex)
+    def add_edge(self, source_vertex, target_vertex, score=-1):
+        # source_vertex = self.match_if_reconstructed(source_vertex)
+        # target_vertex = self.match_if_reconstructed(target_vertex)
         if source_vertex is None or target_vertex is None:
             if source_vertex is None:
                 print "add_edge source_vertex is None, target_vertex: ", target_vertex
@@ -204,7 +213,7 @@ class GraphManager:
     def chunk_list(self):
         chunks = []
         for v in self.g.vertices():
-            ch = self.g.vp['chunk_start_id'][int(v)]
+            ch = self.g.vp['chunk_start_id'][v]
             if ch:
                 chunks.append(ch)
 
@@ -232,3 +241,54 @@ class GraphManager:
             vertices.extend(vs_)
 
         return vertices
+
+    def get_2_best_out_vertices(self, vertex, order='asc'):
+        vertices = []
+        scores = []
+
+        for e in vertex.out_edges():
+            vertices.append(e.target())
+            scores.append(self.g.ep['score'][e])
+
+        scores = np.array(scores)
+        vertices = np.array(vertices)
+
+        if order == 'asc':
+            ids = np.argsort(scores)
+        else:
+            ids = np.argsort(-scores)
+
+        r = min(2, len(ids))
+        best_scores = [0, 0]
+        best_vertices = [None, None]
+        for i in range(r):
+            best_scores[i] = scores[ids[i]]
+            best_vertices[i] = vertices[ids[i]]
+
+        return best_scores, best_vertices
+
+    def get_2_best_in_vertices(self, vertex, order='asc'):
+        vertices = []
+        scores = []
+
+        for e in vertex.in_edges():
+            vertices.append(e.source())
+            scores.append(self.g.ep['score'][e])
+
+        scores = np.array(scores)
+        vertices = np.array(vertices)
+
+        if order == 'asc':
+            ids = np.argsort(scores)
+        else:
+            ids = np.argsort(-scores)
+
+        best_scores = [0, 0]
+        best_vertices = [None, None]
+
+        r = min(2, len(ids))
+        for i in range(r):
+            best_scores[i] = scores[ids[i]]
+            best_vertices[i] = vertices[ids[i]]
+
+        return best_scores, best_vertices

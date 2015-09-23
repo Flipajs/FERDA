@@ -9,54 +9,53 @@ from core.region.region import Region
 
 
 class Chunk:
-    def __init__(self, nodes, id_, graph_manager, region_manager, color=None):
+    def __init__(self, nodes, id_, project, color=None):
         self.id_ = id_
         self.nodes_ = nodes
         self.color = color
         self.statistics = {}
-        self.gm = graph_manager
-        self.rm = region_manager
+        self.project = project
 
-        self.chunk_reconnect_(graph_manager)
+        self.chunk_reconnect_()
 
     def __str__(self):
         s = "CHUNK --- start_f: "+str(self.start_frame())+" end_f: "+str(self.end_frame())+" length: "+str(len(self.nodes_))+"\n"
         return s
 
     def append_left(self, node, undo_action=False):
-        region = self.rm[node]
+        region = self.project.gm.region(node)
         if region.frame() + 1 != self.start_frame():
-            print "DISCONTINUITY in chunk.py/append_left", region.frame(), self.start_frame(), region, self.start_node()
+            print "DISCONTINUITY in chunk.py/append_left", region.frame(), self.start_frame(), region, self.project.gm.region(self.start_node())
             raise Exception("DISCONTINUITY in chunk.py/append_left")
 
-        first = self.start_n
+        first = self.start_node()
 
-        ch2, _ = self.gm.is_chunk(node)
+        ch2, _ = self.project.gm.is_chunk(node)
         if ch2:
             ch2.merge(self, undo_action=undo_action)
         else:
             self.nodes_.insert(0, node)
 
         if not undo_action:
-            self.gm.remove_node(first, False)
+            self.project.gm.remove_vertex(first, False)
             self.chunk_reconnect_()
 
     def append_right(self, node, solver, undo_action=False):
-        region = self.rm[node]
-        if region.frame() != self.end_t() + 1:
+        region = self.project.gm.region(node)
+        if region.frame() != self.end_frame() + 1:
             print "DISCONTINUITY in chunk.py/append_right", region.frame(), self.end_frame(), region, self.end_node()
             raise Exception("DISCONTINUITY in chunk.py/append_right")
 
         last = self.end_node()
 
-        ch2, _ = self.gm.is_chunk(node)
+        ch2, _ = self.project.gm.is_chunk(node)
         if ch2:
             self.merge(ch2, undo_action=undo_action)
         else:
             self.nodes_.append(node)
 
         if not undo_action:
-            self.gm.remove_node(last, False)
+            self.project.gm.remove_vertex(last, False)
             self.chunk_reconnect_()
 
     def pop_first(self, undo_action=False):
@@ -64,12 +63,12 @@ class Chunk:
         new_start = self.start_node()
 
         if not undo_action:
-            self.gm.add_vertex(new_start)
+            self.project.gm.add_vertex(new_start)
 
         if not undo_action:
-            self.gm.remove_edge(first, self.end_node())
-            prev_nodes, _, _ = self.gm.get_vertices_around_t(self.rm[new_start].frame())
-            self.gm.add_edges_(prev_nodes, [new_start])
+            self.project.gm.remove_edge(first, self.end_node())
+            prev_nodes, _, _ = self.project.gm.get_vertices_around_t(self.project.gm.region(new_start).frame())
+            self.project.gm.add_edges_(prev_nodes, [new_start])
 
         if not undo_action:
             if len(self.nodes_) > 1:
@@ -82,13 +81,13 @@ class Chunk:
         new_end = self.end_node()
 
         if not undo_action:
-            self.gm.add_vertex(new_end)
+            self.project.gm.add_vertex(new_end)
 
         if not undo_action:
-            self.gm.remove_edge(self.start_node(), last)
+            self.project.gm.remove_edge(self.start_node(), last)
 
-            _, _, next_nodes = self.gm.get_vertices_around_t(self.rm[new_end].frame())
-            self.gm.add_edges_([new_end], next_nodes)
+            _, _, next_nodes = self.project.gm.get_vertices_around_t(self.project.gm.region(new_end).frame())
+            self.project.gm.add_edges_([new_end], next_nodes)
 
             self.chunk_reconnect_()
 
@@ -111,8 +110,8 @@ class Chunk:
         ch2start = ch2.start_node()
 
         if not undo_action:
-            self.gm.remove_vertex(ch1end)
-            self.gm.remove_vertex(ch2start)
+            self.project.gm.remove_vertex(ch1end)
+            self.project.gm.remove_vertex(ch2start)
 
         self.nodes_.extend(ch2.vertices_)
 
@@ -126,8 +125,8 @@ class Chunk:
 
         gap_len = ch2.start_frame() - self.end_frame() - 1
         if gap_len > 0:
-            ch2start_region = self.rm[ch2.start_node()]
-            ch1end_region = self.rm[self.end_node()]
+            ch2start_region = self.project.gm.region(ch2.start_node())
+            ch1end_region = self.project.gm.region(self.end_node())
 
             c_diff_part = (ch2start_region.centroid() - ch1end_region.centroid()) / gap_len
 
@@ -139,7 +138,7 @@ class Chunk:
                 r.centroid_ = c.copy()
 
                 # TODO: log...
-                node = self.gm.add_vertex(r)
+                node = self.project.gm.add_vertex(r)
                 self.append_right(node)
 
                 i += 1
@@ -156,18 +155,18 @@ class Chunk:
         return self.nodes_[0]
 
     def start_frame(self):
-        return self.rm[self.start_node()].frame()
+        return self.project.gm.region(self.start_node()).frame()
 
     def end_frame(self):
-        return self.rm[self.end_node()].frame()
+        return self.project.gm.region(self.end_node()).frame()
 
     def length(self):
         return len(self.nodes_)
 
     def chunk_reconnect_(self):
-        self.gm.add_edge(self.start_node(), self.end_node())
-        self.gm.g[self.start_node()]['chunk_start_id'] = self.id()
-        self.gm.g[self.end_node()]['chunk_end_id'] = self.id()
+        self.project.gm.add_edge(self.start_node(), self.end_node())
+        self.project.gm.g.vp['chunk_start_id'][self.start_node()] = self.id()
+        self.project.gm.g.vp['chunk_end_id'][self.end_node()] = self.id()
 
 
 

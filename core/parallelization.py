@@ -16,6 +16,7 @@ from core.project.project import Project
 from core.settings import Settings as S_
 from utils.img import prepare_for_segmentation
 from core.region.region_manager import RegionManager
+from core.graph.chunk_manager import ChunkManager
 
 import time
 
@@ -30,6 +31,7 @@ if __name__ == '__main__':
     proj.load(working_dir+'/'+proj_name+'.fproj')
     # proj.arena_model = None
     proj.rm = RegionManager(db_name=proj.working_directory+'/temp/regions_part_'+str(id)+'.sqlite3')
+    proj.chm = ChunkManager()
 
     S_.general.log_graph_edits = False
 
@@ -79,7 +81,10 @@ if __name__ == '__main__':
         #     sys.stdout.flush()
 
     s = time.time()
+    print "BEFORE: ", solver.gm.g.num_vertices(), solver.gm.g.num_edges()
+    print "CHUNK START: ", solver.gm.g.vp['chunk_start_id'][solver.gm.vertices_in_t[0][0]]
     solver.simplify()
+    print "AFTER: ", solver.gm.g.num_vertices(), solver.gm.g.num_edges()
     # solver.simplify_to_chunks()
     solver_t += time.time() - s
 

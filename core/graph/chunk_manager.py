@@ -1,12 +1,12 @@
 __author__ = 'flipajs'
 
-import chunk
+from chunk import Chunk
 
 
 class ChunkManager:
     def __init__(self):
         # default value in graph properties will be 0, so we can easily test...
-        self.id = 1
+        self.id_ = 1
         self.chunks_ = {}
         pass
 
@@ -17,7 +17,6 @@ class ChunkManager:
     def __getitem__(self, index):
         return self.chunks_.get(index, None)
 
-    def new_chunk(self):
-        # Chunk(start_n=None, end_n=None, solver=None, store_area=False, id=-1)
-        # we have to provide also nm - NodeManager
-        pass
+    def new_chunk(self, v1, v2, project):
+        self.chunks_[self.id_] = Chunk([v1, v2], self.id_, project)
+        self.id_ += 1

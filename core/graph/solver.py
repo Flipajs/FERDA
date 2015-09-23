@@ -23,7 +23,18 @@ from graph_manager import GraphManager
 
 class Solver:
     def __init__(self, project):
-        self.gm = GraphManager(project, self.assignment_score)
+        """
+        We are maximizing.
+        Score is in the <0,1> range.
+
+        :param project:
+        :return:
+        """
+
+        project.gm = GraphManager(project, self.assignment_score)
+        self.gm = project.gm
+        self.rm = project.rm
+        self.chm = project.chm
         self.project = project
 
         self.major_axis_median = project.stats.major_axis_median
@@ -37,20 +48,6 @@ class Solver:
 
         self.cc_id = 0
 
-    def match_if_reconstructed(self, n):
-        if n not in self.g:
-            return self.find_similar(n)
-
-        return n
-
-    def get_antlikeness(self, n):
-        # if n in self.gm and 'antlikeness' in self.g.node[n]:
-        #     prob = self.g.node[n]['antlikeness']
-        # else:
-        prob = self.project.stats.antlikeness_svm.get_prob(n)[1]
-
-        return prob
-
     def simplify(self, queue=None):
         if queue is None:
             queue = self.gm.get_all_relevant_vertices()
@@ -59,61 +56,65 @@ class Solver:
             vertex = queue.pop()
 
             # skip the chunks...
-            if self.gm.chunk_end(vertex):
+            if self.gm.chunk_start(vertex):
                 continue
 
             for r in self.rules:
                 affected = r(vertex)
                 queue.extend(affected)
 
+    def get_antlikeness(self, n):
+        prob = self.project.stats.antlikeness_svm.get_prob(n)[1]
+
+        return prob
+
     def adaptive_threshold(self, vertex):
-        vals_out, best_out = get_best_n_out_nodes(self.g, vertex, 2)
-        if best_out[0]:
-            if self.g[n][best_out[0]]['type'] == EDGE_CONFIRMED:
-                return []
-        else:
+        if self.gm.chunk_start(vertex):
+            return
+
+        best_out_scores, best_out_vertices = self.gm.get_2_best_out_vertices(vertex)
+
+        if not best_out_vertices[0]:
             return []
 
-        vals_in, best_in = get_best_n_in_nodes(self.g, best_out[0], 2)
-        if best_in[0] == n and vals_out[0] < -self.project.solver_parameters.certainty_threshold:
-            cert = -vals_out[0]
-            n1 = n
-            n2 = best_out[0]
+        best_in_scores, best_in_vertices = self.gm.get_2_best_in_vertices(best_out_vertices[0])
+        if best_in_vertices[0] == vertex and best_in_scores[0] >= self.project.solver_parameters.certainty_threshold:
+            cert = best_out_scores[0]
+            v1 = vertex
+            v2 = best_out_vertices[0]
             affected = []
-            self.g[n1][n2]['certainty'] = cert
-            if best_out[1] or best_in[1]:
-                s = self.g[n][best_out[0]]['score']
+
+            if best_out_vertices[1] or best_in_vertices[1]:
+                s = best_out_scores[0]
 
                 s_out = 0
-                if best_out[1]:
-                    s_out = vals_out[1]
+                if best_out_vertices[1]:
+                    s_out = best_out_scores[1]
 
                 s_in = 0
-                if best_in[1]:
-                    s_in = vals_in[1]
+                if best_in_vertices[1]:
+                    s_in = best_in_scores[1]
 
                 cert = abs(s) * abs(s - (min(s_out, s_in)))
-                self.g[n1][n2]['certainty'] = cert
+
+            self.gm.g.ep['certainty'][self.gm.g.edge(v1, v2)] = cert
 
             if cert > self.project.solver_parameters.certainty_threshold:
-                for _, n2_ in self.g.out_edges(n1):
-                    if n2_ != n2:
-                        self.remove_edge(n1, n2_)
-                        affected.append(n2_)
-                        for n1_, _ in self.g.in_edges(n2_):
-                            if n1_ != n:
-                                affected.append(n1_)
-
-                for n1_, _ in self.g.in_edges(n2):
-                    if n1_ != n1:
-                        self.remove_edge(n1_, n2)
-                        affected.append(n1_)
-
-                self.g[n1][n2]['type'] = EDGE_CONFIRMED
+                affected = self.confirm_edges([(v1, v2)])
 
             return affected
 
         return []
+
+
+
+    def match_if_reconstructed(self, n):
+        if n not in self.g:
+            return self.find_similar(n)
+
+        return n
+
+
 
     def get_cc_rec(self, n, depth, node_groups):
         if depth > 10:
@@ -385,26 +386,28 @@ class Solver:
         """
 
         affected = set()
-        for (v1, v2) in edge_pairs:
+        for v1, v2 in edge_pairs:
             affected.add(v1)
             affected.add(v2)
 
-            for out_neigh in v1.out_edges():
-                if out_neigh != v2:
-                    self.remove_edge(v1, out_neigh)
+            for out_neigh in v1.out_neighbours():
+                # if out_neigh != v2:
+                    self.gm.remove_edge(v1, out_neigh)
                     affected.add(out_neigh)
 
-                    for neigh in out_neigh.in_edges():
-                        if neigh != v1:
-                            affected.add(neigh)
+                    for aff_neigh in out_neigh.in_neighbours():
+                        affected.add(aff_neigh)
 
-            for neigh in v2.in_edges():
-                if neigh != v1:
-                    self.remove_edge(neigh, v2)
+            for neigh in v2.in_neighbours():
+                # if neigh != v1:
+                    self.gm.remove_edge(neigh, v2)
                     affected.add(neigh)
 
+                    for aff_neigh in neigh.out_neighbours():
+                        affected.add(aff_neigh)
+
             # This will happen when there is an edge missing (action connect_with_and_confirm)
-            if v2 not in self.g[v1]:
+            if not self.gm.g.edge(v1, v2):
                 self.gm.add_edge(v1, v2, 1)
 
             # test chunk existence, if there is none, create new one.
@@ -415,7 +418,7 @@ class Solver:
             elif v2_ch:
                 v2_ch.append_left(v1)
             else:
-                Chunk(v1, v2, self, store_area=self.project.other_parameters.store_area_info, id=self.project.solver_parameters.new_chunk_id())
+                self.chm.new_chunk(v1, v2, self.project)
 
         affected = list(affected)
         # all_affected = list(self.simplify(affected[:], return_affected=True))

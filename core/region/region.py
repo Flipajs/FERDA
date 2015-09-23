@@ -50,7 +50,7 @@ class Region():
         self.is_virtual = False
 
     def __str__(self):
-        s = "t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(self.centroid_[0])+", "+str(self.centroid_[1])+"]"
+        s = "t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(round(self.centroid_[0], 2))+", "+str(round(self.centroid_[1], 2))+"]"
         return s
 
     def id(self):
@@ -134,6 +134,9 @@ class Region():
             self.contour_ = get_contour(self.pts_)
 
         return self.contour_
+
+    def frame(self):
+        return self.frame_
 
 def encode_RLE(pts):
     """

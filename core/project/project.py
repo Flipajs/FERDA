@@ -30,6 +30,10 @@ class Project:
 
         # REGION MANAGER
         self.rm = None
+        # CHUNK MANAGER
+        self.chm = None
+        # GRAPH MANAGER
+        self.gm = None
 
         self.bg_model = None
         self.arena_model = None
