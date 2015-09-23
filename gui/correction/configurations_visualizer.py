@@ -704,11 +704,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
     def mark_join(self):
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.MARK_JOIN)
-        self.next_case()
+        self.next_case(move_to_different_case=True)
 
     def mark_split(self):
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.MARK_SPLIT)
-        self.next_case()
+        self.next_case(move_to_different_case=True)
 
     def update_content(self):
         self.next_case()
