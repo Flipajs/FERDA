@@ -1,58 +1,79 @@
 __author__ = 'flipajs'
 
 import sqlite3 as sql
+import cPickle as pickle
 
 
 class RegionManager:
-    def __init__(self, cache_size_limit=-1, db_name=None):
-        k = 2
-        """
-        # TODO: implement db_name. It can't be optional (at least the path must be given)
-        self.db_path = path+"/regions.db"
-        print "Initializing db at %s " % self.db_path
-        self.con = sql.connect(self.db_path)
-        self.cur = self.con.cursor()
-        self.cur.execute("CREATE TABLE IF NOT EXISTS regions(\
-            id INTEGER PRIMARY KEY AUTOINCREMENT, \
-            data BLOB);")
-        self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON log(id);")
-        """
-        # there might be problem estimating size based on object size... then change it to cache_region_num_limit...
+    def __init__(self, db_wd=None, db_name="regions.db", cache_size_limit=-1):
+        # cache only mode (no db set)
+        if db_wd == None:
+            if cache_size_limit == -1:
+                self.use_db = False
+                self.regions_cache_ = {}
+                self.cache_size_limit_ = cache_size_limit
+            else:
+                raise SyntaxError("Cache limit can only be set when database is used!")
+        else:
+            self.use_db = True
+            self.db_path = db_wd+"/"+db_name
+            print "Initializing db at %s " % self.db_path
+            self.con = sql.connect(self.db_path)
+            self.cur = self.con.cursor()
+            self.cur.execute("CREATE TABLE IF NOT EXISTS regions(\
+                id INTEGER PRIMARY KEY, \
+                data BLOB);")
+            self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON log(id);")
+            self.use_db = True
+            self.regions_cache_ = {}
+            self.cache_size_limit_ = cache_size_limit
+        self.id_ = 1
 
-        # TODO: prepare cache
-        # regions_cache dictionary {id: pickled data}
-        self.regions_cache_ = {}
-        self.cache_size_limit_ = cache_size_limit
-        # cache_size_limit=-1 -> store in cache and always save into DB...
-        # cache_size_limit=some_number -> store in cache as queue and always save into DB
-        self.id_ = 0
+        # there might be problem estimating size based on object size... then change it to cache_region_num_limit...
         # TODO: id parallelisation problems (IGNORE FOR NOW)
         # use self.id = 0, increase for each added region...
         # we will solve parallelisation by merging managers in assembly step
-
-        pass
-
 
     def add(self, regions):
         """
         Save one or more regions in RegionManager
         :param regions: (region/list of regions) - regions that should be added into RegionManager.
-        :return (int/list of ints) - ids that were given to appended regions. Regions can be later accessed via there ids
+        :return (int/list of ints) - ids that were given to appended regions. Regions can be later accessed via these ids
         """
+
         # TODO: maybe check if region is a correct object
+        # TODO: create a "private" add_() method to add one region per time to cache. This method should handle the
+        # TODO:     cache according to cache_size_limit_.
         if isinstance(regions, list):
-            ids = []
-            for r in regions:
-                self.regions_cache_[self.id_] = r
-                ids.append(self.id_)
+            if self.use_db:
+                self.tmpids = []
+                self.cur.executemany("INSERT INTO regions VALUES (?, ?)", self.add_iter_(regions))
+                return self.tmpids
+            else:
+                ids = []
+                for r in regions:
+                    self.regions_cache_[self.id_] = r
+                    ids.append(self.id_)
+                    self.id_ += 1
+                return ids
+        else:
+            if self.use_db:
+                self.cur.execute("INSERT INTO regions VALUES (?, ?)", (self.id_, sql.Binary(pickle.dumps(regions, -1))))
                 self.id_ += 1
-            return ids
-        self.regions_cache_[self.id_] = regions
-        self.id_ += 1
-        return self.id_ - 1
+                return self.id_ - 1
+            else:
+                self.regions_cache_[self.id_] = regions
+                self.id_ += 1
+                return self.id_ - 1
+
+    def add_iter_(self, regions):
+        for r in regions:
+            self.regions_cache_[self.id_] = r
+            yield (self.id, sql.Binary(pickle.dumps(r, -1)))
+            self.tmp_ids.append(self.id_)
+            self.id_ += 1
 
     def __getitem__(self, key):
-        print "%s is %s" %(key, type(key))
         if isinstance(key, slice):
             # TODO: check how this example works
             # return [self[ii] for ii in xrange(*key.indices(len(self)))]
@@ -86,7 +107,7 @@ class RegionManager:
 
     def __len__(self):
         # TODO: modify this when db access is implemented
-        return len(self.regions_cache_)
+        return self.id_ + 1
 
 """
     def add(self, regions):
@@ -109,7 +130,7 @@ class RegionManager:
 """
 
 if __name__ == "__main__":
-    rm = RegionManager()
+    rm = RegionManager(cache_size_limit=3)
     #rm.add("zero")
     rm.add(["zero", "one"])
     rm.add("two")
