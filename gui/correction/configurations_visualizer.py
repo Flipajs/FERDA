@@ -573,31 +573,31 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.prev_action.triggered.connect(self.prev_case)
         self.prev_action.setShortcut(S_.controls.prev_case)
         self.addAction(self.prev_action)
-
-        self.confirm_cc_action = QtGui.QAction('confirm', self)
-        self.confirm_cc_action.triggered.connect(self.confirm_cc)
-        self.confirm_cc_action.setShortcut(S_.controls.confirm)
-        self.addAction(self.confirm_cc_action)
-
-        self.partially_confirm_action = QtGui.QAction('partially confirm', self)
-        self.partially_confirm_action.triggered.connect(self.partially_confirm)
-        self.partially_confirm_action.setShortcut(S_.controls.partially_confirm)
-        self.addAction(self.partially_confirm_action)
-
-        self.path_confirm_action = QtGui.QAction('path confirm', self)
-        self.path_confirm_action.triggered.connect(self.path_confirm)
-        self.path_confirm_action.setShortcut(S_.controls.confirm_path)
-        self.addAction(self.path_confirm_action)
-
-        self.fitting_action = QtGui.QAction('fitting', self)
-        self.fitting_action.triggered.connect(partial(self.fitting, False))
-        self.fitting_action.setShortcut(S_.controls.fitting_from_left)
-        self.addAction(self.fitting_action)
-
-        self.fitting_rev_action = QtGui.QAction('fitting rev', self)
-        self.fitting_rev_action.triggered.connect(partial(self.fitting, True))
-        self.fitting_rev_action.setShortcut(S_.controls.fitting_from_right)
-        self.addAction(self.fitting_rev_action)
+        #
+        # self.confirm_cc_action = QtGui.QAction('confirm', self)
+        # self.confirm_cc_action.triggered.connect(self.confirm_cc)
+        # self.confirm_cc_action.setShortcut(S_.controls.confirm)
+        # self.addAction(self.confirm_cc_action)
+        #
+        # self.partially_confirm_action = QtGui.QAction('partially confirm', self)
+        # self.partially_confirm_action.triggered.connect(self.partially_confirm)
+        # self.partially_confirm_action.setShortcut(S_.controls.partially_confirm)
+        # self.addAction(self.partially_confirm_action)
+        #
+        # self.path_confirm_action = QtGui.QAction('path confirm', self)
+        # self.path_confirm_action.triggered.connect(self.path_confirm)
+        # self.path_confirm_action.setShortcut(S_.controls.confirm_path)
+        # self.addAction(self.path_confirm_action)
+        #
+        # self.fitting_action = QtGui.QAction('fitting', self)
+        # self.fitting_action.triggered.connect(partial(self.fitting, False))
+        # self.fitting_action.setShortcut(S_.controls.fitting_from_left)
+        # self.addAction(self.fitting_action)
+        #
+        # self.fitting_rev_action = QtGui.QAction('fitting rev', self)
+        # self.fitting_rev_action.triggered.connect(partial(self.fitting, True))
+        # self.fitting_rev_action.setShortcut(S_.controls.fitting_from_right)
+        # self.addAction(self.fitting_rev_action)
 
         # self.new_region_t1_action = QtGui.QAction('new region t1', self)
         # self.new_region_t1_action.triggered.connect(partial(self.new_region, 0))
@@ -608,21 +608,21 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         # self.new_region_t2_action.triggered.connect(partial(self.new_region, 1))
         # self.new_region_t2_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
         # self.addAction(self.new_region_t2_action)
-
-        self.remove_region_action = QtGui.QAction('remove region', self)
-        self.remove_region_action.triggered.connect(self.remove_region)
-        self.remove_region_action.setShortcut(S_.controls.remove_region)
-        self.addAction(self.remove_region_action)
-
-        self.strong_remove_action = QtGui.QAction('strong remove', self)
-        self.strong_remove_action.triggered.connect(self.strong_remove_region)
-        self.strong_remove_action.setShortcut(S_.controls.remove_chunk)
-        self.addAction(self.strong_remove_action)
-
-        self.join_regions_action = QtGui.QAction('join regions', self)
-        self.join_regions_action.triggered.connect(self.join_regions_pick_second)
-        self.join_regions_action.setShortcut(S_.controls.join_regions)
-        self.addAction(self.join_regions_action)
+        #
+        # self.remove_region_action = QtGui.QAction('remove region', self)
+        # self.remove_region_action.triggered.connect(self.remove_region)
+        # self.remove_region_action.setShortcut(S_.controls.remove_region)
+        # self.addAction(self.remove_region_action)
+        #
+        # self.strong_remove_action = QtGui.QAction('strong remove', self)
+        # self.strong_remove_action.triggered.connect(self.strong_remove_region)
+        # self.strong_remove_action.setShortcut(S_.controls.remove_chunk)
+        # self.addAction(self.strong_remove_action)
+        #
+        # self.join_regions_action = QtGui.QAction('join regions', self)
+        # self.join_regions_action.triggered.connect(self.join_regions_pick_second)
+        # self.join_regions_action.setShortcut(S_.controls.join_regions)
+        # self.addAction(self.join_regions_action)
 
         self.action0 = QtGui.QAction('0', self)
         self.action0.triggered.connect(partial(self.choose_node, 9))
@@ -674,30 +674,35 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.action9.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
         self.addAction(self.action9)
 
-        self.ignore_action = QtGui.QAction('ignore', self)
-        self.ignore_action.triggered.connect(self.ignore_node)
-        self.ignore_action.setShortcut(S_.controls.ignore_case)
-        self.addAction(self.ignore_action)
+        # self.ignore_action = QtGui.QAction('ignore', self)
+        # self.ignore_action.triggered.connect(self.ignore_node)
+        # self.ignore_action.setShortcut(S_.controls.ignore_case)
+        # self.addAction(self.ignore_action)
+        #
+        # self.new_region_t_action = QtGui.QAction('new region', self)
+        # self.new_region_t_action.triggered.connect(partial(self.new_region, -1))
+        # self.new_region_t_action.setShortcut(S_.controls.new_region)
+        # self.addAction(self.new_region_t_action)
 
-        self.new_region_t_action = QtGui.QAction('new region', self)
-        self.new_region_t_action.triggered.connect(partial(self.new_region, -1))
-        self.new_region_t_action.setShortcut(S_.controls.new_region)
-        self.addAction(self.new_region_t_action)
-
-        self.fitting_one_step_a = QtGui.QAction('fitting one step', self)
-        self.fitting_one_step_a.triggered.connect(partial(self.fitting, False, True))
-        self.fitting_one_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_F))
-        self.addAction(self.fitting_one_step_a)
+        # self.fitting_one_step_a = QtGui.QAction('fitting one step', self)
+        # self.fitting_one_step_a.triggered.connect(partial(self.fitting, False, True))
+        # self.fitting_one_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_F))
+        # self.addAction(self.fitting_one_step_a)
 
         self.mark_join_a = QtGui.QAction('mark join', self)
         self.mark_join_a.triggered.connect(self.mark_join)
-        self.mark_join_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Y))
+        self.mark_join_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_G))
         self.addAction(self.mark_join_a)
 
         self.mark_split_a = QtGui.QAction('mark split', self)
         self.mark_split_a.triggered.connect(self.mark_split)
-        self.mark_split_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_U))
+        self.mark_split_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
         self.addAction(self.mark_split_a)
+
+        self.mark_join_and_split_a = QtGui.QAction('mark join and split', self)
+        self.mark_join_and_split_a.triggered.connect(self.mark_join_and_split)
+        self.mark_join_and_split_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_F))
+        self.addAction(self.mark_join_and_split_a)
 
         self.d_ = None
 
@@ -707,6 +712,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
     def mark_split(self):
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.MARK_SPLIT)
+        self.next_case(move_to_different_case=True)
+
+    def mark_join_and_split(self):
+        self.project.log.add(LogCategories.USER_ACTION, ActionNames.MARK_JOIN_AND_SPLIT)
         self.next_case(move_to_different_case=True)
 
     def update_content(self):
