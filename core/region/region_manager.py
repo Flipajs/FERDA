@@ -22,7 +22,8 @@ class RegionManager:
             print "Initializing db at %s " % self.db_path
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
-            self.cur.execute("CREATE TABLE IF NOT EXISTS regions(\
+            self.cur.execute("DROP TABLE IF EXISTS regions;")
+            self.cur.execute("CREATE TABLE regions(\
                 id INTEGER PRIMARY KEY, \
                 data BLOB);")
             self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
@@ -60,6 +61,7 @@ class RegionManager:
                 self.cur.execute("BEGIN TRANSACTION;")
                 self.cur.executemany("INSERT INTO regions VALUES (?, ?)", self.add_iter_(regions))
                 self.con.commit()
+                self.check_cache_size()
                 return self.tmp_ids
             else:
                 ids = []
@@ -67,28 +69,36 @@ class RegionManager:
                     self.add_to_cache(self.id_, r)
                     ids.append(self.id_)
                     self.id_ += 1
+                self.check_cache_size()
                 return ids
         else:
             if self.use_db:
+                self.add_to_cache(self.id_, regions)
                 self.cur.execute("BEGIN TRANSACTION;")
                 self.cur.execute("INSERT INTO regions VALUES (?, ?)", (self.id_, sql.Binary(pickle.dumps(regions, -1))))
                 self.con.commit()
                 self.id_ += 1
+                self.check_cache_size()
                 return self.id_ - 1
             else:
                 self.add_to_cache(self.id_, regions)
                 self.id_ += 1
+                self.check_cache_size()
                 return self.id_ - 1
 
     def check_cache_size(self):
         # if size limit is used and the cache size reached it
         if self.cache_size_limit_ > 0:
             # I guess calling a method with 'while' once is better than calling a method with 'if' several times
-            while len(self.regions_cache_) >= self.cache_size_limit_:
-                self.regions_cache_.pop(self.recent_regions_ids.pop(0), None)
+            while len(self.regions_cache_) > self.cache_size_limit_:
+                pop = self.recent_regions_ids.pop(0)
+                print "%s > %s, popping %s" % (len(self.regions_cache_), self.cache_size_limit_, pop)
+                self.regions_cache_.pop(pop, None)
 
     def add_to_cache(self, id, region):
+        print "Adding %s, %s" % (id, region)
         if id in self.recent_regions_ids:
+            print "%s is in cache already" % id
             self.recent_regions_ids.pop(0)
         self.recent_regions_ids.append(id)
         self.regions_cache_[id] = region
@@ -106,7 +116,7 @@ class RegionManager:
             # return [self[ii] for ii in xrange(*key.indices(len(self)))]
             start = key.start
             if start == None:
-                start = 0
+                start = 1
             stop = key.stop
             if stop == None:
                 stop = len(self)
@@ -120,11 +130,16 @@ class RegionManager:
             sql = []
 
             # TODO: check if dictionary can be sliced in a better way
+            print self.regions_cache_
             for i in range(start, stop, step):
                 if i in self.regions_cache_:
+                    # print "%s was found in cache" % i
                     result[i] = self.regions_cache_[i]
                 else:
+                    # print "%s was not found in cache" % i
                     sql.append(i)
+
+            print "SQL: %s" % sql
 
             l = len(sql)
             if l == 1:
@@ -145,17 +160,51 @@ class RegionManager:
                 rows = self.cur.fetchall()
                 i = 0
                 for row in rows:
-                    try:
-                        print "sql "+str(sql[i])+", row "+pickle.loads(str(row[i]))
-                        result[sql[i]] = pickle.loads(str(row[i]))
-                        i += 1
-                    except IndexError:
-                        print "Error at index %s" % i
-                        return
-
-
-
+                    # print "sql "+str(sql[i])+", row "+pickle.loads(str(row[0]))
+                    result[sql[i]] = pickle.loads(str(row[0]))
+                    i += 1
             return result
+
+        if isinstance(key, list):
+            result = {}
+            sql = []
+            for id in key:
+                if not isinstance(id, int):
+                    print "TypeError: int expected, %s given! Skipping key '%s'." % (type(id), id)
+                    continue
+                if id in self.regions_cache_:
+                    # print "%s was found in cache" % id
+                    result[id] = self.regions_cache_[id]
+                else:
+                    # print "%s was not found in cache" % id
+                    sql.append(id)
+
+            print "SQL: %s" % sql
+
+            l = len(sql)
+            if l == 1:
+                cmd = "SELECT data FROM regions WHERE id = %s" % sql[0]
+                self.cur.execute(cmd)
+                row = self.cur.fetchone()
+                result[sql[0]] = row[0]
+            if l > 1:
+                param = "("
+                for i in range(0, l):
+                    param += str(sql[i])
+                    if i != l-1:
+                        param += ", "
+                param += ")"
+                print param
+                cmd = "SELECT data FROM regions WHERE id IN %s;" % param
+                self.cur.execute(cmd)
+                rows = self.cur.fetchall()
+                i = 0
+                for row in rows:
+                    # print "sql "+str(sql[i])+", row "+pickle.loads(str(row[0]))
+                    result[sql[i]] = pickle.loads(str(row[0]))
+                    i += 1
+            return result
+
         if isinstance(key, int):
             if key < 0:  # Handle negative indices
                 key += len(self)
@@ -167,7 +216,6 @@ class RegionManager:
                 return self.regions_cache_[key]
 
             if self.use_db:
-                print "DB CHECK"
                 self.cur.execute("SELECT data FROM regions WHERE id = %s;" % key)
                 row = self.cur.fetchone()
                 return pickle.loads(str(row[0]))
@@ -179,7 +227,7 @@ class RegionManager:
         pass
 
     def __len__(self):
-        return self.id_ + 1
+        return self.id_
 
     def __contains__(self, item):
         return isinstance(item, (int, long)) and item < len(self) and item > 0
@@ -206,11 +254,12 @@ class RegionManager:
 """
 
 if __name__ == "__main__":
-    rm = RegionManager(db_wd="/home/dita", cache_size_limit=20)
-    #rm.add("zero")
-    rm.add(["zero", "one"])
-    rm.add("two")
+    rm = RegionManager(db_wd="/home/dita", cache_size_limit=3)
+    rm.add(["one", "two"])
     rm.add("three")
-    rm.add("four")
-    rm.add("five")
+    rm.add(["four", "five", "six"])
+    rm.add(["seven", "eight", "nine"])
     print rm[::]
+    print rm[3]
+    ids = [1, 4, "BOOO"]
+    print rm[ids]
