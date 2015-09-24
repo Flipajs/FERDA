@@ -84,16 +84,16 @@ if __name__ == "__main__":
     vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
 
     # plt.ion()
-    for i in range(0, 1000, 100):
+    for i in range(200, 1000, 100):
         fig = plt.figure()
         im = vid.seek_frame(i)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         plt.imshow(im)
 
-        colors = np.array([[73, 56, 44], [216, 209, 217], [208, 195, 184], [54, 89, 120], [167, 140, 95], [148, 52, 56]])
+        colors = np.array([[46, 34, 21], [216, 209, 217], [208, 195, 184], [54, 89, 120], [167, 140, 95],
+                           [148, 52, 56], [168, 125, 144], [36, 58, 96], [122, 103, 110], [199, 190, 196],
+                           [163, 123, 137]])
         colormarks_labelling(im, colors)
-
-
 
         #
         # # show our image
