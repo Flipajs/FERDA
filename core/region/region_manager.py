@@ -6,8 +6,17 @@ import cPickle as pickle
 
 class RegionManager:
     def __init__(self, db_wd=None, db_name="regions.db", cache_size_limit=-1):
-        # cache only mode (no db set)
+        """
+        RegionManager is designed to store regions data. By default, all data is stored in memory cache (dictionary) and
+        identified using unique ids. Optionally, database can be used, in which case the memory cache size can be
+        limited to reduce memory usage.
+        :param db_wd: Working directory in which the database file should be stored
+        :param db_name: Database name, "regions.db" by default
+        :param cache_size_limit: Number of instances to be held in cache
+        :return: None
+        """
         if db_wd == None:
+            # cache mode (no db set)
             if cache_size_limit == -1:
                 self.use_db = False
                 self.regions_cache_ = {}
@@ -49,125 +58,124 @@ class RegionManager:
         """
         Save one or more regions in RegionManager
         :param regions: (region/list of regions) - regions that should be added into RegionManager.
-        :return (int/list of ints) - ids that were given to appended regions. Regions can be later accessed via these ids
+        :return (list of int/ints) - ids that were given to appended regions. Regions can be later accessed via these ids
         """
 
-        # TODO: maybe check if region is a correct object
-        # TODO: create a "private" add_() method to add one region per time to cache. This method should handle the
-        # TODO:     cache according to cache_size_limit_.
+        # TODO: check if region is a correct object
+
+        # use one return list for simplicity
+        self.tmp_ids = []
+
         if isinstance(regions, list):
             if self.use_db:
-                self.tmp_ids = []
                 self.cur.execute("BEGIN TRANSACTION;")
                 self.cur.executemany("INSERT INTO regions VALUES (?, ?)", self.add_iter_(regions))
+                # self.id and self.tmp_ids are updated in self.add_iter_
                 self.con.commit()
-                self.check_cache_size()
-                return self.tmp_ids
             else:
-                ids = []
                 for r in regions:
-                    self.add_to_cache(self.id_, r)
-                    ids.append(self.id_)
+                    self.add_to_cache_(self.id_, r)
+                    self.tmp_ids.append(self.id_)
                     self.id_ += 1
-                self.check_cache_size()
-                return ids
         else:
             if self.use_db:
-                self.add_to_cache(self.id_, regions)
+                self.add_to_cache_(self.id_, regions)
                 self.cur.execute("BEGIN TRANSACTION;")
                 self.cur.execute("INSERT INTO regions VALUES (?, ?)", (self.id_, sql.Binary(pickle.dumps(regions, -1))))
                 self.con.commit()
+                self.tmp_ids.append(self.id_)
                 self.id_ += 1
-                self.check_cache_size()
-                return self.id_ - 1
             else:
-                self.add_to_cache(self.id_, regions)
+                self.add_to_cache_(self.id_, regions)
+                self.tmp_ids.append(self.id_)
                 self.id_ += 1
-                self.check_cache_size()
-                return self.id_ - 1
 
-    def check_cache_size(self):
-        # if size limit is used and the cache size reached it
-        if self.cache_size_limit_ > 0:
-            # I guess calling a method with 'while' once is better than calling a method with 'if' several times
-            while len(self.regions_cache_) > self.cache_size_limit_:
-                pop = self.recent_regions_ids.pop(0)
-                print "%s > %s, popping %s" % (len(self.regions_cache_), self.cache_size_limit_, pop)
-                self.regions_cache_.pop(pop, None)
+        return self.tmp_ids
 
-    def add_to_cache(self, id, region):
-        print "Adding %s, %s" % (id, region)
+    def add_to_cache_(self, id, region):
+        """
+        This method adds region with id to the cache. It also updates it's position in recent_regions_ids and checks
+        the cache size.
+        :param id:
+        :param region:
+        :return None
+        """
+        # print "Adding %s %s" % (id, region)
+        # print "Cache: %s" % self.recent_regions_ids
         if id in self.recent_regions_ids:
-            print "%s is in cache already" % id
+            # remove region from recent_regions_ids
             self.recent_regions_ids.pop(0)
+            # print "Moving %s up" % id
+        # add region to fresh position in recent_regions_ids and add it to cache
         self.recent_regions_ids.append(id)
         self.regions_cache_[id] = region
 
+        if self.cache_size_limit_ > 0 and len(self.regions_cache_) > self.cache_size_limit_:
+            pop_id = self.recent_regions_ids.pop(0)
+            self.regions_cache_.pop(pop_id, None)
+            # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
+
+    def update(self, key):
+        """
+        Renew the position of key in recent_regions_ids
+        :param key: key of the region
+        :return: None
+        """
+
+        # remove region from recent_regions_ids
+        if key in self.recent_regions_ids:
+            self.recent_regions_ids.pop(0)
+            # add region to fresh position in recent_regions_ids and add it to cache
+            self.recent_regions_ids.append(key)
+        else:
+            raise KeyError("Key %s is not in cache and can't be updated!" % key)
+
     def add_iter_(self, regions):
+        """
+        Iterator over given regions, yields a tuple used for sql executemany. self.tmp_ids and self.id_ get modified.
+        :return tuple (id, binary region data)
+        """
         for r in regions:
-            self.add_to_cache(self.id_, r)
+            self.add_to_cache_(self.id_, r)
             yield (self.id_, sql.Binary(pickle.dumps(r, -1)))
             self.tmp_ids.append(self.id_)
             self.id_ += 1
 
     def __getitem__(self, key):
+        sql_ids = []
+        result = {}
         if isinstance(key, slice):
-            # TODO: check how this example works
+            # TODO: check how this example works and if it can be used
             # return [self[ii] for ii in xrange(*key.indices(len(self)))]
+            # get values from slice
             start = key.start
-            if start == None:
+            if start == None or start == 0:
                 start = 1
             stop = key.stop
-            if stop == None:
+            # TODO: value of "stop" is 9223372036854775807 when using [:], but it works fine with [::]. Find out why.
+            if stop == None or stop == 9223372036854775807:
                 stop = len(self)
             step = key.step
             if step == None:
                 step = 1
+            # check if slice parameters are ok
             if start < 0 or start > len(self) or stop > len(self) or stop < 0 or (stop < start and step > 0) or step == 0:
                 raise ValueError("Invalid slice parameters (%s:%s:%s)" % (start, stop, step))
 
-            result = {}
-            sql = []
-
-            # TODO: check if dictionary can be sliced in a better way
-            print self.regions_cache_
+            # go through slice
             for i in range(start, stop, step):
                 if i in self.regions_cache_:
-                    # print "%s was found in cache" % i
+                    # use cache if region is available
                     result[i] = self.regions_cache_[i]
+                    self.update(i)
                 else:
-                    # print "%s was not found in cache" % i
-                    sql.append(i)
-
-            print "SQL: %s" % sql
-
-            l = len(sql)
-            if l == 1:
-                cmd = "SELECT data FROM regions WHERE id = %s" % sql[0]
-                self.cur.execute(cmd)
-                row = self.cur.fetchone()
-                result[sql[0]] = row[0]
-            if l > 1:
-                param = "("
-                for i in range(0, l):
-                    param += str(sql[i])
-                    if i != l-1:
-                        param += ", "
-                param += ")"
-                print param
-                cmd = "SELECT data FROM regions WHERE id IN %s;" % param
-                self.cur.execute(cmd)
-                rows = self.cur.fetchall()
-                i = 0
-                for row in rows:
-                    # print "sql "+str(sql[i])+", row "+pickle.loads(str(row[0]))
-                    result[sql[i]] = pickle.loads(str(row[0]))
-                    i += 1
+                    # if not, add id to the list of ids to be fetched from db
+                    sql_ids.append(i)
+            if self.use_db:
+                self.db_search_(result, sql_ids)
             return result
 
         if isinstance(key, list):
-            result = {}
-            sql = []
             for id in key:
                 if not isinstance(id, int):
                     print "TypeError: int expected, %s given! Skipping key '%s'." % (type(id), id)
@@ -175,34 +183,13 @@ class RegionManager:
                 if id in self.regions_cache_:
                     # print "%s was found in cache" % id
                     result[id] = self.regions_cache_[id]
+                    self.update(id)
                 else:
                     # print "%s was not found in cache" % id
-                    sql.append(id)
+                    sql_ids.append(id)
 
-            print "SQL: %s" % sql
-
-            l = len(sql)
-            if l == 1:
-                cmd = "SELECT data FROM regions WHERE id = %s" % sql[0]
-                self.cur.execute(cmd)
-                row = self.cur.fetchone()
-                result[sql[0]] = row[0]
-            if l > 1:
-                param = "("
-                for i in range(0, l):
-                    param += str(sql[i])
-                    if i != l-1:
-                        param += ", "
-                param += ")"
-                print param
-                cmd = "SELECT data FROM regions WHERE id IN %s;" % param
-                self.cur.execute(cmd)
-                rows = self.cur.fetchall()
-                i = 0
-                for row in rows:
-                    # print "sql "+str(sql[i])+", row "+pickle.loads(str(row[0]))
-                    result[sql[i]] = pickle.loads(str(row[0]))
-                    i += 1
+            if self.use_db:
+                self.db_search_(result, sql_ids)
             return result
 
         if isinstance(key, int):
@@ -213,24 +200,72 @@ class RegionManager:
                 raise IndexError("Index %s is out of range (1 - %s)" % (key, len(self)))
 
             if key in self.regions_cache_:
-                return self.regions_cache_[key]
+                result[key] = self.regions_cache_[key]
+                self.update(key)
+                return result
 
+            sql_ids.append(key)
             if self.use_db:
-                self.cur.execute("SELECT data FROM regions WHERE id = %s;" % key)
-                row = self.cur.fetchone()
-                return pickle.loads(str(row[0]))
+                self.db_search_(result, sql_ids)
+            return result
 
             raise SyntaxError("Very severe! Key %s wasn't found, but probably is in RM!" % key)
         raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
 
-    def info(self):
-        pass
+    def db_search_(self, result, sql_ids):
+        """
+        :param result: The dictionary to which the results should be appended
+        :param sql_ids: ids to be fetched from database
+        """
+        if not self.use_db:
+            raise SyntaxError("Don't call this method when database is not used! Most likely, this is an error of region"
+                              " manager itself")
+
+        l = len(sql_ids)
+        if l == 1:
+            # if only one id has to be taken from db
+            cmd = "SELECT data FROM regions WHERE id = %s" % sql_ids[0]
+            self.cur.execute(cmd)
+            row = self.cur.fetchone()
+            # add it to result
+            id = sql_ids[0]
+            region = pickle.loads(str(row[0]))
+            result[id] = region
+            # add it to cache
+            self.add_to_cache_(id, region)
+
+        if l > 1:
+            cmd = "SELECT data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
+            self.cur.execute(cmd)
+            rows = self.cur.fetchall()
+            i = 0
+            for row in rows:
+                id = sql_ids[i]
+                region = pickle.loads(str(row[0]))
+                self.add_to_cache_(id, region)
+                result[id] = region
+                i += 1
+
+    def pretty_list(self, list):
+        """
+        Converts a list of elements [1, 2, 3] to pretty string "(1, 2, 3)"
+        :param list: list to convert
+        """
+
+        l = len(list)
+        param = "("
+        for i in range(0, l):
+            param += str(list[i])
+            if i != l-1:
+                param += ", "
+        param += ")"
+        return param
 
     def __len__(self):
         return self.id_
 
     def __contains__(self, item):
-        return isinstance(item, (int, long)) and item < len(self) and item > 0
+        return isinstance(item, (int, long)) and len(self) > item > 0
 
 
 """
@@ -254,12 +289,23 @@ class RegionManager:
 """
 
 if __name__ == "__main__":
-    rm = RegionManager(db_wd="/home/dita", cache_size_limit=3)
+    rm = RegionManager(db_wd="/home/dita", cache_size_limit=4)
+    # rm = RegionManager()
     rm.add(["one", "two"])
     rm.add("three")
     rm.add(["four", "five", "six"])
     rm.add(["seven", "eight", "nine"])
-    print rm[::]
-    print rm[3]
-    ids = [1, 4, "BOOO"]
-    print rm[ids]
+    print "Cache: %s" % rm.recent_regions_ids
+
+    print "All: %s" % rm[:]
+    print "Cache: %s" % rm.recent_regions_ids
+
+    ids = [1, 4]
+    print "List: %s" % rm[ids]
+    print "Cache: %s" % rm.recent_regions_ids
+
+    print "3: %s" % rm[3]
+    print "Cache: %s" % rm.recent_regions_ids
+
+    print "9: %s" % rm[9]
+    print "Cache: %s" % rm.recent_regions_ids
