@@ -707,15 +707,21 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.d_ = None
 
     def mark_join(self):
-        self.project.log.add(LogCategories.USER_ACTION, ActionNames.MARK_JOIN)
+        self.project.log.add(LogCategories.USER_ACTION,
+                             ActionNames.MARK_JOIN,
+                             data={'node': self.active_cw.active_node})
         self.next_case(move_to_different_case=True)
 
     def mark_split(self):
-        self.project.log.add(LogCategories.USER_ACTION, ActionNames.MARK_SPLIT)
+        self.project.log.add(LogCategories.USER_ACTION,
+                             ActionNames.MARK_SPLIT,
+                             data={'node': self.active_cw.active_node})
         self.next_case(move_to_different_case=True)
 
     def mark_join_and_split(self):
-        self.project.log.add(LogCategories.USER_ACTION, ActionNames.MARK_JOIN_AND_SPLIT)
+        self.project.log.add(LogCategories.USER_ACTION,
+                             ActionNames.MARK_JOIN_AND_SPLIT,
+                             data={'node': self.active_cw.active_node})
         self.next_case(move_to_different_case=True)
 
     def update_content(self):
