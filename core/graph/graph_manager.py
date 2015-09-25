@@ -55,6 +55,8 @@ class GraphManager:
             self.g.vp['region_id'][vertex] = region.id()
 
     def remove_vertex(self, vertex, disassembly=True):
+        print "remove", vertex
+
         region = self.rm[self.g.vp['region_id'][vertex]]
         # region = self.match_if_reconstructed(region)
         if region is None:
@@ -337,7 +339,12 @@ class GraphManager:
 
         best_scores = [0, 0]
         best_matchings = [None, None]
-        ids = np.argsort(scores)
+
+        if order == 'asc':
+            ids = np.argsort(scores)
+        else:
+            ids = np.argsort(-np.array(scores))
+
         for i in range(2):
             best_scores[i] = scores[ids[i]]
             best_matchings[i] = matchings[ids[i]]

@@ -42,8 +42,8 @@ class Solver:
         # TODO: add to config
         self.antlike_filter = True
         self.rules = []
-        self.rules = [self.symmetric_cc_solver]
-        # self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
+        # self.rules = [self.symmetric_cc_solver]
+        self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
 
         self.ignored_nodes = {}
 
@@ -53,8 +53,16 @@ class Solver:
         if queue is None:
             queue = self.gm.get_all_relevant_vertices()
 
+        queue = sorted(queue, key=lambda x: self.project.gm.region(x).area()+self.project.gm.region(x).centroid()[0]+self.project.gm.region(x).frame()+self.project.gm.region(x).centroid()[1])
+
         while queue:
             vertex = queue.pop()
+
+            r = self.project.gm.region(vertex)
+            if r.frame() not in self.project.gm.vertices_in_t:
+                continue
+            if vertex not in self.project.gm.vertices_in_t[r.frame()]:
+                continue
 
             # skip the chunks...
             if self.gm.chunk_start(vertex):
