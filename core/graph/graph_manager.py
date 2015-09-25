@@ -55,8 +55,6 @@ class GraphManager:
             self.g.vp['region_id'][vertex] = region.id()
 
     def remove_vertex(self, vertex, disassembly=True):
-        print "remove", vertex
-
         region = self.rm[self.g.vp['region_id'][vertex]]
         # region = self.match_if_reconstructed(region)
         if region is None:

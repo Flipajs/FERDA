@@ -43,15 +43,18 @@ class Solver:
         self.antlike_filter = True
         self.rules = []
         # self.rules = [self.symmetric_cc_solver]
-        self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
+        self.rules = [self.adaptive_threshold]
 
         self.ignored_nodes = {}
 
         self.cc_id = 0
 
-    def simplify(self, queue=None):
+    def simplify(self, queue=None, rules=None):
         if queue is None:
             queue = self.gm.get_all_relevant_vertices()
+
+        if rules is None:
+            rules = self.rules
 
         queue = sorted(queue, key=lambda x: self.project.gm.region(x).area()+self.project.gm.region(x).centroid()[0]+self.project.gm.region(x).frame()+self.project.gm.region(x).centroid()[1])
 
@@ -68,7 +71,7 @@ class Solver:
             if self.gm.chunk_start(vertex):
                 continue
 
-            for r in self.rules:
+            for r in rules:
                 affected = r(vertex)
                 queue.extend(affected)
 
@@ -178,7 +181,7 @@ class Solver:
         affected = []
         # TODO:
         # in this case, there might be to much combinations....
-        if len(s1) == len(s2) and len(s1) < 5:
+        if len(s1) == len(s2) and 1 < len(s1) < 5:
             scores, matchings = self.gm.get_2_best_matchings(s1, s2)
             if not scores:
                 return []
@@ -211,7 +214,7 @@ class Solver:
 
                         e = self.gm.g.edge(n1, n2)
                         self.gm.g.ep['certainty'][e] = cert
-                        affected = self.confirm_edges([(n1, n2)])
+                        affected += self.confirm_edges([(n1, n2)])
             else:
                 for n1, n2 in matchings[0]:
                     if n1 and n2:
