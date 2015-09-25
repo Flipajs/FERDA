@@ -33,6 +33,7 @@ class Chunk:
         ch2, _ = self.project.gm.is_chunk(node)
         if ch2:
             ch2.merge(self, undo_action=undo_action)
+            return
         else:
             self.nodes_.insert(0, node)
 
@@ -40,7 +41,7 @@ class Chunk:
             self.project.gm.remove_vertex(first, False)
             self.chunk_reconnect_()
 
-    def append_right(self, node, solver, undo_action=False):
+    def append_right(self, node, undo_action=False):
         region = self.project.gm.region(node)
         if region.frame() != self.end_frame() + 1:
             print "DISCONTINUITY in chunk.py/append_right", region.frame(), self.end_frame(), region, self.end_node()
@@ -51,6 +52,7 @@ class Chunk:
         ch2, _ = self.project.gm.is_chunk(node)
         if ch2:
             self.merge(ch2, undo_action=undo_action)
+            return
         else:
             self.nodes_.append(node)
 
@@ -113,7 +115,7 @@ class Chunk:
             self.project.gm.remove_vertex(ch1end)
             self.project.gm.remove_vertex(ch2start)
 
-        self.nodes_.extend(ch2.vertices_)
+        self.nodes_.extend(ch2.nodes_)
 
         if not undo_action:
             self.chunk_reconnect_()

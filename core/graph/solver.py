@@ -41,8 +41,8 @@ class Solver:
 
         # TODO: add to config
         self.antlike_filter = True
+        self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
         # self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
-        self.rules = [self.adaptive_threshold, self.symmetric_cc_solver]
 
         self.ignored_nodes = {}
 
@@ -170,7 +170,7 @@ class Solver:
         # TODO:
         # in this case, there might be to much combinations....
         if len(s1) == len(s2) and len(s1) < 5:
-            scores, configs = best_2_cc_configs(self.g, s1, s2)
+            scores, matchings = self.gm.get_2_best_matchings(s1, s2)
             if not scores:
                 return []
 
@@ -185,66 +185,71 @@ class Solver:
                 cert = abs(sc1 / n_) * (abs(sc1-sc2))
 
             if cert >= self.project.solver_parameters.certainty_threshold:
-                for n1, n2 in configs[0]:
+                for n1, n2 in matchings[0]:
                     if n1 and n2:
-                        for _, n2_ in self.g.out_edges(n1):
-                            if n2_ != n2:
-                                self.remove_edge(n1, n2_)
-                                affected.append(n2_)
+                        # for n2_ in n1.out_neighbours():
+                        #     if n2_ != n2:
+                        #         self.gm.remove_edge(n1, n2_)
+                        #         affected.append(n2_)
+                        #
+                        # for n1_ in n2.in_neighbours():
+                        #     if n1_ != n1:
+                        #         self.remove_edge(n1_, n2)
+                        #         affected.append(n1_)
+                        #
+                        # affected.append(n1)
+                        # affected.append(n2)
 
-                        for n1_, _ in self.g.in_edges(n2):
-                            if n1_ != n1:
-                                self.remove_edge(n1_, n2)
-                                affected.append(n1_)
-
-                        affected.append(n1)
-                        affected.append(n2)
-
-                        self.g[n1][n2]['type'] = EDGE_CONFIRMED
-                        self.g[n1][n2]['certainty'] = cert
+                        e = self.gm.g.edge(n1, n2)
+                        self.gm.g.ep['certainty'][e] = cert
+                        affected = self.confirm_edges([(n1, n2)])
             else:
-                for n1, n2 in configs[0]:
+                for n1, n2 in matchings[0]:
                     if n1 and n2:
-                        self.g[n1][n2]['certainty'] = cert
+                        e = self.gm.g.edge(n1, n2)
+                        self.gm.g.ep['certainty'][e] = cert
 
         return affected
 
-    def update_costs(self, n):
-        in_d = self.g.in_degree(n)
-        out_d = self.g.out_degree(n)
+    def update_costs(self, vertex):
+        in_d = vertex.in_degree()
+        out_d = vertex.out_degree()
+
+        region = self.project.gm.region(vertex)
 
         affected = []
         if in_d == 1 and out_d > 0:
-            e_ = self.g.in_edges(n)
-            prev_n = e_[0][0]
-            pred = n.centroid() - prev_n.centroid()
+            # there is just one edge...
+            pred = 0
+            for e_ in vertex.in_edges():
+                prev_region = self.project.gm.region(e_.source())
+                pred = region.centroid() - prev_region.centroid()
 
-            for _, n2 in self.g.out_edges(n):
-                s = self.g[n][n2]['score']
+            for e in vertex.out_edges():
+                s = self.project.gm.g.ep['score'][e]
 
-                s2, _, _, _ = self.assignment_score(n, n2, pred)
-                s2 = -s2
+                out_region = self.project.gm.region(e.target())
+                s2, _, _, _ = self.assignment_score(region, out_region, pred)
 
-                if s2 < s:
-                    self.g[n][n2]['score'] = s2
-                    # print "better score ", n.id_, n2.id_, pred, s, s2
-                    affected.append(n)
+                if s2 > s:
+                    self.project.gm.g.ep['score'][e] = s2
+                    affected.append(vertex)
 
         elif in_d > 0 and out_d == 1:
-            e_ = self.g.out_edges(n)
-            next_n = e_[0][1]
-            pred = n.centroid() - next_n.centroid()
+            # there is only one edge
+            for e_ in vertex.out_edges():
+                next_region = self.project.gm.region(e_.target())
+                pred = region.centroid() - next_region.centroid()
 
-            for n1, _ in self.g.in_edges(n):
-                s = self.g[n1][n]['score']
+            for e in vertex.in_edges():
+                s = self.project.gm.g.ep['score'][e]
 
-                s2, _, _, _ = self.assignment_score(n1, n, pred)
-                s2 = -s2
+                in_region = self.project.gm.region(e.source())
+                s2, _, _, _ = self.assignment_score(in_region, region, pred)
 
-                if s2 < s:
-                    self.g[n1][n]['score'] = s2
-                    # print "better score next ", n1.id_, n.id_, pred, s, s2
-                    affected.append(n1)
+                if s2 > s:
+                    self.project.gm.g.ep['score'][e] = s2
+                    affected.append(e.source())
 
         return affected
 
@@ -266,38 +271,6 @@ class Solver:
         s = ds * antlikeness_diff
 
         return s, ds, 0, antlikeness_diff
-
-    def simplify_to_chunks(self, nodes=None):
-        """
-        Goes through given nodes and check if outgoing edge is confirmed, if yes, the node is added into chunk.
-        If there are no nodes given, it goes trough whole graph.
-        """
-
-        if not nodes:
-            nodes = self.g.nodes()
-
-        nodes = sorted(nodes, key=lambda k: k.frame_)
-
-        for n in nodes:
-            if n not in self.g:
-                continue
-
-            out_num, out_n = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
-            if out_num == 1:
-                is_ch, _, chunk = self.is_chunk(n)
-
-                if is_ch:
-                    #check if it is the same chunk
-                    if chunk.end_n == out_n:
-                        continue
-
-                    chunk.append_right(out_n, self)
-                else:
-                    is_ch_out, _, chunk_out = self.is_chunk(out_n)
-                    if is_ch_out:
-                        chunk_out.append_left(n, self)
-                    else:
-                        Chunk(n, out_n, self, store_area=self.project.other_parameters.store_area_info, id=self.project.solver_parameters.new_chunk_id())
 
     def get_ccs(self, queue=[]):
         if not queue:

@@ -81,10 +81,9 @@ if __name__ == '__main__':
         #     sys.stdout.flush()
 
     s = time.time()
-    print "BEFORE: ", solver.gm.g.num_vertices(), solver.gm.g.num_edges()
-    print "CHUNK START: ", solver.gm.g.vp['chunk_start_id'][solver.gm.vertices_in_t[0][0]]
+    print "#Edges BEFORE: ", solver.gm.g.num_edges()
     solver.simplify()
-    print "AFTER: ", solver.gm.g.num_vertices(), solver.gm.g.num_edges()
+    print "#Edges AFTER: ", solver.gm.g.num_edges()
     # solver.simplify_to_chunks()
     solver_t += time.time() - s
 
@@ -101,3 +100,9 @@ if __name__ == '__main__':
     file_t = time.time() - s
 
     print "MSERS t:", round(msers_t, 2), "SOLVER t: ", round(solver_t, 2), "VIDEO t:", round(vid_t, 2), "FILE t: ", round(file_t, 2), "SUM t / frames_in_row:", round((msers_t + solver_t+vid_t+file_t)/float(frames_in_row), 2)
+
+    for e in proj.gm.g.edges():
+        r1 = proj.gm.region(e.source())
+        r2 = proj.gm.region(e.target())
+
+        print r1, " -> ", r2

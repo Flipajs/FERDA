@@ -34,6 +34,9 @@ class GraphManager:
         self.start_t = min(self.start_t, region.frame_)
         self.end_t = max(self.end_t, region.frame_)
 
+        if region.frame() == 22:
+            print "adding ", region.id()
+
         vertex = self.g.add_vertex()
 
         self.vertices_in_t.setdefault(region.frame_, []).append(vertex)
@@ -72,7 +75,7 @@ class GraphManager:
 
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, region)
 
-        self.vertices_in_t[region.frame_].remove(vertex)
+        self.vertices_in_t[region.frame()].remove(vertex)
         if not self.vertices_in_t[region.frame_]:
             del self.vertices_in_t[region.frame_]
 
@@ -95,11 +98,11 @@ class GraphManager:
         """
         chunk_start = self.g.vp['chunk_start_id'][vertex]
         if chunk_start:
-            return chunk_start, False
+            return self.project.chm[chunk_start], False
 
         chunk_end = self.g.vp['chunk_end_id'][vertex]
         if chunk_end:
-            return chunk_end, True
+            return self.project.chm[chunk_end], True
 
         return None, False
 
@@ -242,7 +245,7 @@ class GraphManager:
 
         return vertices
 
-    def get_2_best_out_vertices(self, vertex, order='asc'):
+    def get_2_best_out_vertices(self, vertex, order='desc'):
         vertices = []
         scores = []
 
@@ -267,7 +270,7 @@ class GraphManager:
 
         return best_scores, best_vertices
 
-    def get_2_best_in_vertices(self, vertex, order='asc'):
+    def get_2_best_in_vertices(self, vertex, order='desc'):
         vertices = []
         scores = []
 
@@ -322,3 +325,40 @@ class GraphManager:
                     process.append((n2, 1))
 
         return list(s_t1), list(s_t2)
+
+    def get_2_best_matchings(self, vertices1, vertices2, order='desc'):
+        matchings = []
+        scores = []
+
+        self.get_matchings(vertices1, vertices2, [], 0, matchings, scores)
+
+        if len(scores) < 2:
+            return scores, matchings
+
+        best_scores = [0, 0]
+        best_matchings = [None, None]
+        ids = np.argsort(scores)
+        for i in range(2):
+            best_scores[i] = scores[ids[i]]
+            best_matchings[i] = matchings[ids[i]]
+
+        return best_scores, best_matchings
+
+    def get_matchings(self, vertices1, vertices2, m, s, matchings, conf_scores, use_undefined=True, undefined_edge_cost=0):
+        if vertices1:
+            v1 = vertices1.pop(0)
+            for i in range(len(vertices2)):
+                v2 = vertices2.pop(0)
+                e = self.g.edge(v1, v2)
+                if e:
+                    self.get_matchings(vertices1, vertices2, m + [(v1, v2)], s+self.g.ep['score'][e], matchings, conf_scores)
+                vertices2.append(v2)
+
+            # undefined state
+            if use_undefined:
+                self.get_matchings(vertices1, vertices2, m + [(v1, None)], s + undefined_edge_cost, matchings, conf_scores)
+
+            vertices1.append(v1)
+        else:
+            matchings.append(m)
+            conf_scores.append(s)
