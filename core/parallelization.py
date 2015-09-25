@@ -88,4 +88,5 @@ if __name__ == '__main__':
 
     file_t = time.time() - s
 
-    print "MSERS t:", msers_t, "SOLVER t: ",solver_t, "VIDEO t:", vid_t, "FILE t: ", file_t, "SUM t / frames_in_row:", (msers_t + solver_t+vid_t+file_t)/float(frames_in_row)
+    print "Edges AFTER: ", len(solver.g.edges())
+    print "MSERS t:", msers_t, "SOLVER t: ", solver_t, "VIDEO t:", vid_t, "FILE t: ", file_t, "SUM t / frames_in_row:", (msers_t + solver_t+vid_t+file_t)/float(frames_in_row)
