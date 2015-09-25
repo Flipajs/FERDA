@@ -20,6 +20,8 @@ import cPickle as pickle
 
 
 class Solver:
+    SPLIT_JOIN_THRESHOLD = 0.5
+
     def __init__(self, project):
         self.g = nx.DiGraph()
         self.project = project
@@ -31,6 +33,7 @@ class Solver:
         self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * self.major_axis_median
         self.antlikeness = project.stats.antlikeness_svm
 
+        # TODO: add to config
         # TODO: add to config
         self.antlike_filter = True
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
@@ -201,9 +204,12 @@ class Solver:
         if t-1 in self.nodes_in_t and t in self.nodes_in_t:
             self.add_edges_(self.nodes_in_t[t-1], self.nodes_in_t[t], fast=fast)
 
-    def simplify(self, queue=None, return_affected=False, first_run=False):
+    def simplify(self, queue=None, return_affected=False, first_run=False, rules=None):
         if queue is None:
             queue = self.g.nodes()
+
+        if not rules:
+            rules = self.rules
 
         all_affected = set()
 
@@ -215,7 +221,7 @@ class Solver:
             if num_out == 1 and 'chunk_ref' in self.g[n][n_out]:
                 continue
 
-            for r in self.rules:
+            for r in rules:
                 start = time.time()
                 affected = r(n)
                 if return_affected:
@@ -226,6 +232,17 @@ class Solver:
                     queue.extend(affected)
 
         return all_affected
+
+    def check_split_and_join(self, n):
+        if self.test_split(n):
+            for _, n_out in self.g.out_edges(n):
+                self.g[n][n_out]['score'] = 0.0
+
+        if self.test_join(n):
+            for n_in, _ in self.g.in_edges(n):
+                self.g[n_in][n]['score'] = 0.0
+
+        return []
 
     def adaptive_threshold(self, n):
         vals_out, best_out = get_best_n_out_nodes(self.g, n, 2)
@@ -413,10 +430,22 @@ class Solver:
                     self.g[n1][n]['score'] = s2
                     # print "better score next ", n1.id_, n.id_, pred, s, s2
                     affected.append(n1)
+        else:
+            for _, n_out in self.g.out_edges(n):
+                old_s = self.g[n][n_out]['score']
+                new_s, _, _, _ = self.assignment_score(n, n_out)
+                # print n, "-> ", n_out, "new_score: ", -new_s
+                if old_s != -new_s:
+                    self.g[n][n_out]['score'] = -new_s
+                    affected.append(n)
+                    # affected.append(n_out)
 
         return affected
 
     def assignment_score(self, r1, r2, pred=0):
+        if self.test_split(r1) or self.test_join(r2):
+            return 0.0, 0, 0, 0
+
         d = np.linalg.norm(r1.centroid() + pred - r2.centroid()) / float(self.major_axis_median)
         ds = max(0, (2-d) / 2.0)
 
@@ -556,6 +585,26 @@ class Solver:
         node_representative = [node_representative[id] for id in ids]
 
         return new_ccs, node_representative
+
+    def test_join(self, node):
+        num_in, _ = num_in_edges_of_type(self.g, node, EDGE_CONFIRMED)
+        if self.g.in_degree(node)-num_in > 1:
+            for n_in, _ in self.g.in_edges(node):
+                a = (node.area() - n_in.area()) / float(n_in.area())
+                if a > self.SPLIT_JOIN_THRESHOLD:
+                    return True
+
+        return False
+
+    def test_split(self, node):
+        num_out, _ = num_out_edges_of_type(self.g, node, EDGE_CONFIRMED)
+        if self.g.out_degree(node)-num_out > 1:
+            for _, n_out in self.g.out_edges(node):
+                a = (node.area() - n_out.area()) / float(n_out.area())
+                if a > self.SPLIT_JOIN_THRESHOLD:
+                    return True
+
+        return False
 
     def confirm_edges(self, edge_pairs):
         affected = set()

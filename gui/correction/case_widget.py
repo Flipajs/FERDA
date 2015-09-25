@@ -258,7 +258,6 @@ class CaseWidget(QtGui.QWidget):
         self.active_col = self.active_col % self.cols
         self.draw_selection_rect()
 
-
     def draw_selection_rect(self):
         c = self.active_col
         r = self.active_row
