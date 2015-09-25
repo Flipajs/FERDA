@@ -47,12 +47,11 @@ def test_split(node, solver):
     return False
 
 def experiment1(project):
-    app = QtGui.QApplication(sys.argv)
     solver = project.saved_progress['solver']
     g = solver.g
     vid = get_auto_video_manager(project)
     nodes_groups = []
-    for i in range(300, 500):
+    for i in range(75, 85):
         if i in solver.nodes_in_t:
             nodes_groups.append(solver.nodes_in_t[i])
         else:
@@ -76,16 +75,16 @@ def experiment1(project):
     ex.setFocus()
 
     app.exec_()
-    app.deleteLater()
-    sys.exit()
 
 
 if __name__ == "__main__":
+    app = QtGui.QApplication(sys.argv)
     p = Project()
     # p.load('/Users/flipajs/Documents/wd/ms_colormarks/colormarks.fproj')
     # p.load('/Users/flipajs/Documents/wd/ms_colormarks_mcheck/colormarks.fproj')
-    p.load('/Users/flipajs/Documents/wd/ms_colormarks_mcheck_c10/colormarks.fproj')
+    # p.load('/Users/flipajs/Documents/wd/ms_colormarks_mcheck_c10/colormarks.fproj')
     # p.load('/Users/flipajs/Documents/wd/ms_colonyvid5m/colonyvid5m.fproj')
+    p.load('/Users/flipajs/Documents/wd/ms_colonyvid5m_mcheck_c10/colonyvid5m.fproj')
 
     print "# NODES: ", len(p.saved_progress['solver'].g), p.solver_parameters.certainty_threshold
     solver = p.saved_progress['solver']
@@ -94,12 +93,23 @@ if __name__ == "__main__":
     # solver.save()
     # print "# NODES: ", len(solver.g), p.solver_parameters.certainty_threshold
     # p.load('/Users/flipajs/Documents/wd/c2__/c2.fproj')
-    # p.working_directory = '/Users/flipajs/Documents/wd/ms_colonyvid5m'
-    # p.video_paths = ['/Volumes/Seagate Expansion Drive 1/IST - videos/F1C5.avi']
-    # # p.solver_parameters.certainty_threshold = 0.1
+    # p.working_directory = '/Users/flipajs/Documents/wd/ms_colonyvid5m_mcheck_c10'
+    # p.video_paths = ['/Volumes/Seagate Expansion Drive 1/IST - videos/colonies/F1C5.avi']
+    # p.solver_parameters.certainty_threshold = 0.1
     # p.save()
 
-    experiment1(p)
+    nodes = []
+    for t in range(76, 83):
+        # for n in solver.nodes_in_t[t]:
+        nodes.append(list(solver.nodes_in_t[t]))
+
+    # nodes = sorted(nodes, key=lambda x: x.frame_)
+
+    for n in reversed(nodes):
+        print solver.simplify(n, first_run=True)
+        solver.simplify_to_chunks()
+        p.saved_progress['solver'] = solver
+        experiment1(p)
 
     solver = p.saved_progress['solver']
     join_num = 0
@@ -145,3 +155,6 @@ if __name__ == "__main__":
                     both_num += 1
 
     print "#JOIN: %d, #SPLIT: %d, #BOTH: %d" % (join_num, split_num, both_num)
+
+    app.deleteLater()
+    sys.exit()
