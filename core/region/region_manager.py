@@ -1,3 +1,5 @@
+from core.region.region import Region
+
 __author__ = 'flipajs'
 
 import sqlite3 as sql
@@ -22,7 +24,7 @@ class RegionManager:
                 self.regions_cache_ = {}
                 self.recent_regions_ids = []
                 self.cache_size_limit_ = cache_size_limit
-                self.id_ = 1
+                self.id_ = 0
             else:
                 raise SyntaxError("Cache limit can only be set when database is used!")
         else:
@@ -44,9 +46,9 @@ class RegionManager:
             try:
                 self.cur.execute("SELECT id FROM regions ORDER BY id DESC LIMIT 1;")
                 row = self.cur.fetchone()
-                self.id_ = row[0] + 1
+                self.id_ = row[0]
             except TypeError: # TypeError is raised when row is empty (no IDs were found)
-                self.id_ = 1
+                self.id_ = 0
         self.tmp_ids = []
 
         # there might be problem estimating size based on object size... then change it to cache_region_num_limit...
@@ -63,7 +65,7 @@ class RegionManager:
 
         # TODO: check if region is a correct object
 
-        # use one return list for simplicity
+        # use one return list for simplicity - the ids are appended to it from the get_next_id function
         self.tmp_ids = []
 
         if isinstance(regions, list):
@@ -72,23 +74,30 @@ class RegionManager:
                 self.cur.executemany("INSERT INTO regions VALUES (?, ?)", self.add_iter_(regions))
                 # self.id and self.tmp_ids are updated in self.add_iter_
                 self.con.commit()
+                return self.tmp_ids
             else:
                 for r in regions:
-                    self.add_to_cache_(self.id_, r)
-                    self.tmp_ids.append(self.id_)
-                    self.id_ += 1
+                    if not isinstance(r, Region):
+                        raise TypeError ("Region manager can only work with Region objects, not %s" % type(r))
+                    id = self.get_next_id()
+                    r.id_ = id
+                    self.add_to_cache_(id, r)
+                return self.tmp_ids
+
+        if not isinstance(regions, Region):
+            raise TypeError ("Region manager can only work with Region objects, not %s" % type(regions))
+
+        if self.use_db:
+            id = self.get_next_id()
+            regions.id_ = id
+            self.add_to_cache_(id, regions)
+            self.cur.execute("BEGIN TRANSACTION;")
+            self.cur.execute("INSERT INTO regions VALUES (?, ?)", (id, sql.Binary(pickle.dumps(regions, -1))))
+            self.con.commit()
         else:
-            if self.use_db:
-                self.add_to_cache_(self.id_, regions)
-                self.cur.execute("BEGIN TRANSACTION;")
-                self.cur.execute("INSERT INTO regions VALUES (?, ?)", (self.id_, sql.Binary(pickle.dumps(regions, -1))))
-                self.con.commit()
-                self.tmp_ids.append(self.id_)
-                self.id_ += 1
-            else:
-                self.add_to_cache_(self.id_, regions)
-                self.tmp_ids.append(self.id_)
-                self.id_ += 1
+            id = self.get_next_id()
+            regions.id_ = id
+            self.add_to_cache_(id, regions)
 
         return self.tmp_ids
 
@@ -100,22 +109,31 @@ class RegionManager:
         :param region:
         :return None
         """
-        # print "Adding %s %s" % (id, region)
+        print "Adding %s %s" % (id, region)
         # print "Cache: %s" % self.recent_regions_ids
         if id in self.recent_regions_ids:
             # remove region from recent_regions_ids
             self.recent_regions_ids.pop(0)
             # print "Moving %s up" % id
-        # add region to fresh position in recent_regions_ids and add it to cache
-        self.recent_regions_ids.append(id)
-        self.regions_cache_[id] = region
+            # add region to fresh position in recent_regions_ids and add it to cache
+            self.recent_regions_ids.append(id)
+            self.regions_cache_[id] = region
+        else:
+            # add region to fresh position in recent_regions_ids and add it to cache
+            self.recent_regions_ids.append(id)
+            self.regions_cache_[id] = region
+            print "Cachesize: %s" % len(self.regions_cache_)
 
-        if self.cache_size_limit_ > 0 and len(self.regions_cache_) > self.cache_size_limit_:
-            pop_id = self.recent_regions_ids.pop(0)
-            self.regions_cache_.pop(pop_id, None)
-            # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
+            if self.cache_size_limit_ > 0 and len(self.regions_cache_) > self.cache_size_limit_:
+                print "tmp_cache %s" % self.recent_regions_ids
+                pop_id = self.recent_regions_ids.pop(0)
+                print "Popping %s" % pop_id
+                print self.regions_cache_.pop(pop_id, None).id()
+                print "tmp__cache %s" % self.recent_regions_ids
 
-    def update(self, key):
+                # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
+
+    def update(self, key, region):
         """
         Renew the position of key in recent_regions_ids
         :param key: key of the region
@@ -128,7 +146,7 @@ class RegionManager:
             # add region to fresh position in recent_regions_ids and add it to cache
             self.recent_regions_ids.append(key)
         else:
-            raise KeyError("Key %s is not in cache and can't be updated!" % key)
+            self.add_to_cache_(key, region)
 
     def add_iter_(self, regions):
         """
@@ -136,10 +154,18 @@ class RegionManager:
         :return tuple (id, binary region data)
         """
         for r in regions:
-            self.add_to_cache_(self.id_, r)
-            yield (self.id_, sql.Binary(pickle.dumps(r, -1)))
-            self.tmp_ids.append(self.id_)
-            self.id_ += 1
+            if not isinstance(r, Region):
+                self.con.rollback()
+                raise TypeError ("Region manager can only work with Region objects, not %s" % type(r))
+            id = self.get_next_id()
+            r.id_ = id
+            self.add_to_cache_(id, r)
+            yield (id, sql.Binary(pickle.dumps(r, -1)))
+
+    def get_next_id(self):
+        self.id_ += 1
+        self.tmp_ids.append(self.id_)
+        return self.id_
 
     def __getitem__(self, key):
         sql_ids = []
@@ -166,8 +192,9 @@ class RegionManager:
             for i in range(start, stop, step):
                 if i in self.regions_cache_:
                     # use cache if region is available
-                    result[i] = self.regions_cache_[i]
-                    self.update(i)
+                    r = self.regions_cache_[i]
+                    result[i] = r
+                    self.update(i, r)
                 else:
                     # if not, add id to the list of ids to be fetched from db
                     sql_ids.append(i)
@@ -182,8 +209,9 @@ class RegionManager:
                     continue
                 if id in self.regions_cache_:
                     # print "%s was found in cache" % id
-                    result[id] = self.regions_cache_[id]
-                    self.update(id)
+                    r = self.regions_cache_[id]
+                    result[id] = r
+                    self.update(id, r)
                 else:
                     # print "%s was not found in cache" % id
                     sql_ids.append(id)
@@ -200,8 +228,9 @@ class RegionManager:
                 raise IndexError("Index %s is out of range (1 - %s)" % (key, len(self)))
 
             if key in self.regions_cache_:
-                result[key] = self.regions_cache_[key]
-                self.update(key)
+                r = self.regions_cache_[key]
+                result[key] = r
+                self.update(key, r)
                 return result
 
             sql_ids.append(key)
@@ -291,21 +320,30 @@ class RegionManager:
 if __name__ == "__main__":
     rm = RegionManager(db_wd="/home/dita", cache_size_limit=4)
     # rm = RegionManager()
-    rm.add(["one", "two"])
-    rm.add("three")
-    rm.add(["four", "five", "six"])
-    rm.add(["seven", "eight", "nine"])
-    print "Cache: %s" % rm.recent_regions_ids
+    f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
+    up = pickle.Unpickler(f)
+    regions = up.load()
+    f.close()
 
+    rm.add(regions[0:10])
+
+    # print "Cache: %s" % rm.recent_regions_ids
+#
     print "All: %s" % rm[:]
-    print "Cache: %s" % rm.recent_regions_ids
+    # print "Cache: %s" % rm.recent_regions_ids
+
+    listt = regions[13:16]
+    rm.add(listt)
 
     ids = [1, 4]
     print "List: %s" % rm[ids]
-    print "Cache: %s" % rm.recent_regions_ids
+    # print "Cache: %s" % rm.recent_regions_ids
 
     print "3: %s" % rm[3]
-    print "Cache: %s" % rm.recent_regions_ids
+    # print "Cache: %s" % rm.recent_regions_ids
 
     print "9: %s" % rm[9]
-    print "Cache: %s" % rm.recent_regions_ids
+    # print "Cache: %s" % rm.recent_regions_ids
+
+    print "2: %s" % rm[2]
+    # print "Cache: %s" % rm.recent_regions_ids
