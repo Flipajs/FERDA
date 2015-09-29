@@ -7,7 +7,7 @@ import cPickle as pickle
 
 
 class RegionManager:
-    def __init__(self, db_wd=None, db_name="regions.db", cache_size_limit=-1):
+    def __init__(self, db_wd=None, db_name="regions.db", cache_size_limit=-1, data=None):
         """
         RegionManager is designed to store regions data. By default, all data is stored in memory cache (dictionary) and
         identified using unique ids. Optionally, database can be used, in which case the memory cache size can be
@@ -50,6 +50,15 @@ class RegionManager:
             except TypeError: # TypeError is raised when row is empty (no IDs were found)
                 self.id_ = 0
         self.tmp_ids = []
+
+        if isinstance(data, RegionManager):
+            newdata = data.get_all()
+            print len(newdata)
+            self.add(newdata)
+        elif isinstance(data, list):
+            for datas in data:
+                if isinstance(datas, RegionManager):
+                    self.add(datas.get_all())
 
         # there might be problem estimating size based on object size... then change it to cache_region_num_limit...
         # TODO: id parallelisation problems (IGNORE FOR NOW)
@@ -109,7 +118,7 @@ class RegionManager:
         :param region:
         :return None
         """
-        print "Adding %s %s" % (id, region)
+        # print "Adding %s %s" % (id, region)
         # print "Cache: %s" % self.recent_regions_ids
         if id in self.recent_regions_ids:
             # remove region from recent_regions_ids
@@ -122,14 +131,10 @@ class RegionManager:
             # add region to fresh position in recent_regions_ids and add it to cache
             self.recent_regions_ids.append(id)
             self.regions_cache_[id] = region
-            print "Cachesize: %s" % len(self.regions_cache_)
 
             if self.cache_size_limit_ > 0 and len(self.regions_cache_) > self.cache_size_limit_:
-                print "tmp_cache %s" % self.recent_regions_ids
                 pop_id = self.recent_regions_ids.pop(0)
-                print "Popping %s" % pop_id
-                print self.regions_cache_.pop(pop_id, None).id()
-                print "tmp__cache %s" % self.recent_regions_ids
+                self.regions_cache_.pop(pop_id, None).id()
 
                 # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
 
@@ -180,12 +185,12 @@ class RegionManager:
             stop = key.stop
             # TODO: value of "stop" is 9223372036854775807 when using [:], but it works fine with [::]. Find out why.
             if stop == None or stop == 9223372036854775807:
-                stop = len(self)
+                stop = len(self) +1
             step = key.step
             if step == None:
                 step = 1
             # check if slice parameters are ok
-            if start < 0 or start > len(self) or stop > len(self) or stop < 0 or (stop < start and step > 0) or step == 0:
+            if start < 0 or start > len(self) or stop > len(self)+1 or stop < 0 or (stop < start and step > 0) or step == 0:
                 raise ValueError("Invalid slice parameters (%s:%s:%s)" % (start, stop, step))
 
             # go through slice
@@ -275,6 +280,47 @@ class RegionManager:
                 result[id] = region
                 i += 1
 
+    def get_all(self):
+        result = []
+        sql_ids = []
+        for id in range(1, len(self)+1):
+            if id in self.regions_cache_:
+                # print "%s was found in cache" % id
+                r = self.regions_cache_[id]
+                result.append(r)
+                self.update(id, r)
+            else:
+                # print "%s was not found in cache" % id
+                sql_ids.append(id)
+
+        if self.use_db:
+            l = len(sql_ids)
+            if l == 1:
+                # if only one id has to be taken from db
+                cmd = "SELECT data FROM regions WHERE id = %s" % sql_ids[0]
+                self.cur.execute(cmd)
+                row = self.cur.fetchone()
+                # add it to result
+                id = sql_ids[0]
+                region = pickle.loads(str(row[0]))
+                result.append(region)
+                # add it to cache
+                self.add_to_cache_(id, region)
+
+            if l > 1:
+                cmd = "SELECT data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
+                self.cur.execute(cmd)
+                rows = self.cur.fetchall()
+                i = 0
+                for row in rows:
+                    id = sql_ids[i]
+                    region = pickle.loads(str(row[0]))
+                    self.add_to_cache_(id, region)
+                    result.append(region)
+                    i += 1
+        return result
+
+
     def pretty_list(self, list):
         """
         Converts a list of elements [1, 2, 3] to pretty string "(1, 2, 3)"
@@ -318,32 +364,21 @@ class RegionManager:
 """
 
 if __name__ == "__main__":
-    rm = RegionManager(db_wd="/home/dita", cache_size_limit=4)
     # rm = RegionManager()
     f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
     up = pickle.Unpickler(f)
     regions = up.load()
     f.close()
 
-    rm.add(regions[0:10])
+    rm1 = RegionManager()
+    data = regions[0:10]
+    print data
+    rm1.add(data)
 
-    # print "Cache: %s" % rm.recent_regions_ids
-#
-    print "All: %s" % rm[:]
-    # print "Cache: %s" % rm.recent_regions_ids
+    rm2 = RegionManager()
+    data = regions[10:20]
+    print data
+    rm1.add(data)
 
-    listt = regions[13:16]
-    rm.add(listt)
-
-    ids = [1, 4]
-    print "List: %s" % rm[ids]
-    # print "Cache: %s" % rm.recent_regions_ids
-
-    print "3: %s" % rm[3]
-    # print "Cache: %s" % rm.recent_regions_ids
-
-    print "9: %s" % rm[9]
-    # print "Cache: %s" % rm.recent_regions_ids
-
-    print "2: %s" % rm[2]
-    # print "Cache: %s" % rm.recent_regions_ids
+    rm3 = RegionManager(db_wd="/home/dita", data=[rm1, rm2])
+    print rm3[:]
