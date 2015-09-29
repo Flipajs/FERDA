@@ -43,7 +43,7 @@ class Solver:
         self.antlike_filter = True
         self.rules = []
         # self.rules = [self.symmetric_cc_solver]
-        self.rules = [self.adaptive_threshold]
+        self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
 
         self.ignored_nodes = {}
 
