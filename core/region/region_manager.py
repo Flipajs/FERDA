@@ -280,6 +280,28 @@ class RegionManager:
                 result[id] = region
                 i += 1
 
+    def remove(self, region):
+        print "Removing %s " % region
+        if isinstance(region, Region):
+            if region in self:
+                if self.use_db:
+                    cmd = "UPDATE regions SET data=NULL WHERE id LIKE %s" % region.id()
+                    self.cur.execute(cmd)
+                if region.id() in self.regions_cache_:
+                    self.regions_cache_[region.id()] = None
+                if region.id() in self.recent_regions_ids:
+                    self.recent_regions_ids.remove(region.id())
+        elif isinstance(region, (int, long)):
+            if region in self:
+                if self.use_db:
+                    cmd = "UPDATE regions SET data=NULL WHERE id LIKE %s" % region
+                    self.cur.execute(cmd)
+                if region in self.regions_cache_:
+                    self.regions_cache_[region] = None
+                if region in self.recent_regions_ids:
+                    self.recent_regions_ids.remove(region)
+
+
     def get_all(self):
         result = []
         sql_ids = []
@@ -340,6 +362,8 @@ class RegionManager:
         return self.id_
 
     def __contains__(self, item):
+        if isinstance(item, Region):
+            return len(self) > item.id() > 0
         return isinstance(item, (int, long)) and len(self) > item > 0
 
 
@@ -372,13 +396,10 @@ if __name__ == "__main__":
 
     rm1 = RegionManager()
     data = regions[0:10]
-    print data
     rm1.add(data)
 
-    rm2 = RegionManager()
-    data = regions[10:20]
-    print data
-    rm1.add(data)
+    r3 = data[3]
+    rm1.remove(r3)
+    print rm1[1]
+    print rm1[4]
 
-    rm3 = RegionManager(db_wd="/home/dita", data=[rm1, rm2])
-    print rm3[:]
