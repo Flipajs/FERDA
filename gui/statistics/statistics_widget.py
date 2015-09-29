@@ -135,14 +135,16 @@ class StatisticsWidget(QtGui.QWidget):
                     radius = am.radius
                 except AttributeError:
                     center = np.array([0, 0])
+                    num = 0
                     # estimate center:
                     for y in range(am.im_height):
                         for x in range(am.im_width):
                             if am.mask_[y, x]:
                                 center += np.array([y, x])
+                                num += 1
 
-                    c = np.mean(center)
-                    radius = round((center.shape[0] / np.pi) ** 0.5)
+                    c = center / num
+                    radius = round((num / np.pi) ** 0.5)
 
                 arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
 
