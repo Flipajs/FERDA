@@ -9,8 +9,12 @@ from core.arena.model import Model
 class Circle(Model):
     def __init__(self, im_height, im_width):
         super(Circle, self).__init__(im_height, im_width)
+        self.center = None
+        self.radius = -1
 
     def set_circle(self, center, radius):
+        self.center = center
+        self.radius = radius
         self.mask_ = np.zeros((self.im_height, self.im_width), dtype=np.uint8)
         cv2.circle(self.mask_, (int(round(center[1])), int(round(center[0]))), int(round(radius)), 255, -1)
 
