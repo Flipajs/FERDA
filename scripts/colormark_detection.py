@@ -209,6 +209,9 @@ if __name__ == "__main__":
     # fig.canvas.mpl_connect('button_press_event', onclick)
     # for i in range(200, 1000, 100):
     frame = 0
+    plt.figure(1)
+    fig = plt.figure(2)
+    fig.canvas.mpl_connect('key_press_event', on_key_event)
     while True:
         plt.figure(1)
         im = vid.seek_frame(frame)
@@ -216,7 +219,6 @@ if __name__ == "__main__":
         plt.imshow(im)
 
         fig = plt.figure(2)
-        fig.canvas.mpl_connect('key_press_event', on_key_event)
         # plt.title('lab')
         # out_im = color_candidate_pixels_slow(im)
         out_im = color_candidate_pixels(im)
