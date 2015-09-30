@@ -95,7 +95,11 @@ def onclick(event):
 
 def compute_saturation(im):
     igbr = igbr_transformation(im)
-    out_im = np.sum((igbr[:, :, 1:4] - np.array([1.0/3., 1.0/3., 1.0/3.]))**2, axis=2)
+    out_im = np.sum((igbr[:, :, 1:4] - np.array([1.0/3., 1.0/3., 1.0/3.]))**2, axis=2)**0.5
+
+    MIN_I = 100
+
+    out_im[np.sum(im, axis=2) < MIN_I] = 0
 
     return out_im
 
@@ -232,7 +236,8 @@ if __name__ == "__main__":
                            [167, 137, 103], # ORANGE
                            ])
 
-        out_im = colormarks_labelling(out_im, colors)
+        out_im = compute_saturation(out_im)
+        # out_im = colormarks_labelling(out_im, colors)
         plt.imshow(out_im)
 
         # plt.figure(3)
