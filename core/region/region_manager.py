@@ -1,4 +1,4 @@
-from core.region.region import Region
+from core.region.region import Region, encode_RLE
 
 __author__ = 'flipajs'
 
@@ -93,7 +93,7 @@ class RegionManager:
             regions.id_ = id
             self.add_to_cache_(id, regions)
             self.cur.execute("BEGIN TRANSACTION;")
-            self.cur.execute("INSERT INTO regions VALUES (?, ?)", (id, sql.Binary(pickle.dumps(regions, -1))))
+            self.cur.execute("INSERT INTO regions VALUES (?, ?)", (id, self.prepare_region(regions)))
             self.con.commit()
         else:
             id = self.get_next_id()
@@ -157,7 +157,7 @@ class RegionManager:
             id = self.get_next_id()
             r.id_ = id
             self.add_to_cache_(id, r)
-            yield (id, sql.Binary(pickle.dumps(r, -1)))
+            yield (id, self.prepare_region(r))
 
     def get_next_id(self):
         self.id_ += 1
@@ -283,15 +283,31 @@ class RegionManager:
                 self.add_to_cache_(row[0], region)
                 result[row[0]] = region
 
-    def removemany(self, regions):
-        if self.use_db:
-            self.cur.execute("BEGIN TRANSACTION;")
-        for region in regions:
-            self.remove(region, transaction=False)
-        if self.use_db:
-            self.con.commit()
+    def removemany_(self, regions):
+        sql_ids = []
+        if isinstance(regions, list):
+            for r in regions:
+                if isinstance(r, Region):
+                    sql_ids.append(r.id())
+                elif isinstance(r, (int, long)):
+                    sql_ids.append(r)
+                else:
+                    raise TypeError("Remove method only accepts Regions or their ids (int)")
+        for id_ in sql_ids:
+            if id_ in self.regions_cache_:
+                self.regions_cache_.pop(id_)
+            if id_ in self.recent_regions_ids:
+                self.recent_regions_ids.remove(id_)
 
-    def remove(self, region, transaction=True):
+        cmd = "DELETE FROM regions WHERE id IN %s" % self.pretty_list(sql_ids)
+        self.cur.execute("BEGIN TRANSACTION;")
+        self.cur.execute(cmd)
+        self.con.commit()
+
+    def remove(self, region):
+        if isinstance(region, list):
+            self.removemany_(region)
+            return
         # print "Removing %s " % region
         if isinstance(region, Region):
             id_ = region.id()
@@ -303,17 +319,22 @@ class RegionManager:
         if id_ in self:
             if self.use_db:
                 cmd = "DELETE FROM regions WHERE id = %s;" % id_
-                if transaction:
-                    self.cur.execute("BEGIN TRANSACTION;")
-                    self.cur.execute(cmd)
-                    self.con.commit()
-                else:
-                    self.cur.execute(cmd)
+                self.cur.execute("BEGIN TRANSACTION;")
+                self.cur.execute(cmd)
+                self.con.commit()
             if id_ in self.regions_cache_:
                 self.regions_cache_.pop(id_)
             if id_ in self.recent_regions_ids:
                 self.recent_regions_ids.remove(id_)
 
+    def prepare_region(self, region):
+        if region.pts_rle_ == None:
+            region.pts_rle_ = encode_RLE(region.pts_)
+        tmp_pts = region.pts_
+        region.pts_ = None
+        data = sql.Binary(pickle.dumps(region, -1))
+        region.pts_ = tmp_pts
+        return data
 
     def get_all(self):
         result = []
@@ -379,25 +400,25 @@ class RegionManager:
             return len(self)+1 > item.id() > 0
         return isinstance(item, (int, long)) and len(self)+1 > item > 0
 
-"""
-remove regions, do not set them to none
-create removemany method
-save rle, erase points
-"""
-
 if __name__ == "__main__":
     # rm = RegionManager()
     f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
     up = pickle.Unpickler(f)
     regions = up.load()
+    for r in regions:
+        r.pts_rle_ = None
     f.close()
 
-    rm1 = RegionManager(db_wd="/home/dita/", cache_size_limit=1)
+    rm1 = RegionManager(db_wd="/home/dita", cache_size_limit=1)
     data = regions[0:10]
-    rm1.add(data)
+    rm1.add(regions)
+    rm = regions[3:8]
+    rm1.remove(rm)
 
-    r3 = data[3]
-    rm1.removemany([9, 9, 3, 4, 5])
-    rm1.remove(10)
+    # db size with 20 pts regions: 306 176 bytes
+    # db size with 20 rle regions:  75 776 bytes
+    # NOTE: To check sb size properly, always start in new file. File size doesn't decrease when items are deleted or
+    #       when table is dropped. Instead of delete, sql VACUUM command can be used.
+
     dict = rm1[:]
     print dict
