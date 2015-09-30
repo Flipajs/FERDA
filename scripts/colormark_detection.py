@@ -15,6 +15,7 @@ import utils
 import cv2
 import numpy as np
 from scipy.spatial.distance import cdist
+import time
 
 I_NORM = 766 * 3 * 2
 
@@ -70,6 +71,8 @@ def colormarks_labelling(image, colors, original_colors=None):
     dists = cdist(im_, colors)
     ids = np.argmin(dists, axis=1)
     labels = ids.reshape((image.shape[0], image.shape[1]))
+
+    colors[0:4, :] = [255, 255, 255]
     if original_colors is None:
         labels = np.asarray(colors[labels], dtype=np.uint8)
     else:
@@ -90,71 +93,192 @@ def onclick(event):
     # if len(coords) == 2:
     #     fig.canvas.mpl_disconnect(cid)
 
+def compute_saturation(im):
+    igbr = igbr_transformation(im)
+    out_im = np.sum((igbr[:, :, 1:4] - np.array([1.0/3., 1.0/3., 1.0/3.]))**2, axis=2)
+
+    return out_im
+
+def compute_saturation_(im):
+    from skimage import color
+    import time
+    s = time.time()
+    lab = color.rgb2lab(im)
+    print time.time()-s
+
+    out_im = np.sum(lab[:,:,1:2]**2, axis=2)
+
+    m_ = np.max(out_im) / 4.
+    print m_
+    out_im[out_im > m_] = m_
+    print np.max(out_im)
+
+    return out_im
+
+def color_candidate_pixels_slow(im):
+    from numpy.linalg import norm
+
+    MIN_WHITE_DIST = 180
+    MIN_GRAY_DIST = 10
+    TOO_DARK = 60
+
+    WHITE = np.array([[255, 255, 255]])
+
+    use = []
+    for y in range(im.shape[0]):
+        for x in range(im.shape[1]):
+            px = im[y, x, :]
+            if norm(px - WHITE) > MIN_WHITE_DIST:
+                if np.sum(px) < TOO_DARK:
+                    use.append((y, x))
+                elif (norm(np.cross(WHITE, -px)) / norm(WHITE)) > MIN_GRAY_DIST:
+                    use.append((y, x))
+
+    result = np.ones((im.shape[0], im.shape[1], 3), dtype=np.uint8)*255
+    for px in use:
+        result[px[0], px[1], :] = im[px[0], px[1], :]
+
+    return result
+
+def color_candidate_pixels(im):
+    s = time.time()
+    im_copy = im.copy()
+    print "im_copy t: ", time.time() - s
+
+    s = time.time()
+    im_ = im.reshape(im.shape[0] * im.shape[1], im.shape[2])
+    print "im reshape t: ", time.time() - s
+
+    MIN_WHITE_DIST = 180
+    MIN_GRAY_DIST = 10
+
+    s = time.time()
+    dists = cdist(im_, np.array([[255, 255, 255]]), 'euclidean')
+    print "distances t: ", time.time() - s
+
+    s = time.time()
+    ids = dists < MIN_WHITE_DIST
+    print "thresholding t: ", time.time() - s
+
+    not_ids = np.logical_not(ids)
+
+    # # remove GRAY
+    # from numpy.linalg import norm
+    # l2 = np.array([[255, 255, 255]])
+    # s = time.time()
+    # gray_dists = norm(np.cross(l2, -im_[np.logical_not(ids[:, 0]), :]), axis=1) / norm(l2)
+    # are_gray = gray_dists < MIN_GRAY_DIST
+    #
+    # ids[ids == 0] = are_gray
+    # print "gray dist t: ", time.time()-s
+    remove = ids.reshape((im.shape[0], im.shape[1]))
+    print np.sum(remove)/float((im.shape[0] * im.shape[1]))
+    #
+    im_copy[remove] = [255, 255, 255]
+
+    return im_copy
+
+def on_key_event(event):
+    global frame
+    key = event.key
+
+    # In Python 2.x, the key gets indicated as "alt+[key]"
+    # Bypass this bug:
+    if key.find('alt') == 0:
+        key = key.split('+')[1]
+
+    if key in ['n', 'right']:
+        frame += 1
+    elif key in ['N']:
+        frame += 50
+    elif key in ['B']:
+        frame -= 50
+        if frame < 0:
+            frame = 0
+    elif key in ['b', 'B', 'left']:
+        if frame > 0:
+            frame -= 1
+    elif key in ['q']:
+        quit_ = True
 
 if __name__ == "__main__":
     vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
-    coords = np.array(
-        [[190.55604719764017, 641.76548672566378],
-         [683.29941002949852, 294.3908554572273],
-         [639.877581120944, 454.86283185840716],
-         [239.64159292035401, 773.91887905604722],
-         [687.07522123893807, 430.3200589970503],
-         [526.6032448377581, 233.9778761061948],
-         [216.98672566371681, 303.83038348082607],
-         [464.302359882, 828.668141593]])
-
-    coords = np.asarray(coords, dtype=np.int)
-    im = vid.seek_frame(200)
-    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-    igbr = igbr_transformation(im)
-    orig_colors = im[coords[:, 1], coords[:, 0], :]
-    igbr_colors = igbr[coords[:, 1], coords[:, 0], :]
 
     plt.ion()
-    fig = plt.figure()
-    fig.canvas.mpl_connect('button_press_event', onclick)
-    for i in range(200, 1000, 100):
-        im = vid.seek_frame(i)
+    # fig = plt.figure(1)
+    # fig.canvas.mpl_connect('button_press_event', onclick)
+    # for i in range(200, 1000, 100):
+    frame = 0
+    while True:
+        plt.figure(1)
+        im = vid.seek_frame(frame)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         plt.imshow(im)
-        # plt.hold(True)
-        # plt.scatter(coords[:,0], coords[:,1])
-        # plt.hold(False)
 
-        # colors = np.array([[46, 34, 21], [216, 209, 217], [208, 195, 184], [54, 89, 120], [167, 140, 95],
-        #                    [148, 52, 56], [168, 125, 144], [36, 58, 96], [122, 103, 110], [199, 190, 196],
-        #                    [163, 123, 137]])
-        # colormarks_labelling(im, colors)
+        fig = plt.figure(2)
+        fig.canvas.mpl_connect('key_press_event', on_key_event)
+        # plt.title('lab')
+        # out_im = color_candidate_pixels_slow(im)
+        out_im = color_candidate_pixels(im)
+        colors = np.array([[46, 34, 21], # ANT
+                           [158, 139, 131], [175, 160, 152], [188, 176, 167], # BG
+                           [27, 54, 39], # DARK GREEN
+                           [58, 75, 98], [37, 71, 107], # BLUE
+                           [183, 142, 174], [158, 126, 152], # PINK
+                           [56, 48, 58], # PURPLE
+                           [146, 47, 51], # RED
+                           [167, 137, 103], # ORANGE
+                           ])
 
-        #############
-        import time
+        out_im = colormarks_labelling(out_im, colors)
+        plt.imshow(out_im)
 
-        s = time.time()
-        igbr = igbr_transformation(im)
-
-        labels = colormarks_labelling(igbr, igbr_colors, orig_colors)
-        print "TIME: ", time.time() - s
-        plt.figure()
-        plt.imshow(labels)
+        # plt.figure(3)
+        # plt.title('irgb')
+        # out_im = compute_saturation(im)
+        # plt.imshow(out_im)
         plt.show()
         plt.waitforbuttonpress()
 
-        # rows = 2
-        # cols = 3
         #
-        # i = 1
+        # # plt.hold(True)
+        # # plt.scatter(coords[:,0], coords[:,1])
+        # # plt.hold(False)
+        #
+        # # colors = np.array([[46, 34, 21], [216, 209, 217], [208, 195, 184], [54, 89, 120], [167, 140, 95],
+        # #                    [148, 52, 56], [168, 125, 144], [36, 58, 96], [122, 103, 110], [199, 190, 196],
+        # #                    [163, 123, 137]])
+        # # colormarks_labelling(im, colors)
+        #
+        # #############
+        # import time
+        #
+        # s = time.time()
+        # igbr = igbr_transformation(im)
+        #
+        # labels = colormarks_labelling(igbr, igbr_colors, orig_colors)
+        # print "TIME: ", time.time() - s
         # plt.figure()
-        # plt.subplot(int(str(rows)+str(cols)+str(i)))
-        # im_ = im.copy()
-        # plt.imshow(im_)
-        #
-        # i=2
-        # plt.subplot(int(str(rows)+str(cols)+str(i)))
-        # plt.imshow(igbr[:,:,1:4])
-        #
-        # for i in range(3, 7):
-        #     plt.subplot(int(str(rows)+str(cols)+str(i)))
-        #     plt.imshow(igbr[:, :, i-3], cmap='gray')
-        #
+        # plt.imshow(labels)
         # plt.show()
         # plt.waitforbuttonpress()
+        #
+        # # rows = 2
+        # # cols = 3
+        # #
+        # # i = 1
+        # # plt.figure()
+        # # plt.subplot(int(str(rows)+str(cols)+str(i)))
+        # # im_ = im.copy()
+        # # plt.imshow(im_)
+        # #
+        # # i=2
+        # # plt.subplot(int(str(rows)+str(cols)+str(i)))
+        # # plt.imshow(igbr[:,:,1:4])
+        # #
+        # # for i in range(3, 7):
+        # #     plt.subplot(int(str(rows)+str(cols)+str(i)))
+        # #     plt.imshow(igbr[:, :, i-3], cmap='gray')
+        # #
+        # # plt.show()
+        # # plt.waitforbuttonpress()
