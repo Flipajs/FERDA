@@ -16,6 +16,7 @@ import cv2
 import numpy as np
 from scipy.spatial.distance import cdist
 import time
+import scipy
 
 I_NORM = 766 * 3 * 2
 
@@ -71,14 +72,15 @@ def colormarks_labelling(image, colors, original_colors=None):
     dists = cdist(im_, colors)
     ids = np.argmin(dists, axis=1)
     labels = ids.reshape((image.shape[0], image.shape[1]))
+    labels[labels < 5] = 0
 
-    colors[0:4, :] = [255, 255, 255]
+    colors[0:5, :] = [255, 255, 255]
     if original_colors is None:
-        labels = np.asarray(colors[labels], dtype=np.uint8)
+        out = np.asarray(colors[labels], dtype=np.uint8)
     else:
-        labels = np.asarray(original_colors[labels], dtype=np.uint8)
+        out = np.asarray(original_colors[labels], dtype=np.uint8)
 
-    return labels
+    return out, labels
 
 
 def onclick(event):
@@ -205,17 +207,37 @@ def on_key_event(event):
     elif key in ['q']:
         quit_ = True
 
+def process_ccs(im):
+    from skimage.measure import label
+    from skimage.morphology import erosion, square
+    # im = erosion(im, square(2))
+
+    labels, num = label(im, return_num=True, neighbors=4, background=0)
+    print "Number of components:", num
+    plt.figure(3)
+    plt.imshow(labels, cmap='prism')
+
+
+
 if __name__ == "__main__":
     vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
 
     plt.ion()
-    # fig = plt.figure(1)
-    # fig.canvas.mpl_connect('button_press_event', onclick)
-    # for i in range(200, 1000, 100):
-    frame = 0
+    frame = 500
     plt.figure(1)
     fig = plt.figure(2)
     fig.canvas.mpl_connect('key_press_event', on_key_event)
+
+    colors = np.array([[46, 34, 21], # ANT
+                           [158, 139, 131], [175, 160, 152], [188, 176, 167], [174, 94, 73], # BG
+                           [27, 54, 39], # DARK GREEN
+                           [37, 71, 107], # BLUE
+                           [158, 126, 152], # PINK
+                           [56, 48, 58], # PURPLE
+                           [146, 47, 51], # RED
+                           [158, 130, 90], # ORANGE
+                           ])
+
     while True:
         plt.figure(1)
         im = vid.seek_frame(frame)
@@ -223,69 +245,12 @@ if __name__ == "__main__":
         plt.imshow(im)
 
         fig = plt.figure(2)
-        # plt.title('lab')
-        # out_im = color_candidate_pixels_slow(im)
         out_im = color_candidate_pixels(im)
-        colors = np.array([[46, 34, 21], # ANT
-                           [158, 139, 131], [175, 160, 152], [188, 176, 167], # BG
-                           [27, 54, 39], # DARK GREEN
-                           [58, 75, 98], [37, 71, 107], # BLUE
-                           [183, 142, 174], [158, 126, 152], # PINK
-                           [56, 48, 58], # PURPLE
-                           [146, 47, 51], # RED
-                           [167, 137, 103], # ORANGE
-                           ])
 
-        out_im = compute_saturation(out_im)
-        # out_im = colormarks_labelling(out_im, colors)
+        out_im, labels = colormarks_labelling(out_im, colors.copy())
         plt.imshow(out_im)
 
-        # plt.figure(3)
-        # plt.title('irgb')
-        # out_im = compute_saturation(im)
-        # plt.imshow(out_im)
+        process_ccs(labels)
+
         plt.show()
         plt.waitforbuttonpress()
-
-        #
-        # # plt.hold(True)
-        # # plt.scatter(coords[:,0], coords[:,1])
-        # # plt.hold(False)
-        #
-        # # colors = np.array([[46, 34, 21], [216, 209, 217], [208, 195, 184], [54, 89, 120], [167, 140, 95],
-        # #                    [148, 52, 56], [168, 125, 144], [36, 58, 96], [122, 103, 110], [199, 190, 196],
-        # #                    [163, 123, 137]])
-        # # colormarks_labelling(im, colors)
-        #
-        # #############
-        # import time
-        #
-        # s = time.time()
-        # igbr = igbr_transformation(im)
-        #
-        # labels = colormarks_labelling(igbr, igbr_colors, orig_colors)
-        # print "TIME: ", time.time() - s
-        # plt.figure()
-        # plt.imshow(labels)
-        # plt.show()
-        # plt.waitforbuttonpress()
-        #
-        # # rows = 2
-        # # cols = 3
-        # #
-        # # i = 1
-        # # plt.figure()
-        # # plt.subplot(int(str(rows)+str(cols)+str(i)))
-        # # im_ = im.copy()
-        # # plt.imshow(im_)
-        # #
-        # # i=2
-        # # plt.subplot(int(str(rows)+str(cols)+str(i)))
-        # # plt.imshow(igbr[:,:,1:4])
-        # #
-        # # for i in range(3, 7):
-        # #     plt.subplot(int(str(rows)+str(cols)+str(i)))
-        # #     plt.imshow(igbr[:, :, i-3], cmap='gray')
-        # #
-        # # plt.show()
-        # # plt.waitforbuttonpress()
