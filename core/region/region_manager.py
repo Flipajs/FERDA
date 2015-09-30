@@ -53,17 +53,11 @@ class RegionManager:
 
         if isinstance(data, RegionManager):
             newdata = data.get_all()
-            print len(newdata)
             self.add(newdata)
         elif isinstance(data, list):
             for datas in data:
                 if isinstance(datas, RegionManager):
                     self.add(datas.get_all())
-
-        # there might be problem estimating size based on object size... then change it to cache_region_num_limit...
-        # TODO: id parallelisation problems (IGNORE FOR NOW)
-        # use self.id = 0, increase for each added region...
-        # we will solve parallelisation by merging managers in assembly step
 
     def add(self, regions):
         """
@@ -71,8 +65,6 @@ class RegionManager:
         :param regions: (region/list of regions) - regions that should be added into RegionManager.
         :return (list of int/ints) - ids that were given to appended regions. Regions can be later accessed via these ids
         """
-
-        # TODO: check if region is a correct object
 
         # use one return list for simplicity - the ids are appended to it from the get_next_id function
         self.tmp_ids = []
@@ -183,7 +175,7 @@ class RegionManager:
             if start == None or start == 0:
                 start = 1
             stop = key.stop
-            # TODO: value of "stop" is 9223372036854775807 when using [:], but it works fine with [::]. Find out why.
+            # value of "stop" is 9223372036854775807 when using [:], but it works fine with [::]. Hotfixed.
             if stop == None or stop == 9223372036854775807:
                 stop = len(self) +1
             step = key.step
@@ -196,11 +188,13 @@ class RegionManager:
             # go through slice
             for i in range(start, stop, step):
                 if i in self.regions_cache_:
+                    # print "%s is in cache" % i
                     # use cache if region is available
                     r = self.regions_cache_[i]
                     result[i] = r
                     self.update(i, r)
                 else:
+                    # print "%s is not in cache" % i
                     # if not, add id to the list of ids to be fetched from db
                     sql_ids.append(i)
             if self.use_db:
@@ -259,47 +253,66 @@ class RegionManager:
         if l == 1:
             # if only one id has to be taken from db
             cmd = "SELECT data FROM regions WHERE id = %s" % sql_ids[0]
+            self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
+            self.con.commit()
             row = self.cur.fetchone()
             # add it to result
             id = sql_ids[0]
-            region = pickle.loads(str(row[0]))
-            result[id] = region
-            # add it to cache
-            self.add_to_cache_(id, region)
+            try:
+                region = pickle.loads(str(row[0]))
+                result[id] = region
+                # add it to cache
+                self.add_to_cache_(id, region)
+            except TypeError:
+                # region was erased
+                pass
 
         if l > 1:
-            cmd = "SELECT data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
+            cmd = "SELECT id, data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
+            self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
+            self.con.commit()
             rows = self.cur.fetchall()
-            i = 0
+            tmp_ids = []
             for row in rows:
-                id = sql_ids[i]
-                region = pickle.loads(str(row[0]))
-                self.add_to_cache_(id, region)
-                result[id] = region
-                i += 1
+                if row[0] in tmp_ids:
+                    continue
+                tmp_ids.append(row[0])
+                region = pickle.loads(str(row[1]))
+                self.add_to_cache_(row[0], region)
+                result[row[0]] = region
 
-    def remove(self, region):
-        print "Removing %s " % region
+    def removemany(self, regions):
+        if self.use_db:
+            self.cur.execute("BEGIN TRANSACTION;")
+        for region in regions:
+            self.remove(region, transaction=False)
+        if self.use_db:
+            self.con.commit()
+
+    def remove(self, region, transaction=True):
+        # print "Removing %s " % region
         if isinstance(region, Region):
-            if region in self:
-                if self.use_db:
-                    cmd = "UPDATE regions SET data=NULL WHERE id LIKE %s" % region.id()
-                    self.cur.execute(cmd)
-                if region.id() in self.regions_cache_:
-                    self.regions_cache_[region.id()] = None
-                if region.id() in self.recent_regions_ids:
-                    self.recent_regions_ids.remove(region.id())
+            id_ = region.id()
         elif isinstance(region, (int, long)):
-            if region in self:
-                if self.use_db:
-                    cmd = "UPDATE regions SET data=NULL WHERE id LIKE %s" % region
+            id_ = region
+        else:
+            raise TypeError("Remove method only accepts Regions or their ids (int)")
+
+        if id_ in self:
+            if self.use_db:
+                cmd = "DELETE FROM regions WHERE id = %s;" % id_
+                if transaction:
+                    self.cur.execute("BEGIN TRANSACTION;")
                     self.cur.execute(cmd)
-                if region in self.regions_cache_:
-                    self.regions_cache_[region] = None
-                if region in self.recent_regions_ids:
-                    self.recent_regions_ids.remove(region)
+                    self.con.commit()
+                else:
+                    self.cur.execute(cmd)
+            if id_ in self.regions_cache_:
+                self.regions_cache_.pop(id_)
+            if id_ in self.recent_regions_ids:
+                self.recent_regions_ids.remove(id_)
 
 
     def get_all(self):
@@ -363,28 +376,13 @@ class RegionManager:
 
     def __contains__(self, item):
         if isinstance(item, Region):
-            return len(self) > item.id() > 0
-        return isinstance(item, (int, long)) and len(self) > item > 0
-
+            return len(self)+1 > item.id() > 0
+        return isinstance(item, (int, long)) and len(self)+1 > item > 0
 
 """
-    def add(self, regions):
-        # TODO: assign ids and store regions, return ids
-
-        for r in regions:
-            if self.cache_size_limit_ < 0:
-                self.regions_cache_[self.id_] = r
-                r.id_ = self.id_
-                self.id_ += 1
-
-            # test existence of r.pts_rle_, if not, use encode_RLE and create...
-            # when saving into DB... save everything but .pts_ into one col -> data
-            # it is possible to access class in following way:
-            #   d = r.__dict__ ... then make deep copy and use d.pts_ = None
-            # use cPickle for data serialisation
-            pass
-        pass
-
+remove regions, do not set them to none
+create removemany method
+save rle, erase points
 """
 
 if __name__ == "__main__":
@@ -394,12 +392,12 @@ if __name__ == "__main__":
     regions = up.load()
     f.close()
 
-    rm1 = RegionManager()
+    rm1 = RegionManager(db_wd="/home/dita/", cache_size_limit=1)
     data = regions[0:10]
     rm1.add(data)
 
     r3 = data[3]
-    rm1.remove(r3)
-    print rm1[1]
-    print rm1[4]
-
+    rm1.removemany([9, 9, 3, 4, 5])
+    rm1.remove(10)
+    dict = rm1[:]
+    print dict
