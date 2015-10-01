@@ -72,13 +72,15 @@ def colormarks_labelling(image, colors, original_colors=None):
     dists = cdist(im_, colors)
     ids = np.argmin(dists, axis=1)
     labels = ids.reshape((image.shape[0], image.shape[1]))
-    labels[labels < 5] = 0
 
-    colors[0:5, :] = [255, 255, 255]
+    # colors[0:5, :] = [255, 255, 255]
     if original_colors is None:
         out = np.asarray(colors[labels], dtype=np.uint8)
     else:
         out = np.asarray(original_colors[labels], dtype=np.uint8)
+
+    # set all these to background
+    labels[labels < NUM_BG_COLORS] = 0
 
     return out, labels
 
@@ -207,15 +209,73 @@ def on_key_event(event):
     elif key in ['q']:
         quit_ = True
 
-def process_ccs(im):
+def get_area_from_integral_im(i_im, center, square_size):
+    sq2 = square_size/2
+    if sq2 < center[0] < i_im.shape[0] - sq2 and sq2 < center[1] < i_im.shape[1] - sq2:
+        p0 = i_im[center[0] - sq2, center[1] - sq2]
+        p1 = i_im[center[0] - sq2, center[1] + sq2]
+        p2 = i_im[center[0] + sq2, center[1] - sq2]
+        p3 = i_im[center[0] + sq2, center[1] + sq2]
+
+        # see http://docs.opencv.org/modules/imgproc/doc/miscellaneous_transformations.html#integral
+        return (p0 + p3 - p1 - p2) / square_size**2
+
+    return np.inf
+
+def test_dark_neighbourhood(i_im, c):
+    import itertools
+
+    SQUARE_SIZE = 13
+    MEAN_INTENSITY_THRESHOLD = 50
+
+    # test all 8 directins
+    a = [-SQUARE_SIZE, 0, SQUARE_SIZE]
+    found = True
+    for r in itertools.product(a, a):
+        if r[0] == r[1] == 0:
+            continue
+
+        if get_area_from_integral_im(i_im, c + np.array(r), SQUARE_SIZE) < MEAN_INTENSITY_THRESHOLD:
+            if found:
+                return True
+            else:
+                found = True
+
+    return False
+
+
+def process_ccs(im, integral_im):
     from skimage.measure import label
     from skimage.morphology import erosion, square
     # im = erosion(im, square(2))
 
     labels, num = label(im, return_num=True, neighbors=4, background=0)
+
+    rest_num = 0
+    for i in range(num+1):
+        ids = labels == i
+        px_num = np.sum(ids)
+        if px_num < 20:
+            labels[ids] = 0
+        elif px_num > 500:
+            labels[ids] = 0
+        else:
+            coords = np.argwhere(labels == i)
+            c = np.mean(coords, axis=0)
+            std_ = np.std(coords, axis=0)
+            is_std_ok = True if np.sum(std_) < 9 else False
+            # if is_std_ok:
+            if is_std_ok and test_dark_neighbourhood(integral_im, c):
+                rest_num += 1
+            else:
+                labels[ids] = 0
+
+    # labels, num = label(labels, return_num=True, neighbors=4, background=0)
+
+    print "rest num: ", rest_num
     print "Number of components:", num
     plt.figure(3)
-    plt.imshow(labels, cmap='prism')
+    plt.imshow(labels, cmap='jet')
 
 
 
@@ -223,12 +283,16 @@ if __name__ == "__main__":
     vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
 
     plt.ion()
-    frame = 500
-    plt.figure(1)
+    frame = 0
+    fig = plt.figure(1)
+    fig.canvas.mpl_connect('key_press_event', on_key_event)
     fig = plt.figure(2)
     fig.canvas.mpl_connect('key_press_event', on_key_event)
+    fig = plt.figure(3)
+    fig.canvas.mpl_connect('key_press_event', on_key_event)
 
-    colors = np.array([[46, 34, 21], # ANT
+    NUM_BG_COLORS = 6
+    colors = np.array([[46, 34, 21], [88, 63, 65], # ANT
                            [158, 139, 131], [175, 160, 152], [188, 176, 167], [174, 94, 73], # BG
                            [27, 54, 39], # DARK GREEN
                            [37, 71, 107], # BLUE
@@ -250,7 +314,8 @@ if __name__ == "__main__":
         out_im, labels = colormarks_labelling(out_im, colors.copy())
         plt.imshow(out_im)
 
-        process_ccs(labels)
+        integral_im = cv2.integral(cv2.cvtColor(im , cv2.COLOR_RGB2GRAY))
+        process_ccs(labels, integral_im)
 
         plt.show()
         plt.waitforbuttonpress()
