@@ -151,22 +151,22 @@ def color_candidate_pixels_slow(im):
 def color_candidate_pixels(im):
     s = time.time()
     im_copy = im.copy()
-    print "im_copy t: ", time.time() - s
+    # print "im_copy t: ", time.time() - s
 
     s = time.time()
     im_ = im.reshape(im.shape[0] * im.shape[1], im.shape[2])
-    print "im reshape t: ", time.time() - s
+    # print "im reshape t: ", time.time() - s
 
     MIN_WHITE_DIST = 180
     MIN_GRAY_DIST = 10
 
     s = time.time()
     dists = cdist(im_, np.array([[255, 255, 255]]), 'euclidean')
-    print "distances t: ", time.time() - s
+    # print "distances t: ", time.time() - s
 
     s = time.time()
     ids = dists < MIN_WHITE_DIST
-    print "thresholding t: ", time.time() - s
+    # print "thresholding t: ", time.time() - s
 
     not_ids = np.logical_not(ids)
 
@@ -243,21 +243,111 @@ def test_dark_neighbourhood(i_im, c):
 
     return False
 
-
-def process_ccs(im, integral_im):
+def process_ccs_(im, labels, integral_im):
     from skimage.measure import label
-    from skimage.morphology import erosion, square
-    # im = erosion(im, square(2))
-
-    labels, num = label(im, return_num=True, neighbors=4, background=0)
+    labels, num = label(labels, return_num=True, neighbors=4)
 
     rest_num = 0
-    for i in range(num+1):
+    for i in range(num):
         ids = labels == i
         px_num = np.sum(ids)
         if px_num < 20:
             labels[ids] = 0
-        elif px_num > 500:
+            im[ids] = [255, 255, 255]
+        else:
+            labels[ids] = rest_num
+            rest_num += 1
+
+    print "#CC after min area thresh: ", rest_num
+    plt.figure(3)
+    plt.imshow(im)
+    # plt.waitforbuttonpress()
+
+    num = rest_num
+    rest_num = 0
+    for i in range(num):
+        ids = labels == i
+        px_num = np.sum(ids)
+        if px_num > 200:
+            labels[ids] = 0
+            im[ids] = [255, 255, 255]
+        else:
+            labels[ids] = rest_num
+            rest_num += 1
+
+    print "#CC after max area thresh: ", rest_num
+    plt.figure(3)
+    plt.imshow(im)
+    # plt.waitforbuttonpress()
+
+    num = rest_num
+    rest_num = 0
+    for i in range(num):
+        ids = labels == i
+
+        coords = np.argwhere(labels == i)
+        c = np.mean(coords, axis=0)
+
+        M00 = coords.shape[0]
+        M11 = np.sum(coords[:, 0] * coords[:, 1])
+        M20 = np.sum(coords[:, 0]**2)
+        M02 = np.sum(coords[:, 1]**2)
+
+        u20 = M20/float(M00) - c[0]**2
+        u02 = M02/float(M00) - c[1]**2
+        u11 = M11/float(M00) - c[0]*c[1]
+
+        part2 = ((4*u11**2 + (u20 - u02)**2)**0.5) / 2.
+        lambda1 = (u20 + u02) / 2.
+        lambda2 = lambda1 - part2
+        lambda1 += part2
+
+        eccentricity = (1 - lambda2/lambda1) ** 0.5
+        print eccentricity, lambda1, lambda2
+
+        std_ = np.std(coords, axis=0)
+        is_std_ok = True if np.sum(std_) < 9 else False
+
+        if eccentricity > 0.8:
+        # if not is_std_ok:
+            labels[ids] = 0
+            im[ids] = [255, 255, 255]
+        else:
+            labels[ids] = rest_num
+            rest_num += 1
+
+    print "#CC after std thresh: ", rest_num
+    plt.figure(3)
+    plt.imshow(im)
+    plt.waitforbuttonpress()
+
+    num = rest_num
+    rest_num = 0
+    for i in range(num):
+        ids = labels == i
+
+        coords = np.argwhere(labels == i)
+        c = np.mean(coords, axis=0)
+        if not test_dark_neighbourhood(integral_im, c):
+            labels[ids] = 0
+            im[ids] = [255, 255, 255]
+        else:
+            labels[ids] = rest_num
+            rest_num += 1
+
+    print "#CC after dark neighbour thresh: ", rest_num
+    plt.figure(3)
+    plt.imshow(im)
+    plt.waitforbuttonpress()
+
+    num = rest_num
+    rest_num = 0
+    for i in range(num):
+        ids = labels == i
+        px_num = np.sum(ids)
+        if px_num < 10:
+            labels[ids] = 0
+        elif px_num > 200:
             labels[ids] = 0
         else:
             coords = np.argwhere(labels == i)
@@ -267,20 +357,63 @@ def process_ccs(im, integral_im):
             # if is_std_ok:
             if is_std_ok and test_dark_neighbourhood(integral_im, c):
                 rest_num += 1
+                labels[ids] = rest_num
             else:
                 labels[ids] = 0
 
-    # labels, num = label(labels, return_num=True, neighbors=4, background=0)
+
+def process_ccs(im, integral_im):
+    from skimage.measure import label
+    from skimage.morphology import erosion, square
+    # im = erosion(im, square(2))
+
+    labels, num = label(im, return_num=True, neighbors=4)
+
+    rest_num = 0
+    for i in range(num+1):
+        ids = labels == i
+        px_num = np.sum(ids)
+        if px_num < 10:
+            labels[ids] = 0
+        elif px_num > 200:
+            labels[ids] = 0
+        else:
+            coords = np.argwhere(labels == i)
+            c = np.mean(coords, axis=0)
+
+            M00 = coords.shape[0]
+            M11 = np.sum(coords[:, 0] * coords[:, 1])
+            M20 = np.sum(coords[:, 0]**2)
+            M02 = np.sum(coords[:, 1]**2)
+
+            u20 = M20/float(M00) - c[0]**2
+            u02 = M02/float(M00) - c[1]**2
+            u11 = M11/float(M00) - c[0]*c[1]
+
+            part2 = ((4*u11**2 + (u20 - u02)**2)**0.5) / 2.
+            lambda1 = (u20 + u02) / 2.
+            lambda2 = lambda1 - part2
+            lambda1 += part2
+
+            eccentricity = (1 - lambda2/lambda1) ** 0.5
+
+            is_eccentricity_ok = True if eccentricity < 0.8 else False
+            if is_eccentricity_ok and test_dark_neighbourhood(integral_im, c):
+                rest_num += 1
+                labels[ids] = rest_num
+            else:
+                labels[ids] = 0
 
     print "rest num: ", rest_num
-    print "Number of components:", num
+    # print "Number of components:", num
     plt.figure(3)
     plt.imshow(labels, cmap='jet')
 
 
 
 if __name__ == "__main__":
-    vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
+    # vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
+    vid = VideoManager('/Users/flipajs/Documents/wd/bigLense_clip.avi')
 
     plt.ion()
     frame = 0
@@ -291,7 +424,7 @@ if __name__ == "__main__":
     fig = plt.figure(3)
     fig.canvas.mpl_connect('key_press_event', on_key_event)
 
-    NUM_BG_COLORS = 6
+    NUM_BG_COLORS = 2
     colors = np.array([[46, 34, 21], [88, 63, 65], # ANT
                            [158, 139, 131], [175, 160, 152], [188, 176, 167], [174, 94, 73], # BG
                            [27, 54, 39], # DARK GREEN
@@ -302,20 +435,35 @@ if __name__ == "__main__":
                            [158, 130, 90], # ORANGE
                            ])
 
+    colors = np.array([[51, 35, 36], # ANT
+                           [176, 175, 168], # BG
+                           [141, 71, 99], # PINK
+                           [173, 179, 174], # WHITE
+                           [35, 68, 48], # DARK GREEN
+                           [34, 36, 56], # DARK BLUE
+                           [139, 126, 83] # ORANGE
+                           ])
+
+    old_frame = -1
     while True:
-        plt.figure(1)
-        im = vid.seek_frame(frame)
-        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        plt.imshow(im)
+        if old_frame != frame:
+            print "FRAME: ", frame
+            plt.figure(1)
+            im = vid.seek_frame(frame)
+            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+            plt.imshow(im)
 
-        fig = plt.figure(2)
-        out_im = color_candidate_pixels(im)
+            fig = plt.figure(2)
+            out_im = color_candidate_pixels(im)
 
-        out_im, labels = colormarks_labelling(out_im, colors.copy())
-        plt.imshow(out_im)
+            out_im, labels = colormarks_labelling(out_im, colors.copy())
+            plt.imshow(out_im)
 
-        integral_im = cv2.integral(cv2.cvtColor(im , cv2.COLOR_RGB2GRAY))
-        process_ccs(labels, integral_im)
+            # integral_im = cv2.integral(cv2.cvtColor(im , cv2.COLOR_RGB2GRAY))
+            # process_ccs(labels, integral_im)
 
-        plt.show()
+            plt.show()
+
+            old_frame = frame
+
         plt.waitforbuttonpress()
