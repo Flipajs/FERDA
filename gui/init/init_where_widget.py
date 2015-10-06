@@ -118,7 +118,7 @@ class InitWhereWidget(QtGui.QWidget):
 
     def advanced_editor_done(self, arena_mask, occultation_mask):
         self.advanced_editor.hide()
-        h_, w_, _ = self.project.bg_model.img().shape
+        h_, w_, _ = self.first_frame.shape
         self.project.arena_model = PaintMask(h_, w_)
         self.project.arena_model.set_mask(arena_mask)
         print "Advanced editor done!"

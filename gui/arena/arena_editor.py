@@ -18,6 +18,7 @@ class ArenaEditor(QtGui.QWidget):
 
     def __init__(self, img, project, finish_callback=None):
         # TODO: add support for the original arena editor (circle)
+        np.set_printoptions(threshold=np.nan)
 
         super(ArenaEditor, self).__init__()
 
@@ -230,28 +231,40 @@ class ArenaEditor(QtGui.QWidget):
 
         # Create arena mask: 0 - outside, 255 - inside
         # 1) load RED channel (red color shows where outside of the arena is -> everything not red is inside)
-        arena_mask = np.array(img_arr[:,:,0])
+        # TODO: For some reason, color channels are full of 0, so they can't be used to create a mask. Mysteriously,
+        # TODO:     alpha channel seems to be working just fine. Arena mask is now working with alpha data, but
+        # TODO:     occultation mask cannot be used at the same time. (they both share the same alpha channel)
+        arena_mask = np.array(img_arr[:,:,3], dtype="uint8")
+        np.set_printoptions(threshold=np.nan)
+        print arena_mask[600, :]
         # 2) set all pixels that contain at least a little red to 1 (temporary)
         arena_mask[arena_mask > 0] = 1
+        print arena_mask[600, :]
         # 3) set all pixels with no color (arena inside) to 255
         arena_mask[arena_mask == 0] = 255
+        print arena_mask[600, :]
         # 4) set all red pixels (value 1) to 0
         arena_mask[arena_mask == 1] = 0
+        print arena_mask[600, :]
 
+        """
         # Create occlusion mask: 0 - occultation, 255 - visible spot
         # 1) load BLUE channel (blue color shows where occultation is -> everything not blue is visible or outside of the arena)
-        occultation_mask = np.array(img_arr[:,:,2])
+        occultation_mask = np.array(img_arr[:,:,2], dtype="uint8")
         # 2) set all pixels that contain at least a little blue to 1 (temporary)
         occultation_mask[occultation_mask > 0] = 1
         # 3) set all pixels with no color (arena inside) to 255
         occultation_mask[occultation_mask == 0] = 255
         # 4) set all blue pixels (value 1) to 0
         occultation_mask[occultation_mask == 1] = 0
+        """
 
         if self.finish_callback:
-            self.finish_callback(arena_mask, occultation_mask)
+            # TODO: fix this so two different masks can be used
+            # self.finish_callback(arena_mask, occultation_mask)
+            self.finish_callback(arena_mask, None)
         else:
-            return arena_mask, occultation_mask
+            return arena_mask, None
 
     def change_value(self, value):
         """
