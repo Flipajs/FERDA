@@ -37,7 +37,7 @@ class ArenaEditor(QtGui.QWidget):
 
         # store the current paint mode "polygons" or "paint" or "circles"
         self.mode = ""
-        self.color = "Blue"
+        self.color = "Hiding\nplaces"
 
         # store last 10 QImages to support the "undo" function
         # undo button can only be pushed in paint mode, but affects polygon painting too (all polygons are saved
@@ -170,7 +170,7 @@ class ArenaEditor(QtGui.QWidget):
         self.color_buttons[2].setVisible(False)
         # in case "Eraser" was chosen as a color, switch it to blue
         if self.color == "Eraser":
-            self.color = "Blue"
+            self.color = "Hiding\nplaces"
             self.color_buttons[0].setChecked(True)
             self.color_buttons[2].setChecked(False)
         self.clear_button.setVisible(True)
@@ -213,37 +213,40 @@ class ArenaEditor(QtGui.QWidget):
         converts image to numpy arrays
         :return: tuple (arena_mask, occultation_mask)
         True in arena_masks means that the point is INSIDE the arena
-        True in occultation_mask means that the point is a place to hide
+        True in occultation_mask means that the point is NOT a place to hide (it is visible)
         """
-        r = QtGui.qRgba(255, 0, 0, 255)
-        b = QtGui.qRgba(0, 0, 255, 255)
-        p = QtGui.qRgba(175, 0, 175, 255)
+
         img = self.merge_images()
 
         bg_height, bg_width = self.background.shape[:2]
 
-        arena_mask = np.zeros((bg_height, bg_width), dtype=np.bool)
-        occultation_mask = np.zeros((bg_height, bg_width), dtype=np.bool)
+        ptr = img.constBits()
+        ptr.setsize(img.byteCount())
+        img_arr = np.array(ptr).reshape(bg_height, bg_width, 4)
 
-        for i in range(0, bg_width):
-            for j in range(0, bg_height):
-                color = QtGui.QColor(img.pixel(i, j))
-                if self.DEBUG:
-                    if color.blue() > 250:
-                        img.setPixel(i, j, b)
-                    if color.red() > 250:
-                        img.setPixel(i, j, r)
-                    if color.red() > 250 and color.blue() > 250:
-                        img.setPixel(i, j, p)
-                if color.blue() > 250:
-                    occultation_mask[j, i] = True
-                if color.red() > 250:
-                    arena_mask[j, i] = True
-        if self.DEBUG:
-            self.w = MyPopup(img)
-            self.w.show()
-            self.w.showMaximized()
-            self.w.setFocus()
+        # Color values in image are formatted [R, G, B, A].
+        # To extract mask data, only Red (0) and Blue (2) channels are needed.
+
+        # Create arena mask: 0 - outside, 255 - inside
+        # 1) load RED channel (red color shows where outside of the arena is -> everything not red is inside)
+        arena_mask = np.array(img_arr[:,:,0])
+        # 2) set all pixels that contain at least a little red to 1 (temporary)
+        arena_mask[arena_mask > 0] = 1
+        # 3) set all pixels with no color (arena inside) to 255
+        arena_mask[arena_mask == 0] = 255
+        # 4) set all red pixels (value 1) to 0
+        arena_mask[arena_mask == 1] = 0
+
+        # Create occlusion mask: 0 - occultation, 255 - visible spot
+        # 1) load BLUE channel (blue color shows where occultation is -> everything not blue is visible or outside of the arena)
+        occultation_mask = np.array(img_arr[:,:,2])
+        # 2) set all pixels that contain at least a little blue to 1 (temporary)
+        occultation_mask[occultation_mask > 0] = 1
+        # 3) set all pixels with no color (arena inside) to 255
+        occultation_mask[occultation_mask == 0] = 255
+        # 4) set all blue pixels (value 1) to 0
+        occultation_mask[occultation_mask == 1] = 0
+
         return arena_mask, occultation_mask
 
     def change_value(self, value):
@@ -388,9 +391,9 @@ class ArenaEditor(QtGui.QWidget):
             point = point.toPoint()
 
         # use current pen color
-        if self.color == "Blue":
+        if self.color == "Hiding\nplaces":
             value = QtGui.qRgba(0, 0, 255, 100)
-        elif self.color == "Red":
+        elif self.color == "Outside of\nthe arena":
             value = QtGui.qRgba(255, 0, 0, 100)
         else:
             value = QtGui.qRgba(0, 0, 0, 0)
@@ -472,7 +475,7 @@ class ArenaEditor(QtGui.QWidget):
         painter.begin(self.poly_image)
         brush = QtGui.QBrush()
         # paint the polygon
-        if color == "Red":
+        if color == "Outside of\nthe arena":
             qc = QtGui.QColor(255, 0, 0, 100)
         else:
             qc = QtGui.QColor(0, 0, 255, 100)
@@ -615,14 +618,14 @@ class ArenaEditor(QtGui.QWidget):
         color_widget.setLayout(QtGui.QHBoxLayout())
 
         self.color_buttons = []
-        blue_button = QtGui.QPushButton("Blue")
+        blue_button = QtGui.QPushButton("Hiding\nplaces")
         blue_button.setCheckable(True)
         blue_button.setChecked(True)
         blue_button.clicked.connect(self.switch_color)
         color_widget.layout().addWidget(blue_button)
         self.color_buttons.append(blue_button)
 
-        red_button = QtGui.QPushButton("Red")
+        red_button = QtGui.QPushButton("Outside of\nthe arena")
         red_button.setCheckable(True)
         red_button.clicked.connect(self.switch_color)
         color_widget.layout().addWidget(red_button)
@@ -664,7 +667,7 @@ class ArenaEditor(QtGui.QWidget):
         self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Z))
         self.addAction(self.action_undo)
 
-        self.undo_button = QtGui.QPushButton("Undo \n (key_Z)")
+        self.undo_button = QtGui.QPushButton("Undo\n(key Z)")
         self.undo_button.clicked.connect(self.undo)
         widget.layout().addWidget(self.undo_button)
 
@@ -674,7 +677,7 @@ class ArenaEditor(QtGui.QWidget):
         self.action_paint_polygon.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
         self.addAction(self.action_paint_polygon)
 
-        self.poly_button = QtGui.QPushButton("Draw polygons \n (key_D)")
+        self.poly_button = QtGui.QPushButton("Draw polygons\n(key D)")
         self.poly_button.clicked.connect(self.paint_polygon)
         widget.layout().addWidget(self.poly_button)
 
@@ -684,7 +687,7 @@ class ArenaEditor(QtGui.QWidget):
         self.action_clear.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
         self.addAction(self.action_clear)
 
-        self.clear_button = QtGui.QPushButton("Clear paint area \n (key_C)")
+        self.clear_button = QtGui.QPushButton("Clear paint area\n(key C)")
         self.clear_button.clicked.connect(self.reset)
         widget.layout().addWidget(self.clear_button)
 
@@ -694,7 +697,7 @@ class ArenaEditor(QtGui.QWidget):
 
         self.set_label_text()
 
-        polymode_button.toggle()
+        paintmode_button.toggle()
 
         # complete the gui
         self.layout().addWidget(widget)
