@@ -1,3 +1,6 @@
+from core.arena.paint_mask import PaintMask
+from gui.arena.arena_editor import ArenaEditor
+
 __author__ = 'fnaiser'
 
 import time
@@ -39,6 +42,10 @@ class InitWhereWidget(QtGui.QWidget):
         self.label_instructions = QtGui.QLabel('Please select arena or confirm the suggested one.')
         self.label_instructions.setWordWrap(True)
         self.top_stripe_layout.addWidget(self.label_instructions)
+
+        self.use_advanced_arena_editor = QtGui.QPushButton('Use advanced arena editor')
+        self.use_advanced_arena_editor.clicked.connect(self.use_advanced_editor)
+        self.top_stripe_layout.addWidget(self.use_advanced_arena_editor)
 
         self.confirm_arena_selection = QtGui.QPushButton('Arena selection is ok, lets continue!')
         self.confirm_arena_selection.clicked.connect(self.confirm_arena_selection_clicked)
@@ -100,6 +107,53 @@ class InitWhereWidget(QtGui.QWidget):
 
         self.label_instructions.setText('To support FERDA performance, we are using background model. Bellow you can see background model. There should be no tracked object visible. If they are, please fix them by selecting problematic area in image. Then click f and by draggin move the green selection to area with background only. Press ctrl+z if you don\'t like the result for new selection."')
         self.confirm_arena_selection.setHidden(True)
+        self.use_advanced_arena_editor.setHidden(True)
+
+        self.top_stripe_layout.addWidget(self.skip_bg_model)
+        self.top_stripe_layout.addWidget(self.confirm_bg_model)
+
+    def use_advanced_editor(self):
+        self.advanced_editor = ArenaEditor(self.first_frame, self.project, finish_callback=self.advanced_editor_done);
+        self.advanced_editor.show()
+
+    def advanced_editor_done(self, arena_mask, occultation_mask):
+        self.advanced_editor.hide()
+        h_, w_, _ = self.project.bg_model.img().shape
+        self.project.arena_model = PaintMask(h_, w_)
+        self.project.arena_model.set_mask(arena_mask)
+        print "Advanced editor done!"
+        if isinstance(self.project.bg_model, BGModel) or self.project.bg_model.is_computed():
+            if isinstance(self.project.bg_model, Model):
+                self.project.bg_model = self.project.bg_model.get_model()
+
+            self.graphics_view.hide()
+            self.bg_fix_widget = BgFixWidget(self.project.bg_model.img(), self.finish)
+            self.graphics_view.hide()
+            self.vbox.addWidget(self.bg_fix_widget)
+
+            if self.progress_dialog:
+                self.progress_dialog.cancel()
+                self.progress_dialog = None
+        else:
+            while True:
+                time.sleep(.100)
+                if not self.progress_dialog:
+                    self.progress_dialog = QtGui.QProgressDialog('Computing background model. Be patient please...', QtCore.QString("Cancel"), 0, 100)
+                    self.progress_dialog.setWindowTitle('Upload status')
+                else:
+                    self.progress_dialog.setLabelText('Computing '+str(self.project.bg_model.get_progress()))
+                    self.progress_dialog.setValue(self.project.bg_model.get_progress())
+                    QtGui.QApplication.processEvents()
+
+                if self.project.bg_model.is_computed():
+                    break
+
+            self.confirm_arena_selection_clicked()
+            return
+
+        self.label_instructions.setText('To support FERDA performance, we are using background model. Bellow you can see background model. There should be no tracked object visible. If they are, please fix them by selecting problematic area in image. Then click f and by draggin move the green selection to area with background only. Press ctrl+z if you don\'t like the result for new selection."')
+        self.confirm_arena_selection.setHidden(True)
+        self.use_advanced_arena_editor.setHidden(True)
 
         self.top_stripe_layout.addWidget(self.skip_bg_model)
         self.top_stripe_layout.addWidget(self.confirm_bg_model)

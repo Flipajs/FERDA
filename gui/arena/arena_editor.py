@@ -16,11 +16,12 @@ import numpy as np
 class ArenaEditor(QtGui.QWidget):
     DEBUG = True
 
-    def __init__(self, img, project):
+    def __init__(self, img, project, finish_callback=None):
         # TODO: add support for the original arena editor (circle)
 
         super(ArenaEditor, self).__init__()
 
+        self.finish_callback = finish_callback
         self.setMouseTracking(True)
 
         self.background = img
@@ -247,7 +248,10 @@ class ArenaEditor(QtGui.QWidget):
         # 4) set all blue pixels (value 1) to 0
         occultation_mask[occultation_mask == 1] = 0
 
-        return arena_mask, occultation_mask
+        if self.finish_callback:
+            self.finish_callback(arena_mask, occultation_mask)
+        else:
+            return arena_mask, occultation_mask
 
     def change_value(self, value):
         """
