@@ -236,16 +236,12 @@ class ArenaEditor(QtGui.QWidget):
         # TODO:     occultation mask cannot be used at the same time. (they both share the same alpha channel)
         arena_mask = np.array(img_arr[:,:,3], dtype="uint8")
         np.set_printoptions(threshold=np.nan)
-        print arena_mask[600, :]
         # 2) set all pixels that contain at least a little red to 1 (temporary)
         arena_mask[arena_mask > 0] = 1
-        print arena_mask[600, :]
         # 3) set all pixels with no color (arena inside) to 255
         arena_mask[arena_mask == 0] = 255
-        print arena_mask[600, :]
         # 4) set all red pixels (value 1) to 0
         arena_mask[arena_mask == 1] = 0
-        print arena_mask[600, :]
 
         """
         # Create occlusion mask: 0 - occultation, 255 - visible spot

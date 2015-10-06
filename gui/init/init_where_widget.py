@@ -121,7 +121,6 @@ class InitWhereWidget(QtGui.QWidget):
         h_, w_, _ = self.first_frame.shape
         self.project.arena_model = PaintMask(h_, w_)
         self.project.arena_model.set_mask(arena_mask)
-        print "Advanced editor done!"
         if isinstance(self.project.bg_model, BGModel) or self.project.bg_model.is_computed():
             if isinstance(self.project.bg_model, Model):
                 self.project.bg_model = self.project.bg_model.get_model()
