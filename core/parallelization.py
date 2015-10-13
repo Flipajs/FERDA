@@ -94,11 +94,11 @@ if __name__ == '__main__':
     if not os.path.exists(proj.working_directory+'/temp'):
         os.mkdir(proj.working_directory+'/temp')
 
-    proj.save()
+    # proj.save()
 
-    # with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.gt', 'wb') as f:
-    #     p = pickle.Pickler(f, -1)
-    #     p.dump(solver.gm)
+    with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.gt', 'wb') as f:
+        p = pickle.Pickler(f, -1)
+        p.dump(solver.gm.g)
     #
     #     # solver.gm.g.save(f)
     #     # p.dump(solver.gm.start_nodes())

@@ -54,9 +54,10 @@ class GraphManager:
             self.vertices_in_t.setdefault(region.frame_, []).append(vertex)
             self.g.vp['region_id'][vertex] = region.id()
 
-    def remove_vertex(self, vertex, disassembly=True):
+    def remove_vertex(self, vertex_id, disassembly=True):
+        vertex = self.g.vertex(vertex_id)
         region = self.rm[self.g.vp['region_id'][vertex]]
-        # region = self.match_if_reconstructed(region)
+
         if region is None:
             print "remove node n is None"
             return
@@ -124,7 +125,7 @@ class GraphManager:
             self.add_edges_(self.vertices_in_t[t-1], self.vertices_in_t[t], fast=fast)
 
     def region(self, vertex):
-        id_ = self.g.vp['region_id'][vertex]
+        id_ = self.g.vp['region_id'][self.g.vertex(vertex)]
         return self.project.rm[id_]
 
     def chunk_start(self, vertex):

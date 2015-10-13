@@ -130,6 +130,9 @@ class Project:
 
         # Chunk Manager
         if self.chm:
+            # for _, ch in self.chm.chunks_.iteritems():
+            #     ch.project = None
+
             with open(self.working_directory+'/chunk_manager.pkl', 'wb') as f:
                 pickle.dump(self.chm, f, -1)
 

@@ -9,9 +9,9 @@ from core.region.region import Region
 
 
 class Chunk:
-    def __init__(self, nodes, id_, project, color=None):
+    def __init__(self, vertices_ids, id_, project, color=None):
         self.id_ = id_
-        self.nodes_ = nodes
+        self.nodes_ = vertices_ids
         self.color = color
         self.statistics = {}
         self.project = project
@@ -22,39 +22,41 @@ class Chunk:
         s = "CHUNK --- start_f: "+str(self.start_frame())+" end_f: "+str(self.end_frame())+" length: "+str(len(self.nodes_))+"\n"
         return s
 
-    def append_left(self, node, undo_action=False):
-        region = self.project.gm.region(node)
+    def append_left(self, vertex, undo_action=False):
+        vertex_id = int(vertex)
+        region = self.project.gm.region(vertex_id)
         if region.frame() + 1 != self.start_frame():
             print "DISCONTINUITY in chunk.py/append_left", region.frame(), self.start_frame(), region, self.project.gm.region(self.start_node())
             raise Exception("DISCONTINUITY in chunk.py/append_left")
 
         first = self.start_node()
 
-        ch2, _ = self.project.gm.is_chunk(node)
+        ch2, _ = self.project.gm.is_chunk(vertex)
         if ch2:
             ch2.merge(self, undo_action=undo_action)
             return
         else:
-            self.nodes_.insert(0, node)
+            self.nodes_.insert(0, vertex_id)
 
         if not undo_action:
             self.project.gm.remove_vertex(first, False)
             self.chunk_reconnect_()
 
-    def append_right(self, node, undo_action=False):
-        region = self.project.gm.region(node)
+    def append_right(self, vertex, undo_action=False):
+        vertex_id = int(vertex)
+        region = self.project.gm.region(vertex_id)
         if region.frame() != self.end_frame() + 1:
             print "DISCONTINUITY in chunk.py/append_right", region.frame(), self.end_frame(), region, self.end_node()
             raise Exception("DISCONTINUITY in chunk.py/append_right")
 
         last = self.end_node()
 
-        ch2, _ = self.project.gm.is_chunk(node)
+        ch2, _ = self.project.gm.is_chunk(vertex)
         if ch2:
             self.merge(ch2, undo_action=undo_action)
             return
         else:
-            self.nodes_.append(node)
+            self.nodes_.append(vertex_id)
 
         if not undo_action:
             self.project.gm.remove_vertex(last, False)
@@ -169,114 +171,3 @@ class Chunk:
         self.project.gm.add_edge(self.start_node(), self.end_node())
         self.project.gm.g.vp['chunk_start_id'][self.project.gm.g.vertex(self.start_node())] = self.id()
         self.project.gm.g.vp['chunk_end_id'][self.project.gm.g.vertex(self.end_node())] = self.id()
-
-
-
-    # def first(self):
-    #     if self.start_n:
-    #         return self.start_n
-    #     elif self.end_n:
-    #         return self.end_n
-    #
-    #     return None
-    #
-    # def last(self):
-    #     if self.end_n:
-    #         return self.end_n
-    #     elif self.start_n:
-    #         return self.start_n
-    #
-    #     return None
-    #
-    # def get_centroid_in_time(self, t):
-    #     if self.start_t() <= t <= self.end_t():
-    #         if t == self.start_t():
-    #             return self.start_n.centroid()
-    #         elif t == self.end_t():
-    #             return self.end_n.centroid()
-    #         else:
-    #             return self.reduced[t-self.start_t()-1].centroid()
-    #
-    #     return None
-    #
-    # def get_reduced_at(self, t):
-    #     self.if_not_sorted_sort_()
-    #
-    #     t -= self.start_t() + 1
-    #     if 0 <= t < len(self.reduced):
-    #         return self.reduced[t]
-    #
-    #     return None
-    #
-    # @ staticmethod
-    # def reconstruct(r, project):
-    #     if isinstance(r, Reduced):
-    #         return r.reconstruct(project)
-    #
-    #     return r
-    #
-    # def split_at_t(self, t, solver, undo_action=False):
-    #     # spins off and reconstructs region at frame t and if chunk is long enough it will separate it into 2 chunks
-    #     if self.start_t() < t < self.end_t():
-    #         self.if_not_sorted_sort_()
-    #
-    #         node_t = self.get_reduced_at(t)
-    #         pos = self.reduced.index(node_t)
-    #         node_t = self.reconstruct(node_t, solver.project)
-    #
-    #         if pos == 0:
-    #             # it is first in reduced, to spin it off two pop_first are enough
-    #             self.pop_first(solver)
-    #             self.pop_first(solver)
-    #         elif pos == len(self.reduced)-1:
-    #             # it is last in reduced, to spin it off two pop_last are enough
-    #             self.pop_last(solver)
-    #             self.pop_last(solver)
-    #         else:
-    #             # ----- building second chunk -----
-    #
-    #             # remove node_t we already have
-    #             ch2 = Chunk(store_area=self.store_area, id=solver.project.solver_parameters.new_chunk_id())
-    #             ch2.start_n = self.reduced.pop(pos+1)
-    #             ch2.start_n = self.reconstruct(ch2.start_n, solver.project)
-    #             ch2.end_n = self.end_n
-    #
-    #             while len(self.reduced) > pos+1:
-    #                 ch2.reduced.append(self.reduced.pop(pos+1))
-    #
-    #             # ----- adjust first chunk -----
-    #             new_end_n = self.reduced.pop(pos)
-    #             reconstructed = self.reconstruct(new_end_n, solver.project)
-    #             self.end_n = reconstructed
-    #
-    #             # ----- reconnect with neighbours ----
-    #             # solver.add_node(node_t)
-    #             if not undo_action:
-    #                 solver.add_node(self.end_n)
-    #                 solver.add_node(ch2.start_n)
-    #
-    #                 t_minus, t, t_plus = solver.get_vertices_around_t(self.end_n.frame_)
-    #                 solver.add_edges_(t, t_plus)
-    #             # solver.add_edges_(t, t_plus)
-    #
-    #             # ----- test if we still have 2 chunks and reconnect first and last ---
-    #             if not undo_action:
-    #                 self.chunk_reconnect_(solver)
-    #                 ch2.chunk_reconnect_(solver)
-    #
-    #     else:
-    #         raise Exception("t is out of range of this chunk in chunk.py/split_at_t")
-    #
-    # def is_virtual_in_time(self, t):
-    #     red = self.get_reduced_at(t)
-    #     if red is not None:
-    #         if isinstance(red, Reduced):
-    #             return False
-    #         else:
-    #             return red.is_virtual
-    #
-    #     if self.start_t() == t:
-    #         return self.start_n.is_virtual
-    #     elif self.end_t() == t:
-    #         return self.end_n.is_virtual
-
