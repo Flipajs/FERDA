@@ -29,7 +29,9 @@ class ColorHist3d():
         self.theta = theta
         self.epsilon = epsilon
 
+        # TODO: 2x multiply num of bins
         self.num_bins = num_bins
+
         self.num_pxs = im.shape[0] * im.shape[1] * im.shape[2]
         self.num_colors = num_colors
         self.BG = num_colors
@@ -349,10 +351,22 @@ def get_color_samples_tool(vid):
 
     return color_samples
 
+def process_ccs(im):
+    min_a = 10
+    max_a = 500
+
+    ccs = get_ccs(im)
+
+    for cc in ccs:
+        if not(min_a < len(cc) < max_a):
+            im[cc[:, 0], cc[:, 1], :] = [50, 50, 50]
+
+    return im
+
 if __name__ == "__main__":
     NUM_BINS = 32
 
-    wd = '/Users/flipajs/Documents/wd/colormarks'
+    wd = '/Users/flipajs/Documents/wd/colormarks3'
 
     vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
     # vid = VideoManager('/Users/flipajs/Documents/wd/bigLense_clip.avi')
@@ -367,7 +381,7 @@ if __name__ == "__main__":
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         if True:
             irg_255 = get_irg_255(im)
-            CH3d = ColorHist3d(irg_255.copy(), 7, num_bins=NUM_BINS, theta=0.5, epsilon=0.8)
+            CH3d = ColorHist3d(irg_255.copy(), 7, num_bins=NUM_BINS, theta=0.1, epsilon=0.8)
 
             for (picked_pxs, all_pxs), c_id in zip(color_samples, range(len(color_samples))):
                 CH3d.remove_bg(all_pxs)
@@ -393,3 +407,6 @@ if __name__ == "__main__":
 
             plt.imsave(wd+'/'+str(frame)+'.png', im)
             plt.imsave(wd+'/'+str(frame)+'_c.png', foreground)
+            foreground_ = process_ccs(foreground)
+            plt.imsave(wd+'/'+str(frame)+'_p.png', foreground_)
+
