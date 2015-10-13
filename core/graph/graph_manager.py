@@ -39,7 +39,7 @@ class GraphManager:
 
         vertex = self.g.add_vertex()
 
-        self.vertices_in_t.setdefault(region.frame_, []).append(vertex)
+        self.vertices_in_t.setdefault(region.frame_, []).append(int(vertex))
         self.g.vp['region_id'][vertex] = region.id()
 
         return vertex
@@ -51,7 +51,7 @@ class GraphManager:
             self.start_t = min(self.start_t, region.frame_)
             self.end_t = max(self.end_t, region.frame_)
 
-            self.vertices_in_t.setdefault(region.frame_, []).append(vertex)
+            self.vertices_in_t.setdefault(region.frame_, []).append(int(vertex))
             self.g.vp['region_id'][vertex] = region.id()
 
     def remove_vertex(self, vertex_id, disassembly=True):
@@ -76,7 +76,7 @@ class GraphManager:
 
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, region)
 
-        self.vertices_in_t[region.frame()].remove(vertex)
+        self.vertices_in_t[region.frame()].remove(int(vertex))
         if not self.vertices_in_t[region.frame_]:
             del self.vertices_in_t[region.frame_]
 
@@ -110,8 +110,9 @@ class GraphManager:
     def update_nodes_in_t_refs(self):
         self.vertices_in_t = {}
         for v in self.g.vertices():
-            n = self.g.np.region[v]
-            self.vertices_in_t.setdefault(n.frame_, []).append(v)
+            v_id = int(v)
+            n = self.g.np.region[v_id]
+            self.vertices_in_t.setdefault(n.frame_, []).append(v_id)
 
         self.update_time_boundaries()
 
@@ -128,12 +129,12 @@ class GraphManager:
         id_ = self.g.vp['region_id'][self.g.vertex(vertex)]
         return self.project.rm[id_]
 
-    def chunk_start(self, vertex):
-        id_ = self.g.vp['chunk_start_id'][vertex]
+    def chunk_start(self, vertex_id):
+        id_ = self.g.vp['chunk_start_id'][self.g.vertex(vertex_id)]
         return self.project.chm[id_]
 
-    def chunk_end(self, vertex):
-        id_ = self.g.vp['chunk_end_id'][vertex]
+    def chunk_end(self, vertex_id):
+        id_ = self.g.vp['chunk_end_id'][self.g.vertex(vertex_id)]
         return self.project.chm[id_]
 
     def add_edges_(self, vertices_t1, vertices_t2, fast=False):

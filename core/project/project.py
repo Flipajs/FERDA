@@ -130,14 +130,19 @@ class Project:
 
         # Chunk Manager
         if self.chm:
-            # for _, ch in self.chm.chunks_.iteritems():
-            #     ch.project = None
+            for _, ch in self.chm.chunks_.iteritems():
+                ch.project = None
 
             with open(self.working_directory+'/chunk_manager.pkl', 'wb') as f:
                 pickle.dump(self.chm, f, -1)
 
         # Graph Manager
         if self.gm:
+            self.gm.project = None
+            self.gm.rm = None
+            self.gm.assignment_score = None
+            self.gm.solver = None
+
             with open(self.working_directory+'/graph_manager.pkl', 'wb') as f:
                 pickle.dump(self.gm, f, -1)
 
@@ -235,6 +240,9 @@ class Project:
         try:
             with open(self.working_directory+'/chunk_manager.pkl', 'rb') as f:
                 self.chm = pickle.load(f)
+
+            for ch in self.chm.chunks_:
+                ch.project = self
         except:
             pass
 
@@ -268,6 +276,13 @@ class Project:
                 self.log = log
         except:
             pass
+
+        # reconnect...
+        if self.gm:
+            self.gm.project = self
+            self.gm.rm = self.rm
+            self.gm.assignment_score = None
+            self.gm.solver = self.solver
 
 
 if __name__ == "__main__":

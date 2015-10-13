@@ -59,7 +59,7 @@ class Solver:
         queue = sorted(queue, key=lambda x: self.project.gm.region(x).area()+self.project.gm.region(x).centroid()[0]+self.project.gm.region(x).frame()+self.project.gm.region(x).centroid()[1])
 
         while queue:
-            vertex = queue.pop()
+            vertex = self.gm.g.vertex(queue.pop())
 
             r = self.project.gm.region(vertex)
             if r.frame() not in self.project.gm.vertices_in_t:
