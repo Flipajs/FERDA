@@ -18,5 +18,5 @@ class ChunkManager:
         return self.chunks_.get(index, None)
 
     def new_chunk(self, v1, v2, project):
-        self.chunks_[self.id_] = Chunk([v1, v2], self.id_, project)
+        self.chunks_[self.id_] = Chunk([int(v1), int(v2)], self.id_, project)
         self.id_ += 1

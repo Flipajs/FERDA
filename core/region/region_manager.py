@@ -228,9 +228,9 @@ class RegionManager:
 
             if key in self.regions_cache_:
                 r = self.regions_cache_[key]
-                result[key] = r
+                # result[key] = r
                 self.update(key, r)
-                return result
+                return r
 
             sql_ids.append(key)
             if self.use_db:

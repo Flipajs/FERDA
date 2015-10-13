@@ -123,6 +123,21 @@ class Project:
             with open(self.working_directory+'/stats.pkl', 'wb') as f:
                 pickle.dump(self.stats, f)
 
+        # Region Manager
+        if self.rm:
+            with open(self.working_directory+'/region_manager.pkl', 'wb') as f:
+                pickle.dump(self.rm, f, -1)
+
+        # Chunk Manager
+        if self.chm:
+            with open(self.working_directory+'/chunk_manager.pkl', 'wb') as f:
+                pickle.dump(self.chm, f, -1)
+
+        # Graph Manager
+        if self.gm:
+            with open(self.working_directory+'/graph_manager.pkl', 'wb') as f:
+                pickle.dump(self.gm, f, -1)
+
         self.save_qsettings()
 
         self.save_project_file_()
@@ -203,6 +218,27 @@ class Project:
         # SETTINGS
         try:
             self.load_qsettings()
+        except:
+            pass
+
+        # Region Manager
+        try:
+            with open(self.working_directory+'/region_manager.pkl', 'rb') as f:
+                self.rm = pickle.load(f)
+        except:
+            pass
+
+        # Chunk Manager
+        try:
+            with open(self.working_directory+'/chunk_manager.pkl', 'rb') as f:
+                self.chm = pickle.load(f)
+        except:
+            pass
+
+        # Graph Manager
+        try:
+            with open(self.working_directory+'/graph_manager.pkl', 'rb') as f:
+                self.gm = pickle.load(f)
         except:
             pass
 

@@ -30,7 +30,7 @@ if __name__ == '__main__':
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
     # proj.arena_model = None
-    proj.rm = RegionManager(db_name=proj.working_directory+'/temp/regions_part_'+str(id)+'.sqlite3')
+    proj.rm = RegionManager(db_wd=proj.working_directory+'/temp', db_name='regions_part_'+str(id)+'.sqlite3')
     proj.chm = ChunkManager()
 
     S_.general.log_graph_edits = False
@@ -94,11 +94,15 @@ if __name__ == '__main__':
     if not os.path.exists(proj.working_directory+'/temp'):
         os.mkdir(proj.working_directory+'/temp')
 
-    with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.gt', 'wb') as f:
-        p = pickle.Pickler(f, -1)
-        # solver.gm.g.save(f)
-        # p.dump(solver.gm.start_nodes())
-        # p.dump(solver.gm.end_nodes())
+    proj.save()
+
+    # with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.gt', 'wb') as f:
+    #     p = pickle.Pickler(f, -1)
+    #     p.dump(solver.gm)
+    #
+    #     # solver.gm.g.save(f)
+    #     # p.dump(solver.gm.start_nodes())
+    #     # p.dump(solver.gm.end_nodes())
 
     file_t = time.time() - s
 
