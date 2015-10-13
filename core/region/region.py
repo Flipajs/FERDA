@@ -168,10 +168,13 @@ def encode_RLE(pts):
         if running:
             run['col2'] = j - 1
             rle.append(run)
+    """
     print time.time() - t
 
     for run in rle:
         print "line %s: [%s - %s]" % (run["line"], run["col1"], run["col2"])
+    """
+    return rle
 
 
 
