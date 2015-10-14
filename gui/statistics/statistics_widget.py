@@ -127,7 +127,28 @@ class StatisticsWidget(QtGui.QWidget):
             id_ += 1
 
         with open(self.get_out_path()+'.mat', 'wb') as f:
-            sio.savemat(f, {'FERDA': obj_arr})
+            arena = None
+            if self.project.arena_model:
+                am = self.project.arena_model
+                try:
+                    c = am.center
+                    radius = am.radius
+                except AttributeError:
+                    center = np.array([0, 0])
+                    num = 0
+                    # estimate center:
+                    for y in range(am.im_height):
+                        for x in range(am.im_width):
+                            if am.mask_[y, x]:
+                                center += np.array([y, x])
+                                num += 1
+
+                    c = center / num
+                    radius = round((num / np.pi) ** 0.5)
+
+                arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
+
+            sio.savemat(f, {'FERDA': obj_arr, 'arena:': arena})
 
     def add_line_mat(self, d, r):
         y, x = r.centroid()

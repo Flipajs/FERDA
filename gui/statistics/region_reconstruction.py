@@ -42,6 +42,10 @@ class RegionReconstruction(QtGui.QWidget):
         self.query = QtGui.QLineEdit('1 2')
         self.fbox.addRow('query in following format:\n1 2 3 4 \n1, 2, 3, 4 \n1,2,3,4\n1:1000 (returns list of 1, 2, 3,..., 999, 1000\n1:3:1000 (returns list of 1, 4, 7, .... )', self.query)
 
+        self.add_whole_regions = QtGui.QCheckBox()
+        self.add_whole_regions.setChecked(True)
+        self.fbox.addRow('add whole regions', self.add_whole_regions)
+
         self.add_convex_hull = QtGui.QCheckBox()
         self.fbox.addRow('add convex hull', self.add_convex_hull)
 
@@ -106,9 +110,12 @@ class RegionReconstruction(QtGui.QWidget):
                             ch_xs.append(p[1])
                             ch_ys.append(p[0])
 
+                if self.add_convex_hull.isChecked() and self.add_whole_regions.isChecked():
                     reconstructed.append({'frame': f, 'chunk_id': ch.id, 'px': xs, 'py': ys, 'convex_hull_x': ch_xs, 'convex_hull_y': ch_ys})
-                else:
+                elif self.add_whole_regions.isChecked():
                     reconstructed.append({'frame': f, 'chunk_id': ch.id, 'px': xs, 'py': ys})
+                else:
+                    reconstructed.append({'convex_hull_x': ch_xs, 'convex_hull_y': ch_ys})
 
         return reconstructed
 
