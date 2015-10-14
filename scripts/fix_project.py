@@ -4,10 +4,10 @@ from core.project.project import Project
 
 
 p = Project()
-p.load('/Users/flipajs/Documents/wd/eight_barbara_bug/eight.fproj')
+p.load('/home/ferda/PROJECTS/eight_22/eight22.fproj')
 
-p.video_paths = ['/Users/flipajs/Documents/wd/eight.m4v']
-p.working_directory = '/Users/flipajs/Documents/wd/eight_barbara_bug'
+p.video_paths = ['/home/ferda/PROJECTS/eight.m4v']
+p.working_directory = '/home/ferda/PROJECTS/eight_22'
 
 for it in p.log.data_:
     print it.action_name, it.data
