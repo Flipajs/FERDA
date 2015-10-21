@@ -33,7 +33,7 @@ class RegionManager:
             print "Initializing db at %s " % self.db_path
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
-            self.cur.execute("DROP TABLE IF EXISTS regions;")
+            # DEBUG, do not use! self.cur.execute("DROP TABLE IF EXISTS regions;")
             self.cur.execute("CREATE TABLE regions(\
                 id INTEGER PRIMARY KEY, \
                 data BLOB);")
