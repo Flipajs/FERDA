@@ -44,7 +44,21 @@ class VisLoader:
         for vertex in self.vertices:
             v = self.graph.vertex(vertex)
             for edge in v.out_edges():
-                self.edges.append(edge)
+                source = edge.source()
+                target = edge.target()
+                r1 = self.region_manager[source]
+                r2 = self.region_manager[target]
+
+                # visualizer requires tuple of length 4
+                import random
+                type = random.choice(["chunk", "line"])
+                if type == "chunk":
+                    sureness = 1
+                else:
+                    sureness = random.randint(0, 101) / float(100)
+
+                new_tuple = (r1, r2, type, sureness)
+                self.edges.append(new_tuple)
 
     def visualise(self):
         self.prepare_vertices()
