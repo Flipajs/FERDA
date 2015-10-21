@@ -261,8 +261,10 @@ class GraphVisualizer(QtGui.QWidget):
         return self.selected
 
 if __name__ == '__main__':
+    # from scripts import fix_project
+    # execfile(fix_project.py)
     p = Project()
-    p.load('/home/ferda/PROJECTS/eight_22/eight22.fproj')
+    p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
 
     im_manager = ImgManager(p)
 
