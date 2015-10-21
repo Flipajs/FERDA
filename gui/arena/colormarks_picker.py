@@ -199,7 +199,7 @@ class ColormarksPicker(QtGui.QWidget):
         bg_height, bg_width = self.background.shape[:2]
         for i in range(point.x() - self.pen_size/2, point.x() + self.pen_size/2):
             for j in range(point.y() - self.pen_size/2, point.y() + self.pen_size/2):
-                if i >= 0 and i <= bg_width and j >= 0 and j <= bg_height:
+                if i >= 0 and i < bg_width and j >= 0 and j < bg_height:
                     self.paint_image.setPixel(i, j, value)
 
         # set new image and pixmap
