@@ -25,24 +25,28 @@ import cPickle as pickle
 
 
 class ColorHist3d():
-    def __init__(self, im, num_colors, num_bins=32, theta=0.1, epsilon=0.3):
+    def __init__(self, im, num_colors, num_bins1=32, num_bins2=32, num_bins3=32, theta=0.1, epsilon=0.3):
         self.theta = theta
         self.epsilon = epsilon
 
         # TODO: 2x multiply num of bins
-        self.num_bins = num_bins
+        self.num_bins1 = num_bins1
+        self.num_bins2 = num_bins2
+        self.num_bins3 = num_bins3
+
+        self.num_bins_v = np.array([self.num_bins1, self.num_bins2, self.num_bins3], dtype=np.float)
 
         self.num_pxs = im.shape[0] * im.shape[1] * im.shape[2]
         self.num_colors = num_colors
         self.BG = num_colors
 
-        pos = np.asarray(im/float(self.num_bins), dtype=np.int)
+        pos = np.asarray(im/self.num_bins_v, dtype=np.int)
 
         # num_colors + 1 for background
-        self.hist_ = np.zeros((num_bins, num_bins, num_bins, num_colors+1), dtype=np.int)
+        self.hist_ = np.zeros((self.num_bins1, self.num_bins2, self.num_bins3, num_colors+1), dtype=np.int)
         self.hist_[:,:,:,self.BG] += 1
 
-        self.hist_labels_ = np.zeros((num_bins, num_bins, num_bins), dtype=np.int) + self.BG
+        self.hist_labels_ = np.zeros((self.num_bins1, self.num_bins2, self.num_bins3), dtype=np.int) + self.BG
 
         for i in range(im.shape[0]):
             for j in range(im.shape[1]):
@@ -50,7 +54,7 @@ class ColorHist3d():
                 self.hist_[p[0], p[1], p[2], self.BG] += 1
 
     def swap_bg2color(self, pxs, color_id):
-        pos = np.asarray(pxs/float(self.num_bins), dtype=np.int)
+        pos = np.asarray(pxs/self.num_bins_v, dtype=np.int)
         for i in range(pxs.shape[0]):
             p = pos[i, :]
 
@@ -60,7 +64,7 @@ class ColorHist3d():
             self.hist_[p[0], p[1], p[2], color_id] += 1
 
     def remove_bg(self, pxs):
-        pos = np.asarray(pxs/float(self.num_bins), dtype=np.int)
+        pos = np.asarray(pxs/self.num_bins_v, dtype=np.int)
         for i in range(pxs.shape[0]):
             p = pos[i, :]
 
@@ -68,16 +72,16 @@ class ColorHist3d():
                 self.hist_[p[0], p[1], p[2], self.BG] -= 1
 
     def add_color(self, pxs, color_id):
-        pos = np.asarray(pxs/float(self.num_bins), dtype=np.int)
+        pos = np.asarray(pxs/self.num_bins_v, dtype=np.int)
         for i in range(pxs.shape[0]):
             p = pos[i, :]
 
             self.hist_[p[0], p[1], p[2], color_id] += 1
 
     def compute_p_fg(self):
-        for i in range(self.num_bins):
-            for j in range(self.num_bins):
-                for k in range(self.num_bins):
+        for i in range(self.num_bins1):
+            for j in range(self.num_bins2):
+                for k in range(self.num_bins3):
                     num_bg = self.hist_bg_[i, j, k]
                     num_fg = self.hist_fg_[i, j, k]
                     if num_bg + num_fg > 0:
@@ -104,9 +108,9 @@ class ColorHist3d():
             sum_ = 0
             good_enough = []
 
-            for i in range(self.num_bins):
-                for j in range(self.num_bins):
-                    for k in range(self.num_bins):
+            for i in range(self.num_bins1):
+                for j in range(self.num_bins2):
+                    for k in range(self.num_bins3):
                         pkx = self.get_p_k_x(c_id, [i, j, k])
                         pxk = self.get_p_x_k([i, j, k], c_id)
 
@@ -144,6 +148,7 @@ def show_all_pixels_in_same_bin(y, x, fig=2, tolerance=0):
     global NUM_BINS
     global igbr
     global im
+    global num_bins_v
 
     if fig == 2:
         im_ = im
@@ -156,9 +161,11 @@ def show_all_pixels_in_same_bin(y, x, fig=2, tolerance=0):
         irg = np.asarray(irg*255, dtype=np.uint8)
         im_ = irg
 
-    my_pos = np.round(im_[y, x, :] / float(NUM_BINS))
 
-    pos = np.round(im_ / float(NUM_BINS))
+
+    my_pos = np.round(im_[y, x, :] / num_bins_v)
+
+    pos = np.round(im_ / num_bins_v)
     a_ = np.abs(pos[:, :, 0] - my_pos[0]) <= tolerance
     b_ = np.abs(pos[:, :, 1] - my_pos[1]) <= tolerance
     c_ = np.abs(pos[:, :, 2] - my_pos[2]) <= tolerance
@@ -245,30 +252,38 @@ def find_dist_thresholds(ccs, data):
 
 
 def show_foreground(CH3d, data, im):
-    global NUM_BINS
+    global num_bins_v
 
     colors = [[255, 0, 0], [0, 255, 0], [168, 37, 255],
               [55, 255, 255], [15, 135, 255], [255, 255, 0],
+              [255, 107, 151], [0, 0, 0]]
+
+    colors = [[255, 0, 0], [0, 255, 0], [168, 37, 255],
+              [55, 255, 255], [255, 255, 0],
               [255, 107, 151], [0, 0, 0]]
 
     # colors = [[255, 127, 166], [255, 255, 255], [255, 253, 22],
     #           [0, 255, 57], [0, 189, 255], [255, 255, 0],
     #           [255, 107, 151], [0, 0, 0]]
 
-    pos = np.asarray(data/float(NUM_BINS), dtype=np.int)
+    pos = np.asarray(data/num_bins_v, dtype=np.int)
 
+    labels = np.zeros((im.shape[0], im.shape[1]), dtype=np.int)
     for i in range(data.shape[0]):
         for j in range(data.shape[1]):
             p = pos[i, j]
 
             l = CH3d.hist_labels_[p[0], p[1], p[2]]
             im[i, j, :] = colors[l]
+            labels[i, j] = l
 
-    return im
+    return im, labels
 
 def get_irg_255(im):
     igbr = igbr_transformation(im)
     irg = igbr[:, :, [0, 1, 3]]
+
+    irg[:, :, 0] = irg[:, :, 0] ** 0.5
 
     irg_255 = np.zeros(irg.shape)
     irg_255[:,:,0] = irg[:,:,0]/np.max(irg[:,:,0])
@@ -296,18 +311,20 @@ def get_color_samples_tool(vid):
     except EOFError:
         pass
 
-    # color_samples = []
-    # for frame, mask in masks:
-    #     im = vid.get_frame(frame)
-    #     ccs = get_ccs(mask)
-    #
-    #     im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-    #     irg_255 = get_irg_255(im)
-    #     sample_pxs, all_pxs = find_dist_thresholds(ccs, irg_255.copy())
-    #
-    #     color_samples.append((sample_pxs, all_pxs))
+    # masks[3] = (500, masks[3][1] + masks[3][5])
 
-    frames = [500, 500, 500, 500, 500, 500, 300]
+    color_samples = []
+    for frame, mask in masks:
+        im = vid.get_frame(frame)
+        ccs = get_ccs(mask)
+
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        irg_255 = get_irg_255(im)
+        sample_pxs, all_pxs = find_dist_thresholds(ccs, irg_255.copy())
+
+        color_samples.append((sample_pxs, all_pxs))
+
+    frames = [500, 500, 500, 500, 500, 300]
     # frames = [52, 52, 52, 52, 52]
     frames = []
 
@@ -351,22 +368,30 @@ def get_color_samples_tool(vid):
 
     return color_samples
 
-def process_ccs(im):
-    min_a = 10
+def process_ccs(im, labels):
+    min_a = 20
     max_a = 500
 
-    ccs = get_ccs(im)
+    ccs = get_ccs(labels)
 
     for cc in ccs:
         if not(min_a < len(cc) < max_a):
             im[cc[:, 0], cc[:, 1], :] = [50, 50, 50]
+            # labels[cc[:, 0], cc[:, 1]] = 0
 
     return im
 
 if __name__ == "__main__":
-    NUM_BINS = 32
+    NUM_BINS1 = 16
+    NUM_BINS2 = 16
+    NUM_BINS3 = 16
+    # NUM_BINS1 = 32
+    # NUM_BINS2 = 32
+    # NUM_BINS3 = 32
 
-    wd = '/Users/flipajs/Documents/wd/colormarks3'
+    num_bins_v = np.array([NUM_BINS1, NUM_BINS2, NUM_BINS3], dtype=np.float)
+
+    wd = '/Users/flipajs/Documents/wd/colormarks10-sqrt'
 
     vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
     # vid = VideoManager('/Users/flipajs/Documents/wd/bigLense_clip.avi')
@@ -381,7 +406,7 @@ if __name__ == "__main__":
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         if True:
             irg_255 = get_irg_255(im)
-            CH3d = ColorHist3d(irg_255.copy(), 7, num_bins=NUM_BINS, theta=0.1, epsilon=0.8)
+            CH3d = ColorHist3d(irg_255.copy(), 6, num_bins1=NUM_BINS1, num_bins2=NUM_BINS2, num_bins3=NUM_BINS3, theta=0.05, epsilon=0.9)
 
             for (picked_pxs, all_pxs), c_id in zip(color_samples, range(len(color_samples))):
                 CH3d.remove_bg(all_pxs)
@@ -398,15 +423,15 @@ if __name__ == "__main__":
                 up = pickle.Unpickler(f)
                 CH3d = up.load()
 
-        for frame in range(0, 2001, 25):
+        for frame in range(0, 1001, 25):
             im = vid.get_frame(frame)
             im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
             irg_255 = get_irg_255(im)
-            foreground = show_foreground(CH3d, irg_255.copy(), im.copy())
+            foreground, labels = show_foreground(CH3d, irg_255.copy(), im.copy())
 
             plt.imsave(wd+'/'+str(frame)+'.png', im)
             plt.imsave(wd+'/'+str(frame)+'_c.png', foreground)
-            foreground_ = process_ccs(foreground)
+            foreground_ = process_ccs(foreground, labels)
             plt.imsave(wd+'/'+str(frame)+'_p.png', foreground_)
 
