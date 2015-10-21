@@ -1,5 +1,4 @@
 from gui.arena.my_ellipse import MyEllipse
-from gui.arena.my_popup   import MyPopup
 from gui.arena.my_view    import MyView
 
 __author__ = 'dita'
@@ -28,7 +27,7 @@ class ArenaEditor(QtGui.QWidget):
         self.background = img
         self.project = project
 
-        self.view = MyView(update_callback_move=self.mouse_moving)
+        self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
         self.scene = QtGui.QGraphicsScene()
 
         self.view.setScene(self.scene)
@@ -262,7 +261,7 @@ class ArenaEditor(QtGui.QWidget):
         else:
             return arena_mask, None
 
-    def change_value(self, value):
+    def change_pen_size(self, value):
         """
         change pen size
         :param value: new pen size
@@ -307,12 +306,12 @@ class ArenaEditor(QtGui.QWidget):
         self.polygon_points = []
         self.polygon_colors = []
 
-    def mousePressEvent(self, event):
+    def mouse_press_event(self, event):
         # get event position and calibrate to scene
-        cursor = QtGui.QCursor()
-        pos = cursor.pos()
-        pos = self.get_scene_pos(pos)
-        if type(pos) != QtCore.QPoint:
+
+        pos = self.get_event_pos(event)
+        if not pos:
+            # if pos isn't in the scene
             return
 
         if self.mode == "polygons":
@@ -323,11 +322,13 @@ class ArenaEditor(QtGui.QWidget):
                 # check if the clicked pos isn't too close to any other already chosen point
                 dist = self.get_distance(pt, pos)
                 if dist < precision:
+                    print "Too close"
                     ok = False
             for points in self.polygon_points:
                 for pt in points:
                     dist = self.get_distance(pt, pos)
                     if dist < precision:
+                        print "Too close2"
                         ok = False
             if ok:
                 self.point_items.append(self.pick_point(pos))
@@ -341,11 +342,18 @@ class ArenaEditor(QtGui.QWidget):
 
     def mouse_moving(self, event):
         if self.mode == "paint":
-            # while the mouse is moving, paint it's position
-            point = self.view.mapToScene(event.pos())
-            if self.is_in_scene(point):
+            point = self.get_event_pos(event)
+            if point:
+                # if point is in the scene
                 self.draw(point)
         # do nothing in "polygons" mode
+
+    def get_event_pos(self, event):
+        point = self.view.mapToScene(event.pos()).toPoint()
+        if self.is_in_scene(point):
+            return point
+        else:
+            return False
 
     def save(self):
         """
@@ -415,8 +423,11 @@ class ArenaEditor(QtGui.QWidget):
         bg_height, bg_width = self.background.shape[:2]
         for i in range(point.x() - self.pen_size/2, point.x() + self.pen_size/2):
             for j in range(point.y() - self.pen_size/2, point.y() + self.pen_size/2):
-                if i >= 0 and i <= bg_width and j >= 0 and j <= bg_height:
-                    self.paint_image.setPixel(i, j, value)
+                if i >= 0 and i < bg_width and j > 0 and j <= bg_height:
+                    try:
+                        self.paint_image.setPixel(i, j, value)
+                    except:
+                        pass
 
         # set new image and pixmap
         self.refresh_image(self.paint_image)
@@ -552,23 +563,6 @@ class ArenaEditor(QtGui.QWidget):
         p.end()
         return result
 
-    def get_scene_pos(self, point):
-        """
-        converts point coordinates to scene coordinate system
-        :param point: QPoint or QPointF
-        :return: QPointF or False
-        """
-        map_pos = self.view.mapFromGlobal(point)
-        scene_pos = self.view.mapFromScene(QtCore.QPoint(0, 0))
-        map_pos.setY(map_pos.y() - scene_pos.y())
-        map_pos.setX(map_pos.x() - scene_pos.x())
-        if self.is_in_scene(map_pos):
-            return map_pos
-        else:
-            if self.DEBUG:
-                print "Out of bounds [%s, %s]" % (map_pos.x(), map_pos.y())
-            return False
-
     def is_in_scene(self, point):
         """
         checks if the point is inside the scene
@@ -670,7 +664,7 @@ class ArenaEditor(QtGui.QWidget):
         self.slider.setTickInterval(5)
         self.slider.setValue(30)
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
-        self.slider.valueChanged[int].connect(self.change_value)
+        self.slider.valueChanged[int].connect(self.change_pen_size)
         self.slider.setVisible(False)
         widget.layout().addWidget(self.slider)
 
