@@ -1,15 +1,15 @@
-from gui.arena.my_ellipse import MyEllipse
-from gui.arena.my_view    import MyView
-
 __author__ = 'dita'
 
 from PyQt4 import QtGui, QtCore, Qt
+from skimage.measure import label
 import cv2
 import sys
 import math
+import numpy as np
 from core.project.project import Project
 from gui.img_controls     import utils
-import numpy as np
+from gui.arena.my_ellipse import MyEllipse
+from gui.arena.my_view    import MyView
 
 
 class ArenaEditor(QtGui.QWidget):
@@ -259,6 +259,8 @@ class ArenaEditor(QtGui.QWidget):
             # self.finish_callback(arena_mask, occultation_mask)
             self.finish_callback(arena_mask, None)
         else:
+            # print label(arena_mask, connectivity=2)
+            # TODO: label seems to be working well, uncomment later
             return arena_mask, None
 
     def change_pen_size(self, value):
