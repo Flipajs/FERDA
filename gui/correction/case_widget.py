@@ -565,7 +565,7 @@ class CaseWidget(QtGui.QWidget):
                     for r in self.nodes_groups[i]:
                         im = draw_points(im, r.pts(), color=self.get_node_color(r))
 
-            crop = np.copy(im[roi.y():roi.y()+roi.height(), roi.x():roi.x()+roi.width(), :])
+            crop = np.copy(im[int(roi.y()):int(roi.y())+int(roi.height()), int(roi.x()):int(roi.x())+int(roi.width()), :])
             cv2.putText(crop, str(self.frame_t+i), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
 
             pm = cvimg2qtpixmap(crop)
