@@ -262,6 +262,10 @@ def show_foreground(CH3d, data, im):
               [55, 255, 255], [255, 255, 0], # Blue Yellow
               [255, 107, 151], [0, 0, 0]] # Pink Black
 
+    colors = [[255, 255, 255], [55, 255, 255], # white blue
+              [0, 255, 0], [255, 255, 0], # green yellow
+              [255, 107, 151], [50, 50, 50]] # pink bg
+
     # colors = [[255, 127, 166], [255, 255, 255], [255, 253, 22],
     #           [0, 255, 57], [0, 189, 255], [255, 255, 0],
     #           [255, 107, 151], [0, 0, 0]]
@@ -331,7 +335,7 @@ def get_color_samples_tool(vid):
     f = 916
     frames = [f, f, f, f, f, f, f, f, f]
     # frames = [52, 52, 52, 52, 52]
-    # frames = []
+    frames = []
 
     app = QtGui.QApplication(sys.argv)
 
@@ -398,7 +402,7 @@ if __name__ == "__main__":
 
     num_bins_v = np.array([NUM_BINS1, NUM_BINS2, NUM_BINS3], dtype=np.float)
 
-    wd = '/Users/flipajs/Documents/wd/blc2-1'
+    wd = '/Users/flipajs/Documents/wd/blc2-3'
 
     # vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
     vid = VideoManager('/Volumes/Seagate Expansion Drive/IST - videos/bigLenses_colormarks2.avi')
@@ -414,7 +418,7 @@ if __name__ == "__main__":
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         if True:
             irg_255 = get_irg_255(im)
-            CH3d = ColorHist3d(irg_255.copy(), 6, num_bins1=NUM_BINS1, num_bins2=NUM_BINS2, num_bins3=NUM_BINS3,
+            CH3d = ColorHist3d(irg_255.copy(), 5, num_bins1=NUM_BINS1, num_bins2=NUM_BINS2, num_bins3=NUM_BINS3,
                                theta=0.3, epsilon=0.9)
 
             for (picked_pxs, all_pxs), c_id in zip(color_samples, range(len(color_samples))):
@@ -432,29 +436,32 @@ if __name__ == "__main__":
                 up = pickle.Unpickler(f)
                 CH3d = up.load()
 
-        for frame in range(300, 1001):
-            im = vid.get_frame(frame)
-            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        for frame in range(0, 1001, 50):
+            for i in range(10):
+                frame_ = frame + i
 
-            irg_255 = get_irg_255(im)
+                im = vid.get_frame(frame_)
+                im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
-            # irgb = irgb_transformation(im)
-            # plt.subplot(2, 2, 1)
-            # plt.imshow(irgb[:, :, 0], cmap='gray')
-            # plt.subplot(2, 2, 2)
-            # plt.imshow(irgb[:, :, 1], cmap='gray')
-            # plt.subplot(2, 2, 3)
-            # plt.imshow(irgb[:, :, 2], cmap='gray')
-            # plt.subplot(2, 2, 4)
-            # plt.imshow(irgb[:, :, 3], cmap='gray')
-            # plt.show()
-            # plt.waitforbuttonpress(0)
+                irg_255 = get_irg_255(im)
 
-            foreground, labels = show_foreground(CH3d, irg_255.copy(), im.copy())
+                # irgb = irgb_transformation(im)
+                # plt.subplot(2, 2, 1)
+                # plt.imshow(irgb[:, :, 0], cmap='gray')
+                # plt.subplot(2, 2, 2)
+                # plt.imshow(irgb[:, :, 1], cmap='gray')
+                # plt.subplot(2, 2, 3)
+                # plt.imshow(irgb[:, :, 2], cmap='gray')
+                # plt.subplot(2, 2, 4)
+                # plt.imshow(irgb[:, :, 3], cmap='gray')
+                # plt.show()
+                # plt.waitforbuttonpress(0)
 
-            plt.imsave(wd + '/' + str(frame) + '.png', im)
-            plt.imsave(wd + '/' + str(frame) + '_c.png', foreground)
-            foreground_ = process_ccs(foreground, labels)
-            plt.imsave(wd + '/' + str(frame) + '_p.png', foreground_)
+                foreground, labels = show_foreground(CH3d, irg_255.copy(), im.copy())
 
-            print frame
+                plt.imsave(wd + '/' + str(frame_) + '.png', im)
+                plt.imsave(wd + '/' + str(frame_) + '_c.png', foreground)
+                foreground_ = process_ccs(foreground, labels)
+                plt.imsave(wd + '/' + str(frame_) + '_p.png', foreground_)
+
+                print frame_
