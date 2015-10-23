@@ -66,6 +66,7 @@ class BackgroundComputer():
             for i in range(skip_n_first_parts):
                 self.processes.append(None)
 
+            limitsFile = open(str(self.project.working_directory)+"/limits.txt","w");
             for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
 
@@ -81,16 +82,20 @@ class BackgroundComputer():
 
                 ex_str = str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
                 print ex_str
+                limitsFile.write(str(i)+" "+str(f_num)+" "+str(last_n_frames)+"\n");
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
-                    p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
+                    #p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))   ## Uncomment for cluster usage
 
                 self.processes.append([p, ex_str, status])
 
                 # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
 
             S_.general.log_graph_edits = True
+            limitsFile.close();
+            sys.exit() ## Comment for cluster usage
+            
         else:
             self.precomputed = True
 
