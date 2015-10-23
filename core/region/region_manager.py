@@ -33,7 +33,7 @@ class RegionManager:
             print "Initializing db at %s " % self.db_path
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
-            self.cur.execute("DROP TABLE IF EXISTS regions;")
+            # DEBUG, do not use! self.cur.execute("DROP TABLE IF EXISTS regions;")
             self.cur.execute("CREATE TABLE regions(\
                 id INTEGER PRIMARY KEY, \
                 data BLOB);")
@@ -52,12 +52,12 @@ class RegionManager:
         self.tmp_ids = []
 
         if isinstance(data, RegionManager):
-            newdata = data.get_all()
+            newdata = data[:]
             self.add(newdata)
         elif isinstance(data, list):
             for datas in data:
                 if isinstance(datas, RegionManager):
-                    self.add(datas.get_all())
+                    self.add(datas[:])
 
     def add(self, regions):
         """
@@ -166,7 +166,7 @@ class RegionManager:
 
     def __getitem__(self, key):
         sql_ids = []
-        result = {}
+        result = []
         if isinstance(key, slice):
             # TODO: check how this example works and if it can be used
             # return [self[ii] for ii in xrange(*key.indices(len(self)))]
@@ -191,7 +191,7 @@ class RegionManager:
                     # print "%s is in cache" % i
                     # use cache if region is available
                     r = self.regions_cache_[i]
-                    result[i] = r
+                    result.append(r)
                     self.update(i, r)
                 else:
                     # print "%s is not in cache" % i
@@ -199,9 +199,8 @@ class RegionManager:
                     sql_ids.append(i)
             if self.use_db:
                 self.db_search_(result, sql_ids)
-            return result
 
-        if isinstance(key, list):
+        elif isinstance(key, list):
             for id in key:
                 if not isinstance(id, int):
                     print "TypeError: int expected, %s given! Skipping key '%s'." % (type(id), id)
@@ -209,7 +208,7 @@ class RegionManager:
                 if id in self.regions_cache_:
                     # print "%s was found in cache" % id
                     r = self.regions_cache_[id]
-                    result[id] = r
+                    result.append(r)
                     self.update(id, r)
                 else:
                     # print "%s was not found in cache" % id
@@ -217,9 +216,8 @@ class RegionManager:
 
             if self.use_db:
                 self.db_search_(result, sql_ids)
-            return result
 
-        if isinstance(key, int):
+        elif isinstance(key, int):
             if key < 0:  # Handle negative indices
                 key += len(self)
 
@@ -228,21 +226,26 @@ class RegionManager:
 
             if key in self.regions_cache_:
                 r = self.regions_cache_[key]
-                # result[key] = r
+                result.append(r)
                 self.update(key, r)
                 return r
 
             sql_ids.append(key)
             if self.use_db:
                 self.db_search_(result, sql_ids)
-            return result
+        else:
+            raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
 
-            raise SyntaxError("Very severe! Key %s wasn't found, but probably is in RM!" % key)
-        raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
+        if len(result) == 0:
+            return None
+        elif len(result) == 1:
+            return result[0]
+        else:
+            return result
 
     def db_search_(self, result, sql_ids):
         """
-        :param result: The dictionary to which the results should be appended
+        :param result: The list to which the results should be appended
         :param sql_ids: ids to be fetched from database
         """
         if not self.use_db:
@@ -261,7 +264,7 @@ class RegionManager:
             id = sql_ids[0]
             try:
                 region = pickle.loads(str(row[0]))
-                result[id] = region
+                result.append(region)
                 # add it to cache
                 self.add_to_cache_(id, region)
             except TypeError:
@@ -281,7 +284,7 @@ class RegionManager:
                 tmp_ids.append(row[0])
                 region = pickle.loads(str(row[1]))
                 self.add_to_cache_(row[0], region)
-                result[row[0]] = region
+                result.append(region)
 
     def removemany_(self, regions):
         sql_ids = []
@@ -336,47 +339,6 @@ class RegionManager:
         region.pts_ = tmp_pts
         return data
 
-    def get_all(self):
-        result = []
-        sql_ids = []
-        for id in range(1, len(self)+1):
-            if id in self.regions_cache_:
-                # print "%s was found in cache" % id
-                r = self.regions_cache_[id]
-                result.append(r)
-                self.update(id, r)
-            else:
-                # print "%s was not found in cache" % id
-                sql_ids.append(id)
-
-        if self.use_db:
-            l = len(sql_ids)
-            if l == 1:
-                # if only one id has to be taken from db
-                cmd = "SELECT data FROM regions WHERE id = %s" % sql_ids[0]
-                self.cur.execute(cmd)
-                row = self.cur.fetchone()
-                # add it to result
-                id = sql_ids[0]
-                region = pickle.loads(str(row[0]))
-                result.append(region)
-                # add it to cache
-                self.add_to_cache_(id, region)
-
-            if l > 1:
-                cmd = "SELECT data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
-                self.cur.execute(cmd)
-                rows = self.cur.fetchall()
-                i = 0
-                for row in rows:
-                    id = sql_ids[i]
-                    region = pickle.loads(str(row[0]))
-                    self.add_to_cache_(id, region)
-                    result.append(region)
-                    i += 1
-        return result
-
-
     def pretty_list(self, list):
         """
         Converts a list of elements [1, 2, 3] to pretty string "(1, 2, 3)"
@@ -409,16 +371,15 @@ if __name__ == "__main__":
         r.pts_rle_ = None
     f.close()
 
-    rm1 = RegionManager(db_wd="/home/dita", cache_size_limit=1)
-    data = regions[0:10]
-    rm1.add(regions)
-    rm = regions[3:8]
-    rm1.remove(rm)
+    rm = RegionManager(db_wd="/home/dita", cache_size_limit=1)
+    rm.add(regions)
+
+    print rm[4]
+    print rm[2:6]
+
 
     # db size with 20 pts regions: 306 176 bytes
     # db size with 20 rle regions:  75 776 bytes
     # NOTE: To check sb size properly, always start in new file. File size doesn't decrease when items are deleted or
     #       when table is dropped. Instead of delete, sql VACUUM command can be used.
 
-    dict = rm1[:]
-    print dict
