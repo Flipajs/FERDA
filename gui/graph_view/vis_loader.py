@@ -44,8 +44,8 @@ class VisLoader:
         for vertex in self.vertices:
             v = self.graph.vertex(vertex)
             for edge in v.out_edges():
-                source = int(edge.source())
-                target = int(edge.target())
+                source = edge.source()
+                target = edge.target()
                 r1 = self.project.gm.region(source)
                 # r1 = self.region_manager[source]
                 # r2 = sself.region_manager[source]
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
 
     # # test
-    p.rm = RegionManager(db_wd=p.working_directory+'/temp', db_name='regions_part_'+str(id)+'.sqlite3')
+    # p.rm = RegionManager(db_wd=p.working_directory+'/temp', db_name='regions_part_'+str(id)+'.sqlite3')
     # f = open('/home/sheemon/Downloads/c5regions.pkl', 'r+b')
     # up = pickle.Unpickler(f)
     # regions = up.load()
