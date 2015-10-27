@@ -22,6 +22,7 @@ import sys
 from gui.arena.arena_editor import ArenaEditor
 import cPickle as pickle
 import time
+from scipy import ndimage
 
 
 class ColorHist3d():
@@ -200,13 +201,16 @@ def QImageToCvMat(incomingImage):
     return arr
 
 
-def get_ccs(im, bg=0):
+def get_ccs(im, bg=0, min_a=1, max_a=5000):
     import skimage
 
     labeled, num = skimage.measure.label(im, background=bg, return_num=True)
 
+    sizes = ndimage.sum(np.ones((im.shape[0], im.shape[1])), labeled, range(1, num + 1))
+
     ccs = []
     for i in range(num):
+        np.argwhere(labeled == i)
         ccs.append(np.argwhere(labeled == i))
 
     return ccs
@@ -258,13 +262,13 @@ def show_foreground(CH3d, data, im):
               [55, 255, 255], [15, 135, 255], [255, 255, 0],
               [255, 107, 151], [0, 0, 0]]
 
-    colors = [[255, 0, 0], [0, 255, 0], [168, 37, 255], # Red Green Purple
-              [55, 255, 255], [255, 255, 0], # Blue Yellow
-              [255, 107, 151], [0, 0, 0]] # Pink Black
+    colors = [[255, 0, 0], [0, 255, 0], [168, 37, 255],  # Red Green Purple
+              [55, 255, 255], [255, 255, 0],  # Blue Yellow
+              [255, 107, 151], [0, 0, 0]]  # Pink Black
 
-    colors = [[255, 255, 255], [55, 255, 255], # white blue
-              [0, 255, 0], [255, 255, 0], # green yellow
-              [255, 107, 151], [50, 50, 50]] # pink bg
+    colors = [[255, 255, 255], [55, 255, 255],  # white blue
+              [0, 255, 0], [255, 255, 0],  # green yellow
+              [255, 107, 151], [50, 50, 50]]  # pink bg
 
     # colors = [[255, 127, 166], [255, 255, 255], [255, 253, 22],
     #           [0, 255, 57], [0, 189, 255], [255, 255, 0],
@@ -274,16 +278,22 @@ def show_foreground(CH3d, data, im):
 
     s = time.time()
 
-    labels = np.zeros((im.shape[0], im.shape[1]), dtype=np.int)
-    for i in range(data.shape[0]):
-        for j in range(data.shape[1]):
-            p = pos[i, j]
+    labels = CH3d.hist_labels_[pos[:, :, 0], pos[:, :, 1], pos[:, :, 2]]
 
-            l = CH3d.hist_labels_[p[0], p[1], p[2]]
-            im[i, j, :] = colors[l]
-            labels[i, j] = l
+    colors = np.array(colors)
+    im_ = colors[labels.ravel()]
+    im = np.asarray(im_.reshape(im.shape[0], im.shape[1], 3), dtype=np.uint8)
 
-    print "labelling time ", time.time()-s
+    # labels = np.zeros((im.shape[0], im.shape[1]), dtype=np.int)
+    # for i in range(data.shape[0]):
+    #     for j in range(data.shape[1]):
+    #         p = pos[i, j]
+    #
+    #         l = CH3d.hist_labels_[p[0], p[1], p[2]]
+    #         im[i, j, :] = colors[l]
+    #         labels[i, j] = l
+
+    print "labelling time ", time.time() - s
 
     return im, labels
 
@@ -382,7 +392,9 @@ def process_ccs(im, labels):
     min_a = 12
     max_a = 500
 
-    ccs = get_ccs(labels, bg=-1)
+    s = time.time()
+    ccs = get_ccs(labels, bg=-1, min_a=min_a, max_a=max_a)
+    print "get_ccs t: ", time.time() - s
 
     for cc in ccs:
         if not (min_a < len(cc) < max_a):
@@ -402,7 +414,7 @@ if __name__ == "__main__":
 
     num_bins_v = np.array([NUM_BINS1, NUM_BINS2, NUM_BINS3], dtype=np.float)
 
-    wd = '/Users/flipajs/Documents/wd/blc2-3'
+    wd = '/Users/flipajs/Documents/wd/blc2-test'
 
     # vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
     vid = VideoManager('/Volumes/Seagate Expansion Drive/IST - videos/bigLenses_colormarks2.avi')
@@ -416,7 +428,7 @@ if __name__ == "__main__":
 
     if True:
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        if True:
+        if False:
             irg_255 = get_irg_255(im)
             CH3d = ColorHist3d(irg_255.copy(), 5, num_bins1=NUM_BINS1, num_bins2=NUM_BINS2, num_bins3=NUM_BINS3,
                                theta=0.3, epsilon=0.9)
