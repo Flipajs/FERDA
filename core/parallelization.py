@@ -94,19 +94,20 @@ if __name__ == '__main__':
     if not os.path.exists(proj.working_directory+'/temp'):
         os.mkdir(proj.working_directory+'/temp')
 
-    # TODO: remove this...
-
-    proj.solver = solver
-    proj.gm = solver.gm
-    proj.save()
-
-    # with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.gt', 'wb') as f:
-    #     p = pickle.Pickler(f, -1)
-    #     p.dump(solver.gm.g)
+    # # TODO: remove this...
     #
-    #     # solver.gm.g.save(f)
-    #     # p.dump(solver.gm.start_nodes())
-    #     # p.dump(solver.gm.end_nodes())
+    # proj.solver = solver
+    # proj.gm = solver.gm
+    # proj.save()
+
+    with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.pkl', 'wb') as f:
+        p = pickle.Pickler(f, -1)
+        p.dump(solver.gm.g)
+        p.dump(solver.gm.get_all_relevant_vertices())
+
+        # solver.gm.g.save(f)
+        # p.dump(solver.gm.start_nodes())
+        # p.dump(solver.gm.end_nodes())
 
     file_t = time.time() - s
 

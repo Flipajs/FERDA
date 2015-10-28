@@ -99,6 +99,39 @@ class BackgroundComputer():
             self.check_parallelization_timer.stop()
             self.piece_results_together()
 
+    def merge_parts(self, rm1, rm2, gm1, gm2):
+        """
+        moves all regions from rm2 to rm1
+        :param rm1:
+        :param rm2:
+        :return:
+        """
+
+        S_.general.log_graph_edits = False
+
+        vertex_map = {}
+        for old_v in gm2.get_all_relevant_vertices():
+            old_reg = rm2[gm2.vp['region'][int(old_v)]]
+            rm1.add(old_reg)
+
+            new_v = gm1.add_vertex(old_reg)
+            vertex_map[old_v] = new_v
+
+            gm1.g.vp['chunk_start_id'][new_v] = gm2.g.vp['chunk_start_id'][old_v]
+            gm1.g.vp['chunk_end_id'][new_v] = gm2.g.vp['chunk_end_id'][old_v]
+
+        # go through all edges and copy them with all edge properties...
+        for old_e in gm2.g.edges():
+            v1_old = old_e.source()
+            v2_old = old_e.target()
+            old_score = gm2.g.vp['score'][old_e]
+
+            # ep['score'] is assigned in add_edge call
+            new_e = gm1.add_edge(vertex_map[v1_old], vertex_map[v2_old], old_score)
+            gm1.g.ep['certainty'][new_e] = gm2.g.vp['certainty'][old_e]
+
+        S_.general.log_graph_edits = True
+
     def piece_results_together(self):
         end_nodes_prev = []
         nodes_to_process = []
@@ -112,8 +145,18 @@ class BackgroundComputer():
         if self.project.version_is_le("2.0.1"):
             part_num = self.process_n
 
+        from core.region.region_manager import RegionManager
+        from core.graph.graph_manager import GraphManager
+        from core.graph.solver import Solver
+
+        new_rm = RegionManager(db_wd=self.project.working_directory)
+        self.project.solver = Solver(self.project)
+
         for i in range(part_num):
-            with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
+            rm_old = RegionManager(db_wd=self.project.working_directory+'/temp', db_name='regions_part_'+str(i)+'.sqlite3')
+            # gm_old = GraphManager()
+
+            with open(self.project.working_directory+'/temp/part'+str(i)+'.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g_ = up.load()
                 start_nodes = up.load()

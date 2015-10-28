@@ -29,7 +29,7 @@ if is_flipajs_pc():
     # project.load('/Users/flipajs/Documents/wd/c4/c4.fproj')
     # project.load('/Users/flipajs/Documents/wd/c2/c2.fproj')
     # # # # # #
-    # ex.widget_control('load_project', project)
+    ex.widget_control('load_project', project)
     #
     pass
 

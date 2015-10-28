@@ -34,10 +34,16 @@ class RegionManager:
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
             # DEBUG, do not use! self.cur.execute("DROP TABLE IF EXISTS regions;")
-            self.cur.execute("CREATE TABLE regions(\
-                id INTEGER PRIMARY KEY, \
-                data BLOB);")
-            self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
+
+            # TODO: add table existence test
+            try:
+                self.cur.execute("CREATE TABLE regions(\
+                    id INTEGER PRIMARY KEY, \
+                    data BLOB);")
+                self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
+            except sql.OperationalError:
+                pass
+
             self.use_db = True
             self.regions_cache_ = {}
             self.recent_regions_ids = []
