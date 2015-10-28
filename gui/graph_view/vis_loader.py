@@ -36,9 +36,9 @@ class VisLoader:
         self.vertices = self.graph_manager.get_all_relevant_vertices()
 
     def prepare_nodes(self):
-        # for vertex in self.vertices:
-        #     # v = self.graph.vertex(vertex)
-        self.regions = self.region_manager[self.vertices]
+        self.regions = []
+        for v in self.vertices:
+            self.regions.append(self.graph_manager.region(v))
 
     def prepare_edges(self):
         for vertex in self.vertices:
@@ -72,7 +72,8 @@ class VisLoader:
 
 if __name__ == '__main__':
     from scripts import fix_project
-    execfile("/home/sheemon/FERDA/ferda/scripts/fix_project.py")
+    # import filu, ktery je vlastne script rovnou provede cely script, tedy nasledujici radek je redundantni
+    # execfile("/home/sheemon/FERDA/ferda/scripts/fix_project.py")
 
     p = Project()
     p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
