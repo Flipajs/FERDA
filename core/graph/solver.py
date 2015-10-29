@@ -399,11 +399,11 @@ class Solver:
             v1_ch = self.gm.chunk_end(v1)
             v2_ch = self.gm.chunk_start(v2)
             if v1_ch:
-                v1_ch.append_right(v2)
+                v1_ch.append_right(v2, self.gm)
             elif v2_ch:
-                v2_ch.append_left(v1)
+                v2_ch.append_left(v1, self.gm)
             else:
-                self.chm.new_chunk(v1, v2, self.project)
+                self.chm.new_chunk(map(int, [v1, v2]), self.project.gm)
 
         affected = list(affected)
         # all_affected = list(self.simplify(affected[:], return_affected=True))

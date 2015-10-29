@@ -17,6 +17,8 @@ from core.graph.solver import Solver
 from core.graph.reduced import Reduced
 import cProfile
 from core.region.region_manager import RegionManager
+from core.graph.chunk_manager import ChunkManager
+from core.graph.chunk import Chunk
 
 
 class BackgroundComputer:
@@ -57,7 +59,7 @@ class BackgroundComputer:
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
-        if not os.path.exists(self.project.working_directory+'/temp/part0.pkl'):
+        if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
             if not S_.general.log_in_bg_computation:
                 S_.general.log_graph_edits = False
             self.start = time.time()
@@ -81,12 +83,16 @@ class BackgroundComputer:
                 if i == self.part_num - 1:
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
 
-                ex_str = str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
+                ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
+                    self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
+                    f_num) + ' ' + str(last_n_frames)
                 print ex_str
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
-                    p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
+                    p.start(str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
+                        self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
+                        f_num) + ' ' + str(last_n_frames))
 
                 self.processes.append([p, ex_str, status])
 
@@ -101,18 +107,29 @@ class BackgroundComputer:
             self.check_parallelization_timer.stop()
             self.piece_results_together()
 
-    def merge_parts(self, new_gm, old_g, old_g_relevant_vertices, new_rm, old_rm):
+    def merge_parts(self, new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm):
         """
+        merges all parts (from parallelisation)
+        we want to merge all these structures (graph, region and chunk managers) into one
+
+        in the beginning there were separate graphs(for given time bounds) with ids starting from 0
+        ids in region manager also starts with 0, the same for chunk manager
+        -> reindexing is needed
 
         :param new_gm:
         :param old_g:
         :param old_g_relevant_vertices:
-        :param new_rm:
+        :param project:
         :param old_rm:
+        :param old_chm:
         :return:
         """
+        new_chm = project.chm
+        new_rm = project.rm
 
         vertex_map = {}
+        used_chunks_ids = set()
+        # reindex vertices
         for v_id in old_g_relevant_vertices:
             old_v = old_g.vertex(v_id)
             old_reg = old_rm[old_g.vp['region_id'][old_v]]
@@ -121,8 +138,11 @@ class BackgroundComputer:
             new_v = new_gm.add_vertex(old_reg)
             vertex_map[old_v] = new_v
 
-            new_gm.g.vp['chunk_start_id'][new_v] = old_g.vp['chunk_start_id'][old_v]
-            new_gm.g.vp['chunk_end_id'][new_v] = old_g.vp['chunk_end_id'][old_v]
+            used_chunks_ids.add(old_g.vp['chunk_start_id'][old_v])
+            used_chunks_ids.add(old_g.vp['chunk_end_id'][old_v])
+
+        # because 0 id means - no chunk assigned!
+        used_chunks_ids.remove(0)
 
         # go through all edges and copy them with all edge properties...
         for old_e in old_g.edges():
@@ -141,34 +161,64 @@ class BackgroundComputer:
             new_e = new_gm.add_edge(v1_new, v2_new, old_score)
             new_gm.g.ep['certainty'][new_e] = old_g.ep['certainty'][old_e]
 
+        # chunk id = 0 means no chunk assigned
+        chunks_map = {0: 0}
+        # update chunks
+        for old_id_ in used_chunks_ids:
+            ch = old_chm[old_id_]
+
+            new_list = []
+            for old_v in ch.nodes_:
+                if old_v in vertex_map:
+                    new_list.append(int(vertex_map[old_v]))
+                else:
+                    id_ = new_rm.add(old_rm[old_g.vp['region_id'][old_g.vertex(old_v)]])
+                    # list of ids is returned [id] ...
+                    id_ = id_[0]
+
+                    # this happens in case when the vertex will not be in new graph, but we wan't to keep the region in
+                    # RM (e. g. for inner points of chunks)
+                    new_list.append(-id_)
+
+            _, new_id_ = new_chm.new_chunk(new_list, new_gm)
+
+            chunks_map[old_id_] = new_id_
+
+        for old_v, new_v in vertex_map.iteritems():
+            new_gm.g.vp['chunk_start_id'][new_v] = chunks_map[old_g.vp['chunk_start_id'][old_v]]
+            new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
+
     def piece_results_together(self):
         end_nodes_prev = []
         nodes_to_process = []
 
         self.project.rm = RegionManager(db_wd=self.project.working_directory)
+        self.project.chm = ChunkManager()
         self.solver = Solver(self.project)
 
         self.update_callback(0, 'Assembling solution...')
 
-        # switching off... We don't want to log theese...
+        # switching off... We don't want to log following...
         S_.general.log_graph_edits = False
 
         part_num = self.part_num
-        part_num = self.process_n
         # TODO: remove this line
         part_num = 2
 
         for i in range(part_num):
-            rm_old = RegionManager(db_wd=self.project.working_directory+'/temp',
-                                   db_name='part'+str(i)+'_rm.sqlite3')
+            rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
+                                   db_name='part' + str(i) + '_rm.sqlite3')
 
-            with open(self.project.working_directory+'/temp/part'+str(i)+'.pkl', 'rb') as f:
+            with open(self.project.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g_ = up.load()
                 relevant_vertices = up.load()
+                chm_ = up.load()
 
-                self.merge_parts(self.solver.gm, g_, relevant_vertices, self.project.rm, rm_old)
-                
+                self.merge_parts(self.solver.gm, g_, relevant_vertices, self.project, rm_old, chm_)
+
+                # TODO: add edges... between parts
+
                 #
                 # # This is much faster then nx.union()
                 # for n, d in g_.nodes(data=True):
@@ -192,9 +242,8 @@ class BackgroundComputer:
                 # self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
                 # end_nodes_prev = end_nodes
 
-            self.update_callback((i+1)/float(part_num))
+            self.update_callback((i + 1) / float(part_num))
 
-        self.solver.update_nodes_in_t_refs()
         self.update_callback(-1, 'Simplifying...')
         self.solver.simplify(nodes_to_process)
         self.update_callback(-1, 'CHUNKS reduction')
@@ -228,7 +277,7 @@ class BackgroundComputer:
                 if p_id == self.process_n - 1:
                     try:
                         i = int(str_)
-                        s = str((int(i) / float(self.frames_in_row_last)*100))
+                        s = str((int(i) / float(self.frames_in_row_last) * 100))
                         # self.update_callback(' '+s[0:4]+'%')
                     except:
                         print str_
@@ -251,9 +300,12 @@ class BackgroundComputer:
                     if i:
                         num_finished += 1
 
-                self.update_callback(num_finished/float(self.part_num))
+                self.update_callback(num_finished / float(self.part_num))
 
-                print "PART "+str(p_id+1)+"/"+str(self.part_num)+" FINISHED MSERS, takes ", round(end - self.start, 2), " seconds which is ", round((end-self.start) / (self.process_n * self.frames_in_row * int((p_id+self.process_n)/self.process_n)), 4), " seconds per frame"
+                print "PART " + str(p_id + 1) + "/" + str(self.part_num) + " FINISHED MSERS, takes ", round(
+                    end - self.start, 2), " seconds which is ", round((end - self.start) / (
+                    self.process_n * self.frames_in_row * int((p_id + self.process_n) / self.process_n)),
+                                                                      4), " seconds per frame"
 
                 self.processes[p_id][2] = self.FINISHED
 

@@ -10,13 +10,12 @@ class ChunkManager:
         self.chunks_ = {}
         pass
 
-    # TODO:
-    # https://docs.python.org/2/reference/datamodel.html#emulating-container-types
-    # at least slice access
-
     def __getitem__(self, index):
         return self.chunks_.get(index, None)
 
-    def new_chunk(self, v1, v2, project):
-        self.chunks_[self.id_] = Chunk([int(v1), int(v2)], self.id_, project)
+    def new_chunk(self, vertices_ids, gm):
+        ch = Chunk(vertices_ids, self.id_, gm)
+        self.chunks_[self.id_] = ch
         self.id_ += 1
+
+        return ch, self.id_ - 1

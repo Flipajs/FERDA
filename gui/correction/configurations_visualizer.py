@@ -379,7 +379,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
                     # TODO: find better way
                     if chunk.length() < 3:
-                        chunk.pop_last(self.solver) if t_reversed else chunk.pop_first(self.solver)
+                        chunk.pop_last(self.solver.gm) if t_reversed else chunk.pop_first(self.solver.gm)
 
                     # TODO: settings, safe break
                     if i > 15:
