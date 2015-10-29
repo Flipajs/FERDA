@@ -30,7 +30,7 @@ if __name__ == '__main__':
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
     # proj.arena_model = None
-    proj.rm = RegionManager(db_wd=proj.working_directory+'/temp', db_name='regions_part_'+str(id)+'.sqlite3')
+    proj.rm = RegionManager(db_wd=proj.working_directory+'/temp', db_name='part'+str(id)+'_rm.sqlite3')
     proj.chm = ChunkManager()
 
     S_.general.log_graph_edits = False
@@ -100,10 +100,11 @@ if __name__ == '__main__':
     # proj.gm = solver.gm
     # proj.save()
 
-    with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.pkl', 'wb') as f:
+    with open(proj.working_directory+'/temp/part'+str(id)+'.pkl', 'wb') as f:
         p = pickle.Pickler(f, -1)
         p.dump(solver.gm.g)
         p.dump(solver.gm.get_all_relevant_vertices())
+        p.dump(solver.chm)
 
         # solver.gm.g.save(f)
         # p.dump(solver.gm.start_nodes())

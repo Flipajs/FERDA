@@ -16,8 +16,10 @@ import networkx as nx
 from core.graph.solver import Solver
 from core.graph.reduced import Reduced
 import cProfile
+from core.region.region_manager import RegionManager
 
-class BackgroundComputer():
+
+class BackgroundComputer:
     WAITING = 0
     RUNNING = 1
     FINISHED = 2
@@ -55,7 +57,7 @@ class BackgroundComputer():
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
-        if not os.path.exists(self.project.working_directory+'/temp/g_simplified0.pkl'):
+        if not os.path.exists(self.project.working_directory+'/temp/part0.pkl'):
             if not S_.general.log_in_bg_computation:
                 S_.general.log_graph_edits = False
             self.start = time.time()
@@ -99,94 +101,99 @@ class BackgroundComputer():
             self.check_parallelization_timer.stop()
             self.piece_results_together()
 
-    def merge_parts(self, rm1, rm2, gm1, gm2):
+    def merge_parts(self, new_gm, old_g, old_g_relevant_vertices, new_rm, old_rm):
         """
-        moves all regions from rm2 to rm1
-        :param rm1:
-        :param rm2:
+
+        :param new_gm:
+        :param old_g:
+        :param old_g_relevant_vertices:
+        :param new_rm:
+        :param old_rm:
         :return:
         """
 
-        S_.general.log_graph_edits = False
-
         vertex_map = {}
-        for old_v in gm2.get_all_relevant_vertices():
-            old_reg = rm2[gm2.vp['region'][int(old_v)]]
-            rm1.add(old_reg)
+        for v_id in old_g_relevant_vertices:
+            old_v = old_g.vertex(v_id)
+            old_reg = old_rm[old_g.vp['region_id'][old_v]]
+            new_rm.add(old_reg)
 
-            new_v = gm1.add_vertex(old_reg)
+            new_v = new_gm.add_vertex(old_reg)
             vertex_map[old_v] = new_v
 
-            gm1.g.vp['chunk_start_id'][new_v] = gm2.g.vp['chunk_start_id'][old_v]
-            gm1.g.vp['chunk_end_id'][new_v] = gm2.g.vp['chunk_end_id'][old_v]
+            new_gm.g.vp['chunk_start_id'][new_v] = old_g.vp['chunk_start_id'][old_v]
+            new_gm.g.vp['chunk_end_id'][new_v] = old_g.vp['chunk_end_id'][old_v]
 
         # go through all edges and copy them with all edge properties...
-        for old_e in gm2.g.edges():
+        for old_e in old_g.edges():
             v1_old = old_e.source()
             v2_old = old_e.target()
-            old_score = gm2.g.vp['score'][old_e]
+            old_score = old_g.ep['score'][old_e]
+
+            if v1_old in vertex_map and v2_old in vertex_map:
+                v1_new = vertex_map[v1_old]
+                v2_new = vertex_map[v2_old]
+            else:
+                # this means there was some outdated edge, it is fine to ignore it...
+                continue
 
             # ep['score'] is assigned in add_edge call
-            new_e = gm1.add_edge(vertex_map[v1_old], vertex_map[v2_old], old_score)
-            gm1.g.ep['certainty'][new_e] = gm2.g.vp['certainty'][old_e]
-
-        S_.general.log_graph_edits = True
+            new_e = new_gm.add_edge(v1_new, v2_new, old_score)
+            new_gm.g.ep['certainty'][new_e] = old_g.ep['certainty'][old_e]
 
     def piece_results_together(self):
         end_nodes_prev = []
         nodes_to_process = []
 
+        self.project.rm = RegionManager(db_wd=self.project.working_directory)
         self.solver = Solver(self.project)
 
         self.update_callback(0, 'Assembling solution...')
 
+        # switching off... We don't want to log theese...
+        S_.general.log_graph_edits = False
+
         part_num = self.part_num
-        # compability...
-        if self.project.version_is_le("2.0.1"):
-            part_num = self.process_n
-
-        from core.region.region_manager import RegionManager
-        from core.graph.graph_manager import GraphManager
-        from core.graph.solver import Solver
-
-        new_rm = RegionManager(db_wd=self.project.working_directory)
-        self.project.solver = Solver(self.project)
+        part_num = self.process_n
+        # TODO: remove this line
+        part_num = 2
 
         for i in range(part_num):
-            rm_old = RegionManager(db_wd=self.project.working_directory+'/temp', db_name='regions_part_'+str(i)+'.sqlite3')
-            # gm_old = GraphManager()
+            rm_old = RegionManager(db_wd=self.project.working_directory+'/temp',
+                                   db_name='part'+str(i)+'_rm.sqlite3')
 
             with open(self.project.working_directory+'/temp/part'+str(i)+'.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g_ = up.load()
-                start_nodes = up.load()
-                end_nodes = up.load()
+                relevant_vertices = up.load()
 
-                # This is much faster then nx.union()
-                for n, d in g_.nodes(data=True):
-                    self.solver.g.add_node(n, d)
-
-                for n1, n2, d in g_.edges(data=True):
-                    self.solver.g.add_edge(n1, n2, d)
-
-                nodes_to_process += end_nodes
-
-                # check last and start frames...
-                start_t = self.project.solver_parameters.frames_in_row * i
-                for n in end_nodes_prev[:]:
-                    if n.frame_ != start_t - 1:
-                        end_nodes_prev.remove(n)
-
-                for n in start_nodes[:]:
-                    if n.frame_ != start_t:
-                        start_nodes.remove(n)
-
-                self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
-                end_nodes_prev = end_nodes
+                self.merge_parts(self.solver.gm, g_, relevant_vertices, self.project.rm, rm_old)
+                
+                #
+                # # This is much faster then nx.union()
+                # for n, d in g_.nodes(data=True):
+                #     self.solver.g.add_node(n, d)
+                #
+                # for n1, n2, d in g_.edges(data=True):
+                #     self.solver.g.add_edge(n1, n2, d)
+                #
+                # nodes_to_process += end_nodes
+                #
+                # # check last and start frames...
+                # start_t = self.project.solver_parameters.frames_in_row * i
+                # for n in end_nodes_prev[:]:
+                #     if n.frame_ != start_t - 1:
+                #         end_nodes_prev.remove(n)
+                #
+                # for n in start_nodes[:]:
+                #     if n.frame_ != start_t:
+                #         start_nodes.remove(n)
+                #
+                # self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
+                # end_nodes_prev = end_nodes
 
             self.update_callback((i+1)/float(part_num))
 
-        S_.general.log_graph_edits = False
         self.solver.update_nodes_in_t_refs()
         self.update_callback(-1, 'Simplifying...')
         self.solver.simplify(nodes_to_process)

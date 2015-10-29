@@ -204,7 +204,7 @@ class GraphManager:
                 print "add_edge target_vertex is None, source_vertex: ", source_vertex
             return
 
-        self.add_edge_fast(source_vertex, target_vertex, score)
+        return self.add_edge_fast(source_vertex, target_vertex, score)
 
     def add_edge_fast(self, source_vertex, target_vertex, score):
         self.project.log.add(LogCategories.GRAPH_EDIT,
@@ -214,6 +214,7 @@ class GraphManager:
                               's': score})
         e = self.g.add_edge(source_vertex, target_vertex)
         self.g.ep['score'][e] = float(score)
+        return e
 
     def chunk_list(self):
         chunks = []
