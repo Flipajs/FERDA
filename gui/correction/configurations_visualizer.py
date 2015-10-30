@@ -184,6 +184,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
 
     def next_case(self, move_to_different_case=False):
+        return
         if move_to_different_case:
             self.active_node_id += 1
 

@@ -5,6 +5,7 @@ from matplotlib import cm as cmx
 import sys
 import math
 import random
+from core.graph.region_chunk import RegionChunk
 
 class ColorManager():
     def __init__(self, length, limit, mode="rand", cmap='Accent'):
@@ -263,11 +264,12 @@ def colorize_project(project):
     from utils.video_manager import get_auto_video_manager
     vid = get_auto_video_manager(project)
 
-    limit = 2*project.solver.nodes_in_t[0]
+    limit = len(project.solver.chm.chunks_)
 
     project.color_manager = ColorManager(vid.total_frame_count(), limit)
-    for ch in project.solver.chunk_list():
-        ch.color, _ = project.color_manager.new_track(ch.start_t(), ch.end_t())
+    for ch in project.chm.chunk_list():
+        rch = RegionChunk(ch, project.gm, project.rm)
+        ch.color, _ = project.color_manager.new_track(rch.start_frame(), rch.end_frame())
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

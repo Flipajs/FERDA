@@ -27,6 +27,24 @@ class Chunk:
         s = "CHUNK --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
         return s
 
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key < 0:  # Handle negative indices
+                key += len(self.nodes_)
+            return self.nodes_[key]
+
+        ids = []
+        if isinstance(key, slice):
+            ids = range(key.start, key.stop, key.step)
+        elif isinstance(key, list):
+            ids = key
+
+        items = []
+        for i in ids:
+            items.append(self.nodes_[i])
+
+        return items
+
     def append_left(self, vertex, gm, undo_action=False):
         vertex_id = int(vertex)
         region = gm.region(vertex_id)
@@ -119,8 +137,8 @@ class Chunk:
         ch2start = ch2.start_node()
 
         if not undo_action:
-            gm.remove_vertex(ch1end)
-            gm.remove_vertex(ch2start)
+            gm.remove_vertex(ch1end, disassembly=False)
+            gm.remove_vertex(ch2start, disassembly=False)
 
         self.nodes_.extend(ch2.nodes_)
 

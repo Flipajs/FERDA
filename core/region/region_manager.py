@@ -243,7 +243,7 @@ class RegionManager:
             raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
 
         if len(result) == 0:
-            return None
+            return []
         elif len(result) == 1:
             return result[0]
         else:

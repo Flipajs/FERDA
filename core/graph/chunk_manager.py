@@ -19,3 +19,10 @@ class ChunkManager:
         self.id_ += 1
 
         return ch, self.id_ - 1
+
+    def chunk_list(self):
+        l = []
+        for _, ch in self.chunks_.iteritems():
+            l.append(ch)
+
+        return l

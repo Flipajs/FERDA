@@ -47,8 +47,7 @@ class MainTabWidget(QtGui.QWidget):
         print "LOADING GRAPH..."
         if project.solver:
             solver = project.solver
-            # TODO: is it necessary?
-            solver.update_nodes_in_t_refs()
+
             self.background_computer_finished(solver)
         else:
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)

@@ -374,3 +374,5 @@ class GraphManager:
     def get_vertices_in_t(self, t):
         if t in self.vertices_in_t:
             return self.vertices_in_t[t]
+
+        return []

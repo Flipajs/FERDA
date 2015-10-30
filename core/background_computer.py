@@ -189,14 +189,11 @@ class BackgroundComputer:
             new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
 
     def piece_results_together(self):
-        end_nodes_prev = []
-        nodes_to_process = []
-
         self.project.rm = RegionManager(db_wd=self.project.working_directory)
         self.project.chm = ChunkManager()
         self.solver = Solver(self.project)
 
-        self.update_callback(0, 'Assembling solution...')
+        self.update_callback(0, 're-indexing...')
 
         # switching off... We don't want to log following...
         S_.general.log_graph_edits = False
@@ -217,38 +214,20 @@ class BackgroundComputer:
 
                 self.merge_parts(self.solver.gm, g_, relevant_vertices, self.project, rm_old, chm_)
 
-                # TODO: add edges... between parts
-
-                #
-                # # This is much faster then nx.union()
-                # for n, d in g_.nodes(data=True):
-                #     self.solver.g.add_node(n, d)
-                #
-                # for n1, n2, d in g_.edges(data=True):
-                #     self.solver.g.add_edge(n1, n2, d)
-                #
-                # nodes_to_process += end_nodes
-                #
-                # # check last and start frames...
-                # start_t = self.project.solver_parameters.frames_in_row * i
-                # for n in end_nodes_prev[:]:
-                #     if n.frame_ != start_t - 1:
-                #         end_nodes_prev.remove(n)
-                #
-                # for n in start_nodes[:]:
-                #     if n.frame_ != start_t:
-                #         start_nodes.remove(n)
-                #
-                # self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
-                # end_nodes_prev = end_nodes
-
             self.update_callback((i + 1) / float(part_num))
 
-        self.update_callback(-1, 'Simplifying...')
-        self.solver.simplify(nodes_to_process)
-        self.update_callback(-1, 'CHUNKS reduction')
-        self.solver.simplify_to_chunks(nodes_to_process)
-        self.update_callback(-1, 'DONE...')
+        fir = self.project.solver_parameters.frames_in_row
+
+        self.update_callback(-1, 'joining parts...')
+        for part_end_t in range(fir, fir*part_num):
+            t_v = map(int, self.solver.gm.get_vertices_in_t(part_end_t))
+            t1_v = map(int, self.solver.gm.get_vertices_in_t(part_end_t+1))
+
+            rt = self.project.rm[t_v]
+            rt1 = self.project.rm[t1_v]
+
+            self.connect_graphs(rt, rt1)
+            self.solver.simplify(t_v)
 
         S_.general.log_graph_edits = True
 
@@ -256,11 +235,12 @@ class BackgroundComputer:
 
         from utils.color_manager import colorize_project
         colorize_project(self.project)
-        self.solver.save()
+
+        # self.solver.save()
 
         self.finished_callback(self.solver)
 
-    def connect_graphs(self, g, t1, t2):
+    def connect_graphs(self, t1, t2):
         for r_t1 in t1:
             for r_t2 in t2:
                 d = np.linalg.norm(r_t1.centroid() - r_t2.centroid())
