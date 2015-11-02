@@ -141,7 +141,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             node = self.active_cw.active_node
 
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.REMOVE, node)
-        self.solver.remove_region(node)
+        self.solver.remove_vertex(node)
         if not suppress_next_case:
             self.next_case()
 
@@ -221,7 +221,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
             # test if it is different cc:
             if move_to_different_case and self.active_cw:
-                for g in self.active_cw.nodes_groups:
+                for g in self.active_cw.vertices_groups:
                     for vertex_ in g:
                         if vertex == vertex_:
                             self.next_case(move_to_different_case)
@@ -302,7 +302,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         # test if it is different cc:
         if self.active_cw:
-            for g in self.active_cw.nodes_groups:
+            for g in self.active_cw.vertices_groups:
                 for n_ in g:
                     if n == n_:
                         self.prev_case()

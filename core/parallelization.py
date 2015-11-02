@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
     s = time.time()
     print "#Edges BEFORE: ", solver.gm.g.num_edges()
-    solver.simplify(rules=[solver.adaptive_threshold, solver.update_costs])
+    # solver.simplify(rules=[solver.adaptive_threshold, solver.update_costs])
     # solver.simplify(rules=[solver.adaptive_threshold, solver.symmetric_cc_solver])
     # solver.simplify(rules=[solver.symmetric_cc_solver])
 
