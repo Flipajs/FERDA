@@ -183,31 +183,38 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         else:
             self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
 
+    def order_pairs_(self, pairs):
+        if self.order_by_sb.currentText() == 'chunk length':
+            raise Exception('order by chunk length not implemented yet in configurations_visualizer.py')
+        else:
+            return sorted(pairs, key=lambda k: k[1].frame_)
+
     def next_case(self, move_to_different_case=False):
-        return
         if move_to_different_case:
             self.active_node_id += 1
 
-        self.nodes = self.solver.g.nodes()
-        self.order_nodes()
+        pairs = self.project.gm.all_vertices_and_regions()
+        pairs = self.order_pairs_(pairs)
 
-        if self.active_node_id < len(self.nodes):
-            n = self.nodes[self.active_node_id]
-            if n in self.solver.ignored_nodes:
+        if self.active_node_id < len(pairs):
+            v_id = pairs[self.active_node_id][0]
+            vertex = self.project.gm.g.vertex(v_id)
+            r = pairs[self.active_node_id][1]
+            if v_id in self.solver.ignored_nodes:
                 self.active_node_id += 1
                 self.next_case()
                 return
 
             # test end
-            if n.frame_ == self.solver.end_t:
+            if r.frame_ == self.solver.gm.end_t:
                 self.active_node_id += 1
                 self.next_case()
                 return
 
             # test beginning
-            if n.frame_ == 0:
-                is_ch, _, _ = self.solver.is_chunk(n)
-                if is_ch:
+            if r.frame_ == 0:
+                ch, _ = self.solver.gm.is_chunk(vertex)
+                if ch:
                     self.active_node_id += 1
                     self.next_case()
                     return
@@ -215,8 +222,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             # test if it is different cc:
             if move_to_different_case and self.active_cw:
                 for g in self.active_cw.nodes_groups:
-                    for n_ in g:
-                        if n == n_:
+                    for vertex_ in g:
+                        if vertex == vertex_:
                             self.next_case(move_to_different_case)
                             return
 
@@ -227,27 +234,15 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 it.widget().setParent(None)
 
             # add new widget
-            nodes_groups = self.solver.get_cc_from_node(n)
+            nodes_groups = self.solver.gm.get_cc_from_vertex(vertex)
             if len(nodes_groups) == 0:
-                print n, "empty nodes groups"
-                # self.nodes.pop(self.active_node_id)
                 self.active_node_id += 1
                 self.next_case()
                 return
 
-            # nodes_groups = []
-            # for i in range(100):
-            #     nodes_groups.append([])
-            #
-            # nodes_ = self.solver.g.nodes()
-            # nodes_ = sorted(nodes_, key=lambda k: k.frame_)
-            # while nodes_:
-            #     n = nodes_.pop(0)
-            #     nodes_groups[n.frame_].append(n)
-
             config = self.best_greedy_config(nodes_groups)
 
-            self.active_cw = CaseWidget(self.solver.g, self.project, nodes_groups, config, self.vid, self)
+            self.active_cw = CaseWidget(self.project, nodes_groups, config, self.vid, self)
             self.active_cw.active_node = None
             self.scenes_widget.layout().addWidget(self.active_cw)
 
@@ -260,14 +255,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             while r1 and r2:
                 changed = False
                 values = []
-                for n1 in r1:
-                    for n2 in r2:
-                        try:
-                            s = self.solver.g[n1][n2]['score']
-                            values.append([s, n1, n2])
-                            changed = True
-                        except:
-                            pass
+                for v1, v2 in zip(r1, r2):
+                    try:
+                        e = self.solver.gm.g.edge(v1, v2)
+                        s = self.solver.gm.g.ep['score'][e]
+                        values.append([s, v1, v2])
+                        changed = True
+                    except:
+                        pass
 
                 if not changed:
                     break

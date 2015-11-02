@@ -27,12 +27,12 @@ from core.settings import Settings as S_
 
 
 class CaseWidget(QtGui.QWidget):
-    def __init__(self, G, project, node_groups, suggested_config, vid, parent_widget, color_assignments=None):
+    def __init__(self, project, node_groups, suggested_config, vid, parent_widget, color_assignments=None):
         super(CaseWidget, self).__init__()
 
         print "--------------------------------------------"
         self.project = project
-        self.G = G
+        self.g = project.gm.g
         self.nodes_groups = node_groups
         self.parent = parent_widget
         self.vid = vid
@@ -60,7 +60,7 @@ class CaseWidget(QtGui.QWidget):
         self.connect_with_active = False
         self.join_with_active = False
 
-        self.sub_g = self.G.subgraph([r for regions in self.nodes_groups for r in regions])
+        self.sub_g = self.g.subgraph([r for regions in self.nodes_groups for r in regions])
 
         self.it_nodes = {}
 
@@ -679,7 +679,7 @@ class CaseWidget(QtGui.QWidget):
 
         for i in range(len(self.nodes_groups) - 1):
             for n in self.nodes_groups[i]:
-                for _, n2, d in self.G.out_edges(n, data=True):
+                for _, n2, d in self.g.out_edges(n, data=True):
                     if 'chunk_ref' in d:
                         continue
 

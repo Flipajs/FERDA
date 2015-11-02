@@ -126,8 +126,6 @@ class Solver:
 
         return n
 
-
-
     def get_cc_rec(self, n, depth, node_groups):
         if depth > 10:
             return
