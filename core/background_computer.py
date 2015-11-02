@@ -238,6 +238,9 @@ class BackgroundComputer:
 
         # self.solver.save()
 
+        self.project.gm.project = self.project
+        # self.project.save()
+
         self.finished_callback(self.solver)
 
     def connect_graphs(self, t1, t2):

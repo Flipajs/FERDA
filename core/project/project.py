@@ -140,11 +140,15 @@ class Project:
         if self.gm:
             self.gm.project = None
             self.gm.rm = None
+            ac = self.gm.assignment_score
             self.gm.assignment_score = None
-            self.gm.solver = None
 
             with open(self.working_directory+'/graph_manager.pkl', 'wb') as f:
                 pickle.dump(self.gm, f, -1)
+
+            self.gm.project = self
+            self.gm.rm = self.rm
+            self.gm.assignment_score = ac
 
         self.save_qsettings()
 
@@ -250,6 +254,7 @@ class Project:
         try:
             with open(self.working_directory+'/graph_manager.pkl', 'rb') as f:
                 self.gm = pickle.load(f)
+                self.gm.project = self
         except:
             pass
 
@@ -268,12 +273,14 @@ class Project:
                 except:
                     pass
 
-                solver = Solver(self)
-                solver.g = g
-                solver.ignored_nodes = ignored_nodes
+                self.solver = Solver(self)
+                self.solver.g = g
+                self.solver.ignored_nodes = ignored_nodes
                 # solver.update_nodes_in_t_refs()
-                self.solver = solver
                 self.log = log
+
+                if self.gm:
+                    self.gm.assignment_score = self.solver.assignment_score
         except:
             pass
 
@@ -281,8 +288,6 @@ class Project:
         if self.gm:
             self.gm.project = self
             self.gm.rm = self.rm
-            self.gm.assignment_score = None
-            self.gm.solver = self.solver
 
 
 if __name__ == "__main__":
