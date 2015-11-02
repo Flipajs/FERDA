@@ -89,12 +89,12 @@ class VisLoader:
         g.show()
 
 if __name__ == '__main__':
-    from scripts import fix_project
+    # from scripts import fix_project
     # import filu, ktery je vlastne script rovnou provede cely script, tedy nasledujici radek je redundantni
     # execfile("/home/sheemon/FERDA/ferda/scripts/fix_project.py")
 
     p = Project()
-    p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
+    p.load('/Users/flipajs/Documents/wd/eight_new/eight.fproj')
 
     # # test
     # p.rm = RegionManager(db_wd=p.working_directory+'/temp', db_name='regions_part_'+str(id)+'.sqlite3')
