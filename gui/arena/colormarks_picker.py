@@ -37,13 +37,10 @@ class ColormarksPicker(QtGui.QWidget):
     def __init__(self, video_path):
 
         super(ColormarksPicker, self).__init__()
-        self.setMouseTracking(True)
 
         self.vid_manager = VideoManager(video_path)
 
-        # TODO: To fix the mysterious behavior of MousePressEvent, merge this with arena_editor, rename function to
-        # TODO:    mouse_press_event and pass it as update_callback_press to MyView. Merging will also enable zooming.
-        self.view = MyView(update_callback_move=self.mouse_moving)
+        self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
         self.scene = QtGui.QGraphicsScene()
 
         self.view.setScene(self.scene)
@@ -152,16 +149,11 @@ class ColormarksPicker(QtGui.QWidget):
         self.clear_paint_image()
         self.point_items = []
 
-    def mousePressEvent(self, event):
-        # get event position and calibrate to scene
-        cursor = QtGui.QCursor()
-        pos = cursor.pos()
-        pos = self.get_scene_pos(pos)
-        if type(pos) != QtCore.QPoint:
-            return
-
-        self.save()
-        self.draw(pos)
+    def mouse_press_event(self, event):
+        point = self.view.mapToScene(event.pos())
+        if self.is_in_scene(point):
+            self.save()
+            self.draw(point)
 
     def mouse_moving(self, event):
         # while the mouse is moving, paint it's position
