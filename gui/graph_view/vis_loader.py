@@ -18,8 +18,8 @@ class VisLoader:
         self.update_structures()
 
         self.vertices = []
-        self.edges = []
-        self.regions = []
+        self.edges = set()
+        self.regions = set()
 
     def set_project(self, project):
         self.project = project
@@ -36,108 +36,47 @@ class VisLoader:
         self.vertices = self.graph_manager.get_all_relevant_vertices()
 
     def prepare_nodes(self):
-        self.regions = []
         for v in self.vertices:
-            self.regions.append(self.graph_manager.region(v))
+            self.regions.add(self.graph_manager.region(v))
 
     def prepare_edges(self):
         for vertex in self.vertices:
             v = self.graph.vertex(vertex)
-            for edge in v.out_edges():
-                source = edge.source()
-                target = edge.target()
-                r1 = self.project.gm.region(source)
-                # r1 = self.region_manager[source]
-                # r2 = sself.region_manager[source]
-                r2 = self.project.gm.region(target)
+            self.prepare_tuples(v.in_edges())
+            self.prepare_tuples(v.out_edges())
 
-                # visualizer requires tuple of length 4
-                import random
-                type = random.choice(["chunk", "line"])
-                if type == "chunk":
-                    sureness = 1
-                else:
-                    sureness = random.randint(0, 101) / float(100)
+    def prepare_tuples(self, edges):
+        for edge in edges:
+            source = edge.source()
+            target = edge.target()
+            r1 = self.project.gm.region(source)
+            r2 = self.project.gm.region(target)
+            # TODO
+            # self.graph_manager.g.vp["chunk_start_id"]
+            # visualizer requires tuple of length 4
+            sureness = self.graph_manager.g.ep['score'][self.graph_manager.g.edge(source, target)]
+            type_of_line = "chunk" if abs(sureness) == 1 else "line"
+            if not(r1 in self.regions and r2 in self.regions):
+                type_of_line = "partial"
 
-                new_tuple = (r1, r2, type, sureness)
-                self.edges.append(new_tuple)
-            for edge in v.in_edges():
-                source = edge.source()
-                target = edge.target()
-                r1 = self.project.gm.region(source)
-                # r1 = self.region_manager[source]
-                # r2 = sself.region_manager[source]
-                r2 = self.project.gm.region(target)
-
-                # visualizer requires tuple of length 4
-                import random
-                type = random.choice(["chunk", "line"])
-                if type == "chunk":
-                    sureness = 1
-                else:
-                    sureness = random.randint(0, 101) / float(100)
-
-                new_tuple = (r1, r2, type, sureness)
-                self.edges.append(new_tuple)
+            new_tuple = (r1, r2, type_of_line, sureness)
+            self.edges.add(new_tuple)
 
     def visualise(self):
         self.prepare_vertices()
-        self.prepare_edges()
         self.prepare_nodes()
+        self.prepare_edges()
         img_manager = ImgManager(p)
         g = GraphVisualizer(self.regions, self.edges, img_manager)
         g.show()
 
 if __name__ == '__main__':
     from scripts import fix_project
-    # import filu, ktery je vlastne script rovnou provede cely script, tedy nasledujici radek je redundantni
-    # execfile("/home/sheemon/FERDA/ferda/scripts/fix_project.py")
 
     p = Project()
     p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
 
-    # # test
-    # p.rm = RegionManager(db_wd=p.working_directory+'/temp', db_name='regions_part_'+str(id)+'.sqlite3')
-    # f = open('/home/sheemon/Downloads/c5regions.pkl', 'r+b')
-    # up = pickle.Unpickler(f)
-    # regions = up.load()
-    # for r in regions:
-    #     r.pts_rle_ = None
-    # f.close()
-
-
-    # p.rm = RegionManager(db_wd="/home/dita", cache_size_limit=1)
-    # p.rm.add(regions)
-
-    import cv2
-    # solver = p.saved_progress['solver']
-    # nodes = solver.g.nodes()
-    # edges = solver.g.edges()
-
-    # vertices = p.gm.get_all_relevant_vertices()
-    # edges = []
-    # for vertex in vertices:
-    #     v = p.gm.g.vertex(vertex)
-    #     for edge in v.out_edges():
-    #         edges.append(edge)
-    # regions = []
-    # for vertex in vertices:
-    #     regions.append(p.rm[vertex])
-    # pass
-
-    # edges_4_tuple = []
-    # import random
-    # for edge in edges:
-    #     type = random.choice(["chunk", "line"])
-    #     if type == "chunk":
-    #         sureness = 1
-    #     else:
-    #         sureness = random.randint(0, 101) / float(100)
-    #
-    #     new_tuple = edge + (type, sureness)
-    #     edges_4_tuple.append(new_tuple)
-
-    import sys
+    import cv2, sys
     app = QtGui.QApplication(sys.argv)
     im_manager = ImgManager(p)
     l = VisLoader(p)

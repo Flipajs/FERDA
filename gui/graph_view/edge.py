@@ -33,7 +33,7 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
         self.style = core_obj[2]
 
     def paint(self, painter, style_option_graphics_item, widget=None):
-        opacity = 100 + 155 * float(self.core_obj[3])
+        opacity = 100 + 155 * abs(self.core_obj[3])
         if self.style == 'chunk':
             pen = QtGui.QPen(QtGui.QColor(0, 0, 0, opacity), LINE_WIDTH,
                              Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)

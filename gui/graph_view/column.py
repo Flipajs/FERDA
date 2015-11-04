@@ -132,6 +132,8 @@ class Column:
                 if isinstance(item, Region):
                     self.show_node(item, vertically)
                 elif isinstance(item, tuple):
+                    if item[2] is "partial":
+                        self.show_node()
                     if item[0].frame_ == self.frame:
                         self.show_node(item[0], vertically)
                     elif item[1].frame_ == self.frame:
@@ -145,17 +147,17 @@ class Column:
         position = self.get_position_item(node)
         from_y = GAP + FROM_TOP + position * STEP + STEP / 2 + SPACE_BETWEEN_VER * position
 
-        if not (edge[2] is "partial"):
+        if edge[2] is not "partial":
             column_left = frame_columns[edge[0].frame_]
             position = column_left.get_position_item(edge[0])
             to_x = column_left.x + STEP
             to_y = GAP + FROM_TOP + position * STEP + STEP/2 + SPACE_BETWEEN_VER * position
         else:
             to_y = from_y
-            to_x = self.x - SPACE_BETWEEN_HOR / 2
+            to_x = self.x - SPACE_BETWEEN_HOR / 2.5
             if not direction == "left":
                 from_x += STEP
-                to_x += STEP + SPACE_BETWEEN_HOR
+                to_x += STEP + SPACE_BETWEEN_HOR * 4 / 5.0
 
         if vertically:
             from_x, from_y, to_x, to_y = from_y, from_x, to_y, to_x
