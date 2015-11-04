@@ -244,9 +244,6 @@ class Project:
         try:
             with open(self.working_directory+'/chunk_manager.pkl', 'rb') as f:
                 self.chm = pickle.load(f)
-
-            for ch in self.chm.chunks_:
-                ch.project = self
         except:
             pass
 

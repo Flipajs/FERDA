@@ -76,6 +76,7 @@ class GraphManager:
 
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, region)
 
+        print region.frame(), int(vertex)
         self.vertices_in_t[region.frame()].remove(int(vertex))
         if not self.vertices_in_t[region.frame_]:
             del self.vertices_in_t[region.frame_]

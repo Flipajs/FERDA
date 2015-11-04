@@ -193,4 +193,6 @@ class Chunk:
     def chunk_reconnect_(self, gm):
         gm.add_edge(self.start_node(), self.end_node())
         gm.g.vp['chunk_start_id'][gm.g.vertex(self.start_node())] = self.id()
+        # gm.g.vp['chunk_end_id'][gm.g.vertex(self.start_node())] = 0
         gm.g.vp['chunk_end_id'][gm.g.vertex(self.end_node())] = self.id()
+        # gm.g.vp['chunk_start_id'][gm.g.vertex(self.end_node())] = 0

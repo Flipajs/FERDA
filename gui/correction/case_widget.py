@@ -403,7 +403,7 @@ class CaseWidget(QtGui.QWidget):
             for n in g:
                 ch, t_rev = self.project.gm.is_chunk(n)
                 if ch:
-                    t = n.frame_ - self.frame_t
+                    t = self.project.gm.region(n).frame_ - self.frame_t
 
                     if t_rev:
                         line_ = QtGui.QGraphicsLineItem(self.left_margin + self.w_ * t - highlight_line_len,
@@ -515,7 +515,7 @@ class CaseWidget(QtGui.QWidget):
             n2 = self.it_nodes[it]
 
             if self.connect_with_active:
-                if self.active_node.frame_ > self.it_nodes[it].frame_:
+                if self.project.gm.region(self.active_node).frame_ > self.project.gm.region(self.it_nodes[it]).frame_:
                     n1 = self.it_nodes[it]
                     n2 = self.active_node
 
@@ -691,7 +691,7 @@ class CaseWidget(QtGui.QWidget):
             for n in self.vertices_groups[i]:
                 for n2 in n.out_neighbours():
                     ch, _ = self.project.gm.is_chunk(n2)
-                    if self.project.gm.is_chunk(n2):
+                    if ch:
                         continue
                     try:
                         line_ = QtGui.QGraphicsLineItem(self.left_margin + self.node_size + self.w_*i,

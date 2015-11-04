@@ -461,10 +461,13 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.active_cw.join_with_()
 
     def join_regions(self, n1, n2):
-        if n1.area() < n2.area():
+        r1 = self.project.gm.region(n1)
+        r2 = self.project.gm.region(n2)
+        if r1.area() < r2.area():
             n1, n2 = n2, n1
+            r1, r2 = r2, r1
 
-        self.project.log.add(LogCategories.USER_ACTION, ActionNames.JOIN_REGIONS, {'n1': n1, 'n2': n2})
+        self.project.log.add(LogCategories.USER_ACTION, ActionNames.JOIN_REGIONS, {'n1': int(n1), 'n2': int(n2)})
 
         # TODO: update also other moments etc...
         n_new = deepcopy(n1)

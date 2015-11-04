@@ -16,6 +16,12 @@ class ChunkManager:
     def new_chunk(self, vertices_ids, gm):
         ch = Chunk(vertices_ids, self.id_, gm)
         self.chunks_[self.id_] = ch
+
+        # assign chunk color
+        r1 = gm.region(vertices_ids[0])
+        rend = gm.region(vertices_ids[-1])
+        ch.color, _ = gm.project.color_manager.new_track(r1.frame_, rend.frame_)
+
         self.id_ += 1
 
         return ch, self.id_ - 1
