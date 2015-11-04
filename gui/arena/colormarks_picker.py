@@ -1,5 +1,6 @@
 from gui.arena.my_popup   import MyPopup
 from gui.arena.my_view    import MyView
+from utils.video_manager import VideoManager
 
 __author__ = 'dita'
 
@@ -11,18 +12,34 @@ from core.project.project import Project
 from gui.img_controls     import utils
 import numpy as np
 
+"""
+widget
+in:
+ video
+funkce:
+ oznacit na frame colormark
+ musi byt unikatni
+ pro kazdou barvu maska
+ kliknout a prejit na frame
+ zoom
+out
+ pole id barvy, maska, obrazek src
+
+branch
+ rgb histogram
+ irg hist demo
+ get color samples:
+"""
 
 class ColormarksPicker(QtGui.QWidget):
     DEBUG = True
 
-    def __init__(self, img, project):
+    def __init__(self, video_path):
 
         super(ColormarksPicker, self).__init__()
-
         self.setMouseTracking(True)
 
-        self.background = img
-        self.project = project
+        self.vid_manager = VideoManager(video_path)
 
         # TODO: To fix the mysterious behavior of MousePressEvent, merge this with arena_editor, rename function to
         # TODO:    mouse_press_event and pass it as update_callback_press to MyView. Merging will also enable zooming.
@@ -32,7 +49,9 @@ class ColormarksPicker(QtGui.QWidget):
         self.view.setScene(self.scene)
 
         # background image
-        self.scene.addPixmap(utils.cvimg2qtpixmap(self.background))
+        self.frame = -1
+        self.next_frame()
+
         self.view.setMouseTracking(True)
 
         self.color = "Blue"
@@ -243,6 +262,11 @@ class ColormarksPicker(QtGui.QWidget):
         else:
             return False
 
+    def next_frame(self):
+        self.frame += 1
+        self.background = self.vid_manager.seek_frame(self.frame)
+        self.scene.addPixmap(utils.cvimg2qtpixmap(self.background))
+
     def make_gui(self):
         """
         Creates the widget. It is a separate method purely to save space
@@ -266,8 +290,7 @@ class ColormarksPicker(QtGui.QWidget):
 
         label = QtGui.QLabel()
         label.setWordWrap(True)
-        label.setText("Welcome to arena editor! Paint the outside of the arena with red and use blue to mark possible"
-                      " hiding places. Unresolvable colors will be considered red.")
+        label.setText("")
         widget.layout().addWidget(label)
 
         # color switcher widget
@@ -310,7 +333,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.slider.setValue(30)
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.change_value)
-        self.slider.setVisible(False)
+        self.slider.setVisible(True)
         widget.layout().addWidget(self.slider)
 
         # UNDO key shortcut
@@ -337,6 +360,10 @@ class ColormarksPicker(QtGui.QWidget):
         self.popup_button.clicked.connect(self.popup)
         widget.layout().addWidget(self.popup_button)
 
+        self.next_frame_button = QtGui.QPushButton("Next frame!")
+        self.next_frame_button.clicked.connect(self.next_frame)
+        widget.layout().addWidget(self.next_frame_button)
+
         self.set_label_text()
 
         # complete the gui
@@ -347,11 +374,10 @@ class ColormarksPicker(QtGui.QWidget):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
-    im = cv2.imread('/home/dita/PycharmProjects/sample2.png')
-    # im = cv2.imread('/Users/flipajs/Desktop/red_vid.png')
     p = Project()
+    p.load("/home/dita/PycharmProjects/FERDA projects/testc5/c5.fproj")
 
-    ex = ColormarksPicker(im, p)
+    ex = ColormarksPicker(p.video_paths[0])
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()
