@@ -62,8 +62,6 @@ class Solver:
             vertex = self.gm.g.vertex(queue.pop())
 
             r = self.project.gm.region(vertex)
-            if r.frame() == 93 and int(vertex) == 907:
-                print "problem"
 
             # skip the chunks...
             if self.gm.chunk_start(vertex):
