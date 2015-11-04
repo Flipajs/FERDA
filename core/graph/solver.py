@@ -62,17 +62,21 @@ class Solver:
             vertex = self.gm.g.vertex(queue.pop())
 
             r = self.project.gm.region(vertex)
-            if r.frame() not in self.project.gm.vertices_in_t:
-                continue
-            if vertex not in self.project.gm.vertices_in_t[r.frame()]:
-                continue
+            if r.frame() == 93 and int(vertex) == 907:
+                print "problem"
 
             # skip the chunks...
             if self.gm.chunk_start(vertex):
                 continue
 
-            for r in rules:
-                affected = r(vertex)
+            for ru in rules:
+                # it is necessary to check this here, because it is possible that the vertex will be removed applying one of the rules
+                if r.frame() not in self.project.gm.vertices_in_t:
+                    continue
+                if vertex not in self.project.gm.vertices_in_t[r.frame()]:
+                    continue
+
+                affected = ru(vertex)
                 queue.extend(affected)
 
     def get_antlikeness(self, n):
