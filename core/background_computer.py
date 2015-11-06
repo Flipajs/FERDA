@@ -19,6 +19,8 @@ import cProfile
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 from core.graph.chunk import Chunk
+from gui.graph_view.vis_loader import VisLoader
+from utils.img_manager import ImgManager
 
 
 class BackgroundComputer:
@@ -234,11 +236,8 @@ class BackgroundComputer:
             t_v = self.solver.gm.get_vertices_in_t(part_end_t-1)
             t1_v = self.solver.gm.get_vertices_in_t(part_end_t)
 
-            print "edges before ", self.project.gm.g.num_edges()
             self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
-            print "edges after ", self.project.gm.g.num_edges()
-            self.solver.simplify(map(int, t_v), [self.solver.adaptive_threshold])
-            print "edges after 2", self.project.gm.g.num_edges()
+            # self.solver.simplify(map(int, t_v), [self.solver.adaptive_threshold])
 
         S_.general.log_graph_edits = True
 
@@ -251,6 +250,12 @@ class BackgroundComputer:
 
         self.project.gm.project = self.project
         # self.project.save()
+
+        app = QtGui.QApplication(sys.argv)
+        im_manager = ImgManager(self.projec, max_size_mb=0, max_num_of_instances=0)
+        l = VisLoader(self.project)
+        l.visualise()
+        app.exec_()
 
         self.finished_callback(self.solver)
 

@@ -66,7 +66,7 @@ class VisLoader:
         self.prepare_vertices()
         self.prepare_nodes()
         self.prepare_edges()
-        img_manager = ImgManager(p)
+        img_manager = ImgManager(self.project)
         g = GraphVisualizer(self.regions, self.edges, img_manager)
         g.show()
 
