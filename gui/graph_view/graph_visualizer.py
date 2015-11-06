@@ -23,6 +23,8 @@ GAP = 50
 MINIMUM = 20
 # number of columns processed in one chunk sent to dummy thread, for debbuging purpose
 COLUMNS_TO_LOAD = 10
+# default text to display
+DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, stretch"
 
 __author__ = 'Simon Mandlik'
 
@@ -52,6 +54,13 @@ class GraphVisualizer(QtGui.QWidget):
         self.scene.clicked.connect(self.scene_clicked)
         self.layout().addWidget(self.view)
 
+        self.text = QtGui.QLabel(DEFAULT_TEXT)
+        self.text.setAlignment(QtCore.Qt.AlignCenter)
+        stylesheet = "font: 25px"
+        self.text.setStyleSheet(stylesheet)
+        self.layout().addWidget(self.text)
+
+
         self.menu_node = QtGui.QMenu(self)
         self.menu_edge = QtGui.QMenu(self)
         # TODO add your actions
@@ -74,10 +83,19 @@ class GraphVisualizer(QtGui.QWidget):
         self.compress_axis_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
         self.addAction(self.compress_axis_action)
 
+        self.stretch_action = QtGui.QAction('stretch', self)
+        self.stretch_action.triggered.connect(self.stretch)
+        self.stretch_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
+        self.addAction(self.stretch_action)
+
+        self.shrink_action = QtGui.QAction('shrink', self)
+        self.shrink_action.triggered.connect(self.shrink)
+        self.shrink_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
+        self.addAction(self.shrink_action)
+
         self.selected = []
         self.selected_edge = None
         self.toggled = []
-        self.wheel = None
         self.wheel_count = 1
         self.loaded = set()
 
@@ -106,6 +124,16 @@ class GraphVisualizer(QtGui.QWidget):
             item.toggle()
             self.toggled.append(item)
 
+    def stretch(self):
+        global SPACE_BETWEEN_HOR
+        SPACE_BETWEEN_HOR *= 1.2
+        self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+
+    def shrink(self):
+        global SPACE_BETWEEN_HOR
+        SPACE_BETWEEN_HOR *= 0.8
+        self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+
     def compute_positions(self):
         for edge in self.edges:
             if edge[2] == "chunk":
@@ -133,6 +161,14 @@ class GraphVisualizer(QtGui.QWidget):
     def find_suitable_position_chunk(self, edge):
         node_1 = edge[0]
         node_2 = edge[1]
+        col1 = self.frames_columns[node_1.frame_]
+        col2 = self.frames_columns[node_2.frame_]
+        if col1.contains(node_1) or col2.contains(node_2):
+            self.find_suitable_position_semi_placed_chunk(edge, col1, col2, node_1, node_2)
+        else:
+            self.find_suitable_position_fresh_chunk(edge, node_1, node_2)
+
+    def find_suitable_position_fresh_chunk(self, edge, node_1, node_2):
         position = 0
         while True:
             if self.is_line_free(position, node_1.frame_, node_2.frame_):
@@ -144,11 +180,23 @@ class GraphVisualizer(QtGui.QWidget):
                     else:
                         column = self.get_next_to_column(start - 1, "right")
                         start = column.frame[1]
-                    column.add_object(edge, position)
+                    if start is node_1.frame_ or start is end or \
+                                    position is self.frames_columns[node_1.frame_].get_position_item(node_1):
+                        column.add_object(edge, position)
                     start += 1
                 break
             else:
                 position += 1
+
+    def find_suitable_position_semi_placed_chunk(self, edge, col1, col2, node_1, node_2):
+        if col1.contains(node_1) and col2.contains(node_2):
+            return
+        if col1.contains(node_1) and not col2.contains(node_2):
+            position1, position2 = self.find_nearest_free_slot(node_1, node_2)
+            col2.add_object(edge, position2)
+        if not col1.contains(node_1) and col2.contains(node_2):
+            position1, position2 = self.find_nearest_free_slot(node_2, node_1)
+            col1.add_object(edge, position2)
 
     def is_line_free(self, position, start_frame, end_frame):
         while start_frame <= end_frame:
@@ -184,6 +232,7 @@ class GraphVisualizer(QtGui.QWidget):
                         if self.frames_columns[node_1.frame_].is_free(position_1, node_1) and \
                          self.frames_columns[node_2.frame_].is_free(position_1 + num, node_2):
                             position_2 = position_1 + num
+                            break
                     elif self.is_line_free(position_1, node_1.frame_, node_2.frame_) and \
                             self.is_line_free(position_1 + num, node_1.frame_, node_2.frame_):
                         position_2 = position_1 + num
@@ -200,14 +249,17 @@ class GraphVisualizer(QtGui.QWidget):
             node = edge[0]
             direction = "right"
 
+        if not self.frames_columns.has_key(node.frame_):
+            return
         column = self.frames_columns[node.frame_]
-        next_column = self.get_next_to_column(node.frame_, direction)
+        # next_column = self.get_next_to_column(node.frame_, direction)
 
         if not column.contains(node):
             position = 0
             occupied = True
             while occupied:
-                if not column.is_free(position) and not next_column.is_free(position):
+                if column.is_free(position):
+                        # and next_column.is_free(position):
                     occupied = False
                 position += 1
 
@@ -268,18 +320,6 @@ class GraphVisualizer(QtGui.QWidget):
                 if node.frame_ not in frames:
                     frames.add(node.frame_)
         for edge in added_edges:
-            # if 'chunk_ref' in edge[2].keys():
-            #     type_edge = "chunk"
-            # elif edge[0] is None or edge[1] is None or edge[0] not in self.regions or edge[1] not in self.regions:
-            #     type_edge = "partial"
-            # else:
-            #     type_edge = "line"
-            #
-            # # TODO sureness - dodelat, zatim se generuje nahodne
-            # import random
-            # sureness = random.randint(0, 100) / float(100)
-            # new_tuple = (edge[0], edge[1]) + (type_edge, sureness)
-            # self.edges.add(new_tuple)
             self.edges.add(edge)
 
         frames = list(frames)
@@ -298,6 +338,7 @@ class GraphVisualizer(QtGui.QWidget):
         next_x = 0
         for column in self.columns:
             QApplication.processEvents()
+            self.load_indicator_wheel()
             column.set_x(next_x)
             next_x = self.increment_x(column, next_x)
 
@@ -342,11 +383,12 @@ class GraphVisualizer(QtGui.QWidget):
                         col = self.frames_columns[edge[1].frame_]
                         col.show_edge(edge, self.frames_columns, self.show_vertically)
                 elif edge[2] == "partial":
-                    direction = "left" if (edge[0] is None or not (edge[0] in self.regions)) else "right"
-                    node = edge[1] if direction == "left" else edge[0]
-                    if first_frame <= node.frame_ <= last_frame:
-                        col = self.frames_columns[node.frame_]
-                        col.show_edge(edge, self.frames_columns, self.show_vertically, direction, node)
+                    if(edge[0] or edge[1]) and (edge[0] in self.regions or edge[1] in self.regions):
+                        direction = "left" if (edge[0] is None or not (edge[0] in self.regions)) else "right"
+                        node = edge[1] if direction == "left" else edge[0]
+                        if first_frame <= node.frame_ <= last_frame:
+                            col = self.frames_columns[node.frame_]
+                            col.show_edge(edge, self.frames_columns, self.show_vertically, direction, node)
 
     def toggle_show_vertically(self):
         self.show_vertically = False if self.show_vertically else True
@@ -401,18 +443,17 @@ class GraphVisualizer(QtGui.QWidget):
         return self.selected
 
     def load_indicator_init(self):
-        # TODO make it prettier
-        if self.wheel is None:
-            self.wheel = QtGui.QLabel("Loading")
-            self.wheel.setAlignment(QtCore.Qt.AlignCenter)
-            stylesheet = "font: 25px"
-            self.wheel.setStyleSheet(stylesheet)
-        self.layout().addWidget(self.wheel)
-        self.wheel.show()
+        self.text.setText("Loading")
 
     def load_indicator_hide(self):
-        self.layout().removeWidget(self.wheel)
-        self.wheel.hide()
+        self.text.setText(DEFAULT_TEXT)
+
+    def load_indicator_wheel(self):
+        self.text.setText(self.wheel_count * "." + "Loading" + self.wheel_count * ".")
+        self.wheel_count += 1
+        if self.wheel_count % 3 is 0:
+            self.wheel_count = 1
+
 
 if __name__ == '__main__':
     p = Project()
