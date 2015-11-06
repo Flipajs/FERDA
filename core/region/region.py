@@ -140,7 +140,7 @@ class Region():
     def contour(self):
         from utils.drawing.points import get_contour
         if not hasattr(self, 'contour_') or self.contour_ is None:
-            self.contour_ = get_contour(self.pts_)
+            self.contour_ = get_contour(self.pts())
 
         return self.contour_
 

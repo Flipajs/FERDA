@@ -124,6 +124,7 @@ class BackgroundComputer:
         :param old_chm:
         :return:
         """
+
         new_chm = project.chm
         new_rm = project.rm
 
@@ -165,6 +166,11 @@ class BackgroundComputer:
         chunks_map = {0: 0}
         # update chunks
         for old_id_ in used_chunks_ids:
+            print old_id_
+
+            if old_id_ == 79:
+                print "test"
+
             ch = old_chm[old_id_]
 
             new_list = []
@@ -215,19 +221,24 @@ class BackgroundComputer:
                 self.merge_parts(self.solver.gm, g_, relevant_vertices, self.project, rm_old, chm_)
 
             self.update_callback((i + 1) / float(part_num))
+        # TODO: remove this
+        self.project.solver_parameters.frames_in_row = 10
 
         fir = self.project.solver_parameters.frames_in_row
 
+
         self.update_callback(-1, 'joining parts...')
+
+        self.solver.gm = self.project.gm
         for part_end_t in range(fir, fir*part_num):
-            t_v = map(int, self.solver.gm.get_vertices_in_t(part_end_t))
-            t1_v = map(int, self.solver.gm.get_vertices_in_t(part_end_t+1))
+            t_v = self.solver.gm.get_vertices_in_t(part_end_t-1)
+            t1_v = self.solver.gm.get_vertices_in_t(part_end_t)
 
-            rt = self.project.rm[t_v]
-            rt1 = self.project.rm[t1_v]
-
-            self.connect_graphs(rt, rt1)
-            self.solver.simplify(t_v)
+            print "edges before ", self.project.gm.g.num_edges()
+            self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
+            print "edges after ", self.project.gm.g.num_edges()
+            self.solver.simplify(map(int, t_v), [self.solver.adaptive_threshold])
+            print "edges after 2", self.project.gm.g.num_edges()
 
         S_.general.log_graph_edits = True
 
@@ -243,14 +254,20 @@ class BackgroundComputer:
 
         self.finished_callback(self.solver)
 
-    def connect_graphs(self, t1, t2):
-        for r_t1 in t1:
-            for r_t2 in t2:
-                d = np.linalg.norm(r_t1.centroid() - r_t2.centroid())
+    def connect_graphs(self, vertices1, vertices2, gm, rm):
+        print "edges before ", gm.g.num_edges()
+        for v1 in vertices1:
+            r1 = rm[int(v1)]
+            for v2 in vertices2:
+                r2 = rm[int(v2)]
 
-                if d < self.solver.max_distance:
-                    s, ds, multi, antlike = self.solver.assignment_score(r_t1, r_t2)
-                    self.solver.add_edge_fast(r_t1, r_t2, type='d', score=-s)
+                d = np.linalg.norm(r1.centroid() - r2.centroid())
+
+                if d < gm.max_distance:
+                    s, ds, multi, antlike = self.solver.assignment_score(r1, r2)
+                    gm.add_edge_fast(v1, v2, s)
+
+        print "edges after ", gm.g.num_edges()
 
     def OnProcessOutputReady(self, p_id):
         while True:
