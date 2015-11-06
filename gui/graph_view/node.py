@@ -1,51 +1,67 @@
-__author__ = 'Simon Mandlik'
+from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import Qt
+from gui.img_controls.utils import cvimg2qtpixmap
 
 SELECTION_LINE_WIDTH = 2
 
-from PyQt4 import QtGui, QtCore, Qt
+__author__ = 'Simon Mandlik'
+
 
 class Node(QtGui.QGraphicsPixmapItem):
 
-    def __init__(self, region, parent_pixmap, size=30):
+    def __init__(self, parent_pixmap, scene, region, img_manager, size):
         super(Node, self).__init__(parent_pixmap)
-
         self.region = region
-        self.img = None
-
+        self.img_manager = img_manager
+        self.scene = scene
         self.parent_pixmap = parent_pixmap
-        self.x = 0
-        self.y = 0
+        self.pixmap_toggled = None
         self.size = size
+        self.x = self.parent_pixmap.offset().x()
+        self.y = self.parent_pixmap.offset().y()
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
         self.selection_polygon = self.create_selection_polygon()
-
         self.toggled = False
 
-    def set_pos(self, x, y):
-        self.x = x
-        self.y = y
     def toggle(self):
-        self.toggled = False if self.toggle() else True
-        self.visualize()
+        if not self.toggled:
+            if self.pixmap_toggled is None:
+                self.create_pixmap()
+            else:
+                self.scene.addItem(self.pixmap_toggled)
+        else:
+            self.scene.removeItem(self.pixmap_toggled)
+        self.toggled = False if self.toggled else True
 
-    # def visualize(self):
-    #     if self.toggled:
-    #         #IMG MAKER -
-    #     if self.graph_visualizer.show_vertically:
-    #         #prohodit x, y
-    #
-    #     self.paint()
+    def create_pixmap(self):
+        from graph_visualizer import STEP
+        img_toggled = self.img_manager.get_crop(self.region.frame_, [self.region], width=STEP * 3, height=STEP * 3)
+        pixmap = cvimg2qtpixmap(img_toggled)
+        self.pixmap_toggled = self.scene.addPixmap(pixmap)
+        width, height = self.scene.width(), self.scene.height()
+        multiplier_x = 0 if self.parent_pixmap.pos().x() < width / 2 else -6
+        multiplier_y = 0 if self.parent_pixmap.pos().y() < height / 2 else -6
+        self.pixmap_toggled.setPos(self.parent_pixmap.pos().x() + (multiplier_x + 1) * STEP / 2,
+                                   self.parent_pixmap.pos().y() + (multiplier_y + 1) * STEP / 2)
+        self.pixmap_toggled.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
 
-    def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget = None):
-        self.parent_pixmap.paint(QPainter, QStyleOptionGraphicsItem, None)
+    def setPos(self, x, y):
+        from graph_visualizer import STEP
+        if not(x == self.x and y == self.y):
+            self.x, self.y = x, y
+            self.parent_pixmap.setPos(x, y)
+            if self.pixmap_toggled is not None:
+                self.pixmap_toggled.setPos(x + STEP / 2, y + STEP / 2)
+
+    def paint(self, painter, style_option_graphics_item, widget=None):
+        self.parent_pixmap.paint(painter, style_option_graphics_item, None)
         if self.isSelected():
             pen = QtGui.QPen(Qt.black, SELECTION_LINE_WIDTH, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
-            QPainter.setPen(pen)
-            QPainter.drawPolygon(self.selection_polygon)
         else:
             pen = QtGui.QPen(Qt.white, SELECTION_LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
-            QPainter.setPen(pen)
-            QPainter.drawPolygon(self.selection_polygon)
+
+        painter.setPen(pen)
+        painter.drawPolygon(self.selection_polygon)
 
     def create_selection_polygon(self):
         p1 = QtCore.QPointF(self.x, self.y)
@@ -57,7 +73,7 @@ class Node(QtGui.QGraphicsPixmapItem):
         return polygon
 
     def boundingRect(self):
-        return self.selection_polygon.boundingRect();
+        return self.selection_polygon.boundingRect()
 
     def shape(self):
         path = QtGui.QPainterPath()

@@ -4,10 +4,10 @@ from core.project.project import Project
 
 
 p = Project()
-p.load('/home/ferda/PROJECTS/eight_22/eight22.fproj')
+p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
 
-p.video_paths = ['/home/ferda/PROJECTS/eight.m4v']
-p.working_directory = '/home/ferda/PROJECTS/eight_22'
+p.video_paths = ['/home/sheemon/FERDA/projects/eight.m4v']
+p.working_directory = '/home/sheemon/FERDA/projects/eight_new'
 
 for it in p.log.data_:
     print it.action_name, it.data
