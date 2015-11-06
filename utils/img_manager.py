@@ -96,6 +96,12 @@ class ImgManager:
 
         # one region
         if isinstance(roi, Region):
+            # append it to regions - so it will be visualised
+            if regions:
+                regions.append(roi)
+            else:
+                regions = [roi]
+
             roi = get_roi(roi.pts())
 
         # list of regions

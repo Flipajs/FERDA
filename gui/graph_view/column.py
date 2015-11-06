@@ -110,7 +110,7 @@ class Column:
                     if item in self.items_nodes.keys():
                         continue
                 if item not in self.regions_images.keys():
-                    img = self.im_manager.get_crop(self.frame, [item], width=STEP, height=STEP)
+                    img = self.im_manager.get_crop(self.frame, item, width=STEP, height=STEP, relative_margin=0.3)
                     # img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
                     # img[:, :, 0] = 255
                 else:

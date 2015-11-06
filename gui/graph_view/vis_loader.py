@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     import cv2, sys
     app = QtGui.QApplication(sys.argv)
-    im_manager = ImgManager(p)
+    im_manager = ImgManager(p, max_size_mb=0, max_num_of_instances=0)
     l = VisLoader(p)
     l.visualise()
     app.exec_()
