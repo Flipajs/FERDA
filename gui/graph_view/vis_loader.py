@@ -71,10 +71,29 @@ class VisLoader:
         g.show()
 
 if __name__ == '__main__':
-    from scripts import fix_project
-
     p = Project()
     p.load('/Users/flipajs/Documents/wd/eight_new/eight.fproj')
+    from core.graph.graph_manager import GraphManager
+
+    for i in range(1):
+        rm_old = RegionManager(db_wd=p.working_directory + '/temp',
+                                   db_name='part' + str(i) + '_rm.sqlite3')
+
+        with open(p.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
+                up = pickle.Unpickler(f)
+                g_ = up.load()
+                relevant_vertices = up.load()
+                chm_ = up.load()
+
+        p.chm = chm_
+        p.rm = rm_old
+        p.gm = GraphManager(p, None)
+        p.gm.g = g_
+
+        for v_id in relevant_vertices:
+            v = p.gm.g.vertex(v_id)
+            r = p.rm[p.gm.g.vp['region_id'][v]]
+            p.gm.vertices_in_t.setdefault(r.frame(), []).append(v_id)
 
     import cv2, sys
     app = QtGui.QApplication(sys.argv)
