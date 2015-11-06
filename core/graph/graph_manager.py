@@ -198,7 +198,7 @@ class GraphManager:
 
         self.g.remove_edge(edge)
 
-    def add_edge(self, source_vertex, target_vertex, score=-1):
+    def add_edge(self, source_vertex, target_vertex, score=1):
         # source_vertex = self.match_if_reconstructed(source_vertex)
         # target_vertex = self.match_if_reconstructed(target_vertex)
         if source_vertex is None or target_vertex is None:
@@ -216,6 +216,8 @@ class GraphManager:
                              {'v1': source_vertex,
                               'v2': target_vertex,
                               's': score})
+
+        print source_vertex, target_vertex, score
         e = self.g.add_edge(source_vertex, target_vertex)
         self.g.ep['score'][e] = float(score)
         return e
