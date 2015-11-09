@@ -98,7 +98,8 @@ class Solver:
             v2 = best_out_vertices[0]
             affected = []
 
-            if best_out_vertices[1] or best_in_vertices[1]:
+            if (best_out_vertices[1] and best_out_vertices[0] != best_out_vertices[1]) or \
+                    (best_in_vertices[1] and best_in_vertices[0] != best_in_vertices[1]):
                 s = best_out_scores[0]
 
                 s_out = 0

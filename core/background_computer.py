@@ -168,11 +168,6 @@ class BackgroundComputer:
         chunks_map = {0: 0}
         # update chunks
         for old_id_ in used_chunks_ids:
-            print old_id_
-
-            if old_id_ == 79:
-                print "test"
-
             ch = old_chm[old_id_]
 
             new_list = []
@@ -239,6 +234,9 @@ class BackgroundComputer:
             self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
             # self.solver.simplify(map(int, t_v), [self.solver.adaptive_threshold])
 
+        # import graph_tool.stats
+        # graph_tool.stats.remove_parallel_edges(self.project.gm.g)
+
         S_.general.log_graph_edits = True
 
         self.project.solver = self.solver
@@ -249,22 +247,25 @@ class BackgroundComputer:
         # self.solver.save()
 
         self.project.gm.project = self.project
-        # self.project.save()
-
-        app = QtGui.QApplication(sys.argv)
-        im_manager = ImgManager(self.projec, max_size_mb=0, max_num_of_instances=0)
         l = VisLoader(self.project)
         l.visualise()
-        app.exec_()
+
+        # self.project.solver_parameters.certainty_threshold = 0.2
+        self.solver.simplify(rules=[self.solver.adaptive_threshold])
+        self.solver.simplify(rules=[self.solver.adaptive_threshold])
+        # self.project.save()
+
+        l = VisLoader(self.project)
+        l.visualise()
 
         self.finished_callback(self.solver)
 
     def connect_graphs(self, vertices1, vertices2, gm, rm):
         print "edges before ", gm.g.num_edges()
         for v1 in vertices1:
-            r1 = rm[int(v1)]
+            r1 = gm.region(v1)
             for v2 in vertices2:
-                r2 = rm[int(v2)]
+                r2 = gm.region(v2)
 
                 d = np.linalg.norm(r1.centroid() - r2.centroid())
 
