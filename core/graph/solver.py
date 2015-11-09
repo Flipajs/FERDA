@@ -376,21 +376,21 @@ class Solver:
             affected.add(v1)
             affected.add(v2)
 
-            for out_neigh in v1.out_neighbours():
-                # if out_neigh != v2:
-                    self.gm.remove_edge(v1, out_neigh)
-                    affected.add(out_neigh)
+            for e in v1.out_edges():
+                affected.add(e.target())
 
-                    for aff_neigh in out_neigh.in_neighbours():
-                        affected.add(aff_neigh)
+                for aff_neigh in e.target().in_neighbours():
+                    affected.add(aff_neigh)
 
-            for neigh in v2.in_neighbours():
-                # if neigh != v1:
-                    self.gm.remove_edge(neigh, v2)
-                    affected.add(neigh)
+                self.gm.remove_edge_(e)
 
-                    for aff_neigh in neigh.out_neighbours():
-                        affected.add(aff_neigh)
+            for e in v2.in_edges():
+                affected.add(e.source())
+
+                for aff_neigh in e.source().out_neighbours():
+                    affected.add(aff_neigh)
+
+                self.gm.remove_edge_(e)
 
             # This will happen when there is an edge missing (action connect_with_and_confirm)
             if not self.gm.g.edge(v1, v2):

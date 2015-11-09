@@ -91,7 +91,7 @@ class Column:
                     region = item
                 if region in self.items_nodes.keys():
                     continue
-                img = self.im_manager.get_crop(self.frame, [region], width=STEP, height=STEP)
+                img = self.im_manager.get_crop(self.frame, region, width=STEP, height=STEP)
                 # img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
                 self.regions_images[region] = img
 

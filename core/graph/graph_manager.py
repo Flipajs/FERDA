@@ -11,6 +11,7 @@ class GraphManager:
         self.project = project
         self.rm = project.rm
         self.g = graph_tool.Graph(directed=True)
+        self.g.set_fast_edge_removal(fast=True)
         self.graph_add_properties()
         self.vertices_in_t = {}
         self.start_t = np.inf
@@ -217,7 +218,6 @@ class GraphManager:
                               'v2': target_vertex,
                               's': score})
 
-        print source_vertex, target_vertex, score
         e = self.g.add_edge(source_vertex, target_vertex)
         self.g.ep['score'][e] = float(score)
         return e

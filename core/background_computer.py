@@ -247,11 +247,8 @@ class BackgroundComputer:
         # self.solver.save()
 
         self.project.gm.project = self.project
-        l = VisLoader(self.project)
-        l.visualise()
 
-        # self.project.solver_parameters.certainty_threshold = 0.2
-        self.solver.simplify(rules=[self.solver.adaptive_threshold])
+        self.project.solver_parameters.certainty_threshold = 0.2
         self.solver.simplify(rules=[self.solver.adaptive_threshold])
         # self.project.save()
 
@@ -261,7 +258,6 @@ class BackgroundComputer:
         self.finished_callback(self.solver)
 
     def connect_graphs(self, vertices1, vertices2, gm, rm):
-        print "edges before ", gm.g.num_edges()
         for v1 in vertices1:
             r1 = gm.region(v1)
             for v2 in vertices2:
@@ -272,8 +268,6 @@ class BackgroundComputer:
                 if d < gm.max_distance:
                     s, ds, multi, antlike = self.solver.assignment_score(r1, r2)
                     gm.add_edge_fast(v1, v2, s)
-
-        print "edges after ", gm.g.num_edges()
 
     def OnProcessOutputReady(self, p_id):
         while True:
