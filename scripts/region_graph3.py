@@ -214,6 +214,12 @@ class NodeGraphVisualizer(QtGui.QWidget):
             for box in self.boxes:
                 box[0].hide()
 
+            for it in self.toggled:
+                self.scene.removeItem(it)
+
+            self.toggled = []
+            self.clear_all_button_function()
+            
             return
 
         if isinstance(item, Custom_Line_Selectable):

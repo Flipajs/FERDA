@@ -1,86 +1,100 @@
-import sqlite3 as lite
+import sqlite3 as sql
 import json
-import random
-import numpy
-import string
-import sys
+import time
+import numpy as np
 
 
-def points(array, limit):
-    k = 0
-    for i in range(0, len(array), 2):
-        if(k % limit == 0):
-            k = 0
-        #print array[i]
-        yield (i/2, k, array[i], array[i+1])
-        k += 1
+class DB_Test():
+    def __init__(self, db_path, db_path_json, pts_size=10, reg_size=1000):
+        self.db_path = db_path
+        self.db_path_json = db_path_json
+        self.pts_size = pts_size
+        self.reg_size = reg_size
+        try:
+            self.cur = sql.connect(self.db_path).cursor()
+            self.cur_json = sql.connect(self.db_path_json).cursor()
+        except:
+            pass
 
-def regions(array):
+    def test(self):
+        self.create_db()
+        self.select()
+        self.create_db_json()
+        self.select_json()
+
+    def create_db(self):
+        print "Creating new db..."
+        self.cur.execute("DROP TABLE IF EXISTS Regions")
+        self.cur.execute("DROP TABLE IF EXISTS Points")
+        self.cur.execute("CREATE TABLE Regions(Id INT, Area INT)")
+        self.cur.execute("CREATE TABLE Points(RegionId INT, X INT, Y INT, PRIMARY KEY(RegionId, X, Y))")
+        self.cur.execute("CREATE INDEX RegionIndex ON Points(RegionId);")
+        reg_values = np.random.randint(0, 100, self.reg_size)
+
+        t = time.time()
+        self.cur.executemany("INSERT INTO Regions VALUES((?), (?));", get_regions_data(reg_values))
+        self.cur.executemany("INSERT INTO Points VALUES((?),(?),(?));", get_points_data(reg_values, self.pts_size))
+        print "Done (%ss)" % (time.time() - t)
+
+    def create_db_json(self):
+        print "Creating new db with json data..."
+        self.cur_json.execute("DROP TABLE IF EXISTS Regions")
+        self.cur_json.execute("CREATE TABLE Regions(id INT, area INT, data STRING, PRIMARY KEY (id))")
+        self.cur_json.execute("CREATE INDEX RegionIndex ON Regions(id);")
+        reg_values = np.random.randint(0, 100, self.reg_size)
+        pts_values = np.random.randint(0, 100, self.pts_size*2)
+
+        t = time.time()
+        self.cur_json.executemany("INSERT INTO Regions VALUES((?), (?), (?));", get_regions_data_json(reg_values, pts_values))
+        print "Done (%ss)" % (time.time() - t)
+
+    def select(self):
+        t = time.time()
+        for i in range(0, 200):
+            self.cur.execute("SELECT Regions.*, Points.* FROM Regions LEFT JOIN Points WHERE Regions.Id = %s AND Points.RegionId=Regions.Id;" % (3*i))
+            rows = self.cur.fetchall()
+            for row in rows:
+                #print "Region id: %s, Region area: %s, Point region: %s, X: %s, Y: %s" % (row[0], row[1], row[2], row[3], row[4])
+                pass
+        print "Time taken to SELECT from db: %s" % ((time.time() - t))
+
+    def select_json(self):
+        t = time.time()
+        for i in range(0, 200):
+            str = "SELECT * FROM Regions WHERE id LIKE %s;" % (i*3)
+            self.cur_json.execute(str)
+
+            rows = self.cur_json.fetchall()
+            for row in rows:
+                #print "Id %s, area: %s, json: %s" % (row[0], row[1], row[2])
+                pass
+        print "Time taken to SELECT from db_json: %s)" % (time.time() - t)
+
+
+def get_regions_data_json(area_array, pts_array):
+    # id, area, [{x:?, y:?}{x:?, y:?}{...}...]
+    for i in range(0, len(area_array)):
+        id = i
+        area = area_array[i]
+        str = "["
+        for j in range(0, len(pts_array), 2):
+            str += "{x:%d, y:%d}" % (pts_array[j], pts_array[j+1])
+        str += "]"
+        if i%10000 == 0:
+            print i
+        yield(id, area, json.dumps(str))
+
+def get_regions_data(array):
     for i in range(0, len(array)):
         yield (i, array[i])
 
-con = lite.connect('/home/dita/PycharmProjects/regions.db')
+def get_points_data(array, limit):
+    k = 0
+    for i in range(0, len(array), 2):
+        #print i/2
+        if(i/2 % limit == 0):
+            k += 1
+        yield (k, i, array[i+1])
 
-with con:
-
-    cur = con.cursor()
-    cur.execute('SELECT SQLITE_VERSION()')
-
-    data = cur.fetchone()
-
-    print "SQLite version: %s" % data
-
-    cur = con.cursor()
-    cur.execute("DROP TABLE IF EXISTS Regions")
-    cur.execute("DROP TABLE IF EXISTS Points")
-    cur.execute("CREATE TABLE Regions(Id INT, Area INT)")
-    cur.execute("CREATE TABLE Points(Id INT, Region INT, X INT, Y INT)")
-
-    regions_size = 100000
-    points_size = 100
-
-    reg_values = numpy.random.randint(0, 100, regions_size)
-
-    import time
-    t = time.time()
-    cur.executemany("INSERT INTO Regions VALUES((?), (?));", regions(reg_values))
-
-    str = "INSERT INTO Points VALUES((?),(?),(?),(?));"
-    cur.executemany(str, points(reg_values, points_size))
-    print time.time() - t
-
-    #cur.execute("SELECT Region, Regions.Area, X, Y FROM Points LRegions WHERE Points.Region=Regions.Id AND Regions.Id LIKE 890;")
-    cur.execute("SELECT Regions.Id, Regions.Area, Points.X, Points.Y FROM Regions LEFT JOIN Points WHERE Regions.Id < 890 AND Points.Region=Regions.Id;")
-
-    rows = cur.fetchall()
-
-
-    print "Points: "
-    for row in rows:
-        pass
-        #print "Region %s (Area: %s): [%s,%s]" % (row[0], row[1], row[2], row[3])
-        #print "Region %s Area: %s, %s, %s" % (row[0], row[1], row[2], row[3])
-
-
-
-    """
-    cur.execute("CREATE TABLE Cars(Id INT, Name TEXT, Price INT)")
-    cur.execute("INSERT INTO Cars VALUES(1,'Audi',52642)")
-    cur.execute("INSERT INTO Cars VALUES(2,'Mercedes',57127)")
-    cur.execute("INSERT INTO Cars VALUES(3,'Skoda',9000)")
-    cur.execute("INSERT INTO Cars VALUES(4,'Volvo',29000)")
-    cur.execute("INSERT INTO Cars VALUES(5,'Bentley',350000)")
-    cur.execute("INSERT INTO Cars VALUES(6,'Citroen',21000)")
-    cur.execute("INSERT INTO Cars VALUES(7,'Hummer',41400)")
-    cur.execute("INSERT INTO Cars VALUES(8,'Volkswagen',21600)")
-
-    cur.execute("SELECT Name, Price FROM Cars WHERE Price > 30000")
-
-    rows = cur.fetchall()
-
-    print "Cars more expensive than 30000:"
-    for row in rows:
-        print "%s cost's %s" % (row[0], row[1])
-
-    print json.dump("Hello", "world")
-    """
+tester = DB_Test("/home/dita/PycharmProjects/db1.db", "/home/dita/PycharmProjects/db2.db")
+tester.test()

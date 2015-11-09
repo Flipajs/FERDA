@@ -25,6 +25,7 @@ if is_flipajs_pc():
     # project.load('/Users/flipajs/Documents/wd/small_lenses_colony1/small_lenses    .fproj')
     # project.load('/Users/flipajs/Documents/wd/colonies1_30m/colonies30m.fproj')
     # project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+
     project.load('/Users/flipajs/Documents/wd/eight_new/eight.fproj')
     # project.load('/Users/flipajs/Documents/wd/c4/c4.fproj')
     # project.load('/Users/flipajs/Documents/wd/c2/c2.fproj')

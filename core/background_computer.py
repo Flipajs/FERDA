@@ -252,8 +252,8 @@ class BackgroundComputer:
         self.solver.simplify(rules=[self.solver.adaptive_threshold])
         # self.project.save()
 
-        l = VisLoader(self.project)
-        l.visualise()
+        # l = VisLoader(self.project)
+        # l.visualise()
 
         self.finished_callback(self.solver)
 

@@ -127,7 +127,13 @@ class StatisticsWidget(QtGui.QWidget):
             id_ += 1
 
         with open(self.get_out_path()+'.mat', 'wb') as f:
-            sio.savemat(f, {'FERDA': obj_arr})
+            arena = None
+            if self.project.arena_model:
+                am = self.project.arena_model
+                c = am.c
+                arena = {'cx': c[1], 'cy': c[0], 'radius': am.radius()}
+
+            sio.savemat(f, {'FERDA': obj_arr, 'arena:': arena})
 
     def add_line_mat(self, d, r):
         y, x = r.centroid()

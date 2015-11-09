@@ -244,6 +244,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
             self.active_cw = CaseWidget(self.project, nodes_groups, config, self.vid, self)
             self.active_cw.active_node = None
+
             self.scenes_widget.layout().addWidget(self.active_cw)
 
     def best_greedy_config(self, nodes_groups):
