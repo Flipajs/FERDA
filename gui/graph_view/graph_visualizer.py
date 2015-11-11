@@ -8,24 +8,8 @@ from core.project.project import Project
 from gui.img_controls.my_view_zoomable import MyViewZoomable
 from utils.img_manager import ImgManager
 from gui.graph_view.edge import EdgeGraphical
-
-# the size of a node
-STEP = 40
-# distance of the whole visualization from the top of the widget
-FROM_TOP = 20
-# space between each of the columns
-SPACE_BETWEEN_HOR = 30
-# space between nodes in column
-SPACE_BETWEEN_VER = 10
-# gap between frame_numbers and first node in columns
-GAP = 50
-# number of columns to be displayed before dynamic loading, 0 means dynamic loading for all
-MINIMUM = 20
-# number of columns processed in one chunk sent to dummy thread, for debbuging purpose
-COLUMNS_TO_LOAD = 10
-# default text to display
-DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, stretch"
-
+from vis_loader import COLUMNS_TO_LOAD,DEFAULT_TEXT, FROM_TOP, GAP, \
+    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT
 __author__ = 'Simon Mandlik'
 
 
@@ -302,11 +286,11 @@ class GraphVisualizer(QtGui.QWidget):
                         column = Column(((x - empty_frame_count), x - 1), self.scene, self.img_manager, True)
                         self.frames_columns[((x - empty_frame_count), x - 1)] = column
                         self.columns.append(column)
-                    self.scene_width += STEP / 2 + SPACE_BETWEEN_HOR
+                    self.scene_width += WIDTH / 2 + SPACE_BETWEEN_HOR
                 column = Column(x, self.scene, self.img_manager)
                 self.frames_columns[x] = column
                 self.columns.append(column)
-                self.scene_width += STEP + SPACE_BETWEEN_HOR
+                self.scene_width += WIDTH + SPACE_BETWEEN_HOR
 
                 empty_frame_count = 0
             else:
@@ -360,9 +344,9 @@ class GraphVisualizer(QtGui.QWidget):
 
     def increment_x(self, column, next_x):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
-            next_x += STEP * (column.frame[1] - column.frame[0])
+            next_x += WIDTH * (column.frame[1] - column.frame[0])
         else:
-            next_x += STEP / 2 if column.empty else STEP
+            next_x += WIDTH / 2 if column.empty else WIDTH
         next_x += SPACE_BETWEEN_HOR
         return next_x
 
@@ -420,7 +404,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.view.centerOn(0, 0)
 
     def add_rect_to_scene(self):
-        width = self.scene_width if self.compress_axis else (STEP * self.columns[len(self.columns) - 1].frame +
+        width = self.scene_width if self.compress_axis else (WIDTH * self.columns[len(self.columns) - 1].frame +
                                                              (self.columns[len(self.columns) - 1].frame - 1) * SPACE_BETWEEN_VER)
         height = self.compute_height()
         if self.show_vertically:
@@ -436,7 +420,7 @@ class GraphVisualizer(QtGui.QWidget):
         for col in self.columns:
             if len(col.objects) > height:
                 height = len(col.objects)
-        height = GAP + STEP * height + SPACE_BETWEEN_VER * (height - 1)
+        height = GAP + HEIGHT * height + SPACE_BETWEEN_VER * (height - 1)
         return height
 
     def get_selected(self):

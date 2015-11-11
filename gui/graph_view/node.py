@@ -9,14 +9,15 @@ __author__ = 'Simon Mandlik'
 
 class Node(QtGui.QGraphicsPixmapItem):
 
-    def __init__(self, parent_pixmap, scene, region, img_manager, size):
+    def __init__(self, parent_pixmap, scene, region, img_manager, width, height):
         super(Node, self).__init__(parent_pixmap)
         self.region = region
         self.img_manager = img_manager
         self.scene = scene
         self.parent_pixmap = parent_pixmap
         self.pixmap_toggled = None
-        self.size = size
+        self.width = width
+        self.height = height
         self.x = self.parent_pixmap.offset().x()
         self.y = self.parent_pixmap.offset().y()
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
@@ -34,24 +35,24 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.toggled = False if self.toggled else True
 
     def create_pixmap(self):
-        from graph_visualizer import STEP
-        img_toggled = self.img_manager.get_crop(self.region.frame_, [self.region], width=STEP * 3, height=STEP * 3)
+        from graph_visualizer import WIDTH, HEIGHT
+        img_toggled = self.img_manager.get_crop(self.region.frame_, [self.region], width=WIDTH * 3, height=HEIGHT * 3)
         pixmap = cvimg2qtpixmap(img_toggled)
         self.pixmap_toggled = self.scene.addPixmap(pixmap)
         width, height = self.scene.width(), self.scene.height()
         multiplier_x = 0 if self.parent_pixmap.pos().x() < width / 2 else -6
         multiplier_y = 0 if self.parent_pixmap.pos().y() < height / 2 else -6
-        self.pixmap_toggled.setPos(self.parent_pixmap.pos().x() + (multiplier_x + 1) * STEP / 2,
-                                   self.parent_pixmap.pos().y() + (multiplier_y + 1) * STEP / 2)
+        self.pixmap_toggled.setPos(self.parent_pixmap.pos().x() + (multiplier_x + 1) * WIDTH / 2,
+                                   self.parent_pixmap.pos().y() + (multiplier_y + 1) * HEIGHT / 2)
         self.pixmap_toggled.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
 
     def setPos(self, x, y):
-        from graph_visualizer import STEP
+        from graph_visualizer import WIDTH, HEIGHT
         if not(x == self.x and y == self.y):
             self.x, self.y = x, y
             self.parent_pixmap.setPos(x, y)
             if self.pixmap_toggled is not None:
-                self.pixmap_toggled.setPos(x + STEP / 2, y + STEP / 2)
+                self.pixmap_toggled.setPos(x + WIDTH / 2, y + HEIGHT / 2)
 
     def paint(self, painter, style_option_graphics_item, widget=None):
         self.parent_pixmap.paint(painter, style_option_graphics_item, None)
@@ -65,9 +66,9 @@ class Node(QtGui.QGraphicsPixmapItem):
 
     def create_selection_polygon(self):
         p1 = QtCore.QPointF(self.x, self.y)
-        p2 = QtCore.QPointF(self.x + self.size, self.y)
-        p4 = QtCore.QPointF(self.x, self.y + self.size)
-        p3 = QtCore.QPointF(self.x + self.size, self.y + self.size)
+        p2 = QtCore.QPointF(self.x + self.width, self.y)
+        p4 = QtCore.QPointF(self.x, self.y + self.height)
+        p3 = QtCore.QPointF(self.x + self.width, self.y + self.height)
         polygon = QtGui.QPolygonF()
         polygon << p1 << p2 << p3 << p4
         return polygon

@@ -2,15 +2,33 @@ import pickle
 from core.project.project import Project
 from core.region.region_manager import RegionManager
 from utils.img_manager import ImgManager
-from graph_visualizer import GraphVisualizer
 from PyQt4 import QtGui
 
 __author__ = 'Simon Mandlik'
 
+# the width of a node
+WIDTH = 40
+# the width of a node
+HEIGHT = 40
+# distance of the whole visualization from the top of the widget
+FROM_TOP = 20
+# space between each of the columns
+SPACE_BETWEEN_HOR = 30
+# space between nodes in column
+SPACE_BETWEEN_VER = 10
+# gap between frame_numbers and first node in columns
+GAP = 50
+# number of columns to be displayed before dynamic loading, 0 means dynamic loading for all
+MINIMUM = 20
+# number of columns processed in one chunk sent to dummy thread, for debbuging purpose
+COLUMNS_TO_LOAD = 10
+# default text to display
+DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, stretch"
+
 
 class VisLoader:
 
-    def __init__(self, project=None):
+    def __init__(self, project=None, ):
         self.project = project
         self.graph_manager = None
         self.graph = None
@@ -67,6 +85,7 @@ class VisLoader:
         self.prepare_nodes()
         self.prepare_edges()
         img_manager = ImgManager(p)
+        from graph_visualizer import GraphVisualizer
         g = GraphVisualizer(self.regions, self.edges, img_manager)
         g.show()
 
