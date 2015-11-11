@@ -28,7 +28,7 @@ DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in o
 
 class VisLoader:
 
-    def __init__(self, project=None, ):
+    def __init__(self, project=None):
         self.project = project
         self.graph_manager = None
         self.graph = None
