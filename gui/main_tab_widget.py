@@ -34,7 +34,7 @@ class MainTabWidget(QtGui.QWidget):
         self.switch_to_tracking_window_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
         self.addAction(self.switch_to_tracking_window_action)
 
-        self.vbox.addWidget(self.tabs)
+        self.vbox.addWidget(self.tabs)\
 
         self.tabs.setTabEnabled(1, False)
         self.tabs.setTabEnabled(2, False)
@@ -47,8 +47,7 @@ class MainTabWidget(QtGui.QWidget):
         print "LOADING GRAPH..."
         if project.solver:
             solver = project.solver
-            # TODO: is it necessary?
-            solver.update_nodes_in_t_refs()
+
             self.background_computer_finished(solver)
         else:
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)

@@ -7,7 +7,7 @@ import cPickle as pickle
 
 
 class RegionManager:
-    def __init__(self, db_wd=None, db_name="regions.db", cache_size_limit=-1, data=None):
+    def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=-1, data=None):
         """
         RegionManager is designed to store regions data. By default, all data is stored in memory cache (dictionary) and
         identified using unique ids. Optionally, database can be used, in which case the memory cache size can be
@@ -34,10 +34,12 @@ class RegionManager:
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
             # DEBUG, do not use! self.cur.execute("DROP TABLE IF EXISTS regions;")
-            self.cur.execute("CREATE TABLE regions(\
-                id INTEGER PRIMARY KEY, \
-                data BLOB);")
+
+            self.cur.execute("CREATE TABLE IF NOT EXISTS regions(\
+                    id INTEGER PRIMARY KEY, \
+                    data BLOB);")
             self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
+
             self.use_db = True
             self.regions_cache_ = {}
             self.recent_regions_ids = []
@@ -237,7 +239,7 @@ class RegionManager:
             raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
 
         if len(result) == 0:
-            return None
+            return []
         elif len(result) == 1:
             return result[0]
         else:

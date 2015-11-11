@@ -62,17 +62,19 @@ class Solver:
             vertex = self.gm.g.vertex(queue.pop())
 
             r = self.project.gm.region(vertex)
-            if r.frame() not in self.project.gm.vertices_in_t:
-                continue
-            if vertex not in self.project.gm.vertices_in_t[r.frame()]:
-                continue
 
             # skip the chunks...
             if self.gm.chunk_start(vertex):
                 continue
 
-            for r in rules:
-                affected = r(vertex)
+            for ru in rules:
+                # it is necessary to check this here, because it is possible that the vertex will be removed applying one of the rules
+                if r.frame() not in self.project.gm.vertices_in_t:
+                    continue
+                if vertex not in self.project.gm.vertices_in_t[r.frame()]:
+                    continue
+
+                affected = ru(vertex)
                 queue.extend(affected)
 
     def get_antlikeness(self, n):
@@ -96,7 +98,8 @@ class Solver:
             v2 = best_out_vertices[0]
             affected = []
 
-            if best_out_vertices[1] or best_in_vertices[1]:
+            if (best_out_vertices[1] and best_out_vertices[0] != best_out_vertices[1]) or \
+                    (best_in_vertices[1] and best_in_vertices[0] != best_in_vertices[1]):
                 s = best_out_scores[0]
 
                 s_out = 0
@@ -125,8 +128,6 @@ class Solver:
             return self.find_similar(n)
 
         return n
-
-
 
     def get_cc_rec(self, n, depth, node_groups):
         if depth > 10:
@@ -375,21 +376,21 @@ class Solver:
             affected.add(v1)
             affected.add(v2)
 
-            for out_neigh in v1.out_neighbours():
-                # if out_neigh != v2:
-                    self.gm.remove_edge(v1, out_neigh)
-                    affected.add(out_neigh)
+            for e in v1.out_edges():
+                affected.add(e.target())
 
-                    for aff_neigh in out_neigh.in_neighbours():
-                        affected.add(aff_neigh)
+                for aff_neigh in e.target().in_neighbours():
+                    affected.add(aff_neigh)
 
-            for neigh in v2.in_neighbours():
-                # if neigh != v1:
-                    self.gm.remove_edge(neigh, v2)
-                    affected.add(neigh)
+                self.gm.remove_edge_(e)
 
-                    for aff_neigh in neigh.out_neighbours():
-                        affected.add(aff_neigh)
+            for e in v2.in_edges():
+                affected.add(e.source())
+
+                for aff_neigh in e.source().out_neighbours():
+                    affected.add(aff_neigh)
+
+                self.gm.remove_edge_(e)
 
             # This will happen when there is an edge missing (action connect_with_and_confirm)
             if not self.gm.g.edge(v1, v2):
@@ -399,11 +400,11 @@ class Solver:
             v1_ch = self.gm.chunk_end(v1)
             v2_ch = self.gm.chunk_start(v2)
             if v1_ch:
-                v1_ch.append_right(v2)
+                v1_ch.append_right(v2, self.gm)
             elif v2_ch:
-                v2_ch.append_left(v1)
+                v2_ch.append_left(v1, self.gm)
             else:
-                self.chm.new_chunk(v1, v2, self.project)
+                self.chm.new_chunk(map(int, [v1, v2]), self.project.gm)
 
         affected = list(affected)
         # all_affected = list(self.simplify(affected[:], return_affected=True))
@@ -486,7 +487,8 @@ class Solver:
 
         with open(wd+name, 'wb') as f:
             pc = pickle.Pickler(f, -1)
-            pc.dump(self.g)
+            pc.dump(self.gm.g)
+            pc.dump(self.chm)
             pc.dump(self.ignored_nodes)
 
         print "PROGRESS SAVED"

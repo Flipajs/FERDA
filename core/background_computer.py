@@ -16,8 +16,14 @@ import networkx as nx
 from core.graph.solver import Solver
 from core.graph.reduced import Reduced
 import cProfile
+from core.region.region_manager import RegionManager
+from core.graph.chunk_manager import ChunkManager
+from core.graph.chunk import Chunk
+from gui.graph_view.vis_loader import VisLoader
+from utils.img_manager import ImgManager
 
-class BackgroundComputer():
+
+class BackgroundComputer:
     WAITING = 0
     RUNNING = 1
     FINISHED = 2
@@ -55,7 +61,7 @@ class BackgroundComputer():
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
-        if not os.path.exists(self.project.working_directory+'/temp/g_simplified0.pkl'):
+        if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
             if not S_.general.log_in_bg_computation:
                 S_.general.log_graph_edits = False
             self.start = time.time()
@@ -79,12 +85,16 @@ class BackgroundComputer():
                 if i == self.part_num - 1:
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
 
-                ex_str = str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames)
+                ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
+                    self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
+                    f_num) + ' ' + str(last_n_frames)
                 print ex_str
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
-                    p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))
+                    p.start(str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
+                        self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
+                        f_num) + ' ' + str(last_n_frames))
 
                 self.processes.append([p, ex_str, status])
 
@@ -99,57 +109,133 @@ class BackgroundComputer():
             self.check_parallelization_timer.stop()
             self.piece_results_together()
 
-    def piece_results_together(self):
-        end_nodes_prev = []
-        nodes_to_process = []
+    def merge_parts(self, new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm):
+        """
+        merges all parts (from parallelisation)
+        we want to merge all these structures (graph, region and chunk managers) into one
 
+        in the beginning there were separate graphs(for given time bounds) with ids starting from 0
+        ids in region manager also starts with 0, the same for chunk manager
+        -> reindexing is needed
+
+        :param new_gm:
+        :param old_g:
+        :param old_g_relevant_vertices:
+        :param project:
+        :param old_rm:
+        :param old_chm:
+        :return:
+        """
+
+        new_chm = project.chm
+        new_rm = project.rm
+
+        vertex_map = {}
+        used_chunks_ids = set()
+        # reindex vertices
+        for v_id in old_g_relevant_vertices:
+            old_v = old_g.vertex(v_id)
+            old_reg = old_rm[old_g.vp['region_id'][old_v]]
+            new_rm.add(old_reg)
+
+            new_v = new_gm.add_vertex(old_reg)
+            vertex_map[old_v] = new_v
+
+            used_chunks_ids.add(old_g.vp['chunk_start_id'][old_v])
+            used_chunks_ids.add(old_g.vp['chunk_end_id'][old_v])
+
+        # because 0 id means - no chunk assigned!
+        used_chunks_ids.remove(0)
+
+        # go through all edges and copy them with all edge properties...
+        for old_e in old_g.edges():
+            v1_old = old_e.source()
+            v2_old = old_e.target()
+            old_score = old_g.ep['score'][old_e]
+
+            if v1_old in vertex_map and v2_old in vertex_map:
+                v1_new = vertex_map[v1_old]
+                v2_new = vertex_map[v2_old]
+            else:
+                # this means there was some outdated edge, it is fine to ignore it...
+                continue
+
+            # ep['score'] is assigned in add_edge call
+            new_e = new_gm.add_edge(v1_new, v2_new, old_score)
+            new_gm.g.ep['certainty'][new_e] = old_g.ep['certainty'][old_e]
+
+        # chunk id = 0 means no chunk assigned
+        chunks_map = {0: 0}
+        # update chunks
+        for old_id_ in used_chunks_ids:
+            ch = old_chm[old_id_]
+
+            new_list = []
+            for old_v in ch.nodes_:
+                if old_v in vertex_map:
+                    new_list.append(int(vertex_map[old_v]))
+                else:
+                    id_ = new_rm.add(old_rm[old_g.vp['region_id'][old_g.vertex(old_v)]])
+                    # list of ids is returned [id] ...
+                    id_ = id_[0]
+
+                    # this happens in case when the vertex will not be in new graph, but we wan't to keep the region in
+                    # RM (e. g. for inner points of chunks)
+                    new_list.append(-id_)
+
+            _, new_id_ = new_chm.new_chunk(new_list, new_gm)
+
+            chunks_map[old_id_] = new_id_
+
+        for old_v, new_v in vertex_map.iteritems():
+            new_gm.g.vp['chunk_start_id'][new_v] = chunks_map[old_g.vp['chunk_start_id'][old_v]]
+            new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
+
+    def piece_results_together(self):
+        self.project.rm = RegionManager(db_wd=self.project.working_directory)
+        self.project.chm = ChunkManager()
         self.solver = Solver(self.project)
 
-        self.update_callback(0, 'Assembling solution...')
+        self.update_callback(0, 're-indexing...')
+
+        # switching off... We don't want to log following...
+        S_.general.log_graph_edits = False
 
         part_num = self.part_num
-        # compability...
-        if self.project.version_is_le("2.0.1"):
-            part_num = self.process_n
+        # TODO: remove this line
+        part_num = 2
 
         for i in range(part_num):
-            with open(self.project.working_directory+'/temp/g_simplified'+str(i)+'.pkl', 'rb') as f:
+            rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
+                                   db_name='part' + str(i) + '_rm.sqlite3')
+
+            with open(self.project.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g_ = up.load()
-                start_nodes = up.load()
-                end_nodes = up.load()
+                relevant_vertices = up.load()
+                chm_ = up.load()
 
-                # This is much faster then nx.union()
-                for n, d in g_.nodes(data=True):
-                    self.solver.g.add_node(n, d)
+                self.merge_parts(self.solver.gm, g_, relevant_vertices, self.project, rm_old, chm_)
 
-                for n1, n2, d in g_.edges(data=True):
-                    self.solver.g.add_edge(n1, n2, d)
+            self.update_callback((i + 1) / float(part_num))
+        # TODO: remove this
+        self.project.solver_parameters.frames_in_row = 10
 
-                nodes_to_process += end_nodes
+        fir = self.project.solver_parameters.frames_in_row
 
-                # check last and start frames...
-                start_t = self.project.solver_parameters.frames_in_row * i
-                for n in end_nodes_prev[:]:
-                    if n.frame_ != start_t - 1:
-                        end_nodes_prev.remove(n)
 
-                for n in start_nodes[:]:
-                    if n.frame_ != start_t:
-                        start_nodes.remove(n)
+        self.update_callback(-1, 'joining parts...')
 
-                self.connect_graphs(self.solver.g, end_nodes_prev, start_nodes)
-                end_nodes_prev = end_nodes
+        self.solver.gm = self.project.gm
+        for part_end_t in range(fir, fir*part_num):
+            t_v = self.solver.gm.get_vertices_in_t(part_end_t-1)
+            t1_v = self.solver.gm.get_vertices_in_t(part_end_t)
 
-            self.update_callback((i+1)/float(part_num))
+            self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
+            # self.solver.simplify(map(int, t_v), [self.solver.adaptive_threshold])
 
-        S_.general.log_graph_edits = False
-        self.solver.update_nodes_in_t_refs()
-        self.update_callback(-1, 'Simplifying...')
-        self.solver.simplify(nodes_to_process)
-        self.update_callback(-1, 'CHUNKS reduction')
-        self.solver.simplify_to_chunks(nodes_to_process)
-        self.update_callback(-1, 'DONE...')
+        # import graph_tool.stats
+        # graph_tool.stats.remove_parallel_edges(self.project.gm.g)
 
         S_.general.log_graph_edits = True
 
@@ -157,18 +243,31 @@ class BackgroundComputer():
 
         from utils.color_manager import colorize_project
         colorize_project(self.project)
-        self.solver.save()
+
+        # self.solver.save()
+
+        self.project.gm.project = self.project
+
+        self.project.solver_parameters.certainty_threshold = 0.2
+        self.solver.simplify(rules=[self.solver.adaptive_threshold])
+        # self.project.save()
+
+        # l = VisLoader(self.project)
+        # l.visualise()
 
         self.finished_callback(self.solver)
 
-    def connect_graphs(self, g, t1, t2):
-        for r_t1 in t1:
-            for r_t2 in t2:
-                d = np.linalg.norm(r_t1.centroid() - r_t2.centroid())
+    def connect_graphs(self, vertices1, vertices2, gm, rm):
+        for v1 in vertices1:
+            r1 = gm.region(v1)
+            for v2 in vertices2:
+                r2 = gm.region(v2)
 
-                if d < self.solver.max_distance:
-                    s, ds, multi, antlike = self.solver.assignment_score(r_t1, r_t2)
-                    self.solver.add_edge_fast(r_t1, r_t2, type='d', score=-s)
+                d = np.linalg.norm(r1.centroid() - r2.centroid())
+
+                if d < gm.max_distance:
+                    s, ds, multi, antlike = self.solver.assignment_score(r1, r2)
+                    gm.add_edge_fast(v1, v2, s)
 
     def OnProcessOutputReady(self, p_id):
         while True:
@@ -178,7 +277,7 @@ class BackgroundComputer():
                 if p_id == self.process_n - 1:
                     try:
                         i = int(str_)
-                        s = str((int(i) / float(self.frames_in_row_last)*100))
+                        s = str((int(i) / float(self.frames_in_row_last) * 100))
                         # self.update_callback(' '+s[0:4]+'%')
                     except:
                         print str_
@@ -201,9 +300,12 @@ class BackgroundComputer():
                     if i:
                         num_finished += 1
 
-                self.update_callback(num_finished/float(self.part_num))
+                self.update_callback(num_finished / float(self.part_num))
 
-                print "PART "+str(p_id+1)+"/"+str(self.part_num)+" FINISHED MSERS, takes ", round(end - self.start, 2), " seconds which is ", round((end-self.start) / (self.process_n * self.frames_in_row * int((p_id+self.process_n)/self.process_n)), 4), " seconds per frame"
+                print "PART " + str(p_id + 1) + "/" + str(self.part_num) + " FINISHED MSERS, takes ", round(
+                    end - self.start, 2), " seconds which is ", round((end - self.start) / (
+                    self.process_n * self.frames_in_row * int((p_id + self.process_n) / self.process_n)),
+                                                                      4), " seconds per frame"
 
                 self.processes[p_id][2] = self.FINISHED
 

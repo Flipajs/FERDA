@@ -10,13 +10,25 @@ class ChunkManager:
         self.chunks_ = {}
         pass
 
-    # TODO:
-    # https://docs.python.org/2/reference/datamodel.html#emulating-container-types
-    # at least slice access
-
     def __getitem__(self, index):
         return self.chunks_.get(index, None)
 
-    def new_chunk(self, v1, v2, project):
-        self.chunks_[self.id_] = Chunk([int(v1), int(v2)], self.id_, project)
+    def new_chunk(self, vertices_ids, gm):
+        ch = Chunk(vertices_ids, self.id_, gm)
+        self.chunks_[self.id_] = ch
+
+        # assign chunk color
+        r1 = gm.region(vertices_ids[0])
+        rend = gm.region(vertices_ids[-1])
+        ch.color, _ = gm.project.color_manager.new_track(r1.frame_, rend.frame_)
+
         self.id_ += 1
+
+        return ch, self.id_ - 1
+
+    def chunk_list(self):
+        l = []
+        for _, ch in self.chunks_.iteritems():
+            l.append(ch)
+
+        return l

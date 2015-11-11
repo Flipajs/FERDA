@@ -9,7 +9,7 @@ from gui.img_controls.my_view_zoomable import MyViewZoomable
 from utils.img_manager import ImgManager
 from gui.graph_view.edge import EdgeGraphical
 from vis_loader import COLUMNS_TO_LOAD,DEFAULT_TEXT, FROM_TOP, GAP, \
-    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT, RELATIVE_MARGIN
+    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT
 __author__ = 'Simon Mandlik'
 
 
@@ -19,7 +19,7 @@ class GraphVisualizer(QtGui.QWidget):
     Those can be passed in constructor or using a method add_objects
     """
 
-    def __init__(self, regions, edges, img_manager, show_vertically=False, compress_axis=True, dynamically=True):
+    def __init__(self, regions, edges, img_manager, relative_margin, width, height, show_vertically=False, compress_axis=True, dynamically=True):
         super(GraphVisualizer, self).__init__()
         self.regions = set()
         self.regions_list = []
@@ -28,6 +28,9 @@ class GraphVisualizer(QtGui.QWidget):
         self.frames_columns = {}
         self.columns = []
         self.img_manager = img_manager
+        self.relative_margin = relative_margin
+        self.width = width
+        self.height = height
 
         self.view = MyViewZoomable(self)
         self.setLayout(QtGui.QVBoxLayout())
@@ -110,12 +113,12 @@ class GraphVisualizer(QtGui.QWidget):
 
     def stretch(self):
         global SPACE_BETWEEN_HOR
-        SPACE_BETWEEN_HOR *= 1.2
+        SPACE_BETWEEN_HOR *= 1.5
         self.redraw()
 
     def shrink(self):
         global SPACE_BETWEEN_HOR
-        SPACE_BETWEEN_HOR *= 0.8
+        SPACE_BETWEEN_HOR *= 0.5
         self.redraw()
 
     def compute_positions(self):
@@ -280,15 +283,15 @@ class GraphVisualizer(QtGui.QWidget):
             if x in frames:
                 if empty_frame_count > 0:
                     if empty_frame_count == 1:
-                        column = Column(x - 1, self.scene, self.img_manager, True)
+                        column = Column(x - 1, self.scene, self.img_manager, self.relative_margin, self.width, self.height, True)
                         self.frames_columns[x - 1] = column
                         self.columns.append(column)
                     else:
-                        column = Column(((x - empty_frame_count), x - 1), self.scene, self.img_manager, True)
+                        column = Column(((x - empty_frame_count), x - 1), self.scene, self.img_manager, self.relative_margin, self.width, self.height, True)
                         self.frames_columns[((x - empty_frame_count), x - 1)] = column
                         self.columns.append(column)
                     self.scene_width += WIDTH / 2 + SPACE_BETWEEN_HOR
-                column = Column(x, self.scene, self.img_manager)
+                column = Column(x, self.scene, self.img_manager, self.relative_margin, self.width, self.height)
                 self.frames_columns[x] = column
                 self.columns.append(column)
                 self.scene_width += WIDTH + SPACE_BETWEEN_HOR
@@ -352,7 +355,7 @@ class GraphVisualizer(QtGui.QWidget):
         return next_x
 
     def load(self, minimum, event_loaded):
-        columns = list(self.columns[minimum::])
+        columns = list(self.columns[minimum:])
         while len(columns) > 0:
             columns_stripped = columns[:COLUMNS_TO_LOAD:]
             columns = columns[COLUMNS_TO_LOAD::]
@@ -425,7 +428,7 @@ class GraphVisualizer(QtGui.QWidget):
         for col in self.columns:
             if len(col.objects) > height:
                 height = len(col.objects)
-        height = GAP + HEIGHT * height + SPACE_BETWEEN_VER * (height - 1)
+        height = GAP + self.height * height + SPACE_BETWEEN_VER * (height - 1)
         return height
 
     def get_selected(self):
@@ -446,7 +449,7 @@ class GraphVisualizer(QtGui.QWidget):
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/home/ferda/PROJECTS/eight_22/eight22.fproj')
+    p.load('/home/ferda/PROJECTS/eight_22_issue/eight22.fproj')
     im_manager = ImgManager(p)
 
     solver = p.saved_progress['solver']

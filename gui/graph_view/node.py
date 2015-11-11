@@ -1,6 +1,7 @@
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
 from gui.img_controls.utils import cvimg2qtpixmap
+from vis_loader import WIDTH, HEIGHT, RELATIVE_MARGIN
 
 SELECTION_LINE_WIDTH = 2
 
@@ -9,7 +10,7 @@ __author__ = 'Simon Mandlik'
 
 class Node(QtGui.QGraphicsPixmapItem):
 
-    def __init__(self, parent_pixmap, scene, region, img_manager, width, height):
+    def __init__(self, parent_pixmap, scene, region, img_manager, relative_margin, width, height):
         super(Node, self).__init__(parent_pixmap)
         self.region = region
         self.img_manager = img_manager
@@ -18,6 +19,7 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.pixmap_toggled = None
         self.width = width
         self.height = height
+        self.relative_margin = relative_margin
         self.x = self.parent_pixmap.offset().x()
         self.y = self.parent_pixmap.offset().y()
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
@@ -35,8 +37,7 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.toggled = False if self.toggled else True
 
     def create_pixmap(self):
-        from graph_visualizer import WIDTH, HEIGHT, RELATIVE_MARGIN
-        img_toggled = self.img_manager.get_crop(self.region.frame_, [self.region], width=WIDTH * 3, height=HEIGHT * 3, relative_margin=RELATIVE_MARGIN)
+        img_toggled = self.img_manager.get_crop(self.region.frame_, self.region, width=self.width * 3, height=self.height * 3, relative_margin=self.relative_margin)
         pixmap = cvimg2qtpixmap(img_toggled)
         self.pixmap_toggled = self.scene.addPixmap(pixmap)
         width, height = self.scene.width(), self.scene.height()
@@ -47,7 +48,6 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.pixmap_toggled.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
 
     def setPos(self, x, y):
-        from graph_visualizer import WIDTH, HEIGHT
         if not(x == self.x and y == self.y):
             self.x, self.y = x, y
             self.parent_pixmap.setPos(x, y)

@@ -30,7 +30,7 @@ if __name__ == '__main__':
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
     # proj.arena_model = None
-    proj.rm = RegionManager(db_wd=proj.working_directory+'/temp', db_name='regions_part_'+str(id)+'.sqlite3')
+    proj.rm = RegionManager(db_wd=proj.working_directory+'/temp', db_name='part'+str(id)+'_rm.sqlite3')
     proj.chm = ChunkManager()
 
     S_.general.log_graph_edits = False
@@ -82,31 +82,33 @@ if __name__ == '__main__':
 
     s = time.time()
     print "#Edges BEFORE: ", solver.gm.g.num_edges()
-    solver.simplify(rules=[solver.adaptive_threshold, solver.update_costs])
-    # solver.simplify(rules=[solver.adaptive_threshold, solver.symmetric_cc_solver])
+    # solver.simplify(rules=[solver.adaptive_threshold, solver.update_costs])
+    # solver.simplify(rules=[solver.adaptive_threshold, solver.symmetric_cc_solver, solver.update_costs])
+    solver.simplify(rules=[solver.adaptive_threshold])
     # solver.simplify(rules=[solver.symmetric_cc_solver])
 
     print "#Edges AFTER: ", solver.gm.g.num_edges()
-    # solver.simplify_to_chunks()
     solver_t += time.time() - s
 
     s = time.time()
     if not os.path.exists(proj.working_directory+'/temp'):
         os.mkdir(proj.working_directory+'/temp')
 
-    # TODO: remove this...
-
-    proj.solver = solver
-    proj.gm = solver.gm
-    proj.save()
-
-    # with open(proj.working_directory+'/temp/g_simplified'+str(id)+'.gt', 'wb') as f:
-    #     p = pickle.Pickler(f, -1)
-    #     p.dump(solver.gm.g)
+    # # TODO: remove this...
     #
-    #     # solver.gm.g.save(f)
-    #     # p.dump(solver.gm.start_nodes())
-    #     # p.dump(solver.gm.end_nodes())
+    # proj.solver = solver
+    # proj.gm = solver.gm
+    # proj.save()
+
+    with open(proj.working_directory+'/temp/part'+str(id)+'.pkl', 'wb') as f:
+        p = pickle.Pickler(f, -1)
+        p.dump(solver.gm.g)
+        p.dump(solver.gm.get_all_relevant_vertices())
+        p.dump(solver.chm)
+
+        # solver.gm.g.save(f)
+        # p.dump(solver.gm.start_nodes())
+        # p.dump(solver.gm.end_nodes())
 
     file_t = time.time() - s
 

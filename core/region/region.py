@@ -56,23 +56,29 @@ class Region():
     def id(self):
         return self.id_
 
+    def pts_from_rle_(self, data):
+        i = 0
+        pts = np.zeros((self.area(), 2), dtype=np.int)
+
+        for row in data:
+            for c in xrange(row['col1'], row['col2'] + 1):
+                pts[i, 0] = row['line']
+                pts[i, 1] = c
+
+                i += 1
+
+        return pts
+
     def from_dict_(self, data):
-        pts = np.zeros((data['area'], 2), dtype=np.int)
+        self.area_ = data['area']
         if 'rle' in data:
             self.pts_rle_ = data['rle']
-            i = 0
-            for row in data['rle']:
-                for c in xrange(row['col1'], row['col2'] + 1):
-                    pts[i, 0] = row['line']
-                    pts[i, 1] = c
-                # pts.extend([[row['line'], c] for c in range(row['col1'], row['col2'] + 1)])
-                    i += 1
+            self.pts_ = self.pts_from_rle_(self.pts_rle_)
         else:
             raise Exception('wrong data format',
                             'Wrong data format in from_dict_ in region.points.py. Expected dictionary with "rle" key.')
 
         self.centroid_ = np.array([data['cy'], data['cx']])
-        self.pts_ = pts
         # self.pts_ = np.array(pts)
         self.label_ = data['label']
         self.margin_ = data['margin']
@@ -102,7 +108,7 @@ class Region():
         self.pts_ = np.array(data)
 
     def area(self):
-        return len(self.pts_)
+        return self.area_
 
     def label(self):
         return self.label_
@@ -111,6 +117,9 @@ class Region():
         return self.margin_
 
     def pts(self):
+        if self.pts_ is None:
+            self.pts_ = self.pts_from_rle_(self.pts_rle_)
+
         return self.pts_
 
     def pts_copy(self):
@@ -131,7 +140,7 @@ class Region():
     def contour(self):
         from utils.drawing.points import get_contour
         if not hasattr(self, 'contour_') or self.contour_ is None:
-            self.contour_ = get_contour(self.pts_)
+            self.contour_ = get_contour(self.pts())
 
         return self.contour_
 

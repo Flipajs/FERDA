@@ -142,6 +142,11 @@ class TrackerWidget(QtGui.QWidget):
             self.noise_nodes_filter()
 
     def show_step_by_step(self):
+        """
+
+        Returns:
+
+        """
         step_by_step = ConfigurationsVisualizer(self.solver, get_auto_video_manager(self.project))
         self.tool.addWidget(step_by_step)
         self.tool_row.addWidget(step_by_step.tool_w)

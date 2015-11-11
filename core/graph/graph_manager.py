@@ -11,6 +11,7 @@ class GraphManager:
         self.project = project
         self.rm = project.rm
         self.g = graph_tool.Graph(directed=True)
+        self.g.set_fast_edge_removal(fast=True)
         self.graph_add_properties()
         self.vertices_in_t = {}
         self.start_t = np.inf
@@ -97,7 +98,11 @@ class GraphManager:
         :param n: ref to vertex in g
         :return: (chunk_ref (ref or None), is_chunk_end (True if it is chunk_end))
         """
+        if isinstance(vertex, int):
+            vertex = self.g.vertex(vertex)
+
         chunk_start = self.g.vp['chunk_start_id'][vertex]
+        # 0 means not a chunk
         if chunk_start:
             return self.project.chm[chunk_start], False
 
@@ -194,7 +199,7 @@ class GraphManager:
 
         self.g.remove_edge(edge)
 
-    def add_edge(self, source_vertex, target_vertex, score=-1):
+    def add_edge(self, source_vertex, target_vertex, score=1):
         # source_vertex = self.match_if_reconstructed(source_vertex)
         # target_vertex = self.match_if_reconstructed(target_vertex)
         if source_vertex is None or target_vertex is None:
@@ -204,7 +209,7 @@ class GraphManager:
                 print "add_edge target_vertex is None, source_vertex: ", source_vertex
             return
 
-        self.add_edge_fast(source_vertex, target_vertex, score)
+        return self.add_edge_fast(source_vertex, target_vertex, score)
 
     def add_edge_fast(self, source_vertex, target_vertex, score):
         self.project.log.add(LogCategories.GRAPH_EDIT,
@@ -212,8 +217,10 @@ class GraphManager:
                              {'v1': source_vertex,
                               'v2': target_vertex,
                               's': score})
+
         e = self.g.add_edge(source_vertex, target_vertex)
         self.g.ep['score'][e] = float(score)
+        return e
 
     def chunk_list(self):
         chunks = []
@@ -369,3 +376,56 @@ class GraphManager:
         else:
             matchings.append(m)
             conf_scores.append(s)
+
+    def get_vertices_in_t(self, t):
+        if t in self.vertices_in_t:
+            return self.vertices_in_t[t]
+
+        return []
+
+    def all_vertices_and_regions(self, start_frame=-1, end_frame=np.inf):
+        l = []
+        for t, v_ids in self.vertices_in_t.iteritems():
+            if start_frame <= t <= end_frame:
+                for v_id in v_ids:
+                    l.append((v_id, self.region(v_id)))
+
+        return l
+
+    def get_cc_rec(self, vertex, depth, node_groups):
+        # TODO: add max depth param!
+        if depth > 10:
+            return
+
+        r = self.region(vertex)
+        if r.frame_ in node_groups and vertex in node_groups[r.frame_]:
+            return
+
+        node_groups.setdefault(r.frame_, []).append(vertex)
+
+        for v_ in vertex.in_neighbours():
+            ch, _ = self.is_chunk(v_)
+            if ch:
+                continue
+
+            self.get_cc_rec(v_, depth-1, node_groups)
+
+        for v_ in vertex.out_neighbours():
+            ch, _ = self.is_chunk(v_)
+            if ch:
+                continue
+
+            self.get_cc_rec(v_, depth+1, node_groups)
+
+    def get_cc_from_vertex(self, vertex):
+        node_groups = {}
+        self.get_cc_rec(vertex, 0, node_groups)
+
+        keys = node_groups.keys()
+        keys = sorted(keys)
+
+        g = []
+        for k in keys:
+            g.append(node_groups[k])
+
+        return g
