@@ -1,10 +1,11 @@
+import random
 from gui.arena.my_popup   import MyPopup
 from gui.arena.my_view    import MyView
 from utils.video_manager import VideoManager
 
 __author__ = 'dita'
 
-from PyQt4 import QtGui, QtCore, Qt
+from PyQt4 import QtGui, QtCore
 import cv2
 import sys
 import math
@@ -38,6 +39,7 @@ class ColormarksPicker(QtGui.QWidget):
 
         super(ColormarksPicker, self).__init__()
 
+        # TODO: Perhaps use one VideoManager for the whole project?
         self.vid_manager = VideoManager(video_path)
 
         self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
@@ -47,7 +49,8 @@ class ColormarksPicker(QtGui.QWidget):
 
         # background image
         self.frame = -1
-        self.next_frame()
+        self.old_pixmap = None
+        self.background = None
 
         self.view.setMouseTracking(True)
 
@@ -57,20 +60,20 @@ class ColormarksPicker(QtGui.QWidget):
         # undo button can only be pushed in paint mode
         self.backup = []
 
-        self.pen_size = 30
-
         # image to store all progress
-        bg_height, bg_width = self.background.shape[:2]
+        bg_height, bg_width = 1024, 1024
         bg_size = QtCore.QSize(bg_width, bg_height)
         fmt = QtGui.QImage.Format_ARGB32
         self.paint_image = QtGui.QImage(bg_size, fmt)
         self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
 
+        self.pen_size = 30
+        self.make_gui()
+
         self.save()
 
         # create the main view and left panel with buttons
-        self.make_gui()
 
     def switch_color(self):
         text = self.sender().text()
@@ -254,10 +257,42 @@ class ColormarksPicker(QtGui.QWidget):
         else:
             return False
 
+    def next_color(self):
+        # TODO: do something
+        print "Next color"
+
+    def random_frame(self):
+        # vid_manager's random frame can't be used, because it doesn't return frame id which colormarks_picker uses
+        self.frame = random.randint(0, self.vid_manager.total_frame_count())
+        self.draw_frame()
+
     def next_frame(self):
         self.frame += 1
+        self.draw_frame()
+
+    def prev_frame(self):
+        self.frame -= 1
+        self.draw_frame()
+
+    def draw_frame(self):
+        print "Going to frame %s" % self.frame
+        if self.frame <= 0:
+            self.prev_frame_button.setEnabled(False)
+        else:
+            self.prev_frame_button.setEnabled(True)
+
+        if self.frame >= self.vid_manager.total_frame_count()-1:
+            self.next_frame_button.setEnabled(False)
+        else:
+            self.next_frame_button.setEnabled(True)
+
         self.background = self.vid_manager.seek_frame(self.frame)
-        self.scene.addPixmap(utils.cvimg2qtpixmap(self.background))
+
+        # remove previous image (scene gets cluttered with unused pixmaps and is slow)
+        if self.old_pixmap is not None:
+            self.scene.removeItem(self.old_pixmap)
+        self.old_pixmap = self.scene.addPixmap(utils.cvimg2qtpixmap(self.background))
+        self.view.update_scale()
 
     def make_gui(self):
         """
@@ -273,48 +308,17 @@ class ColormarksPicker(QtGui.QWidget):
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # left panel widget
-        widget = QtGui.QWidget()
-        widget.setLayout(QtGui.QVBoxLayout())
-        widget.layout().setAlignment(QtCore.Qt.AlignTop)
+        left_panel = QtGui.QWidget()
+        left_panel.setLayout(QtGui.QVBoxLayout())
+        left_panel.layout().setAlignment(QtCore.Qt.AlignTop)
         # set left panel widget width to 300px
-        widget.setMaximumWidth(300)
-        widget.setMinimumWidth(300)
-
-        label = QtGui.QLabel()
-        label.setWordWrap(True)
-        label.setText("")
-        widget.layout().addWidget(label)
-
-        # color switcher widget
-        color_widget = QtGui.QWidget()
-        color_widget.setLayout(QtGui.QHBoxLayout())
-
-        self.color_buttons = []
-        blue_button = QtGui.QPushButton("Blue")
-        blue_button.setCheckable(True)
-        blue_button.setChecked(True)
-        blue_button.clicked.connect(self.switch_color)
-        color_widget.layout().addWidget(blue_button)
-        self.color_buttons.append(blue_button)
-
-        red_button = QtGui.QPushButton("Red")
-        red_button.setCheckable(True)
-        red_button.clicked.connect(self.switch_color)
-        color_widget.layout().addWidget(red_button)
-        self.color_buttons.append(red_button)
-
-        eraser_button = QtGui.QPushButton("Eraser")
-        eraser_button.setCheckable(True)
-        eraser_button.clicked.connect(self.switch_color)
-        color_widget.layout().addWidget(eraser_button)
-        self.color_buttons.append(eraser_button)
-
-        widget.layout().addWidget(color_widget)
+        left_panel.setMaximumWidth(300)
+        left_panel.setMinimumWidth(300)
 
         self.pen_label = QtGui.QLabel()
         self.pen_label.setWordWrap(True)
         self.pen_label.setText("")
-        widget.layout().addWidget(self.pen_label)
+        left_panel.layout().addWidget(self.pen_label)
 
         # PEN SIZE slider
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
@@ -326,7 +330,11 @@ class ColormarksPicker(QtGui.QWidget):
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.change_value)
         self.slider.setVisible(True)
-        widget.layout().addWidget(self.slider)
+        left_panel.layout().addWidget(self.slider)
+
+        self.next_color_button = QtGui.QPushButton("Next color")
+        self.next_color_button.clicked.connect(self.next_color)
+        left_panel.layout().addWidget(self.next_color_button)
 
         # UNDO key shortcut
         self.action_undo = QtGui.QAction('undo', self)
@@ -336,7 +344,7 @@ class ColormarksPicker(QtGui.QWidget):
 
         self.undo_button = QtGui.QPushButton("Undo \n (key_Z)")
         self.undo_button.clicked.connect(self.undo)
-        widget.layout().addWidget(self.undo_button)
+        left_panel.layout().addWidget(self.undo_button)
 
         # CLEAR button and key shortcut
         self.action_clear = QtGui.QAction('clear', self)
@@ -346,21 +354,32 @@ class ColormarksPicker(QtGui.QWidget):
 
         self.clear_button = QtGui.QPushButton("Clear paint area \n (key_C)")
         self.clear_button.clicked.connect(self.reset)
-        widget.layout().addWidget(self.clear_button)
+        left_panel.layout().addWidget(self.clear_button)
 
         self.popup_button = QtGui.QPushButton("Done!")
         self.popup_button.clicked.connect(self.popup)
-        widget.layout().addWidget(self.popup_button)
+        left_panel.layout().addWidget(self.popup_button)
 
         self.next_frame_button = QtGui.QPushButton("Next frame!")
         self.next_frame_button.clicked.connect(self.next_frame)
-        widget.layout().addWidget(self.next_frame_button)
+        left_panel.layout().addWidget(self.next_frame_button)
+
+        self.prev_frame_button = QtGui.QPushButton("Previous frame!")
+        self.prev_frame_button.clicked.connect(self.prev_frame)
+        left_panel.layout().addWidget(self.prev_frame_button)
+
+        self.random_frame_button = QtGui.QPushButton("Random frame!")
+        self.random_frame_button.clicked.connect(self.random_frame)
+        left_panel.layout().addWidget(self.random_frame_button)
 
         self.set_label_text()
 
         # complete the gui
-        self.layout().addWidget(widget)
+        self.layout().addWidget(left_panel)
         self.layout().addWidget(self.view)
+
+        self.next_frame()
+        self.update()
 
 
 if __name__ == "__main__":

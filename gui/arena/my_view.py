@@ -12,6 +12,7 @@ class MyView(QtGui.QGraphicsView):
         self.update_callback_press = update_callback_press
         self.scale = 1
         self.scale_step = 0
+        self.scene = None
 
         self.matrix = QtGui.QMatrix()
         self.setMatrix(self.matrix)
@@ -22,6 +23,11 @@ class MyView(QtGui.QGraphicsView):
         if self.update_callback_move:
             if (e.buttons() & QtCore.Qt.LeftButton):
                 self.update_callback_move(e)
+
+    def setScene(self, scene):
+        # for some reason, scene was not set in child widget
+        super(MyView, self).setScene(scene)
+        self.scene = scene
 
     def mousePressEvent(self, e):
         super(MyView, self).mousePressEvent(e)
@@ -55,6 +61,7 @@ class MyView(QtGui.QGraphicsView):
             # if CTRL isn't pressed, control the scrollbars (default behavior)
             super(MyView, self).wheelEvent(event)
 
+
     def get_scale(self):
         # do not scale "too far away"
         # TODO: perhaps add this as parameter to __init__?
@@ -73,3 +80,10 @@ class MyView(QtGui.QGraphicsView):
 
         else:
             return 2 ** (self.scale_step)
+
+    def update_scale(self):
+        # create a new matrix with proper scale (for some reason, modifying self.matrix doesn't work)
+        matrix = QtGui.QMatrix()
+        matrix.scale(self.scale, self.scale)
+
+        self.setMatrix(matrix)
