@@ -4,7 +4,7 @@ from gui.graph_view.node import Node
 from gui.graph_view.edge import Edge
 from gui.img_controls.utils import cvimg2qtpixmap
 import numpy as np
-from graph_visualizer import WIDTH, HEIGHT, FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
+from graph_visualizer import WIDTH, HEIGHT, FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP, RELATIVE_MARGIN
 
 __author__ = 'Simon Mandlik'
 
@@ -91,7 +91,7 @@ class Column:
                     region = item
                 if region in self.items_nodes.keys():
                     continue
-                img = self.im_manager.get_crop(self.frame, [region], width=WIDTH, height=HEIGHT)
+                img = self.im_manager.get_crop(self.frame, [region], width=WIDTH, height=HEIGHT, relative_margin=RELATIVE_MARGIN)
                 # img = np.zeros((WIDTH, HEIGHT, 3), dtype=np.uint8)
                 self.regions_images[region] = img
 
@@ -110,7 +110,7 @@ class Column:
                     if item in self.items_nodes.keys():
                         continue
                 if item not in self.regions_images.keys():
-                    img = self.im_manager.get_crop(self.frame, [item], width=WIDTH, height=HEIGHT)
+                    img = self.im_manager.get_crop(self.frame, [item], width=WIDTH, height=HEIGHT, relative_margin=RELATIVE_MARGIN)
                     # img = np.zeros((WIDTH, HEIGHT, 3), dtype=np.uint8)
                     # img[:, :, 0] = 255
                 else:
@@ -168,8 +168,10 @@ class Column:
 
         if edge[2] is "chunk":
             edge_obj.graphical_object.setZValue(-1)
-        else:
+        elif edge[2] is "partial":
             edge_obj.graphical_object.setZValue(-2)
+        else:
+            edge_obj.graphical_object.setZValue(-3)
 
         self.scene.addItem(edge_obj.graphical_object)
 
@@ -182,7 +184,7 @@ class Column:
             x, y = y, x
         if region not in self.items_nodes.keys():
             if region not in self.regions_images.keys():
-                img = self.im_manager.get_crop(self.frame, [region], width=WIDTH, height=HEIGHT)
+                img = self.im_manager.get_crop(self.frame, [region], width=WIDTH, height=HEIGHT, relative_margin=RELATIVE_MARGIN)
                 # img = np.zeros((WIDTH, HEIGHT, 3), dtype=np.uint8)
                 # img[0:, :, 0] = 255
             else:

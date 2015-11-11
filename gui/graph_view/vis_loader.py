@@ -10,6 +10,8 @@ __author__ = 'Simon Mandlik'
 WIDTH = 40
 # the width of a node
 HEIGHT = 40
+# relative margin of a node
+RELATIVE_MARGIN = 0.5
 # distance of the whole visualization from the top of the widget
 FROM_TOP = 20
 # space between each of the columns
@@ -28,7 +30,7 @@ DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in o
 
 class VisLoader:
 
-    def __init__(self, project=None):
+    def __init__(self, project=None, width=WIDTH, height=HEIGHT, relative_margin = RELATIVE_MARGIN):
         self.project = project
         self.graph_manager = None
         self.graph = None
@@ -39,8 +41,32 @@ class VisLoader:
         self.edges = set()
         self.regions = set()
 
+        self.g = None
+
+        self.set_height(height)
+        self.set_width(width)
+        self.set_relative_margin(relative_margin)
+
     def set_project(self, project):
         self.project = project
+
+    def set_width(self, width):
+        global WIDTH
+        WIDTH = width
+        if self.g:
+            self.g.redraw()
+
+    def set_height(self, height):
+        global HEIGHT
+        HEIGHT = height
+        if self.g:
+            self.g.redraw()
+
+    def set_relative_margin(self, margin):
+        global RELATIVE_MARGIN
+        RELATIVE_MARGIN = margin
+        if self.g:
+            self.g.redraw()
 
     def update_structures(self):
         if self.project is not None:
@@ -86,14 +112,15 @@ class VisLoader:
         self.prepare_edges()
         img_manager = ImgManager(p)
         from graph_visualizer import GraphVisualizer
-        g = GraphVisualizer(self.regions, self.edges, img_manager)
-        g.show()
+        self.g = GraphVisualizer(self.regions, self.edges, img_manager)
+        self.g.show()
+        self.set_relative_margin(0.2)
 
 if __name__ == '__main__':
     from scripts import fix_project
 
     p = Project()
-    p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
+    p.load('/home/sheemon/FERDA/projects/eight_new_issue/eight.fproj')
 
     import cv2, sys
     app = QtGui.QApplication(sys.argv)

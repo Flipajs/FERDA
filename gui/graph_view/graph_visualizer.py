@@ -9,7 +9,7 @@ from gui.img_controls.my_view_zoomable import MyViewZoomable
 from utils.img_manager import ImgManager
 from gui.graph_view.edge import EdgeGraphical
 from vis_loader import COLUMNS_TO_LOAD,DEFAULT_TEXT, FROM_TOP, GAP, \
-    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT
+    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT, RELATIVE_MARGIN
 __author__ = 'Simon Mandlik'
 
 
@@ -111,12 +111,12 @@ class GraphVisualizer(QtGui.QWidget):
     def stretch(self):
         global SPACE_BETWEEN_HOR
         SPACE_BETWEEN_HOR *= 1.2
-        self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+        self.redraw()
 
     def shrink(self):
         global SPACE_BETWEEN_HOR
         SPACE_BETWEEN_HOR *= 0.8
-        self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+        self.redraw()
 
     def compute_positions(self):
         for edge in self.edges:
@@ -258,7 +258,8 @@ class GraphVisualizer(QtGui.QWidget):
             if column_free.is_free(position + offset, node_free):
                 occupied = False
             else:
-                offset = (-1) * offset if offset < 0 else (-1)*(offset + 1)
+                # offset = (-1) * offset if offset < 0 else (-1)*(offset + 1)
+                offset += 1
         return position, position + offset
 
     def get_next_to_column(self, frame_from, direction):
@@ -389,7 +390,11 @@ class GraphVisualizer(QtGui.QWidget):
         self.scene.setForegroundBrush(QtCore.Qt.transparent)
         self.view.setEnabled(True)
 
-    def redraw(self, first_frame, last_frame):
+    def redraw(self, first_frame=None, last_frame=None):
+        if not first_frame:
+            first_frame = self.columns[0].frame
+        if not last_frame:
+            last_frame = self.columns[len(self.columns) - 1].frame
         self.view.centerOn(0, 0)
         self.load_indicator_init()
 

@@ -35,8 +35,8 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.toggled = False if self.toggled else True
 
     def create_pixmap(self):
-        from graph_visualizer import WIDTH, HEIGHT
-        img_toggled = self.img_manager.get_crop(self.region.frame_, [self.region], width=WIDTH * 3, height=HEIGHT * 3)
+        from graph_visualizer import WIDTH, HEIGHT, RELATIVE_MARGIN
+        img_toggled = self.img_manager.get_crop(self.region.frame_, [self.region], width=WIDTH * 3, height=HEIGHT * 3, relative_margin=RELATIVE_MARGIN)
         pixmap = cvimg2qtpixmap(img_toggled)
         self.pixmap_toggled = self.scene.addPixmap(pixmap)
         width, height = self.scene.width(), self.scene.height()
