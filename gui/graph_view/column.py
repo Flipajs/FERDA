@@ -91,7 +91,12 @@ class Column:
                     region = item
                 if region in self.items_nodes.keys():
                     continue
+
+                # if isinstance(region, int) or region is None:
+                #     img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
+                # else:
                 img = self.im_manager.get_crop(self.frame, region, width=STEP, height=STEP)
+
                 # img = np.zeros((STEP, STEP, 3), dtype=np.uint8)
                 self.regions_images[region] = img
 

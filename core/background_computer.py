@@ -203,7 +203,7 @@ class BackgroundComputer:
 
         part_num = self.part_num
         # TODO: remove this line
-        part_num = 2
+        part_num = 5
 
         for i in range(part_num):
             rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
@@ -219,10 +219,11 @@ class BackgroundComputer:
 
             self.update_callback((i + 1) / float(part_num))
         # TODO: remove this
-        self.project.solver_parameters.frames_in_row = 10
+        self.project.solver_parameters.frames_in_row = 100
+
+        self.project.solver_parameters.certainty_threshold = 0.2
 
         fir = self.project.solver_parameters.frames_in_row
-
 
         self.update_callback(-1, 'joining parts...')
 
@@ -232,28 +233,28 @@ class BackgroundComputer:
             t1_v = self.solver.gm.get_vertices_in_t(part_end_t)
 
             self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
-            # self.solver.simplify(map(int, t_v), [self.solver.adaptive_threshold])
+            # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
-        # import graph_tool.stats
-        # graph_tool.stats.remove_parallel_edges(self.project.gm.g)
+        self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver])
+
+        self.project.solver_parameters.certainty_threshold = 0.5
 
         S_.general.log_graph_edits = True
 
         self.project.solver = self.solver
 
+        self.project.gm.project = self.project
+
         from utils.color_manager import colorize_project
         colorize_project(self.project)
 
-        # self.solver.save()
+        self.project.save()
 
-        self.project.gm.project = self.project
-
-        self.project.solver_parameters.certainty_threshold = 0.2
-        self.solver.simplify(rules=[self.solver.adaptive_threshold])
-        # self.project.save()
-
-        # l = VisLoader(self.project)
-        # l.visualise()
+        with open(self.project.working_directory+'/graph.pkl', 'wb') as f:
+            p = pickle.Pickler(f, -1)
+            p.dump(self.solver.gm.g)
+            p.dump(self.solver.gm.get_all_relevant_vertices())
+            p.dump(self.solver.chm)
 
         self.finished_callback(self.solver)
 

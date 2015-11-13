@@ -314,7 +314,15 @@ class ResultsWidget(QtGui.QWidget):
 
     def add_data(self, solver, just_around_frame=-1, margin=1000):
         self.solver = solver
-        self.chunks = self.solver.chm.chunk_list()
+
+        # self.chunks = self.solver.chm.chunk_list()
+        self.chunks = []
+
+        for v_id in self.project.gm.get_all_relevant_vertices():
+            ch_id = self.project.gm.g.vp['chunk_start_id'][self.project.gm.g.vertex(v_id)]
+            if ch_id > 0:
+                self.chunks.append(self.project.chm[ch_id])
+
         i = 0
 
         t1 = just_around_frame - margin

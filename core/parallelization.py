@@ -32,6 +32,7 @@ if __name__ == '__main__':
     # proj.arena_model = None
     proj.rm = RegionManager(db_wd=proj.working_directory+'/temp', db_name='part'+str(id)+'_rm.sqlite3')
     proj.chm = ChunkManager()
+    proj.color_manager = None
 
     S_.general.log_graph_edits = False
 

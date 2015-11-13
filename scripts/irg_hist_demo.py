@@ -436,7 +436,6 @@ if __name__ == "__main__":
             for (picked_pxs, all_pxs), c_id in zip(color_samples, range(len(color_samples))):
                 CH3d.remove_bg(all_pxs)
                 CH3d.add_color(picked_pxs, c_id)
-                # CH3d.swap_bg2color(c, c_id)
 
             CH3d.assign_labels()
 

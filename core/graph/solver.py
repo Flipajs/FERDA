@@ -268,7 +268,8 @@ class Solver:
 
     def assignment_score(self, r1, r2, pred=0):
         d = np.linalg.norm(r1.centroid() + pred - r2.centroid()) / float(self.major_axis_median)
-        ds = max(0, (2-d) / 2.0)
+        max_d = self.project.solver_parameters.max_edge_distance_in_ant_length
+        ds = max(0, (max_d-d) / max_d)
 
         if r1.is_virtual:
             q1 = 1.0
