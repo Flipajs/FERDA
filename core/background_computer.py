@@ -221,7 +221,7 @@ class BackgroundComputer:
         # TODO: remove this
         self.project.solver_parameters.frames_in_row = 100
 
-        self.project.solver_parameters.certainty_threshold = 0.2
+        # self.project.solver_parameters.certainty_threshold = 0.2
 
         fir = self.project.solver_parameters.frames_in_row
 
@@ -237,7 +237,7 @@ class BackgroundComputer:
 
         self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver])
 
-        self.project.solver_parameters.certainty_threshold = 0.5
+        # self.project.solver_parameters.certainty_threshold = 0.5
 
         S_.general.log_graph_edits = True
 

@@ -14,7 +14,7 @@ class ColorHist3d():
 
         self.num_pxs = im.shape[0] * im.shape[1] * im.shape[2]
         self.num_colors = num_colors
-        self.BG = num_colors
+        self.BG = 0
 
         pos = np.asarray(im / self.num_bins_v, dtype=np.int)
 
@@ -80,7 +80,8 @@ class ColorHist3d():
         return a / float(n)
 
     def assign_labels(self):
-        for c_id in range(self.num_colors):
+        # skip bg
+        for c_id in range(1, self.num_colors+1):
             sum_ = 0
             good_enough = []
 

@@ -3,13 +3,14 @@ from scipy import ndimage
 
 
 def get_colormarks(img, cm_model):
-    img_t = transform_img_(img, cm_model)
+    # img_t = transform_img_(img, cm_model)
+    # img_t = img
 
-    pos = np.asarray(img_t / cm_model.num_bins_v, dtype=np.int)
+    pos = np.asarray(img / cm_model.num_bins_v, dtype=np.int)
     labels = cm_model.get_labelling(pos)
 
     # TOOD: parameters
-    ccs = get_ccs_(labels, bg=-1, max_a=100000)
+    ccs = get_ccs_(labels, bg=0, max_a=2000)
     return ccs
 
 
@@ -22,7 +23,7 @@ def get_ccs_(im, bg=-1, min_a=1, max_a=5000):
 
     labeled, num = skimage.measure.label(im, background=bg, return_num=True)
 
-    sizes = ndimage.sum(np.ones((im.shape[0], im.shape[1])), labeled, range(1, num + 1))
+    # sizes = ndimage.sum(np.ones((im.shape[0], im.shape[1])), labeled, range(1, num + 1))
 
     ccs = []
     for i in range(num):

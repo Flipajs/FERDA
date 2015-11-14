@@ -266,9 +266,9 @@ def show_foreground(CH3d, data, im):
               [55, 255, 255], [255, 255, 0],  # Blue Yellow
               [255, 107, 151], [0, 0, 0]]  # Pink Black
 
-    colors = [[255, 255, 255], [55, 255, 255],  # white blue
-              [0, 255, 0], [255, 255, 0],  # green yellow
-              [255, 107, 151], [50, 50, 50]]  # pink bg
+    # colors = [[255, 255, 255], [55, 255, 255],  # white blue
+    #           [0, 255, 0], [255, 255, 0],  # green yellow
+    #           [255, 107, 151], [50, 50, 50]]  # pink bg
 
     # colors = [[255, 127, 166], [255, 255, 255], [255, 253, 22],
     #           [0, 255, 57], [0, 189, 255], [255, 255, 0],
@@ -313,39 +313,40 @@ def get_irg_255(im):
     return irg_255
 
 
-def get_color_samples_tool(vid):
+def get_color_samples_tool(vid, frames=None, wd_=''):
     global wd
 
     name = 'color_samples'
 
     color_samples = []
     masks = []
-    try:
-        with open(wd + '/' + name + '.pkl', 'rb') as f:
-            up = pickle.Unpickler(f)
-            color_samples = up.load()
-            masks = up.load()
-    except IOError:
-        pass
-    except EOFError:
-        pass
+    # try:
+    #     with open(wd + '/' + name + '.pkl', 'rb') as f:
+    #         up = pickle.Unpickler(f)
+    #         color_samples = up.load()
+    #         masks = up.load()
+    # except IOError:
+    #     pass
+    # except EOFError:
+    #     pass
 
-    color_samples = []
-    for frame, mask in masks:
-        im = vid.get_frame(frame)
-        ccs = get_ccs(mask)
+    # color_samples = []
+    # for frame, mask in masks:
+    #     im = vid.get_frame(frame)
+    #     ccs = get_ccs(mask)
+    #
+    #     im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    #     irg_255 = get_irg_255(im)
+    #     sample_pxs, all_pxs = find_dist_thresholds(ccs, irg_255.copy())
+    #
+    #     color_samples.append((sample_pxs, all_pxs))
 
-        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        irg_255 = get_irg_255(im)
-        sample_pxs, all_pxs = find_dist_thresholds(ccs, irg_255.copy())
-
-        color_samples.append((sample_pxs, all_pxs))
-
-    frames = [500, 500, 500, 500, 500, 300]
-    f = 916
-    frames = [f, f, f, f, f, f, f, f, f]
-    # frames = [52, 52, 52, 52, 52]
-    frames = []
+    if not frames:
+        frames = [500, 500, 500, 500, 500, 300]
+        # f = 916
+        # frames = [f, f, f, f, f, f, f, f, f]
+        # frames = [52, 52, 52, 52, 52]
+        # frames = []
 
     app = QtGui.QApplication(sys.argv)
 
@@ -380,7 +381,7 @@ def get_color_samples_tool(vid):
 
     app.deleteLater()
 
-    with open(wd + '/' + name + '.pkl', 'wb') as f:
+    with open(wd_ + '/' + name + '.pkl', 'wb') as f:
         p_ = pickle.Pickler(f, -1)
         p_.dump(color_samples)
         p_.dump(masks)
@@ -414,10 +415,10 @@ if __name__ == "__main__":
 
     num_bins_v = np.array([NUM_BINS1, NUM_BINS2, NUM_BINS3], dtype=np.float)
 
-    wd = '/Users/flipajs/Documents/wd/blc2-test'
+    wd = '/Users/flipajs/Documents/wd/C210'
 
-    # vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
-    vid = VideoManager('/Volumes/Seagate Expansion Drive/IST - videos/bigLenses_colormarks2.avi')
+    vid = VideoManager('/Users/flipajs/Documents/wd/C210min.avi')
+    # vid = VideoManager('/Volumes/Seagate Expansion Drive/IST - videos/bigLenses_colormarks2.avi')
     # vid = VideoManager('/Users/flipajs/Documents/wd/bigLense_clip.avi')
 
     color_samples = get_color_samples_tool(vid)
@@ -428,9 +429,9 @@ if __name__ == "__main__":
 
     if True:
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        if False:
+        if True:
             irg_255 = get_irg_255(im)
-            CH3d = ColorHist3d(irg_255.copy(), 5, num_bins1=NUM_BINS1, num_bins2=NUM_BINS2, num_bins3=NUM_BINS3,
+            CH3d = ColorHist3d(irg_255.copy(), 6, num_bins1=NUM_BINS1, num_bins2=NUM_BINS2, num_bins3=NUM_BINS3,
                                theta=0.3, epsilon=0.9)
 
             for (picked_pxs, all_pxs), c_id in zip(color_samples, range(len(color_samples))):

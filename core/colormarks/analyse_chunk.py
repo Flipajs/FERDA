@@ -4,6 +4,11 @@ from core.graph.region_chunk import RegionChunk
 from utils.img import get_safe_selection
 from math import ceil
 from processing import get_colormarks, match_cms_region
+import matplotlib.pyplot as plt
+import numpy as np
+from scripts.irg_hist_demo import ColorHist3d
+from scripts.irg_hist_demo import *
+from processing import transform_img_
 
 
 def analyse_chunk(ch, project, cm_model, sample_step):
@@ -14,19 +19,17 @@ def analyse_chunk(ch, project, cm_model, sample_step):
         r = r_ch[t - r_ch.start_frame()]
 
         # TODO: set some reasonable parameters
-        bb = get_bounding_box(r, project)
+        bb = get_bounding_box(r, project, cm_model)
 
         cms = get_colormarks(bb, cm_model)
         for pts, label in cms:
             print label
             for pt in pts:
-                if label == 6:
-                    bb[pt[0], pt[1], 0] = 255
-                else:
-                    bb[pt[0], pt[1], 1] = 255
+                bb[pt[0], pt[1], 0] = 255
 
         cv2.imshow('bb', bb)
-        cv2.waitKey(25)
+        cv2.imshow('bb_t', transform_img_(bb, cm_model))
+        cv2.waitKey(0)
         matches = match_cms_region(cms, r)
 
         ch_cms[t] = matches
@@ -34,13 +37,14 @@ def analyse_chunk(ch, project, cm_model, sample_step):
     return ch_cms
 
 
-def get_bounding_box(r, project):
+def get_bounding_box(r, project, cm_model):
     # TODO set this...:
     border_percent = 1.3
 
     frame = r.frame()
     img = project.img_manager.get_whole_img(frame)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = transform_img_(img, cm_model)
 
     roi = r.roi()
 
@@ -74,24 +78,26 @@ if __name__ == '__main__':
 
     from utils.video_manager import get_auto_video_manager
     vm = get_auto_video_manager(p)
-    main_img = vm.get_frame(500)
+    frame = 0
+    main_img = vm.get_frame(frame)
     main_img = cv2.cvtColor(main_img, cv2.COLOR_BGR2RGB)
-
-    for frame, mask in masks:
-        im = vm.get_frame(frame)
-        # ccs = get_ccs(mask)
-        cv2.imshow('mask', mask)
-        cv2.waitKey(0)
-        # im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        # irg_255 = get_irg_255(im)
-        # sample_pxs, all_pxs = find_dist_thresholds(ccs, irg_255.copy())
-
-        # color_samples.append((sample_pxs, all_pxs))
 
 
     cm_model.compute_model(main_img, color_samples)
 
+    for px in color_samples[0][0]:
+        pos = np.asarray(px / cm_model.num_bins_v, dtype=np.int)
+        print px, cm_model.hist3d.hist_labels_[pos[0], pos[1], pos[2]]
 
+    test_im = np.zeros((50, 50, 3), dtype=np.uint8)
+    i = 0
+    j = 0
+    for px in color_samples[0][1]:
+        test_im[i, j, :] = px
+        j += 1
+        if j == 20:
+            i += 1
+            j = 0
 
     chunks = []
 
@@ -99,7 +105,6 @@ if __name__ == '__main__':
         ch_id = p.gm.g.vp['chunk_start_id'][p.gm.g.vertex(v_id)]
         if ch_id > 0:
             chunks.append(p.chm[ch_id])
-
 
     # TODO: remove, debug...
     measurements = analyse_chunk(chunks[7], p, cm_model, 3)
