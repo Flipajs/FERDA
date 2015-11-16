@@ -207,9 +207,9 @@ class BackgroundComputer:
 
         part_num = self.part_num
         # TODO: remove this line
-        part_num = 3
+        part_num = 4
 
-        for i in range(part_num):
+        for i in range(3, part_num):
             rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
                                    db_name='part' + str(i) + '_rm.sqlite3')
 
@@ -222,10 +222,6 @@ class BackgroundComputer:
                 self.merge_parts(self.solver.gm, g_, relevant_vertices, self.project, rm_old, chm_)
 
             self.update_callback((i + 1) / float(part_num))
-        # TODO: remove this
-        self.project.solver_parameters.frames_in_row = 100
-
-        # self.project.solver_parameters.certainty_threshold = 0.2
 
         fir = self.project.solver_parameters.frames_in_row
 
@@ -239,10 +235,8 @@ class BackgroundComputer:
             self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
             # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver])
-        self.solver.simplify(rules=[self.solver.adaptive_threshold])
-
-        # self.project.solver_parameters.certainty_threshold = 0.5
+        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver, self.solver.update_costs])
+        # self.solver.simplify(rules=[self.solver.adaptive_threshold])
 
         S_.general.log_graph_edits = True
 
@@ -254,6 +248,8 @@ class BackgroundComputer:
         colorize_project(self.project)
 
         self.project.save()
+
+        print ("#CHUNKS: %d") % (len(self.project.chm.chunk_list()))
 
         with open(self.project.working_directory+'/graph.pkl', 'wb') as f:
             p = pickle.Pickler(f, -1)

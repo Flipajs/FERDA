@@ -256,19 +256,20 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             while r1 and r2:
                 changed = False
                 values = []
-                for v1, v2 in zip(r1, r2):
-                    try:
-                        e = self.solver.gm.g.edge(v1, v2)
-                        s = self.solver.gm.g.ep['score'][e]
-                        values.append([s, v1, v2])
-                        changed = True
-                    except:
-                        pass
+                for v1 in r1:
+                    for v2 in r2:
+                        try:
+                            e = self.solver.gm.g.edge(v1, v2)
+                            s = self.solver.gm.g.ep['score'][e]
+                            values.append([s, v1, v2])
+                            changed = True
+                        except:
+                            pass
 
                 if not changed:
                     break
 
-                values = sorted(values, key=lambda k: k[0])
+                values = sorted(values, key=lambda k: -k[0])
                 r1.remove(values[0][1])
                 r2.remove(values[0][2])
                 config[values[0][1]] = values[0][2]
