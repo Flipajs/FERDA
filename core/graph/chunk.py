@@ -35,7 +35,19 @@ class Chunk:
 
         ids = []
         if isinstance(key, slice):
-            ids = range(key.start, key.stop, key.step)
+            start = key.start
+            if start is None:
+                start = 0
+
+            stop = key.stop
+            if stop is None or stop == 9223372036854775807:
+                stop = len(self.nodes_)
+
+            step = key.step
+            if step is None:
+                step = 1
+
+            ids = range(start, stop, step)
         elif isinstance(key, list):
             ids = key
 

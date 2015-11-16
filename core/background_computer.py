@@ -160,6 +160,10 @@ class BackgroundComputer:
                 # this means there was some outdated edge, it is fine to ignore it...
                 continue
 
+            # add edges only in one direction
+            if int(v1_new) > int(v2_new):
+                continue
+
             # ep['score'] is assigned in add_edge call
             new_e = new_gm.add_edge(v1_new, v2_new, old_score)
             new_gm.g.ep['certainty'][new_e] = old_g.ep['certainty'][old_e]
@@ -203,7 +207,7 @@ class BackgroundComputer:
 
         part_num = self.part_num
         # TODO: remove this line
-        part_num = 5
+        part_num = 3
 
         for i in range(part_num):
             rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
@@ -228,14 +232,15 @@ class BackgroundComputer:
         self.update_callback(-1, 'joining parts...')
 
         self.solver.gm = self.project.gm
-        for part_end_t in range(fir, fir*part_num):
+        for part_end_t in range(fir, fir*part_num, fir):
             t_v = self.solver.gm.get_vertices_in_t(part_end_t-1)
             t1_v = self.solver.gm.get_vertices_in_t(part_end_t)
 
             self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
             # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
-        self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver])
+        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver])
+        self.solver.simplify(rules=[self.solver.adaptive_threshold])
 
         # self.project.solver_parameters.certainty_threshold = 0.5
 

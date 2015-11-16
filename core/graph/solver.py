@@ -19,7 +19,7 @@ import time
 import cPickle as pickle
 import graph_tool
 from graph_manager import GraphManager
-
+from core.desc.zernike_moments import ZernikeMoments
 
 class Solver:
     def __init__(self, project):
@@ -46,6 +46,7 @@ class Solver:
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
 
         self.ignored_nodes = {}
+        self.zernike_desc = ZernikeMoments(project.solver_parameters.zernike_radius, project.solver_parameters.zernike_norm)
 
         self.cc_id = 0
 
@@ -110,7 +111,17 @@ class Solver:
                 if best_in_vertices[1]:
                     s_in = best_in_scores[1]
 
-                cert = abs(s) * abs(s - (min(s_out, s_in)))
+                r1 = self.gm.region(best_in_vertices[0])
+                r2 = self.gm.region(best_out_vertices[0])
+
+                desc1 = self.zernike_desc.describe(r1)
+                desc2 = self.zernike_desc.describe(r2)
+
+                desc_correction = self.project.solver_parameters.zernike_plus
+                if np.linalg.norm(desc1-desc2) > self.project.solver_parameters.zernike_thresh:
+                    desc_correction = self.project.solver_parameters.zernike_minus
+
+                cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
 
             self.gm.g.ep['certainty'][self.gm.g.edge(v1, v2)] = cert
 

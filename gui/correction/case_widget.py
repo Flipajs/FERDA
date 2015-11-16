@@ -242,31 +242,29 @@ class CaseWidget(QtGui.QWidget):
     def get_info(self):
         n = self.active_node
 
-        antlikeness = self.parent.solver.project.stats.antlikeness_svm.get_prob(n)[1]
+        r = self.project.gm.region(n)
+
+        antlikeness = self.parent.solver.project.stats.antlikeness_svm.get_prob(r)[1]
         virtual = False
         try:
-            if n.is_virtual:
+            if r.is_virtual:
                 antlikeness = 1.0
                 virtual = True
         except:
             pass
 
-        best_out = 0
-        for _, _, d in self.parent.solver.g.out_edges(n, data=True):
-            if 'score' in d:
-                best_out = min(best_out, d['score'])
+        vertex = self.project.gm.g.vertex(int(n))
+        best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
+        best_out = best_out_score[0]
 
-        best_in = 0
-        for _, _, d in self.parent.solver.g.in_edges(n, data=True):
-            if 'score' in d:
-                best_in = min(best_in, d['score'])
+        best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
+        best_in = best_in_score[0]
 
-        is_ch, _, ch = self.parent.solver.is_chunk(n)
-        ch_info = ''
-        if is_ch:
-            ch_info = str(ch)
+        ch = self.project.gm.is_chunk(vertex)
+        ch_info = str(ch)
+
         QtGui.QMessageBox.about(self, "My message box",
-                                "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (n.area(), str(n.centroid()), n.margin_, antlikeness, str(virtual), str(best_in), str(best_out), ch_info))
+                                "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (r.area(), str(r.centroid()), r.margin_, antlikeness, str(virtual), str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info))
 
     def row_changed(self, off):
         self.active_row += off
