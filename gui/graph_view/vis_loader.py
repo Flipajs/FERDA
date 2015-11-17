@@ -15,13 +15,13 @@ FROM_TOP = 20
 # space between each of the columns
 SPACE_BETWEEN_HOR = 30
 # space between nodes in column
-SPACE_BETWEEN_VER = 10
+SPACE_BETWEEN_VER = 30
 # gap between frame_numbers and first node in columns
-GAP = 25
+GAP = 50
 # number of columns to be displayed before dynamic loading, 0 means dynamic loading for all
 MINIMUM = 20
 # number of columns processed in one chunk sent to dummy thread, for debbuging purpose
-COLUMNS_TO_LOAD = 10
+COLUMNS_TO_LOAD = 3
 # default text to display
 DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, stretch"
 
@@ -108,7 +108,7 @@ class VisLoader:
 if __name__ == '__main__':
     from scripts import fix_project
     p = Project()
-    p.load('/home/sheemon/FERDA/projects/eight_new_issue/eight.fproj')
+    p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
     # from core.graph.graph_manager import GraphManager
     #
     # for i in range(1):
@@ -137,9 +137,9 @@ if __name__ == '__main__':
     # l = VisLoader(p)
     # l.visualise()
     l1 = VisLoader(p)
-    l1.set_relative_margin(1.1)
-    l1.set_width(40)
-    l1.set_height(40)
+    l1.set_relative_margin(0.7)
+    l1.set_width(50)
+    l1.set_height(50)
     l1.visualise()
     app.exec_()
     cv2.waitKey(0)
