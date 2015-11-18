@@ -161,7 +161,7 @@ class Column:
             from_x, from_y, to_x, to_y = from_y, from_x, to_y, to_x
         if edge in self.edges.keys():
             self.scene.removeItem(self.edges[edge].graphical_object)
-        edge_obj = Edge(from_x, from_y, to_x, to_y, edge)
+        edge_obj = Edge(from_x, from_y, to_x, to_y, edge, self.scene)
         self.edges[edge] = edge_obj
 
         if edge[2] is "chunk":
