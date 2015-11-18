@@ -129,10 +129,13 @@ class ColorManager():
                     # it must be different from any other track color
                     c2 = t.get_color()
                     distance = self.get_yuv_distance(c1, c2)
-                    # if two of the colors are all the same, move on
-                    if distance == 0:
+                    # if two of the colors are the same, move on
+                    if distance == 0 and self.collide(t, track) > 0:
                         ok = False
                         break
+                    # this doesn't matter if the colors never exist together
+                    else:
+                        continue
                     # the more frames the tracks share, the more different (distant) they must be
                     value = self.collide(t, track) / self.get_yuv_distance(c1, c2)
                     if value > limit:
