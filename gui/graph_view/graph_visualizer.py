@@ -1,3 +1,4 @@
+from libxml2mod import last
 import threading
 from PyQt4.QtGui import QApplication
 from gui.graph_view.node import Node
@@ -8,8 +9,11 @@ from core.project.project import Project
 from gui.img_controls.my_view_zoomable import MyViewZoomable
 from utils.img_manager import ImgManager
 from gui.graph_view.edge import EdgeGraphical
+import random
+import matplotlib.colors as colors
 from vis_loader import COLUMNS_TO_LOAD,DEFAULT_TEXT, FROM_TOP, GAP, \
-    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT
+    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT, OPACITY
+
 __author__ = 'Simon Mandlik'
 
 
@@ -80,9 +84,20 @@ class GraphVisualizer(QtGui.QWidget):
         self.shrink_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
         self.addAction(self.shrink_action)
 
+        self.show_info_action = QtGui.QAction('show_info', self)
+        self.show_info_action.triggered.connect(self.show_info)
+        self.show_info_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_A))
+        self.addAction(self.show_info_action)
+
+        self.toggle_node_action = QtGui.QAction('toggle_node', self)
+        self.toggle_node_action.triggered.connect(self.toggle_node)
+        self.toggle_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
+        self.addAction(self.toggle_node_action)
+
         self.selected = []
-        self.selected_edge = None
+        # self.selected_edge = None
         self.toggled = []
+        self.clipped = []
         self.wheel_count = 1
         self.loaded = set()
 
@@ -101,15 +116,23 @@ class GraphVisualizer(QtGui.QWidget):
         if item is None:
             self.selected = []
             while self.toggled:
-                self.toggled.pop().toggle()
+                node = self.toggled.pop()
+                if node.toggled:
+                    node.toggle()
+            while self.clipped:
+                cl = self.clipped.pop()
+                if cl.clipped:
+                    cl.decolor_margins()
+                    cl.hide_info()
         else:
             self.selected.append(item)
 
         if isinstance(item, EdgeGraphical):
-            self.selected_edge = item
+            # self.selected_edge = item
+            self.clipped.append(item)
         elif isinstance(item, Node):
-            item.toggle()
             self.toggled.append(item)
+            self.clipped.append(item)
 
     def stretch(self):
         global SPACE_BETWEEN_HOR
@@ -120,6 +143,23 @@ class GraphVisualizer(QtGui.QWidget):
         global SPACE_BETWEEN_HOR
         SPACE_BETWEEN_HOR *= 0.5
         self.redraw()
+
+    def show_info(self):
+        last_color = None
+        for item in self.clipped:
+            if last_color:
+                color = hex2rgb_opacity_tuple(inverted_hex_color_str(last_color))
+                last_color = None
+            else:
+                last_color = random_hex_color_str()
+                color = hex2rgb_opacity_tuple(last_color)
+
+            item.color_margins(color)
+            item.show_info()
+
+    def toggle_node(self):
+        for item in self.toggled:
+            item.toggle()
 
     def compute_positions(self):
         for edge in self.edges:
@@ -446,6 +486,42 @@ class GraphVisualizer(QtGui.QWidget):
         if self.wheel_count % 3 is 0:
             self.wheel_count = 1
 
+
+def random_hex_color_str():
+    rand_num = random.randint(1, 3)
+    l1 = "0123456789ab"
+    color = "#"
+    for i in range(1, 4):
+        if i == rand_num:
+            color += "ff"
+        else:
+            color += (l1[random.randint(0, len(l1)-1)] + l1[random.randint(0, len(l1)-1)])
+
+    return color
+
+
+def inverted_hex_color_str(color):
+    string = str(color).lower()
+    code = {}
+    l1 = "#;0123456789abcdef"
+    l2 = "#;fedcba9876543210"
+
+    for i in range(len(l1)):
+        code[l1[i]] = l2[i]
+
+    inverted = ""
+
+    for j in string:
+        inverted += code[j]
+
+    return inverted
+
+
+def hex2rgb_opacity_tuple(color):
+    rgb = colors.hex2color(color)
+    rgb_list = [int(255 * x) for x in rgb]
+    rgb_list.append(OPACITY)
+    return QtGui.QColor(rgb_list[0], rgb_list[1], rgb_list[2], rgb_list[3])
 
 if __name__ == '__main__':
     p = Project()

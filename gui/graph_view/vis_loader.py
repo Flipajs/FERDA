@@ -22,8 +22,10 @@ GAP = 50
 MINIMUM = 20
 # number of columns processed in one chunk sent to dummy thread, for debbuging purpose
 COLUMNS_TO_LOAD = 3
+# Opacity of the colors
+OPACITY = 255
 # default text to display
-DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, stretch"
+DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, stretch; A show info for selected; T - show toggled node"
 
 
 class VisLoader:
