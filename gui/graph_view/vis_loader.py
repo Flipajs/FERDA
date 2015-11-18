@@ -87,10 +87,13 @@ class VisLoader:
             r1 = self.project.gm.region(source)
             r2 = self.project.gm.region(target)
             # TODO
-            # self.graph_manager.g.vp["chunk_start_id"]
-            # visualizer requires tuple of length 4
-            sureness = self.graph_manager.g.ep['score'][self.graph_manager.g.edge(source, target)]
-            type_of_line = "chunk" if abs(sureness) == 1 else "line"
+
+            source_start_id = self.graph_manager.g.vp["chunk_start_id"][source]
+            target_end_id = self.graph_manager.g.vp["chunk_end_id"][target]
+
+            sureness = self.graph_manager.g.ep['score'][edge]
+
+            type_of_line = "chunk" if source_start_id == target_end_id and source_start_id != 0 else "line"
             if not(r1 in self.regions and r2 in self.regions):
                 type_of_line = "partial"
 
@@ -110,7 +113,7 @@ class VisLoader:
 if __name__ == '__main__':
     from scripts import fix_project
     p = Project()
-    p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
+    p.load('/home/sheemon/FERDA/projects/eight_new_issue/eight.fproj')
     # from core.graph.graph_manager import GraphManager
     #
     # for i in range(1):
