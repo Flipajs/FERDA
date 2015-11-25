@@ -1,4 +1,5 @@
 import random
+from functools import partial
 from gui.arena.my_popup   import MyPopup
 from gui.arena.my_view    import MyView
 from utils.video_manager import VideoManager
@@ -402,8 +403,9 @@ class ColorGridWidget(QtGui.QWidget):
         self.rect_size = rect_size
         self.spacing = spacing
         self.max_cols = max_cols
-        self.colors = []
+        self.colors = {}
         self.buttons = []
+        self.last_index = 0
 
         self.col = 0
         self.posx = 0
@@ -412,42 +414,24 @@ class ColorGridWidget(QtGui.QWidget):
         self.grid = QtGui.QGridLayout()
         self.setLayout(self.grid)
 
-    def paintEvent(self, event):
-
-        """
-        if self.max_cols == 0:
-            cols = (self.width() + self.spacing)/(self.rect_size+self.spacing + 0.0)
-        else:
-            cols = self.max_cols
-
-        painter = QtGui.QPainter()
-        painter.begin(self)
-
-        col, posx, posy = 0, 0, 0
-        for n in range(0, len(self.colors)):
-            painter.setBrush(self.colors[n])
-            painter.setPen(QtGui.QPen(self.colors[n]))
-            painter.drawRect(posx, posy, posx+self.rect_size, posy+self.rect_size)
-            col += 1
-            if col > cols:
-                posx = 0
-                posy += self.rect_size + self.spacing
-            else:
-                posx += self.rect_size + self.spacing
-        painter.end()
-        """
-        pass
+    def clicked(self, id):
+        color = self.colors.get(id, 0)
+        if color == 0:
+            return
+        print color
 
     def add_color(self, color):
         print ("Adding color")
-        self.colors.append(color)
+        self.colors[self.last_index] = color
         r = color.red()
         g = color.green()
         b = color.blue()
-        button = QtGui.QPushButton()
-        button.setStyleSheet('QPushButton {background-color: #%02x%02x%02x}' % (r,g,b))
+        button = QtGui.QPushButton("%s" % self.last_index)
+        button.clicked.connect(partial(self.clicked,self.last_index))
+        button.setStyleSheet('QPushButton {background-color: #%02x%02x%02x; color: #%02x%02x%02x;}' % (r,g,b, 255-r, 255-g, 255-b))
         self.buttons.append(button)
         self.grid.addWidget(button, self.posx, self.posy)
+        self.last_index += 1
         self.col += 1
         if self.col >= self.max_cols:
             self.col = 0
@@ -455,6 +439,8 @@ class ColorGridWidget(QtGui.QWidget):
             self.posx += 1
         else:
             self.posy += 1
+
+
 
 app = QtGui.QApplication(sys.argv)
 
