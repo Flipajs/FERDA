@@ -113,7 +113,7 @@ class VisLoader:
 if __name__ == '__main__':
     from scripts import fix_project
     p = Project()
-    p.load('/home/sheemon/FERDA/projects/eight_new_issue/eight.fproj')
+    p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
     # from core.graph.graph_manager import GraphManager
     #
     # for i in range(1):
@@ -143,8 +143,8 @@ if __name__ == '__main__':
     # l.visualise()
     l1 = VisLoader(p)
     l1.set_relative_margin(0.3)
-    l1.set_width(60)
-    l1.set_height(60)
+    l1.set_width(40)
+    l1.set_height(40)
     l1.visualise()
     app.exec_()
     cv2.waitKey(0)

@@ -47,6 +47,7 @@ class Node(QtGui.QGraphicsPixmapItem):
         if not self.info_item:
             self.create_info()
         self.scene.addItem(self.info_item)
+        self.scene.update()
 
     def hide_info(self):
         self.scene.removeItem(self.info_item)
@@ -71,9 +72,8 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.info_item = TextInfoItem("Info there", x, y, self.color, self)
         self.info_item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
 
-    def color_margins(self, color):
+    def set_color(self, color):
         self.color = color
-        self.scene.update()
 
     def decolor_margins(self):
         self.color = None

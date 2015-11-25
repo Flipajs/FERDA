@@ -23,7 +23,7 @@ class GraphVisualizer(QtGui.QWidget):
     Those can be passed in constructor or using a method add_objects
     """
 
-    def __init__(self, regions, edges, img_manager, relative_margin, width, height, show_vertically=False, compress_axis=True, dynamically=True):
+    def __init__(self, regions, edges, img_manager, relative_margin, width, height, show_vertically=True, compress_axis=True, dynamically=True):
         super(GraphVisualizer, self).__init__()
         self.regions = set()
         self.regions_list = []
@@ -95,7 +95,6 @@ class GraphVisualizer(QtGui.QWidget):
         self.addAction(self.toggle_node_action)
 
         self.selected = []
-        # self.selected_edge = None
         self.toggled = []
         self.clipped = []
         self.wheel_count = 1
@@ -147,14 +146,15 @@ class GraphVisualizer(QtGui.QWidget):
     def show_info(self):
         last_color = None
         for item in self.clipped:
-            if last_color:
-                color = hex2rgb_opacity_tuple(inverted_hex_color_str(last_color))
-                last_color = None
-            else:
-                last_color = random_hex_color_str()
-                color = hex2rgb_opacity_tuple(last_color)
+            if not item.clipped:
+                if last_color:
+                    color = hex2rgb_opacity_tuple(inverted_hex_color_str(last_color))
+                    last_color = None
+                else:
+                    last_color = random_hex_color_str()
+                    color = hex2rgb_opacity_tuple(last_color)
 
-            item.color_margins(color)
+                item.set_color(color)
             item.show_info()
 
     def toggle_node(self):
