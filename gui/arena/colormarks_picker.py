@@ -142,13 +142,6 @@ class ColormarksPicker(QtGui.QWidget):
 
         self.pen_label.setText("Pen size: %s" % self.pen_size)
 
-    def reset(self):
-        """
-        clear everything and start over
-        :return: None
-        """
-        self.clear_paint_image()
-
     def mouse_press_event(self, event):
         point = self.view.mapToScene(event.pos())
         if self.is_in_scene(point):
@@ -211,7 +204,7 @@ class ColormarksPicker(QtGui.QWidget):
             for j in range(fromy, toy):
                 if 0 <= i < bg_width and 0 <= j < bg_height and self.pick_mask[i][j] == 0:
                     self.paint_image.setPixel(i, j, value)
-                    difb, difg, difr = self.background[i][j]
+                    difb, difg, difr = self.background[j][i]
                     self.avgr += difr
                     self.avgg += difg
                     self.avgb += difb
@@ -260,19 +253,20 @@ class ColormarksPicker(QtGui.QWidget):
             return False
 
     def next_color(self):
+        if self.avgcount == 0:
+            return
         r = self.avgr/self.avgcount+0.0
         g = self.avgg/self.avgcount+0.0
         b = self.avgb/self.avgcount+0.0
         print ("Color is %s,%s,%s" % (r,g,b))
 
-        self.w = ColorPopup(QtGui.QColor(r, g, b))
-        self.w.setGeometry(QtCore.QRect(100, 100, 400, 200))
-        self.w.show()
+        self.color_grid.add_color(QtGui.QColor(r, g, b))
 
         # save current color mask and data
         self.masks.append((self.pick_id, self.pick_mask, self.frame))
 
         # prepare for a next one
+        self.clear_paint_image()
         self.pick_mask.fill(0)
         self.pick_id += 1
         self.avgcount = 0
@@ -325,17 +319,17 @@ class ColormarksPicker(QtGui.QWidget):
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # left panel widget
-        left_panel = QtGui.QWidget()
-        left_panel.setLayout(QtGui.QVBoxLayout())
-        left_panel.layout().setAlignment(QtCore.Qt.AlignTop)
+        self.left_panel = QtGui.QWidget()
+        self.left_panel.setLayout(QtGui.QVBoxLayout())
+        self.left_panel.layout().setAlignment(QtCore.Qt.AlignTop)
         # set left panel widget width to 300px
-        left_panel.setMaximumWidth(300)
-        left_panel.setMinimumWidth(300)
+        self.left_panel.setMaximumWidth(300)
+        self.left_panel.setMinimumWidth(300)
 
         self.pen_label = QtGui.QLabel()
         self.pen_label.setWordWrap(True)
         self.pen_label.setText("")
-        left_panel.layout().addWidget(self.pen_label)
+        self.left_panel.layout().addWidget(self.pen_label)
 
         # PEN SIZE slider
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
@@ -347,7 +341,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.change_value)
         self.slider.setVisible(True)
-        left_panel.layout().addWidget(self.slider)
+        self.left_panel.layout().addWidget(self.slider)
 
         # UNDO key shortcut
         self.action_undo = QtGui.QAction('undo', self)
@@ -357,73 +351,122 @@ class ColormarksPicker(QtGui.QWidget):
 
         self.undo_button = QtGui.QPushButton("Undo \n (key_Z)")
         self.undo_button.clicked.connect(self.undo)
-        left_panel.layout().addWidget(self.undo_button)
+        self.left_panel.layout().addWidget(self.undo_button)
 
         # CLEAR button and key shortcut
         self.action_clear = QtGui.QAction('clear', self)
-        self.action_clear.triggered.connect(self.reset)
+        self.action_clear.triggered.connect(self.clear_paint_image)
         self.action_clear.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
         self.addAction(self.action_clear)
 
         self.clear_button = QtGui.QPushButton("Clear paint area \n (key_C)")
-        self.clear_button.clicked.connect(self.reset)
-        left_panel.layout().addWidget(self.clear_button)
+        self.clear_button.clicked.connect(self.clear_paint_image)
+        self.left_panel.layout().addWidget(self.clear_button)
 
         self.popup_button = QtGui.QPushButton("Done!")
         self.popup_button.clicked.connect(self.popup)
-        left_panel.layout().addWidget(self.popup_button)
+        self.left_panel.layout().addWidget(self.popup_button)
 
         self.next_frame_button = QtGui.QPushButton("Next frame!")
         self.next_frame_button.clicked.connect(self.next_frame)
-        left_panel.layout().addWidget(self.next_frame_button)
+        self.left_panel.layout().addWidget(self.next_frame_button)
 
         self.prev_frame_button = QtGui.QPushButton("Previous frame!")
         self.prev_frame_button.clicked.connect(self.prev_frame)
-        left_panel.layout().addWidget(self.prev_frame_button)
+        self.left_panel.layout().addWidget(self.prev_frame_button)
 
         self.random_frame_button = QtGui.QPushButton("Random frame!")
         self.random_frame_button.clicked.connect(self.random_frame)
-        left_panel.layout().addWidget(self.random_frame_button)
+        self.left_panel.layout().addWidget(self.random_frame_button)
 
         self.next_color_button = QtGui.QPushButton("Next color")
         self.next_color_button.clicked.connect(self.next_color)
-        left_panel.layout().addWidget(self.next_color_button)
+        self.left_panel.layout().addWidget(self.next_color_button)
+
+        self.color_grid = ColorGridWidget()
+        self.left_panel.layout().addWidget(self.color_grid)
 
         self.set_label_text()
 
         # complete the gui
-        self.layout().addWidget(left_panel)
+        self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.view)
 
         self.next_frame()
         self.update()
 
 
-class ColorPopup(QtGui.QWidget):
-    def __init__(self, color):
-        QtGui.QWidget.__init__(self)
-        self.color = color
+class ColorGridWidget(QtGui.QWidget):
+    def __init__(self, rect_size=20, spacing=5, max_cols=5):
+        super(ColorGridWidget,self).__init__(None)
+        self.rect_size = rect_size
+        self.spacing = spacing
+        self.max_cols = max_cols
+        self.colors = []
+        self.buttons = []
 
-    def paintEvent(self, e):
-        dc = QtGui.QPainter(self)
+        self.col = 0
+        self.posx = 0
+        self.posy = 0
 
-        dc.setBrush(self.color);
-        dc.setPen(QtGui.QPen(self.color));
-        dc.drawRect(0, 0, 100,100);
+        self.grid = QtGui.QGridLayout()
+        self.setLayout(self.grid)
 
+    def paintEvent(self, event):
 
-if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+        """
+        if self.max_cols == 0:
+            cols = (self.width() + self.spacing)/(self.rect_size+self.spacing + 0.0)
+        else:
+            cols = self.max_cols
 
-    p = Project()
-    p.load("/home/dita/PycharmProjects/FERDA projects/testc5/c5.fproj")
+        painter = QtGui.QPainter()
+        painter.begin(self)
 
-    ex = ColormarksPicker(p.video_paths[0])
-    ex.show()
-    ex.move(-500, -500)
-    ex.showMaximized()
-    ex.setFocus()
+        col, posx, posy = 0, 0, 0
+        for n in range(0, len(self.colors)):
+            painter.setBrush(self.colors[n])
+            painter.setPen(QtGui.QPen(self.colors[n]))
+            painter.drawRect(posx, posy, posx+self.rect_size, posy+self.rect_size)
+            col += 1
+            if col > cols:
+                posx = 0
+                posy += self.rect_size + self.spacing
+            else:
+                posx += self.rect_size + self.spacing
+        painter.end()
+        """
+        pass
 
-    app.exec_()
-    app.deleteLater()
-    sys.exit()
+    def add_color(self, color):
+        print ("Adding color")
+        self.colors.append(color)
+        r = color.red()
+        g = color.green()
+        b = color.blue()
+        button = QtGui.QPushButton()
+        button.setStyleSheet('QPushButton {background-color: #%02x%02x%02x}' % (r,g,b))
+        self.buttons.append(button)
+        self.grid.addWidget(button, self.posx, self.posy)
+        self.col += 1
+        if self.col >= self.max_cols:
+            self.col = 0
+            self.posy = 0
+            self.posx += 1
+        else:
+            self.posy += 1
+
+app = QtGui.QApplication(sys.argv)
+
+p = Project()
+p.load("/home/dita/PycharmProjects/FERDA projects/testc5/c5.fproj")
+
+ex = ColormarksPicker(p.video_paths[0])
+ex.show()
+ex.move(-500, -500)
+ex.showMaximized()
+ex.setFocus()
+
+app.exec_()
+app.deleteLater()
+sys.exit()
