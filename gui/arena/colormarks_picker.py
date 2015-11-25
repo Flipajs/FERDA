@@ -6,7 +6,6 @@ from utils.video_manager import VideoManager
 __author__ = 'dita'
 
 from PyQt4 import QtGui, QtCore
-import cv2
 import sys
 import math
 from core.project.project import Project
@@ -31,6 +30,7 @@ branch
  irg hist demo
  get color samples:
 """
+
 
 class ColormarksPicker(QtGui.QWidget):
     DEBUG = True
@@ -68,24 +68,22 @@ class ColormarksPicker(QtGui.QWidget):
         self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
 
-        self.pen_size = 30
+        self.pen_size = 10
         self.make_gui()
+
+        self.pick_id = 0
+        self.pick_mask = np.zeros((bg_height, bg_width))
+
+        self.avgcount = 0
+        self.avgr = 0
+        self.avgg = 0
+        self.avgb = 0
+
+        self.masks = []
 
         self.save()
 
         # create the main view and left panel with buttons
-
-    def switch_color(self):
-        text = self.sender().text()
-        if self.DEBUG:
-            print "Setting color to %s" % text
-        # make sure no other button stays pushed
-        for button in self.color_buttons:
-            if button.text() != text:
-                button.setChecked(False)
-            else:
-                button.setChecked(True)
-        self.color = text
 
     def popup(self):
         """
@@ -150,7 +148,6 @@ class ColormarksPicker(QtGui.QWidget):
         :return: None
         """
         self.clear_paint_image()
-        self.point_items = []
 
     def mouse_press_event(self, event):
         point = self.view.mapToScene(event.pos())
@@ -176,9 +173,9 @@ class ColormarksPicker(QtGui.QWidget):
             self.backup.pop(0)
 
     def undo(self):
-        lenght = len(self.backup)
-        if lenght > 0:
-            img = self.backup.pop(lenght-1)
+        length = len(self.backup)
+        if length > 0:
+            img = self.backup.pop(length-1)
             self.refresh_image(img)
 
     def refresh_image(self, img):
@@ -201,20 +198,25 @@ class ColormarksPicker(QtGui.QWidget):
         if type(point) == QtCore.QPointF:
             point = point.toPoint()
 
-        # use current pen color
-        if self.color == "Blue":
-            value = QtGui.qRgba(0, 0, 255, 100)
-        elif self.color == "Red":
-            value = QtGui.qRgba(255, 0, 0, 100)
-        else:
-            value = QtGui.qRgba(0, 0, 0, 0)
+        value = QtGui.qRgba(0, 0, 255, 100)
 
         # paint the area around the point position
+        fromx = point.x() - self.pen_size/2
+        tox = point.x() + self.pen_size/2
+        fromy = point.y() - self.pen_size/2
+        toy = point.y() + self.pen_size/2
+
         bg_height, bg_width = self.background.shape[:2]
-        for i in range(point.x() - self.pen_size/2, point.x() + self.pen_size/2):
-            for j in range(point.y() - self.pen_size/2, point.y() + self.pen_size/2):
-                if i >= 0 and i < bg_width and j >= 0 and j < bg_height:
+        for i in range(fromx, tox):
+            for j in range(fromy, toy):
+                if 0 <= i < bg_width and 0 <= j < bg_height and self.pick_mask[i][j] == 0:
                     self.paint_image.setPixel(i, j, value)
+                    difb, difg, difr = self.background[i][j]
+                    self.avgr += difr
+                    self.avgg += difg
+                    self.avgb += difb
+                    self.avgcount += 1
+        self.pick_mask[fromx : tox][fromy : toy].fill(1)
 
         # set new image and pixmap
         self.refresh_image(self.paint_image)
@@ -258,8 +260,23 @@ class ColormarksPicker(QtGui.QWidget):
             return False
 
     def next_color(self):
-        # TODO: do something
-        print "Next color"
+        r = self.avgr/self.avgcount+0.0
+        g = self.avgg/self.avgcount+0.0
+        b = self.avgb/self.avgcount+0.0
+        print ("Color is %s,%s,%s" % (r,g,b))
+
+        self.w = ColorPopup(QtGui.QColor(r, g, b))
+        self.w.setGeometry(QtCore.QRect(100, 100, 400, 200))
+        self.w.show()
+
+        # save current color mask and data
+        self.masks.append((self.pick_id, self.pick_mask, self.frame))
+
+        # prepare for a next one
+        self.pick_mask.fill(0)
+        self.pick_id += 1
+        self.avgcount = 0
+        self.avgr, self.avgg, self.avgb = 0, 0, 0
 
     def random_frame(self):
         # vid_manager's random frame can't be used, because it doesn't return frame id which colormarks_picker uses
@@ -324,17 +341,13 @@ class ColormarksPicker(QtGui.QWidget):
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
         self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider.setGeometry(30, 40, 50, 30)
-        self.slider.setRange(10, 50)
-        self.slider.setTickInterval(5)
-        self.slider.setValue(30)
+        self.slider.setRange(2, 30)
+        self.slider.setTickInterval(1)
+        self.slider.setValue(self.pen_size)
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.change_value)
         self.slider.setVisible(True)
         left_panel.layout().addWidget(self.slider)
-
-        self.next_color_button = QtGui.QPushButton("Next color")
-        self.next_color_button.clicked.connect(self.next_color)
-        left_panel.layout().addWidget(self.next_color_button)
 
         # UNDO key shortcut
         self.action_undo = QtGui.QAction('undo', self)
@@ -372,6 +385,10 @@ class ColormarksPicker(QtGui.QWidget):
         self.random_frame_button.clicked.connect(self.random_frame)
         left_panel.layout().addWidget(self.random_frame_button)
 
+        self.next_color_button = QtGui.QPushButton("Next color")
+        self.next_color_button.clicked.connect(self.next_color)
+        left_panel.layout().addWidget(self.next_color_button)
+
         self.set_label_text()
 
         # complete the gui
@@ -380,6 +397,19 @@ class ColormarksPicker(QtGui.QWidget):
 
         self.next_frame()
         self.update()
+
+
+class ColorPopup(QtGui.QWidget):
+    def __init__(self, color):
+        QtGui.QWidget.__init__(self)
+        self.color = color
+
+    def paintEvent(self, e):
+        dc = QtGui.QPainter(self)
+
+        dc.setBrush(self.color);
+        dc.setPen(QtGui.QPen(self.color));
+        dc.drawRect(0, 0, 100,100);
 
 
 if __name__ == "__main__":
