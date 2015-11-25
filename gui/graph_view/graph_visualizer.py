@@ -23,7 +23,7 @@ class GraphVisualizer(QtGui.QWidget):
     Those can be passed in constructor or using a method add_objects
     """
 
-    def __init__(self, regions, edges, img_manager, relative_margin, width, height, show_vertically=True, compress_axis=True, dynamically=True):
+    def __init__(self, loader, img_manager, show_vertically=True, compress_axis=True, dynamically=True):
         super(GraphVisualizer, self).__init__()
         self.regions = set()
         self.regions_list = []
@@ -32,9 +32,10 @@ class GraphVisualizer(QtGui.QWidget):
         self.frames_columns = {}
         self.columns = []
         self.img_manager = img_manager
-        self.relative_margin = relative_margin
-        self.width = width
-        self.height = height
+        self.relative_margin = loader.relative_margin
+        self.width = loader.width
+        self.height = loader.height
+        self.loader = loader
 
         self.view = MyViewZoomable(self)
         self.setLayout(QtGui.QVBoxLayout())
@@ -55,8 +56,8 @@ class GraphVisualizer(QtGui.QWidget):
         self.menu_node = QtGui.QMenu(self)
         self.menu_edge = QtGui.QMenu(self)
         # TODO add your actions
-        self.test_action_node = QtGui.QAction('test_action_node', self)
-        self.test_action_edge = QtGui.QAction('test_action_edge', self)
+        self.test_action_node = QtGui.QAction('TODO', self)
+        self.test_action_edge = QtGui.QAction('TODO', self)
         self.menu_node.addAction(self.test_action_node)
         self.menu_edge.addAction(self.test_action_edge)
         self.view.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -89,6 +90,11 @@ class GraphVisualizer(QtGui.QWidget):
         self.show_info_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_A))
         self.addAction(self.show_info_action)
 
+        self.hide_info_action = QtGui.QAction('hide_info', self)
+        self.hide_info_action.triggered.connect(self.hide_info)
+        self.hide_info_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
+        self.addAction(self.hide_info_action)
+
         self.toggle_node_action = QtGui.QAction('toggle_node', self)
         self.toggle_node_action.triggered.connect(self.toggle_node)
         self.toggle_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
@@ -100,8 +106,8 @@ class GraphVisualizer(QtGui.QWidget):
         self.wheel_count = 1
         self.loaded = set()
 
-        if len(edges) + len(regions) > 0:
-            self.add_objects(regions, edges)
+        if len(loader.edges) + len(loader.regions) > 0:
+            self.add_objects(loader.regions, loader.edges)
 
     def menu(self, point):
         it = self.scene.itemAt(self.view.mapToScene(point))
@@ -125,9 +131,7 @@ class GraphVisualizer(QtGui.QWidget):
                     cl.hide_info()
         else:
             self.selected.append(item)
-
         if isinstance(item, EdgeGraphical):
-            # self.selected_edge = item
             self.clipped.append(item)
         elif isinstance(item, Node):
             self.toggled.append(item)
@@ -153,9 +157,14 @@ class GraphVisualizer(QtGui.QWidget):
                 else:
                     last_color = random_hex_color_str()
                     color = hex2rgb_opacity_tuple(last_color)
-
                 item.set_color(color)
-            item.show_info()
+            item.show_info(self.loader)
+
+    def hide_info(self):
+        while self.clipped:
+            item = self.clipped.pop()
+            if item.clipped:
+                item.hide_info()
 
     def toggle_node(self):
         for item in self.toggled:

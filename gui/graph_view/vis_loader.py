@@ -25,7 +25,8 @@ COLUMNS_TO_LOAD = 3
 # Opacity of the colors
 OPACITY = 255
 # default text to display
-DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, stretch; A show info for selected; T - show toggled node"
+DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, " \
+               "stretch; A, S show/hide info for selected; T - show toggled node"
 
 
 class VisLoader:
@@ -40,6 +41,8 @@ class VisLoader:
         self.vertices = []
         self.edges = set()
         self.regions = set()
+
+        self.regions_vertices = {}
 
         self.g = None
 
@@ -72,7 +75,9 @@ class VisLoader:
 
     def prepare_nodes(self):
         for v in self.vertices:
-            self.regions.add(self.graph_manager.region(v))
+            region = self.graph_manager.region(v)
+            self.regions_vertices[region] = v
+            self.regions.add(region)
 
     def prepare_edges(self):
         for vertex in self.vertices:
@@ -86,19 +91,41 @@ class VisLoader:
             target = edge.target()
             r1 = self.project.gm.region(source)
             r2 = self.project.gm.region(target)
-            # TODO
-
             source_start_id = self.graph_manager.g.vp["chunk_start_id"][source]
             target_end_id = self.graph_manager.g.vp["chunk_end_id"][target]
-
             sureness = self.graph_manager.g.ep['score'][edge]
-
             type_of_line = "chunk" if source_start_id == target_end_id and source_start_id != 0 else "line"
             if not(r1 in self.regions and r2 in self.regions):
                 type_of_line = "partial"
 
             new_tuple = (r1, r2, type_of_line, sureness)
             self.edges.add(new_tuple)
+
+    def get_node_info(self, region):
+        n = self.regions_vertices[region]
+
+        # antlikeness = self.parent.solver.project.stats.antlikeness_svm.get_prob(region)[1]
+        # virtual = False
+        #
+        # try:
+        #     if region.is_virtual:
+        #         antlikeness = 1.0
+        #         virtual = True
+        # except:
+        #     pass
+
+        vertex = self.project.gm.g.vertex(int(n))
+        best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
+        best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
+
+        ch = self.project.gm.is_chunk(vertex)
+        ch_info = str(ch)
+
+        return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
+                region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
+
+    def get_edge_info(self, edge):
+        return "Type = {0}\nSureness = {1}".format(edge[2], edge[3])
 
     def visualise(self):
         self.prepare_vertices()
@@ -107,40 +134,16 @@ class VisLoader:
         img_manager = ImgManager(self.project)
 
         from graph_visualizer import GraphVisualizer
-        self.g = GraphVisualizer(self.regions, self.edges, img_manager, self.relative_margin, self.width, self.height)
+        self.g = GraphVisualizer(self, img_manager)
         self.g.show()
 
 if __name__ == '__main__':
     from scripts import fix_project
     p = Project()
-    p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
-    # from core.graph.graph_manager import GraphManager
-    #
-    # for i in range(1):
-    #     rm_old = RegionManager(db_wd=p.working_directory + '/temp',
-    #                                db_name='part' + str(i) + '_rm.sqlite3')
-    #
-    #     with open(p.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
-    #             up = pickle.Unpickler(f)
-    #             g_ = up.load()
-    #             relevant_vertices = up.load()
-    #             chm_ = up.load()
-    #
-    #     p.chm = chm_
-    #     p.rm = rm_old
-    #     p.gm = GraphManager(p, None)
-    #     p.gm.g = g_
-    #
-    #     for v_id in relevant_vertices:
-    #         v = p.gm.g.vertex(v_id)
-    #         r = p.rm[p.gm.g.vp['region_id'][v]]
-    #         p.gm.vertices_in_t.setdefault(r.frame(), []).append(v_id)
+    p.load('/home/sheemon/FERDA/projects/eight_new_issue/eight.fproj')
 
     import cv2, sys
     app = QtGui.QApplication(sys.argv)
-    # im_manager = ImgManager(p, max_size_mb=0, max_num_of_instances=0)
-    # l = VisLoader(p)
-    # l.visualise()
     l1 = VisLoader(p)
     l1.set_relative_margin(0.3)
     l1.set_width(40)

@@ -27,6 +27,7 @@ class Node(QtGui.QGraphicsPixmapItem):
 
         self.toggled = False
         self.clipped = False
+        self.shown = False
         self.color = None
 
         self.info_item = None
@@ -42,34 +43,24 @@ class Node(QtGui.QGraphicsPixmapItem):
             self.scene.removeItem(self.pixmap_toggled)
         self.toggled = False if self.toggled else True
 
-    def show_info(self):
+    def show_info(self, loader):
         self.clipped = True
         if not self.info_item:
-            self.create_info()
-        self.scene.addItem(self.info_item)
+            self.create_info(loader)
+        if not self.shown:
+            self.scene.addItem(self.info_item)
+            self.shown = True;
         self.scene.update()
 
     def hide_info(self):
         self.scene.removeItem(self.info_item)
+        self.shown = False
         self.clipped = False
 
-    def create_info(self):
-        r = self.region
-
-        # vertex = self.project.gm.g.vertex(int(n))
-        # best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
-        # best_out = best_out_score[0]
-        #
-        # best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
-        # best_in = best_in_score[0]
-        #
-        # ch = self.project.gm.is_chunk(vertex)
-        # ch_info = str(ch)
-
-        # QtGui.QMessageBox.about(self, "My message box",
-        #                         "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (r.area(), str(r.centroid()), r.margin_, antlikeness, str(virtual), str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info))
+    def create_info(self, loader):
+        text = loader.get_node_info(self.region)
         x, y = self.compute_rectangle_pos()
-        self.info_item = TextInfoItem("Info there", x, y, self.color, self)
+        self.info_item = TextInfoItem(text, x, y, self.color, self)
         self.info_item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
 
     def set_color(self, color):
@@ -89,8 +80,8 @@ class Node(QtGui.QGraphicsPixmapItem):
 
     def compute_rectangle_size(self):
         width, height = self.scene.width(), self.scene.height()
-        multiplier_x = 1 if self.x < width / 2 else -3
-        multiplier_y = 1 if self.y < height / 2 else -3
+        multiplier_x = 1 if self.x < width / 2 else 0
+        multiplier_y = 1 if self.y < height / 2 else 0
         return multiplier_x, multiplier_y
 
     def compute_rectangle_pos(self):
@@ -142,10 +133,13 @@ class TextInfoItem(QtGui.QGraphicsItem):
         self.node = node
         self.x = x
         self.y = y
+        self.text = text
+        self.metrics = QtGui.QFontMetrics(QtGui.QFont())
+        self.height = self.metrics.height()
         self.bounding_rect = self.create_bounding_rect()
         self.rect = self.create_rectangle()
-        self.text = self.create_text(text)
-        self.text.setPos(self.x, self.y)
+        self.text_item = self.create_text()
+        self.text_item.setPos(self.x, self.y)
 
     def set_color(self, color):
         self.color = color
@@ -154,21 +148,39 @@ class TextInfoItem(QtGui.QGraphicsItem):
         self.rect.setPen(QtGui.QPen(self.node.color, SELECTION_LINE_WIDTH * 1.5, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin))
         self.rect.setBrush(QtGui.QBrush(self.node.color))
         self.rect.paint(painter, item, widget)
-        self.text.paint(painter, item, widget)
+        self.text_item.paint(painter, item, widget)
 
     def create_bounding_rect(self):
-        if isinstance(self.node, Node):
-            return QtCore.QRectF(QtCore.QPointF(self.x, self.y), QtCore.QPointF(self.x + self.node.width * 3, self.y + self.node.height * 3))
-        else:
-            return QtCore.QRectF(QtCore.QPointF(self.x, self.y), QtCore.QPointF(self.x + WIDTH * 3, self.y + HEIGHT * 3))
+        longest, rows = get_longest_string_rows(self.text)
+        width = self.metrics.width(longest)
+        rectangle = QtCore.QRectF(self.x, self.y, width, self.height * (rows + 0.5))
+        return rectangle
 
     def create_rectangle(self):
         return QtGui.QGraphicsRectItem(self.bounding_rect, self)
 
-    def create_text(self, text):
-        return QtGui.QGraphicsTextItem(text, self.rect)
+    def create_text(self):
+        return QtGui.QGraphicsTextItem(self.text, self.rect)
 
     def boundingRect(self):
         return self.bounding_rect
+
+
+def get_longest_string_rows(string):
+    st = ""
+    longest = ""
+    rows = 1
+    for i in range(len(string)):
+        st += string[i]
+        if string[i] == "\n":
+            rows += 1
+            if len(st) > len(longest):
+                longest = st
+            st = ""
+    else:
+        st += "\n"
+        if len(st) > len(longest):
+            longest = st
+    return longest, rows
 
 

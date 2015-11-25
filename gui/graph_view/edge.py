@@ -40,40 +40,32 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
         self.scene = scene
 
         self.clipped = False
+        self.shown = False
         self.info_item = None
         self.color = color
         if self.color:
             self.clipped = True
+            self.shown = True
 
-    def show_info(self):
+    def show_info(self, loader):
         self.clipped = True
         if not self.info_item:
-            self.create_info()
-        self.scene.addItem(self.info_item)
+            self.create_info(loader)
+        if not self.shown:
+            self.scene.addItem(self.info_item)
+            self.shown = True
         self.scene.update()
 
     def hide_info(self):
         self.scene.removeItem(self.info_item)
+        self.shown = False
         self.clipped = False
 
-    def create_info(self):
-        # r = self.region
-
-        # vertex = self.project.gm.g.vertex(int(n))
-        # best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
-        # best_out = best_out_score[0]
-        #
-        # best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
-        # best_in = best_in_score[0]
-        #
-        # ch = self.project.gm.is_chunk(vertex)
-        # ch_info = str(ch)
-
-        # QtGui.QMessageBox.about(self, "My message box",
-        #                         "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (r.area(), str(r.centroid()), r.margin_, antlikeness, str(virtual), str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info))
+    def create_info(self, loader):
+        text = loader.get_edge_info(self.core_obj)
         x = (self.parent_line.x2() + self.parent_line.x1()) / 2
         y = (self.parent_line.y2() + self.parent_line.y1()) / 2
-        self.info_item = TextInfoItem("Info there", x, y, self.color, self)
+        self.info_item = TextInfoItem(text, x, y, self.color, self)
         self.info_item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
 
     def decolor_margins(self):
@@ -128,26 +120,6 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
 
 class LineGraphical(EdgeGraphical):
 
-    def create_info(self):
-        # r = self.region
-
-        # vertex = self.project.gm.g.vertex(int(n))
-        # best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
-        # best_out = best_out_score[0]
-        #
-        # best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
-        # best_in = best_in_score[0]
-        #
-        # ch = self.project.gm.is_chunk(vertex)
-        # ch_info = str(ch)
-
-        # QtGui.QMessageBox.about(self, "My message box",
-        #                         "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (r.area(), str(r.centroid()), r.margin_, antlikeness, str(virtual), str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info))
-        x = (self.parent_line.x2() + self.parent_line.x1()) / 2
-        y = (self.parent_line.y2() + self.parent_line.y1()) / 2
-        self.info_item = TextInfoItem("Info there", x, y, self.color, self)
-        self.info_item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
-
     def paint(self, painter, style_option_graphics_item, widget=None):
         opacity = 100 + 155 * abs(self.core_obj[3])
         pen = QtGui.QPen(QtGui.QColor(0, 0, 0, opacity), LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
@@ -158,26 +130,6 @@ class LineGraphical(EdgeGraphical):
 
 
 class PartialGraphical(EdgeGraphical):
-
-    def create_info(self):
-        # r = self.region
-
-        # vertex = self.project.gm.g.vertex(int(n))
-        # best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
-        # best_out = best_out_score[0]
-        #
-        # best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
-        # best_in = best_in_score[0]
-        #
-        # ch = self.project.gm.is_chunk(vertex)
-        # ch_info = str(ch)
-
-        # QtGui.QMessageBox.about(self, "My message box",
-        #                         "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (r.area(), str(r.centroid()), r.margin_, antlikeness, str(virtual), str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info))
-        x = (self.parent_line.x2() + self.parent_line.x1()) / 2
-        y = (self.parent_line.y2() + self.parent_line.y1()) / 2
-        self.info_item = TextInfoItem("Info there", x, y, self.color, self)
-        self.info_item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
 
     def paint(self, painter, style_option_graphics_item, widget=None):
         opacity = 100 + 155 * abs(self.core_obj[3])
