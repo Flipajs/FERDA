@@ -114,6 +114,11 @@ class Solver:
                 r1 = self.gm.region(best_in_vertices[0])
                 r2 = self.gm.region(best_out_vertices[0])
 
+                area_coef = abs(r1.area()-r2.area()) / min(r1.area(), r2.area())
+                # hard area rule...
+                if area_coef > 0.5:
+                    return []
+
                 desc1 = self.zernike_desc.describe(r1)
                 desc2 = self.zernike_desc.describe(r2)
 

@@ -236,7 +236,7 @@ class BackgroundComputer:
             # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
         # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver, self.solver.update_costs])
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold])
+        self.solver.simplify(rules=[self.solver.adaptive_threshold])
 
         S_.general.log_graph_edits = True
 

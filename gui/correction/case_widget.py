@@ -264,7 +264,8 @@ class CaseWidget(QtGui.QWidget):
         ch_info = str(ch)
 
         QtGui.QMessageBox.about(self, "My message box",
-                                "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (r.area(), str(r.centroid()), r.margin_, antlikeness, str(virtual), str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info))
+                                "ID = %i\nArea = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" %
+                                (int(n), r.area(), str(r.centroid()), r.margin_, antlikeness, str(virtual), str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info))
 
     def row_changed(self, off):
         self.active_row += off

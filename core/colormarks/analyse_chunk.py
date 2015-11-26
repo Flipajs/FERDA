@@ -25,7 +25,7 @@ def analyse_chunk(ch, project, cm_model, sample_step):
         for pts, label in cms:
             print label
             for pt in pts:
-                bb[pt[0], pt[1], 0] = 255
+                bb[pt[0], pt[1], 0:2] = 255
 
         cv2.imshow('bb', bb)
         cv2.imshow('bb_t', transform_img_(bb, cm_model))
@@ -85,19 +85,10 @@ if __name__ == '__main__':
 
     cm_model.compute_model(main_img, color_samples)
 
-    for px in color_samples[0][0]:
-        pos = np.asarray(px / cm_model.num_bins_v, dtype=np.int)
-        print px, cm_model.hist3d.hist_labels_[pos[0], pos[1], pos[2]]
-
-    test_im = np.zeros((50, 50, 3), dtype=np.uint8)
-    i = 0
-    j = 0
-    for px in color_samples[0][1]:
-        test_im[i, j, :] = px
-        j += 1
-        if j == 20:
-            i += 1
-            j = 0
+    for cs, _ in color_samples:
+        for px in cs:
+            pos = np.asarray(px / cm_model.num_bins_v, dtype=np.int)
+            print px, cm_model.hist3d.hist_labels_[pos[0], pos[1], pos[2]]
 
     chunks = []
 
@@ -106,11 +97,11 @@ if __name__ == '__main__':
         if ch_id > 0:
             chunks.append(p.chm[ch_id])
 
-    # TODO: remove, debug...
-    measurements = analyse_chunk(chunks[7], p, cm_model, 3)
+    # # TODO: remove, debug...
+    # measurements = analyse_chunk(chunks[7], p, cm_model, 3)
 
-    # i = 0
-    # for ch in chunks:
-    #     print i
-    #     measurements = analyse_chunk(ch, p, cm_model, 3)
-    #     i += 1
+    i = 0
+    for ch in chunks:
+        print i
+        measurements = analyse_chunk(ch, p, cm_model, 3)
+        i += 1

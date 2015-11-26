@@ -49,11 +49,11 @@ def process_chunk():
 
 
 if __name__ == '__main__':
-    process_chunk()
-    if False:
+    # process_chunk()
+    if True:
         norm_size = np.array([30, 100])
 
-        desc = ZernikeMoments(15)
+        desc = ZernikeMoments(51, norm_size)
 
         with open('/Users/flipajs/Documents/dev/ferda/scripts/datasets/c210-few_regions.pkl', 'rb') as f:
             regions = pickle.load(f)
@@ -70,8 +70,9 @@ if __name__ == '__main__':
         images = []
         for i in range(im_num):
             r = regions[i]
-            normed_im, im = get_normalised_img(r, norm_size)
-            moments = desc.describe(normed_im)
+            normed_im = get_normalised_img(r, norm_size)
+
+            moments = desc.describe(r, normalize=False)
             if not prev_desc is None:
                 print "distance to previous: ", np.linalg.norm(prev_desc-moments)
 
