@@ -207,9 +207,9 @@ class BackgroundComputer:
 
         part_num = self.part_num
         # TODO: remove this line
-        part_num = 4
+        part_num = 20
 
-        for i in range(3, part_num):
+        for i in range(part_num):
             rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
                                    db_name='part' + str(i) + '_rm.sqlite3')
 
