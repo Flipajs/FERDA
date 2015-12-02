@@ -1,7 +1,7 @@
 import random
 from functools import partial
-from gui.arena.my_popup   import MyPopup
-from gui.arena.my_view    import MyView
+from gui.arena.my_popup import MyPopup
+from gui.arena.my_view import MyView
 from utils.video_manager import VideoManager
 
 __author__ = 'dita'
@@ -10,7 +10,7 @@ from PyQt4 import QtGui, QtCore
 import sys
 import math
 from core.project.project import Project
-from gui.img_controls     import utils
+from gui.img_controls import utils
 import numpy as np
 
 """
@@ -70,18 +70,15 @@ class ColormarksPicker(QtGui.QWidget):
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
 
         self.pen_size = 10
-        self.make_gui()
 
         self.pick_id = 0
         self.pick_mask = np.zeros((bg_height, bg_width))
 
         self.avgcount = 0
-        self.avgr = 0
-        self.avgg = 0
-        self.avgb = 0
 
-        self.masks = []
+        self.masks = {}
 
+        self.make_gui()
         self.save()
 
         # create the main view and left panel with buttons
@@ -133,15 +130,23 @@ class ColormarksPicker(QtGui.QWidget):
         # change pen size
         self.pen_size = value
         # refresh text in QLabel
-        self.set_label_text()
+        self.set_pen_label_text()
 
-    def set_label_text(self):
+    def set_pen_label_text(self):
         """
         changes the label to show current pen settings
         :return: None
         """
 
         self.pen_label.setText("Pen size: %s" % self.pen_size)
+
+    def set_color_label_text(self):
+        """
+        changes the label to show current pen settings
+        :return: None
+        """
+
+        self.color_label.setText("You are currently editing colormark with id %s" % self.pick_id)
 
     def mouse_press_event(self, event):
         point = self.view.mapToScene(event.pos())
@@ -169,7 +174,7 @@ class ColormarksPicker(QtGui.QWidget):
     def undo(self):
         length = len(self.backup)
         if length > 0:
-            img = self.backup.pop(length-1)
+            img = self.backup.pop(length - 1)
             self.refresh_image(img)
 
     def refresh_image(self, img):
@@ -195,22 +200,18 @@ class ColormarksPicker(QtGui.QWidget):
         value = QtGui.qRgba(0, 0, 255, 100)
 
         # paint the area around the point position
-        fromx = point.x() - self.pen_size/2
-        tox = point.x() + self.pen_size/2
-        fromy = point.y() - self.pen_size/2
-        toy = point.y() + self.pen_size/2
+        fromx = point.x() - self.pen_size / 2
+        tox = point.x() + self.pen_size / 2
+        fromy = point.y() - self.pen_size / 2
+        toy = point.y() + self.pen_size / 2
 
         bg_height, bg_width = self.background.shape[:2]
         for i in range(fromx, tox):
             for j in range(fromy, toy):
                 if 0 <= i < bg_width and 0 <= j < bg_height and self.pick_mask[i][j] == 0:
                     self.paint_image.setPixel(i, j, value)
-                    difb, difg, difr = self.background[j][i]
-                    self.avgr += difr
-                    self.avgg += difg
-                    self.avgb += difb
                     self.avgcount += 1
-        self.pick_mask[fromx : tox][fromy : toy].fill(1)
+        self.pick_mask[fromx: tox, fromy: toy] = 1
 
         # set new image and pixmap
         self.refresh_image(self.paint_image)
@@ -253,25 +254,68 @@ class ColormarksPicker(QtGui.QWidget):
         else:
             return False
 
-    def next_color(self):
+    def save_edits(self):
         if self.avgcount == 0:
             return
-        r = self.avgr/self.avgcount+0.0
-        g = self.avgg/self.avgcount+0.0
-        b = self.avgb/self.avgcount+0.0
-        print ("Color is %s,%s,%s" % (r,g,b))
 
-        self.color_grid.add_color(QtGui.QColor(r, g, b))
+        r, g, b = self.get_avg_color(self.frame, self.pick_mask)
 
-        # save current color mask and data
-        self.masks.append((self.pick_id, self.pick_mask, self.frame))
+        self.masks[self.pick_id] = (np.copy(self.pick_mask), self.frame)
+        self.color_grid.modify_color(self.pick_id, r, g, b)
 
-        # prepare for a next one
+    def get_avg_color(self, frame, mask):
+        img = self.vid_manager.seek_frame(frame)
+        sumr, sumg, sumb, count = 0, 0, 0, 0
+        nzero = np.nonzero(mask)
+        for i, j in zip(nzero[0], nzero[1]):
+            difb, difg, difr = img[j][i]
+            sumr += difr
+            sumg += difg
+            sumb += difb
+            count += 1
+        if count == 0:
+            return 255, 255, 255
+        else:
+            return sumr/count+0.0, sumg/count+0.0, sumb/count+0.0
+
+
+    def new_color(self):
+        # something was changed
+        self.save_edits()
+
+        # prepare for a next change
+        self.set_color_label_text()
         self.clear_paint_image()
         self.pick_mask.fill(0)
-        self.pick_id += 1
-        self.avgcount = 0
-        self.avgr, self.avgg, self.avgb = 0, 0, 0
+
+        self.pick_id = self.color_grid.add_color(255, 255, 255)
+        self.masks[self.pick_id] = (np.copy(self.pick_mask), self.frame)
+
+        self.set_color_label_text()
+
+    def show_mask(self, mask_id):
+        self.save_edits()
+        self.clear_paint_image()
+        self.pick_mask.fill(0)
+        self.pick_id = mask_id
+        data = self.masks.get(mask_id, 0)
+        self.frame = data[1]
+        self.draw_frame()
+
+        fmt = QtGui.QImage.Format_ARGB32
+        bg_size = QtCore.QSize(self.background.shape[0], self.background.shape[1])
+        image = QtGui.QImage(bg_size, fmt)
+        image.fill(QtGui.qRgba(0, 0, 0, 0))
+
+        mask = data[0]
+        value = QtGui.qRgba(0, 0, 255, 100)
+        nzero = np.nonzero(mask)
+        for i, j in zip(nzero[0], nzero[1]):
+            image.setPixel(i, j, value)
+
+        self.pick_mask = np.copy(mask)
+        self.refresh_image(image)
+        self.set_color_label_text()
 
     def random_frame(self):
         # vid_manager's random frame can't be used, because it doesn't return frame id which colormarks_picker uses
@@ -293,7 +337,7 @@ class ColormarksPicker(QtGui.QWidget):
         else:
             self.prev_frame_button.setEnabled(True)
 
-        if self.frame >= self.vid_manager.total_frame_count()-1:
+        if self.frame >= self.vid_manager.total_frame_count() - 1:
             self.next_frame_button.setEnabled(False)
         else:
             self.next_frame_button.setEnabled(True)
@@ -380,14 +424,20 @@ class ColormarksPicker(QtGui.QWidget):
         self.random_frame_button.clicked.connect(self.random_frame)
         self.left_panel.layout().addWidget(self.random_frame_button)
 
-        self.next_color_button = QtGui.QPushButton("Next color")
-        self.next_color_button.clicked.connect(self.next_color)
-        self.left_panel.layout().addWidget(self.next_color_button)
+        self.new_color_button = QtGui.QPushButton("New color")
+        self.new_color_button.clicked.connect(self.new_color)
+        self.left_panel.layout().addWidget(self.new_color_button)
 
-        self.color_grid = ColorGridWidget()
+        self.color_label = QtGui.QLabel()
+        self.color_label.setWordWrap(True)
+        self.color_label.setText("")
+        self.left_panel.layout().addWidget(self.color_label)
+
+        self.color_grid = ColorGridWidget(update_callback_picked=self.show_mask)
         self.left_panel.layout().addWidget(self.color_grid)
 
-        self.set_label_text()
+        self.set_pen_label_text()
+        self.set_color_label_text()
 
         # complete the gui
         self.layout().addWidget(self.left_panel)
@@ -398,14 +448,15 @@ class ColormarksPicker(QtGui.QWidget):
 
 
 class ColorGridWidget(QtGui.QWidget):
-    def __init__(self, rect_size=20, spacing=5, max_cols=5):
-        super(ColorGridWidget,self).__init__(None)
-        self.rect_size = rect_size
-        self.spacing = spacing
+    def __init__(self, max_cols=5, update_callback_picked=None, update_callback_deleted=None):
+        super(ColorGridWidget, self).__init__(None)
         self.max_cols = max_cols
         self.colors = {}
         self.buttons = []
         self.last_index = 0
+
+        self.update_callback_picked = update_callback_picked
+        self.update_callback_deleted = update_callback_deleted
 
         self.col = 0
         self.posx = 0
@@ -414,21 +465,19 @@ class ColorGridWidget(QtGui.QWidget):
         self.grid = QtGui.QGridLayout()
         self.setLayout(self.grid)
 
-    def clicked(self, id):
-        color = self.colors.get(id, 0)
-        if color == 0:
+    def clicked(self, button_id):
+        color = self.colors.get(button_id, None)
+        if color is None:
             return
-        print color
+        self.update_callback_picked(button_id)
 
-    def add_color(self, color):
+    def add_color(self, r, g, b):
         print ("Adding color")
-        self.colors[self.last_index] = color
-        r = color.red()
-        g = color.green()
-        b = color.blue()
+        self.colors[self.last_index] = (r,g,b)
         button = QtGui.QPushButton("%s" % self.last_index)
-        button.clicked.connect(partial(self.clicked,self.last_index))
-        button.setStyleSheet('QPushButton {background-color: #%02x%02x%02x; color: #%02x%02x%02x;}' % (r,g,b, 255-r, 255-g, 255-b))
+        button.clicked.connect(partial(self.clicked, self.last_index))
+        button.setStyleSheet('QPushButton {background-color: #%02x%02x%02x; color: #%02x%02x%02x;}' % (
+        r, g, b, 255 - r, 255 - g, 255 - b))
         self.buttons.append(button)
         self.grid.addWidget(button, self.posx, self.posy)
         self.last_index += 1
@@ -440,6 +489,15 @@ class ColorGridWidget(QtGui.QWidget):
         else:
             self.posy += 1
 
+        return self.last_index-1
+
+    def modify_color(self, id, r, g, b):
+        if id not in self.colors:
+            self.add_color(r, g, b)
+        else:
+            self.colors[id] = (r,g,b)
+            self.buttons[id].setStyleSheet('QPushButton {background-color: #%02x%02x%02x; color: #%02x%02x%02x;}' % (
+            r, g, b, 255 - r, 255 - g, 255 - b))
 
 
 app = QtGui.QApplication(sys.argv)
