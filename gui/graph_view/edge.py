@@ -158,27 +158,6 @@ class ChunkGraphical(EdgeGraphical):
 
         super(ChunkGraphical, self).__init__(self.parent_line, core_obj, scene, color)
 
-    def create_info(self):
-        # TODO
-        # r = self.region
-
-        # vertex = self.project.gm.g.vertex(int(n))
-        # best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
-        # best_out = best_out_score[0]
-        #
-        # best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
-        # best_in = best_in_score[0]
-        #
-        # ch = self.project.gm.is_chunk(vertex)
-        # ch_info = str(ch)
-
-        # QtGui.QMessageBox.about(self, "My message box",
-        #                         "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (r.area(), str(r.centroid()), r.margin_, antlikeness, str(virtual), str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info))
-        x = (self.parent_line.x2() + self.parent_line.x1()) / 2
-        y = (self.parent_line.y2() + self.parent_line.y1()) / 2
-        self.info_item = TextInfoItem("Info there", x, y, self.color, self)
-        self.info_item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
-
     def paint(self, painter, style_option_graphics_item, widget=None):
         pen = QtGui.QPen(QtGui.QColor(0, 0, 0), LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
 

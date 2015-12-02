@@ -3,7 +3,7 @@ from core.region.region import Region
 from gui.graph_view.node import Node
 from gui.graph_view.edge import Edge
 from gui.img_controls.utils import cvimg2qtpixmap
-from vis_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP, RELATIVE_MARGIN
+from vis_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 
 __author__ = 'Simon Mandlik'
 
@@ -92,8 +92,9 @@ class Column:
                     region = item
                 if region in self.items_nodes.keys():
                     continue
-                img = self.im_manager.get_crop(self.frame, region, width=self.width, height=self.height, relative_margin=self.relative_margin)
-                self.regions_images[region] = img
+                if not isinstance(region, int):
+                    img = self.im_manager.get_crop(self.frame, region, width=self.width, height=self.height, relative_margin=self.relative_margin)
+                    self.regions_images[region] = img
 
     def add_crop_to_col(self):
         for item in self.objects:

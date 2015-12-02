@@ -5,25 +5,25 @@ from PyQt4 import QtGui
 __author__ = 'Simon Mandlik'
 
 # the width of a node
-WIDTH = 40
+WIDTH = 60
 # the width of a node
-HEIGHT = 40
+HEIGHT = 60
 # relative margin of a node
-RELATIVE_MARGIN = 1
+RELATIVE_MARGIN = 0.9
 # distance of the whole visualization from the top of the widget
-FROM_TOP = 20
+FROM_TOP = WIDTH
 # space between each of the columns
-SPACE_BETWEEN_HOR = 30
+SPACE_BETWEEN_HOR = WIDTH
 # space between nodes in column
-SPACE_BETWEEN_VER = 30
+SPACE_BETWEEN_VER = HEIGHT
 # gap between frame_numbers and first node in columns
-GAP = 50
+GAP = WIDTH
 # number of columns to be displayed before dynamic loading, 0 means dynamic loading for all
 MINIMUM = 20
 # number of columns processed in one chunk sent to dummy thread, for debbuging purpose
 COLUMNS_TO_LOAD = 3
 # Opacity of the colors
-OPACITY = 255
+OPACITY = 160
 # default text to display
 DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, " \
                "stretch; A, S show/hide info for selected; T - show toggled node"
@@ -38,7 +38,7 @@ class VisLoader:
         self.region_manager = None
         self.update_structures()
 
-        self.vertices = []
+        self.vertices = set()
         self.edges = set()
         self.regions = set()
 
@@ -71,12 +71,18 @@ class VisLoader:
             print "No project set!"
 
     def prepare_vertices(self):
-        self.vertices = self.graph_manager.get_all_relevant_vertices()
+        self.vertices = set(self.graph_manager.get_all_relevant_vertices())
+
+        # s = set(self.graph_manager.get_all_relevant_vertices())
+        # i = 200
+        # while i > 0:
+        #     i -= 1
+        #     self.vertices.add(s.pop())
 
     def prepare_nodes(self):
-        for v in self.vertices:
-            region = self.graph_manager.region(v)
-            self.regions_vertices[region] = v
+        for vertex in self.vertices:
+            region = self.graph_manager.region(vertex)
+            self.regions_vertices[region] = vertex
             self.regions.add(region)
 
     def prepare_edges(self):
@@ -104,16 +110,6 @@ class VisLoader:
     def get_node_info(self, region):
         n = self.regions_vertices[region]
 
-        # antlikeness = self.parent.solver.project.stats.antlikeness_svm.get_prob(region)[1]
-        # virtual = False
-        #
-        # try:
-        #     if region.is_virtual:
-        #         antlikeness = 1.0
-        #         virtual = True
-        # except:
-        #     pass
-
         vertex = self.project.gm.g.vertex(int(n))
         best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
         best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
@@ -121,7 +117,10 @@ class VisLoader:
         ch = self.project.gm.is_chunk(vertex)
         ch_info = str(ch)
 
-        return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
+        # TODO
+        # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
+        #         region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
+        return "Centroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (str(region.centroid()),
                 region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
 
     def get_edge_info(self, edge):
@@ -129,8 +128,11 @@ class VisLoader:
 
     def visualise(self):
         self.prepare_vertices()
+        print("Preparing nodes...")
         self.prepare_nodes()
+        print("Preparing edges...")
         self.prepare_edges()
+        print("Preparing visualizer...")
         img_manager = ImgManager(self.project)
 
         from graph_visualizer import GraphVisualizer
@@ -140,14 +142,19 @@ class VisLoader:
 if __name__ == '__main__':
     from scripts import fix_project
     p = Project()
-    p.load('/home/sheemon/FERDA/projects/eight_new_issue/eight.fproj')
+    # p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
+    p.load('/home/sheemon/FERDA/projects/archive/c210.fproj')
+
+    from core.region.region_manager import RegionManager
+
+    p.rm = RegionManager(p.working_directory, '/rm.sqlite3')
 
     import cv2, sys
     app = QtGui.QApplication(sys.argv)
     l1 = VisLoader(p)
-    l1.set_relative_margin(0.3)
-    l1.set_width(40)
-    l1.set_height(40)
+    l1.set_relative_margin(1)
+    l1.set_width(60)
+    l1.set_height(60)
     l1.visualise()
     app.exec_()
     cv2.waitKey(0)

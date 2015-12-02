@@ -36,6 +36,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.width = loader.width
         self.height = loader.height
         self.loader = loader
+        self.dynamically = dynamically
 
         self.view = MyViewZoomable(self)
         self.setLayout(QtGui.QVBoxLayout())
@@ -350,6 +351,7 @@ class GraphVisualizer(QtGui.QWidget):
                 empty_frame_count += 1
 
     def add_objects(self, added_regions, added_edges):
+        print("Preparing objects...")
         frames = set()
         for node in added_regions:
             if node not in self.regions:
@@ -363,17 +365,23 @@ class GraphVisualizer(QtGui.QWidget):
         frames.sort()
         first_frame, last_frame = frames[0], frames[len(frames) - 1]
 
+        print("Preparing columns...")
         self.prepare_columns(frames)
+        print("Preparing edges...")
         self.edges = comp.sort_edges(self.edges, frames)
         self.compute_positions()
+        print("Preparing nodes...")
         self.add_sole_nodes()
+        print("Visualizing...")
         self.redraw(first_frame, last_frame)
 
     def draw_columns(self, first_frame, last_frame, minimum):
-        event_loaded = threading.Event()
-        thread_load = threading.Thread(group=None, target=self.load, args=(minimum, event_loaded))
         next_x = 0
+        if self.dynamically:
+            event_loaded = threading.Event()
+            thread_load = threading.Thread(group=None, target=self.load, args=(minimum, event_loaded))
         for column in self.columns:
+            print("Drawing column {0}...".format(column.frame))
             QApplication.processEvents()
             self.load_indicator_wheel()
             column.set_x(next_x)
@@ -383,17 +391,21 @@ class GraphVisualizer(QtGui.QWidget):
             if isinstance(column.frame, tuple):
                 frame_a, frame_b = column.frame[0], column.frame[1]
             if not (frame_a < first_frame or frame_b > last_frame):
-                if self.columns.index(column) == minimum:
-                    event_loaded.clear()
-                    thread_load.start()
-                    event_loaded.wait()
-                elif self.columns.index(column) < minimum:
-                    column.add_crop_to_col()
-                else:
-                    if column not in self.loaded:
+                if self.dynamically:
+                    if self.columns.index(column) == minimum:
                         event_loaded.clear()
+                        thread_load.start()
                         event_loaded.wait()
-                column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
+                    elif self.columns.index(column) < minimum:
+                        column.add_crop_to_col()
+                    else:
+                        if column not in self.loaded:
+                            event_loaded.clear()
+                            event_loaded.wait()
+                    column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
+                else:
+                    column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
+
 
     def increment_x(self, column, next_x):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
