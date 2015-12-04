@@ -57,7 +57,15 @@ class GraphManager:
 
     def remove_vertex(self, vertex_id, disassembly=True):
         vertex = self.g.vertex(vertex_id)
-        region = self.rm[self.g.vp['region_id'][vertex]]
+        region = self.project.rm[self.g.vp['region_id'][vertex]]
+
+        if region.frame() not in self.vertices_in_t:
+            return []
+
+        if int(vertex) not in self.vertices_in_t[region.frame()]:
+            return []
+
+        affected = []
 
         if region is None:
             print "remove node n is None"
@@ -70,13 +78,16 @@ class GraphManager:
 
         # save all edges
         for e in vertex.in_edges():
+            affected.append(e.source())
             self.remove_edge_(e)
 
         for e in vertex.out_edges():
+            affected.append(e.target())
             self.remove_edge_(e)
 
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, region)
 
+        print region.frame(), int(vertex)
         self.vertices_in_t[region.frame()].remove(int(vertex))
         if not self.vertices_in_t[region.frame_]:
             del self.vertices_in_t[region.frame_]
@@ -91,6 +102,8 @@ class GraphManager:
         # maybe we need to shrink time boundaries...
         if self.end_t == region.frame_ or self.start_t == region.frame_:
             self.update_time_boundaries()
+
+        return affected
 
     def is_chunk(self, vertex):
         """
@@ -116,7 +129,7 @@ class GraphManager:
         self.vertices_in_t = {}
         for v in self.g.vertices():
             v_id = int(v)
-            n = self.g.np.region[v_id]
+            n = self.region(v_id)
             self.vertices_in_t.setdefault(n.frame_, []).append(v_id)
 
         self.update_time_boundaries()

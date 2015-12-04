@@ -7,7 +7,7 @@ __author__ = 'flipajs'
 
 class NoiseFilterComputer(QtCore.QThread):
     proc_done = QtCore.pyqtSignal(bool)
-    part_done = QtCore.pyqtSignal(float, object, object)
+    part_done = QtCore.pyqtSignal(float, object, object, object)
     set_range = QtCore.pyqtSignal(int)
 
     def __init__(self, solver, project, steps):
@@ -21,11 +21,15 @@ class NoiseFilterComputer(QtCore.QThread):
         th = 0.2
 
         to_process = []
-        for n in self.solver.g:
-            prob = self.solver.get_antlikeness(n)
+
+        r2v_mapping = {}
+        for v in self.solver.gm.get_all_relevant_vertices():
+            r = self.solver.gm.region(v)
+            r2v_mapping[r] = v
+            prob = self.solver.get_antlikeness(r)
 
             if prob < th:
-                to_process.append(n)
+                to_process.append(r)
 
         optimized = optimize_frame_access(to_process)
         vid = get_auto_video_manager(self.project)
@@ -33,18 +37,18 @@ class NoiseFilterComputer(QtCore.QThread):
         self.set_range.emit(len(optimized))
 
         i = 0
-        for n, seq, _ in optimized:
+        for r, seq, _ in optimized:
             if seq:
-                while vid.frame_number() < n.frame_:
+                while vid.frame_number() < r.frame_:
                     vid.next_frame()
 
                 img = vid.img()
             else:
-                img = vid.seek_frame(n.frame_)
+                img = vid.seek_frame(r.frame_)
 
             img = prepare_for_segmentation(img, self.project, grayscale_speedup=False)
 
-            self.part_done.emit(i, img, n)
+            self.part_done.emit(i, img, r, r2v_mapping[r])
 
             i += 1
 

@@ -278,57 +278,63 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
     def prev_case(self):
         self.active_node_id -= 1
+        self.next_case(move_to_different_case=False)
 
-        self.nodes = self.solver.g.nodes()
-        self.order_nodes()
-
-        n = self.nodes[self.active_node_id]
-
-        if n in self.solver.ignored_nodes:
-            self.active_node_id -= 1
-            self.prev_case()
-            return
-
-        if n.frame_ == self.solver.end_t:
-            self.active_node_id -= 1
-            self.prev_case()
-            return
-
-        # test beginning
-        if n.frame_ == 0:
-            is_ch, _, _ = self.solver.is_chunk(n)
-            if is_ch:
-                self.active_node_id -= 1
-                self.prev_case()
-                return
-
-        # test if it is different cc:
-        if self.active_cw:
-            for g in self.active_cw.vertices_groups:
-                for n_ in g:
-                    if n == n_:
-                        self.prev_case()
-                        return
-
-        # remove previous case (if exists)
-        if self.scenes_widget.layout().count():
-            it = self.scenes_widget.layout().itemAt(0)
-            self.scenes_widget.layout().removeItem(it)
-            it.widget().setParent(None)
-
-        # add new widget
-        nodes_groups = self.solver.get_cc_from_node(n)
-        if len(nodes_groups) == 0:
-            # self.nodes.pop(self.active_node_id)
-            self.active_node_id -= 1
-            self.prev_case()
-            return
-
-        config = self.best_greedy_config(nodes_groups)
-
-        self.active_cw = CaseWidget(self.solver.g, self.project, nodes_groups, config, self.vid, self)
-        self.active_cw.active_node = None
-        self.scenes_widget.layout().addWidget(self.active_cw)
+    #
+    #
+    # def prev_case(self):
+    #     self.active_node_id -= 1
+    #
+    #     self.nodes = self.solver.g.nodes()
+    #     self.order_nodes()
+    #
+    #     n = self.nodes[self.active_node_id]
+    #
+    #     if n in self.solver.ignored_nodes:
+    #         self.active_node_id -= 1
+    #         self.prev_case()
+    #         return
+    #
+    #     if n.frame_ == self.solver.end_t:
+    #         self.active_node_id -= 1
+    #         self.prev_case()
+    #         return
+    #
+    #     # test beginning
+    #     if n.frame_ == 0:
+    #         is_ch, _, _ = self.solver.is_chunk(n)
+    #         if is_ch:
+    #             self.active_node_id -= 1
+    #             self.prev_case()
+    #             return
+    #
+    #     # test if it is different cc:
+    #     if self.active_cw:
+    #         for g in self.active_cw.vertices_groups:
+    #             for n_ in g:
+    #                 if n == n_:
+    #                     self.prev_case()
+    #                     return
+    #
+    #     # remove previous case (if exists)
+    #     if self.scenes_widget.layout().count():
+    #         it = self.scenes_widget.layout().itemAt(0)
+    #         self.scenes_widget.layout().removeItem(it)
+    #         it.widget().setParent(None)
+    #
+    #     # add new widget
+    #     nodes_groups = self.solver.get_cc_from_node(n)
+    #     if len(nodes_groups) == 0:
+    #         # self.nodes.pop(self.active_node_id)
+    #         self.active_node_id -= 1
+    #         self.prev_case()
+    #         return
+    #
+    #     config = self.best_greedy_config(nodes_groups)
+    #
+    #     self.active_cw = CaseWidget(self.solver.g, self.project, nodes_groups, config, self.vid, self)
+    #     self.active_cw.active_node = None
+    #     self.scenes_widget.layout().addWidget(self.active_cw)
 
     def confirm_cc(self):
         self.active_cw.confirm_clicked()
@@ -515,26 +521,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.thread.proc_done.connect(self.noise_finished)
         self.thread.set_range.connect(self.progress_bar.setMaximum)
         self.thread.start()
-
-    def remove_noise(self):
-        # TODO: add actions
-
-        to_remove = self.noise_nodes_widget.get_selected()
-        for n in to_remove:
-            if n in self.solver.g:
-                self.strong_remove_region(n, suppress_next_case=True)
-
-        to_confirm = self.noise_nodes_widget.get_unselected()
-        for n in to_confirm:
-            if n in self.solver.g:
-                self.solver.g.node[n]['antlikeness'] = 1.0
-
-        self.mode_tools_noise.hide()
-        self.next_case()
-
-    def remove_noise_back(self):
-        self.mode_tools_noise.hide()
-        self.next_case()
 
     def ignore_node(self):
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.IGNORE_NODES)

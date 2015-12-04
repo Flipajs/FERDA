@@ -46,14 +46,6 @@ class MainTabWidget(QtGui.QWidget):
 
         print "LOADING GRAPH..."
         if project.gm.g.num_vertices():
-            from core.graph.solver import Solver
-            from core.region.region_manager import RegionManager
-
-            project.solver = Solver(self.project)
-            project.gm.assignment_score = project.solver.assignment_score
-
-            project.rm = RegionManager(db_wd=project.working_directory)
-
             self.background_computer_finished(project.solver)
         else:
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)

@@ -486,12 +486,12 @@ class Solver:
         if ch:
             affected = []
 
-            affected += self.remove_vertex(ch.start_n)
-            affected += self.remove_vertex(ch.end_n)
+            affected += self.gm.remove_vertex(ch.start_vertex_id(), disassembly=False)
+            affected += self.gm.remove_vertex(ch.end_vertex_id(), disassembly=False)
 
             return affected
         else:
-            return self.remove_region(vertex)
+            return self.gm.remove_vertex(vertex)
 
     def save(self, autosave=False):
         print "SAVING PROGRESS... Wait please"

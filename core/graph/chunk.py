@@ -187,11 +187,17 @@ class Chunk:
     def id(self):
         return self.id_
 
-    def end_node(self):
+    def start_vertex_id(self):
+        return self.nodes_[0]
+
+    def end_vertex_id(self):
         return self.nodes_[-1]
 
+    def end_node(self):
+        self.end_vertex()
+
     def start_node(self):
-        return self.nodes_[0]
+        self.start_vertex()
 
     def start_frame(self, gm):
         return gm.region(self.start_node()).frame()

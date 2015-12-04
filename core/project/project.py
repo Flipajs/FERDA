@@ -270,8 +270,9 @@ class Project:
                 except:
                     pass
 
-                self.solver = Solver(self)
-                self.solver.g = g
+                # self.solver = Solver(self)
+                # self.gm.g = g
+                # self.solver.g = g
                 self.solver.ignored_nodes = ignored_nodes
                 # solver.update_nodes_in_t_refs()
                 self.log = log
@@ -282,10 +283,15 @@ class Project:
             pass
 
         # reconnect...
-        if self.gm:
+            from core.region.region_manager import RegionManager
+            self.solver = Solver(self)
+            self.gm.assignment_score = self.solver.assignment_score
+
+            self.rm = RegionManager(db_wd=self.working_directory)
+
             self.gm.project = self
             self.gm.rm = self.rm
-
+            self.gm.update_nodes_in_t_refs()
 
 if __name__ == "__main__":
     p = Project()
