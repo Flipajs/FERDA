@@ -31,7 +31,7 @@ class Solver:
         :return:
         """
 
-        project.gm = GraphManager(project, self.assignment_score)
+        # project.gm = GraphManager(project, self.assignment_score)
         self.gm = project.gm
         self.rm = project.rm
         self.chm = project.chm

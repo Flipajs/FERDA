@@ -45,10 +45,16 @@ class MainTabWidget(QtGui.QWidget):
         self.show_results_only_around_frame = -1
 
         print "LOADING GRAPH..."
-        if project.solver:
-            solver = project.solver
+        if project.gm.g.num_vertices():
+            from core.graph.solver import Solver
+            from core.region.region_manager import RegionManager
 
-            self.background_computer_finished(solver)
+            project.solver = Solver(self.project)
+            project.gm.assignment_score = project.solver.assignment_score
+
+            project.rm = RegionManager(db_wd=project.working_directory)
+
+            self.background_computer_finished(project.solver)
         else:
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)
             self.bc_msers.run()
@@ -64,7 +70,6 @@ class MainTabWidget(QtGui.QWidget):
         print "GRAPH LOADED"
         self.solver = solver
         self.results_tab.solver = solver
-        self.results_tab.add_data(self.solver)
         self.tracker_tab.prepare_corrections(self.solver)
 
         self.tabs.setTabEnabled(1, True)

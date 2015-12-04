@@ -123,10 +123,10 @@ class Project:
             with open(self.working_directory+'/stats.pkl', 'wb') as f:
                 pickle.dump(self.stats, f)
 
-        # Region Manager
-        if self.rm:
-            with open(self.working_directory+'/region_manager.pkl', 'wb') as f:
-                pickle.dump(self.rm, f, -1)
+        # # Region Manager
+        # if self.rm:
+        #     with open(self.working_directory+'/region_manager.pkl', 'wb') as f:
+        #         pickle.dump(self.rm, f, -1)
 
         # Chunk Manager
         if self.chm:

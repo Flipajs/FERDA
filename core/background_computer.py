@@ -207,7 +207,7 @@ class BackgroundComputer:
 
         part_num = self.part_num
         # TODO: remove this line
-        part_num = 20
+        part_num = 3
 
         for i in range(part_num):
             rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
@@ -247,6 +247,7 @@ class BackgroundComputer:
         from utils.color_manager import colorize_project
         colorize_project(self.project)
 
+        self.update_callback(-1, 'saving...')
         self.project.save()
 
         print ("#CHUNKS: %d") % (len(self.project.chm.chunk_list()))
