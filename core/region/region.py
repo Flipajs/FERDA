@@ -126,6 +126,7 @@ class Region():
         return np.copy(self.pts_)
 
     def centroid(self):
+
         return np.copy(self.centroid_)
 
     def set_centroid(self, centroid):

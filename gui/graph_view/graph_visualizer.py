@@ -1,3 +1,4 @@
+from libxml2mod import last
 import threading
 from PyQt4.QtGui import QApplication
 from gui.graph_view.node import Node
@@ -8,23 +9,10 @@ from core.project.project import Project
 from gui.img_controls.my_view_zoomable import MyViewZoomable
 from utils.img_manager import ImgManager
 from gui.graph_view.edge import EdgeGraphical
-
-# the size of a node
-STEP = 40
-# distance of the whole visualization from the top of the widget
-FROM_TOP = 20
-# space between each of the columns
-SPACE_BETWEEN_HOR = 30
-# space between nodes in column
-SPACE_BETWEEN_VER = 10
-# gap between frame_numbers and first node in columns
-GAP = 50
-# number of columns to be displayed before dynamic loading, 0 means dynamic loading for all
-MINIMUM = 20
-# number of columns processed in one chunk sent to dummy thread, for debbuging purpose
-COLUMNS_TO_LOAD = 10
-# default text to display
-DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, stretch"
+import random
+import matplotlib.colors as colors
+from vis_loader import COLUMNS_TO_LOAD,DEFAULT_TEXT, FROM_TOP, GAP, \
+    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT, OPACITY
 
 __author__ = 'Simon Mandlik'
 
@@ -35,7 +23,7 @@ class GraphVisualizer(QtGui.QWidget):
     Those can be passed in constructor or using a method add_objects
     """
 
-    def __init__(self, regions, edges, img_manager, show_vertically=False, compress_axis=True, dynamically=True):
+    def __init__(self, regions, edges, img_manager, relative_margin, width, height, show_vertically=False, compress_axis=True, dynamically=True):
         super(GraphVisualizer, self).__init__()
         self.regions = set()
         self.regions_list = []
@@ -44,6 +32,9 @@ class GraphVisualizer(QtGui.QWidget):
         self.frames_columns = {}
         self.columns = []
         self.img_manager = img_manager
+        self.relative_margin = relative_margin
+        self.width = width
+        self.height = height
 
         self.view = MyViewZoomable(self)
         self.setLayout(QtGui.QVBoxLayout())
@@ -93,9 +84,20 @@ class GraphVisualizer(QtGui.QWidget):
         self.shrink_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
         self.addAction(self.shrink_action)
 
+        self.show_info_action = QtGui.QAction('show_info', self)
+        self.show_info_action.triggered.connect(self.show_info)
+        self.show_info_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_A))
+        self.addAction(self.show_info_action)
+
+        self.toggle_node_action = QtGui.QAction('toggle_node', self)
+        self.toggle_node_action.triggered.connect(self.toggle_node)
+        self.toggle_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
+        self.addAction(self.toggle_node_action)
+
         self.selected = []
-        self.selected_edge = None
+        # self.selected_edge = None
         self.toggled = []
+        self.clipped = []
         self.wheel_count = 1
         self.loaded = set()
 
@@ -114,25 +116,50 @@ class GraphVisualizer(QtGui.QWidget):
         if item is None:
             self.selected = []
             while self.toggled:
-                self.toggled.pop().toggle()
+                node = self.toggled.pop()
+                if node.toggled:
+                    node.toggle()
+            while self.clipped:
+                cl = self.clipped.pop()
+                if cl.clipped:
+                    cl.decolor_margins()
+                    cl.hide_info()
         else:
             self.selected.append(item)
 
         if isinstance(item, EdgeGraphical):
-            self.selected_edge = item
+            # self.selected_edge = item
+            self.clipped.append(item)
         elif isinstance(item, Node):
-            item.toggle()
             self.toggled.append(item)
+            self.clipped.append(item)
 
     def stretch(self):
         global SPACE_BETWEEN_HOR
-        SPACE_BETWEEN_HOR *= 1.2
-        self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+        SPACE_BETWEEN_HOR *= 1.5
+        self.redraw()
 
     def shrink(self):
         global SPACE_BETWEEN_HOR
-        SPACE_BETWEEN_HOR *= 0.8
-        self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
+        SPACE_BETWEEN_HOR *= 0.5
+        self.redraw()
+
+    def show_info(self):
+        last_color = None
+        for item in self.clipped:
+            if last_color:
+                color = hex2rgb_opacity_tuple(inverted_hex_color_str(last_color))
+                last_color = None
+            else:
+                last_color = random_hex_color_str()
+                color = hex2rgb_opacity_tuple(last_color)
+
+            item.color_margins(color)
+            item.show_info()
+
+    def toggle_node(self):
+        for item in self.toggled:
+            item.toggle()
 
     def compute_positions(self):
         for edge in self.edges:
@@ -274,7 +301,8 @@ class GraphVisualizer(QtGui.QWidget):
             if column_free.is_free(position + offset, node_free):
                 occupied = False
             else:
-                offset = (-1) * offset if offset < 0 else (-1)*(offset + 1)
+                # offset = (-1) * offset if offset < 0 else (-1)*(offset + 1)
+                offset += 1
         return position, position + offset
 
     def get_next_to_column(self, frame_from, direction):
@@ -295,18 +323,18 @@ class GraphVisualizer(QtGui.QWidget):
             if x in frames:
                 if empty_frame_count > 0:
                     if empty_frame_count == 1:
-                        column = Column(x - 1, self.scene, self.img_manager, True)
+                        column = Column(x - 1, self.scene, self.img_manager, self.relative_margin, self.width, self.height, True)
                         self.frames_columns[x - 1] = column
                         self.columns.append(column)
                     else:
-                        column = Column(((x - empty_frame_count), x - 1), self.scene, self.img_manager, True)
+                        column = Column(((x - empty_frame_count), x - 1), self.scene, self.img_manager, self.relative_margin, self.width, self.height, True)
                         self.frames_columns[((x - empty_frame_count), x - 1)] = column
                         self.columns.append(column)
-                    self.scene_width += STEP / 2 + SPACE_BETWEEN_HOR
-                column = Column(x, self.scene, self.img_manager)
+                    self.scene_width += WIDTH / 2 + SPACE_BETWEEN_HOR
+                column = Column(x, self.scene, self.img_manager, self.relative_margin, self.width, self.height)
                 self.frames_columns[x] = column
                 self.columns.append(column)
-                self.scene_width += STEP + SPACE_BETWEEN_HOR
+                self.scene_width += WIDTH + SPACE_BETWEEN_HOR
 
                 empty_frame_count = 0
             else:
@@ -360,14 +388,14 @@ class GraphVisualizer(QtGui.QWidget):
 
     def increment_x(self, column, next_x):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
-            next_x += STEP * (column.frame[1] - column.frame[0])
+            next_x += WIDTH * (column.frame[1] - column.frame[0])
         else:
-            next_x += STEP / 2 if column.empty else STEP
+            next_x += WIDTH / 2 if column.empty else WIDTH
         next_x += SPACE_BETWEEN_HOR
         return next_x
 
     def load(self, minimum, event_loaded):
-        columns = list(self.columns[minimum::])
+        columns = list(self.columns[minimum:])
         while len(columns) > 0:
             columns_stripped = columns[:COLUMNS_TO_LOAD:]
             columns = columns[COLUMNS_TO_LOAD::]
@@ -405,7 +433,11 @@ class GraphVisualizer(QtGui.QWidget):
         self.scene.setForegroundBrush(QtCore.Qt.transparent)
         self.view.setEnabled(True)
 
-    def redraw(self, first_frame, last_frame):
+    def redraw(self, first_frame=None, last_frame=None):
+        if not first_frame:
+            first_frame = self.columns[0].frame
+        if not last_frame:
+            last_frame = self.columns[len(self.columns) - 1].frame
         self.view.centerOn(0, 0)
         self.load_indicator_init()
 
@@ -420,7 +452,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.view.centerOn(0, 0)
 
     def add_rect_to_scene(self):
-        width = self.scene_width if self.compress_axis else (STEP * self.columns[len(self.columns) - 1].frame +
+        width = self.scene_width if self.compress_axis else (WIDTH * self.columns[len(self.columns) - 1].frame +
                                                              (self.columns[len(self.columns) - 1].frame - 1) * SPACE_BETWEEN_VER)
         height = self.compute_height()
         if self.show_vertically:
@@ -436,7 +468,7 @@ class GraphVisualizer(QtGui.QWidget):
         for col in self.columns:
             if len(col.objects) > height:
                 height = len(col.objects)
-        height = GAP + STEP * height + SPACE_BETWEEN_VER * (height - 1)
+        height = GAP + self.height * height + SPACE_BETWEEN_VER * (height - 1)
         return height
 
     def get_selected(self):
@@ -455,9 +487,45 @@ class GraphVisualizer(QtGui.QWidget):
             self.wheel_count = 1
 
 
+def random_hex_color_str():
+    rand_num = random.randint(1, 3)
+    l1 = "0123456789ab"
+    color = "#"
+    for i in range(1, 4):
+        if i == rand_num:
+            color += "ff"
+        else:
+            color += (l1[random.randint(0, len(l1)-1)] + l1[random.randint(0, len(l1)-1)])
+
+    return color
+
+
+def inverted_hex_color_str(color):
+    string = str(color).lower()
+    code = {}
+    l1 = "#;0123456789abcdef"
+    l2 = "#;fedcba9876543210"
+
+    for i in range(len(l1)):
+        code[l1[i]] = l2[i]
+
+    inverted = ""
+
+    for j in string:
+        inverted += code[j]
+
+    return inverted
+
+
+def hex2rgb_opacity_tuple(color):
+    rgb = colors.hex2color(color)
+    rgb_list = [int(255 * x) for x in rgb]
+    rgb_list.append(OPACITY)
+    return QtGui.QColor(rgb_list[0], rgb_list[1], rgb_list[2], rgb_list[3])
+
 if __name__ == '__main__':
     p = Project()
-    p.load('/home/ferda/PROJECTS/eight_22/eight22.fproj')
+    p.load('/home/ferda/PROJECTS/eight_22_issue/eight22.fproj')
     im_manager = ImgManager(p)
 
     solver = p.saved_progress['solver']

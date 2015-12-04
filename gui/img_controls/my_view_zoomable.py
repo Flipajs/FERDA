@@ -4,6 +4,7 @@ from PyQt4 import QtGui, QtCore
 
 SCALE_FACTOR = 1.01
 
+
 class MyViewZoomable(QtGui.QGraphicsView):
     
     def __init__(self, ngv):
@@ -36,6 +37,8 @@ class MyViewZoomable(QtGui.QGraphicsView):
         key_o = QtCore.Qt.Key_O
         key_b = QtCore.Qt.Key_B
         key_n = QtCore.Qt.Key_N
+        # key_q = QtCore.Qt.Key_Q
+        # key_w = QtCore.Qt.Key_W
         event_key = event.key()
 
         if event_key == key_b or event_key == key_n:
@@ -45,10 +48,10 @@ class MyViewZoomable(QtGui.QGraphicsView):
             self.zoom(False)
         elif event_key == key_i:
             self.zoom(True)
+        # elif event_key == key_q or event_key == key_w:
+        #     self.stretch(event_key == key_q)
         else:
             super(MyViewZoomable, self).keyPressEvent(event)
-
-
 
     def zoom (self, in_out):
         self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
@@ -102,5 +105,25 @@ class MyViewZoomable(QtGui.QGraphicsView):
         print str(x1 + (z * (x2 - x1))), str(y1 + (z * (y2 - y1)))
         point = QtCore.QPointF(x1 + (z * (x2 - x1)), y1 + (z * (y2 - y1)))
         self.centerOn(point)
+
+    # def stretch(self, shrink):
+    #     self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
+    #     m11 = self.transform().m11()
+    #     m22 = self.transform().m22()
+    #     time_line = QtCore.QTimeLine(100, self)
+    #     time_line.setUpdateInterval(1)
+    #
+    #     if shrink and not (m11 > 3 or m22 > 3):
+    #         time_line.valueChanged.connect(self.scale_shrink)
+    #     elif m11 > 0.1 or m22 > 0.1:
+    #         time_line.valueChanged.connect(self.scale_stretch)
+    #
+    #     time_line.start()
+    #
+    # def scale_shrink(self, x):
+    #     self.scale(1 - (SCALE_FACTOR - 1), 1)
+    #
+    # def scale_stretch(self, x):
+    #     self.scale(SCALE_FACTOR, 1)
 
 
