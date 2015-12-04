@@ -148,7 +148,6 @@ if __name__ == '__main__':
 
         d = shape_description(r, 18)
         d = gaussian_filter1d(d, 1)
-        print i, d
         descs.append(np.array(d))
 
         i+=1

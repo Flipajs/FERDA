@@ -16,7 +16,8 @@ class GraphManager:
         self.vertices_in_t = {}
         self.start_t = np.inf
         self.end_t = -1
-        self.major_axis_median = project.stats.major_axis_median
+        # multiply 2 times to get ant length
+        self.major_axis_median = 2*project.stats.major_axis_median
         self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * self.major_axis_median
         self.assignment_score = assignment_score
 
@@ -24,6 +25,7 @@ class GraphManager:
         # In these cases the id 0 means unassigned
         # thus it is important to start indexing from 1 in region and chunk manager
         self.g.vp['region_id'] = self.g.new_vertex_property("int")
+        self.g.vp['active'] = self.g.new_vertex_property("bool")
         self.g.vp['chunk_start_id'] = self.g.new_vertex_property("int")
         self.g.vp['chunk_end_id'] = self.g.new_vertex_property("int")
 
@@ -42,6 +44,7 @@ class GraphManager:
 
         self.vertices_in_t.setdefault(region.frame_, []).append(int(vertex))
         self.g.vp['region_id'][vertex] = region.id()
+        self.g.vp['active'][vertex] = True
 
         return vertex
 
@@ -87,7 +90,6 @@ class GraphManager:
 
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.REMOVE_NODE, region)
 
-        print region.frame(), int(vertex)
         self.vertices_in_t[region.frame()].remove(int(vertex))
         if not self.vertices_in_t[region.frame_]:
             del self.vertices_in_t[region.frame_]
@@ -98,6 +100,7 @@ class GraphManager:
 
         self.g.vp['chunk_start_id'][vertex] = 0
         self.g.vp['chunk_end_id'][vertex] = 0
+        self.g.vp['active'][vertex] = False
 
         # maybe we need to shrink time boundaries...
         if self.end_t == region.frame_ or self.start_t == region.frame_:
@@ -128,18 +131,16 @@ class GraphManager:
     def update_nodes_in_t_refs(self):
         self.vertices_in_t = {}
         for v in self.g.vertices():
-            v_id = int(v)
-            n = self.region(v_id)
-            self.vertices_in_t.setdefault(n.frame_, []).append(v_id)
+            if self.g.vp['active'][v]:
+                v_id = int(v)
+                n = self.region(v_id)
+                self.vertices_in_t.setdefault(n.frame_, []).append(v_id)
 
         self.update_time_boundaries()
 
     def add_regions_in_t(self, regions, t, fast=False):
-        import time
-        s = time.time()
         self.add_vertices(regions)
 
-        s = time.time()
         if t-1 in self.vertices_in_t and t in self.vertices_in_t:
             self.add_edges_(self.vertices_in_t[t-1], self.vertices_in_t[t], fast=fast)
 

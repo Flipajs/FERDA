@@ -119,12 +119,14 @@ class Solver:
                 if area_coef > 0.5:
                     return []
 
-                desc1 = self.zernike_desc.describe(r1)
-                desc2 = self.zernike_desc.describe(r2)
+                # desc1 = self.zernike_desc.describe(r1)
+                # desc2 = self.zernike_desc.describe(r2)
+                #
+                # desc_correction = self.project.solver_parameters.zernike_plus
+                # if np.linalg.norm(desc1-desc2) > self.project.solver_parameters.zernike_thresh:
+                #     desc_correction = self.project.solver_parameters.zernike_minus
 
-                desc_correction = self.project.solver_parameters.zernike_plus
-                if np.linalg.norm(desc1-desc2) > self.project.solver_parameters.zernike_thresh:
-                    desc_correction = self.project.solver_parameters.zernike_minus
+                desc_correction = 0
 
                 cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
 
@@ -297,7 +299,8 @@ class Solver:
         else:
             q2 = self.get_antlikeness(r2)
 
-        antlikeness_diff = 1 - abs(q1-q2)
+        # antlikeness_diff = 1 - abs(q1-q2)
+        antlikeness_diff = 1
         s = ds * antlikeness_diff
 
         return s, ds, 0, antlikeness_diff
@@ -541,3 +544,32 @@ class Solver:
             pc.dump(self.ignored_nodes)
 
         print "ONLY CHUNKS PROGRESS SAVED"
+
+    def detect_split_merge_cases(self):
+        from scripts.EMD import get_unstable_num
+        for t in self.gm.vertices_in_t:
+            vs = [v for v in self.gm.vertices_in_t[t]]
+
+            while vs:
+                v = vs[0]
+
+                s1, s2 = self.gm.get_cc(self.gm.g.vertex(v))
+                if len(s1) > 1 and len(s2) > 1:
+                    regions_P = []
+                    for s in s1:
+                        r = self.gm.region(s)
+                        regions_P.append((r.area(), r.centroid()))
+
+                    regions_Q = []
+                    for s in s2:
+                        r = self.gm.region(s)
+                        regions_Q.append((r.area(), r.centroid()))
+
+                    unstable_num = get_unstable_num(regions_P, regions_Q, thresh=0.8)
+                    if unstable_num > 0:
+                        for v in s1:
+                            for e in v.out_edges():
+                                self.gm.g.ep['score'][e] = 0
+
+                for v in s1:
+                    vs.remove(v)

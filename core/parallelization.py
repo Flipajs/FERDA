@@ -30,6 +30,10 @@ if __name__ == '__main__':
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
     # proj.arena_model = None
+    solver = Solver(proj)
+    proj.solver
+    from core.graph.graph_manager import GraphManager
+    proj.gm = GraphManager(proj, proj.solver.assignment_score)
     proj.rm = RegionManager(db_wd=proj.working_directory+'/temp', db_name='part'+str(id)+'_rm.sqlite3')
     proj.chm = ChunkManager()
     proj.color_manager = None
@@ -49,7 +53,6 @@ if __name__ == '__main__':
     vid_t = 0
     file_t = 0
 
-    solver = Solver(proj)
     for i in range(frames_in_row + last_n_frames):
         frame = id*frames_in_row + i
 
@@ -80,6 +83,8 @@ if __name__ == '__main__':
         #     print
         #     print i
         #     sys.stdout.flush()
+
+    solver.detect_split_merge_cases()
 
     s = time.time()
     print "#Edges BEFORE: ", solver.gm.g.num_edges()

@@ -24,7 +24,7 @@ def get_costs(flows, regions_P, regions_Q):
 
         c_p = np.array(regions_P[p][1])
         c_q = np.array(regions_Q[q][1])
-        costs[fl] = np.linalg.norm(c_p - c_q)
+        costs[fl] = np.linalg.norm(c_p - c_q)**1.3
 
     return costs
 
@@ -41,8 +41,12 @@ def get_areas_sums(r_P, r_Q):
 
 
 def build_EMD_lp(regions_P, regions_Q):
+    #TODO: edges param to add support to not full bipartite graphs
+
     prob = LpProblem('EMD', LpMinimize)
+
     flows = [tuple2str(element) for element in itertools.product(range(len(regions_P)), range(len(regions_Q)))]
+
     costs = get_costs(flows, regions_P, regions_Q)
 
     # TODO what does 0 means?
@@ -69,17 +73,52 @@ def build_EMD_lp(regions_P, regions_Q):
 
     return prob
 
+def check_nodes_stability(regions_P, regions_Q, flows, threshold):
+    # check outcomes
+    out_max = np.max(flows, axis=1)
+    in_max = np.max(flows, axis=0)
+
+    stability_p = np.ones((len(regions_P), 1), dtype=np.bool)
+    for r, m, i in zip(regions_P, out_max, range(len(out_max))):
+        area = r[0]
+        if m / float(area) < threshold:
+            stability_p[i] = False
+
+    stability_q = np.ones((len(regions_Q), 1), dtype=np.bool)
+    for r, m, i in zip(regions_Q, in_max, range(len(in_max))):
+        area = r[0]
+        if m / float(area) < threshold:
+            stability_q[i] = False
+
+    unstable_num = len(regions_P) + len(regions_Q) - sum(stability_q) - sum(stability_p)
+    return unstable_num[0], stability_p, stability_q
+
+def get_unstable_num(regions_P, regions_Q, thresh=0.8):
+    prob = build_EMD_lp(regions_P, regions_Q)
+    prob.solve()
+
+    if LpStatus[prob.status] != 'Optimal':
+        print "WARNING: there was not optimal solution computed in EMD split/merge predicate"
+
+    flows = np.zeros((len(regions_P), len(regions_Q)), dtype=np.int)
+    for v in prob.variables():
+        # print(v.name, "=", v.varValue)
+        p_id = get_pid(v.name)
+        q_id = get_qid(v.name)
+
+        flows[p_id, q_id] = v.varValue
+
+    num_unstable, _, _ = check_nodes_stability(regions_P, regions_Q, flows, thresh)
+    return num_unstable
+
 # (area, (centroidX, Y) )
 # regions_P = [(10, (0, 10)), (20, (0, 5)), (9, (0, 0))]
 # regions_Q = [(17, (0, 7)), (18, (0, 3))]
 
-regions_P = [(80, (0, 4)), (80, (0, 1))]
-regions_Q = [(50, (0, 5)), (50, (0, 3)), (50, (0, 2)), (50, (0, 0))]
+# regions_P = [(80, (0, 4)), (80, (0, 1))]
+# regions_Q = [(50, (0, 5)), (50, (0, 3)), (50, (0, 2)), (50, (0, 0))]
+#
+# regions_P = [(72, (0, 4)), (72, (0, 1))]
+# regions_Q = [(80, (0, 5)), (80, (0, 4))]
 
-prob = build_EMD_lp(regions_P, regions_Q)
-
-prob.solve()
-print("Status:", LpStatus[prob.status])
-
-for v in prob.variables():
-    print(v.name, "=", v.varValue)
+# print get_result_flows(regions_P, regions_Q)

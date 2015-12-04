@@ -22,20 +22,21 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
         sub_g = solver.g
     else:
         nodes = []
-        for n in solver.g.nodes():
-            if t_start <= n.frame_ < t_end:
-                nodes.append(n)
+        for vertex in solver.gm.get_all_relevant_vertices():
+            r = solver.gm.region(vertex)
+            if t_start <= r.frame_ < t_end:
+                nodes.append((r, vertex))
 
-        sub_g = solver.g.subgraph(nodes)
+        # sub_g = solver.g.subgraph(nodes)
 
     vid = get_auto_video_manager(project)
     regions = {}
 
     nodes = []
     chunks = set()
-    for n in sub_g.nodes():
-        is_ch, t_reversed, ch = solver.is_chunk(n)
-        if is_ch:
+    for n, vertex in nodes:
+        ch, _ = solver.gm.is_chunk(vertex)
+        if ch:
             if ch.length() >= min_chunk_len:
                 nodes.append(n)
                 chunks.add(ch)
@@ -88,7 +89,7 @@ if __name__ == "__main__":
 
     if is_flipajs_pc():
         project = Project()
-        project.load('/Users/flipajs/Documents/wd/eight_test/test.fproj')
+        project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
         # project.load('/Users/flipajs/Documents/wd/colonies_crop1/colonies.fproj')
     else:
         # EDIT HERE....

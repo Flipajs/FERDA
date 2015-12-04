@@ -283,15 +283,19 @@ class Project:
             pass
 
         # reconnect...
-            from core.region.region_manager import RegionManager
-            self.solver = Solver(self)
-            self.gm.assignment_score = self.solver.assignment_score
+        if not self.gm:
+            from core.graph.graph_manager import GraphManager
+            self.gm = GraphManager(self, None)
 
-            self.rm = RegionManager(db_wd=self.working_directory)
+        from core.region.region_manager import RegionManager
+        self.solver = Solver(self)
+        self.gm.assignment_score = self.solver.assignment_score
 
-            self.gm.project = self
-            self.gm.rm = self.rm
-            self.gm.update_nodes_in_t_refs()
+        self.rm = RegionManager(db_wd=self.working_directory)
+
+        self.gm.project = self
+        self.gm.rm = self.rm
+        self.gm.update_nodes_in_t_refs()
 
 if __name__ == "__main__":
     p = Project()

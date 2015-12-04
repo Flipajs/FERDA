@@ -34,7 +34,7 @@ class MainTabWidget(QtGui.QWidget):
         self.switch_to_tracking_window_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
         self.addAction(self.switch_to_tracking_window_action)
 
-        self.vbox.addWidget(self.tabs)\
+        self.vbox.addWidget(self.tabs)
 
         self.tabs.setTabEnabled(1, False)
         self.tabs.setTabEnabled(2, False)
