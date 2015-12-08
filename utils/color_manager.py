@@ -129,6 +129,14 @@ class ColorManager():
                 for t in self.tracks:
                     # it must be different from any other track color
                     c2 = t.get_color()
+                    distance = self.get_yuv_distance(c1, c2)
+                    # if two of the colors are the same, move on
+                    if distance == 0 and self.collide(t, track) > 0:
+                        ok = False
+                        break
+                    # this doesn't matter if the colors never exist together
+                    else:
+                        continue
                     # the more frames the tracks share, the more different (distant) they must be
                     value = self.collide(t, track) / self.get_yuv_distance(c1, c2)
                     if value > limit:
@@ -138,9 +146,9 @@ class ColorManager():
                     return QtGui.QColor().fromRgb(r, g, b)
 
                 if i > 500:
-                    # if co color was found in 500 laps, return the current color
-                    # print "No color found"
-                    # return QtGui.QColor().fromRgb(0, 0, 0)
+                    # if no color was found in 500 laps, return the current color
+                    print "No color found"
+
                     return QtGui.QColor().fromRgb(r, g, b)
                 i += 1
                 # try to make the choosing easier by enlarging the limit each time a wrong color is picked
