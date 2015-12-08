@@ -93,7 +93,7 @@ def check_nodes_stability(regions_P, regions_Q, flows, threshold):
     unstable_num = len(regions_P) + len(regions_Q) - sum(stability_q) - sum(stability_p)
     return unstable_num[0], stability_p, stability_q
 
-def get_unstable_num(regions_P, regions_Q, thresh=0.8):
+def detect_unstable(regions_P, regions_Q, thresh=0.8):
     prob = build_EMD_lp(regions_P, regions_Q)
     prob.solve()
 
@@ -108,8 +108,13 @@ def get_unstable_num(regions_P, regions_Q, thresh=0.8):
 
         flows[p_id, q_id] = v.varValue
 
-    num_unstable, _, _ = check_nodes_stability(regions_P, regions_Q, flows, thresh)
-    return num_unstable
+    return check_nodes_stability(regions_P, regions_Q, flows, thresh)
+
+
+def get_unstable_num(regions_P, regions_Q, thresh=0.8):
+    num, _, _ = detect_unstable(regions_P, regions_Q, thresh=0.8)
+    return num
+
 
 # (area, (centroidX, Y) )
 # regions_P = [(10, (0, 10)), (20, (0, 5)), (9, (0, 0))]

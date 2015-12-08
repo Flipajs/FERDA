@@ -29,7 +29,10 @@ if __name__ == '__main__':
 
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
-    # proj.arena_model = None
+
+    if not os.path.exists(proj.working_directory+'/temp'):
+        os.mkdir(proj.working_directory+'/temp')
+
     solver = Solver(proj)
     proj.solver
     from core.graph.graph_manager import GraphManager
@@ -97,8 +100,6 @@ if __name__ == '__main__':
     solver_t += time.time() - s
 
     s = time.time()
-    if not os.path.exists(proj.working_directory+'/temp'):
-        os.mkdir(proj.working_directory+'/temp')
 
     # # TODO: remove this...
     #

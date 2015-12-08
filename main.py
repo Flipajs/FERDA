@@ -32,11 +32,11 @@ if is_flipajs_pc():
     # # # # # # #
     # ex.widget_control('load_project', project)
 
-    # project.load('/Users/flipajs/Documents/wd/C210/C210.fproj')
-    # ex.widget_control('load_project', project)
-
-    project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+    project.load('/Users/flipajs/Documents/wd/C210_2/C210.fproj')
     ex.widget_control('load_project', project)
+
+    # project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+    # ex.widget_control('load_project', project)
     pass
 
 

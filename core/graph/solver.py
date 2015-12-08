@@ -546,7 +546,7 @@ class Solver:
         print "ONLY CHUNKS PROGRESS SAVED"
 
     def detect_split_merge_cases(self):
-        from scripts.EMD import get_unstable_num
+        from scripts.EMD import get_unstable_num, detect_unstable
         for t in self.gm.vertices_in_t:
             vs = [v for v in self.gm.vertices_in_t[t]]
 
@@ -565,10 +565,15 @@ class Solver:
                         r = self.gm.region(s)
                         regions_Q.append((r.area(), r.centroid()))
 
-                    unstable_num = get_unstable_num(regions_P, regions_Q, thresh=0.8)
-                    if unstable_num > 0:
-                        for v in s1:
+                    unstable_num, stability_P, stability_Q = detect_unstable(regions_P, regions_Q, thresh=0.8)
+                    for v, i in zip(s1, range(len(s1))):
+                        if not stability_P[i]:
                             for e in v.out_edges():
+                                self.gm.g.ep['score'][e] = 0
+
+                    for v, i in zip(s2, range(len(s2))):
+                        if not stability_Q[i]:
+                            for e in v.in_edges():
                                 self.gm.g.ep['score'][e] = 0
 
                 for v in s1:

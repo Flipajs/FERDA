@@ -1,5 +1,7 @@
 __author__ = 'fnaiser'
 
+import os
+
 from PyQt4 import QtGui, QtCore
 from gui.tracker.tracker_widget import TrackerWidget
 from gui.correction.correction_widget import ResultsWidget
@@ -7,6 +9,7 @@ from gui.statistics.statistics_widget import StatisticsWidget
 
 from core.background_computer import BackgroundComputer
 from functools import partial
+from core.graph.graph_manager import GraphManager
 
 
 class MainTabWidget(QtGui.QWidget):
@@ -46,6 +49,10 @@ class MainTabWidget(QtGui.QWidget):
 
         print "LOADING GRAPH..."
         if project.gm.g.num_vertices():
+            if project.gm is None:
+                project.gm = GraphManager(project, project.solver.assignment_score)
+
+
             self.background_computer_finished(project.solver)
         else:
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)
