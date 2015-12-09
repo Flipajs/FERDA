@@ -1,11 +1,10 @@
+__author__ = 'dita'
+
 import random
 from functools import partial
 from gui.arena.my_popup import MyPopup
 from gui.arena.my_view import MyView
 from utils.video_manager import VideoManager
-
-__author__ = 'dita'
-
 from PyQt4 import QtGui, QtCore
 import sys
 import math
