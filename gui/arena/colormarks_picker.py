@@ -352,7 +352,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.view.update_scale()
 
         data = self.masks.get(self.pick_id)
-        if data is not None and self.is_mask_empty(data[0]) and data[1] != self.frame:
+        if data is not None and self.is_mask_empty(data[0]) and self.is_mask_empty(self.pick_mask) and data[1] != self.frame:
             self.masks[self.pick_id] = (data[0], self.frame)
 
     def is_mask_empty(self, mask):
