@@ -142,8 +142,8 @@ class VisLoader:
 if __name__ == '__main__':
     from scripts import fix_project
     p = Project()
-    # p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
-    p.load('/home/sheemon/FERDA/projects/archive/c210.fproj')
+    p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
+    # p.load('/home/sheemon/FERDA/projects/archive/c210.fproj')
 
     from core.region.region_manager import RegionManager
 
