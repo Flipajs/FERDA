@@ -1,5 +1,3 @@
-__author__ = 'dita'
-
 import random
 from functools import partial
 from gui.arena.my_popup import MyPopup
@@ -11,6 +9,8 @@ import math
 from core.project.project import Project
 from gui.img_controls import utils
 import numpy as np
+
+__author__ = 'dita'
 
 """
 widget
@@ -57,7 +57,6 @@ class ColormarksPicker(QtGui.QWidget):
         self.color = "Blue"
 
         # store last 10 QImages to support the "undo" function
-        # undo button can only be pushed in paint mode
         self.backup = []
 
         # image to store all progress
@@ -166,15 +165,21 @@ class ColormarksPicker(QtGui.QWidget):
         """
         # save last 10 images
         img = self.paint_image.copy()
-        self.backup.append(img)
+        mask = self.pick_mask.copy()
+        self.backup.append((img, mask))
         if len(self.backup) > 10:
             self.backup.pop(0)
 
     def undo(self):
         length = len(self.backup)
+        print "Lenght is %s" % length
         if length > 0:
-            img = self.backup.pop(length - 1)
+            img, mask = self.backup.pop(length - 1)
             self.refresh_image(img)
+            self.pick_mask = mask
+
+    def clear_undo_history(self):
+        self.backup = []
 
     def refresh_image(self, img):
         self.paint_image = img
@@ -288,6 +293,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.set_color_label_text()
         self.clear_paint_image()
         self.pick_mask.fill(0)
+        self.clear_undo_history()
 
         self.pick_id = self.color_grid.add_color(255, 255, 255)
         self.masks[self.pick_id] = (np.copy(self.pick_mask), self.frame)
@@ -295,9 +301,14 @@ class ColormarksPicker(QtGui.QWidget):
         self.set_color_label_text()
 
     def show_mask(self, mask_id):
+        # something was changed
         self.save_edits()
+
+        # prepare for a next change
         self.clear_paint_image()
         self.pick_mask.fill(0)
+        self.clear_undo_history()
+
         self.pick_id = mask_id
         data = self.masks.get(mask_id, 0)
         self.frame = data[1]
@@ -320,14 +331,20 @@ class ColormarksPicker(QtGui.QWidget):
 
     def random_frame(self):
         # vid_manager's random frame can't be used, because it doesn't return frame id which colormarks_picker uses
+        if not self.is_mask_empty(self.pick_mask):
+            self.new_color()
         self.frame = random.randint(0, self.vid_manager.total_frame_count())
         self.draw_frame()
 
     def next_frame(self):
+        if not self.is_mask_empty(self.pick_mask):
+            self.new_color()
         self.frame += 1
         self.draw_frame()
 
     def prev_frame(self):
+        if not self.is_mask_empty(self.pick_mask):
+            self.new_color()
         self.frame -= 1
         self.draw_frame()
 
@@ -351,6 +368,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.old_pixmap = self.scene.addPixmap(utils.cvimg2qtpixmap(self.background))
         self.view.update_scale()
 
+        # adjust mask frame if frame is changed and nothing was drawn in the mask yet
         data = self.masks.get(self.pick_id)
         if data is not None and self.is_mask_empty(data[0]) and self.is_mask_empty(self.pick_mask) and data[1] != self.frame:
             self.masks[self.pick_id] = (data[0], self.frame)
