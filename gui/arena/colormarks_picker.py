@@ -260,7 +260,9 @@ class ColormarksPicker(QtGui.QWidget):
 
         r, g, b = self.get_avg_color(self.frame, self.pick_mask)
 
-        self.masks[self.pick_id] = (np.copy(self.pick_mask), self.frame)
+        frame = self.masks.get(self.pick_id, [0, self.frame])[1]
+
+        self.masks[self.pick_id] = (np.copy(self.pick_mask), frame)
         self.color_grid.modify_color(self.pick_id, r, g, b)
 
     def get_avg_color(self, frame, mask):
@@ -349,6 +351,14 @@ class ColormarksPicker(QtGui.QWidget):
             self.scene.removeItem(self.old_pixmap)
         self.old_pixmap = self.scene.addPixmap(utils.cvimg2qtpixmap(self.background))
         self.view.update_scale()
+
+        data = self.masks.get(self.pick_id)
+        if data is not None and self.is_mask_empty(data[0]) and data[1] != self.frame:
+            self.masks[self.pick_id] = (data[0], self.frame)
+
+    def is_mask_empty(self, mask):
+        nzero = np.nonzero(mask)
+        return nzero[0].size == 0
 
     def make_gui(self):
         """
