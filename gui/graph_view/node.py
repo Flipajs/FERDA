@@ -155,9 +155,7 @@ class TextInfoItem(QtGui.QGraphicsItem):
         self.rect.setBrush(QtGui.QBrush(self.node.color))
         self.rect.paint(painter, item, widget)
         self.text_item.paint(painter, item, widget)
-        pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
-        painter.setPen(pen)
-        painter.drawLine(self.connecting_line)
+        
 
     def create_bounding_rect(self):
         longest, rows = get_longest_string_rows(self.text)
@@ -166,7 +164,7 @@ class TextInfoItem(QtGui.QGraphicsItem):
         return rectangle
 
     def create_connecting_line(self):
-        return QtCore.QLineF(self.parent_x, self.parent_y, self.x, self.y)
+        return ConnectingLine(QtCore.QLineF(self.parent_x, self.parent_y, self.x, self.y), self.rect, self.color)
 
     def create_rectangle(self):
         return QtGui.QGraphicsRectItem(self.bounding_rect, self)
@@ -188,10 +186,20 @@ class TextInfoItem(QtGui.QGraphicsItem):
             p2 = p1 - value.toPointF()
             if p1.x() > p2.x():
                 p1, p2 = p2, p1
-            self.connecting_line = QtCore.QLineF(p1, p2)
+            self.connecting_line.setLine(QtCore.QLineF(p1, p2))
         return super(TextInfoItem, self).itemChange(change, value)
 
-
+class ConnectingLine(QtGui.QGraphicsLineItem):
+    
+    def __init__(self, line, parent_obj, color):
+        super(ConnectingLine, self).__init__(line, parent_obj)
+        self.color = color
+        
+    def paint(self, painter, item, widget=None):
+        pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+        painter.setPen(pen)
+        painter.drawLine(self.line())
+    
 def get_longest_string_rows(string):
     st = ""
     longest = ""
