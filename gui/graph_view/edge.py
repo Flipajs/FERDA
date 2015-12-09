@@ -48,9 +48,13 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
             self.shown = True
 
     def show_info(self, loader):
-        self.clipped = True
         if not self.info_item:
             self.create_info(loader)
+        if not self.clipped:
+            print("NAstavuji pozici")
+            x, y = self.compute_rect_pos()
+            self.info_item.setPos(x, y)
+            self.clipped = True
         if not self.shown:
             self.scene.addItem(self.info_item)
             self.shown = True
@@ -59,14 +63,19 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
     def hide_info(self):
         self.scene.removeItem(self.info_item)
         self.shown = False
-        self.clipped = False
+        # self.clipped = False
 
     def create_info(self, loader):
         text = loader.get_edge_info(self.core_obj)
+        x, y = self.compute_rect_pos()
+        self.info_item = TextInfoItem(text, x, y, self.color, self)
+        self.info_item.setFlag(QtGui.QGraphicsItem.ItemSendsScenePositionChanges)
+        self.info_item.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
+
+    def compute_rect_pos(self):
         x = (self.parent_line.x2() + self.parent_line.x1()) / 2
         y = (self.parent_line.y2() + self.parent_line.y1()) / 2
-        self.info_item = TextInfoItem(text, x, y, self.color, self)
-        self.info_item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
+        return x, y
 
     def decolor_margins(self):
         self.color = None

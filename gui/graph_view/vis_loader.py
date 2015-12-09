@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
     from core.region.region_manager import RegionManager
 
-    p.rm = RegionManager(p.working_directory, '/rm.sqlite3')
+    # p.rm = RegionManager(p.working_directory, '/rm.sqlite3')
 
     import cv2, sys
     app = QtGui.QApplication(sys.argv)

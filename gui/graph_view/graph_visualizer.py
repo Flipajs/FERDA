@@ -125,11 +125,7 @@ class GraphVisualizer(QtGui.QWidget):
                 node = self.toggled.pop()
                 if node.toggled:
                     node.toggle()
-            while self.clipped:
-                cl = self.clipped.pop()
-                if cl.clipped:
-                    cl.decolor_margins()
-                    cl.hide_info()
+            self.remove_info()
         else:
             self.selected.append(item)
         if isinstance(item, EdgeGraphical):
@@ -162,10 +158,16 @@ class GraphVisualizer(QtGui.QWidget):
             item.show_info(self.loader)
 
     def hide_info(self):
+        for item in self.clipped:
+            item.hide_info()
+
+    def remove_info(self):
         while self.clipped:
             item = self.clipped.pop()
             if item.clipped:
                 item.hide_info()
+                item.decolor_margins()
+                item.clipped = False;
 
     def toggle_node(self):
         for item in self.toggled:

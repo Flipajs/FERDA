@@ -44,9 +44,12 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.toggled = False if self.toggled else True
 
     def show_info(self, loader):
-        self.clipped = True
         if not self.info_item:
             self.create_info(loader)
+        if not self.clipped:
+            x, y = self.compute_rectangle_pos()
+            self.info_item.setPos(x, y);
+            self.clipped = True
         if not self.shown:
             self.scene.addItem(self.info_item)
             self.shown = True;
@@ -55,13 +58,14 @@ class Node(QtGui.QGraphicsPixmapItem):
     def hide_info(self):
         self.scene.removeItem(self.info_item)
         self.shown = False
-        self.clipped = False
+        # self.clipped = False
 
     def create_info(self, loader):
         text = loader.get_node_info(self.region)
         x, y = self.compute_rectangle_pos()
         self.info_item = TextInfoItem(text, x, y, self.color, self)
-        self.info_item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
+        self.info_item.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
+        self.info_item.setFlag(QtGui.QGraphicsItem.ItemSendsScenePositionChanges)
 
     def set_color(self, color):
         self.color = color
@@ -131,6 +135,8 @@ class TextInfoItem(QtGui.QGraphicsItem):
         super(TextInfoItem, self).__init__()
         self.color = color
         self.node = node
+        self.parent_x = x
+        self.parent_y = y
         self.x = x
         self.y = y
         self.text = text
@@ -138,8 +144,8 @@ class TextInfoItem(QtGui.QGraphicsItem):
         self.height = self.metrics.height()
         self.bounding_rect = self.create_bounding_rect()
         self.rect = self.create_rectangle()
+        self.connecting_line = self.create_connecting_line()
         self.text_item = self.create_text()
-        self.text_item.setPos(self.x, self.y)
 
     def set_color(self, color):
         self.color = color
@@ -149,6 +155,9 @@ class TextInfoItem(QtGui.QGraphicsItem):
         self.rect.setBrush(QtGui.QBrush(self.node.color))
         self.rect.paint(painter, item, widget)
         self.text_item.paint(painter, item, widget)
+        pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+        painter.setPen(pen)
+        painter.drawLine(self.connecting_line)
 
     def create_bounding_rect(self):
         longest, rows = get_longest_string_rows(self.text)
@@ -156,14 +165,31 @@ class TextInfoItem(QtGui.QGraphicsItem):
         rectangle = QtCore.QRectF(self.x, self.y, width, self.height * (rows + 0.5))
         return rectangle
 
+    def create_connecting_line(self):
+        return QtCore.QLineF(self.parent_x, self.parent_y, self.x, self.y)
+
     def create_rectangle(self):
         return QtGui.QGraphicsRectItem(self.bounding_rect, self)
 
     def create_text(self):
-        return QtGui.QGraphicsTextItem(self.text, self.rect)
+        text_item = QtGui.QGraphicsTextItem(self.text, self.rect)
+        text_item.setPos(self.x, self.y)
+        return text_item
 
     def boundingRect(self):
         return self.bounding_rect
+
+    def setPos(self, x, y):
+        self.text_item.setPos(x, y)
+
+    def itemChange(self, change, value):
+        if change == QtGui.QGraphicsItem.ItemPositionHasChanged:
+            p1 = QtCore.QPoint(self.parent_x, self.parent_y)
+            p2 = p1 - value.toPointF()
+            if p1.x() > p2.x():
+                p1, p2 = p2, p1
+            self.connecting_line = QtCore.QLineF(p1, p2)
+        return super(TextInfoItem, self).itemChange(change, value)
 
 
 def get_longest_string_rows(string):
