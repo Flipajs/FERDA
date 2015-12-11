@@ -206,14 +206,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 return
 
             # test end
-            if r.frame_ == self.solver.gm.end_t:
+            if r.frame_ == self.project.gm.end_t:
                 self.active_node_id += 1
                 self.next_case()
                 return
 
             # test beginning
             if r.frame_ == 0:
-                ch, _ = self.solver.gm.is_chunk(vertex)
+                ch, _ = self.project.gm.is_chunk(vertex)
                 if ch:
                     self.active_node_id += 1
                     self.next_case()
@@ -234,7 +234,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 it.widget().setParent(None)
 
             # add new widget
-            nodes_groups = self.solver.gm.get_cc_from_vertex(vertex)
+            nodes_groups = self.project.gm.get_cc_from_vertex(vertex)
             if len(nodes_groups) == 0:
                 self.active_node_id += 1
                 self.next_case()
@@ -259,8 +259,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 for v1 in r1:
                     for v2 in r2:
                         try:
-                            e = self.solver.gm.g.edge(v1, v2)
-                            s = self.solver.gm.g.ep['score'][e]
+                            e = self.project.gm.g.edge(v1, v2)
+                            s = self.project.gm.g.ep['score'][e]
                             values.append([s, v1, v2])
                             changed = True
                         except:
@@ -383,7 +383,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
                     # TODO: find better way
                     if chunk.length() < 3:
-                        chunk.pop_last(self.solver.gm) if t_reversed else chunk.pop_first(self.solver.gm)
+                        chunk.pop_last(self.project.gm) if t_reversed else chunk.pop_first(self.project.gm)
 
                     # TODO: settings, safe break
                     if i > 15:

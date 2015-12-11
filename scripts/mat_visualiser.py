@@ -360,7 +360,7 @@ class ResultsWidget(QtGui.QWidget):
         self.chunks = chunks
         for ch in self.chunks:
             r, g, b = colors_[i % len(colors_)]
-            item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
+            item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), ch.id_, self.marker_changed)
             item.setZValue(0.5)
             self.items.append(item)
             self.scene.addItem(item)

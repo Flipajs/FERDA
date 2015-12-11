@@ -48,15 +48,12 @@ class MainTabWidget(QtGui.QWidget):
         self.show_results_only_around_frame = -1
 
         print "LOADING GRAPH..."
-        if project.gm.g.num_vertices():
-            if project.gm is None:
-                project.gm = GraphManager(project, project.solver.assignment_score)
-
-
-            self.background_computer_finished(project.solver)
-        else:
+        if project.gm is None or project.gm.g.num_vertices() == 0:
+            # project.gm = GraphManager(project, project.solver.assignment_score)
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)
             self.bc_msers.run()
+        else:
+            self.background_computer_finished(project.solver)
 
     def show_in_visualizer(self, data):
         self.show_results_only_around_frame = data['n1'].frame_

@@ -44,6 +44,8 @@ class BaseMarker(QtGui.QGraphicsEllipseItem, object):
         super(BaseMarker, self).mousePressEvent(event)
         self.setOpacity(.1)
         self.dot.setOpacity(S_.visualization.basic_marker_opacity)
+        # TODO: remove this... just debug feature
+        print self.antId
 
     def mouseReleaseEvent(self, event):
         super(BaseMarker, self).mouseReleaseEvent(event)

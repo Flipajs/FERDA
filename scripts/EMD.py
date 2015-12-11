@@ -24,7 +24,7 @@ def get_costs(flows, regions_P, regions_Q):
 
         c_p = np.array(regions_P[p][1])
         c_q = np.array(regions_Q[q][1])
-        costs[fl] = np.linalg.norm(c_p - c_q)**1.3
+        costs[fl] = np.linalg.norm(c_p - c_q)
 
     return costs
 
@@ -73,7 +73,7 @@ def build_EMD_lp(regions_P, regions_Q):
 
     return prob
 
-def check_nodes_stability(regions_P, regions_Q, flows, threshold):
+def check_nodes_stability(regions_P, regions_Q, flows, threshold, area_med):
     # check outcomes
     out_max = np.max(flows, axis=1)
     in_max = np.max(flows, axis=0)
@@ -81,19 +81,27 @@ def check_nodes_stability(regions_P, regions_Q, flows, threshold):
     stability_p = np.ones((len(regions_P), 1), dtype=np.bool)
     for r, m, i in zip(regions_P, out_max, range(len(out_max))):
         area = r[0]
-        if m / float(area) < threshold:
+        # if area_med > 0
+
+        a1 = min(m, area)
+        a2 = float(max(m, area))
+        if a1 / a2 < threshold and a2-a1 < area_med:
             stability_p[i] = False
 
     stability_q = np.ones((len(regions_Q), 1), dtype=np.bool)
     for r, m, i in zip(regions_Q, in_max, range(len(in_max))):
         area = r[0]
-        if m / float(area) < threshold:
+
+        a1 = min(m, area)
+        a2 = float(max(m, area))
+        if a1 / a2 < threshold and a2-a1 < area_med:
             stability_q[i] = False
 
     unstable_num = len(regions_P) + len(regions_Q) - sum(stability_q) - sum(stability_p)
     return unstable_num[0], stability_p, stability_q
 
-def detect_unstable(regions_P, regions_Q, thresh=0.8):
+
+def detect_unstable(regions_P, regions_Q, thresh=0.8, area_med=0):
     prob = build_EMD_lp(regions_P, regions_Q)
     prob.solve()
 
@@ -108,7 +116,7 @@ def detect_unstable(regions_P, regions_Q, thresh=0.8):
 
         flows[p_id, q_id] = v.varValue
 
-    return check_nodes_stability(regions_P, regions_Q, flows, thresh)
+    return check_nodes_stability(regions_P, regions_Q, flows, thresh, area_med)
 
 
 def get_unstable_num(regions_P, regions_Q, thresh=0.8):
@@ -116,14 +124,22 @@ def get_unstable_num(regions_P, regions_Q, thresh=0.8):
     return num
 
 
-# (area, (centroidX, Y) )
-# regions_P = [(10, (0, 10)), (20, (0, 5)), (9, (0, 0))]
-# regions_Q = [(17, (0, 7)), (18, (0, 3))]
 
-# regions_P = [(80, (0, 4)), (80, (0, 1))]
-# regions_Q = [(50, (0, 5)), (50, (0, 3)), (50, (0, 2)), (50, (0, 0))]
-#
-# regions_P = [(72, (0, 4)), (72, (0, 1))]
-# regions_Q = [(80, (0, 5)), (80, (0, 4))]
+if __name__ == "__main__":
+    pass
+    # (area, (centroidX, Y) )
+    # regions_P = [(10, (0, 10)), (20, (0, 5)), (9, (0, 0))]
+    # regions_Q = [(17, (0, 7)), (18, (0, 3))]
 
-# print get_result_flows(regions_P, regions_Q)
+    # regions_P = [(80, (0, 4)), (80, (0, 1))]
+    # regions_Q = [(50, (0, 5)), (50, (0, 3)), (50, (0, 2)), (50, (0, 0))]
+    #
+    # regions_P = [(72, (0, 4)), (72, (0, 1))]
+    # regions_Q = [(80, (0, 5)), (80, (0, 4))]
+
+    # regions_P = [(397, (967, 584)), (1293, (910, 695)), (1058, (946, 600))]
+    # regions_Q = [(1211, (910, 696)), (470, (841, 816)), (963, (945, 600))]
+    #
+    # print detect_unstable(regions_P, regions_Q)
+
+

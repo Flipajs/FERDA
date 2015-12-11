@@ -32,9 +32,6 @@ class Solver:
         """
 
         # project.gm = GraphManager(project, self.assignment_score)
-        self.gm = project.gm
-        self.rm = project.rm
-        self.chm = project.chm
         self.project = project
 
         self.major_axis_median = project.stats.major_axis_median
@@ -52,7 +49,7 @@ class Solver:
 
     def simplify(self, queue=None, rules=None):
         if queue is None:
-            queue = self.gm.get_all_relevant_vertices()
+            queue = self.project.gm.get_all_relevant_vertices()
 
         if rules is None:
             rules = self.rules
@@ -60,12 +57,12 @@ class Solver:
         queue = sorted(queue, key=lambda x: self.project.gm.region(x).area()+self.project.gm.region(x).centroid()[0]+self.project.gm.region(x).frame()+self.project.gm.region(x).centroid()[1])
 
         while queue:
-            vertex = self.gm.g.vertex(queue.pop())
+            vertex = self.project.gm.g.vertex(queue.pop())
 
             r = self.project.gm.region(vertex)
 
             # skip the chunks...
-            if self.gm.chunk_start(vertex):
+            if self.project.gm.chunk_start(vertex):
                 continue
 
             for ru in rules:
@@ -84,15 +81,15 @@ class Solver:
         return prob
 
     def adaptive_threshold(self, vertex):
-        if self.gm.chunk_start(vertex):
+        if self.project.gm.chunk_start(vertex):
             return
 
-        best_out_scores, best_out_vertices = self.gm.get_2_best_out_vertices(vertex)
+        best_out_scores, best_out_vertices = self.project.gm.get_2_best_out_vertices(vertex)
 
         if not best_out_vertices[0]:
             return []
 
-        best_in_scores, best_in_vertices = self.gm.get_2_best_in_vertices(best_out_vertices[0])
+        best_in_scores, best_in_vertices = self.project.gm.get_2_best_in_vertices(best_out_vertices[0])
         if best_in_vertices[0] == vertex and best_in_scores[0] >= self.project.solver_parameters.certainty_threshold:
             cert = best_out_scores[0]
             v1 = vertex
@@ -111,13 +108,13 @@ class Solver:
                 if best_in_vertices[1]:
                     s_in = best_in_scores[1]
 
-                r1 = self.gm.region(best_in_vertices[0])
-                r2 = self.gm.region(best_out_vertices[0])
-
-                area_coef = abs(r1.area()-r2.area()) / min(r1.area(), r2.area())
-                # hard area rule...
-                if area_coef > 0.5:
-                    return []
+                # r1 = self.project.gm.region(best_in_vertices[0])
+                # r2 = self.project.gm.region(best_out_vertices[0])
+                #
+                # area_coef = abs(r1.area()-r2.area()) / min(r1.area(), r2.area())
+                # # hard area rule...
+                # if area_coef > 0.5:
+                #     return []
 
                 # desc1 = self.zernike_desc.describe(r1)
                 # desc2 = self.zernike_desc.describe(r2)
@@ -130,7 +127,7 @@ class Solver:
 
                 cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
 
-            self.gm.g.ep['certainty'][self.gm.g.edge(v1, v2)] = cert
+            self.project.gm.g.ep['certainty'][self.project.gm.g.edge(v1, v2)] = cert
 
             if cert > self.project.solver_parameters.certainty_threshold:
                 affected = self.confirm_edges([(v1, v2)])
@@ -195,13 +192,13 @@ class Solver:
         return None
 
     def symmetric_cc_solver(self, vertex):
-        s1, s2 = self.gm.get_cc(vertex)
+        s1, s2 = self.project.gm.get_cc(vertex)
 
         affected = []
         # TODO:
         # in this case, there might be to much combinations....
         if len(s1) == len(s2) and 1 < len(s1) < 5:
-            scores, matchings = self.gm.get_2_best_matchings(s1, s2)
+            scores, matchings = self.project.gm.get_2_best_matchings(s1, s2)
             if not scores:
                 return []
 
@@ -220,7 +217,7 @@ class Solver:
                     if n1 and n2:
                         # for n2_ in n1.out_neighbours():
                         #     if n2_ != n2:
-                        #         self.gm.remove_edge(n1, n2_)
+                        #         self.project.gm.remove_edge(n1, n2_)
                         #         affected.append(n2_)
                         #
                         # for n1_ in n2.in_neighbours():
@@ -231,14 +228,14 @@ class Solver:
                         # affected.append(n1)
                         # affected.append(n2)
 
-                        e = self.gm.g.edge(n1, n2)
-                        self.gm.g.ep['certainty'][e] = cert
+                        e = self.project.gm.g.edge(n1, n2)
+                        self.project.gm.g.ep['certainty'][e] = cert
                         affected += self.confirm_edges([(n1, n2)])
             else:
                 for n1, n2 in matchings[0]:
                     if n1 and n2:
-                        e = self.gm.g.edge(n1, n2)
-                        self.gm.g.ep['certainty'][e] = cert
+                        e = self.project.gm.g.edge(n1, n2)
+                        self.project.gm.g.ep['certainty'][e] = cert
 
         return affected
 
@@ -264,7 +261,15 @@ class Solver:
 
                 if s2 > s:
                     self.project.gm.g.ep['score'][e] = s2
-                    affected.append(vertex)
+                    # affected.append(vertex)
+
+                    # make EMD test
+                    s1, s2 = self.project.gm.get_cc(self.project.gm.g.vertex(e.source()))
+                    self.dsmc_process_cc_(s1, s2, self.project.stats.area_median)
+
+                    if self.project.gm.g.ep['score'][e] > 0:
+                       affected.append(e.source())
+                       # affected.append(e.target())
 
         elif in_d > 0 and out_d == 1:
             # there is only one edge
@@ -280,7 +285,16 @@ class Solver:
 
                 if s2 > s:
                     self.project.gm.g.ep['score'][e] = s2
-                    affected.append(e.source())
+                    # affected.append(e.source())
+
+                    # make EMD test
+                    s1, s2 = self.project.gm.get_cc(self.project.gm.g.vertex(e.source()))
+                    self.dsmc_process_cc_(s1, s2, self.project.stats.area_median)
+
+                    if self.project.gm.g.ep['score'][e] > 0:
+                        affected.append(e.source())
+                        # affected.append(e.target())
+
 
         return affected
 
@@ -299,8 +313,8 @@ class Solver:
         else:
             q2 = self.get_antlikeness(r2)
 
-        # antlikeness_diff = 1 - abs(q1-q2)
-        antlikeness_diff = 1
+        antlikeness_diff = 1 - abs(q1-q2)
+        # antlikeness_diff = 1
         s = ds * antlikeness_diff
 
         return s, ds, 0, antlikeness_diff
@@ -402,7 +416,7 @@ class Solver:
                 for aff_neigh in e.target().in_neighbours():
                     affected.add(aff_neigh)
 
-                self.gm.remove_edge_(e)
+                self.project.gm.remove_edge_(e)
 
             for e in v2.in_edges():
                 affected.add(e.source())
@@ -410,21 +424,21 @@ class Solver:
                 for aff_neigh in e.source().out_neighbours():
                     affected.add(aff_neigh)
 
-                self.gm.remove_edge_(e)
+                self.project.gm.remove_edge_(e)
 
             # This will happen when there is an edge missing (action connect_with_and_confirm)
-            if not self.gm.g.edge(v1, v2):
-                self.gm.add_edge(v1, v2, 1)
+            if not self.project.gm.g.edge(v1, v2):
+                self.project.gm.add_edge(v1, v2, 1)
 
             # test chunk existence, if there is none, create new one.
-            v1_ch = self.gm.chunk_end(v1)
-            v2_ch = self.gm.chunk_start(v2)
+            v1_ch = self.project.gm.chunk_end(v1)
+            v2_ch = self.project.gm.chunk_start(v2)
             if v1_ch:
-                v1_ch.append_right(v2, self.gm)
+                v1_ch.append_right(v2, self.project.gm)
             elif v2_ch:
-                v2_ch.append_left(v1, self.gm)
+                v2_ch.append_left(v1, self.project.gm)
             else:
-                self.chm.new_chunk(map(int, [v1, v2]), self.project.gm)
+                self.project.chm.new_chunk(map(int, [v1, v2]), self.project.gm)
 
         affected = list(affected)
         # all_affected = list(self.simplify(affected[:], return_affected=True))
@@ -437,9 +451,9 @@ class Solver:
         """
 
         for r in new_regions:
-            self.gm.add_vertex(r)
+            self.project.gm.add_vertex(r)
 
-        self.gm.remove_vertex(replace)
+        self.project.gm.remove_vertex(replace)
 
         r_t_minus, r_t, r_t_plus = self.get_vertices_around_t(new_regions[0].frame_)
 
@@ -454,8 +468,8 @@ class Solver:
             if not found:
                 raise Exception('new regions not found')
 
-        self.gm.add_edges_(r_t_minus, r_t)
-        self.gm.add_edges_(r_t, r_t_plus)
+        self.project.gm.add_edges_(r_t_minus, r_t)
+        self.project.gm.add_edges_(r_t, r_t_plus)
 
     def get_vertices_around_t(self, t):
         # returns (list, list, list) of nodes in t_minus, t, t+plus
@@ -466,7 +480,7 @@ class Solver:
         return v_t_minus, v_t, v_t_plus
 
     def add_virtual_region(self, region):
-        vertex = self.gm.add_vertex(region)
+        vertex = self.project.gm.add_vertex(region)
 
         r_t_minus, r_t, r_t_plus = self.get_vertices_around_t(region.frame_)
 
@@ -479,22 +493,22 @@ class Solver:
         for v in vertex.all_edges():
             affected.append(v)
 
-        self.gm.remove_vertex(vertex)
+        self.project.gm.remove_vertex(vertex)
 
         return affected
 
     def strong_remove(self, vertex):
-        ch, _ = self.gm.is_chunk(vertex)
+        ch, _ = self.project.gm.is_chunk(vertex)
 
         if ch:
             affected = []
 
-            affected += self.gm.remove_vertex(ch.start_vertex_id(), disassembly=False)
-            affected += self.gm.remove_vertex(ch.end_vertex_id(), disassembly=False)
+            affected += self.project.gm.remove_vertex(ch.start_vertex_id(), disassembly=False)
+            affected += self.project.gm.remove_vertex(ch.end_vertex_id(), disassembly=False)
 
             return affected
         else:
-            return self.gm.remove_vertex(vertex)
+            return self.project.gm.remove_vertex(vertex)
 
     def save(self, autosave=False):
         print "SAVING PROGRESS... Wait please"
@@ -507,8 +521,8 @@ class Solver:
 
         with open(wd+name, 'wb') as f:
             pc = pickle.Pickler(f, -1)
-            pc.dump(self.gm.g)
-            pc.dump(self.chm)
+            pc.dump(self.project.gm.g)
+            pc.dump(self.project.chm)
             pc.dump(self.ignored_nodes)
 
         print "PROGRESS SAVED"
@@ -545,36 +559,39 @@ class Solver:
 
         print "ONLY CHUNKS PROGRESS SAVED"
 
-    def detect_split_merge_cases(self):
+    def dsmc_process_cc_(self, s1, s2, area_med):
         from scripts.EMD import get_unstable_num, detect_unstable
-        for t in self.gm.vertices_in_t:
-            vs = [v for v in self.gm.vertices_in_t[t]]
+        if len(s1) > 1 or len(s2) > 1:
+            regions_P = []
+            for s in s1:
+                r = self.project.gm.region(s)
+                regions_P.append((r.area(), r.centroid()))
+
+            regions_Q = []
+            for s in s2:
+                r = self.project.gm.region(s)
+                regions_Q.append((r.area(), r.centroid()))
+
+            unstable_num, stability_P, stability_Q = detect_unstable(regions_P, regions_Q, thresh=0.7, area_med=area_med)
+            for v, i in zip(s1, range(len(s1))):
+                if not stability_P[i]:
+                    for e in v.out_edges():
+                        self.project.gm.g.ep['score'][e] = 0
+
+            for v, i in zip(s2, range(len(s2))):
+                if not stability_Q[i]:
+                    for e in v.in_edges():
+                        self.project.gm.g.ep['score'][e] = 0
+
+    def detect_split_merge_cases(self):
+        for t in self.project.gm.vertices_in_t:
+            vs = [v for v in self.project.gm.vertices_in_t[t]]
 
             while vs:
                 v = vs[0]
 
-                s1, s2 = self.gm.get_cc(self.gm.g.vertex(v))
-                if len(s1) > 1 and len(s2) > 1:
-                    regions_P = []
-                    for s in s1:
-                        r = self.gm.region(s)
-                        regions_P.append((r.area(), r.centroid()))
-
-                    regions_Q = []
-                    for s in s2:
-                        r = self.gm.region(s)
-                        regions_Q.append((r.area(), r.centroid()))
-
-                    unstable_num, stability_P, stability_Q = detect_unstable(regions_P, regions_Q, thresh=0.8)
-                    for v, i in zip(s1, range(len(s1))):
-                        if not stability_P[i]:
-                            for e in v.out_edges():
-                                self.gm.g.ep['score'][e] = 0
-
-                    for v, i in zip(s2, range(len(s2))):
-                        if not stability_Q[i]:
-                            for e in v.in_edges():
-                                self.gm.g.ep['score'][e] = 0
+                s1, s2 = self.project.gm.get_cc(self.project.gm.g.vertex(v))
+                self.dsmc_process_cc_(s1, s2, self.project.stats.area_median)
 
                 for v in s1:
                     vs.remove(v)

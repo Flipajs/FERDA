@@ -17,7 +17,7 @@ class GraphManager:
         self.start_t = np.inf
         self.end_t = -1
         # multiply 2 times to get ant length
-        self.major_axis_median = 2*project.stats.major_axis_median
+        self.major_axis_median = project.stats.major_axis_median
         self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * self.major_axis_median
         self.assignment_score = assignment_score
 
@@ -36,9 +36,6 @@ class GraphManager:
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
         self.start_t = min(self.start_t, region.frame_)
         self.end_t = max(self.end_t, region.frame_)
-
-        if region.frame() == 22:
-            print "adding ", region.id()
 
         vertex = self.g.add_vertex()
 
@@ -418,15 +415,15 @@ class GraphManager:
         node_groups.setdefault(r.frame_, []).append(vertex)
 
         for v_ in vertex.in_neighbours():
-            ch, _ = self.is_chunk(v_)
-            if ch:
+            ch, ch_end = self.is_chunk(v_)
+            if ch and not ch_end:
                 continue
 
             self.get_cc_rec(v_, depth-1, node_groups)
 
         for v_ in vertex.out_neighbours():
-            ch, _ = self.is_chunk(v_)
-            if ch:
+            ch, ch_end = self.is_chunk(v_)
+            if ch and ch_end:
                 continue
 
             self.get_cc_rec(v_, depth+1, node_groups)

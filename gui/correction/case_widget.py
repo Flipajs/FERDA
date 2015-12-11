@@ -673,8 +673,8 @@ class CaseWidget(QtGui.QWidget):
         for i in range(len(self.vertices_groups) - 1):
             for n in self.vertices_groups[i]:
                 for n2 in n.out_neighbours():
-                    ch, _ = self.project.gm.is_chunk(n2)
-                    if ch:
+                    ch, ch_end = self.project.gm.is_chunk(n2)
+                    if ch_end:
                         continue
                     try:
                         line_ = QtGui.QGraphicsLineItem(self.left_margin + self.node_size + self.w_*i,

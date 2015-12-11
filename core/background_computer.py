@@ -196,9 +196,11 @@ class BackgroundComputer:
             new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
 
     def piece_results_together(self):
+        from core.graph.graph_manager import GraphManager
         self.project.rm = RegionManager(db_wd=self.project.working_directory)
         self.project.chm = ChunkManager()
         self.solver = Solver(self.project)
+        self.project.gm = GraphManager(self.project, self.solver.assignment_score)
 
         self.update_callback(0, 're-indexing...')
 
@@ -209,6 +211,7 @@ class BackgroundComputer:
         # TODO: remove this line
         part_num = 3
 
+        print "merging..."
         for i in range(part_num):
             rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
                                    db_name='part' + str(i) + '_rm.sqlite3')
@@ -219,7 +222,7 @@ class BackgroundComputer:
                 relevant_vertices = up.load()
                 chm_ = up.load()
 
-                self.merge_parts(self.solver.gm, g_, relevant_vertices, self.project, rm_old, chm_)
+                self.merge_parts(self.project.gm, g_, relevant_vertices, self.project, rm_old, chm_)
 
             self.update_callback((i + 1) / float(part_num))
 
@@ -227,6 +230,7 @@ class BackgroundComputer:
 
         self.update_callback(-1, 'joining parts...')
 
+        print "reconnecting graphs"
         self.solver.gm = self.project.gm
         for part_end_t in range(fir, fir*part_num, fir):
             t_v = self.solver.gm.get_vertices_in_t(part_end_t-1)
@@ -235,9 +239,11 @@ class BackgroundComputer:
             self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
             # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
+        print "simplifying "
         # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver, self.solver.update_costs])
         self.project.solver_parameters.certainty_threshold = 0.1
-        self.solver.simplify(rules=[self.solver.adaptive_threshold])
+        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
         self.project.solver_parameters.certainty_threshold = 0.5
 
 
@@ -248,7 +254,10 @@ class BackgroundComputer:
         self.project.gm.project = self.project
 
         from utils.color_manager import colorize_project
+        import time
+        s = time.time()
         colorize_project(self.project)
+        print "color manager takes %f seconds" % (time.time() - s)
 
         self.update_callback(-1, 'saving...')
         self.project.save()
@@ -257,9 +266,9 @@ class BackgroundComputer:
 
         with open(self.project.working_directory+'/graph.pkl', 'wb') as f:
             p = pickle.Pickler(f, -1)
-            p.dump(self.solver.gm.g)
-            p.dump(self.solver.gm.get_all_relevant_vertices())
-            p.dump(self.solver.chm)
+            p.dump(self.project.gm.g)
+            p.dump(self.project.gm.get_all_relevant_vertices())
+            p.dump(self.project.chm)
 
         self.finished_callback(self.solver)
 

@@ -272,7 +272,7 @@ def colorize_project(project):
     from utils.video_manager import get_auto_video_manager
     vid = get_auto_video_manager(project)
 
-    limit = len(project.solver.chm.chunks_)
+    limit = len(project.chm.chunks_)
 
     project.color_manager = ColorManager(vid.total_frame_count(), limit)
     for ch in project.chm.chunk_list():
