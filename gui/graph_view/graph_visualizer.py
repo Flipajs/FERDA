@@ -156,6 +156,7 @@ class GraphVisualizer(QtGui.QWidget):
                     color = hex2rgb_opacity_tuple(last_color)
                 item.set_color(color)
             item.show_info(self.loader)
+        QApplication.processEvents()
 
     def hide_info(self):
         for item in self.clipped:
@@ -181,6 +182,7 @@ class GraphVisualizer(QtGui.QWidget):
                 self.find_suitable_position_line(edge)
             else:
                 self.find_suitable_position_partial(edge)
+
 
     def add_sole_nodes(self):
         for node in self.regions:
@@ -227,9 +229,10 @@ class GraphVisualizer(QtGui.QWidget):
             else:
                 position += 1
 
+
     def find_suitable_position_semi_placed_chunk(self, edge, col1, col2, node_1, node_2):
-        if col1.contains(node_1) and col2.contains(node_2):
-            return
+        # if col1.contains(node_1) and col2.contains(node_2):
+        #     return
         if col1.contains(node_1) and not col2.contains(node_2):
             position1, position2 = self.find_nearest_free_slot(node_1, node_2)
             col2.add_object(edge, position2)
@@ -318,15 +321,18 @@ class GraphVisualizer(QtGui.QWidget):
         return position, position + offset
 
     def get_next_to_column(self, frame_from, direction):
-        frame_offset = (1 if direction == "right" else -1) + frame_from
-        if frame_offset in self.frames_columns.keys():
-            return self.frames_columns[frame_offset]
+        frame_offset = (1 if direction == "right" else -1)
+        frame = frame_offset + frame_from
+        if frame in self.frames_columns.keys():
+            return self.frames_columns[frame]
         else:
             frames = self.frames_columns.keys()
             tuples = [tup for tup in frames if isinstance(tup, tuple)]
             for tup in tuples:
-                if tup[0 if direction == "right" else 1] == frame_offset:
+                if tup[0 if direction == "right" else 1] == frame:
                     return self.frames_columns[tup]
+            # ret = self.columns[self.columns.index(self.frames_columns[frame_from]) + frame_offset]
+            # return ret
 
     def prepare_columns(self, frames):
         from gui.graph_view.column import Column
@@ -375,6 +381,7 @@ class GraphVisualizer(QtGui.QWidget):
         print("Preparing nodes...")
         self.add_sole_nodes()
         print("Visualizing...")
+        self.show()
         self.redraw(first_frame, last_frame)
 
     def draw_columns(self, first_frame, last_frame, minimum):
@@ -383,8 +390,11 @@ class GraphVisualizer(QtGui.QWidget):
             event_loaded = threading.Event()
             thread_load = threading.Thread(group=None, target=self.load, args=(minimum, event_loaded))
         for column in self.columns:
-            print("Drawing column {0}...".format(column.frame))
             QApplication.processEvents()
+            # TODO not every time
+            import time
+            time1 = time.time()
+            print("Drawing column {0}...".format(column.frame))
             self.load_indicator_wheel()
             column.set_x(next_x)
             next_x = self.increment_x(column, next_x)
@@ -407,7 +417,8 @@ class GraphVisualizer(QtGui.QWidget):
                     column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
                 else:
                     column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
-
+            time2 = time.time()
+            print("The drawing of column took {0}".format(time2 - time1))
 
     def increment_x(self, column, next_x):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
@@ -426,6 +437,7 @@ class GraphVisualizer(QtGui.QWidget):
                 col.prepare_images()
                 self.loaded.add(col)
             event_loaded.set()
+
 
     def draw_lines(self, first_frame, last_frame):
         for edge in self.edges:

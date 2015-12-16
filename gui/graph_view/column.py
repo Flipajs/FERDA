@@ -93,7 +93,11 @@ class Column:
                 if region in self.items_nodes.keys():
                     continue
                 if not isinstance(region, int):
-                    img = self.im_manager.get_crop(self.frame, region, width=self.width, height=self.height, relative_margin=self.relative_margin)
+                    import time
+                    time1 = time.time()
+                    img = self.im_manager.get_crop(self.frame, region,  width=self.width, height=self.height, relative_margin=self.relative_margin)
+                    time2 = time.time()
+                    print("Getting image in prepare imgs took {0}".format(time2 - time1))
                     self.regions_images[region] = img
 
     def add_crop_to_col(self):
@@ -111,7 +115,11 @@ class Column:
                     if item in self.items_nodes.keys():
                         continue
                 if item not in self.regions_images.keys():
+                    import time
+                    time1 = time.time()
                     img = self.im_manager.get_crop(self.frame, item,  width=self.width, height=self.height, relative_margin=self.relative_margin)
+                    time2 = time.time()
+                    print("Getting image took {0}".format(time2 - time1))
                 else:
                     img = self.regions_images[item]
                 pixmap = cvimg2qtpixmap(img)

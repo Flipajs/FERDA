@@ -21,9 +21,9 @@ GAP = WIDTH
 # number of columns to be displayed before dynamic loading, 0 means dynamic loading for all
 MINIMUM = 20
 # number of columns processed in one chunk sent to dummy thread, for debbuging purpose
-COLUMNS_TO_LOAD = 3
+COLUMNS_TO_LOAD = 10
 # Opacity of the colors
-OPACITY = 160
+OPACITY = 180
 # default text to display
 DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, " \
                "stretch; A, S show/hide info for selected; T - show toggled node"
@@ -71,25 +71,38 @@ class VisLoader:
             print "No project set!"
 
     def prepare_vertices(self):
+        import time
+        time1 = time.time()
         self.vertices = set(self.graph_manager.get_all_relevant_vertices())
-
+        time2 = time.time()
         # s = set(self.graph_manager.get_all_relevant_vertices())
-        # i = 200
+        # i = 100
         # while i > 0:
         #     i -= 1
         #     self.vertices.add(s.pop())
 
+        # print("Getting {0} vertices from graph took {1}".format(len(self.vertices), time2 - time1))
+
     def prepare_nodes(self):
+        import time
+        time1 = time.time()
+        # zmerit cas toho volani
         for vertex in self.vertices:
             region = self.graph_manager.region(vertex)
             self.regions_vertices[region] = vertex
             self.regions.add(region)
+        time2 = time.time()
+        print("Getting {0} regions from vertices took {1}".format(len(self.regions), time2 - time1))
 
     def prepare_edges(self):
+        import time
+        time1 = time.time()
         for vertex in self.vertices:
             v = self.graph.vertex(vertex)
             self.prepare_tuples(v.in_edges())
             self.prepare_tuples(v.out_edges())
+        time2 = time.time()
+        print("Preparing {0} edges took {1}".format(len(self.edges), time2 - time1))
 
     def prepare_tuples(self, edges):
         for edge in edges:
@@ -134,7 +147,6 @@ class VisLoader:
         self.prepare_edges()
         print("Preparing visualizer...")
         img_manager = ImgManager(self.project)
-
         from graph_visualizer import GraphVisualizer
         self.g = GraphVisualizer(self, img_manager)
         self.g.show()
@@ -144,17 +156,15 @@ if __name__ == '__main__':
     p = Project()
     p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
     # p.load('/home/sheemon/FERDA/projects/archive/c210.fproj')
-
-    from core.region.region_manager import RegionManager
-
+    # from core.region.region_manager import RegionManager
     # p.rm = RegionManager(p.working_directory, '/rm.sqlite3')
 
     import cv2, sys
     app = QtGui.QApplication(sys.argv)
     l1 = VisLoader(p)
     l1.set_relative_margin(1)
-    l1.set_width(60)
-    l1.set_height(60)
+    # l1.set_width(60)
+    # l1.set_height(60)
     l1.visualise()
     app.exec_()
     cv2.waitKey(0)

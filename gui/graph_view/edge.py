@@ -48,16 +48,13 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
             self.shown = True
 
     def show_info(self, loader):
-        if not self.info_item:
+        if not self.info_item or not self.clipped:
             self.create_info(loader)
-        if not self.clipped:
-            print("NAstavuji pozici")
-            x, y = self.compute_rect_pos()
-            self.info_item.setPos(x, y)
             self.clipped = True
+            self.info_item.set_color(self.color)
         if not self.shown:
             self.scene.addItem(self.info_item)
-            self.shown = True
+            self.shown = True;
         self.scene.update()
 
     def hide_info(self):

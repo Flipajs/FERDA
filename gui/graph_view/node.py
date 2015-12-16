@@ -44,12 +44,10 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.toggled = False if self.toggled else True
 
     def show_info(self, loader):
-        if not self.info_item:
+        if not self.info_item or not self.clipped:
             self.create_info(loader)
-        if not self.clipped:
-            x, y = self.compute_rectangle_pos()
-            self.info_item.setPos(x, y);
             self.clipped = True
+            self.info_item.set_color(self.color)
         if not self.shown:
             self.scene.addItem(self.info_item)
             self.shown = True;
@@ -149,13 +147,13 @@ class TextInfoItem(QtGui.QGraphicsItem):
 
     def set_color(self, color):
         self.color = color
+        self.connecting_line.set_color(color)
 
     def paint(self, painter, item, widget):
         self.rect.setPen(QtGui.QPen(self.node.color, SELECTION_LINE_WIDTH * 1.5, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin))
         self.rect.setBrush(QtGui.QBrush(self.node.color))
         self.rect.paint(painter, item, widget)
         self.text_item.paint(painter, item, widget)
-        
 
     def create_bounding_rect(self):
         longest, rows = get_longest_string_rows(self.text)
@@ -189,6 +187,7 @@ class TextInfoItem(QtGui.QGraphicsItem):
             self.connecting_line.setLine(QtCore.QLineF(p1, p2))
         return super(TextInfoItem, self).itemChange(change, value)
 
+
 class ConnectingLine(QtGui.QGraphicsLineItem):
     
     def __init__(self, line, parent_obj, color):
@@ -199,7 +198,11 @@ class ConnectingLine(QtGui.QGraphicsLineItem):
         pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
         painter.setPen(pen)
         painter.drawLine(self.line())
-    
+
+    def set_color(self, color):
+        self.color = color
+
+
 def get_longest_string_rows(string):
     st = ""
     longest = ""
