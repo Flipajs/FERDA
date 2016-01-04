@@ -101,11 +101,9 @@ class Chunk:
         first = self.nodes_.pop(0)
 
         # if last node was popped (e.g. during whole chunk fitting)
-        new_start = None
-        if self.length():
+        if self.length() > 1:
             new_start = self.start_node()
 
-        if new_start:
             if not undo_action:
                 new_start = gm.add_vertex(gm.region(new_start))
                 # it is necessary to verride vertex_id as the ids inside chunk are not vertices ids but -region_ids
@@ -130,10 +128,9 @@ class Chunk:
 
         # if last node was popped (e.g. during whole chunk fitting)
         new_end = None
-        if self.length():
+        if self.length() > 1:
             new_end = self.end_node()
 
-        if new_end:
             if not undo_action:
                 new_end = gm.add_vertex(gm.region(new_end))
                 # it is necessary to override vertex_id, as it was inside chunk, thus the id was -region_id

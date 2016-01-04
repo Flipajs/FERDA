@@ -161,27 +161,28 @@ class GraphManager:
         return self.project.chm[id_]
 
     def add_edges_(self, vertices_t1, vertices_t2, fast=False):
-        regions_t1 = [self.region(v) for v in vertices_t1]
-        regions_t2 = [self.region(v) for v in vertices_t2]
+        if vertices_t1 and vertices_t2:
+            regions_t1 = [self.region(v) for v in vertices_t1]
+            regions_t2 = [self.region(v) for v in vertices_t2]
 
-        centroids_t1 = np.array([r.centroid() for r in regions_t1])
-        centroids_t2 = np.array([r.centroid() for r in regions_t2])
+            centroids_t1 = np.array([r.centroid() for r in regions_t1])
+            centroids_t2 = np.array([r.centroid() for r in regions_t2])
 
-        dists = cdist(centroids_t1, centroids_t2)
-        for i, v_t1, r_t1 in zip(range(len(vertices_t1)), vertices_t1, regions_t1):
-            for j, v_t2, r_t2 in zip(range(len(vertices_t2)), vertices_t2, regions_t2):
-                d = dists[i, j]
+            dists = cdist(centroids_t1, centroids_t2)
+            for i, v_t1, r_t1 in zip(range(len(vertices_t1)), vertices_t1, regions_t1):
+                for j, v_t2, r_t2 in zip(range(len(vertices_t2)), vertices_t2, regions_t2):
+                    d = dists[i, j]
 
-                if d < self.max_distance:
-                    if self.chunk_start(v_t1) or self.chunk_end(v_t2):
-                        continue
+                    if d < self.max_distance:
+                        if self.chunk_start(v_t1) or self.chunk_end(v_t2):
+                            continue
 
-                    s, ds, multi, _ = self.assignment_score(r_t1, r_t2)
+                        s, ds, multi, _ = self.assignment_score(r_t1, r_t2)
 
-                    if fast:
-                        self.add_edge_fast(v_t1, v_t2, s)
-                    else:
-                        self.add_edge(v_t1, v_t2, s)
+                        if fast:
+                            self.add_edge_fast(v_t1, v_t2, s)
+                        else:
+                            self.add_edge(v_t1, v_t2, s)
 
     def update_time_boundaries(self):
         self.start_t = np.inf

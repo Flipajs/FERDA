@@ -458,7 +458,7 @@ class Solver:
         r_t_minus, r_t, r_t_plus = self.get_vertices_around_t(new_regions[0].frame())
 
 
-        # remove all 
+        # remove all
 
         # TEST
         for n in new_regions:
@@ -473,6 +473,66 @@ class Solver:
 
         self.project.gm.add_edges_(r_t_minus, r_t)
         self.project.gm.add_edges_(r_t, r_t_plus)
+
+    def merged_chunk(self, model_vertices, new_regions, replace, t_reversed, chunk):
+        """
+        if t_reversed = False
+        model_regions t-1
+        new_regions t
+        replace t
+
+        is called when fitting is finished...
+        """
+
+        # if chunk.length() == 0:
+        #     print " 1"
+
+        new_vertices = []
+        for r in new_regions:
+            new_vertices.append(self.project.gm.add_vertex(r))
+
+        r_t_minus = []
+        r_t_plus = []
+
+        if t_reversed:
+            r_t_minus = []
+            if chunk.length() == 0:
+                end_vertex = self.project.gm.g.vertex(replace)
+                for v in end_vertex.in_neighbours():
+                    r_t_minus.apend(v)
+        else:
+            r_t_plus = []
+            if chunk.length() == 0:
+                start_vertex = self.project.gm.g.vertex(replace)
+                for v in start_vertex.out_neighbours():
+                    r_t_plus.append(v)
+
+        self.project.gm.remove_vertex(replace)
+
+        if t_reversed:
+            r_t_plus = model_vertices
+        else:
+            r_t_minus = model_vertices
+
+        r_t = new_vertices
+
+        # remove all
+
+        # TEST
+        for n in new_regions:
+            found = False
+            for r in r_t:
+                if self.project.gm.region(r) == n:
+                    found = True
+                    break
+
+            if not found:
+                raise Exception('new regions not found')
+
+        self.project.gm.add_edges_(r_t_minus, r_t)
+        self.project.gm.add_edges_(r_t, r_t_plus)
+
+        return new_vertices
 
     def get_vertices_around_t(self, t):
         # returns (list, list, list) of nodes in t_minus, t, t+plus

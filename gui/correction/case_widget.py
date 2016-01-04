@@ -260,7 +260,7 @@ class CaseWidget(QtGui.QWidget):
         best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
         best_in = best_in_score[0]
 
-        ch = self.project.gm.is_chunk(vertex)
+        ch, _ = self.project.gm.is_chunk(vertex)
         ch_info = str(ch)
 
         QtGui.QMessageBox.about(self, "My message box",

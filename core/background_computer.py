@@ -241,10 +241,13 @@ class BackgroundComputer:
 
         print "simplifying "
         # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver, self.solver.update_costs])
-        self.project.solver_parameters.certainty_threshold = 0.1
+        # self.project.solver_parameters.certainty_threshold = 0.1
+
+        self.solver.detect_split_merge_cases()
         self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+
         # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
-        self.project.solver_parameters.certainty_threshold = 0.5
+        # self.project.solver_parameters.certainty_threshold = 0.5
 
 
         S_.general.log_graph_edits = True
@@ -273,16 +276,21 @@ class BackgroundComputer:
         self.finished_callback(self.solver)
 
     def connect_graphs(self, vertices1, vertices2, gm, rm):
-        for v1 in vertices1:
-            r1 = gm.region(v1)
-            for v2 in vertices2:
-                r2 = gm.region(v2)
+        if vertices1:
+            r1 = gm.region(vertices1[0])
 
-                d = np.linalg.norm(r1.centroid() - r2.centroid())
+            self.project.gm.add_edges_(vertices1, vertices2)
 
-                if d < gm.max_distance:
-                    s, ds, multi, antlike = self.solver.assignment_score(r1, r2)
-                    gm.add_edge_fast(v1, v2, s)
+        # for v1 in vertices1:
+        #     r1 = gm.region(v1)
+        #     for v2 in vertices2:
+        #         r2 = gm.region(v2)
+        #
+        #         d = np.linalg.norm(r1.centroid() - r2.centroid())
+        #
+        #         if d < gm.max_distance:
+        #             s, ds, multi, antlike = self.solver.assignment_score(r1, r2)
+        #             gm.add_edge_fast(v1, v2, 0)
 
     def OnProcessOutputReady(self, p_id):
         while True:
