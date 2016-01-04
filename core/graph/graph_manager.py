@@ -39,23 +39,26 @@ class GraphManager:
 
         vertex = self.g.add_vertex()
 
-        self.vertices_in_t.setdefault(region.frame_, []).append(int(vertex))
+        self.vertices_in_t.setdefault(region.frame(), []).append(int(vertex))
         self.g.vp['region_id'][vertex] = region.id()
         self.g.vp['active'][vertex] = True
 
         return vertex
 
     def add_vertices(self, regions):
-        v_list = self.g.add_vertex(len(regions))
-        for vertex, region in zip(v_list, regions):
-            self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
-            self.start_t = min(self.start_t, region.frame_)
-            self.end_t = max(self.end_t, region.frame_)
-
-            self.vertices_in_t.setdefault(region.frame_, []).append(int(vertex))
-            self.g.vp['region_id'][vertex] = region.id()
+        # v_list = self.g.add_vertex(len(regions))
+        for region in regions:
+            vertex = self.add_vertex(region)
+            # self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
+            # self.start_t = min(self.start_t, region.frame_)
+            # self.end_t = max(self.end_t, region.frame_)
+            #
+            # self.vertices_in_t.setdefault(region.frame_, []).append(int(vertex))
+            # self.g.vp['region_id'][vertex] = region.id()
 
     def remove_vertex(self, vertex_id, disassembly=True):
+        if vertex_id < 0:
+            print "id < 0"
         vertex = self.g.vertex(vertex_id)
         region = self.project.rm[self.g.vp['region_id'][vertex]]
 
@@ -142,7 +145,11 @@ class GraphManager:
             self.add_edges_(self.vertices_in_t[t-1], self.vertices_in_t[t], fast=fast)
 
     def region(self, vertex):
-        id_ = self.g.vp['region_id'][self.g.vertex(vertex)]
+        if int(vertex) < 0:
+            id_ = -int(vertex)
+        else:
+            id_ = self.g.vp['region_id'][self.g.vertex(vertex)]
+
         return self.project.rm[id_]
 
     def chunk_start(self, vertex_id):
@@ -405,7 +412,7 @@ class GraphManager:
 
     def get_cc_rec(self, vertex, depth, node_groups):
         # TODO: add max depth param!
-        if depth > 10:
+        if depth > 10 or not self.g.vp['active'][vertex]:
             return
 
         r = self.region(vertex)

@@ -105,8 +105,8 @@ class CaseWidget(QtGui.QWidget):
         self.action_partially_confirm = QtGui.QAction('confirm this connection', self)
         self.action_partially_confirm.triggered.connect(self.parent.partially_confirm)
 
-        self.action_mark_merged = QtGui.QAction('merged', self)
-        self.action_mark_merged.triggered.connect(self.mark_merged)
+        # self.action_mark_merged = QtGui.QAction('merged', self)
+        # self.action_mark_merged.triggered.connect(self.mark_merged)
 
         self.new_region_t1 = QtGui.QAction('new region t1', self)
         self.new_region_t1.triggered.connect(partial(self.parent.new_region, 0))
@@ -152,7 +152,7 @@ class CaseWidget(QtGui.QWidget):
         self.addAction(self.hide_visualization_a)
 
         self.pop_menu_node.addAction(self.action_remove_node)
-        self.pop_menu_node.addAction(self.action_mark_merged)
+        # self.pop_menu_node.addAction(self.action_mark_merged)
         self.pop_menu_node.addAction(self.action_partially_confirm)
         self.pop_menu_node.addAction(self.new_region_t1)
         self.pop_menu_node.addAction(self.new_region_t2)
@@ -305,6 +305,7 @@ class CaseWidget(QtGui.QWidget):
 
         n = self.vertices_groups[self.active_col][self.active_row]
         self.highlight_node(n)
+        self.active_node = n
 
     def draw_grid(self):
         rows = 0
@@ -544,6 +545,7 @@ class CaseWidget(QtGui.QWidget):
 
     def get_im(self, n):
         r = self.project.gm.region(n)
+        print r.frame_, self.frame_t
         im = self.frame_cache[r.frame_-self.frame_t].copy()
 
         vis = draw_points_crop(im, r.pts(), color=self.get_node_color(n), square=True)
@@ -627,27 +629,27 @@ class CaseWidget(QtGui.QWidget):
 
             self.frame_cache.append(im)
 
-    def mark_merged(self, region, t_reversed=None):
-        merged_t = region.frame_ - self.frame_t
-        model_t = merged_t + 1 if t_reversed else merged_t - 1
-
-        if len(self.vertices_groups[model_t]) > 0 and len(self.vertices_groups[merged_t]) > 0:
-            t1_ = self.vertices_groups[model_t]
-
-            objects = []
-            for c1 in t1_:
-                a = deepcopy(c1)
-                if t_reversed:
-                    a.frame_ -= 1
-                else:
-                    a.frame_ += 1
-
-                objects.append(a)
-
-            f = Fitting(region, objects, num_of_iterations=10)
-            f.fit()
-
-            return f.animals
+    # def mark_merged(self, region, t_reversed=None):
+    #     merged_t = region.frame_ - self.frame_t
+    #     model_t = merged_t + 1 if t_reversed else merged_t - 1
+    #
+    #     if len(self.vertices_groups[model_t]) > 0 and len(self.vertices_groups[merged_t]) > 0:
+    #         t1_ = self.vertices_groups[model_t]
+    #
+    #         objects = []
+    #         for c1 in t1_:
+    #             a = deepcopy(c1)
+    #             if t_reversed:
+    #                 a.frame_ -= 1
+    #             else:
+    #                 a.frame_ += 1
+    #
+    #             objects.append(a)
+    #
+    #         f = Fitting(region, objects, num_of_iterations=10)
+    #         f.fit()
+    #
+    #         return f.animals
 
     def draw_scene(self):
         for i in range(len(self.vertices_groups)):

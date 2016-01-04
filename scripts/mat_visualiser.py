@@ -232,8 +232,9 @@ class ResultsWidget(QtGui.QWidget):
             else:
                 self.highlight_timer.stop()
 
-    def marker_changed(self):
-        pass
+    @staticmethod
+    def marker_changed(id_):
+        print id_
 
     def update_marker_position(self, marker, c):
         sf = self.project.other_parameters.img_subsample_factor
@@ -246,14 +247,14 @@ class ResultsWidget(QtGui.QWidget):
 
     def highlight_area(self, data, radius=50):
         centroid = data['n1'].centroid()
-        self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(167, 255, 36), 0, self.marker_changed)
+        self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(167, 255, 36), 0, print_id)
         self.highlight_marker.setOpacity(0.40)
         self.highlight_marker.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
         self.scene.addItem(self.highlight_marker)
         self.highlight_timer.start(50)
 
         if data['n2']:
-            self.highlight_marker2nd = markers.CenterMarker(0, 0, radius, QtGui.QColor(36, 255, 167), 0, self.marker_changed)
+            self.highlight_marker2nd = markers.CenterMarker(0, 0, radius, QtGui.QColor(36, 255, 167), 0, print_id)
             self.highlight_marker2nd.setOpacity(0.40)
             centroid = data['n2'].centroid()
             self.highlight_marker2nd.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
@@ -324,7 +325,7 @@ class ResultsWidget(QtGui.QWidget):
             for ch in self.chunks:
                 if t1 < ch.start_t() < t2 or t1 < ch.end_t() < t2:
                     r, g, b = colors_[i % len(colors_)]
-                    item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
+                    item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), ch.id_, print_id)
                     item.setZValue(0.5)
                     self.items.append(item)
                     self.scene.addItem(item)
@@ -341,7 +342,7 @@ class ResultsWidget(QtGui.QWidget):
         else:
             for ch in self.chunks:
                 r, g, b = colors_[i % len(colors_)]
-                item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
+                item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), ch.id_, print_id)
                 item.setZValue(0.5)
                 self.items.append(item)
                 self.scene.addItem(item)
@@ -360,7 +361,7 @@ class ResultsWidget(QtGui.QWidget):
         self.chunks = chunks
         for ch in self.chunks:
             r, g, b = colors_[i % len(colors_)]
-            item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), ch.id_, self.marker_changed)
+            item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), ch.id_, print_id)
             item.setZValue(0.5)
             self.items.append(item)
             self.scene.addItem(item)
@@ -523,6 +524,9 @@ def get_chunks_from_mat(mat):
         chunks.append(new_ch)
 
     return chunks
+
+def print_id(id_):
+    print id_
 
 if __name__ == "__main__":
     import sys

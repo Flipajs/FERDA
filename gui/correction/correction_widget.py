@@ -230,8 +230,14 @@ class ResultsWidget(QtGui.QWidget):
             else:
                 self.highlight_timer.stop()
 
-    def marker_changed(self):
-        pass
+    def marker_changed(self, id_):
+        from core.graph.region_chunk import RegionChunk
+
+        ch = self.project.chm[id_]
+        rch = RegionChunk(ch, self.project.gm, self.project.rm)
+        f = self.video.frame_number()
+
+        print id_, rch.region_in_t(f)
 
     def update_marker_position(self, marker, c):
         sf = self.project.other_parameters.img_subsample_factor
@@ -333,7 +339,7 @@ class ResultsWidget(QtGui.QWidget):
             for ch in self.chunks:
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
                 if t1 < rch.start_frame() < t2 or t1 < rch.end_frame() < t2:
-                    item = markers.CenterMarker(0, 0, MARKER_SIZE, ch.color, i, self.marker_changed)
+                    item = markers.CenterMarker(0, 0, MARKER_SIZE, ch.color, ch.id_, self.marker_changed)
                     item.setZValue(0.5)
                     self.items.append(item)
                     self.scene.addItem(item)
@@ -349,7 +355,7 @@ class ResultsWidget(QtGui.QWidget):
         else:
             for ch in self.chunks:
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
-                item = markers.CenterMarker(0, 0, MARKER_SIZE, ch.color, i, self.marker_changed)
+                item = markers.CenterMarker(0, 0, MARKER_SIZE, ch.color, ch.id_, self.marker_changed)
                 item.setZValue(0.5)
                 self.items.append(item)
                 self.scene.addItem(item)

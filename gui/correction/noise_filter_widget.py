@@ -52,9 +52,10 @@ class NoiseFilterWidget(QtGui.QWidget):
     def remove_noise(self):
         # TODO: add actions
         to_remove = self.noise_nodes_widget.get_selected()
+        affected = []
         for v in to_remove:
             # if n in self.solver.g:
-            self.project.solver.strong_remove(v)
+            affected.extend(self.project.solver.strong_remove(v))
 
         to_confirm = self.noise_nodes_widget.get_unselected()
         for n in to_confirm:
@@ -62,6 +63,8 @@ class NoiseFilterWidget(QtGui.QWidget):
                 self.solver.g.node[n]['antlikeness'] = 1.0
 
         self.noise_nodes_widget.hide()
+
+        self.project.solver.simplify(queue=affected, rules=[self.project.solver.adaptive_threshold, self.project.solver.update_costs])
         # self.next_case()
 
     def noise_part_done_(self, val, img, region, vertex):

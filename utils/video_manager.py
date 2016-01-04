@@ -80,8 +80,8 @@ class VideoManager():
         if self.position_ > 0:
             self.position_ -= 1
             view_dec = self.dec_pos_(self.view_position_)
-            # if (view_dec == self.buffer_position_) or (self.buffer_[view_dec] is None):
-            if True:
+            if (view_dec == self.buffer_position_) or (self.buffer_[view_dec] is None):
+            # if True:
                 self.buffer_position_ = self.dec_pos_(self.buffer_position_)
                 self.view_position_ = self.dec_pos_(self.view_position_)
                 self.buffer_[self.view_position_] = self.seek_frame(self.position_)

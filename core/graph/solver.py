@@ -455,13 +455,16 @@ class Solver:
 
         self.project.gm.remove_vertex(replace)
 
-        r_t_minus, r_t, r_t_plus = self.get_vertices_around_t(new_regions[0].frame_)
+        r_t_minus, r_t, r_t_plus = self.get_vertices_around_t(new_regions[0].frame())
+
+
+        # remove all 
 
         # TEST
         for n in new_regions:
             found = False
             for r in r_t:
-                if r == n:
+                if self.project.gm.region(r) == n:
                     found = True
                     break
 
@@ -473,9 +476,9 @@ class Solver:
 
     def get_vertices_around_t(self, t):
         # returns (list, list, list) of nodes in t_minus, t, t+plus
-        v_t_minus = [] if t-1 not in self.nodes_in_t else self.nodes_in_t[t-1]
-        v_t_plus = [] if t+1 not in self.nodes_in_t else self.nodes_in_t[t+1]
-        v_t = [] if t not in self.nodes_in_t else self.nodes_in_t[t]
+        v_t_minus = self.project.gm.get_vertices_in_t(t-1)
+        v_t = self.project.gm.get_vertices_in_t(t)
+        v_t_plus = self.project.gm.get_vertices_in_t(t+1)
 
         return v_t_minus, v_t, v_t_plus
 
@@ -487,15 +490,15 @@ class Solver:
         self.add_edges_(r_t_minus, [vertex])
         self.add_edges_([vertex], r_t_plus)
 
-    def remove_vertex(self, vertex):
-        affected = []
-
-        for v in vertex.all_edges():
-            affected.append(v)
-
-        self.project.gm.remove_vertex(vertex)
-
-        return affected
+    # def remove_vertex(self, vertex):
+    #     affected = []
+    #
+    #     for v in vertex.all_edges():
+    #         affected.append(v)
+    #
+    #     self.project.gm.remove_vertex(vertex)
+    #
+    #     return affected
 
     def strong_remove(self, vertex):
         ch, _ = self.project.gm.is_chunk(vertex)

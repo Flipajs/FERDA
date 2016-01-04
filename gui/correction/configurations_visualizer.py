@@ -141,7 +141,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             node = self.active_cw.active_node
 
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.REMOVE, node)
-        self.solver.remove_vertex(node)
+        self.project.gm.remove_vertex(node)
         if not suppress_next_case:
             self.next_case()
 
@@ -243,9 +243,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             config = self.best_greedy_config(nodes_groups)
 
             self.active_cw = CaseWidget(self.project, nodes_groups, config, self.vid, self)
-            self.active_cw.active_node = None
+            # self.active_cw.active_node = None
 
             self.scenes_widget.layout().addWidget(self.active_cw)
+            self.active_cw.setFocus()
 
     def best_greedy_config(self, nodes_groups):
         config = {}
@@ -340,17 +341,18 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.active_cw.confirm_clicked()
 
     def fitting_get_model(self, t_reversed):
-        region = self.active_cw.active_node
+        region = self.project.gm.region(self.active_cw.active_node)
 
-        merged_t = region.frame_ - self.active_cw.frame_t
+        merged_t = region.frame() - self.active_cw.frame_t
         model_t = merged_t + 1 if t_reversed else merged_t - 1
 
-        if len(self.active_cw.nodes_groups[model_t]) > 0 and len(self.active_cw.nodes_groups[merged_t]) > 0:
-            t1_ = self.active_cw.nodes_groups[model_t]
+        if len(self.active_cw.vertices_groups[model_t]) > 0 and len(self.active_cw.vertices_groups[merged_t]) > 0:
+            t1_ = self.active_cw.vertices_groups[model_t]
 
             objects = []
             for c1 in t1_:
-                a = deepcopy(c1)
+                a = deepcopy(self.project.gm.region(c1))
+                self.project.rm.add(a)
                 if t_reversed:
                     a.frame_ -= 1
                 else:
@@ -368,22 +370,22 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                                      'n': self.active_cw.active_node,
                                      't_reversed': t_reversed
                                  })
+            vertex = self.active_cw.active_node
+            chunk, _ = self.project.gm.is_chunk(vertex)
 
-            is_ch, _, chunk = self.solver.is_chunk(self.active_cw.active_node)
-            if is_ch:
+            if chunk:
                 print "FITTING WHOLE CHUNK, WAIT PLEASE"
                 model = None
 
-                q = chunk.last if t_reversed else chunk.first
+                q = chunk.pop_last if t_reversed else chunk.pop_first
+
                 i = 0
-                while True:
-                    merged = q()
+                while not chunk.is_empty():
+                    print "LEN: ", len(chunk.nodes_)
+                    merged_vertex = q(self.project.gm)
+                    merged = self.project.gm.region(merged_vertex)
                     if not merged:
                         break
-
-                    # TODO: find better way
-                    if chunk.length() < 3:
-                        chunk.pop_last(self.project.gm) if t_reversed else chunk.pop_first(self.project.gm)
 
                     # TODO: settings, safe break
                     if i > 15:
@@ -391,12 +393,23 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
                     if not model:
                         model = self.fitting_get_model(t_reversed)
+                    else:
+                        new_model = []
+                        for r in model:
+                            # it is necessary to create new copies of regions
+                            new_r = deepcopy(r)
+                            self.project.rm.add(new_r)
+
+                            new_model.append(new_r)
+
+                        model = new_model
 
                     # TODO : add to settings
                     f = Fitting(merged, model, num_of_iterations=10)
                     f.fit()
 
-                    self.solver.merged(f.animals, merged, t_reversed)
+                    print i
+                    self.solver.merged(f.animals, merged_vertex, t_reversed)
 
                     model = deepcopy(f.animals)
                     for m in model:
@@ -410,7 +423,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 print "CHUNK FINISHED"
             else:
                 model = self.fitting_get_model(t_reversed)
-                f = Fitting(self.active_cw.active_node, model, num_of_iterations=10)
+                region = self.project.gm.region(self.active_cw.active_node)
+                f = Fitting(region, model, num_of_iterations=10)
                 f.fit()
 
                 self.solver.merged(f.animals, self.active_cw.active_node, t_reversed)

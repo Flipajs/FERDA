@@ -23,8 +23,8 @@ class NoiseFilterComputer(QtCore.QThread):
         to_process = []
 
         r2v_mapping = {}
-        for v in self.solver.gm.get_all_relevant_vertices():
-            r = self.solver.gm.region(v)
+        for v in self.project.gm.get_all_relevant_vertices():
+            r = self.project.gm.region(v)
             r2v_mapping[r] = v
             prob = self.solver.get_antlikeness(r)
 

@@ -99,36 +99,56 @@ class Chunk:
 
     def pop_first(self, gm, undo_action=False):
         first = self.nodes_.pop(0)
-        new_start = self.start_node()
 
-        if not undo_action:
-            gm.add_vertex(gm.region(new_start))
+        # if last node was popped (e.g. during whole chunk fitting)
+        new_start = None
+        if self.length():
+            new_start = self.start_node()
 
-        if not undo_action:
-            gm.remove_edge(gm.g.vertex(first), gm.g.vertex(self.end_node()))
-            prev_nodes = gm.get_vertices_in_t(gm.region(new_start).frame() - 1)
-            gm.add_edges_(prev_nodes, [new_start])
+        if new_start:
+            if not undo_action:
+                new_start = gm.add_vertex(gm.region(new_start))
+                # it is necessary to verride vertex_id as the ids inside chunk are not vertices ids but -region_ids
+                self.nodes_[0] = int(new_start)
+
+            if not undo_action:
+                gm.remove_edge(gm.g.vertex(first), gm.g.vertex(self.end_node()))
+                prev_nodes = gm.get_vertices_in_t(gm.region(new_start).frame() - 1)
+                gm.add_edges_(prev_nodes, [new_start])
 
         if not undo_action:
             if len(self.nodes_) > 1:
                 self.chunk_reconnect_(gm)
 
+        gm.g.vp['chunk_start_id'][gm.g.vertex(first)] = 0
+        gm.g.vp['chunk_end_id'][gm.g.vertex(first)] = 0
+
         return first
 
     def pop_last(self, gm, undo_action=False):
         last = self.nodes_.pop()
-        new_end = self.end_node()
 
-        if not undo_action:
-            gm.add_vertex(gm.region(new_end))
+        # if last node was popped (e.g. during whole chunk fitting)
+        new_end = None
+        if self.length():
+            new_end = self.end_node()
 
-        if not undo_action:
-            gm.remove_edge(gm.g.vertex(self.start_node()), gm.g.vertex(last))
+        if new_end:
+            if not undo_action:
+                new_end = gm.add_vertex(gm.region(new_end))
+                # it is necessary to override vertex_id, as it was inside chunk, thus the id was -region_id
+                self.nodes_[-1] = int(new_end)
 
-            next_nodes = gm.get_vertices_in_t(gm.region(new_end).frame() + 1)
-            gm.add_edges_([new_end], next_nodes)
+            if not undo_action:
+                gm.remove_edge(gm.g.vertex(self.start_node()), gm.g.vertex(last))
 
-            self.chunk_reconnect_(gm)
+                next_nodes = gm.get_vertices_in_t(gm.region(new_end).frame() + 1)
+                gm.add_edges_([new_end], next_nodes)
+
+                self.chunk_reconnect_(gm)
+
+        gm.g.vp['chunk_start_id'][gm.g.vertex(last)] = 0
+        gm.g.vp['chunk_end_id'][gm.g.vertex(last)] = 0
 
         return last
 
@@ -207,6 +227,9 @@ class Chunk:
 
     def length(self):
         return len(self.nodes_)
+
+    def is_empty(self):
+        return True if self.length() == 0 else False
 
     def chunk_reconnect_(self, gm):
         gm.add_edge(self.start_node(), self.end_node(), 1.0)

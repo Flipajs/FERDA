@@ -242,7 +242,7 @@ class BackgroundComputer:
         print "simplifying "
         # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver, self.solver.update_costs])
         self.project.solver_parameters.certainty_threshold = 0.1
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+        self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
         # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
         self.project.solver_parameters.certainty_threshold = 0.5
 

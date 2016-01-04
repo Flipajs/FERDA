@@ -40,9 +40,16 @@ class RegionChunk:
     def end_frame(self):
         return self[-1].frame_
 
-    def centroid_in_t(self, t):
+    def region_in_t(self, t):
         t = t-self.start_frame()
         if -1 < t < len(self.chunk_.nodes_):
-            return self[t].centroid()
+            return self[t]
+        else:
+            return None
+
+    def centroid_in_t(self, t):
+        r = self.region_in_t(t)
+        if r:
+            return r.centroid()
         else:
             return None
