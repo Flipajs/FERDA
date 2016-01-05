@@ -387,6 +387,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
                 q = chunk.pop_last if t_reversed else chunk.pop_first
 
+                f = None
+
                 i = 0
                 # while chunk.length() > 1:
                 while not chunk.is_empty():
@@ -419,13 +421,26 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                         model = new_model
 
                     # TODO : add to settings
-                    f = Fitting(merged, model, num_of_iterations=10)
-                    f.fit()
+                    if f is None:
+                        f = Fitting(merged, model, num_of_iterations=10)
+                    else:
+                        f.region = merged
+                        from core.region.distance_map import DistanceMap
+                        f.d_map_region = DistanceMap(merged.pts())
+
+                        for a in f.animals:
+                            a.frame_ += 1
+
+                    result = f.fit()
+                    for r in result:
+                        self.project.rm.add(r)
+
+                    # it is important to call deepcopy before merged_chunk, where pts_ are rounded...
+                    model = deepcopy(result)
 
                     print i
-                    vertices = self.solver.merged_chunk(vertices, f.animals, merged_vertex, t_reversed, chunk)
+                    vertices = self.solver.merged_chunk(vertices, result, merged_vertex, t_reversed, chunk)
 
-                    model = deepcopy(f.animals)
                     for m in model:
                         m.frame_ += -1 if t_reversed else 1
 
@@ -439,9 +454,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 model, _ = self.fitting_get_model(t_reversed)
                 region = self.project.gm.region(self.active_cw.active_node)
                 f = Fitting(region, model, num_of_iterations=10)
-                f.fit()
+                result = f.fit()
+                for r in result:
+                    self.project.rm.add(r)
 
-                self.solver.merged(f.animals, self.active_cw.active_node, t_reversed)
+                self.solver.merged(result, self.active_cw.active_node, t_reversed)
 
             self.next_case()
 

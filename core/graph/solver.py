@@ -472,6 +472,7 @@ class Solver:
         """
 
         for r in new_regions:
+            r.pts_ = np.asarray(np.round(r.pts_), dtype=np.uint32)
             self.project.gm.add_vertex(r)
 
         self.project.gm.remove_vertex(replace)
@@ -505,11 +506,9 @@ class Solver:
         is called when fitting is finished...
         """
 
-        # if chunk.length() == 0:
-        #     print " 1"
-
         new_vertices = []
         for r in new_regions:
+            r.pts_ = np.asarray(np.round(r.pts_), dtype=np.uint32)
             new_vertices.append(self.project.gm.add_vertex(r))
 
         r_t_minus = []
