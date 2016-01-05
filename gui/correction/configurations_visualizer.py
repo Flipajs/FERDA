@@ -141,7 +141,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             node = self.active_cw.active_node
 
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.REMOVE, node)
-        self.project.gm.remove_vertex(node)
+        affected = self.project.gm.remove_vertex(node)
+
+        self.solver.simplify(queue=affected, rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+
         if not suppress_next_case:
             self.next_case()
 
@@ -153,7 +156,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             return
 
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.STRONG_REMOVE, n)
-        self.solver.strong_remove(n)
+        affected = self.solver.strong_remove(n)
+        self.solver.simplify(queue=affected, rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+
         if not suppress_next_case:
             self.next_case()
 

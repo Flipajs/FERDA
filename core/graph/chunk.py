@@ -21,6 +21,17 @@ class Chunk:
         self.color = color
         self.statistics = {}
 
+        if vertices_ids[0] > 0:
+            v1 = gm.g.vertex(vertices_ids[0])
+            for e in v1.out_edges():
+                gm.remove_edge_(e)
+
+        if vertices_ids[1] > 0:
+            v2 = gm.g.vertex(vertices_ids[1])
+
+            for e in v2.in_edges():
+                gm.remove_edge_(e)
+
         self.chunk_reconnect_(gm)
 
     def __str__(self):
@@ -58,6 +69,11 @@ class Chunk:
         return items
 
     def append_left(self, vertex, gm, undo_action=False):
+        # test: there cannot be any outgoing edge...
+        for e in vertex.out_edges():
+            gm.remove_edge_(e)
+
+
         vertex_id = int(vertex)
         region = gm.region(vertex_id)
         if region.frame() + 1 != self.start_frame(gm):
@@ -78,6 +94,10 @@ class Chunk:
             self.chunk_reconnect_(gm)
 
     def append_right(self, vertex, gm, undo_action=False):
+        # test: there cannot be any incomming edge...
+        for e in vertex.in_edges():
+            gm.remove_edge_(e)
+
         vertex_id = int(vertex)
         region = gm.region(vertex_id)
         if region.frame() != self.end_frame(gm) + 1:

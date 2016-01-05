@@ -65,6 +65,7 @@ class NoiseFilterWidget(QtGui.QWidget):
         self.noise_nodes_widget.hide()
 
         self.project.solver.simplify(queue=affected, rules=[self.project.solver.adaptive_threshold, self.project.solver.update_costs])
+        # self.project.solver.simplify(rules=[self.project.solver.adaptive_threshold, self.project.solver.update_costs])
         # self.next_case()
 
     def noise_part_done_(self, val, img, region, vertex):

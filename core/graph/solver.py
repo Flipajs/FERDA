@@ -61,9 +61,9 @@ class Solver:
 
             r = self.project.gm.region(vertex)
 
-            # skip the chunks...
-            if self.project.gm.chunk_start(vertex):
-                continue
+            # # skip the chunks...
+            # if self.project.gm.chunk_start(vertex):
+            #     continue
 
             for ru in rules:
                 # it is necessary to check this here, because it is possible that the vertex will be removed applying one of the rules
@@ -82,7 +82,7 @@ class Solver:
 
     def adaptive_threshold(self, vertex):
         if self.project.gm.chunk_start(vertex):
-            return
+            return []
 
         best_out_scores, best_out_vertices = self.project.gm.get_2_best_out_vertices(vertex)
 
@@ -125,6 +125,7 @@ class Solver:
 
                 desc_correction = 0
 
+                # cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
                 cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
 
             self.project.gm.g.ep['certainty'][self.project.gm.g.edge(v1, v2)] = cert
@@ -247,54 +248,74 @@ class Solver:
 
         affected = []
         if in_d == 1 and out_d > 0:
-            # there is just one edge...
-            pred = 0
-            for e_ in vertex.in_edges():
-                prev_region = self.project.gm.region(e_.source())
-                pred = region.centroid() - prev_region.centroid()
+            ch, ch_is_end = self.project.gm.is_chunk(vertex)
 
-            for e in vertex.out_edges():
-                s = self.project.gm.g.ep['score'][e]
+            pred = None
+            # if there is a chunk, we have to obtain region differently
+            if ch:
+                if ch_is_end and ch.length() > 1:
+                    prev_region = self.project.gm.region(ch.nodes_[-2])
+                    pred = region.centroid() - prev_region.centroid()
+            else:
+                # there is just one edge...
+                pred = 0
+                for e_ in vertex.in_edges():
+                    prev_region = self.project.gm.region(e_.source())
+                    pred = region.centroid() - prev_region.centroid()
 
-                out_region = self.project.gm.region(e.target())
-                s2, _, _, _ = self.assignment_score(region, out_region, pred)
+            if pred is not None:
+                for e in vertex.out_edges():
+                    s = self.project.gm.g.ep['score'][e]
 
-                if s2 > s:
-                    self.project.gm.g.ep['score'][e] = s2
-                    # affected.append(vertex)
+                    out_region = self.project.gm.region(e.target())
+                    s2, _, _, _ = self.assignment_score(region, out_region, pred)
 
-                    # make EMD test
-                    s1, s2 = self.project.gm.get_cc(self.project.gm.g.vertex(e.source()))
-                    self.dsmc_process_cc_(s1, s2, self.project.stats.area_median)
+                    if s2 > s:
+                        self.project.gm.g.ep['score'][e] = s2
+                        # affected.append(vertex)
 
-                    if self.project.gm.g.ep['score'][e] > 0:
-                       affected.append(e.source())
-                       # affected.append(e.target())
+                        # make EMD test
+                        s1, s2 = self.project.gm.get_cc(self.project.gm.g.vertex(e.source()))
+                        self.dsmc_process_cc_(s1, s2, self.project.stats.area_median)
 
-        elif in_d > 0 and out_d == 1:
-            # there is only one edge
-            for e_ in vertex.out_edges():
-                next_region = self.project.gm.region(e_.target())
-                pred = region.centroid() - next_region.centroid()
+                        if self.project.gm.g.ep['score'][e] > 0:
+                           affected.append(e.source())
+                           # affected.append(e.target())
 
-            for e in vertex.in_edges():
-                s = self.project.gm.g.ep['score'][e]
+        if in_d > 0 and out_d == 1:
+            ch, ch_is_end = self.project.gm.is_chunk(vertex)
 
-                in_region = self.project.gm.region(e.source())
-                s2, _, _, _ = self.assignment_score(in_region, region, pred)
+            pred = None
 
-                if s2 > s:
-                    self.project.gm.g.ep['score'][e] = s2
-                    # affected.append(e.source())
+            # if there is a chunk, we have to obtain region differently
+            if ch:
+                if ch.length() > 1 and not ch_is_end:
+                    next_region = self.project.gm.region(ch.nodes_[1])
+                    pred = region.centroid() - next_region.centroid()
+            else:
+                # there is only one edge
+                for e_ in vertex.out_edges():
+                    next_region = self.project.gm.region(e_.target())
+                    pred = region.centroid() - next_region.centroid()
 
-                    # make EMD test
-                    s1, s2 = self.project.gm.get_cc(self.project.gm.g.vertex(e.source()))
-                    self.dsmc_process_cc_(s1, s2, self.project.stats.area_median)
+            if pred is not None:
+                for e in vertex.in_edges():
+                    s = self.project.gm.g.ep['score'][e]
 
-                    if self.project.gm.g.ep['score'][e] > 0:
-                        affected.append(e.source())
-                        # affected.append(e.target())
+                    in_region = self.project.gm.region(e.source())
+                    s2, _, _, _ = self.assignment_score(in_region, region, pred)
 
+                    if s2 > s:
+                        self.project.gm.g.ep['score'][e] = s2
+                        # affected.append(e.source())
+
+                        # make EMD test
+                        s1, s2 = self.project.gm.get_cc(self.project.gm.g.vertex(e.source()))
+                        self.dsmc_process_cc_(s1, s2, self.project.stats.area_median)
+
+                        if self.project.gm.g.ep['score'][e] > 0:
+                            affected.append(e.source())
+                            # affected.append(e.target())
 
         return affected
 
