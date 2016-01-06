@@ -5,9 +5,9 @@ from PyQt4 import QtGui
 __author__ = 'Simon Mandlik'
 
 # the width of a node
-WIDTH = 60
-# the width of a node
-HEIGHT = 60
+WIDTH = 50
+# the width of a node, should be same as width for the best result
+HEIGHT = WIDTH
 # relative margin of a node
 RELATIVE_MARGIN = 0.9
 # distance of the whole visualization from the top of the widget
@@ -19,11 +19,9 @@ SPACE_BETWEEN_VER = HEIGHT
 # gap between frame_numbers and first node in columns
 GAP = WIDTH
 # number of columns to be displayed before dynamic loading, 0 means dynamic loading for all
-MINIMUM = 20
-# number of columns processed in one chunk sent to dummy thread, for debbuging purpose
-COLUMNS_TO_LOAD = 10
+MINIMUM = 5
 # Opacity of the colors
-OPACITY = 180
+OPACITY = 140
 # default text to display
 DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, " \
                "stretch; A, S show/hide info for selected; T - show toggled node"

@@ -60,8 +60,17 @@ class Node(QtGui.QGraphicsPixmapItem):
 
     def create_info(self, loader):
         text = loader.get_node_info(self.region)
-        x, y = self.compute_rectangle_pos()
-        self.info_item = TextInfoItem(text, x, y, self.color, self)
+        metrics = QtGui.QFontMetrics(QtGui.QFont())
+        longest, rows = get_longest_string_rows(text)
+        width = metrics.width(longest)
+        height = metrics.height() * (rows + 0.5)
+        multiplier_x = 0 if self.x < self.scene.width() / 2 else -1
+        multiplier_y = 0 if self.y < self.scene.height() / 2 else -1
+        parent_x, parent_y = self.compute_rectangle_pos()
+        x = parent_x + multiplier_x * width
+        y = parent_y + multiplier_y * height
+        self.info_item = TextInfoItem(text, x, y, width, height, self.color, self)
+        self.info_item.set_parent_point(parent_x, parent_y)
         self.info_item.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
         self.info_item.setFlag(QtGui.QGraphicsItem.ItemSendsScenePositionChanges)
 
@@ -88,6 +97,10 @@ class Node(QtGui.QGraphicsPixmapItem):
 
     def compute_rectangle_pos(self):
         multiplier_x, multiplier_y = self.compute_rectangle_size()
+        if multiplier_x == 0:
+            multiplier_x = -3
+        if multiplier_y == 0:
+            multiplier_y = -3
         return self.x + (multiplier_x) * self.width, self.y + (multiplier_y) * self.height
 
     def setPos(self, x, y):
@@ -129,7 +142,7 @@ class Node(QtGui.QGraphicsPixmapItem):
 
 class TextInfoItem(QtGui.QGraphicsItem):
 
-    def __init__(self, text, x, y, color, node):
+    def __init__(self, text, x, y, width, height, color, node):
         super(TextInfoItem, self).__init__()
         self.color = color
         self.node = node
@@ -138,8 +151,8 @@ class TextInfoItem(QtGui.QGraphicsItem):
         self.x = x
         self.y = y
         self.text = text
-        self.metrics = QtGui.QFontMetrics(QtGui.QFont())
-        self.height = self.metrics.height()
+        self.width = width
+        self.height = height
         self.bounding_rect = self.create_bounding_rect()
         self.rect = self.create_rectangle()
         self.connecting_line = self.create_connecting_line()
@@ -153,13 +166,9 @@ class TextInfoItem(QtGui.QGraphicsItem):
         self.rect.setPen(QtGui.QPen(self.node.color, SELECTION_LINE_WIDTH * 1.5, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin))
         self.rect.setBrush(QtGui.QBrush(self.node.color))
         self.rect.paint(painter, item, widget)
-        self.text_item.paint(painter, item, widget)
 
     def create_bounding_rect(self):
-        longest, rows = get_longest_string_rows(self.text)
-        width = self.metrics.width(longest)
-        rectangle = QtCore.QRectF(self.x, self.y, width, self.height * (rows + 0.5))
-        return rectangle
+        return QtCore.QRectF(self.x, self.y, self.width, self.height)
 
     def create_connecting_line(self):
         return ConnectingLine(QtCore.QLineF(self.parent_x, self.parent_y, self.x, self.y), self.rect, self.color)
@@ -168,8 +177,10 @@ class TextInfoItem(QtGui.QGraphicsItem):
         return QtGui.QGraphicsRectItem(self.bounding_rect, self)
 
     def create_text(self):
-        text_item = QtGui.QGraphicsTextItem(self.text, self.rect)
+        text_item = QtGui.QGraphicsTextItem()
         text_item.setPos(self.x, self.y)
+        text_item.setPlainText(self.text)
+        text_item.setParentItem(self.rect)
         return text_item
 
     def boundingRect(self):
@@ -177,6 +188,9 @@ class TextInfoItem(QtGui.QGraphicsItem):
 
     def setPos(self, x, y):
         self.text_item.setPos(x, y)
+
+    def set_parent_point(self, x, y):
+        self.parent_x, self.parent_y = x, y
 
     def itemChange(self, change, value):
         if change == QtGui.QGraphicsItem.ItemPositionHasChanged:

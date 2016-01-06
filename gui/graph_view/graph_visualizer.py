@@ -11,7 +11,7 @@ from utils.img_manager import ImgManager
 from gui.graph_view.edge import EdgeGraphical
 import random
 import matplotlib.colors as colors
-from vis_loader import COLUMNS_TO_LOAD,DEFAULT_TEXT, FROM_TOP, GAP, \
+from vis_loader import DEFAULT_TEXT, FROM_TOP, GAP, \
     MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT, OPACITY
 
 __author__ = 'Simon Mandlik'
@@ -54,13 +54,18 @@ class GraphVisualizer(QtGui.QWidget):
         self.layout().addWidget(self.text)
 
 
+        # TODO add your actions
+        self.selected_in_menu = None
         self.menu_node = QtGui.QMenu(self)
         self.menu_edge = QtGui.QMenu(self)
-        # TODO add your actions
         self.test_action_node = QtGui.QAction('TODO', self)
+        self.show_info_menu_action = QtGui.QAction('Show Info', self)
+        self.show_info_menu_action.triggered.connect(self.show_info_action_method)
         self.test_action_edge = QtGui.QAction('TODO', self)
         self.menu_node.addAction(self.test_action_node)
         self.menu_edge.addAction(self.test_action_edge)
+        self.menu_node.addAction(self.show_info_menu_action)
+        self.menu_edge.addAction(self.show_info_menu_action)
         self.view.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self.view, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.menu)
 
@@ -110,12 +115,20 @@ class GraphVisualizer(QtGui.QWidget):
         if len(loader.edges) + len(loader.regions) > 0:
             self.add_objects(loader.regions, loader.edges)
 
+    def show_info_action_method(self):
+        if self.selected_in_menu:
+            if isinstance(self.selected_in_menu, Node):
+                self.toggled.append(self.selected_in_menu)
+            self.clipped.append(self.selected_in_menu)
+            self.selected_in_menu.show_info(self.loader)
+
     def menu(self, point):
         it = self.scene.itemAt(self.view.mapToScene(point))
         if isinstance(it, Node):
             self.menu_node.exec_(self.view.mapToGlobal(point))
         elif isinstance(it, EdgeGraphical):
             self.menu_edge.exec_(self.view.mapToGlobal(point))
+        self.selected_in_menu = it
 
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
@@ -183,7 +196,6 @@ class GraphVisualizer(QtGui.QWidget):
             else:
                 self.find_suitable_position_partial(edge)
 
-
     def add_sole_nodes(self):
         for node in self.regions:
             col = self.frames_columns[node.frame_]
@@ -210,27 +222,30 @@ class GraphVisualizer(QtGui.QWidget):
             self.find_suitable_position_fresh_chunk(edge, node_1, node_2)
 
     def find_suitable_position_fresh_chunk(self, edge, node_1, node_2):
+        # import time
+        # time2 = time.time()
         position = 0
         while True:
             if self.is_line_free(position, node_1.frame_, node_2.frame_):
+                # time1 = time.time()
                 start = node_1.frame_
                 end = node_2.frame_
-                while start <= end:
-                    if start in self.frames_columns.keys():
-                        column = self.frames_columns[start]
-                    else:
-                        column = self.get_next_to_column(start - 1, "right")
-                        start = column.frame[1]
-                    if start is node_1.frame_ or start is end or \
-                                    position is self.frames_columns[node_1.frame_].get_position_item(node_1):
+                frame = start
+                while frame <= end:
+                    column = self.get_next_to_column(frame - 1, "right")
+                    frame = column.get_end_frame()
+                    if frame == start or frame == end or position == self.frames_columns[start].get_position_item(node_1):
                         column.add_object(edge, position)
-                    start += 1
+                    frame += 1
+                # print("inside {0}.".format(time.time() - time1))
                 break
             else:
                 position += 1
-
+        # print("outside {0}.".format(time.time() - time2))
 
     def find_suitable_position_semi_placed_chunk(self, edge, col1, col2, node_1, node_2):
+        """Finds the best position for semi-placed chunk. This situation should never happen!
+        """
         # if col1.contains(node_1) and col2.contains(node_2):
         #     return
         if col1.contains(node_1) and not col2.contains(node_2):
@@ -241,15 +256,15 @@ class GraphVisualizer(QtGui.QWidget):
             col1.add_object(edge, position2)
 
     def is_line_free(self, position, start_frame, end_frame):
+        # import time
+        # time1 = time.time()
         while start_frame <= end_frame:
-            if start_frame in self.frames_columns.keys():
-                column = self.frames_columns[start_frame]
-                start_frame += 1
-            else:
-                column = self.get_next_to_column(start_frame - 1, "right")
-                start_frame = column.frame[1] + 1
+            column = self.get_next_to_column(start_frame - 1, "right")
+            start_frame = column.get_end_frame() + 1
             if not column.is_free(position):
+                # print("fa {0}.".format(time.time() - time1))
                 return False
+        # print("f {0}.".format(time.time() - time1))
         return True
 
     def find_suitable_position_line(self, edge):
@@ -321,18 +336,24 @@ class GraphVisualizer(QtGui.QWidget):
         return position, position + offset
 
     def get_next_to_column(self, frame_from, direction):
+        # import time
+        # time1 = time.time()
         frame_offset = (1 if direction == "right" else -1)
         frame = frame_offset + frame_from
         if frame in self.frames_columns.keys():
             return self.frames_columns[frame]
         else:
-            frames = self.frames_columns.keys()
-            tuples = [tup for tup in frames if isinstance(tup, tuple)]
-            for tup in tuples:
-                if tup[0 if direction == "right" else 1] == frame:
-                    return self.frames_columns[tup]
-            # ret = self.columns[self.columns.index(self.frames_columns[frame_from]) + frame_offset]
-            # return ret
+            # frames = self.frames_columns.keys()
+            # tuples = [tup for tup in frames if isinstance(tup, tuple)]
+            # for tup in tuples:
+            #     if tup[0 if direction == "right" else 1] == frame:
+            #         print("b {0}".format(time.time() - time1))
+            #         return self.frames_columns[tup]
+            start = frame
+            end = frame + frame_offset
+            while end not in self.frames_columns.keys():
+                end += frame_offset
+            return self.frames_columns[((start, end - frame_offset) if direction == "right" else (end - frame_offset, start))]
 
     def prepare_columns(self, frames):
         from gui.graph_view.column import Column
@@ -373,12 +394,9 @@ class GraphVisualizer(QtGui.QWidget):
         frames.sort()
         first_frame, last_frame = frames[0], frames[len(frames) - 1]
 
-        print("Preparing columns...")
         self.prepare_columns(frames)
-        print("Preparing edges...")
         self.edges = comp.sort_edges(self.edges, frames)
         self.compute_positions()
-        print("Preparing nodes...")
         self.add_sole_nodes()
         print("Visualizing...")
         self.show()
@@ -389,12 +407,14 @@ class GraphVisualizer(QtGui.QWidget):
         if self.dynamically:
             event_loaded = threading.Event()
             thread_load = threading.Thread(group=None, target=self.load, args=(minimum, event_loaded))
+        QApplication.processEvents()
         for column in self.columns:
-            QApplication.processEvents()
-            # TODO not every time
-            import time
-            time1 = time.time()
-            print("Drawing column {0}...".format(column.frame))
+            # uncomment to achieve node-by-node loading, decreases performance, remember to comment
+            # every other call of QApplication in this function
+            # QApplication.processEvents()
+            # import time
+            # time1 = time.time()
+            # print("Drawing column {0}...".format(column.frame))
             self.load_indicator_wheel()
             column.set_x(next_x)
             next_x = self.increment_x(column, next_x)
@@ -403,22 +423,24 @@ class GraphVisualizer(QtGui.QWidget):
             if isinstance(column.frame, tuple):
                 frame_a, frame_b = column.frame[0], column.frame[1]
             if not (frame_a < first_frame or frame_b > last_frame):
-                if self.dynamically:
-                    if self.columns.index(column) == minimum:
+                col_index = self.columns.index(column)
+                if col_index <= minimum:
+                        column.add_crop_to_col()
+                        QApplication.processEvents()
+                elif self.dynamically:
+                    if col_index == minimum + 1:
+                        QApplication.processEvents()
                         event_loaded.clear()
                         thread_load.start()
                         event_loaded.wait()
-                    elif self.columns.index(column) < minimum:
-                        column.add_crop_to_col()
-                    else:
-                        if column not in self.loaded:
+                    if col_index not in self.loaded:
                             event_loaded.clear()
                             event_loaded.wait()
-                    column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
-                else:
-                    column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
-            time2 = time.time()
-            print("The drawing of column took {0}".format(time2 - time1))
+                    if col_index % minimum == 0:
+                            QApplication.processEvents()
+                column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
+            # time2 = time.time()
+            # print("The drawing of column took {0}".format(time2 - time1))
 
     def increment_x(self, column, next_x):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
@@ -429,15 +451,15 @@ class GraphVisualizer(QtGui.QWidget):
         return next_x
 
     def load(self, minimum, event_loaded):
-        columns = list(self.columns[minimum:])
-        while len(columns) > 0:
-            columns_stripped = columns[:COLUMNS_TO_LOAD:]
-            columns = columns[COLUMNS_TO_LOAD::]
-            for col in columns_stripped:
-                col.prepare_images()
-                self.loaded.add(col)
-            event_loaded.set()
-
+        i = minimum + 1
+        while i < len(self.columns):
+            col = self.columns[i]
+            col.prepare_images()
+            self.loaded.add(i)
+            if i % minimum == 1:
+                event_loaded.set()
+            i += 1
+        event_loaded.set()
 
     def draw_lines(self, first_frame, last_frame):
         for edge in self.edges:
@@ -464,6 +486,7 @@ class GraphVisualizer(QtGui.QWidget):
     def flash(self):
         self.view.setEnabled(False)
         self.scene.setForegroundBrush(QtCore.Qt.white)
+        self.remove_info()
         self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
         self.scene.setForegroundBrush(QtCore.Qt.transparent)
         self.view.setEnabled(True)
@@ -557,20 +580,3 @@ def hex2rgb_opacity_tuple(color):
     rgb_list = [int(255 * x) for x in rgb]
     rgb_list.append(OPACITY)
     return QtGui.QColor(rgb_list[0], rgb_list[1], rgb_list[2], rgb_list[3])
-
-if __name__ == '__main__':
-    p = Project()
-    p.load('/home/ferda/PROJECTS/eight_22_issue/eight22.fproj')
-    im_manager = ImgManager(p)
-
-    solver = p.saved_progress['solver']
-    n = solver.g.nodes()
-    e = solver.g.edges(data=True)
-
-    import sys
-    app = QtGui.QApplication(sys.argv)
-    g = GraphVisualizer([], [], im_manager, show_vertically=False, compress_axis=True, dynamically=True)
-    g.showMaximized()
-    g.show()
-    g.add_objects(n, e)
-    app.exec_()

@@ -84,16 +84,11 @@ def sort_edges(edges, used_frames_sorted):
                                 + ((used_frames_sorted[len(used_frames_sorted) - 1] - frame0) + (1 - edge[3])
                                    / float(len(used_frames_sorted))), edge))
 
-    print("Getting result")
     chunks = get_list_from_dict(chunk_dict)
     lines = []
-    import time
-    time1 = time.time()
-    print("Popping from queue")
+
     while heap:
         lines.append(heappop(heap)[1])
-    time2 = time.time()
-    print("Popping from queue took {0} seconds".format(time2 - time1))
 
     result = list(reversed(chunks)) + lines + partial
     return result

@@ -5,8 +5,8 @@ from node import TextInfoItem
 
 SELECTION_OFFSET_CHUNK = 1
 SELECTION_OFFSET_LINE = 2
-SELECTION_LINE_WIDTH = 2
 LINE_WIDTH = 2
+SELECTION_LINE_WIDTH = LINE_WIDTH
 SENSITIVITY_CONSTANT = SELECTION_OFFSET_CHUNK * 2
 
 __author__ = 'Simon Mandlik'
@@ -64,10 +64,14 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
 
     def create_info(self, loader):
         text = loader.get_edge_info(self.core_obj)
+        metrics = QtGui.QFontMetrics(QtGui.QFont())
+        longest, rows = get_longest_string_rows(text)
+        width = metrics.width(longest)
+        height = metrics.height() * (rows + 0.5)
         x, y = self.compute_rect_pos()
-        self.info_item = TextInfoItem(text, x, y, self.color, self)
-        self.info_item.setFlag(QtGui.QGraphicsItem.ItemSendsScenePositionChanges)
+        self.info_item = TextInfoItem(text, x, y, width, height, self.color, self)
         self.info_item.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
+        self.info_item.setFlag(QtGui.QGraphicsItem.ItemSendsScenePositionChanges)
 
     def compute_rect_pos(self):
         x = (self.parent_line.x2() + self.parent_line.x1()) / 2
@@ -204,3 +208,21 @@ class ChunkGraphical(EdgeGraphical):
         polygon = QtGui.QPolygonF([self.parent_line_2.p1() + offset1, self.parent_line_1.p1() + offset2,
                                    self.parent_line_1.p2() + offset2, self.parent_line_2.p2() + offset1])
         return polygon
+
+
+def get_longest_string_rows(string):
+    st = ""
+    longest = ""
+    rows = 1
+    for i in range(len(string)):
+        st += string[i]
+        if string[i] == "\n":
+            rows += 1
+            if len(st) > len(longest):
+                longest = st
+            st = ""
+    else:
+        st += "\n"
+        if len(st) > len(longest):
+            longest = st
+    return longest, rows

@@ -32,6 +32,18 @@ class Column:
         self.compress_marker.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
         self.scene.addItem(self.compress_marker)
 
+    def get_start_frame(self):
+        if isinstance(self.frame, tuple):
+            return  self.frame[0]
+        else:
+            return self.frame
+
+    def get_end_frame(self):
+        if isinstance(self.frame, tuple):
+            return  self.frame[1]
+        else:
+            return self.frame
+
     def add_object(self, to_add, position):
         if position < len(self.objects):
             if not(self.objects[position] == to_add or isinstance(self.objects[position], tuple)):
@@ -94,10 +106,10 @@ class Column:
                     continue
                 if not isinstance(region, int):
                     import time
-                    time1 = time.time()
+                    # time1 = time.time()
                     img = self.im_manager.get_crop(self.frame, region,  width=self.width, height=self.height, relative_margin=self.relative_margin)
-                    time2 = time.time()
-                    print("Getting image in prepare imgs took {0}".format(time2 - time1))
+                    # time2 = time.time()
+                    # print("Getting image in prepare imgs took {0}".format(time2 - time1))
                     self.regions_images[region] = img
 
     def add_crop_to_col(self):
@@ -116,10 +128,10 @@ class Column:
                         continue
                 if item not in self.regions_images.keys():
                     import time
-                    time1 = time.time()
+                    # time1 = time.time()
                     img = self.im_manager.get_crop(self.frame, item,  width=self.width, height=self.height, relative_margin=self.relative_margin)
-                    time2 = time.time()
-                    print("Getting image took {0}".format(time2 - time1))
+                    # time2 = time.time()
+                    # print("Getting image took {0}".format(time2 - time1))
                 else:
                     img = self.regions_images[item]
                 pixmap = cvimg2qtpixmap(img)
