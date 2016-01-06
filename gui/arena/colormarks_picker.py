@@ -220,15 +220,6 @@ class ColormarksPicker(QtGui.QWidget):
         # set new image and pixmap
         self.refresh_image(self.paint_image)
 
-    def get_distance(self, pt_a, pt_b):
-        """
-        simple method that returns the distance of two points (A, B)
-        :param pt_a: Point A
-        :param pt_b: Point B
-        :return: float distance
-        """
-        return math.sqrt((pt_b.x() - pt_a.x()) ** 2 + (pt_b.y() - pt_a.y()) ** 2)
-
     def get_scene_pos(self, point):
         """
         converts point coordinates to scene coordinate system
@@ -300,7 +291,11 @@ class ColormarksPicker(QtGui.QWidget):
 
         self.set_color_label_text()
 
+    def delete_color(self):
+        self.color_grid.delete_color(self.pick_id)
+
     def show_mask(self, mask_id):
+        print "Showing mask id %s" % mask_id
         # something was changed
         self.save_edits()
 
@@ -310,7 +305,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.clear_undo_history()
 
         self.pick_id = mask_id
-        data = self.masks.get(mask_id, 0)
+        data = self.masks.get(mask_id, [np.zeros((1024, 1024)), self.frame])
         self.frame = data[1]
         self.draw_frame()
 
@@ -463,6 +458,10 @@ class ColormarksPicker(QtGui.QWidget):
         self.color_grid = ColorGridWidget(update_callback_picked=self.show_mask)
         self.left_panel.layout().addWidget(self.color_grid)
 
+        self.delete_color_button = QtGui.QPushButton("Delete current color")
+        self.delete_color_button.clicked.connect(self.delete_color)
+        self.left_panel.layout().addWidget(self.delete_color_button)
+
         self.set_pen_label_text()
         self.set_color_label_text()
 
@@ -479,7 +478,7 @@ class ColorGridWidget(QtGui.QWidget):
         super(ColorGridWidget, self).__init__(None)
         self.max_cols = max_cols
         self.colors = {}
-        self.buttons = []
+        self.buttons = {}
         self.last_index = 0
 
         self.update_callback_picked = update_callback_picked
@@ -492,20 +491,24 @@ class ColorGridWidget(QtGui.QWidget):
         self.grid = QtGui.QGridLayout()
         self.setLayout(self.grid)
 
-    def clicked(self, button_id):
+    def clicked(self, button):
+        button_id = int(button.text())
+        print "Selected %s" % button_id
         color = self.colors.get(button_id, None)
         if color is None:
             return
+
         self.update_callback_picked(button_id)
 
     def add_color(self, r, g, b):
         print ("Adding color")
         self.colors[self.last_index] = (r,g,b)
-        button = QtGui.QPushButton("%s" % self.last_index)
-        button.clicked.connect(partial(self.clicked, self.last_index))
+        button = QtGui.QPushButton()
+        button.setText("%s" % self.last_index)
+        button.clicked.connect(partial(self.clicked, button))
         button.setStyleSheet('QPushButton {background-color: #%02x%02x%02x; color: #%02x%02x%02x;}' % (
         r, g, b, 255 - r, 255 - g, 255 - b))
-        self.buttons.append(button)
+        self.buttons[self.last_index] = button
         self.grid.addWidget(button, self.posx, self.posy)
         self.last_index += 1
         self.col += 1
@@ -525,6 +528,64 @@ class ColorGridWidget(QtGui.QWidget):
             self.colors[id] = (r,g,b)
             self.buttons[id].setStyleSheet('QPushButton {background-color: #%02x%02x%02x; color: #%02x%02x%02x;}' % (
             r, g, b, 255 - r, 255 - g, 255 - b))
+
+    def delete_color(self, id):
+        print "Deleting id: %s" % id
+
+        if id == self.last_index-1:
+            self.colors[id] = None
+            del (self.colors[id])
+            btn = self.buttons[id]
+            self.grid.removeWidget(btn)
+            btn.deleteLater()
+            del (self.buttons[id])
+            self.last_index -= 1
+            self.repaint_all_buttons()
+            print_dict_keys(self.buttons)
+            return
+
+        del (self.colors[id])
+        btn = self.buttons[id]
+        self.grid.removeWidget(btn)
+        btn.deleteLater()
+        del (self.buttons[id])
+        self.last_index -= 1
+
+
+        for c_id in sorted(self.colors.keys()):
+            if c_id > id:
+                self.colors[c_id-1] = self.colors[c_id]
+                self.colors[c_id] = None
+                self.buttons[c_id-1] = self.buttons[c_id]
+                self.buttons[c_id] = None
+
+        del (self.buttons[self.last_index])
+        del (self.colors[self.last_index])
+
+        self.repaint_all_buttons()
+
+    def repaint_all_buttons(self):
+        self.col = 0
+        self.posx = 0
+        self.posy = 0
+
+        for id in sorted(self.buttons.keys()):
+            self.grid.removeWidget(self.buttons[id])
+            self.buttons[id].setText("%s" % id)
+            self.grid.addWidget(self.buttons[id], self.posx, self.posy)
+            self.col += 1
+            if self.col >= self.max_cols:
+                self.col = 0
+                self.posy = 0
+                self.posx += 1
+            else:
+                self.posy += 1
+
+def print_dict_keys(dic):
+    output = ""
+    for key in sorted(dic.keys()):
+        output += (str(key) + " ")
+    print output
 
 
 app = QtGui.QApplication(sys.argv)
