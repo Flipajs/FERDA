@@ -24,7 +24,7 @@ MINIMUM = 5
 OPACITY = 140
 # default text to display
 DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, " \
-               "stretch; A, S show/hide info for selected; T - show toggled node"
+               "stretch; A, S show/hide info for selected; T, Y - show/hide toggled node"
 
 
 class VisLoader:
@@ -139,19 +139,20 @@ class VisLoader:
 
     def visualise(self):
         self.prepare_vertices()
-        print("Preparing nodes...")
+        # print("Preparing nodes...")
         self.prepare_nodes()
-        print("Preparing edges...")
+        # print("Preparing edges...")
         self.prepare_edges()
-        print("Preparing visualizer...")
+        # print("Preparing visualizer...")
         img_manager = ImgManager(self.project)
         from graph_visualizer import GraphVisualizer
         self.g = GraphVisualizer(self, img_manager)
         self.g.show()
 
 if __name__ == '__main__':
-    from scripts import fix_project
+    # from scripts import fix_project
     p = Project()
+    # p.load('/home/sheemon/FERDA/projects/dita_proj/dita.fproj')
     p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
     # p.load('/home/sheemon/FERDA/projects/archive/c210.fproj')
     # from core.region.region_manager import RegionManager

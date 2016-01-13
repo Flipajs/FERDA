@@ -66,7 +66,7 @@ class Node(QtGui.QGraphicsPixmapItem):
         height = metrics.height() * (rows + 0.5)
         multiplier_x = 0 if self.x < self.scene.width() / 2 else -1
         multiplier_y = 0 if self.y < self.scene.height() / 2 else -1
-        parent_x, parent_y = self.compute_rectangle_pos()
+        parent_x, parent_y = self.compute_info_rectangle_pos()
         x = parent_x + multiplier_x * width
         y = parent_y + multiplier_y * height
         self.info_item = TextInfoItem(text, x, y, width, height, self.color, self)
@@ -85,7 +85,7 @@ class Node(QtGui.QGraphicsPixmapItem):
         img_toggled = self.img_manager.get_crop(self.region.frame_, self.region, width=self.width * 3, height=self.height * 3, relative_margin=self.relative_margin)
         pixmap = cvimg2qtpixmap(img_toggled)
         self.pixmap_toggled = self.scene.addPixmap(pixmap)
-        x, y = self.compute_rectangle_pos()
+        x, y = self.compute_toggle_rectangle_pos()
         self.pixmap_toggled.setPos(x, y)
         self.pixmap_toggled.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
 
@@ -95,7 +95,11 @@ class Node(QtGui.QGraphicsPixmapItem):
         multiplier_y = 1 if self.y < height / 2 else 0
         return multiplier_x, multiplier_y
 
-    def compute_rectangle_pos(self):
+    def compute_info_rectangle_pos(self):
+        multiplier_x, multiplier_y = self.compute_rectangle_size()
+        return self.x + (multiplier_x) * self.width, self.y + (multiplier_y) * self.height
+
+    def compute_toggle_rectangle_pos(self):
         multiplier_x, multiplier_y = self.compute_rectangle_size()
         if multiplier_x == 0:
             multiplier_x = -3
@@ -111,7 +115,7 @@ class Node(QtGui.QGraphicsPixmapItem):
                 self.pixmap_toggled.setPos(x + WIDTH / 2, y + HEIGHT / 2)
 
     def paint(self, painter, style_option_graphics_item, widget=None):
-        self.parent_pixmap.paint(painter, style_option_graphics_item, None)
+        # self.parent_pixmap.paint(painter, style_option_graphics_item, None)
         if self.clipped:
             pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH * 1.5, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
         elif self.isSelected():

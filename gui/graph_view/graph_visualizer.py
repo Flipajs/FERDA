@@ -1,16 +1,14 @@
-from libxml2mod import last
 import threading
 from PyQt4.QtGui import QApplication
+from gui.graph_view.info_manager import InfoManager
 from gui.graph_view.node import Node
+from gui.graph_view.node_zoom_manager import NodeZoomManager
 from gui.img_controls.my_scene import MyScene
 from PyQt4 import QtGui, QtCore
 import computer as comp
-from core.project.project import Project
 from gui.img_controls.my_view_zoomable import MyViewZoomable
-from utils.img_manager import ImgManager
 from gui.graph_view.edge import EdgeGraphical
-import random
-import matplotlib.colors as colors
+
 from vis_loader import DEFAULT_TEXT, FROM_TOP, GAP, \
     MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT, OPACITY
 
@@ -53,19 +51,30 @@ class GraphVisualizer(QtGui.QWidget):
         self.text.setStyleSheet(stylesheet)
         self.layout().addWidget(self.text)
 
+        self.selected = []
+        self.node_zoom_manager = NodeZoomManager()
+        self.info_manager = InfoManager(loader)
 
-        # TODO add your actions
+        self.wheel_count = 1
+        self.loaded = set()
+
         self.selected_in_menu = None
         self.menu_node = QtGui.QMenu(self)
         self.menu_edge = QtGui.QMenu(self)
-        self.test_action_node = QtGui.QAction('TODO', self)
         self.show_info_menu_action = QtGui.QAction('Show Info', self)
         self.show_info_menu_action.triggered.connect(self.show_info_action_method)
-        self.test_action_edge = QtGui.QAction('TODO', self)
-        self.menu_node.addAction(self.test_action_node)
-        self.menu_edge.addAction(self.test_action_edge)
+        self.show_zoom_menu_action = QtGui.QAction('Show Zoom', self)
+        self.show_zoom_menu_action.triggered.connect(self.show_zoom_action_method)
+        self.hide_zoom_menu_action = QtGui.QAction('Hide Zoom', self)
+        self.hide_zoom_menu_action.triggered.connect(self.hide_zoom_action_method)
+        self.hide_info_menu_action = QtGui.QAction('Hide Info', self)
+        self.hide_info_menu_action.triggered.connect(self.hide_info_action_method)
         self.menu_node.addAction(self.show_info_menu_action)
+        self.menu_node.addAction(self.hide_info_menu_action)
+        self.menu_node.addAction(self.show_zoom_menu_action)
+        self.menu_node.addAction(self.hide_zoom_menu_action)
         self.menu_edge.addAction(self.show_info_menu_action)
+        self.menu_edge.addAction(self.hide_info_menu_action)
         self.view.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self.view, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.menu)
 
@@ -92,60 +101,65 @@ class GraphVisualizer(QtGui.QWidget):
         self.addAction(self.shrink_action)
 
         self.show_info_action = QtGui.QAction('show_info', self)
-        self.show_info_action.triggered.connect(self.show_info)
+        self.show_info_action.triggered.connect(self.info_manager.show_all_info)
         self.show_info_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_A))
         self.addAction(self.show_info_action)
 
         self.hide_info_action = QtGui.QAction('hide_info', self)
-        self.hide_info_action.triggered.connect(self.hide_info)
+        self.hide_info_action.triggered.connect(self.info_manager.hide_all_info)
         self.hide_info_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
         self.addAction(self.hide_info_action)
 
-        self.toggle_node_action = QtGui.QAction('toggle_node', self)
-        self.toggle_node_action.triggered.connect(self.toggle_node)
-        self.toggle_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
-        self.addAction(self.toggle_node_action)
+        self.show_zoom_node_action = QtGui.QAction('show_zoom', self)
+        self.show_zoom_node_action.triggered.connect(self.node_zoom_manager.show_zoom_all)
+        self.show_zoom_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
+        self.addAction(self.show_zoom_node_action)
 
-        self.selected = []
-        self.toggled = []
-        self.clipped = []
-        self.wheel_count = 1
-        self.loaded = set()
+        self.hide_zoom_node_action = QtGui.QAction('hide_zoom', self)
+        self.hide_zoom_node_action.triggered.connect(self.node_zoom_manager.hide_zoom_all)
+        self.hide_zoom_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Y))
+        self.addAction(self.hide_zoom_node_action)
 
         if len(loader.edges) + len(loader.regions) > 0:
             self.add_objects(loader.regions, loader.edges)
 
     def show_info_action_method(self):
         if self.selected_in_menu:
-            if isinstance(self.selected_in_menu, Node):
-                self.toggled.append(self.selected_in_menu)
-            self.clipped.append(self.selected_in_menu)
-            self.selected_in_menu.show_info(self.loader)
+            self.info_manager.show_info(self.selected_in_menu)
+
+    def hide_info_action_method(self):
+        if self.selected_in_menu:
+            self.info_manager.hide_info(self.selected_in_menu)
+
+    def show_zoom_action_method(self):
+        if self.selected_in_menu and isinstance(self.selected_in_menu, Node):
+            self.node_zoom_manager.show_zoom(self.selected_in_menu)
+
+    def hide_zoom_action_method(self):
+        if self.selected_in_menu and isinstance(self.selected_in_menu, Node):
+            self.node_zoom_manager.hide_zoom(self.selected_in_menu)
 
     def menu(self, point):
         it = self.scene.itemAt(self.view.mapToScene(point))
+        self.selected_in_menu = it
         if isinstance(it, Node):
             self.menu_node.exec_(self.view.mapToGlobal(point))
         elif isinstance(it, EdgeGraphical):
             self.menu_edge.exec_(self.view.mapToGlobal(point))
-        self.selected_in_menu = it
 
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
         if item is None:
             self.selected = []
-            while self.toggled:
-                node = self.toggled.pop()
-                if node.toggled:
-                    node.toggle()
-            self.remove_info()
+            self.node_zoom_manager.remove_all()
+            self.info_manager.remove_info_all()
         else:
+            if isinstance(item, EdgeGraphical):
+                self.info_manager.add(item)
+            elif isinstance(item, Node):
+                self.node_zoom_manager.add(item)
+                self.info_manager.add(item)
             self.selected.append(item)
-        if isinstance(item, EdgeGraphical):
-            self.clipped.append(item)
-        elif isinstance(item, Node):
-            self.toggled.append(item)
-            self.clipped.append(item)
 
     def stretch(self):
         global SPACE_BETWEEN_HOR
@@ -156,36 +170,6 @@ class GraphVisualizer(QtGui.QWidget):
         global SPACE_BETWEEN_HOR
         SPACE_BETWEEN_HOR *= 0.5
         self.redraw()
-
-    def show_info(self):
-        last_color = None
-        for item in self.clipped:
-            if not item.clipped:
-                if last_color:
-                    color = hex2rgb_opacity_tuple(inverted_hex_color_str(last_color))
-                    last_color = None
-                else:
-                    last_color = random_hex_color_str()
-                    color = hex2rgb_opacity_tuple(last_color)
-                item.set_color(color)
-            item.show_info(self.loader)
-        QApplication.processEvents()
-
-    def hide_info(self):
-        for item in self.clipped:
-            item.hide_info()
-
-    def remove_info(self):
-        while self.clipped:
-            item = self.clipped.pop()
-            if item.clipped:
-                item.hide_info()
-                item.decolor_margins()
-                item.clipped = False;
-
-    def toggle_node(self):
-        for item in self.toggled:
-            item.toggle()
 
     def compute_positions(self):
         for edge in self.edges:
@@ -486,7 +470,7 @@ class GraphVisualizer(QtGui.QWidget):
     def flash(self):
         self.view.setEnabled(False)
         self.scene.setForegroundBrush(QtCore.Qt.white)
-        self.remove_info()
+        self.info_manager.remove_info_all()
         self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
         self.scene.setForegroundBrush(QtCore.Qt.transparent)
         self.view.setEnabled(True)
@@ -544,39 +528,3 @@ class GraphVisualizer(QtGui.QWidget):
         if self.wheel_count % 3 is 0:
             self.wheel_count = 1
 
-
-def random_hex_color_str():
-    rand_num = random.randint(1, 3)
-    l1 = "0123456789ab"
-    color = "#"
-    for i in range(1, 4):
-        if i == rand_num:
-            color += "ff"
-        else:
-            color += (l1[random.randint(0, len(l1)-1)] + l1[random.randint(0, len(l1)-1)])
-
-    return color
-
-
-def inverted_hex_color_str(color):
-    string = str(color).lower()
-    code = {}
-    l1 = "#;0123456789abcdef"
-    l2 = "#;fedcba9876543210"
-
-    for i in range(len(l1)):
-        code[l1[i]] = l2[i]
-
-    inverted = ""
-
-    for j in string:
-        inverted += code[j]
-
-    return inverted
-
-
-def hex2rgb_opacity_tuple(color):
-    rgb = colors.hex2color(color)
-    rgb_list = [int(255 * x) for x in rgb]
-    rgb_list.append(OPACITY)
-    return QtGui.QColor(rgb_list[0], rgb_list[1], rgb_list[2], rgb_list[3])
