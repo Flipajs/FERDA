@@ -21,7 +21,6 @@ class InfoManager():
         self.clipped.remove(item)
 
     def show_all_info(self):
-        last_color = None
         for item in self.clipped:
             self.show_info(item)
         QApplication.processEvents()
