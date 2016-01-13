@@ -293,6 +293,29 @@ class ColormarksPicker(QtGui.QWidget):
 
     def delete_color(self):
         self.color_grid.delete_color(self.pick_id)
+        del(self.masks[len(self.masks)-1])
+        """
+        for id, data in self.masks.iteritems():
+            print "id: %s, hash: %s" % (id, data[0])
+
+        print "deleting pick_id: %s, mask: %s" % (self.pick_id, self.masks[self.pick_id][0])
+        del(self.masks[self.pick_id])
+
+        for c_id in sorted(self.masks.keys()):
+            print "checking..."
+            if c_id > self.pick_id:
+                print "moving %s to pos %s" % (c_id-1, c_id)
+                self.masks[c_id-1] = self.masks[c_id]
+                self.masks[c_id] = None
+
+        self.pick_id -= 1;
+        self.show_mask(self.pick_id)
+
+        for id, data in self.masks.iteritems():
+            print "id: %s, hash: %s" % (id, data[0])
+        """
+        self.pick_id -= 1;
+        self.show_mask(self.pick_id)
 
     def show_mask(self, mask_id):
         print "Showing mask id %s" % mask_id
@@ -492,11 +515,16 @@ class ColorGridWidget(QtGui.QWidget):
         self.setLayout(self.grid)
 
     def clicked(self, button):
+        print_dict_keys(self.buttons)
+        print_dict_keys(self.colors)
         button_id = int(button.text())
         print "Selected %s" % button_id
         color = self.colors.get(button_id, None)
         if color is None:
             return
+        self.repaint_all_buttons()
+        print_dict_keys(self.buttons)
+        print_dict_keys(self.colors)
 
         self.update_callback_picked(button_id)
 
@@ -521,39 +549,40 @@ class ColorGridWidget(QtGui.QWidget):
 
         return self.last_index-1
 
-    def modify_color(self, id, r, g, b):
-        if id not in self.colors:
+    def modify_color(self, idd, r, g, b):
+        if idd not in self.colors:
             self.add_color(r, g, b)
         else:
-            self.colors[id] = (r,g,b)
-            self.buttons[id].setStyleSheet('QPushButton {background-color: #%02x%02x%02x; color: #%02x%02x%02x;}' % (
+            self.colors[idd] = (r,g,b)
+            self.buttons[idd].setStyleSheet('QPushButton {background-color: #%02x%02x%02x; color: #%02x%02x%02x;}' % (
             r, g, b, 255 - r, 255 - g, 255 - b))
 
-    def delete_color(self, id):
-        print "Deleting id: %s" % id
+    def delete_color(self, idd):
+        print "Deleting id: %s" % idd
 
-        if id == self.last_index-1:
-            self.colors[id] = None
-            del (self.colors[id])
-            btn = self.buttons[id]
+        if idd == self.last_index-1:
+            self.colors[idd] = None
+            del (self.colors[idd])
+            btn = self.buttons[idd]
             self.grid.removeWidget(btn)
             btn.deleteLater()
-            del (self.buttons[id])
+            del (self.buttons[idd])
             self.last_index -= 1
             self.repaint_all_buttons()
             print_dict_keys(self.buttons)
+            print_dict_keys(self.colors)
             return
 
-        del (self.colors[id])
-        btn = self.buttons[id]
+        del (self.colors[idd])
+        btn = self.buttons[idd]
         self.grid.removeWidget(btn)
         btn.deleteLater()
-        del (self.buttons[id])
+        del (self.buttons[idd])
         self.last_index -= 1
 
 
         for c_id in sorted(self.colors.keys()):
-            if c_id > id:
+            if c_id > idd:
                 self.colors[c_id-1] = self.colors[c_id]
                 self.colors[c_id] = None
                 self.buttons[c_id-1] = self.buttons[c_id]
@@ -570,6 +599,7 @@ class ColorGridWidget(QtGui.QWidget):
         self.posy = 0
 
         for id in sorted(self.buttons.keys()):
+            print "Repainting %s" % id
             self.grid.removeWidget(self.buttons[id])
             self.buttons[id].setText("%s" % id)
             self.grid.addWidget(self.buttons[id], self.posx, self.posy)
