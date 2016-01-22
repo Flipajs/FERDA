@@ -200,8 +200,6 @@ class TextInfoItem(QtGui.QGraphicsItem):
         if change == QtGui.QGraphicsItem.ItemPositionHasChanged:
             p1 = QtCore.QPoint(self.parent_x, self.parent_y)
             p2 = p1 - value.toPointF()
-            if p1.x() > p2.x():
-                p1, p2 = p2, p1
             self.connecting_line.setLine(QtCore.QLineF(p1, p2))
         return super(TextInfoItem, self).itemChange(change, value)
 
