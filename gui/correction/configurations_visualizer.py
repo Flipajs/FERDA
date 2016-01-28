@@ -194,6 +194,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         else:
             return sorted(pairs, key=lambda k: k[1].frame_)
 
+    def set_active_node_in_t(self, t):
+        nodes = []
+        while len(nodes) == 0:
+            nodes = map(int, self.project.gm.get_vertices_in_t(t))
+            t += 1
+
+        self.active_node_id = nodes[0]
+
     def next_case(self, move_to_different_case=False):
         if move_to_different_case:
             self.active_node_id += 1

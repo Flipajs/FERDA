@@ -342,7 +342,7 @@ class Solver:
 
     def get_ccs(self, queue=[]):
         if not queue:
-            queue = self.g.nodes()
+            queue = self.project.gm.g.nodes()
 
         # sort nodes so the order of ccs is always the same thus the ID of ccs make sense.
         queue = sorted(queue, key=lambda k: (k.frame_, k.id_))

@@ -147,6 +147,7 @@ class TrackerWidget(QtGui.QWidget):
         step_by_step = ConfigurationsVisualizer(self.solver, get_auto_video_manager(self.project))
         self.tool.addWidget(step_by_step)
         self.tool_row.addWidget(step_by_step.tool_w)
+        step_by_step.set_active_node_in_t(180)
         step_by_step.next_case()
 
     def show_global_view(self):

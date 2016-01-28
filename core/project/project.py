@@ -297,6 +297,17 @@ class Project:
         self.gm.rm = self.rm
         self.gm.update_nodes_in_t_refs()
 
+def dummy_project():
+    from core.classes_stats import dummy_classes_stats
+    from core.region.region_manager import RegionManager
+
+    p = Project()
+    p.stats = dummy_classes_stats()
+    p.rm = RegionManager()
+
+    return p
+
+
 if __name__ == "__main__":
     p = Project()
     p.name = 'test'
