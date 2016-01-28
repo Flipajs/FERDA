@@ -3,7 +3,7 @@ from core.region.region import Region
 from gui.graph_view.node import Node
 from gui.graph_view.edge import Edge
 from gui.img_controls.utils import cvimg2qtpixmap
-from vis_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP, RELATIVE_MARGIN
+from vis_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 
 __author__ = 'Simon Mandlik'
 
@@ -31,6 +31,18 @@ class Column:
         self.objects.append(0)
         self.compress_marker.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
         self.scene.addItem(self.compress_marker)
+
+    def get_start_frame(self):
+        if isinstance(self.frame, tuple):
+            return  self.frame[0]
+        else:
+            return self.frame
+
+    def get_end_frame(self):
+        if isinstance(self.frame, tuple):
+            return  self.frame[1]
+        else:
+            return self.frame
 
     def add_object(self, to_add, position):
         if position < len(self.objects):
@@ -93,8 +105,13 @@ class Column:
                 if region in self.items_nodes.keys():
                     continue
 
-                img = self.im_manager.get_crop(self.frame, region, width=self.width, height=self.height, relative_margin=self.relative_margin)
-                self.regions_images[region] = img
+                if not isinstance(region, int):
+                    import time
+                    # time1 = time.time()
+                    img = self.im_manager.get_crop(self.frame, region,  width=self.width, height=self.height, relative_margin=self.relative_margin)
+                    # time2 = time.time()
+                    # print("Getting image in prepare imgs took {0}".format(time2 - time1))
+                    self.regions_images[region] = img
 
     def add_crop_to_col(self):
         for item in self.objects:
@@ -111,7 +128,11 @@ class Column:
                     if item in self.items_nodes.keys():
                         continue
                 if item not in self.regions_images.keys():
+                    import time
+                    # time1 = time.time()
                     img = self.im_manager.get_crop(self.frame, item,  width=self.width, height=self.height, relative_margin=self.relative_margin)
+                    # time2 = time.time()
+                    # print("Getting image took {0}".format(time2 - time1))
                 else:
                     img = self.regions_images[item]
                 pixmap = cvimg2qtpixmap(img)
@@ -160,9 +181,13 @@ class Column:
 
         if vertically:
             from_x, from_y, to_x, to_y = from_y, from_x, to_y, to_x
+
+        color = None
         if edge in self.edges.keys():
+            if self.edges[edge].graphical_object.clipped:
+                color = self.edges[edge].graphical_object.color
             self.scene.removeItem(self.edges[edge].graphical_object)
-        edge_obj = Edge(from_x, from_y, to_x, to_y, edge, self.scene)
+        edge_obj = Edge(from_x, from_y, to_x, to_y, edge, self.scene, color, vertically)
         self.edges[edge] = edge_obj
 
         if edge[2] is "chunk":

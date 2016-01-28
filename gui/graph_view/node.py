@@ -27,6 +27,7 @@ class Node(QtGui.QGraphicsPixmapItem):
 
         self.toggled = False
         self.clipped = False
+        self.shown = False
         self.color = None
 
         self.info_item = None
@@ -42,38 +43,39 @@ class Node(QtGui.QGraphicsPixmapItem):
             self.scene.removeItem(self.pixmap_toggled)
         self.toggled = False if self.toggled else True
 
-    def show_info(self):
-        self.clipped = True
-        if not self.info_item:
-            self.create_info()
-        self.scene.addItem(self.info_item)
+    def show_info(self, loader):
+        if not self.info_item or not self.clipped:
+            self.create_info(loader)
+            self.clipped = True
+            self.info_item.set_color(self.color)
+        if not self.shown:
+            self.scene.addItem(self.info_item)
+            self.shown = True;
+        self.scene.update()
 
     def hide_info(self):
         self.scene.removeItem(self.info_item)
-        self.clipped = False
+        self.shown = False
+        # self.clipped = False
 
-    def create_info(self):
-        r = self.region
+    def create_info(self, loader):
+        text = loader.get_node_info(self.region)
+        metrics = QtGui.QFontMetrics(QtGui.QFont())
+        longest, rows = get_longest_string_rows(text)
+        width = metrics.width(longest)
+        height = metrics.height() * (rows + 0.5)
+        multiplier_x = 0 if self.x < self.scene.width() / 2 else -1
+        multiplier_y = 0 if self.y < self.scene.height() / 2 else -1
+        parent_x, parent_y = self.compute_info_rectangle_pos()
+        x = parent_x + multiplier_x * width
+        y = parent_y + multiplier_y * height
+        self.info_item = TextInfoItem(text, x, y, width, height, self.color, self)
+        self.info_item.set_parent_point(parent_x, parent_y)
+        self.info_item.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
+        self.info_item.setFlag(QtGui.QGraphicsItem.ItemSendsScenePositionChanges)
 
-        # vertex = self.project.gm.g.vertex(int(n))
-        # best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
-        # best_out = best_out_score[0]
-        #
-        # best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
-        # best_in = best_in_score[0]
-        #
-        # ch = self.project.gm.is_chunk(vertex)
-        # ch_info = str(ch)
-
-        # QtGui.QMessageBox.about(self, "My message box",
-        #                         "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (r.area(), str(r.centroid()), r.margin_, antlikeness, str(virtual), str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info))
-        x, y = self.compute_rectangle_pos()
-        self.info_item = TextInfoItem("Info there", x, y, self.color, self)
-        self.info_item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
-
-    def color_margins(self, color):
+    def set_color(self, color):
         self.color = color
-        self.scene.update()
 
     def decolor_margins(self):
         self.color = None
@@ -83,18 +85,26 @@ class Node(QtGui.QGraphicsPixmapItem):
         img_toggled = self.img_manager.get_crop(self.region.frame_, self.region, width=self.width * 3, height=self.height * 3, relative_margin=self.relative_margin)
         pixmap = cvimg2qtpixmap(img_toggled)
         self.pixmap_toggled = self.scene.addPixmap(pixmap)
-        x, y = self.compute_rectangle_pos()
+        x, y = self.compute_toggle_rectangle_pos()
         self.pixmap_toggled.setPos(x, y)
         self.pixmap_toggled.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
 
     def compute_rectangle_size(self):
         width, height = self.scene.width(), self.scene.height()
-        multiplier_x = 1 if self.x < width / 2 else -3
-        multiplier_y = 1 if self.y < height / 2 else -3
+        multiplier_x = 1 if self.x < width / 2 else 0
+        multiplier_y = 1 if self.y < height / 2 else 0
         return multiplier_x, multiplier_y
 
-    def compute_rectangle_pos(self):
+    def compute_info_rectangle_pos(self):
         multiplier_x, multiplier_y = self.compute_rectangle_size()
+        return self.x + (multiplier_x) * self.width, self.y + (multiplier_y) * self.height
+
+    def compute_toggle_rectangle_pos(self):
+        multiplier_x, multiplier_y = self.compute_rectangle_size()
+        if multiplier_x == 0:
+            multiplier_x = -3
+        if multiplier_y == 0:
+            multiplier_y = -3
         return self.x + (multiplier_x) * self.width, self.y + (multiplier_y) * self.height
 
     def setPos(self, x, y):
@@ -105,7 +115,7 @@ class Node(QtGui.QGraphicsPixmapItem):
                 self.pixmap_toggled.setPos(x + WIDTH / 2, y + HEIGHT / 2)
 
     def paint(self, painter, style_option_graphics_item, widget=None):
-        self.parent_pixmap.paint(painter, style_option_graphics_item, None)
+        # self.parent_pixmap.paint(painter, style_option_graphics_item, None)
         if self.clipped:
             pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH * 1.5, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
         elif self.isSelected():
@@ -136,39 +146,94 @@ class Node(QtGui.QGraphicsPixmapItem):
 
 class TextInfoItem(QtGui.QGraphicsItem):
 
-    def __init__(self, text, x, y, color, node):
+    def __init__(self, text, x, y, width, height, color, node):
         super(TextInfoItem, self).__init__()
         self.color = color
         self.node = node
+        self.parent_x = x
+        self.parent_y = y
         self.x = x
         self.y = y
+        self.text = text
+        self.width = width
+        self.height = height
         self.bounding_rect = self.create_bounding_rect()
         self.rect = self.create_rectangle()
-        self.text = self.create_text(text)
-        self.text.setPos(self.x, self.y)
+        self.connecting_line = self.create_connecting_line()
+        self.text_item = self.create_text()
 
     def set_color(self, color):
         self.color = color
+        self.connecting_line.set_color(color)
 
     def paint(self, painter, item, widget):
         self.rect.setPen(QtGui.QPen(self.node.color, SELECTION_LINE_WIDTH * 1.5, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin))
         self.rect.setBrush(QtGui.QBrush(self.node.color))
         self.rect.paint(painter, item, widget)
-        self.text.paint(painter, item, widget)
 
     def create_bounding_rect(self):
-        if isinstance(self.node, Node):
-            return QtCore.QRectF(QtCore.QPointF(self.x, self.y), QtCore.QPointF(self.x + self.node.width * 3, self.y + self.node.height * 3))
-        else:
-            return QtCore.QRectF(QtCore.QPointF(self.x, self.y), QtCore.QPointF(self.x + WIDTH * 3, self.y + HEIGHT * 3))
+        return QtCore.QRectF(self.x, self.y, self.width, self.height)
+
+    def create_connecting_line(self):
+        return ConnectingLine(QtCore.QLineF(self.parent_x, self.parent_y, self.x, self.y), self.rect, self.color)
 
     def create_rectangle(self):
         return QtGui.QGraphicsRectItem(self.bounding_rect, self)
 
-    def create_text(self, text):
-        return QtGui.QGraphicsTextItem(text, self.rect)
+    def create_text(self):
+        text_item = QtGui.QGraphicsTextItem()
+        text_item.setPos(self.x, self.y)
+        text_item.setPlainText(self.text)
+        text_item.setParentItem(self.rect)
+        return text_item
 
     def boundingRect(self):
         return self.bounding_rect
+
+    def setPos(self, x, y):
+        self.text_item.setPos(x, y)
+
+    def set_parent_point(self, x, y):
+        self.parent_x, self.parent_y = x, y
+
+    def itemChange(self, change, value):
+        if change == QtGui.QGraphicsItem.ItemPositionHasChanged:
+            p1 = QtCore.QPoint(self.parent_x, self.parent_y)
+            p2 = p1 - value.toPointF()
+            self.connecting_line.setLine(QtCore.QLineF(p1, p2))
+        return super(TextInfoItem, self).itemChange(change, value)
+
+
+class ConnectingLine(QtGui.QGraphicsLineItem):
+    
+    def __init__(self, line, parent_obj, color):
+        super(ConnectingLine, self).__init__(line, parent_obj)
+        self.color = color
+        
+    def paint(self, painter, item, widget=None):
+        pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+        painter.setPen(pen)
+        painter.drawLine(self.line())
+
+    def set_color(self, color):
+        self.color = color
+
+
+def get_longest_string_rows(string):
+    st = ""
+    longest = ""
+    rows = 1
+    for i in range(len(string)):
+        st += string[i]
+        if string[i] == "\n":
+            rows += 1
+            if len(st) > len(longest):
+                longest = st
+            st = ""
+    else:
+        st += "\n"
+        if len(st) > len(longest):
+            longest = st
+    return longest, rows
 
 

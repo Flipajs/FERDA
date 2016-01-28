@@ -1,17 +1,15 @@
-from libxml2mod import last
 import threading
 from PyQt4.QtGui import QApplication
+from gui.graph_view.info_manager import InfoManager
 from gui.graph_view.node import Node
+from gui.graph_view.node_zoom_manager import NodeZoomManager
 from gui.img_controls.my_scene import MyScene
 from PyQt4 import QtGui, QtCore
 import computer as comp
-from core.project.project import Project
 from gui.img_controls.my_view_zoomable import MyViewZoomable
-from utils.img_manager import ImgManager
 from gui.graph_view.edge import EdgeGraphical
-import random
-import matplotlib.colors as colors
-from vis_loader import COLUMNS_TO_LOAD,DEFAULT_TEXT, FROM_TOP, GAP, \
+
+from vis_loader import DEFAULT_TEXT, FROM_TOP, GAP, \
     MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT, OPACITY
 
 __author__ = 'Simon Mandlik'
@@ -23,7 +21,7 @@ class GraphVisualizer(QtGui.QWidget):
     Those can be passed in constructor or using a method add_objects
     """
 
-    def __init__(self, regions, edges, img_manager, relative_margin, width, height, show_vertically=False, compress_axis=True, dynamically=True):
+    def __init__(self, loader, img_manager, show_vertically=True, compress_axis=True, dynamically=True):
         super(GraphVisualizer, self).__init__()
         self.regions = set()
         self.regions_list = []
@@ -32,9 +30,11 @@ class GraphVisualizer(QtGui.QWidget):
         self.frames_columns = {}
         self.columns = []
         self.img_manager = img_manager
-        self.relative_margin = relative_margin
-        self.width = width
-        self.height = height
+        self.relative_margin = loader.relative_margin
+        self.width = loader.width
+        self.height = loader.height
+        self.loader = loader
+        self.dynamically = dynamically
 
         self.view = MyViewZoomable(self)
         self.setLayout(QtGui.QVBoxLayout())
@@ -51,14 +51,30 @@ class GraphVisualizer(QtGui.QWidget):
         self.text.setStyleSheet(stylesheet)
         self.layout().addWidget(self.text)
 
+        self.selected = []
+        self.node_zoom_manager = NodeZoomManager()
+        self.info_manager = InfoManager(loader)
 
+        self.wheel_count = 1
+        self.loaded = set()
+
+        self.selected_in_menu = None
         self.menu_node = QtGui.QMenu(self)
         self.menu_edge = QtGui.QMenu(self)
-        # TODO add your actions
-        self.test_action_node = QtGui.QAction('test_action_node', self)
-        self.test_action_edge = QtGui.QAction('test_action_edge', self)
-        self.menu_node.addAction(self.test_action_node)
-        self.menu_edge.addAction(self.test_action_edge)
+        self.show_info_menu_action = QtGui.QAction('Show Info', self)
+        self.show_info_menu_action.triggered.connect(self.show_info_action_method)
+        self.show_zoom_menu_action = QtGui.QAction('Show Zoom', self)
+        self.show_zoom_menu_action.triggered.connect(self.show_zoom_action_method)
+        self.hide_zoom_menu_action = QtGui.QAction('Hide Zoom', self)
+        self.hide_zoom_menu_action.triggered.connect(self.hide_zoom_action_method)
+        self.hide_info_menu_action = QtGui.QAction('Hide Info', self)
+        self.hide_info_menu_action.triggered.connect(self.hide_info_action_method)
+        self.menu_node.addAction(self.show_info_menu_action)
+        self.menu_node.addAction(self.hide_info_menu_action)
+        self.menu_node.addAction(self.show_zoom_menu_action)
+        self.menu_node.addAction(self.hide_zoom_menu_action)
+        self.menu_edge.addAction(self.show_info_menu_action)
+        self.menu_edge.addAction(self.hide_info_menu_action)
         self.view.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self.view, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.menu)
 
@@ -85,27 +101,47 @@ class GraphVisualizer(QtGui.QWidget):
         self.addAction(self.shrink_action)
 
         self.show_info_action = QtGui.QAction('show_info', self)
-        self.show_info_action.triggered.connect(self.show_info)
+        self.show_info_action.triggered.connect(self.info_manager.show_all_info)
         self.show_info_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_A))
         self.addAction(self.show_info_action)
 
-        self.toggle_node_action = QtGui.QAction('toggle_node', self)
-        self.toggle_node_action.triggered.connect(self.toggle_node)
-        self.toggle_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
-        self.addAction(self.toggle_node_action)
+        self.hide_info_action = QtGui.QAction('hide_info', self)
+        self.hide_info_action.triggered.connect(self.info_manager.hide_all_info)
+        self.hide_info_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
+        self.addAction(self.hide_info_action)
 
-        self.selected = []
-        # self.selected_edge = None
-        self.toggled = []
-        self.clipped = []
-        self.wheel_count = 1
-        self.loaded = set()
+        self.show_zoom_node_action = QtGui.QAction('show_zoom', self)
+        self.show_zoom_node_action.triggered.connect(self.node_zoom_manager.show_zoom_all)
+        self.show_zoom_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
+        self.addAction(self.show_zoom_node_action)
 
-        if len(edges) + len(regions) > 0:
-            self.add_objects(regions, edges)
+        self.hide_zoom_node_action = QtGui.QAction('hide_zoom', self)
+        self.hide_zoom_node_action.triggered.connect(self.node_zoom_manager.hide_zoom_all)
+        self.hide_zoom_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Y))
+        self.addAction(self.hide_zoom_node_action)
+
+        if len(loader.edges) + len(loader.regions) > 0:
+            self.add_objects(loader.regions, loader.edges)
+
+    def show_info_action_method(self):
+        if self.selected_in_menu:
+            self.info_manager.show_info(self.selected_in_menu)
+
+    def hide_info_action_method(self):
+        if self.selected_in_menu:
+            self.info_manager.hide_info(self.selected_in_menu)
+
+    def show_zoom_action_method(self):
+        if self.selected_in_menu and isinstance(self.selected_in_menu, Node):
+            self.node_zoom_manager.show_zoom(self.selected_in_menu)
+
+    def hide_zoom_action_method(self):
+        if self.selected_in_menu and isinstance(self.selected_in_menu, Node):
+            self.node_zoom_manager.hide_zoom(self.selected_in_menu)
 
     def menu(self, point):
         it = self.scene.itemAt(self.view.mapToScene(point))
+        self.selected_in_menu = it
         if isinstance(it, Node):
             self.menu_node.exec_(self.view.mapToGlobal(point))
         elif isinstance(it, EdgeGraphical):
@@ -115,24 +151,15 @@ class GraphVisualizer(QtGui.QWidget):
         item = self.scene.itemAt(click_pos)
         if item is None:
             self.selected = []
-            while self.toggled:
-                node = self.toggled.pop()
-                if node.toggled:
-                    node.toggle()
-            while self.clipped:
-                cl = self.clipped.pop()
-                if cl.clipped:
-                    cl.decolor_margins()
-                    cl.hide_info()
+            self.node_zoom_manager.remove_all()
+            self.info_manager.remove_info_all()
         else:
+            if isinstance(item, EdgeGraphical):
+                self.info_manager.add(item)
+            elif isinstance(item, Node):
+                self.node_zoom_manager.add(item)
+                self.info_manager.add(item)
             self.selected.append(item)
-
-        if isinstance(item, EdgeGraphical):
-            # self.selected_edge = item
-            self.clipped.append(item)
-        elif isinstance(item, Node):
-            self.toggled.append(item)
-            self.clipped.append(item)
 
     def stretch(self):
         global SPACE_BETWEEN_HOR
@@ -143,23 +170,6 @@ class GraphVisualizer(QtGui.QWidget):
         global SPACE_BETWEEN_HOR
         SPACE_BETWEEN_HOR *= 0.5
         self.redraw()
-
-    def show_info(self):
-        last_color = None
-        for item in self.clipped:
-            if last_color:
-                color = hex2rgb_opacity_tuple(inverted_hex_color_str(last_color))
-                last_color = None
-            else:
-                last_color = random_hex_color_str()
-                color = hex2rgb_opacity_tuple(last_color)
-
-            item.color_margins(color)
-            item.show_info()
-
-    def toggle_node(self):
-        for item in self.toggled:
-            item.toggle()
 
     def compute_positions(self):
         for edge in self.edges:
@@ -196,28 +206,32 @@ class GraphVisualizer(QtGui.QWidget):
             self.find_suitable_position_fresh_chunk(edge, node_1, node_2)
 
     def find_suitable_position_fresh_chunk(self, edge, node_1, node_2):
+        # import time
+        # time2 = time.time()
         position = 0
         while True:
             if self.is_line_free(position, node_1.frame_, node_2.frame_):
+                # time1 = time.time()
                 start = node_1.frame_
                 end = node_2.frame_
-                while start <= end:
-                    if start in self.frames_columns.keys():
-                        column = self.frames_columns[start]
-                    else:
-                        column = self.get_next_to_column(start - 1, "right")
-                        start = column.frame[1]
-                    if start is node_1.frame_ or start is end or \
-                                    position is self.frames_columns[node_1.frame_].get_position_item(node_1):
+                frame = start
+                while frame <= end:
+                    column = self.get_next_to_column(frame - 1, "right")
+                    frame = column.get_end_frame()
+                    if frame == start or frame == end or position == self.frames_columns[start].get_position_item(node_1):
                         column.add_object(edge, position)
-                    start += 1
+                    frame += 1
+                # print("inside {0}.".format(time.time() - time1))
                 break
             else:
                 position += 1
+        # print("outside {0}.".format(time.time() - time2))
 
     def find_suitable_position_semi_placed_chunk(self, edge, col1, col2, node_1, node_2):
-        if col1.contains(node_1) and col2.contains(node_2):
-            return
+        """Finds the best position for semi-placed chunk. This situation should never happen!
+        """
+        # if col1.contains(node_1) and col2.contains(node_2):
+        #     return
         if col1.contains(node_1) and not col2.contains(node_2):
             position1, position2 = self.find_nearest_free_slot(node_1, node_2)
             col2.add_object(edge, position2)
@@ -226,15 +240,15 @@ class GraphVisualizer(QtGui.QWidget):
             col1.add_object(edge, position2)
 
     def is_line_free(self, position, start_frame, end_frame):
+        # import time
+        # time1 = time.time()
         while start_frame <= end_frame:
-            if start_frame in self.frames_columns.keys():
-                column = self.frames_columns[start_frame]
-                start_frame += 1
-            else:
-                column = self.get_next_to_column(start_frame - 1, "right")
-                start_frame = column.frame[1] + 1
+            column = self.get_next_to_column(start_frame - 1, "right")
+            start_frame = column.get_end_frame() + 1
             if not column.is_free(position):
+                # print("fa {0}.".format(time.time() - time1))
                 return False
+        # print("f {0}.".format(time.time() - time1))
         return True
 
     def find_suitable_position_line(self, edge):
@@ -306,15 +320,24 @@ class GraphVisualizer(QtGui.QWidget):
         return position, position + offset
 
     def get_next_to_column(self, frame_from, direction):
-        frame_offset = (1 if direction == "right" else -1) + frame_from
-        if frame_offset in self.frames_columns.keys():
-            return self.frames_columns[frame_offset]
+        # import time
+        # time1 = time.time()
+        frame_offset = (1 if direction == "right" else -1)
+        frame = frame_offset + frame_from
+        if frame in self.frames_columns.keys():
+            return self.frames_columns[frame]
         else:
-            frames = self.frames_columns.keys()
-            tuples = [tup for tup in frames if isinstance(tup, tuple)]
-            for tup in tuples:
-                if tup[0 if direction == "right" else 1] == frame_offset:
-                    return self.frames_columns[tup]
+            # frames = self.frames_columns.keys()
+            # tuples = [tup for tup in frames if isinstance(tup, tuple)]
+            # for tup in tuples:
+            #     if tup[0 if direction == "right" else 1] == frame:
+            #         print("b {0}".format(time.time() - time1))
+            #         return self.frames_columns[tup]
+            start = frame
+            end = frame + frame_offset
+            while end not in self.frames_columns.keys():
+                end += frame_offset
+            return self.frames_columns[((start, end - frame_offset) if direction == "right" else (end - frame_offset, start))]
 
     def prepare_columns(self, frames):
         from gui.graph_view.column import Column
@@ -341,6 +364,7 @@ class GraphVisualizer(QtGui.QWidget):
                 empty_frame_count += 1
 
     def add_objects(self, added_regions, added_edges):
+        print("Preparing objects...")
         frames = set()
         for node in added_regions:
             if node not in self.regions:
@@ -358,14 +382,23 @@ class GraphVisualizer(QtGui.QWidget):
         self.edges = comp.sort_edges(self.edges, frames)
         self.compute_positions()
         self.add_sole_nodes()
+        print("Visualizing...")
+        self.show()
         self.redraw(first_frame, last_frame)
 
     def draw_columns(self, first_frame, last_frame, minimum):
-        event_loaded = threading.Event()
-        thread_load = threading.Thread(group=None, target=self.load, args=(minimum, event_loaded))
         next_x = 0
+        if self.dynamically:
+            event_loaded = threading.Event()
+            thread_load = threading.Thread(group=None, target=self.load, args=(minimum, event_loaded))
+        QApplication.processEvents()
         for column in self.columns:
-            QApplication.processEvents()
+            # uncomment to achieve node-by-node loading, decreases performance, remember to comment
+            # every other call of QApplication in this function
+            # QApplication.processEvents()
+            # import time
+            # time1 = time.time()
+            # print("Drawing column {0}...".format(column.frame))
             self.load_indicator_wheel()
             column.set_x(next_x)
             next_x = self.increment_x(column, next_x)
@@ -374,17 +407,24 @@ class GraphVisualizer(QtGui.QWidget):
             if isinstance(column.frame, tuple):
                 frame_a, frame_b = column.frame[0], column.frame[1]
             if not (frame_a < first_frame or frame_b > last_frame):
-                if self.columns.index(column) == minimum:
-                    event_loaded.clear()
-                    thread_load.start()
-                    event_loaded.wait()
-                elif self.columns.index(column) < minimum:
-                    column.add_crop_to_col()
-                else:
-                    if column not in self.loaded:
+                col_index = self.columns.index(column)
+                if col_index <= minimum:
+                        column.add_crop_to_col()
+                        QApplication.processEvents()
+                elif self.dynamically:
+                    if col_index == minimum + 1:
+                        QApplication.processEvents()
                         event_loaded.clear()
+                        thread_load.start()
                         event_loaded.wait()
+                    if col_index not in self.loaded:
+                            event_loaded.clear()
+                            event_loaded.wait()
+                    if col_index % minimum == 0:
+                            QApplication.processEvents()
                 column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
+            # time2 = time.time()
+            # print("The drawing of column took {0}".format(time2 - time1))
 
     def increment_x(self, column, next_x):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
@@ -395,14 +435,15 @@ class GraphVisualizer(QtGui.QWidget):
         return next_x
 
     def load(self, minimum, event_loaded):
-        columns = list(self.columns[minimum:])
-        while len(columns) > 0:
-            columns_stripped = columns[:COLUMNS_TO_LOAD:]
-            columns = columns[COLUMNS_TO_LOAD::]
-            for col in columns_stripped:
-                col.prepare_images()
-                self.loaded.add(col)
-            event_loaded.set()
+        i = minimum + 1
+        while i < len(self.columns):
+            col = self.columns[i]
+            col.prepare_images()
+            self.loaded.add(i)
+            if i % minimum == 1:
+                event_loaded.set()
+            i += 1
+        event_loaded.set()
 
     def draw_lines(self, first_frame, last_frame):
         for edge in self.edges:
@@ -429,6 +470,7 @@ class GraphVisualizer(QtGui.QWidget):
     def flash(self):
         self.view.setEnabled(False)
         self.scene.setForegroundBrush(QtCore.Qt.white)
+        self.info_manager.remove_info_all()
         self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
         self.scene.setForegroundBrush(QtCore.Qt.transparent)
         self.view.setEnabled(True)
@@ -486,56 +528,3 @@ class GraphVisualizer(QtGui.QWidget):
         if self.wheel_count % 3 is 0:
             self.wheel_count = 1
 
-
-def random_hex_color_str():
-    rand_num = random.randint(1, 3)
-    l1 = "0123456789ab"
-    color = "#"
-    for i in range(1, 4):
-        if i == rand_num:
-            color += "ff"
-        else:
-            color += (l1[random.randint(0, len(l1)-1)] + l1[random.randint(0, len(l1)-1)])
-
-    return color
-
-
-def inverted_hex_color_str(color):
-    string = str(color).lower()
-    code = {}
-    l1 = "#;0123456789abcdef"
-    l2 = "#;fedcba9876543210"
-
-    for i in range(len(l1)):
-        code[l1[i]] = l2[i]
-
-    inverted = ""
-
-    for j in string:
-        inverted += code[j]
-
-    return inverted
-
-
-def hex2rgb_opacity_tuple(color):
-    rgb = colors.hex2color(color)
-    rgb_list = [int(255 * x) for x in rgb]
-    rgb_list.append(OPACITY)
-    return QtGui.QColor(rgb_list[0], rgb_list[1], rgb_list[2], rgb_list[3])
-
-if __name__ == '__main__':
-    p = Project()
-    p.load('/home/ferda/PROJECTS/eight_22_issue/eight22.fproj')
-    im_manager = ImgManager(p)
-
-    solver = p.saved_progress['solver']
-    n = solver.g.nodes()
-    e = solver.g.edges(data=True)
-
-    import sys
-    app = QtGui.QApplication(sys.argv)
-    g = GraphVisualizer([], [], im_manager, show_vertically=False, compress_axis=True, dynamically=True)
-    g.showMaximized()
-    g.show()
-    g.add_objects(n, e)
-    app.exec_()

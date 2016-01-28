@@ -3,106 +3,103 @@ from PyQt4.QtCore import Qt
 import math
 from node import TextInfoItem
 
-SELECTION_OFFSET = 1.5
-SELECTION_LINE_WIDTH = 1
-LINE_WIDTH = SELECTION_OFFSET * 2
-SENSITIVITY_CONSTANT = SELECTION_OFFSET * 2
+SELECTION_OFFSET_CHUNK = 1
+SELECTION_OFFSET_LINE = 2
+LINE_WIDTH = 2
+SELECTION_LINE_WIDTH = LINE_WIDTH
+SENSITIVITY_CONSTANT = SELECTION_OFFSET_CHUNK * 2
 
 __author__ = 'Simon Mandlik'
 
 
 class Edge:
 
-    def __init__(self, from_x, from_y, to_x, to_y, core_obj, scene):
+    def __init__(self, from_x, from_y, to_x, to_y, core_obj, scene, color=None, vertical=False):
         self.from_x = from_x
         self.from_y = from_y
         self.to_x = to_x
         self.to_y = to_y
-        self.graphical_object = EdgeGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), core_obj, scene)
+        if core_obj[2] == "chunk":
+            self.graphical_object = ChunkGraphical(from_x, from_y, to_x, to_y, core_obj, scene, color, vertical)
+        elif core_obj[2] == "line":
+            self.graphical_object = LineGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), core_obj, scene, color)
+        elif core_obj[2] == "partial":
+            self.graphical_object = PartialGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), core_obj, scene, color)
         self.core_obj = core_obj
 
 
 class EdgeGraphical(QtGui.QGraphicsLineItem):
-    def __init__(self, parent_line, core_obj, scene):
+
+    def __init__(self, parent_line, core_obj, scene, color):
         super(EdgeGraphical, self).__init__(parent_line)
         self.core_obj = core_obj
         self.parent_line = parent_line
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
-        self.selection_offset = SELECTION_OFFSET
         self.selection_polygon = self.create_selection_polygon()
         self.pick_polygon = self.create_pick_polygon()
-        self.style = core_obj[2]
         self.scene = scene
 
         self.clipped = False
+        self.shown = False
         self.info_item = None
-        self.color = None
+        self.color = color
+        if self.color:
+            self.clipped = True
+            self.shown = True
 
-    def show_info(self):
-        self.clipped = True
-        if not self.info_item:
-            self.create_info()
-        self.scene.addItem(self.info_item)
+    def show_info(self, loader):
+        if not self.info_item or not self.clipped:
+            self.create_info(loader)
+            self.clipped = True
+            self.info_item.set_color(self.color)
+        if not self.shown:
+            self.scene.addItem(self.info_item)
+            self.shown = True;
+        self.scene.update()
 
     def hide_info(self):
         self.scene.removeItem(self.info_item)
-        self.clipped = False
+        self.shown = False
+        # self.clipped = False
 
-    def create_info(self):
-        # r = self.region
+    def create_info(self, loader):
+        text = loader.get_edge_info(self.core_obj)
+        metrics = QtGui.QFontMetrics(QtGui.QFont())
+        longest, rows = get_longest_string_rows(text)
+        width = metrics.width(longest)
+        height = metrics.height() * (rows + 0.5)
+        x, y = self.compute_rect_pos()
+        self.info_item = TextInfoItem(text, x, y, width, height, self.color, self)
+        self.info_item.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
+        self.info_item.setFlag(QtGui.QGraphicsItem.ItemSendsScenePositionChanges)
 
-        # vertex = self.project.gm.g.vertex(int(n))
-        # best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
-        # best_out = best_out_score[0]
-        #
-        # best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
-        # best_in = best_in_score[0]
-        #
-        # ch = self.project.gm.is_chunk(vertex)
-        # ch_info = str(ch)
-
-        # QtGui.QMessageBox.about(self, "My message box",
-        #                         "Area = %i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s\nBest out = %s\nChunk info = %s" % (r.area(), str(r.centroid()), r.margin_, antlikeness, str(virtual), str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info))
+    def compute_rect_pos(self):
         x = (self.parent_line.x2() + self.parent_line.x1()) / 2
         y = (self.parent_line.y2() + self.parent_line.y1()) / 2
-        self.info_item = TextInfoItem("Info there", x, y, self.color, self)
-        self.info_item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
-
-    def color_margins(self, color):
-        self.color = color
-        self.scene.update()
+        return x, y
 
     def decolor_margins(self):
         self.color = None
         self.scene.update()
 
+    def set_color(self, color):
+        self.color = color
+
     def paint(self, painter, style_option_graphics_item, widget=None):
-        opacity = 100 + 155 * abs(self.core_obj[3])
-        if self.style == 'chunk':
-            pen = QtGui.QPen(QtGui.QColor(0, 0, 0, opacity), LINE_WIDTH,
-                             Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
-        elif self.style == 'line':
-            pen = QtGui.QPen(QtGui.QColor(0, 255, 0, opacity), LINE_WIDTH / 1.5,
-                             Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
-        else:
-            pen = QtGui.QPen(QtGui.QColor(255, 0, 0, opacity), LINE_WIDTH / 1.5,
-                             Qt.DotLine, Qt.SquareCap, Qt.RoundJoin)
-
-        painter.setPen(pen)
-        painter.drawLine(self.parent_line)
-
         if self.clipped:
-            pen = QtGui.QPen(self.color, SELECTION_OFFSET, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
-        if self.isSelected():
-            pen = QtGui.QPen(Qt.black, SELECTION_OFFSET, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
+            pen = QtGui.QPen(self.color, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+            painter.setPen(pen)
+            painter.drawLine(self.parent_line)
+        elif self.isSelected():
+            pen = QtGui.QPen(Qt.black, SELECTION_LINE_WIDTH, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
             painter.setPen(pen)
             painter.drawPolygon(self.selection_polygon)
 
     def create_selection_polygon(self):
         pi = math.pi
         rad_angle = float(self.parent_line.angle() * pi / 180)
-        dx = self.selection_offset * math.sin(rad_angle)
-        dy = self.selection_offset * math.cos(rad_angle)
+        dx = SELECTION_OFFSET_LINE * math.sin(rad_angle)
+        dy = SELECTION_OFFSET_LINE * math.cos(rad_angle)
 
         offset1 = QtCore.QPointF(dx, dy)
         offset2 = QtCore.QPointF(-dx, -dy)
@@ -114,8 +111,8 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
     def create_pick_polygon(self):
         pi = math.pi
         rad_angle = float(self.parent_line.angle() * pi / 180)
-        dx = self.selection_offset * math.sin(rad_angle)
-        dy = self.selection_offset * math.cos(rad_angle)
+        dx = SELECTION_OFFSET_LINE * math.sin(rad_angle)
+        dy = SELECTION_OFFSET_LINE * math.cos(rad_angle)
         offset1 = QtCore.QPointF(dx * SENSITIVITY_CONSTANT, dy * SENSITIVITY_CONSTANT)
         offset2 = QtCore.QPointF(-dx * SENSITIVITY_CONSTANT, -dy * SENSITIVITY_CONSTANT)
         polygon = QtGui.QPolygonF([self.parent_line.p1() + offset1, self.parent_line.p1() + offset2,
@@ -129,3 +126,103 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
         path = QtGui.QPainterPath()
         path.addPolygon(self.pick_polygon)
         return path
+
+
+class LineGraphical(EdgeGraphical):
+
+    def paint(self, painter, style_option_graphics_item, widget=None):
+        opacity = 100 + 155 * abs(self.core_obj[3])
+        pen = QtGui.QPen(QtGui.QColor(0, 0, 0, opacity), LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+        painter.setPen(pen)
+        painter.drawLine(self.parent_line)
+
+        super(LineGraphical, self).paint(painter, style_option_graphics_item, widget=None)
+
+
+class PartialGraphical(EdgeGraphical):
+
+    def paint(self, painter, style_option_graphics_item, widget=None):
+        opacity = 100 + 155 * abs(self.core_obj[3])
+        pen = QtGui.QPen(QtGui.QColor(0, 255, 0, opacity), LINE_WIDTH, Qt.DotLine, Qt.SquareCap, Qt.RoundJoin)
+        painter.setPen(pen)
+        painter.drawLine(self.parent_line)
+
+        super(PartialGraphical, self).paint(painter, style_option_graphics_item, widget=None)
+
+
+class ChunkGraphical(EdgeGraphical):
+
+    def __init__(self, from_x, from_y, to_x, to_y, core_obj, scene, color, vertical=False):
+        self.parent_line = QtCore.QLineF(from_x, from_y, to_x, to_y)
+
+        if vertical:
+            self.parent_line_1 = QtCore.QLineF(from_x - LINE_WIDTH, from_y, to_x - LINE_WIDTH, to_y)
+            self.parent_line_2 = QtCore.QLineF(from_x + LINE_WIDTH, from_y, to_x + LINE_WIDTH, to_y)
+        else:
+            self.parent_line_1 = QtCore.QLineF(from_x, from_y + LINE_WIDTH, to_x, to_y + LINE_WIDTH)
+            self.parent_line_2 = QtCore.QLineF(from_x, from_y - LINE_WIDTH, to_x, to_y - LINE_WIDTH)
+
+        self.vertical = vertical
+        self.selection_polygon = self.create_selection_polygon()
+        self.pick_polygon = self.create_pick_polygon()
+
+        super(ChunkGraphical, self).__init__(self.parent_line, core_obj, scene, color)
+
+    def paint(self, painter, style_option_graphics_item, widget=None):
+        pen = QtGui.QPen(QtGui.QColor(0, 0, 0), LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+
+        painter.setPen(pen)
+        painter.drawLine(self.parent_line_1)
+        painter.drawLine(self.parent_line_2)
+
+        if self.clipped:
+            pen = QtGui.QPen(self.color, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+            painter.setPen(pen)
+            painter.drawLine(self.parent_line_1)
+            painter.drawLine(self.parent_line_2)
+        elif self.isSelected():
+            pen = QtGui.QPen(Qt.black, SELECTION_LINE_WIDTH, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
+            painter.setPen(pen)
+            painter.drawPolygon(self.selection_polygon)
+
+    def create_selection_polygon(self):
+        pi = math.pi
+        rad_angle = float(self.parent_line.angle() * pi / 180)
+        dx = SELECTION_OFFSET_CHUNK * math.sin(rad_angle)
+        dy = SELECTION_OFFSET_CHUNK * math.cos(rad_angle)
+
+        offset1 = QtCore.QPointF(dx, dy)
+        offset2 = QtCore.QPointF(-dx, -dy)
+
+        polygon = QtGui.QPolygonF([self.parent_line_2.p1() + offset1, self.parent_line_1.p1() + offset2,
+                                   self.parent_line_1.p2() + offset2, self.parent_line_2.p2() + offset1])
+        return polygon
+
+    def create_pick_polygon(self):
+        pi = math.pi
+        rad_angle = float(self.parent_line.angle() * pi / 180)
+        dx = SELECTION_OFFSET_CHUNK * math.sin(rad_angle)
+        dy = SELECTION_OFFSET_CHUNK * math.cos(rad_angle)
+        offset1 = QtCore.QPointF(dx * SENSITIVITY_CONSTANT, dy * SENSITIVITY_CONSTANT)
+        offset2 = QtCore.QPointF(-dx * SENSITIVITY_CONSTANT, -dy * SENSITIVITY_CONSTANT)
+        polygon = QtGui.QPolygonF([self.parent_line_2.p1() + offset1, self.parent_line_1.p1() + offset2,
+                                   self.parent_line_1.p2() + offset2, self.parent_line_2.p2() + offset1])
+        return polygon
+
+
+def get_longest_string_rows(string):
+    st = ""
+    longest = ""
+    rows = 1
+    for i in range(len(string)):
+        st += string[i]
+        if string[i] == "\n":
+            rows += 1
+            if len(st) > len(longest):
+                longest = st
+            st = ""
+    else:
+        st += "\n"
+        if len(st) > len(longest):
+            longest = st
+    return longest, rows
