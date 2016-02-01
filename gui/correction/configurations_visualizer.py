@@ -141,7 +141,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             node = self.active_cw.active_node
 
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.REMOVE, node)
-        self.solver.remove_region(node)
+        affected = self.project.gm.remove_vertex(node)
+
+        self.solver.simplify(queue=affected, rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+
         if not suppress_next_case:
             self.next_case()
 
@@ -153,7 +156,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             return
 
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.STRONG_REMOVE, n)
-        self.solver.strong_remove(n)
+        affected = self.solver.strong_remove(n)
+        self.solver.simplify(queue=affected, rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+
         if not suppress_next_case:
             self.next_case()
 
@@ -183,39 +188,55 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         else:
             self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
 
+    def order_pairs_(self, pairs):
+        if self.order_by_sb.currentText() == 'chunk length':
+            raise Exception('order by chunk length not implemented yet in configurations_visualizer.py')
+        else:
+            return sorted(pairs, key=lambda k: k[1].frame_)
+
+    def set_active_node_in_t(self, t):
+        nodes = []
+        while len(nodes) == 0:
+            nodes = map(int, self.project.gm.get_vertices_in_t(t))
+            t += 1
+
+        self.active_node_id = nodes[0]
+
     def next_case(self, move_to_different_case=False):
         if move_to_different_case:
             self.active_node_id += 1
 
-        self.nodes = self.solver.g.nodes()
-        self.order_nodes()
+        pairs = self.project.gm.all_vertices_and_regions()
+        pairs = self.order_pairs_(pairs)
 
-        if self.active_node_id < len(self.nodes):
-            n = self.nodes[self.active_node_id]
-            if n in self.solver.ignored_nodes:
+        if self.active_node_id < len(pairs):
+            v_id = pairs[self.active_node_id][0]
+            vertex = self.project.gm.g.vertex(v_id)
+            r = pairs[self.active_node_id][1]
+            if v_id in self.solver.ignored_nodes:
                 self.active_node_id += 1
                 self.next_case()
                 return
 
             # test end
-            if n.frame_ == self.solver.end_t:
+            if r.frame_ == self.project.gm.end_t:
                 self.active_node_id += 1
                 self.next_case()
                 return
 
             # test beginning
-            if n.frame_ == 0:
-                is_ch, _, _ = self.solver.is_chunk(n)
-                if is_ch:
+            if r.frame_ == 0:
+                ch, _ = self.project.gm.is_chunk(vertex)
+                if ch:
                     self.active_node_id += 1
                     self.next_case()
                     return
 
             # test if it is different cc:
             if move_to_different_case and self.active_cw:
-                for g in self.active_cw.nodes_groups:
-                    for n_ in g:
-                        if n == n_:
+                for g in self.active_cw.vertices_groups:
+                    for vertex_ in g:
+                        if vertex == vertex_:
                             self.next_case(move_to_different_case)
                             return
 
@@ -226,28 +247,19 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 it.widget().setParent(None)
 
             # add new widget
-            nodes_groups = self.solver.get_cc_from_node(n)
+            nodes_groups = self.project.gm.get_cc_from_vertex(vertex)
             if len(nodes_groups) == 0:
-                print n, "empty nodes groups"
-                # self.nodes.pop(self.active_node_id)
                 self.active_node_id += 1
                 self.next_case()
                 return
 
-            # nodes_groups = []
-            # for i in range(100):
-            #     nodes_groups.append([])
-            #
-            # nodes_ = self.solver.g.nodes()
-            # nodes_ = sorted(nodes_, key=lambda k: k.frame_)
-            # while nodes_:
-            #     n = nodes_.pop(0)
-            #     nodes_groups[n.frame_].append(n)
-
             config = self.best_greedy_config(nodes_groups)
 
-            self.active_cw = CaseWidget(self.solver.g, self.project, nodes_groups, config, self.vid, self)
+            self.active_cw = CaseWidget(self.project, nodes_groups, config, self.vid, self)
+            # self.active_cw.active_node = None
+
             self.scenes_widget.layout().addWidget(self.active_cw)
+            self.active_cw.setFocus()
 
     def best_greedy_config(self, nodes_groups):
         config = {}
@@ -258,11 +270,12 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             while r1 and r2:
                 changed = False
                 values = []
-                for n1 in r1:
-                    for n2 in r2:
+                for v1 in r1:
+                    for v2 in r2:
                         try:
-                            s = self.solver.g[n1][n2]['score']
-                            values.append([s, n1, n2])
+                            e = self.project.gm.g.edge(v1, v2)
+                            s = self.project.gm.g.ep['score'][e]
+                            values.append([s, v1, v2])
                             changed = True
                         except:
                             pass
@@ -270,7 +283,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 if not changed:
                     break
 
-                values = sorted(values, key=lambda k: k[0])
+                values = sorted(values, key=lambda k: -k[0])
                 r1.remove(values[0][1])
                 r2.remove(values[0][2])
                 config[values[0][1]] = values[0][2]
@@ -279,73 +292,83 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
     def prev_case(self):
         self.active_node_id -= 1
+        self.next_case(move_to_different_case=False)
 
-        self.nodes = self.solver.g.nodes()
-        self.order_nodes()
-
-        n = self.nodes[self.active_node_id]
-
-        if n in self.solver.ignored_nodes:
-            self.active_node_id -= 1
-            self.prev_case()
-            return
-
-        if n.frame_ == self.solver.end_t:
-            self.active_node_id -= 1
-            self.prev_case()
-            return
-
-        # test beginning
-        if n.frame_ == 0:
-            is_ch, _, _ = self.solver.is_chunk(n)
-            if is_ch:
-                self.active_node_id -= 1
-                self.prev_case()
-                return
-
-        # test if it is different cc:
-        if self.active_cw:
-            for g in self.active_cw.nodes_groups:
-                for n_ in g:
-                    if n == n_:
-                        self.prev_case()
-                        return
-
-        # remove previous case (if exists)
-        if self.scenes_widget.layout().count():
-            it = self.scenes_widget.layout().itemAt(0)
-            self.scenes_widget.layout().removeItem(it)
-            it.widget().setParent(None)
-
-        # add new widget
-        nodes_groups = self.solver.get_cc_from_node(n)
-        if len(nodes_groups) == 0:
-            # self.nodes.pop(self.active_node_id)
-            self.active_node_id -= 1
-            self.prev_case()
-            return
-
-        config = self.best_greedy_config(nodes_groups)
-
-        self.active_cw = CaseWidget(self.solver.g, self.project, nodes_groups, config, self.vid, self)
-        self.active_cw.active_node = None
-        self.scenes_widget.layout().addWidget(self.active_cw)
+    #
+    #
+    # def prev_case(self):
+    #     self.active_node_id -= 1
+    #
+    #     self.nodes = self.solver.g.nodes()
+    #     self.order_nodes()
+    #
+    #     n = self.nodes[self.active_node_id]
+    #
+    #     if n in self.solver.ignored_nodes:
+    #         self.active_node_id -= 1
+    #         self.prev_case()
+    #         return
+    #
+    #     if n.frame_ == self.solver.end_t:
+    #         self.active_node_id -= 1
+    #         self.prev_case()
+    #         return
+    #
+    #     # test beginning
+    #     if n.frame_ == 0:
+    #         is_ch, _, _ = self.solver.is_chunk(n)
+    #         if is_ch:
+    #             self.active_node_id -= 1
+    #             self.prev_case()
+    #             return
+    #
+    #     # test if it is different cc:
+    #     if self.active_cw:
+    #         for g in self.active_cw.vertices_groups:
+    #             for n_ in g:
+    #                 if n == n_:
+    #                     self.prev_case()
+    #                     return
+    #
+    #     # remove previous case (if exists)
+    #     if self.scenes_widget.layout().count():
+    #         it = self.scenes_widget.layout().itemAt(0)
+    #         self.scenes_widget.layout().removeItem(it)
+    #         it.widget().setParent(None)
+    #
+    #     # add new widget
+    #     nodes_groups = self.solver.get_cc_from_node(n)
+    #     if len(nodes_groups) == 0:
+    #         # self.nodes.pop(self.active_node_id)
+    #         self.active_node_id -= 1
+    #         self.prev_case()
+    #         return
+    #
+    #     config = self.best_greedy_config(nodes_groups)
+    #
+    #     self.active_cw = CaseWidget(self.solver.g, self.project, nodes_groups, config, self.vid, self)
+    #     self.active_cw.active_node = None
+    #     self.scenes_widget.layout().addWidget(self.active_cw)
 
     def confirm_cc(self):
         self.active_cw.confirm_clicked()
 
-    def fitting_get_model(self, t_reversed):
-        region = self.active_cw.active_node
+    def fitting_get_model(self, t_reversed, chunk=None):
+        region = self.project.gm.region(self.active_cw.active_node)
 
-        merged_t = region.frame_ - self.active_cw.frame_t
+        merged_t = region.frame() - self.active_cw.frame_t
         model_t = merged_t + 1 if t_reversed else merged_t - 1
 
-        if len(self.active_cw.nodes_groups[model_t]) > 0 and len(self.active_cw.nodes_groups[merged_t]) > 0:
-            t1_ = self.active_cw.nodes_groups[model_t]
+        objects = []
+        vertices = []
 
-            objects = []
+        if len(self.active_cw.vertices_groups[model_t]) > 0 and len(self.active_cw.vertices_groups[merged_t]) > 0:
+            t1_ = self.active_cw.vertices_groups[model_t]
+
             for c1 in t1_:
-                a = deepcopy(c1)
+                vertices.append(c1)
+                a = deepcopy(self.project.gm.region(c1))
+                self.project.rm.add(a)
                 if t_reversed:
                     a.frame_ -= 1
                 else:
@@ -353,7 +376,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
                 objects.append(a)
 
-        return objects
+        return objects, vertices
 
     def fitting(self, t_reversed=False, one_step=False):
         if self.active_cw.active_node:
@@ -363,37 +386,69 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                                      'n': self.active_cw.active_node,
                                      't_reversed': t_reversed
                                  })
+            vertex = self.active_cw.active_node
+            chunk, _ = self.project.gm.is_chunk(vertex)
 
-            is_ch, _, chunk = self.solver.is_chunk(self.active_cw.active_node)
-            if is_ch:
+            if chunk:
                 print "FITTING WHOLE CHUNK, WAIT PLEASE"
                 model = None
 
-                q = chunk.last if t_reversed else chunk.first
+                q = chunk.pop_last if t_reversed else chunk.pop_first
+
+                f = None
+
                 i = 0
-                while True:
-                    merged = q()
+                # while chunk.length() > 1:
+                while not chunk.is_empty():
+                    print "LEN: ", len(chunk.nodes_)
+                    merged_vertex = q(self.project.gm)
+
+                    if chunk.is_empty():
+                        print "empty"
+
+                    merged = self.project.gm.region(merged_vertex)
                     if not merged:
                         break
 
-                    # TODO: find better way
-                    if chunk.length() < 3:
-                        chunk.pop_last(self.solver) if t_reversed else chunk.pop_first(self.solver)
-
                     # TODO: settings, safe break
-                    if i > 15:
+                    if i > 20:
+                        # TODO: reconnect last result with chunk
                         break
 
                     if not model:
-                        model = self.fitting_get_model(t_reversed)
+                        model, vertices = self.fitting_get_model(t_reversed)
+                    else:
+                        new_model = []
+                        for r in model:
+                            # it is necessary to create new copies of regions
+                            new_r = deepcopy(r)
+                            self.project.rm.add(new_r)
+
+                            new_model.append(new_r)
+
+                        model = new_model
 
                     # TODO : add to settings
-                    f = Fitting(merged, model, num_of_iterations=10)
-                    f.fit()
+                    if f is None:
+                        f = Fitting(merged, model, num_of_iterations=10)
+                    else:
+                        f.region = merged
+                        from core.region.distance_map import DistanceMap
+                        f.d_map_region = DistanceMap(merged.pts())
 
-                    self.solver.merged(f.animals, merged, t_reversed)
+                        for a in f.animals:
+                            a.frame_ += 1
 
-                    model = deepcopy(f.animals)
+                    result = f.fit()
+                    for r in result:
+                        self.project.rm.add(r)
+
+                    # it is important to call deepcopy before merged_chunk, where pts_ are rounded...
+                    model = deepcopy(result)
+
+                    print i
+                    vertices = self.solver.merged_chunk(vertices, result, merged_vertex, t_reversed, chunk)
+
                     for m in model:
                         m.frame_ += -1 if t_reversed else 1
 
@@ -404,11 +459,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
                 print "CHUNK FINISHED"
             else:
-                model = self.fitting_get_model(t_reversed)
-                f = Fitting(self.active_cw.active_node, model, num_of_iterations=10)
-                f.fit()
+                model, _ = self.fitting_get_model(t_reversed)
+                region = self.project.gm.region(self.active_cw.active_node)
+                f = Fitting(region, model, num_of_iterations=10)
+                result = f.fit()
+                for r in result:
+                    self.project.rm.add(r)
 
-                self.solver.merged(f.animals, self.active_cw.active_node, t_reversed)
+                self.solver.merged(result, self.active_cw.active_node, t_reversed)
 
             self.next_case()
 
@@ -464,10 +522,13 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.active_cw.join_with_()
 
     def join_regions(self, n1, n2):
-        if n1.area() < n2.area():
+        r1 = self.project.gm.region(n1)
+        r2 = self.project.gm.region(n2)
+        if r1.area() < r2.area():
             n1, n2 = n2, n1
+            r1, r2 = r2, r1
 
-        self.project.log.add(LogCategories.USER_ACTION, ActionNames.JOIN_REGIONS, {'n1': n1, 'n2': n2})
+        self.project.log.add(LogCategories.USER_ACTION, ActionNames.JOIN_REGIONS, {'n1': int(n1), 'n2': int(n2)})
 
         # TODO: update also other moments etc...
         n_new = deepcopy(n1)
@@ -513,26 +574,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.thread.proc_done.connect(self.noise_finished)
         self.thread.set_range.connect(self.progress_bar.setMaximum)
         self.thread.start()
-
-    def remove_noise(self):
-        # TODO: add actions
-
-        to_remove = self.noise_nodes_widget.get_selected()
-        for n in to_remove:
-            if n in self.solver.g:
-                self.strong_remove_region(n, suppress_next_case=True)
-
-        to_confirm = self.noise_nodes_widget.get_unselected()
-        for n in to_confirm:
-            if n in self.solver.g:
-                self.solver.g.node[n]['antlikeness'] = 1.0
-
-        self.mode_tools_noise.hide()
-        self.next_case()
-
-    def remove_noise_back(self):
-        self.mode_tools_noise.hide()
-        self.next_case()
 
     def ignore_node(self):
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.IGNORE_NODES)

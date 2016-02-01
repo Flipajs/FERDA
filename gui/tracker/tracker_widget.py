@@ -13,6 +13,9 @@ from utils.video_manager import optimize_frame_access
 from gui.correction.global_view import GlobalView
 from gui.loading_widget import LoadingWidget
 from core.log import LogCategories, ActionNames
+import math
+from gui.img_grid.img_grid_widget import ImgGridWidget
+from gui.correction.noise_filter_widget import NoiseFilterWidget
 
 
 class TrackerWidget(QtGui.QWidget):
@@ -41,22 +44,6 @@ class TrackerWidget(QtGui.QWidget):
         self.top_row.addWidget(self.mode_selectbox)
 
         self.top_row.addLayout(self.tool_row)
-
-        # noise toolbox
-        self.mode_tools_noise = QtGui.QWidget()
-        self.mode_tools_noise.setLayout(QtGui.QHBoxLayout())
-        self.tool_row.addWidget(self.mode_tools_noise)
-
-        self.noise_nodes_confirm_b = QtGui.QPushButton('remove selected')
-        # self.noise_nodes_confirm_b.clicked.connect(self.remove_noise)
-        self.mode_tools_noise.layout().addWidget(self.noise_nodes_confirm_b)
-
-        self.noise_nodes_back_b = QtGui.QPushButton('back')
-        # self.noise_nodes_back_b.clicked.connect(self.remove_noise_back)
-        self.mode_tools_noise.layout().addWidget(self.noise_nodes_back_b)
-        self.mode_tools_noise.hide()
-
-        self.tool_row.addWidget(self.mode_tools_noise)
 
         self.tool = QtGui.QVBoxLayout()
         self.layout().addLayout(self.tool)
@@ -138,13 +125,29 @@ class TrackerWidget(QtGui.QWidget):
         elif ct == 'global view':
             self.show_global_view()
         elif ct == 'noise filter':
-            self.mode_tools_noise.show()
             self.noise_nodes_filter()
 
+    def noise_nodes_filter(self):
+        elem_width = 100
+        cols = math.floor(self.width() / elem_width)
+
+        steps = 500
+
+        noise_widget = NoiseFilterWidget(self.project, steps, elem_width, cols)
+
+        self.tool.addWidget(noise_widget)
+        # self.tool_row.addWidget(self.mode_tools_noise.tool_w)
+
     def show_step_by_step(self):
+        """
+
+        Returns:
+
+        """
         step_by_step = ConfigurationsVisualizer(self.solver, get_auto_video_manager(self.project))
         self.tool.addWidget(step_by_step)
         self.tool_row.addWidget(step_by_step.tool_w)
+        # step_by_step.set_active_node_in_t(180)
         step_by_step.next_case()
 
     def show_global_view(self):

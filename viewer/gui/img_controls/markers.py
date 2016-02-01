@@ -9,7 +9,7 @@ class BaseMarker(QtGui.QGraphicsEllipseItem, object):
     is used when mouseReleaseEvent	happens.
     """
 
-    def __init__(self, x, y, size, color, antId, changeHandler = None):
+    def __init__(self, x, y, size, color, antId, changeHandler=None):
         super(BaseMarker, self).__init__(x, y, size, size)
         self.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
         self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)

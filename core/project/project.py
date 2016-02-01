@@ -11,6 +11,8 @@ from core.log import Log
 from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
+from utils.color_manager import ColorManager
+
 
 class Project:
     """
@@ -26,18 +28,26 @@ class Project:
         self.date_created = -1
         self.date_last_modifiaction = -1
 
+        # REGION MANAGER
+        self.rm = None
+        # CHUNK MANAGER
+        self.chm = None
+        # GRAPH MANAGER
+        self.gm = None
+
         self.bg_model = None
         self.arena_model = None
         self.classes = None
         self.groups = None
         self.animals = None
         self.stats = None
-        self.saved_progress = None
         self.mser_parameters = MSERParameters()
         self.other_parameters = OtherParameters()
         self.solver_parameters = SolverParameters()
+        self.color_manager = None
         self.log = Log()
-        self.version = "2.2.9"
+        self.solver = None
+        self.version = "3.0.0"
 
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
@@ -68,6 +78,7 @@ class Project:
         p.version = self.version
 
         p.date_created = self.date_created
+        p.color_manager = self.color_manager
         import time
         p.date_last_modifiaction = time.time()
 
@@ -111,6 +122,33 @@ class Project:
         if self.stats:
             with open(self.working_directory+'/stats.pkl', 'wb') as f:
                 pickle.dump(self.stats, f)
+
+        # # Region Manager
+        # if self.rm:
+        #     with open(self.working_directory+'/region_manager.pkl', 'wb') as f:
+        #         pickle.dump(self.rm, f, -1)
+
+        # Chunk Manager
+        if self.chm:
+            for _, ch in self.chm.chunks_.iteritems():
+                ch.project = None
+
+            with open(self.working_directory+'/chunk_manager.pkl', 'wb') as f:
+                pickle.dump(self.chm, f, -1)
+
+        # Graph Manager
+        if self.gm:
+            self.gm.project = None
+            self.gm.rm = None
+            ac = self.gm.assignment_score
+            self.gm.assignment_score = None
+
+            with open(self.working_directory+'/graph_manager.pkl', 'wb') as f:
+                pickle.dump(self.gm, f, -1)
+
+            self.gm.project = self
+            self.gm.rm = self.rm
+            self.gm.assignment_score = ac
 
         self.save_qsettings()
 
@@ -195,6 +233,28 @@ class Project:
         except:
             pass
 
+        # Region Manager
+        try:
+            with open(self.working_directory+'/region_manager.pkl', 'rb') as f:
+                self.rm = pickle.load(f)
+        except:
+            pass
+
+        # Chunk Manager
+        try:
+            with open(self.working_directory+'/chunk_manager.pkl', 'rb') as f:
+                self.chm = pickle.load(f)
+        except:
+            pass
+
+        # Graph Manager
+        try:
+            with open(self.working_directory+'/graph_manager.pkl', 'rb') as f:
+                self.gm = pickle.load(f)
+                self.gm.project = self
+        except:
+            pass
+
         # SAVED CORRECTION PROGRESS
         try:
             with open(self.working_directory+'/progress_save.pkl', 'rb') as f:
@@ -210,14 +270,42 @@ class Project:
                 except:
                     pass
 
-                solver = Solver(self)
-                solver.g = g
-                solver.ignored_nodes = ignored_nodes
-                solver.update_nodes_in_t_refs()
-                self.saved_progress = {'solver': solver}
+                # self.solver = Solver(self)
+                # self.gm.g = g
+                # self.solver.g = g
+                self.solver.ignored_nodes = ignored_nodes
+                # solver.update_nodes_in_t_refs()
                 self.log = log
+
+                if self.gm:
+                    self.gm.assignment_score = self.solver.assignment_score
         except:
             pass
+
+        # reconnect...
+        if not self.gm:
+            from core.graph.graph_manager import GraphManager
+            self.gm = GraphManager(self, None)
+
+        from core.region.region_manager import RegionManager
+        self.solver = Solver(self)
+        self.gm.assignment_score = self.solver.assignment_score
+
+        self.rm = RegionManager(db_wd=self.working_directory)
+
+        self.gm.project = self
+        self.gm.rm = self.rm
+        self.gm.update_nodes_in_t_refs()
+
+def dummy_project():
+    from core.classes_stats import dummy_classes_stats
+    from core.region.region_manager import RegionManager
+
+    p = Project()
+    p.stats = dummy_classes_stats()
+    p.rm = RegionManager()
+
+    return p
 
 
 if __name__ == "__main__":

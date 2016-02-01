@@ -1,7 +1,7 @@
 from gui.arena.my_ellipse import MyEllipse
 from gui.arena.my_popup   import MyPopup
 from gui.arena.my_view    import MyView
-
+from gui.img_controls.my_scene import MyScene
 __author__ = 'dita'
 
 from PyQt4 import QtGui, QtCore, Qt
@@ -517,7 +517,6 @@ class ArenaEditor(QtGui.QWidget):
             tmp_points.append(self.pick_point(pos))
         self.point_items = tmp_points
 
-
     def merge_images(self):
         """
         merges the 3 images (paint, polygons and circles) into one result
@@ -650,8 +649,8 @@ class ArenaEditor(QtGui.QWidget):
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
         self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider.setGeometry(30, 40, 50, 30)
-        self.slider.setRange(10, 50)
-        self.slider.setTickInterval(5)
+        self.slider.setRange(3, 50)
+        self.slider.setTickInterval(3)
         self.slider.setValue(30)
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.change_value)
@@ -704,8 +703,8 @@ class ArenaEditor(QtGui.QWidget):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
-    im = cv2.imread('/home/dita/PycharmProjects/sample2.png')
-    # im = cv2.imread('/Users/flipajs/Desktop/red_vid.png')
+    # im = cv2.imread('/home/dita/PycharmProjects/sample2.png')
+    im = cv2.imread('/Users/flipajs/Desktop/red_vid.png')
     p = Project()
 
     ex = ArenaEditor(im, p)

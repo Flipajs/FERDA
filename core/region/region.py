@@ -1,5 +1,6 @@
 __author__ = 'fnaiser'
 
+from utils.video_manager import get_auto_video_manager
 import numpy as np
 import math
 from utils.roi import get_roi
@@ -13,7 +14,9 @@ class Region():
     """
 
     def __init__(self, data=None, frame=-1, id=-1):
+        self.id_ = id
         self.pts_ = None
+        self.pts_rle_ = None
         self.centroid_ = np.array([-1, -1])
         self.label_ = -1
         self.margin_ = -1
@@ -47,25 +50,35 @@ class Region():
         self.is_virtual = False
 
     def __str__(self):
-        s = "t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(self.centroid_[0])+", "+str(self.centroid_[1])+"]"
+        s = "t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(round(self.centroid_[0], 2))+", "+str(round(self.centroid_[1], 2))+"]"
         return s
 
+    def id(self):
+        return self.id_
+
+    def pts_from_rle_(self, data):
+        i = 0
+        pts = np.zeros((self.area(), 2), dtype=np.int)
+
+        for row in data:
+            for c in xrange(row['col1'], row['col2'] + 1):
+                pts[i, 0] = row['line']
+                pts[i, 1] = c
+
+                i += 1
+
+        return pts
+
     def from_dict_(self, data):
-        pts = np.zeros((data['area'], 2), dtype=np.int)
+        self.area_ = data['area']
         if 'rle' in data:
-            i = 0
-            for row in data['rle']:
-                for c in xrange(row['col1'], row['col2'] + 1):
-                    pts[i, 0] = row['line']
-                    pts[i, 1] = c
-                # pts.extend([[row['line'], c] for c in range(row['col1'], row['col2'] + 1)])
-                    i += 1
+            self.pts_rle_ = data['rle']
+            self.pts_ = self.pts_from_rle_(self.pts_rle_)
         else:
             raise Exception('wrong data format',
                             'Wrong data format in from_dict_ in region.points.py. Expected dictionary with "rle" key.')
 
         self.centroid_ = np.array([data['cy'], data['cx']])
-        self.pts_ = pts
         # self.pts_ = np.array(pts)
         self.label_ = data['label']
         self.margin_ = data['margin']
@@ -95,7 +108,7 @@ class Region():
         self.pts_ = np.array(data)
 
     def area(self):
-        return len(self.pts_)
+        return self.area_
 
     def label(self):
         return self.label_
@@ -104,12 +117,16 @@ class Region():
         return self.margin_
 
     def pts(self):
+        if self.pts_ is None:
+            self.pts_ = self.pts_from_rle_(self.pts_rle_)
+
         return self.pts_
 
     def pts_copy(self):
         return np.copy(self.pts_)
 
     def centroid(self):
+
         return np.copy(self.centroid_)
 
     def set_centroid(self, centroid):
@@ -124,9 +141,52 @@ class Region():
     def contour(self):
         from utils.drawing.points import get_contour
         if not hasattr(self, 'contour_') or self.contour_ is None:
-            self.contour_ = get_contour(self.pts_)
+            self.contour_ = get_contour(self.pts())
 
         return self.contour_
+
+    def frame(self):
+        return self.frame_
+
+def encode_RLE(pts):
+    """
+    returns list of dictionaries
+    {'col1': , 'col2':, 'line':}
+    """
+    import time
+    t = time.time()
+    roi = get_roi(pts)
+    result = np.zeros((roi.height(), roi.width()), dtype="uint8")
+
+    pts2 = pts - roi.top_left_corner()
+    result[pts2[:,0], pts2[:,1]] = 1
+
+    rle = []
+    for i in range(0, result.shape[0]):
+        run = {}
+        running = False
+        for j in range(0, result.shape[1]):
+            if result[i][j] == 1 and not running:
+                run['col1'] = j
+                run['line'] = i
+                running = True
+            if result[i][j] == 0 and running:
+                run['col2'] = j - 1
+                rle.append(run)
+                run = {}
+                running = False
+        if running:
+            run['col2'] = j - 1
+            rle.append(run)
+    """
+    print time.time() - t
+
+    for run in rle:
+        print "line %s: [%s - %s]" % (run["line"], run["col1"], run["col2"])
+    """
+    return rle
+
+
 
 
 def compute_region_axis_(sxx, syy, sxy):
@@ -150,6 +210,14 @@ def get_orientation(sxx, syy, sxy):
     return theta
 
 
-
 if __name__ == '__main__':
-    print "test"
+    import cPickle as pickle
+    import numpy as np
+    f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
+    up = pickle.Unpickler(f)
+    regions = up.load()
+    f.close()
+
+    r = regions[0]
+    pts = r.pts_copy()
+    encode_RLE(pts)

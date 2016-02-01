@@ -5,6 +5,7 @@ from matplotlib import cm as cmx
 import sys
 import math
 import random
+from core.graph.region_chunk import RegionChunk
 
 class ColorManager():
     def __init__(self, length, limit, mode="rand", cmap='Accent'):
@@ -128,18 +129,26 @@ class ColorManager():
                 for t in self.tracks:
                     # it must be different from any other track color
                     c2 = t.get_color()
+                    distance = self.get_yuv_distance(c1, c2)
+                    # if two of the colors are the same, move on
+                    if distance == 0 and self.collide(t, track) > 0:
+                        ok = False
+                        break
+                    # this doesn't matter if the colors never exist together
+                    else:
+                        continue
                     # the more frames the tracks share, the more different (distant) they must be
                     value = self.collide(t, track) / self.get_yuv_distance(c1, c2)
                     if value > limit:
                         ok = False
                 if ok:
-                    print i
+                    # print i
                     return QtGui.QColor().fromRgb(r, g, b)
 
                 if i > 500:
-                    # if co color was found in 500 laps, return the current color
+                    # if no color was found in 500 laps, return the current color
                     print "No color found"
-                    # return QtGui.QColor().fromRgb(0, 0, 0)
+
                     return QtGui.QColor().fromRgb(r, g, b)
                 i += 1
                 # try to make the choosing easier by enlarging the limit each time a wrong color is picked
@@ -246,14 +255,29 @@ class Track():
             self.stop = stop
         self.id = id
         self.len = stop - start
+
     def get_color(self):
         return self.color
+
     def set_color(self, color):
         self.color = color
+
     def get_len(self):
         return self.stop - self.start
+
     def set_color_id(self, color_id):
         self.color_id = color_id
+
+def colorize_project(project):
+    from utils.video_manager import get_auto_video_manager
+    vid = get_auto_video_manager(project)
+
+    limit = len(project.chm.chunks_)
+
+    project.color_manager = ColorManager(vid.total_frame_count(), limit)
+    for ch in project.chm.chunk_list():
+        rch = RegionChunk(ch, project.gm, project.rm)
+        ch.color, _ = project.color_manager.new_track(rch.start_frame(), rch.end_frame())
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

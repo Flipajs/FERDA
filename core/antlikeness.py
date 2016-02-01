@@ -61,3 +61,14 @@ class Antlikeness():
         prob = self.svm_model.predict_proba([x])
 
         return prob[0]
+
+class DummyAntlikeness():
+    def learn(self):
+        pass
+
+    def get_x(self, r, img_gray=None):
+        return []
+
+    def get_prob(self):
+        import random
+        return random.randrange(0, 1)

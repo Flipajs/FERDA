@@ -133,7 +133,6 @@ class RegionReconstruction(QtGui.QWidget):
             im = vid.get_frame(f, auto=True)
             regions = get_msers_(im, self.project, frame=f)
 
-
             for ch in ch_in_frame:
                 c = ch.get_centroid_in_time(f)
                 is_virtual = ch.is_virtual_in_time(f)
@@ -197,7 +196,7 @@ if __name__ == "__main__":
     p = Project()
     p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
 
-    ex = RegionReconstruction(p, p.saved_progress['solver'])
+    ex = RegionReconstruction(p, p.solver)
     print ex.process_input('1 2 3 4')
     print ex.process_input('1, 2, 3, 4')
     print ex.process_input('1,2,3,4')

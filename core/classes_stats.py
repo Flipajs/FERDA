@@ -31,3 +31,14 @@ class ClassesStats():
         self.area_median = np.median(areas)
         self.major_axis_median = np.median(major_axes)
         self.margin_median = np.median(margins)
+
+def dummy_classes_stats():
+    from core.antlikeness import DummyAntlikeness
+
+    cs = ClassesStats()
+    cs.area_median = 100
+    cs.major_axis_median = 5
+    cs.margin_median = 5
+    cs.antlikeness_svm = DummyAntlikeness()
+
+    return cs

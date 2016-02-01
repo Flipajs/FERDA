@@ -96,6 +96,12 @@ class ImgManager:
 
         # one region
         if isinstance(roi, Region):
+            # append it to regions - so it will be visualised
+            if regions:
+                regions.append(roi)
+            else:
+                regions = [roi]
+
             roi = get_roi(roi.pts())
 
         # list of regions
@@ -145,8 +151,8 @@ class ImgManager:
 
         y_ = roi.y() - margin
         x_ = roi.x() - margin
-        height_ = roi.width() + 2 * margin
-        width_ = roi.height() + 2 * margin
+        height_ = roi.height() + 2 * margin
+        width_ = roi.width() + 2 * margin
 
         # get image with the crop
         crop = get_safe_selection(im, y_, x_, height_, width_, fill_color=fill_color)
