@@ -1,5 +1,5 @@
 from heapq import *
-from scipy.linalg._matfuncs_inv_ssq import fractional_matrix_power
+# from scipy.linalg._matfuncs_inv_ssq import fractional_matrix_power
 
 __author__ = 'Simon Mandlik'
 

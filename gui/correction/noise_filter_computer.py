@@ -10,15 +10,16 @@ class NoiseFilterComputer(QtCore.QThread):
     part_done = QtCore.pyqtSignal(float, object, object, object)
     set_range = QtCore.pyqtSignal(int)
 
-    def __init__(self, solver, project, steps):
+    def __init__(self, solver, project, steps, threshold=0.2):
         super(NoiseFilterComputer, self).__init__()
         self.solver = solver
         self.steps = steps
         self.project = project
+        self.threshold = threshold
 
     def run(self):
         # TODO: add some settings...
-        th = 0.2
+        th = self.threshold
 
         to_process = []
 

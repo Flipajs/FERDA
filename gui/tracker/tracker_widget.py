@@ -128,10 +128,10 @@ class TrackerWidget(QtGui.QWidget):
             self.noise_nodes_filter()
 
     def noise_nodes_filter(self):
-        elem_width = 200
+        elem_width = 100
         cols = math.floor(self.width() / elem_width)
 
-        steps = 100
+        steps = 500
 
         noise_widget = NoiseFilterWidget(self.project, steps, elem_width, cols)
 
@@ -147,7 +147,7 @@ class TrackerWidget(QtGui.QWidget):
         step_by_step = ConfigurationsVisualizer(self.solver, get_auto_video_manager(self.project))
         self.tool.addWidget(step_by_step)
         self.tool_row.addWidget(step_by_step.tool_w)
-        step_by_step.set_active_node_in_t(180)
+        # step_by_step.set_active_node_in_t(180)
         step_by_step.next_case()
 
     def show_global_view(self):

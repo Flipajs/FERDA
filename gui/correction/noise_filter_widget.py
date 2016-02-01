@@ -21,15 +21,31 @@ class NoiseFilterWidget(QtGui.QWidget):
         super(NoiseFilterWidget, self).__init__()
 
         self.project = project
+        self.steps = steps
 
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
 
+        self.elem_width = elem_width
         self.noise_nodes_widget = ImgGridWidget()
         self.noise_nodes_widget.reshape(cols, elem_width)
 
         self.progress_bar = QtGui.QProgressBar()
         self.progress_bar.setRange(0, 0)
+
+        self.threshold = QtGui.QDoubleSpinBox()
+        self.threshold.setMinimum(0)
+        self.threshold.setMaximum(1.0)
+        self.threshold.setSingleStep(0.01)
+        self.threshold.setValue(project.solver_parameters.antlikeness_threshold)
+
+        self.hbox = QtGui.QHBoxLayout()
+        self.hbox.addWidget(self.threshold)
+        self.run_button = QtGui.QPushButton('run...')
+        self.run_button.clicked.connect(self.run_noise_filter)
+        self.hbox.addWidget(self.run_button)
+
+        self.vbox.addLayout(self.hbox)
         self.vbox.addWidget(self.progress_bar)
         self.vbox.addWidget(self.noise_nodes_widget)
 
@@ -43,11 +59,15 @@ class NoiseFilterWidget(QtGui.QWidget):
         # self.undo_action.setShortcut(S_.controls.undo)
         # self.addAction(self.undo_action)
 
-        self.thread = NoiseFilterComputer(project.solver, project, steps)
+
+    def run_noise_filter(self):
+        th = self.threshold.value()
+        self.thread = NoiseFilterComputer(self.project.solver, self.project, self.steps, th)
         self.thread.part_done.connect(self.noise_part_done_)
         self.thread.proc_done.connect(self.noise_finished_)
         self.thread.set_range.connect(self.progress_bar.setMaximum)
         self.thread.start()
+
 
     def remove_noise(self):
         # TODO: add actions
@@ -58,22 +78,24 @@ class NoiseFilterWidget(QtGui.QWidget):
             affected.extend(self.project.solver.strong_remove(v))
 
         to_confirm = self.noise_nodes_widget.get_unselected()
-        for n in to_confirm:
-            if n in self.solver.g:
-                self.solver.g.node[n]['antlikeness'] = 1.0
+
+        # TODO: add some flag that the antlikeness is confirmed
+        # for n in to_confirm:
+        #     if n in self.project.solver.g:
+        #         self.project.solver.g.node[n]['antlikeness'] = 1.0
 
         self.noise_nodes_widget.hide()
 
-        self.project.solver.simplify(queue=affected, rules=[self.project.solver.adaptive_threshold, self.project.solver.update_costs])
+        self.project.solver.simplify(queue=affected, rules=[self.project.solver.update_costs])
+        self.project.solver.simplify(queue=affected, rules=[self.project.solver.adaptive_threshold])
         # self.project.solver.simplify(rules=[self.project.solver.adaptive_threshold, self.project.solver.update_costs])
         # self.next_case()
 
     def noise_part_done_(self, val, img, region, vertex):
         from gui.gui_utils import get_img_qlabel
 
-        elem_width = 200
         self.progress_bar.setValue(val)
-        item = get_img_qlabel(region.pts(), img, vertex, elem_width, elem_width, filled=True)
+        item = get_img_qlabel(region.pts(), img, vertex, self.elem_width, self.elem_width, filled=True)
         item.set_selected(True)
         self.noise_nodes_widget.add_item(item)
 

@@ -231,21 +231,34 @@ class BackgroundComputer:
         self.update_callback(-1, 'joining parts...')
 
         print "reconnecting graphs"
-        self.solver.gm = self.project.gm
+        self.project.gm = self.project.gm
         for part_end_t in range(fir, fir*part_num, fir):
-            t_v = self.solver.gm.get_vertices_in_t(part_end_t-1)
-            t1_v = self.solver.gm.get_vertices_in_t(part_end_t)
+            t_v = self.project.gm.get_vertices_in_t(part_end_t-1)
+            t1_v = self.project.gm.get_vertices_in_t(part_end_t)
 
             self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
             # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
         print "simplifying "
         # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver, self.solver.update_costs])
+        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+
         # self.project.solver_parameters.certainty_threshold = 0.1
 
-        self.solver.detect_split_merge_cases()
-        self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+        self.project.solver.detect_split_merge_cases()
+        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
 
+        i = 1
+        while True:
+            print "ITERATION: ", i
+            num_changed1 = self.project.solver.simplify(rules=[self.solver.update_costs])
+            num_changed2 = self.project.solver.simplify(rules=[self.solver.adaptive_threshold])
+
+            if num_changed1+num_changed2 == 0:
+                break
+
+            i += 1
 
         # TEST:
         queue = self.project.gm.get_all_relevant_vertices()
@@ -262,7 +275,8 @@ class BackgroundComputer:
                         print "BEGINNING, DEGREE > 1"
 
 
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+        # self.solver.simplify(rules=[self.solver.adaptive_thre
+        # shold, self.solver.update_costs])
         # self.project.solver_parameters.certainty_threshold = 0.5
 
 

@@ -131,8 +131,8 @@ class VisLoader:
         # TODO
         # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
         #         region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
-        return "Centroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (str(region.centroid()),
-                region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
+        return "Centroid = %s\nArea = %i\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (str(region.centroid()),
+                region.area(), region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
 
     def get_edge_info(self, edge):
         return "Type = {0}\nSureness = {1}".format(edge[2], edge[3])
@@ -153,7 +153,8 @@ if __name__ == '__main__':
     # from scripts import fix_project
     p = Project()
     # p.load('/home/sheemon/FERDA/projects/dita_proj/dita.fproj')
-    p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/C210/C210.fproj')
+    # p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
     # p.load('/home/sheemon/FERDA/projects/archive/c210.fproj')
     # from core.region.region_manager import RegionManager
     # p.rm = RegionManager(p.working_directory, '/rm.sqlite3')

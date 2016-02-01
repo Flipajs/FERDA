@@ -48,6 +48,8 @@ class Solver:
         self.cc_id = 0
 
     def simplify(self, queue=None, rules=None):
+        num_changed = 0
+
         if queue is None:
             queue = self.project.gm.get_all_relevant_vertices()
 
@@ -73,7 +75,13 @@ class Solver:
                     continue
 
                 affected = ru(vertex)
+
+                if len(affected) > 0:
+                    num_changed += 1
+
                 queue.extend(affected)
+
+        return num_changed
 
     def get_antlikeness(self, n):
         prob = self.project.stats.antlikeness_svm.get_prob(n)[1]
@@ -256,12 +264,12 @@ class Solver:
                 if ch_is_end and ch.length() > 1:
                     prev_region = self.project.gm.region(ch.nodes_[-2])
                     pred = region.centroid() - prev_region.centroid()
-            else:
-                # there is just one edge...
-                pred = 0
-                for e_ in vertex.in_edges():
-                    prev_region = self.project.gm.region(e_.source())
-                    pred = region.centroid() - prev_region.centroid()
+            # else:
+            #     # there is just one edge...
+            #     pred = 0
+            #     for e_ in vertex.in_edges():
+            #         prev_region = self.project.gm.region(e_.source())
+            #         pred = region.centroid() - prev_region.centroid()
 
             if pred is not None:
                 for e in vertex.out_edges():
@@ -292,11 +300,11 @@ class Solver:
                 if ch.length() > 1 and not ch_is_end:
                     next_region = self.project.gm.region(ch.nodes_[1])
                     pred = region.centroid() - next_region.centroid()
-            else:
-                # there is only one edge
-                for e_ in vertex.out_edges():
-                    next_region = self.project.gm.region(e_.target())
-                    pred = region.centroid() - next_region.centroid()
+            # else:
+            #     # there is only one edge
+            #     for e_ in vertex.out_edges():
+            #         next_region = self.project.gm.region(e_.target())
+            #         pred = region.centroid() - next_region.centroid()
 
             if pred is not None:
                 for e in vertex.in_edges():
@@ -602,11 +610,13 @@ class Solver:
         if autosave:
             name = '/temp/__autosave.pkl'
 
-        with open(wd+name, 'wb') as f:
-            pc = pickle.Pickler(f, -1)
-            pc.dump(self.project.gm.g)
-            pc.dump(self.project.chm)
-            pc.dump(self.ignored_nodes)
+        self.project.save()
+
+        # with open(wd+name, 'wb') as f:
+        #     pc = pickle.Pickler(f, -1)
+        #     pc.dump(self.project.gm.g)
+        #     pc.dump(self.project.chm)
+        #     pc.dump(self.ignored_nodes)
 
         print "PROGRESS SAVED"
 
