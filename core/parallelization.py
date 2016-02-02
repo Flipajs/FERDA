@@ -90,6 +90,13 @@ if __name__ == '__main__':
 
     s = time.time()
     print "#Edges BEFORE: ", proj.gm.g.num_edges()
+    while True:
+        num_changed1 = solver.simplify(rules=[solver.update_costs])
+        num_changed2 = solver.simplify(rules=[solver.adaptive_threshold])
+
+        if num_changed1+num_changed2 == 0:
+            break
+            
     # solver.simplify(rules=[solver.adaptive_threshold, solver.update_costs])
     # solver.simplify(rules=[solver.adaptive_threshold])
     # solver.simplify(rules=[solver.adaptive_threshold, solver.symmetric_cc_solver, solver.update_costs])

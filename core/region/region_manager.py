@@ -4,7 +4,7 @@ __author__ = 'flipajs'
 
 import sqlite3 as sql
 import cPickle as pickle
-
+from core.region.region import encode_RLE
 
 class RegionManager:
     def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=-1, data=None):

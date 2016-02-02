@@ -209,7 +209,7 @@ class BackgroundComputer:
 
         part_num = self.part_num
         # TODO: remove this line
-        part_num = 3
+        part_num = 50
 
         print "merging..."
         for i in range(part_num):
@@ -249,16 +249,16 @@ class BackgroundComputer:
         self.project.solver.detect_split_merge_cases()
         # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
 
-        i = 1
-        while True:
-            print "ITERATION: ", i
-            num_changed1 = self.project.solver.simplify(rules=[self.solver.update_costs])
-            num_changed2 = self.project.solver.simplify(rules=[self.solver.adaptive_threshold])
-
-            if num_changed1+num_changed2 == 0:
-                break
-
-            i += 1
+        # i = 1
+        # while True:
+        #     print "ITERATION: ", i
+        #     num_changed1 = self.project.solver.simplify(rules=[self.solver.update_costs])
+        #     num_changed2 = self.project.solver.simplify(rules=[self.solver.adaptive_threshold])
+        #
+        #     if num_changed1+num_changed2 == 0:
+        #         break
+        #
+        #     i += 1
 
         # TEST:
         queue = self.project.gm.get_all_relevant_vertices()

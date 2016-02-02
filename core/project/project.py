@@ -184,6 +184,8 @@ class Project:
             tmp_dict = pickle.load(f)
 
         self.__dict__.update(tmp_dict)
+        a_ = path.split('/')
+        self.working_directory = path[:-(len(a_[-1])+1)]
 
         # BG MODEL
         try:

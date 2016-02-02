@@ -61,7 +61,7 @@ class Solver:
 
             r = self.project.gm.region(vertex)
 
-            # # skip the chunks...
+            # # skip the ...
             # if self.project.gm.chunk_start(vertex):
             #     continue
 
