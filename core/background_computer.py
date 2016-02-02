@@ -209,9 +209,10 @@ class BackgroundComputer:
 
         part_num = self.part_num
         # TODO: remove this line
-        part_num = 50
+        part_num = 5
 
         print "merging..."
+        # for i in range(part_num):
         for i in range(part_num):
             rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
                                    db_name='part' + str(i) + '_rm.sqlite3')
@@ -230,14 +231,26 @@ class BackgroundComputer:
 
         self.update_callback(-1, 'joining parts...')
 
+        self.project.solver.detect_split_merge_cases()
+
         print "reconnecting graphs"
         self.project.gm = self.project.gm
+
+        vs_todo = []
+
         for part_end_t in range(fir, fir*part_num, fir):
             t_v = self.project.gm.get_vertices_in_t(part_end_t-1)
             t1_v = self.project.gm.get_vertices_in_t(part_end_t)
 
+            vs_todo.extend(t_v)
+
             self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
             # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
+
+        self.project.solver.detect_split_merge_cases()
+        self.solver.simplify(vs_todo, rules=[self.solver.adaptive_threshold])
+        # TODO: use also update cost
+        # self.solver.simplify(vs_todo, rules=[self.solver.update_costs])
 
         print "simplifying "
         # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver, self.solver.update_costs])
@@ -246,7 +259,7 @@ class BackgroundComputer:
 
         # self.project.solver_parameters.certainty_threshold = 0.1
 
-        self.project.solver.detect_split_merge_cases()
+
         # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
 
         # i = 1
@@ -269,10 +282,10 @@ class BackgroundComputer:
             if ch:
                 if ch_is_end:
                     if v.in_degree() > 1:
-                        print "END, DEGREE > 1"
+                        print "END, DEGREE > 1", self.project.gm.region(v).frame_
                 else:
                     if v.out_degree() > 1:
-                        print "BEGINNING, DEGREE > 1"
+                        print "BEGINNING, DEGREE > 1", self.project.gm.region(v).frame_
 
 
         # self.solver.simplify(rules=[self.solver.adaptive_thre

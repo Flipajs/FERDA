@@ -569,12 +569,13 @@ class Solver:
         return v_t_minus, v_t, v_t_plus
 
     def add_virtual_region(self, region):
+        self.project.rm.add(region)
         vertex = self.project.gm.add_vertex(region)
 
         r_t_minus, r_t, r_t_plus = self.get_vertices_around_t(region.frame_)
 
-        self.add_edges_(r_t_minus, [vertex])
-        self.add_edges_([vertex], r_t_plus)
+        self.project.gm.add_edges_(r_t_minus, [vertex])
+        self.project.gm.add_edges_([vertex], r_t_plus)
 
     # def remove_vertex(self, vertex):
     #     affected = []

@@ -70,7 +70,7 @@ class RegionReconstruction(QtGui.QWidget):
         if self.save_gt.isChecked():
             import cPickle as pickle
             with open(self.project.working_directory+'/'+self.out_name.text()+'.pkl', 'wb') as f:
-                pickle.dump(gt_trajectories(frames), f, -1)
+                pickle.dump(gt_trajectories(self.project, frames), f, -1)
 
         print "done"
 

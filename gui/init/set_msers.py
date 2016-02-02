@@ -129,7 +129,14 @@ class SetMSERs(QtGui.QWidget):
         self.region_min_intensity.valueChanged.connect(self.val_changed)
         self.bottom_row.addRow('region min intensity', self.region_min_intensity)
 
-        self.random_frame = QtGui.QPushButton('random frame')
+        self.frame_number = QtGui.QSpinBox()
+        self.frame_number.setMinimum(-1)
+        self.frame_number.setValue(-1)
+        self.frame_number.setMaximum(10000000)
+
+        self.bottom_row.addRow('frame (-1 = random)', self.frame_number)
+
+        self.random_frame = QtGui.QPushButton('go 2 frame')
         self.random_frame.clicked.connect(self.choose_random_frame)
         self.bottom_row.addRow('', self.random_frame)
 
@@ -137,7 +144,10 @@ class SetMSERs(QtGui.QWidget):
         self.show()
 
     def choose_random_frame(self):
-        im = self.vid.random_frame()
+        if self.frame_number.value() == -1:
+            im = self.vid.random_frame()
+        else:
+            im = self.vid.get_frame(self.frame_number.value())
 
         if self.project.bg_model:
             im = self.project.bg_model.bg_subtraction(im)
@@ -173,7 +183,7 @@ class SetMSERs(QtGui.QWidget):
         for r, id in zip(msers, range(len(msers))):
             if self.project.stats:
                 prob = self.project.stats.antlikeness_svm.get_prob(r)
-                if prob[1] < self.project.solver_parameters.antlikeness_threshold * 0.5:
+                if prob[1] < self.project.solver_parameters.antlikeness_threshold:
                     continue
 
             cont = get_contour(r.pts())
@@ -214,10 +224,13 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
 
-    # proj.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
-    proj.video_paths = ['/Users/flipajs/Downloads/fullf9c5test.avi']
+    proj.load('/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj')
+    # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
     proj.arena_model = None
     proj.bg_model = None
+
+
+
     # proj.video_paths = '/home/flipajs/Downloads/Camera 1_biglense1.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
@@ -227,6 +240,11 @@ if __name__ == "__main__":
     ex.raise_()
     ex.showMaximized()
     ex.activateWindow()
+
+
+    ex.mser_min_margin.setValue(proj.mser_parameters.min_margin)
+    ex.mser_min_area.setValue(proj.mser_parameters.min_area)
+    ex.mser_max_area.setValue(proj.mser_parameters.max_area)
 
     app.exec_()
     app.deleteLater()

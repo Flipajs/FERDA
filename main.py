@@ -35,7 +35,7 @@ if is_flipajs_pc():
     # project.load('/Users/flipajs/Documents/wd/C210_2/C210.fproj')
     # ex.widget_control('load_project', project)
 
-    project.load('/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj')
+    project.load('/Users/flipajs/Documents/wd/GT/C210/C210.fproj')
     ex.widget_control('load_project', project)
 
     # project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')

@@ -68,10 +68,19 @@ class VisLoader:
         else:
             print "No project set!"
 
-    def prepare_vertices(self):
+    def prepare_vertices(self, frames):
         import time
         time1 = time.time()
-        self.vertices = set(self.graph_manager.get_all_relevant_vertices())
+        if frames is None:
+            self.vertices = set(self.graph_manager.get_all_relevant_vertices())
+        else:
+            self.vertices = []
+
+            for f in frames:
+                self.vertices.extend(self.graph_manager.get_vertices_in_t(f))
+
+            self.vertices = set(self.vertices)
+
         time2 = time.time()
         # s = set(self.graph_manager.get_all_relevant_vertices())
         # i = 100
@@ -128,17 +137,19 @@ class VisLoader:
         ch = self.project.gm.is_chunk(vertex)
         ch_info = str(ch)
 
+        antlikeness = self.project.stats.antlikeness_svm.get_prob(region)[1]
+
         # TODO
         # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
         #         region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
-        return "Centroid = %s\nArea = %i\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (str(region.centroid()),
-                region.area(), region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
+        return "Centroid = %s\nArea = %i\nAntlikeness = %.3f\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % \
+               (str(region.centroid()), region.area(), antlikeness, region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
 
     def get_edge_info(self, edge):
         return "Type = {0}\nSureness = {1}".format(edge[2], edge[3])
 
-    def visualise(self):
-        self.prepare_vertices()
+    def visualise(self, frames=None):
+        self.prepare_vertices(frames)
         # print("Preparing nodes...")
         self.prepare_nodes()
         # print("Preparing edges...")
@@ -165,6 +176,7 @@ if __name__ == '__main__':
     l1.set_relative_margin(1)
     # l1.set_width(60)
     # l1.set_height(60)
+    # l1.visualise(range(300, 360))
     l1.visualise()
     app.exec_()
     cv2.waitKey(0)

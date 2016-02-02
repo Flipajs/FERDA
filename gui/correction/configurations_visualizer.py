@@ -82,6 +82,16 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         w = QtGui.QWidget()
         w.setLayout(QtGui.QHBoxLayout())
 
+        self.frame_number = QtGui.QSpinBox()
+        self.frame_number.setMinimum(0)
+        self.frame_number.setMaximum(100000000)
+
+        self.go_to_frame_b = QtGui.QPushButton('go to frame')
+        self.go_to_frame_b.clicked.connect(self.go_to_frame)
+
+        w.layout().addWidget(self.frame_number)
+        w.layout().addWidget(self.go_to_frame_b)
+
         self.order_by_sb = QtGui.QComboBox()
         self.order_by_sb.addItem('frame')
         self.order_by_sb.addItem('chunk length')
@@ -90,6 +100,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         w.layout().addWidget(self.order_by_sb)
 
         return w
+
+    def go_to_frame(self):
+        self.set_active_node_in_t(self.frame_number.value())
+        self.next_case()
 
     def set_nodes_queue(self, nodes):
         for n in nodes:
@@ -196,11 +210,22 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
     def set_active_node_in_t(self, t):
         nodes = []
-        while len(nodes) == 0:
-            nodes = map(int, self.project.gm.get_vertices_in_t(t))
-            t += 1
+        t_ = t
+        while len(nodes) == 0 and t_ - t < 100:
+            nodes = map(int, self.project.gm.get_vertices_in_t(t_))
+            t_ += 1
 
-        self.active_node_id = nodes[0]
+        if len(nodes) == 0:
+            return
+
+        pairs = self.project.gm.all_vertices_and_regions()
+        pairs = self.order_pairs_(pairs)
+
+        for i in range(len(pairs)):
+            if pairs[i][0] == nodes[0]:
+                self.active_node_id = i
+                break
+
 
     def next_case(self, move_to_different_case=False):
         if move_to_different_case:
@@ -467,7 +492,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                     self.project.rm.add(r)
 
                 self.solver.merged(result, self.active_cw.active_node, t_reversed)
-
+            
             self.next_case()
 
     def partially_confirm(self):

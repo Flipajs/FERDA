@@ -62,6 +62,11 @@ class Antlikeness():
 
         return prob[0]
 
+    def get_class(self, region, img_gray=None):
+        x = self.get_x(region, img_gray)
+
+        self.svm_model.decision_function(x)
+
 class DummyAntlikeness():
     def learn(self):
         pass

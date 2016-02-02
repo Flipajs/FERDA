@@ -161,3 +161,16 @@ def children_filter(regions, indexes):
             ids.append(r_id)
 
     return ids
+
+
+def antlikeness_filter(svm, thresh, regions, indexes):
+    ids = []
+    for r_id in indexes:
+        p = svm.get_prob(regions[r_id])[1]
+
+        if p > thresh:
+            ids.append(r_id)
+
+    return ids
+
+

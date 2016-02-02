@@ -35,7 +35,7 @@ def test_project(gt_f, project_f, threshold):
 
 if __name__ == "__main__":
     test_project(
-        '/Users/flipajs/Documents/wd/GT/C210_GT/out_regions.pkl',
-        '/Users/flipajs/Documents/wd/GT/C210_GT/C210.fproj',
+        '/Users/flipajs/Documents/wd/GT/C210_300_GT/out_regions.pkl',
+        '/Users/flipajs/Documents/wd/GT/C210_300_test/C210.fproj',
         1
                  )
