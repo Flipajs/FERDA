@@ -545,7 +545,6 @@ class CaseWidget(QtGui.QWidget):
 
     def get_im(self, n):
         r = self.project.gm.region(n)
-        print r.frame_, self.frame_t
         im = self.frame_cache[r.frame_-self.frame_t].copy()
 
         vis = draw_points_crop(im, r.pts(), color=self.get_node_color(n), square=True)

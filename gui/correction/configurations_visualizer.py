@@ -20,6 +20,7 @@ from core.settings import Settings as S_
 import math
 from gui.view.graph_visualizer import call_visualizer
 from gui.loading_widget import LoadingWidget
+from fitting_threading_manager import FittingThreadingManager
 
 
 class ConfigurationsVisualizer(QtGui.QWidget):
@@ -77,6 +78,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.order_by_sb = None
         self.tool_w = self.create_tool_w()
+        self.fitting_tm = FittingThreadingManager()
+
 
     def create_tool_w(self):
         w = QtGui.QWidget()
@@ -234,27 +237,29 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         pairs = self.project.gm.all_vertices_and_regions()
         pairs = self.order_pairs_(pairs)
 
+        if self.active_node_id in self.fitting_tm.locked_vertices:
+            self.next_case(True)
+            print self.active_node_id
+            return
+
         if self.active_node_id < len(pairs):
             v_id = pairs[self.active_node_id][0]
             vertex = self.project.gm.g.vertex(v_id)
             r = pairs[self.active_node_id][1]
             if v_id in self.solver.ignored_nodes:
-                self.active_node_id += 1
-                self.next_case()
+                self.next_case(True)
                 return
 
             # test end
             if r.frame_ == self.project.gm.end_t:
-                self.active_node_id += 1
-                self.next_case()
+                self.next_case(True)
                 return
 
             # test beginning
             if r.frame_ == 0:
                 ch, _ = self.project.gm.is_chunk(vertex)
                 if ch:
-                    self.active_node_id += 1
-                    self.next_case()
+                    self.next_case(True)
                     return
 
             # test if it is different cc:
@@ -274,8 +279,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             # add new widget
             nodes_groups = self.project.gm.get_cc_from_vertex(vertex)
             if len(nodes_groups) == 0:
-                self.active_node_id += 1
-                self.next_case()
+                self.next_case(True)
                 return
 
             config = self.best_greedy_config(nodes_groups)
@@ -378,30 +382,30 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def confirm_cc(self):
         self.active_cw.confirm_clicked()
 
-    def fitting_get_model(self, t_reversed, chunk=None):
-        region = self.project.gm.region(self.active_cw.active_node)
-
-        merged_t = region.frame() - self.active_cw.frame_t
-        model_t = merged_t + 1 if t_reversed else merged_t - 1
-
-        objects = []
-        vertices = []
-
-        if len(self.active_cw.vertices_groups[model_t]) > 0 and len(self.active_cw.vertices_groups[merged_t]) > 0:
-            t1_ = self.active_cw.vertices_groups[model_t]
-
-            for c1 in t1_:
-                vertices.append(c1)
-                a = deepcopy(self.project.gm.region(c1))
-                self.project.rm.add(a)
-                if t_reversed:
-                    a.frame_ -= 1
-                else:
-                    a.frame_ += 1
-
-                objects.append(a)
-
-        return objects, vertices
+    # def fitting_get_model(self, t_reversed, chunk=None):
+    #     region = self.project.gm.region(self.active_cw.active_node)
+    #
+    #     merged_t = region.frame() - self.active_cw.frame_t
+    #     model_t = merged_t + 1 if t_reversed else merged_t - 1
+    #
+    #     objects = []
+    #     vertices = []
+    #
+    #     if len(self.active_cw.vertices_groups[model_t]) > 0 and len(self.active_cw.vertices_groups[merged_t]) > 0:
+    #         t1_ = self.active_cw.vertices_groups[model_t]
+    #
+    #         for c1 in t1_:
+    #             vertices.append(c1)
+    #             a = deepcopy(self.project.gm.region(c1))
+    #             self.project.rm.add(a)
+    #             if t_reversed:
+    #                 a.frame_ -= 1
+    #             else:
+    #                 a.frame_ += 1
+    #
+    #             objects.append(a)
+    #
+    #     return objects, vertices
 
     def fitting(self, t_reversed=False, one_step=False):
         if self.active_cw.active_node:
@@ -415,85 +419,123 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             chunk, _ = self.project.gm.is_chunk(vertex)
 
             if chunk:
-                print "FITTING WHOLE CHUNK, WAIT PLEASE"
-                model = None
+                # pivot = self.active_cw.active_node
+                # self.active_node_id += 5
+                #
+                # model, _ = fitting_get_model(self.project, t_reversed, self.active_cw)
+                # region = self.project.gm.region(self.active_cw.active_node)
+                #
+                # ft = FittingThread(region, model, pivot, 10)
+                # ft.proc_done.connect(self.fitting_thread_finished)
+                # ft.start()
 
-                q = chunk.pop_last if t_reversed else chunk.pop_first
 
-                f = None
 
-                i = 0
-                # while chunk.length() > 1:
-                while not chunk.is_empty():
-                    print "LEN: ", len(chunk.nodes_)
-                    merged_vertex = q(self.project.gm)
+                # print "STARTING CHUNK FITTING"
+                #
+                # model = None
+                #
+                # q = chunk.pop_last if t_reversed else chunk.pop_first
+                #
+                # f = None
+                #
+                # i = 0
+                # # while chunk.length() > 1:
+                # while not chunk.is_empty():
+                #     print "LEN: ", len(chunk.nodes_)
+                #     merged_vertex = q(self.project.gm)
+                #
+                #     if chunk.is_empty():
+                #         print "empty"
+                #
+                #     merged = self.project.gm.region(merged_vertex)
+                #     if not merged:
+                #         break
+                #
+                #     # TODO: settings, safe break
+                #     if i > 20:
+                #         # TODO: reconnect last result with chunk
+                #         break
+                #
+                #     if not model:
+                #         model, vertices = fitting_get_model(self.project, t_reversed, self.active_cw)
+                #     else:
+                #         new_model = []
+                #         for r in model:
+                #             # it is necessary to create new copies of regions
+                #             new_r = deepcopy(r)
+                #             self.project.rm.add(new_r)
+                #
+                #             new_model.append(new_r)
+                #
+                #         model = new_model
+                #
+                #     # TODO : add to settings
+                #     if f is None:
+                #         f = Fitting(merged, model, num_of_iterations=10)
+                #     else:
+                #         f.region = merged
+                #         from core.region.distance_map import DistanceMap
+                #         f.d_map_region = DistanceMap(merged.pts())
+                #
+                #         for a in f.animals:
+                #             a.frame_ += 1
+                #
+                #     result = f.fit()
+                #     for r in result:
+                #         self.project.rm.add(r)
+                #
+                #     # it is important to call deepcopy before merged_chunk, where pts_ are rounded...
+                #     model = deepcopy(result)
+                #
+                #     print i
+                #     vertices = self.solver.merged_chunk(vertices, result, merged_vertex, t_reversed, chunk)
+                #
+                #     for m in model:
+                #         m.frame_ += -1 if t_reversed else 1
+                #
+                #     i += 1
+                #
+                # print "CHUNK FINISHED"
 
-                    if chunk.is_empty():
-                        print "empty"
-
-                    merged = self.project.gm.region(merged_vertex)
-                    if not merged:
-                        break
-
-                    # TODO: settings, safe break
-                    if i > 20:
-                        # TODO: reconnect last result with chunk
-                        break
-
-                    if not model:
-                        model, vertices = self.fitting_get_model(t_reversed)
-                    else:
-                        new_model = []
-                        for r in model:
-                            # it is necessary to create new copies of regions
-                            new_r = deepcopy(r)
-                            self.project.rm.add(new_r)
-
-                            new_model.append(new_r)
-
-                        model = new_model
-
-                    # TODO : add to settings
-                    if f is None:
-                        f = Fitting(merged, model, num_of_iterations=10)
-                    else:
-                        f.region = merged
-                        from core.region.distance_map import DistanceMap
-                        f.d_map_region = DistanceMap(merged.pts())
-
-                        for a in f.animals:
-                            a.frame_ += 1
-
-                    result = f.fit()
-                    for r in result:
-                        self.project.rm.add(r)
-
-                    # it is important to call deepcopy before merged_chunk, where pts_ are rounded...
-                    model = deepcopy(result)
-
-                    print i
-                    vertices = self.solver.merged_chunk(vertices, result, merged_vertex, t_reversed, chunk)
-
-                    for m in model:
-                        m.frame_ += -1 if t_reversed else 1
-
-                    if one_step:
-                        break
-
-                    i += 1
-
-                print "CHUNK FINISHED"
+                # regions_before_chunk = map(vertices_before_chunk, self.project.gm.region)
+                # chunk_regions = map(chunk_vertices, self.project.gm.region)
+                #
+                # # TODO: compute increment number... 2 + start_n.in_degree + end_n.out_degree
+                # # + maybe the number of pop nodes
+                # self.active_node_id += 20
+                #
+                # self.ft = FittingThread(self.project, regions_before_chunk, chunk_regions)
+                # self.ft.proc_done.connect(partial(self.fitting_thread_finished, self.active_cw))
+                # # self.loading_thread.part_done.connect(self.loading_w.update_progress)
+                #
+                # self.ft.start()
+                ch_start = self.project.gm.g.vertex(chunk.start_vertex_id())
+                ch_end = self.project.gm.g.vertex(chunk.end_vertex_id())
+                # self.active_node_id += chunk.length() + ch_start.in_degree() + ch_end.out_degree()
+                self.fitting_tm.add_chunk_session(self.project, self.fitting_thread_finished, chunk)
             else:
-                model, _ = self.fitting_get_model(t_reversed)
-                region = self.project.gm.region(self.active_cw.active_node)
-                f = Fitting(region, model, num_of_iterations=10)
-                result = f.fit()
-                for r in result:
-                    self.project.rm.add(r)
+                pivot = self.project.gm.g.vertex(self.active_cw.active_node)
+                # self.active_node_id += 2 + pivot.in_degree() + pivot.out_degree()
 
-                self.solver.merged(result, self.active_cw.active_node, t_reversed)
-            
+                # model = [v for v in pivot.in_neighbours]
+                model = map(self.project.gm.region, pivot.in_neighbours())
+                model = map(deepcopy, model)
+                for m in model: m.frame_ += 1
+
+                region = self.project.gm.region(self.active_cw.active_node)
+
+                self.fitting_tm.add_simple_session(self.fitting_thread_finished, region, model, pivot)
+
             self.next_case()
+
+    def fitting_thread_finished(self, result, pivot, s_id, others):
+        for r in result:
+            self.project.rm.add(r)
+
+        self.solver.merged(result, pivot, False)
+        if s_id > -1:
+            self.fitting_tm.release_session(s_id)
 
     def partially_confirm(self):
         if self.active_cw.active_node:
