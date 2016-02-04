@@ -1,12 +1,20 @@
 from fitting_thread import FittingThread, FittingThreadChunk
 from copy import deepcopy
+from PyQt4.QtCore import QProcess
+import sys, os
+from functools import partial
+from PyQt4 import QtCore
+import cPickle as pickle
+from core.region.fitting import Fitting
 
 
 class FittingSession:
-    def __init__(self, id, fitting_thread):
+    def __init__(self, id, fitting_thread, pivot, callback):
         self.id = id
         self.locked_vertices = []
-        self.ft = fitting_thread
+        self.fp = fitting_thread
+        self.pivot = pivot
+        self.callback = callback
 
 
 class FittingSessionChunk(FittingSession):
@@ -14,7 +22,7 @@ class FittingSessionChunk(FittingSession):
         # super(self.__class__, self).__init__(id, None)
         self.id = id
         self.locked_vertices = []
-        self.ft = []
+        self.fp = []
 
         self.project = project
         self.step_callback = step_callback
@@ -23,25 +31,55 @@ class FittingSessionChunk(FittingSession):
         self.ch_vertices = ch_vertices
         self.vertices_after_chunk = vertices_after_chunk
 
+    def get_file_name(self):
+        return self.project.working_directory+'/temp/sess_data_'+str(self.id)+'.pkl'
+
+    def on_process_error_ready(self, s_id):
+        print s_id, self.fp[-1].readAllStandardError().data()
+
     def start(self):
         merged = self.ch_regions[0]
-        pivot = self.ch_vertices[0]
+        self.pivot = self.ch_vertices[0]
         self.ch_regions = self.ch_regions[1:]
         self.ch_vertices = self.ch_vertices[1:]
 
         model = deepcopy(self.model)
         for m in model: m.frame_ += 1
 
-        ft = FittingThread(merged, model, pivot, self.id)
-        self.ft.append(ft)
-        self.ft[-1].proc_done.connect(self.process_next)
-        self.ft[-1].start()
 
-    def process_next(self, result, pivot, s_id, fitting):
+        fp = QProcess()
+
+        fp.finished.connect(partial(self.process_next))
+        fp.readyReadStandardError.connect(partial(self.on_process_error_ready, self.id))
+
+        file_name = self.get_file_name()
+
+        f = Fitting(merged, model)
+        with open(file_name, 'wb') as f_:
+            pickle.dump({'fitting': f}, f_, -1)
+
+        ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/region/fitting_script_chunk.py" '+str(self.id)+' "'+file_name+'"'
+
+        self.fp.append(fp)
+        self.fp[-1].start(ex_str)
+
+    def process_next(self):
+        file_name = self.get_file_name()
+
+        pivot = self.pivot
+        s_id = self.id
+
+        with open(file_name, 'rb') as f:
+            data = pickle.load(f)
+
+        result = data['results']
+        fitting = data['fitting']
+
         if len(self.ch_regions) == 0:
             # reconnect the end...
             # self.project.gm.add_edges_()
 
+            os.remove(file_name)
             self.step_callback(result, pivot, s_id, None)
         else:
             # -s_id is a flag - do not release this session
@@ -51,7 +89,7 @@ class FittingSessionChunk(FittingSession):
             self.step_callback(result, pivot, -s_id, None)
 
             merged = self.ch_regions[0]
-            pivot = self.ch_vertices[0]
+            self.pivot = self.ch_vertices[0]
             self.ch_regions = self.ch_regions[1:]
             self.ch_vertices = self.ch_vertices[1:]
 
@@ -62,24 +100,46 @@ class FittingSessionChunk(FittingSession):
             for a in fitting.animals:
                 a.frame_ += 1
 
-            ft = FittingThreadChunk(pivot, self.id, fitting)
-            # ft = FittingThread(merged, model, pivot, self.id)
-            self.ft.append(ft)
-            self.ft[-1].proc_done.connect(self.process_next)
-            self.ft[-1].start()
+            fp = QProcess()
+
+            fp.finished.connect(partial(self.process_next))
+            fp.readyReadStandardError.connect(partial(self.on_process_error_ready, s_id))
+
+            with open(file_name, 'wb') as f_:
+                pickle.dump({'fitting': fitting}, f_, -1)
+
+            ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/region/fitting_script_chunk.py" '+str(self.id)+' "'+file_name+'"'
+
+            self.fp.append(fp)
+            self.fp[-1].start(ex_str)
 
 
-class FittingThreadingManager():
+class FittingThreadingManager:
     def __init__(self):
         self.locked_vertices = set()
         self.fitting_sessions = {}
         self.session_id = 1
 
-    def add_simple_session(self, done_callback, region, model, pivot):
+    def get_file_name(self, project, s_id):
+        return project.working_directory+'/temp/sess_data_'+str(s_id)+'.pkl'
+
+    def add_simple_session(self, done_callback, region, model, pivot, project):
         s_id = self.session_id
         self.session_id += 1
 
-        fs = FittingSession(s_id, FittingThread(region, model, pivot, s_id))
+        fp = QProcess()
+
+        fp.finished.connect(partial(self.on_finished, s_id, project))
+        fp.readyReadStandardError.connect(partial(self.on_process_error_ready, s_id))
+
+        file_name = self.get_file_name(project, s_id)
+
+        with open(file_name, 'wb') as f:
+            pickle.dump({'merged': region, 'model': model}, f, -1)
+
+        ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/region/fitting_script.py" '+str(s_id)+' "'+file_name+'"'
+
+        fs = FittingSession(s_id, fp, pivot, done_callback)
         fs.locked_vertices.extend(list(set(pivot.in_neighbours())))
         fs.locked_vertices.append(pivot)
         fs.locked_vertices.extend(list(set(pivot.out_neighbours())))
@@ -88,15 +148,28 @@ class FittingThreadingManager():
         for v in fs.locked_vertices:
             self.locked_vertices.add(int(v))
 
-        fs.ft.proc_done.connect(done_callback)
-        fs.ft.start()
+        fs.fp.start(ex_str)
 
         print "STARTING ", s_id
+
+    def on_finished(self, s_id, project):
+        file_path = self.get_file_name(project, s_id)
+        with open(file_path, 'rb') as f:
+            results = pickle.load(f)
+
+        os.remove(file_path)
+
+        pivot = self.fitting_sessions[s_id].pivot
+        self.fitting_sessions[s_id].callback(results, pivot, s_id, None)
+
+    def on_process_error_ready(self, s_id):
+        print s_id, self.fitting_sessions[s_id].fp.readAllStandardError().data()
 
     def release_session(self, s_id):
         fs = self.fitting_sessions[s_id]
         for v in fs.locked_vertices:
-            self.locked_vertices.remove(int(v))
+            if int(v) in self.locked_vertices:
+                self.locked_vertices.remove(int(v))
 
         print "RELEASING: ", s_id
         del self.fitting_sessions[s_id]
@@ -111,9 +184,6 @@ class FittingThreadingManager():
         chunk_vertices = []
         while chunk.length() > 0:
             chunk_vertices.append(chunk.pop_first(project.gm))
-
-
-
 
         s_id = self.session_id
         self.session_id += 1
@@ -139,31 +209,3 @@ class FittingThreadingManager():
         self.fitting_sessions[s_id].locked_vertices.extend(vertices)
         for v in vertices:
             self.locked_vertices.add(v)
-
-
-# def fitting_get_model(project, pivot):
-#     region = project.gm.region(active_cw.active_node)
-#
-#     merged_t = region.frame() - active_cw.frame_t
-#     model_t = merged_t - 1
-#
-#     objects = []
-#     vertices = []
-#
-#     if len(active_cw.vertices_groups[model_t]) > 0 and len(active_cw.vertices_groups[merged_t]) > 0:
-#         t1_ = active_cw.vertices_groups[model_t]
-#
-#         for c1 in t1_:
-#             vertices.append(c1)
-#             a = deepcopy(project.gm.region(c1))
-#             project.rm.add(a)
-#
-#             a.frame_ += 1
-#
-#             objects.append(a)
-#
-#     return objects, vertices
-
-
-
-

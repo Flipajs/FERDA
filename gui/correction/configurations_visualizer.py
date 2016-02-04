@@ -80,6 +80,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.tool_w = self.create_tool_w()
         self.fitting_tm = FittingThreadingManager()
 
+        self.fitting_finished_mutex = QtCore.QMutex()
+
 
     def create_tool_w(self):
         w = QtGui.QWidget()
@@ -101,6 +103,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.order_by_sb.currentIndexChanged.connect(self.next_case)
         w.layout().addWidget(QtGui.QLabel('order by: '))
         w.layout().addWidget(self.order_by_sb)
+
+        self.num_processes_label = QtGui.QLabel('0')
+        w.layout().addWidget(self.num_processes_label)
 
         return w
 
@@ -389,31 +394,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def confirm_cc(self):
         self.active_cw.confirm_clicked()
 
-    # def fitting_get_model(self, t_reversed, chunk=None):
-    #     region = self.project.gm.region(self.active_cw.active_node)
-    #
-    #     merged_t = region.frame() - self.active_cw.frame_t
-    #     model_t = merged_t + 1 if t_reversed else merged_t - 1
-    #
-    #     objects = []
-    #     vertices = []
-    #
-    #     if len(self.active_cw.vertices_groups[model_t]) > 0 and len(self.active_cw.vertices_groups[merged_t]) > 0:
-    #         t1_ = self.active_cw.vertices_groups[model_t]
-    #
-    #         for c1 in t1_:
-    #             vertices.append(c1)
-    #             a = deepcopy(self.project.gm.region(c1))
-    #             self.project.rm.add(a)
-    #             if t_reversed:
-    #                 a.frame_ -= 1
-    #             else:
-    #                 a.frame_ += 1
-    #
-    #             objects.append(a)
-    #
-    #     return objects, vertices
-
     def fitting(self, t_reversed=False, one_step=False):
         if self.active_cw.active_node:
             self.project.log.add(LogCategories.USER_ACTION,
@@ -425,6 +405,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             vertex = self.active_cw.active_node
             chunk, _ = self.project.gm.is_chunk(vertex)
 
+            val = int(float(self.num_processes_label.text()))
+            self.num_processes_label.setText(str(val+1))
+
             if chunk:
                 self.fitting_tm.add_chunk_session(self.project, self.fitting_thread_finished, chunk)
             else:
@@ -435,7 +418,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
                 region = self.project.gm.region(self.active_cw.active_node)
 
-                self.fitting_tm.add_simple_session(self.fitting_thread_finished, region, model, pivot)
+                self.fitting_tm.add_simple_session(self.fitting_thread_finished, region, model, pivot, self.project)
 
             self.next_case()
 
@@ -449,7 +432,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.fitting_tm.add_lock(-s_id, new_vertices)
 
         if s_id > -1:
+            self.fitting_finished_mutex.lock()
             self.fitting_tm.release_session(s_id)
+            val = int(float(self.num_processes_label.text()))
+            self.num_processes_label.setText(str(val-1))
+            self.fitting_finished_mutex.unlock()
 
     def partially_confirm(self):
         if self.active_cw.active_node:
