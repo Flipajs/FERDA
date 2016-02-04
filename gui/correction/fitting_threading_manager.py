@@ -44,11 +44,11 @@ class FittingSessionChunk(FittingSession):
 
             self.step_callback(result, pivot, s_id, None)
         else:
-            # -1 is a flag - do not release this session
+            # -s_id is a flag - do not release this session
 
             # it is important to call deepcopy before merged_chunk, where pts_ are rounded...
             model = deepcopy(result)
-            self.step_callback(result, pivot, -1, None)
+            self.step_callback(result, pivot, -s_id, None)
 
             merged = self.ch_regions[0]
             pivot = self.ch_vertices[0]
@@ -73,16 +73,16 @@ class FittingThreadingManager():
     def __init__(self):
         self.locked_vertices = set()
         self.fitting_sessions = {}
-        self.session_id = 0
+        self.session_id = 1
 
     def add_simple_session(self, done_callback, region, model, pivot):
         s_id = self.session_id
         self.session_id += 1
 
         fs = FittingSession(s_id, FittingThread(region, model, pivot, s_id))
-        fs.locked_vertices.extend(pivot.in_neighbours())
+        fs.locked_vertices.extend(list(set(pivot.in_neighbours())))
         fs.locked_vertices.append(pivot)
-        fs.locked_vertices.extend(pivot.out_neighbours())
+        fs.locked_vertices.extend(list(set(pivot.out_neighbours())))
 
         self.fitting_sessions[s_id] = fs
         for v in fs.locked_vertices:
@@ -105,12 +105,14 @@ class FittingThreadingManager():
         ch_s = project.gm.g.vertex(chunk.start_vertex_id())
         ch_e = project.gm.g.vertex(chunk.end_vertex_id())
 
-        vertices_before_chunk = [v for v in ch_s.in_neighbours()]
+        vertices_before_chunk = list(set([v for v in ch_s.in_neighbours()]))
+        vertices_after_chunk = list(set([v for v in ch_e.out_neighbours()]))
+
         chunk_vertices = []
         while chunk.length() > 0:
             chunk_vertices.append(chunk.pop_first(project.gm))
 
-        vertices_after_chunk = [v for v in ch_e.out_neighbours()]
+
 
 
         s_id = self.session_id
@@ -131,6 +133,12 @@ class FittingThreadingManager():
         fs.start()
 
         print "STARTING ", s_id
+
+    def add_lock(self, s_id, vertices):
+        vertices = map(int, vertices)
+        self.fitting_sessions[s_id].locked_vertices.extend(vertices)
+        for v in vertices:
+            self.locked_vertices.add(v)
 
 
 # def fitting_get_model(project, pivot):

@@ -477,9 +477,10 @@ class Solver:
         is called when fitting is finished...
         """
 
+        new_vertices = []
         for r in new_regions:
             r.pts_ = np.asarray(np.round(r.pts_), dtype=np.uint32)
-            self.project.gm.add_vertex(r)
+            new_vertices.append(self.project.gm.add_vertex(r))
 
         self.project.gm.remove_vertex(replace)
 
@@ -501,6 +502,8 @@ class Solver:
 
         self.project.gm.add_edges_(r_t_minus, r_t)
         self.project.gm.add_edges_(r_t, r_t_plus)
+
+        return new_vertices
 
     def merged_chunk(self, model_vertices, new_regions, replace, t_reversed, chunk):
         """
