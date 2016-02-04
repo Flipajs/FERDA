@@ -13,6 +13,7 @@ FERDA is a multi object tracker developed mainly to meet the needs of biologists
 * [skimage](http://scikit-image.org/docs/dev/api/skimage.html)
 * [PyQt4](https://www.riverbankcomputing.com/software/pyqt/download)
 * [graph_tool](https://graph-tool.skewed.de)
+* [mahotas](https://pypi.python.org/pypi/mahotas)
 
 
 ## Team ##
