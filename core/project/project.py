@@ -86,6 +86,8 @@ class Project:
             pickle.dump(p.__dict__, f, 2)
 
     def save(self):
+        self.save_snapshot()
+
         # BG MODEL
         if self.bg_model:
             if isinstance(self.bg_model, Model):
@@ -128,14 +130,15 @@ class Project:
         #     with open(self.working_directory+'/region_manager.pkl', 'wb') as f:
         #         pickle.dump(self.rm, f, -1)
 
-        # Chunk Manager
-        if self.chm:
-            for _, ch in self.chm.chunks_.iteritems():
-                ch.project = None
+        self.save_chm_(self.working_directory+'/chunk_manager.pkl')
 
-            with open(self.working_directory+'/chunk_manager.pkl', 'wb') as f:
-                pickle.dump(self.chm, f, -1)
+        self.save_gm_(self.working_directory+'/graph_manager.pkl')
 
+        self.save_qsettings()
+
+        self.save_project_file_()
+
+    def save_gm_(self, file_path):
         # Graph Manager
         if self.gm:
             self.gm.project = None
@@ -143,16 +146,35 @@ class Project:
             ac = self.gm.assignment_score
             self.gm.assignment_score = None
 
-            with open(self.working_directory+'/graph_manager.pkl', 'wb') as f:
+            with open(file_path, 'wb') as f:
                 pickle.dump(self.gm, f, -1)
 
             self.gm.project = self
             self.gm.rm = self.rm
             self.gm.assignment_score = ac
 
-        self.save_qsettings()
+    def save_chm_(self, file_path):
+        # Chunk Manager
+        if self.chm:
+            for _, ch in self.chm.chunks_.iteritems():
+                ch.project = None
 
-        self.save_project_file_()
+            with open(file_path, 'wb') as f:
+                pickle.dump(self.chm, f, -1)
+
+    def save_snapshot(self):
+        import time
+        import os
+
+        timestr = time.strftime("%Y%m%d-%H%M%S")
+
+        if not os.path.exists(self.working_directory + '/.auto_save'):
+            os.mkdir(self.working_directory + '/.auto_save')
+
+        self.save_chm_(self.working_directory+'/.auto_save/'+timestr+'__chunk_manager.pkl')
+
+        self.save_gm_(self.working_directory+'/.auto_save/'+timestr+'__graph_manager.pkl')
+
 
     def save_qsettings(self):
         s = QtCore.QSettings('FERDA')
@@ -179,7 +201,7 @@ class Project:
                 except:
                     pass
 
-    def load(self, path):
+    def load(self, path, snapshot=None):
         with open(path, 'rb') as f:
             tmp_dict = pickle.load(f)
 
@@ -235,23 +257,30 @@ class Project:
         except:
             pass
 
-        # Region Manager
-        try:
-            with open(self.working_directory+'/region_manager.pkl', 'rb') as f:
-                self.rm = pickle.load(f)
-        except:
-            pass
+        # # Region Manager
+        # try:
+        #     with open(self.working_directory+'/region_manager.pkl', 'rb') as f:
+        #         self.rm = pickle.load(f)
+        # except:
+        #     pass
+
+        chm_path = self.working_directory+'/chunk_manager.pkl'
+        gm_path = self.working_directory+'/graph_manager.pkl'
+
+        if snapshot:
+            chm_path = snapshot['chm']
+            gm_path = snapshot['gm']
 
         # Chunk Manager
         try:
-            with open(self.working_directory+'/chunk_manager.pkl', 'rb') as f:
+            with open(chm_path, 'rb') as f:
                 self.chm = pickle.load(f)
         except:
             pass
 
         # Graph Manager
         try:
-            with open(self.working_directory+'/graph_manager.pkl', 'rb') as f:
+            with open(gm_path, 'rb') as f:
                 self.gm = pickle.load(f)
                 self.gm.project = self
         except:
@@ -293,7 +322,7 @@ class Project:
         self.solver = Solver(self)
         self.gm.assignment_score = self.solver.assignment_score
 
-        self.rm = RegionManager(db_wd=self.working_directory)
+        self.rm = RegionManager(db_wd=self.working_directory, cache_size_limit=0)
 
         self.gm.project = self
         self.gm.rm = self.rm

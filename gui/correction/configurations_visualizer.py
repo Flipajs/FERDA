@@ -151,7 +151,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             #TODO: get rid of this hack... also in antlikness test in solver.py
             # flag for virtual region
             r.min_intensity_ = -2
-            r.area_ = len(r.pts_)
 
             self.project.log.add(LogCategories.USER_ACTION, ActionNames.NEW_REGION, r)
             self.solver.add_virtual_region(r)
@@ -239,13 +238,21 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         if move_to_different_case:
             self.active_node_id += 1
 
-        pairs = self.project.gm.all_vertices_and_regions()
-        pairs = self.order_pairs_(pairs)
+        # pairs = self.project.gm.all_vertices_and_regions()
+        # pairs = self.order_pairs_(pairs)
 
-        if self.active_node_id < len(pairs):
-            v_id = pairs[self.active_node_id][0]
-            vertex = self.project.gm.g.vertex(v_id)
-            r = pairs[self.active_node_id][1]
+        # if self.active_node_id < len(pairs):
+        if True:
+            # v_id = pairs[self.active_node_id][0]
+            v_id = self.active_node_id
+            try:
+                vertex = self.project.gm.g.vertex(v_id)
+            except:
+                self.next_case(True)
+                return
+
+            # r = pairs[self.active_node_id][1]
+            r = self.project.gm.region(vertex)
             if v_id in self.solver.ignored_nodes:
                 self.next_case(True)
                 return
@@ -423,8 +430,15 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.next_case()
 
     def fitting_thread_finished(self, result, pivot, s_id, others):
+
+        result_ = []
         for r in result:
-            self.project.rm.add(r)
+            r.pts_ = np.asarray(np.round(r.pts_), dtype=np.uint32)
+            r_ = deepcopy(r)
+            self.project.rm.add(r_)
+            result_.append(r_)
+
+        result = result_
 
         new_vertices = self.solver.merged(result, pivot, False)
 

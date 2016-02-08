@@ -53,6 +53,8 @@ class RegionManager:
                 self.id_ = 0
         self.tmp_ids = []
 
+        print "ID: ", self.id_
+
         if isinstance(data, RegionManager):
             newdata = data[:]
             self.add(newdata)
@@ -335,6 +337,7 @@ class RegionManager:
     def prepare_region(self, region):
         if region.pts_rle_ == None:
             region.pts_rle_ = encode_RLE(region.pts_)
+
         tmp_pts = region.pts_
         region.pts_ = None
         data = sql.Binary(pickle.dumps(region, -1))

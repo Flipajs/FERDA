@@ -143,6 +143,8 @@ class Fitting():
             animal.pts_ = np.asarray(np.round(pts_), dtype=np.uint32)
             animal.centroid_ = self.trans_helpers[a_id].centroid
             animal.is_virtual = True
+            animal.area_ = None
+            animal.pts_rle_ = None
 
             results.append(animal)
 

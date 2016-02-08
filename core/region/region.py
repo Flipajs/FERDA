@@ -22,6 +22,7 @@ class Region():
         self.margin_ = -1
         self.min_intensity_ = -1
         self.max_intensity_ = -1
+        self.area_ = None
 
         self.sxx_ = -1
         self.syy_ = -1
@@ -58,14 +59,27 @@ class Region():
 
     def pts_from_rle_(self, data):
         i = 0
-        pts = np.zeros((self.area(), 2), dtype=np.int)
 
-        for row in data:
-            for c in xrange(row['col1'], row['col2'] + 1):
-                pts[i, 0] = row['line']
-                pts[i, 1] = c
+        # do pts allocation if possible
+        if self.area_:
+            pts = np.zeros((self.area(), 2), dtype=np.int)
 
-                i += 1
+            for row in data:
+                for c in xrange(row['col1'], row['col2'] + 1):
+                    pts[i, 0] = row['line']
+                    pts[i, 1] = c
+
+                    i += 1
+
+        else:
+            pts = []
+
+            for row in data:
+                for c in xrange(row['col1'], row['col2'] + 1):
+                    pts.append([row['line'], c])
+                    i += 1
+
+            pts = np.array(pts)
 
         return pts
 
@@ -108,6 +122,9 @@ class Region():
         self.pts_ = np.array(data)
 
     def area(self):
+        if not self.area_:
+            self.area_ = len(self.pts())
+
         return self.area_
 
     def label(self):
@@ -161,23 +178,30 @@ def encode_RLE(pts):
     pts2 = pts - roi.top_left_corner()
     result[pts2[:,0], pts2[:,1]] = 1
 
+    offset_x = roi.top_left_corner()[1]
+    offset_y = roi.top_left_corner()[0]
+
     rle = []
+    area = 0
     for i in range(0, result.shape[0]):
         run = {}
         running = False
         for j in range(0, result.shape[1]):
             if result[i][j] == 1 and not running:
-                run['col1'] = j
-                run['line'] = i
+                run['col1'] = j + offset_x
+                run['line'] = i + offset_y
                 running = True
             if result[i][j] == 0 and running:
-                run['col2'] = j - 1
+                run['col2'] = j - 1 + offset_x
                 rle.append(run)
                 run = {}
                 running = False
+
+            area += 1
         if running:
-            run['col2'] = j - 1
+            run['col2'] = j - 1 + offset_x
             rle.append(run)
+
     """
     print time.time() - t
 

@@ -479,7 +479,6 @@ class Solver:
 
         new_vertices = []
         for r in new_regions:
-            r.pts_ = np.asarray(np.round(r.pts_), dtype=np.uint32)
             new_vertices.append(self.project.gm.add_vertex(r))
 
         self.project.gm.remove_vertex(replace)
@@ -500,8 +499,10 @@ class Solver:
             if not found:
                 raise Exception('new regions not found')
 
-        self.project.gm.add_edges_(r_t_minus, r_t)
-        self.project.gm.add_edges_(r_t, r_t_plus)
+        # self.project.gm.add_edges_(r_t_minus, r_t)
+        # self.project.gm.add_edges_(r_t, r_t_plus)
+        self.project.gm.add_edges_(r_t_minus, new_vertices)
+        self.project.gm.add_edges_(new_vertices, r_t_plus)
 
         return new_vertices
 
