@@ -209,7 +209,7 @@ class BackgroundComputer:
 
         part_num = self.part_num
         # TODO: remove this line
-        part_num = 1
+        part_num = 10
 
         print "merging..."
         # for i in range(part_num):
@@ -310,11 +310,11 @@ class BackgroundComputer:
 
         print ("#CHUNKS: %d") % (len(self.project.chm.chunk_list()))
 
-        with open(self.project.working_directory+'/graph.pkl', 'wb') as f:
-            p = pickle.Pickler(f, -1)
-            p.dump(self.project.gm.g)
-            p.dump(self.project.gm.get_all_relevant_vertices())
-            p.dump(self.project.chm)
+        # with open(self.project.working_directory+'/graph.pkl', 'wb') as f:
+        #     p = pickle.Pickler(f, -1)
+        #     p.dump(self.project.gm.g)
+        #     p.dump(self.project.gm.get_all_relevant_vertices())
+        #     p.dump(self.project.chm)
 
         self.finished_callback(self.solver)
 

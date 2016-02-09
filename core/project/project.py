@@ -169,6 +169,7 @@ class Project:
                 pickle.dump(self.chm, f, -1)
 
     def save_snapshot(self):
+        # print self.snapshot_id, self.active_snapshot
         import os
 
         if not os.path.exists(self.working_directory + '/.auto_save'):
@@ -179,6 +180,7 @@ class Project:
         self.save_gm_(self.working_directory+'/.auto_save/'+str(self.snapshot_id)+'__graph_manager.pkl')
 
         self.snapshot_id += 1
+        self.active_snapshot = -1
 
 
     def save_qsettings(self):
@@ -313,6 +315,8 @@ class Project:
         self.gm.rm = self.rm
         self.gm.update_nodes_in_t_refs()
 
+        self.active_snapshot = -1
+
     def load_snapshot(self, snapshot):
         chm_path = self.working_directory+'/chunk_manager.pkl'
         gm_path = self.working_directory+'/graph_manager.pkl'
@@ -333,6 +337,7 @@ class Project:
             with open(gm_path, 'rb') as f:
                 self.gm = pickle.load(f)
                 self.gm.project = self
+                self.gm.assignment_score = self.solver.assignment_score
         except:
             pass
 
@@ -344,6 +349,8 @@ class Project:
 
         if self.active_snapshot < 0:
             print "No more undo possible!"
+
+        # print "UNDO", self.snapshot_id, self.active_snapshot
 
         self.load_snapshot({'chm': self.working_directory+'/.auto_save/'+str(self.active_snapshot)+'__chunk_manager.pkl',
                            'gm': self.working_directory+'/.auto_save/'+str(self.active_snapshot)+'__graph_manager.pkl'})

@@ -476,8 +476,9 @@ class Solver:
         """
         is called when fitting is finished...
         """
-        replace = list(replace)
-        
+        if not isinstance(replace, list):
+            replace = [replace]
+
         new_vertices = []
         for r in new_regions:
             new_vertices.append(self.project.gm.add_vertex(r))
@@ -486,8 +487,9 @@ class Solver:
         r_t_plus = []
 
         for r in replace:
-            r_t_minus.extend([v for v in r.in_vertices()])
-            r_t_plus.extend([v for v in r.out_vertices()])
+            r = self.project.gm.g.vertex(r)
+            r_t_minus.extend([v for v in r.in_neighbours()])
+            r_t_plus.extend([v for v in r.out_neighbours()])
 
             self.project.gm.remove_vertex(r)
 

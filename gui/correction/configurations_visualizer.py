@@ -234,7 +234,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 self.active_node_id = i
                 break
 
-    def next_case(self, move_to_different_case=False):
+    def next_case(self, move_to_different_case=False, user_action=False):
         if move_to_different_case:
             self.active_node_id += 1
 
@@ -256,19 +256,19 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         r = self.project.gm.region(vertex)
         if v_id in self.solver.ignored_nodes:
-            self.next_case(True)
+            self.next_case(True, user_action)
             return
 
         # test end
         if r.frame_ == self.project.gm.end_t:
-            self.next_case(True)
+            self.next_case(True, user_action)
             return
 
         # test beginning
         if r.frame_ == 0:
             ch, _ = self.project.gm.is_chunk(vertex)
             if ch:
-                self.next_case(True)
+                self.next_case(True, user_action)
                 return
 
         # test if it is different cc:
@@ -276,7 +276,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             for g in self.active_cw.vertices_groups:
                 for vertex_ in g:
                     if vertex == vertex_:
-                        self.next_case(move_to_different_case)
+                        self.next_case(move_to_different_case, user_action)
                         return
 
         # remove previous case (if exists)
@@ -288,16 +288,17 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         # add new widget
         nodes_groups = self.project.gm.get_cc_from_vertex(vertex)
         if len(nodes_groups) == 0:
-            self.next_case(True)
+            self.next_case(True, user_action)
             return
 
         for ng in nodes_groups:
             for n in ng:
                 if int(n) in self.fitting_tm.locked_vertices:
-                    self.next_case(True)
+                    self.next_case(True, user_action)
                     return
 
-        self.project.save_snapshot()
+        if not user_action:
+            self.project.save_snapshot()
 
         config = self.best_greedy_config(nodes_groups)
 
@@ -380,7 +381,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
     def prev_case(self):
         self.move_to_prev_case_()
-        self.next_case(move_to_different_case=False)
+        self.next_case(move_to_different_case=False, user_action=True)
 
     def confirm_cc(self):
         self.active_cw.confirm_clicked()
@@ -434,6 +435,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.fitting_tm.release_session(s_id)
             val = int(float(self.num_processes_label.text()))
             self.num_processes_label.setText(str(val-1))
+            self.project.save_snapshot()
             self.fitting_finished_mutex.unlock()
 
     def partially_confirm(self):
@@ -573,7 +575,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
     def add_actions(self):
         self.next_action = QtGui.QAction('next', self)
-        self.next_action.triggered.connect(partial(self.next_case, True))
+        self.next_action.triggered.connect(partial(self.next_case, True, True))
         self.next_action.setShortcut(S_.controls.next_case)
         self.addAction(self.next_action)
 
@@ -607,15 +609,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.fitting_rev_action.setShortcut(S_.controls.fitting_from_right)
         self.addAction(self.fitting_rev_action)
 
-        # self.new_region_t1_action = QtGui.QAction('new region t1', self)
-        # self.new_region_t1_action.triggered.connect(partial(self.new_region, 0))
-        # self.new_region_t1_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
-        # self.addAction(self.new_region_t1_action)
-        #
-        # self.new_region_t2_action = QtGui.QAction('new region t2', self)
-        # self.new_region_t2_action.triggered.connect(partial(self.new_region, 1))
-        # self.new_region_t2_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
-        # self.addAction(self.new_region_t2_action)
+        self.undo_fitting_action = QtGui.QAction('fitting undo', self)
+        self.undo_fitting_action.triggered.connect(self.undo_fitting)
+        self.undo_fitting_action.setShortcut(S_.controls.undo_fitting)
+        self.addAction(self.undo_fitting_action)
 
         self.remove_region_action = QtGui.QAction('remove region', self)
         self.remove_region_action.triggered.connect(self.remove_region)
@@ -700,4 +697,38 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.d_ = None
 
     def update_content(self):
-        self.next_case()
+        self.next_case(move_to_different_case=False, user_action=True)
+
+    def undo_fitting(self):
+        # try:
+            vertex = self.project.gm.g.vertex(self.active_cw.active_node)
+
+            undo_recipe = self.project.gm.fitting_logger.undo_recipe(vertex)
+
+            vertices_t_minus = []
+            vertices_t_plus = []
+
+            for v in undo_recipe['new_vertices']:
+                v = self.project.gm.g.vertex(v)
+                vertices_t_minus.extend([v_ for v_ in v.in_neighbours()])
+                vertices_t_plus.extend([v_ for v_ in v.out_neighbours()])
+
+                self.project.gm.remove_vertex(v)
+
+            vertices_t_minus = list(set(vertices_t_minus))
+            vertices_t_plus = list(set(vertices_t_plus))
+
+            new_merged_vertices = []
+            for v in undo_recipe['merged_vertices']:
+                v = self.project.gm.g.vertex(v)
+                r = deepcopy(self.project.gm.region(v))
+
+                self.project.rm.add(r)
+                new_merged_vertices.append(self.project.gm.add_vertex(r))
+
+            self.project.gm.add_edges_(vertices_t_minus, new_merged_vertices)
+            self.project.gm.add_edges_(new_merged_vertices, vertices_t_plus)
+
+            self.next_case()
+        # except:
+        #     pass
