@@ -472,37 +472,29 @@ class Solver:
         # all_affected = list(set(all_affected + affected))
         return affected
 
-    def merged(self, new_regions, replace, t_reversed):
+    def merged(self, new_regions, replace, t_reversed=False):
         """
         is called when fitting is finished...
         """
-
+        replace = list(replace)
+        
         new_vertices = []
         for r in new_regions:
             new_vertices.append(self.project.gm.add_vertex(r))
 
-        self.project.gm.remove_vertex(replace)
+        r_t_minus = []
+        r_t_plus = []
 
-        r_t_minus, r_t, r_t_plus = self.get_vertices_around_t(new_regions[0].frame())
+        for r in replace:
+            r_t_minus.extend([v for v in r.in_vertices()])
+            r_t_plus.extend([v for v in r.out_vertices()])
 
+            self.project.gm.remove_vertex(r)
 
-        # remove all
-
-        # TEST
-        for n in new_regions:
-            found = False
-            for r in r_t:
-                if self.project.gm.region(r) == n:
-                    found = True
-                    break
-
-            if not found:
-                raise Exception('new regions not found')
-
-        # self.project.gm.add_edges_(r_t_minus, r_t)
-        # self.project.gm.add_edges_(r_t, r_t_plus)
         self.project.gm.add_edges_(r_t_minus, new_vertices)
         self.project.gm.add_edges_(new_vertices, r_t_plus)
+
+        self.project.gm.fitting_logger.add(new_vertices, r_t_minus, replace)
 
         return new_vertices
 

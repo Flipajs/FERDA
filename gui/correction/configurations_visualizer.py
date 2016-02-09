@@ -238,15 +238,21 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         if move_to_different_case:
             self.active_node_id += 1
 
-        v_id = self.active_node_id
-        try:
-            vertex = self.project.gm.g.vertex(v_id)
-            if not self.project.gm.g.vp['active'][vertex]:
-                self.next_case(True)
-                return
-        except:
-            self.next_case(True)
+        if not self.move_to_next_case_():
+            self.project.save_snapshot()
             return
+
+        v_id = self.active_node_id
+        vertex = self.project.gm.g.vertex(v_id)
+
+        # try:
+        #     vertex = self.project.gm.g.vertex(v_id)
+        #     if not self.project.gm.g.vp['active'][vertex]:
+        #         self.next_case(True)
+        #         return
+        # except:
+        #     self.next_case(True)
+        #     return
 
         r = self.project.gm.region(vertex)
         if v_id in self.solver.ignored_nodes:
@@ -328,6 +334,28 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 config[values[0][1]] = values[0][2]
 
         return config
+
+    def move_to_next_case_(self):
+        for i in xrange(1000):
+            v_id = self.active_node_id
+            try:
+                vertex = self.project.gm.g.vertex(v_id)
+                if self.active_cw is None:
+                    return True
+
+                if self.project.gm.g.vp['active'][vertex]:
+                    for g in self.active_cw.vertices_groups:
+                        for vertex_ in g:
+                            if vertex == vertex_:
+                                continue
+
+                    return True
+            except:
+                pass
+
+            self.active_node_id += 1
+
+        return False
 
     def move_to_prev_case_(self):
         for i in xrange(1000):

@@ -4,6 +4,7 @@ import graph_tool
 from core.log import LogCategories, ActionNames
 import numpy as np
 from scipy.spatial.distance import cdist
+from core.region.fitting_logger import FittingLogger
 
 
 class GraphManager:
@@ -20,6 +21,7 @@ class GraphManager:
         self.major_axis_median = project.stats.major_axis_median
         self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * self.major_axis_median
         self.assignment_score = assignment_score
+        self.fitting_logger = FittingLogger()
 
     def graph_add_properties(self):
         # In these cases the id 0 means unassigned

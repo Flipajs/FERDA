@@ -157,7 +157,7 @@ class TrackerWidget(QtGui.QWidget):
         self.tool.addWidget(step_by_step)
         self.tool_row.addWidget(step_by_step.tool_w)
         # step_by_step.set_active_node_in_t(180)
-        step_by_step.next_case()
+        step_by_step.next_case(True)
 
     def show_global_view(self):
         global_view = GlobalView(self.project, self.solver, show_in_visualizer_callback=self.show_in_visualizer_callback)
