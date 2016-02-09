@@ -47,7 +47,10 @@ class Project:
         self.color_manager = None
         self.log = Log()
         self.solver = None
-        self.version = "3.0.0"
+        self.version = "3.1.0"
+
+        self.snapshot_id = 0
+        self.active_snapshot = -1
 
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
@@ -81,6 +84,9 @@ class Project:
         p.color_manager = self.color_manager
         import time
         p.date_last_modifiaction = time.time()
+
+        p.snapshot_id = self.snapshot_id
+        p.active_snapshot = self.active_snapshot
 
         with open(self.working_directory+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
@@ -163,17 +169,16 @@ class Project:
                 pickle.dump(self.chm, f, -1)
 
     def save_snapshot(self):
-        import time
         import os
-
-        timestr = time.strftime("%Y%m%d-%H%M%S")
 
         if not os.path.exists(self.working_directory + '/.auto_save'):
             os.mkdir(self.working_directory + '/.auto_save')
 
-        self.save_chm_(self.working_directory+'/.auto_save/'+timestr+'__chunk_manager.pkl')
+        self.save_chm_(self.working_directory+'/.auto_save/'+str(self.snapshot_id)+'__chunk_manager.pkl')
 
-        self.save_gm_(self.working_directory+'/.auto_save/'+timestr+'__graph_manager.pkl')
+        self.save_gm_(self.working_directory+'/.auto_save/'+str(self.snapshot_id)+'__graph_manager.pkl')
+
+        self.snapshot_id += 1
 
 
     def save_qsettings(self):
@@ -264,27 +269,7 @@ class Project:
         # except:
         #     pass
 
-        chm_path = self.working_directory+'/chunk_manager.pkl'
-        gm_path = self.working_directory+'/graph_manager.pkl'
-
-        if snapshot:
-            chm_path = snapshot['chm']
-            gm_path = snapshot['gm']
-
-        # Chunk Manager
-        try:
-            with open(chm_path, 'rb') as f:
-                self.chm = pickle.load(f)
-        except:
-            pass
-
-        # Graph Manager
-        try:
-            with open(gm_path, 'rb') as f:
-                self.gm = pickle.load(f)
-                self.gm.project = self
-        except:
-            pass
+        self.load_snapshot(snapshot)
 
         # SAVED CORRECTION PROGRESS
         try:
@@ -327,6 +312,42 @@ class Project:
         self.gm.project = self
         self.gm.rm = self.rm
         self.gm.update_nodes_in_t_refs()
+
+    def load_snapshot(self, snapshot):
+        chm_path = self.working_directory+'/chunk_manager.pkl'
+        gm_path = self.working_directory+'/graph_manager.pkl'
+
+        if snapshot:
+            chm_path = snapshot['chm']
+            gm_path = snapshot['gm']
+
+        # Chunk Manager
+        try:
+            with open(chm_path, 'rb') as f:
+                self.chm = pickle.load(f)
+        except:
+            pass
+
+        # Graph Manager
+        try:
+            with open(gm_path, 'rb') as f:
+                self.gm = pickle.load(f)
+                self.gm.project = self
+        except:
+            pass
+
+    def snapshot_undo(self):
+        if self.active_snapshot < 0:
+            self.active_snapshot = self.snapshot_id - 2
+        else:
+            self.active_snapshot -= 1
+
+        if self.active_snapshot < 0:
+            print "No more undo possible!"
+
+        self.load_snapshot({'chm': self.working_directory+'/.auto_save/'+str(self.active_snapshot)+'__chunk_manager.pkl',
+                           'gm': self.working_directory+'/.auto_save/'+str(self.active_snapshot)+'__graph_manager.pkl'})
+
 
 def dummy_project():
     from core.classes_stats import dummy_classes_stats

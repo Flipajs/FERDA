@@ -238,76 +238,67 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         if move_to_different_case:
             self.active_node_id += 1
 
-        # pairs = self.project.gm.all_vertices_and_regions()
-        # pairs = self.order_pairs_(pairs)
+        v_id = self.active_node_id
+        try:
+            vertex = self.project.gm.g.vertex(v_id)
+            if not self.project.gm.g.vp['active'][vertex]:
+                self.next_case(True)
+                return
+        except:
+            self.next_case(True)
+            return
 
-        # if self.active_node_id < len(pairs):
-        if True:
-            # v_id = pairs[self.active_node_id][0]
-            v_id = self.active_node_id
-            try:
-                vertex = self.project.gm.g.vertex(v_id)
-            except:
+        r = self.project.gm.region(vertex)
+        if v_id in self.solver.ignored_nodes:
+            self.next_case(True)
+            return
+
+        # test end
+        if r.frame_ == self.project.gm.end_t:
+            self.next_case(True)
+            return
+
+        # test beginning
+        if r.frame_ == 0:
+            ch, _ = self.project.gm.is_chunk(vertex)
+            if ch:
                 self.next_case(True)
                 return
 
-            # r = pairs[self.active_node_id][1]
-            r = self.project.gm.region(vertex)
-            if v_id in self.solver.ignored_nodes:
-                self.next_case(True)
-                return
+        # test if it is different cc:
+        if move_to_different_case and self.active_cw:
+            for g in self.active_cw.vertices_groups:
+                for vertex_ in g:
+                    if vertex == vertex_:
+                        self.next_case(move_to_different_case)
+                        return
 
-            # print v_id, len(self.fitting_tm.locked_vertices)
-            # if int(v_id) in self.fitting_tm.locked_vertices:
-            #     self.next_case(True)
-            #     print self.active_node_id
-            #     return
+        # remove previous case (if exists)
+        if self.scenes_widget.layout().count():
+            it = self.scenes_widget.layout().itemAt(0)
+            self.scenes_widget.layout().removeItem(it)
+            it.widget().setParent(None)
 
-            # test end
-            if r.frame_ == self.project.gm.end_t:
-                self.next_case(True)
-                return
+        # add new widget
+        nodes_groups = self.project.gm.get_cc_from_vertex(vertex)
+        if len(nodes_groups) == 0:
+            self.next_case(True)
+            return
 
-            # test beginning
-            if r.frame_ == 0:
-                ch, _ = self.project.gm.is_chunk(vertex)
-                if ch:
+        for ng in nodes_groups:
+            for n in ng:
+                if int(n) in self.fitting_tm.locked_vertices:
                     self.next_case(True)
                     return
 
-            # test if it is different cc:
-            if move_to_different_case and self.active_cw:
-                for g in self.active_cw.vertices_groups:
-                    for vertex_ in g:
-                        if vertex == vertex_:
-                            self.next_case(move_to_different_case)
-                            return
+        self.project.save_snapshot()
 
-            # remove previous case (if exists)
-            if self.scenes_widget.layout().count():
-                it = self.scenes_widget.layout().itemAt(0)
-                self.scenes_widget.layout().removeItem(it)
-                it.widget().setParent(None)
+        config = self.best_greedy_config(nodes_groups)
 
-            # add new widget
-            nodes_groups = self.project.gm.get_cc_from_vertex(vertex)
-            if len(nodes_groups) == 0:
-                self.next_case(True)
-                return
+        self.active_cw = CaseWidget(self.project, nodes_groups, config, self.vid, self)
 
-            for ng in nodes_groups:
-                for n in ng:
-                    if int(n) in self.fitting_tm.locked_vertices:
-                        self.next_case(True)
-                        return
-
-            config = self.best_greedy_config(nodes_groups)
-
-            self.active_cw = CaseWidget(self.project, nodes_groups, config, self.vid, self)
-            # self.active_cw.active_node = None
-
-            self.scenes_widget.layout().addWidget(self.active_cw)
-            self.active_cw.setFocus()
+        self.scenes_widget.layout().addWidget(self.active_cw)
+        self.active_cw.setFocus()
 
     def best_greedy_config(self, nodes_groups):
         config = {}
@@ -338,65 +329,30 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         return config
 
-    def prev_case(self):
-        self.active_node_id = 0
-        self.next_case(move_to_different_case=False)
+    def move_to_prev_case_(self):
+        for i in xrange(1000):
+            self.active_node_id -= 1
 
-    #
-    #
-    # def prev_case(self):
-    #     self.active_node_id -= 1
-    #
-    #     self.nodes = self.solver.g.nodes()
-    #     self.order_nodes()
-    #
-    #     n = self.nodes[self.active_node_id]
-    #
-    #     if n in self.solver.ignored_nodes:
-    #         self.active_node_id -= 1
-    #         self.prev_case()
-    #         return
-    #
-    #     if n.frame_ == self.solver.end_t:
-    #         self.active_node_id -= 1
-    #         self.prev_case()
-    #         return
-    #
-    #     # test beginning
-    #     if n.frame_ == 0:
-    #         is_ch, _, _ = self.solver.is_chunk(n)
-    #         if is_ch:
-    #             self.active_node_id -= 1
-    #             self.prev_case()
-    #             return
-    #
-    #     # test if it is different cc:
-    #     if self.active_cw:
-    #         for g in self.active_cw.vertices_groups:
-    #             for n_ in g:
-    #                 if n == n_:
-    #                     self.prev_case()
-    #                     return
-    #
-    #     # remove previous case (if exists)
-    #     if self.scenes_widget.layout().count():
-    #         it = self.scenes_widget.layout().itemAt(0)
-    #         self.scenes_widget.layout().removeItem(it)
-    #         it.widget().setParent(None)
-    #
-    #     # add new widget
-    #     nodes_groups = self.solver.get_cc_from_node(n)
-    #     if len(nodes_groups) == 0:
-    #         # self.nodes.pop(self.active_node_id)
-    #         self.active_node_id -= 1
-    #         self.prev_case()
-    #         return
-    #
-    #     config = self.best_greedy_config(nodes_groups)
-    #
-    #     self.active_cw = CaseWidget(self.solver.g, self.project, nodes_groups, config, self.vid, self)
-    #     self.active_cw.active_node = None
-    #     self.scenes_widget.layout().addWidget(self.active_cw)
+            v_id = self.active_node_id
+            try:
+                vertex = self.project.gm.g.vertex(v_id)
+                if self.project.gm.g.vp['active'][vertex]:
+                    for g in self.active_cw.vertices_groups:
+                        for vertex_ in g:
+                            if vertex == vertex_:
+                                self.move_to_prev_case_()
+                                return
+
+                    return
+            except:
+                pass
+
+            if self.active_node_id < 0:
+                break
+
+    def prev_case(self):
+        self.move_to_prev_case_()
+        self.next_case(move_to_different_case=False)
 
     def confirm_cc(self):
         self.active_cw.confirm_clicked()

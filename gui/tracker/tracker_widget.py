@@ -60,6 +60,15 @@ class TrackerWidget(QtGui.QWidget):
         self.layout().setContentsMargins(0, 0, 0, 0)
 
     def undo(self):
+        self.project.snapshot_undo()
+
+        tool_w = self.tool.itemAt(0).widget()
+
+        if isinstance(tool_w, ConfigurationsVisualizer):
+            tool_w.update_content()
+
+        return
+
         S_.general.log_graph_edits = False
 
         log = self.solver.project.log
