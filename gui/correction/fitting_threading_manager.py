@@ -182,8 +182,11 @@ class FittingThreadingManager:
         vertices_after_chunk = list(set([v for v in ch_e.out_neighbours()]))
 
         chunk_vertices = []
-        while chunk.length() > 0:
+
+        i = 0
+        while chunk.length() > 0 and i < 10:
             chunk_vertices.append(chunk.pop_first(project.gm))
+            i += 1
 
         s_id = self.session_id
         self.session_id += 1

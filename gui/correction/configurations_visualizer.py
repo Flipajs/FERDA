@@ -107,11 +107,19 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.num_processes_label = QtGui.QLabel('0')
         w.layout().addWidget(self.num_processes_label)
 
+        self.remove_locks_b = QtGui.QPushButton('remove locks')
+        self.remove_locks_b.clicked.connect(self.remove_locks)
+
+        w.layout().addWidget(self.remove_locks_b)
+
         return w
 
     def go_to_frame(self):
         self.set_active_node_in_t(self.frame_number.value())
         self.next_case()
+
+    def remove_locks(self):
+        self.fitting_tm.locked_vertices = set()
 
     def set_nodes_queue(self, nodes):
         for n in nodes:
@@ -330,6 +338,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                     break
 
                 values = sorted(values, key=lambda k: -k[0])
+
                 r1.remove(values[0][1])
                 r2.remove(values[0][2])
                 config[values[0][1]] = values[0][2]
@@ -339,6 +348,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def move_to_next_case_(self):
         for i in xrange(1000):
             v_id = self.active_node_id
+
             try:
                 vertex = self.project.gm.g.vertex(v_id)
                 if self.active_cw is None:
@@ -614,6 +624,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.undo_fitting_action.setShortcut(S_.controls.undo_fitting)
         self.addAction(self.undo_fitting_action)
 
+        self.undo_whole_fitting_action = QtGui.QAction('undo whole fitting', self)
+        self.undo_whole_fitting_action.triggered.connect(self.undo_whole_fitting)
+        self.undo_whole_fitting_action.setShortcut(S_.controls.undo_whole_fitting)
+        self.addAction(self.undo_whole_fitting_action)
+
         self.remove_region_action = QtGui.QAction('remove region', self)
         self.remove_region_action.triggered.connect(self.remove_region)
         self.remove_region_action.setShortcut(S_.controls.remove_region)
@@ -700,35 +715,75 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.next_case(move_to_different_case=False, user_action=True)
 
     def undo_fitting(self):
-        # try:
-            vertex = self.project.gm.g.vertex(self.active_cw.active_node)
+        vertex = self.project.gm.g.vertex(self.active_cw.active_node)
 
-            undo_recipe = self.project.gm.fitting_logger.undo_recipe(vertex)
+        undo_recipe = self.project.gm.fitting_logger.undo_recipe(vertex)
 
-            vertices_t_minus = []
-            vertices_t_plus = []
+        vertices_t_minus = []
+        vertices_t_plus = []
 
-            for v in undo_recipe['new_vertices']:
-                v = self.project.gm.g.vertex(v)
-                vertices_t_minus.extend([v_ for v_ in v.in_neighbours()])
-                vertices_t_plus.extend([v_ for v_ in v.out_neighbours()])
+        for v in undo_recipe['new_vertices']:
+            v = self.project.gm.g.vertex(v)
+            vertices_t_minus.extend([v_ for v_ in v.in_neighbours()])
+            vertices_t_plus.extend([v_ for v_ in v.out_neighbours()])
 
-                self.project.gm.remove_vertex(v)
+            self.project.gm.remove_vertex(v)
 
-            vertices_t_minus = list(set(vertices_t_minus))
-            vertices_t_plus = list(set(vertices_t_plus))
+        vertices_t_minus = list(set(vertices_t_minus))
+        vertices_t_plus = list(set(vertices_t_plus))
 
-            new_merged_vertices = []
-            for v in undo_recipe['merged_vertices']:
-                v = self.project.gm.g.vertex(v)
-                r = deepcopy(self.project.gm.region(v))
+        new_merged_vertices = []
+        for v in undo_recipe['merged_vertices']:
+            v = self.project.gm.g.vertex(v)
+            r = deepcopy(self.project.gm.region(v))
 
-                self.project.rm.add(r)
-                new_merged_vertices.append(self.project.gm.add_vertex(r))
+            self.project.rm.add(r)
+            new_merged_vertices.append(self.project.gm.add_vertex(r))
 
-            self.project.gm.add_edges_(vertices_t_minus, new_merged_vertices)
-            self.project.gm.add_edges_(new_merged_vertices, vertices_t_plus)
+        self.project.gm.add_edges_(vertices_t_minus, new_merged_vertices)
+        self.project.gm.add_edges_(new_merged_vertices, vertices_t_plus)
 
-            self.next_case()
-        # except:
-        #     pass
+        self.next_case()
+
+    def undo_whole_fitting(self):
+        queue = [self.project.gm.g.vertex(self.active_cw.active_node)]
+
+        while queue:
+            vertex = queue.pop()
+
+            try:
+                undo_recipe = self.project.gm.fitting_logger.undo_recipe(vertex)
+
+                if not undo_recipe:
+                    continue
+
+                vertices_t_minus = []
+                vertices_t_plus = []
+
+                for v in undo_recipe['new_vertices']:
+                    v = self.project.gm.g.vertex(v)
+                    vertices_t_minus.extend([v_ for v_ in v.in_neighbours()])
+                    vertices_t_plus.extend([v_ for v_ in v.out_neighbours()])
+
+                    self.project.gm.remove_vertex(v)
+
+                vertices_t_minus = list(set(vertices_t_minus))
+                vertices_t_plus = list(set(vertices_t_plus))
+
+                new_merged_vertices = []
+                for v in undo_recipe['merged_vertices']:
+                    v = self.project.gm.g.vertex(v)
+                    r = deepcopy(self.project.gm.region(v))
+
+                    self.project.rm.add(r)
+                    new_merged_vertices.append(self.project.gm.add_vertex(r))
+
+                self.project.gm.add_edges_(vertices_t_minus, new_merged_vertices)
+                self.project.gm.add_edges_(new_merged_vertices, vertices_t_plus)
+
+                queue.extend(vertices_t_minus)
+                queue.extend(vertices_t_plus)
+            except:
+                pass
+
+        self.next_case()

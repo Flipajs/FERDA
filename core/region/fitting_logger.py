@@ -18,4 +18,10 @@ class FittingLogger:
     def undo_recipe(self, new_vertex):
         new_vertex = int(new_vertex)
 
-        return self.log_[new_vertex]
+        if new_vertex in self.log_:
+            recipe = self.log_[new_vertex]
+            del self.log_[new_vertex]
+
+            return recipe
+        else:
+            return None

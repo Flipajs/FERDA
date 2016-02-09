@@ -493,6 +493,9 @@ class Solver:
 
             self.project.gm.remove_vertex(r)
 
+        r_t_minus = self.project.gm.get_vertices_in_t(new_regions[0].frame_ - 1)
+        r_t_plus = self.project.gm.get_vertices_in_t(new_regions[0].frame_ + 1)
+
         self.project.gm.add_edges_(r_t_minus, new_vertices)
         self.project.gm.add_edges_(new_vertices, r_t_plus)
 
