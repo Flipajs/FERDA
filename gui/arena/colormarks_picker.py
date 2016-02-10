@@ -435,16 +435,6 @@ class ColormarksPicker(QtGui.QWidget):
         self.undo_button.clicked.connect(self.undo)
         self.left_panel.layout().addWidget(self.undo_button)
 
-        # CLEAR button and key shortcut
-        self.action_clear = QtGui.QAction('clear', self)
-        self.action_clear.triggered.connect(self.clear_paint_image)
-        self.action_clear.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
-        self.addAction(self.action_clear)
-
-        self.clear_button = QtGui.QPushButton("Clear paint area \n (key_C)")
-        self.clear_button.clicked.connect(self.clear_paint_image)
-        self.left_panel.layout().addWidget(self.clear_button)
-
         self.popup_button = QtGui.QPushButton("Done!")
         self.popup_button.clicked.connect(self.popup)
         self.left_panel.layout().addWidget(self.popup_button)
