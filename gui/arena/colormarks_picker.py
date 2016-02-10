@@ -1,11 +1,11 @@
+import sys
 import random
+import gc
 from functools import partial
 from gui.arena.my_popup import MyPopup
 from gui.arena.my_view import MyView
 from utils.video_manager import VideoManager
 from PyQt4 import QtGui, QtCore
-import sys
-import math
 from core.project.project import Project
 from gui.img_controls import utils
 import numpy as np
@@ -291,36 +291,24 @@ class ColormarksPicker(QtGui.QWidget):
 
         self.set_color_label_text()
 
+    def move_mask(self, source, target):
+        self.masks[target] = self.masks[source]
+        self.masks.pop(source)
+
     def delete_color(self):
         self.color_grid.delete_color(self.pick_id)
-        del(self.masks[len(self.masks)-1])
-        """
-        for id, data in self.masks.iteritems():
-            print "id: %s, hash: %s" % (id, data[0])
+        self.masks.pop(self.pick_id)
+        for key in sorted(self.masks.iterkeys()):
+            if key > self.pick_id:
+                self.move_mask(key, key-1)
+        self.pick_id = 0
+        self.show_mask(self.pick_id, False)
+        gc.collect()
 
-        print "deleting pick_id: %s, mask: %s" % (self.pick_id, self.masks[self.pick_id][0])
-        del(self.masks[self.pick_id])
-
-        for c_id in sorted(self.masks.keys()):
-            print "checking..."
-            if c_id > self.pick_id:
-                print "moving %s to pos %s" % (c_id-1, c_id)
-                self.masks[c_id-1] = self.masks[c_id]
-                self.masks[c_id] = None
-
-        self.pick_id -= 1;
-        self.show_mask(self.pick_id)
-
-        for id, data in self.masks.iteritems():
-            print "id: %s, hash: %s" % (id, data[0])
-        """
-        self.pick_id -= 1;
-        self.show_mask(self.pick_id)
-
-    def show_mask(self, mask_id):
-        print "Showing mask id %s" % mask_id
+    def show_mask(self, mask_id, save=True):
         # something was changed
-        self.save_edits()
+        if save:
+            self.save_edits()
 
         # prepare for a next change
         self.clear_paint_image()
@@ -329,6 +317,8 @@ class ColormarksPicker(QtGui.QWidget):
 
         self.pick_id = mask_id
         data = self.masks.get(mask_id, [np.zeros((1024, 1024)), self.frame])
+        print "Showing mask..."
+        print data[0]
         self.frame = data[1]
         self.draw_frame()
 
@@ -338,6 +328,8 @@ class ColormarksPicker(QtGui.QWidget):
         image.fill(QtGui.qRgba(0, 0, 0, 0))
 
         mask = data[0]
+        print "Showing mask..."
+        print mask
         value = QtGui.qRgba(0, 0, 255, 100)
         nzero = np.nonzero(mask)
         for i, j in zip(nzero[0], nzero[1]):
