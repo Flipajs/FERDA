@@ -72,8 +72,6 @@ class ColormarksPicker(QtGui.QWidget):
         self.pick_id = 0
         self.pick_mask = np.zeros((bg_height, bg_width))
 
-        self.avgcount = 0
-
         self.masks = {}
 
         self.make_gui()
@@ -201,7 +199,11 @@ class ColormarksPicker(QtGui.QWidget):
         if type(point) == QtCore.QPointF:
             point = point.toPoint()
 
-        value = QtGui.qRgba(0, 0, 255, 100)
+        if self.color == "Blue":
+            paint = QtGui.qRgba(0, 0, 255, 100)
+        else:
+            # TODO: FIX THIS! This isn't erasing enything.. Seems as if the image colors were unchangeable
+            paint = QtGui.qRgba(0, 0, 0, 0)
 
         # paint the area around the point position
         fromx = point.x() - self.pen_size / 2
@@ -213,8 +215,12 @@ class ColormarksPicker(QtGui.QWidget):
         for i in range(fromx, tox):
             for j in range(fromy, toy):
                 if 0 <= i < bg_width and 0 <= j < bg_height and self.pick_mask[i][j] == 0:
-                    self.paint_image.setPixel(i, j, value)
-                    self.avgcount += 1
+                    c = self.paint_image.pixel(i, j)
+                    tmp = QtGui.QColor(c)
+                    #print "%s %s %s %s" % (tmp.red(), tmp.green(), tmp.blue(), tmp.alpha())
+                    self.paint_image.setPixel(i, j, paint)
+
+
         self.pick_mask[fromx: tox, fromy: toy] = 1
 
         # set new image and pixmap
@@ -250,7 +256,7 @@ class ColormarksPicker(QtGui.QWidget):
             return False
 
     def save_edits(self):
-        if self.avgcount == 0:
+        if len(np.nonzero(self.pick_mask)[0]) == 0:
             return
 
         r, g, b = self.get_avg_color(self.frame, self.pick_mask)
@@ -275,6 +281,15 @@ class ColormarksPicker(QtGui.QWidget):
         else:
             return sumr/count+0.0, sumg/count+0.0, sumb/count+0.0
 
+    def switch_color(self):
+        text = self.sender().text()
+        # make sure the other button never stays pushed
+        for button in self.color_buttons:
+            if button.text() != text:
+                button.setChecked(False)
+            else:
+                button.setChecked(True)
+        self.color = text
 
     def new_color(self):
         # something was changed
@@ -424,6 +439,25 @@ class ColormarksPicker(QtGui.QWidget):
         self.slider.valueChanged[int].connect(self.change_value)
         self.slider.setVisible(True)
         self.left_panel.layout().addWidget(self.slider)
+
+        # color switcher widget
+        color_widget = QtGui.QWidget()
+        color_widget.setLayout(QtGui.QHBoxLayout())
+
+        self.color_buttons = []
+        blue_button = QtGui.QPushButton("Blue")
+        blue_button.setCheckable(True)
+        blue_button.setChecked(True)
+        blue_button.clicked.connect(self.switch_color)
+        color_widget.layout().addWidget(blue_button)
+        self.color_buttons.append(blue_button)
+
+        eraser_button = QtGui.QPushButton("Eraser")
+        eraser_button.setCheckable(True)
+        eraser_button.clicked.connect(self.switch_color)
+        color_widget.layout().addWidget(eraser_button)
+        self.color_buttons.append(eraser_button)
+        self.left_panel.layout().addWidget(color_widget)
 
         # UNDO key shortcut
         self.action_undo = QtGui.QAction('undo', self)
