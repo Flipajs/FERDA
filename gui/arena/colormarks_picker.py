@@ -52,7 +52,7 @@ class ColormarksPicker(QtGui.QWidget):
         # background image
         self.frame = -1
         self.old_pixmap = None
-        self.background = None
+        self.background = self.vid_manager.seek_frame(0)
 
         self.view.setMouseTracking(True)
 
@@ -63,8 +63,8 @@ class ColormarksPicker(QtGui.QWidget):
         self.backup = []
 
         # image to store all progress
-        bg_height, bg_width = 1024, 1024
-        bg_size = QtCore.QSize(bg_width, bg_height)
+        self.bg_height, self.bg_width = self.background.shape[0], self.background.shape[1]
+        bg_size = QtCore.QSize(self.bg_width, self.bg_height)
         fmt = QtGui.QImage.Format_ARGB32
         self.paint_image = QtGui.QImage(bg_size, fmt)
         self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
@@ -73,7 +73,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.pen_size = self.DEFAULT_PEN_SIZE
 
         self.pick_id = 0
-        self.pick_mask = np.zeros((bg_height, bg_width))
+        self.pick_mask = np.zeros((self.bg_height, self.bg_width))
 
         self.masks = {}
 
@@ -343,7 +343,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.clear_undo_history()
 
         self.pick_id = mask_id
-        data = self.masks.get(mask_id, [np.zeros((1024, 1024)), self.frame])
+        data = self.masks.get(mask_id, [np.zeros((self.bg_width, self.bg_height)), self.frame])
         self.frame = data[1]
         self.draw_frame()
 
