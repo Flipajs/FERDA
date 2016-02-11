@@ -12,11 +12,12 @@ class ColorManager():
         """
         :param length: the length of the video (frames)
         :param limit: the max number of colors to be used
-        :param mode: "cmap" or "rand", chooses the colors randomly or from a cmap
+        :param mode: "cmap", "rainbow" or "rand" (default), chooses the colors randomly or from a cmap
         :param cmap: the cmap to be used in "cmap" mode
         """
 
         # TODO: http://llllll.li/randomColor/ has a distinguishable color generator on his todo list, check it later
+        # UPDATE: He didn't do it yet..
         # list to store all the tracks
         self.tracks = []
 
@@ -30,6 +31,15 @@ class ColorManager():
             self.mode = "cmap"
             color_norm = colors.Normalize(vmin=0, vmax=limit)
             self.scalar_map = cmx.ScalarMappable(norm=color_norm, cmap=cmap)
+        elif mode == "rainbow":
+            # http://stackoverflow.com/questions/470690/how-to-automatically-generate-n-distinct-colors
+            self.mode = "rainbow"
+            self.colors_list = []
+            if limit >= 2:
+                dx = 1 / (limit - 1.0)
+                for i in range (0, limit):
+                    self.colors_list.append(self.generate_color_cube(i * dx))
+            self.cube_id = 0
         else:
             self.mode = "rand"
 
@@ -55,6 +65,8 @@ class ColorManager():
         # find a suitable color for it
         if self.mode == "cmap":
             color = self.find_color_cmap(track)
+        elif self.mode == "rainbow":
+            color = self.find_color_cube()
         else:
             color = self.find_color(track)
         track.set_color(color)
@@ -113,8 +125,7 @@ class ColorManager():
 
     def find_color(self, track):
         i = 0
-        # 0.7 seems to be the ideal value (distinguishable, yet not too hard to achieve)
-        limit = 0.7
+        limit = 100
         while True:
             ok = True
             # try to pick a color
@@ -129,18 +140,18 @@ class ColorManager():
                 for t in self.tracks:
                     # it must be different from any other track color
                     c2 = t.get_color()
-                    distance = self.get_yuv_distance(c1, c2)
-                    # if two of the colors are the same, move on
-                    if distance == 0 and self.collide(t, track) > 0:
+                    difference = self.get_yuv_distance(c1, c2)
+                    collision = self.collide(t, track)
+
+                    # if two of the colors are the same at the same time, move on
+                    if difference == 0 and collision > 0:
                         ok = False
                         break
-                    # this doesn't matter if the colors never exist together
-                    else:
-                        continue
-                    # the more frames the tracks share, the more different (distant) they must be
-                    value = self.collide(t, track) / self.get_yuv_distance(c1, c2)
-                    if value > limit:
-                        ok = False
+
+                    elif collision > 0:
+                        if difference < limit:
+                            ok = False
+                            break
                 if ok:
                     # print i
                     return QtGui.QColor().fromRgb(r, g, b)
@@ -170,6 +181,41 @@ class ColorManager():
                 track.set_color_id(i)
                 return QtGui.QColor().fromRgbF(tmp_color[0], tmp_color[1], tmp_color[2])
 
+    def find_color_cube(self):
+        next_color = self.colors_list[self.cube_id]
+        self.cube_id += 1
+        print next_color
+        return QtGui.QColor.fromRgbF(next_color[0], next_color[1], next_color[2])
+
+    def generate_color_cube(self, x):
+        r, g, b = 0, 0, 1
+        if 0 <= x < 0.2:
+            x = x / 0.2
+            r = 0
+            g = x
+            b = 1
+        elif x < 0.4:
+            x = (x - 0.2) / 0.2
+            r = 0
+            g = 1
+            b = 1
+        elif x < 0.6:
+            x = (x - 0.4) / 0.2
+            r = x
+            g = 1
+            b = 0
+        elif x < 0.8:
+            x = (x - 0.6) / 0.2
+            r = 1.0
+            g = 1.0 - x
+            b = 0.0
+        elif x <= 1.0:
+            x = (x - 0.8) / 0.2
+            r = 1
+            g = 0
+            b = x
+        return [r, g, b]
+
     def get_yuv_distance(self, c1, c2):
         # returns the "distance" of two colors in the YUV color system, which corresponds best to human perception
         # formulas to convert RGB to YUV (from wikipedia)
@@ -188,8 +234,8 @@ class TempGui(QtGui.QWidget):
     def __init__(self):
         super(TempGui, self).__init__()
 
-        self.const = 30
-        self.cm = ColorManager(1300, self.const)
+        self.const = 40
+        self.cm = ColorManager(1300, self.const, "j")
 
         self.setLayout(QtGui.QVBoxLayout())
         widget = QtGui.QWidget()
@@ -243,6 +289,7 @@ class TempGui(QtGui.QWidget):
             qp.setPen(pen)
             qp.drawLine(track.start, 12*i + 50, track.stop, 12*i + 50)
         qp.end()
+
 
 class Track():
     def __init__(self, start, stop, id, color):
