@@ -1,3 +1,4 @@
+from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from utils.img_manager import ImgManager
 from PyQt4 import QtGui
@@ -21,9 +22,9 @@ GAP = WIDTH
 # number of columns to be displayed before dynamic loading, 0 means dynamic loading for all
 MINIMUM = 5
 # Opacity of the colors
-OPACITY = 140
+OPACITY = 255
 # default text to display
-DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O - zoom in or out; Q, W - shrink, " \
+DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O, Ctrl + MWheel - zoom in or out; Q, W - shrink, " \
                "stretch; A, S show/hide info for selected; T, Y - show/hide toggled node"
 
 
@@ -40,6 +41,7 @@ class VisLoader:
         self.edges = set()
         self.regions = set()
 
+        self.chunks_region_chunks = {}
         self.regions_vertices = {}
 
         self.g = None
@@ -95,6 +97,7 @@ class VisLoader:
         time1 = time.time()
         # zmerit cas toho volani
         for vertex in self.vertices:
+
             region = self.graph_manager.region(vertex)
             self.regions_vertices[region] = vertex
             self.regions.add(region)
@@ -124,8 +127,16 @@ class VisLoader:
             if not(r1 in self.regions and r2 in self.regions):
                 type_of_line = "partial"
 
-            new_tuple = (r1, r2, type_of_line, sureness)
+            color = None
+            if type_of_line == "chunk":
+                color = self.project.chm[source_start_id].color
+
+            new_tuple = (r1, r2, type_of_line, sureness, color)
+
+            self.chunks_region_chunks[new_tuple] = RegionChunk(self.project.chm[source_start_id], self.graph_manager, self.region_manager)
+
             self.edges.add(new_tuple)
+
 
     def get_node_info(self, region):
         n = self.regions_vertices[region]
@@ -137,7 +148,9 @@ class VisLoader:
         ch = self.project.gm.is_chunk(vertex)
         ch_info = str(ch)
 
-        antlikeness = self.project.stats.antlikeness_svm.get_prob(region)[1]
+        # TODO
+        # antlikeness = self.project.stats.antlikeness_svm.get_prob(region)[1]
+        antlikeness = "Dummy"
 
         # TODO
         # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
@@ -158,25 +171,26 @@ class VisLoader:
         img_manager = ImgManager(self.project)
         from graph_visualizer import GraphVisualizer
         self.g = GraphVisualizer(self, img_manager)
-        self.g.show()
+        self.g.showMaximized()
 
 if __name__ == '__main__':
     # from scripts import fix_project
-    p = Project()
-    # p.load('/home/sheemon/FERDA/projects/dita_proj/dita.fproj')
-    p.load('/Users/flipajs/Documents/wd/GT/C210/C210.fproj')
-    # p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
-    # p.load('/home/sheemon/FERDA/projects/archive/c210.fproj')
-    # from core.region.region_manager import RegionManager
-    # p.rm = RegionManager(p.working_directory, '/rm.sqlite3')
+    project = Project()
+
+    sn_id = 2
+    name = 'Cam1_'
+    snapshot = {'chm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
+    'gm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
+
+    project.load('/home/sheemon/FERDA/projects/'+name+'/cam1.fproj', snapshot)
 
     import cv2, sys
     app = QtGui.QApplication(sys.argv)
-    l1 = VisLoader(p)
+    l1 = VisLoader(project)
     l1.set_relative_margin(1)
     # l1.set_width(60)
     # l1.set_height(60)
-    # l1.visualise(range(300, 360))
-    l1.visualise(range(1000, 1400))
+    l1.visualise(range(300, 800))
+    # l1.visualise()
     app.exec_()
     cv2.waitKey(0)

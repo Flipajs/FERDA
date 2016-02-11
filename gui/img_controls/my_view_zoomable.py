@@ -53,6 +53,19 @@ class MyViewZoomable(QtGui.QGraphicsView):
         else:
             super(MyViewZoomable, self).keyPressEvent(event)
 
+    def wheelEvent(self, event):
+        if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
+            # if CTRL is pressed while scrolling
+            if event.delta() > 0:
+                self.zoom(True)
+                self.zoom(True)
+            else:
+                self.zoom(False)
+                self.zoom(False)
+        else:
+            # if CTRL isn't pressed, control the scrollbars (default behavior)
+            super(MyViewZoomable, self).wheelEvent(event)
+
     def zoom (self, in_out):
         self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
         m11 = self.transform().m11()

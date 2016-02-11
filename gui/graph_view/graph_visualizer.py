@@ -1,21 +1,24 @@
 import threading
-from PyQt4.QtGui import QApplication
+from PyQt4 import QtGui, QtCore
+
+from PyQt4.QtGui import QApplication, QLabel, QSizePolicy
+
+import computer as comp
+from gui.graph_view.edge import EdgeGraphical, ChunkGraphical
 from gui.graph_view.info_manager import InfoManager
 from gui.graph_view.node import Node
 from gui.graph_view.node_zoom_manager import NodeZoomManager
+from gui.gui_utils import cvimg2qtpixmap
 from gui.img_controls.my_scene import MyScene
-from PyQt4 import QtGui, QtCore
-import computer as comp
 from gui.img_controls.my_view_zoomable import MyViewZoomable
-from gui.graph_view.edge import EdgeGraphical
-
-from vis_loader import DEFAULT_TEXT, FROM_TOP, GAP, \
-    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH, HEIGHT, OPACITY
+from vis_loader import DEFAULT_TEXT, GAP, \
+    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH
 
 __author__ = 'Simon Mandlik'
 
 
-class GraphVisualizer(QtGui.QWidget):
+class \
+        GraphVisualizer(QtGui.QWidget):
     """
     Requires list of regions and list of edge-tuples (node1, node2, type - chunk, line or partial, sureness).
     Those can be passed in constructor or using a method add_objects
@@ -35,15 +38,49 @@ class GraphVisualizer(QtGui.QWidget):
         self.height = loader.height
         self.loader = loader
         self.dynamically = dynamically
+        self.setLayout(QtGui.QVBoxLayout())
+
+        self.chunk_detail_scroll_horizontal = QtGui.QScrollArea()
+        self.chunk_detail_scroll_vertical = QtGui.QScrollArea()
+        self.chunk_detail_scroll_horizontal.setWidgetResizable(True)
+        self.chunk_detail_scroll_vertical.setWidgetResizable(True)
+
+        # hscroll_shint = self.chunk_detail_scroll_horizontal.horizontalScrollBar().sizeHint()
+        self.chunk_detail_scroll_horizontal.setFixedWidth(self.width * 2)
+
+        # vscroll_shint = self.chunk_detail_scroll_vertical.verticalScrollBar().sizeHint()
+        self.chunk_detail_scroll_vertical.setFixedWidth(self.height * 2)
+
+        self.chunk_detail_widget_horizontal = QtGui.QWidget()
+        self.chunk_detail_widget_horizontal.setLayout(QtGui.QHBoxLayout())
+        self.chunk_detail_widget_vertical = QtGui.QWidget()
+        self.chunk_detail_widget_vertical.setLayout(QtGui.QVBoxLayout())
+
+        self.chunk_detail_scroll_horizontal.setWidget(self.chunk_detail_widget_horizontal)
+        self.chunk_detail_scroll_vertical.setWidget(self.chunk_detail_widget_vertical)
+
+        self.upper_part = QtGui.QWidget()
+        self.upper_part.setLayout(QtGui.QHBoxLayout())
 
         self.view = MyViewZoomable(self)
-        self.setLayout(QtGui.QVBoxLayout())
         self.view.setMouseTracking(True)
+        self.view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.scene = MyScene()
         self.scene_width = 0
         self.view.setScene(self.scene)
+        self.view.setLayout(QtGui.QHBoxLayout())
+        # self.view.layout().addWidget(self.chunk_detail_scroll_vertical)
         self.scene.clicked.connect(self.scene_clicked)
-        self.layout().addWidget(self.view)
+
+        self.upper_part.layout().addWidget(self.view)
+        self.upper_part.layout().addWidget(self.chunk_detail_scroll_vertical)
+
+        self.layout().addWidget(self.upper_part)
+
+        self.layout().addWidget(self.chunk_detail_scroll_horizontal)
+
+        self.chunk_detail_widget_horizontal.hide()
+        self.chunk_detail_widget_vertical.hide()
 
         self.text = QtGui.QLabel(DEFAULT_TEXT)
         self.text.setAlignment(QtCore.Qt.AlignCenter)
@@ -147,6 +184,45 @@ class GraphVisualizer(QtGui.QWidget):
         elif isinstance(it, EdgeGraphical):
             self.menu_edge.exec_(self.view.mapToGlobal(point))
 
+    def show_chunk_pictures_label(self, chunk):
+        self.hide_chunk_pictures_widget()
+        widget = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
+
+        region_chunk = self.loader.chunks_region_chunks[chunk]
+        frames = list(range(chunk[0].frame_, chunk[1].frame_ + 1))
+        freq, none = QtGui.QInputDialog.getInt(self, 'Input Dialog',
+            'Enter frequency:')
+
+        for frame in frames[::freq]:
+            img = self.img_manager.get_crop(frame, region_chunk[frame - region_chunk.start_frame()],  width=self.width, height=self.height, relative_margin=self.relative_margin)
+            pixmap = cvimg2qtpixmap(img)
+            label = QtGui.QLabel()
+            label.setPixmap(pixmap)
+            label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            widget.layout().addWidget(label)
+
+        scroll = self.chunk_detail_scroll_horizontal if self.show_vertically else self.chunk_detail_scroll_vertical
+        scroll.show()
+
+    def hide_chunk_pictures_widget(self):
+        widget = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
+        for child in widget.findChildren(QLabel):
+            widget.layout().removeWidget(child)
+            child.hide()
+        self.chunk_detail_scroll_horizontal.hide()
+        self.chunk_detail_scroll_vertical.hide()
+
+    def swap_chunk_pictures_widgets(self):
+        widget_a = self.chunk_detail_widget_horizontal if self.show_vertically else self.chunk_detail_widget_vertical
+        widget_b = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
+        for child in widget_a.findChildren(QLabel):
+            widget_a.layout().removeWidget(child)
+            widget_b.layout().addWidget(child)
+        if self.show_vertically:
+            self.chunk_detail_scroll_horizontal.hide()
+        else:
+            self.chunk_detail_scroll_vertical.hide()
+
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
         if item is None:
@@ -156,6 +232,8 @@ class GraphVisualizer(QtGui.QWidget):
         else:
             if isinstance(item, EdgeGraphical):
                 self.info_manager.add(item)
+                if isinstance(item, ChunkGraphical):
+                 self.show_chunk_pictures_label(item.core_obj)
             elif isinstance(item, Node):
                 self.node_zoom_manager.add(item)
                 self.info_manager.add(item)
@@ -383,7 +461,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.compute_positions()
         self.add_sole_nodes()
         print("Visualizing...")
-        self.show()
+        self.showMaximized()
         self.redraw(first_frame, last_frame)
 
     def draw_columns(self, first_frame, last_frame, minimum):
@@ -461,6 +539,7 @@ class GraphVisualizer(QtGui.QWidget):
 
     def toggle_show_vertically(self):
         self.show_vertically = False if self.show_vertically else True
+        self.swap_chunk_pictures_widgets()
         self.flash()
 
     def compress_axis_toggle(self):
