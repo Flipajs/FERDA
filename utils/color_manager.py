@@ -125,7 +125,7 @@ class ColorManager():
 
     def find_color(self, track):
         i = 0
-        limit = 100
+        limit = 150
         while True:
             ok = True
             # try to pick a color
