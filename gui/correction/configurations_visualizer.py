@@ -315,6 +315,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         if not user_action:
             self.project.save_snapshot()
 
+        if len(nodes_groups) > 10:
+            nodes_groups = nodes_groups[0:9]
+
         config = self.get_greedy_config(nodes_groups)
 
         self.active_cw = CaseWidget(self.project, nodes_groups, config, self.vid, self)
@@ -325,18 +328,23 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def get_greedy_config(self, nodes_groups):
         config = {}
         for i in range(len(nodes_groups) - 1):
-            r1 = list(nodes_groups[i])
-            r2 = list(nodes_groups[i+1])
+            vs1 = list(nodes_groups[i])
+            vs2 = list(nodes_groups[i+1])
 
-            while r1:
-                v1 = r1[0]
+            while vs1:
+                v1 = vs1[0]
                 changed = False
                 values = []
                 # for v1 in r1:
-                for v2 in r2:
+                for v2 in vs2:
                     try:
-                        e = self.project.gm.g.edge(v1, v2)
-                        s = self.project.gm.g.ep['score'][e]
+                        r1_ = self.project.gm.region(v1)
+                        r2_ = self.project.gm.region(v2)
+
+                        s = 1 / (0.001 + np.linalg.norm(r1_.centroid() - r2_.centroid()))
+
+                        # e = self.project.gm.g.edge(v1, v2)
+                        # s = self.project.gm.g.ep['score'][e]
 
                         if self.project.gm.g.vp['chunk_start_id'][v1] > 0:
                             continue
@@ -351,7 +359,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
                 values = sorted(values, key=lambda k: -k[0])
 
-                r1.remove(values[0][1])
+                vs1.remove(values[0][1])
 
                 config[values[0][1]] = values[0][2]
 

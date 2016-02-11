@@ -164,7 +164,7 @@ if __name__ == '__main__':
     # from scripts import fix_project
     p = Project()
     # p.load('/home/sheemon/FERDA/projects/dita_proj/dita.fproj')
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1/Cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam2/Cam2.fproj')
     # p.load('/home/sheemon/FERDA/projects/eight_new/eight.fproj')
     # p.load('/home/sheemon/FERDA/projects/archive/c210.fproj')
     # from core.region.region_manager import RegionManager
@@ -177,6 +177,6 @@ if __name__ == '__main__':
     # l1.set_width(60)
     # l1.set_height(60)
     # l1.visualise(range(300, 360))
-    l1.visualise(range(0, 3000))
+    l1.visualise(range(0, 300))
     app.exec_()
     cv2.waitKey(0)

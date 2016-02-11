@@ -3,7 +3,7 @@ import cPickle as pickle
 from core.graph.region_chunk import RegionChunk
 from utils.img import get_safe_selection
 from math import ceil
-from processing import get_colormarks, match_cms_region
+from processing import get_colormarks, match_cms_region, filter_cms
 import matplotlib.pyplot as plt
 import numpy as np
 from scripts.irg_hist_demo import ColorHist3d
@@ -23,14 +23,14 @@ def analyse_chunk(ch, project, cm_model, sample_step):
 
         cms = get_colormarks(bb, cm_model)
         for pts, label in cms:
-            print label
             for pt in pts:
                 bb[pt[0], pt[1], 0:2] = 255
 
         cv2.imshow('bb', bb)
         cv2.imshow('bb_t', transform_img_(bb, cm_model))
-        cv2.waitKey(0)
-        matches = match_cms_region(cms, r)
+        cv2.waitKey(5)
+
+        matches = match_cms_region(filter_cms(cms), r)
 
         ch_cms[t] = matches
 
