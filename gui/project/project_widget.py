@@ -26,6 +26,7 @@ class ProjectLoader(QtCore.QThread):
 
     def run(self):
         self.project.load(self.path)
+        CompatibilitySolver(self.project)
         self.proc_done.emit(self.project)
 
 class ProjectWidget(QtGui.QWidget):
@@ -53,6 +54,7 @@ class ProjectWidget(QtGui.QWidget):
         self.loading_speed = 20000000
         # current loading status (0 on the beginning)
         self.status = 0
+        self.timer_step = 0
 
         self.loading_thread = None
         self.update()
@@ -127,7 +129,7 @@ class ProjectWidget(QtGui.QWidget):
         size += os.path.getsize(file)
         file = path+'/stats.pkl'
         size += os.path.getsize(file)
-        
+
         try:
             file = path+'/progress_save.pkl'
             size += os.path.getsize(file)

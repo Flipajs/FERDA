@@ -17,30 +17,29 @@ from utils.misc import is_flipajs_pc
 
 
 def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callback=None, node_size=30, node_margin=0.1, show_in_visualizer_callback=None, reset_cache=True, show_vertically=False):
-    solver = solver
+
     if t_start == t_end == -1:
         sub_g = solver.g
     else:
-        nodes = []
-        for n in solver.g.nodes():
-            if t_start <= n.frame_ < t_end:
-                nodes.append(n)
-
-        sub_g = solver.g.subgraph(nodes)
+        g_nodes = []
+        for vertex in project.gm.get_all_relevant_vertices():
+            r = project.gm.region(vertex)
+            if t_start <= r.frame_ < t_end:
+                g_nodes.append((r, vertex))
 
     vid = get_auto_video_manager(project)
     regions = {}
 
     nodes = []
     chunks = set()
-    for n in sub_g.nodes():
-        is_ch, t_reversed, ch = solver.is_chunk(n)
-        if is_ch:
+    for n, vertex in g_nodes:
+        ch, _ = project.gm.is_chunk(vertex)
+        if ch:
             if ch.length() >= min_chunk_len:
                 nodes.append(n)
                 chunks.add(ch)
 
-    optimized = optimize_frame_access(nodes)
+    optimized = optimize_frame_access_vertices(nodes)
 
     i = 0
     num_parts = 100
@@ -66,14 +65,18 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
                 else:
                     im = cache[n.frame_]
 
-            solver.g.node[n]['img'] = visualize_nodes(im, n, margin=node_margin)
+            # TODO: optimize... and add opacity parameter
+            ch, _ = project.gm.is_chunk(n)
+            c = (ch.color.blue(), ch.color.green(), ch.color.red(), 0.9)
+
+            solver.g.node[n]['img'] = visualize_nodes(im, n, margin=node_margin, color=c)
 
         i += 1
 
         if update_callback is not None and i % part_ == 0:
             update_callback(i / float(len(optimized)))
 
-    ngv = NodeGraphVisualizer(solver, solver.g, regions, list(chunks), node_size=node_size, show_in_visualize_callback=show_in_visualizer_callback, show_vertically=show_vertically)
+    ngv = NodeGraphVisualizer(solver, project.gm.g, regions, list(chunks), node_size=node_size, show_in_visualize_callback=show_in_visualizer_callback, show_vertically=show_vertically)
     ngv.visualize()
 
     return ngv
@@ -84,7 +87,8 @@ if __name__ == "__main__":
 
     if is_flipajs_pc():
         project = Project()
-        project.load('/Users/flipajs/Documents/wd/eight_test/test.fproj')
+        # project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
+        project.load('/Users/flipajs/Documents/wd/GT/C210/C210.fproj')
         # project.load('/Users/flipajs/Documents/wd/colonies_crop1/colonies.fproj')
     else:
         # EDIT HERE....
@@ -108,7 +112,7 @@ if __name__ == "__main__":
     # show()
 
     # ex = call_visualizer(-1, -1, project)
-    ex = call_visualizer(0, 700, project, project.saved_progress['solver'], 10)
+    ex = call_visualizer(0, 700, project, project.solver, 10)
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()

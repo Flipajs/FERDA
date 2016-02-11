@@ -138,7 +138,7 @@ if __name__ == "__main__":
     p = Project()
     p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
 
-    ex = FixArea(p, p.saved_progress['solver'])
+    ex = FixArea(p, p.solver)
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()
