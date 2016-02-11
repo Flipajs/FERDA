@@ -486,10 +486,11 @@ class ResultsWidget(QtGui.QWidget):
                 self.out_of_frames()
 
     def reset_colors(self):
+        print "COLORIZING "
         from utils.color_manager import colorize_project
         colorize_project(self.project)
 
-        "COLORIZING DONE..."
+        print "COLORIZING DONE..."
 
 
 def view_add_bg_image(g_view, pix_map):
