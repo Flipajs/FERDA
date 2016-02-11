@@ -64,6 +64,7 @@ class ColormarksPicker(QtGui.QWidget):
 
         # image to store all progress
         self.bg_height, self.bg_width = self.background.shape[0], self.background.shape[1]
+        print self.background.shape
         bg_size = QtCore.QSize(self.bg_width, self.bg_height)
         fmt = QtGui.QImage.Format_ARGB32
         self.paint_image = QtGui.QImage(bg_size, fmt)
@@ -73,7 +74,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.pen_size = self.DEFAULT_PEN_SIZE
 
         self.pick_id = 0
-        self.pick_mask = np.zeros((self.bg_height, self.bg_width))
+        self.pick_mask = np.zeros((self.bg_width, self.bg_height))
 
         self.masks = {}
 
@@ -93,13 +94,12 @@ class ColormarksPicker(QtGui.QWidget):
         p = QtGui.qRgba(175, 0, 175, 255)
         img = self.merge_images()
 
-        bg_height, bg_width = self.background.shape[:2]
 
-        arena_mask = np.zeros((bg_height, bg_width), dtype=np.bool)
-        occultation_mask = np.zeros((bg_height, bg_width), dtype=np.bool)
+        arena_mask = np.zeros((self.bg_width, self.bg_height), dtype=np.bool)
+        occultation_mask = np.zeros((self.bg_width, self.bg_height), dtype=np.bool)
 
-        for i in range(0, bg_width):
-            for j in range(0, bg_height):
+        for i in range(0, self.bg_width):
+            for j in range(0, self.bg_height):
                 color = QtGui.QColor(img.pixel(i, j))
                 if self.DEBUG:
                     if color.blue() > 250:
@@ -221,10 +221,9 @@ class ColormarksPicker(QtGui.QWidget):
         fromy = point.y() - self.pen_size / 2
         toy = point.y() + self.pen_size / 2
 
-        bg_height, bg_width = self.background.shape[:2]
         for i in range(fromx, tox):
             for j in range(fromy, toy):
-                if 0 <= i < bg_width and 0 <= j < bg_height and self.pick_mask[i][j] == old:
+                if 0 <= i < self.bg_width and 0 <= j < self.bg_height and self.pick_mask[i][j] == old:
                     self.paint_image.setPixel(i, j, paint)
 
         self.pick_mask[fromx: tox, fromy: toy] = new
@@ -348,7 +347,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.draw_frame()
 
         fmt = QtGui.QImage.Format_ARGB32
-        bg_size = QtCore.QSize(self.background.shape[0], self.background.shape[1])
+        bg_size = QtCore.QSize(self.bg_width, self.bg_height)
         image = QtGui.QImage(bg_size, fmt)
         image.fill(QtGui.qRgba(0, 0, 0, 0))
 
@@ -631,10 +630,12 @@ class ColorGridWidget(QtGui.QWidget):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
-    p = Project()
-    p.load("/home/dita/PycharmProjects/FERDA projects/testc5/c5.fproj")
+    #p = Project()
+    #p.load("/home/dita/PycharmProjects/FERDA projects/testc5/c5.fproj")
 
-    ex = ColormarksPicker(p.video_paths[0])
+    video_paths = ['/media/dita/SHARE/Movies/Bones/Season 09/Bones 09x14 The Master in the Slop.mp4']
+
+    ex = ColormarksPicker(video_paths[0])
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()
