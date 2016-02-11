@@ -34,6 +34,8 @@ branch
 
 class ColormarksPicker(QtGui.QWidget):
     DEBUG = True
+    DEFAULT_PEN_SIZE = 10
+    DEFAULT_UNDO_LENGTH = 10
 
     def __init__(self, video_path):
 
@@ -54,6 +56,7 @@ class ColormarksPicker(QtGui.QWidget):
 
         self.view.setMouseTracking(True)
 
+        # current color ("Blue" or "Eraser")
         self.color = "Blue"
 
         # store last 10 QImages to support the "undo" function
@@ -67,17 +70,16 @@ class ColormarksPicker(QtGui.QWidget):
         self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
 
-        self.pen_size = 10
+        self.pen_size = self.DEFAULT_PEN_SIZE
 
         self.pick_id = 0
         self.pick_mask = np.zeros((bg_height, bg_width))
 
         self.masks = {}
 
+        # create the main view and left panel with buttons
         self.make_gui()
         self.save()
-
-        # create the main view and left panel with buttons
 
     def popup(self):
         """
@@ -117,7 +119,7 @@ class ColormarksPicker(QtGui.QWidget):
             self.w.setFocus()
         return arena_mask, occultation_mask
 
-    def change_value(self, value):
+    def change_pen_size(self, value):
         """
         change pen size
         :param value: new pen size
@@ -154,6 +156,7 @@ class ColormarksPicker(QtGui.QWidget):
         # while the mouse is moving, paint it's position
         point = self.view.mapToScene(event.pos())
         if self.is_in_scene(point):
+            # no save here!
             self.draw(point)
 
     def save(self):
@@ -161,16 +164,17 @@ class ColormarksPicker(QtGui.QWidget):
         Saves current image temporarily (to use with "undo()" later)
         :return:
         """
-        # save last 10 images
+        # save last DEFAULT_UNDO_LENGTH images
         img = self.paint_image.copy()
         mask = self.pick_mask.copy()
         self.backup.append((img, mask))
-        if len(self.backup) > 10:
+        if len(self.backup) > self.DEFAULT_UNDO_LENGTH:
             self.backup.pop(0)
 
     def undo(self):
         length = len(self.backup)
-        print "Lenght is %s" % length
+        if self.DEBUG:
+            print "Length is %s" % length
         if length > 0:
             img, mask = self.backup.pop(length - 1)
             self.refresh_image(img)
@@ -180,6 +184,11 @@ class ColormarksPicker(QtGui.QWidget):
         self.backup = []
 
     def refresh_image(self, img):
+        """
+        deletes the old image and pixmap and replaces them with the image given
+        :param img: the new image to use
+        :return: None
+        """
         self.paint_image = img
         self.scene.removeItem(self.paint_pixmap)
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(img))
@@ -191,7 +200,7 @@ class ColormarksPicker(QtGui.QWidget):
 
     def draw(self, point):
         """
-        paint a point with a pen in paint mode
+        paint a point with a pen
         :param point: point to be drawn
         :return: None
         """
@@ -201,9 +210,10 @@ class ColormarksPicker(QtGui.QWidget):
 
         if self.color == "Blue":
             paint = QtGui.qRgba(0, 0, 255, 100)
+            old, new = 0, 1
         else:
-            # TODO: FIX THIS! This isn't erasing enything.. Seems as if the image colors were unchangeable
             paint = QtGui.qRgba(0, 0, 0, 0)
+            old, new = 1, 0
 
         # paint the area around the point position
         fromx = point.x() - self.pen_size / 2
@@ -214,14 +224,10 @@ class ColormarksPicker(QtGui.QWidget):
         bg_height, bg_width = self.background.shape[:2]
         for i in range(fromx, tox):
             for j in range(fromy, toy):
-                if 0 <= i < bg_width and 0 <= j < bg_height and self.pick_mask[i][j] == 0:
-                    c = self.paint_image.pixel(i, j)
-                    tmp = QtGui.QColor(c)
-                    #print "%s %s %s %s" % (tmp.red(), tmp.green(), tmp.blue(), tmp.alpha())
+                if 0 <= i < bg_width and 0 <= j < bg_height and self.pick_mask[i][j] == old:
                     self.paint_image.setPixel(i, j, paint)
 
-
-        self.pick_mask[fromx: tox, fromy: toy] = 1
+        self.pick_mask[fromx: tox, fromy: toy] = new
 
         # set new image and pixmap
         self.refresh_image(self.paint_image)
@@ -267,6 +273,12 @@ class ColormarksPicker(QtGui.QWidget):
         self.color_grid.modify_color(self.pick_id, r, g, b)
 
     def get_avg_color(self, frame, mask):
+        """
+        gets the average color of pixels under the given mask (in the given frame)
+        :param frame: frame number
+        :param mask: np mask
+        :return:
+        """
         img = self.vid_manager.seek_frame(frame)
         sumr, sumg, sumb, count = 0, 0, 0, 0
         nzero = np.nonzero(mask)
@@ -332,8 +344,6 @@ class ColormarksPicker(QtGui.QWidget):
 
         self.pick_id = mask_id
         data = self.masks.get(mask_id, [np.zeros((1024, 1024)), self.frame])
-        print "Showing mask..."
-        print data[0]
         self.frame = data[1]
         self.draw_frame()
 
@@ -343,8 +353,6 @@ class ColormarksPicker(QtGui.QWidget):
         image.fill(QtGui.qRgba(0, 0, 0, 0))
 
         mask = data[0]
-        print "Showing mask..."
-        print mask
         value = QtGui.qRgba(0, 0, 255, 100)
         nzero = np.nonzero(mask)
         for i, j in zip(nzero[0], nzero[1]):
@@ -374,7 +382,8 @@ class ColormarksPicker(QtGui.QWidget):
         self.draw_frame()
 
     def draw_frame(self):
-        print "Going to frame %s" % self.frame
+        if self.DEBUG:
+            print "Going to frame %s" % self.frame
         if self.frame <= 0:
             self.prev_frame_button.setEnabled(False)
         else:
@@ -436,7 +445,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.slider.setTickInterval(1)
         self.slider.setValue(self.pen_size)
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
-        self.slider.valueChanged[int].connect(self.change_value)
+        self.slider.valueChanged[int].connect(self.change_pen_size)
         self.slider.setVisible(True)
         self.left_panel.layout().addWidget(self.slider)
 
@@ -531,17 +540,11 @@ class ColorGridWidget(QtGui.QWidget):
         self.setLayout(self.grid)
 
     def clicked(self, button):
-        print_dict_keys(self.buttons)
-        print_dict_keys(self.colors)
         button_id = int(button.text())
-        print "Selected %s" % button_id
         color = self.colors.get(button_id, None)
         if color is None:
             return
         self.repaint_all_buttons()
-        print_dict_keys(self.buttons)
-        print_dict_keys(self.colors)
-
         self.update_callback_picked(button_id)
 
     def add_color(self, r, g, b):
@@ -585,8 +588,6 @@ class ColorGridWidget(QtGui.QWidget):
             del (self.buttons[idd])
             self.last_index -= 1
             self.repaint_all_buttons()
-            print_dict_keys(self.buttons)
-            print_dict_keys(self.colors)
             return
 
         del (self.colors[idd])
@@ -595,7 +596,6 @@ class ColorGridWidget(QtGui.QWidget):
         btn.deleteLater()
         del (self.buttons[idd])
         self.last_index -= 1
-
 
         for c_id in sorted(self.colors.keys()):
             if c_id > idd:
@@ -627,24 +627,19 @@ class ColorGridWidget(QtGui.QWidget):
             else:
                 self.posy += 1
 
-def print_dict_keys(dic):
-    output = ""
-    for key in sorted(dic.keys()):
-        output += (str(key) + " ")
-    print output
 
+if __name__ == "__main__":
+    app = QtGui.QApplication(sys.argv)
 
-app = QtGui.QApplication(sys.argv)
+    p = Project()
+    p.load("/home/dita/PycharmProjects/FERDA projects/testc5/c5.fproj")
 
-p = Project()
-p.load("/home/dita/PycharmProjects/FERDA projects/testc5/c5.fproj")
+    ex = ColormarksPicker(p.video_paths[0])
+    ex.show()
+    ex.move(-500, -500)
+    ex.showMaximized()
+    ex.setFocus()
 
-ex = ColormarksPicker(p.video_paths[0])
-ex.show()
-ex.move(-500, -500)
-ex.showMaximized()
-ex.setFocus()
-
-app.exec_()
-app.deleteLater()
-sys.exit()
+    app.exec_()
+    app.deleteLater()
+    sys.exit()
