@@ -31,6 +31,7 @@ class Solver:
 
         # TODO: add to config
         self.antlike_filter = True
+        # self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
 
         self.ignored_nodes = {}
