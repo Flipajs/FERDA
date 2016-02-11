@@ -37,12 +37,12 @@ if is_flipajs_pc():
 
 
     sn_id = 120
-    name = 'Cam2'
+    name = 'Cam1'
     wd = '/Users/flipajs/Documents/wd/GT/'
     snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
                 'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
-    project.load(wd+name+'/cam2.fproj', snapshot)
+    project.load(wd+name+'/cam1.fproj')
     ex.widget_control('load_project', project)
 
     # project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
