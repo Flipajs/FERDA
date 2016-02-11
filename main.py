@@ -35,9 +35,12 @@ if is_flipajs_pc():
     # project.load('/Users/flipajs/Documents/wd/C210_2/C210.fproj')
     # ex.widget_control('load_project', project)
 
-    snapshot = {'chm': '/Users/flipajs/Documents/wd/GT/C210_/.auto_save/223__chunk_manager.pkl',
-                'gm': '/Users/flipajs/Documents/wd/GT/C210_/.auto_save/223__graph_manager.pkl'}
-    project.load('/Users/flipajs/Documents/wd/GT/C210_/C210.fproj')
+
+    sn_id = 435
+    name = 'C210'
+    snapshot = {'chm': '/Users/flipajs/Documents/wd/GT/'+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
+                'gm': '/Users/flipajs/Documents/wd/GT/'+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
+    project.load('/Users/flipajs/Documents/wd/GT/'+name+'/C210.fproj')
     ex.widget_control('load_project', project)
 
     # project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')

@@ -137,6 +137,8 @@ class ResultsWidget(QtGui.QWidget):
         self.forward = QtGui.QPushButton('forward')
         self.forward.setShortcut(S_.controls.video_next)
         self.frameEdit = SelectAllLineEdit()
+        self.frameEdit.returnPressed.connect(self.frame_jump)
+        self.frameEdit.setFixedHeight(30)
         self.showFrame = QtGui.QPushButton('show')
         self.fpsLabel = QtGui.QLabel()
         self.fpsLabel.setAlignment(QtCore.Qt.AlignRight)
@@ -151,6 +153,8 @@ class ResultsWidget(QtGui.QWidget):
 
         self.frame_jump_button = QtGui.QPushButton('jump')
         self.frame_jump_button.clicked.connect(self.frame_jump)
+
+        self.frame_jump_button.setFocusPolicy(QtCore.Qt.StrongFocus)
 
         self.video_control_buttons_layout.addWidget(self.speedSlider)
         self.video_control_buttons_layout.addWidget(self.fpsLabel)

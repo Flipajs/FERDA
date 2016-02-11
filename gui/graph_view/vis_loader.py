@@ -177,6 +177,6 @@ if __name__ == '__main__':
     # l1.set_width(60)
     # l1.set_height(60)
     # l1.visualise(range(300, 360))
-    l1.visualise(range(1, 1000))
+    l1.visualise(range(0, 400))
     app.exec_()
     cv2.waitKey(0)

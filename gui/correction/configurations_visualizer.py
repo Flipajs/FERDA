@@ -71,6 +71,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         # self.autosave_timer.start(1000*60*10)
         self.order_by = 'time'
 
+        self.case_t = -1
+        self.case_v = -2
+
         self.join_regions_active = False
         self.join_regions_n1 = None
 
@@ -115,7 +118,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         return w
 
     def go_to_frame(self):
-        self.set_active_node_in_t(self.frame_number.value())
+        self.case_t = self.frame_number.value()
+        self.case_v = -1
+        # self.set_active_node_in_t(self.frame_number.value())
         self.next_case()
 
     def remove_locks(self):
@@ -173,7 +178,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.REMOVE, node)
         affected = self.project.gm.remove_vertex(node)
 
-        self.solver.simplify(queue=affected, rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+        # self.solver.simplify(queue=affected, rules=[self.solver.adaptive_threshold, self.solver.update_costs])
 
         if not suppress_next_case:
             self.next_case()
@@ -187,7 +192,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.STRONG_REMOVE, n)
         affected = self.solver.strong_remove(n)
-        self.solver.simplify(queue=affected, rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+        # self.solver.simplify(queue=affected, rules=[self.solver.adaptive_threshold, self.solver.update_costs])
 
         if not suppress_next_case:
             self.next_case()
@@ -225,6 +230,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             return sorted(pairs, key=lambda k: k[1].frame_)
 
     def set_active_node_in_t(self, t):
+        self.case_t = t
         nodes = []
         t_ = t
         while len(nodes) == 0 and t_ - t < 100:
@@ -244,6 +250,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
     def next_case(self, move_to_different_case=False, user_action=False):
         if move_to_different_case:
+            self.case_v += 1
             self.active_node_id += 1
 
         if not self.move_to_next_case_():
@@ -308,12 +315,46 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         if not user_action:
             self.project.save_snapshot()
 
-        config = self.best_greedy_config(nodes_groups)
+        config = self.get_greedy_config(nodes_groups)
 
         self.active_cw = CaseWidget(self.project, nodes_groups, config, self.vid, self)
 
         self.scenes_widget.layout().addWidget(self.active_cw)
         self.active_cw.setFocus()
+
+    def get_greedy_config(self, nodes_groups):
+        config = {}
+        for i in range(len(nodes_groups) - 1):
+            r1 = list(nodes_groups[i])
+            r2 = list(nodes_groups[i+1])
+
+            while r1:
+                changed = False
+                values = []
+                for v1 in r1:
+                    for v2 in r2:
+                        try:
+                            e = self.project.gm.g.edge(v1, v2)
+                            s = self.project.gm.g.ep['score'][e]
+
+                            if self.project.gm.g.vp['chunk_start_id'][v1] > 0:
+                                continue
+
+                            values.append([s, v1, v2])
+                            changed = True
+                        except:
+                            pass
+
+                if not changed:
+                    break
+
+                values = sorted(values, key=lambda k: -k[0])
+
+                r1.remove(values[0][1])
+
+                config[values[0][1]] = values[0][2]
+
+        return config
 
     def best_greedy_config(self, nodes_groups):
         config = {}
@@ -346,48 +387,58 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         return config
 
     def move_to_next_case_(self):
-        for i in xrange(1000):
-            v_id = self.active_node_id
+        vertices_in_t = self.project.gm.get_vertices_in_t(self.case_t)
 
-            try:
-                vertex = self.project.gm.g.vertex(v_id)
-                if self.active_cw is None:
-                    return True
+        if not vertices_in_t:
+            self.case_t = self.project.gm.next_frame_after(self.case_t)
+            self.case_v = -1
 
-                if self.project.gm.g.vp['active'][vertex]:
-                    for g in self.active_cw.vertices_groups:
-                        for vertex_ in g:
-                            if vertex == vertex_:
-                                continue
-
-                    return True
-            except:
+            return self.move_to_next_case_()
+        else:
+            if self.active_node_id in vertices_in_t:
                 pass
+            elif len(vertices_in_t) > self.case_v + 1:
+                self.active_node_id = vertices_in_t[self.case_v]
+            else:
+                self.case_t = self.project.gm.next_frame_after(self.case_t)
+                self.case_v = -1
+                return self.move_to_next_case_()
 
-            self.active_node_id += 1
+        if self.active_cw is None:
+            return True
 
-        return False
+        vertex = self.project.gm.g.vertex(self.active_node_id)
+        if self.project.gm.g.vp['active'][vertex]:
+            for g in self.active_cw.vertices_groups:
+                for vertex_ in g:
+                    if vertex == vertex_:
+                        self.case_v += 1
+                        self.active_node_id = -1
+                        return self.move_to_next_case_()
+
+            return True
+
+        return True
 
     def move_to_prev_case_(self):
-        for i in xrange(1000):
-            self.active_node_id -= 1
+        # if self.case_v > 0:
+        #     self.case_v -= 1
+        # else:
+        #     self.case_t = self.project.gm.prev_frame_before(self.case_t)
+        # then try if it is a valid vertex....
 
-            v_id = self.active_node_id
-            try:
-                vertex = self.project.gm.g.vertex(v_id)
-                if self.project.gm.g.vp['active'][vertex]:
-                    for g in self.active_cw.vertices_groups:
-                        for vertex_ in g:
-                            if vertex == vertex_:
-                                self.move_to_prev_case_()
-                                return
+        self.case_t = self.project.gm.prev_frame_before(self.case_t)
+        self.case_v = -1
 
-                    return
-            except:
-                pass
+        # vertices_in_t = self.project.gm.get_vertices_in_t(self.case_t)
+        #
+        # if not vertices_in_t:
+        #     self.case_t = self.project.gm.prev_frame_before(self.case_t)
+        #     self.case_v = -1
+        #
+        #     self.move_to_prev_case_()
+        # else:
 
-            if self.active_node_id < 0:
-                break
 
     def prev_case(self):
         self.move_to_prev_case_()
@@ -405,6 +456,15 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                                      't_reversed': t_reversed
                                  })
             vertex = self.active_cw.active_node
+
+            if vertex.in_degree() < 2 and vertex.out_degree() > 1:
+                print "Out degree > 0"
+                return
+
+            if vertex.in_degree() < 2:
+                print "In degree < 2"
+                return
+
             chunk, _ = self.project.gm.is_chunk(vertex)
 
             val = int(float(self.num_processes_label.text()))

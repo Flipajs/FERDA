@@ -450,3 +450,17 @@ class GraphManager:
             g.append(node_groups[k])
 
         return g
+
+    def next_frame_after(self, frame):
+        for t in xrange(frame + 1, self.end_t):
+            if t in self.vertices_in_t:
+                return t
+
+        return None
+
+    def prev_frame_before(self, frame):
+        for t in xrange(frame - 1, -1, -1):
+            if t in self.vertices_in_t:
+                return t
+
+        return None

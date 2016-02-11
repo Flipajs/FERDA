@@ -36,7 +36,7 @@ class CaseWidget(QtGui.QWidget):
         self.process_suggested_config(suggested_config)
 
         self.node_size = 70
-        self.frame_visu_margin = 30
+        self.frame_visu_margin = 100
 
         self.config_lines = []
         self.node_positions = []
