@@ -415,7 +415,7 @@ class GraphManager:
 
     def get_cc_rec(self, vertex, depth, node_groups):
         # TODO: add max depth param!
-        if depth > 10 or not self.g.vp['active'][vertex]:
+        if depth < 0 or depth > 10 or not self.g.vp['active'][vertex]:
             return
 
         r = self.region(vertex)
