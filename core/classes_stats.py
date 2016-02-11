@@ -1,7 +1,7 @@
 __author__ = 'fnaiser'
 
 import numpy as np
-from core.antlikeness import Antlikeness
+from core.antlikeness import Antlikeness, DummyAntlikeness
 
 class ClassesStats():
     def __init__(self):
@@ -11,7 +11,8 @@ class ClassesStats():
         self.antlikeness_svm = Antlikeness()
 
     def compute_stats(self, regions, classes):
-        self.antlikeness_svm.learn(regions, classes)
+        if not isinstance(self.antlikeness_svm, DummyAntlikeness):
+            self.antlikeness_svm.learn(regions, classes)
 
         areas = []
         major_axes = []

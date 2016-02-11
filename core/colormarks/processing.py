@@ -15,7 +15,20 @@ def get_colormarks(img, cm_model):
 
 
 def match_cms_region(cms, r):
+    cms_ = []
+    cont = r.contour()
+
+
     pass
+
+
+def filter_cms(cms):
+    cms_ = []
+    for cm in cms:
+        if len(cm[0]) > 15:
+            cms_.append(cm)
+
+    return cms_
 
 
 def get_ccs_(im, bg=-1, min_a=1, max_a=5000):

@@ -99,9 +99,9 @@ def get_colormark(img, color, position, radius, colormark_radius=-1):
     if len(regions) == 0:
         return None, -1, -1, dist_im
 
-    avg_intensity = [np.sum(dist_im[p.pts()[:, 0], p.pts()[:, 1]]) / p.area() for p in regions];
+    avg_intensity = [np.sum(dist_im[p.pts()[:, 0], p.pts()[:, 1]]) / p.area() for p in regions]
     avg_radius = get_settings('colormarks_avg_radius', float)
-    darkest_neighbour = [darkest_neighbour_square(img_crop, r.centroid(), avg_radius*2) for r in regions];
+    darkest_neighbour = [darkest_neighbour_square(img_crop, r.centroid(), avg_radius*2) for r in regions]
 
     val = np.array(avg_intensity) + np.array(darkest_neighbour)
     order = np.argsort(val)

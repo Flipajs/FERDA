@@ -209,7 +209,7 @@ class BackgroundComputer:
 
         part_num = self.part_num
         # TODO: remove this line
-        part_num = 27
+        # part_num = 27
 
         print "merging..."
         # for i in range(part_num):
