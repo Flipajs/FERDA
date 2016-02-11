@@ -53,8 +53,6 @@ class RegionManager:
                 self.id_ = 0
         self.tmp_ids = []
 
-        print "ID: ", self.id_
-
         if isinstance(data, RegionManager):
             newdata = data[:]
             self.add(newdata)

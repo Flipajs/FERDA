@@ -329,21 +329,22 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             r2 = list(nodes_groups[i+1])
 
             while r1:
+                v1 = r1[0]
                 changed = False
                 values = []
-                for v1 in r1:
-                    for v2 in r2:
-                        try:
-                            e = self.project.gm.g.edge(v1, v2)
-                            s = self.project.gm.g.ep['score'][e]
+                # for v1 in r1:
+                for v2 in r2:
+                    try:
+                        e = self.project.gm.g.edge(v1, v2)
+                        s = self.project.gm.g.ep['score'][e]
 
-                            if self.project.gm.g.vp['chunk_start_id'][v1] > 0:
-                                continue
+                        if self.project.gm.g.vp['chunk_start_id'][v1] > 0:
+                            continue
 
-                            values.append([s, v1, v2])
-                            changed = True
-                        except:
-                            pass
+                        values.append([s, v1, v2])
+                        changed = True
+                    except:
+                        pass
 
                 if not changed:
                     break
@@ -569,12 +570,12 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.JOIN_REGIONS, {'n1': int(n1), 'n2': int(n2)})
 
         # TODO: update also other moments etc...
-        n_new = deepcopy(n1)
-        n_new.pts_ = np.concatenate((n_new.pts_, n2.pts_), 0)
+        n_new = deepcopy(r1)
+        n_new.pts_ = np.concatenate((n_new.pts_, r2.pts_), 0)
         n_new.centroid_ = np.mean(n_new.pts_, 0)
         n_new.area_ = len(n_new.pts_)
-        self.solver.remove_region(n1)
-        self.solver.remove_region(n2)
+        self.project.gm.remove_vertex(n1)
+        self.project.gm.remove_vertex(n2)
         self.solver.add_virtual_region(n_new)
         self.next_case()
 

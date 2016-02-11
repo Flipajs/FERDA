@@ -272,12 +272,19 @@ def colorize_project(project):
     from utils.video_manager import get_auto_video_manager
     vid = get_auto_video_manager(project)
 
-    limit = len(project.chm.chunks_)
+    limit = 0
+    for _, ch in project.chm.chunks_.iteritems():
+        if ch.length() > 0:
+            limit += 1
+
+    print limit, "vs. ", len(project.chm.chunks_)
+    # limit = len(project.chm.chunks_)
 
     project.color_manager = ColorManager(vid.total_frame_count(), limit)
     for ch in project.chm.chunk_list():
-        rch = RegionChunk(ch, project.gm, project.rm)
-        ch.color, _ = project.color_manager.new_track(rch.start_frame(), rch.end_frame())
+        if ch.length() > 0:
+            rch = RegionChunk(ch, project.gm, project.rm)
+            ch.color, _ = project.color_manager.new_track(rch.start_frame(), rch.end_frame())
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
