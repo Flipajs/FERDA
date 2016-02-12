@@ -7,10 +7,7 @@ import math
 import random
 from core.graph.region_chunk import RegionChunk
 
-# TODO: upravit colormanager tak, aby zvladl v rozumnem case vytvorit barvy pro cam1 (600 chunku, ale vzdy max 8 soucasne)
-# TODO: upravit colormanager tak, aby pro kazdou barvu prochazel jen jeji sousedy
 # TODO: opravit chybu databaze pri nacitani projektu rucne (spatne vlakno)
-# TODO: upravit colormanager - mit podkladovou barvu, od ni by musely byt vsechny chunky dostatecne vzdalene (v tomto pripade cerna)
 
 class ColorManager():
     def __init__(self, length, limit, mode="rand", cmap='Accent'):
@@ -45,12 +42,10 @@ class ColorManager():
                 for i in range (0, limit):
                     self.colors_list.append(self.generate_color_cube(i * dx))
             self.cube_id = 0
-        elif mode == "newrand":
-            self.mode = "newrand"
-            self.adjacency = {}
-            self.bg_color = QtGui.QColor().fromRgb(0, 0, 0)
         else:
             self.mode = "rand"
+            self.adjacency = {}
+            self.bg_color = QtGui.QColor().fromRgb(0, 0, 0)
 
         random.seed()
         self.id = 0
@@ -76,15 +71,13 @@ class ColorManager():
             color = self.find_color_cmap(track)
         elif self.mode == "rainbow":
             color = self.find_color_cube()
-        elif self.mode == "newrand":
+        else:
             self.adjacency[track.id] = []
             for t in self.tracks:
                 if self.collide(t, track) > 0:
                     self.adjacency[track.id].append(t)
                     self.adjacency[t.id].append(track)
-            color = self.find_color_newrand(track)
-        else:
-            color = self.find_color(track)
+            color = self.find_color_rand(track)
         track.set_color(color)
 
         # add it in the tracks list
@@ -139,7 +132,7 @@ class ColorManager():
             return abs(track1.len)
         print "Ooops! [%s - %s] and [%s - %s]" % (track1.start, track1.stop, track2.start, track2.stop)
 
-    def find_color_newrand(self, track):
+    def find_color_rand(self, track):
         # the higher the limit, the better quality (difference between colors)
         limit = 80
         counter_limit = 300
@@ -166,50 +159,6 @@ class ColorManager():
                     break
         print "(%s, %s, %s)" % (r, g, b)
         return c
-
-
-
-    def find_color(self, track):
-        i = 0
-        limit = 150
-        while True:
-            ok = True
-            # try to pick a color
-            r = random.randint(0, 255)
-            g = random.randint(0, 255)
-            b = random.randint(0, 255)
-            # do not use colors, that are too close to black
-            if (r + g + b) < 70:
-                continue
-            else:
-                c1 = QtGui.QColor().fromRgb(r, g, b)
-                for t in self.tracks:
-                    # it must be different from any other track color
-                    c2 = t.get_color()
-                    difference = self.get_yuv_distance(c1, c2)
-                    collision = self.collide(t, track)
-
-                    # if two of the colors are the same at the same time, move on
-                    if difference == 0 and collision > 0:
-                        ok = False
-                        break
-
-                    elif collision > 0:
-                        if difference < limit:
-                            ok = False
-                            break
-                if ok:
-                    # print i
-                    return QtGui.QColor().fromRgb(r, g, b)
-
-                if i > 500:
-                    # if no color was found in 500 laps, return the current color
-                    print "No color found"
-                    # return QtGui.QColor().fromRgb(0, 0, 0)
-                    # return QtGui.QColor().fromRgb(r, g, b)
-                    return QtGui.QColor().fromRgb(255, 255, 255)
-                # try to make the choosing easier by enlarging the limit each time a wrong color is picked
-                limit += 0.02
 
     def find_color_cmap(self, track):
         while(True):
@@ -356,7 +305,7 @@ class TempGuiii(QtGui.QWidget):
         self.tracks.append(Track(0, screen_width, -1, QtGui.QColor().fromRgb(0, 0, 0)))
 
         for i in range(0, limit):
-            self.tracks.append(cm.test_dif())
+            self.tracks.append(self.cm.test_dif())
 
     def paintEvent(self, event):
         qp = QtGui.QPainter()
