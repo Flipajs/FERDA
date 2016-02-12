@@ -37,7 +37,7 @@ class ColormarksPicker(QtGui.QWidget):
     DEFAULT_PEN_SIZE = 10
     DEFAULT_UNDO_LENGTH = 10
 
-    def __init__(self, video_path):
+    def __init__(self, video_path, paint_r=255, paint_g=0, paint_b=238):
 
         super(ColormarksPicker, self).__init__()
 
@@ -56,8 +56,11 @@ class ColormarksPicker(QtGui.QWidget):
 
         self.view.setMouseTracking(True)
 
-        # current color ("Blue" or "Eraser")
-        self.color = "Blue"
+        # current color ("Color" or "Eraser")
+        self.color = "Color"
+        self.paint_r = paint_r
+        self.paint_g = paint_g
+        self.paint_b = paint_b
 
         # store last 10 QImages to support the "undo" function
         self.backup = []
@@ -208,8 +211,8 @@ class ColormarksPicker(QtGui.QWidget):
         if type(point) == QtCore.QPointF:
             point = point.toPoint()
 
-        if self.color == "Blue":
-            paint = QtGui.qRgba(0, 0, 255, 100)
+        if self.color == "Color":
+            paint = QtGui.qRgba(self.paint_r, self.paint_g, self.paint_b, 100)
             old, new = 0, 1
         else:
             paint = QtGui.qRgba(0, 0, 0, 0)
@@ -453,7 +456,7 @@ class ColormarksPicker(QtGui.QWidget):
         color_widget.setLayout(QtGui.QHBoxLayout())
 
         self.color_buttons = []
-        blue_button = QtGui.QPushButton("Blue")
+        blue_button = QtGui.QPushButton("Color")
         blue_button.setCheckable(True)
         blue_button.setChecked(True)
         blue_button.clicked.connect(self.switch_color)
@@ -633,7 +636,7 @@ if __name__ == "__main__":
     #p = Project()
     #p.load("/home/dita/PycharmProjects/FERDA projects/testc5/c5.fproj")
 
-    video_paths = ['/media/dita/SHARE/Movies/Bones/Season 09/Bones 09x14 The Master in the Slop.mp4']
+    video_paths = ['/home/dita/PycharmProjects/c5_0h03m-0h06m.avi', '/media/dita/SHARE/Movies/Bones/Season 09/Bones 09x14 The Master in the Slop.mp4']
 
     ex = ColormarksPicker(video_paths[0])
     ex.show()
