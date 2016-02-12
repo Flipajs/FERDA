@@ -106,7 +106,7 @@ class PlotChunks(QtGui.QWidget):
         self.draw_plane()
 
     def draw_intersections(self, frame):
-        for it in self.intersection_items:
+        for it in self.intersection_items[:]:
             try:
                 it.remove()
                 del it

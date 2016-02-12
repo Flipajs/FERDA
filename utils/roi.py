@@ -1,6 +1,6 @@
-import numpy as np
-
 __author__ = 'flipajs'
+
+import numpy as np
 
 
 class ROI():

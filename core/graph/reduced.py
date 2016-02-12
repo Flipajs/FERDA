@@ -7,9 +7,13 @@ from utils.img import prepare_for_segmentation
 from core.region.mser import ferda_filtered_msers
 
 class Reduced:
-    def __init__(self, region):
-        self.centroid_ = region.centroid()
-        self.frame_ = region.frame_
+    def __init__(self, region=None):
+        if not region:
+            self.centroid_ = None
+            self.frame_ = -1
+        else:
+            self.centroid_ = region.centroid()
+            self.frame_ = region.frame_
 
     def centroid(self):
         return np.copy(self.centroid_)

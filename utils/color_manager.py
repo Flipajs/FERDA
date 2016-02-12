@@ -5,6 +5,7 @@ from matplotlib import cm as cmx
 import sys
 import math
 import random
+from core.graph.region_chunk import RegionChunk
 
 # TODO: upravit colormanager tak, aby zvladl v rozumnem case vytvorit barvy pro cam1 (600 chunku, ale vzdy max 8 soucasne)
 # TODO: upravit colormanager tak, aby pro kazdou barvu prochazel jen jeji sousedy
@@ -184,7 +185,7 @@ class ColorManager():
 
     def find_color(self, track):
         i = 0
-        limit = 100
+        limit = 150
         while True:
             ok = True
             # try to pick a color
@@ -212,7 +213,7 @@ class ColorManager():
                             ok = False
                             break
                 if ok:
-                    print i
+                    # print i
                     return QtGui.QColor().fromRgb(r, g, b)
 
                 if i > 500:
@@ -220,8 +221,7 @@ class ColorManager():
                     print "No color found"
                     # return QtGui.QColor().fromRgb(0, 0, 0)
                     # return QtGui.QColor().fromRgb(r, g, b)
-                    return QtGui.QColor().fromRgb(255, 255, 255)
-                i += 1
+                    return QtGui.QColor().fromRgb(255, 255, 255)= 1
                 # try to make the choosing easier by enlarging the limit each time a wrong color is picked
                 limit += 0.02
 
@@ -410,6 +410,24 @@ class Track():
 
     def set_color_id(self, color_id):
         self.color_id = color_id
+
+def colorize_project(project):
+    from utils.video_manager import get_auto_video_manager
+    vid = get_auto_video_manager(project)
+
+    limit = 0
+    for _, ch in project.chm.chunks_.iteritems():
+        if ch.length() > 0:
+            limit += 1
+
+    print limit, "vs. ", len(project.chm.chunks_)
+    # limit = len(project.chm.chunks_)
+
+    project.color_manager = ColorManager(vid.total_frame_count(), limit)
+    for ch in project.chm.chunk_list():
+        if ch.length() > 0:
+            rch = RegionChunk(ch, project.gm, project.rm)
+            ch.color, _ = project.color_manager.new_track(rch.start_frame(), rch.end_frame())
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

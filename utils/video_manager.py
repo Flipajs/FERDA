@@ -80,8 +80,8 @@ class VideoManager():
         if self.position_ > 0:
             self.position_ -= 1
             view_dec = self.dec_pos_(self.view_position_)
-            # if (view_dec == self.buffer_position_) or (self.buffer_[view_dec] is None):
-            if True:
+            if (view_dec == self.buffer_position_) or (self.buffer_[view_dec] is None):
+            # if True:
                 self.buffer_position_ = self.dec_pos_(self.buffer_position_)
                 self.view_position_ = self.dec_pos_(self.view_position_)
                 self.buffer_[self.view_position_] = self.seek_frame(self.position_)
@@ -228,6 +228,24 @@ def get_auto_video_manager(project):
     return FerdaCompressedVideoManager(compressed, lossless, start_t=project.video_start_t, end_t=project.video_end_t)
 
 
+def optimize_frame_access_vertices(vertices, project, ra_n_times_slower=40):
+    mapping = {}
+    regions = []
+    for v in vertices:
+        r = project.gm.region(v)
+        mapping[r] = v
+        regions.append(r)
+
+    results = optimize_frame_access(regions, ra_n_times_slower)
+
+    new_results = []
+    for r, b1, b2 in results:
+        v = mapping[r]
+        new_results.append((v, b1, b2))
+
+    return new_results
+
+
 def optimize_frame_access(list_data, ra_n_times_slower=40):
     """
     implemented by Simon Mandlik
@@ -239,7 +257,7 @@ def optimize_frame_access(list_data, ra_n_times_slower=40):
     :return:
     """
 
-    sorted_list = list(list_data)
+    list_data = list(list_data)
     sorted_list = sorted(list_data, key=lambda x: x.frame_)
     result = []
     prev_frame = 0

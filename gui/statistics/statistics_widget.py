@@ -5,6 +5,8 @@ import csv
 import scipy.io as sio
 import numpy as np
 from region_reconstruction import RegionReconstruction
+from fix_area import FixArea
+
 
 class StatisticsWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -54,6 +56,11 @@ class StatisticsWidget(QtGui.QWidget):
 
         self.region_reconstruction = RegionReconstruction(project, solver=None)
         self.vbox.addWidget(self.region_reconstruction)
+
+        self.fix_area = FixArea(project, solver=None)
+        self.vbox.addWidget(self.fix_area)
+        if not project.version_is_le('2.2.9'):
+            self.fix_area.vbox.addWidget(QtGui.QLabel('AREA WAS ALREADY UPDATED!'))
 
     def export(self):
         print "exporting..."
@@ -120,7 +127,28 @@ class StatisticsWidget(QtGui.QWidget):
             id_ += 1
 
         with open(self.get_out_path()+'.mat', 'wb') as f:
-            sio.savemat(f, {'FERDA': obj_arr})
+            arena = None
+            if self.project.arena_model:
+                am = self.project.arena_model
+                try:
+                    c = am.center
+                    radius = am.radius
+                except AttributeError:
+                    center = np.array([0, 0])
+                    num = 0
+                    # estimate center:
+                    for y in range(am.im_height):
+                        for x in range(am.im_width):
+                            if am.mask_[y, x]:
+                                center += np.array([y, x])
+                                num += 1
+
+                    c = center / num
+                    radius = round((num / np.pi) ** 0.5)
+
+                arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
+
+            sio.savemat(f, {'FERDA': obj_arr, 'arena:': arena})
 
     def add_line_mat(self, d, r):
         y, x = r.centroid()
@@ -174,3 +202,4 @@ class StatisticsWidget(QtGui.QWidget):
         self.num_of_chunks.setText(str(len(solver.chunk_list())))
 
         self.region_reconstruction.solver = solver
+        self.fix_area.solver = solver

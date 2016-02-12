@@ -11,6 +11,8 @@ from core.log import Log
 from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
+from utils.color_manager import ColorManager
+
 
 class Project:
     """
@@ -26,18 +28,29 @@ class Project:
         self.date_created = -1
         self.date_last_modifiaction = -1
 
+        # REGION MANAGER
+        self.rm = None
+        # CHUNK MANAGER
+        self.chm = None
+        # GRAPH MANAGER
+        self.gm = None
+
         self.bg_model = None
         self.arena_model = None
         self.classes = None
         self.groups = None
         self.animals = None
         self.stats = None
-        self.saved_progress = None
         self.mser_parameters = MSERParameters()
         self.other_parameters = OtherParameters()
         self.solver_parameters = SolverParameters()
+        self.color_manager = None
         self.log = Log()
-        self.version = "2.2.9"
+        self.solver = None
+        self.version = "3.1.0"
+
+        self.snapshot_id = 0
+        self.active_snapshot = -1
 
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
@@ -48,7 +61,7 @@ class Project:
         l2 = string.split(ver, '.')
 
         for a, b in zip(l1, l2):
-            if a > b:
+            if int(a) > int(b):
                 return False
 
         return True
@@ -68,13 +81,19 @@ class Project:
         p.version = self.version
 
         p.date_created = self.date_created
+        p.color_manager = self.color_manager
         import time
         p.date_last_modifiaction = time.time()
+
+        p.snapshot_id = self.snapshot_id
+        p.active_snapshot = self.active_snapshot
 
         with open(self.working_directory+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 
     def save(self):
+        self.save_snapshot()
+
         # BG MODEL
         if self.bg_model:
             if isinstance(self.bg_model, Model):
@@ -112,9 +131,57 @@ class Project:
             with open(self.working_directory+'/stats.pkl', 'wb') as f:
                 pickle.dump(self.stats, f)
 
+        # # Region Manager
+        # if self.rm:
+        #     with open(self.working_directory+'/region_manager.pkl', 'wb') as f:
+        #         pickle.dump(self.rm, f, -1)
+
+        self.save_chm_(self.working_directory+'/chunk_manager.pkl')
+
+        self.save_gm_(self.working_directory+'/graph_manager.pkl')
+
         self.save_qsettings()
 
         self.save_project_file_()
+
+    def save_gm_(self, file_path):
+        # Graph Manager
+        if self.gm:
+            self.gm.project = None
+            self.gm.rm = None
+            ac = self.gm.assignment_score
+            self.gm.assignment_score = None
+
+            with open(file_path, 'wb') as f:
+                pickle.dump(self.gm, f, -1)
+
+            self.gm.project = self
+            self.gm.rm = self.rm
+            self.gm.assignment_score = ac
+
+    def save_chm_(self, file_path):
+        # Chunk Manager
+        if self.chm:
+            for _, ch in self.chm.chunks_.iteritems():
+                ch.project = None
+
+            with open(file_path, 'wb') as f:
+                pickle.dump(self.chm, f, -1)
+
+    def save_snapshot(self):
+        # print self.snapshot_id, self.active_snapshot
+        import os
+
+        if not os.path.exists(self.working_directory + '/.auto_save'):
+            os.mkdir(self.working_directory + '/.auto_save')
+
+        self.save_chm_(self.working_directory+'/.auto_save/'+str(self.snapshot_id)+'__chunk_manager.pkl')
+
+        self.save_gm_(self.working_directory+'/.auto_save/'+str(self.snapshot_id)+'__graph_manager.pkl')
+
+        self.snapshot_id += 1
+        self.active_snapshot = -1
+
 
     def save_qsettings(self):
         s = QtCore.QSettings('FERDA')
@@ -141,11 +208,13 @@ class Project:
                 except:
                     pass
 
-    def load(self, path):
+    def load(self, path, snapshot=None):
         with open(path, 'rb') as f:
             tmp_dict = pickle.load(f)
 
         self.__dict__.update(tmp_dict)
+        a_ = path.split('/')
+        self.working_directory = path[:-(len(a_[-1])+1)]
 
         # BG MODEL
         try:
@@ -195,10 +264,18 @@ class Project:
         except:
             pass
 
+        # # Region Manager
+        # try:
+        #     with open(self.working_directory+'/region_manager.pkl', 'rb') as f:
+        #         self.rm = pickle.load(f)
+        # except:
+        #     pass
+
+        self.load_snapshot(snapshot)
+
         # SAVED CORRECTION PROGRESS
         try:
             with open(self.working_directory+'/progress_save.pkl', 'rb') as f:
-                print "LOADING last progerss save... it might take some time..."
                 up = pickle.Unpickler(f)
                 g = up.load()
                 log = up.load()
@@ -211,15 +288,83 @@ class Project:
                 except:
                     pass
 
-                solver = Solver(self)
-                solver.g = g
-                solver.ignored_nodes = ignored_nodes
-                solver.update_nodes_in_t_refs()
-                self.saved_progress = {'solver': solver}
+                # self.solver = Solver(self)
+                # self.gm.g = g
+                # self.solver.g = g
+                self.solver.ignored_nodes = ignored_nodes
+                # solver.update_nodes_in_t_refs()
                 self.log = log
-                print "FINISHED..."
+
+                if self.gm:
+                    self.gm.assignment_score = self.solver.assignment_score
         except:
             pass
+
+        # reconnect...
+        if not self.gm:
+            from core.graph.graph_manager import GraphManager
+            self.gm = GraphManager(self, None)
+
+        from core.region.region_manager import RegionManager
+        self.solver = Solver(self)
+        self.gm.assignment_score = self.solver.assignment_score
+
+        self.rm = RegionManager(db_wd=self.working_directory, cache_size_limit=0)
+
+        self.gm.project = self
+        self.gm.rm = self.rm
+        self.gm.update_nodes_in_t_refs()
+
+        self.active_snapshot = -1
+
+    def load_snapshot(self, snapshot):
+        chm_path = self.working_directory+'/chunk_manager.pkl'
+        gm_path = self.working_directory+'/graph_manager.pkl'
+
+        if snapshot:
+            chm_path = snapshot['chm']
+            gm_path = snapshot['gm']
+
+        # Chunk Manager
+        try:
+            with open(chm_path, 'rb') as f:
+                self.chm = pickle.load(f)
+        except:
+            pass
+
+        # Graph Manager
+        try:
+            with open(gm_path, 'rb') as f:
+                self.gm = pickle.load(f)
+                self.gm.project = self
+                self.gm.assignment_score = self.solver.assignment_score
+        except:
+            pass
+
+    def snapshot_undo(self):
+        if self.active_snapshot < 0:
+            self.active_snapshot = self.snapshot_id - 2
+        else:
+            self.active_snapshot -= 1
+
+        if self.active_snapshot < 0:
+            print "No more undo possible!"
+
+        # print "UNDO", self.snapshot_id, self.active_snapshot
+
+        self.load_snapshot({'chm': self.working_directory+'/.auto_save/'+str(self.active_snapshot)+'__chunk_manager.pkl',
+                           'gm': self.working_directory+'/.auto_save/'+str(self.active_snapshot)+'__graph_manager.pkl'})
+
+
+def dummy_project():
+    from core.classes_stats import dummy_classes_stats
+    from core.region.region_manager import RegionManager
+
+    p = Project()
+    p.stats = dummy_classes_stats()
+    p.rm = RegionManager()
+
+    return p
 
 
 if __name__ == "__main__":

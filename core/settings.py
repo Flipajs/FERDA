@@ -79,7 +79,13 @@ class Visualization:
 
 class Parallelization:
     __metaclass__ = SettingsType
-    processes_num = Item('parallelization/processes_num', 8, 'The number of processes. It is good idea to set it <= num of CPUs')
+    import multiprocessing
+
+    num = multiprocessing.cpu_count()
+    if num > 1:
+        num -= 1
+
+    processes_num = Item('parallelization/processes_num', num, 'The number of processes. It is good idea to set it <= num of CPUs')
     use = Item('parallelization/use', True, '...')
     frames_in_row = Item('parallelization/frames_in_row', 100, 'num of frames in one part into which the whole video is divided...')
 
@@ -115,8 +121,12 @@ class Controls:
     new_region = Item('controls/new_region', QtGui.QKeySequence(QtCore.Qt.Key_R))
     ignore_case = Item('controls/ignore_case', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
 
+    undo_fitting = Item('controls/undo_fitting', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_F))
+    undo_whole_fitting = Item('controls/undo_whole_fitting', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_F))
+
     stop_action = Item('controls/stop_action', QtGui.QKeySequence(QtCore.Qt.Key_Escape))
     save = Item('controls/save', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
+    save_only_long_enough = Item('controls/save_only_long_enough', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_S))
     undo = Item('controls/undo', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Z))
     get_info = Item('controls/get_info', QtGui.QKeySequence(QtCore.Qt.Key_I))
     hide_show = Item('controls/hide_show', QtGui.QKeySequence(QtCore.Qt.Key_H))

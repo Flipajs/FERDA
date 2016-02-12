@@ -13,6 +13,9 @@ from utils.video_manager import optimize_frame_access
 from gui.correction.global_view import GlobalView
 from gui.loading_widget import LoadingWidget
 from core.log import LogCategories, ActionNames
+import math
+from gui.img_grid.img_grid_widget import ImgGridWidget
+from gui.correction.noise_filter_widget import NoiseFilterWidget
 
 
 class TrackerWidget(QtGui.QWidget):
@@ -42,22 +45,6 @@ class TrackerWidget(QtGui.QWidget):
 
         self.top_row.addLayout(self.tool_row)
 
-        # noise toolbox
-        self.mode_tools_noise = QtGui.QWidget()
-        self.mode_tools_noise.setLayout(QtGui.QHBoxLayout())
-        self.tool_row.addWidget(self.mode_tools_noise)
-
-        self.noise_nodes_confirm_b = QtGui.QPushButton('remove selected')
-        # self.noise_nodes_confirm_b.clicked.connect(self.remove_noise)
-        self.mode_tools_noise.layout().addWidget(self.noise_nodes_confirm_b)
-
-        self.noise_nodes_back_b = QtGui.QPushButton('back')
-        # self.noise_nodes_back_b.clicked.connect(self.remove_noise_back)
-        self.mode_tools_noise.layout().addWidget(self.noise_nodes_back_b)
-        self.mode_tools_noise.hide()
-
-        self.tool_row.addWidget(self.mode_tools_noise)
-
         self.tool = QtGui.QVBoxLayout()
         self.layout().addLayout(self.tool)
 
@@ -73,6 +60,15 @@ class TrackerWidget(QtGui.QWidget):
         self.layout().setContentsMargins(0, 0, 0, 0)
 
     def undo(self):
+        self.project.snapshot_undo()
+
+        tool_w = self.tool.itemAt(0).widget()
+
+        if isinstance(tool_w, ConfigurationsVisualizer):
+            tool_w.update_content()
+
+        return
+
         S_.general.log_graph_edits = False
 
         log = self.solver.project.log
@@ -138,14 +134,30 @@ class TrackerWidget(QtGui.QWidget):
         elif ct == 'global view':
             self.show_global_view()
         elif ct == 'noise filter':
-            self.mode_tools_noise.show()
             self.noise_nodes_filter()
 
+    def noise_nodes_filter(self):
+        elem_width = 100
+        cols = math.floor(self.width() / elem_width)
+
+        steps = 500
+
+        noise_widget = NoiseFilterWidget(self.project, steps, elem_width, cols)
+
+        self.tool.addWidget(noise_widget)
+        # self.tool_row.addWidget(self.mode_tools_noise.tool_w)
+
     def show_step_by_step(self):
+        """
+
+        Returns:
+
+        """
         step_by_step = ConfigurationsVisualizer(self.solver, get_auto_video_manager(self.project))
         self.tool.addWidget(step_by_step)
         self.tool_row.addWidget(step_by_step.tool_w)
-        step_by_step.next_case()
+        # step_by_step.set_active_node_in_t(180)
+        step_by_step.next_case(True)
 
     def show_global_view(self):
         global_view = GlobalView(self.project, self.solver, show_in_visualizer_callback=self.show_in_visualizer_callback)
@@ -163,3 +175,13 @@ class TrackerWidget(QtGui.QWidget):
         self.solver = solver
         self.progress_w.hide()
         self.mode_changed()
+
+        self.save_progress = QtGui.QAction('save', self)
+        self.save_progress.triggered.connect(self.solver.save)
+        self.save_progress.setShortcut(S_.controls.save)
+        self.addAction(self.save_progress)
+
+        self.save_progress_only_chunks_action = QtGui.QAction('save only chunks', self)
+        self.save_progress_only_chunks_action.triggered.connect(self.solver.save_progress_only_chunks)
+        self.save_progress_only_chunks_action.setShortcut(S_.controls.save_only_long_enough)
+        self.addAction(self.save_progress_only_chunks_action)

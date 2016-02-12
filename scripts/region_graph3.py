@@ -190,6 +190,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.picked_node = None
         self.ignored_nodes = {}
 
+        self.use_img_toggle = True
+
     def stop_following(self):
         self.picked_node = None
         self.update_view()
@@ -212,10 +214,15 @@ class NodeGraphVisualizer(QtGui.QWidget):
             for box in self.boxes:
                 box[0].hide()
 
-                # if box[2] != None:
-                #     box[2].setClipped(None)
+            for it in self.toggled:
+                self.scene.removeItem(it)
 
-        if item and isinstance(item, Custom_Line_Selectable):
+            self.toggled = []
+            self.clear_all_button_function()
+            
+            return
+
+        if isinstance(item, Custom_Line_Selectable):
             e_ = self.edges_obj[item]
             self.selected_edge[0] = e_
             e = self.g[e_[0]][e_[1]]
@@ -224,12 +231,15 @@ class NodeGraphVisualizer(QtGui.QWidget):
             except KeyError:
                 chunk = None
             self.edge_labels_update(e_, chunk)
-
-        if item and isinstance(item, Pixmap_Selectable):
+        if isinstance(item, Pixmap_Selectable):
             parent_pixmap = item.parent_pixmap
             n_ = self.nodes_obj[parent_pixmap]
             self.node_label_update(n_)
-            self.toggle_n(n_)
+            if self.use_img_toggle:
+                self.toggle_n(n_)
+        elif isinstance(item, QtGui.QGraphicsPixmapItem):
+            # toggled item...
+            return
         else:
             # self.clear_all_button_function()
             self.suggest_node = False
@@ -603,8 +613,9 @@ class NodeGraphVisualizer(QtGui.QWidget):
             self.node_label_update(picked)
             self.node_label_update(best_match)
 
-            self.toggle_n(picked)
-            self.toggle_n(best_match)
+            if self.use_img_toggle:
+                self.toggle_n(picked)
+                self.toggle_n(best_match)
 
             QtGui.QApplication.processEvents()
             self.view.centerOn(self.pixmaps[picked].scenePos())
@@ -775,8 +786,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.toggled.append(it)
 
 
-def visualize_nodes(im, r, margin=0.1):
-    vis = draw_points_crop(im, r.pts(), margin=margin, square=True, color=(0, 255, 0, 0.35))
+def visualize_nodes(im, r, margin=0.1, color=(0, 255, 0, 0.35)):
+    vis = draw_points_crop(im, r.pts(), margin=margin, square=True, color=color)
     # cv2.putText(vis, str(r.id_), (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.55, (255, 255, 255), 1, cv2.cv.CV_AA)
 
     return vis

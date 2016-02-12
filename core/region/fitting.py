@@ -10,6 +10,7 @@ from core.region.region import Region
 import matplotlib.pyplot as plt
 from utils.geometry import rotation_matrix, angle_from_matrix, rotate
 from utils.roi import ROI
+from copy import deepcopy
 
 ##############
 # all point lists are in format [y, x]
@@ -98,7 +99,7 @@ class Fitting():
             if not changed:
                 break
 
-        self.prepare_results()
+        return self.prepare_results()
         # self.plot_situation()
 
     def test_t_convergence(self, animal_history, frame):
@@ -110,6 +111,8 @@ class Fitting():
         return False
 
     def prepare_results(self):
+        results = []
+
         for a_id in range(len(self.animals)):
             # The transformation is done using back projection to supress holes inside objects due rounding to int...
             roi_t2 = self.d_map_animals[a_id].roi
@@ -136,9 +139,16 @@ class Fitting():
 
             pts_ = np.array(pts_)
 
-            self.animals[a_id].pts_ = np.asarray(np.round(pts_), dtype=np.uint32)
-            self.animals[a_id].centroid_ = self.trans_helpers[a_id].centroid
-            self.animals[a_id].is_virtual = True
+            animal = deepcopy(self.animals[a_id])
+            animal.pts_ = np.asarray(np.round(pts_), dtype=np.uint32)
+            animal.centroid_ = self.trans_helpers[a_id].centroid
+            animal.is_virtual = True
+            animal.area_ = None
+            animal.pts_rle_ = None
+
+            results.append(animal)
+
+        return results
 
     def plot_situation(self):
         plt.close()
@@ -182,6 +192,8 @@ class Fitting():
         # pts_ = np.dot(pts_, rot.T)
         # pts_ += translation
         # self.animals[a_id].pts_ = np.asarray(pts_, dtype=np.int32)
+
+        return pts_
 
     def compute_transformation(self, pairs):
         apts = pairs[:,0]

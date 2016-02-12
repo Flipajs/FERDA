@@ -20,6 +20,7 @@ from core.settings import Settings as S_
 import math
 from gui.view.graph_visualizer import call_visualizer
 from gui.loading_widget import LoadingWidget
+from fitting_threading_manager import FittingThreadingManager
 
 
 class ConfigurationsVisualizer(QtGui.QWidget):
@@ -70,6 +71,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         # self.autosave_timer.start(1000*60*10)
         self.order_by = 'time'
 
+        self.case_t = -1
+        self.case_v = -2
+
         self.join_regions_active = False
         self.join_regions_n1 = None
 
@@ -77,10 +81,24 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.order_by_sb = None
         self.tool_w = self.create_tool_w()
+        self.fitting_tm = FittingThreadingManager()
+
+        self.fitting_finished_mutex = QtCore.QMutex()
+
 
     def create_tool_w(self):
         w = QtGui.QWidget()
         w.setLayout(QtGui.QHBoxLayout())
+
+        self.frame_number = QtGui.QSpinBox()
+        self.frame_number.setMinimum(0)
+        self.frame_number.setMaximum(100000000)
+
+        self.go_to_frame_b = QtGui.QPushButton('go to frame')
+        self.go_to_frame_b.clicked.connect(self.go_to_frame)
+
+        w.layout().addWidget(self.frame_number)
+        w.layout().addWidget(self.go_to_frame_b)
 
         self.order_by_sb = QtGui.QComboBox()
         self.order_by_sb.addItem('frame')
@@ -89,40 +107,24 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         w.layout().addWidget(QtGui.QLabel('order by: '))
         w.layout().addWidget(self.order_by_sb)
 
+        self.num_processes_label = QtGui.QLabel('0')
+        w.layout().addWidget(self.num_processes_label)
+
+        self.remove_locks_b = QtGui.QPushButton('remove locks')
+        self.remove_locks_b.clicked.connect(self.remove_locks)
+
+        w.layout().addWidget(self.remove_locks_b)
+
         return w
 
-    def save_progress_only_chunks(self):
-        wd = self.solver.project.working_directory
+    def go_to_frame(self):
+        self.case_t = self.frame_number.value()
+        self.case_v = -1
+        # self.set_active_node_in_t(self.frame_number.value())
+        self.next_case()
 
-        name = '/progress_save.pkl'
-
-        to_remove = []
-        for n in self.solver.g:
-            is_ch, t_reversed, ch = self.solver.is_chunk(n)
-            if not is_ch or ch.length() < self.project.solver_parameters.global_view_min_chunk_len:
-                to_remove.append(n)
-
-        print "NODES", len(self.solver.g)
-        S_.general.log_graph_edits = False
-        for n in to_remove:
-            if n not in self.solver.g:
-                continue
-
-            try:
-                self.solver.strong_remove(n)
-            except:
-                pass
-
-        print "NODES", len(self.solver.g)
-        S_.general.log_graph_edits = True
-
-        with open(wd+name, 'wb') as f:
-            pc = pickle.Pickler(f, -1)
-            pc.dump(self.solver.g)
-            pc.dump(self.solver.project.log)
-            pc.dump(self.solver.ignored_nodes)
-
-        print "ONLY CHUNKS PROGRESS SAVED"
+    def remove_locks(self):
+        self.fitting_tm.locked_vertices = set()
 
     def set_nodes_queue(self, nodes):
         for n in nodes:
@@ -174,7 +176,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             node = self.active_cw.active_node
 
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.REMOVE, node)
-        self.solver.remove_region(node)
+        affected = self.project.gm.remove_vertex(node)
+
+        # self.solver.simplify(queue=affected, rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+
         if not suppress_next_case:
             self.next_case()
 
@@ -186,7 +191,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             return
 
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.STRONG_REMOVE, n)
-        self.solver.strong_remove(n)
+        affected = self.solver.strong_remove(n)
+        # self.solver.simplify(queue=affected, rules=[self.solver.adaptive_threshold, self.solver.update_costs])
+
         if not suppress_next_case:
             self.next_case()
 
@@ -216,72 +223,147 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         else:
             self.nodes = sorted(self.nodes, key=lambda k: k.frame_)
 
-    def next_case(self, move_to_different_case=False):
+    def order_pairs_(self, pairs):
+        if self.order_by_sb.currentText() == 'chunk length':
+            raise Exception('order by chunk length not implemented yet in configurations_visualizer.py')
+        else:
+            return sorted(pairs, key=lambda k: k[1].frame_)
+
+    def set_active_node_in_t(self, t):
+        self.case_t = t
+        nodes = []
+        t_ = t
+        while len(nodes) == 0 and t_ - t < 100:
+            nodes = map(int, self.project.gm.get_vertices_in_t(t_))
+            t_ += 1
+
+        if len(nodes) == 0:
+            return
+
+        pairs = self.project.gm.all_vertices_and_regions()
+        pairs = self.order_pairs_(pairs)
+
+        for i in range(len(pairs)):
+            if pairs[i][0] == nodes[0]:
+                self.active_node_id = i
+                break
+
+    def next_case(self, move_to_different_case=False, user_action=False):
         if move_to_different_case:
+            self.case_v += 1
             self.active_node_id += 1
 
-        self.nodes = self.solver.g.nodes()
-        self.order_nodes()
+        if not self.move_to_next_case_():
+            self.project.save_snapshot()
+            return
 
-        if self.active_node_id < len(self.nodes):
-            n = self.nodes[self.active_node_id]
-            if n in self.solver.ignored_nodes:
-                self.active_node_id += 1
-                self.next_case()
+        v_id = self.active_node_id
+        vertex = self.project.gm.g.vertex(v_id)
+
+        # try:
+        #     vertex = self.project.gm.g.vertex(v_id)
+        #     if not self.project.gm.g.vp['active'][vertex]:
+        #         self.next_case(True)
+        #         return
+        # except:
+        #     self.next_case(True)
+        #     return
+
+        r = self.project.gm.region(vertex)
+        if v_id in self.solver.ignored_nodes:
+            self.next_case(True, user_action)
+            return
+
+        # test end
+        if r.frame_ == self.project.gm.end_t:
+            self.next_case(True, user_action)
+            return
+
+        # test beginning
+        if r.frame_ == 0:
+            ch, _ = self.project.gm.is_chunk(vertex)
+            if ch:
+                self.next_case(True, user_action)
                 return
 
-            # test end
-            if n.frame_ == self.solver.end_t:
-                self.active_node_id += 1
-                self.next_case()
-                return
+        # test if it is different cc:
+        if move_to_different_case and self.active_cw:
+            for g in self.active_cw.vertices_groups:
+                for vertex_ in g:
+                    if vertex == vertex_:
+                        self.next_case(move_to_different_case, user_action)
+                        return
 
-            # test beginning
-            if n.frame_ == 0:
-                is_ch, _, _ = self.solver.is_chunk(n)
-                if is_ch:
-                    self.active_node_id += 1
-                    self.next_case()
+        # remove previous case (if exists)
+        if self.scenes_widget.layout().count():
+            it = self.scenes_widget.layout().itemAt(0)
+            self.scenes_widget.layout().removeItem(it)
+            it.widget().setParent(None)
+
+        # add new widget
+        nodes_groups = self.project.gm.get_cc_from_vertex(vertex)
+        if len(nodes_groups) == 0:
+            self.next_case(True, user_action)
+            return
+
+        for ng in nodes_groups:
+            for n in ng:
+                if int(n) in self.fitting_tm.locked_vertices:
+                    self.next_case(True, user_action)
                     return
 
-            # test if it is different cc:
-            if move_to_different_case and self.active_cw:
-                for g in self.active_cw.nodes_groups:
-                    for n_ in g:
-                        if n == n_:
-                            self.next_case(move_to_different_case)
-                            return
+        if not user_action:
+            self.project.save_snapshot()
 
-            # remove previous case (if exists)
-            if self.scenes_widget.layout().count():
-                it = self.scenes_widget.layout().itemAt(0)
-                self.scenes_widget.layout().removeItem(it)
-                it.widget().setParent(None)
+        if len(nodes_groups) > 10:
+            nodes_groups = nodes_groups[0:9]
 
-            # add new widget
-            nodes_groups = self.solver.get_cc_from_node(n)
-            if len(nodes_groups) == 0:
-                print n, "empty nodes groups"
-                # self.nodes.pop(self.active_node_id)
-                self.active_node_id += 1
-                self.next_case()
-                return
+        config = self.get_greedy_config(nodes_groups)
 
-            # nodes_groups = []
-            # for i in range(100):
-            #     nodes_groups.append([])
-            #
-            # nodes_ = self.solver.g.nodes()
-            # nodes_ = sorted(nodes_, key=lambda k: k.frame_)
-            # while nodes_:
-            #     n = nodes_.pop(0)
-            #     nodes_groups[n.frame_].append(n)
+        self.active_cw = CaseWidget(self.project, nodes_groups, config, self.vid, self)
 
-            config = self.best_greedy_config(nodes_groups)
+        self.scenes_widget.layout().addWidget(self.active_cw)
+        self.active_cw.setFocus()
 
-            self.active_cw = CaseWidget(self.solver.g, self.project, nodes_groups, config, self.vid, self)
-            self.active_cw.active_node = None
-            self.scenes_widget.layout().addWidget(self.active_cw)
+    def get_greedy_config(self, nodes_groups):
+        config = {}
+        for i in range(len(nodes_groups) - 1):
+            vs1 = list(nodes_groups[i])
+            vs2 = list(nodes_groups[i+1])
+
+            while vs1:
+                v1 = vs1[0]
+                changed = False
+                values = []
+                # for v1 in r1:
+                for v2 in vs2:
+                    try:
+                        r1_ = self.project.gm.region(v1)
+                        r2_ = self.project.gm.region(v2)
+
+                        s = 1 / (0.001 + np.linalg.norm(r1_.centroid() - r2_.centroid()))
+
+                        # e = self.project.gm.g.edge(v1, v2)
+                        # s = self.project.gm.g.ep['score'][e]
+
+                        if self.project.gm.g.vp['chunk_start_id'][v1] > 0:
+                            continue
+
+                        values.append([s, v1, v2])
+                        changed = True
+                    except:
+                        pass
+
+                if not changed:
+                    break
+
+                values = sorted(values, key=lambda k: -k[0])
+
+                vs1.remove(values[0][1])
+
+                config[values[0][1]] = values[0][2]
+
+        return config
 
     def best_greedy_config(self, nodes_groups):
         config = {}
@@ -292,11 +374,12 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             while r1 and r2:
                 changed = False
                 values = []
-                for n1 in r1:
-                    for n2 in r2:
+                for v1 in r1:
+                    for v2 in r2:
                         try:
-                            s = self.solver.g[n1][n2]['score']
-                            values.append([s, n1, n2])
+                            e = self.project.gm.g.edge(v1, v2)
+                            s = self.project.gm.g.ep['score'][e]
+                            values.append([s, v1, v2])
                             changed = True
                         except:
                             pass
@@ -304,90 +387,74 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 if not changed:
                     break
 
-                values = sorted(values, key=lambda k: k[0])
+                values = sorted(values, key=lambda k: -k[0])
+
                 r1.remove(values[0][1])
                 r2.remove(values[0][2])
                 config[values[0][1]] = values[0][2]
 
         return config
 
+    def move_to_next_case_(self):
+        vertices_in_t = self.project.gm.get_vertices_in_t(self.case_t)
+
+        if not vertices_in_t:
+            self.case_t = self.project.gm.next_frame_after(self.case_t)
+            self.case_v = -1
+
+            return self.move_to_next_case_()
+        else:
+            if self.active_node_id in vertices_in_t:
+                pass
+            elif len(vertices_in_t) > self.case_v + 1:
+                self.active_node_id = vertices_in_t[self.case_v]
+            else:
+                self.case_t = self.project.gm.next_frame_after(self.case_t)
+                self.case_v = -1
+                return self.move_to_next_case_()
+
+        if self.active_cw is None:
+            return True
+
+        vertex = self.project.gm.g.vertex(self.active_node_id)
+        if self.project.gm.g.vp['active'][vertex]:
+            for g in self.active_cw.vertices_groups:
+                for vertex_ in g:
+                    if vertex == vertex_:
+                        self.case_v += 1
+                        self.active_node_id = -1
+                        return self.move_to_next_case_()
+
+            return True
+
+        return True
+
+    def move_to_prev_case_(self):
+        # if self.case_v > 0:
+        #     self.case_v -= 1
+        # else:
+        #     self.case_t = self.project.gm.prev_frame_before(self.case_t)
+        # then try if it is a valid vertex....
+
+        self.case_t = self.project.gm.prev_frame_before(self.case_t)
+        self.case_v = -1
+
+        # vertices_in_t = self.project.gm.get_vertices_in_t(self.case_t)
+        #
+        # if not vertices_in_t:
+        #     self.case_t = self.project.gm.prev_frame_before(self.case_t)
+        #     self.case_v = -1
+        #
+        #     self.move_to_prev_case_()
+        # else:
+
+
     def prev_case(self):
-        self.active_node_id -= 1
-
-        self.nodes = self.solver.g.nodes()
-        self.order_nodes()
-
-        n = self.nodes[self.active_node_id]
-
-        if n in self.solver.ignored_nodes:
-            self.active_node_id -= 1
-            self.prev_case()
-            return
-
-        if n.frame_ == self.solver.end_t:
-            self.active_node_id -= 1
-            self.prev_case()
-            return
-
-        # test beginning
-        if n.frame_ == 0:
-            is_ch, _, _ = self.solver.is_chunk(n)
-            if is_ch:
-                self.active_node_id -= 1
-                self.prev_case()
-                return
-
-        # test if it is different cc:
-        if self.active_cw:
-            for g in self.active_cw.nodes_groups:
-                for n_ in g:
-                    if n == n_:
-                        self.prev_case()
-                        return
-
-        # remove previous case (if exists)
-        if self.scenes_widget.layout().count():
-            it = self.scenes_widget.layout().itemAt(0)
-            self.scenes_widget.layout().removeItem(it)
-            it.widget().setParent(None)
-
-        # add new widget
-        nodes_groups = self.solver.get_cc_from_node(n)
-        if len(nodes_groups) == 0:
-            # self.nodes.pop(self.active_node_id)
-            self.active_node_id -= 1
-            self.prev_case()
-            return
-
-        config = self.best_greedy_config(nodes_groups)
-
-        self.active_cw = CaseWidget(self.solver.g, self.project, nodes_groups, config, self.vid, self)
-        self.active_cw.active_node = None
-        self.scenes_widget.layout().addWidget(self.active_cw)
+        self.move_to_prev_case_()
+        self.next_case(move_to_different_case=False, user_action=True)
 
     def confirm_cc(self):
         self.active_cw.confirm_clicked()
-
-    def fitting_get_model(self, t_reversed):
-        region = self.active_cw.active_node
-
-        merged_t = region.frame_ - self.active_cw.frame_t
-        model_t = merged_t + 1 if t_reversed else merged_t - 1
-
-        if len(self.active_cw.nodes_groups[model_t]) > 0 and len(self.active_cw.nodes_groups[merged_t]) > 0:
-            t1_ = self.active_cw.nodes_groups[model_t]
-
-            objects = []
-            for c1 in t1_:
-                a = deepcopy(c1)
-                if t_reversed:
-                    a.frame_ -= 1
-                else:
-                    a.frame_ += 1
-
-                objects.append(a)
-
-        return objects
 
     def fitting(self, t_reversed=False, one_step=False):
         if self.active_cw.active_node:
@@ -397,54 +464,58 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                                      'n': self.active_cw.active_node,
                                      't_reversed': t_reversed
                                  })
+            vertex = self.active_cw.active_node
 
-            is_ch, _, chunk = self.solver.is_chunk(self.active_cw.active_node)
-            if is_ch:
-                print "FITTING WHOLE CHUNK, WAIT PLEASE"
-                model = None
+            if vertex.in_degree() < 2 and vertex.out_degree() > 1:
+                print "Out degree > 0"
+                return
 
-                q = chunk.last if t_reversed else chunk.first
-                i = 0
-                while True:
-                    merged = q()
-                    if not merged:
-                        break
+            if vertex.in_degree() < 2:
+                print "In degree < 2"
+                return
 
-                    # TODO: find better way
-                    if chunk.length() < 3:
-                        chunk.pop_last(self.solver) if t_reversed else chunk.pop_first(self.solver)
+            chunk, _ = self.project.gm.is_chunk(vertex)
 
-                    # TODO: settings, safe break
-                    if i > 15:
-                        break
+            val = int(float(self.num_processes_label.text()))
+            self.num_processes_label.setText(str(val+1))
 
-                    if not model:
-                        model = self.fitting_get_model(t_reversed)
-
-                    # TODO : add to settings
-                    f = Fitting(merged, model, num_of_iterations=10)
-                    f.fit()
-
-                    self.solver.merged(f.animals, merged, t_reversed)
-
-                    model = deepcopy(f.animals)
-                    for m in model:
-                        m.frame_ += -1 if t_reversed else 1
-
-                    if one_step:
-                        break
-
-                    i += 1
-
-                print "CHUNK FINISHED"
+            if chunk:
+                self.fitting_tm.add_chunk_session(self.project, self.fitting_thread_finished, chunk)
             else:
-                model = self.fitting_get_model(t_reversed)
-                f = Fitting(self.active_cw.active_node, model, num_of_iterations=10)
-                f.fit()
+                pivot = self.project.gm.g.vertex(self.active_cw.active_node)
+                model = map(self.project.gm.region, pivot.in_neighbours())
+                model = map(deepcopy, model)
+                for m in model: m.frame_ += 1
 
-                self.solver.merged(f.animals, self.active_cw.active_node, t_reversed)
+                region = self.project.gm.region(self.active_cw.active_node)
+
+                self.fitting_tm.add_simple_session(self.fitting_thread_finished, region, model, pivot, self.project)
 
             self.next_case()
+
+    def fitting_thread_finished(self, result, pivot, s_id, others):
+
+        result_ = []
+        for r in result:
+            r.pts_ = np.asarray(np.round(r.pts_), dtype=np.uint32)
+            r_ = deepcopy(r)
+            self.project.rm.add(r_)
+            result_.append(r_)
+
+        result = result_
+
+        new_vertices = self.solver.merged(result, pivot, False)
+
+        if s_id < 0:
+            self.fitting_tm.add_lock(-s_id, new_vertices)
+
+        if s_id > -1:
+            self.fitting_finished_mutex.lock()
+            self.fitting_tm.release_session(s_id)
+            val = int(float(self.num_processes_label.text()))
+            self.num_processes_label.setText(str(val-1))
+            self.project.save_snapshot()
+            self.fitting_finished_mutex.unlock()
 
     def partially_confirm(self):
         if self.active_cw.active_node:
@@ -498,17 +569,21 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.active_cw.join_with_()
 
     def join_regions(self, n1, n2):
-        if n1.area() < n2.area():
+        r1 = self.project.gm.region(n1)
+        r2 = self.project.gm.region(n2)
+        if r1.area() < r2.area():
             n1, n2 = n2, n1
+            r1, r2 = r2, r1
 
-        self.project.log.add(LogCategories.USER_ACTION, ActionNames.JOIN_REGIONS, {'n1': n1, 'n2': n2})
+        self.project.log.add(LogCategories.USER_ACTION, ActionNames.JOIN_REGIONS, {'n1': int(n1), 'n2': int(n2)})
 
         # TODO: update also other moments etc...
-        n_new = deepcopy(n1)
-        n_new.pts_ = np.concatenate((n_new.pts_, n2.pts_), 0)
+        n_new = deepcopy(r1)
+        n_new.pts_ = np.concatenate((n_new.pts_, r2.pts_), 0)
         n_new.centroid_ = np.mean(n_new.pts_, 0)
-        self.solver.remove_region(n1)
-        self.solver.remove_region(n2)
+        n_new.area_ = len(n_new.pts_)
+        self.project.gm.remove_vertex(n1)
+        self.project.gm.remove_vertex(n2)
         self.solver.add_virtual_region(n_new)
         self.next_case()
 
@@ -548,26 +623,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.thread.set_range.connect(self.progress_bar.setMaximum)
         self.thread.start()
 
-    def remove_noise(self):
-        # TODO: add actions
-
-        to_remove = self.noise_nodes_widget.get_selected()
-        for n in to_remove:
-            if n in self.solver.g:
-                self.strong_remove_region(n, suppress_next_case=True)
-
-        to_confirm = self.noise_nodes_widget.get_unselected()
-        for n in to_confirm:
-            if n in self.solver.g:
-                self.solver.g.node[n]['antlikeness'] = 1.0
-
-        self.mode_tools_noise.hide()
-        self.next_case()
-
-    def remove_noise_back(self):
-        self.mode_tools_noise.hide()
-        self.next_case()
-
     def ignore_node(self):
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.IGNORE_NODES)
         for g in self.active_cw.nodes_groups:
@@ -599,7 +654,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
     def add_actions(self):
         self.next_action = QtGui.QAction('next', self)
-        self.next_action.triggered.connect(partial(self.next_case, True))
+        self.next_action.triggered.connect(partial(self.next_case, True, True))
         self.next_action.setShortcut(S_.controls.next_case)
         self.addAction(self.next_action)
 
@@ -633,15 +688,15 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.fitting_rev_action.setShortcut(S_.controls.fitting_from_right)
         self.addAction(self.fitting_rev_action)
 
-        # self.new_region_t1_action = QtGui.QAction('new region t1', self)
-        # self.new_region_t1_action.triggered.connect(partial(self.new_region, 0))
-        # self.new_region_t1_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
-        # self.addAction(self.new_region_t1_action)
-        #
-        # self.new_region_t2_action = QtGui.QAction('new region t2', self)
-        # self.new_region_t2_action.triggered.connect(partial(self.new_region, 1))
-        # self.new_region_t2_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
-        # self.addAction(self.new_region_t2_action)
+        self.undo_fitting_action = QtGui.QAction('fitting undo', self)
+        self.undo_fitting_action.triggered.connect(self.undo_fitting)
+        self.undo_fitting_action.setShortcut(S_.controls.undo_fitting)
+        self.addAction(self.undo_fitting_action)
+
+        self.undo_whole_fitting_action = QtGui.QAction('undo whole fitting', self)
+        self.undo_whole_fitting_action.triggered.connect(self.undo_whole_fitting)
+        self.undo_whole_fitting_action.setShortcut(S_.controls.undo_whole_fitting)
+        self.addAction(self.undo_whole_fitting_action)
 
         self.remove_region_action = QtGui.QAction('remove region', self)
         self.remove_region_action.triggered.connect(self.remove_region)
@@ -708,16 +763,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.action9.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
         self.addAction(self.action9)
 
-        self.save_progress = QtGui.QAction('save', self)
-        self.save_progress.triggered.connect(self.solver.save)
-        self.save_progress.setShortcut(S_.controls.save)
-        self.addAction(self.save_progress)
-
-        self.save_progress_only_chunks_action = QtGui.QAction('save', self)
-        self.save_progress_only_chunks_action.triggered.connect(self.save_progress_only_chunks)
-        self.save_progress_only_chunks_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_S))
-        self.addAction(self.save_progress_only_chunks_action)
-
         self.ignore_action = QtGui.QAction('ignore', self)
         self.ignore_action.triggered.connect(self.ignore_node)
         self.ignore_action.setShortcut(S_.controls.ignore_case)
@@ -736,4 +781,78 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.d_ = None
 
     def update_content(self):
+        self.next_case(move_to_different_case=False, user_action=True)
+
+    def undo_fitting(self):
+        vertex = self.project.gm.g.vertex(self.active_cw.active_node)
+
+        undo_recipe = self.project.gm.fitting_logger.undo_recipe(vertex)
+
+        vertices_t_minus = []
+        vertices_t_plus = []
+
+        for v in undo_recipe['new_vertices']:
+            v = self.project.gm.g.vertex(v)
+            vertices_t_minus.extend([v_ for v_ in v.in_neighbours()])
+            vertices_t_plus.extend([v_ for v_ in v.out_neighbours()])
+
+            self.project.gm.remove_vertex(v)
+
+        vertices_t_minus = list(set(vertices_t_minus))
+        vertices_t_plus = list(set(vertices_t_plus))
+
+        new_merged_vertices = []
+        for v in undo_recipe['merged_vertices']:
+            v = self.project.gm.g.vertex(v)
+            r = deepcopy(self.project.gm.region(v))
+
+            self.project.rm.add(r)
+            new_merged_vertices.append(self.project.gm.add_vertex(r))
+
+        self.project.gm.add_edges_(vertices_t_minus, new_merged_vertices)
+        self.project.gm.add_edges_(new_merged_vertices, vertices_t_plus)
+
+        self.next_case()
+
+    def undo_whole_fitting(self):
+        queue = [self.project.gm.g.vertex(self.active_cw.active_node)]
+
+        while queue:
+            vertex = queue.pop()
+
+            try:
+                undo_recipe = self.project.gm.fitting_logger.undo_recipe(vertex)
+
+                if not undo_recipe:
+                    continue
+
+                vertices_t_minus = []
+                vertices_t_plus = []
+
+                for v in undo_recipe['new_vertices']:
+                    v = self.project.gm.g.vertex(v)
+                    vertices_t_minus.extend([v_ for v_ in v.in_neighbours()])
+                    vertices_t_plus.extend([v_ for v_ in v.out_neighbours()])
+
+                    self.project.gm.remove_vertex(v)
+
+                vertices_t_minus = list(set(vertices_t_minus))
+                vertices_t_plus = list(set(vertices_t_plus))
+
+                new_merged_vertices = []
+                for v in undo_recipe['merged_vertices']:
+                    v = self.project.gm.g.vertex(v)
+                    r = deepcopy(self.project.gm.region(v))
+
+                    self.project.rm.add(r)
+                    new_merged_vertices.append(self.project.gm.add_vertex(r))
+
+                self.project.gm.add_edges_(vertices_t_minus, new_merged_vertices)
+                self.project.gm.add_edges_(new_merged_vertices, vertices_t_plus)
+
+                queue.extend(vertices_t_minus)
+                queue.extend(vertices_t_plus)
+            except:
+                pass
+
         self.next_case()
