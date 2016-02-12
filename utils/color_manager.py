@@ -221,7 +221,7 @@ class ColorManager():
                     print "No color found"
                     # return QtGui.QColor().fromRgb(0, 0, 0)
                     # return QtGui.QColor().fromRgb(r, g, b)
-                    return QtGui.QColor().fromRgb(255, 255, 255)= 1
+                    return QtGui.QColor().fromRgb(255, 255, 255)
                 # try to make the choosing easier by enlarging the limit each time a wrong color is picked
                 limit += 0.02
 
