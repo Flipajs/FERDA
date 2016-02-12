@@ -6,6 +6,11 @@ import sys
 import math
 import random
 
+# TODO: upravit colormanager tak, aby zvladl v rozumnem case vytvorit barvy pro cam1 (600 chunku, ale vzdy max 8 soucasne)
+# TODO: upravit colormanager tak, aby pro kazdou barvu prochazel jen jeji sousedy
+# TODO: opravit chybu databaze pri nacitani projektu rucne (spatne vlakno)
+# TODO: upravit colormanager - mit podkladovou barvu, od ni by musely byt vsechny chunky dostatecne vzdalene (v tomto pripade cerna)
+
 class ColorManager():
     def __init__(self, length, limit, mode="rand", cmap='Accent'):
         """
