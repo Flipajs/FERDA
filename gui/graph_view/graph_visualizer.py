@@ -1,6 +1,7 @@
 import threading
 from PyQt4 import QtGui, QtCore
 
+from PyQt4.QtCore import Qt
 from PyQt4.QtGui import QApplication, QLabel, QSizePolicy
 
 import computer as comp
@@ -46,10 +47,10 @@ class \
         self.chunk_detail_scroll_vertical.setWidgetResizable(True)
 
         # hscroll_shint = self.chunk_detail_scroll_horizontal.horizontalScrollBar().sizeHint()
-        self.chunk_detail_scroll_horizontal.setFixedWidth(self.width * 2)
+        self.chunk_detail_scroll_horizontal.setFixedHeight(self.height * 2)
 
         # vscroll_shint = self.chunk_detail_scroll_vertical.verticalScrollBar().sizeHint()
-        self.chunk_detail_scroll_vertical.setFixedWidth(self.height * 2)
+        self.chunk_detail_scroll_vertical.setFixedWidth(self.width * 2)
 
         self.chunk_detail_widget_horizontal = QtGui.QWidget()
         self.chunk_detail_widget_horizontal.setLayout(QtGui.QHBoxLayout())
@@ -76,11 +77,10 @@ class \
         self.upper_part.layout().addWidget(self.chunk_detail_scroll_vertical)
 
         self.layout().addWidget(self.upper_part)
-
         self.layout().addWidget(self.chunk_detail_scroll_horizontal)
 
-        self.chunk_detail_widget_horizontal.hide()
-        self.chunk_detail_widget_vertical.hide()
+        self.chunk_detail_scroll_horizontal.hide()
+        self.chunk_detail_scroll_vertical.hide()
 
         self.text = QtGui.QLabel(DEFAULT_TEXT)
         self.text.setAlignment(QtCore.Qt.AlignCenter)
@@ -198,10 +198,10 @@ class \
             pixmap = cvimg2qtpixmap(img)
             label = QtGui.QLabel()
             label.setPixmap(pixmap)
-            label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            label.setAlignment(Qt.AlignCenter)
             widget.layout().addWidget(label)
 
-        scroll = self.chunk_detail_scroll_horizontal if self.show_vertically else self.chunk_detail_scroll_vertical
+        scroll = self.chunk_detail_scroll_vertical if self.show_vertically else self.chunk_detail_scroll_horizontal
         scroll.show()
 
     def hide_chunk_pictures_widget(self):
@@ -220,8 +220,10 @@ class \
             widget_b.layout().addWidget(child)
         if self.show_vertically:
             self.chunk_detail_scroll_horizontal.hide()
+            self.chunk_detail_scroll_vertical.show()
         else:
             self.chunk_detail_scroll_vertical.hide()
+            self.chunk_detail_scroll_horizontal.show()
 
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
