@@ -10,12 +10,17 @@ from core.graph.region_chunk import RegionChunk
 # TODO: opravit chybu databaze pri nacitani projektu rucne (spatne vlakno)
 
 class ColorManager():
-    def __init__(self, length, limit, mode="rand", cmap='Accent'):
+    def __init__(self, length, limit, overlap=30, mode="rand", cmap='Accent', rand_quality=80, rand_loop_limit=300):
         """
         :param length: the length of the video (frames)
-        :param limit: the max number of colors to be used
+        :param limit: the max number of colors to be used. this is crucial in cmap and rainbow mode.
+        :param overlap: minimum distance between two similar colors in frames. Should be positive int.
         :param mode: "cmap", "rainbow" or "rand" (default), chooses the colors randomly or from a cmap
         :param cmap: the cmap to be used in "cmap" mode
+        :param rand_quality: the higher the quality, the bigger the difference between colors (but also loops required).
+                             Values smaller than default 80 can produce very similar colors
+        :param rand_loop_limit: number of tries until color manager gives up finding ideal color for a track and chooses
+                             entirely at random. Must be positive int.
         """
 
         # TODO: http://llllll.li/randomColor/ has a distinguishable color generator on his todo list, check it later
@@ -28,6 +33,8 @@ class ColorManager():
 
         # max count of colors
         self.limit = limit
+
+        self.overlap = overlap
 
         if mode == "cmap":
             self.mode = "cmap"
@@ -46,6 +53,8 @@ class ColorManager():
             self.mode = "rand"
             self.adjacency = {}
             self.bg_color = QtGui.QColor().fromRgb(0, 0, 0)
+            self.rand_quality = rand_quality
+            self.rand_loop_limit = rand_loop_limit
 
         random.seed()
         self.id = 0
@@ -118,46 +127,73 @@ class ColorManager():
                 return track
 
     def collide(self, track1, track2):
-        # returns the length of the intersection of track1 and track2 (how long they "exist" together)
-        if (track1.start <= track2.start and track1.stop <= track2.start)\
-                or (track2.start <= track1.start and track2.stop <= track1.start):
+        """
+        returns the length of the intersection of track1 and track2 (how long they "exist" together)
+        :param track1: the first track
+        :param track2: the second track (not necessarily in this order)
+        :return:
+        """
+        start1 = track1.start
+        stop1 = track1.stop + self.overlap
+        start2 = track2.start
+        stop2 = track2.stop + self.overlap
+
+        # no overlap
+        if (start1 <= start2 and stop1 <= start2)\
+                or (start2 <= start1 and stop2 <= start1):
             return 0
-        if track1.start <= track2.start and track1.stop <= track2.stop:
-            return abs(track1.stop - track2.start)
-        if track2.start <= track1.start and track2.stop <= track1.stop:
-            return abs(track2.stop - track1.start)
-        if track1.start <= track2.start and track1.stop >= track2.stop:
+
+        # 1:    --------
+        # 2:          --------
+        if start1 <= start2 and stop1 <= stop2:
+            return abs(stop1 - start2)
+
+        # 1:          --------
+        # 2:    --------
+        if start2 <= start1 and stop2 <= stop1:
+            return abs(stop2 - start1)
+
+        # 1:    ------------
+        # 2:       ------
+        if start1 <= start2 and stop1 >= stop2:
             return abs(track2.len)
-        if track2.start <= track1.start and track2.stop >= track1.stop:
+
+
+        # 1:       ------
+        # 2:    ------------
+        if start2 <= start1 and stop2 >= stop1:
             return abs(track1.len)
-        print "Ooops! [%s - %s] and [%s - %s]" % (track1.start, track1.stop, track2.start, track2.stop)
+
+        # in case of emergency (the impossible mistake)
+        return 0
 
     def find_color_rand(self, track):
-        # the higher the limit, the better quality (difference between colors)
-        limit = 80
-        counter_limit = 300
         counter = 0
         ok = False
         while not ok:
-            if counter >= counter_limit:
-                print "No color found!"
-                return QtGui.QColor.fromRgb(255, 255, 255)
-            counter += 1
             ok = True
             # try to pick a color
             r = random.randint(0, 255)
             g = random.randint(0, 255)
             b = random.randint(0, 255)
             c = QtGui.QColor.fromRgb(r, g, b)
-            if self.get_yuv_distance(c, self.bg_color) <= limit:
+
+            # give up after several unsuccessful loops
+            if counter >= self.rand_loop_limit:
+                print "No color found!"
+                # return last color
+                return c
+            counter += 1
+
+            if self.get_yuv_distance(c, self.bg_color) <= self.rand_quality:
                 ok = False
                 continue
 
             for t in self.adjacency[track.id]:
-                if self.get_yuv_distance(c, t.get_color()) <= limit:
+                if self.get_yuv_distance(c, t.get_color()) <= self.rand_quality:
                     ok = False
                     break
-        print "(%s, %s, %s)" % (r, g, b)
+        # print "(%s, %s, %s)" % (r, g, b)
         return c
 
     def find_color_cmap(self, track):
@@ -287,9 +323,9 @@ class TempGui(QtGui.QWidget):
         qp.end()
 
 
-class TempGuiii(QtGui.QWidget):
+class ColorComparatorGui(QtGui.QWidget):
     def __init__(self, limit, screen_width):
-        super(TempGuiii, self).__init__()
+        super(ColorComparatorGui, self).__init__()
 
         self.const = limit
         self.cm = ColorManager(screen_width, self.const, "j")
@@ -320,8 +356,6 @@ class TempGuiii(QtGui.QWidget):
         qp.end()
 
 
-
-
 class Track():
     def __init__(self, start, stop, id, color):
         self.color = color
@@ -345,6 +379,7 @@ class Track():
 
     def set_color_id(self, color_id):
         self.color_id = color_id
+
 
 def colorize_project(project):
     from utils.video_manager import get_auto_video_manager
