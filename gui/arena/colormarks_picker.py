@@ -12,112 +12,64 @@ import numpy as np
 
 __author__ = 'dita'
 
-"""
-widget
-in:
- video
-funkce:
- oznacit na frame colormark
- musi byt unikatni
- pro kazdou barvu maska
- kliknout a prejit na frame
- zoom
-out
- pole id barvy, maska, obrazek src
-
-branch
- rgb histogram
- irg hist demo
- get color samples:
-"""
-
 
 class ColormarksPicker(QtGui.QWidget):
-    DEBUG = True
-    DEFAULT_PEN_SIZE = 10
-    DEFAULT_UNDO_LENGTH = 10
 
-    def __init__(self, video_path):
+    def __init__(self, video_path, done_callback=None, pen_size=10, undo_len=10, debug=False, paint_r=255, paint_g=0, paint_b=238):
 
         super(ColormarksPicker, self).__init__()
+
+        self.DEBUG = debug
+        self.done_callback = done_callback
 
         # TODO: Perhaps use one VideoManager for the whole project?
         self.vid_manager = VideoManager(video_path)
 
-        self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
-        self.scene = QtGui.QGraphicsScene()
-
-        self.view.setScene(self.scene)
+        # PAINT SETUP
+        # current color ("Color" or "Eraser"), purple by default
+        self.color = "Color"
+        self.paint_r = paint_r
+        self.paint_g = paint_g
+        self.paint_b = paint_b
+        self.pen_size = pen_size
 
         # background image
         self.frame = -1
-        self.old_pixmap = None
+        self.bg_pixmap = None
         self.background = self.vid_manager.seek_frame(0)
 
+        # WIDGET SETUP
+        self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
+        self.scene = QtGui.QGraphicsScene()
+        self.view.setScene(self.scene)
         self.view.setMouseTracking(True)
 
-        # current color ("Blue" or "Eraser")
-        self.color = "Blue"
-
-        # store last 10 QImages to support the "undo" function
+        # store last 10 QImages to support the "undo()" function
         self.backup = []
+        self.undo_len = undo_len
 
-        # image to store all progress
+        # create empty image and pixmap to view painting
         self.bg_height, self.bg_width = self.background.shape[0], self.background.shape[1]
-        print self.background.shape
         bg_size = QtCore.QSize(self.bg_width, self.bg_height)
         fmt = QtGui.QImage.Format_ARGB32
         self.paint_image = QtGui.QImage(bg_size, fmt)
         self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
 
-        self.pen_size = self.DEFAULT_PEN_SIZE
-
+        # mask storage: {['mask id': (numpy 0-1 mask, frame number)]}
+        self.masks = {}
         self.pick_id = 0
         self.pick_mask = np.zeros((self.bg_width, self.bg_height))
 
-        self.masks = {}
-
         # create the main view and left panel with buttons
         self.make_gui()
-        self.save()
 
-    def popup(self):
-        """
-        converts image to numpy arrays
-        :return: tuple (arena_mask, occultation_mask)
-        True in arena_masks means that the point is INSIDE the arena
-        True in occultation_mask means that the point is a place to hide
-        """
-        r = QtGui.qRgba(255, 0, 0, 255)
-        b = QtGui.qRgba(0, 0, 255, 255)
-        p = QtGui.qRgba(175, 0, 175, 255)
-        img = self.merge_images()
+        # show first image
+        self.next_frame()
 
-
-        arena_mask = np.zeros((self.bg_width, self.bg_height), dtype=np.bool)
-        occultation_mask = np.zeros((self.bg_width, self.bg_height), dtype=np.bool)
-
-        for i in range(0, self.bg_width):
-            for j in range(0, self.bg_height):
-                color = QtGui.QColor(img.pixel(i, j))
-                if self.DEBUG:
-                    if color.blue() > 250:
-                        img.setPixel(i, j, b)
-                    if color.red() > 250:
-                        img.setPixel(i, j, r)
-                    if color.red() > 250 and color.blue() > 250:
-                        img.setPixel(i, j, p)
-                if color.blue() > 250:
-                    occultation_mask[j, i] = True
-                if color.red() > 250:
-                    arena_mask[j, i] = True
-        if self.DEBUG:
-            self.w = MyPopup(img)
-            self.w.show()
-            self.w.showMaximized()
-            self.w.setFocus()
-        return arena_mask, occultation_mask
+    def done(self):
+        if self.done_callback:
+            self.done_callback(self.masks)
 
     def change_pen_size(self, value):
         """
@@ -127,6 +79,7 @@ class ColormarksPicker(QtGui.QWidget):
         """
         # change pen size
         self.pen_size = value
+
         # refresh text in QLabel
         self.set_pen_label_text()
 
@@ -161,20 +114,24 @@ class ColormarksPicker(QtGui.QWidget):
 
     def save(self):
         """
-        Saves current image temporarily (to use with "undo()" later)
+        Saves current image state (to use with "undo()" later)
         :return:
         """
-        # save last DEFAULT_UNDO_LENGTH images
+        # save the image and mask
         img = self.paint_image.copy()
         mask = self.pick_mask.copy()
         self.backup.append((img, mask))
-        if len(self.backup) > self.DEFAULT_UNDO_LENGTH:
+
+        # remove the oldest save if backup size got larger than self.undo_size
+        if len(self.backup) > self.undo_len:
             self.backup.pop(0)
 
     def undo(self):
+        # get number of elements in backup
         length = len(self.backup)
         if self.DEBUG:
             print "Length is %s" % length
+        # proceed to undo if there is something to undo
         if length > 0:
             img, mask = self.backup.pop(length - 1)
             self.refresh_image(img)
@@ -208,9 +165,11 @@ class ColormarksPicker(QtGui.QWidget):
         if type(point) == QtCore.QPointF:
             point = point.toPoint()
 
-        if self.color == "Blue":
-            paint = QtGui.qRgba(0, 0, 255, 100)
+        # use color paint
+        if self.color == "Color":
+            paint = QtGui.qRgba(self.paint_r, self.paint_g, self.paint_b, 100)
             old, new = 0, 1
+        # use eraser
         else:
             paint = QtGui.qRgba(0, 0, 0, 0)
             old, new = 1, 0
@@ -254,21 +213,24 @@ class ColormarksPicker(QtGui.QWidget):
         :param point: Qpoint or QPointF
         :return: True or False
         """
-        height, width = self.background.shape[:2]
-        if self.scene.itemsBoundingRect().contains(point) and point.x() <= width and point.y() <= height:
+        if self.scene.itemsBoundingRect().contains(point) and point.x() <= self.bg_width and point.y() <= self.bg_height:
             return True
         else:
             return False
 
     def save_edits(self):
-        if len(np.nonzero(self.pick_mask)[0]) == 0:
+        # if mask is empty, there is nothing to save -> skip
+        if self.is_mask_empty(self.pick_mask):
             return
 
-        r, g, b = self.get_avg_color(self.frame, self.pick_mask)
-
+        # get the frame where edits happened (self.frame by default)
         frame = self.masks.get(self.pick_id, [0, self.frame])[1]
 
+        # update mask
         self.masks[self.pick_id] = (np.copy(self.pick_mask), frame)
+
+        # get average color under mask and update button color
+        r, g, b = self.get_avg_color(self.frame, self.pick_mask)
         self.color_grid.modify_color(self.pick_id, r, g, b)
 
     def get_avg_color(self, frame, mask):
@@ -318,18 +280,30 @@ class ColormarksPicker(QtGui.QWidget):
         self.set_color_label_text()
 
     def move_mask(self, source, target):
+        """
+        Moves source mask to target location
+        :param source: source mask id
+        :param target: target mask id
+        :return:
+        """
         self.masks[target] = self.masks[source]
         self.masks.pop(source)
 
     def delete_color(self):
+        # update color grid
         self.color_grid.delete_color(self.pick_id)
+
+        # remove current mask
         self.masks.pop(self.pick_id)
+
+        # move all following masks one down, so the ids stay consistent
         for key in sorted(self.masks.iterkeys()):
             if key > self.pick_id:
                 self.move_mask(key, key-1)
+
+        # show first mask
         self.pick_id = 0
         self.show_mask(self.pick_id, False)
-        gc.collect()
 
     def show_mask(self, mask_id, save=True):
         # something was changed
@@ -341,23 +315,26 @@ class ColormarksPicker(QtGui.QWidget):
         self.pick_mask.fill(0)
         self.clear_undo_history()
 
+        # load mask id, frame and value
         self.pick_id = mask_id
-        data = self.masks.get(mask_id, [np.zeros((self.bg_width, self.bg_height)), self.frame])
+        data = self.masks.get(self.pick_id, [np.zeros((self.bg_width, self.bg_height)), self.frame])
         self.frame = data[1]
         self.draw_frame()
+        self.pick_mask = np.copy(data[0])
 
+        # prepare image
         fmt = QtGui.QImage.Format_ARGB32
         bg_size = QtCore.QSize(self.bg_width, self.bg_height)
         image = QtGui.QImage(bg_size, fmt)
         image.fill(QtGui.qRgba(0, 0, 0, 0))
 
-        mask = data[0]
-        value = QtGui.qRgba(0, 0, 255, 100)
-        nzero = np.nonzero(mask)
+        # apply mask to image
+        value = QtGui.qRgba(self.paint_r, self.paint_g, self.paint_b, 100)
+        nzero = np.nonzero(self.pick_mask)
         for i, j in zip(nzero[0], nzero[1]):
             image.setPixel(i, j, value)
 
-        self.pick_mask = np.copy(mask)
+        # show new image and update label
         self.refresh_image(image)
         self.set_color_label_text()
 
@@ -383,6 +360,8 @@ class ColormarksPicker(QtGui.QWidget):
     def draw_frame(self):
         if self.DEBUG:
             print "Going to frame %s" % self.frame
+
+        # adjust buttons
         if self.frame <= 0:
             self.prev_frame_button.setEnabled(False)
         else:
@@ -393,12 +372,15 @@ class ColormarksPicker(QtGui.QWidget):
         else:
             self.next_frame_button.setEnabled(True)
 
+        # get new background image
         self.background = self.vid_manager.seek_frame(self.frame)
 
         # remove previous image (scene gets cluttered with unused pixmaps and is slow)
-        if self.old_pixmap is not None:
-            self.scene.removeItem(self.old_pixmap)
-        self.old_pixmap = self.scene.addPixmap(utils.cvimg2qtpixmap(self.background))
+        if self.bg_pixmap is not None:
+            self.scene.removeItem(self.bg_pixmap)
+
+        # setup new pixmap
+        self.bg_pixmap = self.scene.addPixmap(utils.cvimg2qtpixmap(self.background))
         self.view.update_scale()
 
         # adjust mask frame if frame is changed and nothing was drawn in the mask yet
@@ -453,7 +435,7 @@ class ColormarksPicker(QtGui.QWidget):
         color_widget.setLayout(QtGui.QHBoxLayout())
 
         self.color_buttons = []
-        blue_button = QtGui.QPushButton("Blue")
+        blue_button = QtGui.QPushButton("Color")
         blue_button.setCheckable(True)
         blue_button.setChecked(True)
         blue_button.clicked.connect(self.switch_color)
@@ -478,7 +460,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.left_panel.layout().addWidget(self.undo_button)
 
         self.popup_button = QtGui.QPushButton("Done!")
-        self.popup_button.clicked.connect(self.popup)
+        self.popup_button.clicked.connect(self.done)
         self.left_panel.layout().addWidget(self.popup_button)
 
         self.next_frame_button = QtGui.QPushButton("Next frame!")
@@ -502,7 +484,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.color_label.setText("")
         self.left_panel.layout().addWidget(self.color_label)
 
-        self.color_grid = ColorGridWidget(update_callback_picked=self.show_mask)
+        self.color_grid = ColorGridWidget(debug=self.DEBUG, update_callback_picked=self.show_mask)
         self.left_panel.layout().addWidget(self.color_grid)
 
         self.delete_color_button = QtGui.QPushButton("Delete current color")
@@ -516,20 +498,17 @@ class ColormarksPicker(QtGui.QWidget):
         self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.view)
 
-        self.next_frame()
-        self.update()
-
 
 class ColorGridWidget(QtGui.QWidget):
-    def __init__(self, max_cols=5, update_callback_picked=None, update_callback_deleted=None):
+    def __init__(self, max_cols=5, debug=False, update_callback_picked=None):
         super(ColorGridWidget, self).__init__(None)
         self.max_cols = max_cols
         self.colors = {}
         self.buttons = {}
         self.last_index = 0
 
+        self.DEBUG = debug
         self.update_callback_picked = update_callback_picked
-        self.update_callback_deleted = update_callback_deleted
 
         self.col = 0
         self.posx = 0
@@ -547,7 +526,8 @@ class ColorGridWidget(QtGui.QWidget):
         self.update_callback_picked(button_id)
 
     def add_color(self, r, g, b):
-        print ("Adding color")
+        if self.DEBUG:
+            print ("Adding color")
         self.colors[self.last_index] = (r,g,b)
         button = QtGui.QPushButton()
         button.setText("%s" % self.last_index)
@@ -576,7 +556,8 @@ class ColorGridWidget(QtGui.QWidget):
             r, g, b, 255 - r, 255 - g, 255 - b))
 
     def delete_color(self, idd):
-        print "Deleting id: %s" % idd
+        if self.DEBUG:
+            print "Deleting id: %s" % idd
 
         if idd == self.last_index-1:
             self.colors[idd] = None
@@ -614,7 +595,8 @@ class ColorGridWidget(QtGui.QWidget):
         self.posy = 0
 
         for id in sorted(self.buttons.keys()):
-            print "Repainting %s" % id
+            if self.DEBUG:
+                print "Repainting %s" % id
             self.grid.removeWidget(self.buttons[id])
             self.buttons[id].setText("%s" % id)
             self.grid.addWidget(self.buttons[id], self.posx, self.posy)
@@ -633,7 +615,7 @@ if __name__ == "__main__":
     #p = Project()
     #p.load("/home/dita/PycharmProjects/FERDA projects/testc5/c5.fproj")
 
-    video_paths = ['/media/dita/SHARE/Movies/Bones/Season 09/Bones 09x14 The Master in the Slop.mp4']
+    video_paths = ['/home/dita/PycharmProjects/c5_0h03m-0h06m.avi', '/media/dita/SHARE/Movies/Bones/Season 09/Bones 09x14 The Master in the Slop.mp4']
 
     ex = ColormarksPicker(video_paths[0])
     ex.show()
