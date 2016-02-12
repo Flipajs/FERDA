@@ -315,8 +315,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         if not user_action:
             self.project.save_snapshot()
 
-        if len(nodes_groups) > 10:
-            nodes_groups = nodes_groups[0:9]
+        # if len(nodes_groups) > 10:
+        #     nodes_groups = nodes_groups[0:9]
 
         config = self.get_greedy_config(nodes_groups)
 
