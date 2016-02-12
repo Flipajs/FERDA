@@ -190,16 +190,57 @@ class \
 
         region_chunk = self.loader.chunks_region_chunks[chunk]
         frames = list(range(chunk[0].frame_, chunk[1].frame_ + 1))
-        freq, none = QtGui.QInputDialog.getInt(self, 'Input Dialog',
-            'Enter frequency:')
+        freq, none = QtGui.QInputDialog.getInt(self, 'Input Dialog', 'Enter frequency:', value=1, min=1)
 
+        import numpy as np
+        import matplotlib.pyplot as plt
+        import matplotlib as mpl
+        im = self.img_manager.get_whole_img(frames[0])
+        alpha = np.zeros((im.shape[0], im.shape[1]), dtype=np.int32)
+        alpha2 = np.zeros((im.shape[0], im.shape[1], 3), dtype=np.int32)
+
+        centroids = []
+
+        incr = 1
         for frame in frames[::freq]:
-            img = self.img_manager.get_crop(frame, region_chunk[frame - region_chunk.start_frame()],  width=self.width, height=self.height, relative_margin=self.relative_margin)
+            r = region_chunk[frame - region_chunk.start_frame()]
+            centroids.append(r.centroid())
+
+            img = self.img_manager.get_crop(frame, r,  width=self.width, height=self.height, relative_margin=self.relative_margin)
+
+            alpha[r.pts()[:, 0], r.pts()[:, 1]] += 1
+            alpha2[r.pts()[:, 0], r.pts()[:, 1], 1] += 1
+            alpha2[r.pts()[:, 0], r.pts()[:, 1], 2] += 1
+            alpha2[r.pts()[:, 0], r.pts()[:, 1], 0] = incr
+
+            incr += 1
+
             pixmap = cvimg2qtpixmap(img)
             label = QtGui.QLabel()
             label.setPixmap(pixmap)
             label.setAlignment(Qt.AlignCenter)
             widget.layout().addWidget(label)
+
+        # alpha2[:, :, 2] = alpha2[:, :, 2]**0.5
+
+        centroids = np.array(centroids)
+
+        plt.figure(1)
+        plt.imshow(alpha)
+        plt.set_cmap('viridis')
+
+        plt.figure(2)
+        plt.imshow(alpha)
+        plt.set_cmap('jet')
+
+        centr_step = 3
+        centroids = centroids[::centr_step, :]
+
+        plt.scatter(centroids[:, 1], centroids[:, 0], s=8, c=range(len(centroids)), edgecolors='None', cmap=mpl.cm.afmhot)
+        # plt.figure(2)
+        # plt.imshow(alpha2)
+        plt.subplots_adjust(left=0.0, right=1, top=1, bottom=0.0)
+        plt.show()
 
         scroll = self.chunk_detail_scroll_vertical if self.show_vertically else self.chunk_detail_scroll_horizontal
         scroll.show()

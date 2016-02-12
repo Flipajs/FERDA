@@ -6,11 +6,11 @@ from PyQt4 import QtGui
 __author__ = 'Simon Mandlik'
 
 # the width of a node
-WIDTH = 50
+WIDTH = 85
 # the width of a node, should be same as width for the best result
 HEIGHT = WIDTH
 # relative margin of a node
-RELATIVE_MARGIN = 0.9
+RELATIVE_MARGIN = 0.5
 # distance of the whole visualization from the top of the widget
 FROM_TOP = WIDTH
 # space between each of the columns
@@ -150,7 +150,7 @@ class VisLoader:
 
         # TODO
         # antlikeness = self.project.stats.antlikeness_svm.get_prob(region)[1]
-        antlikeness = "Dummy"
+        antlikeness = -1.0
 
         # TODO
         # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
@@ -179,11 +179,12 @@ if __name__ == '__main__':
     project = Project()
 
     sn_id = 2
-    name = 'Cam1_'
-    snapshot = {'chm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
-    'gm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
+    name = 'Cam2'
+    wd = '/Users/flipajs/Documents/wd/GT/'
+    snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
+    'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
-    project.load('/home/sheemon/FERDA/projects/'+name+'/cam1.fproj', snapshot)
+    project.load(wd+name+'/cam2.fproj', snapshot)
 
     import cv2, sys
     app = QtGui.QApplication(sys.argv)
@@ -192,7 +193,9 @@ if __name__ == '__main__':
     # l1.set_width(60)
     # l1.set_height(60)
 
-    l1.visualise(range(300, 500))
+
+
+    l1.visualise(range(0, 1000))
     # l1.visualise()
 
     app.exec_()
