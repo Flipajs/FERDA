@@ -13,7 +13,7 @@ from core.graph.region_chunk import RegionChunk
 # TODO: upravit colormanager - mit podkladovou barvu, od ni by musely byt vsechny chunky dostatecne vzdalene (v tomto pripade cerna)
 
 class ColorManager():
-    def __init__(self, length, limit, screen_width, mode="rand", cmap='Accent'):
+    def __init__(self, length, limit, mode="rand", cmap='Accent'):
         """
         :param length: the length of the video (frames)
         :param limit: the max number of colors to be used
@@ -28,7 +28,6 @@ class ColorManager():
 
         #lenght of the video
         self.length = length
-        self.screen_width = screen_width
 
         # max count of colors
         self.limit = limit
@@ -55,19 +54,6 @@ class ColorManager():
 
         random.seed()
         self.id = 0
-
-    def test_dif(self):
-        r1 = 146
-        g1 = 51
-        b1 = 210
-
-        r2 = random.randint(0, 255)
-        g2 = random.randint(0, 255)
-        b2 = random.randint(0, 255)
-
-        dif = self.get_yuv_distance(QtGui.QColor().fromRgb(r1, g1, b1),QtGui.QColor().fromRgb(r2, g2, b2))
-        print "Distance of (%s, %s, %s) and (%s, %s, %s) is %s" % (r1, g1, b1, r2, g2, b2, dif)
-        return Track(0, self.screen_width, -1, QtGui.QColor().fromRgb(r2, g2, b2))
 
     def get_next_id(self):
         # return current id and raise it by one
