@@ -12,7 +12,7 @@ import random
 # TODO: upravit colormanager - mit podkladovou barvu, od ni by musely byt vsechny chunky dostatecne vzdalene (v tomto pripade cerna)
 
 class ColorManager():
-    def __init__(self, length, limit, mode="rand", cmap='Accent'):
+    def __init__(self, length, limit, screen_width, mode="rand", cmap='Accent'):
         """
         :param length: the length of the video (frames)
         :param limit: the max number of colors to be used
@@ -27,6 +27,7 @@ class ColorManager():
 
         #lenght of the video
         self.length = length
+        self.screen_width = screen_width
 
         # max count of colors
         self.limit = limit
@@ -44,11 +45,28 @@ class ColorManager():
                 for i in range (0, limit):
                     self.colors_list.append(self.generate_color_cube(i * dx))
             self.cube_id = 0
+        elif mode == "newrand":
+            self.mode = "newrand"
+            self.adjacency = {}
+            self.bg_color = QtGui.QColor().fromRgb(0, 0, 0)
         else:
             self.mode = "rand"
 
         random.seed()
         self.id = 0
+
+    def test_dif(self):
+        r1 = 146
+        g1 = 51
+        b1 = 210
+
+        r2 = random.randint(0, 255)
+        g2 = random.randint(0, 255)
+        b2 = random.randint(0, 255)
+
+        dif = self.get_yuv_distance(QtGui.QColor().fromRgb(r1, g1, b1),QtGui.QColor().fromRgb(r2, g2, b2))
+        print "Distance of (%s, %s, %s) and (%s, %s, %s) is %s" % (r1, g1, b1, r2, g2, b2, dif)
+        return Track(0, self.screen_width, -1, QtGui.QColor().fromRgb(r2, g2, b2))
 
     def get_next_id(self):
         # return current id and raise it by one
@@ -71,6 +89,13 @@ class ColorManager():
             color = self.find_color_cmap(track)
         elif self.mode == "rainbow":
             color = self.find_color_cube()
+        elif self.mode == "newrand":
+            self.adjacency[track.id] = []
+            for t in self.tracks:
+                if self.collide(t, track) > 0:
+                    self.adjacency[track.id].append(t)
+                    self.adjacency[t.id].append(track)
+            color = self.find_color_newrand(track)
         else:
             color = self.find_color(track)
         track.set_color(color)
@@ -127,6 +152,36 @@ class ColorManager():
             return abs(track1.len)
         print "Ooops! [%s - %s] and [%s - %s]" % (track1.start, track1.stop, track2.start, track2.stop)
 
+    def find_color_newrand(self, track):
+        # the higher the limit, the better quality (difference between colors)
+        limit = 80
+        counter_limit = 300
+        counter = 0
+        ok = False
+        while not ok:
+            if counter >= counter_limit:
+                print "No color found!"
+                return QtGui.QColor.fromRgb(255, 255, 255)
+            counter += 1
+            ok = True
+            # try to pick a color
+            r = random.randint(0, 255)
+            g = random.randint(0, 255)
+            b = random.randint(0, 255)
+            c = QtGui.QColor.fromRgb(r, g, b)
+            if self.get_yuv_distance(c, self.bg_color) <= limit:
+                ok = False
+                continue
+
+            for t in self.adjacency[track.id]:
+                if self.get_yuv_distance(c, t.get_color()) <= limit:
+                    ok = False
+                    break
+        print "(%s, %s, %s)" % (r, g, b)
+        return c
+
+
+
     def find_color(self, track):
         i = 0
         limit = 100
@@ -164,7 +219,8 @@ class ColorManager():
                     # if no color was found in 500 laps, return the current color
                     print "No color found"
                     # return QtGui.QColor().fromRgb(0, 0, 0)
-                    return QtGui.QColor().fromRgb(r, g, b)
+                    # return QtGui.QColor().fromRgb(r, g, b)
+                    return QtGui.QColor().fromRgb(255, 255, 255)
                 i += 1
                 # try to make the choosing easier by enlarging the limit each time a wrong color is picked
                 limit += 0.02
@@ -234,12 +290,13 @@ class ColorManager():
         distance = math.sqrt((y1-y2)**2 + 3*(u1-u2)**2 + 3*(v1-v2)**2)
         return distance
 
+
 class TempGui(QtGui.QWidget):
-    def __init__(self):
+    def __init__(self, num_lines, screen_width):
         super(TempGui, self).__init__()
 
-        self.const = 40
-        self.cm = ColorManager(1300, self.const, "j")
+        self.const = num_lines
+        self.cm = ColorManager(screen_width, self.const, "newrand")
 
         self.setLayout(QtGui.QVBoxLayout())
         widget = QtGui.QWidget()
@@ -260,11 +317,11 @@ class TempGui(QtGui.QWidget):
 
         tracks = []
         for i in range (0, self.const):
-            start = random.randint(0, 1300)
-            stop = random.randint(0, 1300)
+            start = random.randint(0, screen_width)
+            stop = random.randint(0, screen_width)
             while stop >= start:
-                start = random.randint(0, 1300)
-                stop = random.randint(0, 1300)
+                start = random.randint(0, screen_width)
+                stop = random.randint(0, screen_width)
             color = QtGui.QColor(0, 0, 0)
             track = Track(start, stop, 0, color)
             tracks.append(track)
@@ -295,6 +352,41 @@ class TempGui(QtGui.QWidget):
         qp.end()
 
 
+class TempGuiii(QtGui.QWidget):
+    def __init__(self, limit, screen_width):
+        super(TempGuiii, self).__init__()
+
+        self.const = limit
+        self.cm = ColorManager(screen_width, self.const, "j")
+
+        self.setAutoFillBackground(True)
+
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QtCore.Qt.black)
+        self.setPalette(p)
+
+        self.tracks = []
+        self.tracks.append(Track(0, screen_width, -1, QtGui.QColor().fromRgb(146, 51, 210)))
+        self.tracks.append(Track(0, screen_width, -1, QtGui.QColor().fromRgb(0, 0, 0)))
+
+        for i in range(0, limit):
+            self.tracks.append(cm.test_dif())
+
+    def paintEvent(self, event):
+        qp = QtGui.QPainter()
+        qp.begin(self)
+        pen = QtGui.QPen()
+        pen.setWidth(10)
+        for i in range(0, len(self.tracks)):
+            track = self.tracks[i]
+            pen.setColor(track.get_color())
+            qp.setPen(pen)
+            qp.drawLine(track.start, 12*i + 50, track.stop, 12*i + 50)
+        qp.end()
+
+
+
+
 class Track():
     def __init__(self, start, stop, id, color):
         self.color = color
@@ -322,12 +414,19 @@ class Track():
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
-    ex = TempGui()
+    ex = TempGui(20, 800)
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()
     ex.setFocus()
 
+
     app.exec_()
+    for key, track_dict in ex.cm.adjacency.iteritems():
+        track_ids = ""
+        for track in track_dict:
+            track_ids += str(track.id)
+            track_ids += " "
+        print "%s: %s" % (key, track_ids)
     app.deleteLater()
     sys.exit()
