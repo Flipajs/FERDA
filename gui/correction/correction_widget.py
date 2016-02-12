@@ -174,11 +174,6 @@ class ResultsWidget(QtGui.QWidget):
         self.reset_colors_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Control + QtCore.Qt.Key_0))
         self.addAction(self.reset_colors_action)
 
-        self.switch_to_tracking_window_action = QtGui.QAction('switch tab to tracking', self)
-        self.switch_to_tracking_window_action.triggered.connect(partial(self.tabs.setCurrentIndex, 0))
-        self.switch_to_tracking_window_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
-        self.addAction(self.switch_to_tracking_window_action)
-
         self.setTabOrder(self.frameEdit, self.frame_jump_button)
 
         self.connect_GUI()
