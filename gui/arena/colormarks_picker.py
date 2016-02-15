@@ -615,9 +615,11 @@ if __name__ == "__main__":
     #p = Project()
     #p.load("/home/dita/PycharmProjects/FERDA projects/testc5/c5.fproj")
 
-    video_paths = ['/home/dita/PycharmProjects/c5_0h03m-0h06m.avi', '/media/dita/SHARE/Movies/Bones/Season 09/Bones 09x14 The Master in the Slop.mp4']
+    video_paths = ['/home/dita/PycharmProjects/c5_0h03m-0h06m.avi',
+                   '/media/dita/SHARE/Movies/Bones/Season 09/Bones 09x14 The Master in the Slop.mp4',
+                   '/Users/flipajs/Documents/wd/Cam1_clip.avi']
 
-    ex = ColormarksPicker(video_paths[0])
+    ex = ColormarksPicker(video_paths[2])
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()
