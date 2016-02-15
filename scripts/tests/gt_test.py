@@ -28,16 +28,16 @@ if __name__ == "__main__":
     frames = range(300)
     p_test = Project()
     p_test.load(wd+name+'/cam1.fproj')
-    gt_mesurements = get_trajectories(p_test, frames)
+    test_measurements = get_trajectories(p_test, frames)
     del p_test
 
     p_gt = Project()
     p_gt.load(wd+name+'/cam1.fproj')
-    test_mesurements = get_trajectories(p_gt, frames)
+    gt_measurements = get_trajectories(p_gt, frames)
 
     test_project(
-        gt_mesurements,
-        test_mesurements,
+        gt_measurements,
+        test_measurements,
         frames,
         1
                  )
