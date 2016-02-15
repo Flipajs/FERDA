@@ -4,6 +4,7 @@ from gui.img_controls.utils import cvimg2qtpixmap
 from vis_loader import WIDTH, HEIGHT, RELATIVE_MARGIN
 
 SELECTION_LINE_WIDTH = 2
+DEFAULT_INFO_TEXT_OPACITY = 150
 
 __author__ = 'Simon Mandlik'
 
@@ -148,6 +149,8 @@ class TextInfoItem(QtGui.QGraphicsItem):
 
     def __init__(self, text, x, y, width, height, color, node):
         super(TextInfoItem, self).__init__()
+        color.setAlpha(DEFAULT_INFO_TEXT_OPACITY)
+
         self.color = color
         self.node = node
         self.parent_x = x
@@ -163,8 +166,9 @@ class TextInfoItem(QtGui.QGraphicsItem):
         self.text_item = self.create_text()
 
     def set_color(self, color):
-        self.color = color
         self.connecting_line.set_color(color)
+        color.setAlpha(DEFAULT_INFO_TEXT_OPACITY)
+        self.color = color
 
     def paint(self, painter, item, widget):
         self.rect.setPen(QtGui.QPen(self.node.color, SELECTION_LINE_WIDTH * 1.5, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin))

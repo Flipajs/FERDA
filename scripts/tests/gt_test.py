@@ -1,26 +1,11 @@
 from core.project.project import Project
 from utils.clearmetrics.clearmetrics import ClearMetrics
 import cPickle as pickle
-from gui.statistics.region_reconstruction import gt_trajectories
+from gui.statistics.region_reconstruction import get_trajectories
 
 
-def test_project(gt_f, project_f, threshold):
-    gt = None
-
-    with open(gt_f, 'rb') as f:
-        gt = pickle.load(f)
-
-    p = Project()
-    p.load(project_f)
-
-
-    keys_ = map(int, gt.keys())
-    keys_ = sorted(keys_)
-
-    measurements = gt_trajectories(p, keys_)
-
-
-    clear = ClearMetrics(gt, measurements, threshold)
+def test_project(gt_measurements, test_measurements, frames, threshold):
+    clear = ClearMetrics(gt_measurements, test_measurements, threshold)
     clear.match_sequence()
     evaluation = [clear.get_mota(),
               clear.get_motp(),
@@ -34,8 +19,25 @@ def test_project(gt_f, project_f, threshold):
     print evaluation
 
 if __name__ == "__main__":
+    sn_id = 2
+    name = 'Cam1'
+    wd = '/Users/flipajs/Documents/wd/GT/'
+    snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
+                'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
+
+    frames = range(300)
+    p_test = Project()
+    p_test.load(wd+name+'/cam1.fproj')
+    gt_mesurements = get_trajectories(p_test, frames)
+    del p_test
+
+    p_gt = Project()
+    p_gt.load(wd+name+'/cam1.fproj')
+    test_mesurements = get_trajectories(p_gt, frames)
+
     test_project(
-        '/Users/flipajs/Documents/wd/GT/C210_300_GT/out_regions.pkl',
-        '/Users/flipajs/Documents/wd/GT/C210_300_test/C210.fproj',
+        gt_mesurements,
+        test_mesurements,
+        frames,
         1
                  )

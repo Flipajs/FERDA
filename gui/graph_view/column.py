@@ -182,12 +182,9 @@ class Column:
         if vertically:
             from_x, from_y, to_x, to_y = from_y, from_x, to_y, to_x
 
-        color = None
         if edge in self.edges.keys():
-            if self.edges[edge].graphical_object.clipped:
-                color = self.edges[edge].graphical_object.color
             self.scene.removeItem(self.edges[edge].graphical_object)
-        edge_obj = Edge(from_x, from_y, to_x, to_y, edge, self.scene, color, vertically)
+        edge_obj = Edge(from_x, from_y, to_x, to_y, edge, self.scene, vertically)
         self.edges[edge] = edge_obj
 
         if edge[2] is "chunk":

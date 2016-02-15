@@ -5,9 +5,9 @@ from core.project.project import Project
 
 p = Project()
 
-p.load('/home/sheemon/FERDA/projects/dita_proj/dita.fproj')
-p.video_paths = ['/home/sheemon/FERDA/projects/c5_0h03m-0h06m.avi']
-p.working_directory = '/home/sheemon/FERDA/projects/dita_proj'
+p.load('/home/sheemon/FERDA/projects/Cam1_/cam1.fproj')
+p.video_paths = ['/home/sheemon/FERDA/projects/Cam1_/Cam1_clip.avi']
+# p.working_directory = '/home/sheemon/FERDA/projects/Cam1_'
 
 for it in p.log.data_:
     print it.action_name, it.data

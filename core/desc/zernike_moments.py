@@ -1,8 +1,6 @@
 import mahotas
-from utils.img import get_normalised_img
-import scipy.ndimage
-import matplotlib.pyplot as plt
-from utils.img import imresize, get_normalised_img, draw_pts, get_cropped_pts
+
+from utils.img import get_normalised_img, draw_pts, get_cropped_pts
 
 
 class ZernikeMoments:
