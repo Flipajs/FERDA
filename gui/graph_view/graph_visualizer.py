@@ -1,9 +1,7 @@
 import threading
 from PyQt4 import QtGui, QtCore
-
 from PyQt4.QtCore import Qt
 from PyQt4.QtGui import QApplication, QLabel, QSizePolicy
-
 import computer as comp
 from gui.graph_view.edge import EdgeGraphical, ChunkGraphical
 from gui.graph_view.info_manager import InfoManager
@@ -18,8 +16,7 @@ from vis_loader import DEFAULT_TEXT, GAP, \
 __author__ = 'Simon Mandlik'
 
 
-class \
-        GraphVisualizer(QtGui.QWidget):
+class GraphVisualizer(QtGui.QWidget):
     """
     Requires list of regions and list of edge-tuples (node1, node2, type - chunk, line or partial, sureness).
     Those can be passed in constructor or using a method add_objects
@@ -45,6 +42,8 @@ class \
         self.chunk_detail_scroll_vertical = QtGui.QScrollArea()
         self.chunk_detail_scroll_horizontal.setWidgetResizable(True)
         self.chunk_detail_scroll_vertical.setWidgetResizable(True)
+        self.chunk_detail_scroll_horizontal.hide()
+        self.chunk_detail_scroll_vertical.hide()
 
         # hscroll_shint = self.chunk_detail_scroll_horizontal.horizontalScrollBar().sizeHint()
         self.chunk_detail_scroll_horizontal.setFixedHeight(self.height * 2)
@@ -70,7 +69,6 @@ class \
         self.scene_width = 0
         self.view.setScene(self.scene)
         self.view.setLayout(QtGui.QHBoxLayout())
-        # self.view.layout().addWidget(self.chunk_detail_scroll_vertical)
         self.scene.clicked.connect(self.scene_clicked)
 
         self.upper_part.layout().addWidget(self.view)
@@ -79,12 +77,10 @@ class \
         self.layout().addWidget(self.upper_part)
         self.layout().addWidget(self.chunk_detail_scroll_horizontal)
 
-        self.chunk_detail_scroll_horizontal.hide()
-        self.chunk_detail_scroll_vertical.hide()
 
         self.text = QtGui.QLabel(DEFAULT_TEXT)
         self.text.setAlignment(QtCore.Qt.AlignCenter)
-        stylesheet = "font: 25px"
+        stylesheet = "font: 20px"
         self.text.setStyleSheet(stylesheet)
         self.layout().addWidget(self.text)
 
@@ -186,23 +182,25 @@ class \
 
     def show_chunk_pictures_label(self, chunk):
         self.hide_chunk_pictures_widget()
+        freq, none = QtGui.QInputDialog.getInt(self, 'Input Dialog', 'Enter frequency:', value=1)
         widget = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
-
         region_chunk = self.loader.chunks_region_chunks[chunk]
-        frames = list(range(chunk[0].frame_, chunk[1].frame_ + 1))
-        freq, none = QtGui.QInputDialog.getInt(self, 'Input Dialog',
-            'Enter frequency:')
 
-        for frame in frames[::freq]:
-            img = self.img_manager.get_crop(frame, region_chunk[frame - region_chunk.start_frame()],  width=self.width, height=self.height, relative_margin=self.relative_margin)
+        scroll = self.chunk_detail_scroll_vertical if self.show_vertically else self.chunk_detail_scroll_horizontal
+        scroll.show()
+
+        start = chunk[0].frame_
+        end = chunk[1].frame_
+        while start <= end:
+            img = self.img_manager.get_crop(start, region_chunk[start - region_chunk.start_frame()],  width=self.width, height=self.height, relative_margin=self.relative_margin)
             pixmap = cvimg2qtpixmap(img)
             label = QtGui.QLabel()
             label.setPixmap(pixmap)
             label.setAlignment(Qt.AlignCenter)
             widget.layout().addWidget(label)
+            start += freq
+            QApplication.processEvents()
 
-        scroll = self.chunk_detail_scroll_vertical if self.show_vertically else self.chunk_detail_scroll_horizontal
-        scroll.show()
 
     def hide_chunk_pictures_widget(self):
         widget = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
@@ -233,13 +231,15 @@ class \
             self.info_manager.remove_info_all()
         else:
             if isinstance(item, EdgeGraphical):
-                self.info_manager.add(item)
-                if isinstance(item, ChunkGraphical):
-                 self.show_chunk_pictures_label(item.core_obj)
+                if isinstance(item, ChunkGraphical) and QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
+                    self.show_chunk_pictures_label(item.core_obj)
+                else:
+                    self.selected.append(item)
+                    self.info_manager.add(item)
             elif isinstance(item, Node):
                 self.node_zoom_manager.add(item)
                 self.info_manager.add(item)
-            self.selected.append(item)
+                self.selected.append(item)
 
     def stretch(self):
         global SPACE_BETWEEN_HOR
@@ -286,12 +286,9 @@ class \
             self.find_suitable_position_fresh_chunk(edge, node_1, node_2)
 
     def find_suitable_position_fresh_chunk(self, edge, node_1, node_2):
-        # import time
-        # time2 = time.time()
         position = 0
         while True:
             if self.is_line_free(position, node_1.frame_, node_2.frame_):
-                # time1 = time.time()
                 start = node_1.frame_
                 end = node_2.frame_
                 frame = start
@@ -301,11 +298,9 @@ class \
                     if frame == start or frame == end or position == self.frames_columns[start].get_position_item(node_1):
                         column.add_object(edge, position)
                     frame += 1
-                # print("inside {0}.".format(time.time() - time1))
                 break
             else:
                 position += 1
-        # print("outside {0}.".format(time.time() - time2))
 
     def find_suitable_position_semi_placed_chunk(self, edge, col1, col2, node_1, node_2):
         """Finds the best position for semi-placed chunk. This situation should never happen!
@@ -320,15 +315,11 @@ class \
             col1.add_object(edge, position2)
 
     def is_line_free(self, position, start_frame, end_frame):
-        # import time
-        # time1 = time.time()
         while start_frame <= end_frame:
             column = self.get_next_to_column(start_frame - 1, "right")
             start_frame = column.get_end_frame() + 1
             if not column.is_free(position):
-                # print("fa {0}.".format(time.time() - time1))
                 return False
-        # print("f {0}.".format(time.time() - time1))
         return True
 
     def find_suitable_position_line(self, edge):
@@ -401,7 +392,6 @@ class \
 
     def get_next_to_column(self, frame_from, direction):
         # import time
-        # time1 = time.time()
         frame_offset = (1 if direction == "right" else -1)
         frame = frame_offset + frame_from
         if frame in self.frames_columns.keys():
@@ -476,10 +466,7 @@ class \
             # uncomment to achieve node-by-node loading, decreases performance, remember to comment
             # every other call of QApplication in this function
             # QApplication.processEvents()
-            # import time
-            # time1 = time.time()
-            # print("Drawing column {0}...".format(column.frame))
-            self.load_indicator_wheel()
+            # self.load_indicator_wheel()
             column.set_x(next_x)
             next_x = self.increment_x(column, next_x)
 
@@ -503,8 +490,6 @@ class \
                     if col_index % minimum == 0:
                             QApplication.processEvents()
                 column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
-            # time2 = time.time()
-            # print("The drawing of column took {0}".format(time2 - time1))
 
     def increment_x(self, column, next_x):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
@@ -562,14 +547,14 @@ class \
         if not last_frame:
             last_frame = self.columns[len(self.columns) - 1].frame
         self.view.centerOn(0, 0)
-        self.load_indicator_init()
+        # self.load_indicator_init()
 
         # to ensure that graphics scene has correct size
         rect = self.add_rect_to_scene()
 
         self.draw_columns(first_frame, last_frame, MINIMUM)
         self.draw_lines(first_frame, last_frame)
-        self.load_indicator_hide()
+        # self.load_indicator_hide()
         self.scene.removeItem(rect)
         self.scene.setSceneRect(self.scene.itemsBoundingRect())
         self.view.centerOn(0, 0)
@@ -597,15 +582,15 @@ class \
     def get_selected(self):
         return self.selected
 
-    def load_indicator_init(self):
-        self.text.setText("Loading")
-
-    def load_indicator_hide(self):
-        self.text.setText(DEFAULT_TEXT)
-
-    def load_indicator_wheel(self):
-        self.text.setText(self.wheel_count * "." + "Loading" + self.wheel_count * ".")
-        self.wheel_count += 1
-        if self.wheel_count % 3 is 0:
-            self.wheel_count = 1
+    # def load_indicator_init(self):
+    #     self.text.setText("Loading")
+    #
+    # def load_indicator_hide(self):
+    #     self.text.setText(DEFAULT_TEXT)
+    #
+    # def load_indicator_wheel(self):
+    #     self.text.setText(self.wheel_count * "." + "Loading" + self.wheel_count * ".")
+    #     self.wheel_count += 1
+    #     if self.wheel_count % 3 is 0:
+    #         self.wheel_count = 1
 

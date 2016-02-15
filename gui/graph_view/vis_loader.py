@@ -25,7 +25,7 @@ MINIMUM = 5
 OPACITY = 255
 # default text to display
 DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O, Ctrl + MWheel - zoom in or out; Q, W - shrink, " \
-               "stretch; A, S show/hide info for selected; T, Y - show/hide toggled node"
+               "stretch; A, S show/hide info for selected; T, Y - show/hide toggled node; Ctrl + Chunk - Chunk detail"
 
 
 class VisLoader:
@@ -190,7 +190,7 @@ if __name__ == '__main__':
     l1.set_relative_margin(1)
     # l1.set_width(60)
     # l1.set_height(60)
-    l1.visualise(range(300, 500))
+    l1.visualise(range(300, 350))
     # l1.visualise()
     app.exec_()
     cv2.waitKey(0)
