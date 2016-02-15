@@ -13,24 +13,26 @@ __author__ = 'Simon Mandlik'
 
 RELATIVE_MARGIN = 0.1
 NUMBER_OF_COLUMNS = 4
-TEXT = "Press Space to proceed\nS for change of step\n\n\nFrame: {0}\nStep: {1}\nId: {2}"
+TEXT = "Press Space to proceed\nS for change of step\nD for change of ROI\n\n\n\n" \
+       "Frame: {0}\nStep: {1}\nRoi: {2}\n\n\n\nChunk:\nId: {3}\nLength: {4}\n\n\n\n" \
+       "Region:\nId: {5}\nCentroid: {6}"
 
 class CropWidget(QtGui.QWidget):
 
-    def __init__(self, project, margin=None, start_frame=100, end_frame=200, step=3):
+    def __init__(self, project, roi=RELATIVE_MARGIN, start_frame=0, end_frame=200, step=1):
         super(CropWidget, self).__init__()
         self.project = project
         self.graph_manager = project.gm
         self.image_manager = ImgManager(project)
 
-        if margin is None:
-            self.margin = self.frameGeometry().height() * 2
-        else:
-            self.margin = margin
-
+        self.margin = self.frameGeometry().height() * 2
         self.start_frame = start_frame
-        self.end_frame = end_frame
+        if end_frame is None:
+            self.end_frame = self.project.vm.total_frame_count()
+        else:
+            self.end_frame = end_frame
         self.step = step
+        self.roi = roi
 
         self.h_layout = QtGui.QHBoxLayout()
         self.setLayout(self.h_layout)
@@ -70,20 +72,27 @@ class CropWidget(QtGui.QWidget):
         self.change_step_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
         self.addAction(self.change_step_action)
 
+        self.change_roi_action = QtGui.QAction('change_roi', self)
+        self.change_roi_action.triggered.connect(self.change_roi)
+        self.change_roi_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
+        self.addAction(self.change_roi_action)
+
         self.chunk_generator = self.graph_manager.chunks_in_frame_generator(self.start_frame, self.end_frame)
         self.chunk = None
         self.chunk_id = None
+        self.chunk_length = 0
         self.region_generator = None
 
         self.next_frame()
-        self.show()
 
     def handle_start(self):
         self.button_start.setDisabled(True)
         self._running = True
+        old_step = self.step
+        self.step = 1
         while self._running:
             self.next_frame()
-            time.sleep(0.1)
+        self.step = old_step
         self.button_start.setDisabled(False)
 
     def handle_stop(self):
@@ -93,11 +102,16 @@ class CropWidget(QtGui.QWidget):
         step, none = QtGui.QInputDialog.getInt(self, 'Change of step', 'Enter new step:', value=1)
         self.step = step
 
+    def change_roi(self):
+        roi, none = QtGui.QInputDialog.getDouble(self, 'Change of ROI', 'Enter new ROI:', value=0.1)
+        self.roi = roi
+
     def next_frame(self):
         if self.chunk is None:
             try:
                 self.chunk = next(self.chunk_generator)
                 self.chunk_id = self.chunk.id()
+                self.chunk_length = self.chunk.length()
             except StopIteration:
                 return
         if self.region_generator is None:
@@ -105,7 +119,7 @@ class CropWidget(QtGui.QWidget):
         try:
             region, frame = next(self.region_generator)
             self.img_label.setPixmap(self.prepare_pixmap(region, frame))
-            self.info_label.setText(TEXT.format(frame, self.step, self.chunk_id))
+            self.info_label.setText(TEXT.format(frame, self.step, self.roi, self.chunk_id, self.chunk_length, region.id(), region.centroid()))
             QApplication.processEvents()
         except StopIteration:
             self.region_generator = None
@@ -113,7 +127,7 @@ class CropWidget(QtGui.QWidget):
             self.next_frame()
 
     def prepare_pixmap(self, region, frame):
-        img = self.image_manager.get_crop(frame, region, width=self.margin, height=self.margin, relative_margin=RELATIVE_MARGIN)
+        img = self.image_manager.get_crop(frame, region, width=self.margin, height=self.margin, relative_margin=self.roi)
         pixmap = cvimg2qtpixmap(img)
         return pixmap
 
@@ -133,7 +147,7 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
     widget = CropWidget(project)
-    # widget.showMaximized()
+    widget.showMaximized()
     app.exec_()
     cv2.waitKey(0)
 
