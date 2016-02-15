@@ -1,16 +1,15 @@
-from gui.pixmap_selectable import Pixmap_Selectable
-
 __author__ = 'flipajs'
 
-import sys
-import cv2
 import numpy as np
-
-from PyQt4 import QtGui
+import sys
 from PyQt4 import QtCore
+from PyQt4 import QtGui
 from skimage.transform import resize
-from core.region.mser import get_msers_
+
+import cv2
+
 from core.project.project import Project
+from core.region.mser import get_msers_
 from gui.img_controls.utils import cvimg2qtpixmap
 from scripts.region_graph3 import visualize_nodes
 

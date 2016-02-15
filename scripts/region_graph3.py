@@ -1,22 +1,22 @@
 __author__ = 'simon'
 
 import numpy as np
-import cv2
 import random
-import matplotlib.colors as colors
-from utils.drawing.points import draw_points_crop
-from skimage.transform import resize
-from gui.img_controls.my_scene import MyScene
-from gui.img_controls.my_view_zoomable import MyViewZoomable
 from PyQt4 import QtGui, QtCore
-from gui.img_controls.utils import cvimg2qtpixmap
-from core.region.region import Region
+from skimage.transform import resize
+
+import matplotlib.colors as colors
 from gui.custom_line_selectable import Custom_Line_Selectable
-from gui.pixmap_selectable import Pixmap_Selectable
+
+from core.log import LogCategories, ActionNames
+from core.region.region import Region
+from core.settings import Settings as S_
+from gui.graph_view.pixmap_selectable import Pixmap_Selectable
+from gui.img_controls.my_scene import MyScene
+from gui.img_controls.utils import cvimg2qtpixmap
 from gui.plot.plot_chunks import PlotChunks
 from gui.view.chunks_on_frame import ChunksOnFrame
-from core.settings import Settings as S_
-from core.log import LogCategories, ActionNames
+from utils.drawing.points import draw_points_crop
 
 # Number of max boxes below graph, max is six
 BOX_NUM = 6
