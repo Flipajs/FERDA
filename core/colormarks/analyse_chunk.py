@@ -9,6 +9,7 @@ import numpy as np
 from scripts.irg_hist_demo import ColorHist3d
 from scripts.irg_hist_demo import *
 from processing import transform_img_
+from utils.img_manager import ImgManager
 
 
 def analyse_chunk(ch, project, cm_model, sample_step):
@@ -79,6 +80,33 @@ def evolve_measurements(measurements):
     return best_id, best_val /float(len(measurements))
 
 
+def colormarks_init_finished_cb(project, masks):
+    from scripts.irg_hist_demo import get_ccs, find_dist_thresholds
+
+    color_samples = []
+    for _, m in masks.iteritems():
+        mask, frame = m
+
+        mask = np.flipud(np.fliplr(mask))
+        if np.sum(mask) == 0:
+            continue
+
+        ccs = get_ccs(mask)
+
+        im = project.img_manager.get_whole_img(frame)
+
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        irg_255 = get_irg_255(im)
+        sample_pxs, all_pxs = find_dist_thresholds(ccs, irg_255.copy())
+
+        color_samples.append((sample_pxs, all_pxs))
+
+    import time
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    with open(project.working_directory+'/temp/color_samples_'+timestr+'.pkl', 'wb') as f:
+        pickle.dump(color_samples, f)
+
+
 if __name__ == '__main__':
     from colormarks_model import ColormarksModel
     from core.project.project import Project
@@ -86,15 +114,31 @@ if __name__ == '__main__':
     cm_model.im_space = 'irb'
 
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/C210/C210.fproj')
-
-    from utils.img_manager import ImgManager
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
+    # p.load('/Users/flipajs/Documents/wd/C210/c210.fproj')
     p.img_manager = ImgManager(p)
 
-    with open(p.working_directory + '/color_samples.pkl', 'rb') as f:
+    if True:
+        app = QtGui.QApplication(sys.argv)
+
+        from gui.arena.colormarks_picker import ColormarksPicker
+        cp = ColormarksPicker(p, colormarks_init_finished_cb)
+
+        cp.show()
+        cp.move(-500, -500)
+        cp.showMaximized()
+        cp.setFocus()
+
+        app.exec_()
+        app.deleteLater()
+        sys.exit()
+
+    with open(p.working_directory + '/temp/coloar_samples_20160216-124928.pkl', 'rb') as f:
+    # with open(p.working_directory + '/temp/color_samples_20160216-130321.pkl', 'rb') as f:
+    # with open(p.working_directory + '/color_samples.pkl', 'rb') as f:
         up = pickle.Unpickler(f)
         color_samples = up.load()
-        masks = up.load()
+        # masks = up.load()
 
 
     from utils.video_manager import get_auto_video_manager
@@ -131,6 +175,5 @@ if __name__ == '__main__':
         measurements = analyse_chunk(ch, p, cm_model, 3)
 
         ch_ids[ch], ch_probs[ch] = evolve_measurements(measurements)
-
 
         i += 1
