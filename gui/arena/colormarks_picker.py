@@ -71,7 +71,11 @@ class ColormarksPicker(QtGui.QWidget):
 
     def done(self):
         if self.done_callback:
-            self.done_callback(self.project, self.masks)
+            masks = []
+            for m, frame in self.masks.itervalues():
+                masks.append({'mask': m.T, 'frame': frame})
+
+            self.done_callback(self.project, masks)
 
     def change_pen_size(self, value):
         """

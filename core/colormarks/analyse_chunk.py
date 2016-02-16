@@ -84,8 +84,8 @@ def colormarks_init_finished_cb(project, masks):
     from scripts.irg_hist_demo import get_ccs, find_dist_thresholds
 
     color_samples = []
-    for _, m in masks.iteritems():
-        mask, frame = m
+    for m in masks:
+        mask, frame = m['mask'], m['frame']
 
         mask = np.flipud(np.fliplr(mask))
         if np.sum(mask) == 0:
