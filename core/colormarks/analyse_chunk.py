@@ -87,7 +87,6 @@ def colormarks_init_finished_cb(project, masks):
     for m in masks:
         mask, frame = m['mask'], m['frame']
 
-        mask = np.flipud(np.fliplr(mask))
         if np.sum(mask) == 0:
             continue
 
@@ -118,7 +117,7 @@ if __name__ == '__main__':
     # p.load('/Users/flipajs/Documents/wd/C210/c210.fproj')
     p.img_manager = ImgManager(p)
 
-    if True:
+    if False:
         app = QtGui.QApplication(sys.argv)
 
         from gui.arena.colormarks_picker import ColormarksPicker
@@ -133,12 +132,9 @@ if __name__ == '__main__':
         app.deleteLater()
         sys.exit()
 
-    with open(p.working_directory + '/temp/coloar_samples_20160216-124928.pkl', 'rb') as f:
-    # with open(p.working_directory + '/temp/color_samples_20160216-130321.pkl', 'rb') as f:
-    # with open(p.working_directory + '/color_samples.pkl', 'rb') as f:
+    with open(p.working_directory + '/temp/color_samples_20160216-155612.pkl', 'rb') as f:
         up = pickle.Unpickler(f)
         color_samples = up.load()
-        # masks = up.load()
 
 
     from utils.video_manager import get_auto_video_manager
