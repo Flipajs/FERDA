@@ -4,6 +4,7 @@ import cv2, sys
 import time
 from PyQt4.QtCore import Qt
 from PyQt4.QtGui import QApplication
+import numpy as np
 
 from core.project.project import Project
 from gui.gui_utils import cvimg2qtpixmap
@@ -19,11 +20,13 @@ TEXT = "Press Space to proceed\nS for change of step\nD for change of ROI\n\n\n\
 
 class CropWidget(QtGui.QWidget):
 
-    def __init__(self, project, roi=RELATIVE_MARGIN, start_frame=0, end_frame=200, step=1):
+    def __init__(self, project, ft=None, roi=RELATIVE_MARGIN, start_frame=0, end_frame=200, step=1):
         super(CropWidget, self).__init__()
         self.project = project
         self.graph_manager = project.gm
         self.image_manager = ImgManager(project)
+
+        self.ft = ft
 
         self.margin = self.frameGeometry().height() * 2
         self.start_frame = start_frame
@@ -127,7 +130,48 @@ class CropWidget(QtGui.QWidget):
             self.next_frame()
 
     def prepare_pixmap(self, region, frame):
-        img = self.image_manager.get_crop(frame, region, width=self.margin, height=self.margin, relative_margin=self.roi)
+        from utils.img import get_safe_selection
+        from skimage.transform import rescale
+
+        img = self.image_manager.get_whole_img(frame)
+        img_ = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+        border = 5
+        img_ = cv2.copyMakeBorder(img_, border, border, border, border, cv2.BORDER_REPLICATE )
+        ft.getCharSegmentations(img_, '', 'base')
+
+
+        keypoints = ft.getLastDetectionKeypoints()
+        strokes = []
+
+        sizes_ = [1, 3, 6]
+
+        # TODO: solve scale
+        scales = ft.getImageScales()
+        scs_ = []
+        for kp, i in zip(keypoints, range(len(keypoints))):
+            s_ = ft.getKeypointStrokes(i) * (1.0 / scales[kp[2]])
+            scs_.append(kp[2])
+            strokes.append(s_)
+
+
+        scale_factor = 2.5
+        img = np.asarray(rescale(img, scale_factor) * 255, dtype=np.uint8)
+
+        for i in [2, 1, 0]:
+            for s_, sc_ in zip(strokes, scs_):
+                if sc_ != i:
+                    continue
+
+                c = tuple(numpy.asarray(numpy.random.rand(3,) * 255, dtype=numpy.uint8))
+                c = (int(c[0]), int(c[1]), int(c[2]))
+
+                for pt in s_:
+                    cv2.circle(img, (int(scale_factor * (pt[0] - border)), int(scale_factor * (pt[1]-border))), sizes_[i], c, -1)
+
+        border = 700
+        img = get_safe_selection(img, scale_factor*region.centroid()[0] - border/2, scale_factor* region.centroid()[1] - border/2, border, border)
+
         pixmap = cvimg2qtpixmap(img)
         return pixmap
 
@@ -142,11 +186,67 @@ class CropWidget(QtGui.QWidget):
             i += self.step
 
 if __name__ == '__main__':
+    import sys
+    sys.path.append('/Users/flipajs/Documents/dev/fastext/toolbox')
+    from ft import FASTex
+    import math
+    import cv2
+    from utils.video_manager import get_auto_video_manager
+    from core.project.project import Project
+
+    import matplotlib.pyplot as plt
+    import numpy
+
     project = Project()
-    project.load("/home/sheemon/FERDA/projects/Cam1_/cam1.fproj")
+    project.load("/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj")
+
+    vm = get_auto_video_manager(project)
+
+    scaleFactor = 1.4
+    nlevels = 3
+    edgeThreshold = 13
+    keypointTypes = 2
+    kMin = 9
+    kMax = 11
+    erode = 0
+    segmentGrad = 0
+    minCompSize = 4
+    process_color = 0
+    segmDeltaInt = 1
+    min_tupple_top_bottom_angle = math.pi / 2
+    maxSpaceHeightRatio = -1
+    createKeypointSegmenter = 1
+
+    params_dict = {
+        'scaleFactor': scaleFactor,
+        'nlevels': nlevels,
+        'edgeThreshold': edgeThreshold,
+        'keypointTypes': keypointTypes,
+        'kMin': kMin,
+        'kMax': kMax,
+        'erode': erode,
+        'segmentGrad': segmentGrad,
+        'minCompSize': minCompSize,
+        'process_color': process_color,
+        'segmDeltaInt': segmDeltaInt,
+        'min_tupple_top_bottom_angle': min_tupple_top_bottom_angle,
+        'maxSpaceHeightRatio': maxSpaceHeightRatio,
+        'createKeypointSegmenter': createKeypointSegmenter
+    }
+
+    process_color = 0
+
+    imgName = '/Users/flipajs/Pictures/vlcsnap-2016-02-12-13h43m29s676.png'
+    border = 5
+
+    ft = FASTex(edgeThreshold=edgeThreshold,
+                createKeypointSegmenter=createKeypointSegmenter,
+                nlevels=nlevels,
+                minCompSize=minCompSize,
+                keypointTypes=keypointTypes)
 
     app = QtGui.QApplication(sys.argv)
-    widget = CropWidget(project)
+    widget = CropWidget(project, ft)
     widget.showMaximized()
     app.exec_()
     cv2.waitKey(0)
