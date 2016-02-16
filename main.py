@@ -31,3 +31,4 @@ if is_flipajs_pc():
 app.exec_()
 app.deleteLater()
 sys.exit()
+
