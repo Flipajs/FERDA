@@ -3,7 +3,7 @@ import cPickle as pickle
 from core.graph.region_chunk import RegionChunk
 from utils.img import get_safe_selection
 from math import ceil
-from processing import get_colormarks, match_cms_region
+from processing import get_colormarks, match_cms_region, filter_cms
 import matplotlib.pyplot as plt
 import numpy as np
 from scripts.irg_hist_demo import ColorHist3d
@@ -19,18 +19,18 @@ def analyse_chunk(ch, project, cm_model, sample_step):
         r = r_ch[t - r_ch.start_frame()]
 
         # TODO: set some reasonable parameters
-        bb = get_bounding_box(r, project, cm_model)
+        bb, offset = get_bounding_box(r, project, cm_model)
 
         cms = get_colormarks(bb, cm_model)
         for pts, label in cms:
-            print label
             for pt in pts:
                 bb[pt[0], pt[1], 0:2] = 255
 
         cv2.imshow('bb', bb)
         cv2.imshow('bb_t', transform_img_(bb, cm_model))
-        cv2.waitKey(0)
-        matches = match_cms_region(cms, r)
+        cv2.waitKey(1)
+
+        matches = match_cms_region(filter_cms(cms), r, offset)
 
         ch_cms[t] = matches
 
@@ -55,7 +55,28 @@ def get_bounding_box(r, project, cm_model):
 
     bb = get_safe_selection(img, y, x, height2*2, width2*2)
 
-    return bb
+    return bb, np.array([y, x])
+
+
+def evolve_measurements(measurements):
+    votes_ = {}
+
+    for m in measurements.itervalues():
+         if m:
+             id_ = m[0][1]
+             if id_ not in votes_:
+                 votes_[id_] = 0
+
+             votes_[id_] += 1
+
+    best_id = None
+    best_val = 0
+    for id_, num in votes_.iteritems():
+        if num > best_val:
+            best_val = num
+            best_id = id_
+
+    return best_id, best_val /float(len(measurements))
 
 
 if __name__ == '__main__':
@@ -101,7 +122,15 @@ if __name__ == '__main__':
     # measurements = analyse_chunk(chunks[7], p, cm_model, 3)
 
     i = 0
+
+    ch_ids = {}
+    ch_probs = {}
+
     for ch in chunks:
         print i
         measurements = analyse_chunk(ch, p, cm_model, 3)
+
+        ch_ids[ch], ch_probs[ch] = evolve_measurements(measurements)
+
+
         i += 1

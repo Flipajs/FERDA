@@ -8,29 +8,38 @@ SELECTION_OFFSET_LINE = 2
 LINE_WIDTH = 2
 SELECTION_LINE_WIDTH = LINE_WIDTH
 SENSITIVITY_CONSTANT = SELECTION_OFFSET_CHUNK * 2
+PARTIAL_LINE_OFFSET = 5
 
 __author__ = 'Simon Mandlik'
 
 
 class Edge:
 
-    def __init__(self, from_x, from_y, to_x, to_y, core_obj, scene, color=None, vertical=False):
+    def __init__(self, from_x, from_y, to_x, to_y, core_obj, scene, vertical=False):
         self.from_x = from_x
         self.from_y = from_y
         self.to_x = to_x
         self.to_y = to_y
+        if core_obj[2] == "partial":
+            if not vertical:
+                from_y += PARTIAL_LINE_OFFSET
+                to_y += PARTIAL_LINE_OFFSET
+            else:
+                from_x += PARTIAL_LINE_OFFSET
+                to_x += PARTIAL_LINE_OFFSET
+
         if core_obj[2] == "chunk":
-            self.graphical_object = ChunkGraphical(from_x, from_y, to_x, to_y, core_obj, scene, color, vertical)
+            self.graphical_object = ChunkGraphical(from_x, from_y, to_x, to_y, core_obj, scene, vertical)
         elif core_obj[2] == "line":
-            self.graphical_object = LineGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), core_obj, scene, color)
+            self.graphical_object = LineGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), core_obj, scene)
         elif core_obj[2] == "partial":
-            self.graphical_object = PartialGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), core_obj, scene, color)
+            self.graphical_object = PartialGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), core_obj, scene)
         self.core_obj = core_obj
 
 
 class EdgeGraphical(QtGui.QGraphicsLineItem):
 
-    def __init__(self, parent_line, core_obj, scene, color):
+    def __init__(self, parent_line, core_obj, scene, color=None):
         super(EdgeGraphical, self).__init__(parent_line)
         self.core_obj = core_obj
         self.parent_line = parent_line
@@ -43,9 +52,9 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
         self.shown = False
         self.info_item = None
         self.color = color
-        if self.color:
-            self.clipped = True
-            self.shown = True
+        # if self.color:
+        #     self.clipped = True
+        #     self.shown = True
 
     def show_info(self, loader):
         if not self.info_item or not self.clipped:
@@ -79,11 +88,13 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
         return x, y
 
     def decolor_margins(self):
-        self.color = None
-        self.scene.update()
+        if not isinstance(self, ChunkGraphical):
+            self.color = None
+            self.scene.update()
 
     def set_color(self, color):
-        self.color = color
+        if not isinstance(self, ChunkGraphical):
+            self.color = color
 
     def paint(self, painter, style_option_graphics_item, widget=None):
         if self.clipped:
@@ -143,7 +154,7 @@ class PartialGraphical(EdgeGraphical):
 
     def paint(self, painter, style_option_graphics_item, widget=None):
         opacity = 100 + 155 * abs(self.core_obj[3])
-        pen = QtGui.QPen(QtGui.QColor(0, 255, 0, opacity), LINE_WIDTH, Qt.DotLine, Qt.SquareCap, Qt.RoundJoin)
+        pen = QtGui.QPen(QtGui.QColor(255, 0, 0, opacity), LINE_WIDTH, Qt.DotLine, Qt.SquareCap, Qt.RoundJoin)
         painter.setPen(pen)
         painter.drawLine(self.parent_line)
 
@@ -152,7 +163,7 @@ class PartialGraphical(EdgeGraphical):
 
 class ChunkGraphical(EdgeGraphical):
 
-    def __init__(self, from_x, from_y, to_x, to_y, core_obj, scene, color, vertical=False):
+    def __init__(self, from_x, from_y, to_x, to_y, core_obj, scene, vertical=False):
         self.parent_line = QtCore.QLineF(from_x, from_y, to_x, to_y)
 
         if vertical:
@@ -166,10 +177,12 @@ class ChunkGraphical(EdgeGraphical):
         self.selection_polygon = self.create_selection_polygon()
         self.pick_polygon = self.create_pick_polygon()
 
+        color = core_obj[4]
+
         super(ChunkGraphical, self).__init__(self.parent_line, core_obj, scene, color)
 
     def paint(self, painter, style_option_graphics_item, widget=None):
-        pen = QtGui.QPen(QtGui.QColor(0, 0, 0), LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+        pen = QtGui.QPen(self.color, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
 
         painter.setPen(pen)
         painter.drawLine(self.parent_line_1)

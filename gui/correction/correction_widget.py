@@ -165,6 +165,15 @@ class ResultsWidget(QtGui.QWidget):
         self.video_control_buttons_layout.addWidget(self.frameEdit)
         self.video_control_buttons_layout.addWidget(self.frame_jump_button)
 
+        self.reset_colors_b = QtGui.QPushButton('reset colors')
+        self.reset_colors_b.clicked.connect(self.reset_colors)
+        self.video_control_buttons_layout.addWidget(self.reset_colors_b)
+
+        self.reset_colors_action = QtGui.QAction('reset_colors', self)
+        self.reset_colors_action.triggered.connect(self.reset_colors)
+        self.reset_colors_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Control + QtCore.Qt.Key_0))
+        self.addAction(self.reset_colors_action)
+
         self.setTabOrder(self.frameEdit, self.frame_jump_button)
 
         self.connect_GUI()
@@ -470,6 +479,13 @@ class ResultsWidget(QtGui.QWidget):
                 self.update_positions(self.video.frame_number(), optimized=False)
             else:
                 self.out_of_frames()
+
+    def reset_colors(self):
+        print "COLORIZING "
+        from utils.color_manager import colorize_project
+        colorize_project(self.project)
+
+        print "COLORIZING DONE..."
 
 
 def view_add_bg_image(g_view, pix_map):

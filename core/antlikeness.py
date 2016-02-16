@@ -75,5 +75,7 @@ class DummyAntlikeness():
         return []
 
     def get_prob(self):
-        import random
-        return random.randrange(0, 1)
+        # import random
+        # return random.randrange(0, 1)
+
+        return 1

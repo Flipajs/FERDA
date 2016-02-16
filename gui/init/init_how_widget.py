@@ -60,9 +60,14 @@ class InitHowWidget(QtGui.QWidget):
         self.im_grid_layout.addWidget(self.inverse_selection_b)
         self.im_grid_layout.addWidget(self.img_grid)
 
+        self.use_dummy_antlikness_b = QtGui.QPushButton('use dummy antlikeness')
+        self.use_dummy_antlikness_b.clicked.connect(self.use_dummy_antlikeness)
+        self.vbox.addWidget(self.use_dummy_antlikness_b)
+
         self.finish_how = QtGui.QPushButton('confirm selection and finish initialization')
         self.finish_how.clicked.connect(self.finish)
         self.vbox.addWidget(self.finish_how)
+
 
         self.regions = []
 
@@ -86,6 +91,10 @@ class InitHowWidget(QtGui.QWidget):
         self.classes = [0 for i in range(len(self.regions))]
 
         self.class_stats = ClassesStats()
+
+    def use_dummy_antlikeness(self):
+        from core.antlikeness import DummyAntlikeness
+        self.class_stats.antlikeness_svm = DummyAntlikeness()
 
     def finish(self):
         selected = self.img_grid.get_selected()

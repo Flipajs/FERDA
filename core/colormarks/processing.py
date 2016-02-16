@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import ndimage
+from scipy.spatial.distance import cdist
 
 
 def get_colormarks(img, cm_model):
@@ -14,8 +15,28 @@ def get_colormarks(img, cm_model):
     return ccs
 
 
-def match_cms_region(cms, r):
-    pass
+def match_cms_region(cms, r, offset, thresh=2.0):
+    cms_ = []
+    cont = r.contour()
+
+    for cm in cms:
+        d_ = cdist(cm[0] + offset, cont)
+        mins_ = np.min(d_, 0)
+
+        min_ = min(mins_)
+
+        if min_ <= thresh:
+            cms_.append(cm)
+
+    return cms_
+
+def filter_cms(cms):
+    cms_ = []
+    for cm in cms:
+        if len(cm[0]) > 15:
+            cms_.append(cm)
+
+    return cms_
 
 
 def get_ccs_(im, bg=-1, min_a=1, max_a=5000):

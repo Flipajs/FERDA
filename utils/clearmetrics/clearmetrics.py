@@ -29,6 +29,7 @@ class ClearMetrics(object):
         0: [1, 3, 8],
         1: [2, 3, None, 6],
         2: [0, 4, None, 6, 8]
+
     }
     clear = ClearMetrics(groundtruth, measurements, 1.5)
     clear.match_sequence()
