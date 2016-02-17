@@ -27,6 +27,9 @@ if is_flipajs_pc():
     project.load(wd+name+'/cam1.fproj')
     ex.widget_control('load_project', project)
 
+project.load('/home/dita/PycharmProjects/FERDA projects/Cam1_/cam1.fproj')
+ex.widget_control('load_project', project)
+
 
 app.exec_()
 app.deleteLater()
