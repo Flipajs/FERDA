@@ -20,16 +20,21 @@ def analyse_chunk(ch, project, cm_model, sample_step):
         r = r_ch[t - r_ch.start_frame()]
 
         # TODO: set some reasonable parameters
-        bb, offset = get_bounding_box(r, project, cm_model)
+        bb, offset, orig = get_bounding_box(r, project, cm_model)
 
         cms = get_colormarks(bb, cm_model)
         for pts, label in cms:
             for pt in pts:
                 bb[pt[0], pt[1], 0:2] = 255
 
-        cv2.imshow('bb', bb)
-        cv2.imshow('bb_t', transform_img_(bb, cm_model))
-        cv2.waitKey(1)
+        plt.ion()
+        plt.subplot(1, 3, 1)
+        plt.imshow(bb)
+        plt.subplot(1, 3, 2)
+        plt.imshow(transform_img_(bb, cm_model))
+        plt.subplot(1, 3, 3)
+        plt.imshow(orig)
+        plt.waitforbuttonpress()
 
         matches = match_cms_region(filter_cms(cms), r, offset)
 
@@ -43,8 +48,8 @@ def get_bounding_box(r, project, cm_model):
     border_percent = 1.3
 
     frame = r.frame()
-    img = project.img_manager.get_whole_img(frame)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img_orig = project.img_manager.get_whole_img(frame)
+    img = cv2.cvtColor(img_orig, cv2.COLOR_BGR2RGB)
     img = transform_img_(img, cm_model)
 
     roi = r.roi()
@@ -56,7 +61,10 @@ def get_bounding_box(r, project, cm_model):
 
     bb = get_safe_selection(img, y, x, height2*2, width2*2)
 
-    return bb, np.array([y, x])
+    orig = get_safe_selection(img_orig, y, x, height2*2, width2*2)
+    orig = cv2.cvtColor(orig, cv2.COLOR_BGR2RGB )
+
+    return bb, np.array([y, x]), orig
 
 
 def evolve_measurements(measurements):
@@ -109,7 +117,7 @@ def colormarks_init_finished_cb(project, masks):
 if __name__ == '__main__':
     from colormarks_model import ColormarksModel
     from core.project.project import Project
-    cm_model = ColormarksModel()
+    cm_model = ColormarksModel(32, 32, 32)
     cm_model.im_space = 'irb'
 
     p = Project()
@@ -149,7 +157,7 @@ if __name__ == '__main__':
     for cs, _ in color_samples:
         for px in cs:
             pos = np.asarray(px / cm_model.num_bins_v, dtype=np.int)
-            print px, cm_model.hist3d.hist_labels_[pos[0], pos[1], pos[2]]
+            # print px, cm_model.hist3d.hist_labels_[pos[0], pos[1], pos[2]]
 
     chunks = []
 
@@ -158,18 +166,11 @@ if __name__ == '__main__':
         if ch_id > 0:
             chunks.append(p.chm[ch_id])
 
-    # # TODO: remove, debug...
-    # measurements = analyse_chunk(chunks[7], p, cm_model, 3)
-
-    i = 0
-
     ch_ids = {}
     ch_probs = {}
 
-    for ch in chunks:
-        print i
-        measurements = analyse_chunk(ch, p, cm_model, 3)
+    for ch in chunks[0:]:
+        print ch.id_
+        measurements = analyse_chunk(ch, p, cm_model, 99)
 
         ch_ids[ch], ch_probs[ch] = evolve_measurements(measurements)
-
-        i += 1

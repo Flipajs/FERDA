@@ -3,10 +3,10 @@ from processing import transform_img_
 from hist_3d import ColorHist3d
 
 class ColormarksModel:
-    def __init__(self):
-        self.num_bins1 = 16
-        self.num_bins2 = 16
-        self.num_bins3 = 16
+    def __init__(self, num_bins1=16, num_bins2=16, num_bins3=16):
+        self.num_bins1 = num_bins1
+        self.num_bins2 = num_bins2
+        self.num_bins3 = num_bins3
 
         self.im_space = 'irb'
         self.hist3d = None

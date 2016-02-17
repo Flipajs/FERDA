@@ -11,7 +11,7 @@ def get_colormarks(img, cm_model):
     labels = cm_model.get_labelling(pos)
 
     # TOOD: parameters
-    ccs = get_ccs_(labels, bg=0, max_a=2000)
+    ccs = get_ccs_(labels, bg=0, min_a=10, max_a=500)
     return ccs
 
 
