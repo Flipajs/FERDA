@@ -1,6 +1,8 @@
 import numpy as np
 from scipy import ndimage
 from scipy.spatial.distance import cdist
+import math
+import numpy.linalg as la
 
 
 def get_colormarks(img, cm_model):
@@ -18,6 +20,41 @@ def get_colormarks(img, cm_model):
 def match_cms_region(cms, r, offset, thresh=2.0):
     cms_ = []
     cont = r.contour()
+
+    # centroid test - colormark can be only near endpoints
+    p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
+    endpoint1 = np.ceil(r.centroid() + p_)
+    endpoint2 = np.ceil(r.centroid() - p_)
+
+    thresh1 = r.a_
+    thresh2 = (1/6.0) * np.pi
+
+    for cm in cms:
+        centroid = offset + np.sum(cm[0], 0) / cm[0].shape[0]
+        if la.norm(centroid - endpoint1) > thresh1:
+            if la.norm(centroid - endpoint2) > thresh1:
+                continue
+
+        v1 = endpoint1 - endpoint2
+        v2 = endpoint1 - centroid
+
+        cosang = np.dot(v1, v2)
+        sinang = la.norm(np.cross(v1, v2))
+        th1 = abs(np.arctan2(sinang, cosang))
+
+        v1 = endpoint2 - endpoint1
+        v2 = endpoint2 - centroid
+        cosang = np.dot(v1, v2)
+        sinang = la.norm(np.cross(v1, v2))
+        th2 = abs(np.arctan2(sinang, cosang))
+
+        if th1 > thresh2 and th2 > thresh2:
+            continue
+
+        cms_.append(cm)
+
+    cms = cms_
+    cms_ = []
 
     for cm in cms:
         d_ = cdist(cm[0] + offset, cont)
