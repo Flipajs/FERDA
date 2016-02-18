@@ -229,9 +229,9 @@ class \
         plt.imshow(alpha)
         plt.set_cmap('viridis')
 
-        plt.figure(2)
-        plt.imshow(alpha)
-        plt.set_cmap('jet')
+        # plt.figure(2)
+        # plt.imshow(alpha)
+        # plt.set_cmap('jet')
 
         centr_step = 3
         centroids = centroids[::centr_step, :]
@@ -240,6 +240,27 @@ class \
         # plt.figure(2)
         # plt.imshow(alpha2)
         plt.subplots_adjust(left=0.0, right=1, top=1, bottom=0.0)
+
+        # make crop...
+        for y_start in range(alpha.shape[0]):
+            if sum(alpha[y_start, :]) > 0:
+                break
+
+        for y_end in reversed(range(alpha.shape[0])):
+            if sum(alpha[y_end, :]) > 0:
+                break
+
+        for x_start in range(alpha.shape[1]):
+            if sum(alpha[:, x_start]) > 0:
+                break
+
+        for x_end in reversed(range(alpha.shape[1])):
+            if sum(alpha[:, x_end]) > 0:
+                break
+
+        border = 5
+        plt.ylim([max(0, y_start-border), min(y_end+border, alpha.shape[0])])
+        plt.xlim([max(0, x_start-border), min(x_end+border, alpha.shape[1])])
         plt.show()
 
         scroll = self.chunk_detail_scroll_vertical if self.show_vertically else self.chunk_detail_scroll_horizontal
