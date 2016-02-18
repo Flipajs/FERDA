@@ -259,7 +259,7 @@ class \
                 break
 
         border = 5
-        plt.ylim([max(0, y_start-border), min(y_end+border, alpha.shape[0])])
+        plt.ylim([min(y_end+border, alpha.shape[0]), max(0, y_start-border)])
         plt.xlim([max(0, x_start-border), min(x_end+border, alpha.shape[1])])
         plt.show()
 

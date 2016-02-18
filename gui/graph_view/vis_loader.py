@@ -195,7 +195,7 @@ if __name__ == '__main__':
 
 
 
-    l1.visualise(range(0, 1000))
+    l1.visualise(range(3000, 5000))
     # l1.visualise()
 
     app.exec_()
