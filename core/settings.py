@@ -136,6 +136,9 @@ class Controls:
     video_play_pause = Item('controls/video_play_pause', QtGui.QKeySequence(QtCore.Qt.Key_Space))
     video_random_frame = Item('controls/video_random_frame', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_R))
 
+    chunk_alpha_blending = Item('controls/chunk_alpha_blending', QtGui.QKeySequence(QtCore.Qt.Key_A))
+    chunk_interpolation_fitting = Item('controls/chunk_interpolation_fitting', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_P))
+
     # global view
     global_view_join_chunks = Item('controls/gv/join_chunks', QtGui.QKeySequence(QtCore.Qt.Key_J))
     global_view_stop_following = Item('controls/gv/stop_following', QtGui.QKeySequence(QtCore.Qt.Key_S))
