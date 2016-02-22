@@ -102,8 +102,17 @@ def colormarks_init_finished_cb(project, masks):
 
     import time
     timestr = time.strftime("%Y%m%d-%H%M%S")
+
+    import os
+    try:
+        os.mkdir(project.working_directory+'/temp')
+    except:
+        pass
+
     with open(project.working_directory+'/temp/color_samples_'+timestr+'.pkl', 'wb') as f:
         pickle.dump(color_samples, f)
+
+    return color_samples
 
 
 if __name__ == '__main__':

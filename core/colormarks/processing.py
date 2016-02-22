@@ -4,9 +4,6 @@ from scipy.spatial.distance import cdist
 
 
 def get_colormarks(img, cm_model):
-    # img_t = transform_img_(img, cm_model)
-    # img_t = img
-
     pos = np.asarray(img / cm_model.num_bins_v, dtype=np.int)
     labels = cm_model.get_labelling(pos)
 
