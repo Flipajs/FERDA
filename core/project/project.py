@@ -316,7 +316,7 @@ class Project:
         self.solver = Solver(self)
         self.gm.assignment_score = self.solver.assignment_score
 
-        self.rm = RegionManager(db_wd=self.working_directory, cache_size_limit=0)
+        self.rm = RegionManager(db_wd=self.working_directory)
 
         self.gm.project = self
         self.gm.rm = self.rm

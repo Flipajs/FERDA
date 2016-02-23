@@ -879,6 +879,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         centroids = np.array(centroids)
 
+        plt.close('all')
         plt.figure(1)
         plt.imshow(alpha)
         plt.set_cmap('viridis')

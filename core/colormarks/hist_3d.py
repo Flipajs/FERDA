@@ -49,6 +49,7 @@ class ColorHist3d():
 
     def add_color(self, pxs, color_id):
         pos = np.asarray(pxs / self.num_bins_v, dtype=np.int)
+
         for i in range(pxs.shape[0]):
             p = pos[i, :]
 

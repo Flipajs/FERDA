@@ -19,6 +19,7 @@ class ColormarksModel:
         self.num_bins_v = None
 
         self.irgb_img_cache = {}
+        self.colors_ = {}
 
     def compute_model(self, main_img, color_samples):
         self.num_bins_v = np.array([self.num_bins1, self.num_bins2, self.num_bins3], dtype=np.float)
@@ -31,9 +32,10 @@ class ColormarksModel:
                                   num_bins1=self.num_bins1, num_bins2=self.num_bins2, num_bins3=self.num_bins3,
                                   theta=0.3, epsilon=0.9)
 
-        for (picked_pxs, all_pxs), c_id in zip(color_samples, range(1, len(color_samples)+1)):
+        for (picked_pxs, all_pxs, mean_color), c_id in zip(color_samples, range(1, len(color_samples)+1)):
             self.hist3d.remove_bg(all_pxs)
             self.hist3d.add_color(picked_pxs, c_id)
+            self.colors_[c_id] = mean_color
 
         self.hist3d.assign_labels()
 
@@ -76,7 +78,7 @@ class ColormarksModel:
     def find_colormarks(self, project, region):
         bb, offset = self.get_bounding_box(region, project)
 
-        cms = get_colormarks(bb, self, min_a=50)
+        cms = get_colormarks(bb, self, min_a=20)
 
         # print region.id_
         #
@@ -88,6 +90,8 @@ class ColormarksModel:
         #
         #     cv2.imshow('bb', bb)
         #     cv2.imshow('im_', im_)
+        #
+        #     print len(pts)
         #     cv2.waitKey(0)
 
         matches = match_cms_region(filter_cms(cms), region, offset)
