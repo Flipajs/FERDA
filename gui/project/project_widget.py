@@ -106,6 +106,11 @@ class ProjectWidget(QtGui.QWidget):
         # stop timer and fill the progress bar
         self.loading_w.update_progress(1)
         self.timer.stop()
+        
+        from core.region.region_manager import RegionManager
+        project.rm.con.close()
+        project.rm = RegionManager(db_wd=project.working_directory)
+
         self.finish_callback('load_project', project)
 
     def timer_done(self):
