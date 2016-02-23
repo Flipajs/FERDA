@@ -1,7 +1,3 @@
-__author__ = 'flipajs'
-
-__author__ = 'fnaiser'
-
 from PyQt4 import QtGui, QtCore
 from gui.img_controls.my_view import MyView
 from utils.video_manager import get_auto_video_manager
@@ -11,6 +7,8 @@ import cv2
 from viewer.gui.img_controls import markers
 from core.animal import colors_
 from core.settings import Settings as S_
+from core.graph.region_chunk import RegionChunk
+import numpy as np
 
 
 MARKER_SIZE = 15
@@ -191,6 +189,7 @@ class ResultsWidget(QtGui.QWidget):
         self.highlight_timer2nd = QtCore.QTimer()
         from functools import partial
         self.highlight_timer2nd.timeout.connect(partial(self.decrease_highlight_marker_opacity, True))
+
 
     def frame_jump(self):
         f = int(self.frameEdit.text())

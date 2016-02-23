@@ -18,6 +18,8 @@ class ColormarksModel:
         self.num_colors = -1
         self.num_bins_v = None
 
+        self.irgb_img_cache = {}
+
     def compute_model(self, main_img, color_samples):
         self.num_bins_v = np.array([self.num_bins1, self.num_bins2, self.num_bins3], dtype=np.float)
 
@@ -45,9 +47,20 @@ class ColormarksModel:
         border_percent = 1.3
 
         frame = r.frame()
-        img = project.img_manager.get_whole_img(frame)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = transform_img_(img, self)
+        if frame in self.irgb_img_cache:
+            img = self.irgb_img_cache[frame]
+        else:
+            from utils.video_manager import get_auto_video_manager
+            vid_m = get_auto_video_manager(project)
+
+            img = project.img_manager.get_whole_img(frame)
+
+            # cv2.imshow('img', img)
+            # cv2.waitKey(0)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img = transform_img_(img, self)
+
+            self.irgb_img_cache[frame] = img
 
         roi = r.roi()
 
@@ -63,15 +76,24 @@ class ColormarksModel:
     def find_colormarks(self, project, region):
         bb, offset = self.get_bounding_box(region, project)
 
-        cms = get_colormarks(bb, self)
-        for pts, label in cms:
-            for pt in pts:
-                bb[pt[0], pt[1], 0:2] = 255
+        cms = get_colormarks(bb, self, min_a=50)
+
+        # print region.id_
+        #
+        # im_ = np.zeros((bb.shape[0], bb.shape[1]), dtype=np.uint8)
+        # for pts, label in cms:
+        #     for pt in pts:
+        #         im_[pt[0], pt[1]] = 255
+        #         # bb[pt[0], pt[1], 0:2] = 0
+        #
+        #     cv2.imshow('bb', bb)
+        #     cv2.imshow('im_', im_)
+        #     cv2.waitKey(0)
 
         matches = match_cms_region(filter_cms(cms), region, offset)
 
         # order by size:
-        matches = sorted(matches, lambda x: -len(x[0]))
+        matches = sorted(matches, key=lambda x: -len(x[0]))
 
         return matches
 

@@ -111,11 +111,15 @@ class MainWindow(QtGui.QMainWindow):
 
         vm = get_auto_video_manager(project)
         frame = masks[0]['frame']
+
         main_img = vm.get_frame(frame)
+        import cv2
+        main_img = cv2.cvtColor(main_img, cv2.COLOR_BGR2RGB)
 
         cm_model.compute_model(main_img, color_samples)
 
         self.project.colormarks_model = cm_model
+        self.project.save()
 
         self.add_init_widget_()
 

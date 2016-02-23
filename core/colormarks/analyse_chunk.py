@@ -122,7 +122,7 @@ if __name__ == '__main__':
     cm_model.im_space = 'irb'
 
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1__/cam1.fproj')
     # p.load('/Users/flipajs/Documents/wd/C210/c210.fproj')
     p.img_manager = ImgManager(p)
 
@@ -141,7 +141,7 @@ if __name__ == '__main__':
         app.deleteLater()
         sys.exit()
 
-    with open(p.working_directory + '/temp/color_samples_20160216-155612.pkl', 'rb') as f:
+    with open(p.working_directory + '/temp/color_samples_20160222-200002.pkl', 'rb') as f:
         up = pickle.Unpickler(f)
         color_samples = up.load()
 
@@ -176,9 +176,15 @@ if __name__ == '__main__':
     ch_probs = {}
 
     for ch in chunks:
-        print i
-        measurements = analyse_chunk(ch, p, cm_model, 3)
+        r_ch = RegionChunk(ch, p.gm, p.rm)
+        for f in range(ch.start_frame(p.gm), ch.end_frame(p.gm)):
+            r = r_ch.region_in_t(f)
 
-        ch_ids[ch], ch_probs[ch] = evolve_measurements(measurements)
+            cm = cm_model.find_colormarks(p, r)
 
-        i += 1
+            # print i
+            # measurements = analyse_chunk(ch, p, cm_model, 3)
+            #
+            # ch_ids[ch], ch_probs[ch] = evolve_measurements(measurements)
+            #
+            # i += 1

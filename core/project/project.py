@@ -87,6 +87,7 @@ class Project:
 
         p.date_created = self.date_created
         p.use_colormarks = self.use_colormarks
+        p.colormarks_model = self.colormarks_model
         p.color_manager = self.color_manager
 
         p.date_last_modifiaction = time.time()
