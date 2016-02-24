@@ -210,7 +210,7 @@ class BackgroundComputer:
 
         part_num = self.part_num
         # TODO: remove this line
-        # part_num = 15
+        part_num = 2
 
         self.project.color_manager = None
 
@@ -237,7 +237,6 @@ class BackgroundComputer:
         self.project.solver.detect_split_merge_cases()
 
         print "reconnecting graphs"
-        self.project.gm = self.project.gm
 
         vs_todo = []
 
@@ -285,12 +284,6 @@ class BackgroundComputer:
         self.project.save()
 
         print ("#CHUNKS: %d") % (len(self.project.chm.chunk_list()))
-
-        # with open(self.project.working_directory+'/graph.pkl', 'wb') as f:
-        #     p = pickle.Pickler(f, -1)
-        #     p.dump(self.project.gm.g)
-        #     p.dump(self.project.gm.get_all_relevant_vertices())
-        #     p.dump(self.project.chm)
 
         self.finished_callback(self.solver)
 
