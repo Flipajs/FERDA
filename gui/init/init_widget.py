@@ -71,4 +71,4 @@ class InitWidget(QtGui.QWidget):
             with open(self.project.working_directory+'/stats.pkl', 'wb') as f:
                 pickle.dump(values[0], f)
 
-            self.finish_callback('initialization_finished', values[1])
+            self.finish_callback('initialization_finished', [values[1]])

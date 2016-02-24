@@ -110,6 +110,10 @@ class BackgroundComputer:
 
                 # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
 
+            if self.postpone_parallelisation:
+                f.close()
+                self.precomputed = True
+
             S_.general.log_graph_edits = True
         else:
             self.precomputed = True
