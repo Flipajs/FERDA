@@ -250,49 +250,22 @@ class BackgroundComputer:
 
         self.project.solver.detect_split_merge_cases()
         self.solver.simplify(vs_todo, rules=[self.solver.adaptive_threshold])
-        # TODO: use also update cost
-        # self.solver.simplify(vs_todo, rules=[self.solver.update_costs])
 
         print "simplifying "
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver, self.solver.update_costs])
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
 
-        # self.project.solver_parameters.certainty_threshold = 0.1
-
-
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
-
-        # i = 1
-        # while True:
-        #     print "ITERATION: ", i
-        #     num_changed1 = self.project.solver.simplify(rules=[self.solver.update_costs])
-        #     num_changed2 = self.project.solver.simplify(rules=[self.solver.adaptive_threshold])
+        # # TEST:
+        # queue = self.project.gm.get_all_relevant_vertices()
+        # for v in queue:
+        #     v = self.project.gm.g.vertex(v)
         #
-        #     if num_changed1+num_changed2 == 0:
-        #         break
-        #
-        #     i += 1
-
-        # TEST:
-        queue = self.project.gm.get_all_relevant_vertices()
-        for v in queue:
-            v = self.project.gm.g.vertex(v)
-
-            ch, ch_is_end = self.project.gm.is_chunk(v)
-            if ch:
-                if ch_is_end:
-                    if v.in_degree() > 1:
-                        print "END, DEGREE > 1", self.project.gm.region(v).frame_
-                else:
-                    if v.out_degree() > 1:
-                        print "BEGINNING, DEGREE > 1", self.project.gm.region(v).frame_
-
-
-        # self.solver.simplify(rules=[self.solver.adaptive_thre
-        # shold, self.solver.update_costs])
-        # self.project.solver_parameters.certainty_threshold = 0.5
-
+        #     ch, ch_is_end = self.project.gm.is_chunk(v)
+        #     if ch:
+        #         if ch_is_end:
+        #             if v.in_degree() > 1:
+        #                 print "END, DEGREE > 1", self.project.gm.region(v).frame_
+        #         else:
+        #             if v.out_degree() > 1:
+        #                 print "BEGINNING, DEGREE > 1", self.project.gm.region(v).frame_
 
         S_.general.log_graph_edits = True
 
