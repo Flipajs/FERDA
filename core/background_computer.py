@@ -219,8 +219,10 @@ class BackgroundComputer:
         S_.general.log_graph_edits = False
 
         part_num = self.part_num
-        # TODO: remove this line
-        part_num = 2
+        from utils.misc import is_flipajs_pc
+        if is_flipajs_pc():
+            # TODO: remove this line
+            part_num = 2
 
         self.project.color_manager = None
 
