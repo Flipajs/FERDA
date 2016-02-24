@@ -880,15 +880,16 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         centroids = np.array(centroids)
 
-        plt.figure(1)
-        plt.imshow(alpha)
-        plt.set_cmap('viridis')
+        # plt.close()
+
+        # imgplot = plt.imshow(alpha)
+        # imgplot.set_cmap('viridis')
 
         centr_step = 3
         centroids = centroids[::centr_step, :]
 
-        plt.scatter(centroids[:, 1], centroids[:, 0], s=8, c=range(len(centroids)), edgecolors='None', cmap=mpl.cm.afmhot)
-        plt.subplots_adjust(left=0.0, right=1, top=1, bottom=0.0)
+        # plt.scatter(centroids[:, 1], centroids[:, 0], s=8, c=range(len(centroids)), edgecolors='None', cmap=mpl.cm.afmhot)
+        # plt.subplots_adjust(left=0.0, right=1, top=1, bottom=0.0)
 
         # make crop...
         for y_start in range(alpha.shape[0]):
@@ -908,9 +909,14 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 break
 
         border = 5
-        plt.ylim([min(y_end+border, alpha.shape[0]), max(0, y_start-border)])
-        plt.xlim([max(0, x_start-border), min(x_end+border, alpha.shape[1])])
+        # plt.ylim([min(y_end+border, alpha.shape[0]), max(0, y_start-border)])
+        # plt.xlim([max(0, x_start-border), min(x_end+border, alpha.shape[1])])
+        # plt.show()
+
+        plt.figure()
         plt.show()
+
+
 
     def update_content(self):
         self.next_case(move_to_different_case=False, user_action=True)

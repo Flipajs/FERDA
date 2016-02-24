@@ -13,7 +13,6 @@ class StatisticsWidget(QtGui.QWidget):
         super(StatisticsWidget, self).__init__()
 
         self.project = project
-        self.solver = None
 
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
@@ -38,15 +37,37 @@ class StatisticsWidget(QtGui.QWidget):
         # self.export_trajectories.setChecked(True)
         # self.export_fbox.addRow('export trajectories', self.export_trajectories)
 
-        self.x_axis_first = QtGui.QCheckBox('')
-        self.x_axis_first.setChecked(True)
-        self.export_fbox.addRow('x axis first', self.x_axis_first)
+        self.include_id = QtGui.QCheckBox('')
+        self.include_id.setChecked(True)
+        self.export_fbox.addRow('include id', self.include_id)
+
+        self.include_orientation = QtGui.QCheckBox('')
+        self.include_orientation.setChecked(True)
+        self.export_fbox.addRow('include orientation', self.include_orientation)
+
+        self.include_area = QtGui.QCheckBox('')
+        self.include_area.setChecked(True)
+        self.export_fbox.addRow('include area', self.include_area)
+
+        self.include_axes = QtGui.QCheckBox('')
+        self.include_axes.setChecked(True)
+        self.export_fbox.addRow('include axes (major/minor)', self.include_axes)
+
+        self.include_region_points = QtGui.QCheckBox('')
+        self.include_region_points.setChecked(True)
+        self.export_fbox.addRow('include region points', self.include_region_points)
+
+        self.include_region_contour = QtGui.QCheckBox('')
+        self.export_fbox.addRow('include region contour', self.include_region_contour)
+
+        self.export_chunks_only = QtGui.QCheckBox('')
+        self.export_fbox.addRow('export chunks only', self.export_chunks_only)
 
         self.file_type = QtGui.QComboBox()
-        self.file_type.addItem('.csv')
+        # self.file_type.addItem('.csv')
         self.file_type.addItem('.mat')
-        self.file_type.addItem('.txt')
-        self.file_type.setCurrentIndex(1)
+        # self.file_type.addItem('.txt')
+        self.file_type.setCurrentIndex(0)
 
         self.export_fbox.addRow('file type', self.file_type)
 
@@ -54,13 +75,13 @@ class StatisticsWidget(QtGui.QWidget):
         self.export_b.clicked.connect(self.export)
         self.export_fbox.addRow(self.export_b)
 
-        self.region_reconstruction = RegionReconstruction(project, solver=None)
-        self.vbox.addWidget(self.region_reconstruction)
+        # self.region_reconstruction = RegionReconstruction(project, solver=None)
+        # self.vbox.addWidget(self.region_reconstruction)
 
-        self.fix_area = FixArea(project, solver=None)
-        self.vbox.addWidget(self.fix_area)
-        if not project.version_is_le('2.2.9'):
-            self.fix_area.vbox.addWidget(QtGui.QLabel('AREA WAS ALREADY UPDATED!'))
+        # self.fix_area = FixArea(project, solver=None)
+        # self.vbox.addWidget(self.fix_area)
+        # if not project.version_is_le('2.2.9'):
+        #     self.fix_area.vbox.addWidget(QtGui.QLabel('AREA WAS ALREADY UPDATED!'))
 
     def export(self):
         print "exporting..."
@@ -79,7 +100,7 @@ class StatisticsWidget(QtGui.QWidget):
         f.writerow([str(r.frame_), round(a, 2), round(b, 2)])
 
     def export_csv(self):
-        chunks = self.solver.chunk_list()
+        chunks = self.project.solver.chunk_list()
         chunks = sorted(chunks, key=lambda x: x.start_n.frame_)
 
         with open(self.get_out_path()+'.csv', 'wb') as f:
@@ -104,27 +125,43 @@ class StatisticsWidget(QtGui.QWidget):
 
                 csv_f.writerow([])
 
+    def obj_arr_append_(self, obj_arr, d):
+        new_d = {}
+        for key, val in d.iteritems():
+            if key != 'frame' and key != 'region_id':
+                val = np.array(val)
+
+            new_d[key] = val
+
+        obj_arr.append(d)
+
     def export_mat(self):
-        chunks = self.solver.chunk_list()
-        chunks = sorted(chunks, key=lambda x: x.start_n.frame_)
+        from utils.video_manager import get_auto_video_manager
+        from core.graph.region_chunk import RegionChunk
+        vm = get_auto_video_manager(self.project)
 
         obj_arr = []
 
-        id_ = 0
-        for ch in chunks:
-            d = {'x': [], 'y': [], 'frame': []}
+        if not self.export_chunks_only.isChecked():
+            for _, vs in self.project.gm.vertices_in_t.iteritems():
+                for v in vs:
+                    ch, _ = self.project.gm.is_chunk(v)
 
-            self.add_line_mat(d, ch.start_n)
-            for r in ch.reduced:
+                    if not ch:
+                        r = self.project.gm.region(v)
+                        d = self.init_struct_(r)
+                        self.add_line_mat(d, r)
+
+                        self.obj_arr_append_(obj_arr, d)
+
+        for ch in self.project.gm.chunk_list():
+            rch = RegionChunk(self.project.chm[ch], self.project.gm, self.project.rm)
+            d = self.init_struct_(rch[0])
+
+            for r in rch:
                 self.add_line_mat(d, r)
 
-            self.add_line_mat(d, ch.end_n)
-            if self.project.other_parameters.store_area_info:
-                mean, std = ch.get_area_stats()
-                obj_arr.append({'id': id_, 'x': np.array(d['x']), 'y': np.array(d['y']), 'frame': np.array(d['frame']), 'area_mean': mean, 'area_std': std})
-            else:
-                obj_arr.append({'id': id_, 'x': np.array(d['x']), 'y': np.array(d['y']), 'frame': np.array(d['frame'])})
-            id_ += 1
+            self.obj_arr_append_(obj_arr, d)
 
         with open(self.get_out_path()+'.mat', 'wb') as f:
             arena = None
@@ -150,11 +187,63 @@ class StatisticsWidget(QtGui.QWidget):
 
             sio.savemat(f, {'FERDA': obj_arr, 'arena:': arena})
 
+    def append_pts_(self, d, key, pts):
+        px = []
+        py = []
+        for pt in pts:
+            py.append(pt[0])
+            px.append(pt[1])
+
+        d[key].append({'x': np.array(px), 'y': np.array(py)})
+
     def add_line_mat(self, d, r):
         y, x = r.centroid()
         d['x'].append(x)
         d['y'].append(y)
-        d['frame'].append(r.frame_)
+
+        if self.include_id.isChecked():
+            d['region_id'].append(r.id_)
+
+        if self.include_orientation.isChecked():
+            d['orientation'].append(r.theta_)
+
+        if self.include_area.isChecked():
+            d['area'].append(r.area())
+
+        if self.include_axes.isChecked():
+            d['major_axis'].append(r.a_)
+            d['minor_axis'].append(r.b_)
+
+        if self.include_region_points.isChecked():
+            pts = r.pts()
+            self.append_pts_(d, 'region', pts)
+
+        if self.include_region_contour.isChecked():
+            pts = r.contour()
+            self.append_pts_(d, 'region_contour', pts)
+
+    def init_struct_(self, region):
+        d = {'x': [], 'y': [], 'frame_offset': region.frame()}
+        if self.include_id.isChecked():
+            d['region_id'] = []
+
+        if self.include_orientation.isChecked():
+            d['orientation'] = []
+
+        if self.include_area.isChecked():
+            d['area'] = []
+
+        if self.include_axes.isChecked():
+            d['major_axis'] = []
+            d['minor_axis'] = []
+
+        if self.include_region_points.isChecked():
+            d['region'] = []
+
+        if self.include_region_contour.isChecked():
+            d['region_contour'] = []
+
+        return d
 
     def get_out_path(self):
         return self.project.working_directory + '/' + self.export_name.text()
@@ -175,7 +264,7 @@ class StatisticsWidget(QtGui.QWidget):
         f.write('#' + str(r.frame_) + '\t' + str(round(a, 2)) + '\t' + str(round(b, 2)) + '\n')
 
     def export_txt(self):
-        chunks = self.solver.chunk_list()
+        chunks = self.project.solver.chunk_list()
         chunks = sorted(chunks, key=lambda x: x.start_n.frame_)
 
         with open(self.get_out_path()+'.txt', 'wb') as f:
@@ -196,10 +285,7 @@ class StatisticsWidget(QtGui.QWidget):
 
                 f.write("\n")
 
-    def update_data(self, solver):
-        self.solver = solver
-        self.num_of_single_nodes.setText(str(len(solver.g.nodes())))
-        self.num_of_chunks.setText(str(len(solver.chunk_list())))
-
-        self.region_reconstruction.solver = solver
-        self.fix_area.solver = solver
+    def update_data(self, project):
+        self.project = project
+        self.num_of_single_nodes.setText(str(project.gm.g.num_vertices()))
+        self.num_of_chunks.setText(str(len(project.gm.chunk_list())))

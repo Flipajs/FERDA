@@ -66,7 +66,7 @@ class MainTabWidget(QtGui.QWidget):
         print "GRAPH LOADED"
         self.solver = solver
         self.results_tab.solver = solver
-        self.tracker_tab.prepare_corrections(self.solver)
+        self.tracker_tab.prepare_corrections(self.project.solver)
 
         self.tabs.setTabEnabled(1, True)
         self.tabs.setTabEnabled(2, True)
@@ -81,13 +81,13 @@ class MainTabWidget(QtGui.QWidget):
             self.results_tab.setParent(None)
 
             self.results_tab = ResultsWidget(self.project)
-            self.results_tab.add_data(self.solver, self.show_results_only_around_frame)
+            self.results_tab.add_data(self.project.solver, self.show_results_only_around_frame)
             self.results_tab.update_positions(self.results_tab.video.frame_number(), optimized=False)
             self.tabs.insertTab(1, self.results_tab, 'results viewer')
             self.tabs.setCurrentIndex(1)
             self.ignore_tab_change = False
         if i == 2:
-            self.statistics_tab.update_data(self.solver)
+            self.statistics_tab.update_data(self.project)
 
         # if i == 0:
         #     # TODO: add interval to settings
