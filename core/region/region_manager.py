@@ -128,7 +128,9 @@ class RegionManager:
 
             if self.cache_size_limit_ > 0 and len(self.regions_cache_) > self.cache_size_limit_:
                 pop_id = self.recent_regions_ids.pop(0)
-                self.regions_cache_.pop(pop_id, None).id()
+                # TODO: Dita why .id() ?
+                # self.regions_cache_.pop(pop_id, None).id()
+                self.regions_cache_.pop(pop_id, None)
 
                 # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
 
