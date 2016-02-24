@@ -107,7 +107,7 @@ class FittingSessionChunk(FittingSession):
 
             with open(file_name, 'wb') as f_:
                 pickle.dump({'fitting': fitting}, f_, -1)
-                os.fsync(f.fileno())
+                os.fsync(f_.fileno())
 
             ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/region/fitting_script_chunk.py" '+str(self.id)+' "'+file_name+'"'
 
