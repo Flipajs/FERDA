@@ -197,7 +197,8 @@ class BackgroundComputer:
 
     def piece_results_together(self):
         from core.graph.graph_manager import GraphManager
-        self.project.rm = RegionManager(db_wd=self.project.working_directory)
+        # TODO: add to settings
+        self.project.rm = RegionManager(db_wd=self.project.working_directory, cache_size_limit=500)
         self.project.chm = ChunkManager()
         self.solver = Solver(self.project)
         self.project.gm = GraphManager(self.project, self.solver.assignment_score)

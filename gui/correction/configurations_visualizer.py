@@ -85,7 +85,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         self.fitting_finished_mutex = QtCore.QMutex()
         from utils.img_manager import ImgManager
-        self.img_manager = ImgManager(self.project)
+        # TODO: add to settings
+        self.img_manager = ImgManager(self.project, max_size_mb=500)
 
 
     def create_tool_w(self):
