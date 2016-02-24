@@ -28,7 +28,7 @@ class BackgroundComputer:
     RUNNING = 1
     FINISHED = 2
 
-    def __init__(self, project, update_callback, finished_callback):
+    def __init__(self, project, update_callback, finished_callback, postpone_parallelisation):
         self.project = project
         self.process_n = S_.parallelization.processes_num
         self.results = []
@@ -52,6 +52,7 @@ class BackgroundComputer:
         self.check_parallelization_timer.timeout.connect(self.check_parallelization)
         self.check_parallelization_timer.start(100)
         self.precomputed = False
+        self.postpone_parallelisation = postpone_parallelisation
 
     def set_frames_in_row(self):
         vid = get_auto_video_manager(self.project)
@@ -62,6 +63,9 @@ class BackgroundComputer:
 
     def run(self):
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
+            if self.postpone_parallelisation:
+                f = open(self.project.working_directory+'/limits.txt', 'w')
+
             if not S_.general.log_in_bg_computation:
                 S_.general.log_graph_edits = False
             self.start = time.time()
@@ -89,12 +93,18 @@ class BackgroundComputer:
                     self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
                     f_num) + ' ' + str(last_n_frames)
                 print ex_str
+
+                if self.postpone_parallelisation:
+                    f.write(str(i)+'\t'+str(f_num)+'\t'+str(last_n_frames)+'\n')
+
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
-                    p.start(str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
-                        self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
-                        f_num) + ' ' + str(last_n_frames))
+
+                    if not self.postpone_parallelisation:
+                        p.start(str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
+                            self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
+                            f_num) + ' ' + str(last_n_frames))
 
                 self.processes.append([p, ex_str, status])
 

@@ -8,8 +8,8 @@ from gui.init.init_what_widget import InitWhatWidget
 from gui.init.init_how_widget import InitHowWidget
 
 
-SKIP_WHERE = False
-SKIP_WHAT = False
+SKIP_WHERE = True
+SKIP_WHAT = True
 
 class InitWidget(QtGui.QWidget):
     def __init__(self, finish_callback, project):
@@ -70,6 +70,5 @@ class InitWidget(QtGui.QWidget):
         if state == 'init_how_finished':
             with open(self.project.working_directory+'/stats.pkl', 'wb') as f:
                 pickle.dump(values[0], f)
-                print "SAVING STATS"
 
-            self.finish_callback('initialization_finished')
+            self.finish_callback('initialization_finished', values[1])

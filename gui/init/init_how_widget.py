@@ -64,6 +64,9 @@ class InitHowWidget(QtGui.QWidget):
         self.use_dummy_antlikness_b.clicked.connect(self.use_dummy_antlikeness)
         self.vbox.addWidget(self.use_dummy_antlikness_b)
 
+        self.do_cluster_parallelisation_ch = QtGui.QCheckBox('don\'t run parallelisation now, just prepare everything for it')
+        self.vbox.addWidget(self.do_cluster_parallelisation_ch)
+
         self.finish_how = QtGui.QPushButton('confirm selection and finish initialization')
         self.finish_how.clicked.connect(self.finish)
         self.vbox.addWidget(self.finish_how)
@@ -107,7 +110,8 @@ class InitHowWidget(QtGui.QWidget):
         # self.project.mser_parameters.min_area = int(self.class_stats.area_median * c)
         self.project.stats = self.class_stats
 
-        self.finish_callback('init_how_finished', [self.class_stats])
+        do_cluster_parall = self.do_cluster_parallelisation_ch.isChecked()
+        self.finish_callback('init_how_finished', [self.class_stats, do_cluster_parall])
 
     def give_me_selected(self):
         print self.img_grid.get_selected()

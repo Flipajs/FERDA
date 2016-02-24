@@ -90,7 +90,7 @@ class MainWindow(QtGui.QMainWindow):
         if state == 'initialization_finished':
             self.project.save()
 
-            self.main_tab_widget = MainTabWidget(self.widget_control, self.project)
+            self.main_tab_widget = MainTabWidget(self.widget_control, self.project, values[0])
             self.central_widget.addWidget(self.main_tab_widget)
             self.central_widget.setCurrentWidget(self.main_tab_widget)
 
