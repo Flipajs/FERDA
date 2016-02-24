@@ -198,7 +198,7 @@ class BackgroundComputer:
     def piece_results_together(self):
         from core.graph.graph_manager import GraphManager
         # TODO: add to settings
-        self.project.rm = RegionManager(db_wd=self.project.working_directory, cache_size_limit=500)
+        self.project.rm = RegionManager(db_wd=self.project.working_directory, cache_size_limit=-1)
         self.project.chm = ChunkManager()
         self.solver = Solver(self.project)
         self.project.gm = GraphManager(self.project, self.solver.assignment_score)
@@ -210,7 +210,9 @@ class BackgroundComputer:
 
         part_num = self.part_num
         # TODO: remove this line
-        # part_num = 27
+        # part_num = 15
+
+        self.project.color_manager = None
 
         print "merging..."
         # for i in range(part_num):

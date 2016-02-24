@@ -10,7 +10,7 @@ from core.graph.region_chunk import RegionChunk
 # TODO: opravit chybu databaze pri nacitani projektu rucne (spatne vlakno)
 
 class ColorManager():
-    def __init__(self, length, limit, overlap=30, mode="rand", cmap='Accent', rand_quality=80, rand_loop_limit=300):
+    def __init__(self, length, limit, overlap=30, mode="rand", cmap='Accent', rand_quality=80, rand_loop_limit=100):
         """
         :param length: the length of the video (frames)
         :param limit: the max number of colors to be used. this is crucial in cmap and rainbow mode.
@@ -180,7 +180,7 @@ class ColorManager():
 
             # give up after several unsuccessful loops
             if counter >= self.rand_loop_limit:
-                print "No color found!"
+                # print "No color found!"
                 # return last color
                 return c
             counter += 1
@@ -391,7 +391,8 @@ def colorize_project(project):
             limit += 1
 
     print limit, "vs. ", len(project.chm.chunks_)
-    # limit = len(project.chm.chunks_)
+
+    limit = min(limit, 50)
 
     project.color_manager = ColorManager(vid.total_frame_count(), limit)
     for ch in project.chm.chunk_list():
