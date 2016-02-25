@@ -260,12 +260,13 @@ class GraphManager:
                 in_frame.append(ch)
         return in_frame
 
-    def chunks_in_frame_generator(self, start_frame, end_frame):
+    def chunks_in_frame(self, start_frame, end_frame):
         chunks = self.chunk_list()
         chunks = [self.project.chm[ch] for ch in chunks]
-        for ch in chunks:
-            if ch.start_frame(self.project.gm) <= end_frame and ch.end_frame(self.project.gm) >= start_frame:
-               yield ch
+        for ch in chunks[:]:
+            if ch.start_frame(self.project.gm) > end_frame or ch.end_frame(self.project.gm) < start_frame:
+                chunks.remove(ch)
+        return chunks
 
     def start_nodes(self):
         return self.vertices_in_t[self.start_t]
