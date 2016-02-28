@@ -15,6 +15,7 @@ FERDA is a multi object tracker developed mainly to meet the needs of biologists
 * [graph_tool](https://graph-tool.skewed.de)
 * [mahotas](https://pypi.python.org/pypi/mahotas)
 * [PuLP](https://pypi.python.org/pypi/PuLP)
+* [graph-tool](https://pypi.python.org/pypi/graph-tool)
 
 
 ## Team ##
