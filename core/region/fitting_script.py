@@ -1,4 +1,9 @@
 import sys
+import os
+baseDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(baseDir)
+print baseDir
+
 from fitting import Fitting
 from core.region.region import Region
 import cPickle as pickle
