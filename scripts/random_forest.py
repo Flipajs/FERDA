@@ -8,6 +8,10 @@ from utils.img import get_img_around_pts, replace_everything_but_pts
 import cPickle as pickle
 import numpy as np
 
+import os, sys
+# TODO: REMOVE
+sys.path.append('/Users/flipajs/Documents/dev/mondrianforest/src/')
+
 
 def get_training_data(p, get_features, first_n=-1, offset=0):
     X = []
