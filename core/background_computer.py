@@ -121,6 +121,7 @@ class BackgroundComputer:
     def check_parallelization(self):
         if self.finished.all() or self.precomputed:
             self.check_parallelization_timer.stop()
+            self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
             self.piece_results_together()
 
     def merge_parts(self, new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm):

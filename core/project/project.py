@@ -221,7 +221,7 @@ class Project:
 
         self.__dict__.update(tmp_dict)
         a_ = path.split('/')
-        self.working_directory = path[:-(len(a_[-1])+1)]
+        self.working_directory = str(path[:-(len(a_[-1])+1)])
 
         # BG MODEL
         try:
