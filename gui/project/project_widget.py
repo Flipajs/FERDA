@@ -109,6 +109,7 @@ class ProjectWidget(QtGui.QWidget):
         self.timer.stop()
 
         from core.region.region_manager import RegionManager
+        project.rm.con.close()
         project.rm = RegionManager(db_wd=project.working_directory)
 
         self.finish_callback('load_project', project)

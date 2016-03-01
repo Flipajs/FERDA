@@ -3,15 +3,12 @@ from scipy import ndimage
 from scipy.spatial.distance import cdist
 
 
-def get_colormarks(img, cm_model):
-    # img_t = transform_img_(img, cm_model)
-    # img_t = img
-
+def get_colormarks(img, cm_model, min_a=0, max_a=20000):
     pos = np.asarray(img / cm_model.num_bins_v, dtype=np.int)
     labels = cm_model.get_labelling(pos)
 
     # TOOD: parameters
-    ccs = get_ccs_(labels, bg=0, max_a=2000)
+    ccs = get_ccs_(labels, bg=0, min_a=min_a, max_a=max_a)
     return ccs
 
 

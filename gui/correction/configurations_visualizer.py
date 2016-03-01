@@ -880,10 +880,10 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         centroids = np.array(centroids)
 
-        # plt.close()
-
-        # imgplot = plt.imshow(alpha)
-        # imgplot.set_cmap('viridis')
+        plt.close('all')
+        plt.figure(1)
+        plt.imshow(alpha)
+        plt.set_cmap('viridis')
 
         centr_step = 3
         centroids = centroids[::centr_step, :]

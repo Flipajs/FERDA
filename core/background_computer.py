@@ -223,6 +223,7 @@ class BackgroundComputer:
         S_.general.log_graph_edits = False
 
         part_num = self.part_num
+
         from utils.misc import is_flipajs_pc
         if is_flipajs_pc():
             # TODO: remove this line

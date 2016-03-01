@@ -92,18 +92,27 @@ def colormarks_init_finished_cb(project, masks):
 
         ccs = get_ccs(mask)
 
-        im = project.img_manager.get_whole_img(frame)
+        im_orig = project.img_manager.get_whole_img(frame)
 
-        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        im = cv2.cvtColor(im_orig, cv2.COLOR_BGR2RGB)
         irg_255 = get_irg_255(im)
-        sample_pxs, all_pxs = find_dist_thresholds(ccs, irg_255.copy())
+        sample_pxs, all_pxs, mean_color = find_dist_thresholds(ccs, irg_255.copy(), im_orig)
 
-        color_samples.append((sample_pxs, all_pxs))
+        color_samples.append((sample_pxs, all_pxs, mean_color))
 
     import time
     timestr = time.strftime("%Y%m%d-%H%M%S")
+
+    import os
+    try:
+        os.mkdir(project.working_directory+'/temp')
+    except:
+        pass
+
     with open(project.working_directory+'/temp/color_samples_'+timestr+'.pkl', 'wb') as f:
         pickle.dump(color_samples, f)
+
+    return color_samples
 
 
 if __name__ == '__main__':
@@ -113,7 +122,7 @@ if __name__ == '__main__':
     cm_model.im_space = 'irb'
 
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1__/cam1.fproj')
     # p.load('/Users/flipajs/Documents/wd/C210/c210.fproj')
     p.img_manager = ImgManager(p)
 
@@ -132,7 +141,7 @@ if __name__ == '__main__':
         app.deleteLater()
         sys.exit()
 
-    with open(p.working_directory + '/temp/color_samples_20160216-155612.pkl', 'rb') as f:
+    with open(p.working_directory + '/temp/color_samples_20160223-135328.pkl', 'rb') as f:
         up = pickle.Unpickler(f)
         color_samples = up.load()
 
@@ -146,7 +155,7 @@ if __name__ == '__main__':
 
     cm_model.compute_model(main_img, color_samples)
 
-    for cs, _ in color_samples:
+    for cs, _, _ in color_samples:
         for px in cs:
             pos = np.asarray(px / cm_model.num_bins_v, dtype=np.int)
             print px, cm_model.hist3d.hist_labels_[pos[0], pos[1], pos[2]]
@@ -167,9 +176,8 @@ if __name__ == '__main__':
     ch_probs = {}
 
     for ch in chunks:
-        print i
-        measurements = analyse_chunk(ch, p, cm_model, 3)
+        r_ch = RegionChunk(ch, p.gm, p.rm)
+        for f in range(ch.start_frame(p.gm), ch.end_frame(p.gm)):
+            r = r_ch.region_in_t(f)
 
-        ch_ids[ch], ch_probs[ch] = evolve_measurements(measurements)
-
-        i += 1
+            cm = cm_model.find_colormarks(p, r)

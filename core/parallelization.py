@@ -60,6 +60,10 @@ if __name__ == '__main__':
 
         s = time.time()
         msers = ferda_filtered_msers(img, proj, frame)
+
+        if proj.colormarks_model:
+            proj.colormarks_model.assign_colormarks(proj, msers)
+
         proj.rm.add(msers)
         msers_t += time.time()-s
 
