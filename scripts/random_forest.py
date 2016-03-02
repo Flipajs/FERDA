@@ -7,10 +7,12 @@ import cv2
 from utils.img import get_img_around_pts, replace_everything_but_pts
 import cPickle as pickle
 import numpy as np
+import optparse
 
 import os, sys
 # TODO: REMOVE
-sys.path.append('/Users/flipajs/Documents/dev/mondrianforest/src/')
+from libs.mondrianforest.mondrianforest import MondrianForest, parser_add_common_options, parser_add_mf_options, process_command_line
+from libs.mondrianforest.mondrianforest_utils import precompute_minimal
 
 
 def get_training_data(p, get_features, first_n=-1, offset=0):
@@ -126,11 +128,26 @@ if __name__ == '__main__':
             rfc = p_.load()
             X2 = p_.load()
             y2 = p_.load()
+
+
+        # settings = process_command_line()
+        #
+        # data = {'n_dim': 100}
+        #
+        # data = {'x_train': np.array(X), 'y_train': np.array(y), 'n_class': 6, \
+        #     'n_dim': len(X[0]), 'n_train': len(X), 'is_sparse': False}
+        #
+        # mf = MondrianForest(settings, data)
+        # param, cache = precompute_minimal(data, settings)
+        # mf.fit(data, range(len(X)), settings, param, cache)
+
     else:
         X, y = get_training_data(p, get_features1, first_n=500)
 
         rfc = RandomForestClassifier()
         rfc.fit(X, y)
+
+        mf = MondrianForest()
 
         print rfc.score(X, y)
         X2, y2 = get_training_data(p, get_features1, first_n=200, offset=1000)
