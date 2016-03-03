@@ -303,19 +303,22 @@ class ResultsWidget(QtGui.QWidget):
                 c = r.centroid().copy()
                 self.update_marker_position(self.items[m_id], c)
 
-                if r.colormarks:
-                    height_ = 13
-                    width_ = 30
-                    im = np.zeros((height_*len(r.colormarks), width_, 3), dtype=np.uint8)
+                try:
+                    if r.colormarks:
+                        height_ = 13
+                        width_ = 30
+                        im = np.zeros((height_*len(r.colormarks), width_, 3), dtype=np.uint8)
 
-                    for c, i in zip(r.colormarks, range(len(r.colormarks))):
-                        w_ = max(5, min(width_, c[0].shape[0] / 5))
-                        im[i*height_:(i+1)*height_, :w_, :] = self.project.colormarks_model.colors_[c[1]]
+                        for c, i in zip(r.colormarks, range(len(r.colormarks))):
+                            w_ = max(5, min(width_, c[0].shape[0] / 5))
+                            im[i*height_:(i+1)*height_, :w_, :] = self.project.colormarks_model.colors_[c[1]]
 
-                    item = self.scene.addPixmap(cvimg2qtpixmap(im))
-                    item.setPos(r.centroid()[1] + 10, r.centroid()[0])
+                        item = self.scene.addPixmap(cvimg2qtpixmap(im))
+                        item.setPos(r.centroid()[1] + 10, r.centroid()[0])
 
-                    self.colormarks_items.append(item)
+                        self.colormarks_items.append(item)
+                except:
+                    pass
 
         self.active_markers = new_active_markers
 

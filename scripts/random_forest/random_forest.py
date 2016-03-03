@@ -7,7 +7,6 @@ import cv2
 from utils.img import get_img_around_pts, replace_everything_but_pts
 import cPickle as pickle
 import numpy as np
-import optparse
 
 # from libs.mondrianforest.mondrianforest import MondrianForest, parser_add_common_options, parser_add_mf_options, process_command_line
 # from libs.mondrianforest.mondrianforest_utils import precompute_minimal
@@ -165,7 +164,6 @@ if __name__ == '__main__':
             p_.dump(y2)
             p_.dump(test_length)
 
-    results = rfc.predict_proba(X2)
 
     ids = range(6)
     chunk_length = test_length

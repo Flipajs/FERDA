@@ -195,6 +195,8 @@ class Chunk:
         if not undo_action:
             self.chunk_reconnect_(gm)
 
+        del gm.project.chm.chunks_[ch2.id_]
+
     def merge_and_interpolate(self, ch2, gm, undo_action=False):
         if self.end_frame(gm) > ch2.start_frame(gm):
             ch2.merge_and_interpolate(self, gm, undo_action=undo_action)

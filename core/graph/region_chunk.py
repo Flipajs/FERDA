@@ -53,3 +53,9 @@ class RegionChunk:
             return r.centroid()
         else:
             return None
+
+    def regions_gen(self):
+        i = 0
+        while i < self.chunk_.length():
+            yield self[i]
+            i += 1
