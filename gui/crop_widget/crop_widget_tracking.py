@@ -1,9 +1,10 @@
+import threading
 from PyQt4 import QtGui, QtCore
 
 import cv2
 import sys
 from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QApplication
+from PyQt4.QtGui import QApplication, QLabel
 
 from core.project.project import Project
 from gui.gui_utils import cvimg2qtpixmap
@@ -13,19 +14,20 @@ __author__ = 'Simon Mandlik'
 
 RELATIVE_MARGIN = 0.1
 NUMBER_OF_COLUMNS = 4
+PICTURE_SIZE = 50
 TEXT = "Press Space to proceed\nShift + Space for one step backwards\nS for change of step\nD for change of ROI\n\n\n\n" \
        "Frame: {0}\nStep: {1}\nRoi: {2}\n\n\n\nChunk:\nId: {3}\nLength: {4}\n\n\n\n" \
-       "Region:\nId: {5}\nCentroid: {6}"
+       "Region:\nId: {5}\nCentroid:\n{6}"
 
 
-class CropWidget(QtGui.QWidget):
+class CropWidgetTracker(QtGui.QWidget):
     def __init__(self, project, roi=RELATIVE_MARGIN, start_frame=0, end_frame=200, step=1):
-        super(CropWidget, self).__init__()
+        super(CropWidgetTracker, self).__init__()
         self.project = project
         self.graph_manager = project.gm
         self.image_manager = ImgManager(project)
 
-        self.margin = self.frameGeometry().height() * 2
+        self.size_of_pix = self.frameGeometry().height() * 2
         self.start_frame = start_frame
         if end_frame is None:
             self.end_frame = self.project.vm.total_frame_count()
@@ -39,11 +41,14 @@ class CropWidget(QtGui.QWidget):
 
         self.info_widget = QtGui.QWidget()
         self.info_widget.setLayout(QtGui.QVBoxLayout())
+        self.picture_widget = QtGui.QWidget()
+        self.picture_widget.setLayout(QtGui.QVBoxLayout())
 
         self.info_label = QtGui.QLabel()
         self.info_label.setAlignment(Qt.AlignCenter)
         stylesheet = "border-style: outset; border-width: 2px; border-radius: 10px; border-color: black; font: bold 14px; min-width: 10em; padding: 6px; font: 30px"
         self.info_label.setStyleSheet(stylesheet)
+        self.info_label.setFixedWidth(self.size_of_pix)
         self.button_start = QtGui.QPushButton('Start (I)', self)
         self.button_start.clicked.connect(self.handle_start)
         self.button_start.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_I))
@@ -63,13 +68,22 @@ class CropWidget(QtGui.QWidget):
         self.info_widget.layout().addWidget(self.button_start)
         self.info_widget.layout().addWidget(self.button_stop)
 
-        self.layout().addWidget(self.info_widget)
-
         self.img_label = QtGui.QLabel()
         stylesheet += "; background-color: black"
         self.img_label.setStyleSheet(stylesheet)
         self.img_label.setAlignment(Qt.AlignCenter)
-        self.layout().addWidget(self.img_label)
+        self.picture_widget.layout().addWidget(self.img_label)
+
+        self.chunk_detail_widget = QtGui.QWidget()
+        self.chunk_detail_widget.setLayout(QtGui.QHBoxLayout())
+        self.chunk_detail_scroll = QtGui.QScrollArea()
+        self.chunk_detail_scroll.setWidgetResizable(True)
+        self.chunk_detail_scroll.setFixedHeight(2 * PICTURE_SIZE)
+        self.chunk_detail_scroll.setWidget(self.chunk_detail_widget)
+        self.picture_widget.layout().addWidget(self.chunk_detail_scroll)
+
+        self.layout().addWidget(self.info_widget)
+        self.layout().addWidget(self.picture_widget)
 
         self.reverse_frame_action = QtGui.QAction('reverse_frame', self)
         self.reverse_frame_action.triggered.connect(self.reverse)
@@ -98,8 +112,9 @@ class CropWidget(QtGui.QWidget):
         self.chunk_id = None
         self.chunk_length = 0
         self.region_generator = None
+        self.pixmaps_of_chunk = None
 
-        # self.chunk_combobox.addItem("Select chunk by its id")
+        self.chunk_combobox.addItem("Select chunk by its id")
         self.chunk_combobox.addItems([str(x.id()) for x in self.chunks])
 
         self.change_chunk()
@@ -158,7 +173,7 @@ class CropWidget(QtGui.QWidget):
             self.region_generator = self.generate_next_region(self.actual_chunk)
         try:
             region, frame = next(self.region_generator)
-            self.img_label.setPixmap(self.prepare_pixmap(region, frame))
+            self.img_label.setPixmap(self.prepare_pixmap(region, frame, self.size_of_pix - PICTURE_SIZE))
             self.info_label.setText(
                 TEXT.format(frame, self.step, self.roi, self.chunk_id, self.chunk_length, region.id(),
                             region.centroid()))
@@ -173,14 +188,33 @@ class CropWidget(QtGui.QWidget):
         self.chunk_combobox.setCurrentIndex(self.actual_chunk_position + 1)
         self.chunk_id = self.actual_chunk.id()
         self.chunk_length = self.actual_chunk.length()
+        thread = threading.Thread(group=None, target=self.load_pictures)
+        thread.run()
 
-    def prepare_pixmap(self, region, frame):
-        img = self.image_manager.get_crop(frame, region, width=self.margin, height=self.margin,
+    def load_pictures(self):
+        for child in self.chunk_detail_widget.findChildren(QLabel):
+            self.chunk_detail_widget.layout().removeWidget(child)
+            child.hide()
+        if self.step < 0:
+            self.chunk_detail_scroll.horizontalScrollBar().setValue(self.chunk_detail_scroll.horizontalScrollBar().maximum())
+        self.pixmaps_of_chunk = []
+        region_generator = self.generate_next_region(self.actual_chunk)
+        for region, frame in region_generator:
+            pixmap = self.prepare_pixmap(region, frame, PICTURE_SIZE)
+            label = QtGui.QLabel()
+            label.setPixmap(pixmap)
+            label.setAlignment(Qt.AlignCenter)
+            self.chunk_detail_widget.layout().addWidget(label)
+            self.pixmaps_of_chunk.append(pixmap)
+
+    def prepare_pixmap(self, region, frame, size):
+        img = self.image_manager.get_crop(frame, region, width=size, height=size,
                                           relative_margin=self.roi)
         pixmap = cvimg2qtpixmap(img)
         return pixmap
 
     def generate_next_region(self, chunk):
+        self.chunk_detail_scroll.verticalScrollBar().setValue(self.chunk_detail_scroll.verticalScrollBar().value() + PICTURE_SIZE * self.step)
         chunk_start = chunk.start_frame(self.graph_manager)
         chunk_end = chunk.end_frame(self.graph_manager)
         start = chunk_start if chunk_start > self.start_frame else self.start_frame
@@ -206,7 +240,7 @@ if __name__ == '__main__':
     project.load("/home/sheemon/FERDA/projects/Cam1_/cam1.fproj")
 
     app = QtGui.QApplication(sys.argv)
-    widget = CropWidget(project, start_frame=0, end_frame=10)
+    widget = CropWidgetTracker(project, start_frame=0, end_frame=40)
     widget.showMaximized()
     app.exec_()
     cv2.waitKey(0)
