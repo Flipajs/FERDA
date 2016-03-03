@@ -54,12 +54,12 @@ class LearningProcess:
         features = {}
         i = 0
         for ch in self.candidate_chunks:
-            if i > 20:
-                break
+            # if i > 20:
+            #     break
             X = self.get_data(ch)
 
             i += 1
-        features[ch.id_] = X
+            features[ch.id_] = X
 
         return features
 
