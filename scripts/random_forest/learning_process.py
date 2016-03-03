@@ -16,19 +16,24 @@ class LearningProcess:
 
         self.get_features = self.get_features_var1
         self.animal_id_mapping = {}
-        self.candidate_chunks = self.get_candidate_chunks()
-        self.chunks_itree = self.build_itree_()
-        self.class_frequences = []
 
-        if False:
+        if True:
+            self.candidate_chunks = self.get_candidate_chunks()
+            self.chunks_itree = self.build_itree_()
+            self.class_frequences = []
+
             self.X, self.y, self.ids = self.get_init_data()
 
-            self.rfc = RandomForestClassifier()
+            self.rfc = RandomForestClassifier(class_weight='balanced')
             self.rfc.fit(self.X, self.y)
+
+            self.features = self.precompute_features_()
 
             with open(p.working_directory+'/temp/rfc.pkl', 'wb') as f:
                 d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.ids,
-                     'candidate_chunks': self.candidate_chunks, 'class_frequences': self.class_frequences, 'animal_id_mapping': self.animal_id_mapping}
+                     'candidate_chunks': self.candidate_chunks, 'class_frequences': self.class_frequences,
+                     'animal_id_mapping': self.animal_id_mapping, 'chunks_itree': self.chunks_itree,
+                     'features': self.features}
                 pickle.dump(d, f, -1)
         else:
             with open(p.working_directory+'/temp/rfc.pkl', 'rb') as f:
@@ -40,8 +45,24 @@ class LearningProcess:
                 self.candidate_chunks = d['candidate_chunks']
                 self.class_frequences = d['class_frequences']
                 self.animal_id_mapping = d['animal_id_mapping']
+                self.chunks_itree = d['chunks_itree']
+                self.features = d['features']
 
         self.next_step()
+
+    def precompute_features_(self):
+        features = {}
+        i = 0
+        for ch in self.candidate_chunks:
+            if i > 20:
+                break
+            X = self.get_data(ch)
+
+            i += 1
+        features[ch.id_] = X
+
+        return features
+
 
     def build_itree_(self):
         itree = IntervalTree()
@@ -57,12 +78,12 @@ class LearningProcess:
         filtered = []
         for ch in ch_list:
             if ch.length() > 0:
-                ch_start_region = self.p.gm.g.vertex(ch.start_node())
+                ch_start_vertex = self.p.gm.g.vertex(ch.start_node())
 
                 # ignore chunks of merged regions
                 is_merged = False
-                for e in ch_start_region.in_edges():
-                    if self.p.gm.g.ep['score'][e] == 0:
+                for e in ch_start_vertex.in_edges():
+                    if self.p.gm.g.ep['score'][e] == 0 and ch_start_vertex.in_degree() > 1:
                         is_merged = True
                         break
 
@@ -70,13 +91,21 @@ class LearningProcess:
                     filtered.append(ch)
 
         print "FILTERED: ", len(filtered)
+
+        filtered = sorted(filtered, key=lambda x: x.start_frame(self.p.gm))
         return filtered
 
     def next_step(self):
         k = 50.0
         for ch in self.candidate_chunks:
             proba, data_len = self.get_chunk_proba(ch)
-            print "prob: %.2f, ch_len: %d, id: %d, ch_id: %d, %s, ch_start: %d, ch_end: %d" % (min((data_len/k)**2, 1) * np.max(proba), data_len, np.argmax(proba), ch.id_, proba, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
+
+            uni_probs = np.ones((len(proba), )) / float(len(proba))
+            alpha = (min((data_len/k)**2, 0.95))
+
+            proba = (1-alpha) * uni_probs + alpha*proba
+
+            print "prob: %.2f, ch_len: %d, id: %d, ch_id: %d, %s, ch_start: %d, ch_end: %d" %  (np.max(proba), data_len, np.argmax(proba), ch.id_, proba, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
             # self.classify_chunk(ch, proba)
 
         pass
@@ -85,14 +114,15 @@ class LearningProcess:
         return float(np.sum(self.class_frequences)) / self.class_frequences
 
     def get_chunk_proba(self, ch):
-        X = self.get_data(ch)
+        X = self.features[ch.id_]
+        # X = self.get_data(ch)
         if len(X) == 0:
             return None, 0
 
         probs = self.rfc.predict_proba(np.array(X))
         probs = np.mean(probs, 0)
 
-        probs *= self.get_frequence_vector_()
+        # probs *= self.get_frequence_vector_()
 
         probs = self.apply_consistency_rule(ch, probs)
 
@@ -116,7 +146,6 @@ class LearningProcess:
         for i in intervals:
             if i.data in self.animal_id_mapping:
                 animal_id = self.animal_id_mapping[i.data]
-                print "consistency applied ", animal_id, probs
                 probs[animal_id] = 0
 
         return probs
