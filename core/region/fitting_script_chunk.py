@@ -3,6 +3,10 @@ from fitting import Fitting
 from core.region.region import Region
 import cPickle as pickle
 from PyQt4 import QtCore
+import os
+
+baseDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(baseDir)
 
 s_id = sys.argv[1]
 file_path = sys.argv[2]
