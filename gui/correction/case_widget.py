@@ -266,16 +266,26 @@ class CaseWidget(QtGui.QWidget):
         ch_start = 1
         ch_end = -1
 
+        is_merged = False
         if ch:
             ch_start = ch.start_frame(self.project.gm)
             ch_end = ch.end_frame(self.project.gm)
 
+            ch_start_vertex = self.project.gm.g.vertex(ch.start_node())
+
+            # ignore chunks of merged regions
+            for e in ch_start_vertex.in_edges():
+                if self.project.gm.g.ep['score'][e] == 0 and ch_start_vertex.in_degree() > 1:
+                    is_merged = True
+
         QtGui.QMessageBox.about(self, "My message box",
-                                "ID = %i\nArea = %i\nframe=%i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s, (%d)\nBest out = %s (%d)\nChunk info = %s\nChunk start: %d end: %d" %
+                                "ID = %i\nArea = %i\nframe=%i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\n"
+                                "Is virtual: %s\nBest in = %s, (%d)\nBest out = %s (%d)\nChunk info = %s\n"
+                                "Chunk start: %d end: %d\ntest:%s" %
                                 (int(n), r.area(), r.frame_, str(r.centroid()), r.margin_, antlikeness, str(virtual),
                                  str(best_in_score[0]) + ', ' + str(best_in_score[1]), vertex.in_degree(),
                                  str(best_out_score[0]) + ', ' + str(best_out_score[1]), vertex.out_degree(), ch_info,
-                                 ch_start, ch_end
+                                 ch_start, ch_end, str(is_merged)
                                 ))
 
     def row_changed(self, off):

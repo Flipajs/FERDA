@@ -8,7 +8,9 @@ from utils.img import get_img_around_pts, replace_everything_but_pts
 import cPickle as pickle
 import numpy as np
 from intervaltree import IntervalTree
-
+from gui.learning.ids_names_widget import IdsNamesWidget
+from PyQt4 import QtGui
+import sys
 
 class LearningProcess:
     def __init__(self, p):
@@ -17,8 +19,15 @@ class LearningProcess:
         self.get_features = self.get_features_var1
         self.animal_id_mapping = {}
 
-        if True:
+        self.id_names_pd = None
+        self.old_x_size = 0
+
+        if False:
+            self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
             self.candidate_chunks = self.get_candidate_chunks()
+
+            self.set_ids_()
+
             self.chunks_itree = self.build_itree_()
             self.class_frequences = []
 
@@ -48,7 +57,18 @@ class LearningProcess:
                 self.chunks_itree = d['chunks_itree']
                 self.features = d['features']
 
+        # self.rfc = RandomForestClassifier()
+        # self.rfc.fit(self.X, self.y)
+
         self.next_step()
+
+    def set_ids_(self):
+        app = QtGui.QApplication(sys.argv)
+        ex = IdsNamesWidget()
+        ex.show()
+
+        app.exec_()
+        app.deleteLater()
 
     def precompute_features_(self):
         features = {}
@@ -61,8 +81,9 @@ class LearningProcess:
             i += 1
             features[ch.id_] = X
 
-        return features
+            print i
 
+        return features
 
     def build_itree_(self):
         itree = IntervalTree()
@@ -96,19 +117,73 @@ class LearningProcess:
         return filtered
 
     def next_step(self):
-        k = 50.0
-        for ch in self.candidate_chunks:
+        for i in range(len(self.candidate_chunks)):
+            k = 50.0
+
+            best_ch = None
+            best_val = 0
+            for ch in self.candidate_chunks:
+                proba, data_len = self.get_chunk_proba(ch)
+
+                uni_probs = np.ones((len(proba), )) / float(len(proba))
+                alpha = (min((data_len/k)**2, 0.95))
+
+                # if it is obvious (1.0, 0, 0, 0, 0)...
+                if np.max(proba) < 1.0:
+                    proba = (1-alpha) * uni_probs + alpha*proba
+
+                if np.max(proba) > best_val:
+                    best_val = np.max(proba)
+                    best_ch = ch
+
+                # print "prob: %.2f, ch_len: %d, id: %d, ch_id: %d, %s, ch_start: %d, ch_end: %d" %  (np.max(proba), data_len, np.argmax(proba), ch.id_, proba, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
+                # self.classify_chunk(ch, proba)
+
+            if best_val < 0.5:
+                break
+
+            ch = best_ch
+
             proba, data_len = self.get_chunk_proba(ch)
 
             uni_probs = np.ones((len(proba), )) / float(len(proba))
             alpha = (min((data_len/k)**2, 0.95))
 
-            proba = (1-alpha) * uni_probs + alpha*proba
+            if np.max(proba) < 1.0:
+                proba = (1-alpha) * uni_probs + alpha*proba
 
             print "prob: %.2f, ch_len: %d, id: %d, ch_id: %d, %s, ch_start: %d, ch_end: %d" %  (np.max(proba), data_len, np.argmax(proba), ch.id_, proba, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
-            # self.classify_chunk(ch, proba)
+            print "-----------------------------------------------", len(self.candidate_chunks)
 
-        pass
+            animal_id = np.argmax(proba)
+
+            # use it for learning
+            if np.max(proba) > 0.9:
+                X = self.features[ch.id_]
+                self.X = np.vstack([self.X, np.array(X)])
+
+                y = [animal_id] * len(X)
+                self.y = np.append(self.y, np.array(y))
+
+                self.class_frequences[animal_id] += len(X)
+
+                if len(self.X) - self.old_x_size > 50:
+                    self.rfc = RandomForestClassifier(class_weight='balanced')
+                    self.rfc.fit(self.X, self.y)
+
+                    self.old_x_size = len(self.X)
+
+            self.candidate_chunks.remove(ch)
+            self.animal_id_mapping[ch.id_] = animal_id
+
+        for i in range(6):
+            print i, np.sum(self.y == i)
+
+
+        with open(self.p.working_directory + '/temp/animal_id_mapping.pkl', 'wb') as f_:
+            pickle.dump(self.animal_id_mapping, f_)
+
+
 
     def get_frequence_vector_(self):
         return float(np.sum(self.class_frequences)) / self.class_frequences
@@ -122,12 +197,13 @@ class LearningProcess:
         probs = self.rfc.predict_proba(np.array(X))
         probs = np.mean(probs, 0)
 
-        # probs *= self.get_frequence_vector_()
+        probs *= self.get_frequence_vector_()
 
         probs = self.apply_consistency_rule(ch, probs)
 
         # normalise
-        probs /= float(np.sum(probs))
+        if np.sum(probs) > 0:
+            probs /= float(np.sum(probs))
 
         return probs, len(X)
 
@@ -155,6 +231,13 @@ class LearningProcess:
         # area
         f.append(r.area())
 
+        # # area, modifications
+        # f.append(r.area()**0.5)
+        # f.append(r.area()**2)
+        #
+        # contour length
+        f.append(len(r.contour()))
+
         # major axis
         f.append(r.a_)
 
@@ -178,7 +261,10 @@ class LearningProcess:
         crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGRA2GRAY)
 
         ###### MOMENTS #####
-        #### BINARY
+        # #### BINARY
+        crop_b_mask = replace_everything_but_pts(np.ones(crop_gray.shape, dtype=np.uint8), pts_)
+        f.extend(self.get_hu_moments(crop_b_mask))
+
 
         #### ONLY MSER PXs
         # in GRAY
@@ -190,19 +276,37 @@ class LearningProcess:
             crop_ith_channel_masked = replace_everything_but_pts(crop[:, :, i], pts_)
             f.extend(self.get_hu_moments(crop_ith_channel_masked))
 
+        # min, max from moments head/tail
 
-        ### ALL PXs in crop image given margin
-        crop, offset = get_img_around_pts(img, r.pts(), margin=0.3)
 
-        # in GRAY
-        crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-        f.extend(self.get_hu_moments(crop_gray))
-
-        # B G R
-        for i in range(3):
-            f.extend(self.get_hu_moments(crop[:, :, i]))
+        # ### ALL PXs in crop image given margin
+        # crop, offset = get_img_around_pts(img, r.pts(), margin=0.3)
+        #
+        # # in GRAY
+        # crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+        # f.extend(self.get_hu_moments(crop_gray))
+        #
+        # # B G R
+        # for i in range(3):
+        #     f.extend(self.get_hu_moments(crop[:, :, i]))
 
         return f
+
+
+        crop_ = np.asarray(crop, dtype=np.int32)
+
+        # # R G combination
+        # crop_rg = crop_[:, :, 1] + crop_[:, :, 2]
+        # f.extend(self.get_hu_moments(crop_rg))
+        #
+        # # B G
+        # crop_bg = crop_[:, :, 0] + crop_[:, :, 1]
+        # f.extend(self.get_hu_moments(crop_bg))
+        #
+        # # B R
+        # crop_br = crop_[:, :, 0] + crop_[:, :, 2]
+        # f.extend(self.get_hu_moments(crop_br))
+
 
     def get_hu_moments(self, img):
         m = moments(img)
@@ -260,7 +364,7 @@ class LearningProcess:
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1_/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1_orig/cam1.fproj')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p)

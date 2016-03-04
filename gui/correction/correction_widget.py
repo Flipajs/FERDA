@@ -405,9 +405,37 @@ class ResultsWidget(QtGui.QWidget):
 
             self.chunks = chs
         else:
+            colors_ = [
+                QtGui.QColor().fromRgbF(0, 0, 1), #
+                QtGui.QColor().fromRgbF(1, 0, 0),
+                QtGui.QColor().fromRgbF(1, 1, 0),
+                QtGui.QColor().fromRgbF(0, 1, 0), #
+                QtGui.QColor().fromRgbF(0, 1, 1),
+                QtGui.QColor().fromRgbF(1, 1, 1)
+            ]
+
+            import cPickle as pickle
+            animal_id_mapping = None
+            try:
+                with open(self.project.working_directory+'/temp/animal_id_mapping.pkl', 'rb') as f_:
+                    animal_id_mapping = pickle.load(f_)
+            except:
+                pass
+
+
             for ch in self.chunks:
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
-                item = markers.CenterMarker(0, 0, MARKER_SIZE, ch.color, ch.id_, self.marker_changed)
+
+                col_ = ch.color
+                if animal_id_mapping is not None:
+                    if ch.id_ in animal_id_mapping:
+                        animal_id = animal_id_mapping[ch.id_]
+                        col_ = colors_[animal_id]
+                    else:
+                        col_ = QtGui.QColor().fromRgbF(0.3, 0.3, 0.3)
+
+
+                item = markers.CenterMarker(0, 0, MARKER_SIZE, col_, ch.id_, self.marker_changed)
                 item.setZValue(0.5)
                 self.items.append(item)
                 self.scene.addItem(item)
