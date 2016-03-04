@@ -24,7 +24,6 @@ if __name__ == '__main__':
 
         if ch.shape[0] == 1:
             continue
-            # ax.scatter(ch[0, 1], ch[0, 0], ch[0, 2])
         else:
             avg_a = np.mean(ch[:, 3])
             w_ = max(1, math.log(avg_a)-4)

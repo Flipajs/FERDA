@@ -39,7 +39,6 @@ def show_next():
 
     sizes_ = [10, 17, 25]
 
-    # TODO: solve scale
     scales = ft.getImageScales()
     scs_ = []
     for kp, i in zip(keypoints, range(len(keypoints))):
@@ -111,7 +110,6 @@ if __name__ == "__main__":
 
     process_color = 0
 
-    imgName = '/Users/flipajs/Pictures/vlcsnap-2016-02-12-13h43m29s676.png'
     border = 5
 
     ft = FASTex(edgeThreshold=edgeThreshold,

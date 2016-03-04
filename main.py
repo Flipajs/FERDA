@@ -21,6 +21,7 @@ if is_flipajs_pc():
     sn_id = 2
     name = 'Cam1_orig'
     wd = '/Users/flipajs/Documents/wd/GT/'
+    # wd = '/Users/flipajs/Documents/wd/'
     snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
                 'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
