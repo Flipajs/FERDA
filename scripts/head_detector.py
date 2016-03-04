@@ -69,7 +69,7 @@ def rotate_img(img, theta):
 
     center = (im_.shape[0] / 2, im_.shape[1] / 2)
 
-    rot_mat = cv2.getRotationMatrix2D(center, -np.rad2deg(r.theta_), 1.0)
+    rot_mat = cv2.getRotationMatrix2D(center, -np.rad2deg(theta), 1.0)
     return cv2.warpAffine(im_, rot_mat, (s_, s_))
 
 def centered_crop(img, new_h, new_w):
