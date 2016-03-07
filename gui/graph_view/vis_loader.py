@@ -2,6 +2,8 @@ from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from utils.img_manager import ImgManager
 from PyQt4 import QtGui
+from core.settings import  Settings as S_
+
 
 __author__ = 'Simon Mandlik'
 
@@ -168,7 +170,7 @@ class VisLoader:
         # print("Preparing edges...")
         self.prepare_edges()
         # print("Preparing visualizer...")
-        img_manager = ImgManager(self.project)
+        img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
         from graph_visualizer import GraphVisualizer
         self.g = GraphVisualizer(self, img_manager)
         self.g.showMaximized()

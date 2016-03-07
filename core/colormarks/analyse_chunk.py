@@ -124,7 +124,7 @@ if __name__ == '__main__':
     p = Project()
     p.load('/Users/flipajs/Documents/wd/GT/Cam1__/cam1.fproj')
     # p.load('/Users/flipajs/Documents/wd/C210/c210.fproj')
-    p.img_manager = ImgManager(p)
+    p.img_manager = ImgManager(p, max_size_mb=S_.cache.img_manager_size_MB)
 
     if False:
         app = QtGui.QApplication(sys.argv)

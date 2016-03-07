@@ -20,7 +20,6 @@ from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 from core.graph.chunk import Chunk
 from gui.graph_view.vis_loader import VisLoader
-from utils.img_manager import ImgManager
 
 
 class BackgroundComputer:

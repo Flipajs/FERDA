@@ -59,6 +59,7 @@ class Cache(object):
     __metaclass__ = SettingsType
     use = Item('cache/use', True, 'There will be stored information in working directory to speed up mainly the correction tool.')
     mser = Item('cache/mser', True, 'Storing MSERs have huge impact on speed but it also needs huge space amount.')
+    img_manager_size_MB = 500
 
 class Colormarks:
     __metaclass__ = SettingsType
