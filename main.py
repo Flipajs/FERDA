@@ -27,6 +27,19 @@ if is_flipajs_pc():
     project.load(wd+name+'/cam1.fproj')
     ex.widget_control('load_project', project)
 
+"""
+dita pc
+
+sn_id = 2
+name = 'Cam1_orig_'
+wd = '/home/dita/PycharmProjects/FERDA projects/'
+snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
+            'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
+
+project.load(wd+name+'/cam1.fproj')
+ex.widget_control('load_project', project)
+"""
+
 
 app.exec_()
 app.deleteLater()
