@@ -41,10 +41,18 @@ def data_from_projects(fm):
     snapshot = {'chm': wd+'gt/'+str(sn_id)+'__chunk_manager.pkl',
                 'gm': wd+'gt/'+str(sn_id)+'__graph_manager.pkl'}
 
+
     frames = range(fm)
     p_test = Project()
     p_test.load(wd+name+'/cam1.fproj', snapshot)
     test_measurements = get_trajectories(p_test, frames)
+
+#    frames = range(5)
+#    p_test = Project()
+#    p_test.load(wd+name+'/cam1.fproj')
+#    gt_mesurements = get_trajectories(p_test, frames)
+
+#    del p_test
 
     p_gt = Project()
     p_gt.load(wd+name+'/cam1.fproj')

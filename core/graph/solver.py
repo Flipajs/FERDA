@@ -19,7 +19,7 @@ import time
 import cPickle as pickle
 import graph_tool
 from graph_manager import GraphManager
-from core.desc.zernike_moments import ZernikeMoments
+# from core.desc.zernike_moments import ZernikeMoments
 
 class Solver:
     def __init__(self, project):
@@ -41,7 +41,7 @@ class Solver:
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
 
         self.ignored_nodes = {}
-        self.zernike_desc = ZernikeMoments(project.solver_parameters.zernike_radius, project.solver_parameters.zernike_norm)
+        # self.zernike_desc = ZernikeMoments(project.solver_parameters.zernike_radius, project.solver_parameters.zernike_norm)
 
         self.cc_id = 0
 

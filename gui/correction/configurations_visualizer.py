@@ -21,6 +21,7 @@ import math
 from gui.view.graph_visualizer import call_visualizer
 from gui.loading_widget import LoadingWidget
 from fitting_threading_manager import FittingThreadingManager
+from core.settings import Settings as S_
 
 
 class ConfigurationsVisualizer(QtGui.QWidget):
@@ -84,6 +85,9 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.fitting_tm = FittingThreadingManager()
 
         self.fitting_finished_mutex = QtCore.QMutex()
+        from utils.img_manager import ImgManager
+        # TODO: add to settings
+        self.img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
 
 
     def create_tool_w(self):
@@ -252,6 +256,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         if move_to_different_case:
             self.case_v += 1
             self.active_node_id += 1
+
+        print self.active_node_id
 
         if not self.move_to_next_case_():
             self.project.save_snapshot()
@@ -778,7 +784,140 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.fitting_one_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_F))
         self.addAction(self.fitting_one_step_a)
 
+        self.chunk_alpha_blending_action = QtGui.QAction('chunk alpha blending', self)
+        self.chunk_alpha_blending_action.triggered.connect(self.chunk_alpha_blending)
+        self.chunk_alpha_blending_action.setShortcut(S_.controls.chunk_alpha_blending)
+        self.addAction(self.chunk_alpha_blending_action)
+
+        self.chunk_interpolation_fitting_action = QtGui.QAction('chunk interpolation fitting', self)
+        self.chunk_interpolation_fitting_action.triggered.connect(self.chunk_interpolation_fitting)
+        self.chunk_interpolation_fitting_action.setShortcut(S_.controls.chunk_interpolation_fitting)
+        self.addAction(self.chunk_interpolation_fitting_action)
+
         self.d_ = None
+
+    def chunk_interpolation_fitting(self):
+        vertex = self.active_cw.active_node
+        chunk, _ = self.project.gm.is_chunk(vertex)
+
+        in_vertices = [v for v in self.project.gm.g.vertex(chunk.start_vertex_id()).in_neighbours()]
+        out_vertices = [v for v in self.project.gm.g.vertex(chunk.end_vertex_id()).out_neighbours()]
+
+        if len(in_vertices) != len(out_vertices):
+            Warning("UNBALANCED CONFIGURATION! ENDING CHUNK INTERPOLATION FITTING")
+            return
+
+        in_regions = map(self.project.gm.region, in_vertices)
+        out_regions = map(self.project.gm.region, out_vertices)
+
+        matching = []
+        for r in in_regions:
+            best_r = None
+            best_dist = np.inf
+            for r2 in out_regions:
+                d_ = np.linalg.norm(r.centroid() - r2.centroid())
+
+                if best_dist > d_:
+                    best_dist = d_
+                    best_r = r2
+
+            matching.append((r, best_r))
+            out_regions.remove(best_r)
+
+        ch_len = chunk.length()
+        for i in range(1, ch_len+1):
+            replace = chunk.pop_first(self.project.gm)
+            new_regions = []
+            for m in matching:
+                new_r = deepcopy(m[0])
+                self.project.rm.add(new_r)
+
+                new_r.frame_ += i
+                new_r.virtual = True
+                # TODO rotate a little bit ?
+                new_centroid = (m[0].centroid() * (ch_len - i) + m[1].centroid() * i) / ch_len
+                dif_ = new_centroid - m[0].centroid()
+                new_r.centroid_ = new_centroid
+                new_r.pts_ += np.asarray(dif_, dtype=np.int64)
+                new_regions.append(new_r)
+
+
+            # TODO: create chunks...
+            self.project.solver.merged(new_regions, replace)
+
+        self.active_node_id -= 1
+        self.next_case()
+
+    def chunk_alpha_blending(self):
+        vertex = self.active_cw.active_node
+        chunk, _ = self.project.gm.is_chunk(vertex)
+
+        from core.graph.region_chunk import RegionChunk
+
+        region_chunk = RegionChunk(chunk, self.project.gm, self.project.rm)
+        frames = list(range(chunk.start_frame(self.project.gm), chunk.end_frame(self.project.gm)))
+        freq, confirmed = QtGui.QInputDialog.getInt(self, 'Input Dialog', 'Chunk length is: '+str(chunk.length())+'.Enter frequency:', value=1, min=1)
+
+        if not confirmed:
+            return
+
+        import numpy as np
+        import matplotlib.pyplot as plt
+        import matplotlib as mpl
+        im = self.img_manager.get_whole_img(frames[0])
+        alpha = np.zeros((im.shape[0], im.shape[1]), dtype=np.int32)
+        alpha2 = np.zeros((im.shape[0], im.shape[1], 3), dtype=np.int32)
+
+        centroids = []
+
+        incr = 1
+        for frame in frames[::freq]:
+            r = region_chunk[frame - region_chunk.start_frame()]
+            centroids.append(r.centroid())
+
+            # img = self.img_manager.get_crop(frame, r,  width=self.width, height=self.height, relative_margin=self.relative_margin)
+            alpha[r.pts()[:, 0], r.pts()[:, 1]] += 1
+            incr += 1
+
+        centroids = np.array(centroids)
+
+        plt.close('all')
+        plt.figure(1)
+        plt.imshow(alpha)
+        plt.set_cmap('viridis')
+
+        centr_step = 3
+        centroids = centroids[::centr_step, :]
+
+        # plt.scatter(centroids[:, 1], centroids[:, 0], s=8, c=range(len(centroids)), edgecolors='None', cmap=mpl.cm.afmhot)
+        # plt.subplots_adjust(left=0.0, right=1, top=1, bottom=0.0)
+
+        # make crop...
+        for y_start in range(alpha.shape[0]):
+            if sum(alpha[y_start, :]) > 0:
+                break
+
+        for y_end in reversed(range(alpha.shape[0])):
+            if sum(alpha[y_end, :]) > 0:
+                break
+
+        for x_start in range(alpha.shape[1]):
+            if sum(alpha[:, x_start]) > 0:
+                break
+
+        for x_end in reversed(range(alpha.shape[1])):
+            if sum(alpha[:, x_end]) > 0:
+                break
+
+        border = 5
+        # plt.ylim([min(y_end+border, alpha.shape[0]), max(0, y_start-border)])
+        # plt.xlim([max(0, x_start-border), min(x_end+border, alpha.shape[1])])
+        # plt.show()
+
+        plt.figure()
+        plt.show()
+
+
 
     def update_content(self):
         self.next_case(move_to_different_case=False, user_action=True)

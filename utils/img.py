@@ -15,9 +15,10 @@ import matplotlib.cm as cmx
 import matplotlib.colors as colors
 import math
 import scipy.ndimage
+from utils.roi import get_roi
 
 
-def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255)):
+def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), return_offset=False):
     y = int(y)
     x = int(x)
     height = int(height)
@@ -52,7 +53,28 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255)):
         # crop = np.copy(img[y:y + height, x:x + height, :])
         crop = np.copy(img[y:y + height, x:x + width, :])
 
+    if return_offset:
+        return crop, np.array([y, x])
+
     return crop
+
+
+def get_img_around_pts(img, pts, margin=0):
+    roi = get_roi(pts)
+
+    width = roi.width()
+    height = roi.height()
+
+    m_ = max(width, height)
+    margin = m_ * margin
+
+    y_ = roi.y() - margin
+    x_ = roi.x() - margin
+    height_ = height + 2 * margin
+    width_ = width + 2 * margin
+
+    crop = get_safe_selection(img, y_, x_, height_, width_, fill_color=(0, 0, 0))
+    return crop, np.array([y_, x_])
 
 
 def get_pixmap_from_np_bgr(np_image):
@@ -184,6 +206,18 @@ def get_normalised_img(region, norm_size, blur_sigma=0):
     return im_out
 
 
+def replace_everything_but_pts(img, pts, fill_color=[0, 0, 0]):
+    # TODO: 3 channels vs 1 channel (:, :, 1) and (:, :)
+    if len(img.shape) == 2 or img.shape[3] == 1:
+        if len(fill_color) > 1:
+            fill_color = fill_color[0]
+
+    new_img = np.zeros(img.shape, dtype=img.dtype)
+    new_img[:, :] = fill_color
+
+    new_img[pts[:, 0], pts[:, 1]] = img[pts[:, 0], pts[:, 1]]
+
+    return new_img
 
 
 class DistinguishableColors():

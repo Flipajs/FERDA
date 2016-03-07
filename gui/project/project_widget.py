@@ -27,6 +27,7 @@ class ProjectLoader(QtCore.QThread):
     def run(self):
         self.project.load(self.path)
         CompatibilitySolver(self.project)
+        self.project.rm.con.close()
         self.proc_done.emit(self.project)
 
 class ProjectWidget(QtGui.QWidget):
@@ -106,6 +107,10 @@ class ProjectWidget(QtGui.QWidget):
         # stop timer and fill the progress bar
         self.loading_w.update_progress(1)
         self.timer.stop()
+
+        from core.region.region_manager import RegionManager
+        project.rm = RegionManager(db_wd=project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
+
         self.finish_callback('load_project', project)
 
     def timer_done(self):

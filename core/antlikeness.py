@@ -74,8 +74,8 @@ class DummyAntlikeness():
     def get_x(self, r, img_gray=None):
         return []
 
-    def get_prob(self):
+    def get_prob(self, a=None, b=None):
         # import random
         # return random.randrange(0, 1)
 
-        return 1
+        return [0, 1]

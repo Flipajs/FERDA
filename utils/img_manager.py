@@ -1,6 +1,3 @@
-__author__ = 'flipajs'
-
-from core.project.project import Project
 from utils.img import prepare_for_visualisation, get_safe_selection
 from utils.video_manager import get_auto_video_manager
 from utils.drawing.points import draw_points
@@ -369,6 +366,7 @@ def get_image(im_manager):
 
 
 if __name__ == "__main__":
+    from core.project.project import Project
     p = Project()
     # p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
     p.load('/home/dita/PycharmProjects/eight_22/eight22.fproj')

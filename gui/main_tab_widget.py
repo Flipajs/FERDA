@@ -13,7 +13,7 @@ from core.graph.graph_manager import GraphManager
 
 
 class MainTabWidget(QtGui.QWidget):
-    def __init__(self, finish_callback, project):
+    def __init__(self, finish_callback, project, postpone_parallelisation=False):
         super(MainTabWidget, self).__init__()
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
@@ -50,7 +50,7 @@ class MainTabWidget(QtGui.QWidget):
         print "LOADING GRAPH..."
         if project.gm is None or project.gm.g.num_vertices() == 0:
             # project.gm = GraphManager(project, project.solver.assignment_score)
-            self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)
+            self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished, postpone_parallelisation)
             self.bc_msers.run()
         else:
             self.background_computer_finished(project.solver)
@@ -66,7 +66,7 @@ class MainTabWidget(QtGui.QWidget):
         print "GRAPH LOADED"
         self.solver = solver
         self.results_tab.solver = solver
-        self.tracker_tab.prepare_corrections(self.solver)
+        self.tracker_tab.prepare_corrections(self.project.solver)
 
         self.tabs.setTabEnabled(1, True)
         self.tabs.setTabEnabled(2, True)
@@ -81,13 +81,13 @@ class MainTabWidget(QtGui.QWidget):
             self.results_tab.setParent(None)
 
             self.results_tab = ResultsWidget(self.project)
-            self.results_tab.add_data(self.solver, self.show_results_only_around_frame)
+            self.results_tab.add_data(self.project.solver, self.show_results_only_around_frame)
             self.results_tab.update_positions(self.results_tab.video.frame_number(), optimized=False)
             self.tabs.insertTab(1, self.results_tab, 'results viewer')
             self.tabs.setCurrentIndex(1)
             self.ignore_tab_change = False
         if i == 2:
-            self.statistics_tab.update_data(self.solver)
+            self.statistics_tab.update_data(self.project)
 
         # if i == 0:
         #     # TODO: add interval to settings

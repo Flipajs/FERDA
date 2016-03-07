@@ -226,33 +226,32 @@ def get_mean_around(data, c):
     return np.asarray(color / 5.0, dtype=np.uint8)
 
 
-def find_dist_thresholds(ccs, data):
+def find_dist_thresholds(ccs, data, orig_img=None):
     all_pxs = np.array([], dtype=np.int).reshape(0, 3)
     picked_pxs = np.array([], dtype=np.int).reshape(0, 3)
+    mean_colors = []
+
     for cc in ccs:
         pxs = data[cc[:, 0], cc[:, 1], :]
         all_pxs = np.append(all_pxs, pxs, axis=0)
         c = np.mean(cc, axis=0)
 
         center_color = get_mean_around(data, c)
-        # center_color = data[c[0], c[1], :]
 
         dists = cdist(pxs, np.array([center_color]))
-        # dists_med = np.median(dists)
-        # print np.min(dists), dists_med, np.max(dists), np.percentile(dists, 0.5)
 
-        # plt.figure(1)
-        # plt.plot(np.sort(dists, axis=0))
-        # plt.hold('on')
-        #
-        # plt.figure(4)
         ids = dists < np.percentile(dists, 70)
         coords = cc[np.reshape(ids, (ids.shape[0],)), :]
         pxs_ = data[coords[:, 0], coords[:, 1], :]
 
+        if orig_img is not None:
+            # TODO: solve for multiple colormarks...
+            color_representant = get_mean_around(orig_img, c)
+
+
         picked_pxs = np.append(picked_pxs, pxs_, axis=0)
 
-    return picked_pxs, all_pxs
+    return picked_pxs, all_pxs, color_representant
 
 
 def show_foreground(CH3d, data, im):

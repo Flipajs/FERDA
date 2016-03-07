@@ -210,6 +210,9 @@ class Fitting():
             q = np.sum(rpts * weights_, axis=0) / w_sum
 
             # centering
+            apts = np.asarray(apts, dtype=np.float64)
+            rpts = np.asarray(rpts, dtype=np.float64)
+
             apts -= p
             rpts -= q
 

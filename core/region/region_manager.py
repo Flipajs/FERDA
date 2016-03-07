@@ -90,17 +90,13 @@ class RegionManager:
         if not isinstance(regions, Region):
             raise TypeError ("Region manager can only work with Region objects, not %s" % type(regions))
 
+        id = self.get_next_id()
+        regions.id_ = id
+        # self.add_to_cache_(id, regions)
         if self.use_db:
-            id = self.get_next_id()
-            regions.id_ = id
-            self.add_to_cache_(id, regions)
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute("INSERT INTO regions VALUES (?, ?)", (id, self.prepare_region(regions)))
             self.con.commit()
-        else:
-            id = self.get_next_id()
-            regions.id_ = id
-            self.add_to_cache_(id, regions)
 
         return self.tmp_ids
 
@@ -128,7 +124,9 @@ class RegionManager:
 
             if self.cache_size_limit_ > 0 and len(self.regions_cache_) > self.cache_size_limit_:
                 pop_id = self.recent_regions_ids.pop(0)
-                self.regions_cache_.pop(pop_id, None).id()
+                # TODO: Dita why .id() ?
+                # self.regions_cache_.pop(pop_id, None).id()
+                self.regions_cache_.pop(pop_id, None)
 
                 # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
 
@@ -257,7 +255,7 @@ class RegionManager:
         l = len(sql_ids)
         if l == 1:
             # if only one id has to be taken from db
-            cmd = "SELECT data FROM regions WHERE id = %s" % sql_ids[0]
+            cmd = "SELECT data FROM regions WHERE id = '%s'" % sql_ids[0]
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
             self.con.commit()

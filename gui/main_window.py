@@ -78,9 +78,13 @@ class MainWindow(QtGui.QMainWindow):
                 self.statusBar().showMessage("The project was successfully created.")
                 self.setWindowTitle('FERDA - '+self.project.name)
 
-                self.init_widget = InitWidget(self.widget_control, self.project)
-                self.central_widget.addWidget(self.init_widget)
-                self.central_widget.setCurrentWidget(self.init_widget)
+                if self.project.use_colormarks:
+                    from gui.arena.colormarks_picker import ColormarksPicker
+                    self.colormark_widget = ColormarksPicker(self.project, self.colormarks_selected)
+                    self.central_widget.addWidget(self.colormark_widget)
+                    self.central_widget.setCurrentWidget(self.colormark_widget)
+                else:
+                    self.add_init_widget_()
             else:
                 self.statusBar().showMessage("Something went wrong during project creation!")
 
@@ -90,9 +94,39 @@ class MainWindow(QtGui.QMainWindow):
         if state == 'initialization_finished':
             self.project.save()
 
-            self.main_tab_widget = MainTabWidget(self.widget_control, self.project)
+            self.main_tab_widget = MainTabWidget(self.widget_control, self.project, values[0])
             self.central_widget.addWidget(self.main_tab_widget)
             self.central_widget.setCurrentWidget(self.main_tab_widget)
+
+    def colormarks_selected(self, project, masks):
+        from core.colormarks.analyse_chunk import colormarks_init_finished_cb
+        from utils.video_manager import get_auto_video_manager
+
+        color_samples = colormarks_init_finished_cb(project, masks)
+
+        from core.colormarks.colormarks_model import ColormarksModel
+
+        cm_model = ColormarksModel()
+        cm_model.im_space = 'irb'
+
+        vm = get_auto_video_manager(project)
+        frame = masks[0]['frame']
+
+        main_img = vm.get_frame(frame)
+        import cv2
+        main_img = cv2.cvtColor(main_img, cv2.COLOR_BGR2RGB)
+
+        cm_model.compute_model(main_img, color_samples)
+
+        self.project.colormarks_model = cm_model
+        self.project.save()
+
+        self.add_init_widget_()
+
+    def add_init_widget_(self):
+        self.init_widget = InitWidget(self.widget_control, self.project)
+        self.central_widget.addWidget(self.init_widget)
+        self.central_widget.setCurrentWidget(self.init_widget)
 
     def control_widget_exit(self):
         self.close()

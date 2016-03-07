@@ -20,7 +20,6 @@ from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 from core.graph.chunk import Chunk
 from gui.graph_view.vis_loader import VisLoader
-from utils.img_manager import ImgManager
 
 
 class BackgroundComputer:
@@ -28,7 +27,7 @@ class BackgroundComputer:
     RUNNING = 1
     FINISHED = 2
 
-    def __init__(self, project, update_callback, finished_callback):
+    def __init__(self, project, update_callback, finished_callback, postpone_parallelisation):
         self.project = project
         self.process_n = S_.parallelization.processes_num
         self.results = []
@@ -52,6 +51,7 @@ class BackgroundComputer:
         self.check_parallelization_timer.timeout.connect(self.check_parallelization)
         self.check_parallelization_timer.start(100)
         self.precomputed = False
+        self.postpone_parallelisation = postpone_parallelisation
 
     def set_frames_in_row(self):
         vid = get_auto_video_manager(self.project)
@@ -62,6 +62,9 @@ class BackgroundComputer:
 
     def run(self):
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
+            if self.postpone_parallelisation:
+                f = open(self.project.working_directory+'/limits.txt', 'w')
+
             if not S_.general.log_in_bg_computation:
                 S_.general.log_graph_edits = False
             self.start = time.time()
@@ -89,16 +92,26 @@ class BackgroundComputer:
                     self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
                     f_num) + ' ' + str(last_n_frames)
                 print ex_str
+
+                if self.postpone_parallelisation:
+                    f.write(str(i)+'\t'+str(f_num)+'\t'+str(last_n_frames)+'\n')
+
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
-                    p.start(str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
-                        self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
-                        f_num) + ' ' + str(last_n_frames))
+
+                    if not self.postpone_parallelisation:
+                        p.start(str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
+                            self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
+                            f_num) + ' ' + str(last_n_frames))
 
                 self.processes.append([p, ex_str, status])
 
                 # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
+
+            if self.postpone_parallelisation:
+                f.close()
+                self.precomputed = True
 
             S_.general.log_graph_edits = True
         else:
@@ -107,6 +120,7 @@ class BackgroundComputer:
     def check_parallelization(self):
         if self.finished.all() or self.precomputed:
             self.check_parallelization_timer.stop()
+            self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
             self.piece_results_together()
 
     def merge_parts(self, new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm):
@@ -197,7 +211,8 @@ class BackgroundComputer:
 
     def piece_results_together(self):
         from core.graph.graph_manager import GraphManager
-        self.project.rm = RegionManager(db_wd=self.project.working_directory)
+        # TODO: add to settings
+        self.project.rm = RegionManager(db_wd=self.project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
         self.project.chm = ChunkManager()
         self.solver = Solver(self.project)
         self.project.gm = GraphManager(self.project, self.solver.assignment_score)
@@ -208,8 +223,14 @@ class BackgroundComputer:
         S_.general.log_graph_edits = False
 
         part_num = self.part_num
-        # TODO: remove this line
-        # part_num = 27
+
+        from utils.misc import is_flipajs_pc
+        if is_flipajs_pc():
+            # TODO: remove this line
+            # part_num = 1
+            pass
+
+        self.project.color_manager = None
 
         print "merging..."
         # for i in range(part_num):
@@ -234,7 +255,6 @@ class BackgroundComputer:
         self.project.solver.detect_split_merge_cases()
 
         print "reconnecting graphs"
-        self.project.gm = self.project.gm
 
         vs_todo = []
 
@@ -249,49 +269,22 @@ class BackgroundComputer:
 
         self.project.solver.detect_split_merge_cases()
         self.solver.simplify(vs_todo, rules=[self.solver.adaptive_threshold])
-        # TODO: use also update cost
-        # self.solver.simplify(vs_todo, rules=[self.solver.update_costs])
 
         print "simplifying "
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.symmetric_cc_solver, self.solver.update_costs])
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
 
-        # self.project.solver_parameters.certainty_threshold = 0.1
-
-
-        # self.solver.simplify(rules=[self.solver.adaptive_threshold, self.solver.update_costs])
-
-        # i = 1
-        # while True:
-        #     print "ITERATION: ", i
-        #     num_changed1 = self.project.solver.simplify(rules=[self.solver.update_costs])
-        #     num_changed2 = self.project.solver.simplify(rules=[self.solver.adaptive_threshold])
+        # # TEST:
+        # queue = self.project.gm.get_all_relevant_vertices()
+        # for v in queue:
+        #     v = self.project.gm.g.vertex(v)
         #
-        #     if num_changed1+num_changed2 == 0:
-        #         break
-        #
-        #     i += 1
-
-        # TEST:
-        queue = self.project.gm.get_all_relevant_vertices()
-        for v in queue:
-            v = self.project.gm.g.vertex(v)
-
-            ch, ch_is_end = self.project.gm.is_chunk(v)
-            if ch:
-                if ch_is_end:
-                    if v.in_degree() > 1:
-                        print "END, DEGREE > 1", self.project.gm.region(v).frame_
-                else:
-                    if v.out_degree() > 1:
-                        print "BEGINNING, DEGREE > 1", self.project.gm.region(v).frame_
-
-
-        # self.solver.simplify(rules=[self.solver.adaptive_thre
-        # shold, self.solver.update_costs])
-        # self.project.solver_parameters.certainty_threshold = 0.5
-
+        #     ch, ch_is_end = self.project.gm.is_chunk(v)
+        #     if ch:
+        #         if ch_is_end:
+        #             if v.in_degree() > 1:
+        #                 print "END, DEGREE > 1", self.project.gm.region(v).frame_
+        #         else:
+        #             if v.out_degree() > 1:
+        #                 print "BEGINNING, DEGREE > 1", self.project.gm.region(v).frame_
 
         S_.general.log_graph_edits = True
 
@@ -309,12 +302,6 @@ class BackgroundComputer:
         self.project.save()
 
         print ("#CHUNKS: %d") % (len(self.project.chm.chunk_list()))
-
-        # with open(self.project.working_directory+'/graph.pkl', 'wb') as f:
-        #     p = pickle.Pickler(f, -1)
-        #     p.dump(self.project.gm.g)
-        #     p.dump(self.project.gm.get_all_relevant_vertices())
-        #     p.dump(self.project.chm)
 
         self.finished_callback(self.solver)
 

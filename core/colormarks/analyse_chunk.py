@@ -9,6 +9,7 @@ import numpy as np
 from scripts.irg_hist_demo import ColorHist3d
 from scripts.irg_hist_demo import *
 from processing import transform_img_
+from utils.img_manager import ImgManager
 
 
 def analyse_chunk(ch, project, cm_model, sample_step):
@@ -79,6 +80,41 @@ def evolve_measurements(measurements):
     return best_id, best_val /float(len(measurements))
 
 
+def colormarks_init_finished_cb(project, masks):
+    from scripts.irg_hist_demo import get_ccs, find_dist_thresholds
+
+    color_samples = []
+    for m in masks:
+        mask, frame = m['mask'], m['frame']
+
+        if np.sum(mask) == 0:
+            continue
+
+        ccs = get_ccs(mask)
+
+        im_orig = project.img_manager.get_whole_img(frame)
+
+        im = cv2.cvtColor(im_orig, cv2.COLOR_BGR2RGB)
+        irg_255 = get_irg_255(im)
+        sample_pxs, all_pxs, mean_color = find_dist_thresholds(ccs, irg_255.copy(), im_orig)
+
+        color_samples.append((sample_pxs, all_pxs, mean_color))
+
+    import time
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+
+    import os
+    try:
+        os.mkdir(project.working_directory+'/temp')
+    except:
+        pass
+
+    with open(project.working_directory+'/temp/color_samples_'+timestr+'.pkl', 'wb') as f:
+        pickle.dump(color_samples, f)
+
+    return color_samples
+
+
 if __name__ == '__main__':
     from colormarks_model import ColormarksModel
     from core.project.project import Project
@@ -86,15 +122,28 @@ if __name__ == '__main__':
     cm_model.im_space = 'irb'
 
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/C210/C210.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1__/cam1.fproj')
+    # p.load('/Users/flipajs/Documents/wd/C210/c210.fproj')
+    p.img_manager = ImgManager(p, max_size_mb=S_.cache.img_manager_size_MB)
 
-    from utils.img_manager import ImgManager
-    p.img_manager = ImgManager(p)
+    if False:
+        app = QtGui.QApplication(sys.argv)
 
-    with open(p.working_directory + '/color_samples.pkl', 'rb') as f:
+        from gui.arena.colormarks_picker import ColormarksPicker
+        cp = ColormarksPicker(p, colormarks_init_finished_cb)
+
+        cp.show()
+        cp.move(-500, -500)
+        cp.showMaximized()
+        cp.setFocus()
+
+        app.exec_()
+        app.deleteLater()
+        sys.exit()
+
+    with open(p.working_directory + '/temp/color_samples_20160223-135328.pkl', 'rb') as f:
         up = pickle.Unpickler(f)
         color_samples = up.load()
-        masks = up.load()
 
 
     from utils.video_manager import get_auto_video_manager
@@ -106,7 +155,7 @@ if __name__ == '__main__':
 
     cm_model.compute_model(main_img, color_samples)
 
-    for cs, _ in color_samples:
+    for cs, _, _ in color_samples:
         for px in cs:
             pos = np.asarray(px / cm_model.num_bins_v, dtype=np.int)
             print px, cm_model.hist3d.hist_labels_[pos[0], pos[1], pos[2]]
@@ -127,10 +176,8 @@ if __name__ == '__main__':
     ch_probs = {}
 
     for ch in chunks:
-        print i
-        measurements = analyse_chunk(ch, p, cm_model, 3)
+        r_ch = RegionChunk(ch, p.gm, p.rm)
+        for f in range(ch.start_frame(p.gm), ch.end_frame(p.gm)):
+            r = r_ch.region_in_t(f)
 
-        ch_ids[ch], ch_probs[ch] = evolve_measurements(measurements)
-
-
-        i += 1
+            cm = cm_model.find_colormarks(p, r)
