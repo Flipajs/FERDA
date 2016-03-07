@@ -227,7 +227,7 @@ class BackgroundComputer:
         from utils.misc import is_flipajs_pc
         if is_flipajs_pc():
             # TODO: remove this line
-            part_num = 2
+            # part_num = 1
             pass
 
         self.project.color_manager = None
