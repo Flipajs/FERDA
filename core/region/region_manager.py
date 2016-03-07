@@ -364,20 +364,25 @@ class RegionManager:
         return isinstance(item, (int, long)) and len(self)+1 > item > 0
 
 if __name__ == "__main__":
+
     # rm = RegionManager()
-    f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
+    f = open('/home/dita/PycharmProjects/FERDA projects/old/c5regions.pkl', 'r+b')
     up = pickle.Unpickler(f)
     regions = up.load()
     for r in regions:
+        r.area_ = None
         r.pts_rle_ = None
     f.close()
 
-    rm = RegionManager(db_wd="/home/dita", cache_size_limit=1)
+    rm = RegionManager(db_wd="/home/dita", cache_size_limit=10)
+    # rm = RegionManager()
     rm.add(regions)
 
-    print rm[4]
-    print rm[2:6]
-
+    k = 0
+    r1 = rm[18]
+    r2 = rm[4]
+    # print doesn't work on data from old/c5regions.pkl due to change in class structure
+    # print rm[2:6]
 
     # db size with 20 pts regions: 306 176 bytes
     # db size with 20 rle regions:  75 776 bytes
