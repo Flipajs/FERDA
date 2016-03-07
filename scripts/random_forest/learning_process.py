@@ -26,7 +26,7 @@ class LearningProcess:
             self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
             self.candidate_chunks = self.get_candidate_chunks()
 
-            self.set_ids_()
+            # self.set_ids_()
 
             self.chunks_itree = self.build_itree_()
             self.class_frequences = []
@@ -139,8 +139,8 @@ class LearningProcess:
                 # print "prob: %.2f, ch_len: %d, id: %d, ch_id: %d, %s, ch_start: %d, ch_end: %d" %  (np.max(proba), data_len, np.argmax(proba), ch.id_, proba, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
                 # self.classify_chunk(ch, proba)
 
-            if best_val < 0.5:
-                break
+            # if best_val < 0.5:
+            #     break
 
             ch = best_ch
 
@@ -277,7 +277,31 @@ class LearningProcess:
             f.extend(self.get_hu_moments(crop_ith_channel_masked))
 
         # min, max from moments head/tail
+        import math
+        from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
+        relative_border = 2.0
 
+        bb, offset = get_bounding_box(r, p, relative_border)
+        p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
+        endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
+        endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
+
+        bb = rotate_img(bb, r.theta_)
+        bb = centered_crop(bb, 8*r.b_, 4*r.a_)
+
+        c_ = endpoint_rot(bb, r.centroid(), -r.theta_, r.centroid())
+
+        endpoint1_ = endpoint_rot(bb, endpoint1, -r.theta_, r.centroid())
+        endpoint2_ = endpoint_rot(bb, endpoint2, -r.theta_, r.centroid())
+        if endpoint1_[1] > endpoint2_[1]:
+            endpoint1_, endpoint2_ = endpoint2_, endpoint1_
+
+        y_ = int(c_[0] - r.b_)
+        y2_ = int(c_[0]+r.b_)
+        x_ = int(c_[1] - r.a_)
+        x2_ = int(c_[1] + r.a_)
+        im1_ = bb[y_:y2_, x_:int(c_[1]), :].copy()
+        im2_ = bb[y_:y2_, int(c_[1]):x2_, :].copy()
 
         # ### ALL PXs in crop image given margin
         # crop, offset = get_img_around_pts(img, r.pts(), margin=0.3)
@@ -286,9 +310,13 @@ class LearningProcess:
         # crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
         # f.extend(self.get_hu_moments(crop_gray))
         #
-        # # B G R
-        # for i in range(3):
-        #     f.extend(self.get_hu_moments(crop[:, :, i]))
+        # B G R
+        for i in range(3):
+            hu1 = self.get_hu_moments(im1_[:, :, i])
+            hu2 = self.get_hu_moments(im2_[:, :, i])
+
+            f.extend(list(np.min(np.vstack([hu1, hu2]), axis=0)))
+            f.extend(list(np.max(np.vstack([hu1, hu2]), axis=0)))
 
         return f
 
@@ -364,7 +392,7 @@ class LearningProcess:
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1_orig/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam2_orig/cam2.fproj')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p)
