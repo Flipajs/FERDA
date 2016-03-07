@@ -230,6 +230,8 @@ class BackgroundComputer:
             # part_num = 1
             pass
 
+        part_num = 1
+
         self.project.color_manager = None
 
         print "merging..."
