@@ -1,11 +1,25 @@
 import numpy as np
 import time
+from PyQt4 import QtGui
+
 from core.project.project import Project
 from utils.clearmetrics.clearmetrics import ClearMetrics
 from gui.statistics.region_reconstruction import get_trajectories
+from gui.plot.pyqtgraph_test import MyView
 
 
-def test_project(gt_measurements, test_measurements, frames, threshold):
+class TwinView(QtGui.QWidget):
+    def __init__(self, left_project, right_project):
+        super(TwinView, self).__init__()
+        self.setLayout(QtGui.QVBoxLayout())
+        # Frame slider
+        self.left = MyView(left_project)
+        self.right = MyView(right_project)
+        self.layout().addWidget(self.left)
+        self.layout().addWidget(self.right)
+
+
+def test_project(gt_measurements, test_measurements, threshold):
     clear = ClearMetrics(gt_measurements, test_measurements, threshold)
     clear.match_sequence()
     evaluation = [clear.get_mota(),
@@ -31,13 +45,39 @@ def data_from_projects(fm):
     p_test = Project()
     p_test.load(wd+name+'/cam1.fproj', snapshot)
     test_measurements = get_trajectories(p_test, frames)
-    del p_test
 
     p_gt = Project()
     p_gt.load(wd+name+'/cam1.fproj')
     gt_measurements = get_trajectories(p_gt, frames)
+
+    app = QtGui.QApplication([])
+    w = TwinView(p_test, p_gt)
+    w.showMaximized()
+    w.show()
+    app.exec_()
+    app.deleteLater()
+
     return gt_measurements, test_measurements
 
+
+def data_test():
+    groundtruth = {
+        0: [4, 1, 5],
+        1: [4, 2, 4],
+        2: [4, 1, 3],
+        3: [4, 2, 2],
+        4: [4, 1, 3],
+        5: [4, 1, 3]
+    }
+    measurements = {
+        0: [4, 1, 5],
+        1: [4, 2, 4],
+        2: [4, 1, 3],
+        3: [4, 2, 2],
+        4: [4, 1500, 3],
+        5: [4, 15, 3]
+    }
+    return groundtruth, measurements
 
 def data1d():
     groundtruth = {
@@ -86,14 +126,13 @@ if __name__ == "__main__":
     threshold = 1
     print "Loading projects..."
     t = time.time()
-    data = data_from_projects(frames)
+    data = data_test()
     nt = time.time()
     print "Done (%5.3f s)" % (nt-t)
     print "Checking..."
     test_project(
         data[0],
         data[1],
-        range(frames),
         threshold
         )
     print "Done (%5.3f s)" % (time.time()-nt)
