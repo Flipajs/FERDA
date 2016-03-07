@@ -55,6 +55,7 @@ class FittingSessionChunk(FittingSession):
         file_name = self.get_file_name()
 
         f = Fitting(merged, model)
+
         with open(file_name, 'wb') as f_:
             pickle.dump({'fitting': f}, f_, -1)
 
@@ -107,6 +108,9 @@ class FittingSessionChunk(FittingSession):
 
             with open(file_name, 'wb') as f_:
                 pickle.dump({'fitting': fitting}, f_, -1)
+                os.fsync(f_.fileno())
+
+
 
             ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/region/fitting_script_chunk.py" '+str(self.id)+' "'+file_name+'"'
 

@@ -2,6 +2,7 @@ __author__ = 'filip@naiser.cz'
 
 import cPickle as pickle
 import string
+import time
 
 from PyQt4 import QtCore
 
@@ -12,7 +13,8 @@ from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
 from utils.color_manager import ColorManager
-
+from utils.img_manager import ImgManager
+from core.settings import Settings as S_
 
 class Project:
     """
@@ -44,7 +46,10 @@ class Project:
         self.mser_parameters = MSERParameters()
         self.other_parameters = OtherParameters()
         self.solver_parameters = SolverParameters()
+        self.use_colormarks = False
+        self.colormarks_model = None
         self.color_manager = None
+        self.img_manager = None
         self.log = Log()
         self.solver = None
         self.version = "3.1.0"
@@ -81,8 +86,10 @@ class Project:
         p.version = self.version
 
         p.date_created = self.date_created
+        p.use_colormarks = self.use_colormarks
+        p.colormarks_model = self.colormarks_model
         p.color_manager = self.color_manager
-        import time
+
         p.date_last_modifiaction = time.time()
 
         p.snapshot_id = self.snapshot_id
@@ -214,7 +221,7 @@ class Project:
 
         self.__dict__.update(tmp_dict)
         a_ = path.split('/')
-        self.working_directory = path[:-(len(a_[-1])+1)]
+        self.working_directory = str(path[:-(len(a_[-1])+1)])
 
         # BG MODEL
         try:
@@ -309,11 +316,13 @@ class Project:
         self.solver = Solver(self)
         self.gm.assignment_score = self.solver.assignment_score
 
-        self.rm = RegionManager(db_wd=self.working_directory, cache_size_limit=0)
+        self.rm = RegionManager(db_wd=self.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
 
         self.gm.project = self
         self.gm.rm = self.rm
         self.gm.update_nodes_in_t_refs()
+
+        self.img_manager = ImgManager(self, max_size_mb=S_.cache.img_manager_size_MB)
 
         self.active_snapshot = -1
 
@@ -340,6 +349,8 @@ class Project:
                 self.gm.assignment_score = self.solver.assignment_score
         except:
             pass
+
+        self.img_manager = ImgManager(self, max_size_mb=S_.cache.img_manager_size_MB)
 
     def snapshot_undo(self):
         if self.active_snapshot < 0:

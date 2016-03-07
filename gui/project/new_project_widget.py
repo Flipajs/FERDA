@@ -6,6 +6,7 @@ import os
 from PyQt4 import QtGui, QtCore
 import numpy as np
 import skimage.transform
+import time
 
 import core.project.project
 import gui.gui_utils
@@ -20,7 +21,7 @@ from gui.init.set_msers import SetMSERs
 from core.project.project import Project
 from gui.init.crop_video_widget import CropVideoWidget
 from functools import partial
-
+from core.settings import Settings as S_
 
 class NewProjectWidget(QtGui.QWidget):
     def __init__(self, finish_callback):
@@ -69,6 +70,7 @@ class NewProjectWidget(QtGui.QWidget):
         self.import_widget = ImportWidget()
         self.import_widget.import_button.clicked.connect(self.finish_import)
         self.import_widget.hide()
+        self.import_widget.setDisabled(True)
 
         self.certainty_slider = QtGui.QDoubleSpinBox()
         self.certainty_slider.setMinimum(0)
@@ -84,6 +86,9 @@ class NewProjectWidget(QtGui.QWidget):
         self.max_edge_distance.setValue(2.5)
         self.max_edge_distance.setSingleStep(0.05)
         self.form_layout.addRow('max edge distance (in ant body length)', self.max_edge_distance)
+
+        self.use_colormarks_ch = gui.gui_utils.get_checkbox('Use colormarks', 'colormarks_use')
+        self.form_layout.addRow('use colormarks', self.use_colormarks_ch)
 
         self.create_project_button = QtGui.QPushButton('Create new project', self)
         self.create_project_button.clicked.connect(self.create_project)
@@ -198,7 +203,6 @@ class NewProjectWidget(QtGui.QWidget):
 
         self.project.bg_model = self.bg_computation
 
-        import time
         self.project.date_created = time.time()
         self.project.date_last_modifiaction = time.time()
         self.project.solver_parameters.certainty_threshold = self.certainty_slider.value()
@@ -211,6 +215,10 @@ class NewProjectWidget(QtGui.QWidget):
             return
 
         self.update_project()
+
+        self.project.use_colormarks = self.use_colormarks_ch.isChecked()
+        from utils.img_manager import ImgManager
+        self.project.img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
 
         if self.finish_callback:
             self.finish_callback('project_created', self.project)

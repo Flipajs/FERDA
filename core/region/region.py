@@ -50,6 +50,8 @@ class Region():
         self.contour_ = None
         self.is_virtual = False
 
+        self.colormarks = []
+
     def __str__(self):
         s = "t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(round(self.centroid_[0], 2))+", "+str(round(self.centroid_[1], 2))+"]"
         return s

@@ -4,7 +4,7 @@ import gc
 from functools import partial
 from gui.arena.my_popup import MyPopup
 from gui.arena.my_view import MyView
-from utils.video_manager import VideoManager
+from utils.video_manager import get_auto_video_manager
 from PyQt4 import QtGui, QtCore
 from core.project.project import Project
 from gui.img_controls import utils
@@ -15,15 +15,17 @@ __author__ = 'dita'
 
 class ColormarksPicker(QtGui.QWidget):
 
-    def __init__(self, video_path, done_callback=None, pen_size=10, undo_len=10, debug=False, paint_r=255, paint_g=0, paint_b=238):
+    def __init__(self, project, done_callback=None, pen_size=10, undo_len=10, debug=False, paint_r=255, paint_g=0, paint_b=238):
 
         super(ColormarksPicker, self).__init__()
 
         self.DEBUG = debug
         self.done_callback = done_callback
 
+        self.project = project
+
         # TODO: Perhaps use one VideoManager for the whole project?
-        self.vid_manager = VideoManager(video_path)
+        self.vid_manager = get_auto_video_manager(project)
 
         # PAINT SETUP
         # current color ("Color" or "Eraser"), purple by default
@@ -69,7 +71,11 @@ class ColormarksPicker(QtGui.QWidget):
 
     def done(self):
         if self.done_callback:
-            self.done_callback(self.masks)
+            masks = []
+            for m, frame in self.masks.itervalues():
+                masks.append({'mask': m.T, 'frame': frame})
+
+            self.done_callback(self.project, masks)
 
     def change_pen_size(self, value):
         """
@@ -612,14 +618,14 @@ class ColorGridWidget(QtGui.QWidget):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
-    #p = Project()
+    p = Project()
     #p.load("/home/dita/PycharmProjects/FERDA projects/testc5/c5.fproj")
 
-    video_paths = ['/home/dita/PycharmProjects/c5_0h03m-0h06m.avi',
+    p.video_paths = ['/home/dita/PycharmProjects/c5_0h03m-0h06m.avi',
                    '/media/dita/SHARE/Movies/Bones/Season 09/Bones 09x14 The Master in the Slop.mp4',
                    '/Users/flipajs/Documents/wd/Cam1_clip.avi']
 
-    ex = ColormarksPicker(video_paths[2])
+    ex = ColormarksPicker(p)
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()

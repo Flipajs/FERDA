@@ -10,6 +10,7 @@ from viewer.gui.img_controls import markers
 from core.animal import colors_
 from core.settings import Settings as S_
 from core.graph.region_chunk import RegionChunk
+import numpy as np
 
 MARKER_SIZE = 15
 
@@ -203,6 +204,8 @@ class ResultsWidget(QtGui.QWidget):
         from functools import partial
         self.highlight_timer2nd.timeout.connect(partial(self.decrease_highlight_marker_opacity, True))
 
+        self.colormarks_items = []
+
     def frame_jump(self):
         f = int(self.frameEdit.text())
         self.change_frame(f)
@@ -278,25 +281,60 @@ class ResultsWidget(QtGui.QWidget):
 
     def update_positions_optimized(self, frame):
         new_active_markers = []
+
+        # TODO: BGR, offset 1
+        # R B G Y dark B
+        colors = [
+            [0, 0, 0],
+            [0, 0, 255],
+            [255, 0, 0],
+            [0, 255, 0],
+            [0, 255, 255],
+            [150, 0, 0]
+        ]
+
         for m_id, ch in self.active_markers:
             rch = RegionChunk(ch,  self.project.gm, self.project.rm)
             if frame == rch.end_frame() + 1:
                 self.items[m_id].setVisible(False)
             else:
                 new_active_markers.append((m_id, ch))
-                c = rch.centroid_in_t(frame).copy()
+                r = rch.region_in_t(frame)
+                c = r.centroid().copy()
                 self.update_marker_position(self.items[m_id], c)
+
+                try:
+                    height_ = 13
+                    width_ = 30
+                    im = np.zeros((height_*len(r.colormarks), width_, 3), dtype=np.uint8)
+
+                    for c, i in zip(r.colormarks, range(len(r.colormarks))):
+                        w_ = max(5, min(width_, c[0].shape[0] / 5))
+                        im[i*height_:(i+1)*height_, :w_, :] = self.project.colormarks_model.colors_[c[1]]
+
+                    item = self.scene.addPixmap(cvimg2qtpixmap(im))
+                    item.setPos(r.centroid()[1] + 10, r.centroid()[0])
+
+                    self.colormarks_items.append(item)
+                except:
+                    pass
 
         self.active_markers = new_active_markers
 
         if frame in self.starting_frames:
             for ch, m_id in self.starting_frames[frame]:
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
-                c = rch.centroid_in_t(frame).copy()
+                r = rch.region_in_t(frame)
+                c = r.centroid().copy()
                 self.update_marker_position(self.items[m_id], c)
                 self.active_markers.append((m_id, ch))
 
     def update_positions(self, frame, optimized=True):
+        for c in self.colormarks_items:
+            c.setVisible(False)
+
+        self.colormarks_items = []
+
         if optimized:
             self.update_positions_optimized(frame)
             return

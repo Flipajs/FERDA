@@ -6,7 +6,7 @@ import cv2
 from core.project.project import Project
 import scripts.trajectories_data.eight_gt as data
 import utils.img_manager as imm
-
+from core.settings import Settings as S_
 
 class FrameLoader(QtCore.QThread):
     proc_done = QtCore.pyqtSignal(object)
@@ -31,7 +31,7 @@ class MyView(QtGui.QWidget):
         super(MyView, self).__init__()
 
         self.w = gl.GLViewWidget()
-        self.imm = imm.ImgManager(project, max_size_mb=500)
+        self.imm = imm.ImgManager(project, max_size_mb=S_.cache.img_manager_size_MB)
         self.w.setCameraPosition(elevation=20, distance=2100)
         self.w.setVisible(True)
 

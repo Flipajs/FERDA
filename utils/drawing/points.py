@@ -8,7 +8,7 @@ from utils.img import get_safe_selection
 from utils.roi import get_roi
 from core.settings import Settings as S_
 from PyQt4 import QtGui
-
+from PyQt4 import QtCore
 
 def process_color(c):
     """
@@ -138,6 +138,12 @@ def get_contour(pts):
         cont += np.array([roi.y(), roi.x()])
 
     return cont
+
+def draw_pts_qpixmap():
+    pixmap = QtGui.QPixmap(QtCore.QSize(400, 400))
+    painter = QtGui.QPainter(pixmap)
+
+    # pixmap.
 
 
 
