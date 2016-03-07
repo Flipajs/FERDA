@@ -43,7 +43,7 @@ class Item():
             t = type_
 
         settings = QtCore.QSettings('ferda1')
-        QtCore.QSettings()
+        # QtCore.QSettings()
 
         return settings.value(self.key_, self.val_, t)
 
@@ -59,7 +59,8 @@ class Cache(object):
     __metaclass__ = SettingsType
     use = Item('cache/use', True, 'There will be stored information in working directory to speed up mainly the correction tool.')
     mser = Item('cache/mser', True, 'Storing MSERs have huge impact on speed but it also needs huge space amount.')
-    img_manager_size_MB = 500
+    img_manager_size_MB = Item('cache/img_manager_size_MB', 500, '')
+    region_manager_num_of_instances = Item('cache/region_manager_num_of_instances', 50, '')
 
 class Colormarks:
     __metaclass__ = SettingsType

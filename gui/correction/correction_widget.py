@@ -303,7 +303,7 @@ class ResultsWidget(QtGui.QWidget):
                 c = r.centroid().copy()
                 self.update_marker_position(self.items[m_id], c)
 
-                if r.colormarks:
+                try:
                     height_ = 13
                     width_ = 30
                     im = np.zeros((height_*len(r.colormarks), width_, 3), dtype=np.uint8)
@@ -316,6 +316,8 @@ class ResultsWidget(QtGui.QWidget):
                     item.setPos(r.centroid()[1] + 10, r.centroid()[0])
 
                     self.colormarks_items.append(item)
+                except:
+                    pass
 
         self.active_markers = new_active_markers
 
