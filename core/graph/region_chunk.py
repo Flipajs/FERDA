@@ -21,11 +21,16 @@ class RegionChunk:
         if isinstance(ids, int):
             return self.get_region_(ids)
 
-        regions = []
+        new_ids = []
         for id in ids:
-            regions.append(self.get_region_(id))
+            if id < 0:
+                id_ = -id
+            else:
+                id_ = self.gm_.g.vp['region_id'][self.gm_.g.vertex(id)]
 
-        return regions
+            new_ids.append(id_)
+
+        return self.rm_[new_ids]
 
     def get_region_(self, id):
         # if there is direct link to region, the id is negative
