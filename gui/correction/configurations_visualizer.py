@@ -21,6 +21,7 @@ import math
 from gui.view.graph_visualizer import call_visualizer
 from gui.loading_widget import LoadingWidget
 from fitting_threading_manager import FittingThreadingManager
+from core.settings import Settings as S_
 
 
 class ConfigurationsVisualizer(QtGui.QWidget):
@@ -86,7 +87,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.fitting_finished_mutex = QtCore.QMutex()
         from utils.img_manager import ImgManager
         # TODO: add to settings
-        self.img_manager = ImgManager(self.project, max_size_mb=500)
+        self.img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
 
 
     def create_tool_w(self):

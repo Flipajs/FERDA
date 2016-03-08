@@ -136,12 +136,14 @@ class StatisticsWidget(QtGui.QWidget):
         obj_arr.append(d)
 
     def export_mat(self):
-        from utils.video_manager import get_auto_video_manager
         from core.graph.region_chunk import RegionChunk
-        vm = get_auto_video_manager(self.project)
+        import time
+
+        t = time.time()
 
         obj_arr = []
 
+        t1 = time.time()
         if not self.export_chunks_only.isChecked():
             for _, vs in self.project.gm.vertices_in_t.iteritems():
                 for v in vs:
@@ -154,15 +156,26 @@ class StatisticsWidget(QtGui.QWidget):
 
                         self.obj_arr_append_(obj_arr, d)
 
+        print "single regions t:", time.time() - t1
+
+
+        t2 = time.time()
+        t_ = 0
         for ch in self.project.gm.chunk_list():
             rch = RegionChunk(self.project.chm[ch], self.project.gm, self.project.rm)
             d = self.init_struct_(rch[0])
 
-            for r in rch:
+            rs_ = rch[:]
+            t__ = time.time()
+            for r in rs_:
                 self.add_line_mat(d, r)
 
             self.obj_arr_append_(obj_arr, d)
+            t_ += time.time() - t__
 
+        print "chunks only t:", time.time() - t2, t_
+
+        t3 = time.time()
         with open(self.get_out_path()+'.mat', 'wb') as f:
             arena = None
             if self.project.arena_model:
@@ -186,6 +199,10 @@ class StatisticsWidget(QtGui.QWidget):
                 arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
 
             sio.savemat(f, {'FERDA': obj_arr, 'arena:': arena})
+
+        print "save t:", time.time()-t3
+
+        print "WHOLE EXPORT t: ", time.time() - t
 
     def append_pts_(self, d, key, pts):
         px = []

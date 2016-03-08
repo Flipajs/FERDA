@@ -90,17 +90,13 @@ class RegionManager:
         if not isinstance(regions, Region):
             raise TypeError ("Region manager can only work with Region objects, not %s" % type(regions))
 
+        id = self.get_next_id()
+        regions.id_ = id
+        # self.add_to_cache_(id, regions)
         if self.use_db:
-            id = self.get_next_id()
-            regions.id_ = id
-            self.add_to_cache_(id, regions)
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute("INSERT INTO regions VALUES (?, ?)", (id, self.prepare_region(regions)))
             self.con.commit()
-        else:
-            id = self.get_next_id()
-            regions.id_ = id
-            self.add_to_cache_(id, regions)
 
         return self.tmp_ids
 
@@ -259,7 +255,7 @@ class RegionManager:
         l = len(sql_ids)
         if l == 1:
             # if only one id has to be taken from db
-            cmd = "SELECT data FROM regions WHERE id = %s" % sql_ids[0]
+            cmd = "SELECT data FROM regions WHERE id = '%s'" % sql_ids[0]
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
             self.con.commit()

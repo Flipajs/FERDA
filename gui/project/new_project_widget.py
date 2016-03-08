@@ -21,7 +21,7 @@ from gui.init.set_msers import SetMSERs
 from core.project.project import Project
 from gui.init.crop_video_widget import CropVideoWidget
 from functools import partial
-
+from core.settings import Settings as S_
 
 class NewProjectWidget(QtGui.QWidget):
     def __init__(self, finish_callback):
@@ -218,7 +218,7 @@ class NewProjectWidget(QtGui.QWidget):
 
         self.project.use_colormarks = self.use_colormarks_ch.isChecked()
         from utils.img_manager import ImgManager
-        self.project.img_manager = ImgManager(self.project)
+        self.project.img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
 
         if self.finish_callback:
             self.finish_callback('project_created', self.project)
