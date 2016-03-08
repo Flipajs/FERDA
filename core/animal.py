@@ -15,13 +15,20 @@ colors_ = [(145, 95, 22), (54, 38, 227), (0, 191, 255), (204, 102, 153), (117, 1
 
 
 class Animal():
-    def __init__(self, id=0, name=None, colormark=None):
+    def __init__(self, id=0, name=None, colormark=None, color=None):
         self.id = id
         self.name = male_names_[id]
+        if name:
+            self.name = name
+
         if colormark:
             self.color_ = colormark.color_
         else:
             self.color_ = colors_[id]
+
+        # Workaround...
+        if color:
+            self.color_ = color
 
 
         self.init_pos_center_ = None
