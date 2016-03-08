@@ -320,7 +320,7 @@ class Project:
 
         self.gm.project = self
         self.gm.rm = self.rm
-        self.gm.update_nodes_in_t_refs()
+        # self.gm.update_nodes_in_t_refs()
 
         self.img_manager = ImgManager(self, max_size_mb=S_.cache.img_manager_size_MB)
 
