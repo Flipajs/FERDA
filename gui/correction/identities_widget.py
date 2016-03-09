@@ -132,7 +132,7 @@ if __name__ == '__main__':
         project.chm[ch_id].animal_id_ = animal_id
 
     ex = IdentitiesWidget(project)
-    ex.update(1000)
+    ex.update(3000)
     ex.show()
 
     app.exec_()
