@@ -272,13 +272,15 @@ def centered_crop(img, new_h, new_w):
         Warning('cropped area cannot be bigger then original image!')
         return img
 
-    return img[y_:y_+new_h, x_:x_+new_w, :]
+    return img[y_:y_+new_h, x_:x_+new_w, :].copy()
 
-def get_bounding_box(r, project, relative_border=1.3):
+def get_bounding_box(r, project, relative_border=1.3, img=None):
     from math import ceil
 
-    frame = r.frame()
-    img = project.img_manager.get_whole_img(frame)
+    if img is None:
+        frame = r.frame()
+        img = project.img_manager.get_whole_img(frame)
+
     roi = r.roi()
 
     height2 = int(ceil((roi.height() * relative_border) / 2.0))

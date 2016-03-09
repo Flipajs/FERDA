@@ -255,7 +255,8 @@ class GraphManager:
     def chunks_in_frame(self, frame):
         chunks = self.chunk_list()
         in_frame = []
-        for ch in chunks:
+        for ch_id in chunks:
+            ch = self.project.chm[ch_id]
             if ch.start_frame(self.project.gm) <= frame <= ch.end_frame(self.project.gm):
                 in_frame.append(ch)
         return in_frame
