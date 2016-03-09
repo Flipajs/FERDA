@@ -676,8 +676,18 @@ class Solver:
                     for e in v.in_edges():
                         self.project.gm.g.ep['score'][e] = 0
 
-    def detect_split_merge_cases(self):
-        for t in self.project.gm.vertices_in_t:
+    def detect_split_merge_cases(self, frames=None):
+        if frames is None:
+            frames = self.project.gm.vertices_in_t
+        else:
+            frames_ = []
+            for t in frames:
+                if t in self.project.gm.vertices_in_t:
+                    frames_.append(t)
+
+            frames = frames_
+
+        for t in frames:
             vs = [v for v in self.project.gm.vertices_in_t[t]]
 
             while vs:
