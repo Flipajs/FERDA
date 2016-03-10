@@ -156,7 +156,10 @@ class RegionManager:
                 raise TypeError ("Region manager can only work with Region objects, not %s" % type(r))
             id = self.get_next_id()
             r.id_ = id
-            self.add_to_cache_(id, r)
+
+            if self.cache_size_limit_ != 0:
+                self.add_to_cache_(id, r)
+
             yield (id, self.prepare_region(r))
 
     def get_next_id(self):

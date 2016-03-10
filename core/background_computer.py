@@ -1,15 +1,13 @@
-__author__ = 'fnaiser'
-
+import time
+import sys
+import os
+import errno
 import numpy as np
 from utils.video_manager import get_auto_video_manager
 import multiprocessing as mp
 from core.region.mser import get_msers_
 from PyQt4 import QtGui, QtCore
-import time
 from functools import partial
-import sys
-import os
-import errno
 from core.settings import Settings as S_
 import cPickle as pickle
 import networkx as nx
@@ -20,6 +18,7 @@ from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 from core.graph.chunk import Chunk
 from gui.graph_view.vis_loader import VisLoader
+from utils.color_manager import colorize_project
 
 
 class BackgroundComputer:
@@ -146,6 +145,9 @@ class BackgroundComputer:
 
         vertex_map = {}
         used_chunks_ids = set()
+
+        t1 = time.time()
+
         # reindex vertices
         for v_id in old_g_relevant_vertices:
             old_v = old_g.vertex(v_id)
@@ -158,9 +160,12 @@ class BackgroundComputer:
             used_chunks_ids.add(old_g.vp['chunk_start_id'][old_v])
             used_chunks_ids.add(old_g.vp['chunk_end_id'][old_v])
 
+        print "reindexing t: ", time.time() - t1
+
         # because 0 id means - no chunk assigned!
         used_chunks_ids.remove(0)
 
+        t1 = time.time()
         # go through all edges and copy them with all edge properties...
         for old_e in old_g.edges():
             v1_old = old_e.source()
@@ -182,37 +187,57 @@ class BackgroundComputer:
             new_e = new_gm.add_edge(v1_new, v2_new, old_score)
             new_gm.g.ep['certainty'][new_e] = old_g.ep['certainty'][old_e]
 
+        print "edges t:", time.time() - t1
+
         # chunk id = 0 means no chunk assigned
         chunks_map = {0: 0}
+
+        t1 = time.time()
+
+        ids_ = []
         # update chunks
         for old_id_ in used_chunks_ids:
             ch = old_chm[old_id_]
 
             new_list = []
+            reg_ids_in_row = []
             for old_v in ch.nodes_:
                 if old_v in vertex_map:
+                    if len(reg_ids_in_row) > 0:
+                        ids_ = new_rm.add(old_rm[reg_ids_in_row])
+                        ids_ = map(lambda x: -x, ids_)
+
+                        new_list.extend(ids_)
+                        reg_ids_in_row = []
+
                     new_list.append(int(vertex_map[old_v]))
                 else:
-                    id_ = new_rm.add(old_rm[old_g.vp['region_id'][old_g.vertex(old_v)]])
-                    # list of ids is returned [id] ...
-                    id_ = id_[0]
+                    reg_ids_in_row.append(old_g.vp['region_id'][old_g.vertex(old_v)])
 
-                    # this happens in case when the vertex will not be in new graph, but we wan't to keep the region in
-                    # RM (e. g. for inner points of chunks)
-                    new_list.append(-id_)
+            if len(reg_ids_in_row) > 0:
+                ids_ = new_rm.add(old_rm[reg_ids_in_row])
+                ids_ = map(lambda x: -x, ids_)
+
+                new_list.extend(ids_)
 
             _, new_id_ = new_chm.new_chunk(new_list, new_gm)
 
             chunks_map[old_id_] = new_id_
 
+        print "chunk update t: ", time.time() - t1
+
+        t1 = time.time()
         for old_v, new_v in vertex_map.iteritems():
             new_gm.g.vp['chunk_start_id'][new_v] = chunks_map[old_g.vp['chunk_start_id'][old_v]]
             new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
+
+        print "graph update t: ", time.time() - t1
 
     def piece_results_together(self):
         from core.graph.graph_manager import GraphManager
         # TODO: add to settings
         self.project.rm = RegionManager(db_wd=self.project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
+        # self.project.rm = RegionManager(db_wd=self.project.working_directory, cache_size_limit=-1)
         self.project.chm = ChunkManager()
         self.solver = Solver(self.project)
         self.project.gm = GraphManager(self.project, self.solver.assignment_score)
@@ -233,7 +258,7 @@ class BackgroundComputer:
         self.project.color_manager = None
 
         print "merging..."
-        # for i in range(part_num):
+        t1 = time.time()
         for i in range(part_num):
             rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
                                    db_name='part' + str(i) + '_rm.sqlite3')
@@ -248,16 +273,17 @@ class BackgroundComputer:
 
             self.update_callback((i + 1) / float(part_num))
 
+        print "merging t: ", time.time() - t1
+
         fir = self.project.solver_parameters.frames_in_row
 
         self.update_callback(-1, 'joining parts...')
-
-        self.project.solver.detect_split_merge_cases()
 
         print "reconnecting graphs"
 
         vs_todo = []
 
+        t1 = time.time()
         for part_end_t in range(fir, fir*part_num, fir):
             t_v = self.project.gm.get_vertices_in_t(part_end_t-1)
             t1_v = self.project.gm.get_vertices_in_t(part_end_t)
@@ -265,12 +291,17 @@ class BackgroundComputer:
             vs_todo.extend(t_v)
 
             self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
-            # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
+        print "connect graph t: ", time.time()-t1
 
-        self.project.solver.detect_split_merge_cases()
-        self.solver.simplify(vs_todo, rules=[self.solver.adaptive_threshold])
+        t1 = time.time()
+        self.project.solver.detect_split_merge_cases(frames=range(self.frames_in_row-1, self.frames_in_row * (self.part_num + 1), self.frames_in_row))
+        print "detect split_merge_cases t: ", time.time() - t1
 
         print "simplifying "
+        t1 = time.time()
+        self.solver.simplify(vs_todo, rules=[self.solver.adaptive_threshold])
+        print "simplifying t: ", time.time() - t1
+
 
         # # TEST:
         # queue = self.project.gm.get_all_relevant_vertices()
@@ -292,8 +323,6 @@ class BackgroundComputer:
 
         self.project.gm.project = self.project
 
-        from utils.color_manager import colorize_project
-        import time
         s = time.time()
         colorize_project(self.project)
         print "color manager takes %f seconds" % (time.time() - s)
