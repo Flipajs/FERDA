@@ -226,18 +226,40 @@ class ResultsWidget(QtGui.QWidget):
 
         self.colormarks_items = []
 
-        self.test_alpha_()
+        self.one_frame_items = []
+        # self.test_alpha_()
+
+    def show_regions(self, frame):
+        for m_id, ch in self.active_markers:
+            rch = RegionChunk(ch,  self.project.gm, self.project.rm)
+            r = rch.region_in_t(frame)
+
+            self.draw_region(r)
+
+    def draw_region(self, r):
+        from utils.img import get_cropped_pts
+        pts_, roi = get_cropped_pts(r, return_roi=True)
+        offset = roi.top_left_corner()
+
+        qim_ = QtGui.QImage(roi.width(), roi.height(), QtGui.QImage.Format_ARGB32)
+        qim_.fill(QtGui.qRgba(0, 0, 0, 0))
+
+        for i in range(pts_.shape[0]):
+            qim_.setPixel(pts_[i, 1], pts_[i, 0], QtGui.qRgba(100, 0, 0, 255))
+
+        self.one_frame_items.append(self.scene.addPixmap(QtGui.QPixmap.fromImage(qim_)))
+        self.one_frame_items[-1].setPos(offset[1], offset[0])
+        # item.setPos(offset[1], offset[0])
+        # self.one_frame_items.append(item)
+
 
     def test_alpha_(self):
-        im = np.zeros((100, 100, 3))
+        # im = np.zeros((100, 100, 3)) + 30
 
-        pixmap = cvimg2qtpixmap(im)
-        # pixmap.setAlphaChannel(pixmap)
-        qimage = pixmap.toImage()
+        a = np.random.randint(0,256,size=(100,100,3)).astype(np.uint32)
+        b = (100 << 24 | a[:,:,0] << 16 | a[:,:,1] << 8 | a[:,:,2]).flatten()
 
-        for i in range(10):
-            for j in range(10):
-                qimage.setPixel(i, j, QtGui.qRgba(0, 0, 0, 255))
+        qimage = QtGui.QImage(b, 100, 100, QtGui.QImage.Format_ARGB32)
 
         item = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimage))
         item.setPos(100, 200)
@@ -329,6 +351,15 @@ class ResultsWidget(QtGui.QWidget):
             [150, 0, 0]
         ]
 
+        # TODO: WTF? Kdyz mazu rovnou, nezobrazuje to dalsi pridane itemy, proto zkusim oddalit mazani
+        if len(self.one_frame_items) > 50:
+            for i, it in enumerate(self.one_frame_items):
+                if i > 30:
+                    break
+
+                self.scene.removeItem(it)
+                self.one_frame_items.pop(0)
+
         for m_id, ch in self.active_markers:
             rch = RegionChunk(ch,  self.project.gm, self.project.rm)
             if frame == rch.end_frame() + 1:
@@ -338,6 +369,8 @@ class ResultsWidget(QtGui.QWidget):
                 r = rch.region_in_t(frame)
                 c = r.centroid().copy()
                 self.update_marker_position(self.items[m_id], c)
+
+                self.draw_region(r)
 
                 try:
                     height_ = 13

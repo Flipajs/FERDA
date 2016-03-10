@@ -154,9 +154,12 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
     return img
 
 
-def get_cropped_pts(region):
+def get_cropped_pts(region, return_roi=True):
     roi_ = region.roi()
     pts = region.pts() - roi_.top_left_corner()
+
+    if return_roi:
+        return pts, roi_
 
     return pts
 
