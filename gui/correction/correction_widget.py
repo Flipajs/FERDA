@@ -89,7 +89,10 @@ class ResultsWidget(QtGui.QWidget):
     def __init__(self, project, start_on_frame=-1):
         super(ResultsWidget, self).__init__()
 
-        self.vbox = QtGui.QVBoxLayout()
+        self.show_identities = True
+
+        self.hbox = QtGui.QHBoxLayout()
+        self.right_vbox = QtGui.QVBoxLayout()
         self.solver = None
         self.project = project
         self.video = get_auto_video_manager(project)
@@ -101,7 +104,24 @@ class ResultsWidget(QtGui.QWidget):
         self.pixMap = None
         self.pixMapItem = None
 
-        self.setLayout(self.vbox)
+        self.setLayout(self.hbox)
+        self.splitter = QtGui.QSplitter()
+
+        if self.show_identities:
+            self.scroll_ = QtGui.QScrollArea()
+            self.scroll_.setWidgetResizable(True)
+            from gui.correction.identities_widget import IdentitiesWidget
+            self.identities_widget = IdentitiesWidget(self.project)
+            self.identities_widget.setMinimumWidth(200)
+            self.scroll_.setWidget(self.identities_widget)
+
+            self.splitter.addWidget(self.scroll_)
+
+        self.right_w = QtGui.QWidget()
+        self.right_w.setLayout(self.right_vbox)
+        self.splitter.addWidget(self.right_w)
+
+        self.hbox.addWidget(self.splitter)
 
         graphics_view_widget = QtGui.QWidget()
         self.graphics_view = MyView(graphics_view_widget)
@@ -109,7 +129,7 @@ class ResultsWidget(QtGui.QWidget):
 
         self.video_widget = QtGui.QWidget()
         self.video_layout = QtGui.QVBoxLayout()
-        self.vbox.addLayout(self.video_layout)
+        self.right_vbox.addLayout(self.video_layout)
         # self.video_widget.setLayout(self.video_layout)
 
         self.video_control_widget = QtGui.QWidget()
@@ -205,6 +225,22 @@ class ResultsWidget(QtGui.QWidget):
         self.highlight_timer2nd.timeout.connect(partial(self.decrease_highlight_marker_opacity, True))
 
         self.colormarks_items = []
+
+        self.test_alpha_()
+
+    def test_alpha_(self):
+        im = np.zeros((100, 100, 3))
+
+        pixmap = cvimg2qtpixmap(im)
+        # pixmap.setAlphaChannel(pixmap)
+        qimage = pixmap.toImage()
+
+        for i in range(10):
+            for j in range(10):
+                qimage.setPixel(i, j, QtGui.qRgba(0, 0, 0, 255))
+
+        item = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimage))
+        item.setPos(100, 200)
 
     def frame_jump(self):
         f = int(self.frameEdit.text())
@@ -330,6 +366,8 @@ class ResultsWidget(QtGui.QWidget):
                 self.active_markers.append((m_id, ch))
 
     def update_positions(self, frame, optimized=True):
+        self.identities_widget.update(frame)
+
         for c in self.colormarks_items:
             c.setVisible(False)
 

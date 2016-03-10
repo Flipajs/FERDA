@@ -22,24 +22,33 @@ class AnimalVisu(QtGui.QWidget):
 
         cimg = np.zeros((15, 10, 3), dtype=np.uint8)
         cimg = np.asarray(cimg+animal.color_, dtype=np.uint8)
-        self.color_label = gui_utils.get_image_label(cimg)
+        self.color_img = gui_utils.get_image_label(cimg)
+        self.img1 = None
+        self.img2 = None
 
-        self.hbox.addWidget(self.color_label)
+        self.hbox.addWidget(self.color_img)
         self.hbox.addWidget(QtGui.QLabel(animal.name))
 
         self.orig_img = None
         self.adjusted_img = None
 
     def update_visu(self, img, region, project):
+        if self.img1 is not None:
+            self.hbox.removeWidget(self.img1)
+            self.img1.deleteLater()
+            self.img1 = None
+
+        if self.img2 is not None:
+            self.hbox.removeWidget(self.img2)
+            self.img2.deleteLater()
+            self.img2 = None
+
         if region is None:
             # set gray images
             return
 
         from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
-        relative_border = 5.1
-        border = 50
-
-        bb, offset = get_bounding_box(region, project, relative_border, img)
+        border = 30
 
         from utils.img import get_safe_selection
         roi_ = region.roi()
@@ -50,10 +59,11 @@ class AnimalVisu(QtGui.QWidget):
 
         bb = get_safe_selection(img, y, x, h_, w_)
 
-        self.color_label1 = gui_utils.get_image_label(bb)
-        self.hbox.addWidget(self.color_label1)
+        self.img1 = gui_utils.get_image_label(bb)
+        self.hbox.addWidget(self.img1)
+
         bb = rotate_img(bb, region.theta_)
-        bb = centered_crop(bb, 8*region.b_, 4*region.a_)
+        bb = centered_crop(bb, 6*region.b_, 3*region.a_)
 
         import matplotlib as mpl
         bb_hsv = mpl.colors.rgb_to_hsv(bb)
@@ -63,8 +73,9 @@ class AnimalVisu(QtGui.QWidget):
 
         bb = np.asarray(np.clip(bb - bb.min(), 0, 255), dtype=np.uint8)
 
-        self.color_label = gui_utils.get_image_label(bb)
-        self.hbox.addWidget(self.color_label)
+        self.img2 = gui_utils.get_image_label(bb)
+        self.hbox.addWidget(self.img2)
+
 
 
 
@@ -105,7 +116,8 @@ class IdentitiesWidget(QtGui.QWidget):
 
         for ch in chunks:
             r_ch = RegionChunk(ch, self.p.gm, self.p.rm)
-            regions[ch.animal_id_] = r_ch.region_in_t(frame)
+            if ch.animal_id_ > -1:
+                regions[ch.animal_id_] = r_ch.region_in_t(frame)
 
         for i in range(len(self.p.animals)):
             self.animal_widgets[i].update_visu(img, regions[i], self.p)
@@ -133,6 +145,7 @@ if __name__ == '__main__':
 
     ex = IdentitiesWidget(project)
     ex.update(3000)
+    ex.update(100)
     ex.show()
 
     app.exec_()

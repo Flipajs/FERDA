@@ -1,5 +1,5 @@
 import sys
-
+import cPickle as pickle
 from PyQt4 import QtGui
 
 from gui import main_window
@@ -26,6 +26,18 @@ if is_flipajs_pc():
                 'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
     project.load(wd+name+'/cam1.fproj')
+
+    with open(project.working_directory+'/temp/animal_id_mapping.pkl', 'rb') as f_:
+        animal_id_mapping = pickle.load(f_)
+
+    for ch_id in project.gm.chunk_list():
+        animal_id = -1
+        if ch_id in animal_id_mapping:
+            animal_id = animal_id_mapping[ch_id]
+
+        project.chm[ch_id].animal_id_ = animal_id
+
+
     ex.widget_control('load_project', project)
 
 
