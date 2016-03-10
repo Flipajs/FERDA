@@ -148,6 +148,8 @@ class BackgroundComputer:
 
         t1 = time.time()
 
+        single_vertices = []
+
         # reindex vertices
         for v_id in old_g_relevant_vertices:
             old_v = old_g.vertex(v_id)
@@ -159,6 +161,9 @@ class BackgroundComputer:
 
             used_chunks_ids.add(old_g.vp['chunk_start_id'][old_v])
             used_chunks_ids.add(old_g.vp['chunk_end_id'][old_v])
+
+            if old_g.vp['chunk_start_id'][old_v] == 0 and old_g.vp['chunk_end_id'][old_v] == 0:
+                single_vertices.append(new_v)
 
         print "reindexing t: ", time.time() - t1
 
@@ -232,6 +237,12 @@ class BackgroundComputer:
             new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
 
         print "graph update t: ", time.time() - t1
+
+        # create chunk for each single vertex
+        for v_id in single_vertices:
+            ch, id = project.chm.new_chunk([int(v_id)], project.gm)
+            new_gm.g.vp['chunk_start_id'][v_id] = id
+            new_gm.g.vp['chunk_end_id'][v_id] = id
 
     def piece_results_together(self):
         from core.graph.graph_manager import GraphManager

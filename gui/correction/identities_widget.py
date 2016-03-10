@@ -116,6 +116,7 @@ class IdentitiesWidget(QtGui.QWidget):
 
         for ch in chunks:
             r_ch = RegionChunk(ch, self.p.gm, self.p.rm)
+
             if ch.animal_id_ > -1:
                 regions[ch.animal_id_] = r_ch.region_in_t(frame)
 

@@ -10,27 +10,29 @@ from core.region.region import Region
 
 class Chunk:
     def __init__(self, vertices_ids, id_, gm, color=None):
-        if not isinstance(vertices_ids, list):
-            raise Exception('vertices_ids must be a list! (in chunk.py)')
-        if len(vertices_ids) < 2:
-            raise Exception('vertices_ids must be a list with length >= 2 (in chunk.py)')
+        # if not isinstance(vertices_ids, list):
+        #     raise Exception('vertices_ids must be a list! (in chunk.py)')
+        # if len(vertices_ids) < 2:
+        #     raise Exception('vertices_ids must be a list with length >= 2 (in chunk.py)')
         self.id_ = id_
 
         # list of integers. If >= 0 means vertex_id, if < 0 direct link -> region_id
         self.nodes_ = vertices_ids
         self.color = color
         self.statistics = {}
+        self.animal_id_ = -1
 
-        if vertices_ids[0] > 0:
-            v1 = gm.g.vertex(vertices_ids[0])
-            for e in v1.out_edges():
-                gm.remove_edge_(e)
+        if len(vertices_ids) > 1:
+            if vertices_ids[0] > 0:
+                v1 = gm.g.vertex(vertices_ids[0])
+                for e in v1.out_edges():
+                    gm.remove_edge_(e)
 
-        if vertices_ids[1] > 0:
-            v2 = gm.g.vertex(vertices_ids[1])
+            if vertices_ids[1] > 0:
+                v2 = gm.g.vertex(vertices_ids[1])
 
-            for e in v2.in_edges():
-                gm.remove_edge_(e)
+                for e in v2.in_edges():
+                    gm.remove_edge_(e)
 
         self.chunk_reconnect_(gm)
 
@@ -252,6 +254,8 @@ class Chunk:
         return True if self.length() == 0 else False
 
     def chunk_reconnect_(self, gm):
-        gm.add_edge(self.start_node(), self.end_node(), 1.0)
+        if len(self.nodes_) > 1:
+            gm.add_edge(self.start_node(), self.end_node(), 1.0)
+
         gm.g.vp['chunk_start_id'][gm.g.vertex(self.start_node())] = self.id()
         gm.g.vp['chunk_end_id'][gm.g.vertex(self.end_node())] = self.id()

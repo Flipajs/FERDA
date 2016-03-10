@@ -228,11 +228,11 @@ class ResultsWidget(QtGui.QWidget):
 
         self.one_frame_items = []
 
-        self.show_contour = False
+        self.show_contour = True
         self.alpha_contour = 240
         self.show_filled = False
         self.alpha_filled = 120
-        self.show_markers = True
+        self.show_markers = False
 
         self.colors_ = [
                 QtGui.QColor().fromRgbF(0, 0, 1), #
@@ -252,7 +252,7 @@ class ResultsWidget(QtGui.QWidget):
         qim_ = QtGui.QImage(roi.width(), roi.height(), QtGui.QImage.Format_ARGB32)
         qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
-        c = QtGui.qRgba(100, 100, 100, alpha)
+        c = QtGui.qRgba(180, 180, 180, alpha)
         if animal_id > -1:
             c_ = self.colors_[animal_id]
             c = QtGui.qRgba(c_.red(), c_.green(), c_.blue(), alpha)
@@ -262,6 +262,7 @@ class ResultsWidget(QtGui.QWidget):
 
         self.one_frame_items.append(self.scene.addPixmap(QtGui.QPixmap.fromImage(qim_)))
         self.one_frame_items[-1].setPos(offset[1], offset[0])
+        self.one_frame_items[-1].setZValue(0.5)
 
     def frame_jump(self):
         f = int(self.frameEdit.text())
@@ -352,16 +353,8 @@ class ResultsWidget(QtGui.QWidget):
             [150, 0, 0]
         ]
 
-        # # TODO: WTF? Kdyz mazu rovnou, nezobrazuje to dalsi pridane itemy, proto zkusim oddalit mazani
-        # if len(self.one_frame_items) > 50:
-        #     for i, it in enumerate(self.one_frame_items):
-        #         if i > 30:
-        #             break
-        #
-        #         if it.scene() == self.scene:
-        #             self.scene.removeItem(it)
-        #
-        #         self.one_frame_items.remove(it)
+        if frame == 50:
+            print "test"
 
         for m_id, ch in self.active_markers:
             rch = RegionChunk(ch,  self.project.gm, self.project.rm)
@@ -370,12 +363,10 @@ class ResultsWidget(QtGui.QWidget):
             else:
                 new_active_markers.append((m_id, ch))
                 r = rch.region_in_t(frame)
+
                 c = r.centroid().copy()
 
                 self.update_marker_position(self.items[m_id], c)
-
-                if self.show_contour or self.show_filled:
-                    self.draw_region(r, ch.animal_id_, alpha=self.alpha_filled if self.show_filled else self.alpha_contour)
 
                 try:
                     height_ = 13
@@ -403,6 +394,12 @@ class ResultsWidget(QtGui.QWidget):
 
                 self.update_marker_position(self.items[m_id], c)
                 self.active_markers.append((m_id, ch))
+
+        if self.show_contour or self.show_filled:
+            for m_id, ch in self.active_markers:
+                rch = RegionChunk(ch,  self.project.gm, self.project.rm)
+                r = rch.region_in_t(frame)
+                self.draw_region(r, ch.animal_id_, alpha=self.alpha_filled if self.show_filled else self.alpha_contour)
 
     def update_positions(self, frame, optimized=True):
         self.identities_widget.update(frame)
@@ -495,9 +492,11 @@ class ResultsWidget(QtGui.QWidget):
             except:
                 pass
 
-
             for ch in self.chunks:
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
+
+                if ch.id_ == 22:
+                    print "22"
 
                 col_ = ch.color
                 if animal_id_mapping is not None:
@@ -507,14 +506,12 @@ class ResultsWidget(QtGui.QWidget):
                     else:
                         col_ = QtGui.QColor().fromRgbF(0.3, 0.3, 0.3)
 
-
                 item = markers.CenterMarker(0, 0, MARKER_SIZE, col_, ch.id_, self.marker_changed)
                 item.setZValue(0.5)
                 self.items.append(item)
                 self.scene.addItem(item)
 
                 self.starting_frames.setdefault(rch.start_frame(), []).append((ch, i))
-                # if ch.start_n.frame_ != 0:
 
                 item.setVisible(False)
 
