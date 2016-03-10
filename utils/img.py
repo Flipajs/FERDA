@@ -154,15 +154,17 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
     return img
 
 
-def get_cropped_pts(region, return_roi=True):
+def get_cropped_pts(region, return_roi=True, only_contour=True):
     roi_ = region.roi()
-    pts = region.pts() - roi_.top_left_corner()
+    if only_contour:
+        pts = region.contour() - roi_.top_left_corner()
+    else:
+        pts = region.pts() - roi_.top_left_corner()
 
     if return_roi:
         return pts, roi_
 
     return pts
-
 
 def imresize(im,sz):
     """  Resize an image array using PIL. """

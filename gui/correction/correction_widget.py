@@ -227,42 +227,41 @@ class ResultsWidget(QtGui.QWidget):
         self.colormarks_items = []
 
         self.one_frame_items = []
-        # self.test_alpha_()
 
-    def show_regions(self, frame):
-        for m_id, ch in self.active_markers:
-            rch = RegionChunk(ch,  self.project.gm, self.project.rm)
-            r = rch.region_in_t(frame)
+        self.show_contour = False
+        self.alpha_contour = 240
+        self.show_filled = False
+        self.alpha_filled = 120
+        self.show_markers = True
 
-            self.draw_region(r)
+        self.colors_ = [
+                QtGui.QColor().fromRgbF(0, 0, 1), #
+                QtGui.QColor().fromRgbF(1, 0, 0),
+                QtGui.QColor().fromRgbF(1, 1, 0),
+                QtGui.QColor().fromRgbF(0, 1, 0), #
+                QtGui.QColor().fromRgbF(0, 1, 1),
+                QtGui.QColor().fromRgbF(1, 1, 1)
+            ]
 
-    def draw_region(self, r):
+    def draw_region(self, r, animal_id, alpha=120):
         from utils.img import get_cropped_pts
-        pts_, roi = get_cropped_pts(r, return_roi=True)
+
+        pts_, roi = get_cropped_pts(r, return_roi=True, only_contour=False if self.show_filled else True)
         offset = roi.top_left_corner()
 
         qim_ = QtGui.QImage(roi.width(), roi.height(), QtGui.QImage.Format_ARGB32)
         qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
+        c = QtGui.qRgba(100, 100, 100, alpha)
+        if animal_id > -1:
+            c_ = self.colors_[animal_id]
+            c = QtGui.qRgba(c_.red(), c_.green(), c_.blue(), alpha)
+
         for i in range(pts_.shape[0]):
-            qim_.setPixel(pts_[i, 1], pts_[i, 0], QtGui.qRgba(100, 0, 0, 255))
+            qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
 
         self.one_frame_items.append(self.scene.addPixmap(QtGui.QPixmap.fromImage(qim_)))
         self.one_frame_items[-1].setPos(offset[1], offset[0])
-        # item.setPos(offset[1], offset[0])
-        # self.one_frame_items.append(item)
-
-
-    def test_alpha_(self):
-        # im = np.zeros((100, 100, 3)) + 30
-
-        a = np.random.randint(0,256,size=(100,100,3)).astype(np.uint32)
-        b = (100 << 24 | a[:,:,0] << 16 | a[:,:,1] << 8 | a[:,:,2]).flatten()
-
-        qimage = QtGui.QImage(b, 100, 100, QtGui.QImage.Format_ARGB32)
-
-        item = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimage))
-        item.setPos(100, 200)
 
     def frame_jump(self):
         f = int(self.frameEdit.text())
@@ -319,7 +318,9 @@ class ResultsWidget(QtGui.QWidget):
             c[0] *= sf
             c[1] *= sf
 
-        marker.setVisible(True)
+        if self.show_markers:
+            marker.setVisible(True)
+
         marker.setPos(c[1] - MARKER_SIZE / 2, c[0] - MARKER_SIZE/2)
 
     def highlight_area(self, data, radius=50):
@@ -351,14 +352,16 @@ class ResultsWidget(QtGui.QWidget):
             [150, 0, 0]
         ]
 
-        # TODO: WTF? Kdyz mazu rovnou, nezobrazuje to dalsi pridane itemy, proto zkusim oddalit mazani
-        if len(self.one_frame_items) > 50:
-            for i, it in enumerate(self.one_frame_items):
-                if i > 30:
-                    break
-
-                self.scene.removeItem(it)
-                self.one_frame_items.pop(0)
+        # # TODO: WTF? Kdyz mazu rovnou, nezobrazuje to dalsi pridane itemy, proto zkusim oddalit mazani
+        # if len(self.one_frame_items) > 50:
+        #     for i, it in enumerate(self.one_frame_items):
+        #         if i > 30:
+        #             break
+        #
+        #         if it.scene() == self.scene:
+        #             self.scene.removeItem(it)
+        #
+        #         self.one_frame_items.remove(it)
 
         for m_id, ch in self.active_markers:
             rch = RegionChunk(ch,  self.project.gm, self.project.rm)
@@ -368,9 +371,11 @@ class ResultsWidget(QtGui.QWidget):
                 new_active_markers.append((m_id, ch))
                 r = rch.region_in_t(frame)
                 c = r.centroid().copy()
+
                 self.update_marker_position(self.items[m_id], c)
 
-                self.draw_region(r)
+                if self.show_contour or self.show_filled:
+                    self.draw_region(r, ch.animal_id_, alpha=self.alpha_filled if self.show_filled else self.alpha_contour)
 
                 try:
                     height_ = 13
@@ -395,6 +400,7 @@ class ResultsWidget(QtGui.QWidget):
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
                 r = rch.region_in_t(frame)
                 c = r.centroid().copy()
+
                 self.update_marker_position(self.items[m_id], c)
                 self.active_markers.append((m_id, ch))
 
@@ -425,6 +431,12 @@ class ResultsWidget(QtGui.QWidget):
                 self.active_markers.append((i, ch))
 
             i += 1
+
+        if self.show_contour or self.show_filled:
+            for m_id, ch in self.active_markers:
+                rch = RegionChunk(ch,  self.project.gm, self.project.rm)
+                r = rch.region_in_t(frame)
+                self.draw_region(r, ch.animal_id_, alpha=self.alpha_filled if self.show_filled else self.alpha_contour)
 
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""
@@ -475,15 +487,6 @@ class ResultsWidget(QtGui.QWidget):
 
             self.chunks = chs
         else:
-            colors_ = [
-                QtGui.QColor().fromRgbF(0, 0, 1), #
-                QtGui.QColor().fromRgbF(1, 0, 0),
-                QtGui.QColor().fromRgbF(1, 1, 0),
-                QtGui.QColor().fromRgbF(0, 1, 0), #
-                QtGui.QColor().fromRgbF(0, 1, 1),
-                QtGui.QColor().fromRgbF(1, 1, 1)
-            ]
-
             import cPickle as pickle
             animal_id_mapping = None
             try:
@@ -500,7 +503,7 @@ class ResultsWidget(QtGui.QWidget):
                 if animal_id_mapping is not None:
                     if ch.id_ in animal_id_mapping:
                         animal_id = animal_id_mapping[ch.id_]
-                        col_ = colors_[animal_id]
+                        col_ = self.colors_[animal_id]
                     else:
                         col_ = QtGui.QColor().fromRgbF(0.3, 0.3, 0.3)
 

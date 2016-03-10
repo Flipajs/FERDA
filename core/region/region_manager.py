@@ -258,8 +258,8 @@ class RegionManager:
             cmd = "SELECT data FROM regions WHERE id = '%s'" % sql_ids[0]
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
-            self.con.commit()
             row = self.cur.fetchone()
+            self.con.commit()
             # add it to result
             id = sql_ids[0]
             try:
@@ -275,8 +275,8 @@ class RegionManager:
             cmd = "SELECT id, data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
-            self.con.commit()
             rows = self.cur.fetchall()
+            self.con.commit()
             tmp_ids = []
             for row in rows:
                 if row[0] in tmp_ids:
