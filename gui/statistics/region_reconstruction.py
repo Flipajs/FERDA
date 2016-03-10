@@ -83,7 +83,7 @@ class RegionReconstruction(QtGui.QWidget):
         convex_t = 0
 
         for f in frames:
-            ch_in_frame = self.project.solver.chunks_in_frame(f)
+            ch_in_frame = self.project.solver.chunks_in_frame_range(f)
             im = vid.get_frame(f, auto=True)
             regions = get_msers_(im, self.project, frame=f)
 
@@ -139,7 +139,7 @@ class RegionReconstruction(QtGui.QWidget):
 
         for f in frames:
             reconstructed[f] = []
-            ch_in_frame = self.project.solver.chunks_in_frame(f)
+            ch_in_frame = self.project.solver.chunks_in_frame_range(f)
             im = vid.get_frame(f, auto=True)
             regions = get_msers_(im, self.project, frame=f)
 
