@@ -205,6 +205,10 @@ class StatisticsWidget(QtGui.QWidget):
                 obj_arr = []
                 file_num += 1
 
+        # save the rest
+        with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
+            sio.savemat(f, {'FERDA': obj_arr})
+
         print "chunks regions t:", time.time() - t2
 
         t3 = time.time()
@@ -230,7 +234,7 @@ class StatisticsWidget(QtGui.QWidget):
 
                 arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
 
-            sio.savemat(f, {'arena:': arena})
+            sio.savemat(f, {'arena': arena})
 
         print "save t:", time.time()-t3
 
