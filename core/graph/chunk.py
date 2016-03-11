@@ -185,6 +185,8 @@ class Chunk:
             ch2.merge(self, gm)
             return
 
+        gm.project.chm.remove_chunk(ch2, gm)
+
         ch1end = self.end_node()
         ch2start = ch2.start_node()
 
@@ -196,8 +198,6 @@ class Chunk:
 
         if not undo_action:
             self.chunk_reconnect_(gm)
-
-        del gm.project.chm.chunks_[ch2.id_]
 
     def merge_and_interpolate(self, ch2, gm, undo_action=False):
         if self.end_frame(gm) > ch2.start_frame(gm):

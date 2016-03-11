@@ -230,7 +230,7 @@ class ResultsWidget(QtGui.QWidget):
 
         self.show_contour = True
         self.alpha_contour = 240
-        self.show_filled = False
+        self.show_filled = True
         self.alpha_filled = 120
         self.show_markers = False
 
@@ -262,7 +262,7 @@ class ResultsWidget(QtGui.QWidget):
 
         self.one_frame_items.append(self.scene.addPixmap(QtGui.QPixmap.fromImage(qim_)))
         self.one_frame_items[-1].setPos(offset[1], offset[0])
-        self.one_frame_items[-1].setZValue(0.5)
+        self.one_frame_items[-1].setZValue(0.6)
 
     def frame_jump(self):
         f = int(self.frameEdit.text())
@@ -353,11 +353,6 @@ class ResultsWidget(QtGui.QWidget):
             [150, 0, 0]
         ]
 
-        if len(self.one_frame_items) > 5 * 6:
-            for i in range(6):
-                self.scene.removeItem(self.one_frame_items[0])
-                self.one_frame_items.pop(0)
-
         for m_id, ch in self.active_markers:
             rch = RegionChunk(ch,  self.project.gm, self.project.rm)
             if frame == rch.end_frame() + 1:
@@ -398,6 +393,7 @@ class ResultsWidget(QtGui.QWidget):
                 self.active_markers.append((m_id, ch))
 
         if self.show_contour or self.show_filled:
+            print "# active markers: ", len(self.active_markers)
             for m_id, ch in self.active_markers:
                 rch = RegionChunk(ch,  self.project.gm, self.project.rm)
                 r = rch.region_in_t(frame)
@@ -405,6 +401,10 @@ class ResultsWidget(QtGui.QWidget):
 
     def update_positions(self, frame, optimized=True):
         self.identities_widget.update(frame)
+
+        for i in range(len(self.one_frame_items)):
+            self.scene.removeItem(self.one_frame_items[0])
+            self.one_frame_items.pop(0)
 
         for c in self.colormarks_items:
             c.setVisible(False)
@@ -432,6 +432,7 @@ class ResultsWidget(QtGui.QWidget):
             i += 1
 
         if self.show_contour or self.show_filled:
+            print "# active markers: ", len(self.active_markers)
             for m_id, ch in self.active_markers:
                 rch = RegionChunk(ch,  self.project.gm, self.project.rm)
                 r = rch.region_in_t(frame)
