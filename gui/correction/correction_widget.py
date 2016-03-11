@@ -353,8 +353,10 @@ class ResultsWidget(QtGui.QWidget):
             [150, 0, 0]
         ]
 
-        if frame == 50:
-            print "test"
+        if len(self.one_frame_items) > 5 * 6:
+            for i in range(6):
+                self.scene.removeItem(self.one_frame_items[0])
+                self.one_frame_items.pop(0)
 
         for m_id, ch in self.active_markers:
             rch = RegionChunk(ch,  self.project.gm, self.project.rm)
