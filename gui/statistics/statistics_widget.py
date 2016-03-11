@@ -6,7 +6,9 @@ import scipy.io as sio
 import numpy as np
 from region_reconstruction import RegionReconstruction
 from fix_area import FixArea
-
+import sys
+from core.graph.region_chunk import RegionChunk
+from pympler import asizeof
 
 class StatisticsWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -70,6 +72,10 @@ class StatisticsWidget(QtGui.QWidget):
         self.file_type.setCurrentIndex(0)
 
         self.export_fbox.addRow('file type', self.file_type)
+
+        self.memory_limit_mb = QtGui.QLineEdit()
+        self.memory_limit_mb.setText('1000')
+        self.export_fbox.addRow('memory approx. limit (MB)', self.memory_limit_mb)
 
         self.export_b = QtGui.QPushButton('export')
         self.export_b.clicked.connect(self.export)
@@ -135,13 +141,31 @@ class StatisticsWidget(QtGui.QWidget):
 
         obj_arr.append(d)
 
+    def get_approx_region_size(self):
+        ch_test_num = min(10, len(self.project.chm.chunks_))
+
+        size_sum = 0
+        for i in range(1, ch_test_num+1):
+            rch = RegionChunk(self.project.chm[i], self.project.gm, self.project.rm)
+            # so we have some idea about uncompressed pts size
+            rch[0].pts()
+            size_sum += asizeof.asizeof(rch[0])
+
+        return int(size_sum / ch_test_num)
+
     def export_mat(self):
-        from core.graph.region_chunk import RegionChunk
         import time
 
         t = time.time()
 
+        approx_reg_size = self.get_approx_region_size()
+        print "APPROX REG SIZE", approx_reg_size
+
         obj_arr = []
+
+        # bytes to Mb * 1000 * 1000
+        limit = int(self.memory_limit_mb.text()) * 1000 * 1000
+        curr_size = 0
 
         t1 = time.time()
         if not self.export_chunks_only.isChecked():
@@ -152,31 +176,39 @@ class StatisticsWidget(QtGui.QWidget):
                     if not ch:
                         r = self.project.gm.region(v)
                         d = self.init_struct_(r)
+
+                        curr_size += asizeof.asizeof(d)
                         self.add_line_mat(d, r)
 
                         self.obj_arr_append_(obj_arr, d)
 
         print "single regions t:", time.time() - t1
 
-
         t2 = time.time()
-        t_ = 0
+        file_num = 0
         for ch in self.project.gm.chunk_list():
             rch = RegionChunk(self.project.chm[ch], self.project.gm, self.project.rm)
             d = self.init_struct_(rch[0])
 
             rs_ = rch[:]
-            t__ = time.time()
             for r in rs_:
                 self.add_line_mat(d, r)
 
+            curr_size += asizeof.asizeof(d)
             self.obj_arr_append_(obj_arr, d)
-            t_ += time.time() - t__
 
-        print "chunks only t:", time.time() - t2, t_
+            if curr_size > limit:
+                with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
+                    sio.savemat(f, {'FERDA': obj_arr})
+
+                curr_size = 0
+                obj_arr = []
+                file_num += 1
+
+        print "chunks regions t:", time.time() - t2
 
         t3 = time.time()
-        with open(self.get_out_path()+'.mat', 'wb') as f:
+        with open(self.get_out_path()+'_arena.mat', 'wb') as f:
             arena = None
             if self.project.arena_model:
                 am = self.project.arena_model
@@ -198,7 +230,7 @@ class StatisticsWidget(QtGui.QWidget):
 
                 arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
 
-            sio.savemat(f, {'FERDA': obj_arr, 'arena:': arena})
+            sio.savemat(f, {'arena:': arena})
 
         print "save t:", time.time()-t3
 
