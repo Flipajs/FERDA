@@ -83,7 +83,7 @@ class CaseWidget(QtGui.QWidget):
             for g in self.vertices_groups:
                 for n in g:
                     ch, _ = self.project.gm.is_chunk(n)
-                    if ch:
+                    if ch and ch.length() > 1:
                         chunk_nodes.add(n)
                         self.color_assignments[n] = (ch.color.blue(), ch.color.green(), ch.color.red(), self.opacity)
                     else:
@@ -411,7 +411,7 @@ class CaseWidget(QtGui.QWidget):
         for g in self.vertices_groups:
             for n in g:
                 ch, t_rev = self.project.gm.is_chunk(n)
-                if ch:
+                if ch and ch.length() > 1:
                     t = self.project.gm.region(n).frame_ - self.frame_t
 
                     if t_rev:

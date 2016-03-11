@@ -243,7 +243,7 @@ class ResultsWidget(QtGui.QWidget):
                 QtGui.QColor().fromRgbF(1, 1, 1)
             ]
 
-    def draw_region(self, r, animal_id, alpha=120):
+    def draw_region(self, r, animal_id, use_ch_color=None, alpha=120):
         from utils.img import get_cropped_pts
 
         pts_, roi = get_cropped_pts(r, return_roi=True, only_contour=False if self.show_filled else True)
@@ -253,9 +253,12 @@ class ResultsWidget(QtGui.QWidget):
         qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
         c = QtGui.qRgba(180, 180, 180, alpha)
-        if animal_id > -1:
-            c_ = self.colors_[animal_id]
-            c = QtGui.qRgba(c_.red(), c_.green(), c_.blue(), alpha)
+        if use_ch_color:
+            c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
+        else:
+            if animal_id > -1:
+                c_ = self.colors_[animal_id]
+                c = QtGui.qRgba(c_.red(), c_.green(), c_.blue(), alpha)
 
         for i in range(pts_.shape[0]):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
@@ -339,68 +342,8 @@ class ResultsWidget(QtGui.QWidget):
             self.highlight_marker2nd.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
             self.highlight_marker2nd_frame = data['n2'].frame_
 
-    def update_positions_optimized(self, frame):
-        new_active_markers = []
-
-        # TODO: BGR, offset 1
-        # R B G Y dark B
-        colors = [
-            [0, 0, 0],
-            [0, 0, 255],
-            [255, 0, 0],
-            [0, 255, 0],
-            [0, 255, 255],
-            [150, 0, 0]
-        ]
-
-        for m_id, ch in self.active_markers:
-            rch = RegionChunk(ch,  self.project.gm, self.project.rm)
-            if frame == rch.end_frame() + 1:
-                self.items[m_id].setVisible(False)
-            else:
-                new_active_markers.append((m_id, ch))
-                r = rch.region_in_t(frame)
-
-                c = r.centroid().copy()
-
-                self.update_marker_position(self.items[m_id], c)
-
-                try:
-                    height_ = 13
-                    width_ = 30
-                    im = np.zeros((height_*len(r.colormarks), width_, 3), dtype=np.uint8)
-
-                    for c, i in zip(r.colormarks, range(len(r.colormarks))):
-                        w_ = max(5, min(width_, c[0].shape[0] / 5))
-                        im[i*height_:(i+1)*height_, :w_, :] = self.project.colormarks_model.colors_[c[1]]
-
-                    item = self.scene.addPixmap(cvimg2qtpixmap(im))
-                    item.setPos(r.centroid()[1] + 10, r.centroid()[0])
-
-                    self.colormarks_items.append(item)
-                except:
-                    pass
-
-        self.active_markers = new_active_markers
-
-        if frame in self.starting_frames:
-            for ch, m_id in self.starting_frames[frame]:
-                rch = RegionChunk(ch, self.project.gm, self.project.rm)
-                r = rch.region_in_t(frame)
-                c = r.centroid().copy()
-
-                self.update_marker_position(self.items[m_id], c)
-                self.active_markers.append((m_id, ch))
-
-        if self.show_contour or self.show_filled:
-            print "# active markers: ", len(self.active_markers)
-            for m_id, ch in self.active_markers:
-                rch = RegionChunk(ch,  self.project.gm, self.project.rm)
-                r = rch.region_in_t(frame)
-                self.draw_region(r, ch.animal_id_, alpha=self.alpha_filled if self.show_filled else self.alpha_contour)
-
     def update_positions(self, frame, optimized=True):
-        self.identities_widget.update(frame)
+        # self.identities_widget.update(frame)
 
         for i in range(len(self.one_frame_items)):
             self.scene.removeItem(self.one_frame_items[0])
@@ -411,32 +354,18 @@ class ResultsWidget(QtGui.QWidget):
 
         self.colormarks_items = []
 
-        if optimized:
-            self.update_positions_optimized(frame)
-            return
-
-        self.active_markers = []
-
         i = 0
-        for ch in self.chunks:
-            rch = RegionChunk(ch, self.project.gm, self.project.rm)
-            c = rch.centroid_in_t(frame)
 
-            if c is None:
-                self.items[i].setVisible(False)
-            else:
-                c = c.copy()
-                self.update_marker_position(self.items[i], c)
-                self.active_markers.append((i, ch))
+        for ch in self.project.chm.chunks_in_frame(frame):
+            rch = RegionChunk(ch, self.project.gm, self.project.rm)
+            r = rch.region_in_t(frame)
+            c = r.centroid().copy()
+            self.update_marker_position(self.items[i], c)
+
+            if self.show_contour or self.show_filled:
+                self.draw_region(r, ch.animal_id_, use_ch_color=ch.color, alpha=self.alpha_filled if self.show_filled else self.alpha_contour)
 
             i += 1
-
-        if self.show_contour or self.show_filled:
-            print "# active markers: ", len(self.active_markers)
-            for m_id, ch in self.active_markers:
-                rch = RegionChunk(ch,  self.project.gm, self.project.rm)
-                r = rch.region_in_t(frame)
-                self.draw_region(r, ch.animal_id_, alpha=self.alpha_filled if self.show_filled else self.alpha_contour)
 
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""
