@@ -122,7 +122,7 @@ class BackgroundComputer:
             self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
             self.piece_results_together()
 
-    def merge_parts(self, new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm):
+    def merge_parts(self, new_gm, old_g, project, old_rm, old_chm):
         """
         merges all parts (from parallelisation)
         we want to merge all these structures (graph, region and chunk managers) into one
@@ -151,7 +151,10 @@ class BackgroundComputer:
         single_vertices = []
 
         # reindex vertices
-        for v_id in old_g_relevant_vertices:
+        for v_id in old_g.vertices():
+            if not old_g.vp['active'][v_id]:
+                continue
+
             old_v = old_g.vertex(v_id)
             old_reg = old_rm[old_g.vp['region_id'][old_v]]
             new_rm.add(old_reg)
@@ -277,10 +280,10 @@ class BackgroundComputer:
             with open(self.project.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
                 up = pickle.Unpickler(f)
                 g_ = up.load()
-                relevant_vertices = up.load()
+                _ = up.load()
                 chm_ = up.load()
 
-                self.merge_parts(self.project.gm, g_, relevant_vertices, self.project, rm_old, chm_)
+                self.merge_parts(self.project.gm, g_, self.project, rm_old, chm_)
 
             self.update_callback((i + 1) / float(part_num))
 
@@ -301,7 +304,7 @@ class BackgroundComputer:
 
             vs_todo.extend(t_v)
 
-            self.connect_graphs(t_v, t1_v, self.project.gm, self.project.rm)
+            self.connect_graphs(t_v, t1_v)
         print "connect graph t: ", time.time()-t1
 
         t1 = time.time()
@@ -312,21 +315,6 @@ class BackgroundComputer:
         t1 = time.time()
         self.solver.simplify(vs_todo, rules=[self.solver.adaptive_threshold])
         print "simplifying t: ", time.time() - t1
-
-
-        # # TEST:
-        # queue = self.project.gm.get_all_relevant_vertices()
-        # for v in queue:
-        #     v = self.project.gm.g.vertex(v)
-        #
-        #     ch, ch_is_end = self.project.gm.is_chunk(v)
-        #     if ch:
-        #         if ch_is_end:
-        #             if v.in_degree() > 1:
-        #                 print "END, DEGREE > 1", self.project.gm.region(v).frame_
-        #         else:
-        #             if v.out_degree() > 1:
-        #                 print "BEGINNING, DEGREE > 1", self.project.gm.region(v).frame_
 
         S_.general.log_graph_edits = True
 
@@ -345,22 +333,9 @@ class BackgroundComputer:
 
         self.finished_callback(self.solver)
 
-    def connect_graphs(self, vertices1, vertices2, gm, rm):
+    def connect_graphs(self, vertices1, vertices2):
         if vertices1:
-            r1 = gm.region(vertices1[0])
-
             self.project.gm.add_edges_(vertices1, vertices2)
-
-        # for v1 in vertices1:
-        #     r1 = gm.region(v1)
-        #     for v2 in vertices2:
-        #         r2 = gm.region(v2)
-        #
-        #         d = np.linalg.norm(r1.centroid() - r2.centroid())
-        #
-        #         if d < gm.max_distance:
-        #             s, ds, multi, antlike = self.solver.assignment_score(r1, r2)
-        #             gm.add_edge_fast(v1, v2, 0)
 
     def OnProcessOutputReady(self, p_id):
         while True:

@@ -398,9 +398,10 @@ def colorize_project(project):
     for ch in project.chm.chunk_list():
         if ch.length() > 0:
             if ch.length() < 100:
-                r = random.randint(0, 255)
-                g = random.randint(0, 255)
-                b = random.randint(0, 255)
+                r = random.randint(50, 255)
+                g = random.randint(50, 255)
+                b = random.randint(50, 255)
+
                 c = QtGui.QColor.fromRgb(r, g, b)
                 ch.color = c
             else:

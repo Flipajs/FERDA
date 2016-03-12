@@ -19,7 +19,7 @@ class ChunkManager:
         ch = Chunk(vertices_ids, self.id_, gm)
         self.chunks_[self.id_] = ch
 
-        self.itree.addi(ch.start_frame(gm)-self.eps1, ch.end_frame(gm)+self.eps1, ch)
+        self._add_ch_itree(ch, gm)
 
         # assign chunk color
         r1 = gm.region(vertices_ids[0])
@@ -38,16 +38,28 @@ class ChunkManager:
 
         return l
 
-    def remove_chunk(self, ch, gm):
-        if isinstance(ch, int):
-            ch = self.chunks_[ch]
+    def _add_ch_itree(self, ch, gm):
+        self.itree.addi(ch.start_frame(gm)-self.eps1, ch.end_frame(gm)+self.eps1, ch)
 
+    def _try_ch_itree_delete(self, ch, gm):
         try:
             self.itree.removei(ch.start_frame(gm)-self.eps1, ch.end_frame(gm)+self.eps1, ch)
         except ValueError:
             pass
 
+    def remove_chunk(self, ch, gm):
+        if isinstance(ch, int):
+            ch = self.chunks_[ch]
+
+        self._try_ch_itree_delete(ch, gm)
         del self.chunks_[ch.id_]
+
+    def update_chunk(self, ch, gm):
+        if isinstance(ch, int):
+            ch = self.chunks_[ch]
+
+        self._try_ch_itree_delete(ch, gm)
+        self._add_ch_itree(ch, gm)
 
     def get_chunks_from_intervals_(self, intervals):
         chunks = [i.data for i in intervals]

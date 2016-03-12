@@ -11,79 +11,11 @@ from core.animal import colors_
 from core.settings import Settings as S_
 from core.graph.region_chunk import RegionChunk
 import numpy as np
+from video_slider import VideoSlider
+from select_all_line_edit import SelectAllLineEdit
+
 
 MARKER_SIZE = 15
-
-class VideoSlider(QtGui.QSlider):
-    """A slider that changes it's value directly to the part where it was clicked instead of slowly sliding there.
-    Also, it's nice! """
-
-    def __init__(self, parent=None):
-        super(VideoSlider, self).__init__(parent)
-        self.usercontrolled = False
-        self.recentlyreleased = False
-        self.setPageStep(0)
-        self.setSingleStep(0)
-        self.setStyleSheet("""
-            QSlider::groove:horizontal {
-                background: white;
-            }
-
-            QSlider::sub-page:horizontal {
-                background: green;
-                background: qlineargradient(x1: 1, y1: 0,    x2: 0, y2: 0, stop: 0 #085700, stop: 1 #5DA556);
-            }
-
-            QSlider::handle:horizontal {
-                background: #5DA556;
-                border: 0px;
-                width: 0px;
-                margin-top: 0px;
-                margin-bottom: 0px;
-                border-radius: 0px;
-            }
-        """)
-
-    def mousePressEvent(self, QMouseEvent):
-        super(VideoSlider, self).mousePressEvent(QMouseEvent)
-        self.usercontrolled = True
-        opt = QtGui.QStyleOptionSlider()
-        self.initStyleOption(opt)
-        sr = self.style().subControlRect(QtGui.QStyle.CC_Slider, opt, QtGui.QStyle.SC_SliderHandle, self)
-
-        if QMouseEvent.button() == QtCore.Qt.LeftButton and not sr.contains(QMouseEvent.pos()):
-            if self.orientation() == QtCore.Qt.Vertical:
-                newVal = self.minimum() + ((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.y()))/self.height()
-            else:
-                newVal = self.minimum() + (self.maximum() - self.minimum()) * QMouseEvent.x() / self.width()
-            if self.invertedAppearance():
-                self.setValue(self.maximum() - newVal)
-            else:
-                self.setValue(newVal)
-
-    def mouseReleaseEvent(self, QMouseEvent):
-        self.usercontrolled = False
-        self.recentlyreleased = True
-        super(VideoSlider, self).mouseReleaseEvent(QMouseEvent)
-
-
-class SelectAllLineEdit(QtGui.QLineEdit):
-    def __init__(self, parent=None):
-        super(SelectAllLineEdit, self).__init__(parent)
-        self.readyToEdit = True
-        self.setFixedHeight(15)
-
-    def mousePressEvent(self, e, Parent=None):
-        super(SelectAllLineEdit, self).mousePressEvent(e) #required to deselect on 2e click
-        if self.readyToEdit:
-            self.selectAll()
-            self.readyToEdit = False
-
-    def focusOutEvent(self, e):
-        super(SelectAllLineEdit, self).focusOutEvent(e) #required to remove cursor on focusOut
-        self.deselect()
-        self.readyToEdit = True
-
 
 class ResultsWidget(QtGui.QWidget):
     def __init__(self, project, start_on_frame=-1):
@@ -92,7 +24,9 @@ class ResultsWidget(QtGui.QWidget):
         self.show_identities = True
 
         self.hbox = QtGui.QHBoxLayout()
+        self.hbox.setContentsMargins(0, 0, 0, 0)
         self.right_vbox = QtGui.QVBoxLayout()
+        self.right_vbox.setContentsMargins(0, 0, 0, 0)
         self.solver = None
         self.project = project
         self.video = get_auto_video_manager(project)
@@ -150,6 +84,7 @@ class ResultsWidget(QtGui.QWidget):
         self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
         self.speedSlider.setMinimum(0)
         self.speedSlider.setMaximum(99)
+        self.init_speed_slider()
 
         self.backward = QtGui.QPushButton('back')
         self.backward.setShortcut(S_.controls.video_prev)
@@ -281,12 +216,6 @@ class ResultsWidget(QtGui.QWidget):
                     dec_fact = 0.04
 
                 self.highlight_marker2nd.setOpacity(op - dec_fact)
-
-                # self.highlight_marker.setVisible(False)
-                # self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(255, 255, 0), 0, self.marker_changed)
-                # self.highlight_marker.setOpacity(0.40)
-                # self.highlight_marker.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
-                # self.scene.addItem(self.highlight_marker)
             else:
                 self.highlight_timer2nd.stop()
         else:
@@ -298,12 +227,6 @@ class ResultsWidget(QtGui.QWidget):
                     dec_fact = 0.04
 
                 self.highlight_marker.setOpacity(op - dec_fact)
-
-                # self.highlight_marker.setVisible(False)
-                # self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(255, 255, 0), 0, self.marker_changed)
-                # self.highlight_marker.setOpacity(0.40)
-                # self.highlight_marker.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
-                # self.scene.addItem(self.highlight_marker)
             else:
                 self.highlight_timer.stop()
 
@@ -343,8 +266,6 @@ class ResultsWidget(QtGui.QWidget):
             self.highlight_marker2nd_frame = data['n2'].frame_
 
     def update_positions(self, frame, optimized=True):
-        # self.identities_widget.update(frame)
-
         for i in range(len(self.one_frame_items)):
             self.scene.removeItem(self.one_frame_items[0])
             self.one_frame_items.pop(0)
@@ -356,7 +277,9 @@ class ResultsWidget(QtGui.QWidget):
 
         i = 0
 
+        print "FRAME: ", frame
         for ch in self.project.chm.chunks_in_frame(frame):
+            print ch.id_
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
             r = rch.region_in_t(frame)
             c = r.centroid().copy()
@@ -371,7 +294,7 @@ class ResultsWidget(QtGui.QWidget):
         """Initiates components associated with speed of viewing videos"""
         self.speedSlider.setValue(self.frame_rate)
         self.timer.setInterval(1000 / self.frame_rate)
-        self.fpsLabel.setText(str(self.frame_rate) + ' fps')
+        # self.fpsLabel.setText(str(self.frame_rate) + ' fps')
         self.speedSlider.setMinimum(1)
         self.speedSlider.setMaximum(120)
 

@@ -185,10 +185,11 @@ class Chunk:
             ch2.merge(self, gm)
             return
 
-        gm.project.chm.remove_chunk(ch2, gm)
-
         ch1end = self.end_node()
         ch2start = ch2.start_node()
+
+        gm.project.chm.remove_chunk(ch2, gm)
+        gm.project.chm._try_ch_itree_delete(self, gm)
 
         if not undo_action:
             gm.remove_vertex(ch1end, disassembly=False)
@@ -198,6 +199,8 @@ class Chunk:
 
         if not undo_action:
             self.chunk_reconnect_(gm)
+
+        gm.project.chm._add_ch_itree(self, gm)
 
     def merge_and_interpolate(self, ch2, gm, undo_action=False):
         if self.end_frame(gm) > ch2.start_frame(gm):
