@@ -16,6 +16,7 @@ import matplotlib.colors as colors
 import math
 import scipy.ndimage
 from utils.roi import get_roi
+import matplotlib as mpl
 
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), return_offset=False):
@@ -308,3 +309,12 @@ def endpoint_rot(bb_img, pt, theta, centroid):
     new_pt = [int(round(pt[0][0] + bb_img.shape[0]/2)), int(round(pt[1][0] + bb_img.shape[1]/2))]
 
     return new_pt
+
+def img_saturation(img, saturation_coef=2.0, intensity_coef=1.0):
+    img_hsv = mpl.colors.rgb_to_hsv(img)
+    img_hsv[:,:,1] *= saturation_coef
+    img_hsv[:,:,2] *= intensity_coef
+    img = mpl.colors.hsv_to_rgb(img_hsv)
+    img = np.asarray(np.clip(img - img.min(), 0, 255), dtype=np.uint8)
+
+    return img

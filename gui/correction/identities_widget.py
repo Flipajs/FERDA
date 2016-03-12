@@ -65,13 +65,8 @@ class AnimalVisu(QtGui.QWidget):
         bb = rotate_img(bb, region.theta_)
         bb = centered_crop(bb, 6*region.b_, 3*region.a_)
 
-        import matplotlib as mpl
-        bb_hsv = mpl.colors.rgb_to_hsv(bb)
-        bb_hsv[:,:,1] *= 2.0
-        bb_hsv[:,:,2] *= 1.2
-        bb = mpl.colors.hsv_to_rgb(bb_hsv)
-
-        bb = np.asarray(np.clip(bb - bb.min(), 0, 255), dtype=np.uint8)
+        from utils.img import img_saturation
+        bb = img_saturation(bb, saturation_coef=2.0, intensity_coef=1.2)
 
         self.img2 = gui_utils.get_image_label(bb)
         self.hbox.addWidget(self.img2)
