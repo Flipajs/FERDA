@@ -187,8 +187,9 @@ class SetMSERs(QtGui.QWidget):
                     continue
 
             cont = get_contour(r.pts())
-            crop = draw_points_crop(img_vis, cont, (0, 255, 0, 0.9), square=True)
-            draw_points(img_vis, cont, (0, 255, 0, 0.9))
+            img_ = img_vis.copy()
+            crop = draw_points_crop(img_, cont, (0, 255, 0, 0.9), square=True)
+            draw_points(img_, cont, (0, 255, 0, 0.9))
 
             img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
             pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())

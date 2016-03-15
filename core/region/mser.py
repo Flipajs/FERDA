@@ -38,7 +38,8 @@ class Mser():
         self.mser.process_image(gray, intensity_threshold)
         regions = self.mser.get_regions()
 
-        if prefiltered:
+        # if prefiltered:
+        if False:
             groups = get_region_groups_dict_(regions)
             ids = margin_filter_dict_(regions, groups)
             if region_min_intensity is not None and region_min_intensity < 256:
@@ -121,10 +122,16 @@ def ferda_filtered_msers(img, project, frame=-1):
     if project.mser_parameters.use_children_filter:
         m = get_msers_(img, project, frame, prefiltered=True)
         groups = get_region_groups(m)
-        ids = margin_filter(m, groups)
+
+        ids = []
+        for g in groups:
+            for id_ in g:
+                ids.append(id_)
+
+        # ids = margin_filter(m, groups)
         # # min_area = project.stats.area_median * 0.2
         # # ids = area_filter(m, ids, min_area)
-        ids = children_filter(m, ids)
+        # ids = children_filter(m, ids)
         if project.stats:
             ids = antlikeness_filter(project.stats.antlikeness_svm, project.solver_parameters.antlikeness_threshold, m, ids)
 
