@@ -83,7 +83,7 @@ class IdentitiesWidget(QtGui.QWidget):
         # TOOD: remove in future
         self.p.animals = [
             # BGR colors
-            Animal(0, 'light blue', color=(255, 100, 70)),
+            Animal(0, 'light blue', color=(255, 191, 0)),
             Animal(1, 'red', color=(0, 0, 255)),
             Animal(2, 'yellow', color=(0, 255, 255)),
             Animal(3, 'green', color=(0, 255, 0)),

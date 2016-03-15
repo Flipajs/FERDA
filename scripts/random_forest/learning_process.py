@@ -16,17 +16,18 @@ class LearningProcess:
     def __init__(self, p):
         self.p = p
 
+        self._eps1 = 0.01
+        self._eps2 = 0.1
+
         self.get_features = self.get_features_var1
         self.animal_id_mapping = {}
 
         self.id_names_pd = None
         self.old_x_size = 0
 
-        if False:
+        if True:
             self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
             self.candidate_chunks = self.get_candidate_chunks()
-
-            # self.set_ids_()
 
             self.chunks_itree = self.build_itree_()
             self.class_frequences = []
@@ -88,7 +89,7 @@ class LearningProcess:
     def build_itree_(self):
         itree = IntervalTree()
         for ch in self.candidate_chunks:
-            itree.addi(ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch.id_)
+            itree.addi(ch.start_frame(self.p.gm) - self._eps1, ch.end_frame(self.p.gm) + self._eps1, ch.id_)
 
         return itree
 
@@ -179,11 +180,8 @@ class LearningProcess:
         for i in range(6):
             print i, np.sum(self.y == i)
 
-
         with open(self.p.working_directory + '/temp/animal_id_mapping.pkl', 'wb') as f_:
             pickle.dump(self.animal_id_mapping, f_)
-
-
 
     def get_frequence_vector_(self):
         return float(np.sum(self.class_frequences)) / self.class_frequences
@@ -216,8 +214,7 @@ class LearningProcess:
     def apply_consistency_rule(self, ch, probs):
         start_f = ch.start_frame(self.p.gm)
         end_f = ch.end_frame(self.p.gm)
-        eps = 0.1
-        intervals = self.chunks_itree[start_f-eps:end_f+eps]
+        intervals = self.chunks_itree[start_f-self._eps2:end_f + self._eps2]
 
         for i in intervals:
             if i.data in self.animal_id_mapping:
@@ -392,7 +389,7 @@ class LearningProcess:
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam2_orig/cam2.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam2/cam2.fproj')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p)

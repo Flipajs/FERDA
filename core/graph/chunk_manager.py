@@ -46,6 +46,8 @@ class ChunkManager:
             self.itree.removei(ch.start_frame(gm)-self.eps1, ch.end_frame(gm)+self.eps1, ch)
         except ValueError:
             pass
+        except KeyError:
+            pass
 
     def remove_chunk(self, ch, gm):
         if isinstance(ch, int):

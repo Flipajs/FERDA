@@ -13,6 +13,8 @@ from core.graph.region_chunk import RegionChunk
 import numpy as np
 from video_slider import VideoSlider
 from select_all_line_edit import SelectAllLineEdit
+from utils.misc import is_flipajs_pc
+import cPickle as pickle
 
 
 MARKER_SIZE = 15
@@ -41,6 +43,19 @@ class ResultsWidget(QtGui.QWidget):
         self.setLayout(self.hbox)
         self.splitter = QtGui.QSplitter()
 
+        self.left_w = QtGui.QWidget()
+        self.left_vbox = QtGui.QVBoxLayout()
+        self.left_vbox.setContentsMargins(0, 0, 0, 0)
+        self.left_w.setLayout(self.left_vbox)
+        self.save_gt_b = QtGui.QPushButton('save gt')
+        self.save_gt_b.clicked.connect(self._save_gt)
+        self.save_gt_a = QtGui.QAction('save gt', self)
+        self.save_gt_a.triggered.connect(self._save_gt)
+        self.save_gt_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_G))
+        self.addAction(self.save_gt_a)
+
+        self.left_vbox.addWidget(self.save_gt_b)
+
         if self.show_identities:
             self.scroll_ = QtGui.QScrollArea()
             self.scroll_.setWidgetResizable(True)
@@ -49,7 +64,8 @@ class ResultsWidget(QtGui.QWidget):
             self.identities_widget.setMinimumWidth(200)
             self.scroll_.setWidget(self.identities_widget)
 
-            self.splitter.addWidget(self.scroll_)
+            self.left_vbox.addWidget(self.scroll_)
+            self.splitter.addWidget(self.left_w)
 
         self.right_w = QtGui.QWidget()
         self.right_w.setLayout(self.right_vbox)
@@ -83,7 +99,6 @@ class ResultsWidget(QtGui.QWidget):
         self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
         self.speedSlider.setMinimum(0)
         self.speedSlider.setMaximum(99)
-        self.init_speed_slider()
 
         self.backward = QtGui.QPushButton('back')
         self.backward.setShortcut(S_.controls.video_prev)
@@ -124,6 +139,8 @@ class ResultsWidget(QtGui.QWidget):
         self.video_control_buttons_layout.addWidget(self.frameEdit)
         self.video_control_buttons_layout.addWidget(self.frame_jump_button)
 
+        self.init_speed_slider()
+
         self.reset_colors_b = QtGui.QPushButton('reset colors')
         self.reset_colors_b.clicked.connect(self.reset_colors)
         self.video_control_buttons_layout.addWidget(self.reset_colors_b)
@@ -156,23 +173,10 @@ class ResultsWidget(QtGui.QWidget):
         self.show_staurated_ch.setChecked(False)
         self.show_staurated_ch.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_staurated_ch)
-        # self.visu_controls_layout.addWidget(QtGui.QLabel('markers:'))
-        # self.show_markers_ch = QtGui.QCheckBox()
-        # self.show_markers_ch.setChecked(False)
-        # # lambda is used because if only self.update_position is given, it will give it parameters...
-        # self.show_markers_ch.stateChanged.connect(lambda x: self.update_positions())
-        # self.visu_controls_layout.addWidget(self.show_markers_ch)
 
         self.connect_GUI()
 
         self.video.next_frame()
-        #
-        # if img is not None:
-        #     self.pixMap = cvimg2qtpixmap(img)
-        #     item = self.scene.addPixmap(self.pixMap)
-        #     self.pixMapItem = item
-        #     self.update_frame_number()
-
         self.chunks = []
         self.starting_frames = {}
         self.markers = []
@@ -208,8 +212,35 @@ class ResultsWidget(QtGui.QWidget):
                 QtGui.QColor().fromRgbF(1, 1, 1)
             ]
 
-        self.update_positions()
-        # self.graphics_view.set
+        self._gt = None
+        self._gt_file = self.project.working_directory + '/GT_sparse.pkl'
+        self._gt_corr_step = 50
+        if is_flipajs_pc():
+            try:
+                with open(self._gt_file, 'rb') as f:
+                    self._gt = pickle.load(f)
+            except:
+                self._gt = {}
+
+        # self.update_positions()
+
+    def _save_gt(self):
+        if self._gt is None:
+            print "No GT file opened"
+            return
+
+        frame = self.video.frame_number()
+        self._gt.setdefault(frame, {})
+
+        for it in self.gitems['gt_markers']:
+            self._gt[frame][it.id] = (it.centerPos().y(), it.centerPos().x())
+
+        with open(self._gt_file, 'wb') as f:
+            pickle.dump(self._gt, f)
+
+        self.change_frame(frame + self._gt_corr_step)
+        print self._gt[frame]
+
 
     def test_print_(self):
         print "TEST"
@@ -304,16 +335,25 @@ class ResultsWidget(QtGui.QWidget):
     def _show_gt_markers(self, animal_ids2centroids):
         for a in self.project.animals:
             c_ = QtGui.QColor(a.color_[2], a.color_[1], a.color_[0])
-            gt_m = markers.CenterMarker(0, 0, 10, c_, id=0, changeHandler=self._gt_marker_clicked)
+
+            frame = self.video.frame_number()
 
             x = 10*a.id
             y = -1
-
             if a.id in animal_ids2centroids:
-                y = animal_ids2centroids[a.id][0] - 5
-                x = animal_ids2centroids[a.id][1] - 5
+                y = animal_ids2centroids[a.id][0]
+                x = animal_ids2centroids[a.id][1]
 
-            gt_m.setPos(x, y)
+            radius = 10
+            if frame in self._gt:
+                if a.id in self._gt[frame]:
+                    radius = 20
+                    y = self._gt[frame][a.id][0]
+                    x = self._gt[frame][a.id][1]
+
+            gt_m = markers.CenterMarker(0, 0, radius, c_, id=a.id, changeHandler=self._gt_marker_clicked)
+
+            gt_m.setPos(x - radius/2, y-radius/2)
 
             self.gitems['gt_markers'].append(gt_m)
             self.scene.addItem(gt_m)
@@ -383,7 +423,7 @@ class ResultsWidget(QtGui.QWidget):
         """Initiates components associated with speed of viewing videos"""
         self.speedSlider.setValue(self.frame_rate)
         self.timer.setInterval(1000 / self.frame_rate)
-        # self.fpsLabel.setText(str(self.frame_rate) + ' fps')
+        self.fpsLabel.setText(str(self.frame_rate) + ' fps')
         self.speedSlider.setMinimum(1)
         self.speedSlider.setMaximum(120)
 

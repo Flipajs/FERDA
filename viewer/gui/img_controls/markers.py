@@ -18,7 +18,9 @@ class BaseMarker(QtGui.QGraphicsEllipseItem, object):
         self.setBrush(brush)
         self.setFlag(self.ItemSendsGeometryChanges, True)
 
+        # antId is deprecated
         self.antId = antId
+        self.id = antId
         self.changeHandler = changeHandler
         self.recently_changed = False
 

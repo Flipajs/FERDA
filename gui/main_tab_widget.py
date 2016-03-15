@@ -80,6 +80,7 @@ class MainTabWidget(QtGui.QWidget):
             self.results_tab.setParent(None)
 
             self.results_tab = ResultsWidget(self.project)
+            self.results_tab.update_positions()
             # self.results_tab.add_data(self.project.solver, self.show_results_only_around_frame)
             self.tabs.insertTab(1, self.results_tab, 'results viewer')
             self.tabs.setCurrentIndex(1)
