@@ -48,9 +48,9 @@ class ResultsWidget(QtGui.QWidget):
         self.left_vbox.setContentsMargins(0, 0, 0, 0)
         self.left_w.setLayout(self.left_vbox)
         self.save_gt_b = QtGui.QPushButton('save gt')
-        self.save_gt_b.clicked.connect(self._save_gt)
+        self.save_gt_b.clicked.connect(self.__save_gt)
         self.save_gt_a = QtGui.QAction('save gt', self)
-        self.save_gt_a.triggered.connect(self._save_gt)
+        self.save_gt_a.triggered.connect(self.__save_gt)
         self.save_gt_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_G))
         self.addAction(self.save_gt_a)
 
@@ -233,8 +233,7 @@ class ResultsWidget(QtGui.QWidget):
         my_data = {}
 
         for frame in self._gt:
-            my_data = {}
-            my_data[frame] = [None] * len(self.project.animals)
+            my_data[frame] = np.array(([None] * len(self.project.animals)))
             for ch in self.project.chm.chunks_in_frame(frame):
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
 
@@ -243,25 +242,50 @@ class ResultsWidget(QtGui.QWidget):
 
         from utils.clearmetrics.clearmetrics import ClearMetrics
         threshold = 10
-        clear = ClearMetrics(self._gt, my_data, threshold)
+
+        gt_ = self.__prepare_gt()
+
+        clear = ClearMetrics(gt_, my_data, threshold)
         clear.match_sequence()
         evaluation = [clear.get_mota(),
-                  clear.get_motp(),
-                  clear.get_fn_count(),
-                  clear.get_fp_count(),
-                  clear.get_mismatches_count(),
-                  clear.get_object_count(),
-                  clear.get_matches_count()]
+                      clear.get_motp(),
+                      clear.get_fn_count(),
+                      clear.get_fp_count(),
+                      clear.get_mismatches_count(),
+                      clear.get_object_count(),
+                      clear.get_matches_count()]
 
-        print evaluation
+        print ("MOTA: %.3f\nMOTP: %.3f\n#FN: %d\n#FP:%d\n#mismatches: %d\n#objects: %d\n#matchs: %d") % (
+            tuple(evaluation)
+        )
 
-    def _save_gt(self):
+        return evaluation
+
+    def __prepare_gt(self):
+        new_ = {}
+
+        for frame in self._gt:
+            new_[frame] = [None] * len(self._gt[frame])
+
+            for i, data in enumerate(self._gt[frame]):
+                y = data[0]
+                x = data[1]
+
+                if y < 50 and x < 100:
+                    continue
+
+                else:
+                    new_[frame][i] = (y, x)
+
+        return new_
+
+    def __save_gt(self):
         if self._gt is None:
             print "No GT file opened"
             return
 
         frame = self.video.frame_number()
-        self._gt.setdefault(frame, {})
+        self._gt.setdefault(frame, [None]*len(self.project.animals))
 
         for it in self.gitems['gt_markers']:
             self._gt[frame][it.id] = (it.centerPos().y(), it.centerPos().x())
@@ -271,10 +295,6 @@ class ResultsWidget(QtGui.QWidget):
 
         self.change_frame(frame + self._gt_corr_step)
         print self._gt[frame]
-
-
-    def test_print_(self):
-        print "TEST"
 
     def draw_region(self, r, animal_id, use_ch_color=None, alpha=120):
         from utils.img import get_cropped_pts
@@ -621,17 +641,7 @@ class ResultsWidget(QtGui.QWidget):
         """Changes current frame to position given. If there is no such position, calls self.out_of_frames"""
         if self.video is not None:
             self.video.seek_frame(position)
-            # if img is not None:
-            #     if self.pixMapItem is not None:
-            #         self.scene.removeItem(self.pixMapItem)
-            #     self.pixMap = cvimg2qtpixmap(img)
-            #     # view_add_bg_image(self.graphics_view, self.pixMap)
-            #     item = self.scene.addPixmap(self.pixMap)
-            #     self.pixMapItem = item
-            #     self.update_frame_number()
             self.update_positions(self.video.frame_number())
-            # else:
-            #     self.out_of_frames()
 
     def reset_colors(self):
         print "COLORIZING "
@@ -639,20 +649,3 @@ class ResultsWidget(QtGui.QWidget):
         colorize_project(self.project)
 
         print "COLORIZING DONE..."
-
-# def view_add_bg_image(g_view, pix_map):
-#     gv_w = g_view.geometry().width()
-#     gv_h = g_view.geometry().height()
-#     im_w = pix_map.width()
-#     im_h = pix_map.height()
-#
-#     m11 = g_view.transform().m11()
-#     m22 = g_view.transform().m22()
-#
-#     if m11 and m22 == 1:
-#         if gv_w / float(im_w) <= gv_h / float(im_h):
-#             val = math.floor((gv_w / float(im_w))*100) / 100
-#             g_view.scale(val, val)
-#         else:
-#             val = math.floor((gv_h / float(im_h))*100) / 100
-#             g_view.scale(val, val)
