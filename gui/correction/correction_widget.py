@@ -67,6 +67,11 @@ class ResultsWidget(QtGui.QWidget):
             self.left_vbox.addWidget(self.scroll_)
             self.splitter.addWidget(self.left_w)
 
+
+        self.evolve_gt_b = QtGui.QPushButton('evolve GT')
+        self.evolve_gt_b.clicked.connect(self._evolve_gt)
+        self.left_vbox.addWidget(self.evolve_gt_b)
+
         self.right_w = QtGui.QWidget()
         self.right_w.setLayout(self.right_vbox)
         self.splitter.addWidget(self.right_w)
@@ -223,6 +228,32 @@ class ResultsWidget(QtGui.QWidget):
                 self._gt = {}
 
         # self.update_positions()
+
+    def _evolve_gt(self):
+        my_data = {}
+
+        for frame in self._gt:
+            my_data = {}
+            my_data[frame] = [None] * len(self.project.animals)
+            for ch in self.project.chm.chunks_in_frame(frame):
+                rch = RegionChunk(ch, self.project.gm, self.project.rm)
+
+                if ch.animal_id_ > -1:
+                    my_data[frame][ch.animal_id_] = rch.centroid_in_t(frame)
+
+        from utils.clearmetrics.clearmetrics import ClearMetrics
+        threshold = 10
+        clear = ClearMetrics(self._gt, my_data, threshold)
+        clear.match_sequence()
+        evaluation = [clear.get_mota(),
+                  clear.get_motp(),
+                  clear.get_fn_count(),
+                  clear.get_fp_count(),
+                  clear.get_mismatches_count(),
+                  clear.get_object_count(),
+                  clear.get_matches_count()]
+
+        print evaluation
 
     def _save_gt(self):
         if self._gt is None:
