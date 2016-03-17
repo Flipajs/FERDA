@@ -232,6 +232,8 @@ class ResultsWidget(QtGui.QWidget):
     def _evolve_gt(self):
         my_data = {}
 
+        # TODO: clearmetrics bug workaround...
+        max_frame = 0
         for frame in self._gt:
             my_data[frame] = np.array(([None] * len(self.project.animals)))
             for ch in self.project.chm.chunks_in_frame(frame):
@@ -239,6 +241,11 @@ class ResultsWidget(QtGui.QWidget):
 
                 if ch.animal_id_ > -1:
                     my_data[frame][ch.animal_id_] = rch.centroid_in_t(frame)
+
+            max_frame = max(max_frame, frame)
+
+        for f in xrange(max_frame):
+            my_data.setdefault(f, np.array([None] * len(self.project.animals)))
 
         from utils.clearmetrics.clearmetrics import ClearMetrics
         threshold = 10
@@ -255,7 +262,7 @@ class ResultsWidget(QtGui.QWidget):
                       clear.get_object_count(),
                       clear.get_matches_count()]
 
-        print ("MOTA: %.3f\nMOTP: %.3f\n#FN: %d\n#FP:%d\n#mismatches: %d\n#objects: %d\n#matchs: %d") % (
+        print ("MOTA: %.3f\nMOTP: %.3f\n#FN: %d\n#FP:%d\n#mismatches: %d\n#objects: %d\n#matches: %d") % (
             tuple(evaluation)
         )
 
@@ -397,10 +404,9 @@ class ResultsWidget(QtGui.QWidget):
 
             radius = 10
             if frame in self._gt:
-                if a.id in self._gt[frame]:
-                    radius = 20
-                    y = self._gt[frame][a.id][0]
-                    x = self._gt[frame][a.id][1]
+                radius = 20
+                y = self._gt[frame][a.id][0]
+                x = self._gt[frame][a.id][1]
 
             gt_m = markers.CenterMarker(0, 0, radius, c_, id=a.id, changeHandler=self._gt_marker_clicked)
 
