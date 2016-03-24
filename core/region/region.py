@@ -164,6 +164,11 @@ class Region():
 
         return self.contour_
 
+    def contour_without_holes(self):
+        from utils.drawing.points import get_contour_without_holes
+
+        return get_contour_without_holes(self.pts())
+
     def frame(self):
         return self.frame_
 
