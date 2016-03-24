@@ -236,7 +236,7 @@ class StatisticsWidget(QtGui.QWidget):
             self.append_pts_(d, 'region', pts)
 
         if self.include_region_contour.isChecked():
-            pts = r.contour()
+            pts = r.contour_without_holes()
             self.append_pts_(d, 'region_contour', pts)
 
     def init_struct_(self, region):

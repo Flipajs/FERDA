@@ -139,6 +139,59 @@ def get_contour(pts):
 
     return cont
 
+
+def get_contour_without_holes(pts):
+    """
+    returns np.array of [y,x] positions of inner contour for given points
+
+    :param pts:
+    :return:
+    """
+
+    roi = get_roi(pts)
+
+    img = np.zeros((roi.height(), roi.width()), dtype=np.uint8)
+
+    img[pts[:,0]-roi.y(), pts[:,1]-roi.x()] = 255
+
+    ret, thresh = cv2.threshold(img, 127, 255, 0)
+
+    # different versions of opencv... =/
+    try:
+        # TODO: CV_RETR_CCOMP and skip holes... http://docs.opencv.org/modules/imgproc/doc/structural_analysis_and_shape_descriptors.html
+        _, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    except:
+        try:
+            contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        except:
+            pass
+
+    cont = np.array([])
+
+    max_c = -1
+    max_rows = 0
+    for c in contours:
+        rows, _, _ = c.shape
+        if rows > max_rows:
+            max_c = c
+            max_rows = rows
+
+    c = max_c
+    (rows, _, _) = c.shape
+    c = np.reshape(c, (rows, 2))
+
+    c[:, [0, 1]] = c[:, [1, 0]]
+
+    if cont.size > 0:
+        cont = np.append(cont, c, axis=0)
+    else:
+        cont = c
+
+    if cont.size > 0:
+        cont += np.array([roi.y(), roi.x()])
+
+    return cont
+
 def draw_pts_qpixmap():
     pixmap = QtGui.QPixmap(QtCore.QSize(400, 400))
     painter = QtGui.QPainter(pixmap)
