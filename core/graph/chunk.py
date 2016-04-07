@@ -238,8 +238,14 @@ class Chunk:
     def end_vertex_id(self):
         return self.nodes_[-1]
 
+    def end_vertex(self, gm):
+        return gm.g.vertex(self.end_vertex_id())
+
     def end_node(self):
         return self.end_vertex_id()
+
+    def start_vertex(self, gm):
+        return gm.g.vertex(self.start_vertex_id())
 
     def start_node(self):
         return self.start_vertex_id()

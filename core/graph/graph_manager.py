@@ -186,7 +186,7 @@ class GraphManager:
                         else:
                             self.add_edge(v_t1, v_t2, s)
 
-    def update_time_boundaries(self):
+    def time_boundaries(self):
         self.start_t = np.inf
         self.end_t = -1
 

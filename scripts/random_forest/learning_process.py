@@ -25,7 +25,7 @@ class LearningProcess:
         self.id_names_pd = None
         self.old_x_size = 0
 
-        if True:
+        if False:
             self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
             self.candidate_chunks = self.get_candidate_chunks()
 
@@ -117,13 +117,130 @@ class LearningProcess:
         filtered = sorted(filtered, key=lambda x: x.start_frame(self.p.gm))
         return filtered
 
+    def __solve_if_clear(self, vertices1, vertices2):
+        score = np.zeros((len(vertices1), len(vertices2)))
+
+        for i, v1 in enumerate(vertices1):
+            for j, v2 in enumerate(vertices2):
+                s, _, _, _ = self.p.solver.assignment_score(self.p.gm.region(v1), self.p.gm.region(v2))
+
+                score[i, j] = s
+
+        confirmed = []
+
+        for i in range(len(vertices1)):
+            j = np.argmax(score[i, :])
+            if i == np.argmax(score[:, j]):
+                confirmed.append([i, j])
+
+        assign_new_ids = []
+
+        if len(confirmed) == len(vertices1):
+            for i, j in confirmed:
+                v1 = vertices1[i]
+                v2 = vertices2[j]
+
+                ch1, _ = self.p.gm.is_chunk(v1)
+                ch2, _ = self.p.gm.is_chunk(v2)
+
+                id1 = self.animal_id_mapping.get(ch1.id_, -1)
+                id2 = self.animal_id_mapping.get(ch2.id_, -1)
+
+                if id1 > -1 and id2 > -1 and id1 != id2:
+                    assign_new_ids = []
+                    break
+
+                if id1 == id2:
+                    continue
+
+                if id1 > -1:
+                    assign_new_ids.append((id1, ch2))
+                elif id2 > -1:
+                    assign_new_ids.append((id2, ch1))
+
+        for id_, ch in assign_new_ids:
+            if ch.id_ in self.features:
+                self.__learn(ch, id_)
+
+            self.__assign_id(ch, id_)
+
+        return len(assign_new_ids) > 0
+
+    def test_connected_with_merged(self, ch):
+        s_vertex = ch.start_vertex(self.p.gm)
+        e_vertext = ch.end_vertex(self.p.gm)
+
+        # test previous...
+        if s_vertex.in_degree() == 1:
+            for v in s_vertex.in_neighbours():
+                pass
+
+            ch, _ = self.p.gm.is_chunk(v)
+
+            ch_s_v = ch.start_vertex(self.p.gm)
+            ch_e_v = ch.end_vertex(self.p.gm)
+
+            if ch.length() <= 5 and ch_s_v.in_degree() == ch_e_v.out_degree():
+                vertices1 = [v for v in ch_s_v.in_neighbours()]
+                vertices2 = [v for v in ch_e_v.out_neighbours()]
+
+                if self.__solve_if_clear(vertices1, vertices2):
+                    return True
+
+        # if e_vertext.out_degree() == 1:
+        #     for v in e_vertext.out_neighbours():
+        #         pass
+        #
+
+        return False
+
+    def __learn(self, ch, id_):
+        X = self.features[ch.id_]
+        self.X = np.vstack([self.X, np.array(X)])
+
+        y = [id_] * len(X)
+        self.y = np.append(self.y, np.array(y))
+
+        self.class_frequences[id_] += len(X)
+
+        if len(self.X) - self.old_x_size > 50:
+            self.rfc = RandomForestClassifier(class_weight='balanced')
+            self.rfc.fit(self.X, self.y)
+
+            self.old_x_size = len(self.X)
+
+    def __assign_id(self, ch, id_):
+        # for i in xrange(len(self.candidate_chunks)):
+        #     if self.candidate_chunks[i].id_ == ch.id_:
+        #         self.candidate_chunks.pop(i)
+        #         break
+
+        for i, ch_ in enumerate(self.candidate_chunks):
+            if ch.id_ == ch_.id_:
+                self.candidate_chunks.pop(i)
+
+                print "pop ", i
+        # try:
+        #     self.candidate_chunks.remove(ch)
+        # except:
+        #
+        #     pass
+
+        self.animal_id_mapping[ch.id_] = id_
+
     def next_step(self):
         for i in range(len(self.candidate_chunks)):
+            if not self.candidate_chunks:
+                break
+
             k = 50.0
 
             best_ch = None
             best_val = 0
             for ch in self.candidate_chunks:
+                if self.test_connected_with_merged(ch):
+                    break
+
                 proba, data_len = self.get_chunk_proba(ch)
 
                 uni_probs = np.ones((len(proba), )) / float(len(proba))
@@ -145,6 +262,9 @@ class LearningProcess:
 
             ch = best_ch
 
+            if best_ch is None:
+                continue
+
             proba, data_len = self.get_chunk_proba(ch)
 
             uni_probs = np.ones((len(proba), )) / float(len(proba))
@@ -153,29 +273,16 @@ class LearningProcess:
             if np.max(proba) < 1.0:
                 proba = (1-alpha) * uni_probs + alpha*proba
 
-            print "prob: %.2f, ch_len: %d, id: %d, ch_id: %d, %s, ch_start: %d, ch_end: %d" %  (np.max(proba), data_len, np.argmax(proba), ch.id_, proba, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
+            print "prob: %.2f, ch_len: %d, id: %d, ch_id: %d, %s, ch_start: %d, ch_end: %d" % (np.max(proba), data_len, np.argmax(proba), ch.id_, proba, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
             print "-----------------------------------------------", len(self.candidate_chunks)
 
             animal_id = np.argmax(proba)
 
             # use it for learning
             if np.max(proba) > 0.9:
-                X = self.features[ch.id_]
-                self.X = np.vstack([self.X, np.array(X)])
+                self.__learn(ch, animal_id)
 
-                y = [animal_id] * len(X)
-                self.y = np.append(self.y, np.array(y))
-
-                self.class_frequences[animal_id] += len(X)
-
-                if len(self.X) - self.old_x_size > 50:
-                    self.rfc = RandomForestClassifier(class_weight='balanced')
-                    self.rfc.fit(self.X, self.y)
-
-                    self.old_x_size = len(self.X)
-
-            self.candidate_chunks.remove(ch)
-            self.animal_id_mapping[ch.id_] = animal_id
+            self.__assign_id(ch, animal_id)
 
         for i in range(6):
             print i, np.sum(self.y == i)
