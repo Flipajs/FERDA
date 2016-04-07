@@ -2,7 +2,6 @@
 CLEAR multi target tracking metric evaluation.
 """
 import numpy as np
-import sys
 import math
 import munkres
 
@@ -146,6 +145,61 @@ class ClearMetrics(object):
             mask_match_in_both_frames = (matches != -1) & (last_matches != -1)
             mismatches += np.count_nonzero(
                 matches[mask_match_in_both_frames] != last_matches[mask_match_in_both_frames])
+            last_matches = matches
+        return mismatches
+
+    def get_mismatches_count_ignore_swaps(self):
+        """
+        Return number of identity mismatches.
+
+        One mismatch occurs when measurement id assigned to a gt id changes.
+        Each identity swap is counted only once. Example shows changes is indexes compared to previous frame.
+
+        These examples are understood as one mismatch
+        A)  0   1       B)  0   1  2
+             \ /             \ /  /
+              x               /--/
+             / \             /  / \
+            1   0           1  2   0
+
+        Example C shows two mismatches
+        C)  0   1   2   3
+             \ /     \ /
+              x       x
+             / \     / \
+            1   0   3   2
+
+        @return: number of mismatches in the sequence
+        @rtype: int
+        """
+        frames = sorted(self.groundtruth.keys())
+        last_matches = np.array(self.gt_matches[frames[0]])
+        mismatches = 0
+        for frame in frames[1:]:
+            if frame >= len(self.measurements):
+                break
+            matches = np.array(self.gt_matches[frame])
+            # keep record of already swapped indexes
+            swapped = []
+            for i in range(len(matches)):
+                # get current target index
+                k = matches[i]
+                # if k is a mismatch and was not processed yet
+                if k != last_matches[i] and k not in swapped:
+                    try:
+                        swapped.append(i)
+                        swapped.append(k)
+                        # visit all neighboring connected mismatches and mark them as processed (swapped)
+                        while matches[k] != i:
+                            k = matches[k]
+                            swapped.append(k)
+                    except IndexError:
+                        # ignore index errors
+                        pass
+                    finally:
+                        # add a mismatch and continue with other indexes
+                        mismatches += 1
+            # after finishing frame check, save current matches state
             last_matches = matches
         return mismatches
 
