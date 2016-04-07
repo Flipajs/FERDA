@@ -19,7 +19,7 @@ S_.general.print_log = False
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 if is_flipajs_pc():
     sn_id = 2
-    cam_ = 2
+    cam_ = 1
     name = 'Cam'+str(cam_)
     wd = '/Users/flipajs/Documents/wd/GT/'
     # wd = '/Users/flipajs/Documents/wd/'

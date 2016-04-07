@@ -60,6 +60,7 @@ class LearningProcess:
 
         # self.rfc = RandomForestClassifier()
         # self.rfc.fit(self.X, self.y)
+        self.chunk_available_ids = {}
 
         self.next_step()
 
@@ -180,7 +181,7 @@ class LearningProcess:
             ch_s_v = ch.start_vertex(self.p.gm)
             ch_e_v = ch.end_vertex(self.p.gm)
 
-            if ch.length() <= 20 and ch_s_v.in_degree() == ch_e_v.out_degree():
+            if ch.length() <= 5 and ch_s_v.in_degree() == ch_e_v.out_degree():
                 vertices1 = [v for v in ch_s_v.in_neighbours()]
                 vertices2 = [v for v in ch_e_v.out_neighbours()]
 
@@ -228,7 +229,64 @@ class LearningProcess:
 
         self.animal_id_mapping[ch.id_] = id_
 
+    def __precompute_availability(self):
+        vertices = map(self.p.gm.g.vertex, self.p.gm.get_vertices_in_t(0))
+
+        ids = range(len(vertices))
+
+        queue = vertices
+
+        while queue:
+            v = queue.pop()
+
+            for w in v.out_neighbours():
+                ch, _ = self.p.gm.is_chunk(w)
+
+                if w in self.chunk_available_ids:
+                    continue
+                else:
+                    self.chunk_available_ids[w] = list(ids)
+
+    def __propagate_availability(self, v):
+        ch, _ = self.p.gm.is_chunk(v)
+
+        S_in = set()
+        affected = []
+        for u in ch.start_vertex(self.p.gm).in_neighbours():
+            affected.append(u)
+            ch_, _ = self.p.gm.is_chunk(u)
+            S_in.update(self.chunk_available_ids[ch_])
+
+        S_out = set()
+        for u in ch.end_vertex(self.p.gm).out_neighbours():
+            affected.append(u)
+            ch_, _ = self.p.gm.is_chunk(u)
+            S_out.update(self.chunk_available_ids[ch_])
+
+        S_self = set(self.chunk_available_ids[ch])
+
+        new_S_self = S_self.intersection(S_in.union(S_out))
+
+        if S_self == new_S_self:
+            return []
+
+        return affected
+
+    def __update_avalability(self, ch, id):
+        # remove from all chunks in same time
+
+        self.chunk_available_ids[ch] = [id]
+
+        queue = [u for u in ch.start_vertex(self.p.gm).neighbours()]
+
+        while queue:
+            v = queue.pop(0)
+            queue.extend(self.__propagate_availability(v))
+
+
     def next_step(self):
+        self.__precompute_availability()
+
         for i in range(len(self.candidate_chunks)):
             if not self.candidate_chunks:
                 break
@@ -238,8 +296,8 @@ class LearningProcess:
             best_ch = None
             best_val = 0
             for ch in self.candidate_chunks:
-                if self.test_connected_with_merged(ch):
-                    break
+                # if self.test_connected_with_merged(ch):
+                #     break
 
                 proba, data_len = self.get_chunk_proba(ch)
 
@@ -254,8 +312,8 @@ class LearningProcess:
                     best_val = np.max(proba)
                     best_ch = ch
 
-                # print "prob: %.2f, ch_len: %d, id: %d, ch_id: %d, %s, ch_start: %d, ch_end: %d" %  (np.max(proba), data_len, np.argmax(proba), ch.id_, proba, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
-                # self.classify_chunk(ch, proba)
+                    # print "prob: %.2f, ch_len: %d, id: %d, ch_id: %d, %s, ch_start: %d, ch_end: %d" %  (np.max(proba), data_len, np.argmax(proba), ch.id_, proba, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
+                    # self.classify_chunk(ch, proba)
 
             # if best_val < 0.5:
             #     break
@@ -496,7 +554,7 @@ class LearningProcess:
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam2/cam2.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p)
