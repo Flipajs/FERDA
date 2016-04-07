@@ -180,7 +180,7 @@ class LearningProcess:
             ch_s_v = ch.start_vertex(self.p.gm)
             ch_e_v = ch.end_vertex(self.p.gm)
 
-            if ch.length() <= 5 and ch_s_v.in_degree() == ch_e_v.out_degree():
+            if ch.length() <= 20 and ch_s_v.in_degree() == ch_e_v.out_degree():
                 vertices1 = [v for v in ch_s_v.in_neighbours()]
                 vertices2 = [v for v in ch_e_v.out_neighbours()]
 
