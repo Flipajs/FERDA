@@ -62,6 +62,12 @@ class LearningProcess:
         # self.rfc.fit(self.X, self.y)
         self.chunk_available_ids = {}
 
+        # basically set every chunk with full set of possible ids
+        self.__precompute_availability()
+        # propagate information given from initialisation
+        for ch, id_ in self.animal_id_mapping.iteritems():
+            self.__update_avalability(ch, id_)
+
         self.next_step()
 
     def set_ids_(self):
@@ -247,7 +253,7 @@ class LearningProcess:
                 else:
                     self.chunk_available_ids[w] = list(ids)
 
-    def __propagate_availability(self, v):
+    def __propagate_availability(self, v, remove_id=[]):
         ch, _ = self.p.gm.is_chunk(v)
 
         S_in = set()
@@ -266,23 +272,30 @@ class LearningProcess:
         S_self = set(self.chunk_available_ids[ch])
 
         new_S_self = S_self.intersection(S_in.union(S_out))
+        for id_ in remove_id:
+            new_S_self.remove(id_)
 
         if S_self == new_S_self:
             return []
 
         return affected
 
-    def __update_avalability(self, ch, id):
-        # remove from all chunks in same time
+    def __update_avalability(self, ch, id_):
+        self.chunk_available_ids[ch] = [id_]
 
-        self.chunk_available_ids[ch] = [id]
-
+        # processed = set()
         queue = [u for u in ch.start_vertex(self.p.gm).neighbours()]
+
+        # remove from all chunks in same time
+        in_time = set(self.p.chm.chunks_in_interval(ch.start_frame(self.p.gm), ch.end_frame(self.p.gm)))
+        in_time = list(in_time.remove(ch))
+        for v in in_time:
+            queue.extend(self.__propagate_availability(v, remove_id=id_))
 
         while queue:
             v = queue.pop(0)
             queue.extend(self.__propagate_availability(v))
-
+            # processed.add(v)
 
     def next_step(self):
         self.__precompute_availability()
