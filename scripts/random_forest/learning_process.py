@@ -27,17 +27,30 @@ class LearningProcess:
         self.collision_chunks = {}
 
         self.chunk_available_ids = {}
+        self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
 
-        if True:
-            self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
+        if False:
             self.chunks = self.get_candidate_chunks()
 
             self.chunks_itree = self.build_itree_()
-            self.class_frequences = []
 
+            self.features = self.precompute_features_()
+
+            with open(p.working_directory+'/temp/features.pkl', 'wb') as f:
+                d = {'chunks': self.chunks, 'chunks_itree': self.chunks_itree, 'features': self.features}
+                pickle.dump(d, f, -1)
+        else:
+            with open(p.working_directory+'/temp/features.pkl', 'rb') as f:
+                d = pickle.load(f)
+                self.chunks = d['chunks']
+                self.chunks_itree = d['chunks_itree']
+                self.features = d['features']
+
+        if True:
             # basically set every chunk with full set of possible ids
             self.__precompute_availability()
-            self.features = self.precompute_features_()
+
+            self.class_frequences = []
 
             self.undecided_chunks = {}
             for ch in self.chunks:
@@ -55,9 +68,9 @@ class LearningProcess:
 
             with open(p.working_directory+'/temp/rfc.pkl', 'wb') as f:
                 d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.ids,
-                     'chunks': self.chunks, 'class_frequences': self.class_frequences,
-                     'animal_id_mapping': self.animal_id_mapping, 'chunks_itree': self.chunks_itree,
-                     'features': self.features, 'chunk_available_ids': self.chunk_available_ids,
+                     'class_frequences': self.class_frequences,
+                     'animal_id_mapping': self.animal_id_mapping,
+                     'chunk_available_ids': self.chunk_available_ids,
                      'collision_chunks': self.collision_chunks, 'undecided_chunks': self.undecided_chunks,
                      'old_x_size': self.old_x_size}
                 pickle.dump(d, f, -1)
@@ -68,11 +81,8 @@ class LearningProcess:
                 self.X = d['X']
                 self.y = d['y']
                 self.ids = d['ids']
-                self.chunks = d['chunks']
                 self.class_frequences = d['class_frequences']
                 self.animal_id_mapping = d['animal_id_mapping']
-                self.chunks_itree = d['chunks_itree']
-                self.features = d['features']
                 self.chunk_available_ids = d['chunk_available_ids']
                 self.collision_chunks = d['collision_chunks']
                 self.undecided_chunks = d['undecided_chunks']
@@ -302,7 +312,7 @@ class LearningProcess:
         try:
             del self.undecided_chunks[ch.id_]
         except:
-            print "PROBLEMATIC CHUNK", ch.id_,  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "AID: ", id_
+            print "PROBLEMATIC CHUNK", ch.id_,  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "A_ID: ", id_
 
         self.animal_id_mapping[ch.id_] = id_
 
@@ -315,28 +325,35 @@ class LearningProcess:
             self.chunk_available_ids[ch.id_] = list(ids)
 
     def __propagate_availability(self, ch, remove_id=[]):
-        if ch not in self.chunks:
-            return []
-
+        # if ch not in self.chunks:
+        #     return []
 
         S_in = set()
         affected = []
         for u in ch.start_vertex(self.p.gm).in_neighbours():
             ch_, _ = self.p.gm.is_chunk(u)
-            if ch_ in self.chunks:
-                affected.append(ch_)
-                S_in.update(self.chunk_available_ids[ch_.id_])
+            # if ch_ in self.chunks:
+            affected.append(ch_)
+            S_in.update(self.chunk_available_ids[ch_.id_])
 
         S_out = set()
         for u in ch.end_vertex(self.p.gm).out_neighbours():
             ch_, _ = self.p.gm.is_chunk(u)
-            if ch_ in self.chunks:
-                affected.append(ch_)
-                S_out.update(self.chunk_available_ids[ch_.id_])
+            # if ch_ in self.chunks:
+            affected.append(ch_)
+            S_out.update(self.chunk_available_ids[ch_.id_])
 
         S_self = set(self.chunk_available_ids[ch.id_])
 
-        new_S_self = S_self.intersection(S_in.union(S_out))
+        # first chunks
+        if not S_in:
+            new_S_self = S_self.intersection(S_out)
+        else:
+            if not S_out:
+                new_S_self = S_self.intersection(S_in)
+            else:
+                new_S_self = S_self.intersection(S_in).intersection(S_out)
+        # new_S_self = S_self.intersection(S_in.union(S_out))
         for id_ in remove_id:
             new_S_self.discard(id_)
 
@@ -654,7 +671,7 @@ class LearningProcess:
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam2/cam2.fproj')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p)

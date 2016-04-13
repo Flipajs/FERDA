@@ -123,6 +123,8 @@ class ResultsWidget(QtGui.QWidget):
         self.videoSlider.setMaximumHeight(15)
         self.videoSlider.setMaximum(self.video.total_frame_count())
 
+
+
         self.video_control_layout.addWidget(self.videoSlider)
         self.video_control_layout.addWidget(self.video_control_buttons_widget)
 
@@ -169,7 +171,7 @@ class ResultsWidget(QtGui.QWidget):
         self.show_contour_ch.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_contour_ch)
 
-        self.contour_without_colors = QtGui.QCheckBox('contours without colors')
+        self.contour_without_colors = QtGui.QCheckBox('w\'out colors')
         self.contour_without_colors.setChecked(True)
         self.contour_without_colors.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.contour_without_colors)
@@ -183,6 +185,16 @@ class ResultsWidget(QtGui.QWidget):
         self.show_staurated_ch.setChecked(False)
         self.show_staurated_ch.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_staurated_ch)
+
+        self.big_video_forward_a = QtGui.QAction('big next', self)
+        self.big_video_forward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() + 50))
+        self.big_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
+        self.addAction(self.big_video_forward_a)
+
+        self.big_video_backward_a = QtGui.QAction('big next', self)
+        self.big_video_backward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() - 50))
+        self.big_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
+        self.addAction(self.big_video_backward_a)
 
         self.connect_GUI()
 
@@ -414,18 +426,28 @@ class ResultsWidget(QtGui.QWidget):
                 x = animal_ids2centroids[a.id][1]
 
             radius = 10
+
+            gt_m = markers.CenterMarker(0, 0, radius, c_, id=a.id, changeHandler=self._gt_marker_clicked)
+
+            gt_m.setPos(x - radius/2, y-radius/2)
+            gt_m.setZValue(0.75)
+
+            self.gitems['gt_markers'].append(gt_m)
+            self.scene.addItem(gt_m)
+
+
             if frame in self._gt:
                 radius = 20
                 y = self._gt[frame][a.id][0]
                 x = self._gt[frame][a.id][1]
 
-            gt_m = markers.CenterMarker(0, 0, radius, c_, id=a.id, changeHandler=self._gt_marker_clicked)
+                gt_m = markers.CenterMarker(0, 0, radius, c_, id=a.id, changeHandler=self._gt_marker_clicked)
 
-            gt_m.setPos(x - radius/2, y-radius/2)
-            gt_m.setZValue(0.7)
+                gt_m.setPos(x - radius/2, y-radius/2)
+                gt_m.setZValue(0.7)
 
-            self.gitems['gt_markers'].append(gt_m)
-            self.scene.addItem(gt_m)
+                self.gitems['gt_markers'].append(gt_m)
+                self.scene.addItem(gt_m)
 
     def _clear_items(self):
         for it in self.gitems['gt_markers']:
