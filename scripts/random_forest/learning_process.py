@@ -193,7 +193,8 @@ class LearningProcess:
 
         for i, v1 in enumerate(vertices1):
             for j, v2 in enumerate(vertices2):
-                s, _, _ = self.p.solver.assignment_score_pos_orient(self.p.gm.region(v1), self.p.gm.region(v2))
+                s, _, _, _ = self.p.solver.assignment_score(self.p.gm.region(v1), self.p.gm.region(v2))
+                # s, _, _ = self.p.solver.assignment_score_pos_orient(self.p.gm.region(v1), self.p.gm.region(v2))
 
                 score[i, j] = s
 
