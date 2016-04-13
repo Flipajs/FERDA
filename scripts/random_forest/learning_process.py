@@ -28,7 +28,7 @@ class LearningProcess:
 
         self.chunk_available_ids = {}
 
-        if False:
+        if True:
             self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
             self.chunks = self.get_candidate_chunks()
 
@@ -193,8 +193,8 @@ class LearningProcess:
 
         for i, v1 in enumerate(vertices1):
             for j, v2 in enumerate(vertices2):
-                # s, _, _, _ = self.p.solver.assignment_score(self.p.gm.region(v1), self.p.gm.region(v2))
-                s, _, _ = self.p.solver.assignment_score_pos_orient(self.p.gm.region(v1), self.p.gm.region(v2))
+                s, _, _, _ = self.p.solver.assignment_score(self.p.gm.region(v1), self.p.gm.region(v2))
+                # s, _, _ = self.p.solver.assignment_score_pos_orient(self.p.gm.region(v1), self.p.gm.region(v2))
 
                 score[i, j] = s
 
@@ -654,7 +654,7 @@ class LearningProcess:
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam2/cam2.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p)

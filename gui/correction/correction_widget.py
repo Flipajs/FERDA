@@ -169,6 +169,11 @@ class ResultsWidget(QtGui.QWidget):
         self.show_contour_ch.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_contour_ch)
 
+        self.contour_without_colors = QtGui.QCheckBox('contours without colors')
+        self.contour_without_colors.setChecked(True)
+        self.contour_without_colors.stateChanged.connect(lambda x: self.update_positions())
+        self.visu_controls_layout.addWidget(self.contour_without_colors)
+
         self.show_gt_markers = QtGui.QCheckBox('gt markers')
         self.show_gt_markers.setChecked(True)
         self.show_gt_markers.stateChanged.connect(lambda x: self.update_positions())
@@ -235,8 +240,8 @@ class ResultsWidget(QtGui.QWidget):
         # TODO: clearmetrics bug workaround...
         max_frame = 0
         for frame in self._gt:
-            if frame >= 301:
-                continue
+            # if frame >= 301:
+            #     continue
 
             my_data[frame] = np.array(([None] * len(self.project.animals)))
             for ch in self.project.chm.chunks_in_frame(frame):
@@ -322,6 +327,9 @@ class ResultsWidget(QtGui.QWidget):
             if animal_id > -1:
                 c_ = self.colors_[animal_id]
                 c = QtGui.qRgba(c_.red(), c_.green(), c_.blue(), alpha)
+
+        if self.contour_without_colors.isChecked():
+            c = QtGui.qRgba(200, 200, 200, 200)
 
         for i in range(pts_.shape[0]):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
@@ -414,6 +422,7 @@ class ResultsWidget(QtGui.QWidget):
             gt_m = markers.CenterMarker(0, 0, radius, c_, id=a.id, changeHandler=self._gt_marker_clicked)
 
             gt_m.setPos(x - radius/2, y-radius/2)
+            gt_m.setZValue(0.7)
 
             self.gitems['gt_markers'].append(gt_m)
             self.scene.addItem(gt_m)
@@ -470,7 +479,9 @@ class ResultsWidget(QtGui.QWidget):
 
             if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
                 alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
-                self.draw_region(r, ch.animal_id_, use_ch_color=ch.color, alpha=alpha)
+
+                c = ch.color
+                self.draw_region(r, ch.animal_id_, use_ch_color=c, alpha=alpha)
 
         if self.show_gt_markers.isChecked():
             self._show_gt_markers(animal_ids2centroids)
