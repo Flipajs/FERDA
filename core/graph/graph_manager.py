@@ -130,6 +130,11 @@ class GraphManager:
 
         return None, False
 
+    def get_chunk(self, vertex):
+        ch, _ = self.is_chunk(vertex)
+
+        return ch
+
     def update_nodes_in_t_refs(self):
         self.vertices_in_t = {}
         for v in self.g.vertices():

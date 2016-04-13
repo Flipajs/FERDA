@@ -254,8 +254,10 @@ class CaseWidget(QtGui.QWidget):
             pass
 
         vertex = self.project.gm.g.vertex(int(n))
-        best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
+        best_out_score, best_out_n = self.project.gm.get_2_best_out_vertices(vertex)
         best_out = best_out_score[0]
+
+        new_s, do, dt = self.project.solver.assignment_score_pos_orient(r, self.project.gm.region(best_out_n[0]))
 
         best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
         best_in = best_in_score[0]
@@ -281,11 +283,11 @@ class CaseWidget(QtGui.QWidget):
         QtGui.QMessageBox.about(self, "My message box",
                                 "ID = %i\nArea = %i\nframe=%i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\n"
                                 "Is virtual: %s\nBest in = %s, (%d)\nBest out = %s (%d)\nChunk info = %s\n"
-                                "Chunk start: %d end: %d\ntest:%s" %
+                                "Chunk start: %d end: %d\ntest:%s\nnew_s:%f, %f, %f\ntheta: %f\n" %
                                 (int(n), r.area(), r.frame_, str(r.centroid()), r.margin_, antlikeness, str(virtual),
                                  str(best_in_score[0]) + ', ' + str(best_in_score[1]), vertex.in_degree(),
                                  str(best_out_score[0]) + ', ' + str(best_out_score[1]), vertex.out_degree(), ch_info,
-                                 ch_start, ch_end, str(is_merged)
+                                 ch_start, ch_end, str(is_merged), new_s, do, dt, r.theta_
                                 ))
 
     def row_changed(self, off):

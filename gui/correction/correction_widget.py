@@ -235,6 +235,9 @@ class ResultsWidget(QtGui.QWidget):
         # TODO: clearmetrics bug workaround...
         max_frame = 0
         for frame in self._gt:
+            if frame >= 301:
+                continue
+
             my_data[frame] = np.array(([None] * len(self.project.animals)))
             for ch in self.project.chm.chunks_in_frame(frame):
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
