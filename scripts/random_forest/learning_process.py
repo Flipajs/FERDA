@@ -678,7 +678,7 @@ class LearningProcess:
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam2/cam2.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p)

@@ -75,6 +75,7 @@ if __name__ == "__main__":
     p = Project()
     p.video_paths = ['/Users/flipajs/Documents/wd/Cam1_clip.avi']
     vm = get_auto_video_manager(p)
+    vm.get_frame(109)
 
     scaleFactor = 1.4
     nlevels = 3
