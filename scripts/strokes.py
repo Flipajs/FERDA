@@ -71,6 +71,7 @@ def show_next():
     mng = plt.get_current_fig_manager()
     plt.show()
 
+    show_next()
 
 
 if __name__ == "__main__":
@@ -81,7 +82,7 @@ if __name__ == "__main__":
 
     scaleFactor = 1.4
     nlevels = 2
-    edgeThreshold = 5
+    edgeThreshold = 4
     keypointTypes = 2
     kMin = 9
     kMax = 11
