@@ -67,10 +67,13 @@ class ResultsWidget(QtGui.QWidget):
             self.left_vbox.addWidget(self.scroll_)
             self.splitter.addWidget(self.left_w)
 
+        self.info_l = QtGui.QLabel('info')
+        self.left_vbox.addWidget(self.info_l)
 
         self.evolve_gt_b = QtGui.QPushButton('evolve GT')
         self.evolve_gt_b.clicked.connect(self._evolve_gt)
         self.left_vbox.addWidget(self.evolve_gt_b)
+
 
         self.right_w = QtGui.QWidget()
         self.right_w.setLayout(self.right_vbox)
@@ -105,16 +108,16 @@ class ResultsWidget(QtGui.QWidget):
         self.speedSlider.setMinimum(0)
         self.speedSlider.setMaximum(99)
 
-        self.backward = QtGui.QPushButton('back')
+        self.backward = QtGui.QPushButton('<')
         self.backward.setShortcut(S_.controls.video_prev)
         self.playPause = QtGui.QPushButton('play')
         self.playPause.setShortcut(S_.controls.video_play_pause)
-        self.forward = QtGui.QPushButton('forward')
+        self.forward = QtGui.QPushButton('>')
         self.forward.setShortcut(S_.controls.video_next)
         self.frameEdit = SelectAllLineEdit()
         self.frameEdit.returnPressed.connect(self.frame_jump)
         self.frameEdit.setFixedHeight(30)
-        self.showFrame = QtGui.QPushButton('show')
+        # self.showFrame = QtGui.QPushButton('show')
         self.fpsLabel = QtGui.QLabel()
         self.fpsLabel.setAlignment(QtCore.Qt.AlignRight)
         self.videoSlider = VideoSlider()
@@ -128,7 +131,7 @@ class ResultsWidget(QtGui.QWidget):
         self.video_control_layout.addWidget(self.videoSlider)
         self.video_control_layout.addWidget(self.video_control_buttons_widget)
 
-        self.frame_jump_button = QtGui.QPushButton('jump')
+        self.frame_jump_button = QtGui.QPushButton('go')
         self.frame_jump_button.clicked.connect(self.frame_jump)
 
         self.frame_jump_button.setFocusPolicy(QtCore.Qt.StrongFocus)
@@ -142,15 +145,15 @@ class ResultsWidget(QtGui.QWidget):
         self.video_control_buttons_layout.addWidget(self.backward)
         self.video_control_buttons_layout.addWidget(self.playPause)
         self.video_control_buttons_layout.addWidget(self.forward)
-        self.video_control_buttons_layout.addWidget(self.showFrame)
+        # self.video_control_buttons_layout.addWidget(self.showFrame)
         self.video_control_buttons_layout.addWidget(self.frameEdit)
         self.video_control_buttons_layout.addWidget(self.frame_jump_button)
 
         self.init_speed_slider()
 
-        self.reset_colors_b = QtGui.QPushButton('reset colors')
-        self.reset_colors_b.clicked.connect(self.reset_colors)
-        self.video_control_buttons_layout.addWidget(self.reset_colors_b)
+        # self.reset_colors_b = QtGui.QPushButton('reset colors')
+        # self.reset_colors_b.clicked.connect(self.reset_colors)
+        # self.video_control_buttons_layout.addWidget(self.reset_colors_b)
 
         self.reset_colors_action = QtGui.QAction('reset_colors', self)
         self.reset_colors_action.triggered.connect(self.reset_colors)
@@ -463,7 +466,7 @@ class ResultsWidget(QtGui.QWidget):
                 self.__add_marker(x, y, c_, a.id, 0.7, type_='GT')
 
             if a.id in animal_ids2centroids:
-                for i, data in enumerate(animal_ids2centroids[a.id]):
+                for i, data, ch in enumerate(animal_ids2centroids[a.id]):
                     centroid = data[0]
                     decided = data[1]
                     y = centroid[0]
@@ -532,7 +535,7 @@ class ResultsWidget(QtGui.QWidget):
 
             for id_ in ch.animal_id_:
                 animal_ids2centroids.setdefault(id_, [])
-                animal_ids2centroids[id_].append((c, len(ch.animal_id_) == 1))
+                animal_ids2centroids[id_].append((c, len(ch.animal_id_) == 1, ch))
 
             if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
                 alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour

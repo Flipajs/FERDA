@@ -378,6 +378,7 @@ class LearningProcess:
         if learn:
             self.__learn(ch, id_)
 
+        print "Ch.id: %d assigned animal id: %d. Ch.start: %d, Ch.end: %d" % (ch.id_, id_, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
         self.save_ids_()
 
         self.__assign_id(ch, id_)

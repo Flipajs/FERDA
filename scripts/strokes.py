@@ -41,8 +41,10 @@ def show_next():
 
     scales = ft.getImageScales()
     scs_ = []
-    for kp, i in zip(keypoints, range(len(keypoints))):
+    for i, kp in enumerate(keypoints):
         s_ = ft.getKeypointStrokes(i) * (1.0 / scales[kp[2]])
+        if len(s_) < 5:
+            continue
         scs_.append(kp[2])
         strokes.append(s_)
 
@@ -75,11 +77,11 @@ if __name__ == "__main__":
     p = Project()
     p.video_paths = ['/Users/flipajs/Documents/wd/Cam1_clip.avi']
     vm = get_auto_video_manager(p)
-    vm.get_frame(109)
+    vm.get_frame(123)
 
     scaleFactor = 1.4
-    nlevels = 3
-    edgeThreshold = 13
+    nlevels = 2
+    edgeThreshold = 5
     keypointTypes = 2
     kMin = 9
     kMax = 11
