@@ -259,8 +259,8 @@ class ResultsWidget(QtGui.QWidget):
             for ch in self.project.chm.chunks_in_frame(frame):
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
 
-                if ch.animal_id_ > -1:
-                    my_data[frame][ch.animal_id_] = rch.centroid_in_t(frame)
+                if len(ch.animal_id_) == 1:
+                    my_data[frame][ch.animal_id_[0]] = rch.centroid_in_t(frame)
 
             max_frame = max(max_frame, frame)
 
@@ -336,8 +336,8 @@ class ResultsWidget(QtGui.QWidget):
         if use_ch_color:
             c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
         else:
-            if animal_id > -1:
-                c_ = self.colors_[animal_id]
+            if len(animal_id) == 1:
+                c_ = self.colors_[animal_id[0]]
                 c = QtGui.qRgba(c_.red(), c_.green(), c_.blue(), alpha)
 
         if self.contour_without_colors.isChecked():
@@ -413,41 +413,68 @@ class ResultsWidget(QtGui.QWidget):
             self.highlight_marker2nd.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
             self.highlight_marker2nd_frame = data['n2'].frame_
 
+    def __find_nearest_free_marker_pos(self, y, x):
+        import itertools
+        x_ = round(x / float(self.marker_helper_step))
+        y_ = round(y / float(self.marker_helper_step))
+
+        if self.marker_pos_helper[y_, x_]:
+            for a, b in itertools.product([-1, 0, 1], [-1, 0, 1]):
+                if not self.marker_pos_helper[y_+a, x_+b]:
+                    y_ += a
+                    x_ += b
+
+                    y = y_ * self.marker_helper_step
+                    x = x_ * self.marker_helper_step
+                    break
+
+        self.marker_pos_helper[y_, x_] = True
+        return y, x
+
+    def __add_marker(self, x, y, c_, id_, z_value, type_):
+        radius = 13
+
+        if type_ == 'GT':
+            radius = 20
+        elif type_ == 'multiple':
+            radius = 9
+
+
+        if type_ != 'GT':
+            y, x = self.__find_nearest_free_marker_pos(y, x)
+
+        gt_m = markers.CenterMarker(0, 0, radius, c_, id=id_, changeHandler=self._gt_marker_clicked)
+
+        gt_m.setPos(x - radius/2, y-radius/2)
+        gt_m.setZValue(z_value)
+
+        self.gitems['gt_markers'].append(gt_m)
+        self.scene.addItem(gt_m)
+
     def _show_gt_markers(self, animal_ids2centroids):
         for a in self.project.animals:
             c_ = QtGui.QColor(a.color_[2], a.color_[1], a.color_[0])
 
             frame = self.video.frame_number()
 
-            x = 10*a.id
-            y = -1
-            if a.id in animal_ids2centroids:
-                y = animal_ids2centroids[a.id][0]
-                x = animal_ids2centroids[a.id][1]
-
-            radius = 10
-
-            gt_m = markers.CenterMarker(0, 0, radius, c_, id=a.id, changeHandler=self._gt_marker_clicked)
-
-            gt_m.setPos(x - radius/2, y-radius/2)
-            gt_m.setZValue(0.75)
-
-            self.gitems['gt_markers'].append(gt_m)
-            self.scene.addItem(gt_m)
-
-
             if frame in self._gt:
-                radius = 20
                 y = self._gt[frame][a.id][0]
                 x = self._gt[frame][a.id][1]
+                self.__add_marker(x, y, c_, a.id, 0.7, type_='GT')
 
-                gt_m = markers.CenterMarker(0, 0, radius, c_, id=a.id, changeHandler=self._gt_marker_clicked)
+            if a.id in animal_ids2centroids:
+                for i, data in enumerate(animal_ids2centroids[a.id]):
+                    centroid = data[0]
+                    decided = data[1]
+                    y = centroid[0]
+                    x = centroid[1]
+                    type_ = 'normal' if decided else 'multiple'
+                    self.__add_marker(x, y, c_, a.id, 0.75, type_=type_)
+            else:
+                x = 10*a.id
+                y = -1
 
-                gt_m.setPos(x - radius/2, y-radius/2)
-                gt_m.setZValue(0.7)
-
-                self.gitems['gt_markers'].append(gt_m)
-                self.scene.addItem(gt_m)
+                self.__add_marker(x, y, c_, a.id, 0.75, type_='undef')
 
     def _clear_items(self):
         for it in self.gitems['gt_markers']:
@@ -483,6 +510,13 @@ class ResultsWidget(QtGui.QWidget):
             self.out_of_frames()
 
     def update_positions(self, frame=-1):
+        self.marker_helper_step = 7
+        from math import ceil
+        self.marker_pos_helper = np.zeros((ceil(self.video.img().shape[0] / self.marker_helper_step),
+                                           ceil(self.video.img().shape[1] / self.marker_helper_step)),
+                                          dtype=np.bool)
+
+
         if frame == -1:
             frame = self.video.frame_number()
 
@@ -496,8 +530,9 @@ class ResultsWidget(QtGui.QWidget):
             c = r.centroid().copy()
 
 
-            if ch.animal_id_ > -1:
-                animal_ids2centroids[ch.animal_id_] = c
+            for id_ in ch.animal_id_:
+                animal_ids2centroids.setdefault(id_, [])
+                animal_ids2centroids[id_].append((c, len(ch.animal_id_) == 1))
 
             if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
                 alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour

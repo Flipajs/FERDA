@@ -109,7 +109,9 @@ class LearningProcess:
         #             except:
         #                 pass
 
+        self.save_ids_()
         self.next_step()
+
 
 
 
@@ -376,6 +378,8 @@ class LearningProcess:
         if learn:
             self.__learn(ch, id_)
 
+        self.save_ids_()
+
         self.__assign_id(ch, id_)
         self.chunk_available_ids[ch.id_] = [id_]
 
@@ -451,8 +455,11 @@ class LearningProcess:
         for i in range(6):
             print i, np.sum(self.y == i)
 
+        self.save_ids_()
+
+    def save_ids_(self):
         with open(self.p.working_directory + '/temp/animal_id_mapping.pkl', 'wb') as f_:
-            pickle.dump(self.animal_id_mapping, f_)
+            pickle.dump(self.chunk_available_ids, f_)
 
     def get_frequence_vector_(self):
         return float(np.sum(self.class_frequences)) / self.class_frequences
