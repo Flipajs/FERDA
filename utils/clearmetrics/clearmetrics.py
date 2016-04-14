@@ -1,6 +1,10 @@
 """
 CLEAR multi target tracking metric evaluation.
 """
+from docutils.utils.math.latex2mathml import mi
+
+from numpy.core._internal import _missing_ctypes
+
 import numpy as np
 import math
 import munkres
@@ -172,6 +176,7 @@ class ClearMetrics(object):
         @return: number of mismatches in the sequence
         @rtype: int
         """
+
         frames = sorted(self.groundtruth.keys())
         last_matches = np.array(self.gt_matches[frames[0]])
         mismatches = 0
@@ -179,27 +184,17 @@ class ClearMetrics(object):
             if frame >= len(self.measurements):
                 break
             matches = np.array(self.gt_matches[frame])
-            # keep record of already swapped indexes
-            swapped = []
-            for i in range(len(matches)):
-                # get current target index
-                k = matches[i]
-                # if k is a mismatch and was not processed yet
-                if k != last_matches[i] and k not in swapped:
-                    try:
-                        swapped.append(i)
-                        swapped.append(k)
-                        # visit all neighboring connected mismatches and mark them as processed (swapped)
-                        while matches[k] != i:
-                            k = matches[k]
-                            swapped.append(k)
-                    except IndexError:
-                        # ignore index errors
-                        pass
-                    finally:
-                        # add a mismatch and continue with other indexes
+            mask_match_in_both_frames = (matches != -1) & (last_matches != -1)
+            for i in range(0, len(matches)):
+                if mask_match_in_both_frames[i]:
+                    if matches[i] != last_matches[i]:
+                        if matches[i] in last_matches:
+                            mismatches += 1
+                # this hotfix is not working!
+                else:
+                    if matches[i] != last_matches[i]:
                         mismatches += 1
-            # after finishing frame check, save current matches state
+
             last_matches = matches
         return mismatches
 
