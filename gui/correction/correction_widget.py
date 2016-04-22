@@ -466,13 +466,14 @@ class ResultsWidget(QtGui.QWidget):
                 self.__add_marker(x, y, c_, a.id, 0.7, type_='GT')
 
             if a.id in animal_ids2centroids:
-                for i, data, ch in enumerate(animal_ids2centroids[a.id]):
+                for i, data in enumerate(animal_ids2centroids[a.id]):
                     centroid = data[0]
                     decided = data[1]
+                    ch = data[2]
                     y = centroid[0]
                     x = centroid[1]
                     type_ = 'normal' if decided else 'multiple'
-                    self.__add_marker(x, y, c_, a.id, 0.75, type_=type_)
+                    self.__add_marker(x, y, c_, ch.id_, 0.75, type_=type_)
             else:
                 x = 10*a.id
                 y = -1
@@ -547,8 +548,13 @@ class ResultsWidget(QtGui.QWidget):
             self._show_gt_markers(animal_ids2centroids)
 
 
-    def _gt_marker_clicked(self, id):
-        print id
+    def _gt_marker_clicked(self, id_):
+        s = 'id: '+str(id_)
+
+        s += "\n" + str(RegionChunk(self.project.chm[id_], self.project.gm, self.project.rm).region_in_t(self.video.frame_number()))
+
+        self.info_l.setText(s)
+        print id_
 
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""

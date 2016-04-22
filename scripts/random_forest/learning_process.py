@@ -37,7 +37,8 @@ class LearningProcess:
             self.features = self.precompute_features_()
 
             with open(p.working_directory+'/temp/features.pkl', 'wb') as f:
-                d = {'chunks': self.chunks, 'chunks_itree': self.chunks_itree, 'features': self.features}
+                d = {'chunks': self.chunks, 'chunks_itree': self.chunks_itree, 'features': self.features,
+                     'collision_chunks': self.collision_chunks}
                 pickle.dump(d, f, -1)
         else:
             with open(p.working_directory+'/temp/features.pkl', 'rb') as f:
@@ -45,6 +46,7 @@ class LearningProcess:
                 self.chunks = d['chunks']
                 self.chunks_itree = d['chunks_itree']
                 self.features = d['features']
+                self.collision_chunks = d['collision_chunks']
 
         if True:
             # basically set every chunk with full set of possible ids
@@ -71,7 +73,7 @@ class LearningProcess:
                      'class_frequences': self.class_frequences,
                      'animal_id_mapping': self.animal_id_mapping,
                      'chunk_available_ids': self.chunk_available_ids,
-                     'collision_chunks': self.collision_chunks, 'undecided_chunks': self.undecided_chunks,
+                     'undecided_chunks': self.undecided_chunks,
                      'old_x_size': self.old_x_size}
                 pickle.dump(d, f, -1)
         else:
@@ -177,8 +179,7 @@ class LearningProcess:
                     for r in rch.regions_gen():
                         sum += r.area()
 
-                    area_mean = sum/float(ch.length())
-                    area_mean_thr = 1000
+                    # area_mean = sum/float(ch.length())
 
                     area_mean = sum/float(ch.length())
                     c = 'C' if ch.id_ in self.collision_chunks else ' '
@@ -367,21 +368,25 @@ class LearningProcess:
 
         new_S_self = list(new_S_self)
         if len(new_S_self) == 1:
-            print "Chunk solved by ID conservation rules", ch.id_,  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "AID: ", new_S_self[0]
             self.update_availability(ch, new_S_self[0], learn=True)
+            print "Chunk solved by ID conservation rules", ch.id_,  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "AID: ", new_S_self[0]
         else:
             self.chunk_available_ids[ch.id_] = new_S_self
 
         return affected
 
     def update_availability(self, ch, id_, learn=False):
+        if ch.id_ in self.collision_chunks:
+            print "CANNOT DECIDE COLLISION CHUNK!!!"
+            return
+
         if learn:
             self.__learn(ch, id_)
 
-        print "Ch.id: %d assigned animal id: %d. Ch.start: %d, Ch.end: %d" % (ch.id_, id_, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
         self.save_ids_()
 
         self.__assign_id(ch, id_)
+        print "Ch.id: %d assigned animal id: %d. Ch.start: %d, Ch.end: %d" % (ch.id_, id_, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
         self.chunk_available_ids[ch.id_] = [id_]
 
         # processed = set()
@@ -399,6 +404,8 @@ class LearningProcess:
             ch = queue.pop(0)
             queue.extend(self.__propagate_availability(ch))
             # processed.add(v)
+
+        pass
 
     def next_step(self):
         k = 50.0
@@ -673,13 +680,18 @@ class LearningProcess:
         # it is in this position, because we need self.X, self.y to be ready for the case when we solve something by conservation rules -> thus we will be learning -> updating self.X...
         # skip last chunk, because it will be assigned autoamtically based on conservation rules
         for id_, ch in enumerate(chunks[:-1]):
-            self.update_availability(ch, id_)
+            self.update_availability(ch, id_, learn=True)
+
+        try:
+            self.update_availability(chunks[-1], id_, learn=True)
+        except:
+            pass
 
         return range(len(chunks))
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam2/cam2.fproj')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p)
