@@ -63,13 +63,13 @@ class MainTabWidget(QtGui.QWidget):
         print "RELOADING"
         import cPickle as pickle
         try:
-            with open(self.project.working_directory+'/temp/animal_id_mapping.pkl', 'rb') as f_:
-                animal_id_mapping = pickle.load(f_)
+            with open(self.project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
+                chunk_available_ids = pickle.load(f_)
 
             for ch_id in self.project.gm.chunk_list():
                 animal_id = -1
-                if ch_id in animal_id_mapping:
-                    animal_id = animal_id_mapping[ch_id]
+                if ch_id in chunk_available_ids:
+                    animal_id = chunk_available_ids[ch_id]
 
                 self.project.chm[ch_id].animal_id_ = animal_id
 

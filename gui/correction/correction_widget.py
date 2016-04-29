@@ -606,10 +606,10 @@ class ResultsWidget(QtGui.QWidget):
             self.chunks = chs
         else:
             import cPickle as pickle
-            animal_id_mapping = None
+            chunk_available_ids = None
             try:
-                with open(self.project.working_directory+'/temp/animal_id_mapping.pkl', 'rb') as f_:
-                    animal_id_mapping = pickle.load(f_)
+                with open(self.project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
+                    chunk_available_ids = pickle.load(f_)
             except:
                 pass
 
@@ -620,9 +620,9 @@ class ResultsWidget(QtGui.QWidget):
                     print "22"
 
                 col_ = ch.color
-                if animal_id_mapping is not None:
-                    if ch.id_ in animal_id_mapping:
-                        animal_id = animal_id_mapping[ch.id_]
+                if chunk_available_ids is not None:
+                    if ch.id_ in chunk_available_ids:
+                        animal_id = chunk_available_ids[ch.id_]
                         col_ = self.colors_[animal_id]
                     else:
                         col_ = QtGui.QColor().fromRgbF(0.3, 0.3, 0.3)

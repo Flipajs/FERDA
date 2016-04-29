@@ -20,7 +20,6 @@ class LearningProcess:
         self._eps2 = 0.1
 
         self.get_features = self.get_features_var1
-        self.animal_id_mapping = {}
 
         self.old_x_size = 0
 
@@ -71,7 +70,6 @@ class LearningProcess:
             with open(p.working_directory+'/temp/rfc.pkl', 'wb') as f:
                 d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.ids,
                      'class_frequences': self.class_frequences,
-                     'animal_id_mapping': self.animal_id_mapping,
                      'chunk_available_ids': self.chunk_available_ids,
                      'undecided_chunks': self.undecided_chunks,
                      'old_x_size': self.old_x_size}
@@ -84,38 +82,13 @@ class LearningProcess:
                 self.y = d['y']
                 self.ids = d['ids']
                 self.class_frequences = d['class_frequences']
-                self.animal_id_mapping = d['animal_id_mapping']
                 self.chunk_available_ids = d['chunk_available_ids']
                 self.collision_chunks = d['collision_chunks']
                 self.undecided_chunks = d['undecided_chunks']
                 self.old_x_size = d['old_x_size']
 
-        # for ch in self.chunks:
-        #     rch = RegionChunk(ch, self.p.gm, self.p.rm)
-        #
-        #     if ch.length() > 0:
-        #         sum = 0
-        #         for r in rch.regions_gen():
-        #             sum += r.area()
-        #
-        #         area_mean = sum/float(ch.length())
-        #         c = 'C' if ch.id_ in self.collision_chunks else ' '
-        #         area_mean_thr = 1000
-        #         p = 'C' if area_mean > area_mean_thr else ' '
-        #         print "%s %s %s area: %.2f, id:%d, length:%d" % (p==c, c, p, area_mean, ch.id_, ch.length())
-        #
-        #         if area_mean > area_mean_thr:
-        #             self.collision_chunks[ch.id_] = True
-        #             try:
-        #                 del self.undecided_chunks[ch.id_]
-        #             except:
-        #                 pass
-
         self.save_ids_()
         self.next_step()
-
-
-
 
     def set_ids_(self):
         app = QtGui.QApplication(sys.argv)
@@ -207,7 +180,6 @@ class LearningProcess:
         for i, v1 in enumerate(vertices1):
             for j, v2 in enumerate(vertices2):
                 s, _, _, _ = self.p.solver.assignment_score(self.p.gm.region(v1), self.p.gm.region(v2))
-                # s, _, _ = self.p.solver.assignment_score_pos_orient(self.p.gm.region(v1), self.p.gm.region(v2))
 
                 score[i, j] = s
 
@@ -228,8 +200,10 @@ class LearningProcess:
                 ch1, _ = self.p.gm.is_chunk(v1)
                 ch2, _ = self.p.gm.is_chunk(v2)
 
-                id1 = self.animal_id_mapping.get(ch1.id_, -1)
-                id2 = self.animal_id_mapping.get(ch2.id_, -1)
+                ids1 = self.chunk_available_ids.get(ch1.id_, [])
+                id1 = -1 if len(ids1) != 1 else ids1[0]
+                ids2 = self.chunk_available_ids.get(ch2.id_, [])
+                id2 = -1 if len(ids2) != 1 else ids2[0]
 
                 if id1 > -1 and id2 > -1 and id1 != id2:
                     assign_new_ids = []
@@ -244,10 +218,11 @@ class LearningProcess:
                     assign_new_ids.append((id2, ch1))
 
         for id_, ch in assign_new_ids:
-            if ch.id_ in self.features:
-                self.__learn(ch, id_)
+            if len(self.chunk_available_ids[ch.id_]) > 1:
+                if ch.id_ in self.features:
+                    self.__learn(ch, id_)
 
-            self.__assign_id(ch, id_)
+                self.__assign_id(ch, id_)
 
         return len(assign_new_ids) > 0
 
@@ -272,11 +247,6 @@ class LearningProcess:
                 if self.__solve_if_clear(vertices1, vertices2):
                     return True
 
-        # if e_vertext.out_degree() == 1:
-        #     for v in e_vertext.out_neighbours():
-        #         pass
-        #
-
         return False
 
     def __learn(self, ch, id_):
@@ -296,28 +266,24 @@ class LearningProcess:
             self.old_x_size = len(self.X)
 
     def __assign_id(self, ch, id_):
-        # for i in xrange(len(self.candidate_chunks)):
-        #     if self.candidate_chunks[i].id_ == ch.id_:
-        #         self.candidate_chunks.pop(i)
-        #         break
+        if len(self.chunk_available_ids[ch.id_]) <= 1:
+            try:
+                del self.undecided_chunks[ch.id_]
+            except:
+                pass
 
-        # for i, ch_ in enumerate(self.chunks):
-        #     if ch.id_ == ch_.id_:
-        #         self.chunks.pop(i)
-        #
-        #         print "pop ", i
-        # try:
-        #     self.candidate_chunks.remove(ch)
-        # except:
-        #
-        #     pass
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            print "WARNING: Strange behaviour occured attempting to assign id to already resolved chunk in __assign_id/learning_process.py"
+            return False
 
         try:
             del self.undecided_chunks[ch.id_]
         except:
             print "PROBLEMATIC CHUNK", ch.id_,  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "A_ID: ", id_
 
-        self.animal_id_mapping[ch.id_] = id_
+        self.chunk_available_ids[ch.id_] = [id_]
+
+        return True
 
     def __precompute_availability(self):
         vertices = map(self.p.gm.g.vertex, self.p.gm.get_vertices_in_t(0))
@@ -328,9 +294,6 @@ class LearningProcess:
             self.chunk_available_ids[ch.id_] = list(ids)
 
     def __propagate_availability(self, ch, remove_id=[]):
-        # if ch not in self.chunks:
-        #     return []
-
         S_in = set()
         affected = []
         for u in ch.start_vertex(self.p.gm).in_neighbours():
@@ -350,18 +313,47 @@ class LearningProcess:
 
         # first chunks
         if not S_in:
-            new_S_self = S_self.intersection(S_out)
+            if not S_out:
+                new_S_self = S_self
+            else:
+                new_S_self = S_self.intersection(S_out)
         else:
             if not S_out:
                 new_S_self = S_self.intersection(S_in)
             else:
                 new_S_self = S_self.intersection(S_in).intersection(S_out)
-        # new_S_self = S_self.intersection(S_in.union(S_out))
+
+        if ch.start_frame(self.p.gm) > 0:
+            for id_ in S_self.difference(new_S_self):
+                if id_ not in S_in:
+                    in_chunks = self.p.chm.chunks_in_frame(ch.start_frame(self.p.gm)-1)
+                    ids_test = set()
+                    for ch_ in in_chunks:
+                        ids_test.update(self.chunk_available_ids[ch_.id_])
+
+                    # Id is lost
+                    if id_ not in ids_test:
+                        new_S_self.add(id_)
+
+                if id_ not in S_out:
+                    out_chunks = self.p.chm.chunks_in_frame(ch.end_frame(self.p.gm) + 1)
+                    ids_test = set()
+                    for ch_ in out_chunks:
+                        ids_test.update(self.chunk_available_ids[ch_.id_])
+
+                    # Id is lost
+                    if id_ not in ids_test:
+                        new_S_self.add(id_)
+
         for id_ in remove_id:
             new_S_self.discard(id_)
 
         if S_self == new_S_self:
             return []
+
+        if len(S_self) < len(new_S_self):
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            print "WARNING: S_self < new_S_self!"
 
         if not new_S_self:
             print "ZERO available IDs set", ch.id_,  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch
@@ -376,7 +368,15 @@ class LearningProcess:
         return affected
 
     def update_availability(self, ch, id_, learn=False):
+        if len(self.chunk_available_ids[ch.id_]) <= 1:
+            return
+
         if ch.id_ in self.collision_chunks:
+            try:
+                del self.undecided_chunks[ch.id_]
+            except:
+                pass
+
             print "CANNOT DECIDE COLLISION CHUNK!!!"
             return
 
@@ -385,9 +385,10 @@ class LearningProcess:
 
         self.save_ids_()
 
-        self.__assign_id(ch, id_)
+        if not self.__assign_id(ch, id_):
+            return
+
         print "Ch.id: %d assigned animal id: %d. Ch.start: %d, Ch.end: %d" % (ch.id_, id_, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
-        self.chunk_available_ids[ch.id_] = [id_]
 
         # processed = set()
         queue = [self.p.gm.get_chunk(u) for u in ch.start_vertex(self.p.gm).in_neighbours()] + \
@@ -432,12 +433,6 @@ class LearningProcess:
                     best_val = np.max(proba)
                     best_ch = ch
 
-                    # print "prob: %.2f, ch_len: %d, id: %d, ch_id: %d, %s, ch_start: %d, ch_end: %d" %  (np.max(proba), data_len, np.argmax(proba), ch.id_, proba, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
-                    # self.classify_chunk(ch, proba)
-
-            # if best_val < 0.5:
-            #     break
-
             ch = best_ch
 
             if best_ch is None:
@@ -466,7 +461,7 @@ class LearningProcess:
         self.save_ids_()
 
     def save_ids_(self):
-        with open(self.p.working_directory + '/temp/animal_id_mapping.pkl', 'wb') as f_:
+        with open(self.p.working_directory + '/temp/chunk_available_ids.pkl', 'wb') as f_:
             pickle.dump(self.chunk_available_ids, f_)
 
     def get_frequence_vector_(self):
@@ -503,15 +498,6 @@ class LearningProcess:
             mask[id_] = 1
 
         probs *= mask
-
-        # start_f = ch.start_frame(self.p.gm)
-        # end_f = ch.end_frame(self.p.gm)
-        # intervals = self.chunks_itree[start_f-self._eps2:end_f + self._eps2]
-        #
-        # for i in intervals:
-        #     if i.data in self.animal_id_mapping:
-        #         animal_id = self.animal_id_mapping[i.data]
-        #         probs[animal_id] = 0
 
         return probs
 
@@ -691,7 +677,7 @@ class LearningProcess:
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam2/cam2.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p)
