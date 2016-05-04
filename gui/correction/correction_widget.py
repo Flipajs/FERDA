@@ -175,7 +175,7 @@ class ResultsWidget(QtGui.QWidget):
         self.visu_controls_layout.addWidget(self.show_contour_ch)
 
         self.contour_without_colors = QtGui.QCheckBox('w\'out colors')
-        self.contour_without_colors.setChecked(True)
+        self.contour_without_colors.setChecked(False)
         self.contour_without_colors.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.contour_without_colors)
 
@@ -255,7 +255,7 @@ class ResultsWidget(QtGui.QWidget):
         # TODO: clearmetrics bug workaround...
         max_frame = 0
         for frame in self._gt:
-            # if frame >= 301:
+            # if frame > 4000:
             #     continue
 
             my_data[frame] = np.array(([None] * len(self.project.animals)))
@@ -267,7 +267,7 @@ class ResultsWidget(QtGui.QWidget):
 
             max_frame = max(max_frame, frame)
 
-        for f in xrange(max_frame):
+        for f in xrange(max_frame+100):
             my_data.setdefault(f, np.array([None] * len(self.project.animals)))
 
         from utils.clearmetrics.clearmetrics import ClearMetrics
@@ -551,7 +551,18 @@ class ResultsWidget(QtGui.QWidget):
     def _gt_marker_clicked(self, id_):
         s = 'id: '+str(id_)
 
-        s += "\n" + str(RegionChunk(self.project.chm[id_], self.project.gm, self.project.rm).region_in_t(self.video.frame_number()))
+        ch = self.project.chm[id_]
+        f = self.video.frame_number()
+        r = RegionChunk(ch, self.project.gm, self.project.rm).region_in_t(f)
+        s += "\n" + str(r)
+
+        if ch.start_frame(self.project.gm) == f:
+            s += "\n in_degree: " + str(ch.start_vertex(self.project.gm).in_degree())
+
+        if ch.end_frame(self.project.gm) == f:
+            s += "\n out degree: " + str(ch.end_vertex(self.project.gm).out_degree())
+
+
 
         self.info_l.setText(s)
         print id_

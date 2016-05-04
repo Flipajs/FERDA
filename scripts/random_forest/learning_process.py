@@ -64,7 +64,9 @@ class LearningProcess:
             self.y = None
             self.ids = self.get_init_data()
 
-            self.rfc = RandomForestClassifier(class_weight='balanced')
+
+            np.random.seed(42)
+            self.rfc = RandomForestClassifier()
             self.rfc.fit(self.X, self.y)
 
             with open(p.working_directory+'/temp/rfc.pkl', 'wb') as f:
@@ -217,14 +219,16 @@ class LearningProcess:
                 elif id2 > -1:
                     assign_new_ids.append((id2, ch1))
 
+        b = False
         for id_, ch in assign_new_ids:
             if len(self.chunk_available_ids[ch.id_]) > 1:
                 if ch.id_ in self.features:
                     self.__learn(ch, id_)
 
-                self.__assign_id(ch, id_)
+                if self.__assign_id(ch, id_):
+                    b = True
 
-        return len(assign_new_ids) > 0
+        return b
 
     def test_connected_with_merged(self, ch):
         s_vertex = ch.start_vertex(self.p.gm)
@@ -282,6 +286,7 @@ class LearningProcess:
             print "PROBLEMATIC CHUNK", ch.id_,  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "A_ID: ", id_
 
         self.chunk_available_ids[ch.id_] = [id_]
+        self.update_after_hard_decision(ch, id_)
 
         return True
 
@@ -294,6 +299,9 @@ class LearningProcess:
             self.chunk_available_ids[ch.id_] = list(ids)
 
     def __propagate_availability(self, ch, remove_id=[]):
+        if ch.id_ == 124:
+            print "124"
+
         S_in = set()
         affected = []
         for u in ch.start_vertex(self.p.gm).in_neighbours():
@@ -360,10 +368,20 @@ class LearningProcess:
 
         new_S_self = list(new_S_self)
         if len(new_S_self) == 1:
-            self.update_availability(ch, new_S_self[0], learn=True)
+            self.__assign_id(ch, new_S_self[0])
+            # self.update_availability(ch, new_S_self[0], learn=True)
+            # in_time = set(self.p.chm.chunks_in_interval(ch.start_frame(self.p.gm), ch.end_frame(self.p.gm)))
+            # in_time.remove(ch)
+            # affected.extend(list(in_time))
+
             print "Chunk solved by ID conservation rules", ch.id_,  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "AID: ", new_S_self[0]
         else:
             self.chunk_available_ids[ch.id_] = new_S_self
+            if not new_S_self:
+                try:
+                    del self.undecided_chunks[ch.id_]
+                except:
+                    pass
 
         return affected
 
@@ -390,7 +408,8 @@ class LearningProcess:
 
         print "Ch.id: %d assigned animal id: %d. Ch.start: %d, Ch.end: %d" % (ch.id_, id_, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
 
-        # processed = set()
+
+    def update_after_hard_decision(self, ch, id_):
         queue = [self.p.gm.get_chunk(u) for u in ch.start_vertex(self.p.gm).in_neighbours()] + \
                 [self.p.gm.get_chunk(u) for u in ch.end_vertex(self.p.gm).out_neighbours()]
 
@@ -404,20 +423,21 @@ class LearningProcess:
         while queue:
             ch = queue.pop(0)
             queue.extend(self.__propagate_availability(ch))
-            # processed.add(v)
-
-        pass
 
     def next_step(self):
         k = 50.0
 
         while len(self.undecided_chunks):
+            if len(self.undecided_chunks) == 2:
+                print 2
+
             best_ch = None
-            best_val = 0
+            best_val = -1
             for ch_id_ in self.undecided_chunks:
                 ch = self.p.chm[ch_id_]
 
                 if self.test_connected_with_merged(ch):
+                    best_ch = None
                     break
 
                 proba, data_len = self.get_chunk_proba(ch)
@@ -426,16 +446,25 @@ class LearningProcess:
                 alpha = (min((data_len/k)**2, 0.95))
 
                 # if it is obvious (1.0, 0, 0, 0, 0)...
-                if np.max(proba) < 1.0:
+                if 0 < np.max(proba) < 1.0:
                     proba = (1-alpha) * uni_probs + alpha*proba
 
                 if np.max(proba) > best_val:
                     best_val = np.max(proba)
+                    print "best_val", best_val
                     best_ch = ch
 
             ch = best_ch
 
             if best_ch is None:
+                continue
+
+            if best_val == 0:
+                try:
+                    del self.undecided_chunks[best_ch]
+                except:
+                    pass
+
                 continue
 
             proba, data_len = self.get_chunk_proba(ch)
@@ -450,6 +479,15 @@ class LearningProcess:
             print "-----------------------------------------------", len(self.undecided_chunks)
 
             animal_id = np.argmax(proba)
+
+            ######
+            # proba_ = np.copy(proba)
+            # id1_ = np.argmax(proba_)
+            # m1 = proba_[id1_]
+            # proba_[id1_] = 0
+
+            # if np.max(proba_) > 1e-6 and m1 / np.max(proba_) < 5:
+            #     return
 
             use_for_learning = True if np.max(proba) > 0.9 else False
 
