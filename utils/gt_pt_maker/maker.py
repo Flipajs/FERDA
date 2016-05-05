@@ -172,22 +172,19 @@ right-click - remove point
 
 """
 
-
-with open('/Users/flipajs/Documents/wd/antennas_gt/test/0_20160505-164551.pkl', 'rb') as f:
+data = None
+with open('/Users/flipajs/Documents/wd/antennas_gt/Cam1/50.pkl', 'rb') as f:
     up = pickle.Unpickler(f)
     data = up.load()
 
-
-# im = plt.imread('/Users/flipajs/Desktop/Screen Shot 2016-03-01 at 17.28.47.png')
-im = plt.imread('/Users/flipajs/Desktop/Screen Shot 2016-03-09 at 08.14.06.png')
 fig = plt.figure()
 ax = fig.add_subplot(111)
 from utils.video_manager import VideoManager
 vm = VideoManager('/Users/flipajs/Documents/wd/Cam1_clip.avi')
-cc = clicker_class(ax, vm, '/Users/flipajs/Documents/wd/antennas_gt/test', set_id=0, frame=0)
+cc = clicker_class(ax, vm, '/Users/flipajs/Documents/wd/antennas_gt/test', set_id=50, frame=50)
 
-cc.data = data
-cc.frame = sorted([f for f in data])[0]
-print cc.frame
-cc.set_frame()
+if data is not None:
+    cc.data = data
+    cc.frame = sorted([f for f in data])[0]
+    cc.set_frame()
 plt.show()
