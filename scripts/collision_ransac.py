@@ -73,9 +73,14 @@ def __get_support(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t
     # -1 because, there is last number describing the end of interval in p_type_starts...
     for c in range(len(p_type_starts1)-1):
         d = cdist(pts1[p_type_starts1[c]:p_type_starts1[c+1], :], pts2[p_type_starts2[c]:p_type_starts2[c+1], :])
-        mins_ = np.min(d, axis=0)
+        mins_ = np.min(d, axis=1)
 
-        supp += type_weights[c] * np.sum(mins_ < thresh)
+
+        mins_ = mins_**2 - thresh**2
+        mins_[mins_ > 0] = 0
+
+        # supp += type_weights[c] * np.sum(mins_ < thresh)
+        supp += -np.sum(mins_) * type_weights[c]
         # supp += np.sum(mins_ < threshs[c])
 
     return supp
@@ -136,9 +141,10 @@ def estimate_rt(kps1, kps2):
         if t is None:
             continue
 
-        type_weights = [0.2, 0.35, 0.7, 1.3, 2]
+        # type_weights = [0.2, 0.35, 0.7, 1.3, 2]
+        type_weights = [1, 2]
         # type_weights = [1, 1, 1, 1, 1]
-        supp = __get_support(pts1, type_starts1, pts2, type_starts2, type_weights, r, t, rot_center)
+        supp = __get_support(pts1, type_starts1, pts2, type_starts2, type_weights, r, t, rot_center, thresh=5)
 
         i = 0
         while i < len(best_supp) and supp > best_supp[i]:
@@ -168,12 +174,12 @@ if __name__ == '__main__':
     rs2 = p.gm.region(p.chm[d['s'][1]].end_vertex_id())
     rs3 = p.gm.region(p.chm[d['s'][2]].end_vertex_id())
 
-    im = vm.get_frame(rs1.frame())
-    plt.figure()
-    plt.imshow(im)
-    plt.show()
-    plt.waitforbuttonpress()
-
+    # im = vm.get_frame(rs1.frame())
+    # plt.figure()
+    # plt.imshow(im)
+    # plt.show()
+    # plt.waitforbuttonpress()
+    #
     plt.ion()
 
     # kps1 = get_curvature_kp(rs1.contour_without_holes(), True)
@@ -187,18 +193,28 @@ if __name__ == '__main__':
 
     step = 5
 
-    test1 = {0: []}
+    rs__ = rs3
+    test1 = {0: [], 1:[]}
     pts1 = []
-    pts__ = rs3.pts()
+    pts__ = rs__.pts()
     pts__ = pts__[np.random.randint(len(pts__), size=len(pts__)/step), :]
+
     for i in range(len(pts__)):
         # if i % step == 0:
             p = pts__[i, :]
             test1[0].append({'point': p, 'angle': 0})
             pts1.append(p)
+
+    pts__ = rs__.contour_without_holes()
+    for i in range(len(pts__)):
+        if i % step == 0:
+            p = pts__[i, :]
+            test1[1].append({'point': p, 'angle': 0})
+
+
     pts1 = np.array(pts1)
 
-    testm = {0: []}
+    testm = {0: [], 1: []}
     ptsm = []
     pts__ = r.pts()
     pts__ = pts__[np.random.randint(len(pts__), size=len(pts__)/step), :]
@@ -207,6 +223,12 @@ if __name__ == '__main__':
             p = pts__[i, :]
             testm[0].append({'point': p, 'angle': 0})
             ptsm.append(p)
+
+    pts__ = r.contour_without_holes()
+    for i in range(len(pts__)):
+        if i % step == 0:
+            p = pts__[i, :]
+            testm[1].append({'point': p, 'angle': 0})
 
     ptsm = np.array(ptsm)
 
