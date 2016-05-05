@@ -136,8 +136,8 @@ def estimate_rt(kps1, kps2):
         if t is None:
             continue
 
-        type_weights = [0.2, 0.35, 0.7, 1.3, 2]
-        # type_weights = [1, 1, 1, 1, 1]
+        # type_weights = [0.2, 0.35, 0.7, 1.3, 2]
+        type_weights = [1, 1, 1, 1, 1]
         supp = __get_support(pts1, type_starts1, pts2, type_starts2, type_weights, r, t, rot_center)
 
         i = 0
@@ -168,28 +168,35 @@ if __name__ == '__main__':
     rs2 = p.gm.region(p.chm[d['s'][1]].end_vertex_id())
     rs3 = p.gm.region(p.chm[d['s'][2]].end_vertex_id())
 
-    im = vm.get_frame(rs1.frame())
-    plt.figure()
-    plt.imshow(im)
-    plt.show()
-    plt.waitforbuttonpress()
-
     plt.ion()
+    #
+    # im = vm.get_frame(rs1.frame())
+    # plt.figure()
+    # plt.imshow(im)
+    # plt.show()
+    # plt.waitforbuttonpress()
+    #
+    # im = vm.get_frame(rs1.frame() + 1)
+    # plt.figure()
+    # plt.imshow(im)
+    # plt.show()
+    # plt.waitforbuttonpress()
 
-    # kps1 = get_curvature_kp(rs1.contour_without_holes(), True)
-    # kps2 = get_curvature_kp(rs2.contour_without_holes(), True)
-    # kps3 = get_curvature_kp(rs3.contour_without_holes(), True)
+
+    kps1 = get_curvature_kp(rs1.contour_without_holes(), True)
+    kps2 = get_curvature_kp(rs2.contour_without_holes(), True)
+    kps3 = get_curvature_kp(rs3.contour_without_holes(), True)
 
 
     r = p.gm.region(p.chm[d['m']].start_vertex_id())
-    # kpsm = get_curvature_kp(r.contour_without_holes(), True)
+    kpsm = get_curvature_kp(r.contour_without_holes(), True)
 
 
     step = 5
 
     test1 = {0: []}
     pts1 = []
-    pts__ = rs3.pts()
+    pts__ = rs1.pts()
     pts__ = pts__[np.random.randint(len(pts__), size=len(pts__)/step), :]
     for i in range(len(pts__)):
         # if i % step == 0:
@@ -228,7 +235,7 @@ if __name__ == '__main__':
         print best_supp[i+1]
         pts_ = __transform_pts(pts1, best_r[i], best_t[i], best_rot_center[i])
         plt.hold(True)
-        plt.scatter(pts_[:, 0], pts_[:, 1], c=cs[i%len(cs)], s=100, alpha=0.4)
+        plt.scatter(pts_[:, 0], pts_[:, 1], c=cs[i%len(cs)], s=30, alpha=0.4)
         plt.hold(False)
 
         plt.show()
