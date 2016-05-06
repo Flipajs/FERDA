@@ -95,7 +95,7 @@ def __get_support(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t
             supp += sum(int_diff) * type_weights[c]
 
         c = 50
-        if True:
+        if False:
             supp += np.linalg.norm(t)**1.2 + c*r
 
 
@@ -144,40 +144,57 @@ def estimate_rt(kps1, kps2):
     pts2 = np.array(pts2)
 
 
-    steps = 1000
+    max_steps = 10000
+    num_trials = 500
 
     best_t = []
     best_r = []
     best_rot_center = []
     best_supp = [np.inf]
 
-    for i in range(steps):
+    trials = 0
+    for i in range(max_steps):
         ai = random.randint(len(pts1), size=2)
         s_ = p_type1[ai[0]]
         bi1 = random.randint(type_starts2[s_], type_starts2[s_+1])
         s_ = p_type1[ai[1]]
         bi2 = random.randint(type_starts2[s_], type_starts2[s_+1])
 
-        t, r, s, rot_center = __get_rts(pts1[ai[0], :], pts1[ai[1], :], pts2[bi1, :], pts2[bi2, :])
+        pa1 = pts1[ai[0], :]
+        pa2 = pts1[ai[1], :]
+        pb1 = pts2[bi1, :]
+        pb2 = pts2[bi2, :]
+
+        # test if they are reasonable pairs
+        if abs(np.linalg.norm(pa1-pa2) - np.linalg.norm(pb1-pb2)) > 5:
+            continue
+
+        t, r, s, rot_center = __get_rts(pa1, pa2, pb1, pb2)
 
         if t is None:
             continue
+
+        trials += 1
 
         # type_weights = [0.2, 0.35, 0.7, 1.3, 2]
         type_weights = [1, 2]
         # type_weights = [1, 1, 1, 1, 1]
         supp = __get_support(pts1, type_starts1, pts2, type_starts2, type_weights, r, t, rot_center, intensities=(intensities1, intensities2), thresh=5)
 
-        i = 0
-        while i < len(best_supp) and supp < best_supp[i]:
-            i += 1
+        j = 0
+        while j < len(best_supp) and supp < best_supp[j]:
+            j += 1
 
-        if i > 0:
-            best_r.insert(i, r)
-            best_t.insert(i, t)
-            best_rot_center.insert(i, rot_center)
-            best_supp.insert(i, supp)
+        if j > 0:
+            best_r.insert(j, r)
+            best_t.insert(j, t)
+            best_rot_center.insert(j, rot_center)
+            best_supp.insert(j, supp)
 
+        if trials >= num_trials:
+            break
+
+    print "SKIPPED: ", i - num_trials
 
     return best_t, best_r, best_rot_center, best_supp
 
@@ -190,7 +207,7 @@ if __name__ == '__main__':
     p.load(wd+name)
     vm = get_auto_video_manager(p)
 
-    d = data[3350]
+    d = data[1985]
 
     rs1 = p.gm.region(p.chm[d['s'][0]].end_vertex_id())
     rs2 = p.gm.region(p.chm[d['s'][1]].end_vertex_id())
@@ -218,10 +235,9 @@ if __name__ == '__main__':
     r = rch[1]
     # kpsm = get_curvature_kp(r.contour_without_holes(), True)
 
-
     step = 5
 
-    rs__ = rs2
+    rs__ = rs1
     test1 = {0: [], 1:[]}
     pts1 = []
     pts__ = rs__.pts()
@@ -238,7 +254,6 @@ if __name__ == '__main__':
         if i % step == 0:
             p = pts__[i, :]
             test1[1].append({'point': p, 'angle': 0, 'intensity': gray[p[0], p[1]]})
-
 
     im = vm.get_frame(r.frame())
     gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)

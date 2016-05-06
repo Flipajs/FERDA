@@ -74,7 +74,6 @@ def get_curvature_kp(cont, plot=False):
         plt.gca().invert_yaxis()
 
         plt.show()
-        # plt.waitforbuttonpress(0)
 
     return kps
 
