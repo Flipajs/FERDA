@@ -101,14 +101,47 @@ def __get_support(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t
 
     return supp
 
-def estimate_rt(kps1, kps2):
+def __solution_distance(t1, t2, r1, r2):
+    d = np.linalg.norm(t1 - t2)
+
+    c = 30
+
+    return d + c * abs(r1 - r2)
+
+def __compare_solution(best_t, best_r, best_rot_center, best_supp, t, r, rot_center, supp, best_n, min_diff_t = 10):
+    j = 0
+    while j < len(best_supp) and supp < best_supp[j]:
+        j += 1
+
+    remove = -1
+    for i in xrange(1, len(best_t)):
+        if __solution_distance(best_t[i], t, best_r[i], r) < min_diff_t:
+            if best_supp[i] > supp:
+                remove = i
+            else:
+                return
+
+    if j > 0 or len(best_t) == 0:
+        best_r.insert(j, r)
+        best_t.insert(j, t)
+        best_rot_center.insert(j, rot_center)
+        best_supp.insert(j, supp)
+
+    remove = max(remove, 0)
+    if len(best_r) >= best_n or remove:
+        best_r.pop(remove)
+        best_t.pop(remove)
+        best_rot_center.pop(remove)
+        best_supp.pop(remove)
+
+
+def estimate_rt(kps1, kps2, best_n=20):
     from numpy import random
     random.seed(19)
 
     p_type1 = []
     type_starts1 = []
     pts1 = []
-    angles1 = []
     intensities1 = []
     si = 0
 
@@ -116,7 +149,6 @@ def estimate_rt(kps1, kps2):
         type_starts1.append(len(pts1))
         for b in kps1[a]:
             pts1.append(b['point'])
-            angles1.append(b['angle'])
             intensities1.append(b['intensity'])
             p_type1.append(si)
 
@@ -129,13 +161,11 @@ def estimate_rt(kps1, kps2):
 
     type_starts2 = []
     pts2 = []
-    angles2 = []
     intensities2 = []
     for a in sorted([int(x) for x in kps2]):
         type_starts2.append(len(pts2))
         for b in kps2[a]:
             pts2.append(b['point'])
-            angles2.append(b['angle'])
             intensities2.append(b['intensity'])
 
     intensities2 = np.array(intensities2, dtype=np.int32)
@@ -147,9 +177,9 @@ def estimate_rt(kps1, kps2):
     max_steps = 10000
     num_trials = 500
 
-    best_t = []
-    best_r = []
-    best_rot_center = []
+    best_t = [None]
+    best_r = [None]
+    best_rot_center = [None]
     best_supp = [np.inf]
 
     trials = 0
@@ -179,24 +209,40 @@ def estimate_rt(kps1, kps2):
         # type_weights = [0.2, 0.35, 0.7, 1.3, 2]
         type_weights = [1, 2]
         # type_weights = [1, 1, 1, 1, 1]
-        supp = __get_support(pts1, type_starts1, pts2, type_starts2, type_weights, r, t, rot_center, intensities=(intensities1, intensities2), thresh=5)
+        supp = __get_support(pts1, type_starts1, pts2, type_starts2, type_weights, r, t, rot_center, intensities=(intensities1, intensities2), thresh=20)
 
-        j = 0
-        while j < len(best_supp) and supp < best_supp[j]:
-            j += 1
-
-        if j > 0:
-            best_r.insert(j, r)
-            best_t.insert(j, t)
-            best_rot_center.insert(j, rot_center)
-            best_supp.insert(j, supp)
+        __compare_solution(best_t, best_r, best_rot_center, best_supp, t, r, rot_center, supp, best_n)
 
         if trials >= num_trials:
             break
 
     print "SKIPPED: ", i - num_trials
 
+    # remove fake data
+    best_t.pop(0)
+    best_r.pop(0)
+    best_rot_center.pop(0)
+    best_supp.pop(0)
+
     return best_t, best_r, best_rot_center, best_supp
+
+
+def __prepare_pts_and_cont(r, step, gray):
+    result = {0: [], 1: []}
+    pts = r.pts()
+    pts = pts[np.random.randint(len(pts), size=len(pts)/step), :]
+
+    for i in range(len(pts)):
+        p = pts[i, :]
+        result[0].append({'point': p, 'intensity': gray[p[0], p[1]]})
+
+    ptsc = r.contour_without_holes()
+    for i in range(len(ptsc)):
+        if i % step == 0:
+            p = ptsc[i, :]
+            result[1].append({'point': p, 'intensity': gray[p[0], p[1]]})
+
+    return result, pts
 
 
 if __name__ == '__main__':
@@ -216,84 +262,39 @@ if __name__ == '__main__':
     im = vm.get_frame(rs1.frame())
     gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
-    # plt.figure()
-    # plt.imshow(im)
-    # plt.show()
-    # plt.waitforbuttonpress()
-    #
     plt.ion()
-
-    # kps1 = get_curvature_kp(rs1.contour_without_holes(), True)
-    # kps2 = get_curvature_kp(rs2.contour_without_holes(), True)
-    # kps3 = get_curvature_kp(rs3.contour_without_holes(), True)
 
 
     from core.graph.region_chunk import RegionChunk
     rch = RegionChunk(p.chm[d['m']], p.gm, p.rm)
 
-    # r = p.gm.region(p.chm[d['m']].start_vertex_id())
-    r = rch[1]
-    # kpsm = get_curvature_kp(r.contour_without_holes(), True)
+    r = rch[2]
 
     step = 5
 
-    rs__ = rs1
-    test1 = {0: [], 1:[]}
-    pts1 = []
-    pts__ = rs__.pts()
-    pts__ = pts__[np.random.randint(len(pts__), size=len(pts__)/step), :]
-
-    for i in range(len(pts__)):
-        # if i % step == 0:
-            p = pts__[i, :]
-            test1[0].append({'point': p, 'angle': 0, 'intensity': gray[p[0], p[1]]})
-            pts1.append(p)
-
-    pts__ = rs__.contour_without_holes()
-    for i in range(len(pts__)):
-        if i % step == 0:
-            p = pts__[i, :]
-            test1[1].append({'point': p, 'angle': 0, 'intensity': gray[p[0], p[1]]})
+    result, pts1 = __prepare_pts_and_cont(rs1, step, gray)
 
     im = vm.get_frame(r.frame())
     gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
-    pts1 = np.array(pts1)
+    # step-1 = little hack to have higher densiti where to fit
+    testm, ptsm = __prepare_pts_and_cont(r, step-1, gray)
 
-    testm = {0: [], 1: []}
-    ptsm = []
-    pts__ = r.pts()
-    pts__ = pts__[np.random.randint(len(pts__), size=len(pts__)/step), :]
-    for i in range(len(pts__)):
-        # if i % step == 0:
-            p = pts__[i, :]
-            testm[0].append({'point': p, 'angle': 0, 'intensity': gray[p[0], p[1]]})
-            ptsm.append(p)
-
-    pts__ = r.contour_without_holes()
-    for i in range(len(pts__)):
-        if i % step == 0:
-            p = pts__[i, :]
-            testm[1].append({'point': p, 'angle': 0, 'intensity': gray[p[0], p[1]]})
-
-    ptsm = np.array(ptsm)
-
-    best_t, best_r, best_rot_center, best_supp = estimate_rt(test1, testm)
-
-    plt.figure()
-    plt.scatter(ptsm[:, 1], ptsm[:, 0], c='k', s=30, alpha=.70)
-    plt.hold(True)
-    plt.scatter(pts1[:, 1], pts1[:, 0], c='r', s=30, alpha=.20)
+    best_t, best_r, best_rot_center, best_supp = estimate_rt(result, testm)
 
     cs = ['g', 'b', 'c', 'm', 'k', 'w', 'y']
-    # pts__ = []
-    # for a in kps1:
-    #     for b in kps1[a]:
-    #         pts__.append(b['point'])
 
     for i in reversed(xrange(len(best_t))):
+        plt.cla()
+        plt.scatter(ptsm[:, 1], ptsm[:, 0], c='k', s=30, alpha=.70)
+        plt.hold(True)
+        plt.scatter(pts1[:, 1], pts1[:, 0], c='r', s=30, alpha=.20)
+
+
         print i
-        print best_supp[i+1]
+        print best_supp[i]
+
+        plt.title(str(i) + ' ' + str(best_supp[i]))
         pts_ = __transform_pts(pts1, best_r[i], best_t[i], best_rot_center[i])
         plt.hold(True)
         plt.scatter(pts_[:, 1], pts_[:, 0], c=cs[i%len(cs)], s=100, alpha=0.4)
