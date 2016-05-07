@@ -8,6 +8,8 @@ from core.region.mser import ferda_filtered_msers
 import scipy.ndimage as ndimage
 from utils.geometry import rotate
 from scipy.spatial.distance import cdist
+import networkx as nx
+import itertools
 
 
 def data_cam2():
@@ -69,11 +71,11 @@ def get_geom_s(start_, coef, num):
 
     return r
 
-def __get_support(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t, rot_center, intensities=None, thresh=1):
+def __get_cost(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t, rot_center, intensities=None, thresh=1):
     pts1 =__transform_pts(pts1, r, t, rot_center)
 
     # threshs = get_geom_s(2, 2**0.5, 5)
-    supp = 0
+    cost = 0
     # -1 because, there is last number describing the end of interval in p_type_starts...
     for c in range(len(p_type_starts1)-1):
         ids1_ = slice(p_type_starts1[c], p_type_starts1[c+1])
@@ -86,20 +88,20 @@ def __get_support(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t
         mins_ = mins_**2
         mins_[mins_ > thresh] = thresh
 
-        supp += np.sum(mins_) * type_weights[c]
+        cost += np.sum(mins_) * type_weights[c]
         if intensities is not None:
             int2 = intensities[1][ids2_]
             int_diff = intensities[0][ids1_] - int2[amins_]
             int_diff = abs(np.asarray(int_diff[mins_ < thresh], dtype=np.float) / 10)
 
-            supp += sum(int_diff) * type_weights[c]
+            cost += sum(int_diff) * type_weights[c]
 
         c = 50
         if False:
-            supp += np.linalg.norm(t)**1.2 + c*r
+            cost += np.linalg.norm(t)**1.2 + c*r
 
 
-    return supp
+    return cost
 
 def __solution_distance(t1, t2, r1, r2):
     d = np.linalg.norm(t1 - t2)
@@ -108,15 +110,15 @@ def __solution_distance(t1, t2, r1, r2):
 
     return d + c * abs(r1 - r2)
 
-def __compare_solution(best_t, best_r, best_rot_center, best_supp, t, r, rot_center, supp, best_n, min_diff_t = 10):
+def __compare_solution(best_t, best_r, best_rot_center, best_cost, t, r, rot_center, cost, best_n, min_diff_t = 10):
     j = 0
-    while j < len(best_supp) and supp < best_supp[j]:
+    while j < len(best_cost) and cost < best_cost[j]:
         j += 1
 
     remove = -1
     for i in xrange(1, len(best_t)):
         if __solution_distance(best_t[i], t, best_r[i], r) < min_diff_t:
-            if best_supp[i] > supp:
+            if best_cost[i] > cost:
                 remove = i
             else:
                 return
@@ -125,17 +127,18 @@ def __compare_solution(best_t, best_r, best_rot_center, best_supp, t, r, rot_cen
         best_r.insert(j, r)
         best_t.insert(j, t)
         best_rot_center.insert(j, rot_center)
-        best_supp.insert(j, supp)
+        best_cost.insert(j, cost)
 
     remove = max(remove, 0)
-    if len(best_r) >= best_n or remove:
+    # + 1 because there is a fake solution on first position with inf. cost
+    if len(best_r) > best_n + 1 or remove:
         best_r.pop(remove)
         best_t.pop(remove)
         best_rot_center.pop(remove)
-        best_supp.pop(remove)
+        best_cost.pop(remove)
 
 
-def estimate_rt(kps1, kps2, best_n=20):
+def estimate_rt(kps1, kps2, best_n=1):
     from numpy import random
     random.seed(19)
 
@@ -180,7 +183,7 @@ def estimate_rt(kps1, kps2, best_n=20):
     best_t = [None]
     best_r = [None]
     best_rot_center = [None]
-    best_supp = [np.inf]
+    best_cost = [np.inf]
 
     trials = 0
     for i in range(max_steps):
@@ -209,9 +212,9 @@ def estimate_rt(kps1, kps2, best_n=20):
         # type_weights = [0.2, 0.35, 0.7, 1.3, 2]
         type_weights = [1, 2]
         # type_weights = [1, 1, 1, 1, 1]
-        supp = __get_support(pts1, type_starts1, pts2, type_starts2, type_weights, r, t, rot_center, intensities=(intensities1, intensities2), thresh=20)
+        cost = __get_cost(pts1, type_starts1, pts2, type_starts2, type_weights, r, t, rot_center, intensities=(intensities1, intensities2), thresh=20)
 
-        __compare_solution(best_t, best_r, best_rot_center, best_supp, t, r, rot_center, supp, best_n)
+        __compare_solution(best_t, best_r, best_rot_center, best_cost, t, r, rot_center, cost, best_n)
 
         if trials >= num_trials:
             break
@@ -222,9 +225,9 @@ def estimate_rt(kps1, kps2, best_n=20):
     best_t.pop(0)
     best_r.pop(0)
     best_rot_center.pop(0)
-    best_supp.pop(0)
+    best_cost.pop(0)
 
-    return best_t, best_r, best_rot_center, best_supp
+    return best_t, best_r, best_rot_center, best_cost
 
 
 def __prepare_pts_and_cont(r, step, gray):
@@ -280,7 +283,7 @@ if __name__ == '__main__':
     # step-1 = little hack to have higher densiti where to fit
     testm, ptsm = __prepare_pts_and_cont(r, step-1, gray)
 
-    best_t, best_r, best_rot_center, best_supp = estimate_rt(result, testm)
+    best_t, best_r, best_rot_center, cost = estimate_rt(result, testm, best_n=5)
 
     cs = ['g', 'b', 'c', 'm', 'k', 'w', 'y']
 
@@ -290,11 +293,10 @@ if __name__ == '__main__':
         plt.hold(True)
         plt.scatter(pts1[:, 1], pts1[:, 0], c='r', s=30, alpha=.20)
 
-
         print i
-        print best_supp[i]
+        print cost[i]
 
-        plt.title(str(i) + ' ' + str(best_supp[i]))
+        plt.title(str(i) + ' ' + str(cost[i]))
         pts_ = __transform_pts(pts1, best_r[i], best_t[i], best_rot_center[i])
         plt.hold(True)
         plt.scatter(pts_[:, 1], pts_[:, 0], c=cs[i%len(cs)], s=100, alpha=0.4)
