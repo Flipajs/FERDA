@@ -13,6 +13,7 @@ import itertools
 from core.graph.region_chunk import RegionChunk
 from heapq import *
 import cPickle as pickle
+from core.region.distance_map import DistanceMap
 
 
 def data_cam2():
@@ -75,7 +76,7 @@ def get_geom_s(start_, coef, num):
 
     return r
 
-def __get_cost(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t, rot_center, intensities=None, thresh=1):
+def __get_cost(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t, rot_center, dmap=None, intensities=None, thresh=1):
     pts1 =__transform_pts(pts1, r, t, rot_center)
 
     # threshs = get_geom_s(2, 2**0.5, 5)
@@ -85,27 +86,34 @@ def __get_cost(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t, r
         ids1_ = slice(p_type_starts1[c], p_type_starts1[c+1])
         ids2_ = slice(p_type_starts2[c], p_type_starts2[c+1])
 
+        # if dmap is None:
         d = cdist(pts1[ids1_, :], pts2[ids2_, :])
+        # else:
+        #     d = []
+        #     pts_ = pts1[ids1_, :]
+        #     for pt in pts_:
+        #         if dmap.is_inside_object(pt):
+        #             _, d_ = dmap.get_nearest_point(pt)
+        #
+        #             d.append(d_)
+        #
+        #     d = np.array(d)
+
         mins_ = np.min(d, axis=1)
         amins_ = np.argmin(d, axis=1)
 
-        mins_ = mins_**1.2
+        # mins_ = mins_**1.1
         mins_[mins_ > thresh] = thresh
 
         cost += np.sum(mins_) * type_weights[c]
         if intensities is not None:
             int2 = intensities[1][ids2_]
             int_diff = intensities[0][ids1_] - int2[amins_]
-            int_diff = abs(np.asarray(int_diff[mins_ < thresh], dtype=np.float) / 10)
+            int_diff = abs(np.asarray(int_diff[mins_ < thresh], dtype=np.float) / 3)
 
             cost += sum(int_diff) * type_weights[c]
 
-        c = 50
-        if False:
-            cost += np.linalg.norm(t)**1.2 + c*r
-
-
-    return cost/10.
+    return cost / 10
 
 def __solution_distance(t1, t2, r1, r2):
     d = np.linalg.norm(t1 - t2)
@@ -117,7 +125,7 @@ def __solution_distance(t1, t2, r1, r2):
 
     return d**a + c * rd
 
-def __compare_solution(best_t, best_r, best_rot_center, best_cost, t, r, rot_center, cost, best_n, min_diff_t = 10):
+def __compare_solution(best_t, best_r, best_rot_center, best_cost, t, r, rot_center, cost, best_n, min_diff_t = 50):
     j = 0
     while j < len(best_cost) and cost < best_cost[j]:
         j += 1
@@ -181,8 +189,8 @@ def estimate_rt(kps1, rot_center, kps2, best_n=1):
     pts2 = np.array(pts2)
 
 
-    max_steps = 10000
-    num_trials = 1000
+    max_steps = 20000
+    num_trials = 500
 
     best_t = [None]
     best_r = [None]
@@ -203,10 +211,10 @@ def estimate_rt(kps1, rot_center, kps2, best_n=1):
         pb2 = pts2[bi2, :]
 
         # test if they are reasonable pairs
-        if np.linalg.norm(pa1-pa2) < 10:
+        if np.linalg.norm(pa1-pa2) < 15:
             continue
 
-        if abs(np.linalg.norm(pa1-pa2) - np.linalg.norm(pb1-pb2)) > 3:
+        if abs(np.linalg.norm(pa1-pa2) - np.linalg.norm(pb1-pb2)) > 2:
             continue
 
         t, r, s, _ = __get_rts(pa1, pa2, pb1, pb2)
@@ -238,7 +246,8 @@ def estimate_rt(kps1, rot_center, kps2, best_n=1):
 
 
 def __prepare_pts_and_cont(r, step, gray):
-    result = {0: [], 1: []}
+    # result = {0: [], 1: []}
+    result = {0: []}
     pts = r.pts()
     pts = pts[np.random.randint(len(pts), size=len(pts)/step), :]
 
@@ -246,11 +255,11 @@ def __prepare_pts_and_cont(r, step, gray):
         p = pts[i, :]
         result[0].append({'point': p, 'intensity': gray[p[0], p[1]]})
 
-    ptsc = r.contour_without_holes()
-    for i in range(len(ptsc)):
-        if i % step == 0:
-            p = ptsc[i, :]
-            result[1].append({'point': p, 'intensity': gray[p[0], p[1]]})
+    # ptsc = r.contour_without_holes()
+    # for i in range(len(ptsc)):
+    #     if i % step == 0:
+    #         p = ptsc[i, :]
+    #         result[1].append({'point': p, 'intensity': gray[p[0], p[1]]})
 
     return result, pts
 
@@ -331,7 +340,8 @@ if __name__ == '__main__':
     ng = 0  # noed group id
 
     STEP = 5
-    BEST_N = 10
+    STEP2 = 2
+    BEST_N = 5
 
     plt.ion()
 
@@ -358,7 +368,7 @@ if __name__ == '__main__':
         r = p.gm.region(p.chm[ch_id].start_vertex_id())
         print r.theta_
         end_rs.append(r)
-        x, pts = __prepare_pts_and_cont(r, STEP, start_gray)
+        x, pts = __prepare_pts_and_cont(r, STEP2, start_gray)
         end_pts.append(pts)
 
     # add first node
@@ -374,7 +384,7 @@ if __name__ == '__main__':
             gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
             # step-1 = little hack to have higher densiti where to fit
-            x, x_pts = __prepare_pts_and_cont(r, STEP, gray)
+            x, x_pts = __prepare_pts_and_cont(r, STEP2, gray)
 
             results = []
             for i, sd in enumerate(start_data):
@@ -401,9 +411,18 @@ if __name__ == '__main__':
                 #     plt.show()
                 #     plt.waitforbuttonpress()
 
-
+                # for i in range(len(best_r)):
+                #     best_r.append((best_r[i] + np.pi) % 2*np.pi)
+                #     best_t.append(best_t[i])
+                #     best_rot_center.append(best_rot_center[i])
+                #     cost.append(cost[i])
 
                 results.append((best_t, best_r, best_rot_center, cost))
+
+
+
+
+
 
             for ids in itertools.product(*[range(len(x[0])) for x in results]):
                 transformations = []
@@ -489,7 +508,7 @@ if __name__ == '__main__':
     prev_id = -1
     for n, r in zip(path, rch.regions_gen()):
         # gray is not used... in this case so it is not problem if it is feeded by wrong img - start_gray
-        _, x_pts = __prepare_pts_and_cont(r, STEP, start_gray)
+        _, x_pts = __prepare_pts_and_cont(r, STEP2, start_gray)
 
         plt.figure()
         plt.scatter(x_pts[:, 1], x_pts[:, 0], c='k', s=30, alpha=.70)
