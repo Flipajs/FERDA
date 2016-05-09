@@ -109,7 +109,7 @@ def __get_cost(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t, r
 def __solution_distance(t1, t2, r1, r2):
     d = np.linalg.norm(t1 - t2)
 
-    a = 1.4
+    a = 1.1
     c = 100
 
     return d**a + c * abs((r1 - r2))
@@ -306,7 +306,7 @@ if __name__ == '__main__':
     p.load(wd+name)
     vm = get_auto_video_manager(p)
 
-    d = data[111]
+    d = data[394]
 
     G = nx.DiGraph()
     ni = 0  # node id
@@ -430,9 +430,9 @@ if __name__ == '__main__':
                     dist = __solution_distance(t1, t2, r1, r2)
                     cost = cost + d1['cost'] + dist
 
-                    print "id1: %d id2: %d r1: %.2f r2: %.2f dist: %d" % (id1, id2, r1, r2, dist)
+                    # print "id1: %d id2: %d r1: %.2f r2: %.2f dist: %d" % (id1, id2, r1, r2, dist)
 
-                print "COST: ", cost
+                # print "COST: ", cost
 
             G.add_edge(id1, id2, cost=cost)
 
@@ -450,30 +450,26 @@ if __name__ == '__main__':
     plt.show()
 
     print "COST: ", cost
-    for n in path:
-        print
-        for d in G.node[n]['data']:
+    cs = ['r', 'b', 'y', 'm', 'c']
+    for n in path[:-2]:
+        plt.figure()
+        plt.scatter(x_pts[:, 1], x_pts[:, 0], c='k', s=30, alpha=.70)
+        plt.hold(True)
+        for i, sp in enumerate(start_pts):
+            plt.scatter(sp[:, 1], sp[:, 0], c=cs[i], s=30, alpha=.20)
+
+        for i, d in enumerate(G.node[n]['data']):
             print d['t'], d['r'], d['rot_center'], d['cost'] if 'cost' in d else ""
 
-            # plt.cla()
-            # plt.scatter(ptsm[:, 1], ptsm[:, 0], c='k', s=30, alpha=.70)
-            # plt.hold(True)
-            # plt.scatter(pts1[:, 1], pts1[:, 0], c='r', s=30, alpha=.20)
-            #
-            # print i
-            # print cost[i]
-            #
-            # plt.title(str(i) + ' ' + str(cost[i]))
-            # pts_ = __transform_pts(pts1, best_r[i], best_t[i], best_rot_center[i])
-            # plt.hold(True)
-            # plt.scatter(pts_[:, 1], pts_[:, 0], c=cs[i%len(cs)], s=100, alpha=0.4)
-            # plt.hold(False)
-            #
-            # plt.axis('equal')
-            #
-            # plt.show()
-            # plt.waitforbuttonpress()
+            pts_ = __transform_pts(start_pts[i], d['r'], d['t'], d['rot_center'])
+            plt.scatter(pts_[:, 1], pts_[:, 0], c=cs[i], s=100, alpha=0.4)
+            plt.scatter(pts_[0, 1], pts_[0, 0], c='g', s=100, alpha=0.9)
 
+        plt.hold(False)
+        plt.axis('equal')
+
+        plt.show()
+        plt.waitforbuttonpress()
 
     # plt.ion()
     #
