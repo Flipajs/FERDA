@@ -12,6 +12,7 @@ import networkx as nx
 import itertools
 from core.graph.region_chunk import RegionChunk
 from heapq import *
+import cPickle as pickle
 
 
 def data_cam2():
@@ -109,10 +110,12 @@ def __get_cost(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t, r
 def __solution_distance(t1, t2, r1, r2):
     d = np.linalg.norm(t1 - t2)
 
-    a = 1.1
+    a = 1.3
     c = 100
 
-    return d**a + c * abs((r1 - r2))
+    rd = abs((max(r1, r2) - min(r1, r2)) % (2*np.pi))
+
+    return d**a + c * rd
 
 def __compare_solution(best_t, best_r, best_rot_center, best_cost, t, r, rot_center, cost, best_n, min_diff_t = 10):
     j = 0
@@ -142,7 +145,7 @@ def __compare_solution(best_t, best_r, best_rot_center, best_cost, t, r, rot_cen
         best_cost.pop(remove)
 
 
-def estimate_rt(kps1, kps2, best_n=1):
+def estimate_rt(kps1, rot_center, kps2, best_n=1):
     p_type1 = []
     type_starts1 = []
     pts1 = []
@@ -200,10 +203,13 @@ def estimate_rt(kps1, kps2, best_n=1):
         pb2 = pts2[bi2, :]
 
         # test if they are reasonable pairs
+        if np.linalg.norm(pa1-pa2) < 10:
+            continue
+
         if abs(np.linalg.norm(pa1-pa2) - np.linalg.norm(pb1-pb2)) > 5:
             continue
 
-        t, r, s, rot_center = __get_rts(pa1, pa2, pb1, pb2)
+        t, r, s, _ = __get_rts(pa1, pa2, pb1, pb2)
 
         if t is None:
             continue
@@ -242,9 +248,10 @@ def __prepare_pts_and_cont(r, step, gray):
 
     ptsc = r.contour_without_holes()
     for i in range(len(ptsc)):
-        if i % step == 0:
-            p = ptsc[i, :]
-            result[1].append({'point': p, 'intensity': gray[p[0], p[1]]})
+        # if i % step == 0:
+        # if i % step == 0:
+        p = ptsc[i, :]
+        result[1].append({'point': p, 'intensity': gray[p[0], p[1]]})
 
     return result, pts
 
@@ -266,7 +273,7 @@ def __reconstruct_path(predecesors, id_):
         path.append(id_)
         id_ = predecesors[id_]
 
-    return reversed(path)
+    return list(reversed(path))
 
 
 def __optimize(G):
@@ -305,8 +312,19 @@ if __name__ == '__main__':
     wd = '/Users/flipajs/Documents/wd/gt/'
     p.load(wd+name)
     vm = get_auto_video_manager(p)
+    #
+    # 1: {'s': [6, 7], 'm': 1, 'e': [18, 23]},
+    #     2: {'s': [64, 65], 'm': 50, 'e': [48, 62]},
+    #     3: {'s': [111, 112, 120], 'm': 132, 'e': [123, 124, 116]},
+    #     111: {'s': [23, 18], 'm': 24, 'e': [25, 26]},
+    #     394: {'s': [60, 61], 'm': 49, 'e': [77, 78]},
+    #     1985: {'s': [306, 307], 'm': 302, 'e': [297, 305]},
+    #     3130: {'s': [425, 411], 'm': 420, 'e': [421, 422]},
+    #     3350: {'s': [464, 460], 'm': 457, 'e': [452, 467]}
 
-    d = data[394]
+    seq_n = 1
+    d = data[seq_n]
+
 
     G = nx.DiGraph()
     ni = 0  # node id
@@ -328,142 +346,174 @@ if __name__ == '__main__':
 
     for ch_id in d['s']:
         r = p.gm.region(p.chm[ch_id].end_vertex_id())
+        print r.theta_
         start_rs.append(r)
         transformations.append({'t': np.array([0, 0]), 'r': 0, 'rot_center': r.centroid(), 'cost': 0})
         x, pts = __prepare_pts_and_cont(r, STEP, start_gray)
         start_data.append(x)
         start_pts.append(pts)
 
+    end_rs = []
+    end_pts = []
+    for ch_id in d['e']:
+        r = p.gm.region(p.chm[ch_id].start_vertex_id())
+        print r.theta_
+        end_rs.append(r)
+        x, pts = __prepare_pts_and_cont(r, STEP, start_gray)
+        end_pts.append(pts)
+
     # add first node
     ni = __add_node(G, ni, nodes_groups, ng, transformations)
 
     # for each middle region...
     rch = RegionChunk(p.chm[d['m']], p.gm, p.rm)
-    for r in rch.regions_gen():
-        print "FRAME: ", r.frame()
+    if True:
+        for r in rch.regions_gen():
+            print "FRAME: ", r.frame()
+            ng += 1
+            im = vm.get_frame(r.frame())
+            gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+
+            # step-1 = little hack to have higher densiti where to fit
+            x, x_pts = __prepare_pts_and_cont(r, STEP-1, gray)
+
+            results = []
+            for i, sd in enumerate(start_data):
+                best_t, best_r, best_rot_center, cost = estimate_rt(sd, start_rs[i].centroid(), x, best_n=BEST_N)
+
+                for j in reversed(range(len(best_t))):
+                    plt.cla()
+                    plt.scatter(x_pts[:, 1], x_pts[:, 0], c='k', s=30, alpha=.70)
+                    plt.hold(True)
+                    plt.scatter(start_pts[i][:, 1], start_pts[i][:, 0], c='r', s=30, alpha=.20)
+
+                    print j
+                    print cost[j]
+
+                    plt.title(str(j) + ' ' + str(cost[j]))
+                    pts_ = __transform_pts(start_pts[i], best_r[j], best_t[j], best_rot_center[j])
+                    plt.hold(True)
+                    plt.scatter(pts_[:, 1], pts_[:, 0], c='r', s=100, alpha=0.4)
+                    plt.scatter(pts_[0, 1], pts_[0, 0], c='g', s=100, alpha=0.9)
+                    plt.hold(False)
+
+                    plt.axis('equal')
+
+                    plt.show()
+                    plt.waitforbuttonpress()
+
+
+
+                results.append((best_t, best_r, best_rot_center, cost))
+
+            for ids in itertools.product(*[range(len(x[0])) for x in results]):
+                transformations = []
+                for i, id_ in enumerate(ids):
+                    x = results[i]
+                    # 0 - best_T, 1 - best_r, 2 - best_rot_center, 3 - cost
+                    transformations.append({'t': x[0][id_],
+                                            'r': x[1][id_],
+                                            'rot_center': x[2][id_],
+                                            'cost': x[3][id_]})
+
+                ni = __add_node(G, ni, nodes_groups, ng, transformations)
+
         ng += 1
-        im = vm.get_frame(r.frame())
-        gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-
-        # step-1 = little hack to have higher densiti where to fit
-        x, x_pts = __prepare_pts_and_cont(r, STEP-2, gray)
-
-        results = []
-        for i, sd in enumerate(start_data):
-            best_t, best_r, best_rot_center, cost = estimate_rt(sd, x, best_n=BEST_N)
-            #
-            # for j in reversed(range(len(best_t))):
-            #     plt.cla()
-            #     plt.scatter(x_pts[:, 1], x_pts[:, 0], c='k', s=30, alpha=.70)
-            #     plt.hold(True)
-            #     plt.scatter(start_pts[i][:, 1], start_pts[i][:, 0], c='r', s=30, alpha=.20)
-            #
-            #     print j
-            #     print cost[j]
-            #
-            #     plt.title(str(j) + ' ' + str(cost[j]))
-            #     pts_ = __transform_pts(start_pts[i], best_r[j], best_t[j], best_rot_center[j])
-            #     plt.hold(True)
-            #     plt.scatter(pts_[:, 1], pts_[:, 0], c='r', s=100, alpha=0.4)
-            #     plt.scatter(pts_[0, 1], pts_[0, 0], c='g', s=100, alpha=0.9)
-            #     plt.hold(False)
-            #
-            #     plt.axis('equal')
-            #
-            #     plt.show()
-            #     plt.waitforbuttonpress()
-
-
-
-            results.append((best_t, best_r, best_rot_center, cost))
-
-        for ids in itertools.product(*[range(len(x[0])) for x in results]):
+        # add all permutations for the last frame of collision
+        for ids in itertools.permutations(range(len(start_data))):
             transformations = []
+
             for i, id_ in enumerate(ids):
-                x = results[i]
-                # 0 - best_T, 1 - best_r, 2 - best_rot_center, 3 - cost
-                transformations.append({'t': x[0][id_],
-                                        'r': x[1][id_],
-                                        'rot_center': x[2][id_],
-                                        'cost': x[3][id_]})
+                rs = p.gm.region(p.chm[d['s'][i]].end_vertex_id())
+                re = p.gm.region(p.chm[d['e'][id_]].start_vertex_id())
+
+                t = re.centroid() - rs.centroid()
+                r = re.theta_ - rs.theta_
+
+                transformations.append({'t': t,
+                                        'r': r,
+                                        'permutation': ids,
+                                        'cost': 0})
 
             ni = __add_node(G, ni, nodes_groups, ng, transformations)
 
-    ng += 1
-    # add all permutations for the last frame of collision
-    for ids in itertools.permutations(range(len(start_data))):
-        transformations = []
+        # add end node
+        ng += 1
+        ni = __add_node(G, ni, nodes_groups, ng, [{'cost': 0}])
 
-        for i, id_ in enumerate(ids):
-            rs = p.gm.region(p.chm[d['s'][i]].end_vertex_id())
-            re = p.gm.region(p.chm[d['e'][id_]].start_vertex_id())
+        # add edges...
+        for i in range(len(nodes_groups)-1):
+            g1 = nodes_groups[i]
+            g2 = nodes_groups[i+1]
 
-            t = re.centroid() - rs.centroid()
-            r = re.theta_ - rs.theta_
+            for id1, id2 in itertools.product(g1, g2):
+                cost = 0
+                if 't' in G.node[id2]['data'][0]:
+                    for d1, d2 in zip(G.node[id1]['data'], G.node[id2]['data']):
+                        t1 = d1['t']
+                        t2 = d2['t']
+                        r1 = d1['r']
+                        r2 = d2['r']
 
-            transformations.append({'t': t,
-                                    'r': r,
-                                    'rot_center': re.centroid(),
-                                    'permutation': ids,
-                                    'cost': 0})
+                        dist = 3 * __solution_distance(t1, t2, r1, r2)
+                        cost = cost + d1['cost'] + dist
 
-        ni = __add_node(G, ni, nodes_groups, ng, transformations)
+                        print "id1: %d id2: %d r1: %.2f r2: %.2f dist: %d" % (id1, id2, r1, r2, dist)
 
-    # add end node
-    ng += 1
-    ni = __add_node(G, ni, nodes_groups, ng, [{'cost': 0}])
+                    # print "COST: ", cost
 
-    # add edges...
-    for i in range(len(nodes_groups)-1):
-        g1 = nodes_groups[i]
-        g2 = nodes_groups[i+1]
+                G.add_edge(id1, id2, cost=cost)
 
-        for id1, id2 in itertools.product(g1, g2):
-            cost = 0
-            if 't' in G.node[id2]['data'][0]:
-                for d1, d2 in zip(G.node[id1]['data'], G.node[id2]['data']):
-                    t1 = d1['t']
-                    t2 = d2['t']
-                    r1 = d1['r']
-                    r2 = d2['r']
+        with open('/Users/flipajs/Desktop/temp/'+str(seq_n)+'.pkl', 'wb') as f:
+            pickle.dump(G, f)
 
-                    dist = __solution_distance(t1, t2, r1, r2)
-                    cost = cost + d1['cost'] + dist
-
-                    # print "id1: %d id2: %d r1: %.2f r2: %.2f dist: %d" % (id1, id2, r1, r2, dist)
-
-                # print "COST: ", cost
-
-            G.add_edge(id1, id2, cost=cost)
+    else:
+        with open('/Users/flipajs/Desktop/temp/'+str(seq_n)+'.pkl', 'rb') as f:
+            G = pickle.load(f)
 
     print "OPTIMIZING"
     path, cost = __optimize(G)
 
-    edge_labels=dict([((u,v,), int(d['cost']))
-                 for u,v,d in G.edges(data=True)])
-
-    pos = nx.spring_layout(G)
-    nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'))
-    nx.draw_networkx_edges(G, pos, edgelist=G.edges(), edge_color='r', arrows=True)
-    nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels)
-    # nx.draw_networkx_edges(G, pos, edgelist=black_edges, arrows=False)
-    plt.show()
+    # edge_labels=dict([((u,v,), int(d['cost']))
+    #              for u,v,d in G.edges(data=True)])
+    #
+    # pos = nx.spring_layout(G)
+    # nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'))
+    # nx.draw_networkx_edges(G, pos, edgelist=G.edges(), edge_color='r', arrows=True)
+    # nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels)
+    # # nx.draw_networkx_edges(G, pos, edgelist=black_edges, arrows=False)
+    # plt.show()
 
     print "COST: ", cost
     cs = ['r', 'b', 'y', 'm', 'c']
-    for n in path[:-2]:
+
+    prev_id = -1
+    for n, r in zip(path, rch.regions_gen()):
+        # gray is not used... in this case so it is not problem if it is feeded by wrong img - start_gray
+        _, x_pts = __prepare_pts_and_cont(r, STEP-2, start_gray)
+
         plt.figure()
         plt.scatter(x_pts[:, 1], x_pts[:, 0], c='k', s=30, alpha=.70)
         plt.hold(True)
         for i, sp in enumerate(start_pts):
             plt.scatter(sp[:, 1], sp[:, 0], c=cs[i], s=30, alpha=.20)
 
+        for i, id_ in enumerate(G.node[path[-2]]['data'][0]['permutation']):
+            ep = end_pts[id_]
+            plt.scatter(ep[:, 1], ep[:, 0], c=cs[i], marker="v", s=30, alpha=.40)
+
         for i, d in enumerate(G.node[n]['data']):
-            print d['t'], d['r'], d['rot_center'], d['cost'] if 'cost' in d else ""
+            edge_c = 0
+            if prev_id > -1:
+                edge_c = G.get_edge_data(prev_id, n)
+                edge_c = edge_c['cost']
+            print d['t'], d['r'], d['rot_center'], d['cost'] if 'cost' in d else "", edge_c
 
             pts_ = __transform_pts(start_pts[i], d['r'], d['t'], d['rot_center'])
             plt.scatter(pts_[:, 1], pts_[:, 0], c=cs[i], s=100, alpha=0.4)
             plt.scatter(pts_[0, 1], pts_[0, 0], c='g', s=100, alpha=0.9)
+
+        prev_id = n
 
         plt.hold(False)
         plt.axis('equal')
