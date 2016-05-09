@@ -10,6 +10,8 @@ from utils.geometry import rotate
 from scipy.spatial.distance import cdist
 import networkx as nx
 import itertools
+from core.graph.region_chunk import RegionChunk
+from heapq import *
 
 
 def data_cam2():
@@ -18,6 +20,7 @@ def data_cam2():
         1: {'s': [6, 7], 'm': 1, 'e': [18, 23]},
         2: {'s': [64, 65], 'm': 50, 'e': [48, 62]},
         3: {'s': [111, 112, 120], 'm': 132, 'e': [123, 124, 116]},
+        111: {'s': [23, 18], 'm': 24, 'e': [25, 26]},
         394: {'s': [60, 61], 'm': 49, 'e': [77, 78]},
         1985: {'s': [306, 307], 'm': 302, 'e': [297, 305]},
         3130: {'s': [425, 411], 'm': 420, 'e': [421, 422]},
@@ -106,9 +109,10 @@ def __get_cost(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t, r
 def __solution_distance(t1, t2, r1, r2):
     d = np.linalg.norm(t1 - t2)
 
-    c = 30
+    a = 1.4
+    c = 100
 
-    return d + c * abs(r1 - r2)
+    return d**a + c * abs((r1 - r2))
 
 def __compare_solution(best_t, best_r, best_rot_center, best_cost, t, r, rot_center, cost, best_n, min_diff_t = 10):
     j = 0
@@ -139,9 +143,6 @@ def __compare_solution(best_t, best_r, best_rot_center, best_cost, t, r, rot_cen
 
 
 def estimate_rt(kps1, kps2, best_n=1):
-    from numpy import random
-    random.seed(19)
-
     p_type1 = []
     type_starts1 = []
     pts1 = []
@@ -178,7 +179,7 @@ def estimate_rt(kps1, kps2, best_n=1):
 
 
     max_steps = 10000
-    num_trials = 500
+    num_trials = 1000
 
     best_t = [None]
     best_r = [None]
@@ -248,7 +249,56 @@ def __prepare_pts_and_cont(r, step, gray):
     return result, pts
 
 
+def __add_node(G, ni, nodes_groups, ng, data):
+    G.add_node(ni, data=data)
+    if len(nodes_groups) <= ng:
+        nodes_groups.append([])
+
+    nodes_groups[ng].append(ni)
+
+    return ni + 1
+
+
+def __reconstruct_path(predecesors, id_):
+    path = []
+
+    while predecesors[id_] is not None:
+        path.append(id_)
+        id_ = predecesors[id_]
+
+    return reversed(path)
+
+
+def __optimize(G):
+    q = []
+
+    heappush(q, (0, 0))
+    predecesors = [None] * G.number_of_nodes()
+    costs = [np.inf] * G.number_of_nodes()
+
+    while len(q):
+        cost, id_ = heappop(q)
+
+        if G.out_degree(id_) == 0:
+            path = __reconstruct_path(predecesors, id_)
+            return path, cost
+
+        for _, id2, c in G.out_edges(id_, data=True):
+            c = c['cost']
+            for d in G.node[id2]['data']:
+                c += d['cost']
+
+            new_cost = c+cost
+            if predecesors[id2] is None or costs[id2] > new_cost:
+                heappush(q, (new_cost, id2))
+                predecesors[id2] = id_
+                costs[id2] = new_cost
+
+
 if __name__ == '__main__':
+    from numpy import random
+    random.seed(19)
+
     p = Project()
     data = data_cam2()
     name = 'Cam2/cam2.fproj'
@@ -256,53 +306,196 @@ if __name__ == '__main__':
     p.load(wd+name)
     vm = get_auto_video_manager(p)
 
-    d = data[1985]
+    d = data[111]
 
-    rs1 = p.gm.region(p.chm[d['s'][0]].end_vertex_id())
-    rs2 = p.gm.region(p.chm[d['s'][1]].end_vertex_id())
-    # rs3 = p.gm.region(p.chm[d['s'][2]].end_vertex_id())
+    G = nx.DiGraph()
+    ni = 0  # node id
+    nodes_groups = []
+    ng = 0  # noed group id
 
-    im = vm.get_frame(rs1.frame())
-    gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    STEP = 5
+    BEST_N = 5
 
     plt.ion()
 
+    start_rs = []
+    transformations = []
+    start_data = []
+    start_pts = []
 
-    from core.graph.region_chunk import RegionChunk
+    start_im = vm.get_frame(p.chm[d['s'][0]].end_frame(p.gm))
+    start_gray = cv2.cvtColor(start_im, cv2.COLOR_BGR2GRAY)
+
+    for ch_id in d['s']:
+        r = p.gm.region(p.chm[ch_id].end_vertex_id())
+        start_rs.append(r)
+        transformations.append({'t': np.array([0, 0]), 'r': 0, 'rot_center': r.centroid(), 'cost': 0})
+        x, pts = __prepare_pts_and_cont(r, STEP, start_gray)
+        start_data.append(x)
+        start_pts.append(pts)
+
+    # add first node
+    ni = __add_node(G, ni, nodes_groups, ng, transformations)
+
+    # for each middle region...
     rch = RegionChunk(p.chm[d['m']], p.gm, p.rm)
+    for r in rch.regions_gen():
+        print "FRAME: ", r.frame()
+        ng += 1
+        im = vm.get_frame(r.frame())
+        gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
-    r = rch[2]
+        # step-1 = little hack to have higher densiti where to fit
+        x, x_pts = __prepare_pts_and_cont(r, STEP-2, gray)
 
-    step = 5
+        results = []
+        for i, sd in enumerate(start_data):
+            best_t, best_r, best_rot_center, cost = estimate_rt(sd, x, best_n=BEST_N)
+            #
+            # for j in reversed(range(len(best_t))):
+            #     plt.cla()
+            #     plt.scatter(x_pts[:, 1], x_pts[:, 0], c='k', s=30, alpha=.70)
+            #     plt.hold(True)
+            #     plt.scatter(start_pts[i][:, 1], start_pts[i][:, 0], c='r', s=30, alpha=.20)
+            #
+            #     print j
+            #     print cost[j]
+            #
+            #     plt.title(str(j) + ' ' + str(cost[j]))
+            #     pts_ = __transform_pts(start_pts[i], best_r[j], best_t[j], best_rot_center[j])
+            #     plt.hold(True)
+            #     plt.scatter(pts_[:, 1], pts_[:, 0], c='r', s=100, alpha=0.4)
+            #     plt.scatter(pts_[0, 1], pts_[0, 0], c='g', s=100, alpha=0.9)
+            #     plt.hold(False)
+            #
+            #     plt.axis('equal')
+            #
+            #     plt.show()
+            #     plt.waitforbuttonpress()
 
-    result, pts1 = __prepare_pts_and_cont(rs1, step, gray)
 
-    im = vm.get_frame(r.frame())
-    gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
-    # step-1 = little hack to have higher densiti where to fit
-    testm, ptsm = __prepare_pts_and_cont(r, step-1, gray)
+            results.append((best_t, best_r, best_rot_center, cost))
 
-    best_t, best_r, best_rot_center, cost = estimate_rt(result, testm, best_n=5)
+        for ids in itertools.product(*[range(len(x[0])) for x in results]):
+            transformations = []
+            for i, id_ in enumerate(ids):
+                x = results[i]
+                # 0 - best_T, 1 - best_r, 2 - best_rot_center, 3 - cost
+                transformations.append({'t': x[0][id_],
+                                        'r': x[1][id_],
+                                        'rot_center': x[2][id_],
+                                        'cost': x[3][id_]})
 
-    cs = ['g', 'b', 'c', 'm', 'k', 'w', 'y']
+            ni = __add_node(G, ni, nodes_groups, ng, transformations)
 
-    for i in reversed(xrange(len(best_t))):
-        plt.cla()
-        plt.scatter(ptsm[:, 1], ptsm[:, 0], c='k', s=30, alpha=.70)
-        plt.hold(True)
-        plt.scatter(pts1[:, 1], pts1[:, 0], c='r', s=30, alpha=.20)
+    ng += 1
+    # add all permutations for the last frame of collision
+    for ids in itertools.permutations(range(len(start_data))):
+        transformations = []
 
-        print i
-        print cost[i]
+        for i, id_ in enumerate(ids):
+            rs = p.gm.region(p.chm[d['s'][i]].end_vertex_id())
+            re = p.gm.region(p.chm[d['e'][id_]].start_vertex_id())
 
-        plt.title(str(i) + ' ' + str(cost[i]))
-        pts_ = __transform_pts(pts1, best_r[i], best_t[i], best_rot_center[i])
-        plt.hold(True)
-        plt.scatter(pts_[:, 1], pts_[:, 0], c=cs[i%len(cs)], s=100, alpha=0.4)
-        plt.hold(False)
+            t = re.centroid() - rs.centroid()
+            r = re.theta_ - rs.theta_
 
-        plt.axis('equal')
+            transformations.append({'t': t,
+                                    'r': r,
+                                    'rot_center': re.centroid(),
+                                    'permutation': ids,
+                                    'cost': 0})
 
-        plt.show()
-        plt.waitforbuttonpress()
+        ni = __add_node(G, ni, nodes_groups, ng, transformations)
+
+    # add end node
+    ng += 1
+    ni = __add_node(G, ni, nodes_groups, ng, [{'cost': 0}])
+
+    # add edges...
+    for i in range(len(nodes_groups)-1):
+        g1 = nodes_groups[i]
+        g2 = nodes_groups[i+1]
+
+        for id1, id2 in itertools.product(g1, g2):
+            cost = 0
+            if 't' in G.node[id2]['data'][0]:
+                for d1, d2 in zip(G.node[id1]['data'], G.node[id2]['data']):
+                    t1 = d1['t']
+                    t2 = d2['t']
+                    r1 = d1['r']
+                    r2 = d2['r']
+
+                    dist = __solution_distance(t1, t2, r1, r2)
+                    cost = cost + d1['cost'] + dist
+
+                    print "id1: %d id2: %d r1: %.2f r2: %.2f dist: %d" % (id1, id2, r1, r2, dist)
+
+                print "COST: ", cost
+
+            G.add_edge(id1, id2, cost=cost)
+
+    print "OPTIMIZING"
+    path, cost = __optimize(G)
+
+    edge_labels=dict([((u,v,), int(d['cost']))
+                 for u,v,d in G.edges(data=True)])
+
+    pos = nx.spring_layout(G)
+    nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'))
+    nx.draw_networkx_edges(G, pos, edgelist=G.edges(), edge_color='r', arrows=True)
+    nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels)
+    # nx.draw_networkx_edges(G, pos, edgelist=black_edges, arrows=False)
+    plt.show()
+
+    print "COST: ", cost
+    for n in path:
+        print
+        for d in G.node[n]['data']:
+            print d['t'], d['r'], d['rot_center'], d['cost'] if 'cost' in d else ""
+
+            # plt.cla()
+            # plt.scatter(ptsm[:, 1], ptsm[:, 0], c='k', s=30, alpha=.70)
+            # plt.hold(True)
+            # plt.scatter(pts1[:, 1], pts1[:, 0], c='r', s=30, alpha=.20)
+            #
+            # print i
+            # print cost[i]
+            #
+            # plt.title(str(i) + ' ' + str(cost[i]))
+            # pts_ = __transform_pts(pts1, best_r[i], best_t[i], best_rot_center[i])
+            # plt.hold(True)
+            # plt.scatter(pts_[:, 1], pts_[:, 0], c=cs[i%len(cs)], s=100, alpha=0.4)
+            # plt.hold(False)
+            #
+            # plt.axis('equal')
+            #
+            # plt.show()
+            # plt.waitforbuttonpress()
+
+
+    # plt.ion()
+    #
+    #
+    # cs = ['g', 'b', 'c', 'm', 'k', 'w', 'y']
+    #
+    # for i in reversed(xrange(len(best_t))):
+    #     plt.cla()
+    #     plt.scatter(ptsm[:, 1], ptsm[:, 0], c='k', s=30, alpha=.70)
+    #     plt.hold(True)
+    #     plt.scatter(pts1[:, 1], pts1[:, 0], c='r', s=30, alpha=.20)
+    #
+    #     print i
+    #     print cost[i]
+    #
+    #     plt.title(str(i) + ' ' + str(cost[i]))
+    #     pts_ = __transform_pts(pts1, best_r[i], best_t[i], best_rot_center[i])
+    #     plt.hold(True)
+    #     plt.scatter(pts_[:, 1], pts_[:, 0], c=cs[i%len(cs)], s=100, alpha=0.4)
+    #     plt.hold(False)
+    #
+    #     plt.axis('equal')
+    #
+    #     plt.show()
+    #     plt.waitforbuttonpress()

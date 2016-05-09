@@ -53,7 +53,7 @@ class Region():
         self.colormarks = []
 
     def __str__(self):
-        s = "t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(round(self.centroid_[0], 2))+", "+str(round(self.centroid_[1], 2))+"]"
+        s = "t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(round(self.centroid_[0], 2))+", "+str(round(self.centroid_[1], 2))+"] th: "+str(self.theta_)
         return s
 
     def id(self):
