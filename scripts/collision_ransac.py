@@ -248,10 +248,9 @@ def __prepare_pts_and_cont(r, step, gray):
 
     ptsc = r.contour_without_holes()
     for i in range(len(ptsc)):
-        # if i % step == 0:
-        # if i % step == 0:
-        p = ptsc[i, :]
-        result[1].append({'point': p, 'intensity': gray[p[0], p[1]]})
+        if i % step == 0:
+            p = ptsc[i, :]
+            result[1].append({'point': p, 'intensity': gray[p[0], p[1]]})
 
     return result, pts
 
@@ -322,7 +321,7 @@ if __name__ == '__main__':
     #     3130: {'s': [425, 411], 'm': 420, 'e': [421, 422]},
     #     3350: {'s': [464, 460], 'm': 457, 'e': [452, 467]}
 
-    seq_n = 1
+    seq_n = 3350
     d = data[seq_n]
 
 
@@ -367,7 +366,7 @@ if __name__ == '__main__':
 
     # for each middle region...
     rch = RegionChunk(p.chm[d['m']], p.gm, p.rm)
-    if True:
+    if False:
         for r in rch.regions_gen():
             print "FRAME: ", r.frame()
             ng += 1
@@ -375,32 +374,32 @@ if __name__ == '__main__':
             gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
             # step-1 = little hack to have higher densiti where to fit
-            x, x_pts = __prepare_pts_and_cont(r, STEP-1, gray)
+            x, x_pts = __prepare_pts_and_cont(r, STEP, gray)
 
             results = []
             for i, sd in enumerate(start_data):
                 best_t, best_r, best_rot_center, cost = estimate_rt(sd, start_rs[i].centroid(), x, best_n=BEST_N)
 
-                for j in reversed(range(len(best_t))):
-                    plt.cla()
-                    plt.scatter(x_pts[:, 1], x_pts[:, 0], c='k', s=30, alpha=.70)
-                    plt.hold(True)
-                    plt.scatter(start_pts[i][:, 1], start_pts[i][:, 0], c='r', s=30, alpha=.20)
-
-                    print j
-                    print cost[j]
-
-                    plt.title(str(j) + ' ' + str(cost[j]))
-                    pts_ = __transform_pts(start_pts[i], best_r[j], best_t[j], best_rot_center[j])
-                    plt.hold(True)
-                    plt.scatter(pts_[:, 1], pts_[:, 0], c='r', s=100, alpha=0.4)
-                    plt.scatter(pts_[0, 1], pts_[0, 0], c='g', s=100, alpha=0.9)
-                    plt.hold(False)
-
-                    plt.axis('equal')
-
-                    plt.show()
-                    plt.waitforbuttonpress()
+                # for j in reversed(range(len(best_t))):
+                #     plt.cla()
+                #     plt.scatter(x_pts[:, 1], x_pts[:, 0], c='k', s=30, alpha=.70)
+                #     plt.hold(True)
+                #     plt.scatter(start_pts[i][:, 1], start_pts[i][:, 0], c='r', s=30, alpha=.20)
+                #
+                #     print j
+                #     print cost[j]
+                #
+                #     plt.title(str(j) + ' ' + str(cost[j]))
+                #     pts_ = __transform_pts(start_pts[i], best_r[j], best_t[j], best_rot_center[j])
+                #     plt.hold(True)
+                #     plt.scatter(pts_[:, 1], pts_[:, 0], c='r', s=100, alpha=0.4)
+                #     plt.scatter(pts_[0, 1], pts_[0, 0], c='g', s=100, alpha=0.9)
+                #     plt.hold(False)
+                #
+                #     plt.axis('equal')
+                #
+                #     plt.show()
+                #     plt.waitforbuttonpress()
 
 
 
@@ -490,7 +489,7 @@ if __name__ == '__main__':
     prev_id = -1
     for n, r in zip(path, rch.regions_gen()):
         # gray is not used... in this case so it is not problem if it is feeded by wrong img - start_gray
-        _, x_pts = __prepare_pts_and_cont(r, STEP-2, start_gray)
+        _, x_pts = __prepare_pts_and_cont(r, STEP, start_gray)
 
         plt.figure()
         plt.scatter(x_pts[:, 1], x_pts[:, 0], c='k', s=30, alpha=.70)
