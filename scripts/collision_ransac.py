@@ -89,7 +89,7 @@ def __get_cost(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t, r
         mins_ = np.min(d, axis=1)
         amins_ = np.argmin(d, axis=1)
 
-        mins_ = mins_**2
+        mins_ = mins_**1.2
         mins_[mins_ > thresh] = thresh
 
         cost += np.sum(mins_) * type_weights[c]
@@ -105,7 +105,7 @@ def __get_cost(pts1, p_type_starts1, pts2, p_type_starts2, type_weights, r, t, r
             cost += np.linalg.norm(t)**1.2 + c*r
 
 
-    return cost
+    return cost/10.
 
 def __solution_distance(t1, t2, r1, r2):
     d = np.linalg.norm(t1 - t2)
@@ -206,7 +206,7 @@ def estimate_rt(kps1, rot_center, kps2, best_n=1):
         if np.linalg.norm(pa1-pa2) < 10:
             continue
 
-        if abs(np.linalg.norm(pa1-pa2) - np.linalg.norm(pb1-pb2)) > 5:
+        if abs(np.linalg.norm(pa1-pa2) - np.linalg.norm(pb1-pb2)) > 3:
             continue
 
         t, r, s, _ = __get_rts(pa1, pa2, pb1, pb2)
@@ -331,7 +331,7 @@ if __name__ == '__main__':
     ng = 0  # noed group id
 
     STEP = 5
-    BEST_N = 5
+    BEST_N = 10
 
     plt.ion()
 
@@ -366,7 +366,7 @@ if __name__ == '__main__':
 
     # for each middle region...
     rch = RegionChunk(p.chm[d['m']], p.gm, p.rm)
-    if False:
+    if True:
         for r in rch.regions_gen():
             print "FRAME: ", r.frame()
             ng += 1
@@ -457,7 +457,7 @@ if __name__ == '__main__':
                         dist = 3 * __solution_distance(t1, t2, r1, r2)
                         cost = cost + d1['cost'] + dist
 
-                        print "id1: %d id2: %d r1: %.2f r2: %.2f dist: %d" % (id1, id2, r1, r2, dist)
+                        # print "id1: %d id2: %d r1: %.2f r2: %.2f dist: %d" % (id1, id2, r1, r2, dist)
 
                     # print "COST: ", cost
 
