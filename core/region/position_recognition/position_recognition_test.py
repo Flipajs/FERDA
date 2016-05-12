@@ -3,8 +3,9 @@ from numpy import transpose
 from core.project.project import Project
 from numpy.linalg import eig
 import math
+import matplotlib.pyplot as plt
 
-NUMBER_OF_DATA = 10
+NUMBER_OF_DATA = 100
 PRECISION = 3
 
 project = Project()
@@ -33,6 +34,7 @@ def get_eigenfaces(chunk_matrix):
     eigens = eig(covariance_matrix)
     return eigens
 
+
 def get_chunks_regions(ch):
     chunk = project.chm[ch]
     chunk_start = chunk.start_frame(project.gm)
@@ -50,27 +52,64 @@ def get_matrix(chunk):
 
 
 def get_region_vector(region):
+    # odmocnina ze dvou vzdalenost
+    # distances
     vector = []
     centroid = region.centroid()
     contours = region.contour()
+    # table of deviations and length
+    results = [[] for x in range(len(contours))]
     con_index = 0
     head_beam = centroid - contours[0]
     last = head_beam
     last_angle = 0
     angle = 0
-    circle = math.pi * 2
-    while angle < circle:
+    circle = 2 * math.pi
+    step = circle / NUMBER_OF_DATA
+
+    plt.figure()
+    points_aux = []
+    points_aux.append(centroid)
+
+    while con_index < len(contours):
         beam = centroid - contours[con_index]
+
+        points_aux.append(contours[con_index])
+
         ang = deviation(head_beam, beam)
-        if ang == angle:
-            vector.append(vector_norm(beam))
-        elif ang > angle:
-            vector.append(interpolation(angle - last_angle, ang - angle, last, beam))
+        print((ang * 180) / math.pi)
+        distance = vector_norm(beam)
+        data = (ang, distance)
+        adress = int(ang / step)
+        print(adress)
+        if float(ang) / float(step) > 0.5:
+            adress += 1;
+
+        results[adress].append(data)
+
+
+        # if ang == angle:
+        #     vector.append(vector_norm(beam))
+        #     angle += circle / NUMBER_OF_DATA
+        # elif ang > angle:
+        #     check?
+        #     vector.append(interpolation(angle - last_angle, ang - angle, last, beam))
+        #     angle +=
+
         last = beam
         last_angle = ang
         con_index += 1
-        angle += circle / NUMBER_OF_DATA
+        # print(angle)
+
+
     # hlavicka?
+    # plt.hold(True)
+    # xs = [x[1] for x in points_aux]
+    # ys = [x[0] for x in points_aux]
+    # plt.scatter(xs, ys)
+    # # plt.scatter(*(zip(*points_aux)))
+    # plt.show(True)
+
     return vector
 
 
@@ -83,7 +122,13 @@ def dot_product(u, v):
 
 
 def deviation(u, v):
-    return math.acos(dot_product(u, v) / (vector_norm(u) * vector_norm(v)))
+    try:
+        ang = math.acos(abs(dot_product(u, v)) / ((vector_norm(u)) * vector_norm(v)))
+    except:
+        return 0
+    if dot_product(u, v) / ((vector_norm(u)) * vector_norm(v)) < 0:
+        ang += math.pi
+    return ang
 
 
 def interpolation(first_angle, sec_angle, u, v):
