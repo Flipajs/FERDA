@@ -12,10 +12,10 @@ project = Project()
 project.load("/home/sheemon/FERDA/projects/Cam1_/cam1.fproj")
 
 
-def get_pca(chunks):
+def get_pca(chunks, number_of_data):
     matrix = []
     for ch in chunks:
-        for vector in get_matrix(ch):
+        for vector in get_matrix(ch, number_of_data):
             matrix.append(vector)
     # for a in matrix:
     #     print (a)
@@ -44,73 +44,99 @@ def get_chunks_regions(ch):
         chunk_start += 1
 
 
-def get_matrix(chunk):
+def get_matrix(chunk, number_of_data):
     matrix = []
     for region in get_chunks_regions(chunk):
-        matrix.append(get_region_vector(region))
+        matrix.append(get_region_vector(region, number_of_data))
     return matrix
 
 
-def get_region_vector(region):
-    # odmocnina ze dvou vzdalenost
-    # distances
-    vector = []
+def find_closest_angle_pos(beam_angle, number_of_data):
+    # interpolar search
+
+    step = math.pi * 2 / number_of_data
+    left = 0
+    right = number_of_data - 1
+    while left < right:
+        #TODO - precision!
+        middle = int((left + right) / 2)
+        if abs(beam_angle - (middle * step)) <= (step / 2) + 0.000001:
+            return middle
+        elif (middle * step) < beam_angle:
+            left = middle + 1
+        elif (middle * step) > beam_angle:
+            right = middle - 1
+        else:
+            return middle
+    return left
+
+
+def get_region_vector(region, number_of_data):
     centroid = region.centroid()
     contours = region.contour()
-    # table of deviations and length
-    results = [[] for x in range(len(contours))]
-    con_index = 0
-    head_beam = centroid - contours[0]
-    last = head_beam
-    last_angle = 0
-    angle = 0
-    circle = 2 * math.pi
-    step = circle / NUMBER_OF_DATA
+
+    # table of the closest lower and higher deviated beams
+    results = [[None, None] for x in range(number_of_data)]
+
+    step = 2 * math.pi / number_of_data
 
     plt.figure()
     points_aux = []
     points_aux.append(centroid)
 
+    head_beam = centroid - contours[0]
+    con_index = 0
+
     while con_index < len(contours):
         beam = centroid - contours[con_index]
-
         points_aux.append(contours[con_index])
 
-        ang = deviation(head_beam, beam)
-        print((ang * 180) / math.pi)
+        beam_angle = deviation(head_beam, beam)
+        if abs(head_beam[0] - abs(centroid[0]) < abs(head_beam[0] - abs(centroid[0]))):
+            if abs(head_beam[1] - abs(centroid[1]) >= abs(head_beam[1] - abs(centroid[1]))):
+                beam_angle += math.pi
         distance = vector_norm(beam)
-        data = (ang, distance)
-        adress = int(ang / step)
-        print(adress)
-        if float(ang) / float(step) > 0.5:
-            adress += 1;
 
-        results[adress].append(data)
+        closest_angle_pos = find_closest_angle_pos(beam_angle, number_of_data)
+        closest_angle = closest_angle_pos * step
+        #TODO - precision
+        #TODO - precision multiplier
+        pr = 0.9
+        if (closest_angle - beam_angle) < 0.00001:
+            for i in [0, 1]:
+                data_entry = results[closest_angle_pos][i]
+                if data_entry is None or data_entry[1] < distance * pr:
+                    results[closest_angle_pos][i] = (beam_angle, distance)
+        elif closest_angle < beam_angle:
+            highest_lower = results[closest_angle_pos][0]
+            if highest_lower is None or highest_lower[1] < distance * pr or highest_lower[0] < beam_angle:
+                results[closest_angle_pos][0] = (beam_angle, distance)
+        else:
+            lowest_higher = results[closest_angle_pos][1]
+            if lowest_higher is None or lowest_higher[1] < distance * pr or lowest_higher[0] > beam_angle:
+                results[closest_angle_pos][1] = (beam_angle, distance)
 
-
-        # if ang == angle:
-        #     vector.append(vector_norm(beam))
-        #     angle += circle / NUMBER_OF_DATA
-        # elif ang > angle:
-        #     check?
-        #     vector.append(interpolation(angle - last_angle, ang - angle, last, beam))
-        #     angle +=
-
-        last = beam
-        last_angle = ang
         con_index += 1
-        # print(angle)
 
+    for i in range(number_of_data):
+        print (step * i * (180 / math.pi))
+        print (results[i][0])
+        print (results[i][1])
+    results = [0 if h_l is None or l_h is None else interpolation(h_l[0], l_h[0], h_l[1], l_h[1]) for h_l, l_h in results]
 
-    # hlavicka?
-    # plt.hold(True)
-    # xs = [x[1] for x in points_aux]
-    # ys = [x[0] for x in points_aux]
-    # plt.scatter(xs, ys)
-    # # plt.scatter(*(zip(*points_aux)))
-    # plt.show(True)
+    plt.hold(True)
+    xs = [x[1] for x in points_aux]
+    ys = [x[0] for x in points_aux]
 
-    return vector
+    # res_x = [math.cos(x * step - deviation(head_beam, (0, 1))) * results[x] + centroid[0] for x in range(number_of_data)]
+    # res_y = [math.sin(x * step - deviation(head_beam, (0, 1))) * results[x] + centroid[0] for x in range(number_of_data)]
+    res_x = [range(number_of_data)]
+    res_y = [results[x] for x in range(number_of_data)]
+    plt.scatter(xs, ys)
+    plt.scatter(res_x, res_y)
+    plt.show(True)
+
+    return results
 
 
 def vector_norm(u):
@@ -122,24 +148,36 @@ def dot_product(u, v):
 
 
 def deviation(u, v):
-    try:
-        ang = math.acos(abs(dot_product(u, v)) / ((vector_norm(u)) * vector_norm(v)))
-    except:
-        return 0
-    if dot_product(u, v) / ((vector_norm(u)) * vector_norm(v)) < 0:
-        ang += math.pi
+    ang = math.acos(dot_product(u, v) / ((vector_norm(u)) * vector_norm(v)))
     return ang
 
 
-def interpolation(first_angle, sec_angle, u, v):
-    size_u = vector_norm(u)
-    size_v = vector_norm(v)
-    if size_u > size_v:
-        size_u, size_v = size_v, size_u
+def interpolation(first_angle, sec_angle, first_dist, second_dist):
+    if first_angle == 0:
+        return first_dist
+    if sec_angle == 0:
+        return second_dist
+    if first_dist > second_dist:
+        first_dist, second_dist = second_dist, first_dist
         first_angle, sec_angle = sec_angle, first_angle
-    return size_u + (size_v - size_u) / 2 * (first_angle / sec_angle)
+    return first_dist + ((second_dist - first_dist) / (2 * (first_angle / sec_angle)))
 
 
 if __name__ == '__main__':
+    print ((180/math.pi) *(deviation((1, 0), (1, 0))))
+    print ((180/math.pi) *(deviation((1, 0), (1, 1)))  )
+    print ((180/math.pi) *(deviation((1, 0), (0, 1)))   )
+    print ((180/math.pi) *(deviation((1, 0), (-1, 1)))   )
+    print ((180/math.pi) *(deviation((1, 0), (-1, 0)))    )
+    print ((180/math.pi) *(deviation((1, 0), (-1, -1)))    )
+    print ((180/math.pi) *(deviation((1, 0), (-1, 0)))      )
+    print ((180/math.pi) *(deviation((1, 0), (1, -1)))       )
+    # number_of_data = 9
+    # degrees = range(3610)
+    # for deg in degrees:
+    #     print(deg, find_closest_angle_pos((math.pi / 180) * (deg / 10), number_of_data))
+    # print(601, find_closest_angle_pos((math.pi / 180) * (601 / 10), number_of_data))
+
+
     chunks = project.gm.chunk_list()
-    get_pca(chunks[:1])
+    get_pca(chunks[:1], NUMBER_OF_DATA)
