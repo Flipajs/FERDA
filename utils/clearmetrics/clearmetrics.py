@@ -180,7 +180,8 @@ class ClearMetrics(object):
         frames = sorted(self.groundtruth.keys())
         last_matches = np.array(self.gt_matches[frames[0]])
 
-        swaplist = [[] for _ in range(len(frames))]
+        # dictionary that holds a list of swaps for each frame
+        swapdict = {}
 
         mismatches = 0
         for frame in frames[1:]:
@@ -188,15 +189,23 @@ class ClearMetrics(object):
                 break
             matches = np.array(self.gt_matches[frame])
             mask_match_in_both_frames = (matches != -1) & (last_matches != -1)
+
+            # temporary list with swaps in current frame
+            swaps = []
             for i in range(0, len(matches)):
                 if mask_match_in_both_frames[i]:
                     if matches[i] != last_matches[i]:
                         if i < len(matches) and i < len(self.measurements) and matches[i] in last_matches and self.measurements[i] != None:
-                            swaplist[frame].append(matches[i])
+                            # if a swap was found, add it to temporary list
+                            swaps.append(matches[i])
                             mismatches += 1
 
             last_matches = matches
-        print swaplist
+            # if anything was found, add current list of swaps
+            if len(swaps) > 0:
+                swapdict[frame] = swaps
+
+        print swapdict
         return mismatches
 
     def get_object_count(self):
