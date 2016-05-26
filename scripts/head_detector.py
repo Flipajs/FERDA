@@ -89,13 +89,13 @@ def centered_crop(img, new_h, new_w):
     return img[y_:y_+new_h, x_:x_+new_w, :]
 
 
-def get_bounding_box(r, project, relative_border=1.3):
+def get_bounding_box(r, project, relative_border=1.3, fixed_border=0):
     frame = r.frame()
     img = project.img_manager.get_whole_img(frame)
     roi = r.roi()
 
-    height2 = int(ceil((roi.height() * relative_border) / 2.0))
-    width2 = int(ceil((roi.width() * relative_border) / 2.0))
+    height2 = int(ceil((roi.height() * relative_border) / 2.0) + fixed_border)
+    width2 = int(ceil((roi.width() * relative_border) / 2.0) + fixed_border)
     x = r.centroid()[1] - width2
     y = r.centroid()[0] - height2
 
@@ -126,12 +126,6 @@ def draw_keypoints(ft, keypoints):
         s_ = ft.getKeypointStrokes(i) * (1.0 / scales[kp[2]])
         scs_.append(kp[2])
         strokes.append(s_)
-
-
-    laplacian = cv2.Laplacian(bb,cv2.CV_64F)
-    grad = np.gradient(bb[:, :, 1])
-
-    plt.imshow(grad)
 
     sizes_ = [10, 17, 25]
 
@@ -274,6 +268,87 @@ def create_poly(ep, reversed=False):
     return poly
 
 
+def r_normalize(r, shape=(40, 70)):
+    bb, offset = get_bounding_box(r, p, relative_border=relative_border, fixed_border=20)
+
+    # p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
+    # endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
+    # endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
+
+    bb = rotate_img(bb, r.theta_)
+    bb = centered_crop(bb, 6*r.b_, 2.5*r.a_)
+
+    from scipy.misc import imresize
+
+    cv2.imshow("img", bb)
+    cv2.waitKey(25)
+
+    bb = np.asarray(imresize(bb, shape), dtype=np.uint8)
+    # endpoint1_ = endpoint_rot(bb, endpoint1, -r.theta_, r.centroid())
+    # endpoint2_ = endpoint_rot(bb, endpoint2, -r.theta_, r.centroid())
+
+    return bb
+
+
+def get_sek_img(bb):
+    bb_bw = cv2.cvtColor(bb, cv2.COLOR_BGR2GRAY)
+    ft.getCharSegmentations(bb_bw, '', 'base')
+    keypoints = ft.getLastDetectionKeypoints()
+
+    sek_im = np.zeros((bb.shape[0], bb.shape[1]), dtype=np.uint)
+
+    scales = ft.getImageScales()
+    for i, kp in enumerate(keypoints):
+        s_ = ft.getKeypointStrokes(i) * (1.0 / scales[kp[2]])
+        for pt in s_:
+            sek_im[round(pt[1]), round(pt[0])] += 1
+
+    return sek_im
+
+
+def img2hist(img, hSteps, wSteps):
+    img = np.asarray(img, dtype=np.uint8)
+    hStep = img.shape[0] / hSteps
+    wStep = img.shape[1] / wSteps
+    integral = cv2.integral(img)
+
+    hist = np.zeros((hSteps*wSteps, ), dtype=np.uint)
+
+    i = 0
+    for y in range(hStep, img.shape[0] + 1, hStep):
+        for x in range(wStep, img.shape[1] + 1, wStep):
+            sq_sum = integral[y, x] + integral[y-hStep, x-wStep] - integral[y-hStep, x] - integral[y, x-wStep]
+            hist[i] = sq_sum
+            i += 1
+
+    return hist
+
+
+def get_description(r, hSteps=4, wSteps=7):
+    bb = r_normalize(r)
+
+    laplacian = cv2.Laplacian(bb[:, :, 2], cv2.CV_64F, ksize=3)
+    sek_img = get_sek_img(bb)
+
+    sek_imhist = img2hist(sek_img, hSteps, wSteps)
+    laplacian_imhist = img2hist(laplacian, hSteps, wSteps)
+
+    # plt.figure(1)
+    # plt.subplot(2, 2, 1)
+    # plt.imshow(sek_img)
+    # plt.subplot(2, 2, 2)
+    # plt.imshow(laplacian)
+    # plt.subplot(2, 2, 3)
+    # plt.plot(sek_imhist)
+    # plt.subplot(2, 2, 4)
+    # plt.plot(laplacian_imhist)
+    # plt.show()
+    # key = cv2.waitKey(0)
+
+    # key = plt.waitforbuttonpress(5)
+
+
+
 if __name__ == "__main__":
     p = Project()
     p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
@@ -290,9 +365,17 @@ if __name__ == "__main__":
     x_fw = 20
     y_ = 25
 
+    file_name = "../data/head_detection/data.pkl"
+    with open(file_name, "rb") as f:
+        data = pickle.load(f)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+    skip_ids = set()
+    for id_, b in data:
+        print id_, b
+        skip_ids.add(id_)
+
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
 
     for v_id in p.gm.get_all_relevant_vertices():
         ch_id = p.gm.g.vp['chunk_start_id'][p.gm.g.vertex(v_id)]
@@ -302,56 +385,62 @@ if __name__ == "__main__":
             ch = p.chm[ch_id]
             r_ch = RegionChunk(ch, p.gm, p.rm)
 
+            from_one_chunk = 10
+            i = 0
             for t in range(r_ch.start_frame(), r_ch.end_frame() + 1, sample_step):
                 r = r_ch[t - r_ch.start_frame()]
                 if r.is_virtual:
                     continue
 
-                bb, offset = get_bounding_box(r, p, relative_border)
+                if r.id_ in skip_ids:
+                    break
 
-                # swap x, y
-                # c_ = tuple(map(int, r.centroid()-offset))[::-1]
-                # cv2.circle(bb, c_, 4, (255, 255, 255), 2)
+                get_description(r)
+                var = raw_input("head is Right Left? (r/l) s for skip")
+                if var == 's':
+                    break
 
-                p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
-                endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
-                endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
+                data.append((r.id_, True if var == 'r' else False))
+                print "LEN: ", len(data)
 
-                # c_ = tuple(map(int, endpoint1-offset))[::-1]
-                # cv2.circle(bb, c_, 4, (255, 0, 0), 2)
+                i += 1
+
+                if i == from_one_chunk:
+                    break
+
+                with open(file_name, 'wb') as f:
+                    pickle.dump(data, f)
+
+                # bb, endpoint1_, endpoint2_ = r_normalize(r)
+
+                # laplacian = cv2.Laplacian(bb, cv2.CV_64F, ksize=3)
+
+                # plt.figure()
+                # plt.imshow(bb)
+
+                # if endpoint1_[1] > endpoint2_[1]:
+                #     endpoint1_, endpoint2_ = endpoint2_, endpoint1_
                 #
-                # c_ = tuple(map(int, endpoint2-offset))[::-1]
-                # cv2.circle(bb, c_, 4, (255, 255, 0), 2)
-
-                bb = rotate_img(bb, r.theta_)
-                bb = centered_crop(bb, 8*r.b_, 4*r.a_)
-
-                endpoint1_ = endpoint_rot(bb, endpoint1, -r.theta_, r.centroid())
-                endpoint2_ = endpoint_rot(bb, endpoint2, -r.theta_, r.centroid())
-
-                if endpoint1_[1] > endpoint2_[1]:
-                    endpoint1_, endpoint2_ = endpoint2_, endpoint1_
-
-                plt.clf()
-
-                poly1 = create_poly(endpoint1_)
-                poly2 = create_poly(endpoint2_, True)
+                # plt.clf()
+                #
+                # poly1 = create_poly(endpoint1_)
+                # poly2 = create_poly(endpoint2_, True)
 
                 # plot_rectangle(endpoint1_[0]-y_, endpoint1_[1]-x_fw, endpoint1_[0]+y_, endpoint1_[1]+x_bw)
                 # plot_rectangle(endpoint1_[0]-y_, endpoint2_[1]-x_bw, endpoint1_[0]+y_, endpoint2_[1]+x_fw)
 
-                bb_bw = cv2.cvtColor(bb, cv2.COLOR_BGR2GRAY)
-                ft.getCharSegmentations(bb_bw, '', 'base')
-
-                keypoints = ft.getLastDetectionKeypoints()
-                draw_keypoints(ft, keypoints)
-
-                # head = detect_head(keypoints, np.array([bb.shape[0] / 2, bb.shape[1] / 2]), endpoint1_, endpoint2_, x_bw, x_fw, y_)
-                head = detect_head2(keypoints, endpoint1_, endpoint2_, poly1, poly2)
-
-                if head:
-                    plt.scatter(head[1], head[0], s=100, c=(1, 1,0))
-
-                plt.show()
-                plt.waitforbuttonpress()
+                # bb_bw = cv2.cvtColor(bb, cv2.COLOR_BGR2GRAY)
+                # ft.getCharSegmentations(bb_bw, '', 'base')
+                #
+                # keypoints = ft.getLastDetectionKeypoints()
+                # draw_keypoints(ft, keypoints)
+                #
+                # # head = detect_head(keypoints, np.array([bb.shape[0] / 2, bb.shape[1] / 2]), endpoint1_, endpoint2_, x_bw, x_fw, y_)
+                # # head = detect_head2(keypoints, endpoint1_, endpoint2_, poly1, poly2)
+                #
+                # # if head:
+                # #     plt.scatter(head[1], head[0], s=100, c=(1, 1,0))
+                #
+                # plt.show()
+                # plt.waitforbuttonpress()
 
