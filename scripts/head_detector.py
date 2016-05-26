@@ -369,6 +369,7 @@ if __name__ == "__main__":
     with open(file_name, "rb") as f:
         data = pickle.load(f)
 
+
     skip_ids = set()
     for id_, b in data:
         print id_, b
@@ -379,7 +380,6 @@ if __name__ == "__main__":
 
     for v_id in p.gm.get_all_relevant_vertices():
         ch_id = p.gm.g.vp['chunk_start_id'][p.gm.g.vertex(v_id)]
-        # 12, 19, 579
         if ch_id > 0:
             print ch_id
             ch = p.chm[ch_id]
