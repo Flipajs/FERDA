@@ -19,8 +19,10 @@ def test_project(gt_measurements, test_measurements, threshold):
 def test_swaps(gt_measurements, test_measurements, threshold):
     clear = ClearMetrics(gt_measurements, test_measurements, threshold)
     clear.match_sequence()
+    data = clear.get_mismatches_count_ignore_swaps()
     print "Old mismatches: %s" % clear.get_mismatches_count()
-    print "New mismatches v1: %s" % clear.get_mismatches_count_ignore_swaps()
+    print "New mismatches: %s" % data[0]
+    print "Dictionary with suspicious frames: %s" % data[1]
 
 
 def data1():

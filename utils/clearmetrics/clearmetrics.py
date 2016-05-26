@@ -156,25 +156,32 @@ class ClearMetrics(object):
         """
         Return number of identity mismatches.
 
-        One mismatch occurs when measurement id assigned to a gt id changes.
-        Each identity swap is counted only once. Example shows changes is indexes compared to previous frame.
+        A mismatch occurs when measurement id assigned to a gt id changes, however, identity loss (swap with None) is
+        not considered an error in this case. Following examples show how different situations are evaluated:
+        This is considered three mismatches, because 3 trajectories lose their id's.
+        A)  0   1  2
+             \ /  /
+              /--/
+             /  / \
+            1  2   0
 
-        These examples are understood as one mismatch
-        A)  0   1       B)  0   1  2
-             \ /             \ /  /
-              x               /--/
-             / \             /  / \
-            1   0           1  2   0
+        Example B shows no mismatches, because trajectory 1 only loses it's identity in one frame and doesn't
+        confuse with other trajectories.
+        B) None 1    2
+             \ /     |
+              x      |
+             / \     |
+            1  None  2
 
-        Example C shows two mismatches
+        Example C shows four mismatches
         C)  0   1   2   3
              \ /     \ /
               x       x
              / \     / \
             1   0   3   2
 
-        @return: number of mismatches in the sequence
-        @rtype: int
+        @return: number of mismatches in the sequence, dictionary of problematic trajectories (for each frame with a swap, a list of id's is given)
+        @rtype: int, dict
         """
 
         frames = sorted(self.groundtruth.keys())
@@ -205,8 +212,7 @@ class ClearMetrics(object):
             if len(swaps) > 0:
                 swapdict[frame] = swaps
 
-        print swapdict
-        return mismatches
+        return mismatches, swapdict
 
     def get_object_count(self):
         """
