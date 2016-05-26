@@ -127,7 +127,11 @@ def draw_keypoints(ft, keypoints):
         scs_.append(kp[2])
         strokes.append(s_)
 
-    plt.imshow(bb)
+
+    laplacian = cv2.Laplacian(bb,cv2.CV_64F)
+    grad = np.gradient(bb[:, :, 1])
+
+    plt.imshow(grad)
 
     sizes_ = [10, 17, 25]
 
