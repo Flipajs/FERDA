@@ -41,7 +41,13 @@ if is_flipajs_pc():
     except IOError:
         pass
 
-    ex.widget_control('load_project', project)
+    # name = 'c2'
+    # wd = '/Users/flipajs/Documents/wd/'
+    # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
+    #             'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
+    #
+    # project.load(wd+name+'/c2.fproj')
+    # ex.widget_control('load_project', project)
 
 
 app.exec_()
