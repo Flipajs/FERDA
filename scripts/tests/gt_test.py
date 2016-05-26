@@ -20,11 +20,11 @@ def test_swaps(gt_measurements, test_measurements, threshold):
     clear = ClearMetrics(gt_measurements, test_measurements, threshold)
     clear.match_sequence()
     print "Old mismatches: %s" % clear.get_mismatches_count()
-    print "New mismatches: %s" % clear.get_mismatches_count_ignore_swaps()
+    print "New mismatches v1: %s" % clear.get_mismatches_count_ignore_swaps()
 
 
 def data1():
-    print "One object swapped with None (exp: 1)"
+    print "One object swapped with None (exp: 0)"
     gt = {
         0: [15],
         1: [15]
@@ -52,7 +52,7 @@ def data2():
 
 
 def data3():
-    print "Three objects swapped with each other (exp: 3)"
+    print "Three objects swapped with each other (exp: 1)"
     gt = {
         0: [15, 10, 5],
         1: [15, 10, 5],
@@ -67,7 +67,7 @@ def data3():
 
 
 def data4():
-    print "Four objects, two independent swaps (exp: 4)"
+    print "Four objects, two independent swaps (exp: 2)"
     gt = {
         0: [15, 10, 5, 0],
         1: [15, 10, 5, 0],
@@ -95,7 +95,7 @@ def data5():
 
 
 def data6():
-    print "Three objects, two swapped with each other, one with None (exp: 3)"
+    print "Three objects, two swapped with each other, one with None (exp: 2)"
     gt = {
         0: [15, 5, 0],
         1: [15, 5, 0],
@@ -105,6 +105,35 @@ def data6():
         0: [15, None, 5, 0],
         1: [15, None, 5, 0],
         2: [None, 15, 0, 5]
+    }
+    return gt, ms
+
+
+def data7():
+    print "Three objects and None swapped together (exp. 1)"
+    gt = {
+        0: [15, 5, 0],
+        1: [15, 5, 0],
+        2: [15, 5, 0]
+    }
+    ms = {
+        0: [15, None, 5, 0],
+        1: [15, None, 5, 0],
+        2: [None, 0, 15, 5]
+    }
+    return gt, ms
+
+def data8():
+    print "Three objects swapped together on different frames (exp. 1)"
+    gt = {
+        0: [15, 5, 0],
+        1: [15, 5, 0],
+        2: [15, 5, 0]
+    }
+    ms = {
+        0: [15, 5, 0],
+        1: [15, 0, 5],
+        2: [0, 15, 5]
     }
     return gt, ms
 
@@ -129,5 +158,11 @@ if __name__ == "__main__":
     test_swaps(data[0], data[1], threshold)
     print "-----"
     data = data6()
+    test_swaps(data[0], data[1], threshold)
+    print "-----"
+    data = data7()
+    test_swaps(data[0], data[1], threshold)
+    print "-----"
+    data = data8()
     test_swaps(data[0], data[1], threshold)
     print "Done (%5.3f s)" % (time.time() - t)

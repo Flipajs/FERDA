@@ -179,6 +179,9 @@ class ClearMetrics(object):
 
         frames = sorted(self.groundtruth.keys())
         last_matches = np.array(self.gt_matches[frames[0]])
+
+        swaplist = [[] for _ in range(len(frames))]
+
         mismatches = 0
         for frame in frames[1:]:
             if frame >= len(self.measurements):
@@ -188,14 +191,12 @@ class ClearMetrics(object):
             for i in range(0, len(matches)):
                 if mask_match_in_both_frames[i]:
                     if matches[i] != last_matches[i]:
-                        if matches[i] in last_matches:
+                        if i < len(matches) and i < len(self.measurements) and matches[i] in last_matches and self.measurements[i] != None:
+                            swaplist[frame].append(matches[i])
                             mismatches += 1
-                # this hotfix is not working!
-                else:
-                    if matches[i] != last_matches[i]:
-                        mismatches += 1
 
             last_matches = matches
+        print swaplist
         return mismatches
 
     def get_object_count(self):
