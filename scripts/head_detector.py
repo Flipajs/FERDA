@@ -280,9 +280,6 @@ def r_normalize(r, shape=(40, 70)):
 
     from scipy.misc import imresize
 
-    cv2.imshow("img", bb)
-    cv2.waitKey(25)
-
     bb = np.asarray(imresize(bb, shape), dtype=np.uint8)
     # endpoint1_ = endpoint_rot(bb, endpoint1, -r.theta_, r.centroid())
     # endpoint2_ = endpoint_rot(bb, endpoint2, -r.theta_, r.centroid())
@@ -324,14 +321,45 @@ def img2hist(img, hSteps, wSteps):
     return hist
 
 
-def get_description(r, hSteps=4, wSteps=7):
-    bb = r_normalize(r)
+def n_choose_k_num(n, k):
+    import math
+    return math.factorial(n) / ((math.factorial(n-k))*k)
 
-    laplacian = cv2.Laplacian(bb[:, :, 2], cv2.CV_64F, ksize=3)
+
+def combine_hist(hist):
+    import itertools
+
+    new_hist = np.zeros(3*n_choose_k_num(len(hist), 2))
+    i = 0
+    for x, y in itertools.combinations(range(len(hist)), 2):
+        new_hist[i] = hist[x] + hist[y]
+        new_hist[(i+len(hist))] = int(hist[x]) - int(hist[y])
+        new_hist[(i+2*len(hist))] = int(hist[y]) - int(hist[x])
+
+
+    return new_hist
+
+
+def get_description(r, hSteps=3, wSteps=6, fliplr=False, shape=(32, 64)):
+    bb = r_normalize(r, shape)
+    bb_gray = cv2.cvtColor(bb, cv2.COLOR_BGR2GRAY)
+
+    if fliplr:
+        bb = np.fliplr(bb)
+
+    laplacian = cv2.Laplacian(bb_gray, cv2.CV_64F, ksize=3)
     sek_img = get_sek_img(bb)
+
+    from skimage.feature import hog
+    fd, hog_image = hog(bb_gray, orientations=8, pixels_per_cell=(16, 16),
+                    cells_per_block=(1, 1), visualise=True)
 
     sek_imhist = img2hist(sek_img, hSteps, wSteps)
     laplacian_imhist = img2hist(laplacian, hSteps, wSteps)
+
+    x = np.hstack((sek_imhist, laplacian_imhist, fd, combine_hist(sek_imhist), combine_hist(laplacian_imhist)))
+    # x =
+
 
     # plt.figure(1)
     # plt.subplot(2, 2, 1)
@@ -346,6 +374,8 @@ def get_description(r, hSteps=4, wSteps=7):
     # key = cv2.waitKey(0)
 
     # key = plt.waitforbuttonpress(5)
+
+    return x
 
 
 
@@ -366,81 +396,151 @@ if __name__ == "__main__":
     y_ = 25
 
     file_name = "../data/head_detection/data.pkl"
+    features_file_name = "../data/head_detection/data_features.pkl"
+    rfc_file_name = "../data/head_detection/rfc.pkl"
     with open(file_name, "rb") as f:
         data = pickle.load(f)
 
+    X = []
+    Y = []
 
-    skip_ids = set()
-    for id_, b in data:
-        print id_, b
-        skip_ids.add(id_)
+    from random import shuffle, seed
+    np.random.seed(30)
+    seed(15)
 
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111)
+    artifical_data = False
 
-    for v_id in p.gm.get_all_relevant_vertices():
-        ch_id = p.gm.g.vp['chunk_start_id'][p.gm.g.vertex(v_id)]
-        if ch_id > 0:
-            print ch_id
-            ch = p.chm[ch_id]
-            r_ch = RegionChunk(ch, p.gm, p.rm)
+    ids = range((2 if artifical_data else 1)*len(data))
+    shuffle(ids)
 
-            from_one_chunk = 10
-            i = 0
-            for t in range(r_ch.start_frame(), r_ch.end_frame() + 1, sample_step):
-                r = r_ch[t - r_ch.start_frame()]
-                if r.is_virtual:
-                    continue
+    part_ = int(len(ids)*0.8)
+    learn_ids = ids[0:part_]
+    test_ids = ids[part_:-1]
 
-                if r.id_ in skip_ids:
-                    break
+    ## PREPARE FEATURES
+    if False:
+        i = 0
+        for r_id, head_ok in data:
+            r = p.rm[r_id]
 
-                get_description(r)
-                var = raw_input("head is Right Left? (r/l) s for skip")
-                if var == 's':
-                    break
+            x1 = get_description(r, fliplr=not head_ok)
+            X.append(x1)
+            Y.append(head_ok)
 
-                data.append((r.id_, True if var == 'r' else False))
-                print "LEN: ", len(data)
+            if artifical_data:
+                x2 = get_description(r, fliplr=head_ok)
+                X.append(x2)
+                Y.append(not head_ok)
 
-                i += 1
+            i += 1
+            if not i % 10:
+                print i
 
-                if i == from_one_chunk:
-                    break
+        with open(features_file_name, "wb") as f:
+            p = pickle.Pickler(f, -1)
+            p.dump(X)
+            p.dump(Y)
 
-                with open(file_name, 'wb') as f:
-                    pickle.dump(data, f)
 
-                # bb, endpoint1_, endpoint2_ = r_normalize(r)
+    else:
+        with open(features_file_name, "rb") as f:
+            up = pickle.Unpickler(f)
+            X = up.load()
+            Y = up.load()
 
-                # laplacian = cv2.Laplacian(bb, cv2.CV_64F, ksize=3)
+    ## LEARN
+    if False:
+        X = np.array(X)
+        Y = np.array(Y)
+        from sklearn.ensemble import RandomForestClassifier
+        rfc = RandomForestClassifier()
+        rfc.fit(X[learn_ids], Y[learn_ids])
 
-                # plt.figure()
-                # plt.imshow(bb)
+        with open(rfc_file_name, "wb") as f:
+            pickle.dump(rfc, f, -1)
+    else:
+        with open(rfc_file_name, "rb") as f:
+            rfc = pickle.load(f)
 
-                # if endpoint1_[1] > endpoint2_[1]:
-                #     endpoint1_, endpoint2_ = endpoint2_, endpoint1_
-                #
-                # plt.clf()
-                #
-                # poly1 = create_poly(endpoint1_)
-                # poly2 = create_poly(endpoint2_, True)
 
-                # plot_rectangle(endpoint1_[0]-y_, endpoint1_[1]-x_fw, endpoint1_[0]+y_, endpoint1_[1]+x_bw)
-                # plot_rectangle(endpoint1_[0]-y_, endpoint2_[1]-x_bw, endpoint1_[0]+y_, endpoint2_[1]+x_fw)
+    # test_ids = range(500)
+    Y_ = rfc.predict(X[test_ids])
+    GT_Y = Y[test_ids]
 
-                # bb_bw = cv2.cvtColor(bb, cv2.COLOR_BGR2GRAY)
-                # ft.getCharSegmentations(bb_bw, '', 'base')
-                #
-                # keypoints = ft.getLastDetectionKeypoints()
-                # draw_keypoints(ft, keypoints)
-                #
-                # # head = detect_head(keypoints, np.array([bb.shape[0] / 2, bb.shape[1] / 2]), endpoint1_, endpoint2_, x_bw, x_fw, y_)
-                # # head = detect_head2(keypoints, endpoint1_, endpoint2_, poly1, poly2)
-                #
-                # # if head:
-                # #     plt.scatter(head[1], head[0], s=100, c=(1, 1,0))
-                #
-                # plt.show()
-                # plt.waitforbuttonpress()
+    print "correct:", np.sum(Y_ == GT_Y), len(Y_)
 
+
+    # skip_ids = set()
+    # for id_, b in data:
+    #     print id_, b
+    #     skip_ids.add(id_)
+    #
+    # # fig = plt.figure()
+    # # ax = fig.add_subplot(111)
+    #
+    # for v_id in p.gm.get_all_relevant_vertices():
+    #     ch_id = p.gm.g.vp['chunk_start_id'][p.gm.g.vertex(v_id)]
+    #     if ch_id > 0:
+    #         print ch_id
+    #         ch = p.chm[ch_id]
+    #         r_ch = RegionChunk(ch, p.gm, p.rm)
+    #
+    #         from_one_chunk = 10
+    #         i = 0
+    #         for t in range(r_ch.start_frame(), r_ch.end_frame() + 1, sample_step):
+    #             r = r_ch[t - r_ch.start_frame()]
+    #             if r.is_virtual:
+    #                 continue
+    #
+    #             if r.id_ in skip_ids:
+    #                 break
+    #
+    #             get_description(r)
+    #             var = raw_input("head is Right Left? (r/l) s for skip")
+    #             if var == 's':
+    #                 break
+    #
+    #             data.append((r.id_, True if var == 'r' else False))
+    #             print "LEN: ", len(data)
+    #
+    #             i += 1
+    #
+    #             if i == from_one_chunk:
+    #                 break
+    #
+    #             with open(file_name, 'wb') as f:
+    #                 pickle.dump(data, f)
+    #
+    #             # bb, endpoint1_, endpoint2_ = r_normalize(r)
+    #
+    #             # laplacian = cv2.Laplacian(bb, cv2.CV_64F, ksize=3)
+    #
+    #             # plt.figure()
+    #             # plt.imshow(bb)
+    #
+    #             # if endpoint1_[1] > endpoint2_[1]:
+    #             #     endpoint1_, endpoint2_ = endpoint2_, endpoint1_
+    #             #
+    #             # plt.clf()
+    #             #
+    #             # poly1 = create_poly(endpoint1_)
+    #             # poly2 = create_poly(endpoint2_, True)
+    #
+    #             # plot_rectangle(endpoint1_[0]-y_, endpoint1_[1]-x_fw, endpoint1_[0]+y_, endpoint1_[1]+x_bw)
+    #             # plot_rectangle(endpoint1_[0]-y_, endpoint2_[1]-x_bw, endpoint1_[0]+y_, endpoint2_[1]+x_fw)
+    #
+    #             # bb_bw = cv2.cvtColor(bb, cv2.COLOR_BGR2GRAY)
+    #             # ft.getCharSegmentations(bb_bw, '', 'base')
+    #             #
+    #             # keypoints = ft.getLastDetectionKeypoints()
+    #             # draw_keypoints(ft, keypoints)
+    #             #
+    #             # # head = detect_head(keypoints, np.array([bb.shape[0] / 2, bb.shape[1] / 2]), endpoint1_, endpoint2_, x_bw, x_fw, y_)
+    #             # # head = detect_head2(keypoints, endpoint1_, endpoint2_, poly1, poly2)
+    #             #
+    #             # # if head:
+    #             # #     plt.scatter(head[1], head[0], s=100, c=(1, 1,0))
+    #             #
+    #             # plt.show()
+    #             # plt.waitforbuttonpress()
+    #
