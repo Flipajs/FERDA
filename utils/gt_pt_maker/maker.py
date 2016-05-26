@@ -1,17 +1,20 @@
 import numpy as np
 from matplotlib import pyplot as plt
-
+import cPickle as pickle
+import cv2
 
 class clicker_class(object):
     """
     credit: tcaswell on http://stackoverflow.com/questions/19592422/python-gui-that-draw-a-dot-when-clicking-on-plot
     """
-    def __init__(self, ax, pix_err=1):
+    def __init__(self, ax, vm, out_path, set_id=0, frame=0, del_limit=30):
         self.canvas = ax.get_figure().canvas
         self.cid = None
-        self.pt_lst = []
+        # form data[frame][antid]
+        self.frame = frame
+        self.data = {frame: {0: []}}
         self.pt_plot = ax.plot([], [], marker='+', mec='k', ms=20)[0]
-        self.pix_err = pix_err
+        self.del_limit = del_limit
         self.connect_sf()
 
         self.__objs = []
@@ -19,13 +22,27 @@ class clicker_class(object):
         self.current_ant = 0
         self.part_order = ['left antenna', 'right antenna', '1st right', '2nd rigth', '3rd right', '3rd left', '2nd left', '1st left', 'DONE']
 
+        self.set_id = set_id
+        self.vm = vm
+        self.out_path = out_path
+        self.set_frame()
+
+    def set_frame(self):
+        self.data.setdefault(self.frame, {}).setdefault(0, [])
+        self.__objs = []
+        self.current_ant = 0
+        plt.cla()
+        im = cv2.cvtColor(vm.get_frame(self.frame), cv2.COLOR_BGR2RGB)
+        plt.imshow(im)
+        self.redraw()
+
     def set_visible(self, visible):
         '''sets if the curves are visible '''
         self.pt_plot.set_visible(visible)
 
     def clear(self):
         '''Clears the points'''
-        self.pt_lst = []
+        self.data[self.frame] = {}
         self.redraw()
 
     def connect_sf(self):
@@ -45,7 +62,17 @@ class clicker_class(object):
         if event.xdata is None or event.ydata is None:
             return
         if event.button == 1:
-            self.pt_lst.append((event.xdata, event.ydata))
+            if event.key == 'z':
+                x, y = event.xdata, event.ydata
+                offset = 75
+                plt.xlim([x-offset, x+offset])
+                plt.ylim([y-offset, y+offset])
+                plt.gca().invert_yaxis()
+
+            elif event.key == 'Z':
+                ax.autoscale()
+            else:
+                self.data[self.frame][self.current_ant].append((event.xdata, event.ydata))
         elif event.button == 3:
             self.remove_pt((event.xdata, event.ydata))
 
@@ -56,11 +83,47 @@ class clicker_class(object):
             self.clear()
             return
 
+        elif event.key == 'n':
+            self.current_ant += 1
+            self.data[self.frame].setdefault(self.current_ant, [])
+
+        elif event.key == 'b':
+            if self.current_ant > 0:
+                self.current_ant -= 1
+
+        elif event.key == 'g':
+            if self.frame > 0:
+                self.frame -= 1
+            self.set_frame()
+            self.save()
+            return
+
+        elif event.key == 'h':
+            self.frame += 1
+            self.set_frame()
+            self.save()
+            return
+
+        elif event.key == 'S':
+            self.save()
+
+        self.redraw()
+
+    def save(self):
+        import time
+        timestr = time.strftime("%Y%m%d-%H%M%S")
+        with open(self.out_path+'/'+str(self.set_id)+'_'+timestr+'.pkl', 'wb') as f:
+            p = pickle.Pickler(f, -1)
+            p.dump(self.data)
+
+        print 'SAVED'
+
+
     def remove_pt(self, loc):
-        if len(self.pt_lst) > 0:
-            id_ = np.argmin(map(lambda x: np.sqrt((x[0] - loc[0]) ** 2 + (x[1] - loc[1]) ** 2), self.pt_lst))
-            if np.linalg.norm(np.array(loc) - np.array(self.pt_lst[id_])) < 30:
-                self.pt_lst.pop(id_)
+        if len(self.data[self.frame][self.current_ant]) > 0:
+            id_ = np.argmin(map(lambda x: np.sqrt((x[0] - loc[0]) ** 2 + (x[1] - loc[1]) ** 2), self.data[self.frame][self.current_ant]))
+            if np.linalg.norm(np.array(loc) - np.array(self.data[self.frame][self.current_ant][id_])) < self.del_limit:
+                self.data[self.frame][self.current_ant].pop(id_)
 
     def redraw(self):
         for o in self.__objs:
@@ -69,42 +132,24 @@ class clicker_class(object):
         self.__objs = []
 
         plt.hold(True)
-        i = 0
-        for x, y in self.pt_lst:
-            c = 'r'
+        colors = ['r', 'g', 'b', 'm', 'c', 'y']
 
-            o = plt.scatter(x, y, c=c, marker='o', s=70, edgecolors='k', alpha=0.4)
-            self.__objs.append(o)
+        for a_id in self.data[self.frame]:
+            i = 0
+            for x, y in self.data[self.frame][a_id]:
+                m = 'x' if i < 2 else '+'
+                o = plt.scatter(x, y, c=colors[a_id%len(colors)], marker=m, s=100, edgecolors='k', alpha=0.7)
+                self.__objs.append(o)
 
-            # sig1 = -1
-            # sig2 = 1
-            #
-            # off = 20
-            # o = ax.annotate(i, xy=(x, y), xycoords='data',
-            #     xytext=(sig1*off, sig2*off), textcoords='offset points',
-            #             bbox=dict(boxstyle="round", fc="red", alpha=0.5),
-            #     arrowprops=dict(arrowstyle="->"),
-            #     )
+                i += 1
 
-            # self.__objs.append(o)
+        s1 = 'Frame: '+str(self.frame)+' Ant #'+str(self.current_ant+1)
 
-            i += 1
+        s2 = 'ERROR'
+        if len(self.data[self.frame][self.current_ant]) < len(self.part_order):
+            s2 = self.part_order[len(self.data[self.frame][self.current_ant])]
 
-
-        o = ax.annotate('Ant #'+str(self.current_ant+1), xy=(0, -15),
-                bbox=dict(boxstyle="round", fc="green", alpha=0.7),
-                )
-        self.__objs.append(o)
-
-        t = 'ERROR'
-        if len(self.pt_lst) < len(self.part_order):
-            t = self.part_order[len(self.pt_lst)]
-
-        o = ax.annotate(t, xy=(80, -15),
-                bbox=dict(boxstyle="round", fc="green", alpha=0.7),
-                )
-        self.__objs.append(o)
-
+        plt.title(s1+', '+s2)
         plt.hold(False)
 
         self.canvas.draw()
@@ -112,23 +157,34 @@ class clicker_class(object):
     def return_points(self):
         '''Returns the clicked points in the format the rest of the
         code expects'''
-        return np.vstack(self.pt_lst).T
+        # return np.vstack(self.pt_lst).T
+        return None
 
 
 """
+n - next ant
+b - previous ant
+shift+s - save
+z + click - zoom in
+shift + z + click - zoom out
 
-ctrl + shift + c - clear all
-s - skip
-1 2 3 .... pt number
+right-click - remove point
 
 """
 
+data = None
+with open('/Users/flipajs/Documents/wd/antennas_gt/Cam1/50.pkl', 'rb') as f:
+    up = pickle.Unpickler(f)
+    data = up.load()
 
-# im = plt.imread('/Users/flipajs/Desktop/Screen Shot 2016-03-01 at 17.28.47.png')
-im = plt.imread('/Users/flipajs/Desktop/Screen Shot 2016-03-09 at 08.14.06.png')
 fig = plt.figure()
 ax = fig.add_subplot(111)
-plt.imshow(im)
-# ax = plt.gca()
-cc = clicker_class(ax)
+from utils.video_manager import VideoManager
+vm = VideoManager('/Users/flipajs/Documents/wd/Cam1_clip.avi')
+cc = clicker_class(ax, vm, '/Users/flipajs/Documents/wd/antennas_gt/test', set_id=50, frame=50)
+
+if data is not None:
+    cc.data = data
+    cc.frame = sorted([f for f in data])[0]
+    cc.set_frame()
 plt.show()
