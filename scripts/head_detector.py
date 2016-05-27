@@ -454,27 +454,30 @@ if __name__ == "__main__":
     X = np.array(X)
     Y = np.array(Y)
 
-    rf = True
+    rf = False
     if rf:
         ## LEARN
         if True:
             from sklearn.ensemble import RandomForestClassifier
-            rfc = RandomForestClassifier()
-            rfc.fit(X[learn_ids], Y[learn_ids])
+            clf = RandomForestClassifier()
+            clf.fit(X[learn_ids], Y[learn_ids])
 
             with open(rfc_file_name, "wb") as f:
-                pickle.dump(rfc, f, -1)
+                pickle.dump(clf, f, -1)
         else:
             with open(rfc_file_name, "rb") as f:
-                rfc = pickle.load(f)
+                clf = pickle.load(f)
     else:
         #### SVM
         from sklearn.svm import SVC
-        svc = SVC(kernel='poly', degree='2')
+        # X = np.array([[-1, -1], [-2, -1], [1, 1], [2, 1]])
+        # y = np.array([1, 1, 2, 2])
+        # clf = SVC(kernel='poly')
+        # clf.fit(X, y)
 
 
     # test_ids = range(500)
-    Y_ = rfc.predict(X[test_ids])
+    Y_ = clf.predict(X[test_ids])
     GT_Y = Y[test_ids]
 
     print "correct:", np.sum(Y_ == GT_Y), len(Y_)
