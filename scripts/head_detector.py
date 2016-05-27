@@ -340,12 +340,15 @@ def combine_hist(hist):
     return new_hist
 
 
-def get_description(r, hSteps=3, wSteps=6, fliplr=False, shape=(32, 64)):
+def get_description(r, hSteps=3, wSteps=6, fliplr=False, flipud=False, shape=(32, 64)):
     bb = r_normalize(r, shape)
     bb_gray = cv2.cvtColor(bb, cv2.COLOR_BGR2GRAY)
 
     if fliplr:
         bb = np.fliplr(bb)
+
+    if flipud:
+        bb = np.flipud(bb)
 
     laplacian = cv2.Laplacian(bb_gray, cv2.CV_64F, ksize=3)
     sek_img = get_sek_img(bb)
@@ -408,17 +411,17 @@ if __name__ == "__main__":
     np.random.seed(30)
     seed(15)
 
-    artifical_data = False
+    data_augmentation = True
 
-    ids = range((2 if artifical_data else 1)*len(data))
+    ids = range((2 if data_augmentation else 1) * len(data))
     shuffle(ids)
 
-    part_ = int(len(ids)*0.8)
+    part_ = int((2 if data_augmentation else 1) * len(ids)*0.8)
     learn_ids = ids[0:part_]
     test_ids = ids[part_:-1]
 
     ## PREPARE FEATURES
-    if False:
+    if True:
         i = 0
         for r_id, head_ok in data:
             r = p.rm[r_id]
@@ -427,10 +430,10 @@ if __name__ == "__main__":
             X.append(x1)
             Y.append(head_ok)
 
-            if artifical_data:
-                x2 = get_description(r, fliplr=head_ok)
+            if data_augmentation:
+                x2 = get_description(r, fliplr=not head_ok, flipud=True)
                 X.append(x2)
-                Y.append(not head_ok)
+                Y.append(head_ok)
 
             i += 1
             if not i % 10:
@@ -448,10 +451,11 @@ if __name__ == "__main__":
             X = up.load()
             Y = up.load()
 
+    X = np.array(X)
+    Y = np.array(Y)
+
     ## LEARN
-    if False:
-        X = np.array(X)
-        Y = np.array(Y)
+    if True:
         from sklearn.ensemble import RandomForestClassifier
         rfc = RandomForestClassifier()
         rfc.fit(X[learn_ids], Y[learn_ids])
@@ -468,6 +472,51 @@ if __name__ == "__main__":
     GT_Y = Y[test_ids]
 
     print "correct:", np.sum(Y_ == GT_Y), len(Y_)
+
+
+    plt.figure(1)
+    plt.suptitle("FAIL examples")
+
+    cols = 5
+    rows = 3
+    im_id = 1
+    num_examples = cols * rows
+    # show errors
+    for i, id_ in enumerate(test_ids):
+        if im_id == num_examples + 1:
+            break
+        if Y_[i] != GT_Y[i]:
+            d, head_ok = data[id_]
+            r = p.rm[d]
+
+            bb = r_normalize(r)
+
+            plt.subplot(cols, rows, im_id)
+            plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
+
+            im_id += 1
+
+    plt.figure(2)
+    plt.suptitle("SUCCESS examples")
+    im_id = 1
+    # show correct
+    for i, id_ in enumerate(test_ids):
+        if im_id == num_examples + 1:
+            break
+
+        if Y_[i] == GT_Y[i]:
+            d, head_ok = data[id_]
+            r = p.rm[d]
+
+            bb = r_normalize(r)
+
+            plt.subplot(cols, rows, im_id)
+            plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
+
+            im_id += 1
+
+    plt.show()
+    plt.waitforbuttonpress()
 
 
     # skip_ids = set()
