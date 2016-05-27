@@ -11,6 +11,7 @@ from utils.img_manager import ImgManager
 from core.project.project import Project
 import math
 from ft import FASTex
+from scipy.misc import imresize
 
 
 def get_fastext(project):
@@ -268,7 +269,7 @@ def create_poly(ep, reversed=False):
     return poly
 
 
-def r_normalize(r, shape=(40, 70)):
+def r_normalize(r, shape=(40, 70), rescale=True):
     bb, offset = get_bounding_box(r, p, relative_border=relative_border, fixed_border=20)
 
     # p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
@@ -276,11 +277,13 @@ def r_normalize(r, shape=(40, 70)):
     # endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
 
     bb = rotate_img(bb, r.theta_)
-    bb = centered_crop(bb, 6*r.b_, 2.5*r.a_)
 
-    from scipy.misc import imresize
+    if rescale:
+        bb = centered_crop(bb, 6*r.b_, 2.5*r.a_)
+        bb = np.asarray(imresize(bb, shape), dtype=np.uint8)
+    else:
+        bb = centered_crop(bb, shape[0], shape[1])
 
-    bb = np.asarray(imresize(bb, shape), dtype=np.uint8)
     # endpoint1_ = endpoint_rot(bb, endpoint1, -r.theta_, r.centroid())
     # endpoint2_ = endpoint_rot(bb, endpoint2, -r.theta_, r.centroid())
 
@@ -340,8 +343,8 @@ def combine_hist(hist):
     return new_hist
 
 
-def get_description(r, hSteps=3, wSteps=6, hog_size=16, fliplr=False, flipud=False, shape=(32, 64), combine=True):
-    bb = r_normalize(r, shape)
+def get_description(r, hSteps=3, wSteps=6, hog_size=16, fliplr=False, flipud=False, shape=(32, 64), combine=True, rescale=True):
+    bb = r_normalize(r, shape, rescale)
     bb_gray = cv2.cvtColor(bb, cv2.COLOR_BGR2GRAY)
 
     if fliplr:
@@ -415,11 +418,13 @@ if __name__ == "__main__":
 
     data_augmentation = True
     double_precission = True
+    rescale_normalisation = False
+    shape = (88, 136)
 
     ids = range((2 if data_augmentation else 1) * len(data))
-    # shuffle(ids)
+    shuffle(ids)
 
-    part_ = int(len(ids) * 0.8)
+    part_ = int(len(ids) * 0.9)
     learn_ids = ids[0:part_]
     test_ids = ids[part_:]
 
@@ -430,18 +435,18 @@ if __name__ == "__main__":
         for r_id, head_ok in data:
             r = p.rm[r_id]
 
-            x1 = get_description(r, fliplr=not head_ok)
+            x1 = get_description(r, fliplr=not head_ok, rescale=rescale_normalisation, shape=shape)
             if double_precission:
-                x1_ = get_description(r, hSteps=6, wSteps=12, hog_size=8, fliplr=not head_ok, combine=False)
+                x1_ = get_description(r, hSteps=6, wSteps=12, hog_size=8, fliplr=not head_ok, combine=False, rescale=rescale_normalisation, shape=shape)
                 x1 = np.hstack((x1, x1_))
 
             X.append(x1)
             Y.append(head_ok)
 
             if data_augmentation:
-                x2 = get_description(r, fliplr=not head_ok, flipud=True)
+                x2 = get_description(r, fliplr=not head_ok, flipud=True, rescale=rescale_normalisation, shape=shape)
                 if double_precission:
-                    x2_ = get_description(r, hSteps=6, wSteps=12, hog_size=8, fliplr=not head_ok, flipud=True, combine=False)
+                    x2_ = get_description(r, hSteps=6, wSteps=12, hog_size=8, fliplr=not head_ok, flipud=True, combine=False, rescale=rescale_normalisation, shape=shape)
                     x2 = np.hstack((x2, x2_))
                 X.append(x2)
                 Y.append(head_ok)
