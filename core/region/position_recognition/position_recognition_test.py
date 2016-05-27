@@ -32,12 +32,9 @@ def get_eigenfaces(chunk_matrix):
 
 
 def get_chunks_regions(ch, chm, gm):
-    project = Project()
-    project.load("/home/sheemon/FERDA/projects/Cam1_/cam1.fproj")
-    print(project)
-    chunk = project.chm[ch]
-    chunk_start = chunk.start_frame(project.gm)
-    chunk_end = chunk.end_frame(project.gm)
+    chunk = chm[ch]
+    chunk_start = chunk.start_frame(gm)
+    chunk_end = chunk.end_frame(gm)
     while chunk_start <= chunk_end:
         yield project.gm.region(chunk[chunk_start])
         chunk_start += 1
