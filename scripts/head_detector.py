@@ -340,7 +340,7 @@ def combine_hist(hist):
     return new_hist
 
 
-def get_description(r, hSteps=3, wSteps=6, fliplr=False, flipud=False, shape=(32, 64)):
+def get_description(r, hSteps=3, wSteps=6, hog_size=16, fliplr=False, flipud=False, shape=(32, 64), combine=True):
     bb = r_normalize(r, shape)
     bb_gray = cv2.cvtColor(bb, cv2.COLOR_BGR2GRAY)
 
@@ -354,14 +354,16 @@ def get_description(r, hSteps=3, wSteps=6, fliplr=False, flipud=False, shape=(32
     sek_img = get_sek_img(bb)
 
     from skimage.feature import hog
-    fd, hog_image = hog(bb_gray, orientations=8, pixels_per_cell=(16, 16),
+
+    fd, hog_image = hog(bb_gray, orientations=8, pixels_per_cell=(hog_size, hog_size),
                     cells_per_block=(1, 1), visualise=True)
 
     sek_imhist = img2hist(sek_img, hSteps, wSteps)
     laplacian_imhist = img2hist(laplacian, hSteps, wSteps)
+    x = np.hstack((sek_imhist, laplacian_imhist, fd))
+    if combine:
+        x = np.hstack((x, combine_hist(sek_imhist), combine_hist(laplacian_imhist)))
 
-    x = np.hstack((sek_imhist, laplacian_imhist, fd, combine_hist(sek_imhist), combine_hist(laplacian_imhist)))
-    # x =
 
 
     # plt.figure(1)
@@ -412,9 +414,10 @@ if __name__ == "__main__":
     seed(15)
 
     data_augmentation = True
+    double_precission = True
 
     ids = range((2 if data_augmentation else 1) * len(data))
-    shuffle(ids)
+    # shuffle(ids)
 
     part_ = int(len(ids) * 0.8)
     learn_ids = ids[0:part_]
@@ -428,11 +431,18 @@ if __name__ == "__main__":
             r = p.rm[r_id]
 
             x1 = get_description(r, fliplr=not head_ok)
+            if double_precission:
+                x1_ = get_description(r, hSteps=6, wSteps=12, hog_size=8, fliplr=not head_ok, combine=False)
+                x1 = np.hstack((x1, x1_))
+
             X.append(x1)
             Y.append(head_ok)
 
             if data_augmentation:
                 x2 = get_description(r, fliplr=not head_ok, flipud=True)
+                if double_precission:
+                    x2_ = get_description(r, hSteps=6, wSteps=12, hog_size=8, fliplr=not head_ok, flipud=True, combine=False)
+                    x2 = np.hstack((x2, x2_))
                 X.append(x2)
                 Y.append(head_ok)
 
@@ -441,9 +451,9 @@ if __name__ == "__main__":
                 print i
 
         with open(features_file_name, "wb") as f:
-            p = pickle.Pickler(f, -1)
-            p.dump(X)
-            p.dump(Y)
+            p_ = pickle.Pickler(f, -1)
+            p_.dump(X)
+            p_.dump(Y)
 
 
     else:
@@ -478,66 +488,65 @@ if __name__ == "__main__":
 
         probs_ = clf.predict_proba(X[test_ids])
 
-        Y_ = clf.predict(X[test_ids])
-        GT_Y = Y[test_ids]
+    Y_ = clf.predict(X[test_ids])
+    GT_Y_test = Y[test_ids]
 
     from sklearn.metrics import roc_curve
 
-    fpr, tpr, thresholds = roc_curve(Y[test_ids], probs_[:, 1])
+    fpr, tpr, thresholds = roc_curve(GT_Y_test, probs_[:, 1])
     plt.figure(3)
     plt.plot(fpr, tpr, lw=1)
     plt.title('ROC')
 
+    print "correct:", np.sum(Y_ == GT_Y_test), len(Y_)
+
+    plt.figure(1)
+    plt.suptitle("FAIL examples")
+
+    cols = 5
+    rows = 3
+    im_id = 1
+    num_examples = cols * rows
+    # show errors
+    for i, id_ in enumerate(test_ids):
+        if im_id == num_examples + 1:
+            break
+        if Y_[i] != GT_Y_test[i]:
+            id_ = id_ / 2 if data_augmentation else id_
+            d, head_ok = data[id_]
+            r = p.rm[d]
+
+            bb = r_normalize(r)
+
+            plt.subplot(cols, rows, im_id)
+            plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
+            plt.title(str(probs_[i]))
+
+            im_id += 1
+
+    plt.figure(2)
+    plt.suptitle("SUCCESS examples")
+    im_id = 1
+    # show correct
+    for i, id_ in enumerate(test_ids):
+        if im_id == num_examples + 1:
+            break
+
+        if Y_[i] == GT_Y_test[i]:
+            id_ = id_ / 2 if data_augmentation else id_
+            d, head_ok = data[id_]
+            r = p.rm[d]
+
+            bb = r_normalize(r)
+
+            plt.subplot(cols, rows, im_id)
+            plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
+            plt.title(str(probs_[i]))
+
+            im_id += 1
+
     plt.show()
     plt.waitforbuttonpress()
-
-    print "correct:", np.sum(Y_ == GT_Y), len(Y_)
-
-    # plt.figure(1)
-    # plt.suptitle("FAIL examples")
-    #
-    # cols = 5
-    # rows = 3
-    # im_id = 1
-    # num_examples = cols * rows
-    # # show errors
-    # for i, id_ in enumerate(test_ids):
-    #     if im_id == num_examples + 1:
-    #         break
-    #     if Y_[i] != GT_Y[i]:
-    #         id_ = id_ / 2 if data_augmentation else id_
-    #         d, head_ok = data[id_]
-    #         r = p.rm[d]
-    #
-    #         bb = r_normalize(r)
-    #
-    #         plt.subplot(cols, rows, im_id)
-    #         plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
-    #
-    #         im_id += 1
-    #
-    # plt.figure(2)
-    # plt.suptitle("SUCCESS examples")
-    # im_id = 1
-    # # show correct
-    # for i, id_ in enumerate(test_ids):
-    #     if im_id == num_examples + 1:
-    #         break
-    #
-    #     if Y_[i] == GT_Y[i]:
-    #         id_ = id_ / 2 if data_augmentation else id_
-    #         d, head_ok = data[id_]
-    #         r = p.rm[d]
-    #
-    #         bb = r_normalize(r)
-    #
-    #         plt.subplot(cols, rows, im_id)
-    #         plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
-    #
-    #         im_id += 1
-    #
-    # plt.show()
-    # plt.waitforbuttonpress()
 
 
     # skip_ids = set()
