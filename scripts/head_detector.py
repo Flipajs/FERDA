@@ -416,12 +416,12 @@ if __name__ == "__main__":
     ids = range((2 if data_augmentation else 1) * len(data))
     shuffle(ids)
 
-    part_ = int((2 if data_augmentation else 1) * len(ids)*0.8)
+    part_ = int(len(ids) * 0.8)
     learn_ids = ids[0:part_]
-    test_ids = ids[part_:-1]
+    test_ids = ids[part_:]
 
     ## PREPARE FEATURES
-    if True:
+    if False:
         i = 0
         for r_id, head_ok in data:
             r = p.rm[r_id]
@@ -454,17 +454,23 @@ if __name__ == "__main__":
     X = np.array(X)
     Y = np.array(Y)
 
-    ## LEARN
-    if True:
-        from sklearn.ensemble import RandomForestClassifier
-        rfc = RandomForestClassifier()
-        rfc.fit(X[learn_ids], Y[learn_ids])
+    rf = True
+    if rf:
+        ## LEARN
+        if True:
+            from sklearn.ensemble import RandomForestClassifier
+            rfc = RandomForestClassifier()
+            rfc.fit(X[learn_ids], Y[learn_ids])
 
-        with open(rfc_file_name, "wb") as f:
-            pickle.dump(rfc, f, -1)
+            with open(rfc_file_name, "wb") as f:
+                pickle.dump(rfc, f, -1)
+        else:
+            with open(rfc_file_name, "rb") as f:
+                rfc = pickle.load(f)
     else:
-        with open(rfc_file_name, "rb") as f:
-            rfc = pickle.load(f)
+        #### SVM
+        from sklearn.svm import SVC
+        svc = SVC(kernel='poly', degree='2')
 
 
     # test_ids = range(500)
@@ -486,6 +492,7 @@ if __name__ == "__main__":
         if im_id == num_examples + 1:
             break
         if Y_[i] != GT_Y[i]:
+            id_ = id_ / 2 if data_augmentation else id_
             d, head_ok = data[id_]
             r = p.rm[d]
 
@@ -505,6 +512,7 @@ if __name__ == "__main__":
             break
 
         if Y_[i] == GT_Y[i]:
+            id_ = id_ / 2 if data_augmentation else id_
             d, head_ok = data[id_]
             r = p.rm[d]
 
