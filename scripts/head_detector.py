@@ -356,7 +356,7 @@ if __name__ == "__main__":
 
     ft = get_fastext(p)
 
-    sample_step = 1
+    sample_step = 10
     relative_border = 5.0
 
     plt.ion()
@@ -378,6 +378,8 @@ if __name__ == "__main__":
     # fig = plt.figure()
     # ax = fig.add_subplot(111)
 
+    skip_i = 0
+
     for v_id in p.gm.get_all_relevant_vertices():
         ch_id = p.gm.g.vp['chunk_start_id'][p.gm.g.vertex(v_id)]
         if ch_id > 0:
@@ -394,6 +396,10 @@ if __name__ == "__main__":
 
                 if r.id_ in skip_ids:
                     break
+
+                if skip_i < 50:
+                    skip_i += 1
+                    continue
 
                 get_description(r)
                 var = raw_input("head is Right Left? (r/l) s for skip")
