@@ -454,13 +454,15 @@ if __name__ == "__main__":
     X = np.array(X)
     Y = np.array(Y)
 
-    rf = False
+    rf = True
     if rf:
         ## LEARN
         if True:
             from sklearn.ensemble import RandomForestClassifier
             clf = RandomForestClassifier()
             clf.fit(X[learn_ids], Y[learn_ids])
+
+            probs_ = clf.predict_proba(X[test_ids])
 
             with open(rfc_file_name, "wb") as f:
                 pickle.dump(clf, f, -1)
@@ -470,64 +472,71 @@ if __name__ == "__main__":
     else:
         #### SVM
         from sklearn.svm import SVC
-        # X = np.array([[-1, -1], [-2, -1], [1, 1], [2, 1]])
-        # y = np.array([1, 1, 2, 2])
-        # clf = SVC(kernel='poly')
-        # clf.fit(X, y)
+        clf = SVC(kernel='poly', degree=3, probability=True)
+        clf.fit(X[learn_ids], Y[learn_ids])
 
+        probs_ = clf.predict_proba(X[test_ids])
 
-    # test_ids = range(500)
-    Y_ = clf.predict(X[test_ids])
-    GT_Y = Y[test_ids]
+        Y_ = clf.predict(X[test_ids])
+        GT_Y = Y[test_ids]
 
-    print "correct:", np.sum(Y_ == GT_Y), len(Y_)
+    from sklearn.metrics import roc_curve
 
-
-    plt.figure(1)
-    plt.suptitle("FAIL examples")
-
-    cols = 5
-    rows = 3
-    im_id = 1
-    num_examples = cols * rows
-    # show errors
-    for i, id_ in enumerate(test_ids):
-        if im_id == num_examples + 1:
-            break
-        if Y_[i] != GT_Y[i]:
-            id_ = id_ / 2 if data_augmentation else id_
-            d, head_ok = data[id_]
-            r = p.rm[d]
-
-            bb = r_normalize(r)
-
-            plt.subplot(cols, rows, im_id)
-            plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
-
-            im_id += 1
-
-    plt.figure(2)
-    plt.suptitle("SUCCESS examples")
-    im_id = 1
-    # show correct
-    for i, id_ in enumerate(test_ids):
-        if im_id == num_examples + 1:
-            break
-
-        if Y_[i] == GT_Y[i]:
-            id_ = id_ / 2 if data_augmentation else id_
-            d, head_ok = data[id_]
-            r = p.rm[d]
-
-            bb = r_normalize(r)
-
-            plt.subplot(cols, rows, im_id)
-            plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
-
-            im_id += 1
+    fpr, tpr, thresholds = roc_curve(Y[test_ids], probs_[:, 1])
+    plt.figure(3)
+    plt.plot(fpr, tpr, lw=1)
+    plt.title('ROC')
 
     plt.show()
     plt.waitforbuttonpress()
+
+    print "correct:", np.sum(Y_ == GT_Y), len(Y_)
+
+    # plt.figure(1)
+    # plt.suptitle("FAIL examples")
+    #
+    # cols = 5
+    # rows = 3
+    # im_id = 1
+    # num_examples = cols * rows
+    # # show errors
+    # for i, id_ in enumerate(test_ids):
+    #     if im_id == num_examples + 1:
+    #         break
+    #     if Y_[i] != GT_Y[i]:
+    #         id_ = id_ / 2 if data_augmentation else id_
+    #         d, head_ok = data[id_]
+    #         r = p.rm[d]
+    #
+    #         bb = r_normalize(r)
+    #
+    #         plt.subplot(cols, rows, im_id)
+    #         plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
+    #
+    #         im_id += 1
+    #
+    # plt.figure(2)
+    # plt.suptitle("SUCCESS examples")
+    # im_id = 1
+    # # show correct
+    # for i, id_ in enumerate(test_ids):
+    #     if im_id == num_examples + 1:
+    #         break
+    #
+    #     if Y_[i] == GT_Y[i]:
+    #         id_ = id_ / 2 if data_augmentation else id_
+    #         d, head_ok = data[id_]
+    #         r = p.rm[d]
+    #
+    #         bb = r_normalize(r)
+    #
+    #         plt.subplot(cols, rows, im_id)
+    #         plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
+    #
+    #         im_id += 1
+    #
+    # plt.show()
+    # plt.waitforbuttonpress()
 
 
     # skip_ids = set()
