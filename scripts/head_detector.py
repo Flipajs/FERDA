@@ -525,7 +525,7 @@ if __name__ == "__main__":
 
             plt.subplot(cols, rows, im_id)
             plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
-            plt.title(str(probs_[i]))
+            plt.title(str(probs_[i]) + ("RIGHT" if GT_Y_test[i] else "LEFT") + str(id_))
 
             im_id += 1
 
@@ -546,7 +546,7 @@ if __name__ == "__main__":
 
             plt.subplot(cols, rows, im_id)
             plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
-            plt.title(str(probs_[i]))
+            plt.title(str(probs_[i]) + ("LEFT" if GT_Y_test[i] else "RIGHT"))
 
             im_id += 1
 
