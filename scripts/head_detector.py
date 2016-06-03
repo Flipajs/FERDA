@@ -90,9 +90,7 @@ def centered_crop(img, new_h, new_w):
     return img[y_:y_+new_h, x_:x_+new_w, :]
 
 
-def get_bounding_box(r, project, relative_border=1.3, fixed_border=0):
-    frame = r.frame()
-    img = project.img_manager.get_whole_img(frame)
+def get_bounding_box(r, img, relative_border=1.3, fixed_border=0):
     roi = r.roi()
 
     height2 = int(ceil((roi.height() * relative_border) / 2.0) + fixed_border)
@@ -269,8 +267,8 @@ def create_poly(ep, reversed=False):
     return poly
 
 
-def r_normalize(r, shape=(40, 70), rescale=True):
-    bb, offset = get_bounding_box(r, p, relative_border=relative_border, fixed_border=20)
+def r_normalize(r, img, shape=(40, 70), rescale=True):
+    bb, offset = get_bounding_box(r, img, relative_border=5.0, fixed_border=20)
 
     # p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
     # endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
@@ -343,8 +341,8 @@ def combine_hist(hist):
     return new_hist
 
 
-def get_description(r, hSteps=3, wSteps=6, hog_size=16, fliplr=False, flipud=False, shape=(32, 64), combine=True, rescale=True):
-    bb = r_normalize(r, shape, rescale)
+def get_description(r, img, hSteps=3, wSteps=6, hog_size=16, fliplr=False, flipud=False, shape=(32, 64), combine=True, rescale=True):
+    bb = r_normalize(r, img, shape, rescale)
     bb_gray = cv2.cvtColor(bb, cv2.COLOR_BGR2GRAY)
 
     if fliplr:
@@ -367,35 +365,88 @@ def get_description(r, hSteps=3, wSteps=6, hog_size=16, fliplr=False, flipud=Fal
     if combine:
         x = np.hstack((x, combine_hist(sek_imhist), combine_hist(laplacian_imhist)))
 
-
-
-    # plt.figure(1)
-    # plt.subplot(2, 2, 1)
-    # plt.imshow(sek_img)
-    # plt.subplot(2, 2, 2)
-    # plt.imshow(laplacian)
-    # plt.subplot(2, 2, 3)
-    # plt.plot(sek_imhist)
-    # plt.subplot(2, 2, 4)
-    # plt.plot(laplacian_imhist)
-    # plt.show()
-    # key = cv2.waitKey(0)
-
-    # key = plt.waitforbuttonpress(5)
-
     return x
 
 
+def _get_data(r, img, rescale_normalisation, shape, fliplr=False, flipud=False):
+    x1 = get_description(r, img, fliplr=fliplr, flipud=flipud, rescale=rescale_normalisation, shape=shape)
+    if double_precission:
+        x1_ = get_description(r, img, hSteps=6, wSteps=12, hog_size=8, fliplr=fliplr, flipud=flipud, combine=False, rescale=rescale_normalisation, shape=shape)
+        x1 = np.hstack((x1, x1_))
 
-if __name__ == "__main__":
+    return x1
+
+
+def test_on_another_seq(rfc_file_name):
+    with open(rfc_file_name, "rb") as f:
+        clf = pickle.load(f)
+
     p = Project()
     p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
     p.img_manager = ImgManager(p)
 
-    ft = get_fastext(p)
+    rescale_normalisation = True
+
+    cols = 5
+    rows = 5
+    plt.figure()
+    plt.subplot(cols, rows, 1)
+
+    im_id = 1
+    for i in range(1, 10000):
+        if i > cols*rows:
+            break
+
+        try:
+            r = p.rm[i]
+            print r.area()
+
+            if r.area() > 1000:
+                continue
+
+            img = p.img_manager.get_whole_img(r.frame())
+            x = _get_data(r, img, rescale_normalisation, shape)
+            # reshape - single data...
+            y = clf.predict(x.reshape(1, -1))
+
+            bb = r_normalize(r, img, rescale=rescale_normalisation)
+
+            if y[0]:
+                c = (10, bb.shape[0]/2)
+            else:
+                c = (bb.shape[1] - 10, bb.shape[0]/2)
+            cv2.circle(bb, c, 5, (0, 0, 255), 3)
+
+            plt.subplot(cols, rows, im_id)
+            plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
+
+            im_id += 1
+        except:
+            pass
+
+            # print y
+            # cv2.imshow("img", bb)
+            # cv2.waitKey(0)
+    plt.show()
+    plt.waitforbuttonpress()
+
+if __name__ == "__main__":
+    data_augmentation = True
+    double_precission = True
+    rescale_normalisation = False
+    relative_border = 5.0
+    shape = (88, 136)
+    ft = get_fastext(None)
+
+    plt.ion()
+
+    test_on_another_seq("../data/head_detection/rfc.pkl")
+
+    p = Project()
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
+    p.img_manager = ImgManager(p)
 
     sample_step = 1
-    relative_border = 5.0
 
     plt.ion()
 
@@ -416,11 +467,6 @@ if __name__ == "__main__":
     np.random.seed(30)
     seed(15)
 
-    data_augmentation = True
-    double_precission = True
-    rescale_normalisation = False
-    shape = (88, 136)
-
     ids = range((2 if data_augmentation else 1) * len(data))
     shuffle(ids)
 
@@ -435,19 +481,14 @@ if __name__ == "__main__":
         for r_id, head_ok in data:
             r = p.rm[r_id]
 
-            x1 = get_description(r, fliplr=not head_ok, rescale=rescale_normalisation, shape=shape)
-            if double_precission:
-                x1_ = get_description(r, hSteps=6, wSteps=12, hog_size=8, fliplr=not head_ok, combine=False, rescale=rescale_normalisation, shape=shape)
-                x1 = np.hstack((x1, x1_))
+            x1 = _get_data(r, rescale_normalisation, shape, fliplr=not head_ok)
 
             X.append(x1)
             Y.append(head_ok)
 
             if data_augmentation:
-                x2 = get_description(r, fliplr=not head_ok, flipud=True, rescale=rescale_normalisation, shape=shape)
-                if double_precission:
-                    x2_ = get_description(r, hSteps=6, wSteps=12, hog_size=8, fliplr=not head_ok, flipud=True, combine=False, rescale=rescale_normalisation, shape=shape)
-                    x2 = np.hstack((x2, x2_))
+                x2 = _get_data(r, rescale_normalisation, shape, fliplr = not head_ok, flipud=True)
+
                 X.append(x2)
                 Y.append(head_ok)
 
