@@ -424,7 +424,7 @@ if __name__ == "__main__":
     ids = range((2 if data_augmentation else 1) * len(data))
     shuffle(ids)
 
-    part_ = int(len(ids) * 0.9)
+    part_ = int(len(ids) * 0.8)
     learn_ids = ids[0:part_]
     test_ids = ids[part_:]
 
