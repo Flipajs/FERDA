@@ -16,20 +16,16 @@ project = Project()
 
 S_.general.print_log = False
 
-# project.load('/home/dita/PycharmProjects/c5__/c5__.fproj')
-# ex.widget_control('load_project', project)
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 if is_flipajs_pc():
-    # project.load('/Users/flipajs/Documents/wd/F1C51/f1c51.fproj')
-    # project.load('/Users/flipajs/Documents/wd/video_bounds_test/test.fproj')
-    # project.load('/Users/flipajs/Documents/wd/small_lenses_colony1/small_lenses    .fproj')
-    # project.load('/Users/flipajs/Documents/wd/colonies1_30m/colonies30m.fproj')
-    # project.load('/Users/flipajs/Documents/wd/eight/eight.fproj')
-    project.load('/Users/flipajs/Documents/wd/c4/c4.fproj')
-    # # # # # #
-    ex.widget_control('load_project', project)
+    sn_id = 2
+    name = 'c2'
+    wd = '/Users/flipajs/Documents/wd/'
+    # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
+    #             'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
-    pass
+    project.load(wd+name+'/c2.fproj')
+    ex.widget_control('load_project', project)
 
 
 app.exec_()

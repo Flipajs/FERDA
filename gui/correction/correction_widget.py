@@ -9,7 +9,8 @@ import cv2
 from viewer.gui.img_controls import markers
 from core.animal import colors_
 from core.settings import Settings as S_
-
+from core.graph.region_chunk import RegionChunk
+import numpy as np
 
 MARKER_SIZE = 15
 
@@ -137,6 +138,8 @@ class ResultsWidget(QtGui.QWidget):
         self.forward = QtGui.QPushButton('forward')
         self.forward.setShortcut(S_.controls.video_next)
         self.frameEdit = SelectAllLineEdit()
+        self.frameEdit.returnPressed.connect(self.frame_jump)
+        self.frameEdit.setFixedHeight(30)
         self.showFrame = QtGui.QPushButton('show')
         self.fpsLabel = QtGui.QLabel()
         self.fpsLabel.setAlignment(QtCore.Qt.AlignRight)
@@ -152,6 +155,8 @@ class ResultsWidget(QtGui.QWidget):
         self.frame_jump_button = QtGui.QPushButton('jump')
         self.frame_jump_button.clicked.connect(self.frame_jump)
 
+        self.frame_jump_button.setFocusPolicy(QtCore.Qt.StrongFocus)
+
         self.video_control_buttons_layout.addWidget(self.speedSlider)
         self.video_control_buttons_layout.addWidget(self.fpsLabel)
         self.video_control_buttons_layout.addWidget(self.backward)
@@ -160,6 +165,15 @@ class ResultsWidget(QtGui.QWidget):
         self.video_control_buttons_layout.addWidget(self.showFrame)
         self.video_control_buttons_layout.addWidget(self.frameEdit)
         self.video_control_buttons_layout.addWidget(self.frame_jump_button)
+
+        self.reset_colors_b = QtGui.QPushButton('reset colors')
+        self.reset_colors_b.clicked.connect(self.reset_colors)
+        self.video_control_buttons_layout.addWidget(self.reset_colors_b)
+
+        self.reset_colors_action = QtGui.QAction('reset_colors', self)
+        self.reset_colors_action.triggered.connect(self.reset_colors)
+        self.reset_colors_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Control + QtCore.Qt.Key_0))
+        self.addAction(self.reset_colors_action)
 
         self.setTabOrder(self.frameEdit, self.frame_jump_button)
 
@@ -189,6 +203,8 @@ class ResultsWidget(QtGui.QWidget):
         self.highlight_timer2nd = QtCore.QTimer()
         from functools import partial
         self.highlight_timer2nd.timeout.connect(partial(self.decrease_highlight_marker_opacity, True))
+
+        self.colormarks_items = []
 
     def frame_jump(self):
         f = int(self.frameEdit.text())
@@ -230,8 +246,14 @@ class ResultsWidget(QtGui.QWidget):
             else:
                 self.highlight_timer.stop()
 
-    def marker_changed(self):
-        pass
+    def marker_changed(self, id_):
+        from core.graph.region_chunk import RegionChunk
+
+        ch = self.project.chm[id_]
+        rch = RegionChunk(ch, self.project.gm, self.project.rm)
+        f = self.video.frame_number()
+
+        print id_, rch.region_in_t(f)
 
     def update_marker_position(self, marker, c):
         sf = self.project.other_parameters.img_subsample_factor
@@ -259,23 +281,60 @@ class ResultsWidget(QtGui.QWidget):
 
     def update_positions_optimized(self, frame):
         new_active_markers = []
+
+        # TODO: BGR, offset 1
+        # R B G Y dark B
+        colors = [
+            [0, 0, 0],
+            [0, 0, 255],
+            [255, 0, 0],
+            [0, 255, 0],
+            [0, 255, 255],
+            [150, 0, 0]
+        ]
+
         for m_id, ch in self.active_markers:
-            if frame == ch.end_n.frame_ + 1:
+            rch = RegionChunk(ch,  self.project.gm, self.project.rm)
+            if frame == rch.end_frame() + 1:
                 self.items[m_id].setVisible(False)
             else:
                 new_active_markers.append((m_id, ch))
-                c = ch.get_centroid_in_time(frame).copy()
+                r = rch.region_in_t(frame)
+                c = r.centroid().copy()
                 self.update_marker_position(self.items[m_id], c)
+
+                try:
+                    height_ = 13
+                    width_ = 30
+                    im = np.zeros((height_*len(r.colormarks), width_, 3), dtype=np.uint8)
+
+                    for c, i in zip(r.colormarks, range(len(r.colormarks))):
+                        w_ = max(5, min(width_, c[0].shape[0] / 5))
+                        im[i*height_:(i+1)*height_, :w_, :] = self.project.colormarks_model.colors_[c[1]]
+
+                    item = self.scene.addPixmap(cvimg2qtpixmap(im))
+                    item.setPos(r.centroid()[1] + 10, r.centroid()[0])
+
+                    self.colormarks_items.append(item)
+                except:
+                    pass
 
         self.active_markers = new_active_markers
 
         if frame in self.starting_frames:
             for ch, m_id in self.starting_frames[frame]:
-                c = ch.get_centroid_in_time(frame).copy()
+                rch = RegionChunk(ch, self.project.gm, self.project.rm)
+                r = rch.region_in_t(frame)
+                c = r.centroid().copy()
                 self.update_marker_position(self.items[m_id], c)
                 self.active_markers.append((m_id, ch))
 
     def update_positions(self, frame, optimized=True):
+        for c in self.colormarks_items:
+            c.setVisible(False)
+
+        self.colormarks_items = []
+
         if optimized:
             self.update_positions_optimized(frame)
             return
@@ -284,7 +343,8 @@ class ResultsWidget(QtGui.QWidget):
 
         i = 0
         for ch in self.chunks:
-            c = ch.get_centroid_in_time(frame)
+            rch = RegionChunk(ch, self.project.gm, self.project.rm)
+            c = rch.centroid_in_t(frame)
 
             if c is None:
                 self.items[i].setVisible(False)
@@ -311,7 +371,15 @@ class ResultsWidget(QtGui.QWidget):
 
     def add_data(self, solver, just_around_frame=-1, margin=1000):
         self.solver = solver
-        self.chunks = self.solver.chunk_list()
+
+        # self.chunks = self.solver.chm.chunk_list()
+        self.chunks = []
+
+        for v_id in self.project.gm.get_all_relevant_vertices():
+            ch_id = self.project.gm.g.vp['chunk_start_id'][self.project.gm.g.vertex(v_id)]
+            if ch_id > 0:
+                self.chunks.append(self.project.chm[ch_id])
+
         i = 0
 
         t1 = just_around_frame - margin
@@ -320,15 +388,14 @@ class ResultsWidget(QtGui.QWidget):
         if just_around_frame > -1:
             chs = []
             for ch in self.chunks:
-                if t1 < ch.start_t() < t2 or t1 < ch.end_t() < t2:
-                    r, g, b = colors_[i % len(colors_)]
-                    item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
+                rch = RegionChunk(ch, self.project.gm, self.project.rm)
+                if t1 < rch.start_frame() < t2 or t1 < rch.end_frame() < t2:
+                    item = markers.CenterMarker(0, 0, MARKER_SIZE, ch.color, ch.id_, self.marker_changed)
                     item.setZValue(0.5)
                     self.items.append(item)
                     self.scene.addItem(item)
 
-                    self.starting_frames.setdefault(ch.start_n.frame_, []).append((ch, i))
-                    # if ch.start_n.frame_ != 0:
+                    self.starting_frames.setdefault(rch.start_frame(), []).append((ch, i))
 
                     item.setVisible(False)
 
@@ -338,13 +405,13 @@ class ResultsWidget(QtGui.QWidget):
             self.chunks = chs
         else:
             for ch in self.chunks:
-                r, g, b = colors_[i % len(colors_)]
-                item = markers.CenterMarker(0, 0, MARKER_SIZE, QtGui.QColor(r, g, b), i, self.marker_changed)
+                rch = RegionChunk(ch, self.project.gm, self.project.rm)
+                item = markers.CenterMarker(0, 0, MARKER_SIZE, ch.color, ch.id_, self.marker_changed)
                 item.setZValue(0.5)
                 self.items.append(item)
                 self.scene.addItem(item)
 
-                self.starting_frames.setdefault(ch.start_n.frame_, []).append((ch, i))
+                self.starting_frames.setdefault(rch.start_frame(), []).append((ch, i))
                 # if ch.start_n.frame_ != 0:
 
                 item.setVisible(False)
@@ -450,6 +517,13 @@ class ResultsWidget(QtGui.QWidget):
                 self.update_positions(self.video.frame_number(), optimized=False)
             else:
                 self.out_of_frames()
+
+    def reset_colors(self):
+        print "COLORIZING "
+        from utils.color_manager import colorize_project
+        colorize_project(self.project)
+
+        print "COLORIZING DONE..."
 
 
 def view_add_bg_image(g_view, pix_map):

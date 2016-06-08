@@ -14,9 +14,11 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 import math
+import scipy.ndimage
+from utils.roi import get_roi
 
 
-def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255)):
+def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), return_offset=False):
     y = int(y)
     x = int(x)
     height = int(height)
@@ -51,7 +53,28 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255)):
         # crop = np.copy(img[y:y + height, x:x + height, :])
         crop = np.copy(img[y:y + height, x:x + width, :])
 
+    if return_offset:
+        return crop, np.array([y, x])
+
     return crop
+
+
+def get_img_around_pts(img, pts, margin=0):
+    roi = get_roi(pts)
+
+    width = roi.width()
+    height = roi.height()
+
+    m_ = max(width, height)
+    margin = m_ * margin
+
+    y_ = roi.y() - margin
+    x_ = roi.x() - margin
+    height_ = height + 2 * margin
+    width_ = width + 2 * margin
+
+    crop = get_safe_selection(img, y_, x_, height_, width_, fill_color=(0, 0, 0))
+    return crop, np.array([y_, x_])
 
 
 def get_pixmap_from_np_bgr(np_image):
@@ -98,11 +121,13 @@ def get_igbr_normalised(im):
 
     return igbr
 
+
 def prepare_for_visualisation(img, project):
     if project.other_parameters.img_subsample_factor > 1.0:
         img = np.asarray(rescale(img, 1/project.other_parameters.img_subsample_factor) * 255, dtype=np.uint8)
 
     return img
+
 
 def prepare_for_segmentation(img, project, grayscale_speedup=True):
     if project.bg_model:
@@ -127,6 +152,72 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
         img = np.asarray(rescale(img, 1/project.other_parameters.img_subsample_factor) * 255, dtype=np.uint8)
 
     return img
+
+
+def get_cropped_pts(region):
+    roi_ = region.roi()
+    pts = region.pts() - roi_.top_left_corner()
+
+    return pts
+
+
+def imresize(im,sz):
+    """  Resize an image array using PIL. """
+    from PIL import Image
+
+    pil_im = Image.fromarray(np.uint8(im))
+
+    return np.array(pil_im.resize(sz))
+
+
+def draw_pts(pts_):
+    h_ = np.max(pts_[:, 0]) + 1
+    w_ = np.max(pts_[:, 1]) + 1
+
+    im = np.zeros((h_, w_), dtype=np.bool)
+    im[pts_[:, 0], pts_[:, 1]] = True
+
+    return im
+
+
+def get_normalised_img(region, norm_size, blur_sigma=0):
+    pts_ = get_cropped_pts(region)
+
+    im = draw_pts(pts_)
+
+    # plt.figure()
+    # plt.imshow(im)
+
+    if blur_sigma > 0:
+        im = np.asarray(np.round(scipy.ndimage.gaussian_filter(im, sigma=blur_sigma)), dtype=np.bool)
+
+    # plt.figure()
+    # plt.imshow(im)
+    # plt.show()
+
+    im_normed = imresize(im, norm_size)
+    im_out = np.zeros(im_normed.shape, dtype=np.uint8)
+
+    # fill holes
+    (cnts, _) = cv2.findContours(im_normed.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[0]
+    cv2.drawContours(im_out, [cnts], -1, 255, -1)
+
+    return im_out
+
+
+def replace_everything_but_pts(img, pts, fill_color=[0, 0, 0]):
+    # TODO: 3 channels vs 1 channel (:, :, 1) and (:, :)
+    if len(img.shape) == 2 or img.shape[3] == 1:
+        if len(fill_color) > 1:
+            fill_color = fill_color[0]
+
+    new_img = np.zeros(img.shape, dtype=img.dtype)
+    new_img[:, :] = fill_color
+
+    new_img[pts[:, 0], pts[:, 1]] = img[pts[:, 0], pts[:, 1]]
+
+    return new_img
 
 
 class DistinguishableColors():

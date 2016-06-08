@@ -1,6 +1,10 @@
+"""
+CLEAR multi target tracking metric evaluation.
+"""
 import numpy as np
-from hungarian import Hungarian
 import sys
+import math
+import munkres
 
 
 class ClearMetrics(object):
@@ -25,6 +29,7 @@ class ClearMetrics(object):
         0: [1, 3, 8],
         1: [2, 3, None, 6],
         2: [0, 4, None, 6, 8]
+
     }
     clear = ClearMetrics(groundtruth, measurements, 1.5)
     clear.match_sequence()
@@ -39,7 +44,7 @@ class ClearMetrics(object):
 
     def __init__(self, groundtruth, measurements, thresh):
         """
-        Initialize ClearMetrics with input data.
+        Initialize ClearMetrics.
 
         @param groundtruth:     [frame nr]    [target nr]
                                 dict/list     list        ndarray, shape=(n,) or number or None
@@ -50,7 +55,8 @@ class ClearMetrics(object):
         @param measurements:    [frame nr]    [target nr]
                                 dict/list     list        ndarray, shape=(n,) or number or None
 
-        @param thresh: float, maximum distance of a measurement from ground truth to be considered as true positive
+        @param thresh: float, maximum distance of a measurement from ground truth to be considered as
+                              true positive
         """
         self.groundtruth = groundtruth
         self.measurements = measurements
@@ -59,48 +65,43 @@ class ClearMetrics(object):
         # following members hold evaluation results:
 
         # [frame nr]    [target nr]
-        # dict/list     list        int (groundtruth or measurement index, -1 if no match)
+        # dict          list        int  - for every measurement corresponding groundtruth index
+        #                                  -1 if no match, None there was no measurement of the target
         self.measurements_matches = None
-        self.gt_matches = None
-        self.gt_distances = None
 
-        # {mismatches: {frame: idx}, fp: {frame: idx}, fn: {frame: idx}}
-        self._problematic_frames = {'mismatches': {}, 'fp': {}, 'fn': {}}
-        self._methods_processed = {
-            'get_fp_count': False,
-            'get_fn_count': False,
-            'get_mismatches_count': False
-        }
+        # [frame nr]    [target nr]
+        # dict          list        int  - for every ground truth target corresponding measurement index
+        #                                  -1 if no match, None target is not present in the ground truth
+        self.gt_matches = None
+
+        # [frame nr]    [target nr]
+        # dict          list        int  - for every ground truth target distance to matched measurement
+        #                                  -1 if no match or grount truth not defined
+        self.gt_distances = None
 
     def match_sequence(self):
         """
         Evaluate the sequence.
 
-        Writes results to
+        Evaluation is done for all frames where ground truth and measurement is available.
+
+        The method writes the results to:
             self.measurements_matches
             self.gt_matches
             self.gt_distances
         """
-        prev_gt_matches = [-1] * len(self.groundtruth.values()[0])
+        prev_gt_matches = [-1] * len(self.groundtruth[self.get_frames()[0]])
+        prev_measurement_matches = [-1] * len(self.measurements[self.get_frames()[0]])
         self.gt_matches = {}
         self.gt_distances = {}
         self.measurements_matches = {}
-        for frame in sorted(self.groundtruth.keys()):
+        for frame in self.get_frames():
             if frame >= len(self.measurements):
                 break
             self.gt_matches[frame], self.gt_distances[frame], self.measurements_matches[frame] = \
-                self._match_frame(frame, prev_gt_matches)
+                self._match_frame(frame, prev_gt_matches, prev_measurement_matches)
             prev_gt_matches = self.gt_matches[frame]
-
-    def get_problematic_frames(self):
-        if not self._methods_processed['get_fp_count']:
-            self.get_fp_count()
-        if not self._methods_processed['get_fn_count']:
-            self.get_fn_count()
-        if not self._methods_processed['get_mismatches_count']:
-            self.get_mismatches_count()
-
-        return self._problematic_frames
+            prev_measurement_matches = self.measurements_matches[frame]
 
     def get_fp_count(self):
         """
@@ -109,19 +110,9 @@ class ClearMetrics(object):
         @return: FP count
         @rtype: int
         """
-        # prevents duplicate entries when user for some reason
-        # calls get_fp_count multiple times.
-        called_first_time = self._methods_processed['get_fp_count']
-
         count = 0
-        for frame in self.measurements_matches:
-            matches = self.measurements_matches[frame]
-            indexes = _indexes(matches, -1)
-            count += len(indexes)
-            if len(indexes) > 0 and called_first_time:
-                self._problematic_frames['fp'][frame] = indexes
-
-        self._methods_processed['get_fp_count'] = True
+        for matches in self.measurements_matches.values():
+            count += matches.count(-1)
         return count
 
     def get_fn_count(self):
@@ -131,19 +122,9 @@ class ClearMetrics(object):
         @return: FN count
         @rtype: int
         """
-        # prevents duplicate entries when user for some reason
-        # calls get_fn_count multiple times.
-        called_first_time = self._methods_processed['get_fn_count']
-
         count = 0
-        for frame in self.gt_matches:
-            matches = self.gt_matches[frame]
-            indexes = _indexes(matches, - 1)
-            count += len(indexes)
-            if len(indexes) > 0 and called_first_time:
-                self._problematic_frames['fn'][frame] = indexes
-
-        self._methods_processed['get_fn_count'] = True
+        for matches in self.gt_matches.values():
+            count += matches.count(-1)
         return count
 
     def get_mismatches_count(self):
@@ -156,10 +137,6 @@ class ClearMetrics(object):
         @return: number of mismatches in the sequence
         @rtype: int
         """
-        # prevents duplicate entries when user for some reason
-        # calls get_mismatches_count multiple times.
-        called_first_time = self._methods_processed['get_mismatches_count']
-
         frames = sorted(self.groundtruth.keys())
         last_matches = np.array(self.gt_matches[frames[0]])
         mismatches = 0
@@ -168,17 +145,9 @@ class ClearMetrics(object):
                 break
             matches = np.array(self.gt_matches[frame])
             mask_match_in_both_frames = (matches != -1) & (last_matches != -1)
-            _test = matches[mask_match_in_both_frames] != last_matches[mask_match_in_both_frames]
-            num = np.count_nonzero(_test)
-            mismatches += num
-            if num > 0 and called_first_time:
-                indexes = _indexes((_test != 0).tolist(), True)
-                self._problematic_frames['mismatches'][frame] = indexes
-
+            mismatches += np.count_nonzero(
+                matches[mask_match_in_both_frames] != last_matches[mask_match_in_both_frames])
             last_matches = matches
-
-        self._methods_processed['get_mismatches_count'] = True
-
         return mismatches
 
     def get_object_count(self):
@@ -189,7 +158,7 @@ class ClearMetrics(object):
         @rtype: int
         """
         object_count = 0
-        for frame in sorted(self.groundtruth.keys()):
+        for frame in self.get_frames():
             if frame >= len(self.measurements):
                 break
             targets = self.groundtruth[frame]
@@ -236,7 +205,7 @@ class ClearMetrics(object):
         """
         Compute squared distances between ground truth and measurements objects.
 
-        Distance is sys.maxint when gt or measurement is not defined (None).
+        Distance is np.nan when gt or measurement is not defined (None).
 
         @param frame: frame number
         @type frame: int
@@ -251,25 +220,32 @@ class ClearMetrics(object):
             for j in xrange(n_meas):
                 measured_pos = self.measurements[frame][j]
                 if gt_pos is None or measured_pos is None:
-                    distance_mat[i, j] = sys.maxint
+                    distance_mat[i, j] = np.nan
                 else:
                     distance_mat[i, j] = np.sum((measured_pos - gt_pos) ** 2)
         return distance_mat
 
-    def _match_frame(self, frame, prev_gt_matches):
+    def _match_frame(self, frame, prev_gt_matches, prev_measurement_matches):
         """
+        Matches measurements to ground truth for a frame.
 
-        @type frame: int
-        @type prev_gt_matches: list
+        @type frame: int - frame number
+        @type prev_gt_matches: list - ground truth matches for previous frame
+        @prev_measurement_matches - measurement matches for previous frame
         @return: gt_matches - list of measurement ids to that the ground truth objects match
                               None for gt objects not present in the frame
+                              -1 for FN
                  gt_distances - distances from ground truth objects to matched measured objects
                                 None for objects not found in the frame
                  measurements_matches - list of ground truth ids to that the measured objects match
+                                        None for measured object not present in the frame
+                                        -1 for FP
         @rtype: list, list, list
         """
         sq_distance = self._get_sq_distance_matrix(frame)
-        sq_distance[sq_distance > (self.thresh ** 2)] = sys.maxint
+        sq_distance_undefined = math.ceil(np.nanmax(sq_distance)) + 1
+        sq_distance[np.isnan(sq_distance)] = sq_distance_undefined
+        sq_distance[sq_distance > (self.thresh ** 2)] = sq_distance_undefined
 
         # set all ground truth matches to FN or not defined
         gt_matches = []
@@ -278,6 +254,7 @@ class ClearMetrics(object):
                 gt_matches.append(None)
             else:
                 gt_matches.append(-1)
+
         # set all measurements matches to FP or not defined
         gt_distances = [-1] * len(self.groundtruth[frame])
         measurements_matches = []
@@ -288,22 +265,21 @@ class ClearMetrics(object):
                 measurements_matches.append(-1)
 
         # verify TP from previous frame
-        for prev_gt, prev_measurement in enumerate(prev_gt_matches):
-            if prev_measurement != -1 and sq_distance[prev_gt, prev_measurement] <= (self.thresh ** 2):
-                gt_matches[prev_gt] = prev_measurement
-                measurements_matches[prev_measurement] = prev_gt
-                gt_distances[prev_gt] = np.sqrt(sq_distance[prev_gt, prev_measurement])
-                # prev_gt and prev_measurement are excluded from further matching
-                sq_distance[prev_gt, :] = sys.maxint
-                sq_distance[:, prev_measurement] = sys.maxint
-
-        hungarian = Hungarian(sq_distance)
-        hungarian.calculate()
-        matches = hungarian.get_results()
+        prev_matches = [(prev_measurement_matches[m], m) for m in prev_gt_matches if (m is not None) and (m != -1)]
+        for prev_gt, prev_m in prev_matches:
+            if sq_distance[prev_gt, prev_m] != sq_distance_undefined:
+                gt_matches[prev_gt] = prev_m
+                measurements_matches[prev_m] = prev_gt
+                gt_distances[prev_gt] = np.sqrt(sq_distance[prev_gt, prev_m])
+                # prev_gt and prev_m are excluded from further matching
+                sq_distance[prev_gt, :] = sq_distance_undefined
+                sq_distance[:, prev_m] = sq_distance_undefined
 
         # fill in new TP
+        m = munkres.Munkres()
+        matches = m.compute(sq_distance.tolist())
         for m in matches:
-            if sq_distance[m[0], m[1]] == sys.maxint:
+            if sq_distance[m[0], m[1]] == sq_distance_undefined:
                 continue
             gt_matches[m[0]] = m[1]
             measurements_matches[m[1]] = m[0]
@@ -311,7 +287,16 @@ class ClearMetrics(object):
 
         return gt_matches, gt_distances, measurements_matches
 
+    def get_frames(self):
+        """
+        Return sorted list of frames.
 
-def _indexes(l, el):
-    """returns all indexes where elements of l equals el """
-    return [i for i, x in enumerate(l) if x == el]
+        :return: list of frame numbers
+        :rtype: list
+        """
+        if isinstance(self.groundtruth, dict):
+            return sorted(self.groundtruth.keys())
+        if isinstance(self.measurements, dict):
+            return sorted(self.measurements.keys())
+        else:
+            return xrange(len(self.groundtruth))

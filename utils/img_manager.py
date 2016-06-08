@@ -1,6 +1,3 @@
-__author__ = 'flipajs'
-
-from core.project.project import Project
 from utils.img import prepare_for_visualisation, get_safe_selection
 from utils.video_manager import get_auto_video_manager
 from utils.drawing.points import draw_points
@@ -96,6 +93,12 @@ class ImgManager:
 
         # one region
         if isinstance(roi, Region):
+            # append it to regions - so it will be visualised
+            if regions:
+                regions.append(roi)
+            else:
+                regions = [roi]
+
             roi = get_roi(roi.pts())
 
         # list of regions
@@ -145,8 +148,8 @@ class ImgManager:
 
         y_ = roi.y() - margin
         x_ = roi.x() - margin
-        height_ = roi.width() + 2 * margin
-        width_ = roi.height() + 2 * margin
+        height_ = roi.height() + 2 * margin
+        width_ = roi.width() + 2 * margin
 
         # get image with the crop
         crop = get_safe_selection(im, y_, x_, height_, width_, fill_color=fill_color)
@@ -363,6 +366,7 @@ def get_image(im_manager):
 
 
 if __name__ == "__main__":
+    from core.project.project import Project
     p = Project()
     # p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
     p.load('/home/dita/PycharmProjects/eight_22/eight22.fproj')

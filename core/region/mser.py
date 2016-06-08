@@ -10,7 +10,7 @@ from core.settings import Settings as S_
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 import time
 from utils.misc import is_flipajs_pc
-from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_
+from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_, antlikeness_filter
 
 
 class Mser():
@@ -125,6 +125,8 @@ def ferda_filtered_msers(img, project, frame=-1):
         # # min_area = project.stats.area_median * 0.2
         # # ids = area_filter(m, ids, min_area)
         ids = children_filter(m, ids)
+        if project.stats:
+            ids = antlikeness_filter(project.stats.antlikeness_svm, project.solver_parameters.antlikeness_threshold, m, ids)
 
         return [m[id] for id in ids]
     else:

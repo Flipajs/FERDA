@@ -26,6 +26,8 @@ class ProjectLoader(QtCore.QThread):
 
     def run(self):
         self.project.load(self.path)
+        CompatibilitySolver(self.project)
+        self.project.rm.con.close()
         self.proc_done.emit(self.project)
 
 class ProjectWidget(QtGui.QWidget):
@@ -53,6 +55,7 @@ class ProjectWidget(QtGui.QWidget):
         self.loading_speed = 20000000
         # current loading status (0 on the beginning)
         self.status = 0
+        self.timer_step = 0
 
         self.loading_thread = None
         self.update()
@@ -67,12 +70,17 @@ class ProjectWidget(QtGui.QWidget):
 
     def load_project(self):
         # pick .fproj location
+        path = ''
         if os.path.isdir(S_.temp.last_wd_path):
             path = S_.temp.last_vid_path
-            files = gui.gui_utils.file_names_dialog(self, 'Select FERDA project', filter_="Project (*.fproj)", path=path)
+
+        files = gui.gui_utils.file_names_dialog(self, 'Select FERDA project', filter_="Project (*.fproj)", path=path)
+
         if len(files) == 1:
             f = files[0]
             project = core.project.project.Project()
+        else:
+            return
 
         # disable all buttons, so another project can't be loaded/created at the same time
         self.load_project_button.setEnabled(False)
@@ -104,6 +112,10 @@ class ProjectWidget(QtGui.QWidget):
         # stop timer and fill the progress bar
         self.loading_w.update_progress(1)
         self.timer.stop()
+
+        from core.region.region_manager import RegionManager
+        project.rm = RegionManager(db_wd=project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
+
         self.finish_callback('load_project', project)
 
     def timer_done(self):
@@ -127,7 +139,7 @@ class ProjectWidget(QtGui.QWidget):
         size += os.path.getsize(file)
         file = path+'/stats.pkl'
         size += os.path.getsize(file)
-        
+
         try:
             file = path+'/progress_save.pkl'
             size += os.path.getsize(file)

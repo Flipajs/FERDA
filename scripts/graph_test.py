@@ -65,12 +65,21 @@ def create_graph_tool(nodes, lenght):
     # vertices is a list of Vertex objects
     # edges is a list of Edge objects
     g = gt.Graph(directed=True)
+    # g.vp['region'] = g.new_vertex_property("int")
+    # g.vp['chunk_start'] = g.new_vertex_property("int")
+    # g.vp['chunk_end'] = g.new_vertex_property("int")
+    # g.ep['cost'] = g.new_edge_property("float")
+
     vertices = []
     id = 0
     for i in range(0, lenght):
         n = []
         for j in range(0, nodes):
             n.append(g.add_vertex())
+            # if i % 3:
+                # g.vp['region'][n[-1]] = i
+                # g.vp['chunk_start'][n[-1]] = i*13
+                # g.vp['chunk_end'][n[-1]] = i*14
             id += 1
         vertices.append(n)
 
@@ -100,6 +109,10 @@ def delete_edges_graph_tool(graph, edges, ids):
     for i in range(0, len(ids)):
         graph.remove_edge(edges[ids[i]])
         #graph.remove_edge(edges[ids[i]][0], edges[ids[i]][1])
+
+def delete_nodes_graph_tool(graph, nodes, ids):
+    for i in range(0, len(ids)):
+        graph.remove_vertex(nodes[i])
 
 
 def create_networkx(nodes, lenght):
@@ -142,6 +155,9 @@ def delete_edges_networkx(graph, edges, ids):
     for i in range(0, len(ids)):
         graph.remove_edge(edges[ids[i]][0], edges[ids[i]][1])
 
+def delete_nodes_networkx(graph, nodes, ids):
+    for i in range(0, len(ids)):
+        graph.remove_node(nodes[i])
 
 def randoms(array):
     for i in range(0, len(array)):
@@ -162,10 +178,10 @@ import time
 rnd_array = get_rnd(1000, 500)
 print "Random done"
 
-lim = 30*60*60
+lim = 30*60*10
 
 t = time.time()
-graph_tool, graph_tool_vertices, graph_tool_edges = create_graph_tool(10, lim)
+graph_tool, graph_tool_vertices, graph_tool_edges = create_graph_tool(50, lim)
 print "graph_tool creation: %s" % (time.time()-t)
 t = time.time()
 search_graph_tool(graph_tool)
@@ -173,9 +189,18 @@ print "graph_tool search: %s" % (time.time()-t)
 t = time.time()
 delete_edges_graph_tool(graph_tool, graph_tool_edges, rnd_array)
 print "graph_tool edges deletion: %s" % (time.time()-t)
+t = time.time()
+delete_nodes_graph_tool(graph_tool, graph_tool_vertices, rnd_array)
+print "graph_tool nodes deletion: %s" % (time.time()-t)
+
+import cPickle as pickle
+s = time.time()
+with open('/Users/flipajs/Documents/wd/graph_test_graph_tool.pkl', 'wb') as f:
+    pickle.dump(graph_tool, f, -1)
+print "DUMP TIME: ", time.time() - s
 
 t = time.time()
-networkx, networkx_vertices, networkx_edges = create_networkx(10, lim)
+networkx, networkx_vertices, networkx_edges = create_networkx(50, lim)
 print "networkx creation: %s" % (time.time()-t)
 t = time.time()
 search_networkx(networkx)
@@ -185,14 +210,23 @@ delete_edges_networkx(networkx, networkx_edges, rnd_array)
 print "networkx edges deletion: %s" % (time.time()-t)
 
 t = time.time()
-igraph, igraph_vertices, igraph_edges = create_igraph(10,lim)
-print "igraph creation: %s" % (time.time()-t)
-t = time.time()
-search_igraph(igraph)
-print "igraph search: %s" % (time.time()-t)
-t = time.time()
-delete_edges_igraph(igraph, igraph_edges, rnd_array)
-print "igraph edges deletion: %s" % (time.time()-t)
+delete_nodes_networkx(networkx, networkx_vertices, rnd_array)
+print "networkx nodes deletion: %s" % (time.time()-t)
+
+s = time.time()
+with open('/Users/flipajs/Documents/wd/graph_test_networkx.pkl', 'wb') as f:
+    pickle.dump(networkx, f, -1)
+print "DUMP TIME: ", time.time() - s
+
+# t = time.time()
+# igraph, igraph_vertices, igraph_edges = create_igraph(10,lim)
+# print "igraph creation: %s" % (time.time()-t)
+# t = time.time()
+# search_igraph(igraph)
+# print "igraph search: %s" % (time.time()-t)
+# t = time.time()
+# delete_edges_igraph(igraph, igraph_edges, rnd_array)
+# print "igraph edges deletion: %s" % (time.time()-t)
 
 # alternativy metod z networkx v graph_tool
 """

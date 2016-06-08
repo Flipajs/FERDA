@@ -18,13 +18,13 @@ from core.graph.reduced import Reduced
 import scipy.io as sio
 from scipy.spatial import ConvexHull
 import time
+from core.graph.region_chunk import RegionChunk
 
 
 class RegionReconstruction(QtGui.QWidget):
-    def __init__(self, project, solver):
+    def __init__(self, project, solver=None):
         super(RegionReconstruction, self).__init__()
         self.project = project
-        self.solver = solver
 
         self.setLayout(QtGui.QVBoxLayout())
 
@@ -49,6 +49,11 @@ class RegionReconstruction(QtGui.QWidget):
         self.add_convex_hull = QtGui.QCheckBox()
         self.fbox.addRow('add convex hull', self.add_convex_hull)
 
+        self.save_gt = QtGui.QCheckBox()
+        self.save_gt.setChecked(True)
+
+        self.fbox.addRow('save as GT to .pkl file', self.save_gt)
+
         self.export_results = QtGui.QPushButton('export')
         self.export_results.clicked.connect(self.export)
         self.fbox.addRow('', self.export_results)
@@ -57,10 +62,15 @@ class RegionReconstruction(QtGui.QWidget):
         print "reconstructin & exporting..."
         query = self.query.text()
         frames = self.process_input(query)
-        reconstructed = self.reconstruct(frames)
+        # reconstructed = self.reconstruct(frames)
+        #
+        # with open(self.project.working_directory+'/'+self.out_name.text()+'.mat', 'wb') as f:
+        #     sio.savemat(f, {'FERDA_regions': reconstructed})
 
-        with open(self.project.working_directory+'/'+self.out_name.text()+'.mat', 'wb') as f:
-            sio.savemat(f, {'FERDA_regions': reconstructed})
+        if self.save_gt.isChecked():
+            import cPickle as pickle
+            with open(self.project.working_directory+'/'+self.out_name.text()+'.pkl', 'wb') as f:
+                pickle.dump(get_trajectories(self.project, frames), f, -1)
 
         print "done"
 
@@ -73,7 +83,7 @@ class RegionReconstruction(QtGui.QWidget):
         convex_t = 0
 
         for f in frames:
-            ch_in_frame = self.solver.chunks_in_frame(f)
+            ch_in_frame = self.project.solver.chunks_in_frame(f)
             im = vid.get_frame(f, auto=True)
             regions = get_msers_(im, self.project, frame=f)
 
@@ -129,10 +139,9 @@ class RegionReconstruction(QtGui.QWidget):
 
         for f in frames:
             reconstructed[f] = []
-            ch_in_frame = self.solver.chunks_in_frame(f)
+            ch_in_frame = self.project.solver.chunks_in_frame(f)
             im = vid.get_frame(f, auto=True)
             regions = get_msers_(im, self.project, frame=f)
-
 
             for ch in ch_in_frame:
                 c = ch.get_centroid_in_time(f)
@@ -191,13 +200,34 @@ class RegionReconstruction(QtGui.QWidget):
         return frames
 
 
+def get_trajectories(project, frames):
+    trajectories = {}
+
+    chunks = map(project.chm.__getitem__, project.gm.chunk_list())
+    chunks = sorted(chunks, key=lambda x:x.id_)
+
+    mapping = {}
+
+    i = 0
+    for ch in chunks:
+        mapping[ch] = i
+        rch = RegionChunk(ch, project.gm, project.rm)
+
+        for f in frames:
+            trajectories.setdefault(f, []).append(rch.centroid_in_t(f))
+
+        i += 1
+
+    return trajectories
+
+
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
     p = Project()
     p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
 
-    ex = RegionReconstruction(p, p.saved_progress['solver'])
+    ex = RegionReconstruction(p, p.solver)
     print ex.process_input('1 2 3 4')
     print ex.process_input('1, 2, 3, 4')
     print ex.process_input('1,2,3,4')

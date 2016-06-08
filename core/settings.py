@@ -43,7 +43,7 @@ class Item():
             t = type_
 
         settings = QtCore.QSettings('ferda1')
-        QtCore.QSettings()
+        # QtCore.QSettings()
 
         return settings.value(self.key_, self.val_, t)
 
@@ -59,6 +59,8 @@ class Cache(object):
     __metaclass__ = SettingsType
     use = Item('cache/use', True, 'There will be stored information in working directory to speed up mainly the correction tool.')
     mser = Item('cache/mser', True, 'Storing MSERs have huge impact on speed but it also needs huge space amount.')
+    img_manager_size_MB = Item('cache/img_manager_size_MB', 500, '')
+    region_manager_num_of_instances = Item('cache/region_manager_num_of_instances', 0, '')
 
 class Colormarks:
     __metaclass__ = SettingsType
@@ -121,6 +123,9 @@ class Controls:
     new_region = Item('controls/new_region', QtGui.QKeySequence(QtCore.Qt.Key_R))
     ignore_case = Item('controls/ignore_case', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
 
+    undo_fitting = Item('controls/undo_fitting', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_F))
+    undo_whole_fitting = Item('controls/undo_whole_fitting', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_F))
+
     stop_action = Item('controls/stop_action', QtGui.QKeySequence(QtCore.Qt.Key_Escape))
     save = Item('controls/save', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
     save_only_long_enough = Item('controls/save_only_long_enough', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_S))
@@ -132,6 +137,9 @@ class Controls:
     video_prev = Item('controls/video_prev', QtGui.QKeySequence(QtCore.Qt.Key_B))
     video_play_pause = Item('controls/video_play_pause', QtGui.QKeySequence(QtCore.Qt.Key_Space))
     video_random_frame = Item('controls/video_random_frame', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_R))
+
+    chunk_alpha_blending = Item('controls/chunk_alpha_blending', QtGui.QKeySequence(QtCore.Qt.Key_A))
+    chunk_interpolation_fitting = Item('controls/chunk_interpolation_fitting', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_P))
 
     # global view
     global_view_join_chunks = Item('controls/gv/join_chunks', QtGui.QKeySequence(QtCore.Qt.Key_J))

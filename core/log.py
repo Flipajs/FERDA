@@ -21,7 +21,6 @@ class LogCategories:
         elif val == LogCategories.DEBUG_INFO:
             return 'debug info'
 
-
 class ActionNames:
     # GRAPH_EDIT
     ADD_NODE = 'add_node'
