@@ -382,19 +382,20 @@ def test_on_another_seq(rfc_file_name):
         clf = pickle.load(f)
 
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam2/cam2.fproj')
     p.img_manager = ImgManager(p)
 
-    rescale_normalisation = True
+    rescale_normalisation = False
 
-    cols = 5
-    rows = 5
+    cols = 10
+    rows = 7
     plt.figure()
     plt.subplot(cols, rows, 1)
 
     im_id = 1
-    for i in range(1, 10000):
-        if i > cols*rows:
+
+    for i in range(1, 10000, 30):
+        if im_id > cols*rows:
             break
 
         try:
@@ -424,9 +425,6 @@ def test_on_another_seq(rfc_file_name):
         except:
             pass
 
-            # print y
-            # cv2.imshow("img", bb)
-            # cv2.waitKey(0)
     plt.show()
     plt.waitforbuttonpress()
 
@@ -435,7 +433,7 @@ if __name__ == "__main__":
     double_precission = True
     rescale_normalisation = False
     relative_border = 5.0
-    shape = (88, 136)
+    shape = (100, 150)
     ft = get_fastext(None)
 
     plt.ion()
@@ -480,14 +478,15 @@ if __name__ == "__main__":
         i = 0
         for r_id, head_ok in data:
             r = p.rm[r_id]
+            img = p.img_manager.get_whole_img(r.frame())
 
-            x1 = _get_data(r, rescale_normalisation, shape, fliplr=not head_ok)
+            x1 = _get_data(r, img, rescale_normalisation, shape, fliplr=not head_ok)
 
             X.append(x1)
             Y.append(head_ok)
 
             if data_augmentation:
-                x2 = _get_data(r, rescale_normalisation, shape, fliplr = not head_ok, flipud=True)
+                x2 = _get_data(r, img, rescale_normalisation, shape, fliplr = not head_ok, flipud=True)
 
                 X.append(x2)
                 Y.append(head_ok)
@@ -558,15 +557,25 @@ if __name__ == "__main__":
         if im_id == num_examples + 1:
             break
         if Y_[i] != GT_Y_test[i]:
+            augm_flag = False
+            if id_ > len(data):
+                augm_flag = True
+
+            real_id = id_
             id_ = id_ / 2 if data_augmentation else id_
+
             d, head_ok = data[id_]
             r = p.rm[d]
 
-            bb = r_normalize(r)
+            img = p.img_manager.get_whole_img(r.frame())
+            bb = r_normalize(r, img)
+
+            if augm_flag:
+                bb = np.flipud(bb)
 
             plt.subplot(cols, rows, im_id)
             plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
-            plt.title(str(probs_[i]) + ("RIGHT" if GT_Y_test[i] else "LEFT") + str(id_))
+            plt.title(str(probs_[i]) + ("RIGHT" if GT_Y_test[i] else "LEFT") + str(real_id))
 
             im_id += 1
 
@@ -583,7 +592,8 @@ if __name__ == "__main__":
             d, head_ok = data[id_]
             r = p.rm[d]
 
-            bb = r_normalize(r)
+            img = p.img_manager.get_whole_img(r.frame())
+            bb = r_normalize(r, img)
 
             plt.subplot(cols, rows, im_id)
             plt.imshow(cv2.cvtColor(bb, cv2.COLOR_BGR2RGB))
