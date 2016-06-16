@@ -105,9 +105,9 @@ class Project:
 
     def save(self,toFolder=""):
         if (toFolder == ""):
-            destinationFolder = self.working_directory;
+            destinationFolder = self.working_directory
         else:
-            destinationFolder = toFolder;
+            destinationFolder = toFolder
 
         # BG MODEL
         if self.bg_model:
@@ -146,8 +146,6 @@ class Project:
             with open(destinationFolder+'/stats.pkl', 'wb') as f:
                 pickle.dump(self.stats, f)
 
-        self.save_qsettings(toFolder)
-
         # # Region Manager
         # if self.rm:
         #     with open(self.working_directory+'/region_manager.pkl', 'wb') as f:
@@ -157,7 +155,7 @@ class Project:
 
         self.save_gm_(self.working_directory+'/graph_manager.pkl')
 
-        self.save_qsettings()
+        self.save_qsettings(toFolder)
 
         self.save_project_file_(toFolder)
 
@@ -202,9 +200,9 @@ class Project:
 
     def save_qsettings(self,toFolder=""):
         if (toFolder == ""):
-            destinationFolder = self.working_directory
+            destinationFolder = self.working_directory;
         else:
-            destinationFolder = toFolder
+            destinationFolder = toFolder;
 
         s = QtCore.QSettings('FERDA')
         settings = {}
