@@ -121,8 +121,8 @@ class BackgroundComputer:
                 self.precomputed = True
 
             S_.general.log_graph_edits = True
-            limitsFile.close();
-            sys.exit() ## Comment for cluster usage
+            limitsFile.close()
+            # sys.exit() ## Comment for cluster usage
             
         else:
             self.precomputed = True
