@@ -41,10 +41,12 @@ SPLIT = 'split'
 
 
 class NodeGraphVisualizer(QtGui.QWidget):
-    def __init__(self, solver, g, regions, chunks, node_size=30, show_in_visualize_callback=None, show_vertically=False):
+    def __init__(self, solver, g, regions, chunks, images, region_vertices_mapping, node_size=30, show_in_visualize_callback=None, show_vertically=False):
         super(NodeGraphVisualizer, self).__init__()
         self.show_in_visualizer_callback = show_in_visualize_callback
         self.solver = solver
+        self.images = images
+        self.region_vertices_mapping = region_vertices_mapping
         self.project = solver.project
         self.g = g
         self.regions = regions
@@ -375,7 +377,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
             pos = self.get_nearest_free_slot(t, prev_pos)
             self.positions[n] = pos
 
-        vis = self.g.node[n]['img']
+        vis = self.images[n]
         if vis.shape[0] > self.node_size or vis.shape[1] > self.node_size:
             vis = np.asarray(resize(vis, (self.node_size, self.node_size)) * 255, dtype=np.uint8)
         else:
@@ -422,17 +424,18 @@ class NodeGraphVisualizer(QtGui.QWidget):
         process_at_the_end = []
         for f in frames:
             for n1 in self.regions[f]:
-                if n1 not in self.g.node:
-                    continue
+                # if n1 not in self.g.node:
+                #     continue
                 if n1 in self.positions:
                     continue
 
-                is_ch, t_reversed, ch = self.solver.is_chunk(n1)
+
+                ch, t_reversed = self.project.gm.is_chunk(self.region_vertices_mapping[n1])
                 if t_reversed:
                     continue
 
-                n2 = ch.end_n
-                # for _, n2, d in self.g.out_edges(n1, data=True):
+
+                n2 = self.project.gm.region(ch.end_vertex_id())
                 if n2 in self.positions:
                     continue
 
@@ -500,7 +503,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
         visited = {}
         for f in self.frames:
             for r in self.regions[f]:
-                if r in visited or r not in self.g:
+                # if r in visited or r not in self.g:
+                if r in visited:
                     continue
 
                 temp_queue = [r]
@@ -513,7 +517,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
                     if n in visited:
                         continue
 
-                    if 'img' not in self.g.node[n]:
+                    if n not in self.images:
                         continue
 
                     visited[n] = True
@@ -573,9 +577,9 @@ class NodeGraphVisualizer(QtGui.QWidget):
                 if n in self.ignored_nodes:
                     continue
 
-                is_ch, t_reversed, ch = self.solver.is_chunk(n)
+                ch, t_reversed = self.project.gm.is_chunk(self.region_vertices_mapping[n])
 
-                if is_ch and t_reversed:
+                if ch is not None and t_reversed:
                     if not picked:
                         picked = n
                     elif picked.frame_ > n.frame_:
@@ -593,7 +597,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
                 if n in self.ignored_nodes:
                     continue
 
-                is_ch, t_reversed, ch = self.solver.is_chunk(n)
+
+                ch, t_reversed = self.project.gm.is_chunk(self.region_vertices_mapping[n])
                 if t_reversed:
                     continue
 

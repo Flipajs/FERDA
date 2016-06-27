@@ -24,8 +24,8 @@ if is_flipajs_pc():
     # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
     #             'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
-    # project.load(wd+name+'/Cam1.fproj')
-    # ex.widget_control('load_project', project)
+    project.load(wd+name+'/Cam1.fproj')
+    ex.widget_control('load_project', project)
 
 
 app.exec_()

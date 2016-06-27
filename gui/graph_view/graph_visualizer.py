@@ -18,8 +18,7 @@ from vis_loader import DEFAULT_TEXT, GAP, \
 __author__ = 'Simon Mandlik'
 
 
-class \
-        GraphVisualizer(QtGui.QWidget):
+class GraphVisualizer(QtGui.QWidget):
     """
     Requires list of regions and list of edge-tuples (node1, node2, type - chunk, line or partial, sureness).
     Those can be passed in constructor or using a method add_objects

@@ -11,13 +11,12 @@ from skimage.transform import rescale
 
 from scripts.region_graph3 import NodeGraphVisualizer, visualize_nodes
 from core.settings import Settings as S_
-from utils.video_manager import get_auto_video_manager, optimize_frame_access
+from utils.video_manager import get_auto_video_manager, optimize_frame_access, optimize_frame_access_vertices
 from core.project.project import Project
 from utils.misc import is_flipajs_pc
 
 
 def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callback=None, node_size=30, node_margin=0.1, show_in_visualizer_callback=None, reset_cache=True, show_vertically=False):
-
     if t_start == t_end == -1:
         sub_g = solver.g
     else:
@@ -28,18 +27,22 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
                 g_nodes.append((r, vertex))
 
     vid = get_auto_video_manager(project)
-    regions = {}
+    frames_d = {}
 
-    nodes = []
+    regions = []
     chunks = set()
-    for n, vertex in g_nodes:
+    vertices = []
+    region_vertices_mapping = {}
+    for r, vertex in g_nodes:
         ch, _ = project.gm.is_chunk(vertex)
         if ch:
             if ch.length() >= min_chunk_len:
-                nodes.append(n)
+                regions.append(r)
+                vertices.append(vertex)
+                region_vertices_mapping[r] = vertex
                 chunks.add(ch)
 
-    optimized = optimize_frame_access_vertices(nodes)
+    optimized = optimize_frame_access_vertices(vertices, project)
 
     i = 0
     num_parts = 100
@@ -48,35 +51,39 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
     # TODO: optimize for same frames...
     cache = {}
 
-    for n, seq, _ in optimized:
-        if n.frame_ in regions:
-            regions[n.frame_].append(n)
-        else:
-            regions[n.frame_] = [n]
 
-        if reset_cache or 'img' not in solver.g.node[n]:
-            im = vid.get_frame(n.frame_, sequence_access=seq)
+    images = {}
+
+    for v, seq, _ in optimized:
+        r = project.gm.region(v)
+        if r.frame_ in frames_d:
+            frames_d[r.frame_].append(r)
+        else:
+            frames_d[r.frame_] = [r]
+
+        if reset_cache or 'img' not in solver.g.node[r]:
+            im = vid.get_frame(r.frame_, sequence_access=seq)
 
             sf = project.other_parameters.img_subsample_factor
             if sf > 1.0:
-                if n.frame_ not in cache:
+                if r.frame_ not in cache:
                     im = np.asarray(rescale(im, 1/sf) * 255, dtype=np.uint8)
-                    cache[n.frame_] = im
+                    cache[r.frame_] = im
                 else:
-                    im = cache[n.frame_]
+                    im = cache[r.frame_]
 
             # TODO: optimize... and add opacity parameter
-            ch, _ = project.gm.is_chunk(n)
+            ch, _ = project.gm.is_chunk(v)
             c = (ch.color.blue(), ch.color.green(), ch.color.red(), 0.9)
 
-            solver.g.node[n]['img'] = visualize_nodes(im, n, margin=node_margin, color=c)
+            images[r] = visualize_nodes(im, r, margin=node_margin, color=c)
 
         i += 1
 
         if update_callback is not None and i % part_ == 0:
             update_callback(i / float(len(optimized)))
 
-    ngv = NodeGraphVisualizer(solver, project.gm.g, regions, list(chunks), node_size=node_size, show_in_visualize_callback=show_in_visualizer_callback, show_vertically=show_vertically)
+    ngv = NodeGraphVisualizer(solver, project.gm.g, frames_d, list(chunks), images, region_vertices_mapping, node_size=node_size, show_in_visualize_callback=show_in_visualizer_callback, show_vertically=show_vertically)
     ngv.visualize()
 
     return ngv
