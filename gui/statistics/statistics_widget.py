@@ -81,6 +81,10 @@ class StatisticsWidget(QtGui.QWidget):
         self.export_b.clicked.connect(self.export)
         self.export_fbox.addRow(self.export_b)
 
+        self.export_collisions_b = QtGui.QPushButton('export collisions')
+        self.export_collisions_b.clicked.connect(self.export_collisions)
+        self.export_fbox.addRow(self.export_collisions_b)
+
         # self.region_reconstruction = RegionReconstruction(project, solver=None)
         # self.vbox.addWidget(self.region_reconstruction)
 
@@ -88,6 +92,20 @@ class StatisticsWidget(QtGui.QWidget):
         # self.vbox.addWidget(self.fix_area)
         # if not project.version_is_le('2.2.9'):
         #     self.fix_area.vbox.addWidget(QtGui.QLabel('AREA WAS ALREADY UPDATED!'))
+
+    def export_collisions(self):
+        num = 0
+
+        for ch in self.project.chm.chunk_list():
+            in_d = self.project.gm.g.vertex(ch.start_node()).in_degree()
+            if in_d > 1:
+                out_d = self.project.gm.g.vertex(ch.end_node()).out_degree()
+                if out_d > 1:
+                    if ch.length() > 10:
+                        print "test", ch.length(), ch.start_frame(self.project.gm)
+                        num += 1
+
+        print "EXPORTING collisions", num
 
     def export(self):
         print "exporting..."

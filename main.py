@@ -19,13 +19,13 @@ S_.general.print_log = False
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 if is_flipajs_pc():
     sn_id = 2
-    name = 'Cam1'
+    name = 'Cam2'
     wd = '/Users/flipajs/Documents/wd/GT/'
     # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
     #             'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
-    # project.load(wd+name+'/Cam1.fproj')
-    # ex.widget_control('load_project', project)
+    project.load(wd+name+'/Cam2.fproj')
+    ex.widget_control('load_project', project)
 
 
 app.exec_()
