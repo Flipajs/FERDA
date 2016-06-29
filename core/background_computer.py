@@ -42,7 +42,6 @@ class BackgroundComputer:
 
         self.processes = []
 
-        self.set_frames_in_row()
         self.finished = np.array([False for i in range(self.part_num)])
 
         self.solver = None
@@ -62,6 +61,8 @@ class BackgroundComputer:
 
     def run(self):
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
+            self.set_frames_in_row()
+            
             if self.postpone_parallelisation:
                 f = open(self.project.working_directory+'/limits.txt', 'w')
 
