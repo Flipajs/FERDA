@@ -81,7 +81,11 @@ class StatisticsWidget(QtGui.QWidget):
         self.export_b.clicked.connect(self.export)
         self.export_fbox.addRow(self.export_b)
 
-        self.export_collisions_b = QtGui.QPushButton('export collisions')
+
+        self.export_collision_length = QtGui.QLineEdit()
+        self.export_fbox.addRow('min interaction length (>)', self.export_collision_length)
+
+        self.export_collisions_b = QtGui.QPushButton('export interactions')
         self.export_collisions_b.clicked.connect(self.export_collisions)
         self.export_fbox.addRow(self.export_collisions_b)
 
@@ -101,7 +105,7 @@ class StatisticsWidget(QtGui.QWidget):
             if in_d > 1:
                 out_d = self.project.gm.g.vertex(ch.end_node()).out_degree()
                 if out_d > 1:
-                    if ch.length() > 10:
+                    if ch.length() > int(self.export_collision_length.text()):
                         print "test", ch.length(), ch.start_frame(self.project.gm)
                         num += 1
 
