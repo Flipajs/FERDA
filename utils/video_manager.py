@@ -29,6 +29,8 @@ class VideoManager():
         frame seeking.
         """
 
+        return
+
         self.capture = cv2.VideoCapture(video_path)  # OpenCV video capture class
         self.start_t = start_t if start_t > 0 else 0
         self.end_t = end_t if start_t < end_t <= self.video_frame_count_without_bounds() else np.inf
