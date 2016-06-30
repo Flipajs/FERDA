@@ -187,7 +187,7 @@ class StatisticsWidget(QtGui.QWidget):
         t2 = time.time()
         file_num = 0
         for _, ch in self.project.chm.chunks_.iteritems():
-            rch = RegionChunk(self.project.chm[ch], self.project.gm, self.project.rm)
+            rch = RegionChunk(ch, self.project.gm, self.project.rm)
             d = self.init_struct_(rch[0])
 
             rs_ = rch[:]
