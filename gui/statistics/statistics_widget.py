@@ -199,6 +199,7 @@ class StatisticsWidget(QtGui.QWidget):
 
             if curr_size > limit:
                 with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
+                    print "saving ", str(file_num)
                     sio.savemat(f, {'FERDA': obj_arr})
 
                 curr_size = 0
