@@ -89,6 +89,8 @@ class ResultsWidget(QtGui.QWidget):
     def __init__(self, project, start_on_frame=-1):
         super(ResultsWidget, self).__init__()
 
+        return
+
         self.vbox = QtGui.QVBoxLayout()
         self.solver = None
         self.project = project

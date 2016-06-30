@@ -64,6 +64,8 @@ class VideoManager():
         return pos
 
     def next_frame(self):
+        return None
+
         # continue reading new frames
         if self.dec_pos_(self.buffer_position_) == self.view_position_:
             f, self.buffer_[self.buffer_position_] = self.capture.read()
@@ -135,6 +137,9 @@ class VideoManager():
         return self.capture.get(cv_compatibility.cv_CAP_PROP_FPS)
 
     def total_frame_count(self):
+        return 100
+
+
         vid_frame_num = int(self.capture.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT))
         if self.end_t < np.inf:
             vid_frame_num -= vid_frame_num - self.end_t
