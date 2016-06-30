@@ -238,26 +238,29 @@ class BackgroundComputer:
         from utils.misc import is_flipajs_pc
         if is_flipajs_pc():
             # TODO: remove this line
-            part_num = 5
+            # part_num = 5
             pass
 
         self.project.color_manager = None
 
         print "merging..."
         # for i in range(part_num):
-        for i in range(part_num):
-            rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
-                                   db_name='part' + str(i) + '_rm.sqlite3')
+        for i in range(10000):
+            try:
+                rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
+                                       db_name='part' + str(i) + '_rm.sqlite3')
 
-            with open(self.project.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
-                up = pickle.Unpickler(f)
-                g_ = up.load()
-                relevant_vertices = up.load()
-                chm_ = up.load()
+                with open(self.project.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
+                    up = pickle.Unpickler(f)
+                    g_ = up.load()
+                    relevant_vertices = up.load()
+                    chm_ = up.load()
 
-                self.merge_parts(self.project.gm, g_, relevant_vertices, self.project, rm_old, chm_)
+                    self.merge_parts(self.project.gm, g_, relevant_vertices, self.project, rm_old, chm_)
 
-            self.update_callback((i + 1) / float(part_num))
+                self.update_callback((i + 1) / float(part_num))
+            except:
+                pass
 
         fir = self.project.solver_parameters.frames_in_row
 
