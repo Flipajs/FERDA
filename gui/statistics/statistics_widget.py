@@ -100,6 +100,8 @@ class StatisticsWidget(QtGui.QWidget):
     def export_collisions(self):
         num = 0
 
+        collisions = []
+
         for ch in self.project.chm.chunk_list():
             in_d = self.project.gm.g.vertex(ch.start_node()).in_degree()
             if in_d > 1:
@@ -108,6 +110,13 @@ class StatisticsWidget(QtGui.QWidget):
                     if ch.length() > int(self.export_collision_length.text()):
                         print "test", ch.length(), ch.start_frame(self.project.gm)
                         num += 1
+
+                        d = {}
+                        d['in'] = []
+                        for v in self.project.gm.g.vertex(ch.start_node()).in_neighbours():
+                            region = self.projecg.gm.region(v)
+                            seks = None
+                            d['in'].append({'region': region, 'SEKS': seks})
 
         print "EXPORTING collisions", num
 
