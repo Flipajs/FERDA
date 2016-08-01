@@ -228,14 +228,13 @@ def interpolation(first_angle, sec_angle, first_dist, second_dist):
 
 
 if __name__ == '__main__':
+    from scripts import fix_project
     project = Project()
-    project.video_paths = ["/home/sheemon/FERDA/projects/Cam1_/Cam1_clip.avi"]
-    project.load("/home/sheemon/FERDA/projects/Cam1_/cam1.fproj")
+    # project.video_paths = ["/home/simon/FERDA/projects/Cam1_/Cam1_clip.avi"]
+    project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
     chunks = project.gm.chunk_list()
     get_pca(chunks[:1], NUMBER_OF_DATA, project.chm, project.gm)
 
-    # with open("/home/sheemon/FERDA/projects/Cam1_/cam1.fproj", 'rb') as f:
+    # with open("/home/simon/FERDA/projects/Cam1_/cam1.fproj", 'rb') as f:
     #     tmp_dict = pickle.load(f)
     #     print tmp_dict
-
-
