@@ -13,6 +13,7 @@ apt-get update
 echo "Installing packges"
 apt-get install python-pip python-opencv python-scipy libpython-stdlib libfreetype6-dev -y
 
+pip install --upgrade pip
 # to run in quiet mode, add -q to each command
 echo "Done"
 echo "Installing networkx via pip"
