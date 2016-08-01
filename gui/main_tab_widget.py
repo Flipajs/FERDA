@@ -9,7 +9,6 @@ from gui.statistics.statistics_widget import StatisticsWidget
 
 from core.background_computer import BackgroundComputer
 from functools import partial
-from core.graph.graph_manager import GraphManager
 
 
 class MainTabWidget(QtGui.QWidget):
@@ -49,11 +48,11 @@ class MainTabWidget(QtGui.QWidget):
 
         print "LOADING GRAPH..."
         if project.gm is None or project.gm.g.num_vertices() == 0:
-            # project.gm = GraphManager(project, project.solver.assignment_score)
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished, postpone_parallelisation)
             self.bc_msers.run()
         else:
             self.background_computer_finished(project.solver)
+            self.tabs.setCurrentIndex(1)
 
     def show_in_visualizer(self, data):
         self.show_results_only_around_frame = data['n1'].frame_
@@ -81,8 +80,8 @@ class MainTabWidget(QtGui.QWidget):
             self.results_tab.setParent(None)
 
             self.results_tab = ResultsWidget(self.project)
-            self.results_tab.add_data(self.project.solver, self.show_results_only_around_frame)
-            self.results_tab.update_positions(self.results_tab.video.frame_number(), optimized=False)
+            self.results_tab.update_positions()
+            # self.results_tab.add_data(self.project.solver, self.show_results_only_around_frame)
             self.tabs.insertTab(1, self.results_tab, 'results viewer')
             self.tabs.setCurrentIndex(1)
             self.ignore_tab_change = False

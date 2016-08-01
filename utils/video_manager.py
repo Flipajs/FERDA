@@ -81,7 +81,6 @@ class VideoManager():
             self.position_ -= 1
             view_dec = self.dec_pos_(self.view_position_)
             if (view_dec == self.buffer_position_) or (self.buffer_[view_dec] is None):
-            # if True:
                 self.buffer_position_ = self.dec_pos_(self.buffer_position_)
                 self.view_position_ = self.dec_pos_(self.view_position_)
                 self.buffer_[self.view_position_] = self.seek_frame(self.position_)
@@ -166,15 +165,16 @@ class VideoManager():
 
         return vid
 
-    def get_frame(self, frame, sequence_access=False, auto=False):
+    def get_frame(self, frame):
         """
         If you ask for given frame, it will access it sequentially or by random access, depending on what is "cheaper"
         With sequence_access = auto = False it behaves the same as frame_seek
         """
 
-        if auto:
-            if abs(frame - self.frame_number()) < 15:
-                sequence_access = True
+        sequence_access = False
+
+        if abs(frame - self.frame_number()) < 15:
+            sequence_access = True
 
         reversed = False
         if frame < self.frame_number():

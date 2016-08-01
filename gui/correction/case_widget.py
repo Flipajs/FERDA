@@ -83,7 +83,7 @@ class CaseWidget(QtGui.QWidget):
             for g in self.vertices_groups:
                 for n in g:
                     ch, _ = self.project.gm.is_chunk(n)
-                    if ch:
+                    if ch and ch.length() > 1:
                         chunk_nodes.add(n)
                         self.color_assignments[n] = (ch.color.blue(), ch.color.green(), ch.color.red(), self.opacity)
                     else:
@@ -254,8 +254,10 @@ class CaseWidget(QtGui.QWidget):
             pass
 
         vertex = self.project.gm.g.vertex(int(n))
-        best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
+        best_out_score, best_out_n = self.project.gm.get_2_best_out_vertices(vertex)
         best_out = best_out_score[0]
+
+        new_s, do, dt = self.project.solver.assignment_score_pos_orient(r, self.project.gm.region(best_out_n[0]))
 
         best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
         best_in = best_in_score[0]
@@ -263,11 +265,30 @@ class CaseWidget(QtGui.QWidget):
         ch, _ = self.project.gm.is_chunk(vertex)
         ch_info = str(ch)
 
+        ch_start = 1
+        ch_end = -1
+
+        is_merged = False
+        if ch:
+            ch_start = ch.start_frame(self.project.gm)
+            ch_end = ch.end_frame(self.project.gm)
+
+            ch_start_vertex = self.project.gm.g.vertex(ch.start_node())
+
+            # ignore chunks of merged regions
+            for e in ch_start_vertex.in_edges():
+                if self.project.gm.g.ep['score'][e] == 0 and ch_start_vertex.in_degree() > 1:
+                    is_merged = True
+
         QtGui.QMessageBox.about(self, "My message box",
-                                "ID = %i\nArea = %i\nframe=%i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\nIs virtual: %s\nBest in = %s, (%d)\nBest out = %s (%d)\nChunk info = %s" %
+                                "ID = %i\nArea = %i\nframe=%i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\n"
+                                "Is virtual: %s\nBest in = %s, (%d)\nBest out = %s (%d)\nChunk info = %s\n"
+                                "Chunk start: %d end: %d\ntest:%s\nnew_s:%f, %f, %f\ntheta: %f\n" %
                                 (int(n), r.area(), r.frame_, str(r.centroid()), r.margin_, antlikeness, str(virtual),
                                  str(best_in_score[0]) + ', ' + str(best_in_score[1]), vertex.in_degree(),
-                                 str(best_out_score[0]) + ', ' + str(best_out_score[1]), vertex.out_degree(), ch_info))
+                                 str(best_out_score[0]) + ', ' + str(best_out_score[1]), vertex.out_degree(), ch_info,
+                                 ch_start, ch_end, str(is_merged), new_s, do, dt, r.theta_
+                                ))
 
     def row_changed(self, off):
         self.active_row += off
@@ -392,7 +413,7 @@ class CaseWidget(QtGui.QWidget):
         for g in self.vertices_groups:
             for n in g:
                 ch, t_rev = self.project.gm.is_chunk(n)
-                if ch:
+                if ch and ch.length() > 1:
                     t = self.project.gm.region(n).frame_ - self.frame_t
 
                     if t_rev:

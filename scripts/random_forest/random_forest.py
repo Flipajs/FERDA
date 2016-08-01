@@ -8,6 +8,9 @@ from utils.img import get_img_around_pts, replace_everything_but_pts
 import cPickle as pickle
 import numpy as np
 
+# from libs.mondrianforest.mondrianforest import MondrianForest, parser_add_common_options, parser_add_mf_options, process_command_line
+# from libs.mondrianforest.mondrianforest_utils import precompute_minimal
+
 
 def get_training_data(p, get_features, first_n=-1, offset=0):
     X = []
@@ -20,6 +23,7 @@ def get_training_data(p, get_features, first_n=-1, offset=0):
         chunks.append(p.chm[p.gm.g.vp['chunk_start_id'][p.gm.g.vertex(v)]])
 
     id_ = 0
+    max_t = 0
     for ch in chunks:
         r_ch = RegionChunk(ch, p.gm, p.rm)
         i = 0
@@ -34,10 +38,10 @@ def get_training_data(p, get_features, first_n=-1, offset=0):
                 y.append(id_)
 
                 i += 1
-
+        max_t = max(max_t, r.frame())
         id_ += 1
 
-    return X, y
+    return X, y, max_t
 
 
 def get_hu_moments(img):
@@ -122,14 +126,34 @@ if __name__ == '__main__':
             rfc = p_.load()
             X2 = p_.load()
             y2 = p_.load()
+            test_length = p_.load()
+
+
+        # settings = process_command_line()
+        #
+        # data = {'n_dim': 100}
+        #
+        # data = {'x_train': np.array(X), 'y_train': np.array(y), 'n_class': 6, \
+        #     'n_dim': len(X[0]), 'n_train': len(X), 'is_sparse': False}
+        #
+        # mf = MondrianForest(settings, data)
+        # param, cache = precompute_minimal(data, settings)
+        # mf.fit(data, range(len(X)), settings, param, cache)
+
     else:
-        X, y = get_training_data(p, get_features1, first_n=500)
+        X, y, max_t = get_training_data(p, get_features1, first_n=500)
+        print max_t
 
         rfc = RandomForestClassifier()
         rfc.fit(X, y)
 
+        # mf = MondrianForest()
+
+        test_length = 500
+
         print rfc.score(X, y)
-        X2, y2 = get_training_data(p, get_features1, first_n=200, offset=1000)
+        X2, y2, max_t = get_training_data(p, get_features1, first_n=test_length, offset=max_t)
+        print max_t
 
         with open(p.working_directory+'/temp/rfc.pkl', 'wb') as f:
             p_ = pickle.Pickler(f)
@@ -138,8 +162,45 @@ if __name__ == '__main__':
             p_.dump(rfc)
             p_.dump(X2)
             p_.dump(y2)
+            p_.dump(test_length)
 
-    results = rfc.predict_proba(X2)
+
+    ids = range(6)
+    chunk_length = test_length
+    sample_size = 50
+    offset = 50
+    for id_ in ids:
+        best = []
+        second = []
+
+        idx_ = range(id_*chunk_length + offset, min(id_*chunk_length + offset + sample_size, (id_+1)*(chunk_length)))
+
+        for r_ in results[idx_, :]:
+            best_ = r_[id_]
+            best.append(best_)
+
+        print ("------- %d ------- med: %.3f") % (id_, np.median(np.array(best)))
+
+        for second_id_ in ids:
+            if second_id_ == id_:
+                continue
+
+            num_better_ = 0
+            second = []
+
+            for r_ in results[idx_, :]:
+                best_ = r_[id_]
+                second_ = r_[second_id_]
+
+                num_better_ += best_ > second_
+                second.append(second_)
+
+            second = np.array(second)
+            print (" VS %d #TP: %d/%d (%.1f%%), vs med: %.3f") % (second_id_, num_better_,
+                                                                  sample_size,
+                                                                  100*(num_better_/float(sample_size)),
+                                                                  np.median(second))
+
     y_results = rfc.predict(X2)
 
     idx = np.array(y_results) == np.array(y2)
@@ -147,6 +208,7 @@ if __name__ == '__main__':
     mismatches_proba = results[np.logical_not(idx)]
     matches_proba = results[idx]
 
+    print "\n\n\n"
     print np.sum(idx), len(idx)
 
     print "MISMATCHES"
@@ -162,5 +224,3 @@ if __name__ == '__main__':
            np.median(matches_proba),
            np.std(matches_proba),
            np.median(np.max(matches_proba, axis=1)))
-
-    # print results, y2

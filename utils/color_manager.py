@@ -397,8 +397,16 @@ def colorize_project(project):
     project.color_manager = ColorManager(vid.total_frame_count(), limit)
     for ch in project.chm.chunk_list():
         if ch.length() > 0:
-            rch = RegionChunk(ch, project.gm, project.rm)
-            ch.color, _ = project.color_manager.new_track(rch.start_frame(), rch.end_frame())
+            if ch.length() < 100:
+                r = random.randint(50, 255)
+                g = random.randint(50, 255)
+                b = random.randint(50, 255)
+
+                c = QtGui.QColor.fromRgb(r, g, b)
+                ch.color = c
+            else:
+                rch = RegionChunk(ch, project.gm, project.rm)
+                ch.color, _ = project.color_manager.new_track(rch.start_frame(), rch.end_frame())
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

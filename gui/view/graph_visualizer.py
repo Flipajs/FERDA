@@ -55,7 +55,7 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
             regions[n.frame_] = [n]
 
         if reset_cache or 'img' not in solver.g.node[n]:
-            im = vid.get_frame(n.frame_, sequence_access=seq)
+            im = vid.get_frame(n.frame_)
 
             sf = project.other_parameters.img_subsample_factor
             if sf > 1.0:

@@ -161,7 +161,10 @@ class RegionManager:
                 raise TypeError ("Region manager can only work with Region objects, not %s" % type(r))
             id = self.get_next_id()
             r.id_ = id
-            self.add_to_cache_(id, r)
+
+            if self.cache_size_limit_ != 0:
+                self.add_to_cache_(id, r)
+
             yield (id, self.prepare_region(r))
 
     def get_next_id(self):
@@ -266,8 +269,8 @@ class RegionManager:
             cmd = "SELECT data FROM regions WHERE id = '%s'" % sql_ids[0]
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
-            self.con.commit()
             row = self.cur.fetchone()
+            self.con.commit()
             # add it to result
             id = sql_ids[0]
             try:
@@ -284,8 +287,8 @@ class RegionManager:
             cmd = "SELECT id, data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
-            self.con.commit()
             rows = self.cur.fetchall()
+            self.con.commit()
             tmp_ids = []
             for row in rows:
                 if row[0] in tmp_ids:
