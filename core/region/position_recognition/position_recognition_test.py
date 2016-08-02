@@ -29,8 +29,8 @@ def get_pca(chunks, number_of_data, chm, gm):
     print pca
     print original
     # print reduce(lambda a,b: a + b, original)
-    plt.scatter(range(len(original) * len(original[0])), reduce(lambda a,b: a + b, original))
-    plt.scatter(range(len(original) * len(original[0])), reduce(lambda a,b: a + b, pca))
+    # plt.scatter(range(len(original) * len(original[0])), reduce(lambda a,b: a + b, original))
+    # plt.scatter(range(len(original) * len(original[0])), reduce(lambda a,b: a + b, pca))
 
 
 def get_eigenfaces(chunk_matrix):
