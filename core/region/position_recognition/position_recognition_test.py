@@ -9,6 +9,7 @@ from core.project.project import Project
 NUMBER_OF_DATA = 100
 NUMBER_OF_PC = 100
 
+average = 0
 
 def get_pca(chunks, number_of_data, chm, gm):
     matrix = []
@@ -45,6 +46,7 @@ def get_eigenfaces(chunk_matrix):
 
 def get_chunks_regions(ch, chm, gm):
     chunk = chm[ch]
+    print "Chunk " + str(ch)
     chunk_start = chunk.start_frame(gm)
     chunk_end = chunk.end_frame(gm)
     while chunk_start <= chunk_end:
