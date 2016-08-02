@@ -1,13 +1,13 @@
 import math
+
 import numpy
 from numpy import transpose
-from numpy.linalg import eig
-import matplotlib.pyplot as plt
-from core.project import project
+from numpy.linalg import eig, norm
+from matplotlib import pyplot as plt
 from core.project.project import Project
 
 NUMBER_OF_DATA = 100
-PRECISION = 3
+NUMBER_OF_PC = 100
 
 
 def get_pca(chunks, number_of_data, chm, gm):
@@ -15,16 +15,32 @@ def get_pca(chunks, number_of_data, chm, gm):
     for ch in chunks:
         for vector in get_matrix(ch, number_of_data, chm, gm):
             matrix.append(vector)
-    eigenfaces = get_eigenfaces(matrix)
-    return numpy.dot(transpose(eigenfaces[:PRECISION]), matrix)
+    average = [sum(a) / len(a) for a in zip(*matrix)]
+    matrix = map(lambda a: [i - avg for i, avg in zip(a, average)], matrix)
+    matrix = transpose(matrix)
+    eigenfaces = get_eigenfaces(matrix) #vectors = columns
+    coefficient_matrix = (transpose(eigenfaces)).dot(matrix)
+    # return eigenfaces, coefficient_matrix
+    # return transpose(eigenfaces).dot(coefficient_matrix)
+    pca = eigenfaces.dot(coefficient_matrix)
+    # pca = map(lambda a: [i + avg for i, avg in zip(a, average)], pca)
+    original = matrix
+    print pca
+    print original
+    # print reduce(lambda a,b: a + b, original)
+    plt.scatter(range(len(original) * len(original[0])), reduce(lambda a,b: a + b, original))
+    plt.scatter(range(len(original) * len(original[0])), reduce(lambda a,b: a + b, pca))
 
 
 def get_eigenfaces(chunk_matrix):
-    vector_matrix = numpy.array(chunk_matrix)
-    transposed = transpose(chunk_matrix)
-    covariance_matrix = numpy.dot(transposed, chunk_matrix)
-    eigens = eig(covariance_matrix)
-    return eigens
+    m = numpy.array(chunk_matrix)
+    transposed = transpose(m)
+    covariance_matrix = transposed.dot(m)
+    eigenvalues, eigenvectors = eig(covariance_matrix)
+    index = eigenvalues.argsort()[::-1]
+    eigenfaces = eigenvectors[:, index]
+    eigenfaces = transpose(transpose(eigenfaces)[:NUMBER_OF_PC])
+    return m.dot(eigenfaces)
 
 
 def get_chunks_regions(ch, chm, gm):
@@ -37,13 +53,12 @@ def get_chunks_regions(ch, chm, gm):
 
 
 def get_matrix(chunk, number_of_data, chm, gm):
-    matrix = []
+    distance_matrix = []
     for region in get_chunks_regions(chunk, chm, gm):
-        matrix.append(get_region_vector_curve(region, number_of_data))
-    return matrix
+        distance_matrix.append(get_region_vector(region, number_of_data))
+    return distance_matrix
 
-
-def get_region_vector_curve(region, number_of_data):
+def get_region_vector(region, number_of_data):
     contour = region.contour_without_holes()
     con_length = len(contour)
 
@@ -63,12 +78,11 @@ def get_region_vector_curve(region, number_of_data):
         result.append(distances[int(i)])
         i += step
 
-
-    plt.hold(True)
-    plt.axis('equal')
-    plt.scatter([i[0] for i in contour], [i[1] for i in contour])
-    plt.scatter(list(range(number_of_data)), result)
-    plt.show(True)
+    # plt.hold(True)
+    # plt.axis('equal')
+    # plt.scatter([i[0] for i in contour], [i[1] for i in contour])
+    # plt.scatter(list(range(number_of_data)), result)
+    # plt.show(True)
     return result
 
 
@@ -84,10 +98,11 @@ def vector_norm(u):
     return math.sqrt(sum(i ** 2 for i in u))
 
 if __name__ == '__main__':
+    from scripts import fix_project
     project = Project()
     project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
     chunks = project.gm.chunk_list()
-    get_pca(chunks[:1], NUMBER_OF_DATA, project.chm, project.gm)
+    pca = get_pca(chunks[:1], NUMBER_OF_DATA, project.chm, project.gm)
 
 # def get_region_vector_angle(region, number_of_data):
 #     centroid = region.centroid()
