@@ -1,13 +1,17 @@
 import math
 
+import numpy as np
 import numpy
 from numpy import transpose
 from numpy.linalg import eig, norm
 from matplotlib import pyplot as plt
+
+from sklearn.preprocessing import normalize
+
 from core.project.project import Project
 
-NUMBER_OF_DATA = 100
-NUMBER_OF_PC = 100
+NUMBER_OF_DATA = 40
+NUMBER_OF_PC = 10
 
 average = 0
 
@@ -16,38 +20,44 @@ def get_pca(chunks, number_of_data, chm, gm):
     for ch in chunks:
         for vector in get_matrix(ch, number_of_data, chm, gm):
             matrix.append(vector)
-    average = [sum(a) / len(a) for a in zip(*matrix)]
-    matrix = map(lambda a: [i - avg for i, avg in zip(a, average)], matrix)
-    matrix = transpose(matrix)
-    eigenfaces = get_eigenfaces(matrix) #vectors = columns
-    coefficient_matrix = (transpose(eigenfaces)).dot(matrix)
+
+    matrix = np.matrix(matrix)
+    mean = np.mean(matrix, axis=0)
+
+    matrix = matrix-mean
+    matrix = transpose(matrix) # PCA uses 'vector-column' matrix
+
+    # from sklearn.decomposition import PCA as sklearnPCA
+    # print matrix
+    # sklearn_pca = sklearnPCA(n_components=2)
+    # sklearn_transf = sklearn_pca.fit_transform(matrix.T)
+    # print sklearn_transf
+
+    eigenfaces = get_eigenfaces(matrix)
+    coefficient_matrix = eigenfaces.T.dot(matrix)
     # return eigenfaces, coefficient_matrix
     # return transpose(eigenfaces).dot(coefficient_matrix)
     pca = eigenfaces.dot(coefficient_matrix)
-    # pca = map(lambda a: [i + avg for i, avg in zip(a, average)], pca)
-    original = matrix
-    print pca
-    print original
-    # print reduce(lambda a,b: a + b, original)
-    # plt.scatter(range(len(original) * len(original[0])), reduce(lambda a,b: a + b, original))
-    # plt.scatter(range(len(original) * len(original[0])), reduce(lambda a,b: a + b, pca))
+    # pca = map(lambda a: [i + avg for i, avg in zip(a, mean)], pca)
+    pca = normalize(transpose(pca))
+    matrix = normalize(matrix)
+    return pca
 
 
-def get_eigenfaces(chunk_matrix):
-    m = numpy.array(chunk_matrix)
-    transposed = transpose(m)
-    covariance_matrix = transposed.dot(m)
+def get_eigenfaces(m):
+    covariance_matrix = m.T.dot(m)
     eigenvalues, eigenvectors = eig(covariance_matrix)
     index = eigenvalues.argsort()[::-1]
     eigenfaces = eigenvectors[:, index]
-    eigenfaces = transpose(transpose(eigenfaces)[:NUMBER_OF_PC])
-    return m.dot(eigenfaces)
+    eigenfaces = eigenfaces[:, :NUMBER_OF_PC]
+    eigenfaces = m.dot(eigenfaces)
+    return eigenfaces
 
 
 def get_chunks_regions(ch, chm, gm):
     chunk = chm[ch]
-    print "Chunk " + str(ch)
     chunk_start = chunk.start_frame(gm)
+    print "Chunk " + str(ch)
     chunk_end = chunk.end_frame(gm)
     while chunk_start <= chunk_end:
         yield project.gm.region(chunk[chunk_start])
@@ -80,11 +90,6 @@ def get_region_vector(region, number_of_data):
         result.append(distances[int(i)])
         i += step
 
-    # plt.hold(True)
-    # plt.axis('equal')
-    # plt.scatter([i[0] for i in contour], [i[1] for i in contour])
-    # plt.scatter(list(range(number_of_data)), result)
-    # plt.show(True)
     return result
 
 
