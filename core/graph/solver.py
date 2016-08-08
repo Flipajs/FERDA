@@ -346,6 +346,28 @@ class Solver:
 
         return s, ds, 0, antlikeness_diff
 
+    def assignment_score_pos_orient(self, r1, r2):
+        """
+
+
+        Args:
+            r1:
+            r2:
+            orient_weight:
+
+        Returns:
+
+        """
+
+        d = np.linalg.norm(r1.centroid() - r2.centroid()) / float(self.major_axis_median)
+        max_d = self.project.solver_parameters.max_edge_distance_in_ant_length
+        ds = max(0, (max_d-d) / max_d)
+
+        dt = (r1.theta_ - r2.theta_) % np.pi
+        dt = max(0, (np.pi/2-dt) / (np.pi/2))
+
+        return ds*dt, ds, dt
+
     def get_ccs(self, queue=[]):
         if not queue:
             queue = self.project.gm.g.nodes()
@@ -676,8 +698,18 @@ class Solver:
                     for e in v.in_edges():
                         self.project.gm.g.ep['score'][e] = 0
 
-    def detect_split_merge_cases(self):
-        for t in self.project.gm.vertices_in_t:
+    def detect_split_merge_cases(self, frames=None):
+        if frames is None:
+            frames = self.project.gm.vertices_in_t
+        else:
+            frames_ = []
+            for t in frames:
+                if t in self.project.gm.vertices_in_t:
+                    frames_.append(t)
+
+            frames = frames_
+
+        for t in frames:
             vs = [v for v in self.project.gm.vertices_in_t[t]]
 
             while vs:

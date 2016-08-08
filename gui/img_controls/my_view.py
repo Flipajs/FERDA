@@ -86,7 +86,7 @@ class MyView(QtGui.QGraphicsView, object):
     def wheelEvent(self, event):
         modifiers = QtGui.QApplication.keyboardModifiers()
         if modifiers == QtCore.Qt.ControlModifier:
-            scale_factor = 1.12
+            scale_factor = 1.06
 
             self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
 

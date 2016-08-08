@@ -139,6 +139,7 @@ def get_contour(pts):
 
     return cont
 
+
 def get_contour_without_holes(pts):
     """
     returns np.array of [y,x] positions of inner contour for given points

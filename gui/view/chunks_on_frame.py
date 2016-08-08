@@ -64,7 +64,7 @@ class ChunksOnFrame(QtGui.QWidget):
         f = self.slider.value()
         self.plot_w.draw_plane(f)
 
-        im = self.vid.get_frame(f, auto=True)
+        im = self.vid.get_frame(f)
         # im = self.vid.seek_frame(f)
 
         w = 420

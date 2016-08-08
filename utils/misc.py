@@ -59,3 +59,4 @@ def get_settings(key, type=str):
 def set_settings(key, value):
     settings = QtCore.QSettings('FERDA')
     settings.setValue(key, value)
+

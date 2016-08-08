@@ -16,6 +16,7 @@ import matplotlib.colors as colors
 import math
 import scipy.ndimage
 from utils.roi import get_roi
+import matplotlib as mpl
 
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), return_offset=False):
@@ -154,12 +155,17 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
     return img
 
 
-def get_cropped_pts(region):
+def get_cropped_pts(region, return_roi=True, only_contour=True):
     roi_ = region.roi()
-    pts = region.pts() - roi_.top_left_corner()
+    if only_contour:
+        pts = region.contour() - roi_.top_left_corner()
+    else:
+        pts = region.pts() - roi_.top_left_corner()
+
+    if return_roi:
+        return pts, roi_
 
     return pts
-
 
 def imresize(im,sz):
     """  Resize an image array using PIL. """
@@ -243,3 +249,72 @@ def get_cmap(N, step):
         return scalar_map.to_rgba(index)
 
     return map_index_to_rgb_color
+
+def rotate_img(img, theta):
+    s_ = max(img.shape[0], img.shape[1])
+
+    im_ = np.zeros((s_, s_, img.shape[2]), dtype=img.dtype)
+    h_ = (s_ - img.shape[0]) / 2
+    w_ = (s_ - img.shape[1]) / 2
+
+    im_[h_:h_+img.shape[0], w_:w_+img.shape[1], :] = img
+
+    center = (im_.shape[0] / 2, im_.shape[1] / 2)
+
+    rot_mat = cv2.getRotationMatrix2D(center, -np.rad2deg(theta), 1.0)
+    return cv2.warpAffine(im_, rot_mat, (s_, s_))
+
+def centered_crop(img, new_h, new_w):
+    new_h = int(new_h)
+    new_w = int(new_w)
+
+    h_ = img.shape[0]
+    w_ = img.shape[1]
+
+    y_ = (h_ - new_h) / 2
+    x_ = (w_ - new_w) / 2
+
+    if y_ < 0 or x_ < 0:
+        Warning('cropped area cannot be bigger then original image!')
+        return img
+
+    return img[y_:y_+new_h, x_:x_+new_w, :].copy()
+
+def get_bounding_box(r, project, relative_border=1.3, img=None):
+    from math import ceil
+
+    if img is None:
+        frame = r.frame()
+        img = project.img_manager.get_whole_img(frame)
+
+    roi = r.roi()
+
+    height2 = int(ceil((roi.height() * relative_border) / 2.0))
+    width2 = int(ceil((roi.width() * relative_border) / 2.0))
+    x = r.centroid()[1] - width2
+    y = r.centroid()[0] - height2
+
+    bb = get_safe_selection(img, y, x, height2*2, width2*2)
+
+    return bb, np.array([y, x])
+
+def endpoint_rot(bb_img, pt, theta, centroid):
+    rot = np.array(
+        [[math.cos(theta), -math.sin(theta)],
+         [math.sin(theta), math.cos(theta)]]
+    )
+
+    pt_ = pt-centroid
+    pt = np.dot(rot, pt_.reshape(2, 1))
+    new_pt = [int(round(pt[0][0] + bb_img.shape[0]/2)), int(round(pt[1][0] + bb_img.shape[1]/2))]
+
+    return new_pt
+
+def img_saturation(img, saturation_coef=2.0, intensity_coef=1.0):
+    img_hsv = mpl.colors.rgb_to_hsv(img)
+    img_hsv[:,:,1] *= saturation_coef
+    img_hsv[:,:,2] *= intensity_coef
+    img = mpl.colors.hsv_to_rgb(img_hsv)
+    img = np.asarray(np.clip(img - img.min(), 0, 255), dtype=np.uint8)
+
+    return img
