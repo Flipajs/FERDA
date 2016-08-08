@@ -28,7 +28,7 @@ class LearningProcess:
         self.chunk_available_ids = {}
         self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
 
-        if False:
+        if True:
             self.chunks = self.get_candidate_chunks()
 
             self.chunks_itree = self.build_itree_()
@@ -715,7 +715,7 @@ class LearningProcess:
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1 copy/cam1.fproj')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p)

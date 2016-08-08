@@ -533,10 +533,12 @@ class ResultsWidget(QtGui.QWidget):
             r = rch.region_in_t(frame)
             c = r.centroid().copy()
 
-
-            for id_ in ch.animal_id_:
-                animal_ids2centroids.setdefault(id_, [])
-                animal_ids2centroids[id_].append((c, len(ch.animal_id_) == 1, ch))
+            try:
+                for id_ in ch.animal_id_:
+                    animal_ids2centroids.setdefault(id_, [])
+                    animal_ids2centroids[id_].append((c, len(ch.animal_id_) == 1, ch))
+            except:
+                pass
 
             if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
                 alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
