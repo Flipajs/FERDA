@@ -1,8 +1,9 @@
-from scipy.spatial import ConvexHull
-from core.project.project import Project
+from matplotlib import patches
 from matplotlib import pyplot as plt
+from scipy.spatial import ConvexHull
 
-from scripts.frame_search.line_segment_intersect import do_intersect, on_segment
+from core.project.project import Project
+from scripts.frame_search.line_segment_intersect import do_intersect
 
 
 def random_hex_color():
@@ -52,26 +53,37 @@ class FrameSearch:
                     ret.append(ch)
         return ret
 
-    def find_range(self, xA, yA, xB, yB):
+    def find_range(self, xA, yA, xB, yB, convex_hull=True):
         """
         Finds out whether there are any chunks present in the given range
-        :param xA: x coordinate of upper left corner
-        :param yA: y coordinate of upper left corner
-        :param xB: x coordinate of lower right corner
-        :param yB: y coordinate of lower right corner
+        :param xA: x coordinate of lower left corner
+        :param yA: y coordinate of lower left corner
+        :param xB: x coordinate of upper right corner
+        :param yB: y coordinate of upper right corner
+        :param convex_hull: uses convex hull approximation, faster but less accurate
         :return: list od ids of chunks present, -1 if there is none
         """
+        if xA > xB :
+            xA, xB = xB, xA
+        if yA > yB:
+            yA, yB = yB, yA
+        ret = []
+        for ch in self.chunks_id:
+            if convex_hull:
+                if self._range_in_area(xA, yA, xB, yB, self.hulls[ch]):
+                    ret.append(ch)
+                elif self._range_in_area(xA, yA, xB, yB, self.contours[ch]):
+                    ret.append(ch)
+        return ret
 
-    def find_closest_chunk(self, x, y):
+    def find_closest_chunk(self, x, y, convex_hull=True):
         """
         Returns the closest chunk to the given point. If the point lies already on chunk, its id is returned.
         :param x: x cooradinate
         :param y: y coordinate
+        :param convex_hull: uses convex hull approximation, faster but less accurate
         :return: id of the closest chunk, -1 if there are no chunks in the frame
         """
-        pass
-
-    def find_count_in_range(self):
         pass
 
     def visualize_frame(self):
@@ -82,8 +94,6 @@ class FrameSearch:
             plt.plot(*zip(*self.hulls[ch]), c=c, label=str(ch))
         plt.legend(loc='upper right')
         plt.axis('equal')
-        # mng = plt.get_current_fig_manager()
-        # mng.full_screen_toggle()
         plt.show()
 
     def _prepare_contours(self, chunks):
@@ -121,6 +131,12 @@ class FrameSearch:
             last = point
         return count % 2 == 1
 
+    def _range_in_area(self, xA, yA, xB, yB, points):
+        x_min, y_min = reduce(lambda a, b: (min(a[0], b[0]), min(a[1], b[1])), points)
+        x_max, y_max = reduce(lambda a, b: (max(a[0], b[0]), max(a[1], b[1])), points)
+
+        return xA < x_max and yA < y_max and xB > x_min and yB > y_min
+
 if __name__ == "__main__":
     project = Project()
     project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
@@ -130,5 +146,18 @@ if __name__ == "__main__":
     print search.find_point(600, 260)
     print search.find_point(600, 260, False)
 
-    # search.visualize_frame()
+    print search.find_range(350, 150, 400, 250)
+
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(111, aspect='equal')
+    ax1.add_patch(
+        patches.Rectangle(
+            (350, 150),  # (x,y)
+            50,  # width
+            100,  # height
+            fill=False
+        )
+    )
+
+    search.visualize_frame()
 
