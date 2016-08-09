@@ -13,7 +13,7 @@ from PyQt4 import QtGui
 import sys
 
 class LearningProcess:
-    def __init__(self, p):
+    def __init__(self, p, use_feature_cache=False, use_rf_cache=False):
         self.p = p
 
         self._eps1 = 0.01
@@ -25,10 +25,12 @@ class LearningProcess:
 
         self.collision_chunks = {}
 
-        self.chunk_available_ids = {}
+        self.idsPresentInTracklet = {}
+        self.idsNotPresentInTracklet = {}
+
         self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
 
-        if True:
+        if not use_feature_cache:
             self.chunks = self.get_candidate_chunks()
 
             self.chunks_itree = self.build_itree_()
@@ -47,7 +49,7 @@ class LearningProcess:
                 self.features = d['features']
                 self.collision_chunks = d['collision_chunks']
 
-        if True:
+        if not use_rf_cache:
             # basically set every chunk with full set of possible ids
             self.__precompute_availability()
 
@@ -64,7 +66,6 @@ class LearningProcess:
             self.y = None
             self.ids = self.get_init_data()
 
-
             np.random.seed(42)
             self.rfc = RandomForestClassifier()
             self.rfc.fit(self.X, self.y)
@@ -72,7 +73,8 @@ class LearningProcess:
             with open(p.working_directory+'/temp/rfc.pkl', 'wb') as f:
                 d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.ids,
                      'class_frequences': self.class_frequences,
-                     'chunk_available_ids': self.chunk_available_ids,
+                     'idsPresentInTracklet': self.idsPresentInTracklet,
+                     'idsNotPresentInTracklet': self.idsNotPresentInTracklet,
                      'undecided_chunks': self.undecided_chunks,
                      'old_x_size': self.old_x_size}
                 pickle.dump(d, f, -1)
@@ -84,8 +86,9 @@ class LearningProcess:
                 self.y = d['y']
                 self.ids = d['ids']
                 self.class_frequences = d['class_frequences']
-                self.chunk_available_ids = d['chunk_available_ids']
                 self.collision_chunks = d['collision_chunks']
+                self.idsPresentInTracklet = d['idsPresentInTracklet']
+                self.idsNotPresentInTracklet = d['idsNotPresentInTracklet']
                 self.undecided_chunks = d['undecided_chunks']
                 self.old_x_size = d['old_x_size']
 
@@ -296,7 +299,8 @@ class LearningProcess:
         ids = range(len(vertices))
 
         for ch in self.chunks:
-            self.chunk_available_ids[ch.id_] = list(ids)
+            self.idsPresentInTracklet[ch.id_] = set()
+            self.idsNotPresentInTracklet[ch.id_] = set()
 
     def __propagate_availability(self, ch, remove_id=[]):
         if ch.id_ == 124:
@@ -480,15 +484,6 @@ class LearningProcess:
 
             animal_id = np.argmax(proba)
 
-            ######
-            # proba_ = np.copy(proba)
-            # id1_ = np.argmax(proba_)
-            # m1 = proba_[id1_]
-            # proba_[id1_] = 0
-
-            # if np.max(proba_) > 1e-6 and m1 / np.max(proba_) < 5:
-            #     return
-
             use_for_learning = True if np.max(proba) > 0.9 else False
 
             self.update_availability(ch, animal_id, learn=use_for_learning)
@@ -500,7 +495,8 @@ class LearningProcess:
 
     def save_ids_(self):
         with open(self.p.working_directory + '/temp/chunk_available_ids.pkl', 'wb') as f_:
-            pickle.dump(self.chunk_available_ids, f_)
+            d_ = {'idsPresentInTracklet': self.idsPresentInTracklet, 'idsNotPresentInTracklet': self.idsNotPresentInTracklet}
+            pickle.dump(d_, f_, -1)
 
     def get_frequence_vector_(self):
         return float(np.sum(self.class_frequences)) / self.class_frequences
@@ -713,10 +709,65 @@ class LearningProcess:
 
         return range(len(chunks))
 
+
+    def __updateDefinitelyPresent(self, ids, tracklet):
+        """
+        updates set P (definitelyPresent) as follows P = P.union(ids)
+        then tries to add ids into N (definitelyNotPresent) in others tracklets if possible.
+
+        Args:
+            ids: list
+            tracklet: class Tracklet (Chunk)
+
+        Returns:
+
+        """
+
+        P = self.idsPresentInTracklet[tracklet.id]
+        self.idsPresentInTracklet[tracklet.id] = P.union(ids)
+
+        # TODO: remove from N if possible
+        # for all tracklets t' in frame interval of tracklet t - check the  
+
+        # TODO: test finalize P.union(N) = IDS
+
+        affected = self.__get_affected(tracklet)
+        # TODO: update affected
+
+
+        pass
+
+    def __updateDefinitelyNotPresent(self, ids, tracklet):
+
+        pass
+
+    def __assignIdentity(self, ids, tracklet):
+        """
+        Sets set definitelyPresent (P) = ids
+        and set definitelyNotPresent (N) = complement of ids in all IDS
+
+        then calls update on all affected
+        Args:
+            ids:
+            tracklet:
+
+        Returns:
+
+        """
+
+        affected = self.__get_affected(tracklet)
+        # TODO: update affected
+
+
+        pass
+
+    def __get_affected(self, tracklet):
+        pass
+
 if __name__ == '__main__':
     p = Project()
     p.load('/Users/flipajs/Documents/wd/GT/Cam1 copy/cam1.fproj')
     p.img_manager = ImgManager(p)
 
-    learn_proc = LearningProcess(p)
+    learn_proc = LearningProcess(p, use_feature_cache=True, use_rf_cache=False)
 
