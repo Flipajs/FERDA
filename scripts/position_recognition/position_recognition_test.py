@@ -15,6 +15,43 @@ NUMBER_OF_PC = 10
 
 average = 0
 
+def pca_basis(X):
+    # implementation trick
+    T = X.T.dot(X)
+    eigenValues, eigenVectors = np.linalg.eig(T)
+
+    # sorting
+    idx = eigenValues.argsort()[::-1]
+    eigenValues = eigenValues[idx]
+    eigenVectors = eigenVectors[:,idx]
+
+    # normalization
+    Y = X.dot(eigenVectors)
+    for i in range(Y.shape[1]):
+        Y[:, i] = Y[:, i] / norm(Y[:, i])
+
+    eigenValues = eigenValues/np.sum(eigenValues)
+
+    return Y, eigenValues
+
+
+def reconstruct(X, Y, X_mean):
+    m, num_samples = X.shape
+
+    # Apply the liner combination and add the mean image
+    Z = np.zeros((Y.shape[0], X.shape[1]))
+    for i in range(num_samples):
+        temp = (Y[:, m - 1] * X[m - 1, i] + X_mean).real
+        Z[:, i] = temp.reshape((Z.shape[0], ))
+
+    return Z
+
+
+def compact_representation(X, Y, m):
+    W = Y[:, :m].T.dot(X)
+    return W
+
+
 def get_pca(chunks, number_of_data, chm, gm):
     matrix = []
     for ch in chunks:
@@ -22,26 +59,21 @@ def get_pca(chunks, number_of_data, chm, gm):
             matrix.append(vector)
 
     matrix = np.matrix(matrix)
-    mean = np.mean(matrix, axis=0)
+    X = matrix.T
+    X_mean = np.mean(X, axis=1)
 
-    matrix = matrix-mean
-    matrix = transpose(matrix) # PCA uses 'vector-column' matrix
+    # center the data
+    X = X-X_mean
 
-    # from sklearn.decomposition import PCA as sklearnPCA
-    # print matrix
-    # sklearn_pca = sklearnPCA(n_components=2)
-    # sklearn_transf = sklearn_pca.fit_transform(matrix.T)
-    # print sklearn_transf
+    eigenAnts, eigenValues = pca_basis(X)
 
-    eigenfaces = get_eigenfaces(matrix)
-    coefficient_matrix = eigenfaces.T.dot(matrix)
-    # return eigenfaces, coefficient_matrix
-    # return transpose(eigenfaces).dot(coefficient_matrix)
-    pca = eigenfaces.dot(coefficient_matrix)
-    # pca = map(lambda a: [i + avg for i, avg in zip(a, mean)], pca)
-    pca = normalize(transpose(pca))
-    matrix = normalize(matrix)
-    return pca
+    m = 10
+    X_c = compact_representation(X, eigenAnts, m)
+    Z = reconstruct(X_c, eigenAnts[:, :m], X_mean)
+
+    print matrix.T - Z
+
+    return eigenAnts
 
 
 def get_eigenfaces(m):
@@ -105,9 +137,10 @@ def vector_norm(u):
     return math.sqrt(sum(i ** 2 for i in u))
 
 if __name__ == '__main__':
-    from scripts import fix_project
+    # from scripts import fix_project
     project = Project()
-    project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
+    # project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
+    project.load("/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj")
     chunks = project.gm.chunk_list()
     pca = get_pca(chunks[:1], NUMBER_OF_DATA, project.chm, project.gm)
 
