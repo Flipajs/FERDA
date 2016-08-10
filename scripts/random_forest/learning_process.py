@@ -30,6 +30,12 @@ class LearningProcess:
 
         self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
 
+        self.all_ids = self.__get_ids()
+
+        self.undecidedTracklets = set()
+        self.trackletCertainty = {}
+        self.trackletMeasurements = {}
+
         if not use_feature_cache:
             self.chunks = self.get_candidate_chunks()
 
@@ -64,14 +70,14 @@ class LearningProcess:
 
             self.X = None
             self.y = None
-            self.ids = self.get_init_data()
+            self.all_ids = self.get_init_data()
 
             np.random.seed(42)
             self.rfc = RandomForestClassifier()
             self.rfc.fit(self.X, self.y)
 
             with open(p.working_directory+'/temp/rfc.pkl', 'wb') as f:
-                d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.ids,
+                d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.all_ids,
                      'class_frequences': self.class_frequences,
                      'idsPresentInTracklet': self.idsPresentInTracklet,
                      'idsNotPresentInTracklet': self.idsNotPresentInTracklet,
@@ -84,7 +90,7 @@ class LearningProcess:
                 self.rfc = d['rfc']
                 self.X = d['X']
                 self.y = d['y']
-                self.ids = d['ids']
+                self.all_ids = d['ids']
                 self.class_frequences = d['class_frequences']
                 self.collision_chunks = d['collision_chunks']
                 self.idsPresentInTracklet = d['idsPresentInTracklet']
@@ -293,11 +299,23 @@ class LearningProcess:
 
         return True
 
-    def __precompute_availability(self):
+    def __get_ids(self):
+        """
+        TODO: improve
+
+        returns set of ids based on number of vertices in first frame. It is not good solution.
+        Problems occurs when
+         1) there is a noise chunk in frame 0
+         2) there is an ant missing in frame 0
+
+        Returns:
+
+        """
+
         vertices = map(self.p.gm.g.vertex, self.p.gm.get_vertices_in_t(0))
+        return set(range(len(vertices)))
 
-        ids = range(len(vertices))
-
+    def __precompute_availability(self):
         for ch in self.chunks:
             self.idsPresentInTracklet[ch.id_] = set()
             self.idsNotPresentInTracklet[ch.id_] = set()
@@ -709,7 +727,6 @@ class LearningProcess:
 
         return range(len(chunks))
 
-
     def __updateDefinitelyPresent(self, ids, tracklet):
         """
         updates set P (definitelyPresent) as follows P = P.union(ids)
@@ -724,22 +741,91 @@ class LearningProcess:
         """
 
         P = self.idsPresentInTracklet[tracklet.id]
-        self.idsPresentInTracklet[tracklet.id] = P.union(ids)
+        N = self.idsNotPresentInTracklet[tracklet.id]
 
-        # TODO: remove from N if possible
-        # for all tracklets t' in frame interval of tracklet t - check the  
+        P = P.union(ids)
 
-        # TODO: test finalize P.union(N) = IDS
+        # consistency check
+        if not self.__consistencyCheckPN(P, N):
+            return False
 
-        affected = self.__get_affected(tracklet)
-        # TODO: update affected
+        # if the tracklet labellign is fully decided
+        if P.union(N) == self.all_ids:
+            # TODO: finalize
+            pass
 
+        # update affected
+        affected_tracklets = self.__getAffectedTracklets(tracklet)
+        for t in affected_tracklets:
+            self.__ifPossibleAddDefinitelyNotPresent(t, tracklet, ids)
 
+        self.idsPresentInTracklet[tracklet.id] = P
+
+        # everything is OK
+        return True
+
+    def __updateCertainty(self, tracklet):
         pass
+
+    def __consistencyCheckPN(self, P, N):
+        if len(P.intersection(N)) > 0:
+            print "WARNING: inconsistency in learning_process."
+            print "Intersection of DefinitelyPresent and DefinitelyNotPresent is NOT empty!!!"
+
+            return False
+
+        return True
 
     def __updateDefinitelyNotPresent(self, ids, tracklet):
+        P = self.idsPresentInTracklet[tracklet.id]
+        N = self.idsNotPresentInTracklet[tracklet.id]
 
-        pass
+        N = N.union(ids)
+
+        # consistency check
+        if not self.__consistencyCheckPN(P, N):
+            return False
+
+        # update affected
+
+        self.idsNotPresentInTracklet[tracklet.id] = N
+
+        return True
+
+    def __ifPossibleAddDefinitelyNotPresent(self, tracklet, present_tracklet, ids):
+        """
+        check whether there is a risk of tracklet being a second part of present_tracklet (undersegmentation). If not
+        add it to definitelyNotPresent
+
+        test is simple... If there is a time when the distance between tracklets is bigger then ant length, it is not
+        undersegmentation. It is possible to have first check - if those tracklets don't overlap (frame range) then it
+        is not a undersegmantation.
+        Args:
+            tracklet:
+            present_tracklet:
+            ids:
+
+        Returns:
+
+        """
+
+        if tracklet.start_frame(self.p.gm) != present_tracklet.start_frame(self.p.gm) \
+                and tracklet.end_frame(self.p.gm) != present_tracklet.end_frame(self.p.gm):
+
+            rch1 = RegionChunk(tracklet, self.p.gm, self.p.rm)
+            rch2 = RegionChunk(present_tracklet, self.p.gm, self.p.rm)
+
+            oversegmented = True
+            for r1, r2 in zip(rch1.regions_gen(), rch2.regions_gen()):
+                if np.linalg.norm(r1.centroid() - r2.centroid()) > self.p.stats.major_axis_median:
+                    oversegmented = False
+                    break
+
+            if not oversegmented:
+                self.__updateDefinitelyNotPresent(ids, tracklet)
+                return True
+
+        return False
 
     def __assignIdentity(self, ids, tracklet):
         """
@@ -755,13 +841,20 @@ class LearningProcess:
 
         """
 
-        affected = self.__get_affected(tracklet)
-        # TODO: update affected
+        oldP = self.idsPresentInTracklet[tracklet.id]
+        # oldN = self.idsNotPresentInTracklet[tracklet.id]
 
+        # TODO: finalize
 
-        pass
+        self.idsPresentInTracklet[tracklet.id] = ids
+        self.idsNotPresentInTracklet[tracklet.id] = self.all_ids.difference(ids)
 
-    def __get_affected(self, tracklet):
+        affectedTracklets = self.__getAffectedTracklets(tracklet)
+        for t in affectedTracklets:
+            newPresentIDs = self.idsPresentInTracklet - oldP
+            self.__ifPossibleAddDefinitelyNotPresent(t, tracklet, newPresentIDs)
+
+    def __getAffectedTracklets(self, tracklet):
         pass
 
 if __name__ == '__main__':
