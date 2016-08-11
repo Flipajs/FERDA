@@ -1,12 +1,10 @@
-import sys
 from PyQt4 import QtGui, QtCore
-
 from gui.gui_utils import cvimg2qtpixmap
+import transformation_classifier
 
-
-class GrandTruthWidget(QtGui.QWidget):
+class GroundTruthWidget(QtGui.QWidget):
     def __init__(self, project):
-        super(GrandTruthWidget, self).__init__()
+        super(GroundTruthWidget, self).__init__()
         self.project = project
 
         self.setLayout(QtGui.QVBoxLayout())
@@ -17,7 +15,6 @@ class GrandTruthWidget(QtGui.QWidget):
         self.right = QtGui.QVBoxLayout()
         self.right_img = QtGui.QLabel()
 
-
         self.no = QtGui.QPushButton('no (N)', self)
         self.yes = QtGui.QPushButton('yes (M)', self)
         self.no_action = QtGui.QAction('no', self)
@@ -26,7 +23,7 @@ class GrandTruthWidget(QtGui.QWidget):
         self._prepare_layouts()
         self._prepare_buttons()
 
-        self.setWindowTitle('Grand Truth Widget')
+        self.setWindowTitle('Ground Truth Widget')
 
         self.results = {}
         self.regions = None
@@ -36,11 +33,12 @@ class GrandTruthWidget(QtGui.QWidget):
         self._next()
 
     def _next(self):
-        if self.regions:
+        print len(self.regions)
+        if self.regions and len(self.regions) > 0:
             self.current = self.regions.pop()
             self._resolve(self.current[0], self.current[1])
         else:
-            QtCore.QCoreApplication.quit()
+            self.buttons_l.addWidget(QtGui.QLabel("Every region from input already marked"))
 
     def get_results(self):
         return self.results
@@ -82,9 +80,9 @@ class GrandTruthWidget(QtGui.QWidget):
         self.no.setFixedWidth(100)
 
     def _no_action(self):
-        self.results[self.current] = False
+        self.results[transformation_classifier.hash_region_tuple(self.current)] = False
         self._next()
 
     def _yes_action(self):
-        self.results[self.current] = True
+        self.results[transformation_classifier.hash_region_tuple(self.current)] = True
         self._next()
