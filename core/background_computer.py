@@ -266,7 +266,7 @@ class BackgroundComputer:
         from utils.misc import is_flipajs_pc
         if is_flipajs_pc():
             # TODO: remove this line
-            # part_num = 5
+            # part_num = 10
             pass
 
         self.project.color_manager = None
@@ -274,6 +274,9 @@ class BackgroundComputer:
         print "merging..."
         t1 = time.time()
         for i in range(part_num):
+            if i == 6:
+                print "test"
+
             rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
                                    db_name='part' + str(i) + '_rm.sqlite3')
 

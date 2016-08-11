@@ -73,7 +73,7 @@ def build_EMD_lp(regions_P, regions_Q):
 
     return prob
 
-def check_nodes_stability(regions_P, regions_Q, flows, threshold, area_med):
+def check_nodes_stability(regions_P, regions_Q, flows, threshold, area_med, area_med_w=0.5):
     # check outcomes
     out_max = np.max(flows, axis=1)
     in_max = np.max(flows, axis=0)
@@ -84,7 +84,7 @@ def check_nodes_stability(regions_P, regions_Q, flows, threshold, area_med):
 
         a1 = min(m, area)
         a2 = float(max(m, area))
-        if a1 / a2 < threshold or a2-a1 > area_med:
+        if a1 / a2 < threshold or a2-a1 > area_med_w*area_med:
             stability_p[i] = False
 
     stability_q = np.ones((len(regions_Q), 1), dtype=np.bool)
@@ -93,7 +93,7 @@ def check_nodes_stability(regions_P, regions_Q, flows, threshold, area_med):
 
         a1 = min(m, area)
         a2 = float(max(m, area))
-        if a1 / a2 < threshold or a2-a1 > area_med:
+        if a1 / a2 < threshold or a2-a1 > area_med_w*area_med:
             stability_q[i] = False
 
     unstable_num = len(regions_P) + len(regions_Q) - sum(stability_q) - sum(stability_p)

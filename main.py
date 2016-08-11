@@ -19,8 +19,8 @@ S_.general.print_log = False
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 if is_flipajs_pc():
     sn_id = 2
-    cam_ = 2
-    name = 'Cam'+str(cam_)
+    cam_ = 1
+    name = 'Cam'+str(cam_)+' copy'
     wd = '/Users/flipajs/Documents/wd/gt/'
     # wd = '/Users/flipajs/Documents/wd/'
     snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
@@ -29,13 +29,13 @@ if is_flipajs_pc():
     project.load(wd+name+'/cam'+str(cam_)+'.fproj')
 
     try:
-        with open(project.working_directory+'/temp/animal_id_mapping.pkl', 'rb') as f_:
-            animal_id_mapping = pickle.load(f_)
+        with open(project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
+            chunk_available_ids = pickle.load(f_)
 
         for ch_id in project.gm.chunk_list():
             animal_id = -1
-            if ch_id in animal_id_mapping:
-                animal_id = animal_id_mapping[ch_id]
+            if ch_id in chunk_available_ids:
+                animal_id = chunk_available_ids[ch_id]
 
             project.chm[ch_id].animal_id_ = animal_id
     except IOError:
