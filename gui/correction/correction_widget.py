@@ -67,10 +67,13 @@ class ResultsWidget(QtGui.QWidget):
             self.left_vbox.addWidget(self.scroll_)
             self.splitter.addWidget(self.left_w)
 
+        self.info_l = QtGui.QLabel('info')
+        self.left_vbox.addWidget(self.info_l)
 
         self.evolve_gt_b = QtGui.QPushButton('evolve GT')
         self.evolve_gt_b.clicked.connect(self._evolve_gt)
         self.left_vbox.addWidget(self.evolve_gt_b)
+
 
         self.right_w = QtGui.QWidget()
         self.right_w.setLayout(self.right_vbox)
@@ -105,16 +108,16 @@ class ResultsWidget(QtGui.QWidget):
         self.speedSlider.setMinimum(0)
         self.speedSlider.setMaximum(99)
 
-        self.backward = QtGui.QPushButton('back')
+        self.backward = QtGui.QPushButton('<')
         self.backward.setShortcut(S_.controls.video_prev)
         self.playPause = QtGui.QPushButton('play')
         self.playPause.setShortcut(S_.controls.video_play_pause)
-        self.forward = QtGui.QPushButton('forward')
+        self.forward = QtGui.QPushButton('>')
         self.forward.setShortcut(S_.controls.video_next)
         self.frameEdit = SelectAllLineEdit()
         self.frameEdit.returnPressed.connect(self.frame_jump)
         self.frameEdit.setFixedHeight(30)
-        self.showFrame = QtGui.QPushButton('show')
+        # self.showFrame = QtGui.QPushButton('show')
         self.fpsLabel = QtGui.QLabel()
         self.fpsLabel.setAlignment(QtCore.Qt.AlignRight)
         self.videoSlider = VideoSlider()
@@ -123,10 +126,12 @@ class ResultsWidget(QtGui.QWidget):
         self.videoSlider.setMaximumHeight(15)
         self.videoSlider.setMaximum(self.video.total_frame_count())
 
+
+
         self.video_control_layout.addWidget(self.videoSlider)
         self.video_control_layout.addWidget(self.video_control_buttons_widget)
 
-        self.frame_jump_button = QtGui.QPushButton('jump')
+        self.frame_jump_button = QtGui.QPushButton('go')
         self.frame_jump_button.clicked.connect(self.frame_jump)
 
         self.frame_jump_button.setFocusPolicy(QtCore.Qt.StrongFocus)
@@ -140,15 +145,15 @@ class ResultsWidget(QtGui.QWidget):
         self.video_control_buttons_layout.addWidget(self.backward)
         self.video_control_buttons_layout.addWidget(self.playPause)
         self.video_control_buttons_layout.addWidget(self.forward)
-        self.video_control_buttons_layout.addWidget(self.showFrame)
+        # self.video_control_buttons_layout.addWidget(self.showFrame)
         self.video_control_buttons_layout.addWidget(self.frameEdit)
         self.video_control_buttons_layout.addWidget(self.frame_jump_button)
 
         self.init_speed_slider()
 
-        self.reset_colors_b = QtGui.QPushButton('reset colors')
-        self.reset_colors_b.clicked.connect(self.reset_colors)
-        self.video_control_buttons_layout.addWidget(self.reset_colors_b)
+        # self.reset_colors_b = QtGui.QPushButton('reset colors')
+        # self.reset_colors_b.clicked.connect(self.reset_colors)
+        # self.video_control_buttons_layout.addWidget(self.reset_colors_b)
 
         self.reset_colors_action = QtGui.QAction('reset_colors', self)
         self.reset_colors_action.triggered.connect(self.reset_colors)
@@ -169,6 +174,11 @@ class ResultsWidget(QtGui.QWidget):
         self.show_contour_ch.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_contour_ch)
 
+        self.contour_without_colors = QtGui.QCheckBox('w\'out colors')
+        self.contour_without_colors.setChecked(False)
+        self.contour_without_colors.stateChanged.connect(lambda x: self.update_positions())
+        self.visu_controls_layout.addWidget(self.contour_without_colors)
+
         self.show_gt_markers = QtGui.QCheckBox('gt markers')
         self.show_gt_markers.setChecked(True)
         self.show_gt_markers.stateChanged.connect(lambda x: self.update_positions())
@@ -178,6 +188,16 @@ class ResultsWidget(QtGui.QWidget):
         self.show_staurated_ch.setChecked(False)
         self.show_staurated_ch.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_staurated_ch)
+
+        self.big_video_forward_a = QtGui.QAction('big next', self)
+        self.big_video_forward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() + 50))
+        self.big_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
+        self.addAction(self.big_video_forward_a)
+
+        self.big_video_backward_a = QtGui.QAction('big next', self)
+        self.big_video_backward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() - 50))
+        self.big_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
+        self.addAction(self.big_video_backward_a)
 
         self.connect_GUI()
 
@@ -235,19 +255,19 @@ class ResultsWidget(QtGui.QWidget):
         # TODO: clearmetrics bug workaround...
         max_frame = 0
         for frame in self._gt:
-            if frame >= 301:
-                continue
+            # if frame > 4000:
+            #     continue
 
             my_data[frame] = np.array(([None] * len(self.project.animals)))
             for ch in self.project.chm.chunks_in_frame(frame):
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
 
-                if ch.animal_id_ > -1:
-                    my_data[frame][ch.animal_id_] = rch.centroid_in_t(frame)
+                if len(ch.animal_id_) == 1:
+                    my_data[frame][ch.animal_id_[0]] = rch.centroid_in_t(frame)
 
             max_frame = max(max_frame, frame)
 
-        for f in xrange(max_frame):
+        for f in xrange(max_frame+100):
             my_data.setdefault(f, np.array([None] * len(self.project.animals)))
 
         from utils.clearmetrics.clearmetrics import ClearMetrics
@@ -319,9 +339,12 @@ class ResultsWidget(QtGui.QWidget):
         if use_ch_color:
             c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
         else:
-            if animal_id > -1:
-                c_ = self.colors_[animal_id]
+            if len(animal_id) == 1:
+                c_ = self.colors_[animal_id[0]]
                 c = QtGui.qRgba(c_.red(), c_.green(), c_.blue(), alpha)
+
+        if self.contour_without_colors.isChecked():
+            c = QtGui.qRgba(200, 200, 200, 200)
 
         for i in range(pts_.shape[0]):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
@@ -393,30 +416,69 @@ class ResultsWidget(QtGui.QWidget):
             self.highlight_marker2nd.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
             self.highlight_marker2nd_frame = data['n2'].frame_
 
+    def __find_nearest_free_marker_pos(self, y, x):
+        import itertools
+        x_ = round(x / float(self.marker_helper_step))
+        y_ = round(y / float(self.marker_helper_step))
+
+        if self.marker_pos_helper[y_, x_]:
+            for a, b in itertools.product([-1, 0, 1], [-1, 0, 1]):
+                if not self.marker_pos_helper[y_+a, x_+b]:
+                    y_ += a
+                    x_ += b
+
+                    y = y_ * self.marker_helper_step
+                    x = x_ * self.marker_helper_step
+                    break
+
+        self.marker_pos_helper[y_, x_] = True
+        return y, x
+
+    def __add_marker(self, x, y, c_, id_, z_value, type_):
+        radius = 13
+
+        if type_ == 'GT':
+            radius = 20
+        elif type_ == 'multiple':
+            radius = 9
+
+
+        if type_ != 'GT':
+            y, x = self.__find_nearest_free_marker_pos(y, x)
+
+        gt_m = markers.CenterMarker(0, 0, radius, c_, id=id_, changeHandler=self._gt_marker_clicked)
+
+        gt_m.setPos(x - radius/2, y-radius/2)
+        gt_m.setZValue(z_value)
+
+        self.gitems['gt_markers'].append(gt_m)
+        self.scene.addItem(gt_m)
+
     def _show_gt_markers(self, animal_ids2centroids):
         for a in self.project.animals:
             c_ = QtGui.QColor(a.color_[2], a.color_[1], a.color_[0])
 
             frame = self.video.frame_number()
 
-            x = 10*a.id
-            y = -1
-            if a.id in animal_ids2centroids:
-                y = animal_ids2centroids[a.id][0]
-                x = animal_ids2centroids[a.id][1]
-
-            radius = 10
             if frame in self._gt:
-                radius = 20
                 y = self._gt[frame][a.id][0]
                 x = self._gt[frame][a.id][1]
+                self.__add_marker(x, y, c_, a.id, 0.7, type_='GT')
 
-            gt_m = markers.CenterMarker(0, 0, radius, c_, id=a.id, changeHandler=self._gt_marker_clicked)
+            if a.id in animal_ids2centroids:
+                for i, data in enumerate(animal_ids2centroids[a.id]):
+                    centroid = data[0]
+                    decided = data[1]
+                    ch = data[2]
+                    y = centroid[0]
+                    x = centroid[1]
+                    type_ = 'normal' if decided else 'multiple'
+                    self.__add_marker(x, y, c_, ch.id_, 0.75, type_=type_)
+            else:
+                x = 10*a.id
+                y = -1
 
-            gt_m.setPos(x - radius/2, y-radius/2)
-
-            self.gitems['gt_markers'].append(gt_m)
-            self.scene.addItem(gt_m)
+                self.__add_marker(x, y, c_, a.id, 0.75, type_='undef')
 
     def _clear_items(self):
         for it in self.gitems['gt_markers']:
@@ -452,6 +514,13 @@ class ResultsWidget(QtGui.QWidget):
             self.out_of_frames()
 
     def update_positions(self, frame=-1):
+        self.marker_helper_step = 7
+        from math import ceil
+        self.marker_pos_helper = np.zeros((ceil(self.video.img().shape[0] / self.marker_helper_step),
+                                           ceil(self.video.img().shape[1] / self.marker_helper_step)),
+                                          dtype=np.bool)
+
+
         if frame == -1:
             frame = self.video.frame_number()
 
@@ -464,20 +533,41 @@ class ResultsWidget(QtGui.QWidget):
             r = rch.region_in_t(frame)
             c = r.centroid().copy()
 
-
-            if ch.animal_id_ > -1:
-                animal_ids2centroids[ch.animal_id_] = c
+            try:
+                for id_ in ch.animal_id_:
+                    animal_ids2centroids.setdefault(id_, [])
+                    animal_ids2centroids[id_].append((c, len(ch.animal_id_) == 1, ch))
+            except:
+                pass
 
             if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
                 alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
-                self.draw_region(r, ch.animal_id_, use_ch_color=ch.color, alpha=alpha)
+
+                c = ch.color
+                self.draw_region(r, ch.animal_id_, use_ch_color=c, alpha=alpha)
 
         if self.show_gt_markers.isChecked():
             self._show_gt_markers(animal_ids2centroids)
 
 
-    def _gt_marker_clicked(self, id):
-        print id
+    def _gt_marker_clicked(self, id_):
+        s = 'id: '+str(id_)
+
+        ch = self.project.chm[id_]
+        f = self.video.frame_number()
+        r = RegionChunk(ch, self.project.gm, self.project.rm).region_in_t(f)
+        s += "\n" + str(r)
+
+        if ch.start_frame(self.project.gm) == f:
+            s += "\n in_degree: " + str(ch.start_vertex(self.project.gm).in_degree())
+
+        if ch.end_frame(self.project.gm) == f:
+            s += "\n out degree: " + str(ch.end_vertex(self.project.gm).out_degree())
+
+
+
+        self.info_l.setText(s)
+        print id_
 
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""
@@ -529,10 +619,10 @@ class ResultsWidget(QtGui.QWidget):
             self.chunks = chs
         else:
             import cPickle as pickle
-            animal_id_mapping = None
+            chunk_available_ids = None
             try:
-                with open(self.project.working_directory+'/temp/animal_id_mapping.pkl', 'rb') as f_:
-                    animal_id_mapping = pickle.load(f_)
+                with open(self.project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
+                    chunk_available_ids = pickle.load(f_)
             except:
                 pass
 
@@ -543,9 +633,9 @@ class ResultsWidget(QtGui.QWidget):
                     print "22"
 
                 col_ = ch.color
-                if animal_id_mapping is not None:
-                    if ch.id_ in animal_id_mapping:
-                        animal_id = animal_id_mapping[ch.id_]
+                if chunk_available_ids is not None:
+                    if ch.id_ in chunk_available_ids:
+                        animal_id = chunk_available_ids[ch.id_]
                         col_ = self.colors_[animal_id]
                     else:
                         col_ = QtGui.QColor().fromRgbF(0.3, 0.3, 0.3)

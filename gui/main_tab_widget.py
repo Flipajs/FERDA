@@ -46,6 +46,11 @@ class MainTabWidget(QtGui.QWidget):
 
         self.show_results_only_around_frame = -1
 
+        self.reload_id_data = QtGui.QAction('reload', self)
+        self.reload_id_data.triggered.connect(self.reload_ids)
+        self.reload_id_data.setShortcut(QtGui.QKeySequence(QtCore.Qt.ShiftModifier + QtCore.Qt.Key_R))
+        self.addAction(self.reload_id_data)
+
         print "LOADING GRAPH..."
         if project.gm is None or project.gm.g.num_vertices() == 0:
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished, postpone_parallelisation)
@@ -53,6 +58,29 @@ class MainTabWidget(QtGui.QWidget):
         else:
             self.background_computer_finished(project.solver)
             self.tabs.setCurrentIndex(1)
+
+    def reload_ids(self):
+        print "RELOADING"
+        import cPickle as pickle
+        try:
+            with open(self.project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
+                chunk_available_ids = pickle.load(f_)
+
+            for ch_id in self.project.gm.chunk_list():
+                animal_id = -1
+                if ch_id in chunk_available_ids:
+                    animal_id = chunk_available_ids[ch_id]
+
+                self.project.chm[ch_id].animal_id_ = animal_id
+
+        except IOError:
+            pass
+
+        try:
+            self.results_tab.update_positions()
+        except AttributeError:
+            pass
+
 
     def show_in_visualizer(self, data):
         self.show_results_only_around_frame = data['n1'].frame_

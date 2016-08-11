@@ -76,6 +76,7 @@ class VideoManager():
         self.position_ += 1
         return self.buffer_[self.view_position_]
 
+
     def previous_frame(self):
         if self.position_ > 0:
             self.position_ -= 1

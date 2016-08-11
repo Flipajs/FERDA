@@ -44,6 +44,7 @@ class MainWindow(QtGui.QMainWindow):
         self.update()
 
         self.show()
+        self.statusBar().hide()
 
         # TOOD: remove this hack...
         self.move(-500, -500)

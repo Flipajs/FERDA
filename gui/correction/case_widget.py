@@ -257,7 +257,11 @@ class CaseWidget(QtGui.QWidget):
         best_out_score, best_out_n = self.project.gm.get_2_best_out_vertices(vertex)
         best_out = best_out_score[0]
 
-        new_s, do, dt = self.project.solver.assignment_score_pos_orient(r, self.project.gm.region(best_out_n[0]))
+        new_s = -1
+        do = -1
+        dt = -1
+        if best_out_n[0]:
+            new_s, do, dt = self.project.solver.assignment_score_pos_orient(r, self.project.gm.region(best_out_n[0]))
 
         best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
         best_in = best_in_score[0]

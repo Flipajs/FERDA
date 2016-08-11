@@ -87,7 +87,7 @@ class Solver:
         return prob
 
     def adaptive_threshold(self, vertex):
-        if self.project.gm.chunk_start(vertex):
+        if self.project.gm.ch_start_longer(vertex):
             return []
 
         best_out_scores, best_out_vertices = self.project.gm.get_2_best_out_vertices(vertex)

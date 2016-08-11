@@ -242,6 +242,9 @@ class ClearMetrics(object):
                                         -1 for FP
         @rtype: list, list, list
         """
+        if frame == 4000:
+            print "4000"
+
         sq_distance = self._get_sq_distance_matrix(frame)
         sq_distance_undefined = math.ceil(np.nanmax(sq_distance)) + 1
         sq_distance[np.isnan(sq_distance)] = sq_distance_undefined
@@ -275,9 +278,16 @@ class ClearMetrics(object):
                 sq_distance[prev_gt, :] = sq_distance_undefined
                 sq_distance[:, prev_m] = sq_distance_undefined
 
+
         # fill in new TP
         m = munkres.Munkres()
-        matches = m.compute(sq_distance.tolist())
+
+        # if everything is none...
+        if np.sum(np.isnan(sq_distance)) == (sq_distance.shape[0] * sq_distance.shape[1]):
+            matches = []
+        else:
+            matches = m.compute(sq_distance.tolist())
+
         for m in matches:
             if sq_distance[m[0], m[1]] == sq_distance_undefined:
                 continue
