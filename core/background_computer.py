@@ -326,8 +326,9 @@ class BackgroundComputer:
 
         print "simplifying "
         t1 = time.time()
-        self.solver.simplify(vs_todo, rules=[self.solver.adaptive_threshold])
-        print "simplifying t: ", time.time() - t1
+        # TODO removed to obtain complete graph
+        # self.solver.simplify(vs_todo, rules=[self.solver.adaptive_threshold])
+        # print "simplifying t: ", time.time() - t1
 
         S_.general.log_graph_edits = True
 

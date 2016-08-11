@@ -39,6 +39,10 @@ class GroundTruthWidget(QtGui.QWidget):
             self._resolve(self.current[0], self.current[1])
         else:
             self.buttons_l.addWidget(QtGui.QLabel("Every region from input already marked"))
+            self.no.setDisabled(True)
+            self.yes.setDisabled(True)
+            self.left_img.hide()
+            self.right_img.hide()
 
     def get_results(self):
         return self.results
@@ -48,11 +52,11 @@ class GroundTruthWidget(QtGui.QWidget):
         self._add_region_right(r2)
 
     def _add_region_left(self, r):
-        img = self.project.img_manager.get_crop(r.frame(), r, width=300, height=300)
+        img = self.project.img_manager.get_crop(r.frame(), r, width=300, height=300, margin=100)
         self.left_img.setPixmap(cvimg2qtpixmap(img))
 
     def _add_region_right(self, r):
-        img = self.project.img_manager.get_crop(r.frame(), r, width=300, height=300)
+        img = self.project.img_manager.get_crop(r.frame(), r, width=300, height=300, margin=100)
         self.right_img.setPixmap(cvimg2qtpixmap(img))
 
     def _prepare_layouts(self):
