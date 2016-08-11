@@ -1,5 +1,5 @@
 import logging
 
-def method(param1, param2):
+def method():
     logger = logging.getLogger(__name__)
     logger.info("Running method in module 2")
