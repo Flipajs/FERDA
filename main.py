@@ -19,35 +19,6 @@ S_.general.print_log = False
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 if is_flipajs_pc():
     sn_id = 2
-<<<<<<< HEAD
-    name = 'big_lenses'
-    wd = '/Users/flipajs/Documents/wd/GT/'
-=======
-    cam_ = 1
-    name = 'Cam'+str(cam_)+' copy'
-    wd = '/Users/flipajs/Documents/wd/gt/'
-    # wd = '/Users/flipajs/Documents/wd/'
-    snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
-                'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
-
-    project.load(wd+name+'/cam'+str(cam_)+'.fproj')
-
-    try:
-        with open(project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
-            chunk_available_ids = pickle.load(f_)
-
-        for ch_id in project.gm.chunk_list():
-            animal_id = -1
-            if ch_id in chunk_available_ids:
-                animal_id = chunk_available_ids[ch_id]
-
-            project.chm[ch_id].animal_id_ = animal_id
-    except IOError:
-        pass
-
-    # name = 'c2'
-    # wd = '/Users/flipajs/Documents/wd/'
->>>>>>> random_forest
     # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
     #             'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 

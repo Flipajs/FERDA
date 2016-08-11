@@ -2,10 +2,12 @@ from PyQt4 import QtGui, QtCore
 from gui.gui_utils import cvimg2qtpixmap
 import transformation_classifier
 
+
 class GroundTruthWidget(QtGui.QWidget):
-    def __init__(self, project):
+    def __init__(self, project, classifier):
         super(GroundTruthWidget, self).__init__()
         self.project = project
+        self.classifier = classifier
 
         self.setLayout(QtGui.QVBoxLayout())
         self.buttons_l = QtGui.QHBoxLayout()
@@ -33,7 +35,6 @@ class GroundTruthWidget(QtGui.QWidget):
         self._next()
 
     def _next(self):
-        print len(self.regions)
         if self.regions and len(self.regions) > 0:
             self.current = self.regions.pop()
             self._resolve(self.current[0], self.current[1])
@@ -43,6 +44,7 @@ class GroundTruthWidget(QtGui.QWidget):
             self.yes.setDisabled(True)
             self.left_img.hide()
             self.right_img.hide()
+            self.close()
 
     def get_results(self):
         return self.results
@@ -90,3 +92,7 @@ class GroundTruthWidget(QtGui.QWidget):
     def _yes_action(self):
         self.results[transformation_classifier.hash_region_tuple(self.current)] = True
         self._next()
+
+    def closeEvent(self, QCloseEvent):
+        super(GroundTruthWidget, self).closeEvent(QCloseEvent)
+        self.classifier.accept_results(self.results)
