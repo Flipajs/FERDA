@@ -17,8 +17,6 @@ class TransformationClassifier:
 
     def __init__(self, project):
         self.project = project
-        self.graph_supplier = GraphSupplier(project.gm)
-
         self.results = self.load_previous_results()
 
     def load_previous_results(self):
@@ -30,14 +28,9 @@ class TransformationClassifier:
 
     def improve_ground_truth(self, data):
         regions = filter(lambda x: hash_region_tuple(x) not in self.results, data)
-        print "a"
-        app = QtGui.QApplication(sys.argv)
         widget = ground_truth_widget.GroundTruthWidget(project, self)
         widget.set_data(regions)
         widget.show()
-        # app.aboutToQuit.connect(widget.close)
-        app.exec_()
-        app.quit()
 
     def accept_results(self, results):
         print results
@@ -67,14 +60,18 @@ class TransformationClassifier:
 def hash_region_tuple(region_tuple):
     return (PRIME + region_tuple[0].id()) * PRIME + region_tuple[1].id()
 
-
 if __name__ == "__main__":
     project = Project()
     project.load("/home/simon/FERDA/projects/CompleteGraph/CompleteGraph.fproj")
 
-    classifier = TransformationClassifier(project)
+    app = QtGui.QApplication(sys.argv)
 
+    classifier = TransformationClassifier(project)
+    graph_supplier = GraphSupplier(project.gm)
+    # classifier.improve_ground_truth(graph_supplier.get_nodes_tuples())
     data = [(project.rm[1], project.rm[2]), (project.rm[2], project.rm[3])]
     classifier.improve_ground_truth(data)
-    data = [(project.rm[2], project.rm[3]), (project.rm[3], project.rm[4])]
-    classifier.improve_ground_truth(data)
+
+    # app.aboutToQuit.connect(widget.close)
+    app.exec_()
+    # app.quit()
