@@ -15,7 +15,8 @@ class GraphSupplier:
         ret = []
         queue = [self.graph.vertex(x) for x in self.graph_manager.start_nodes()]
         visited = set(queue)
-        for vertex in queue:
+        while queue:
+            vertex = queue.pop(0)
             region = self.graph_manager.region(vertex)
             for neighbour in vertex.out_neighbours():
                 ret.append((region, self.graph_manager.region(neighbour)))

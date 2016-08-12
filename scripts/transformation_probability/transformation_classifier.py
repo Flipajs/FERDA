@@ -1,3 +1,5 @@
+import logging
+from PyQt4 import QtCore
 from PyQt4 import QtGui
 import cPickle as pickle
 import numpy as np
@@ -10,33 +12,35 @@ import ground_truth_widget
 from scripts.transformation_probability.graph_supplier import GraphSupplier
 
 PRIME = 2 ** 8 + 1
-FNAME = "region_probability_results.p"
+FNAME = 'region_probability_results.p'
 
 
 class TransformationClassifier:
-
     def __init__(self, project):
         self.project = project
 
-        fname = os.path.join(self.project.working_directory, FNAME)
-        if exists(fname):
-            self.results = pickle.load(open(fname, 'rb'))
+        self.fname = os.path.join(self.project.working_directory, FNAME)
+        logging.info("Loading previous results from %s" % self.fname)
+        if exists(self.fname):
+            self.results = pickle.load(open(self.fname, 'rb'))
         else:
             self.results = {}
+        logging.info("Loaded {0} results from database".format(len(self.results)))
 
     def improve_ground_truth(self, data):
         regions = filter(lambda x: hash_region_tuple(x) not in self.results, data)
-        app = QtGui.QApplication(sys.argv)
+        regions = sorted(regions, key=lambda x: abs(x[0].area_ - x[1].area_))
         widget = ground_truth_widget.GroundTruthWidget(project, self)
         widget.set_data(regions)
         widget.show()
-        # app.aboutToQuit.connect(widget.close)
+        # app.connect(app, QtCore.SIGNAL("aboutToQuit()"), widget.close)
         app.exec_()
-        app.quit()
 
     def accept_results(self, results):
         self.results.update(results)
-        pickle.dump(self.results, open(FNAME, 'wb'))
+        logging.info(
+            "Saving {0} results to database. It now contains {1} entries.".format(len(results), len(self.results)))
+        pickle.dump(self.results, open(self.fname, 'wb'))
 
     def descriptor(self, r1, r2):
         # centroid distance
@@ -65,7 +69,10 @@ def hash_region_tuple(region_tuple):
 if __name__ == "__main__":
     project = Project()
     project.load("/home/simon/FERDA/projects/CompleteGraph/CompleteGraph.fproj")
+    logging.basicConfig(level=logging.INFO)
 
+    app = QtGui.QApplication(sys.argv)
     classifier = TransformationClassifier(project)
     supplier = GraphSupplier(project.gm)
     classifier.improve_ground_truth(supplier.get_nodes_tuples())
+    app.quit()

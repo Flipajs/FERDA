@@ -19,6 +19,7 @@ class GroundTruthWidget(QtGui.QWidget):
 
         self.no = QtGui.QPushButton('no (N)', self)
         self.yes = QtGui.QPushButton('yes (M)', self)
+        self.quit = QtGui.QPushButton('save and quit', self)
         self.no_action = QtGui.QAction('no', self)
         self.yes_action = QtGui.QAction('yes', self)
 
@@ -44,7 +45,7 @@ class GroundTruthWidget(QtGui.QWidget):
             self.yes.setDisabled(True)
             self.left_img.hide()
             self.right_img.hide()
-            self.close()
+            # self.close()
 
     def get_results(self):
         return self.results
@@ -54,11 +55,11 @@ class GroundTruthWidget(QtGui.QWidget):
         self._add_region_right(r2)
 
     def _add_region_left(self, r):
-        img = self.project.img_manager.get_crop(r.frame(), r, width=300, height=300, margin=100)
+        img = self.project.img_manager.get_crop(r.frame(), r, width=500, height=500, margin=300)
         self.left_img.setPixmap(cvimg2qtpixmap(img))
 
     def _add_region_right(self, r):
-        img = self.project.img_manager.get_crop(r.frame(), r, width=300, height=300, margin=100)
+        img = self.project.img_manager.get_crop(r.frame(), r, width=500, height=500, margin=300)
         self.right_img.setPixmap(cvimg2qtpixmap(img))
 
     def _prepare_layouts(self):
@@ -76,20 +77,24 @@ class GroundTruthWidget(QtGui.QWidget):
     def _prepare_buttons(self):
         self.buttons_l.addWidget(self.no)
         self.buttons_l.addWidget(self.yes)
-        self.no_action.triggered.connect(self._no_action)
-        self.yes_action.triggered.connect(self._yes_action)
+        self.buttons_l.addWidget(self.quit)
         self.no_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
         self.yes_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_M))
-        self.no.addAction(self.no_action)
-        self.yes.addAction(self.yes_action)
+        self.connect(self.no, QtCore.SIGNAL('clicked()'), self.no_function)
+        self.connect(self.yes, QtCore.SIGNAL('clicked()'), self.yes_function)
+        self.connect(self.quit, QtCore.SIGNAL('clicked()'), self.close)
+        self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N), self), QtCore.SIGNAL('activated()'),
+                     self.no_function)
+        self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_M), self), QtCore.SIGNAL('activated()'),
+                     self.yes_function)
         self.yes.setFixedWidth(100)
         self.no.setFixedWidth(100)
 
-    def _no_action(self):
+    def no_function(self):
         self.results[transformation_classifier.hash_region_tuple(self.current)] = False
         self._next()
 
-    def _yes_action(self):
+    def yes_function(self):
         self.results[transformation_classifier.hash_region_tuple(self.current)] = True
         self._next()
 
