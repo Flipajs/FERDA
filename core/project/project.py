@@ -151,9 +151,9 @@ class Project:
         #     with open(self.working_directory+'/region_manager.pkl', 'wb') as f:
         #         pickle.dump(self.rm, f, -1)
 
-        self.save_chm_(self.working_directory+'/chunk_manager.pkl')
+        self.save_chm_(destinationFolder+'/chunk_manager.pkl')
 
-        self.save_gm_(self.working_directory+'/graph_manager.pkl')
+        self.save_gm_(destinationFolder+'/graph_manager.pkl')
 
         self.save_qsettings(toFolder)
 

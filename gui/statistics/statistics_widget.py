@@ -9,6 +9,7 @@ from fix_area import FixArea
 import sys
 from core.graph.region_chunk import RegionChunk
 from pympler import asizeof
+import gc
 
 class StatisticsWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -187,8 +188,8 @@ class StatisticsWidget(QtGui.QWidget):
         t2 = time.time()
         file_num = 0
         for _, ch in self.project.chm.chunks_.iteritems():
-            print ch.length()
-            
+            #print ch.length()
+
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
             d = self.init_struct_(rch[0])
 
@@ -205,7 +206,11 @@ class StatisticsWidget(QtGui.QWidget):
                     sio.savemat(f, {'FERDA': obj_arr})
 
                 curr_size = 0
-                obj_arr = []
+                del obj_arr
+                del rch
+                del d
+                gc.collect()
+                obj_arr=[]
                 file_num += 1
 
         # save the rest
