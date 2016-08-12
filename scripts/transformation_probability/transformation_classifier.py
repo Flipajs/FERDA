@@ -36,6 +36,9 @@ class TransformationClassifier:
         # app.connect(app, QtCore.SIGNAL("aboutToQuit()"), widget.close)
         app.exec_()
 
+    def correct_answer(self, id1, id2, answer=True):
+        self.results[hash_region_tuple((self.project.rm[id1], self.project.rm[id2]))] = answer
+
     def accept_results(self, results):
         self.results.update(results)
         logging.info(
@@ -74,5 +77,6 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     classifier = TransformationClassifier(project)
     supplier = GraphSupplier(project.gm)
+    # classifier.correct_answer(2237, 2242)
     classifier.improve_ground_truth(supplier.get_nodes_tuples())
     app.quit()

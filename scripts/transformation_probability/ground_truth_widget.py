@@ -13,8 +13,10 @@ class GroundTruthWidget(QtGui.QWidget):
         self.buttons_l = QtGui.QHBoxLayout()
         self.imgs = QtGui.QHBoxLayout()
         self.left = QtGui.QVBoxLayout()
+        self.left_label = QtGui.QLabel()
         self.left_img = QtGui.QLabel()
         self.right = QtGui.QVBoxLayout()
+        self.right_label = QtGui.QLabel()
         self.right_img = QtGui.QLabel()
 
         self.no = QtGui.QPushButton('no (N)', self)
@@ -30,6 +32,9 @@ class GroundTruthWidget(QtGui.QWidget):
 
         self.results = {}
         self.regions = None
+
+        self.last_left = - 1
+        self.last_right = -1
 
     def set_data(self, regions):
         self.regions = regions
@@ -55,11 +60,15 @@ class GroundTruthWidget(QtGui.QWidget):
         self._add_region_right(r2)
 
     def _add_region_left(self, r):
-        img = self.project.img_manager.get_crop(r.frame(), r, width=500, height=500, margin=300)
+        img = self.project.img_manager.get_crop(r.frame(), r, width=700, height=700, margin=300)
+        self.left_label.setText('Last id: '  + str(self.last_left))
+        self.last_left = r.id()
         self.left_img.setPixmap(cvimg2qtpixmap(img))
 
     def _add_region_right(self, r):
-        img = self.project.img_manager.get_crop(r.frame(), r, width=500, height=500, margin=300)
+        img = self.project.img_manager.get_crop(r.frame(), r, width=700, height=700, margin=300)
+        self.right_label.setText('Last id: ' + str(self.last_right))
+        self.last_right = r.id()
         self.right_img.setPixmap(cvimg2qtpixmap(img))
 
     def _prepare_layouts(self):
@@ -68,7 +77,9 @@ class GroundTruthWidget(QtGui.QWidget):
         self.imgs.addLayout(self.right)
         self.layout().addLayout(self.buttons_l)
 
+        self.left.addWidget(self.left_label)
         self.left.addWidget(self.left_img)
+        self.right.addWidget(self.right_label)
         self.right.addWidget(self.right_img)
         self.left.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom)
         self.right.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignBottom)
