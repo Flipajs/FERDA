@@ -7,6 +7,7 @@ from os.path import exists
 
 from core.project.project import Project
 import ground_truth_widget
+from scripts.transformation_probability.graph_supplier import GraphSupplier
 
 PRIME = 2 ** 8 + 1
 FNAME = "region_probability_results.p"
@@ -16,12 +17,16 @@ class TransformationClassifier:
 
     def __init__(self, project):
         self.project = project
+        self.graph_supplier = GraphSupplier(project.gm)
 
+        self.results = self.load_previous_results()
+
+    def load_previous_results(self):
         fname = os.path.join(self.project.working_directory, FNAME)
         if exists(fname):
-            self.results = pickle.load(open(fname, 'rb'))
+            return pickle.load(open(fname, 'rb'))
         else:
-            self.results = {}
+            return {}
 
     def improve_ground_truth(self, data):
         regions = filter(lambda x: hash_region_tuple(x) not in self.results, data)
