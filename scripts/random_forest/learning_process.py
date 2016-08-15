@@ -812,6 +812,7 @@ class LearningProcess:
         N = self.ids_not_present_in_tracklet[tracklet.id()]
 
         P = P.union(ids)
+        N = N.remove(ids)
 
         # consistency check
         if not self.__consistency_check_PN(P, N):
@@ -835,7 +836,7 @@ class LearningProcess:
 
     def __update_certainty(self, tracklet):
         if len(self.tracklet_measurements) == 0:
-            print "tracklet_measurements is empty"
+            # print "tracklet_measurements is empty"
             return
 
         # ignore collision tracklets because there are no measurements etc...
@@ -867,7 +868,7 @@ class LearningProcess:
 
     def __consistency_check_PN(self, P, N):
         if len(P.intersection(N)) > 0:
-            print "WARNING: inconsistency in learning_process."
+            print "WARNING: inconsistency in learning_process.", P, N
             print "Intersection of DefinitelyPresent and DefinitelyNotPresent is NOT empty!!!"
 
             return False
