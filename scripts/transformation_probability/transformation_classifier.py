@@ -17,6 +17,7 @@ class TransformationClassifier():
     def __init__(self, project, regions, results):
         self.project = project
         # for sure
+        random.seed(4)
         random.shuffle(regions)
         self.training_regions = regions[len(regions) / 2:]
         self.testing_regions = regions[:len(regions) / 2]

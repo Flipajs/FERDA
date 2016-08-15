@@ -71,7 +71,7 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     classifier = TransformationTrainer(project)
     # print classifier.results[10, 10]
-    classifier.correct_answer(1790, 1796, answer=True)
-    # classifier.delete_answer(4813, 4814)
+    # classifier.correct_answer(1790, 1796, answer=True)
+    # classifier.delete_answer(130, 136)
     classifier.improve_ground_truth()
     app.quit()
