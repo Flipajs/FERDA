@@ -22,6 +22,7 @@ class TransformationClassifier():
         self.testing_regions = regions[:len(regions) / 2]
         self.results = results
         self.classification = {}
+        self.probability = {}
 
     def process(self):
         X = [self.descriptor(r) for r in self.training_regions]
@@ -32,7 +33,9 @@ class TransformationClassifier():
         y1 = [self.results[transformation_trainer.hash_region_tuple(r)] for r in self.testing_regions]
         logging.info("Random forest with {0} accuracy".format(rfc.score(X1, y1)))
         for r in self.testing_regions:
-            self.classification[r] = rfc.predict([self.descriptor(r)])[0]
+            desc = self.descriptor(r)
+            self.classification[r] = rfc.predict([desc])[0]
+            self.probability[r] = rfc.predict_proba([desc])[0]
 
     def descriptor(self, regions):
         r1 = regions[0]
@@ -64,10 +67,9 @@ class TransformationClassifier():
         return ret
 
     def view_results(self):
-        data = {k: v for k, v in self.classification.items() if
-                (bool(v) != self.results[transformation_trainer.hash_region_tuple(k)])}
-
-        widget = ViewWidget(self.project, data)
+        regions = [k for k, v in self.classification.items() if
+                (bool(v) != self.results[transformation_trainer.hash_region_tuple(k)])]
+        widget = ViewWidget(self.project, regions, self.classification, self.probability)
         widget.show()
         app.exec_()
 
@@ -75,9 +77,9 @@ class TransformationClassifier():
 if __name__ == "__main__":
     project = Project()
     project.load("/home/simon/FERDA/projects/CompleteGraph/CompleteGraph.fproj")
+    logging.basicConfig(level=logging.INFO)
 
     app = QtGui.QApplication(sys.argv)
-
     trainer = TransformationTrainer(project)
     regions, results = trainer.get_ground_truth()
     classifier = TransformationClassifier(project, regions, results)

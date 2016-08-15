@@ -59,7 +59,7 @@ class GroundTruthWidget(QtGui.QWidget):
 
     def _add_region_left(self, r):
         img = self.project.img_manager.get_crop(r.frame(), r, width=700, height=700, margin=300)
-        self.left_label.setText('Last id: '  + str(self.last_left))
+        self.left_label.setText('Last id: ' + str(self.last_left))
         self.last_left = r.id()
         self.left_img.setPixmap(cvimg2qtpixmap(img))
 

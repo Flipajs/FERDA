@@ -6,14 +6,12 @@ import transformation_trainer
 
 
 class ViewWidget(QtGui.QWidget):
-    def __init__(self, project, data):
+    def __init__(self, project, regions, classification, probability):
         super(ViewWidget, self).__init__()
         self.project = project
-        self.data = data
-        self.regions = data.keys()
-        print type(self.regions)
-        for r in self.regions:
-            print r[0].id(), r[1].id()
+        self.regions = regions
+        self.classification = classification
+        self.probability = probability
 
         self.setLayout(QtGui.QVBoxLayout())
         self.buttons = QtGui.QHBoxLayout()
@@ -40,11 +38,12 @@ class ViewWidget(QtGui.QWidget):
             self._next()
         self.prev_b.setDisabled(True)
 
-    def _view(self, r1, r2):
-        self._add_region_left(r1)
-        self._add_region_right(r2)
-        res = self.data[(r1, r2)]
-        self.info.setText("Tagged {0}, should be {1}".format(res, not res))
+    def _view(self, r):
+        self._add_region_left(r[0])
+        self._add_region_right(r[1])
+        res = self.classification[r]
+        p = self.probability[r]
+        self.info.setText("Tagged {0}, should be {1} \t probability: F: {2} T: {3}".format(res, not res, p[0], p[1]))
 
     def _add_region_left(self, r):
         img = self.project.img_manager.get_crop(r.frame(), r, width=700, height=700, margin=300)
@@ -82,16 +81,16 @@ class ViewWidget(QtGui.QWidget):
         if self.current_index < len(self.regions):
             self.current_index += 1
             self.current = self.regions[self.current_index]
-            self._view(self.current[0], self.current[1])
+            self._view(self.current)
             self.prev_b.setDisabled(False)
-            if self.current_index == len(self.data) - 1:
+            if self.current_index == len(self.regions) - 1:
                 self.next_b.setDisabled(True)
 
     def _prev(self):
         if self.current_index >= 0:
             self.current_index -= 1
             self.current = self.regions[self.current_index]
-            self._view(self.current[0], self.current[1])
+            self._view(self.current)
             self.next_b.setDisabled(False)
             if self.current_index == 0:
                 self.prev_b.setDisabled(True)
