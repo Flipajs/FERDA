@@ -11,6 +11,7 @@ from intervaltree import IntervalTree
 from gui.learning.ids_names_widget import IdsNamesWidget
 from PyQt4 import QtGui
 import sys
+import operator
 
 class LearningProcess:
     def __init__(self, p, use_feature_cache=False, use_rf_cache=False):
@@ -65,10 +66,10 @@ class LearningProcess:
             self.class_frequences = []
 
             for t in self.tracklets:
-                if t.id_ in self.collision_chunks:
+                if t.id() in self.collision_chunks:
                     continue
 
-                self.undecided_tracklets[t.id_] = True
+                self.undecided_tracklets.add(t.id())
 
             self.X = None
             self.y = None
@@ -104,9 +105,89 @@ class LearningProcess:
                 self.tracklet_measurements = d['tracklet_measurements']
 
         self.save_ids_()
-        self.next_step()
+
+        self.run_learning()
+
+    def run_learning(self):
+        while len(self.undecided_tracklets):
+            self.next_step()
+
+    def __human_in_the_loop_request(self):
+        # TODO: raise question
+
+        try:
+            best_candidate_tracklet = self.__get_best_question()
+            # to speed up testing - simulate Human in the Loop by asking GT
+            id_ = self.__DEBUG_get_answer_from_GT(best_candidate_tracklet)
+            if id_ > -1:
+                self.__assign_identity(id_, best_candidate_tracklet)
+                self.next_step()
+            else:
+                print "DEBUG_get_answer didn't returned an ID"
+        except:
+            print "human in the loop failed"
+
+    def __DEBUG_get_answer_from_GT(self, tracklet):
+        best_id = -1
+
+        with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
+            GT = pickle.load(f)
+            values = None
+            region = None
+            for frame in range(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm) + 1):
+                if frame in GT:
+                    values = GT[frame]
+                    rch = RegionChunk(tracklet, self.p.gm, self.p.rm)
+                    region = rch.region_in_t(frame)
+                    break
+
+            for id_, val in enumerate(values):
+                best_dist = np.inf
+
+                gt_pt = np.array(val)
+
+                d = np.linalg.norm(gt_pt, region.centroid())
+                if d < best_dist:
+                    if gt_pt[0] > -1:
+                        best_dist = d
+                        best_id = id_
+
+        return best_id
+
+    def __get_best_question(self, strategy='default'):
+        best_tracklet = None
+        best_value = -1
+        for t_id in self.undecided_tracklets:
+            tracklet = self.p.chm[t_id]
+            in_time = set(self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm),
+                                                        tracklet.end_frame(self.p.gm)))
+            # find tracklet which overlaps with max number of other tracklets
+            if strategy == 'max_tracklets':
+                val = len(in_time)
+            elif strategy == 'longest_impact':
+                min_t = np.inf
+                max_t = 0
+                for t in in_time:
+                    if t.start_frame(self.p.gm) < min_t:
+                        min_t = t.start_frame(self.p.gm)
+
+                    if t.end_frame(self.p.gm) > max_t:
+                        max_t = t.start_frame(self.p.gm)
+
+                val = max_t - min_t
+
+            elif strategy == 'default' or strategy == 'longest_tracklet':
+                # DEFAULT - find longest tracklet...
+                val = tracklet.length()
+
+            if best_value < val:
+                best_value = val
+                best_tracklet = tracklet
+
+        return best_tracklet
 
     def __train_rfc(self):
+        print "TRAINING RFC"
         self.rfc = RandomForestClassifier(class_weight='balanced_subsample')
         self.rfc.fit(self.X, self.y)
 
@@ -116,8 +197,9 @@ class LearningProcess:
         # TODO: global parameter!!!
         k = 50.0
 
-        for t in self.undecided_tracklets:
-            x, t_length = self.__get_tracklet_proba(t)
+        for t_id in self.undecided_tracklets:
+            tracklet = self.p.chm[t_id]
+            x, t_length = self.__get_tracklet_proba(tracklet)
 
             uni_probs = np.ones((len(x), )) / float(len(x))
 
@@ -125,27 +207,12 @@ class LearningProcess:
             alpha = (min((t_length/k)**2, 0.95))
 
             # if it is not obvious e.g. (1.0, 0, 0, 0, 0)...
-            if 0 < np.max(x) < 1.0:
-                # reduce the certainty by alpha factor depending on tracklet length
-                x = (1-alpha) * uni_probs + alpha*x
+            # if 0 < np.max(x) < 1.0:
+            # reduce the certainty by alpha factor depending on tracklet length
+            x = (1-alpha) * uni_probs + alpha*x
 
-            self.tracklet_measurements[t.id] = x
-
-            # compute certainty
-            x_ = np.copy(x)
-            for id_ in self.ids_not_present_in_tracklet:
-                x_[id_] = 0
-
-            i1 = np.max(x_)
-            p1 = x_[i1]
-            x_[i1] = 0
-            p2 = np.max(x_)
-
-            # take maximum probability from rest after removing definitely not present ids and the second max and compute certainty
-            # for 0.6 and 0.4 it is 0.6 but for 0.6 and 0.01 it is ~ 0.98
-            certainty = p1 / (p1 + p2)
-
-            self.tracklet_certainty[t.id] = certainty
+            self.tracklet_measurements[tracklet.id()] = x
+            self.__update_certainty(tracklet)
 
     def set_ids_(self):
         app = QtGui.QApplication(sys.argv)
@@ -167,7 +234,7 @@ class LearningProcess:
             X = self.get_data(ch)
 
             i += 1
-            features[ch.id_] = X
+            features[ch.id()] = X
 
             print i
 
@@ -176,7 +243,7 @@ class LearningProcess:
     def build_itree_(self):
         itree = IntervalTree()
         for ch in self.tracklets:
-            itree.addi(ch.start_frame(self.p.gm) - self._eps1, ch.end_frame(self.p.gm) + self._eps1, ch.id_)
+            itree.addi(ch.start_frame(self.p.gm) - self._eps1, ch.end_frame(self.p.gm) + self._eps1, ch.id())
 
         return itree
 
@@ -199,7 +266,7 @@ class LearningProcess:
                 for e in ch_start_vertex.in_edges():
                     if self.p.gm.g.ep['score'][e] == 0 and ch_start_vertex.in_degree() > 1:
                         # is_merged = True
-                        self.collision_chunks[ch.id_] = True
+                        self.collision_chunks[ch.id()] = True
                         break
 
                 rch = RegionChunk(ch, self.p.gm, self.p.rm)
@@ -212,13 +279,13 @@ class LearningProcess:
                     # area_mean = sum/float(ch.length())
 
                     area_mean = sum/float(ch.length())
-                    c = 'C' if ch.id_ in self.collision_chunks else ' '
+                    c = 'C' if ch.id() in self.collision_chunks else ' '
                     area_mean_thr = 1000
                     p = 'C' if area_mean > area_mean_thr else ' '
-                    print "%s %s %s area: %.2f, id:%d, length:%d" % (p==c, c, p, area_mean, ch.id_, ch.length())
+                    print "%s %s %s area: %.2f, id:%d, length:%d" % (p==c, c, p, area_mean, ch.id(), ch.length())
 
                     if area_mean > area_mean_thr:
-                        self.collision_chunks[ch.id_] = True
+                        self.collision_chunks[ch.id()] = True
 
 
                 # if not is_merged:
@@ -257,9 +324,9 @@ class LearningProcess:
                 ch1, _ = self.p.gm.is_chunk(v1)
                 ch2, _ = self.p.gm.is_chunk(v2)
 
-                ids1 = self.chunk_available_ids.get(ch1.id_, [])
+                ids1 = self.chunk_available_ids.get(ch1.id(), [])
                 id1 = -1 if len(ids1) != 1 else ids1[0]
-                ids2 = self.chunk_available_ids.get(ch2.id_, [])
+                ids2 = self.chunk_available_ids.get(ch2.id(), [])
                 id2 = -1 if len(ids2) != 1 else ids2[0]
 
                 if id1 > -1 and id2 > -1 and id1 != id2:
@@ -276,8 +343,8 @@ class LearningProcess:
 
         b = False
         for id_, ch in assign_new_ids:
-            if len(self.chunk_available_ids[ch.id_]) > 1:
-                if ch.id_ in self.features:
+            if len(self.chunk_available_ids[ch.id()]) > 1:
+                if ch.id() in self.features:
                     self.__learn(ch, id_)
 
                 if self.__assign_id(ch, id_):
@@ -310,24 +377,18 @@ class LearningProcess:
 
     def __learn(self, ch, id_):
         print "LEARNING ", id_
-        X = self.features[ch.id_]
+        X = self.features[ch.id()]
         self.X = np.vstack([self.X, np.array(X)])
 
         y = [id_] * len(X)
         self.y = np.append(self.y, np.array(y))
 
-        self.class_frequences[id_] += len(X)
-
-        # TODO: remove this. Retraining will occur only at the end of next_step when the probability is low or there is a lot of new information
-        if len(self.X) - self.old_x_size > 50:
-            self.__train_rfc()
-            self.old_x_size = len(self.X)
-            #TODO: refresh measurements and certainties.
+        # self.class_frequences[id_] += len(X)
 
     def __assign_id(self, ch, id_):
-        if len(self.chunk_available_ids[ch.id_]) <= 1:
+        if len(self.chunk_available_ids[ch.id()]) <= 1:
             try:
-                del self.undecided_chunks[ch.id_]
+                del self.undecided_chunks[ch.id()]
             except:
                 pass
 
@@ -336,11 +397,11 @@ class LearningProcess:
             return False
 
         try:
-            del self.undecided_chunks[ch.id_]
+            del self.undecided_chunks[ch.id()]
         except:
-            print "PROBLEMATIC CHUNK", ch.id_,  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "A_ID: ", id_
+            print "PROBLEMATIC CHUNK", ch.id(),  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "A_ID: ", id_
 
-        self.chunk_available_ids[ch.id_] = [id_]
+        self.chunk_available_ids[ch.id()] = [id_]
         self.update_after_hard_decision(ch, id_)
 
         return True
@@ -363,11 +424,11 @@ class LearningProcess:
 
     def __precompute_availability(self):
         for ch in self.tracklets:
-            self.ids_present_in_tracklet[ch.id_] = set()
-            self.ids_not_present_in_tracklet[ch.id_] = set()
+            self.ids_present_in_tracklet[ch.id()] = set()
+            self.ids_not_present_in_tracklet[ch.id()] = set()
 
     def __propagate_availability(self, ch, remove_id=[]):
-        if ch.id_ == 124:
+        if ch.id() == 124:
             print "124"
 
         S_in = set()
@@ -376,16 +437,16 @@ class LearningProcess:
             ch_, _ = self.p.gm.is_chunk(u)
             # if ch_ in self.chunks:
             affected.append(ch_)
-            S_in.update(self.chunk_available_ids[ch_.id_])
+            S_in.update(self.chunk_available_ids[ch_.id()])
 
         S_out = set()
         for u in ch.end_vertex(self.p.gm).out_neighbours():
             ch_, _ = self.p.gm.is_chunk(u)
             # if ch_ in self.chunks:
             affected.append(ch_)
-            S_out.update(self.chunk_available_ids[ch_.id_])
+            S_out.update(self.chunk_available_ids[ch_.id()])
 
-        S_self = set(self.chunk_available_ids[ch.id_])
+        S_self = set(self.chunk_available_ids[ch.id()])
 
         # first chunks
         if not S_in:
@@ -405,7 +466,7 @@ class LearningProcess:
                     in_chunks = self.p.chm.chunks_in_frame(ch.start_frame(self.p.gm)-1)
                     ids_test = set()
                     for ch_ in in_chunks:
-                        ids_test.update(self.chunk_available_ids[ch_.id_])
+                        ids_test.update(self.chunk_available_ids[ch_.id()])
 
                     # Id is lost
                     if id_ not in ids_test:
@@ -415,7 +476,7 @@ class LearningProcess:
                     out_chunks = self.p.chm.chunks_in_frame(ch.end_frame(self.p.gm) + 1)
                     ids_test = set()
                     for ch_ in out_chunks:
-                        ids_test.update(self.chunk_available_ids[ch_.id_])
+                        ids_test.update(self.chunk_available_ids[ch_.id()])
 
                     # Id is lost
                     if id_ not in ids_test:
@@ -432,7 +493,7 @@ class LearningProcess:
             print "WARNING: S_self < new_S_self!"
 
         if not new_S_self:
-            print "ZERO available IDs set", ch.id_,  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch
+            print "ZERO available IDs set", ch.id(),  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch
 
         new_S_self = list(new_S_self)
         if len(new_S_self) == 1:
@@ -442,12 +503,12 @@ class LearningProcess:
             # in_time.remove(ch)
             # affected.extend(list(in_time))
 
-            print "Chunk solved by ID conservation rules", ch.id_,  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "AID: ", new_S_self[0]
+            print "Chunk solved by ID conservation rules", ch.id(),  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "AID: ", new_S_self[0]
         else:
-            self.chunk_available_ids[ch.id_] = new_S_self
+            self.chunk_available_ids[ch.id()] = new_S_self
             if not new_S_self:
                 try:
-                    del self.undecided_chunks[ch.id_]
+                    del self.undecided_chunks[ch.id()]
                 except:
                     pass
 
@@ -455,12 +516,12 @@ class LearningProcess:
 
     def update_availability(self, ch, id_, learn=False):
         # TODO: remove this function
-        if len(self.chunk_available_ids[ch.id_]) <= 1:
+        if len(self.chunk_available_ids[ch.id()]) <= 1:
             return
 
-        if ch.id_ in self.collision_chunks:
+        if ch.id() in self.collision_chunks:
             try:
-                del self.undecided_chunks[ch.id_]
+                del self.undecided_chunks[ch.id()]
             except:
                 pass
 
@@ -475,7 +536,7 @@ class LearningProcess:
         if not self.__assign_id(ch, id_):
             return
 
-        print "Ch.id: %d assigned animal id: %d. Ch.start: %d, Ch.end: %d" % (ch.id_, id_, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
+        print "Ch.id: %d assigned animal id: %d. Ch.start: %d, Ch.end: %d" % (ch.id(), id_, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
 
 
     def update_after_hard_decision(self, ch, id_):
@@ -494,75 +555,38 @@ class LearningProcess:
             queue.extend(self.__propagate_availability(ch))
 
     def next_step(self):
-        # TODO: review whole function!
+        # TODO: global parameter
+        eps_certainty = 0.3
+        eps_certainty_learning = 0.15
+        min_new_samples_to_retrain = 50
 
-        k = 50.0
+        # pick one with best certainty
+        # TODO: it is possible to improve speed (if necessary) implementing dynamic priority queue
+        best_tracklet_id = max(self.tracklet_certainty.iteritems(), key=operator.itemgetter(1))[0]
+        best_tracklet = self.p.chm[best_tracklet_id]
 
-        # TODO: pick one with best certainty
         # if not good enough, raise question
         # different strategies... 1) pick the longest tracklet, 2) tracklet with the longest intersection impact
+        certainty = self.tracklet_certainty[best_tracklet.id()]
+        if certainty >= 1 - eps_certainty:
+            learn = False
+            # if good enough, use for learning
+            if certainty >= 1 - eps_certainty_learning:
+                learn = True
 
-        # TODO: to speed up testing, we can simulate human interaction using GT
-
-        while len(self.undecided_tracklets):
-            best_ch = None
-            best_val = -1
-            for ch_id_ in self.undecided_chunks:
-                ch = self.p.chm[ch_id_]
-
-                if self.test_connected_with_merged(ch):
-                    best_ch = None
-                    break
-
-                proba, data_len = self.__get_tracklet_proba(ch)
-
-                uni_probs = np.ones((len(proba), )) / float(len(proba))
-                alpha = (min((data_len/k)**2, 0.95))
-
-                # if it is obvious (1.0, 0, 0, 0, 0)...
-                if 0 < np.max(proba) < 1.0:
-                    proba = (1-alpha) * uni_probs + alpha*proba
-
-                if np.max(proba) > best_val:
-                    best_val = np.max(proba)
-                    print "best_val", best_val
-                    best_ch = ch
-
-            ch = best_ch
-
-            if best_ch is None:
-                continue
-
-            if best_val == 0:
-                try:
-                    del self.undecided_chunks[best_ch]
-                except:
-                    pass
-
-                continue
-
-            proba, data_len = self.__get_tracklet_proba(ch)
-
-            uni_probs = np.ones((len(proba), )) / float(len(proba))
-            alpha = (min((data_len/k)**2, 0.95))
-
-            if np.max(proba) < 1.0:
-                proba = (1-alpha) * uni_probs + alpha*proba
-
-            print "prob: %.2f, ch_len: %d, id: %d, ch_id: %d, %s, ch_start: %d, ch_end: %d" % (np.max(proba), data_len, np.argmax(proba), ch.id_, proba, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
-            print "-----------------------------------------------", len(self.undecided_chunks)
-
-            animal_id = np.argmax(proba)
-
-            use_for_learning = True if np.max(proba) > 0.9 else False
-
-            # TODO: review this
-            self.update_availability(ch, animal_id, learn=use_for_learning)
-
-        for i in range(6):
-            print i, np.sum(self.y == i)
-
-        self.save_ids_()
+            id_ = np.argmax(self.tracklet_measurements[best_tracklet.id()])
+            self.__assign_identity(id_, best_tracklet, learn=learn)
+            self.save_ids_()
+        else:
+            # if new training data, retrain
+            if len(self.X) - self.old_x_size > min_new_samples_to_retrain:
+                self.__train_rfc()
+                self.old_x_size = len(self.X)
+                #TODO: refresh measurements and certainties.
+                self.next_step()
+                return
+            else:
+                self.__human_in_the_loop_request()
 
     def save_ids_(self):
         with open(self.p.working_directory + '/temp/chunk_available_ids.pkl', 'wb') as f_:
@@ -573,7 +597,7 @@ class LearningProcess:
         return float(np.sum(self.class_frequences)) / self.class_frequences
 
     def __get_tracklet_proba(self, ch):
-        X = self.features[ch.id_]
+        X = self.features[ch.id()]
         if len(X) == 0:
             return None, 0
 
@@ -596,7 +620,7 @@ class LearningProcess:
 
     def apply_consistency_rule(self, ch, probs):
         mask = np.zeros(probs.shape)
-        for id_ in self.chunk_available_ids[ch.id_]:
+        for id_ in self.chunk_available_ids[ch.id()]:
             mask[id_] = 1
 
         probs *= mask
@@ -767,9 +791,9 @@ class LearningProcess:
 
         # it is in this position, because we need self.X, self.y to be ready for the case when we solve something by conservation rules -> thus we will be learning -> updating self.X...
         for id_, t in enumerate(tracklets):
-            self.__assign_identity(t, id_)
+            self.__assign_identity(id_, t)
 
-        return range(len(tracklets))
+        return set(range(len(tracklets)))
 
     def __update_definitely_present(self, ids, tracklet):
         """
@@ -784,8 +808,8 @@ class LearningProcess:
 
         """
 
-        P = self.ids_present_in_tracklet[tracklet.id]
-        N = self.ids_not_present_in_tracklet[tracklet.id]
+        P = self.ids_present_in_tracklet[tracklet.id()]
+        N = self.ids_not_present_in_tracklet[tracklet.id()]
 
         P = P.union(ids)
 
@@ -795,31 +819,51 @@ class LearningProcess:
 
         # if the tracklet labellign is fully decided
         if P.union(N) == self.all_ids:
-            self.undecided_tracklets.remove(tracklet.id)
+            self.undecided_tracklets.remove(tracklet.id())
+            del self.tracklet_certainty[tracklet.id()]
+            del self.tracklet_measurements[tracklet.id()]
 
         # update affected
         affected_tracklets = self.__get_affected_tracklets(tracklet)
         for t in affected_tracklets:
             self.__if_possible_add_definitely_not_present(t, tracklet, ids)
 
-        self.ids_present_in_tracklet[tracklet.id] = P
+        self.ids_present_in_tracklet[tracklet.id()] = P
 
         # everything is OK
         return True
 
     def __update_certainty(self, tracklet):
-        # TODO:
-        P = self.ids_present_in_tracklet[tracklet.id]
-        N = self.ids_not_present_in_tracklet[tracklet.id]
+        if len(self.tracklet_measurements) == 0:
+            print "tracklet_measurements is empty"
+            return
+
+        # ignore collision tracklets because there are no measurements etc...
+        if tracklet.id() in self.collision_chunks:
+            return
+
+        P = self.ids_present_in_tracklet[tracklet.id()]
+        N = self.ids_not_present_in_tracklet[tracklet.id()]
 
         # skip the oversegmented regions
         if len(P) == 0:
-            x = self.tracklet_measurements[tracklet.id]
+            x = self.tracklet_measurements[tracklet.id()]
 
-            # TODO: is it right this way?
+            # compute certainty
+            x_ = np.copy(x)
+            for id_ in N:
+                x_[id_] = 0
 
+            i1 = np.argmax(x_)
+            p1 = x_[i1]
+            x_[i1] = 0
+            p2 = np.max(x_)
 
-        pass
+            # take maximum probability from rest after removing definitely not present ids and the second max and compute certainty
+            # for 0.6 and 0.4 it is 0.6 but for 0.6 and 0.01 it is ~ 0.98
+            certainty = p1 / (p1 + p2)
+
+            self.tracklet_certainty[tracklet.id()] = certainty
 
     def __consistency_check_PN(self, P, N):
         if len(P.intersection(N)) > 0:
@@ -831,8 +875,8 @@ class LearningProcess:
         return True
 
     def __update_definitely_not_present(self, ids, tracklet):
-        P = self.ids_present_in_tracklet[tracklet.id]
-        N = self.ids_not_present_in_tracklet[tracklet.id]
+        P = self.ids_present_in_tracklet[tracklet.id()]
+        N = self.ids_not_present_in_tracklet[tracklet.id()]
 
         N = N.union(ids)
 
@@ -841,7 +885,7 @@ class LearningProcess:
             return False
 
         # propagate changes
-        self.ids_not_present_in_tracklet[tracklet.id] = N
+        self.ids_not_present_in_tracklet[tracklet.id()] = N
 
         self.__update_certainty(tracklet)
 
@@ -864,29 +908,29 @@ class LearningProcess:
 
         """
 
+        oversegmented = True
         if tracklet.start_frame(self.p.gm) != present_tracklet.start_frame(self.p.gm) \
-                and tracklet.end_frame(self.p.gm) != present_tracklet.end_frame(self.p.gm):
-
+                or tracklet.end_frame(self.p.gm) != present_tracklet.end_frame(self.p.gm):
+            oversegmented = False
+        else:
             rch1 = RegionChunk(tracklet, self.p.gm, self.p.rm)
             rch2 = RegionChunk(present_tracklet, self.p.gm, self.p.rm)
 
-            oversegmented = True
             for r1, r2 in zip(rch1.regions_gen(), rch2.regions_gen()):
                 if np.linalg.norm(r1.centroid() - r2.centroid()) > self.p.stats.major_axis_median:
                     oversegmented = False
                     break
 
-            if not oversegmented:
-                self.__update_definitely_not_present(ids, tracklet)
-                return True
+        if not oversegmented:
+            self.__update_definitely_not_present(ids, tracklet)
 
-        return False
+        return not oversegmented
 
-    def __assign_identity(self, ids, tracklet, learn=True):
+    def __assign_identity(self, id_, tracklet, learn=True, not_affecting=False):
         """
         Sets set definitelyPresent (P) = ids
         and set definitelyNotPresent (N) = complement of ids in all IDS
-        
+
         if learn is True, it will use tracklet as an training example
 
         then calls update on all affected
@@ -898,22 +942,29 @@ class LearningProcess:
 
         """
 
-        oldP = self.ids_present_in_tracklet[tracklet.id]
+        if not isinstance(id_, int):
+            print "FAIL in learning_process.py __assign_identity, id not a number"
 
+
+        print "ASSIGNING ID: ", id_, " to tracklet: ", tracklet.id()
         # finalize
-        self.undecided_tracklets.remove(tracklet.id)
+        self.undecided_tracklets.remove(tracklet.id())
+        if len(self.tracklet_measurements):
+            del self.tracklet_certainty[tracklet.id()]
+            del self.tracklet_measurements[tracklet.id()]
 
         if learn:
-            self.__learn(tracklet, ids)
+            self.__learn(tracklet, id_)
 
-        self.ids_present_in_tracklet[tracklet.id] = ids
+        id_set = set([id_])
+        self.ids_present_in_tracklet[tracklet.id()] = id_set
         # and the rest of ids goes to not_present
-        self.ids_not_present_in_tracklet[tracklet.id] = self.all_ids.difference(ids)
+        self.ids_not_present_in_tracklet[tracklet.id()] = self.all_ids.difference(id_set)
 
+        # if affecting:
         affected_tracklets = self.__get_affected_tracklets(tracklet)
         for t in affected_tracklets:
-            new_present_IDs = self.ids_present_in_tracklet - oldP
-            self.__if_possible_add_definitely_not_present(t, tracklet, new_present_IDs)
+            self.__if_possible_add_definitely_not_present(t, tracklet, id_set)
 
     def __get_affected_tracklets(self, tracklet):
         """
