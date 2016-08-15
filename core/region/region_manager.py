@@ -7,7 +7,7 @@ import cPickle as pickle
 from core.region.region import encode_RLE
 
 class RegionManager:
-    def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=-1, data=None):
+    def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=1000, data=None):
         """
         RegionManager is designed to store regions data. By default, all data is stored in memory cache (dictionary) and
         identified using unique ids. Optionally, database can be used, in which case the memory cache size can be
@@ -100,6 +100,10 @@ class RegionManager:
 
         return self.tmp_ids
 
+    def clear_cache(self):
+        self.regions_cache_ = {}
+        self.recent_regions_ids = []
+
     def add_to_cache_(self, id, region):
         """
         This method adds region with id to the cache. It also updates it's position in recent_regions_ids and checks
@@ -128,7 +132,7 @@ class RegionManager:
                 # self.regions_cache_.pop(pop_id, None).id()
                 self.regions_cache_.pop(pop_id, None)
 
-                # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
+                print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
 
     def update(self, key, region):
         """
@@ -383,4 +387,3 @@ if __name__ == "__main__":
     # db size with 20 rle regions:  75 776 bytes
     # NOTE: To check sb size properly, always start in new file. File size doesn't decrease when items are deleted or
     #       when table is dropped. Instead of delete, sql VACUUM command can be used.
-
