@@ -1,82 +1,86 @@
 import logging
-from PyQt4 import QtCore
+import random
 from PyQt4 import QtGui
-import cPickle as pickle
+
 import numpy as np
 import sys
-import os
-from os.path import exists
+from sklearn.ensemble import RandomForestClassifier
 
 from core.project.project import Project
-import ground_truth_widget
 from scripts.transformation_probability.graph_supplier import GraphSupplier
+from scripts.transformation_probability.transformation_trainer import TransformationTrainer
+import transformation_trainer
+from scripts.transformation_probability.view_widget import ViewWidget
 
-PRIME = 2 ** 8 + 1
-FNAME = 'region_probability_results.p'
 
-
-class TransformationClassifier:
-    def __init__(self, project):
+class TransformationClassifier():
+    def __init__(self, project, regions, results):
         self.project = project
+        # for sure
+        random.shuffle(regions)
+        self.training_regions = regions[len(regions) / 2:]
+        self.testing_regions = regions[:len(regions) / 2]
+        self.results = results
+        self.classification = {}
 
-        self.fname = os.path.join(self.project.working_directory, FNAME)
-        logging.info("Loading previous results from %s" % self.fname)
-        if exists(self.fname):
-            self.results = pickle.load(open(self.fname, 'rb'))
-        else:
-            self.results = {}
-        logging.info("Loaded {0} results from database".format(len(self.results)))
+    def process(self):
+        X = [self.descriptor(r) for r in self.training_regions]
+        y = [self.results[transformation_trainer.hash_region_tuple(r)] for r in self.training_regions]
+        rfc = RandomForestClassifier()
+        rfc.fit(X, y)
+        X1 = [self.descriptor(r) for r in self.testing_regions]
+        y1 = [self.results[transformation_trainer.hash_region_tuple(r)] for r in self.testing_regions]
+        logging.info("Random forest with {0} accuracy".format(rfc.score(X1, y1)))
+        for r in self.testing_regions:
+            self.classification[r] = rfc.predict([self.descriptor(r)])[0]
 
-    def improve_ground_truth(self, data):
-        regions = filter(lambda x: hash_region_tuple(x) not in self.results, data)
-        regions = sorted(regions, key=lambda x: abs(x[0].area_ - x[1].area_))
-        widget = ground_truth_widget.GroundTruthWidget(project, self)
-        widget.set_data(regions)
-        widget.show()
-        # app.connect(app, QtCore.SIGNAL("aboutToQuit()"), widget.close)
-        app.exec_()
+    def descriptor(self, regions):
+        r1 = regions[0]
+        r2 = regions[1]
+        ret = []
 
-    def correct_answer(self, id1, id2, answer=True):
-        self.results[hash_region_tuple((self.project.rm[id1], self.project.rm[id2]))] = answer
-
-    def accept_results(self, results):
-        self.results.update(results)
-        logging.info(
-            "Saving {0} results to database. It now contains {1} entries.".format(len(results), len(self.results)))
-        pickle.dump(self.results, open(self.fname, 'wb'))
-
-    def descriptor(self, r1, r2):
         # centroid distance
         centr_dist = np.linalg.norm(r2.centroid() - r1.centroid())
-
+        ret.append(centr_dist
+                   )
         # margin difference
         margin_diff = r2.margin() - r1.margin()
+        ret.append(margin_diff)
 
         # intensity
         max_intensity = r2.max_intensity_ - r1.max_intensity_
         min_intensity = r2.min_intensity_ - r1.min_intensity_
+        ret.append(max_intensity)
+        ret.append(min_intensity)
 
         # area difference
         area_diff = r2.area() - r1.area()
+        ret.append(area_diff)
 
         # axis difference
         axis_diff = r2.major_axis_ - r1.major_axis_
+        ret.append(axis_diff)
 
-        return centr_dist, margin_diff, max_intensity, min_intensity, area_diff, axis_diff
+        return ret
 
+    def view_results(self):
+        data = {k: v for k, v in self.classification.items() if
+                (bool(v) != self.results[transformation_trainer.hash_region_tuple(k)])}
 
-def hash_region_tuple(region_tuple):
-    return (PRIME + region_tuple[0].id()) * PRIME + region_tuple[1].id()
+        widget = ViewWidget(self.project, data)
+        widget.show()
+        app.exec_()
 
 
 if __name__ == "__main__":
     project = Project()
     project.load("/home/simon/FERDA/projects/CompleteGraph/CompleteGraph.fproj")
-    logging.basicConfig(level=logging.INFO)
 
     app = QtGui.QApplication(sys.argv)
-    classifier = TransformationClassifier(project)
-    supplier = GraphSupplier(project.gm)
-    # classifier.correct_answer(2237, 2242)
-    classifier.improve_ground_truth(supplier.get_nodes_tuples())
+
+    trainer = TransformationTrainer(project)
+    regions, results = trainer.get_ground_truth()
+    classifier = TransformationClassifier(project, regions, results)
+    classifier.process()
+    classifier.view_results()
     app.quit()

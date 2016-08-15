@@ -1,6 +1,6 @@
 from PyQt4 import QtGui, QtCore
 from gui.gui_utils import cvimg2qtpixmap
-import transformation_classifier
+import transformation_trainer
 
 
 class GroundTruthWidget(QtGui.QWidget):
@@ -22,8 +22,6 @@ class GroundTruthWidget(QtGui.QWidget):
         self.no = QtGui.QPushButton('no (N)', self)
         self.yes = QtGui.QPushButton('yes (M)', self)
         self.quit = QtGui.QPushButton('save and quit', self)
-        self.no_action = QtGui.QAction('no', self)
-        self.yes_action = QtGui.QAction('yes', self)
 
         self._prepare_layouts()
         self._prepare_buttons()
@@ -89,8 +87,6 @@ class GroundTruthWidget(QtGui.QWidget):
         self.buttons_l.addWidget(self.no)
         self.buttons_l.addWidget(self.yes)
         self.buttons_l.addWidget(self.quit)
-        self.no_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N))
-        self.yes_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_M))
         self.connect(self.no, QtCore.SIGNAL('clicked()'), self.no_function)
         self.connect(self.yes, QtCore.SIGNAL('clicked()'), self.yes_function)
         self.connect(self.quit, QtCore.SIGNAL('clicked()'), self.close)
@@ -102,11 +98,11 @@ class GroundTruthWidget(QtGui.QWidget):
         self.no.setFixedWidth(100)
 
     def no_function(self):
-        self.results[transformation_classifier.hash_region_tuple(self.current)] = False
+        self.results[transformation_trainer.hash_region_tuple(self.current)] = False
         self._next()
 
     def yes_function(self):
-        self.results[transformation_classifier.hash_region_tuple(self.current)] = True
+        self.results[transformation_trainer.hash_region_tuple(self.current)] = True
         self._next()
 
     def closeEvent(self, QCloseEvent):

@@ -5,7 +5,6 @@ from core.project.project import Project
 
 p = Project()
 
-#p.load('/Users/flipajs/Documents/wd/eight_barbara_b/eight.fproj')
 p.load('/home/simon/FERDA/projects/CompleteGraph/CompleteGraph.fproj')
 
 p.video_paths = ['/home/simon/FERDA/projects/CompleteGraph/Cam1_clip.avi']
