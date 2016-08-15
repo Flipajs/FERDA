@@ -1,7 +1,6 @@
 import sys
 import cPickle as pickle
 from core.project.project import Project
-from core.settings import Settings as S_
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 from core.graph.solver import Solver
@@ -11,7 +10,12 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     print "Starting assembly..."
     from core.graph.graph_manager import GraphManager
     # TODO: add to settings
-    bgcomp.project.rm = RegionManager(db_wd=bgcomp.project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
+    if cluster:
+        bgcomp.project.rm = RegionManager(db_wd=bgcomp.project.working_directory)
+    else:
+        from core.settings import Settings as S_
+        bgcomp.project.rm = RegionManager(db_wd=bgcomp.project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
+
     bgcomp.project.chm = ChunkManager()
     bgcomp.solver = Solver(bgcomp.project)
     bgcomp.project.gm = GraphManager(bgcomp.project, bgcomp.solver.assignment_score)
@@ -19,8 +23,10 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     if not cluster:
         bgcomp.update_callback(0, 're-indexing...')
 
-    # switching off... We don't want to log following...
-    S_.general.log_graph_edits = False
+    if not cluster:
+        from core.settings import Settings as S_
+        # switching off... We don't want to log following...
+        S_.general.log_graph_edits = False
 
     part_num = bgcomp.part_num
 
@@ -44,7 +50,6 @@ def assembly_after_parallelization(bgcomp, cluster=False):
             relevant_vertices = up.load()
             chm_ = up.load()
 
-            # TODO: make standalone
             merge_parts(bgcomp.project.gm, g_, relevant_vertices, bgcomp.project, rm_old, chm_)
 
         if not cluster:
@@ -75,7 +80,9 @@ def assembly_after_parallelization(bgcomp, cluster=False):
 
     print "simplifying "
 
-    S_.general.log_graph_edits = True
+    if not cluster:
+        from core.settings import Settings as S_
+        S_.general.log_graph_edits = True
 
     bgcomp.project.solver = bgcomp.solver
 
@@ -89,7 +96,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
 
     if not cluster:
         bgcomp.update_callback(-1, 'saving...')
-        
+
     bgcomp.project.save()
 
     print ("#CHUNKS: %d") % (len(bgcomp.project.chm.chunk_list()))
