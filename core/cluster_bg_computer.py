@@ -10,7 +10,7 @@ class BGComp():
 if __name__ == '__main__':
     working_dir = sys.argv[1]
     proj_name = sys.argv[2]
-    part_num = sys.argv[3]
+    part_num = int(sys.argv[3])
 
     p = Project()
     p.load(working_dir+'/'+proj_name+'.fproj')
