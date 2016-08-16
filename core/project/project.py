@@ -276,6 +276,7 @@ class Project:
         # check if video exists
         if parent:
             self.video_paths = check_video_path(self.video_paths, parent)
+            print "New path is %s" % self.video_paths
 
         # # Region Manager
         # try:

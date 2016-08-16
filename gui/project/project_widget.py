@@ -18,17 +18,14 @@ class ProjectLoader(QtCore.QThread):
     proc_done = QtCore.pyqtSignal(object)
     part_done = QtCore.pyqtSignal(float)
 
-    def __init__(self, project, path, parent=None):
+    def __init__(self, project, path):
         super(ProjectLoader, self).__init__()
 
         self.project = project
         self.path = path
-        self.parent = parent
 
     def run(self):
-        self.project.load(self.path, parent=self.parent)
         CompatibilitySolver(self.project)
-        self.project.rm.con.close()
         self.proc_done.emit(self.project)
 
 class ProjectWidget(QtGui.QWidget):
@@ -93,8 +90,11 @@ class ProjectWidget(QtGui.QWidget):
         self.layout().addWidget(self.loading_w)
         QtGui.QApplication.processEvents()
 
+        # load project - this doesn't take as much time and is needed in the main thread to run popup windows
+        project.load(f, parent=self)
+
         # setup loading thread
-        self.loading_thread = ProjectLoader(project, f, parent=self)
+        self.loading_thread = ProjectLoader(project, f)
         self.loading_thread.proc_done.connect(partial(self.loading_finished, project))
         self.loading_thread.part_done.connect(self.loading_w.update_progress)
 
@@ -111,6 +111,7 @@ class ProjectWidget(QtGui.QWidget):
 
     def loading_finished(self, project):
         # stop timer and fill the progress bar
+        project.rm.con.close()
         self.loading_w.update_progress(1)
         self.timer.stop()
 
