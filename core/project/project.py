@@ -3,6 +3,7 @@ __author__ = 'filip@naiser.cz'
 import cPickle as pickle
 import string
 import time
+import os
 
 from PyQt4 import QtCore
 
@@ -15,6 +16,7 @@ from core.project.solver_parameters import SolverParameters
 from utils.color_manager import ColorManager
 from utils.img_manager import ImgManager
 from core.settings import Settings as S_
+from gui.video_loader import check_video_path
 
 class Project:
     """
@@ -215,7 +217,7 @@ class Project:
                 except:
                     pass
 
-    def load(self, path, snapshot=None):
+    def load(self, path, snapshot=None, parent=None):
         with open(path, 'rb') as f:
             tmp_dict = pickle.load(f)
 
@@ -258,7 +260,7 @@ class Project:
         except:
             pass
 
-        # ANIMALS
+        # STATS
         try:
             with open(self.working_directory+'/stats.pkl', 'rb') as f:
                 self.stats = pickle.load(f)
@@ -270,6 +272,10 @@ class Project:
             self.load_qsettings()
         except:
             pass
+
+        # check if video exists
+        if parent:
+            self.video_paths = check_video_path(self.video_paths, parent)
 
         # # Region Manager
         # try:
