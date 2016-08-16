@@ -572,16 +572,25 @@ class ResultsWidget(QtGui.QWidget):
         for i, a in enumerate(self.project.animals):
             params['colors'].append([a.color_[0], a.color_[1], a.color_[2]])
 
-        img = pn_ids_visualisation.draw(ids_, tracklet.animal_id_['P'], tracklet.animal_id_['N'], tracklet.animal_id_['probabilities'])
-        pixMap = cvimg2qtpixmap(img)
-        item = self.scene.addPixmap(pixMap)
+        item = pn_ids_visualisation.get_pixmap_item(ids_, tracklet.animal_id_['P'], tracklet.animal_id_['N'],
+                                                     tracklet_id=tracklet.id(),
+                                                     callback=self.pn_pixmap_clicked,
+                                                     probs=tracklet.animal_id_['probabilities'],
+                                                     params=params
+                                                     )
 
         reg = rch.region_in_t(frame)
 
+        self.scene.addItem(item)
+
         self.one_frame_items.append(item)
         self.one_frame_items[-1].setPos(reg.centroid()[1], reg.centroid()[0])
-        self.one_frame_items[-1].setZValue(0.6)
+        self.one_frame_items[-1].setZValue(0.9)
+        # self.one_frame_items[-1].setOpacity(0.9)
         self.one_frame_items[-1].setFlags(QtGui.QGraphicsItem.ItemIsMovable)
+
+    def pn_pixmap_clicked(self, id_):
+        print id_
 
     def _gt_marker_clicked(self, id_):
         s = 'id: '+str(id_)
@@ -596,8 +605,6 @@ class ResultsWidget(QtGui.QWidget):
 
         if ch.end_frame(self.project.gm) == f:
             s += "\n out degree: " + str(ch.end_vertex(self.project.gm).out_degree())
-
-
 
         self.info_l.setText(s)
         print id_
