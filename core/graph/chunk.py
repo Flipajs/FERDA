@@ -70,6 +70,12 @@ class Chunk:
 
         return items
 
+    def print_info(self, gm):
+        s = "TRACKLET --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
+        s += "\tstarts at: "+str(self.start_frame(gm))+" ends at: "+str(self.end_frame(gm))
+
+        print s
+
     def append_left(self, vertex, gm, undo_action=False):
         # test: there cannot be any outgoing edge...
         for e in vertex.out_edges():

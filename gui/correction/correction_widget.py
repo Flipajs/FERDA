@@ -249,6 +249,11 @@ class ResultsWidget(QtGui.QWidget):
 
         # self.update_positions()
 
+    def test_one_id_in_tracklet(self, tracklet):
+        # if there is one and only one ID assigned to chunk
+        return len(tracklet.animal_id_['P']) == 1 and \
+               len(tracklet.animal_id_['N']) == len(self.project.animals) - 1
+
     def _evolve_gt(self):
         my_data = {}
 
@@ -262,8 +267,9 @@ class ResultsWidget(QtGui.QWidget):
             for ch in self.project.chm.chunks_in_frame(frame):
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
 
-                if len(ch.animal_id_) == 1:
-                    my_data[frame][ch.animal_id_[0]] = rch.centroid_in_t(frame)
+                if self.test_one_id_in_tracklet(ch):
+                    id_ = list(ch.animal_id_['P'])[0]
+                    my_data[frame][id_] = rch.centroid_in_t(frame)
 
             max_frame = max(max_frame, frame)
 
@@ -339,8 +345,9 @@ class ResultsWidget(QtGui.QWidget):
         if use_ch_color:
             c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
         else:
-            if len(animal_id) == 1:
-                c_ = self.colors_[animal_id[0]]
+            if self.test_one_id_in_tracklet(animal_id):
+                id_ = list(animal_id['P'])[0]
+                c_ = self.colors_[id_]
                 c = QtGui.qRgba(c_.red(), c_.green(), c_.blue(), alpha)
 
         if self.contour_without_colors.isChecked():
@@ -533,8 +540,11 @@ class ResultsWidget(QtGui.QWidget):
             r = rch.region_in_t(frame)
             c = r.centroid().copy()
 
+            self.show_pn_ids_visualisation(ch, frame)
+
+            # TODO: fix for option when only P set is displayed using circles
             try:
-                for id_ in ch.animal_id_:
+                for id_ in ch.animal_id_['P']:
                     animal_ids2centroids.setdefault(id_, [])
                     animal_ids2centroids[id_].append((c, len(ch.animal_id_) == 1, ch))
             except:
@@ -549,6 +559,29 @@ class ResultsWidget(QtGui.QWidget):
         if self.show_gt_markers.isChecked():
             self._show_gt_markers(animal_ids2centroids)
 
+    def show_pn_ids_visualisation(self, tracklet, frame):
+        rch = RegionChunk(tracklet, self.project.gm, self.project.rm)
+
+        from gui.view import pn_ids_visualisation
+        from gui.view.pn_ids_visualisation import default_params
+
+        params = default_params
+        params['colors'] = []
+
+        ids_ = range(len(self.project.animals))
+        for i, a in enumerate(self.project.animals):
+            params['colors'].append([a.color_[0], a.color_[1], a.color_[2]])
+
+        img = pn_ids_visualisation.draw(ids_, tracklet.animal_id_['P'], tracklet.animal_id_['N'], tracklet.animal_id_['probabilities'])
+        pixMap = cvimg2qtpixmap(img)
+        item = self.scene.addPixmap(pixMap)
+
+        reg = rch.region_in_t(frame)
+
+        self.one_frame_items.append(item)
+        self.one_frame_items[-1].setPos(reg.centroid()[1], reg.centroid()[0])
+        self.one_frame_items[-1].setZValue(0.6)
+        self.one_frame_items[-1].setFlags(QtGui.QGraphicsItem.ItemIsMovable)
 
     def _gt_marker_clicked(self, id_):
         s = 'id: '+str(id_)

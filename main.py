@@ -30,12 +30,20 @@ if is_flipajs_pc():
 
     try:
         with open(project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
-            chunk_available_ids = pickle.load(f_)
+            data = pickle.load(f_)
+
+            Ps = data['ids_present_in_tracklet']
+            Ns = data['ids_not_present_in_tracklet']
+            probabilities = data['probabilities']
 
         for ch_id in project.gm.chunk_list():
             animal_id = -1
-            if ch_id in chunk_available_ids:
-                animal_id = chunk_available_ids[ch_id]
+            if ch_id in Ps:
+                probs = None
+                if ch_id in probabilities:
+                    probs = probabilities[ch_id]
+
+                animal_id = {'P': Ps[ch_id], 'N': Ns[ch_id], 'probabilities': probs}
 
             project.chm[ch_id].animal_id_ = animal_id
     except IOError:
