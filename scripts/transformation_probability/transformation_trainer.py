@@ -59,9 +59,9 @@ class TransformationTrainer:
         regions = filter(lambda x: hash_region_tuple(x) in self.results, data)
         return regions, self.results
 
+
 def hash_region_tuple(region_tuple):
     return (PRIME + region_tuple[0].id()) * PRIME + region_tuple[1].id()
-
 
 if __name__ == "__main__":
     project = Project()
@@ -69,9 +69,9 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     app = QtGui.QApplication(sys.argv)
-    classifier = TransformationTrainer(project)
-    # print classifier.results[10, 10]
-    # classifier.correct_answer(1790, 1796, answer=True)
-    # classifier.delete_answer(130, 136)
-    classifier.improve_ground_truth()
+    trainer = TransformationTrainer(project)
+    # print trainer.results[10, 10]
+    # trainer.correct_answer(1790, 1796, answer=True)
+    # trainer.delete_answer(597, 602)
+    trainer.improve_ground_truth()
     app.quit()

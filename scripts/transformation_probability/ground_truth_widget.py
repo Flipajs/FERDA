@@ -2,12 +2,13 @@ from PyQt4 import QtGui, QtCore
 from gui.gui_utils import cvimg2qtpixmap
 import transformation_trainer
 
+BACK_UP_CONSTANT = 50
 
 class GroundTruthWidget(QtGui.QWidget):
-    def __init__(self, project, classifier):
+    def __init__(self, project, trainer):
         super(GroundTruthWidget, self).__init__()
         self.project = project
-        self.classifier = classifier
+        self.trainer = trainer
 
         self.setLayout(QtGui.QVBoxLayout())
         self.buttons_l = QtGui.QHBoxLayout()
@@ -42,6 +43,9 @@ class GroundTruthWidget(QtGui.QWidget):
         if self.regions and len(self.regions) > 0:
             self.current = self.regions.pop()
             self._resolve(self.current[0], self.current[1])
+            if len(self.regions) % BACK_UP_CONSTANT == 0:
+                self.trainer.accept_results(self.results)
+                self.results = {}
         else:
             self.buttons_l.addWidget(QtGui.QLabel("Every region from input already marked"))
             self.no.setDisabled(True)
@@ -71,10 +75,9 @@ class GroundTruthWidget(QtGui.QWidget):
 
     def _prepare_layouts(self):
         self.layout().addLayout(self.imgs)
+        self.layout().addLayout(self.buttons_l)
         self.imgs.addLayout(self.left)
         self.imgs.addLayout(self.right)
-        self.layout().addLayout(self.buttons_l)
-
         self.left.addWidget(self.left_label)
         self.left.addWidget(self.left_img)
         self.right.addWidget(self.right_label)
@@ -107,4 +110,4 @@ class GroundTruthWidget(QtGui.QWidget):
 
     def closeEvent(self, QCloseEvent):
         super(GroundTruthWidget, self).closeEvent(QCloseEvent)
-        self.classifier.accept_results(self.results)
+        self.trainer.accept_results(self.results)
