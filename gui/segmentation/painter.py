@@ -43,6 +43,9 @@ class Painter(QtGui.QWidget):
         # create empty image and pixmap to view painting
         self.paint_image = numpy2qimage(image)
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
+      
+        self.bg_width = self.paint_image.width()
+        self.bg_height = self.paint_image.height()
 
         # mask storage: numpy 0-1 mask
         self.pick_mask = np.zeros((self.bg_width, self.bg_height))
@@ -224,6 +227,8 @@ class Painter(QtGui.QWidget):
         self.layout().addWidget(self.view)
 
 def numpy2qimage(image):
+    if type(image) == QtGui.QImage:
+        return image
     height, width, channels = image.shape
     bytesPerLine = channels * width
     return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)

@@ -39,6 +39,11 @@ class SegmentationPicker(QtGui.QWidget):
         self.setLayout(QtGui.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
+        # drawing area
+        image = cv2.imread('/home/dita/vlcsnap-2016-08-16-17h28m57s150.png')
+        self.view = painter.Painter(image)
+        self.layout().addWidget(self.view)
+
         # left panel widget
         self.left_panel = QtGui.QWidget()
         self.left_panel.setLayout(QtGui.QVBoxLayout())
@@ -125,11 +130,7 @@ class SegmentationPicker(QtGui.QWidget):
         # complete the gui
         self.layout().addWidget(self.left_panel)
 
-        image = cv2.imread('/home/dita/vlcsnap-2016-08-16-17h28m57s150.png')
-        image = painter.numpy2qimage(image)
-        self.view = painter.Painter(image)
-        self.view.set_image(image)
-        self.layout().addWidget(self.view)
+        # image = painter.numpy2qimage(image)
 
 
 
