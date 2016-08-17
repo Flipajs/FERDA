@@ -179,6 +179,7 @@ class LearningProcess:
             # find tracklet which overlaps with max number of other tracklets
             if strategy == 'max_tracklets':
                 val = len(in_time)
+
             elif strategy == 'longest_impact':
                 min_t = np.inf
                 max_t = 0
@@ -218,8 +219,8 @@ class LearningProcess:
 
             uni_probs = np.ones((len(x), )) / float(len(x))
 
-            # TODO: why 0.95 and not 1.0? Maybe to give a small chance for each option independently on classifier
-            alpha = (min((t_length/k)**2, 0.95))
+            # TODO: why 0.99 and not 1.0? Maybe to give a small chance for each option independently on classifier
+            alpha = (min((t_length/k)**2, 0.99))
 
             # if it is not obvious e.g. (1.0, 0, 0, 0, 0)...
             # if 0 < np.max(x) < 1.0:
@@ -571,7 +572,7 @@ class LearningProcess:
 
     def next_step(self):
         # TODO: global parameter
-        eps_certainty = 0.3
+        eps_certainty = 0.2
         eps_certainty_learning = 0.15
         min_new_samples_to_retrain = 50
 
@@ -1026,6 +1027,11 @@ class LearningProcess:
             return
 
         print "ASSIGNING ID: ", id_, " to tracklet: ", tracklet.id(), "length: ", tracklet.length(), "start: ", tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)
+        try:
+            print "\t\tcertainty: ", self.tracklet_certainty[tracklet.id()], " measurements: ", self.tracklet_measurements[tracklet.id()]
+        except:
+            pass
+
         # finalize
         self.undecided_tracklets.remove(tracklet.id())
         if len(self.tracklet_measurements):

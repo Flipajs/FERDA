@@ -606,6 +606,8 @@ class ResultsWidget(QtGui.QWidget):
         if ch.end_frame(self.project.gm) == f:
             s += "\n out degree: " + str(ch.end_vertex(self.project.gm).out_degree())
 
+        s += "len: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(ch.end_frame(self.project.gm))
+
         self.info_l.setText(s)
         print id_
 
