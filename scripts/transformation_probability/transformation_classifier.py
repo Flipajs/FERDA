@@ -22,27 +22,28 @@ FNAME = 'region_probability_descriptors.p'
 
 
 class TransformationClassifier():
-    def __init__(self, project, results):
+    def __init__(self, project, regions, results):
         self.project = project
+        self.regions = regions
         self.results = results
         self.feature_vectors = {}
         self.classification = {}
         self.probability = {}
 
         self.fname = os.path.join(self.project.working_directory, FNAME)
-        logging.info("Loading previous descriptors from %s" % self.fname)
+        logging.info("Loading previous feature veectors from %s" % self.fname)
         if exists(self.fname):
             self.feature_vectors = pickle.load(open(self.fname, 'rb'))
         else:
             self.feature_vectors = {}
-        logging.info("Loaded {0} descriptors from database".format(len(self.results)))
+        logging.info("Loaded {0} feature vectors from database".format(len(self.results)))
 
     def compute_accuracy(self, training_regions, testing_regions, save_results=False, verbose=True):
-        X = [self.feature_vectors[r] for r in training_regions]
+        X = [self.feature_vectors[hash_region_tuple(r)] for r in training_regions]
         y = [self.results[hash_region_tuple(r)] for r in training_regions]
         rfc = RandomForestClassifier(class_weight='balanced_subsample')
         rfc.fit(X, y)
-        X1 = [self.feature_vectors[r] for r in testing_regions]
+        X1 = [self.feature_vectors[hash_region_tuple(r)] for r in testing_regions]
         y1 = [self.results[hash_region_tuple(r)] for r in testing_regions]
         accuracy = rfc.score(X1, y1)
         if verbose:
@@ -55,9 +56,10 @@ class TransformationClassifier():
             logging.info("Testing: True: {0}, False: {1}".format(t, f))
         if save_results:
             for r in testing_regions:
-                desc = self.feature_vector(r)
-                self.classification[r] = rfc.predict([desc])[0]
-                self.probability[r] = rfc.predict_proba([desc])[0]
+                h = hash_region_tuple(r)
+                desc = self.feature_vectors[h]
+                self.classification[h] = rfc.predict([desc])[0]
+                self.probability[h] = rfc.predict_proba([desc])[0]
         return accuracy
 
     def test(self, regions):
@@ -87,14 +89,18 @@ class TransformationClassifier():
         logging.info("False classified with {0:.3f} accuracy".format(accuracy))
 
     def view_results(self):
-        regions = [k for k, v in self.classification.items() if
-                   (bool(v) != self.results[hash_region_tuple(k)])]
-        n_correct = len(regions)
-        regions += [k for k, v in self.classification.items() if
-                    (bool(v) == self.results[hash_region_tuple(k)])]
+        regions = filter(lambda x: hash_region_tuple(x) in self.classification, self.regions)
+        r_t = []
+        r_f = []
+        for r in regions:
+            if bool(self.classification[hash_region_tuple(r)]) == self.results[hash_region_tuple(r)]:
+                r_t.append(r)
+            else:
+                r_f.append(r)
+        n_false = len(r_f)
         avg_vector = (np.array(self.feature_vectors.values()).mean(axis=0))
-        widget = view_widget.ViewWidget(self.project, regions, self.classification, self.probability, self, avg_vector,
-                                        n_correct)
+        widget = view_widget.ViewWidget(self.project, r_f + r_t, self.classification, self.probability, self, avg_vector,
+                                        n_false)
         widget.show()
         app.exec_()
 
@@ -215,14 +221,17 @@ class TransformationClassifier():
                 closest = min(dist, closest)
         return farthest, closest
 
-    def update_feature_vectors(self, regions, all=False):
+    def update_feature_vectors(self, all=False):
         if not all:
-            regions = filter(lambda x: x not in self.feature_vectors, regions)
-        print len(regions)
-        self.feature_vectors.update({r: self.feature_vector(r) for r in regions})
-        logging.info("Saving {0} descriptors to database. It now contains {1} entries.".format(
+            regions = filter(lambda x: hash_region_tuple(x) not in self.feature_vectors, self.regions)
+        else:
+            regions = self.regions
+        logging.info("Creating features for {0} region tuples".format(len(regions)))
+        self.feature_vectors.update({hash_region_tuple(r): self.feature_vector(r) for r in regions})
+        logging.info("Saving {0} feature vectors to database. It now contains {1} entries.".format(
             len(regions), len(self.feature_vectors)))
         pickle.dump(self.feature_vectors, open(self.fname, 'wb'))
+
 
 if __name__ == "__main__":
     project = Project()
@@ -233,8 +242,8 @@ if __name__ == "__main__":
 
     trainer = TransformationTrainer(project)
     regions, results = trainer.get_ground_truth()
-    classifier = TransformationClassifier(project, results)
-    classifier.update_feature_vectors(regions, all=False)
+    classifier = TransformationClassifier(project, regions, results)
+    classifier.update_feature_vectors(all=False)
     # classifier.update_feature_vectors(regions, all=True)
     classifier.test(regions)
     classifier.view_results()
