@@ -19,16 +19,11 @@ class Painter(QtGui.QWidget):
 
         # PAINT SETUP
         # current color ("Color" or "Eraser"), purple by default
-        self.color = "Color"
-        self.paint_r = paint_r
-        self.paint_g = paint_g
-        self.paint_b = paint_b
+        self.color = [0, 0, 0]
+        self.color[0] = paint_r
+        self.color[1] = paint_g
+        self.color[2] = paint_b
         self.pen_size = pen_size
-
-        # background image
-        self.frame = -1
-        self.bg_pixmap = None
-        self.background = image
 
         # WIDGET SETUP
         self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
@@ -40,8 +35,14 @@ class Painter(QtGui.QWidget):
         self.backup = []
         self.undo_len = undo_len
 
+        self.background = numpy2qimage(image)
+        self.scene.addPixmap(QtGui.QPixmap.fromImage(self.background))
+
         # create empty image and pixmap to view painting
-        self.paint_image = numpy2qimage(image)
+        bg_size = QtCore.QSize(self.background.width(), self.background.height())
+        fmt = QtGui.QImage.Format_ARGB32
+        self.paint_image = QtGui.QImage(bg_size, fmt)
+        self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
       
         self.bg_width = self.paint_image.width()
@@ -73,6 +74,14 @@ class Painter(QtGui.QWidget):
         # change pen size
         self.pen_size = value
 
+    def set_pen_color(self, color):
+        """ Change pen size
+        :param value: new pen size
+        :return: None
+        """
+        # change pen size
+        self.color = color
+
     def mouse_press_event(self, event):
         point = self.view.mapToScene(event.pos())
         if self.is_in_scene(point):
@@ -101,6 +110,7 @@ class Painter(QtGui.QWidget):
             self.backup.pop(0)
 
     def undo(self):
+        print "Undoing"
         # get number of elements in backup
         length = len(self.backup)
         if self.DEBUG:
@@ -120,8 +130,7 @@ class Painter(QtGui.QWidget):
         self.refresh_image(self.paint_image)
 
     def draw(self, point):
-        """
-        paint a point with a pen
+        """ Draw a point with a pen
         :param point: point to be drawn
         :return: None
         """
@@ -130,8 +139,8 @@ class Painter(QtGui.QWidget):
             point = point.toPoint()
 
         # use color paint
-        if self.color == "Color":
-            paint = QtGui.qRgba(self.paint_r, self.paint_g, self.paint_b, 100)
+        if self.color:
+            paint = QtGui.qRgba(self.color[0], self.color[1], self.color[2], 100)
             old, new = 0, 1
         # use eraser
         else:
