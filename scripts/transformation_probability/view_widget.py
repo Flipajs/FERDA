@@ -9,9 +9,10 @@ MARGIN = 300
 HEIGHT = 500
 WIDTH = 700
 
+MAX_ROW = 5
 
 class ViewWidget(QtGui.QWidget):
-    def __init__(self, project, regions, classification, probability, classifier, avg_feat_v):
+    def __init__(self, project, regions, classification, probability, classifier, avg_feat_v, n_correct):
         super(ViewWidget, self).__init__()
         self.project = project
         self.regions = regions
@@ -19,7 +20,7 @@ class ViewWidget(QtGui.QWidget):
         self.classifier = classifier
         self.probability = probability
         self.avg_feat_v = avg_feat_v
-        print avg_feat_v
+        self.n_correct = n_correct
 
         self.setLayout(QtGui.QVBoxLayout())
         self.buttons = QtGui.QHBoxLayout()
@@ -52,12 +53,21 @@ class ViewWidget(QtGui.QWidget):
         self.prev_b.setDisabled(True)
 
     def _prepare_table(self):
-        self.table.setColumnCount(2)
+        self.table.setColumnCount(3)
+        self.table.setRowCount(len(self.avg_feat_v))
         self.table.verticalHeader().setVisible(False)
-        self.table.horizontalHeader().setVisible(False)
         self.table.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.table.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        for i, v in enumerate(self.avg_feat_v):
+            if i % MAX_ROW == 0:
+                self.table.setHorizontalHeaderItem(0, QTableWidgetItem(""))
+                self.table.setHorizontalHeaderItem(1, QTableWidgetItem(""))
+                self.table.setHorizontalHeaderItem(2, QTableWidgetItem("avg"))
+                self.table.horizontalHeaderItem(i + 2).setTextAlignment(QtCore.Qt.AlignRight)
+            self.table.setItem(i, 2, QTableWidgetItem(str("{0:.2f}".format(v))))
+            self.table.item(i, 2).setTextAlignment(QtCore.Qt.AlignRight)
+        self.table.resizeRowsToContents()
 
     def _view(self, r):
         self._add_region_left(r[0])
@@ -67,20 +77,20 @@ class ViewWidget(QtGui.QWidget):
         self.desc_label.setText("Feature Vector")
         self._set_table(self.classifier.descriptor_representation(r))
         self.info.setText(
-            "Tagged <b>{0}</b>, should be <b>{1}</b> with probability: F : {2} T : {3}".format(res, not res, p[0],
-                                                                                               p[1]))
+            "Tagged <b>{0}</b>, should be <b>{1}</b> with probability: F : {2} T : {3}".format(res,
+                                        not res if self.current_index < self.n_correct else res, p[0], p[1]))
 
     def _set_table(self, data):
-        self.table.setRowCount(len(data))
         for i, (f, v) in enumerate(data):
-            self.table.setItem(i, 0, QTableWidgetItem(f))
-            self.table.item(i, 0).setTextAlignment(QtCore.Qt.AlignRight)
-            self.table.setItem(i, 1, QTableWidgetItem("{0:.2f}".format(v)))
-            self.table.item(i, 1).setTextAlignment(QtCore.Qt.AlignRight)
-
+            a = i % MAX_ROW
+            ratio = i / MAX_ROW
+            self.table.setItem(a, ratio, QTableWidgetItem(f))
+            self.table.item(a, ratio).setTextAlignment(QtCore.Qt.AlignRight)
+            self.table.setItem(a, ratio + 1, QTableWidgetItem("{0:.2f}".format(v)))
+            self.table.item(a, ratio + 1).setTextAlignment(QtCore.Qt.AlignRight)
         self.table.resizeColumnsToContents()
-        self.table.setFixedSize(self.table.horizontalHeader().length() + self.table.verticalHeader().width(),
-                                self.table.verticalHeader().length())
+        self.table.setFixedSize(self.table.horizontalHeader().length(),
+                                self.table.verticalHeader().length() + self.table.horizontalHeader().height())
 
     def _add_region_left(self, r):
         img = self.project.img_manager.get_crop(r.frame(), r, width=WIDTH, height=HEIGHT, margin=MARGIN)
