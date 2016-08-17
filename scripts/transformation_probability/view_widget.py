@@ -3,7 +3,6 @@ from PyQt4 import QtGui
 
 from PyQt4.QtGui import QTableWidgetItem
 
-import transformation_classifier
 from gui.gui_utils import cvimg2qtpixmap
 
 MARGIN = 300
@@ -12,12 +11,15 @@ WIDTH = 700
 
 
 class ViewWidget(QtGui.QWidget):
-    def __init__(self, project, regions, classification, probability):
+    def __init__(self, project, regions, classification, probability, classifier, avg_feat_v):
         super(ViewWidget, self).__init__()
         self.project = project
         self.regions = regions
         self.classification = classification
+        self.classifier = classifier
         self.probability = probability
+        self.avg_feat_v = avg_feat_v
+        print avg_feat_v
 
         self.setLayout(QtGui.QVBoxLayout())
         self.buttons = QtGui.QHBoxLayout()
@@ -63,7 +65,7 @@ class ViewWidget(QtGui.QWidget):
         res = self.classification[r]
         p = self.probability[r]
         self.desc_label.setText("Feature Vector")
-        self._set_table(transformation_classifier.descriptor_representation(r))
+        self._set_table(self.classifier.descriptor_representation(r))
         self.info.setText(
             "Tagged <b>{0}</b>, should be <b>{1}</b> with probability: F : {2} T : {3}".format(res, not res, p[0],
                                                                                                p[1]))
