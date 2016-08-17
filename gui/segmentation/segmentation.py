@@ -42,7 +42,6 @@ class SegmentationPicker(QtGui.QWidget):
         # drawing area
         image = cv2.imread('/home/dita/vlcsnap-2016-08-16-17h28m57s150.png')
         self.view = painter.Painter(image)
-        self.layout().addWidget(self.view)
 
         # left panel widget
         self.left_panel = QtGui.QWidget()
@@ -65,7 +64,7 @@ class SegmentationPicker(QtGui.QWidget):
         self.slider.setTickInterval(1)
         self.slider.setValue(self.pen_size)
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
-        #self.slider.valueChanged[int].connect(self.change_pen_size)
+        self.slider.valueChanged[int].connect(self.view.set_pen_size)
         self.slider.setVisible(True)
         self.left_panel.layout().addWidget(self.slider)
 
@@ -102,22 +101,6 @@ class SegmentationPicker(QtGui.QWidget):
         #	self.popup_button.clicked.connect(self.done)
         self.left_panel.layout().addWidget(self.popup_button)
 
-        self.next_frame_button = QtGui.QPushButton("Next frame!")
-        # self.next_frame_button.clicked.connect(self.next_frame)
-        self.left_panel.layout().addWidget(self.next_frame_button)
-
-        self.prev_frame_button = QtGui.QPushButton("Previous frame!")
-        # self.prev_frame_button.clicked.connect(self.prev_frame)
-        self.left_panel.layout().addWidget(self.prev_frame_button)
-
-        self.random_frame_button = QtGui.QPushButton("Random frame!")
-        # self.random_frame_button.clicked.connect(self.random_frame)
-        self.left_panel.layout().addWidget(self.random_frame_button)
-
-        self.new_color_button = QtGui.QPushButton("New color")
-        # self.new_color_button.clicked.connect(self.new_color)
-        self.left_panel.layout().addWidget(self.new_color_button)
-
         self.color_label = QtGui.QLabel()
         self.color_label.setWordWrap(True)
         self.color_label.setText("")
@@ -129,9 +112,7 @@ class SegmentationPicker(QtGui.QWidget):
 
         # complete the gui
         self.layout().addWidget(self.left_panel)
-
-        # image = painter.numpy2qimage(image)
-
+        self.layout().addWidget(self.view)
 
 
 if __name__ == "__main__":
