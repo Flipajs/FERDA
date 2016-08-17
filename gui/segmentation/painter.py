@@ -8,8 +8,10 @@ __author__ = 'dita'
 
 
 class Painter(QtGui.QWidget):
+    """ Painter widget that can be used in all painting applications"""
 
-    def __init__(self, image, width=1000, height=1000, pen_size=10, undo_len=10, debug=False, paint_r=255, paint_g=0, paint_b=238):
+    def __init__(self, image, pen_size=10, undo_len=10, debug=False, paint_r=255, paint_g=0, paint_b=238):
+        """ """
 
         super(Painter, self).__init__()
 
@@ -39,11 +41,7 @@ class Painter(QtGui.QWidget):
         self.undo_len = undo_len
 
         # create empty image and pixmap to view painting
-        self.bg_height, self.bg_width = height, width
-        bg_size = QtCore.QSize(self.bg_width, self.bg_height)
-        fmt = QtGui.QImage.Format_ARGB32
-        self.paint_image = QtGui.QImage(bg_size, fmt)
-        self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
+        self.paint_image = numpy2qimage(image)
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
 
         # mask storage: numpy 0-1 mask
