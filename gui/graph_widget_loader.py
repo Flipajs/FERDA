@@ -30,7 +30,7 @@ DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O, Ctrl + MWh
                "stretch; A, S show/hide info for selected; T, Y - show/hide toggled node"
 
 
-class VisLoader:
+class GraphWidgetLoader:
 
     def __init__(self, project=None, width=WIDTH, height=HEIGHT, relative_margin=RELATIVE_MARGIN):
         self.project = project
@@ -74,7 +74,6 @@ class VisLoader:
 
     def prepare_vertices(self, frames):
         import time
-        time1 = time.time()
         if frames is None:
             self.vertices = set(self.graph_manager.get_all_relevant_vertices())
         else:
@@ -85,36 +84,20 @@ class VisLoader:
 
             self.vertices = set(self.vertices)
 
-        time2 = time.time()
-        # s = set(self.graph_manager.get_all_relevant_vertices())
-        # i = 100
-        # while i > 0:
-        #     i -= 1
-        #     self.vertices.add(s.pop())
-
-        # print("Getting {0} vertices from graph took {1}".format(len(self.vertices), time2 - time1))
-
     def prepare_nodes(self):
         import time
-        time1 = time.time()
-        # zmerit cas toho volani
         for vertex in self.vertices:
 
             region = self.graph_manager.region(vertex)
             self.regions_vertices[region] = vertex
             self.regions.add(region)
-        time2 = time.time()
-        print("Getting {0} regions from vertices took {1}".format(len(self.regions), time2 - time1))
 
     def prepare_edges(self):
         import time
-        time1 = time.time()
         for vertex in self.vertices:
             v = self.graph.vertex(vertex)
             self.prepare_tuples(v.in_edges())
             self.prepare_tuples(v.out_edges())
-        time2 = time.time()
-        print("Preparing {0} edges took {1}".format(len(self.edges), time2 - time1))
 
     def prepare_tuples(self, edges):
         for edge in edges:
@@ -163,7 +146,7 @@ class VisLoader:
     def get_edge_info(self, edge):
         return "Type = {0}\nSureness = {1}".format(edge[2], edge[3])
 
-    def visualise(self, frames=None):
+    def get_widget(self, frames=None):
         self.prepare_vertices(frames)
         # print("Preparing nodes...")
         self.prepare_nodes()
@@ -171,9 +154,9 @@ class VisLoader:
         self.prepare_edges()
         # print("Preparing visualizer...")
         img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
-        from graph_visualizer import GraphVisualizer
+        from gui.graph_widget.graph_visualizer import GraphVisualizer
         self.g = GraphVisualizer(self, img_manager)
-        self.g.showMaximized()
+        return self.g
 
 if __name__ == '__main__':
     project = Project()
@@ -187,13 +170,13 @@ if __name__ == '__main__':
 
     import cv2, sys
     app = QtGui.QApplication(sys.argv)
-    l1 = VisLoader(project)
+    l1 = GraphWidgetLoader(project)
     l1.set_relative_margin(1)
     # l1.set_width(60)
     # l1.set_height(60)
 
-    l1.visualise(range(300, 500))
-    # l1.visualise()
+    g = l1.get_widget(range(300, 500))
+    g.show()
 
     app.exec_()
     cv2.waitKey(0)

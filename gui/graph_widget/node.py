@@ -2,7 +2,7 @@ from PyQt4 import QtGui, QtCore
 
 from PyQt4.QtCore import Qt
 
-from gui.graph_widget import WIDTH, HEIGHT
+from gui.graph_widget_loader import WIDTH, HEIGHT
 from gui.img_controls.utils import cvimg2qtpixmap
 
 SELECTION_LINE_WIDTH = 2

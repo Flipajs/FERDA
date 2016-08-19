@@ -1,7 +1,7 @@
 from PyQt4 import QtGui
 
 from core.region.region import Region
-from gui.graph_widget import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
+from gui.graph_widget_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 from gui.graph_widget.edge import Edge
 from gui.graph_widget.node import Node
 from gui.img_controls.utils import cvimg2qtpixmap

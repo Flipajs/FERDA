@@ -5,7 +5,7 @@ from PyQt4.QtCore import Qt
 from PyQt4.QtGui import QApplication, QLabel, QSizePolicy
 
 import computer as comp
-from gui.graph_widget import DEFAULT_TEXT, GAP, \
+from gui.graph_widget_loader import DEFAULT_TEXT, GAP, SPACE_BETWEEN_HOR, \
     MINIMUM, SPACE_BETWEEN_VER, WIDTH
 from gui.graph_widget.edge import EdgeGraphical, ChunkGraphical
 from gui.graph_widget.info_manager import InfoManager
@@ -24,7 +24,7 @@ class GraphVisualizer(QtGui.QWidget):
     Those can be passed in constructor or using a method add_objects
     """
 
-    def __init__(self, loader, img_manager, show_vertically=True, compress_axis=True, dynamically=True):
+    def __init__(self, loader, img_manager, show_vertically=False, compress_axis=True, dynamically=True):
         super(GraphVisualizer, self).__init__()
         self.regions = set()
         self.regions_list = []
@@ -156,8 +156,10 @@ class GraphVisualizer(QtGui.QWidget):
         self.hide_zoom_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Y))
         self.addAction(self.hide_zoom_node_action)
 
-        if len(loader.edges) + len(loader.regions) > 0:
-            self.add_objects(loader.regions, loader.edges)
+
+    def show_objects(self):
+        if len(self.loader.edges) + len(self.loader.regions) > 0:
+            self.add_objects(self.loader.regions, self.loader.edges)
 
     def show_info_action_method(self):
         if self.selected_in_menu:
@@ -189,12 +191,14 @@ class GraphVisualizer(QtGui.QWidget):
 
         region_chunk = self.loader.chunks_region_chunks[chunk]
         frames = list(range(chunk[0].frame_, chunk[1].frame_ + 1))
+        # TODO moznost zmenit
         # freq, none = QtGui.QInputDialog.getInt(self, 'Chunk Detail',
         #     'Enter frequency:')
         freq = 1
 
         for frame in frames[::freq]:
-            img = self.img_manager.get_crop(frame, region_chunk[frame - region_chunk.start_frame()],  width=self.width, height=self.height, relative_margin=self.relative_margin)
+            img = self.img_manager.get_crop(frame, region_chunk[frame - region_chunk.start_frame()], width=self.width,
+                                            height=self.height, relative_margin=self.relative_margin)
             pixmap = cvimg2qtpixmap(img)
             label = QtGui.QLabel()
             label.setPixmap(pixmap)
@@ -227,15 +231,19 @@ class GraphVisualizer(QtGui.QWidget):
 
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
+        print type(item)
         if item is None:
             self.selected = []
             self.node_zoom_manager.remove_all()
             self.info_manager.remove_info_all()
+            self.hide_chunk_pictures_widget()
         else:
             if isinstance(item, EdgeGraphical):
                 self.info_manager.add(item)
                 if isinstance(item, ChunkGraphical):
-                 self.show_chunk_pictures_label(item.core_obj)
+                    self.show_chunk_pictures_label(item.core_obj)
+                else:
+                    self.hide_chunk_pictures_widget()
             elif isinstance(item, Node):
                 self.node_zoom_manager.add(item)
                 self.info_manager.add(item)
@@ -298,14 +306,15 @@ class GraphVisualizer(QtGui.QWidget):
                 while frame <= end:
                     column = self.get_next_to_column(frame - 1, "right")
                     frame = column.get_end_frame()
-                    if frame == start or frame == end or position == self.frames_columns[start].get_position_item(node_1):
+                    if frame == start or frame == end or position == self.frames_columns[start].get_position_item(
+                            node_1):
                         column.add_object(edge, position)
                     frame += 1
                 # print("inside {0}.".format(time.time() - time1))
                 break
             else:
                 position += 1
-        # print("outside {0}.".format(time.time() - time2))
+                # print("outside {0}.".format(time.time() - time2))
 
     def find_suitable_position_semi_placed_chunk(self, edge, col1, col2, node_1, node_2):
         """Finds the best position for semi-placed chunk. This situation should never happen!
@@ -351,7 +360,7 @@ class GraphVisualizer(QtGui.QWidget):
                 for num in offset_list:
                     if node_2.frame_ - node_1.frame_ == 1:
                         if self.frames_columns[node_1.frame_].is_free(position_1, node_1) and \
-                         self.frames_columns[node_2.frame_].is_free(position_1 + num, node_2):
+                                self.frames_columns[node_2.frame_].is_free(position_1 + num, node_2):
                             position_2 = position_1 + num
                             break
                     elif self.is_line_free(position_1, node_1.frame_, node_2.frame_) and \
@@ -380,7 +389,7 @@ class GraphVisualizer(QtGui.QWidget):
             occupied = True
             while occupied:
                 if column.is_free(position):
-                        # and next_column.is_free(position):
+                    # and next_column.is_free(position):
                     occupied = False
                 position += 1
 
@@ -417,7 +426,8 @@ class GraphVisualizer(QtGui.QWidget):
             end = frame + frame_offset
             while end not in self.frames_columns.keys():
                 end += frame_offset
-            return self.frames_columns[((start, end - frame_offset) if direction == "right" else (end - frame_offset, start))]
+            return self.frames_columns[
+                ((start, end - frame_offset) if direction == "right" else (end - frame_offset, start))]
 
     def prepare_columns(self, frames):
         from gui.graph_widget.column import Column
@@ -426,11 +436,13 @@ class GraphVisualizer(QtGui.QWidget):
             if x in frames:
                 if empty_frame_count > 0:
                     if empty_frame_count == 1:
-                        column = Column(x - 1, self.scene, self.img_manager, self.relative_margin, self.width, self.height, True)
+                        column = Column(x - 1, self.scene, self.img_manager, self.relative_margin, self.width,
+                                        self.height, True)
                         self.frames_columns[x - 1] = column
                         self.columns.append(column)
                     else:
-                        column = Column(((x - empty_frame_count), x - 1), self.scene, self.img_manager, self.relative_margin, self.width, self.height, True)
+                        column = Column(((x - empty_frame_count), x - 1), self.scene, self.img_manager,
+                                        self.relative_margin, self.width, self.height, True)
                         self.frames_columns[((x - empty_frame_count), x - 1)] = column
                         self.columns.append(column)
                     self.scene_width += WIDTH / 2 + SPACE_BETWEEN_HOR
@@ -444,7 +456,6 @@ class GraphVisualizer(QtGui.QWidget):
                 empty_frame_count += 1
 
     def add_objects(self, added_regions, added_edges):
-        print("Preparing objects...")
         frames = set()
         for node in added_regions:
             if node not in self.regions:
@@ -462,8 +473,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.edges = comp.sort_edges(self.edges, frames)
         self.compute_positions()
         self.add_sole_nodes()
-        print("Visualizing...")
-        self.showMaximized()
+        # self.showMaximized()
         self.redraw(first_frame, last_frame)
 
     def draw_columns(self, first_frame, last_frame, minimum):
@@ -489,8 +499,8 @@ class GraphVisualizer(QtGui.QWidget):
             if not (frame_a < first_frame or frame_b > last_frame):
                 col_index = self.columns.index(column)
                 if col_index <= minimum:
-                        column.add_crop_to_col()
-                        QApplication.processEvents()
+                    column.add_crop_to_col()
+                    QApplication.processEvents()
                 elif self.dynamically:
                     if col_index == minimum + 1:
                         QApplication.processEvents()
@@ -498,13 +508,13 @@ class GraphVisualizer(QtGui.QWidget):
                         thread_load.start()
                         event_loaded.wait()
                     if col_index not in self.loaded:
-                            event_loaded.clear()
-                            event_loaded.wait()
+                        event_loaded.clear()
+                        event_loaded.wait()
                     if col_index % minimum == 0:
-                            QApplication.processEvents()
+                        QApplication.processEvents()
                 column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
-            # time2 = time.time()
-            # print("The drawing of column took {0}".format(time2 - time1))
+                # time2 = time.time()
+                # print("The drawing of column took {0}".format(time2 - time1))
 
     def increment_x(self, column, next_x):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
@@ -527,17 +537,17 @@ class GraphVisualizer(QtGui.QWidget):
 
     def draw_lines(self, first_frame, last_frame):
         for edge in self.edges:
-                if edge[2] == "line" or edge[2] == "chunk":
-                    if first_frame <= edge[0].frame_ and edge[1].frame_ <= last_frame:
-                        col = self.frames_columns[edge[1].frame_]
-                        col.show_edge(edge, self.frames_columns, self.show_vertically)
-                elif edge[2] == "partial":
-                    if(edge[0] or edge[1]) and (edge[0] in self.regions or edge[1] in self.regions):
-                        direction = "left" if (edge[0] is None or not (edge[0] in self.regions)) else "right"
-                        node = edge[1] if direction == "left" else edge[0]
-                        if first_frame <= node.frame_ <= last_frame:
-                            col = self.frames_columns[node.frame_]
-                            col.show_edge(edge, self.frames_columns, self.show_vertically, direction, node)
+            if edge[2] == "line" or edge[2] == "chunk":
+                if first_frame <= edge[0].frame_ and edge[1].frame_ <= last_frame:
+                    col = self.frames_columns[edge[1].frame_]
+                    col.show_edge(edge, self.frames_columns, self.show_vertically)
+            elif edge[2] == "partial":
+                if (edge[0] or edge[1]) and (edge[0] in self.regions or edge[1] in self.regions):
+                    direction = "left" if (edge[0] is None or not (edge[0] in self.regions)) else "right"
+                    node = edge[1] if direction == "left" else edge[0]
+                    if first_frame <= node.frame_ <= last_frame:
+                        col = self.frames_columns[node.frame_]
+                        col.show_edge(edge, self.frames_columns, self.show_vertically, direction, node)
 
     def toggle_show_vertically(self):
         self.show_vertically = False if self.show_vertically else True
@@ -576,7 +586,8 @@ class GraphVisualizer(QtGui.QWidget):
 
     def add_rect_to_scene(self):
         width = self.scene_width if self.compress_axis else (WIDTH * self.columns[len(self.columns) - 1].frame +
-                                                             (self.columns[len(self.columns) - 1].frame - 1) * SPACE_BETWEEN_VER)
+                                                             (self.columns[
+                                                                  len(self.columns) - 1].frame - 1) * SPACE_BETWEEN_VER)
         height = self.compute_height()
         if self.show_vertically:
             width, height = height, width
@@ -608,4 +619,3 @@ class GraphVisualizer(QtGui.QWidget):
         self.wheel_count += 1
         if self.wheel_count % 3 is 0:
             self.wheel_count = 1
-

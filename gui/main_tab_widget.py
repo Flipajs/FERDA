@@ -1,3 +1,7 @@
+import threading
+
+from gui.graph_widget_loader import GraphWidgetLoader
+
 __author__ = 'fnaiser'
 
 import os
@@ -24,12 +28,16 @@ class MainTabWidget(QtGui.QWidget):
         self.tracker_tab = TrackerWidget(project, show_in_visualizer_callback=self.show_in_visualizer)
         self.results_tab = ResultsWidget(project)
         self.statistics_tab = StatisticsWidget(project)
+        self.graph_tab = GraphWidgetLoader(project).get_widget()
 
         self.finish_callback = finish_callback
 
         self.tabs.addTab(self.tracker_tab, "tracking")
         self.tabs.addTab(self.results_tab, "results viewer")
         self.tabs.addTab(self.statistics_tab, "stats && results")
+        self.tabs.addTab(self.graph_tab, "graph")
+        t = threading.Thread(target=self.graph_tab.show_objects)
+        t.start()
 
         self.switch_to_tracking_window_action = QtGui.QAction('switch tab to tracking', self)
         self.switch_to_tracking_window_action.triggered.connect(partial(self.tabs.setCurrentIndex, 0))
@@ -40,6 +48,7 @@ class MainTabWidget(QtGui.QWidget):
 
         self.tabs.setTabEnabled(1, False)
         self.tabs.setTabEnabled(2, False)
+        self.tabs.setTabEnabled(3, False)
 
         self.ignore_tab_change = False
         self.tabs.currentChanged.connect(self.tab_changed)
@@ -69,6 +78,7 @@ class MainTabWidget(QtGui.QWidget):
 
         self.tabs.setTabEnabled(1, True)
         self.tabs.setTabEnabled(2, True)
+        self.tabs.setTabEnabled(3, True)
 
     def tab_changed(self, i):
         if self.ignore_tab_change:
@@ -87,6 +97,8 @@ class MainTabWidget(QtGui.QWidget):
             self.ignore_tab_change = False
         if i == 2:
             self.statistics_tab.update_data(self.project)
+        if i == 3:
+            pass
 
         # if i == 0:
         #     # TODO: add interval to settings

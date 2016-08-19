@@ -4,7 +4,7 @@ from matplotlib import colors
 
 from PyQt4.QtGui import QApplication
 
-from gui.graph_widget import OPACITY
+from gui.graph_widget_loader import OPACITY
 
 
 class InfoManager():
