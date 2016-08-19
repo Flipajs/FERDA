@@ -1,24 +1,19 @@
-import time
-import sys
-import os
-import errno
-import numpy as np
-from utils.video_manager import get_auto_video_manager
-import multiprocessing as mp
-from core.region.mser import get_msers_
-from PyQt4 import QtGui, QtCore
-from functools import partial
-from core.settings import Settings as S_
 import cPickle as pickle
-import networkx as nx
-from core.graph.solver import Solver
-from core.graph.reduced import Reduced
-import cProfile
-from core.region.region_manager import RegionManager
+import errno
+import os
+import sys
+import time
+from PyQt4 import QtCore
+from functools import partial
+
+import numpy as np
+
 from core.graph.chunk_manager import ChunkManager
-from core.graph.chunk import Chunk
-from gui.graph_view.vis_loader import VisLoader
+from core.graph.solver import Solver
+from core.region.region_manager import RegionManager
+from core.settings import Settings as S_
 from utils.color_manager import colorize_project
+from utils.video_manager import get_auto_video_manager
 
 
 class BackgroundComputer:

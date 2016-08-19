@@ -1,9 +1,10 @@
 from PyQt4 import QtGui
+
 from core.region.region import Region
-from gui.graph_view.node import Node
-from gui.graph_view.edge import Edge
+from gui.graph_widget import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
+from gui.graph_widget.edge import Edge
+from gui.graph_widget.node import Node
 from gui.img_controls.utils import cvimg2qtpixmap
-from vis_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 
 __author__ = 'Simon Mandlik'
 
@@ -106,7 +107,6 @@ class Column:
                     continue
 
                 if not isinstance(region, int):
-                    import time
                     # time1 = time.time()
                     img = self.im_manager.get_crop(self.frame, region,  width=self.width, height=self.height, relative_margin=self.relative_margin)
                     # time2 = time.time()
@@ -128,7 +128,6 @@ class Column:
                     if item in self.items_nodes.keys():
                         continue
                 if item not in self.regions_images.keys():
-                    import time
                     # time1 = time.time()
                     img = self.im_manager.get_crop(self.frame, item,  width=self.width, height=self.height, relative_margin=self.relative_margin)
                     # time2 = time.time()

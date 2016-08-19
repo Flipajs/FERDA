@@ -45,7 +45,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.show()
 
-        # TOOD: remove this hack...
+        # TODO: remove this hack...
         self.move(-500, -500)
         self.showMaximized()
 

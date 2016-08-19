@@ -5,21 +5,20 @@ from PyQt4.QtCore import Qt
 from PyQt4.QtGui import QApplication, QLabel, QSizePolicy
 
 import computer as comp
-from gui.graph_view.edge import EdgeGraphical, ChunkGraphical
-from gui.graph_view.info_manager import InfoManager
-from gui.graph_view.node import Node
-from gui.graph_view.node_zoom_manager import NodeZoomManager
+from gui.graph_widget import DEFAULT_TEXT, GAP, \
+    MINIMUM, SPACE_BETWEEN_VER, WIDTH
+from gui.graph_widget.edge import EdgeGraphical, ChunkGraphical
+from gui.graph_widget.info_manager import InfoManager
+from gui.graph_widget.node import Node
+from gui.graph_widget.node_zoom_manager import NodeZoomManager
 from gui.gui_utils import cvimg2qtpixmap
 from gui.img_controls.my_scene import MyScene
 from gui.img_controls.my_view_zoomable import MyViewZoomable
-from vis_loader import DEFAULT_TEXT, GAP, \
-    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH
 
 __author__ = 'Simon Mandlik'
 
 
-class \
-        GraphVisualizer(QtGui.QWidget):
+class GraphVisualizer(QtGui.QWidget):
     """
     Requires list of regions and list of edge-tuples (node1, node2, type - chunk, line or partial, sureness).
     Those can be passed in constructor or using a method add_objects
@@ -190,8 +189,9 @@ class \
 
         region_chunk = self.loader.chunks_region_chunks[chunk]
         frames = list(range(chunk[0].frame_, chunk[1].frame_ + 1))
-        freq, none = QtGui.QInputDialog.getInt(self, 'Input Dialog',
-            'Enter frequency:')
+        # freq, none = QtGui.QInputDialog.getInt(self, 'Chunk Detail',
+        #     'Enter frequency:')
+        freq = 1
 
         for frame in frames[::freq]:
             img = self.img_manager.get_crop(frame, region_chunk[frame - region_chunk.start_frame()],  width=self.width, height=self.height, relative_margin=self.relative_margin)
@@ -420,7 +420,7 @@ class \
             return self.frames_columns[((start, end - frame_offset) if direction == "right" else (end - frame_offset, start))]
 
     def prepare_columns(self, frames):
-        from gui.graph_view.column import Column
+        from gui.graph_widget.column import Column
         empty_frame_count = 0
         for x in range(frames[0], frames[len(frames) - 1] + 1):
             if x in frames:

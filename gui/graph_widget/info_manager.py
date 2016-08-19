@@ -1,10 +1,10 @@
 import random
 from PyQt4 import QtGui
-
-from PyQt4.QtGui import QApplication
 from matplotlib import colors
 
-from gui.graph_view.vis_loader import OPACITY
+from PyQt4.QtGui import QApplication
+
+from gui.graph_widget import OPACITY
 
 
 class InfoManager():

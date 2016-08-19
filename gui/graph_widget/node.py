@@ -1,7 +1,9 @@
 from PyQt4 import QtGui, QtCore
+
 from PyQt4.QtCore import Qt
+
+from gui.graph_widget import WIDTH, HEIGHT
 from gui.img_controls.utils import cvimg2qtpixmap
-from vis_loader import WIDTH, HEIGHT, RELATIVE_MARGIN
 
 SELECTION_LINE_WIDTH = 2
 DEFAULT_INFO_TEXT_OPACITY = 150

@@ -176,16 +176,14 @@ class VisLoader:
         self.g.showMaximized()
 
 if __name__ == '__main__':
-    # from scripts import fix_project
-
     project = Project()
 
-    sn_id = 2
-    name = 'Cam1_'
-    snapshot = {'chm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
-    'gm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
+    # sn_id = 2
+    # name = 'Cam1_'
+    # snapshot = {'chm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
+    # 'gm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
-    project.load('/home/sheemon/FERDA/projects/'+name+'/cam1.fproj', snapshot)
+    project.load('/home/simon/FERDA/projects/Cam1_/cam1.fproj')
 
     import cv2, sys
     app = QtGui.QApplication(sys.argv)
