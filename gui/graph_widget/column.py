@@ -1,11 +1,13 @@
-import threading
 from PyQt4 import QtGui
+
 import numpy as np
+
 from core.region.region import Region
-from gui.graph_widget_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 from gui.graph_widget.edge import Edge
 from gui.graph_widget.node import Node
+from gui.graph_widget_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 from gui.img_controls.utils import cvimg2qtpixmap
+
 
 __author__ = 'Simon Mandlik'
 
@@ -33,6 +35,10 @@ class Column:
         self.objects.append(0)
         self.compress_marker.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
         self.scene.addItem(self.compress_marker)
+        self.def_img = np.zeros((self.height, self.width, 3), dtype=np.uint8)
+        self.def_img[:, :, :] = 255
+        # color borders
+        self.def_img[:3, :, :] = self.def_img[:, :3, :] = self.def_img[-3:, :, :] = self.def_img[:, -3:, :] = 30
 
     def get_start_frame(self):
         if isinstance(self.frame, tuple):
@@ -108,8 +114,7 @@ class Column:
                     continue
 
                 if not isinstance(region, int):
-                    img = np.zeros((self.height, self.width, 3), dtype=np.uint8)
-                    img[:,:,0] = 255
+                    img = self.def_img
                     # img = self.im_manager.get_crop(self.frame, region,  width=self.width, height=self.height, relative_margin=self.relative_margin)
                     self.regions_images[region] = img
 
@@ -128,8 +133,7 @@ class Column:
                     if item in self.items_nodes.keys():
                         continue
                 if item not in self.regions_images.keys():
-                    img = np.zeros((self.height, self.width, 3), dtype=np.uint8)
-                    img[:, :, 0] = 255
+                    img = self.def_img
                     self.regions_images[item] = img
                     # img = self.im_manager.get_crop(self.frame, item,  width=self.width, height=self.height, relative_margin=self.relative_margin)
                 else:
@@ -205,8 +209,7 @@ class Column:
             if region not in self.items_nodes.keys():
                 if region not in self.regions_images.keys():
                     if compressed:
-                        img = np.zeros((self.height, self.width, 3), dtype=np.uint8)
-                        img[:, :, 0] = 255
+                        img = self.def_img
                     else:
                         img = self.im_manager.get_crop(self.frame, region, width=self.width, height=self.height, relative_margin=self.relative_margin)
                     self.regions_images[region] = img

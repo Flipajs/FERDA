@@ -3,6 +3,7 @@ from PyQt4 import QtGui, QtCore
 
 from PyQt4.QtCore import Qt
 from PyQt4.QtGui import QApplication, QLabel, QSizePolicy
+from PyQt4.QtGui import QWidget
 
 import computer as comp
 from gui.graph_widget_loader import DEFAULT_TEXT, GAP, SPACE_BETWEEN_HOR, \
@@ -107,12 +108,15 @@ class GraphVisualizer(QtGui.QWidget):
         self.hide_zoom_menu_action.triggered.connect(self.hide_zoom_action_method)
         self.hide_info_menu_action = QtGui.QAction('Hide Info', self)
         self.hide_info_menu_action.triggered.connect(self.hide_info_action_method)
+        self.show_detail_menu_action = QtGui.QAction('Show detail', self)
+        self.show_detail_menu_action.triggered.connect(self.show_chunk_pictures_label)
         self.menu_node.addAction(self.show_info_menu_action)
         self.menu_node.addAction(self.hide_info_menu_action)
         self.menu_node.addAction(self.show_zoom_menu_action)
         self.menu_node.addAction(self.hide_zoom_menu_action)
         self.menu_edge.addAction(self.show_info_menu_action)
         self.menu_edge.addAction(self.hide_info_menu_action)
+        self.menu_edge.addAction(self.show_detail_menu_action)
         self.view.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self.view, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.menu)
 
@@ -185,16 +189,16 @@ class GraphVisualizer(QtGui.QWidget):
         elif isinstance(it, EdgeGraphical):
             self.menu_edge.exec_(self.view.mapToGlobal(point))
 
-    def show_chunk_pictures_label(self, chunk):
+    def show_chunk_pictures_label(self):
+        chunk = self.selected_in_menu.core_obj
         self.hide_chunk_pictures_widget()
         widget = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
 
         region_chunk = self.loader.chunks_region_chunks[chunk]
         frames = list(range(chunk[0].frame_, chunk[1].frame_ + 1))
-        # TODO moznost zmenit
-        # freq, none = QtGui.QInputDialog.getInt(self, 'Chunk Detail',
-        #     'Enter frequency:')
-        freq = 1
+        freq, none  = QtGui.QInputDialog.getInt(self, 'Chunk Detail',
+            'Enter frequency:', value=1, min=1)
+
 
         for frame in frames[::freq]:
             img = self.img_manager.get_crop(frame, region_chunk[frame - region_chunk.start_frame()], width=self.width,
@@ -210,7 +214,7 @@ class GraphVisualizer(QtGui.QWidget):
 
     def hide_chunk_pictures_widget(self):
         widget = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
-        for child in widget.findChildren(QLabel):
+        for child in widget.findChildren(QWidget):
             widget.layout().removeWidget(child)
             child.hide()
         self.chunk_detail_scroll_horizontal.hide()
@@ -219,15 +223,13 @@ class GraphVisualizer(QtGui.QWidget):
     def swap_chunk_pictures_widgets(self):
         widget_a = self.chunk_detail_widget_horizontal if self.show_vertically else self.chunk_detail_widget_vertical
         widget_b = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
-        for child in widget_a.findChildren(QLabel):
+        for child in widget_a.findChildren(QWidget):
             widget_a.layout().removeWidget(child)
             widget_b.layout().addWidget(child)
         if self.show_vertically:
             self.chunk_detail_scroll_horizontal.hide()
-            self.chunk_detail_scroll_vertical.show()
         else:
             self.chunk_detail_scroll_vertical.hide()
-            self.chunk_detail_scroll_horizontal.show()
 
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
@@ -240,7 +242,8 @@ class GraphVisualizer(QtGui.QWidget):
             if isinstance(item, EdgeGraphical):
                 self.info_manager.add(item)
                 if isinstance(item, ChunkGraphical):
-                    self.show_chunk_pictures_label(item.core_obj)
+                    # self.show_chunk_pictures_label(item.core_obj)
+                    pass
                 else:
                     self.hide_chunk_pictures_widget()
             elif isinstance(item, Node):

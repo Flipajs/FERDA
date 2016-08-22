@@ -172,7 +172,7 @@ if __name__ == '__main__':
     # l1.set_width(60)
     # l1.set_height(60)
 
-    g = l1.get_widget(range(300, 500))
+    g = l1.get_widget()
     g.redraw()
     g.show()
 
