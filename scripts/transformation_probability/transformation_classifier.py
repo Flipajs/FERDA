@@ -1,18 +1,20 @@
+import cPickle as pickle
 import logging
+import os
 import random
 import sys
-from IN import minor
 from PyQt4 import QtGui
-import os
+from os.path import exists
+
 import numpy as np
 from numpy.linalg import norm
-from os.path import exists
-import cPickle as pickle
 from scipy.spatial.qhull import ConvexHull
 from sklearn.ensemble import RandomForestClassifier
-from transformation_trainer import TransformationTrainer, hash_region_tuple
+
 import view_widget
 from core.project.project import Project
+from core.region.region import get_orientation
+from transformation_trainer import TransformationTrainer, hash_region_tuple
 
 R1 = 1
 R2 = 2
@@ -87,6 +89,7 @@ class TransformationClassifier():
         f = filter(lambda x: not results[hash_region_tuple(x)], testing_regions)
         accuracy = self.compute_accuracy(training_regions, f, save_results=True)
         logging.info("False classified with {0:.3f} accuracy".format(accuracy))
+        self.view_results()
 
     def view_results(self):
         regions = filter(lambda x: hash_region_tuple(x) in self.classification, self.regions)
@@ -98,9 +101,18 @@ class TransformationClassifier():
             else:
                 r_f.append(r)
         n_false = len(r_f)
-        avg_vector = (np.array(self.feature_vectors.values()).mean(axis=0))
-        widget = view_widget.ViewWidget(self.project, r_f + r_t, self.classification, self.probability, self, avg_vector,
-                                        n_false)
+
+        yes_f_v = map(lambda x: self.feature_vectors[hash_region_tuple(x)], r_t)
+        avg_vector_yes = np.mean(yes_f_v, axis=0)
+        std_yes = np.std(yes_f_v, axis=0)
+        median_yes = np.median(yes_f_v, axis=0)
+        no_f_v = map(lambda x: self.feature_vectors[hash_region_tuple(x)], r_f)
+        avg_vector_no = np.mean(no_f_v, axis=0)
+        std_no = np.std(no_f_v, axis=0)
+        median_no = np.median(no_f_v, axis=0)
+
+        widget = view_widget.ViewWidget(self.project, r_f + r_t, self.classification, self.probability, self,
+                                        avg_vector_yes, std_yes, median_yes, avg_vector_no, std_no, median_no, n_false)
         widget.show()
         app.exec_()
 
@@ -170,14 +182,16 @@ class TransformationClassifier():
         ret.append(abs(a[0] - b[0]))
         ret.append(abs(a[1] - b[1]))
 
+        ret.append(abs(r1.theta_ % np.math.pi - r2.theta_ % np.math.pi))
+
         return ret
 
     def descriptor_representation(self, regions):
         desc = self.feature_vector(regions)
         features = ['centroid dist', 'margin diff', 'max_intensity', 'min_intensity', 'area diff',
                     'major_axis diff', 'minor_axis_diff', 'c_small_neigh', 'c_middle_neigh', 'c_big_neigh',
-                    'small_neigh', 'middle_neigh', 'big_neigh', 'dist_small', 'dist_big', 'dist_small_all',
-                    'dist_big_all']
+                    'small_neigh', 'middle_neigh', 'big_neigh', 'dist_big', 'dist_small', 'dist_big_all',
+                    'dist_small_all', 'theta diff']
         return zip(features, desc)
 
     def count_regions_in_neighbourhood_contour(self, r, regions, radius):
@@ -244,8 +258,7 @@ if __name__ == "__main__":
     regions, results = trainer.get_ground_truth()
     classifier = TransformationClassifier(project, regions, results)
     classifier.update_feature_vectors(all=False)
-    # classifier.update_feature_vectors(regions, all=True)
+    # classifier.update_feature_vectors(all=True)
     classifier.test(regions)
-    classifier.view_results()
 
     app.quit()

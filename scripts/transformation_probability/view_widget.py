@@ -7,21 +7,24 @@ from math import ceil
 from transformation_trainer import hash_region_tuple
 from gui.gui_utils import cvimg2qtpixmap
 
-MARGIN = 300
-HEIGHT = 500
+MARGIN = 200
+HEIGHT = 400
 WIDTH = 700
 
-MAX_COL = 5
-
 class ViewWidget(QtGui.QWidget):
-    def __init__(self, project, regions, classification, probability, classifier, avg_feat_v, n_false):
+    def __init__(self, project, regions, classification, probability, classifier, avg_feat_v_yes, std_yes, median_yes, avg_feat_v_no, std_no, median_no, n_false):
         super(ViewWidget, self).__init__()
         self.project = project
         self.regions = regions
         self.classification = classification
         self.classifier = classifier
         self.probability = probability
-        self.avg_feat_v = avg_feat_v
+        self.avg_feat_v_yes = avg_feat_v_yes
+        self.std_yes = std_yes
+        self.median_yes = median_yes
+        self.avg_feat_v_no = avg_feat_v_no
+        self.std_no = std_no
+        self.median_no = median_no
         self.n_false = n_false
 
         self.setLayout(QtGui.QVBoxLayout())
@@ -55,22 +58,40 @@ class ViewWidget(QtGui.QWidget):
         self.prev_b.setDisabled(True)
 
     def _prepare_table(self):
-        self.table.setColumnCount(ceil(len(self.avg_feat_v) / MAX_COL) * 3)
-        self.table.setRowCount(MAX_COL)
+        self.table.setRowCount(len(self.avg_feat_v_yes))
+        self.table.setColumnCount(8)
         self.table.verticalHeader().setVisible(False)
         self.table.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.table.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        for i, v in enumerate(self.avg_feat_v):
-            a = i % MAX_COL
-            col = i / MAX_COL * 3
-            if i % MAX_COL == 0:
-                self.table.setHorizontalHeaderItem(col, QTableWidgetItem(""))
-                self.table.setHorizontalHeaderItem(col + 1, QTableWidgetItem(""))
-                self.table.setHorizontalHeaderItem(col + 2, QTableWidgetItem("avg"))
-                # self.table.horizontalHeaderItem(col + 2).setTextAlignment(QtCore.Qt.AlignRight)
-            self.table.setItem(a, col + 2, QTableWidgetItem(str("{0:.2f}".format(v))))
-            self.table.item(a, col + 2).setTextAlignment(QtCore.Qt.AlignRight)
+        self.table.setHorizontalHeaderItem(0, QTableWidgetItem(""))
+        self.table.setHorizontalHeaderItem(1, QTableWidgetItem(""))
+        self.table.setHorizontalHeaderItem(2, QTableWidgetItem("avg_yes"))
+        self.table.setHorizontalHeaderItem(3, QTableWidgetItem("median_yes"))
+        self.table.setHorizontalHeaderItem(4, QTableWidgetItem("std_yes"))
+        self.table.setHorizontalHeaderItem(5, QTableWidgetItem("avg_no"))
+        self.table.setHorizontalHeaderItem(6, QTableWidgetItem("median_no"))
+        self.table.setHorizontalHeaderItem(7, QTableWidgetItem("std_no"))
+        self.table.horizontalHeaderItem(2).setTextAlignment(QtCore.Qt.AlignRight)
+        self.table.horizontalHeaderItem(3).setTextAlignment(QtCore.Qt.AlignRight)
+        self.table.horizontalHeaderItem(4).setTextAlignment(QtCore.Qt.AlignRight)
+        self.table.horizontalHeaderItem(5).setTextAlignment(QtCore.Qt.AlignRight)
+        self.table.horizontalHeaderItem(6).setTextAlignment(QtCore.Qt.AlignRight)
+        self.table.horizontalHeaderItem(7).setTextAlignment(QtCore.Qt.AlignRight)
+        for i, (v, s, m, v1, s1, m1) in enumerate(zip(self.avg_feat_v_yes, self.std_yes, self.median_yes,
+                                                      self.avg_feat_v_no, self.std_no, self.median_no)):
+            self.table.setItem(i, 2, QTableWidgetItem(str("{0:.2f}".format(v))))
+            self.table.setItem(i, 3, QTableWidgetItem(str("{0:.2f}".format(m))))
+            self.table.setItem(i, 4, QTableWidgetItem(str("{0:.2f}".format(s))))
+            self.table.setItem(i, 5, QTableWidgetItem(str("{0:.2f}".format(v1))))
+            self.table.setItem(i, 6, QTableWidgetItem(str("{0:.2f}".format(m1))))
+            self.table.setItem(i, 7, QTableWidgetItem(str("{0:.2f}".format(s1))))
+            self.table.item(i, 2).setTextAlignment(QtCore.Qt.AlignRight)
+            self.table.item(i, 3).setTextAlignment(QtCore.Qt.AlignRight)
+            self.table.item(i, 4).setTextAlignment(QtCore.Qt.AlignRight)
+            self.table.item(i, 5).setTextAlignment(QtCore.Qt.AlignRight)
+            self.table.item(i, 6).setTextAlignment(QtCore.Qt.AlignRight)
+            self.table.item(i, 7).setTextAlignment(QtCore.Qt.AlignRight)
         self.table.resizeRowsToContents()
 
     def _view(self, r):
@@ -86,12 +107,10 @@ class ViewWidget(QtGui.QWidget):
 
     def _set_table(self, data):
         for i, (f, v) in enumerate(data):
-            a = i % MAX_COL
-            ratio = i / MAX_COL * 3
-            self.table.setItem(a, ratio, QTableWidgetItem(f))
-            self.table.item(a, ratio).setTextAlignment(QtCore.Qt.AlignRight)
-            self.table.setItem(a, ratio + 1, QTableWidgetItem("{0:.2f}".format(v)))
-            self.table.item(a, ratio + 1).setTextAlignment(QtCore.Qt.AlignRight)
+            self.table.setItem(i, 0, QTableWidgetItem(f))
+            self.table.item(i, 0).setTextAlignment(QtCore.Qt.AlignRight)
+            self.table.setItem(i, 1, QTableWidgetItem("{0:.2f}".format(v)))
+            self.table.item(i, 1).setTextAlignment(QtCore.Qt.AlignRight)
         self.table.resizeColumnsToContents()
         self.table.setFixedSize(self.table.horizontalHeader().length(),
                                 self.table.verticalHeader().length() + self.table.horizontalHeader().height())
