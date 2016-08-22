@@ -31,6 +31,8 @@ class GraphVisualizer(QtGui.QWidget):
         self.edges = set()
         self.edges_list = []
         self.frames_columns = {}
+        self.first_frame = None
+        self.last_frame = None
         self.columns = []
         self.img_manager = img_manager
         self.relative_margin = loader.relative_margin
@@ -156,8 +158,6 @@ class GraphVisualizer(QtGui.QWidget):
         self.hide_zoom_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Y))
         self.addAction(self.hide_zoom_node_action)
 
-
-    def show_objects(self):
         if len(self.loader.edges) + len(self.loader.regions) > 0:
             self.add_objects(self.loader.regions, self.loader.edges)
 
@@ -231,7 +231,6 @@ class GraphVisualizer(QtGui.QWidget):
 
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
-        print type(item)
         if item is None:
             self.selected = []
             self.node_zoom_manager.remove_all()
@@ -245,6 +244,7 @@ class GraphVisualizer(QtGui.QWidget):
                 else:
                     self.hide_chunk_pictures_widget()
             elif isinstance(item, Node):
+                item.create_pixmap()
                 self.node_zoom_manager.add(item)
                 self.info_manager.add(item)
             self.selected.append(item)
@@ -467,14 +467,12 @@ class GraphVisualizer(QtGui.QWidget):
 
         frames = list(frames)
         frames.sort()
-        first_frame, last_frame = frames[0], frames[len(frames) - 1]
 
         self.prepare_columns(frames)
         self.edges = comp.sort_edges(self.edges, frames)
         self.compute_positions()
         self.add_sole_nodes()
-        # self.showMaximized()
-        self.redraw(first_frame, last_frame)
+        self.first_frame, self.last_frame = frames[0], frames[len(frames) - 1]
 
     def draw_columns(self, first_frame, last_frame, minimum):
         next_x = 0
@@ -483,16 +481,9 @@ class GraphVisualizer(QtGui.QWidget):
             thread_load = threading.Thread(group=None, target=self.load, args=(minimum, event_loaded))
         QApplication.processEvents()
         for column in self.columns:
-            # uncomment to achieve node-by-node loading, decreases performance, remember to comment
-            # every other call of QApplication in this function
-            # QApplication.processEvents()
-            # import time
-            # time1 = time.time()
-            # print("Drawing column {0}...".format(column.frame))
             self.load_indicator_wheel()
             column.set_x(next_x)
             next_x = self.increment_x(column, next_x)
-
             frame_a = frame_b = column.frame
             if isinstance(column.frame, tuple):
                 frame_a, frame_b = column.frame[0], column.frame[1]
@@ -513,8 +504,11 @@ class GraphVisualizer(QtGui.QWidget):
                     if col_index % minimum == 0:
                         QApplication.processEvents()
                 column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
-                # time2 = time.time()
-                # print("The drawing of column took {0}".format(time2 - time1))
+
+    def load_columns(self):
+        for column in self.columns:
+            column.prepare_images()
+        print "Columns loaded"
 
     def increment_x(self, column, next_x):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
@@ -568,9 +562,9 @@ class GraphVisualizer(QtGui.QWidget):
 
     def redraw(self, first_frame=None, last_frame=None):
         if not first_frame:
-            first_frame = self.columns[0].frame
+            first_frame = self.first_frame
         if not last_frame:
-            last_frame = self.columns[len(self.columns) - 1].frame
+            last_frame = self.last_frame
         self.view.centerOn(0, 0)
         self.load_indicator_init()
 

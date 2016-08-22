@@ -1,9 +1,9 @@
+from PyQt4 import QtGui
+
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
-from utils.img_manager import ImgManager
-from PyQt4 import QtGui
 from core.settings import  Settings as S_
-
+from utils.img_manager import ImgManager
 
 __author__ = 'Simon Mandlik'
 
@@ -73,7 +73,6 @@ class GraphWidgetLoader:
             print "No project set!"
 
     def prepare_vertices(self, frames):
-        import time
         if frames is None:
             self.vertices = set(self.graph_manager.get_all_relevant_vertices())
         else:
@@ -85,7 +84,6 @@ class GraphWidgetLoader:
             self.vertices = set(self.vertices)
 
     def prepare_nodes(self):
-        import time
         for vertex in self.vertices:
 
             region = self.graph_manager.region(vertex)
@@ -93,7 +91,6 @@ class GraphWidgetLoader:
             self.regions.add(region)
 
     def prepare_edges(self):
-        import time
         for vertex in self.vertices:
             v = self.graph.vertex(vertex)
             self.prepare_tuples(v.in_edges())
@@ -135,7 +132,7 @@ class GraphWidgetLoader:
 
         # TODO
         # antlikeness = self.project.stats.antlikeness_svm.get_prob(region)[1]
-        antlikeness = "Dummy"
+        antlikeness = 0
 
         # TODO
         # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
@@ -176,6 +173,7 @@ if __name__ == '__main__':
     # l1.set_height(60)
 
     g = l1.get_widget(range(300, 500))
+    g.redraw()
     g.show()
 
     app.exec_()

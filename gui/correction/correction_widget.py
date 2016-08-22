@@ -394,6 +394,9 @@ class ResultsWidget(QtGui.QWidget):
             self.highlight_marker2nd_frame = data['n2'].frame_
 
     def _show_gt_markers(self, animal_ids2centroids):
+        if self._gt is None:
+            return
+
         for a in self.project.animals:
             c_ = QtGui.QColor(a.color_[2], a.color_[1], a.color_[0])
 
