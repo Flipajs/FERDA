@@ -103,11 +103,11 @@ class Project:
         with open(destinationFolder+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 
-    def save(self,toFolder=""):
-        if (toFolder == ""):
+    def save(self, to_folder=""):
+        if (to_folder == ""):
             destinationFolder = self.working_directory
         else:
-            destinationFolder = toFolder
+            destinationFolder = to_folder
 
         # BG MODEL
         if self.bg_model:
@@ -155,9 +155,9 @@ class Project:
 
         self.save_gm_(destinationFolder+'/graph_manager.pkl')
 
-        self.save_qsettings(toFolder)
+        self.save_qsettings(to_folder)
 
-        self.save_project_file_(toFolder)
+        self.save_project_file_(to_folder)
 
     def save_gm_(self, file_path):
         # Graph Manager
