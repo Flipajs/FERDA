@@ -23,7 +23,7 @@ class ResultsWidget(QtGui.QWidget):
     def __init__(self, project, start_on_frame=-1):
         super(ResultsWidget, self).__init__()
 
-        self.show_identities = True
+        self.show_identities = False
 
         self.hbox = QtGui.QHBoxLayout()
         self.hbox.setContentsMargins(0, 0, 0, 0)
@@ -65,7 +65,7 @@ class ResultsWidget(QtGui.QWidget):
             self.scroll_.setWidget(self.identities_widget)
 
             self.left_vbox.addWidget(self.scroll_)
-            self.splitter.addWidget(self.left_w)
+        self.splitter.addWidget(self.left_w)
 
         self.info_l = QtGui.QLabel('info')
         self.left_vbox.addWidget(self.info_l)
@@ -590,7 +590,7 @@ class ResultsWidget(QtGui.QWidget):
         self.one_frame_items[-1].setFlags(QtGui.QGraphicsItem.ItemIsMovable)
 
     def pn_pixmap_clicked(self, id_):
-        print id_
+        self._gt_marker_clicked(id_)
 
     def _gt_marker_clicked(self, id_):
         s = 'id: '+str(id_)
@@ -608,8 +608,10 @@ class ResultsWidget(QtGui.QWidget):
 
         s += "len: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(ch.end_frame(self.project.gm))
 
+        from scripts.random_forest.learning_process import get_features_var1, features2str_var1
+        s += "\nFeature vector: "+ features2str_var1(get_features_var1(r, self.project))
+
         self.info_l.setText(s)
-        print id_
 
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""
