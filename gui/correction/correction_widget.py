@@ -249,6 +249,10 @@ class ResultsWidget(QtGui.QWidget):
 
         # self.update_positions()
 
+    def play_and_highlight_tracklet(self, tracklet):
+        # self.project.
+        pass
+
     def test_one_id_in_tracklet(self, tracklet):
         # if there is one and only one ID assigned to chunk
         return len(tracklet.animal_id_['P']) == 1 and \
@@ -407,6 +411,8 @@ class ResultsWidget(QtGui.QWidget):
             marker.setVisible(True)
 
         marker.setPos(c[1] - MARKER_SIZE / 2, c[0] - MARKER_SIZE/2)
+
+
 
     def highlight_area(self, data, radius=50):
         centroid = data['n1'].centroid()
