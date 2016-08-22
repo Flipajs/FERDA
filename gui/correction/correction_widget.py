@@ -24,6 +24,7 @@ class ResultsWidget(QtGui.QWidget):
         super(ResultsWidget, self).__init__()
 
         self.show_identities = False
+        self.loop_highlight_tracklets = []
 
         self.hbox = QtGui.QHBoxLayout()
         self.hbox.setContentsMargins(0, 0, 0, 0)
@@ -36,6 +37,7 @@ class ResultsWidget(QtGui.QWidget):
         self.frame_rate = 30
         self.timer = QtCore.QTimer()
         self.timer.setInterval(1000 / self.frame_rate)
+        self.help_timer = QtCore.QTimer()
         self.scene = QtGui.QGraphicsScene()
         self.pixMap = None
         self.pixMapItem = None
@@ -249,9 +251,23 @@ class ResultsWidget(QtGui.QWidget):
 
         # self.update_positions()
 
-    def play_and_highlight_tracklet(self, tracklet):
-        # self.project.
-        pass
+    def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
+        # frame=-1 ... start from beginning
+
+        self.loop_begin = max(0, tracklet.start_frame(self.project.gm) - margin)
+        self.loop_end = min(tracklet.end_frame(self.project.gm) + margin, self.video.total_frame_count()-1)
+        self.loop_highlight_tracklets = [tracklet.id()]
+
+        if frame < 0:
+            frame = self.loop_begin
+
+        self.change_frame(frame)
+        self.timer.stop()
+        self.play_pause()
+
+        # TODO: frame loop
+        # TODO: visualize loop
+
 
     def test_one_id_in_tracklet(self, tracklet):
         # if there is one and only one ID assigned to chunk
@@ -565,6 +581,25 @@ class ResultsWidget(QtGui.QWidget):
         if self.show_gt_markers.isChecked():
             self._show_gt_markers(animal_ids2centroids)
 
+        self.__highlight_tracklets()
+
+    def __highlight_tracklets(self):
+        for id_ in self.loop_highlight_tracklets:
+            tracklet = self.project.chm[id_]
+            frame = self.video.frame_number()
+
+            r = RegionChunk(tracklet, self.project.gm, self.project.rm).region_in_t(frame)
+
+            centroid = r.centroid()
+            # TODO: global parameters
+            radius = 130
+
+            m = markers.CenterMarker(0, 0, radius, QtGui.QColor(167, 255, 36), 0, self.marker_changed)
+            m.setOpacity(0.20)
+            m.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
+            self.scene.addItem(m)
+            self.one_frame_items.append(m)
+
     def show_pn_ids_visualisation(self, tracklet, frame):
         rch = RegionChunk(tracklet, self.project.gm, self.project.rm)
 
@@ -713,23 +748,27 @@ class ResultsWidget(QtGui.QWidget):
         self.videoSlider.valueChanged.connect(self.video_slider_changed)
         self.timer.timeout.connect(self.load_next_frame)
 
+    def __continue_loop(self):
+        self.help_timer.stop()
+        # TODO: if loop only once... check something and remove flags...
+        self.change_frame(self.loop_begin)
+        self.timer.start()
+
     def load_next_frame(self):
         """Loads next frame of the video and displays it. If there is no next frame, calls self.out_of_frames"""
         if self.video is not None:
             self.video.next_frame()
             self.update_positions(self.video.frame_number())
-            # if img is not None:
-            #     if self.pixMapItem is not None:
-            #         self.scene.removeItem(self.pixMapItem)
-            #
-            #     self.pixMap = cvimg2qtpixmap(img)
-            #     # view_add_bg_image(self.graphics_view, self.pixMap)
-            #     item = self.scene.addPixmap(self.pixMap)
-            #     self.pixMapItem = item
-            #     self.update_frame_number()
-            #     self.update_positions(self.video.frame_number())
-            # else:
-            #     self.out_of_frames()
+
+        if self.video.frame_number() == self.loop_end:
+            # TODO: global parameter
+            wait_in_the_end = 600
+
+            self.timer.stop()
+            self.help_timer.setInterval(wait_in_the_end)
+            self.help_timer.start()
+            self.help_timer.timeout.connect(self.__continue_loop)
+            return
 
         if self.video.frame_number() == self.highlight_marker2nd_frame:
             print "SHOW"

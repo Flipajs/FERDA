@@ -113,6 +113,10 @@ class MainTabWidget(QtGui.QWidget):
             self.tabs.insertTab(1, self.results_tab, 'results viewer')
             self.tabs.setCurrentIndex(1)
             self.ignore_tab_change = False
+
+            tracklet = self.project.chm[12]
+
+            self.results_tab.play_and_highlight_tracklet(tracklet, margin=5)
         if i == 2:
             self.statistics_tab.update_data(self.project)
 
