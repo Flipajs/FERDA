@@ -132,7 +132,7 @@ class RegionManager:
                 # self.regions_cache_.pop(pop_id, None).id()
                 self.regions_cache_.pop(pop_id, None)
 
-                print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
+                # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
 
     def update(self, key, region):
         """
