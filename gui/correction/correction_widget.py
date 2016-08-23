@@ -67,10 +67,22 @@ class ResultsWidget(QtGui.QWidget):
             self.scroll_.setWidget(self.identities_widget)
 
             self.left_vbox.addWidget(self.scroll_)
+
         self.splitter.addWidget(self.left_w)
 
         self.info_l = QtGui.QLabel('info')
+
+        self.highlight_tracklet_input = QtGui.QLineEdit('tracklet id')
+        self.highlight_tracklet_button = QtGui.QPushButton('show traklet')
+        self.highlight_tracklet_button.clicked.connect(self.highlight_tracklet_button_clicked)
+        self.stop_highlight_tracklet = QtGui.QPushButton('stop highlight tracklet')
+        self.stop_highlight_tracklet.clicked.connect(self.stop_highlight_tracklet_clicked)
+        self.left_vbox.addWidget(self.highlight_tracklet_input)
+        self.left_vbox.addWidget(self.highlight_tracklet_button)
+        self.left_vbox.addWidget(self.stop_highlight_tracklet)
+
         self.left_vbox.addWidget(self.info_l)
+
 
         self.evolve_gt_b = QtGui.QPushButton('evolve GT')
         self.evolve_gt_b.clicked.connect(self._evolve_gt)
@@ -250,6 +262,21 @@ class ResultsWidget(QtGui.QWidget):
                 self._gt = {}
 
         # self.update_positions()
+
+    def stop_highlight_tracklet_clicked(self):
+        self.loop_highlight_tracklets = []
+        self.help_timer.stop()
+        self.loop_end = -1
+
+    def highlight_tracklet_button_clicked(self):
+        try:
+            id_ = int(self.highlight_tracklet_input.text())
+            tracklet = self.project.chm[id_]
+        except:
+            return
+
+        # TODO: global parameter - margin
+        self.play_and_highlight_tracklet(tracklet, margin=5)
 
     def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
         # frame=-1 ... start from beginning
@@ -589,6 +616,10 @@ class ResultsWidget(QtGui.QWidget):
             frame = self.video.frame_number()
 
             r = RegionChunk(tracklet, self.project.gm, self.project.rm).region_in_t(frame)
+
+            # out of frame range
+            if r is None:
+                return
 
             centroid = r.centroid()
             # TODO: global parameters
