@@ -39,6 +39,15 @@ class SegmentationPicker(QtGui.QWidget):
         self.view.color = None
         self.color_button.setChecked(False)
 
+
+    def add_color(self):
+        r = 0
+        g = 0
+        b = 255
+        a = 100
+        self.view.add_color("BLUE", r, g, b, a=a)
+        self.view.set_pen_color("BLUE")
+
     def make_gui(self):
         """
         Creates the widget. It is a separate method purely to save space
@@ -103,6 +112,10 @@ class SegmentationPicker(QtGui.QWidget):
         self.action_undo.triggered.connect(self.view.undo)
         self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Z))
         self.addAction(self.action_undo)
+
+        self.blue_button = QtGui.QPushButton("Add blue")
+        self.blue_button.clicked.connect(self.add_color)
+        self.left_panel.layout().addWidget(self.blue_button)
 
         self.undo_button = QtGui.QPushButton("Undo \n (key_Z)")
         self.undo_button.clicked.connect(self.view.undo)

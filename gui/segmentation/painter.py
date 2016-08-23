@@ -10,20 +10,12 @@ __author__ = 'dita'
 class Painter(QtGui.QWidget):
     """ Painter widget that can be used in all painting applications"""
 
-    def __init__(self, image, pen_size=10, undo_len=10, debug=False, paint_r=255, paint_g=0, paint_b=238):
+    def __init__(self, image, pen_size=10, undo_len=10, debug=False, paint_name = "PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=100):
         """ """
 
         super(Painter, self).__init__()
 
         self.DEBUG = debug
-
-        # PAINT SETUP
-        # current color ("Color" or "Eraser"), purple by default
-        self.color = [0, 0, 0]
-        self.color[0] = paint_r
-        self.color[1] = paint_g
-        self.color[2] = paint_b
-        self.pen_size = pen_size
 
         # WIDGET SETUP
         self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
@@ -44,18 +36,26 @@ class Painter(QtGui.QWidget):
         self.paint_image = QtGui.QImage(bg_size, fmt)
         self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
+
+        self.overlay_image = QtGui.QImage(bg_size, fmt)
+        self.overlay_image.fill(QtGui.qRgba(0, 0, 0, 0))
+        self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.overlay_image))
       
         self.bg_width = self.paint_image.width()
         self.bg_height = self.paint_image.height()
 
-        # mask storage: numpy 0-1 mask
-        self.pick_mask = np.zeros((self.bg_width, self.bg_height))
+        # PAINT SETUP
+        # current color ("Color" or "Eraser"), purple by default
+        self.colors = {}
+        self.add_color(paint_name, paint_r, paint_g, paint_b, paint_a)
+        self.pen_size = pen_size
+        self.set_pen_color(paint_name)
 
         # create the main view and left panel with buttons
         self.make_gui()
 
     def set_image(self, img):
-        """ Deletes the old image and pixmap and replaces them with a new image
+        """ Deletes the old image and pixmap and replaces them with a new image	
         :param img: a new image to use
         :return: None
         """
@@ -63,8 +63,22 @@ class Painter(QtGui.QWidget):
         self.scene.removeItem(self.paint_pixmap)
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
 
+    def set_overlay(self, img):
+        """ Deletes the old image and pixmap and replaces them with a new image
+        :param img: a new image to use
+        :return: None
+        """
+        self.overlay_image = img
+        self.scene.removeItem(self.overlay_pixmap)
+        self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.overlay_image))
+
+    def add_color(self, name, r, g, b, a=100):
+        mask = np.zeros((self.bg_width, self.bg_height))
+        color = QtGui.qRgba(r, g, b, a)
+        self.colors[name] = (mask, color)
+
     def get_result(self):
-        return self.pick_mask
+        return self.colors
 
     def set_pen_size(self, value):
         """ Change pen size
@@ -74,13 +88,14 @@ class Painter(QtGui.QWidget):
         # change pen size
         self.pen_size = value
 
-    def set_pen_color(self, color):
+    def set_pen_color(self, name):
         """ Change pen size
         :param value: new pen size
         :return: None
         """
         # change pen size
-        self.color = color
+        self.color = self.colors[name][1]
+        self.pick_mask = self.colors[name][0]
 
     def mouse_press_event(self, event):
         point = self.view.mapToScene(event.pos())
@@ -140,7 +155,7 @@ class Painter(QtGui.QWidget):
 
         # use color paint
         if self.color:
-            paint = QtGui.qRgba(self.color[0], self.color[1], self.color[2], 100)
+            paint = self.color
             old, new = 0, 1
         # use eraser
         else:
