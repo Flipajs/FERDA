@@ -1,17 +1,23 @@
 import math
+from PyQt4 import QtCore
+from PyQt4 import QtGui
 
 import numpy as np
 import numpy
+import sys
 from numpy import transpose
 from numpy.linalg import eig, norm
 from matplotlib import pyplot as plt
 
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import normalize
-
+from utils.geometry import rotate
+from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
+from gui.gui_utils import cvimg2qtpixmap
 
-NUMBER_OF_DATA = 40
-NUMBER_OF_PC = 10
+INPUT_DIM = 40
+NUMBER_OF_EIGEN_V = 40
 
 average = 0
 
@@ -54,12 +60,25 @@ def compact_representation(X, Y, m):
 
 def get_pca(chunks, number_of_data, chm, gm):
     matrix = []
+    i = 1
     for ch in chunks:
+        print "Chunk #{0}".format(i)
+        i+= 1
         for vector in get_matrix(ch, number_of_data, chm, gm):
             matrix.append(vector)
 
+    print "Constructing eigen ants"
+
     matrix = np.matrix(matrix)
     X = matrix.T
+
+    pca = PCA(NUMBER_OF_EIGEN_V)
+    T = pca.fit_transform(X)
+    X1 = pca.transform(X)
+    inverse = pca.inverse_transform(X1)
+
+    # return T
+
     X_mean = np.mean(X, axis=1)
 
     # center the data
@@ -67,11 +86,10 @@ def get_pca(chunks, number_of_data, chm, gm):
 
     eigenAnts, eigenValues = pca_basis(X)
 
-    m = 10
-    X_c = compact_representation(X, eigenAnts, m)
-    Z = reconstruct(X_c, eigenAnts[:, :m], X_mean)
+    X_c = compact_representation(X, eigenAnts, NUMBER_OF_EIGEN_V)
+    Z = reconstruct(X_c, eigenAnts[:, :NUMBER_OF_EIGEN_V], X_mean)
 
-    print matrix.T - Z
+    # print matrix.T - Z
 
     return eigenAnts
 
@@ -81,18 +99,17 @@ def get_eigenfaces(m):
     eigenvalues, eigenvectors = eig(covariance_matrix)
     index = eigenvalues.argsort()[::-1]
     eigenfaces = eigenvectors[:, index]
-    eigenfaces = eigenfaces[:, :NUMBER_OF_PC]
+    eigenfaces = eigenfaces[:, :NUMBER_OF_EIGEN_V]
     eigenfaces = m.dot(eigenfaces)
     return eigenfaces
 
 
 def get_chunks_regions(ch, chm, gm):
     chunk = chm[ch]
-    chunk_start = chunk.start_frame(gm)
-    chunk_end = chunk.end_frame(gm)
-    while chunk_start <= chunk_end:
-        yield project.gm.region(chunk[chunk_start])
-        chunk_start += 1
+    print chunk
+    r_ch = RegionChunk(chunk, gm, gm.rm)
+    for region in r_ch:
+        yield region
 
 
 def get_matrix(chunk, number_of_data, chm, gm):
@@ -103,6 +120,7 @@ def get_matrix(chunk, number_of_data, chm, gm):
 
 def get_region_vector(region, number_of_data):
     contour = region.contour_without_holes()
+    centroid = region.centroid()
     con_length = len(contour)
 
     if len(contour) < number_of_data:
@@ -114,14 +132,21 @@ def get_region_vector(region, number_of_data):
         perimeter += vector_norm(contour[i] - contour[i - 1])
         distances.append(perimeter)
 
-    result = []
-    step = con_length / float(number_of_data)
+    result = np.zeros((number_of_data, 2))
+    step = perimeter / float(number_of_data)
     i = 0
-    while i <= con_length - 1:
-        result.append(distances[int(i)])
-        i += step
+    p = 0
+    while i < 40:
+        if distances[p] >= i * step:
+            result[i,] = (contour[p] + (contour[p-1] - contour[p]) * ((distances[p] - i * step) / step)) - centroid
+            i += 1
+        p += 1
 
-    return result
+    # plt.axis('equal')
+    # plt.plot(contour[:,0], contour[:,1], c='r')
+    # plt.scatter(result[:,0], result[:,1], c='g')
+    # plt.show()
+    return result.flatten()
 
 
 def compute_contour_perimeter(contour):
@@ -135,10 +160,93 @@ def compute_contour_perimeter(contour):
 def vector_norm(u):
     return math.sqrt(sum(i ** 2 for i in u))
 
+def view_chunk(ch):
+   pass
+
+class ChunkViewer(QtGui.QWidget):
+
+    WIDTH = HEIGHT = 300
+
+    def __init__(self, im, ch, chm, gm, rm):
+        super(ChunkViewer, self).__init__()
+        self.im = im
+        self.regions = list(self.get_regions(ch, chm, gm, rm))
+        self.setLayout(QtGui.QVBoxLayout())
+        self.buttons = QtGui.QHBoxLayout()
+        self.next_b = QtGui.QPushButton('next')
+        self.prev_b = QtGui.QPushButton('prev')
+        self.img = QtGui.QLabel()
+        self.current = -1
+        self.prepare_layout()
+        self.next_action()
+        self.prev_b.setDisabled(True)
+        if len(self.regions) == 1:
+            self.next_b.setDisabled(True)
+
+    def prepare_layout(self):
+        self.layout().addWidget(self.img)
+        self.layout().addLayout(self.buttons)
+        self.buttons.addWidget(self.prev_b)
+        self.buttons.addWidget(self.next_b)
+        self.connect(self.prev_b, QtCore.SIGNAL('clicked()'), self.prev_action)
+        self.connect(self.next_b, QtCore.SIGNAL('clicked()'), self.next_action)
+
+    def view_region(self):
+        region = self.regions[self.current]
+        img = self.im.get_crop(region.frame(), region, width=self.WIDTH, height=self.HEIGHT, margin=200)
+        pixmap = cvimg2qtpixmap(img)
+        self.img.setPixmap(pixmap)
+        contour = region.contour_without_holes()
+        rotate(contour, region.theta_, region.centroid)
+        plt.scatter(contour[:, 0], contour[:, 1])
+        plt.scatter(contour[0, 0], contour[0, 1], c='r')
+        plt.show()
+
+    def get_regions(self, ch, chm, gm, rm):
+        chunk = chm[ch]
+        print chunk
+        r_ch = RegionChunk(chunk, gm, rm)
+        return r_ch
+
+    def next_action(self):
+        print self.current
+        if self.current != len(self.regions) - 1:
+            self.current += 1
+            self.view_region()
+            self.prev_b.setDisabled(False)
+            if self.current == len(self.regions) - 1:
+                self.next_b.setDisabled(True)
+
+    def prev_action(self):
+        print self.current
+        if self.current != 0:
+            self.current -= 1
+            self.view_region()
+            self.next_b.setDisabled(False)
+            if self.current == 0:
+                self.prev_b.setDisabled(True)
+
+
 if __name__ == '__main__':
-    # from scripts import fix_project
     project = Project()
     project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
     # project.load("/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj")
     chunks = project.gm.chunk_list()
-    pca = get_pca(chunks[:1], NUMBER_OF_DATA, project.chm, project.gm)
+
+    app = QtGui.QApplication(sys.argv)
+    i = 0
+    for ch in chunks:
+        print i
+        i += 1
+        chv = ChunkViewer(project.img_manager, ch, project.chm, project.gm, project.gm.rm)
+        chv.show()
+        app.exec_()
+
+    eigen_ants = get_pca(chunks[:5], INPUT_DIM, project.chm, project.gm)
+    plt.axis('equal')
+    for i in range(NUMBER_OF_EIGEN_V):
+        # print eigen_ant
+        # print '\n\n\n'
+        # print '\n\n\n'
+        plt.plot(eigen_ants[::2, i], eigen_ants[1::2, i])
+        plt.show()
