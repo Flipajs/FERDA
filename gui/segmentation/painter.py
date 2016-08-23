@@ -93,6 +93,10 @@ class Painter(QtGui.QWidget):
         :param value: new pen size
         :return: None
         """
+
+        if not name:
+            self.color = None
+            return
         # change pen size
         self.color = self.colors[name][1]
         self.pick_mask = self.colors[name][0]

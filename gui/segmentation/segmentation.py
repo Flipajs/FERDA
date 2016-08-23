@@ -43,8 +43,6 @@ class SegmentationPicker(QtGui.QWidget):
 
     def set_eraser(self):
         self.view.set_pen_color(None)
-        self.color_buttons[0].setChecked(False)
-        self.color_buttons[1].setChecked(False)
 
     def make_gui(self):
         """
@@ -101,10 +99,8 @@ class SegmentationPicker(QtGui.QWidget):
         color_widget.layout().addWidget(pink_button)
         self.color_buttons.append(pink_button)
 
-        self.color_buttons = []
         green_button = QtGui.QPushButton("Green")
         green_button.setCheckable(True)
-        green_button.setChecked(True)
         green_button.clicked.connect(self.green)
         color_widget.layout().addWidget(green_button)
         self.color_buttons.append(green_button)
@@ -121,10 +117,6 @@ class SegmentationPicker(QtGui.QWidget):
         self.action_undo.triggered.connect(self.view.undo)
         self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Z))
         self.addAction(self.action_undo)
-
-        self.blue_button = QtGui.QPushButton("Add blue")
-        self.blue_button.clicked.connect(self.add_color)
-        self.left_panel.layout().addWidget(self.blue_button)
 
         self.undo_button = QtGui.QPushButton("Undo \n (key_Z)")
         self.undo_button.clicked.connect(self.view.undo)
