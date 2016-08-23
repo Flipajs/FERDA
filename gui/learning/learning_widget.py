@@ -1,6 +1,11 @@
 from PyQt4 import QtGui, QtCore
 import sys
 import os
+from core.project.project import Project
+from utils.img_manager import ImgManager
+from core.learning.learning_process import LearningProcess
+from core.settings import Settings as S_
+
 
 class LearningWidget(QtGui.QWidget):
     def __init__(self, project=None):
@@ -10,25 +15,52 @@ class LearningWidget(QtGui.QWidget):
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
 
+        self.lp = None
         if not self.project:
             self.load_project_button = QtGui.QPushButton('load project')
             self.load_project_button.clicked.connect(self.load_project)
             self.vbox.addWidget(self.load_project_button)
         else:
-            self.show_menu
+            self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False,
+                                      question_callback=self.question_callback)
 
-    def load_project(self):
+        self.start_button = QtGui.QPushButton('start')
+        self.start_button.clicked.connect(self.lp.run_learning())
+
+        # TODO: step by step
+
+        # TODO: update callback... info about decisions...
+
+        self.vbox.addWidget(self.start_button)
+
+    def load_project(self, default=''):
         path = ''
         if os.path.isdir(S_.temp.last_wd_path):
             path = S_.temp.last_wd_path
 
         working_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select working directory", path, QtGui.QFileDialog.ShowDirsOnly))
+        # TODO: load project...
+        # self.project = ...
+        # TODO: use_feature_cache...
+        self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False)
+
+    def question_callback(self, tracklet):
+        items = map(str, range(len(self.project.animals)))
+
+        item, ok = QtGui.QInputDialog.getItem(self, "select animal ID for tracklet ID: "+str(tracklet.id()),
+                                              "list of ids", items, 0, False)
+
+        return int(item)
 
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
-    ex = LearningWidget()
+    p = Project()
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1 copy/cam1.fproj')
+    p.img_manager = ImgManager(p)
+
+    ex = LearningWidget(project=p)
     ex.show()
 
     app.exec_()

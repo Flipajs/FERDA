@@ -1,21 +1,19 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui, QtCore
-from gui.img_controls.my_view import MyView
-from utils.video_manager import get_auto_video_manager
-from gui.img_controls.utils import cvimg2qtpixmap
-import math
-import cv2
-from viewer.gui.img_controls import markers
-from core.animal import colors_
-from core.settings import Settings as S_
-from core.graph.region_chunk import RegionChunk
-import numpy as np
-from video_slider import VideoSlider
-from select_all_line_edit import SelectAllLineEdit
-from utils.misc import is_flipajs_pc
 import cPickle as pickle
 
+import numpy as np
+from PyQt4 import QtGui, QtCore
+
+from core.graph.region_chunk import RegionChunk
+from core.settings import Settings as S_
+from gui.img_controls.my_view import MyView
+from gui.img_controls.utils import cvimg2qtpixmap
+from select_all_line_edit import SelectAllLineEdit
+from utils.misc import is_flipajs_pc
+from utils.video_manager import get_auto_video_manager
+from video_slider import VideoSlider
+from viewer.gui.img_controls import markers
 
 MARKER_SIZE = 15
 
@@ -72,8 +70,11 @@ class ResultsWidget(QtGui.QWidget):
 
         self.info_l = QtGui.QLabel('info')
 
+        # TODO: show list of tracklets instead of QLine edit...
+        # TODO: show range on frame time line
+        # TODO: checkbox - stop at the end...
         self.highlight_tracklet_input = QtGui.QLineEdit('tracklet id')
-        self.highlight_tracklet_button = QtGui.QPushButton('show traklet')
+        self.highlight_tracklet_button = QtGui.QPushButton('show tracklet')
         self.highlight_tracklet_button.clicked.connect(self.highlight_tracklet_button_clicked)
         self.stop_highlight_tracklet = QtGui.QPushButton('stop highlight tracklet')
         self.stop_highlight_tracklet.clicked.connect(self.stop_highlight_tracklet_clicked)
@@ -680,7 +681,7 @@ class ResultsWidget(QtGui.QWidget):
 
         s += "len: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(ch.end_frame(self.project.gm))
 
-        from scripts.random_forest.learning_process import get_features_var1, features2str_var1
+        from core.learning.learning_process import get_features_var1, features2str_var1
         s += "\nFeature vector: "+ features2str_var1(get_features_var1(r, self.project))
 
         self.info_l.setText(s)

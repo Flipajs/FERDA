@@ -15,8 +15,10 @@ import operator
 
 
 class LearningProcess:
-    def __init__(self, p, use_feature_cache=False, use_rf_cache=False):
+    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None):
         self.p = p
+
+        self.question_callback = question_callback
 
         self._eps1 = 0.01
         self._eps2 = 0.1
@@ -109,8 +111,7 @@ class LearningProcess:
                 self.tracklet_measurements = d['tracklet_measurements']
 
         self.save_ids_()
-
-        self.run_learning()
+        # self.run_learning()
 
     def run_learning(self):
         while len(self.undecided_tracklets):
@@ -122,8 +123,15 @@ class LearningProcess:
         # TODO:
         try:
             best_candidate_tracklet = self.__get_best_question()
-            # to speed up testing - simulate Human in the Loop by asking GT
-            id_ = self.__DEBUG_get_answer_from_GT(best_candidate_tracklet)
+
+            if not self.question_callback:
+                # to speed up testing - simulate Human in the Loop by asking GT
+                id_ = self.__DEBUG_get_answer_from_GT(best_candidate_tracklet)
+            else:
+                id_ = self.question_callback(best_candidate_tracklet)
+
+            print 'Human in the loop says: tracklet id: {} is animal ID: {}'.format(best_candidate_tracklet.id(), id_)
+
             if id_ > -1:
                 self.__assign_identity(id_, best_candidate_tracklet)
                 self.next_step()
@@ -573,8 +581,8 @@ class LearningProcess:
 
     def next_step(self):
         # TODO: global parameter
-        eps_certainty = 0.2
-        eps_certainty_learning = 0.15
+        eps_certainty = 0.1
+        eps_certainty_learning = 0.05
         min_new_samples_to_retrain = 50
 
         # pick one with best certainty
@@ -659,11 +667,11 @@ class LearningProcess:
 
     def get_data(self, ch):
         X = []
-        r_ch = RegionChunk(ch, p.gm, p.rm)
+        r_ch = RegionChunk(ch, self.p.gm, self.p.rm)
         i = 0
         for r in r_ch.regions_gen():
             if not r.is_virtual:
-                f_ = self.get_features(r, p)
+                f_ = self.get_features(r, self.p)
                 X.append(f_)
 
                 i += 1
@@ -671,11 +679,11 @@ class LearningProcess:
         return X
 
     def get_init_data(self):
-        vertices = p.gm.get_vertices_in_t(0)
+        vertices = self.p.gm.get_vertices_in_t(0)
 
         tracklets = []
         for v in vertices:
-            tracklets.append(p.chm[p.gm.g.vp['chunk_start_id'][p.gm.g.vertex(v)]])
+            tracklets.append(self.p.chm[self.p.gm.g.vp['chunk_start_id'][self.p.gm.g.vertex(v)]])
 
         X = []
         y = []
