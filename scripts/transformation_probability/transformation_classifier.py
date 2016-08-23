@@ -10,6 +10,7 @@ import numpy as np
 from numpy.linalg import norm
 from scipy.spatial.qhull import ConvexHull
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 
 import view_widget
 from core.project.project import Project
@@ -43,11 +44,12 @@ class TransformationClassifier():
     def compute_accuracy(self, training_regions, testing_regions, save_results=False, verbose=True):
         X = [self.feature_vectors[hash_region_tuple(r)] for r in training_regions]
         y = [self.results[hash_region_tuple(r)] for r in training_regions]
-        rfc = RandomForestClassifier(class_weight='balanced_subsample')
-        rfc.fit(X, y)
+        # classifier = RandomForestClassifier(class_weight='balanced_subsample')
+        classifier = SVC(class_weight='balanced', probability=True)
+        classifier.fit(X, y)
         X1 = [self.feature_vectors[hash_region_tuple(r)] for r in testing_regions]
         y1 = [self.results[hash_region_tuple(r)] for r in testing_regions]
-        accuracy = rfc.score(X1, y1)
+        accuracy = classifier.score(X1, y1)
         if verbose:
             logging.info("Random forest with {0:.3f} accuracy".format(accuracy))
             t = len(filter(lambda x: x, y))
@@ -60,8 +62,8 @@ class TransformationClassifier():
             for r in testing_regions:
                 h = hash_region_tuple(r)
                 desc = self.feature_vectors[h]
-                self.classification[h] = rfc.predict([desc])[0]
-                self.probability[h] = rfc.predict_proba([desc])[0]
+                self.classification[h] = classifier.predict([desc])[0]
+                self.probability[h] = classifier.predict_proba([desc])[0]
         return accuracy
 
     def test(self, regions):
