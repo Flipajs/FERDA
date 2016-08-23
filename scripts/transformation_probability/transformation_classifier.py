@@ -45,7 +45,7 @@ class TransformationClassifier():
         X = [self.feature_vectors[hash_region_tuple(r)] for r in training_regions]
         y = [self.results[hash_region_tuple(r)] for r in training_regions]
         # classifier = RandomForestClassifier(class_weight='balanced_subsample')
-        classifier = SVC(class_weight='balanced', probability=True)
+        classifier = SVC(kernel='linear', class_weight='balanced', probability=True)
         classifier.fit(X, y)
         X1 = [self.feature_vectors[hash_region_tuple(r)] for r in testing_regions]
         y1 = [self.results[hash_region_tuple(r)] for r in testing_regions]
