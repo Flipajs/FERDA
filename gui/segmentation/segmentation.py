@@ -7,19 +7,22 @@ import painter
 import cv2
 import numpy as np
 
+from sklearn.ensemble import RandomForestClassifier
+
 __author__ = 'dita'
 
 
 class SegmentationPicker(QtGui.QWidget):
 
-    def __init__(self, project, done_callback=None, pen_size=10, undo_len=10, debug=False, paint_r=255, paint_g=0, paint_b=238):
+    def __init__(self, img, done_callback=None, pen_size=10, undo_len=10, debug=False, paint_r=255, paint_g=0, paint_b=238):
 
         super(SegmentationPicker, self).__init__()
 
         self.DEBUG = debug
         self.done_callback = done_callback
 
-        self.project = project
+        self.img_path = img
+        self.image = cv2.imread(self.img_path)
         self.pen_size = pen_size
 
         self.color = [paint_r, paint_g, paint_b]
@@ -28,8 +31,42 @@ class SegmentationPicker(QtGui.QWidget):
 
     def done(self):
         result = self.view.get_result()
-        cv2.imshow("Result", result)
+        background = result["PINK"]
+        foreground = result["GREEN"]
+
+        X = []
+        y = []
+ 
+        nzero = np.nonzero(background[0])
+        print type(nzero[0])
+        for i, j in zip(nzero[0], nzero[1]):
+            b, g, r = self.image[j][i]
+            X.append((b, g, r))
+            y.append(0)
+
+        nzero = np.nonzero(foreground[0])
+        for i, j in zip(nzero[0], nzero[1]):
+            b, g, r = self.image[j][i]
+            X.append((b, g, r))
+            y.append(1)
+
+        rfc = RandomForestClassifier()
+        rfc.fit(X, y)
+
+        h, w, c = self.image.shape
+        print h, w, c
+        self.image.shape = ((h*w, c))
+        print self.image.shape
+        mask1 = np.zeros_like(self.image)
+        mask2 = (h*w)
+        mask1 = rfc.predict(self.image)
+        mask1.shape = ((h, w))
+        self.image.shape = ((h, w, c))
+        mask1 = np.asarray(mask1 * 255, dtype=np.uint8)
+        print "Done"
+        cv2.imshow("Fooo", mask1)
         cv2.waitKey(0)
+        print mask1
 
     def pink(self):
         self.view.set_pen_color("PINK")
@@ -58,8 +95,7 @@ class SegmentationPicker(QtGui.QWidget):
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # drawing area
-        image = cv2.imread('/home/dita/vlcsnap-2016-08-16-17h28m57s150.png')
-        self.view = painter.Painter(image)
+        self.view = painter.Painter(self.image)
         self.view.add_color("GREEN", 0, 255, 0)
 
         # left panel widget
@@ -139,7 +175,7 @@ class SegmentationPicker(QtGui.QWidget):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
-    ex = SegmentationPicker(None)
+    ex = SegmentationPicker('/home/dita/vlcsnap-2016-08-16-17h28m57s150.png')
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()
