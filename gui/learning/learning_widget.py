@@ -32,6 +32,7 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setColumnCount(2)
         self.info_table.setRowCount(10)
 
+        self.info_table.setMinimumHeight(500)
         self.vbox.addWidget(self.info_table)
 
         # TODO: next step
@@ -45,6 +46,11 @@ class LearningWidget(QtGui.QWidget):
 
         self.vbox.addWidget(self.start_button)
 
+        self.tracklets_table = QtGui.QTableWidget()
+        self.tracklets_table.setRowCount(self.lp.undecided_tracklets)
+        num_animals = len(self.project.animals)
+        self.tracklets_table.setColumnCount(2 * num_animals + 2)
+
         self.update_callback()
 
     def update_callback(self):
@@ -57,10 +63,17 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setItem(2, 0, QtGui.QTableWidgetItem('#undecided'))
         self.info_table.setItem(2, 1, QtGui.QTableWidgetItem(str(len(self.lp.undecided_tracklets))))
 
-        START = 3
+        self.info_table.setItem(3, 0, QtGui.QTableWidgetItem('#new T examples'))
+        self.info_table.setItem(3, 0, QtGui.QTableWidgetItem(str(len(self.lp.X) - self.lp.old_x_size)))
+
+        START = 4
         for i in range(len(self.project.animals)):
             self.info_table.setItem(START+i, 0, QtGui.QTableWidgetItem('#examples, ID: '+str(i)))
             self.info_table.setItem(START+i, 1, QtGui.QTableWidgetItem(str(np.count_nonzero(self.lp.y == i))))
+
+
+        # update chunk infos...
+
 
     def load_project(self, default=''):
         path = ''
