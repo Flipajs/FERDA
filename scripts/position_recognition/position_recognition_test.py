@@ -17,7 +17,7 @@ from core.project.project import Project
 from gui.gui_utils import cvimg2qtpixmap
 
 INPUT_DIM = 40
-NUMBER_OF_EIGEN_V = 40
+NUMBER_OF_EIGEN_V = 20
 
 average = 0
 
@@ -65,19 +65,14 @@ def get_pca(chunks, number_of_data, chm, gm):
         print "Chunk #{0}".format(i)
         i+= 1
         for vector in get_matrix(ch, number_of_data, chm, gm):
+            # plt.plot(vector[::2], vector[1::2])
+            # plt.show()
             matrix.append(vector)
 
     print "Constructing eigen ants"
 
     matrix = np.matrix(matrix)
     X = matrix.T
-
-    pca = PCA(NUMBER_OF_EIGEN_V)
-    T = pca.fit_transform(X)
-    X1 = pca.transform(X)
-    inverse = pca.inverse_transform(X1)
-
-    # return T
 
     X_mean = np.mean(X, axis=1)
 
@@ -119,34 +114,63 @@ def get_matrix(chunk, number_of_data, chm, gm):
     return distance_matrix
 
 def get_region_vector(region, number_of_data):
-    contour = region.contour_without_holes()
     centroid = region.centroid()
-    con_length = len(contour)
+    contour = region.contour_without_holes() - centroid
+    contour = np.array(rotate(contour, -region.theta_))
+    centroid = [0,0]
 
     if len(contour) < number_of_data:
         print("Number of data should be smaller than contours length")
 
+    ant_head, index = find_head_index(centroid, contour, region)
+    contour[index:index] = ant_head
+    contour = np.roll(contour, - index, axis=0)
+    con_length = len(contour)
     distances = [0]
     perimeter = vector_norm(contour[0] - contour[-1])
     for i in range(1, con_length):
         perimeter += vector_norm(contour[i] - contour[i - 1])
         distances.append(perimeter)
-
     result = np.zeros((number_of_data, 2))
     step = perimeter / float(number_of_data)
     i = 0
     p = 0
-    while i < 40:
+    while i < INPUT_DIM:
         if distances[p] >= i * step:
-            result[i,] = (contour[p] + (contour[p-1] - contour[p]) * ((distances[p] - i * step) / step)) - centroid
+            result[i,] = (contour[p] + (contour[p-1] - contour[p]) * ((distances[p] - i * step) / step))
             i += 1
-        p += 1
+        p = (p + 1) % con_length
 
     # plt.axis('equal')
     # plt.plot(contour[:,0], contour[:,1], c='r')
     # plt.scatter(result[:,0], result[:,1], c='g')
     # plt.show()
     return result.flatten()
+
+
+def find_head_index(centroid, contour, region):
+    a = list(enumerate(contour))
+    a = filter(lambda v: v[1][1] - centroid[1] > region.a_ / 2, a)
+    index = 0
+    ant_head = None
+    i = 0
+    while a[i][1][0] > centroid[0]:
+        i += 1
+    for v in range(len(a)):
+        x1 = a[i][1][0]
+        x2 = a[i - 1][1][0]
+        if x1 <= centroid[0] < x2:
+            y1 = a[i][1][1]
+            y2 = a[i - 1][1][1]
+            ant_head = [centroid[0], y1 + (y2 - y1) * ((centroid[0] - x1) / (x2 - x1))]
+            index = a[i - 1][0]
+            break
+        i = (i + 1) % len(a)
+    # plt.axis('equal')
+    # plt.plot(contour[:,0], contour[:,1], c='r')
+    # plt.scatter(ant_head[0], ant_head[1], c ='g')
+    # plt.show()
+    return np.array(ant_head), index
 
 
 def compute_contour_perimeter(contour):
@@ -196,11 +220,10 @@ class ChunkViewer(QtGui.QWidget):
         img = self.im.get_crop(region.frame(), region, width=self.WIDTH, height=self.HEIGHT, margin=200)
         pixmap = cvimg2qtpixmap(img)
         self.img.setPixmap(pixmap)
-        contour = region.contour_without_holes()
-        rotate(contour, region.theta_, region.centroid)
-        plt.scatter(contour[:, 0], contour[:, 1])
-        plt.scatter(contour[0, 0], contour[0, 1], c='r')
-        plt.show()
+        # plt.scatter(contour[:, 0], contour[:, 1])
+        # plt.scatter(contour[0, 0], contour[0, 1], c='r')
+        # plt.scatter(region.centroid()[0], region.centroid()[1])
+        # plt.show()
 
     def get_regions(self, ch, chm, gm, rm):
         chunk = chm[ch]
@@ -235,15 +258,38 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
     i = 0
-    for ch in chunks:
-        print i
-        i += 1
-        chv = ChunkViewer(project.img_manager, ch, project.chm, project.gm, project.gm.rm)
-        chv.show()
-        app.exec_()
+    # for ch in chunks:
+    #     print i
+    #     i += 1
+    #     chv = ChunkViewer(project.img_manager, ch, project.chm, project.gm, project.gm.rm)
+    #     chv.show()
+    #     app.exec_()
 
-    eigen_ants = get_pca(chunks[:5], INPUT_DIM, project.chm, project.gm)
+    matrix = []
+    i = 1
+    for ch in chunks:
+        print "Chunk #{0}".format(i)
+        i += 1
+        for vector in get_matrix(ch, INPUT_DIM, project.chm, project.gm):
+            matrix.append(vector)
+
+    print "Constructing eigen ants"
+
+    matrix = np.matrix(matrix)
+    X = matrix.T
+    pca = PCA(NUMBER_OF_EIGEN_V)
+    eigen_ants = pca.fit_transform(X)
+    X1 = pca.transform(X)
+    inverse = pca.inverse_transform(X1)
+    # eigen_ants = get_pca(chunks[:5], INPUT_DIM, project.chm, project.gm)
     plt.axis('equal')
+    for i in range(len(inverse[0])):
+        # print eigen_ant
+        # print '\n\n\n'
+        # print '\n\n\n'
+        plt.plot(inverse[::2, i], inverse[1::2, i])
+        plt.plot(X[::2, i], X[1::2, i], c='r')
+        plt.show()
     for i in range(NUMBER_OF_EIGEN_V):
         # print eigen_ant
         # print '\n\n\n'
