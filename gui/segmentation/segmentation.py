@@ -14,7 +14,7 @@ __author__ = 'dita'
 
 class SegmentationPicker(QtGui.QWidget):
 
-    def __init__(self, img, done_callback=None, pen_size=10, undo_len=10, debug=False, paint_r=255, paint_g=0, paint_b=238):
+    def __init__(self, img, done_callback=None, pen_size=10, undo_len=10, debug=False, paint_r=255, paint_g=0, paint_b=238, paint_a=255):
 
         super(SegmentationPicker, self).__init__()
 
@@ -25,7 +25,7 @@ class SegmentationPicker(QtGui.QWidget):
         self.image = cv2.imread(self.img_path)
         self.pen_size = pen_size
 
-        self.color = [paint_r, paint_g, paint_b]
+        self.color = [paint_r, paint_g, paint_b, paint_a]
 
         self.make_gui()
 
@@ -54,19 +54,20 @@ class SegmentationPicker(QtGui.QWidget):
         rfc.fit(X, y)
 
         h, w, c = self.image.shape
-        print h, w, c
         self.image.shape = ((h*w, c))
-        print self.image.shape
         mask1 = np.zeros_like(self.image)
-        mask2 = (h*w)
         mask1 = rfc.predict(self.image)
         mask1.shape = ((h, w))
         self.image.shape = ((h, w, c))
-        mask1 = np.asarray(mask1 * 255, dtype=np.uint8)
+        r = np.zeros((h, w), dtype=np.uint8)
+        g = np.asarray(mask1 * 255, dtype=np.uint8)
+        b = np.zeros((h, w), dtype=np.uint8)
+        a = np.full((h, w), 100, dtype=np.uint8)
+        rgb = np.dstack((b, g, r, a))
+
+        foo = painter.rgba2qimage(rgb)
+        self.view.set_overlay(foo)
         print "Done"
-        cv2.imshow("Fooo", mask1)
-        cv2.waitKey(0)
-        print mask1
 
     def pink(self):
         self.view.set_pen_color("PINK")
@@ -95,8 +96,8 @@ class SegmentationPicker(QtGui.QWidget):
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # drawing area
-        self.view = painter.Painter(self.image)
-        self.view.add_color("GREEN", 0, 255, 0)
+        self.view = painter.Painter(self.image, paint_name="PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=255)
+        self.view.add_color("GREEN", 0, 255, 0, 255)
 
         # left panel widget
         self.left_panel = QtGui.QWidget()

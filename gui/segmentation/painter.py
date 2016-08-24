@@ -71,6 +71,7 @@ class Painter(QtGui.QWidget):
         self.overlay_image = img
         self.scene.removeItem(self.overlay_pixmap)
         self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.overlay_image))
+        self.overlay_pixmap.setZValue(10)
 
     def add_color(self, name, r, g, b, a=100):
         mask = np.zeros((self.bg_width, self.bg_height))
@@ -138,6 +139,7 @@ class Painter(QtGui.QWidget):
         if length > 0:
             img, mask = self.backup.pop(length - 1)
             self.refresh_image(img)
+            #TODO: this doesn't work, since it can overwrite a mask that is different from the origin
             self.pick_mask = mask
 
     def clear_undo_history(self):
@@ -258,7 +260,23 @@ def numpy2qimage(image):
     if type(image) == QtGui.QImage:
         return image
     height, width, channels = image.shape
+    print channels
     bytesPerLine = channels * width
+    return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
+
+def rgba2qimage(image):
+    if type(image) == QtGui.QImage:
+        return image
+    height, width, channels = image.shape
+    print channels
+    bytesPerLine = channels * width
+    return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format_ARGB32)
+
+def mask2qimage(image):
+    if type(image) == QtGui.QImage:
+        return image
+    height, width = image.shape
+    bytesPerLine = width
     return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
 
 
