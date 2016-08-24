@@ -145,6 +145,9 @@ class Painter(QtGui.QWidget):
             self.refresh_image(img)
             #TODO: this doesn't work, since it can overwrite a mask that is different from the origin
             self.pick_mask = mask
+            if self.update_callback:
+                print "Updating"
+                self.update_callback()
 
     def clear_undo_history(self):
         self.backup = []
