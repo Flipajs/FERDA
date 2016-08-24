@@ -1,23 +1,21 @@
 import math
+import os
 from PyQt4 import QtCore
 from PyQt4 import QtGui
+from matplotlib import gridspec
+from matplotlib import pyplot as plt
+from matplotlib.pyplot import gcf
 
 import numpy as np
-import numpy
 import sys
-from numpy import transpose
 from numpy.linalg import eig, norm
-from matplotlib import pyplot as plt
-
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import normalize
-from utils.geometry import rotate
+
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from gui.gui_utils import cvimg2qtpixmap
-
-INPUT_DIM = 40
-NUMBER_OF_EIGEN_V = 20
+from scripts.position_recognition.eigen_widget import EigenWidget
+from utils.geometry import rotate
 
 average = 0
 
@@ -58,7 +56,7 @@ def compact_representation(X, Y, m):
     return W
 
 
-def get_pca(chunks, number_of_data, chm, gm):
+def get_pca(chunks, number_of_data, number_of_eigen_v, chm, gm):
     matrix = []
     i = 1
     for ch in chunks:
@@ -81,20 +79,20 @@ def get_pca(chunks, number_of_data, chm, gm):
 
     eigenAnts, eigenValues = pca_basis(X)
 
-    X_c = compact_representation(X, eigenAnts, NUMBER_OF_EIGEN_V)
-    Z = reconstruct(X_c, eigenAnts[:, :NUMBER_OF_EIGEN_V], X_mean)
+    X_c = compact_representation(X, eigenAnts, number_of_eigen_v)
+    Z = reconstruct(X_c, eigenAnts[:, :number_of_eigen_v], X_mean)
 
     # print matrix.T - Z
 
     return eigenAnts
 
 
-def get_eigenfaces(m):
+def get_eigenfaces(m, number_of_eigen_v):
     covariance_matrix = m.T.dot(m)
     eigenvalues, eigenvectors = eig(covariance_matrix)
     index = eigenvalues.argsort()[::-1]
     eigenfaces = eigenvectors[:, index]
-    eigenfaces = eigenfaces[:, :NUMBER_OF_EIGEN_V]
+    eigenfaces = eigenfaces[:, :number_of_eigen_v]
     eigenfaces = m.dot(eigenfaces)
     return eigenfaces
 
@@ -135,7 +133,7 @@ def get_region_vector(region, number_of_data):
     step = perimeter / float(number_of_data)
     i = 0
     p = 0
-    while i < INPUT_DIM:
+    while i < number_of_data:
         if distances[p] >= i * step:
             result[i,] = (contour[p] + (contour[p-1] - contour[p]) * ((distances[p] - i * step) / step))
             i += 1
@@ -184,10 +182,19 @@ def compute_contour_perimeter(contour):
 def vector_norm(u):
     return math.sqrt(sum(i ** 2 for i in u))
 
-def view_chunk(ch):
-   pass
+def prepare_matrix(chunks, number_of_data):
+    matrix = []
+    i = 1
+    for ch in chunks:
+        print "Chunk #{0}".format(i)
+        i += 1
+        for vector in get_matrix(ch, number_of_data, project.chm, project.gm):
+            matrix.append(vector)
+    matrix = np.array(matrix)
+    return matrix
 
 class ChunkViewer(QtGui.QWidget):
+
 
     WIDTH = HEIGHT = 300
 
@@ -240,6 +247,7 @@ class ChunkViewer(QtGui.QWidget):
             if self.current == len(self.regions) - 1:
                 self.next_b.setDisabled(True)
 
+
     def prev_action(self):
         print self.current
         if self.current != 0:
@@ -250,14 +258,66 @@ class ChunkViewer(QtGui.QWidget):
                 self.prev_b.setDisabled(True)
 
 
+def generate_eigen_ants_figure(ants, number_of_eigen_v):
+    f, axes = plt.subplots(1, number_of_eigen_v, sharey=True)
+    for i in range(number_of_eigen_v):
+        axes[i].plot(ants[i, ::2], ants[i, 1::2])
+        axes[i].set_title("Eigenant #{0}".format(i))
+    f.subplots_adjust(hspace=0)
+    plt.setp([a.get_xticklabels() for a in f.axes], visible=False)
+    fig = gcf()
+    fig.suptitle('Dim reduction: {0}'.format(number_of_eigen_v), fontsize=23)
+    plt.axis('equal')
+    # plt.figure().savefig(os.path.join(project.working_directory, 'eigenants'))
+    plt.show()
+
+def generate_ants_image(X, X1, V, r, c, i):
+    plt.figure(figsize=(r, c))
+    gs1 = gridspec.GridSpec(r, c)
+    gs1.update(wspace=0.025, hspace=0.05)
+    for i in range(r*c):
+        ax1 = plt.subplot(gs1[i])
+        plt.axis('on')
+        ax1.set_xticklabels([])
+        ax1.set_yticklabels([])
+        ax1.set_aspect('equal')
+        from mpl_toolkits.axes_grid.inset_locator import inset_axes
+        inset_axes = inset_axes(ax1,
+                                width="100%",  # width = 30% of parent_bbox
+                                height=1.,  # height : 1 inch
+                                loc=3)
+        ax1.plot(X[i, ::2], X[i, 1::2], c='r')
+        ax1.plot(X1[i, ::2], X1[i, 1::2], c='b')
+        # f.subplots_adjust(hspace=0)
+        inset_axes.scatter(V[i, ::2], V[i, 1::2], c='r')
+    # plt.figure().savefig(os.path.join(project.working_directory, 'ants {0}'.format(i)))
+    # plt.tight_layout()
+    plt.show()
+
+def generate_ants_reconstructed_figure(X, X1, V):
+    r = 4
+    c = 9
+    number_in_pic = r * c
+    i = 0
+    while i < len(X):
+        a = i * number_in_pic
+        b = (i + 1) * number_in_pic
+        generate_ants_image(X[a:b, :], X1[a:b, :], V[a:b, :], r, c, i)
+        i += 1
+
+# for i in range(len(inverse[0])):
+#     plt.plot(inverse[::2, i], inverse[1::2, i])
+#     plt.plot(X[::2, i], X[1::2, i], c='r')
+#     plt.show()
+
+
 if __name__ == '__main__':
     project = Project()
     project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
-    # project.load("/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj")
     chunks = project.gm.chunk_list()
 
-    app = QtGui.QApplication(sys.argv)
-    i = 0
+    # app = QtGui.QApplication(sys.argv)
+    # i = 0
     # for ch in chunks:
     #     print i
     #     i += 1
@@ -265,34 +325,29 @@ if __name__ == '__main__':
     #     chv.show()
     #     app.exec_()
 
-    matrix = []
-    i = 1
-    for ch in chunks:
-        print "Chunk #{0}".format(i)
-        i += 1
-        for vector in get_matrix(ch, INPUT_DIM, project.chm, project.gm):
-            matrix.append(vector)
+    number_of_eigen_v = 10
+    number_of_data = 40
 
-    print "Constructing eigen ants"
+    X = prepare_matrix(chunks[:1], number_of_data)
+    pca = PCA(number_of_eigen_v)
+    V = pca.fit_transform(X)
+    eigen_ants = pca.components_
+    X1 = pca.inverse_transform(pca.transform(X))
 
-    matrix = np.matrix(matrix)
-    X = matrix.T
-    pca = PCA(NUMBER_OF_EIGEN_V)
-    eigen_ants = pca.fit_transform(X)
-    X1 = pca.transform(X)
-    inverse = pca.inverse_transform(X1)
-    # eigen_ants = get_pca(chunks[:5], INPUT_DIM, project.chm, project.gm)
-    plt.axis('equal')
-    for i in range(len(inverse[0])):
-        # print eigen_ant
-        # print '\n\n\n'
-        # print '\n\n\n'
-        plt.plot(inverse[::2, i], inverse[1::2, i])
-        plt.plot(X[::2, i], X[1::2, i], c='r')
-        plt.show()
-    for i in range(NUMBER_OF_EIGEN_V):
-        # print eigen_ant
-        # print '\n\n\n'
-        # print '\n\n\n'
-        plt.plot(eigen_ants[::2, i], eigen_ants[1::2, i])
-        plt.show()
+    # generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
+    # generate_ants_reconstructed_figure(X, X1, V)
+
+    app = QtGui.QApplication(sys.argv)
+
+    main = EigenWidget(pca, eigen_ants, V[0])
+    main.show()
+
+    sys.exit(app.exec_())
+
+    # for i in range(len(inverse[0])):
+    #     plt.plot(inverse[::2, i], inverse[1::2, i])
+    #     plt.plot(X[::2, i], X[1::2, i], c='r')
+    #     plt.show()
+    # for i in range(number_of_eigen_v):
+    #     plt.plot(eigen_ants[::2, i], eigen_ants[1::2, i])
+    #     plt.show()
