@@ -15,10 +15,11 @@ import operator
 
 
 class LearningProcess:
-    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None):
+    def  __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None):
         self.p = p
 
         self.question_callback = question_callback
+        self.update_callback = update_callback
 
         self._eps1 = 0.01
         self._eps2 = 0.1

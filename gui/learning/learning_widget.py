@@ -5,6 +5,7 @@ from core.project.project import Project
 from utils.img_manager import ImgManager
 from core.learning.learning_process import LearningProcess
 from core.settings import Settings as S_
+import numpy as np
 
 
 class LearningWidget(QtGui.QWidget):
@@ -22,16 +23,44 @@ class LearningWidget(QtGui.QWidget):
             self.vbox.addWidget(self.load_project_button)
         else:
             self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False,
-                                      question_callback=self.question_callback)
+                                      question_callback=self.question_callback, update_callback=self.update_callback)
 
         self.start_button = QtGui.QPushButton('start')
-        self.start_button.clicked.connect(self.lp.run_learning())
+        self.start_button.clicked.connect(self.lp.run_learning)
+
+        self.info_table = QtGui.QTableWidget()
+        self.info_table.setColumnCount(2)
+        self.info_table.setRowCount(10)
+
+        self.vbox.addWidget(self.info_table)
+
+        # TODO: next step
+        # TODO: next N steps
+        # TODO: print info...
+        # TODO: callback from learningProcess on change to update info
 
         # TODO: step by step
 
         # TODO: update callback... info about decisions...
 
         self.vbox.addWidget(self.start_button)
+
+        self.update_callback()
+
+    def update_callback(self):
+        self.info_table.setItem(0, 0, QtGui.QTableWidgetItem('#tracklets'))
+        self.info_table.setItem(0, 1, QtGui.QTableWidgetItem(str(len(self.project.chm))))
+
+        self.info_table.setItem(1, 0, QtGui.QTableWidgetItem('#collision tracklets'))
+        self.info_table.setItem(1, 1, QtGui.QTableWidgetItem(str(len(self.lp.collision_chunks))))
+
+        self.info_table.setItem(2, 0, QtGui.QTableWidgetItem('#undecided'))
+        self.info_table.setItem(2, 1, QtGui.QTableWidgetItem(str(len(self.lp.undecided_tracklets))))
+
+        START = 3
+        for i in range(len(self.project.animals)):
+            self.info_table.setItem(START+i, 0, QtGui.QTableWidgetItem('#examples, ID: '+str(i)))
+            self.info_table.setItem(START+i, 1, QtGui.QTableWidgetItem(str(np.count_nonzero(self.lp.y == i))))
 
     def load_project(self, default=''):
         path = ''

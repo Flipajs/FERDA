@@ -15,6 +15,9 @@ class ChunkManager:
     def __getitem__(self, index):
         return self.chunks_.get(index, None)
 
+    def __len__(self):
+        return len(self.chunks_)
+
     def new_chunk(self, vertices_ids, gm, assign_color=True):
         ch = Chunk(vertices_ids, self.id_, gm)
         self.chunks_[self.id_] = ch

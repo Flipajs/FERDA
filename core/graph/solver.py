@@ -31,7 +31,6 @@ class Solver:
         :return:
         """
 
-        # project.gm = GraphManager(project, self.assignment_score)
         self.project = project
 
         self.major_axis_median = project.stats.major_axis_median
@@ -41,7 +40,6 @@ class Solver:
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
 
         self.ignored_nodes = {}
-        # self.zernike_desc = ZernikeMoments(project.solver_parameters.zernike_radius, project.solver_parameters.zernike_norm)
 
         self.cc_id = 0
 
