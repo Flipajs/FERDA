@@ -4,11 +4,10 @@ __author__ = 'filip@naiser.cz'
 from PyQt4 import QtGui, QtCore
 
 class MyView(QtGui.QGraphicsView):
-    def __init__(self, update_callback_move=None, update_callback_press=None, update_callback_release=None):
+    def __init__(self, update_callback_move=None, update_callback_press=None):
         super(MyView, self).__init__()
         self.setMouseTracking(True)
         self.update_callback_move = update_callback_move
-        self.update_callback_release = update_callback_release
         self.update_callback_press = update_callback_press
         self.scale = 1
         self.scale_step = 0

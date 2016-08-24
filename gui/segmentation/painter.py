@@ -10,12 +10,13 @@ __author__ = 'dita'
 class Painter(QtGui.QWidget):
     """ Painter widget that can be used in all painting applications"""
 
-    def __init__(self, image, pen_size=10, undo_len=10, debug=False, paint_name = "PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=100):
+    def __init__(self, image, pen_size=10, undo_len=10, debug=False, update_callback=None, paint_name = "PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=100):
         """ """
 
         super(Painter, self).__init__()
 
         self.DEBUG = debug
+        self.update_callback = update_callback
 
         # WIDGET SETUP
         self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
@@ -107,6 +108,9 @@ class Painter(QtGui.QWidget):
         if self.is_in_scene(point):
             self.save()
             self.draw(point)
+        if self.update_callback:
+            print "Updating"
+            self.update_callback()
 
     def mouse_moving(self, event):
         # while the mouse is moving, paint it's position
