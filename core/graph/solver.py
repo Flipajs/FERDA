@@ -658,11 +658,18 @@ class Solver:
             regions_P = []
             for s in s1:
                 r = self.project.gm.region(s)
+                if isinstance(r, list):
+                    print "PROBLEM IN SOLVER.py, line 662, region doesn't exist", r, s
+                    return
                 regions_P.append((r.area(), r.centroid()))
 
             regions_Q = []
             for s in s2:
                 r = self.project.gm.region(s)
+                if isinstance(r, list):
+                    print "PROBLEM IN SOLVER.py, line 662, region doesn't exist", r, s
+                    return
+
                 regions_Q.append((r.area(), r.centroid()))
 
             unstable_num, stability_P, stability_Q = detect_unstable(regions_P, regions_Q, thresh=0.7, area_med=area_med)

@@ -10,11 +10,13 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     print "Starting assembly..."
     from core.graph.graph_manager import GraphManager
     # TODO: add to settings
+
     if cluster:
-        bgcomp.project.rm = RegionManager(db_wd=bgcomp.project.working_directory)
+        bgcomp.project.rm = RegionManager(db_wd=bgcomp.project.working_directory, cache_size_limit=0)
     else:
         from core.settings import Settings as S_
         bgcomp.project.rm = RegionManager(db_wd=bgcomp.project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
+
 
     bgcomp.project.chm = ChunkManager()
     bgcomp.solver = Solver(bgcomp.project)
@@ -61,6 +63,8 @@ def assembly_after_parallelization(bgcomp, cluster=False):
         bgcomp.update_callback(-1, 'joining parts...')
 
     bgcomp.project.solver.detect_split_merge_cases()
+
+    # bgcomp.project.gm.rm = bgcomp.project.rm
 
     print "reconnecting graphs"
 
