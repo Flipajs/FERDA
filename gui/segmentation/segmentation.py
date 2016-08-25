@@ -68,6 +68,11 @@ class SegmentationPicker(QtGui.QWidget):
 
         foo = painter.rgba2qimage(rgb)
         self.view.set_overlay(foo)
+
+        edges = cv2.Canny(self.image, 3, 80)
+        cv2.imshow("Edges", edges)
+        cv2.waitKey(0)
+
         print "Done"
 
     def pink(self):

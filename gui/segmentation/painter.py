@@ -100,6 +100,7 @@ class Painter(QtGui.QWidget):
             self.color = None
             return
         # change pen size
+        self.color_name = name
         self.color = self.colors[name][1]
         self.pick_mask = self.colors[name][0]
 
@@ -109,7 +110,6 @@ class Painter(QtGui.QWidget):
             self.save()
             self.draw(point)
         if self.update_callback:
-            print "Updating"
             self.update_callback()
 
     def mouse_moving(self, event):
@@ -127,26 +127,26 @@ class Painter(QtGui.QWidget):
         # save the image and mask
         img = self.paint_image.copy()
         mask = self.pick_mask.copy()
-        self.backup.append((img, mask))
+        name = self.color_name
+        self.backup.append((img, mask, name))
 
         # remove the oldest save if backup size got larger than self.undo_size
         if len(self.backup) > self.undo_len:
             self.backup.pop(0)
 
     def undo(self):
-        print "Undoing"
         # get number of elements in backup
         length = len(self.backup)
         if self.DEBUG:
             print "Length is %s" % length
         # proceed to undo if there is something to undo
         if length > 0:
-            img, mask = self.backup.pop(length - 1)
+            img, mask, name = self.backup.pop(length - 1)
             self.refresh_image(img)
-            #TODO: this doesn't work, since it can overwrite a mask that is different from the origin
-            self.pick_mask = mask
+            self.colors[name][0] = mask
+            # TODO: this doesn't work, since it can overwrite a mask that is different from the origin
+            # self.pick_mask = mask
             if self.update_callback:
-                print "Updating"
                 self.update_callback()
 
     def clear_undo_history(self):
@@ -267,7 +267,6 @@ def numpy2qimage(image):
     if type(image) == QtGui.QImage:
         return image
     height, width, channels = image.shape
-    print channels
     bytesPerLine = channels * width
     return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
 
@@ -275,7 +274,6 @@ def rgba2qimage(image):
     if type(image) == QtGui.QImage:
         return image
     height, width, channels = image.shape
-    print channels
     bytesPerLine = channels * width
     return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format_ARGB32)
 
