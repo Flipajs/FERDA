@@ -121,9 +121,7 @@ class MainTabWidget(QtGui.QWidget):
                 self.tabs.setCurrentIndex(1)
                 self.ignore_tab_change = False
 
-            # tracklet = self.project.chm[12]
-
-            # self.results_tab.play_and_highlight_tracklet(tracklet, margin=5)
+            self.results_tab.update_positions()
 
         if i == 2:
             # TODO: show loading or something...

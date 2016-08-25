@@ -157,9 +157,9 @@ class LearningWidget(QtGui.QWidget):
 
             for j in range(num_animals):
                 val = ''
-                if j in self.lp.ids_not_present_in_tracklet[t_id]:
+                if j in t.P:
                     val = 'N'
-                elif j in self.lp.ids_present_in_tracklet[t_id]:
+                elif j in t.N:
                     val = 'P'
 
                 self.tracklets_table.setItem(i, 5+num_animals+j, QtGui.QTableWidgetItem(val))

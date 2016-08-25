@@ -23,6 +23,9 @@ class ResultsWidget(QtGui.QWidget):
 
         self.show_identities = False
         self.loop_highlight_tracklets = []
+        self.loop_end = -1
+
+        self.hide_visualisation_ = False
 
         self.hbox = QtGui.QHBoxLayout()
         self.hbox.setContentsMargins(0, 0, 0, 0)
@@ -166,6 +169,11 @@ class ResultsWidget(QtGui.QWidget):
 
         self.init_speed_slider()
 
+        self.hide_visualisation_action = QtGui.QAction('hide visualisation', self)
+        self.hide_visualisation_action.triggered.connect(self.hide_visualisation)
+        self.hide_visualisation_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
+        self.addAction(self.hide_visualisation_action)
+
         # self.reset_colors_b = QtGui.QPushButton('reset colors')
         # self.reset_colors_b.clicked.connect(self.reset_colors)
         # self.video_control_buttons_layout.addWidget(self.reset_colors_b)
@@ -264,6 +272,10 @@ class ResultsWidget(QtGui.QWidget):
 
         # self.update_positions()
 
+    def hide_visualisation(self):
+        self.hide_visualisation_ = not self.hide_visualisation_
+        self.update_positions()
+
     def stop_highlight_tracklet_clicked(self):
         self.loop_highlight_tracklets = []
         self.help_timer.stop()
@@ -300,8 +312,8 @@ class ResultsWidget(QtGui.QWidget):
 
     def test_one_id_in_tracklet(self, tracklet):
         # if there is one and only one ID assigned to chunk
-        return len(tracklet.animal_id_['P']) == 1 and \
-               len(tracklet.animal_id_['N']) == len(self.project.animals) - 1
+        return len(tracklet.P) == 1 and \
+               len(tracklet.N) == len(self.project.animals) - 1
 
     def _evolve_gt(self):
         my_data = {}
@@ -317,7 +329,7 @@ class ResultsWidget(QtGui.QWidget):
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
 
                 if self.test_one_id_in_tracklet(ch):
-                    id_ = list(ch.animal_id_['P'])[0]
+                    id_ = list(ch.P)[0]
                     my_data[frame][id_] = rch.centroid_in_t(frame)
 
             max_frame = max(max_frame, frame)
@@ -585,6 +597,9 @@ class ResultsWidget(QtGui.QWidget):
         self._clear_items()
         self._update_bg_img(frame)
 
+        if self.hide_visualisation_:
+            return
+
         animal_ids2centroids = {}
         for ch in self.project.chm.chunks_in_frame(frame):
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
@@ -595,9 +610,9 @@ class ResultsWidget(QtGui.QWidget):
 
             # TODO: fix for option when only P set is displayed using circles
             try:
-                for id_ in ch.animal_id_['P']:
+                for id_ in ch.P:
                     animal_ids2centroids.setdefault(id_, [])
-                    animal_ids2centroids[id_].append((c, len(ch.animal_id_) == 1, ch))
+                    animal_ids2centroids[id_].append((c, self.test_one_id_in_tracklet(ch), ch))
             except:
                 pass
 
@@ -605,7 +620,7 @@ class ResultsWidget(QtGui.QWidget):
                 alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
 
                 c = ch.color
-                self.draw_region(r, ch.animal_id_, use_ch_color=c, alpha=alpha)
+                self.draw_region(r, {'P': ch.P, 'N': ch.N}, use_ch_color=c, alpha=alpha)
 
         if self.show_gt_markers.isChecked():
             self._show_gt_markers(animal_ids2centroids)
@@ -646,10 +661,12 @@ class ResultsWidget(QtGui.QWidget):
         for i, a in enumerate(self.project.animals):
             params['colors'].append([a.color_[0], a.color_[1], a.color_[2]])
 
-        item = pn_ids_visualisation.get_pixmap_item(ids_, tracklet.animal_id_['P'], tracklet.animal_id_['N'],
+        item = pn_ids_visualisation.get_pixmap_item(ids_, tracklet.P, tracklet.N,
                                                      tracklet_id=tracklet.id(),
                                                      callback=self.pn_pixmap_clicked,
-                                                     probs=tracklet.animal_id_['probabilities'],
+                                                    # TODO: probs on Demand
+                                                     probs=None,
+                                                     # probs=tracklet.animal_id_['probabilities'],
                                                      params=params
                                                      )
 

@@ -457,8 +457,8 @@ class LearningProcess:
 
     def __precompute_availability(self):
         for ch in self.tracklets:
-            self.ids_present_in_tracklet[ch.id()] = set()
-            self.ids_not_present_in_tracklet[ch.id()] = set()
+            ch.P = set()
+            ch.N = set()
 
     def __propagate_availability(self, ch, remove_id=[]):
         if ch.id() == 124:
@@ -611,7 +611,7 @@ class LearningProcess:
 
             # compute certainty
             x_ = np.copy(x)
-            for id_ in self.ids_not_present_in_tracklet[best_tracklet_id]:
+            for id_ in best_tracklet.N:
                 x_[id_] = 0
 
             # TODO: test conflict in other tracklet with high certainity for given ID
@@ -733,8 +733,8 @@ class LearningProcess:
 
         """
 
-        P = self.ids_present_in_tracklet[tracklet.id()]
-        N = self.ids_not_present_in_tracklet[tracklet.id()]
+        P = tracklet.P
+        N = tracklet.N
 
         P = P.union(ids)
         N = N.remove(ids)
@@ -755,7 +755,7 @@ class LearningProcess:
         for t in affected_tracklets:
             self.__if_possible_add_definitely_not_present(t, tracklet, ids)
 
-        self.ids_present_in_tracklet[tracklet.id()] = P
+        tracklet.P = P
 
         # everything is OK
         return True
@@ -769,8 +769,8 @@ class LearningProcess:
         if tracklet.id() in self.collision_chunks:
             return
 
-        P = self.ids_present_in_tracklet[tracklet.id()]
-        N = self.ids_not_present_in_tracklet[tracklet.id()]
+        P = tracklet.P
+        N = tracklet.N
 
         # skip the oversegmented regions
         if len(P) == 0:
@@ -809,13 +809,13 @@ class LearningProcess:
 
         conflicts = []
         for t in in_time:
-            if gt_id in self.ids_present_in_tracklet[t.id()]:
+            if gt_id in t.P:
                 conflicts.append(t)
 
         # TODO: remove this
         # repairing conflict...
-        self.ids_present_in_tracklet[tracklet.id()] = set([gt_id])
-        self.ids_not_present_in_tracklet[tracklet.id()] = self.all_ids - set([gt_id])
+        tracklet.P = set([gt_id])
+        tracklet.N = self.all_ids - set([gt_id])
 
         return conflicts
 
@@ -834,8 +834,8 @@ class LearningProcess:
             self.__print_conflicts(new_conflicts, t, depth=depth+1)
 
     def __update_definitely_not_present(self, ids, tracklet):
-        P = self.ids_present_in_tracklet[tracklet.id()]
-        N = self.ids_not_present_in_tracklet[tracklet.id()]
+        P = tracklet.P
+        N = tracklet.N
 
         N = N.union(ids)
 
@@ -849,7 +849,7 @@ class LearningProcess:
             return False
 
         # propagate changes
-        self.ids_not_present_in_tracklet[tracklet.id()] = N
+        tracklet.N = N
 
         self.__update_certainty(tracklet)
 
@@ -861,7 +861,7 @@ class LearningProcess:
             print "\tGT id: ", self.__DEBUG_get_answer_from_GT(tracklet)
         except:
             pass
-        print "\tP:", self.ids_present_in_tracklet[tracklet.id()], " N: ", self.ids_not_present_in_tracklet[tracklet.id()]
+        print "\tP:", tracklet.P, " N: ", tracklet.N
 
     def __if_possible_add_definitely_not_present(self, tracklet, present_tracklet, ids):
         """
@@ -920,7 +920,7 @@ class LearningProcess:
         if not self.__DEBUG_GT_test(id_, tracklet):
             self.mistakes.append(tracklet)
 
-            print "MISTAKE ", "P:", self.ids_present_in_tracklet[tracklet.id()], "N: ", self.ids_not_present_in_tracklet[tracklet.id()],\
+            print "MISTAKE ", "P:", tracklet.P, "N: ", tracklet.N,\
                 "MEASUREMENTS", self.tracklet_measurements[tracklet.id()], "Certainty: ", self.tracklet_certainty[tracklet.id()], "tracklet id:",  tracklet.id(), " ID: ", id_
 
             # TODO: remove in future...
@@ -945,9 +945,9 @@ class LearningProcess:
             self.__learn(tracklet, id_)
 
         id_set = set([id_])
-        self.ids_present_in_tracklet[tracklet.id()] = id_set
+        tracklet.P = id_set
         # and the rest of ids goes to not_present
-        self.ids_not_present_in_tracklet[tracklet.id()] = self.all_ids.difference(id_set)
+        tracklet.N = self.all_ids.difference(id_set)
 
         # if affecting:
         affected_tracklets = self.__get_affected_tracklets(tracklet)

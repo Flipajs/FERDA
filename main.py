@@ -29,23 +29,29 @@ if is_flipajs_pc():
     project.load(wd+name+'/cam'+str(cam_)+'.fproj')
 
     try:
-        with open(project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
-            data = pickle.load(f_)
+        # WORKAROUND:
+        for t in project.chm.chunk_list():
+            t.N = set()
+            t.P = set()
 
-            Ps = data['ids_present_in_tracklet']
-            Ns = data['ids_not_present_in_tracklet']
-            probabilities = data['probabilities']
-
-        for ch_id in project.gm.chunk_list():
-            animal_id = -1
-            if ch_id in Ps:
-                probs = None
-                if ch_id in probabilities:
-                    probs = probabilities[ch_id]
-
-                animal_id = {'P': Ps[ch_id], 'N': Ns[ch_id], 'probabilities': probs}
-
-            project.chm[ch_id].animal_id_ = animal_id
+        # with open(project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
+        #     data = pickle.load(f_)
+        #
+        #     #outdated
+        #     Ps = data['ids_present_in_tracklet']
+        #     Ns = data['ids_not_present_in_tracklet']
+        #     probabilities = data['probabilities']
+        #
+        # for ch_id in project.gm.chunk_list():
+        #     animal_id = -1
+        #     if ch_id in Ps:
+        #         probs = None
+        #         if ch_id in probabilities:
+        #             probs = probabilities[ch_id]
+        #
+        #         animal_id = {'P': Ps[ch_id], 'N': Ns[ch_id], 'probabilities': probs}
+        #
+        #     project.chm[ch_id].animal_id_ = animal_id
     except IOError:
         pass
 
