@@ -22,13 +22,16 @@ class MainTabWidget(QtGui.QWidget):
 
         self.tabs = QtGui.QTabWidget()
         self.tracker_tab = TrackerWidget(project, show_in_visualizer_callback=self.show_in_visualizer)
-        self.results_tab = ResultsWidget(project)
+        self.results_tab = QtGui.QWidget()
         self.statistics_tab = StatisticsWidget(project)
+
+        self.id_detection_tab = QtGui.QWidget()
 
         self.finish_callback = finish_callback
 
         self.tabs.addTab(self.tracker_tab, "tracking")
         self.tabs.addTab(self.results_tab, "results viewer")
+        self.tabs.addTab(self.id_detection_tab, "id detection")
         self.tabs.addTab(self.statistics_tab, "stats && results")
 
         self.switch_to_tracking_window_action = QtGui.QAction('switch tab to tracking', self)
@@ -98,26 +101,42 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.setTabEnabled(1, True)
         self.tabs.setTabEnabled(2, True)
 
+    def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
+        self.tabs.setCurrentIndex(1)
+        self.results_tab.play_and_highlight_tracklet(tracklet, frame=frame, margin=margin)
+
     def tab_changed(self, i):
         if self.ignore_tab_change:
             return
 
         if i == 1:
-            self.ignore_tab_change = True
-            self.tabs.removeTab(1)
-            self.results_tab.setParent(None)
+            if not isinstance(self.results_tab, ResultsWidget):
+                self.ignore_tab_change = True
+                self.tabs.removeTab(1)
+                self.results_tab.setParent(None)
 
-            self.results_tab = ResultsWidget(self.project)
-            self.results_tab.update_positions()
-            # self.results_tab.add_data(self.project.solver, self.show_results_only_around_frame)
-            self.tabs.insertTab(1, self.results_tab, 'results viewer')
-            self.tabs.setCurrentIndex(1)
-            self.ignore_tab_change = False
+                self.results_tab = ResultsWidget(self.project)
+                self.results_tab.update_positions()
+                self.tabs.insertTab(1, self.results_tab, 'results viewer')
+                self.tabs.setCurrentIndex(1)
+                self.ignore_tab_change = False
 
             # tracklet = self.project.chm[12]
 
             # self.results_tab.play_and_highlight_tracklet(tracklet, margin=5)
+
         if i == 2:
+            # TODO: show loading or something...
+            from gui.learning.learning_widget import LearningWidget
+            if not isinstance(self.id_detection_tab, LearningWidget):
+                self.ignore_tab_change = True
+                self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet)
+                self.tabs.removeTab(2)
+                self.tabs.insertTab(2, self.id_detection_tab, "id detection")
+                self.tabs.setCurrentIndex(2)
+                self.ignore_tab_change = False
+
+        if i == 3:
             self.statistics_tab.update_data(self.project)
 
         # if i == 0:

@@ -58,6 +58,7 @@ class LearningProcess:
                      'collision_chunks': self.collision_chunks}
                 pickle.dump(d, f, -1)
         else:
+            print "LOADING features..."
             with open(p.working_directory+'/temp/features.pkl', 'rb') as f:
                 d = pickle.load(f)
                 self.tracklets = d['tracklets']
@@ -65,25 +66,31 @@ class LearningProcess:
                 self.features = d['features']
                 self.collision_chunks = d['collision_chunks']
 
+            print "LOADED"
+
         if not use_rf_cache:
+            print "precompute avalability"
             # basically set every chunk with full set of possible ids
             self.__precompute_availability()
 
             # TODO: remove this
             self.class_frequences = []
 
+            print "undecided tracklets..."
             for t in self.tracklets:
                 if t.id() in self.collision_chunks:
                     continue
 
                 self.undecided_tracklets.add(t.id())
 
+            print "Init data..."
             self.X = None
             self.y = None
             self.all_ids = self.get_init_data()
 
             np.random.seed(42)
             self.__train_rfc()
+            print "TRAINED"
 
             with open(p.working_directory+'/temp/rfc.pkl', 'wb') as f:
                 d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.all_ids,

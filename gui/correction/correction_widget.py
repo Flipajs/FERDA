@@ -268,6 +268,7 @@ class ResultsWidget(QtGui.QWidget):
         self.loop_highlight_tracklets = []
         self.help_timer.stop()
         self.loop_end = -1
+        self.update_positions()
 
     def highlight_tracklet_button_clicked(self):
         try:

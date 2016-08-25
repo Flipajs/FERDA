@@ -9,10 +9,11 @@ import numpy as np
 
 
 class LearningWidget(QtGui.QWidget):
-    def __init__(self, project=None):
+    def __init__(self, project=None, show_tracklet_callback=None):
         super(LearningWidget, self).__init__()
 
         self.project = project
+        self.show_tracklet_callback = show_tracklet_callback
         self.vbox = QtGui.QVBoxLayout()
         self.hbox = QtGui.QHBoxLayout()
         self.top_stripe_layout = QtGui.QHBoxLayout()
@@ -27,6 +28,7 @@ class LearningWidget(QtGui.QWidget):
             self.load_project_button.clicked.connect(self.load_project)
             self.top_stripe_layout.addWidget(self.load_project_button)
         else:
+            print "LOADING LP"
             self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False,
                                       question_callback=self.question_callback, update_callback=self.update_callback)
 
@@ -53,8 +55,12 @@ class LearningWidget(QtGui.QWidget):
         self.n_next_steps_button.clicked.connect(self.do_n_steps)
         self.top_stripe_layout.addWidget(self.n_next_steps_button)
 
+        self.show_tracklet_button = QtGui.QPushButton('show selected tracklet')
+        self.show_tracklet_button.clicked.connect(self.show_tracklet)
+        self.top_stripe_layout.addWidget(self.show_tracklet_button)
+
         # TODO: last info label
-        # TODO: integrate into main...
+        # TODO: refactor results widget to be up to date with learning results...
         # TODO: add option to add info...
         # TODO: add option to reset learning
         # TODO: add saving
@@ -71,6 +77,17 @@ class LearningWidget(QtGui.QWidget):
         self.hbox.addWidget(self.tracklets_table)
 
         self.update_callback()
+
+    def show_tracklet(self):
+        indexes = self.tracklets_table.selectionModel().selectedRows()
+        indexes = sorted(indexes)
+
+        if len(indexes):
+            # pick first
+            row = indexes[0].row()
+            id_ = int(self.tracklets_table.item(row, 0).text())
+            tracklet = self.project.chm[id_]
+            self.show_tracklet_callback(tracklet)
 
     def do_n_steps(self):
         try:
