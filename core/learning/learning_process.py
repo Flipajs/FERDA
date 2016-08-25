@@ -622,6 +622,8 @@ class LearningProcess:
             else:
                 self.__human_in_the_loop_request()
 
+        self.update_callback()
+
     def save_ids_(self):
         with open(self.p.working_directory + '/temp/chunk_available_ids.pkl', 'wb') as f_:
             d_ = {'ids_present_in_tracklet': self.ids_present_in_tracklet,

@@ -13,23 +13,26 @@ class LearningWidget(QtGui.QWidget):
         super(LearningWidget, self).__init__()
 
         self.project = project
-        self.hbox = QtGui.QHBoxLayout()
         self.vbox = QtGui.QVBoxLayout()
-        self.hbox.addLayout(self.vbox)
-        self.setLayout(self.hbox)
+        self.hbox = QtGui.QHBoxLayout()
+        self.top_stripe_layout = QtGui.QHBoxLayout()
+        self.setLayout(self.vbox)
+
+        self.vbox.addLayout(self.top_stripe_layout)
+        self.vbox.addLayout(self.hbox)
 
         self.lp = None
         if not self.project:
             self.load_project_button = QtGui.QPushButton('load project')
             self.load_project_button.clicked.connect(self.load_project)
-            self.vbox.addWidget(self.load_project_button)
+            self.top_stripe_layout.addWidget(self.load_project_button)
         else:
             self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False,
                                       question_callback=self.question_callback, update_callback=self.update_callback)
 
         self.start_button = QtGui.QPushButton('start')
         self.start_button.clicked.connect(self.lp.run_learning)
-        self.vbox.addWidget(self.start_button)
+        self.top_stripe_layout.addWidget(self.start_button)
 
         self.info_table = QtGui.QTableWidget()
         self.info_table.setColumnCount(2)
@@ -39,13 +42,22 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setFixedWidth(220)
         self.hbox.addWidget(self.info_table)
 
-        # TODO: next step
-        # TODO: next N steps
-        # TODO: print info...
-        # TODO: callback from learningProcess on change to update info
+        self.next_step_button = QtGui.QPushButton('next step')
+        self.next_step_button.clicked.connect(self.lp.next_step)
+        self.top_stripe_layout.addWidget(self.next_step_button)
 
-        # TODO: step by step
+        self.num_next_step = QtGui.QLineEdit()
+        self.num_next_step.setText('10')
+        self.top_stripe_layout.addWidget(self.num_next_step)
+        self.n_next_steps_button = QtGui.QPushButton('do N steps')
+        self.n_next_steps_button.clicked.connect(self.do_n_steps)
+        self.top_stripe_layout.addWidget(self.n_next_steps_button)
 
+        # TODO: last info label
+        # TODO: integrate into main...
+        # TODO: add option to add info...
+        # TODO: add option to reset learning
+        # TODO: add saving
         # TODO: update callback... info about decisions...
 
         self.tracklets_table = QtGui.QTableWidget()
@@ -54,10 +66,20 @@ class LearningWidget(QtGui.QWidget):
         self.tracklets_table.setColumnCount(2 * num_animals + 5)
         self.tracklets_table.setMinimumWidth(1000)
         self.tracklets_table.setMinimumHeight(1000)
+
         self.tracklets_table.setSortingEnabled(True)
         self.hbox.addWidget(self.tracklets_table)
 
         self.update_callback()
+
+    def do_n_steps(self):
+        try:
+            num = int(self.num_next_step.text())
+        except:
+            QtGui.QMessageBox('not a valid number!')
+
+        for i in range(num):
+            self.lp.next_step()
 
     def update_callback(self):
         self.info_table.setItem(0, 0, QtGui.QTableWidgetItem('#tracklets'))
@@ -80,6 +102,7 @@ class LearningWidget(QtGui.QWidget):
         # update tracklet info...
         num_animals = len(self.project.animals)
         self.tracklets_table.clear()
+        self.tracklets_table.setSortingEnabled(False)
         header_labels = ("id", "len", "start", "end", "cert")
         for i in range(num_animals):
             header_labels += ('m'+str(i), )
@@ -87,15 +110,28 @@ class LearningWidget(QtGui.QWidget):
         for i in range(num_animals):
             header_labels += (str(i), )
 
-        print "TYPE:", type(header_labels)
+        it = QtGui.QTableWidgetItem
+
         self.tracklets_table.setHorizontalHeaderLabels(header_labels)
         for i, t_id in enumerate(self.lp.undecided_tracklets):
             t = self.project.chm[t_id]
 
-            self.tracklets_table.setItem(i, 0, QtGui.QTableWidgetItem(str(t.id())))
-            self.tracklets_table.setItem(i, 1, QtGui.QTableWidgetItem(str(t.length())))
-            self.tracklets_table.setItem(i, 2, QtGui.QTableWidgetItem(str(t.start_frame(self.project.gm))))
-            self.tracklets_table.setItem(i, 3, QtGui.QTableWidgetItem(str(t.end_frame(self.project.gm))))
+            item = it()
+            item.setData(QtCore.Qt.EditRole, t.id())
+            self.tracklets_table.setItem(i, 0, item)
+
+            item = it()
+            item.setData(QtCore.Qt.EditRole, t.length())
+            self.tracklets_table.setItem(i, 1, item)
+
+            item = it()
+            item.setData(QtCore.Qt.EditRole, t.start_frame(self.project.gm))
+            self.tracklets_table.setItem(i, 2, item)
+
+            item = it()
+            item.setData(QtCore.Qt.EditRole, t.end_frame(self.project.gm))
+            self.tracklets_table.setItem(i, 3, item)
+
             self.tracklets_table.setItem(i, 4, QtGui.QTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
 
             d = self.lp.tracklet_measurements[t_id]
@@ -111,6 +147,7 @@ class LearningWidget(QtGui.QWidget):
 
                 self.tracklets_table.setItem(i, 5+num_animals+j, QtGui.QTableWidgetItem(val))
 
+        self.tracklets_table.setSortingEnabled(True)
         self.tracklets_table.resizeColumnsToContents()
 
     def __f2str(self, f, prec=3):
