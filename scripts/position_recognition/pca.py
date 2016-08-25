@@ -261,49 +261,61 @@ class ChunkViewer(QtGui.QWidget):
 def generate_eigen_ants_figure(ants, number_of_eigen_v):
     f, axes = plt.subplots(1, number_of_eigen_v, sharey=True)
     for i in range(number_of_eigen_v):
-        axes[i].plot(ants[i, ::2], ants[i, 1::2])
+        axes[i].plot(np.append(ants[i, ::2], ants[i, 0]), np.append(ants[i, 1::2], ants[i, 1]))
         axes[i].set_title("Eigenant #{0}".format(i))
     f.subplots_adjust(hspace=0)
     plt.setp([a.get_xticklabels() for a in f.axes], visible=False)
     fig = gcf()
     fig.suptitle('Dim reduction: {0}'.format(number_of_eigen_v), fontsize=23)
     plt.axis('equal')
-    # plt.figure().savefig(os.path.join(project.working_directory, 'eigenants'))
+    fold = os.path.join(project.working_directory, 'pca_results')
+    if not os.path.exists(fold):
+        os.mkdir(fold)
+    f.savefig(os.path.join(fold, 'eigen_ants'), dpi=f.dpi)
     plt.show()
 
-def generate_ants_image(X, X1, V, r, c, i):
-    plt.figure(figsize=(r, c))
+def generate_ants_image(X, X1, V, r, c, i, fold):
+    f = plt.figure(figsize=(r, c))
     gs1 = gridspec.GridSpec(r, c)
     gs1.update(wspace=0.025, hspace=0.05)
-    for i in range(r*c):
-        ax1 = plt.subplot(gs1[i])
+    for j in range(r*c):
+        ax1 = plt.subplot(gs1[j])
         plt.axis('on')
         ax1.set_xticklabels([])
         ax1.set_yticklabels([])
         ax1.set_aspect('equal')
         from mpl_toolkits.axes_grid.inset_locator import inset_axes
-        inset_axes = inset_axes(ax1,
-                                width="100%",  # width = 30% of parent_bbox
-                                height=1.,  # height : 1 inch
-                                loc=3)
-        ax1.plot(X[i, ::2], X[i, 1::2], c='r')
-        ax1.plot(X1[i, ::2], X1[i, 1::2], c='b')
+        # inset_axes = inset_axes(ax1,
+        #                         width="100%",  # width = 30% of parent_bbox
+        #                         height=1.,  # height : 1 inch
+        #                         loc=3)
+        ax1.plot(X[j, ::2], X[j, 1::2], c='r')
+        ax1.plot(X1[j, ::2], X1[j, 1::2], c='b')
         # f.subplots_adjust(hspace=0)
-        inset_axes.scatter(V[i, ::2], V[i, 1::2], c='r')
-    # plt.figure().savefig(os.path.join(project.working_directory, 'ants {0}'.format(i)))
-    # plt.tight_layout()
+        ax1.scatter(np.arange(len(V[j, :])) + 1, V[j, :], c='r')
+    f.savefig(os.path.join(fold, str(i)), dpi=f.dpi)
     plt.show()
 
 def generate_ants_reconstructed_figure(X, X1, V):
-    r = 4
-    c = 9
+    r = 3
+    c = 12
     number_in_pic = r * c
     i = 0
+    fold = os.path.join(project.working_directory, 'pca_results')
+    if not os.path.exists(fold):
+        os.mkdir(fold)
     while i < len(X):
         a = i * number_in_pic
         b = (i + 1) * number_in_pic
-        generate_ants_image(X[a:b, :], X1[a:b, :], V[a:b, :], r, c, i)
+        generate_ants_image(X[a:b, :], X1[a:b, :], V[a:b, :], r, c, i, fold)
         i += 1
+
+def view_ant(pca, eigen_ants, ant):
+    app = QtGui.QApplication(sys.argv)
+    main = EigenWidget(pca, eigen_ants, ant)
+    main.showMaximized()
+    sys.exit(app.exec_())
+
 
 # for i in range(len(inverse[0])):
 #     plt.plot(inverse[::2, i], inverse[1::2, i])
@@ -325,29 +337,15 @@ if __name__ == '__main__':
     #     chv.show()
     #     app.exec_()
 
-    number_of_eigen_v = 10
+    number_of_eigen_v = 15
     number_of_data = 40
 
-    X = prepare_matrix(chunks[:1], number_of_data)
+    X = prepare_matrix(chunks[:5], number_of_data)
     pca = PCA(number_of_eigen_v)
     V = pca.fit_transform(X)
     eigen_ants = pca.components_
     X1 = pca.inverse_transform(pca.transform(X))
 
+    # view_ant(pca, eigen_ants, V[0])
     # generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
-    # generate_ants_reconstructed_figure(X, X1, V)
-
-    app = QtGui.QApplication(sys.argv)
-
-    main = EigenWidget(pca, eigen_ants, V[0])
-    main.show()
-
-    sys.exit(app.exec_())
-
-    # for i in range(len(inverse[0])):
-    #     plt.plot(inverse[::2, i], inverse[1::2, i])
-    #     plt.plot(X[::2, i], X[1::2, i], c='r')
-    #     plt.show()
-    # for i in range(number_of_eigen_v):
-    #     plt.plot(eigen_ants[::2, i], eigen_ants[1::2, i])
-    #     plt.show()
+    generate_ants_reconstructed_figure(X, X1, V)
