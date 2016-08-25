@@ -30,6 +30,8 @@ class LearningProcess:
 
         self.collision_chunks = {}
 
+        # TODO: remove these
+        # TODO: saving chunks info...
         self.ids_present_in_tracklet = {}
         self.ids_not_present_in_tracklet = {}
 

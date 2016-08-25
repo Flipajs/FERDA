@@ -65,6 +65,7 @@ class LearningWidget(QtGui.QWidget):
         # TODO: add option to reset learning
         # TODO: add saving
         # TODO: update callback... info about decisions...
+        # TODO: set tracklet to color
 
         self.tracklets_table = QtGui.QTableWidget()
         self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
