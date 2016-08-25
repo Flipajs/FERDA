@@ -5,7 +5,7 @@ from PyQt4 import QtGui
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import gcf
-
+from matplotlib import patches as mpatches
 import numpy as np
 import sys
 from numpy.linalg import eig, norm
@@ -259,69 +259,68 @@ class ChunkViewer(QtGui.QWidget):
 
 
 def generate_eigen_ants_figure(ants, number_of_eigen_v):
-    f, axes = plt.subplots(1, number_of_eigen_v, sharey=True)
+    f = plt.figure(figsize=(number_of_eigen_v / 6 + 1, 6))
+    gs1 = gridspec.GridSpec(number_of_eigen_v / 6 + 1, 6)
+    gs1.update(wspace=0.3, hspace=0.1)
     for i in range(number_of_eigen_v):
-        axes[i].plot(np.append(ants[i, ::2], ants[i, 0]), np.append(ants[i, 1::2], ants[i, 1]))
-        axes[i].set_title("Eigenant #{0}".format(i))
+        ax = plt.subplot(gs1[i])
+        ax.plot(np.append(ants[i, ::2], ants[i, 0]), np.append(ants[i, 1::2], ants[i, 1]))
+        ax.set_title("Eigenant #{0}".format(i))
     f.subplots_adjust(hspace=0)
     plt.setp([a.get_xticklabels() for a in f.axes], visible=False)
     fig = gcf()
     fig.suptitle('Dim reduction: {0}'.format(number_of_eigen_v), fontsize=23)
     plt.axis('equal')
+    f.set_size_inches(30, 20)
     fold = os.path.join(project.working_directory, 'pca_results')
     if not os.path.exists(fold):
         os.mkdir(fold)
     f.savefig(os.path.join(fold, 'eigen_ants'), dpi=f.dpi)
-    plt.show()
+    plt.ioff()
+    # plt.show()
 
 def generate_ants_image(X, X1, V, r, c, i, fold):
     f = plt.figure(figsize=(r, c))
     gs1 = gridspec.GridSpec(r, c)
     gs1.update(wspace=0.025, hspace=0.05)
-    for j in range(r*c):
+    for j in range(len(X)):
         ax1 = plt.subplot(gs1[j])
         plt.axis('on')
         ax1.set_xticklabels([])
         ax1.set_yticklabels([])
         ax1.set_aspect('equal')
-        from mpl_toolkits.axes_grid.inset_locator import inset_axes
-        # inset_axes = inset_axes(ax1,
-        #                         width="100%",  # width = 30% of parent_bbox
-        #                         height=1.,  # height : 1 inch
-        #                         loc=3)
-        ax1.plot(X[j, ::2], X[j, 1::2], c='r')
-        ax1.plot(X1[j, ::2], X1[j, 1::2], c='b')
-        # f.subplots_adjust(hspace=0)
-        ax1.scatter(np.arange(len(V[j, :])) + 1, V[j, :], c='r')
-    f.savefig(os.path.join(fold, str(i)), dpi=f.dpi)
-    plt.show()
+        ax1.plot(np.append(X[j, ::2], X[j, 0]), np.append(X[j, 1::2], X[j, 1]), c='r')
+        ax1.plot(np.append(X1[j, ::2], X1[j, 0]), np.append(X1[j, 1::2], X1[j, 1]), c='b')
+        ax1.plot(np.arange(len(V[j, :])) + 1, V[j, :], c='g')
 
-def generate_ants_reconstructed_figure(X, X1, V):
-    r = 3
-    c = 12
-    number_in_pic = r * c
-    i = 0
+    red_patch = mpatches.Patch(color='red', label='original')
+    blue_patch = mpatches.Patch(color='blue', label='reconstructed')
+    f.legend(handles=[red_patch], labels=[])
+    f.set_size_inches(30, 20)
+    f.savefig(os.path.join(fold, str(i)), dpi=f.dpi)
+    plt.ioff()
+
+
+def generate_ants_reconstructed_figure(X, X1, V, rows, columns):
+    number_in_pic = rows * columns
     fold = os.path.join(project.working_directory, 'pca_results')
     if not os.path.exists(fold):
         os.mkdir(fold)
-    while i < len(X):
-        a = i * number_in_pic
-        b = (i + 1) * number_in_pic
-        generate_ants_image(X[a:b, :], X1[a:b, :], V[a:b, :], r, c, i, fold)
+    i = 0
+    while X is not None:
+        generate_ants_image(X[:number_in_pic, :], X1[:number_in_pic, :], V[:number_in_pic, :], rows, columns, i, fold)
+        X = np.delete(X, range(number_in_pic), axis=0)
+        X1 = np.delete(X1, range(number_in_pic), axis=0)
+        V = np.delete(V, range(number_in_pic), axis=0)
         i += 1
+    generate_ants_image(X, X1, V, rows, columns, i, fold)
+
 
 def view_ant(pca, eigen_ants, ant):
     app = QtGui.QApplication(sys.argv)
     main = EigenWidget(pca, eigen_ants, ant)
     main.showMaximized()
     sys.exit(app.exec_())
-
-
-# for i in range(len(inverse[0])):
-#     plt.plot(inverse[::2, i], inverse[1::2, i])
-#     plt.plot(X[::2, i], X[1::2, i], c='r')
-#     plt.show()
-
 
 if __name__ == '__main__':
     project = Project()
@@ -346,6 +345,8 @@ if __name__ == '__main__':
     eigen_ants = pca.components_
     X1 = pca.inverse_transform(pca.transform(X))
 
-    # view_ant(pca, eigen_ants, V[0])
-    # generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
-    generate_ants_reconstructed_figure(X, X1, V)
+    generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
+    rows = 3
+    columns = 11
+    # generate_ants_reconstructed_figure(X, X1, V, rows, columns)
+    view_ant(pca, eigen_ants, V[0])

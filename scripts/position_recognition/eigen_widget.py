@@ -119,6 +119,22 @@ class CustomSlider(QtGui.QSlider):
         self.widget.plot()
 
 
+class EigenViewer(FigureCanvas):
+    def __init__(self, figure, slider):
+        super(EigenViewer, self).__init__(figure)
+        self.slider = slider
+
+    def mousePressEvent(self, event):
+        super(EigenViewer, self).mousePressEvent(event)
+        dialog = QtGui.QInputDialog()
+        dialog.setInputMode(QtGui.QInputDialog.DoubleInput)
+        val, ok = dialog.getDouble(self, "", "Enter coefficient", min=self.slider.SLIDE_MIN,
+                               max=self.slider.SLIDE_MAX)
+        if ok:
+            # self.slider.setSliderPosition(val)
+            self.slider.valueChanged(val)
+
+
 class EigenWidget(QtGui.QWidget):
     def __init__(self, pca, eigens, ant):
         super(EigenWidget, self).__init__()
@@ -162,23 +178,22 @@ class EigenWidget(QtGui.QWidget):
         i = 0
         for eigen in eigens:
             layout = QtGui.QVBoxLayout()
-            figure = plt.figure()
-            ax = figure.add_subplot(111)
-            a = random.randint(0, len(cnames) - 1)
-            ax.plot(np.append(eigen[::2], eigen[0]), np.append(eigen[1::2], eigen[1]), c=cnames.keys()[a])
-            ax.set_xticklabels([])
-            ax.set_yticklabels([])
-            # ax.set_aspect('equal')
-            canvas = FigureCanvas(figure)
-            canvas.setSizePolicy(QtGui.QSizePolicy.Expanding,
-                                 QtGui.QSizePolicy.Expanding)
-            canvas.updateGeometry()
-            canvas.draw()
             label = QtGui.QLabel('{0:.2f}'.format(float(self.ant[i])))
             label.setAlignment(QtCore.Qt.AlignCenter)
             self.labels.append(label)
             slider = CustomSlider(i, self)
             slider.setSliderPosition(self.ant[i])
+            figure = plt.figure()
+            ax = figure.add_subplot(111)
+            a = random.randint(0, len(cnames) - 1)
+            ax.plot(np.append(eigen[::2], eigen[0]), np.append(eigen[1::2], eigen[1]), c=cnames.keys()[a])
+            ax.axes.get_xaxis().set_visible(False)
+            ax.axes.get_yaxis().set_visible(False)
+            canvas = EigenViewer(figure, slider)
+            canvas.setSizePolicy(QtGui.QSizePolicy.Expanding,
+                                 QtGui.QSizePolicy.Expanding)
+            canvas.updateGeometry()
+            canvas.draw()
             layout.addWidget(canvas)
             layout.addWidget(slider)
             layout.addWidget(label)
@@ -188,7 +203,10 @@ class EigenWidget(QtGui.QWidget):
     def plot(self):
         data = self.pca.inverse_transform(self.ant)
         ax = self.figure.add_subplot(111)
-        ax.hold(False)
+        ax.set_autoscale_on(False)
         ax.plot(np.append(data[::2], data[0]), np.append(data[1::2], data[1]))
-        ax.axis('equal')
+        ax.grid(True)
+        ax.set_xlim([-20, 20])
+        ax.set_ylim([-40, 40])
+        ax.hold(False)
         self.canvas.draw()
