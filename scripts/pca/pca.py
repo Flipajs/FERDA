@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 from PyQt4 import QtCore
@@ -14,7 +15,8 @@ from sklearn.decomposition import PCA
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from gui.gui_utils import cvimg2qtpixmap
-from scripts.position_recognition.eigen_widget import EigenWidget
+from scripts.pca.eigen_widget import EigenWidget
+from scripts.pca.head_tag import HeadGT
 from utils.geometry import rotate
 
 average = 0
@@ -336,17 +338,34 @@ if __name__ == '__main__':
     #     chv.show()
     #     app.exec_()
 
-    number_of_eigen_v = 15
-    number_of_data = 40
+    # compatible chunks 0,1,2,3,4
+    chunks = chunks[:5]
 
-    X = prepare_matrix(chunks[:5], number_of_data)
-    pca = PCA(number_of_eigen_v)
-    V = pca.fit_transform(X)
-    eigen_ants = pca.components_
-    X1 = pca.inverse_transform(pca.transform(X))
+    logging.basicConfig(level=logging.INFO)
+    app = QtGui.QApplication(sys.argv)
+    trainer = HeadGT(project)
+    # print trainer.results[10, 10]
+    # trainer.correct_answer(1790, 1796, answer=True)
+    # trainer.delete_answer(597, 602)
+    training_regions = []
+    for chunk in chunks:
+        ch = project.chm[chunk]
+        r_ch = RegionChunk(ch, project.gm, project.rm)
+        training_regions += r_ch
+    trainer.improve_ground_truth(training_regions)
+    app.quit()
 
-    generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
-    rows = 3
-    columns = 11
+    # number_of_eigen_v = 15
+    # number_of_data = 40
+
+    # X = prepare_matrix(chunks, number_of_data)
+    # pca = PCA(number_of_eigen_v)
+    # V = pca.fit_transform(X)
+    # eigen_ants = pca.components_
+    # X1 = pca.inverse_transform(pca.transform(X))
+
+    # generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
+    # rows = 3
+    # columns = 11
     # generate_ants_reconstructed_figure(X, X1, V, rows, columns)
-    view_ant(pca, eigen_ants, V[0])
+    # view_ant(pca, eigen_ants, V[0])
