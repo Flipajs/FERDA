@@ -16,7 +16,7 @@ from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from gui.gui_utils import cvimg2qtpixmap
 from scripts.pca.eigen_widget import EigenWidget
-from scripts.pca.head_tag import HeadGT
+import head_tag
 from utils.geometry import rotate
 
 average = 0
@@ -107,11 +107,13 @@ def get_chunks_regions(ch, chm, gm):
         yield region
 
 
-def get_matrix(chunk, number_of_data, chm, gm):
+def get_matrix(chunk, number_of_data, chm, gm, results):
     distance_matrix = []
     for region in get_chunks_regions(chunk, chm, gm):
-        distance_matrix.append(get_region_vector(region, number_of_data))
+        if results.get(region.id(), False):
+            distance_matrix.append(get_region_vector(region, number_of_data))
     return distance_matrix
+
 
 def get_region_vector(region, number_of_data):
     centroid = region.centroid()
@@ -184,13 +186,13 @@ def compute_contour_perimeter(contour):
 def vector_norm(u):
     return math.sqrt(sum(i ** 2 for i in u))
 
-def prepare_matrix(chunks, number_of_data):
+def prepare_matrix(chunks, number_of_data, results):
     matrix = []
     i = 1
     for ch in chunks:
         print "Chunk #{0}".format(i)
         i += 1
-        for vector in get_matrix(ch, number_of_data, project.chm, project.gm):
+        for vector in get_matrix(ch, number_of_data, project.chm, project.gm, results):
             matrix.append(vector)
     matrix = np.array(matrix)
     return matrix
@@ -309,7 +311,7 @@ def generate_ants_reconstructed_figure(X, X1, V, rows, columns):
     if not os.path.exists(fold):
         os.mkdir(fold)
     i = 0
-    while X is not None:
+    while X.shape[0] != 0:
         generate_ants_image(X[:number_in_pic, :], X1[:number_in_pic, :], V[:number_in_pic, :], rows, columns, i, fold)
         X = np.delete(X, range(number_in_pic), axis=0)
         X1 = np.delete(X1, range(number_in_pic), axis=0)
@@ -329,6 +331,9 @@ if __name__ == '__main__':
     project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
     chunks = project.gm.chunk_list()
 
+    # compatible chunks 0,1,2,3,4,5,6
+    chunks = chunks[:5]
+
     # app = QtGui.QApplication(sys.argv)
     # i = 0
     # for ch in chunks:
@@ -338,34 +343,34 @@ if __name__ == '__main__':
     #     chv.show()
     #     app.exec_()
 
-    # compatible chunks 0,1,2,3,4
-    chunks = chunks[:5]
+
+    number_of_eigen_v = 15
+    number_of_data = 40
 
     logging.basicConfig(level=logging.INFO)
     app = QtGui.QApplication(sys.argv)
-    trainer = HeadGT(project)
-    # print trainer.results[10, 10]
+    trainer = head_tag.HeadGT(project)
+    training_regions = []
+    # for chunk in chunks:
+    #     ch = project.chm[chunk]
+    #     r_ch = RegionChunk(ch, project.gm, project.rm)
+    #     training_regions += r_ch
+    # trainer.improve_ground_truth(training_regions)
+    results = trainer.get_ground_truth()
+    # app.exec_()
     # trainer.correct_answer(1790, 1796, answer=True)
     # trainer.delete_answer(597, 602)
-    training_regions = []
-    for chunk in chunks:
-        ch = project.chm[chunk]
-        r_ch = RegionChunk(ch, project.gm, project.rm)
-        training_regions += r_ch
-    trainer.improve_ground_truth(training_regions)
-    app.quit()
+    # app.quit()
 
-    # number_of_eigen_v = 15
-    # number_of_data = 40
 
-    # X = prepare_matrix(chunks, number_of_data)
-    # pca = PCA(number_of_eigen_v)
-    # V = pca.fit_transform(X)
-    # eigen_ants = pca.components_
-    # X1 = pca.inverse_transform(pca.transform(X))
+    X = prepare_matrix(chunks, number_of_data, results)
+    pca = PCA(number_of_eigen_v)
+    V = pca.fit_transform(X)
+    eigen_ants = pca.components_
+    X1 = pca.inverse_transform(pca.transform(X))
 
+    view_ant(pca, eigen_ants, V[0])
     # generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
     # rows = 3
     # columns = 11
     # generate_ants_reconstructed_figure(X, X1, V, rows, columns)
-    # view_ant(pca, eigen_ants, V[0])

@@ -6,7 +6,7 @@ from PyQt4 import QtGui
 from os.path import exists
 
 from core.project.project import Project
-from scripts.pca.head_widget import HeadWidget
+import head_widget
 
 PRIME = 2 ** 8 + 1
 FNAME = 'head_gt_results.p'
@@ -25,10 +25,10 @@ class HeadGT:
 
     def improve_ground_truth(self, regions):
         regions = filter(lambda x: x.id() not in self.results, regions)
-        widget = HeadWidget(self.project, self)
+        widget = head_widget.HeadWidget(self.project, self)
         widget.set_data(regions)
         widget.show()
-        app.exec_()
+        # app.exec_()
 
     def correct_answer(self, r_id, answer=True):
         self.results[r_id] = answer
@@ -48,9 +48,7 @@ class HeadGT:
         pickle.dump(self.results, open(self.fname, 'wb'))
 
     def get_ground_truth(self):
-        data = self.supplier.get_nodes_tuples()
-        regions = filter(lambda x: x.id() in self.results, data)
-        return regions, self.results
+        return self.results
 
 
 if __name__ == "__main__":

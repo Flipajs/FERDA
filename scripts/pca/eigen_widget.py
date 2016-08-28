@@ -138,6 +138,9 @@ class EigenViewer(FigureCanvas):
 class EigenWidget(QtGui.QWidget):
     def __init__(self, pca, eigens, ant):
         super(EigenWidget, self).__init__()
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
+        self.toolbar = NavigationToolbar(self.canvas, self)
         self.ant = ant
         self.pca = pca
         self.right = QtGui.QVBoxLayout()
@@ -166,9 +169,6 @@ class EigenWidget(QtGui.QWidget):
         self.plot()
 
     def prepare_canvas(self):
-        self.figure = plt.figure()
-        self.canvas = FigureCanvas(self.figure)
-        self.toolbar = NavigationToolbar(self.canvas, self)
         self.left.addWidget(self.canvas)
         self.left.addWidget(self.toolbar)
         screen = QtGui.QDesktopWidget().screenGeometry()

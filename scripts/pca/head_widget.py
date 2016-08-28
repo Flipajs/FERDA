@@ -1,7 +1,13 @@
+import matplotlib.pyplot as plt
 from PyQt4 import QtGui, QtCore
-from gui.gui_utils import cvimg2qtpixmap
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+
+import numpy as np
+from skimage.viewer.utils import FigureCanvas
+import pca
 
 BACK_UP_CONSTANT = 50
+
 
 class HeadWidget(QtGui.QWidget):
     def __init__(self, project, trainer):
@@ -11,7 +17,9 @@ class HeadWidget(QtGui.QWidget):
 
         self.setLayout(QtGui.QVBoxLayout())
         self.label = QtGui.QLabel()
-        self.img = QtGui.QLabel()
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
+        self.toolbar = NavigationToolbar(self.canvas, self)
 
         self.buttons_l = QtGui.QHBoxLayout()
         self.no = QtGui.QPushButton('no (N)', self)
@@ -45,21 +53,27 @@ class HeadWidget(QtGui.QWidget):
             self.no.setDisabled(True)
             self.yes.setDisabled(True)
             self.dont_know.setDisabled(True)
-            self.img.hide()
+            self.canvas.hide()
+            self.toolbar.hide()
             # self.close()
 
     def get_results(self):
         return self.results
 
-    def _add_region(self, r):
-        img = self.project.img_manager.get_crop(r.frame(), r, width=700, height=700, margin=300)
+    def _add_region(self, region):
+        ant = pca.get_region_vector(region, len(region.contour_without_holes()))
+        ax = self.figure.add_subplot(111)
+        ax.plot(np.append(ant[::2], ant[0]), np.append(ant[1::2], ant[1]))
+        ax.grid(True)
+        ax.hold(False)
+        self.canvas.draw()
         self.label.setText('Last id: ' + str(self.last))
-        self.last = r.id()
-        self.img.setPixmap(cvimg2qtpixmap(img))
+        self.last = region.id()
 
     def _prepare_layouts(self):
         self.layout().addLayout(self.buttons_l)
-        self.layout().addWidget(self.img)
+        self.layout().addWidget(self.canvas)
+        # self.layout().addWidget(self.toolbar)
         self.layout().addWidget(self.label)
         self.buttons_l.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignTop)
 
@@ -70,7 +84,7 @@ class HeadWidget(QtGui.QWidget):
         self.buttons_l.addWidget(self.quit)
         self.connect(self.no, QtCore.SIGNAL('clicked()'), self.no_function)
         self.connect(self.yes, QtCore.SIGNAL('clicked()'), self.yes_function)
-        self.connect(self.yes, QtCore.SIGNAL('clicked()'), self._next)
+        self.connect(self.dont_know, QtCore.SIGNAL('clicked()'), self._next)
         self.connect(self.quit, QtCore.SIGNAL('clicked()'), self.close)
         self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N), self), QtCore.SIGNAL('activated()'),
                      self.no_function)
