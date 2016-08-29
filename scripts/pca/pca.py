@@ -299,12 +299,14 @@ def generate_ants_image(X, X1, V, r, c, i, fold):
         ax1.set_yticklabels([])
         ax1.set_aspect('equal')
         ax1.plot(np.append(X[j, ::2], X[j, 0]), np.append(X[j, 1::2], X[j, 1]), c='r')
+        ax1.scatter(np.append(X[j, ::2], X[j, 0]), np.append(X[j, 1::2], X[j, 1]), c='r')
         ax1.plot(np.append(X1[j, ::2], X1[j, 0]), np.append(X1[j, 1::2], X1[j, 1]), c='b')
+        ax1.scatter(np.append(X1[j, ::2], X1[j, 0]), np.append(X1[j, 1::2], X1[j, 1]), c='b')
         ax1.plot(np.arange(len(V[j, :])) + 1, V[j, :], c='g')
 
-    red_patch = mpatches.Patch(color='red', label='original')
-    blue_patch = mpatches.Patch(color='blue', label='reconstructed')
-    f.legend(handles=[red_patch], labels=[])
+    # red_patch = mpatches.Patch(color='red', label='original')
+    # blue_patch = mpatches.Patch(color='blue', label='reconstructed')
+    # f.legend(handles=[red_patch], labels=[])
     f.set_size_inches(30, 20)
     f.savefig(os.path.join(fold, str(i)), dpi=f.dpi)
     plt.ioff()
@@ -376,13 +378,13 @@ if __name__ == '__main__':
     eigen_ants = pca.components_
     X1 = pca.inverse_transform(pca.transform(X))
 
-    app = QtGui.QApplication(sys.argv)
-    for i in range(10):
-        view_ant(pca, eigen_ants, V[i])
-        app.exec_()
-    app.quit()
+    # app = QtGui.QApplication(sys.argv)
+    # for i in range(10):
+    #     view_ant(pca, eigen_ants, V[i])
+        # app.exec_()
+    # app.quit()
 
-    # generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
-    # rows = 3
-    # columns = 11
-    # generate_ants_reconstructed_figure(X, X1, V, rows, columns)
+    generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
+    rows = 3
+    columns = 11
+    generate_ants_reconstructed_figure(X, X1, V, rows, columns)
