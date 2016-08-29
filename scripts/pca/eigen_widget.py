@@ -210,3 +210,6 @@ class EigenWidget(QtGui.QWidget):
         ax.set_ylim([-40, 40])
         ax.hold(False)
         self.canvas.draw()
+
+    def close_figures(self):
+        plt.close('all')

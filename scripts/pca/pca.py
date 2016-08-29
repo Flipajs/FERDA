@@ -110,15 +110,19 @@ def get_chunks_regions(ch, chm, gm):
 def get_matrix(chunk, number_of_data, chm, gm, results):
     distance_matrix = []
     for region in get_chunks_regions(chunk, chm, gm):
+        # if region.id() in results:
         if results.get(region.id(), False):
-            distance_matrix.append(get_region_vector(region, number_of_data))
+            distance_matrix.append(get_region_vector(region, number_of_data, results[region.id()]))
     return distance_matrix
 
 
-def get_region_vector(region, number_of_data):
+def get_region_vector(region, number_of_data, right_orientation):
     centroid = region.centroid()
     contour = region.contour_without_holes() - centroid
-    contour = np.array(rotate(contour, -region.theta_))
+    ang = -region.theta_
+    if not right_orientation:
+        ang -= math.pi
+    contour = np.array(rotate(contour, ang))
     centroid = [0,0]
 
     if len(contour) < number_of_data:
@@ -186,6 +190,7 @@ def compute_contour_perimeter(contour):
 def vector_norm(u):
     return math.sqrt(sum(i ** 2 for i in u))
 
+
 def prepare_matrix(chunks, number_of_data, results):
     matrix = []
     i = 1
@@ -197,8 +202,8 @@ def prepare_matrix(chunks, number_of_data, results):
     matrix = np.array(matrix)
     return matrix
 
-class ChunkViewer(QtGui.QWidget):
 
+class ChunkViewer(QtGui.QWidget):
 
     WIDTH = HEIGHT = 300
 
@@ -321,17 +326,17 @@ def generate_ants_reconstructed_figure(X, X1, V, rows, columns):
 
 
 def view_ant(pca, eigen_ants, ant):
-    app = QtGui.QApplication(sys.argv)
-    main = EigenWidget(pca, eigen_ants, ant)
-    main.showMaximized()
-    sys.exit(app.exec_())
+    w = EigenWidget(pca, eigen_ants, ant)
+    w.showMaximized()
+    w.close_figures()
+
 
 if __name__ == '__main__':
     project = Project()
     project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
     chunks = project.gm.chunk_list()
 
-    # compatible chunks 0,1,2,3,4,5,6
+    # compatible chunks 0,1,2,3,4,5
     chunks = chunks[:5]
 
     # app = QtGui.QApplication(sys.argv)
@@ -348,20 +353,22 @@ if __name__ == '__main__':
     number_of_data = 40
 
     logging.basicConfig(level=logging.INFO)
-    app = QtGui.QApplication(sys.argv)
     trainer = head_tag.HeadGT(project)
-    training_regions = []
+
+    # app = QtGui.QApplication(sys.argv)
+    # training_regions = []
     # for chunk in chunks:
     #     ch = project.chm[chunk]
     #     r_ch = RegionChunk(ch, project.gm, project.rm)
     #     training_regions += r_ch
     # trainer.improve_ground_truth(training_regions)
-    results = trainer.get_ground_truth()
     # app.exec_()
     # trainer.correct_answer(1790, 1796, answer=True)
     # trainer.delete_answer(597, 602)
     # app.quit()
 
+    # proper-oriented regions
+    results = trainer.get_ground_truth()
 
     X = prepare_matrix(chunks, number_of_data, results)
     pca = PCA(number_of_eigen_v)
@@ -369,7 +376,12 @@ if __name__ == '__main__':
     eigen_ants = pca.components_
     X1 = pca.inverse_transform(pca.transform(X))
 
-    view_ant(pca, eigen_ants, V[0])
+    app = QtGui.QApplication(sys.argv)
+    for i in range(10):
+        view_ant(pca, eigen_ants, V[i])
+        app.exec_()
+    app.quit()
+
     # generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
     # rows = 3
     # columns = 11
