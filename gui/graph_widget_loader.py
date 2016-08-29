@@ -2,7 +2,7 @@ from PyQt4 import QtGui
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
-from core.settings import  Settings as S_
+from core.settings import Settings as S_
 from utils.img_manager import ImgManager
 
 __author__ = 'Simon Mandlik'
@@ -27,11 +27,10 @@ MINIMUM = 5
 OPACITY = 255
 # default text to display
 DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O, Ctrl + MWheel - zoom in or out; Q, W - shrink, " \
-               "stretch; A, S show/hide info for selected; T, Y - show/hide toggled node"
+               "stretch; A, S show/hide info for selected; T, Y - show/hide toggled node; L - zoom to chunk"
 
 
 class GraphWidgetLoader:
-
     def __init__(self, project=None, width=WIDTH, height=HEIGHT, relative_margin=RELATIVE_MARGIN):
         self.project = project
         self.graph_manager = None
@@ -85,7 +84,6 @@ class GraphWidgetLoader:
 
     def prepare_nodes(self):
         for vertex in self.vertices:
-
             region = self.graph_manager.region(vertex)
             self.regions_vertices[region] = vertex
             self.regions.add(region)
@@ -106,19 +104,18 @@ class GraphWidgetLoader:
             target_end_id = self.graph_manager.g.vp["chunk_end_id"][target]
             sureness = self.graph_manager.g.ep['score'][edge]
             type_of_line = "chunk" if source_start_id == target_end_id and source_start_id != 0 else "line"
-            if not(r1 in self.regions and r2 in self.regions):
+            if not (r1 in self.regions and r2 in self.regions):
                 type_of_line = "partial"
 
             color = None
             if type_of_line == "chunk":
                 color = self.project.chm[source_start_id].color
 
-            new_tuple = (r1, r2, type_of_line, sureness, color)
+            new_tuple = (r1, r2, type_of_line, sureness, color, source_start_id)
 
-            self.chunks_region_chunks[new_tuple] = RegionChunk(self.project.chm[source_start_id], self.graph_manager, self.region_manager)
-
+            self.chunks_region_chunks[new_tuple] = RegionChunk(self.project.chm[source_start_id], self.graph_manager,
+                                                               self.region_manager)
             self.edges.add(new_tuple)
-
 
     def get_node_info(self, region):
         n = self.regions_vertices[region]
@@ -138,10 +135,12 @@ class GraphWidgetLoader:
         # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
         #         region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
         return "Centroid = %s\nArea = %i\nAntlikeness = %.3f\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % \
-               (str(region.centroid()), region.area(), antlikeness, region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
+               (str(region.centroid()), region.area(), antlikeness, region.margin_,
+                str(best_in_score[0]) + ', ' + str(best_in_score[1]),
+                str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info)
 
     def get_edge_info(self, edge):
-        return "Type = {0}\nSureness = {1}".format(edge[2], edge[3])
+        return "Type = {0}\nSureness = {1}\nStart id: {2}".format(edge[2], edge[3], edge[5])
 
     def get_widget(self, frames=None):
         self.prepare_vertices(frames)
@@ -155,6 +154,7 @@ class GraphWidgetLoader:
         self.g = GraphVisualizer(self, img_manager)
         return self.g
 
+
 if __name__ == '__main__':
     project = Project()
 
@@ -166,12 +166,14 @@ if __name__ == '__main__':
     project.load('/home/simon/FERDA/projects/Cam1_/cam1.fproj')
 
     import cv2, sys
+
     app = QtGui.QApplication(sys.argv)
     l1 = GraphWidgetLoader(project)
     l1.set_relative_margin(1)
     # l1.set_width(60)
     # l1.set_height(60)
 
+    # g = l1.get_widget(range(300, 500))
     g = l1.get_widget()
     g.redraw()
     g.show()

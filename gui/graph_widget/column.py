@@ -42,13 +42,13 @@ class Column:
 
     def get_start_frame(self):
         if isinstance(self.frame, tuple):
-            return  self.frame[0]
+            return self.frame[0]
         else:
             return self.frame
 
     def get_end_frame(self):
         if isinstance(self.frame, tuple):
-            return  self.frame[1]
+            return self.frame[1]
         else:
             return self.frame
 
@@ -97,6 +97,14 @@ class Column:
                 elif isinstance(item, Node):
                     if item_to_locate == item.region:
                         return self.objects.index(item)
+
+    def get_position_with_chunk_id(self, ch_id):
+        position = 0
+        for item in self.objects:
+            if isinstance(item, tuple):
+                if item[5] == ch_id:
+                    return position
+            position += 1
 
     def prepare_images(self):
         for item in self.objects:

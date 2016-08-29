@@ -7,7 +7,7 @@ from PyQt4.QtGui import QWidget
 
 import computer as comp
 from gui.graph_widget_loader import DEFAULT_TEXT, GAP, SPACE_BETWEEN_HOR, \
-    MINIMUM, SPACE_BETWEEN_VER, WIDTH
+    MINIMUM, SPACE_BETWEEN_VER, WIDTH, FROM_TOP, HEIGHT
 from gui.graph_widget.edge import EdgeGraphical, ChunkGraphical
 from gui.graph_widget.info_manager import InfoManager
 from gui.graph_widget.node import Node
@@ -162,6 +162,11 @@ class GraphVisualizer(QtGui.QWidget):
         self.hide_zoom_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Y))
         self.addAction(self.hide_zoom_node_action)
 
+        self.zoom_to_chunk_action = QtGui.QAction('zoom_to_chunk', self)
+        self.zoom_to_chunk_action.triggered.connect(self.zoom_to_chunk_event)
+        self.zoom_to_chunk_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_L))
+        self.addAction(self.zoom_to_chunk_action)
+
         if len(self.loader.edges) + len(self.loader.regions) > 0:
             self.add_objects(self.loader.regions, self.loader.edges)
 
@@ -198,7 +203,6 @@ class GraphVisualizer(QtGui.QWidget):
         frames = list(range(chunk[0].frame_, chunk[1].frame_ + 1))
         freq, none  = QtGui.QInputDialog.getInt(self, 'Chunk Detail',
             'Enter frequency:', value=1, min=1)
-
 
         for frame in frames[::freq]:
             img = self.img_manager.get_crop(frame, region_chunk[frame - region_chunk.start_frame()], width=self.width,
@@ -261,6 +265,49 @@ class GraphVisualizer(QtGui.QWidget):
         global SPACE_BETWEEN_HOR
         SPACE_BETWEEN_HOR *= 0.5
         self.redraw()
+
+    def zoom_to_chunk_event(self):
+        ch_id, ok = QtGui.QInputDialog.getInt(self, 'Zoom to chunk',
+            'Enter chunk\'s id:', value=0, min=0)
+
+        if ok:
+            try:
+                self.zoom_to_chunk(ch_id)
+            except AttributeError as e:
+                dialog = QtGui.QDialog(self)
+                dialog.setLayout(QtGui.QVBoxLayout())
+                dialog.layout().addWidget(QtGui.QLabel(e.message))
+                dialog.show()
+            else:
+                pass
+
+    def zoom_to_chunk(self, ch_id):
+        ch = self.loader.project.chm[ch_id]
+        if ch is None:
+            raise AttributeError("Chunk with id {0} does not exist!".format(ch_id))
+        start_frame = ch.start_frame(self.loader.project.gm)
+        end_frame = ch.end_frame(self.loader.project.gm)
+        if start_frame > self.last_frame or end_frame < self.first_frame:
+            raise AttributeError("Chunk with id {0} out of range!".format(ch_id))
+        if start_frame < self.first_frame:
+            start_frame = self.first_frame
+        if start_frame == end_frame:
+            self.view.centerOn(self.frames_columns[start_frame].x, 0)
+        elif start_frame < self.last_frame:
+            col = self.frames_columns[start_frame]
+            x = col.x
+            position = col.get_position_with_chunk_id(ch_id)
+            y = GAP + FROM_TOP + position * self.height + SPACE_BETWEEN_VER * position
+            if self.show_vertically:
+                self.view.centerOn(y, x + QtGui.QWidget.normalGeometry(self).width() / 2)
+            else:
+                self.view.centerOn(x + QtGui.QWidget.normalGeometry(self).width() / 2, y)
+            x += WIDTH
+            y += HEIGHT / 2
+            if self.show_vertically:
+                x, y = y, x
+            g_item = self.scene.itemAt(x, y)
+            g_item.setSelected(True)
 
     def compute_positions(self):
         for edge in self.edges:
