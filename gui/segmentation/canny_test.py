@@ -9,6 +9,7 @@ class CannyTest(QtGui.QWidget):
         self.v1 = 100
         self.v2 = 100
         self.image = cv2.imread(image)
+        self.blur = 15
         self.h, self.w, foo= self.image.shape
         self.make_gui()
         self.repaint()
@@ -21,9 +22,20 @@ class CannyTest(QtGui.QWidget):
         self.v2 = value
         self.repaint()
 
+    def slide3(self, value):
+        if value % 2 == 0:
+            self.blur = value +1
+        else:
+            self.blur = value
+        self.repaint()
+
     def repaint(self):
+        self.label_blur.setText("Blur: %d" % self.blur)
+        self.blur_image = cv2.GaussianBlur(self.image, (self.blur, self.blur), 0)
+        foo = painter.numpy2qimage(self.blur_image)
+        self.view.set_image(foo)
         self.label.setText("Top: %d, Bottom: %d" % (self.v1, self.v2))
-        edges = cv2.Canny(self.image, self.v1, self.v2)
+        edges = cv2.Canny(self.blur_image, self.v1, self.v2)
         edges.shape = ((self.h, self.w))
         r = np.zeros((self.h, self.w), dtype=np.uint8)
         g = np.asarray(edges, dtype=np.uint8)
@@ -80,10 +92,26 @@ class CannyTest(QtGui.QWidget):
         self.slider2.setVisible(True)
         self.left_panel.layout().addWidget(self.slider2)
 
+        self.slider3 = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider3.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.slider3.setGeometry(30, 40, 50, 30)
+        self.slider3.setRange(0, 100)
+        self.slider3.setTickInterval(5)
+        self.slider3.setValue(self.blur)
+        self.slider3.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider3.valueChanged[int].connect(self.slide3)
+        self.slider3.setVisible(True)
+        self.left_panel.layout().addWidget(self.slider3)
+
         self.label = QtGui.QLabel()
         self.label.setWordWrap(True)
         self.label.setText("")
         self.left_panel.layout().addWidget(self.label)
+
+        self.label_blur = QtGui.QLabel()
+        self.label_blur.setWordWrap(True)
+        self.label_blur.setText("")
+        self.left_panel.layout().addWidget(self.label_blur)
 
         self.pen_label = QtGui.QLabel()
         self.pen_label.setWordWrap(True)

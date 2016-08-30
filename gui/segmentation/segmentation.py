@@ -23,6 +23,7 @@ class SegmentationPicker(QtGui.QWidget):
 
         self.img_path = img
         self.image = cv2.imread(self.img_path)
+        self.h, self.w, c = self.image.shape
         self.pen_size = pen_size
 
         self.color = [paint_r, paint_g, paint_b, paint_a]
@@ -30,36 +31,65 @@ class SegmentationPicker(QtGui.QWidget):
         self.make_gui()
 
     def done(self):
-        print "Hiiii"
+        # get user data from painter
         result = self.view.get_result()
         background = result["PINK"]
         foreground = result["GREEN"]
 
+        # create a blurred image
+        blur = 33
+        a = 0
+        b = 37
+        blur_image = cv2.GaussianBlur(self.image, (blur, blur), 0)
+
+        # find edges on the blurred image
+        edges = cv2.Canny(blur_image, a, b)
+
+        # prepare learning data
+        # X contains tuples of data for each evaluated unit-pixel (R, G, B, edge?)
+        # y contains classifications for all pixels respectively
         X = []
         y = []
  
+        # loop all nonzero pixels from foregound (ants) and background and add them to testing data
         nzero = np.nonzero(background[0])
-        print type(nzero[0])
         for i, j in zip(nzero[0], nzero[1]):
-            b, g, r = self.image[j][i]
-            X.append((b, g, r))
-            y.append(0)
+            self.get_data(i, j, edges, X, y, 0)
 
         nzero = np.nonzero(foreground[0])
         for i, j in zip(nzero[0], nzero[1]):
-            b, g, r = self.image[j][i]
-            X.append((b, g, r))
-            y.append(1)
+            self.get_data(i, j, edges, X, y, 1)
 
+        # create the classifier
         rfc = RandomForestClassifier()
         rfc.fit(X, y)
 
         h, w, c = self.image.shape
-        self.image.shape = ((h*w, c))
-        mask1 = np.zeros_like(self.image)
-        mask1 = rfc.predict(self.image)
+
+
+        # get color channels from the image and format each channel not to be a w*h table but a w*h long list of pixel values
+        red = self.image[:,:,2]
+        red.shape = ((h*w, 1))
+        green = self.image[:,:,1]
+        green.shape = ((h*w, 1))
+        blue = self.image[:,:,0]
+        blue.shape = ((h*w, 1))
+        # also format edges to be a single row
+        edges.shape = ((h*w, 1))
+
+        # create a 4D image that has edge value as the fourth channel
+        data = np.dstack((red, green, blue, edges))
+        # reshape the image so it contains 4-tuples, each descripting a single pixel
+        data.shape = ((h*w, 4))
+
+        # prepare a mask and predict result for data (current image)
+        mask1 = np.zeros((h*w, c))
+        mask1 = rfc.predict(data)
+
+        # reshape mask to be a grid, not a list
         mask1.shape = ((h, w))
-        self.image.shape = ((h, w, c))
+
+        # create a rgba image from mask
         r = np.zeros((h, w), dtype=np.uint8)
         g = np.asarray(mask1 * 255, dtype=np.uint8)
         b = np.zeros((h, w), dtype=np.uint8)
@@ -68,12 +98,6 @@ class SegmentationPicker(QtGui.QWidget):
 
         foo = painter.rgba2qimage(rgb)
         self.view.set_overlay(foo)
-
-        edges = cv2.Canny(self.image, 3, 80)
-        cv2.imshow("Edges", edges)
-        cv2.waitKey(0)
-
-        print "Done"
 
     def pink(self):
         self.view.set_pen_color("PINK")
@@ -177,6 +201,12 @@ class SegmentationPicker(QtGui.QWidget):
         # complete the gui
         self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.view)
+
+    def get_data(self, i, j, edges, X, y, classification):
+        b, g, r = self.image[j][i]
+        e = edges[j][i]
+        X.append((b, g, r, e))
+        y.append(classification)
 
 
 if __name__ == "__main__":
