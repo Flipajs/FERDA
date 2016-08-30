@@ -66,7 +66,6 @@ class SegmentationPicker(QtGui.QWidget):
 
         h, w, c = self.image.shape
 
-
         # get color channels from the image and format each channel not to be a w*h table but a w*h long list of pixel values
         red = self.image[:,:,2]
         red.shape = ((h*w, 1))
@@ -111,6 +110,14 @@ class SegmentationPicker(QtGui.QWidget):
 
     def set_eraser(self):
         self.view.set_pen_color(None)
+
+    def show_edges(self):
+        blur_image = cv2.GaussianBlur(self.image, (33, 33), 0)
+        # find edges on the blurred image
+        edges = cv2.Canny(blur_image, 0, 37)
+
+        cv2.imshow("Edges", edges)
+        cv2.waitKey(0)
 
     def make_gui(self):
         """
@@ -193,6 +200,10 @@ class SegmentationPicker(QtGui.QWidget):
         self.popup_button.clicked.connect(self.done)
         self.left_panel.layout().addWidget(self.popup_button)
 
+        self.edge_button = QtGui.QPushButton("Show edges")
+        self.edge_button.clicked.connect(self.show_edges)
+        self.left_panel.layout().addWidget(self.edge_button)
+
         self.color_label = QtGui.QLabel()
         self.color_label.setWordWrap(True)
         self.color_label.setText("")
@@ -212,7 +223,8 @@ class SegmentationPicker(QtGui.QWidget):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
-    ex = SegmentationPicker('/home/dita/vlcsnap-2016-08-16-17h28m57s150.png')
+    #ex = SegmentationPicker('/home/dita/vlcsnap-2016-08-16-17h28m57s150.png')
+    ex = SegmentationPicker('/home/dita/img_67.png')
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()

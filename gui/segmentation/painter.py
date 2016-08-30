@@ -77,7 +77,7 @@ class Painter(QtGui.QWidget):
     def add_color(self, name, r, g, b, a=100):
         mask = np.zeros((self.bg_width, self.bg_height))
         color = QtGui.qRgba(r, g, b, a)
-        self.colors[name] = (mask, color)
+        self.colors[name] = [mask, color]
 
     def get_result(self):
         return self.colors
