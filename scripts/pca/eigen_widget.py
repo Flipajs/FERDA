@@ -131,12 +131,12 @@ class EigenViewer(FigureCanvas):
         val, ok = dialog.getDouble(self, "", "Enter coefficient", min=self.slider.SLIDE_MIN,
                                max=self.slider.SLIDE_MAX)
         if ok:
-            # self.slider.setSliderPosition(val)
+            self.slider.setValue(val)
             self.slider.valueChanged(val)
 
 
 class EigenWidget(QtGui.QWidget):
-    def __init__(self, pca, eigens, ant):
+    def __init__(self, pca, eigens, eigen_vals, ant):
         super(EigenWidget, self).__init__()
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
@@ -149,7 +149,7 @@ class EigenWidget(QtGui.QWidget):
 
         self.labels = []
         self.eigens_layouts = []
-        self.prepare_eigens(eigens)
+        self.prepare_eigens(eigens, eigen_vals)
 
         l = QtGui.QHBoxLayout()
         for i in range(len(self.eigens_layouts)):
@@ -174,9 +174,14 @@ class EigenWidget(QtGui.QWidget):
         screen = QtGui.QDesktopWidget().screenGeometry()
         self.canvas.setFixedWidth(screen.width() / 3)
 
-    def prepare_eigens(self, eigens):
+    def prepare_eigens(self, eigens, eigen_vals):
+        max_val = max(eigen_vals)
+        max_x = np.max(eigens[0, ::2])
+        min_x = np.min(eigens[0, ::2])
+        max_y = np.max(eigens[0, 1::2])
+        min_y = np.min(eigens[0, 1::2])
         i = 0
-        for eigen in eigens:
+        for eigen, eigen_val in zip(eigens, eigen_vals):
             layout = QtGui.QVBoxLayout()
             label = QtGui.QLabel('{0:.2f}'.format(float(self.ant[i])))
             label.setAlignment(QtCore.Qt.AlignCenter)
@@ -186,9 +191,12 @@ class EigenWidget(QtGui.QWidget):
             figure = plt.figure()
             ax = figure.add_subplot(111)
             a = random.randint(0, len(cnames) - 1)
+            eigen = map (lambda x: x * (eigen_val / max_val), eigen)
             ax.plot(np.append(eigen[::2], eigen[0]), np.append(eigen[1::2], eigen[1]), c=cnames.keys()[a])
             ax.axes.get_xaxis().set_visible(False)
             ax.axes.get_yaxis().set_visible(False)
+            ax.set_xlim([min_x, max_x])
+            ax.set_ylim([min_y, max_y])
             canvas = EigenViewer(figure, slider)
             canvas.setSizePolicy(QtGui.QSizePolicy.Expanding,
                                  QtGui.QSizePolicy.Expanding)

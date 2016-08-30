@@ -327,8 +327,8 @@ def generate_ants_reconstructed_figure(X, X1, V, rows, columns):
     generate_ants_image(X, X1, V, rows, columns, i, fold)
 
 
-def view_ant(pca, eigen_ants, ant):
-    w = EigenWidget(pca, eigen_ants, ant)
+def view_ant(pca, eigen_ants, eigen_values, ant):
+    w = EigenWidget(pca, eigen_ants, eigen_values, ant)
     w.showMaximized()
     w.close_figures()
 
@@ -357,14 +357,14 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     trainer = head_tag.HeadGT(project)
 
-    app = QtGui.QApplication(sys.argv)
-    training_regions = []
-    for chunk in chunks:
-        ch = project.chm[chunk]
-        r_ch = RegionChunk(ch, project.gm, project.rm)
-        training_regions += r_ch
-    trainer.improve_ground_truth(training_regions)
-    app.exec_()
+    # app = QtGui.QApplication(sys.argv)
+    # training_regions = []
+    # for chunk in chunks:
+    #     ch = project.chm[chunk]
+    #     r_ch = RegionChunk(ch, project.gm, project.rm)
+    #     training_regions += r_ch
+    # trainer.improve_ground_truth(training_regions)
+    # app.exec_()
     # trainer.correct_answer(1790, 1796, answer=True)
     # trainer.delete_answer(597, 602)
     # app.quit()
@@ -376,13 +376,14 @@ if __name__ == '__main__':
     pca = PCA(number_of_eigen_v)
     V = pca.fit_transform(X)
     eigen_ants = pca.components_
+    eigen_values = pca.explained_variance_
     X1 = pca.inverse_transform(pca.transform(X))
 
-    # app = QtGui.QApplication(sys.argv)
-    # for i in range(10):
-    #     view_ant(pca, eigen_ants, V[i])
-        # app.exec_()
-    # app.quit()
+    app = QtGui.QApplication(sys.argv)
+    for i in range(1):
+        view_ant(pca, eigen_ants, eigen_values, V[i])
+        app.exec_()
+    app.quit()
 
     generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
     rows = 3
