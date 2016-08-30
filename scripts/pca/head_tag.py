@@ -25,6 +25,7 @@ class HeadGT:
 
     def improve_ground_truth(self, regions):
         regions = filter(lambda x: x.id() not in self.results, regions)
+        # regions = filter(lambda x: x.id() in self.results and not self.results[x.id()], regions)
         widget = head_widget.HeadWidget(self.project, self)
         widget.set_data(regions)
         widget.show()

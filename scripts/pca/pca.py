@@ -110,8 +110,8 @@ def get_chunks_regions(ch, chm, gm):
 def get_matrix(chunk, number_of_data, chm, gm, results):
     distance_matrix = []
     for region in get_chunks_regions(chunk, chm, gm):
-        # if region.id() in results:
-        if results.get(region.id(), False):
+        if region.id() in results:
+        # if results.get(region.id(), False):
             distance_matrix.append(get_region_vector(region, number_of_data, results[region.id()]))
     return distance_matrix
 
@@ -125,8 +125,8 @@ def get_region_vector(region, number_of_data, right_orientation):
     contour = np.array(rotate(contour, ang))
     centroid = [0,0]
 
-    if len(contour) < number_of_data:
-        print("Number of data should be smaller than contours length")
+    if len(contour) < number_of_data * 2:
+        logging.warn("Number of data should be much smaller than contours length")
 
     ant_head, index = find_head_index(centroid, contour, region)
     contour[index:index] = ant_head
@@ -143,13 +143,14 @@ def get_region_vector(region, number_of_data, right_orientation):
     p = 0
     while i < number_of_data:
         if distances[p] >= i * step:
-            result[i,] = (contour[p] + (contour[p-1] - contour[p]) * ((distances[p] - i * step) / step))
+            result[i,] = (contour[p - 1] + (contour[p] - contour[p - 1]) * ((distances[p] - i * step) / step))
             i += 1
         p = (p + 1) % con_length
 
     # plt.axis('equal')
-    # plt.plot(contour[:,0], contour[:,1], c='r')
+    # plt.scatter(contour[:,0], contour[:,1], c='r')
     # plt.scatter(result[:,0], result[:,1], c='g')
+    # plt.hold(False)
     # plt.show()
     return result.flatten()
 
@@ -274,7 +275,7 @@ def generate_eigen_ants_figure(ants, number_of_eigen_v):
     for i in range(number_of_eigen_v):
         ax = plt.subplot(gs1[i])
         ax.plot(np.append(ants[i, ::2], ants[i, 0]), np.append(ants[i, 1::2], ants[i, 1]))
-        ax.set_title("Eigenant #{0}".format(i))
+        ax.set_title("Eigenant #{0}".format(i + 1))
     f.subplots_adjust(hspace=0)
     plt.setp([a.get_xticklabels() for a in f.axes], visible=False)
     fig = gcf()
@@ -286,7 +287,6 @@ def generate_eigen_ants_figure(ants, number_of_eigen_v):
         os.mkdir(fold)
     f.savefig(os.path.join(fold, 'eigen_ants'), dpi=f.dpi)
     plt.ioff()
-    # plt.show()
 
 def generate_ants_image(X, X1, V, r, c, i, fold):
     f = plt.figure(figsize=(r, c))
@@ -351,20 +351,20 @@ if __name__ == '__main__':
     #     app.exec_()
 
 
-    number_of_eigen_v = 15
+    number_of_eigen_v = 10
     number_of_data = 40
 
     logging.basicConfig(level=logging.INFO)
     trainer = head_tag.HeadGT(project)
 
-    # app = QtGui.QApplication(sys.argv)
-    # training_regions = []
-    # for chunk in chunks:
-    #     ch = project.chm[chunk]
-    #     r_ch = RegionChunk(ch, project.gm, project.rm)
-    #     training_regions += r_ch
-    # trainer.improve_ground_truth(training_regions)
-    # app.exec_()
+    app = QtGui.QApplication(sys.argv)
+    training_regions = []
+    for chunk in chunks:
+        ch = project.chm[chunk]
+        r_ch = RegionChunk(ch, project.gm, project.rm)
+        training_regions += r_ch
+    trainer.improve_ground_truth(training_regions)
+    app.exec_()
     # trainer.correct_answer(1790, 1796, answer=True)
     # trainer.delete_answer(597, 602)
     # app.quit()

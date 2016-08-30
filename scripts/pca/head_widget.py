@@ -25,6 +25,7 @@ class HeadWidget(QtGui.QWidget):
         self.no = QtGui.QPushButton('no (N)', self)
         self.yes = QtGui.QPushButton('yes (M)', self)
         self.dont_know = QtGui.QPushButton('dont know (P)', self)
+        self.skip = QtGui.QPushButton('skip (Space)', self)
         self.quit = QtGui.QPushButton('save and quit', self)
 
         self._prepare_layouts()
@@ -53,6 +54,7 @@ class HeadWidget(QtGui.QWidget):
             self.no.setDisabled(True)
             self.yes.setDisabled(True)
             self.dont_know.setDisabled(True)
+            self.skip.setDisabled(True)
             self.canvas.hide()
             self.toolbar.hide()
             # self.close()
@@ -61,10 +63,11 @@ class HeadWidget(QtGui.QWidget):
         return self.results
 
     def _add_region(self, region):
-        ant = pca.get_region_vector(region, len(region.contour_without_holes()))
+        ant = pca.get_region_vector(region, len(region.contour_without_holes()) / 2, True)
         ax = self.figure.add_subplot(111)
         ax.plot(np.append(ant[::2], ant[0]), np.append(ant[1::2], ant[1]))
         ax.grid(True)
+        plt.gca().set_aspect('equal', adjustable='box')
         ax.hold(False)
         self.canvas.draw()
         self.label.setText('Last id: ' + str(self.last))
@@ -81,21 +84,26 @@ class HeadWidget(QtGui.QWidget):
         self.buttons_l.addWidget(self.no)
         self.buttons_l.addWidget(self.yes)
         self.buttons_l.addWidget(self.dont_know)
+        self.buttons_l.addWidget(self.skip)
         self.buttons_l.addWidget(self.quit)
         self.connect(self.no, QtCore.SIGNAL('clicked()'), self.no_function)
         self.connect(self.yes, QtCore.SIGNAL('clicked()'), self.yes_function)
-        self.connect(self.dont_know, QtCore.SIGNAL('clicked()'), self._next)
+        self.connect(self.dont_know, QtCore.SIGNAL('clicked()'), self.dont_know_function)
+        self.connect(self.skip, QtCore.SIGNAL('clicked()'), self._next)
         self.connect(self.quit, QtCore.SIGNAL('clicked()'), self.close)
         self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N), self), QtCore.SIGNAL('activated()'),
                      self.no_function)
         self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_M), self), QtCore.SIGNAL('activated()'),
                      self.yes_function)
         self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_P), self), QtCore.SIGNAL('activated()'),
+                     self.dont_know_function)
+        self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space), self), QtCore.SIGNAL('activated()'),
                      self._next)
 
         self.yes.setFixedWidth(100)
         self.no.setFixedWidth(100)
         self.dont_know.setFixedWidth(100)
+        self.skip.setFixedWidth(100)
 
     def no_function(self):
         self.results[self.current.id()] = False
@@ -103,6 +111,12 @@ class HeadWidget(QtGui.QWidget):
 
     def yes_function(self):
         self.results[self.current.id()] = True
+        self._next()
+
+    def dont_know_function(self):
+        if self.current.id() in self.trainer.results:
+            print "deleting", self.current.id()
+            del self.trainer.results[self.current.id()]
         self._next()
 
     def closeEvent(self, QCloseEvent):
