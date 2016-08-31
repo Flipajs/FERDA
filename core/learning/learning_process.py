@@ -417,7 +417,14 @@ class LearningProcess:
 
     def __learn(self, ch, id_):
         print "LEARNING ", id_
-        X = self.features[ch.id()]
+        if ch.id() not in self.features:
+            print "cached features are missing. COMPUTING..."
+            X = self.get_data(ch)
+            print "Done"
+        else:
+            X = self.features[ch.id()]
+
+
         self.X = np.vstack([self.X, np.array(X)])
 
         y = [id_] * len(X)
@@ -468,9 +475,6 @@ class LearningProcess:
             ch.N = set()
 
     def __propagate_availability(self, ch, remove_id=[]):
-        if ch.id() == 124:
-            print "124"
-
         S_in = set()
         affected = []
         for u in ch.start_vertex(self.p.gm).in_neighbours():
@@ -725,7 +729,7 @@ class LearningProcess:
         for id_, t in enumerate(tracklets):
             self.assign_identity(id_, t)
 
-            self.user_decisions.append({'tracklet': t, 'type': 'P', 'id': id_})
+            self.user_decisions.append({'tracklet_id': t.id(), 'type': 'P', 'ids': [id_]})
 
         return set(range(len(tracklets)))
 
@@ -912,14 +916,23 @@ class LearningProcess:
         self.undecided_tracklets = set()
         self.fill_undecided_tracklets()
 
+        self.__precompute_availability()
+
         # TODO: fill self.X and self.Y only with tracklets decided by user (self.user_decisions)
-        self.X = []
-        self.y = []
+        self.X = np.array([])
+        self.y = np.array([])
 
         for d in self.user_decisions:
-            tracklet = d['tracklet']
-            id_ = d['id']
+            tracklet_id = d['tracklet_id']
+            tracklet = self.p.chm[tracklet_id]
+            ids = d['ids']
             type = d['type']
+
+            if len(ids) == 1:
+                id_ = ids[0]
+            else:
+                # TODO: multi ID decisions
+                return
 
             if type == 'P':
                 self.assign_identity(id_, tracklet, learn=True)
@@ -944,15 +957,22 @@ class LearningProcess:
 
         """
 
+        if not isinstance(id_, int):
+            print "FAIL in learning_process.py assign_identity, id is not a number"
+
         if tracklet.id() in self.collision_chunks:
             del self.collision_chunks[tracklet.id()]
             print "Fixing tracklet wrongly labeled as OVERSEGMENTED"
 
         if user:
-            self.user_decisions.append({'tracklet': tracklet, 'type': 'P', 'id': id_})
+            self.user_decisions.append({'tracklet_id': tracklet.id(), 'type': 'P', 'ids': [id_]})
 
-        if not isinstance(id_, int):
-            print "FAIL in learning_process.py assign_identity, id is not a number"
+        # conflict test
+        conflicts = self.__find_conflict(tracklet, id_=id_)
+        if len(conflicts):
+            print "------------------- CONFLICT ------------"
+            print tracklet, tracklet.start_frame(self.p.gm), id_, conflicts
+            return
 
         if not self.__DEBUG_GT_test(id_, tracklet):
             self.mistakes.append(tracklet)
@@ -971,13 +991,6 @@ class LearningProcess:
         except:
             pass
 
-
-        # conflict test
-        conflicts = self.__find_conflict(tracklet, id_=id_)
-        if len(conflicts):
-            print "------------------- CONFLICT ------------"
-            return
-
         # finalize
         # TODO: test collision chunk, if yes and learn - compute features...
         try:
@@ -985,10 +998,10 @@ class LearningProcess:
         except KeyError:
             pass
 
-            # TODO: commented so we can save it for visualisation
-            # if len(self.tracklet_measurements):
-            #     del self.tracklet_certainty[tracklet.id()]
-            #     del self.tracklet_measurements[tracklet.id()]
+            if len(self.tracklet_measurements):
+                del self.tracklet_certainty[tracklet.id()]
+                # TODO: commented so we can save it for visualisation
+                #     del self.tracklet_measurements[tracklet.id()]
 
         if learn:
             self.__learn(tracklet, id_)
