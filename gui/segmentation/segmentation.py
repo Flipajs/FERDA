@@ -45,6 +45,9 @@ class SegmentationPicker(QtGui.QWidget):
         # find edges on the blurred image
         edges = cv2.Canny(blur_image, a, b)
 
+        laplace = cv2.Laplacian(blur_image, cv2.CV_64F)
+        print laplace.shape
+
         # prepare learning data
         # X contains tuples of data for each evaluated unit-pixel (R, G, B, edge?)
         # y contains classifications for all pixels respectively
@@ -54,11 +57,11 @@ class SegmentationPicker(QtGui.QWidget):
         # loop all nonzero pixels from foregound (ants) and background and add them to testing data
         nzero = np.nonzero(background[0])
         for i, j in zip(nzero[0], nzero[1]):
-            self.get_data(i, j, edges, X, y, 0)
+            self.get_data(i, j, edges, laplace, X, y, 0)
 
         nzero = np.nonzero(foreground[0])
         for i, j in zip(nzero[0], nzero[1]):
-            self.get_data(i, j, edges, X, y, 1)
+            self.get_data(i, j, edges, laplace, X, y, 1)
 
         # create the classifier
         rfc = RandomForestClassifier()
@@ -75,9 +78,15 @@ class SegmentationPicker(QtGui.QWidget):
         blue.shape = ((h*w, 1))
         # also format edges to be a single row
         edges.shape = ((h*w, 1))
+        laplace.shape = ((h*w, 3))
+        foo = laplace[:,1]
+        foo.shape = ((h*w, 1))
+        print red.shape
+        print blue.shape
+        print green.shape
 
         # create a 4D image that has edge value as the fourth channel
-        data = np.dstack((red, green, blue, edges))
+        data = np.dstack((red, green, blue, foo))
         # reshape the image so it contains 4-tuples, each descripting a single pixel
         data.shape = ((h*w, 4))
 
@@ -114,10 +123,14 @@ class SegmentationPicker(QtGui.QWidget):
     def show_edges(self):
         blur_image = cv2.GaussianBlur(self.image, (33, 33), 0)
         # find edges on the blurred image
-        edges = cv2.Canny(blur_image, 0, 37)
+        laplace = cv2.Laplacian(blur_image, cv2.CV_64F)
+        laplace.shape = ((1024*1024, 3))
+        foo = laplace[:,1]
+        foo.shape = ((1024*1024, 1))
 
-        cv2.imshow("Edges", edges)
+        cv2.imshow("Edges", laplace)
         cv2.waitKey(0)
+
 
     def make_gui(self):
         """
@@ -213,10 +226,11 @@ class SegmentationPicker(QtGui.QWidget):
         self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.view)
 
-    def get_data(self, i, j, edges, X, y, classification):
+    def get_data(self, i, j, edges, laplace, X, y, classification):
         b, g, r = self.image[j][i]
         e = edges[j][i]
-        X.append((b, g, r, e))
+        l = laplace[j][i][0]
+        X.append((b, g, r, l))
         y.append(classification)
 
 
