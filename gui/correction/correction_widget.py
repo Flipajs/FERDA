@@ -18,12 +18,16 @@ from viewer.gui.img_controls import markers
 MARKER_SIZE = 15
 
 class ResultsWidget(QtGui.QWidget):
-    def __init__(self, project, start_on_frame=-1):
+    def __init__(self, project, start_on_frame=-1, decide_tracklet_callback=None):
         super(ResultsWidget, self).__init__()
+
+        self.decide_tracklet_callback = decide_tracklet_callback
 
         self.show_identities = False
         self.loop_highlight_tracklets = []
         self.loop_end = -1
+
+        self.active_tracklet_id = -1
 
         self.hide_visualisation_ = False
 
@@ -87,6 +91,10 @@ class ResultsWidget(QtGui.QWidget):
 
         self.left_vbox.addWidget(self.info_l)
 
+        self.decide_tracklet_button = QtGui.QPushButton('decide tracklet')
+        self.decide_tracklet_button.clicked.connect(self.decide_tracklet)
+        self.decide_tracklet_button.setDisabled(True)
+        self.left_vbox.addWidget(self.decide_tracklet_button)
 
         self.evolve_gt_b = QtGui.QPushButton('evolve GT')
         self.evolve_gt_b.clicked.connect(self._evolve_gt)
@@ -271,6 +279,14 @@ class ResultsWidget(QtGui.QWidget):
                 self._gt = {}
 
         # self.update_positions()
+
+    def decide_tracklet(self):
+        if self.active_tracklet_id > -1:
+            self.decide_tracklet_callback(self.project.chm[self.active_tracklet_id])
+            self.active_tracklet_id = -1
+            self.decide_tracklet_button.setDisabled(True)
+
+            self.update_positions()
 
     def hide_visualisation(self):
         self.hide_visualisation_ = not self.hide_visualisation_
@@ -684,6 +700,8 @@ class ResultsWidget(QtGui.QWidget):
         self._gt_marker_clicked(id_)
 
     def _gt_marker_clicked(self, id_):
+        self.decide_tracklet_button.setDisabled(False)
+        self.active_tracklet_id = id_
         s = 'id: '+str(id_)
 
         ch = self.project.chm[id_]

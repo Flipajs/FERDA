@@ -43,6 +43,7 @@ class LearningProcess:
         self.tracklet_certainty = {}
         self.tracklet_measurements = {}
 
+        self.user_decisions = []
 
         self.mistakes = []
 
@@ -79,11 +80,7 @@ class LearningProcess:
             self.class_frequences = []
 
             print "undecided tracklets..."
-            for t in self.tracklets:
-                if t.id() in self.collision_chunks:
-                    continue
-
-                self.undecided_tracklets.add(t.id())
+            self.fill_undecided_tracklets()
 
             print "Init data..."
             self.X = None
@@ -123,6 +120,13 @@ class LearningProcess:
         self.save_ids_()
         # self.run_learning()
 
+    def fill_undecided_tracklets(self):
+        for t in self.tracklets:
+            if t.id() in self.collision_chunks:
+                continue
+
+            self.undecided_tracklets.add(t.id())
+
     def run_learning(self):
         while len(self.undecided_tracklets):
             self.next_step()
@@ -134,16 +138,17 @@ class LearningProcess:
         try:
             best_candidate_tracklet = self.__get_best_question()
 
+            id_ = -1
             if not self.question_callback:
                 # to speed up testing - simulate Human in the Loop by asking GT
                 id_ = self.__DEBUG_get_answer_from_GT(best_candidate_tracklet)
             else:
-                id_ = self.question_callback(best_candidate_tracklet)
-
-            print 'Human in the loop says: tracklet id: {} is animal ID: {}'.format(best_candidate_tracklet.id(), id_)
+                # id_ = self.question_callback(best_candidate_tracklet)
+                self.question_callback(best_candidate_tracklet)
 
             if id_ > -1:
-                self.__assign_identity(id_, best_candidate_tracklet)
+                print 'Human in the loop says: tracklet id: {} is animal ID: {}'.format(best_candidate_tracklet.id(), id_)
+                self.assign_identity(id_, best_candidate_tracklet)
                 self.next_step()
             else:
                 print "DEBUG_get_answer didn't returned an ID"
@@ -591,7 +596,7 @@ class LearningProcess:
 
     def next_step(self):
         # TODO: global parameter
-        eps_certainty = 0.1
+        eps_certainty = 0.3
         eps_certainty_learning = 0.05
         min_new_samples_to_retrain = 50
 
@@ -619,7 +624,7 @@ class LearningProcess:
             # TODO: test conflict in other tracklet with high certainity for given ID
 
             id_ = np.argmax(x_)
-            self.__assign_identity(id_, best_tracklet, learn=learn)
+            self.assign_identity(id_, best_tracklet, learn=learn)
             self.save_ids_()
         else:
             # if new training data, retrain
@@ -718,7 +723,9 @@ class LearningProcess:
 
         # it is in this position, because we need self.X, self.y to be ready for the case when we solve something by conservation rules -> thus we will be learning -> updating self.X...
         for id_, t in enumerate(tracklets):
-            self.__assign_identity(id_, t)
+            self.assign_identity(id_, t)
+
+            self.user_decisions.append({'tracklet': t, 'type': 'P', 'id': id_})
 
         return set(range(len(tracklets)))
 
@@ -803,21 +810,22 @@ class LearningProcess:
 
         return True
 
-    def __find_conflict(self, tracklet):
-        gt_id = self.__DEBUG_get_answer_from_GT(tracklet)
+    def __find_conflict(self, tracklet, id_=None):
+        if id_ is None:
+            id_ = self.__DEBUG_get_answer_from_GT(tracklet)
 
         in_time = set(self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm),
                                                     tracklet.end_frame(self.p.gm)))
 
         conflicts = []
         for t in in_time:
-            if gt_id in t.P:
+            if id_ in t.P:
                 conflicts.append(t)
 
         # TODO: remove this
-        # repairing conflict...
-        tracklet.P = set([gt_id])
-        tracklet.N = self.all_ids - set([gt_id])
+        # # repairing conflict...
+        # tracklet.P = set([gt_id])
+        # tracklet.N = self.all_ids - set([gt_id])
 
         return conflicts
 
@@ -900,7 +908,27 @@ class LearningProcess:
 
         return not oversegmented
 
-    def __assign_identity(self, id_, tracklet, learn=True, not_affecting=False):
+    def reset_learning(self):
+        self.undecided_tracklets = set()
+        self.fill_undecided_tracklets()
+
+        # TODO: fill self.X and self.Y only with tracklets decided by user (self.user_decisions)
+        self.X = []
+        self.y = []
+
+        for d in self.user_decisions:
+            tracklet = d['tracklet']
+            id_ = d['id']
+            type = d['type']
+
+            if type == 'P':
+                self.assign_identity(id_, tracklet, learn=True)
+            elif type == 'N':
+                self.__update_definitely_not_present(set([id_]), tracklet)
+
+        self.__train_rfc()
+
+    def assign_identity(self, id_, tracklet, learn=True, not_affecting=False, oversegmented=False, user=False):
         """
         Sets set definitelyPresent (P) = ids
         and set definitelyNotPresent (N) = complement of ids in all IDS
@@ -916,8 +944,16 @@ class LearningProcess:
 
         """
 
+        if tracklet.id() in self.collision_chunks:
+            del self.lp.collision_chunks[tracklet.id()]
+            print "Fixing tracklet wrongly labeled as OVERSEGMENTED"
+
+
+        if user:
+            self.user_decisions.append({'tracklet': tracklet, 'type': 'P', 'id': id_})
+
         if not isinstance(id_, int):
-            print "FAIL in learning_process.py __assign_identity, id not a number"
+            print "FAIL in learning_process.py assign_identity, id is not a number"
 
         if not self.__DEBUG_GT_test(id_, tracklet):
             self.mistakes.append(tracklet)
@@ -926,7 +962,7 @@ class LearningProcess:
                 "MEASUREMENTS", self.tracklet_measurements[tracklet.id()], "Certainty: ", self.tracklet_certainty[tracklet.id()], "tracklet id:",  tracklet.id(), " ID: ", id_
 
             # TODO: remove in future...
-            self.__assign_identity(self.__DEBUG_get_answer_from_GT(tracklet), tracklet, learn=True)
+            self.assign_identity(self.__DEBUG_get_answer_from_GT(tracklet), tracklet, learn=True)
 
             return
 
@@ -936,12 +972,23 @@ class LearningProcess:
         except:
             pass
 
+
+        # conflict test
+        conflicts = self.__find_conflict(tracklet, id_=id_)
+        if len(conflicts):
+            print "------------------- CONFLICT ------------"
+            return
+
         # finalize
-        self.undecided_tracklets.remove(tracklet.id())
-        if len(self.tracklet_measurements):
-            del self.tracklet_certainty[tracklet.id()]
+        try:
+            self.undecided_tracklets.remove(tracklet.id())
+        except KeyError:
+            pass
+
             # TODO: commented so we can save it for visualisation
-            # del self.tracklet_measurements[tracklet.id()]
+            # if len(self.tracklet_measurements):
+            #     del self.tracklet_certainty[tracklet.id()]
+            #     del self.tracklet_measurements[tracklet.id()]
 
         if learn:
             self.__learn(tracklet, id_)

@@ -38,7 +38,7 @@ class LearningWidget(QtGui.QWidget):
 
         self.info_table = QtGui.QTableWidget()
         self.info_table.setColumnCount(2)
-        self.info_table.setRowCount(10)
+        self.info_table.setRowCount(11)
 
         self.info_table.setMinimumHeight(500)
         self.info_table.setFixedWidth(220)
@@ -59,13 +59,13 @@ class LearningWidget(QtGui.QWidget):
         self.show_tracklet_button.clicked.connect(self.show_tracklet)
         self.top_stripe_layout.addWidget(self.show_tracklet_button)
 
+        self.reset_learning_button = QtGui.QPushButton('reset learning')
+        self.reset_learning_button.clicked.connect(self.reset_learning)
+        self.top_stripe_layout.addWidget(self.reset_learning_button)
+
         # TODO: last info label
-        # TODO: refactor results widget to be up to date with learning results...
-        # TODO: add option to add info...
-        # TODO: add option to reset learning
         # TODO: add saving
         # TODO: update callback... info about decisions...
-        # TODO: set tracklet to color
 
         self.tracklets_table = QtGui.QTableWidget()
         self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
@@ -78,6 +78,9 @@ class LearningWidget(QtGui.QWidget):
         self.hbox.addWidget(self.tracklets_table)
 
         self.update_callback()
+
+    def reset_learning_button(self):
+        self.lp.reset_learning()
 
     def show_tracklet(self):
         indexes = self.tracklets_table.selectionModel().selectedRows()
@@ -116,6 +119,9 @@ class LearningWidget(QtGui.QWidget):
         for i in range(len(self.project.animals)):
             self.info_table.setItem(START+i, 0, QtGui.QTableWidgetItem('#examples, ID: '+str(i)))
             self.info_table.setItem(START+i, 1, QtGui.QTableWidgetItem(str(np.count_nonzero(self.lp.y == i))))
+
+        self.info_table.setItem(10, 0, QtGui.QTableWidgetItem('# user decisions: '))
+        self.info_table.setItem(11, 0, QtGui.QTableWidgetItem(str(len(self.lp.user_decisions))))
 
         # update tracklet info...
         num_animals = len(self.project.animals)
@@ -183,12 +189,17 @@ class LearningWidget(QtGui.QWidget):
         self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False)
 
     def question_callback(self, tracklet):
+        self.show_tracklet_callback(tracklet)
+
+    def decide_tracklet_question(self, tracklet):
         items = map(str, range(len(self.project.animals)))
 
         item, ok = QtGui.QInputDialog.getItem(self, "select animal ID for tracklet ID: "+str(tracklet.id()),
                                               "list of ids", items, 0, False)
-
-        return int(item)
+        if ok:
+            self.lp.assign_identity(int(item), tracklet, user=True)
+        else:
+            print "..."
 
 
 if __name__ == '__main__':
