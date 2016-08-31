@@ -6,6 +6,7 @@ from PyQt4 import QtGui, QtCore
 import painter
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 from sklearn.ensemble import RandomForestClassifier
 
@@ -121,16 +122,20 @@ class SegmentationPicker(QtGui.QWidget):
         self.view.set_pen_color(None)
 
     def show_edges(self):
-        blur_image = cv2.GaussianBlur(self.image, (33, 33), 0)
+        blur_image = cv2.GaussianBlur(self.image, (15, 15), 0.1)
+
+        grey = cv2.cvtColor(blur_image, cv2.COLOR_BGR2GRAY)
+    
         # find edges on the blurred image
-        laplace = cv2.Laplacian(blur_image, cv2.CV_64F)
-        laplace.shape = ((1024*1024, 3))
-        foo = laplace[:,1]
-        foo.shape = ((1024*1024, 1))
-
-        cv2.imshow("Edges", laplace)
-        cv2.waitKey(0)
-
+        laplace = cv2.Laplacian(grey, cv2.CV_64F)
+    
+        laplace -= np.min(laplace)
+        laplace /= np.max(laplace)
+        laplace *= 255
+        laplace = np.asarray(laplace, dtype=np.uint8)
+    
+        plt.imshow(laplace, cmap='gray')
+        plt.show()
 
     def make_gui(self):
         """
