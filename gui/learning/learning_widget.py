@@ -79,7 +79,7 @@ class LearningWidget(QtGui.QWidget):
 
         self.update_callback()
 
-    def reset_learning_button(self):
+    def reset_learning(self):
         self.lp.reset_learning()
 
     def show_tracklet(self):

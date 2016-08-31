@@ -945,9 +945,8 @@ class LearningProcess:
         """
 
         if tracklet.id() in self.collision_chunks:
-            del self.lp.collision_chunks[tracklet.id()]
+            del self.collision_chunks[tracklet.id()]
             print "Fixing tracklet wrongly labeled as OVERSEGMENTED"
-
 
         if user:
             self.user_decisions.append({'tracklet': tracklet, 'type': 'P', 'id': id_})
@@ -980,6 +979,7 @@ class LearningProcess:
             return
 
         # finalize
+        # TODO: test collision chunk, if yes and learn - compute features...
         try:
             self.undecided_tracklets.remove(tracklet.id())
         except KeyError:
