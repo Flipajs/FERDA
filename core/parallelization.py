@@ -38,12 +38,18 @@ if __name__ == '__main__':
     temp_local_path='/localhome/casillas/'
 
     if not os.path.exists(temp_local_path+proj_name):
-	os.mkdir(temp_local_path+proj_name)
+        try:
+            os.mkdir(temp_local_path+proj_name)
+        except:
+            print(temp_local_path+proj_name + "   was created between check and mkdir");
     
-    temp_local_path=temp_local_path+proj_name
+    temp_local_path=temp_local_path + proj_name
     
     if not os.path.exists(temp_local_path+'/temp'):
-           os.mkdir(temp_local_path+'/temp')
+        try:
+            os.mkdir(temp_local_path+'/temp')
+        except:
+            print(temp_local_path+'/temp' + "   was created between check and mkdir");
 
     temp_local_path=temp_local_path+'/temp'
 
@@ -146,7 +152,7 @@ if __name__ == '__main__':
 
     print "MSERS t:", round(msers_t, 2), "SOLVER t: ", round(solver_t, 2), "VIDEO t:", round(vid_t, 2), "FILE t: ", round(file_t, 2), "SUM t / frames_in_row:", round((msers_t + solver_t+vid_t+file_t)/float(frames_in_row), 2)
 
-import shutil
-import glob
-for file in glob.glob(temp_local_path+'/part'+str(id)+'_rm.sqlite3'):
-   shutil.move(file,working_dir+'/temp')
+    import shutil
+    import glob
+    for file in glob.glob(temp_local_path+'/part'+str(id)+'_rm.sqlite3'):
+        shutil.move(file,working_dir+'/temp')
