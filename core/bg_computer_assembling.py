@@ -35,7 +35,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     from utils.misc import is_flipajs_pc
     if is_flipajs_pc():
         # TODO: remove this line
-        part_num = 5
+        part_num = 20
         pass
 
     bgcomp.project.color_manager = None
