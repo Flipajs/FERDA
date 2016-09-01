@@ -7,6 +7,7 @@ import painter
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from utils import *
 
 from sklearn.ensemble import RandomForestClassifier
 
@@ -49,6 +50,9 @@ class SegmentationPicker(QtGui.QWidget):
         laplace = cv2.Laplacian(blur_image, cv2.CV_64F)
         print laplace.shape
 
+        shiftx = get_shift(self.image, shift_x=2, shift_y=0)
+        shifty = get_shift(self.image, shift_x=0, shift_y=2)
+
         # prepare learning data
         # X contains tuples of data for each evaluated unit-pixel (R, G, B, edge?)
         # y contains classifications for all pixels respectively
@@ -58,11 +62,11 @@ class SegmentationPicker(QtGui.QWidget):
         # loop all nonzero pixels from foregound (ants) and background and add them to testing data
         nzero = np.nonzero(background[0])
         for i, j in zip(nzero[0], nzero[1]):
-            self.get_data(i, j, edges, laplace, X, y, 0)
+            self.get_data(i, j, shiftx, shifty, X, y, 0)
 
         nzero = np.nonzero(foreground[0])
         for i, j in zip(nzero[0], nzero[1]):
-            self.get_data(i, j, edges, laplace, X, y, 1)
+            self.get_data(i, j, shiftx, shifty, X, y, 1)
 
         # create the classifier
         rfc = RandomForestClassifier()
@@ -78,18 +82,16 @@ class SegmentationPicker(QtGui.QWidget):
         blue = self.image[:,:,0]
         blue.shape = ((h*w, 1))
         # also format edges to be a single row
-        edges.shape = ((h*w, 1))
-        laplace.shape = ((h*w, 3))
-        foo = laplace[:,1]
-        foo.shape = ((h*w, 1))
+        shiftx.shape = ((h*w, 1))
+        shifty.shape = ((h*w, 1))
         print red.shape
         print blue.shape
         print green.shape
 
         # create a 4D image that has edge value as the fourth channel
-        data = np.dstack((red, green, blue, foo))
+        data = np.dstack((red, green, blue, shiftx, shifty))
         # reshape the image so it contains 4-tuples, each descripting a single pixel
-        data.shape = ((h*w, 4))
+        data.shape = ((h*w, 5))
 
         # prepare a mask and predict result for data (current image)
         mask1 = np.zeros((h*w, c))
@@ -231,11 +233,11 @@ class SegmentationPicker(QtGui.QWidget):
         self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.view)
 
-    def get_data(self, i, j, edges, laplace, X, y, classification):
+    def get_data(self, i, j, shiftx, shifty, X, y, classification):
         b, g, r = self.image[j][i]
-        e = edges[j][i]
-        l = laplace[j][i][0]
-        X.append((b, g, r, l))
+        sx = shiftx[j][i]
+        sy = shiftx[j][i]
+        X.append((b, g, r, sx, sy))
         y.append(classification)
 
 
