@@ -121,7 +121,7 @@ class LearningWidget(QtGui.QWidget):
             self.info_table.setItem(START+i, 1, QtGui.QTableWidgetItem(str(np.count_nonzero(self.lp.y == i))))
 
         self.info_table.setItem(10, 0, QtGui.QTableWidgetItem('# user decisions: '))
-        self.info_table.setItem(11, 0, QtGui.QTableWidgetItem(str(len(self.lp.user_decisions))))
+        self.info_table.setItem(10, 1, QtGui.QTableWidgetItem(str(len(self.lp.user_decisions))))
 
         # update tracklet info...
         num_animals = len(self.project.animals)
@@ -198,6 +198,7 @@ class LearningWidget(QtGui.QWidget):
                                               "list of ids", items, 0, False)
         if ok:
             self.lp.assign_identity(int(item), tracklet, user=True)
+            self.update_callback()
         else:
             print "..."
 

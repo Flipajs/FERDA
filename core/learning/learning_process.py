@@ -15,7 +15,7 @@ import operator
 
 
 class LearningProcess:
-    def  __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None):
+    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None):
         self.p = p
 
         self.question_callback = question_callback
@@ -47,24 +47,21 @@ class LearningProcess:
 
         self.mistakes = []
 
-        # TODO: remove undecided_chunks variable
-
         if not use_feature_cache:
-            self.tracklets = self.get_candidate_chunks()
+            self.get_candidate_chunks()
 
             self.chunks_itree = self.build_itree_()
 
             self.features = self.precompute_features_()
 
             with open(p.working_directory+'/temp/features.pkl', 'wb') as f:
-                d = {'tracklets': self.tracklets, 'chunks_itree': self.chunks_itree, 'features': self.features,
+                d = {'chunks_itree': self.chunks_itree, 'features': self.features,
                      'collision_chunks': self.collision_chunks}
                 pickle.dump(d, f, -1)
         else:
             print "LOADING features..."
             with open(p.working_directory+'/temp/features.pkl', 'rb') as f:
                 d = pickle.load(f)
-                self.tracklets = d['tracklets']
                 self.chunks_itree = d['chunks_itree']
                 self.features = d['features']
                 self.collision_chunks = d['collision_chunks']
@@ -121,7 +118,7 @@ class LearningProcess:
         # self.run_learning()
 
     def fill_undecided_tracklets(self):
-        for t in self.tracklets:
+        for t in self.p.chm.chunk_gen():
             if t.id() in self.collision_chunks:
                 continue
 
@@ -265,7 +262,7 @@ class LearningProcess:
     def precompute_features_(self):
         features = {}
         i = 0
-        for ch in self.tracklets:
+        for ch in self.p.chm.chunk_gen():
             if ch in self.collision_chunks:
                 continue
 
@@ -282,7 +279,7 @@ class LearningProcess:
 
     def build_itree_(self):
         itree = IntervalTree()
-        for ch in self.tracklets:
+        for ch in self.p.chm.chunk_gen():
             itree.addi(ch.start_frame(self.p.gm) - self._eps1, ch.end_frame(self.p.gm) + self._eps1, ch.id())
 
         return itree
@@ -291,12 +288,12 @@ class LearningProcess:
         ch_list = self.p.chm.chunk_list()
 
         print "ALL CHUNKS:", len(ch_list)
-        filtered = []
+        # filtered = []
         for ch in ch_list:
             # if ch.start_frame(self.p.gm) > 500:
             #     continue
             # else:
-            filtered.append(ch)
+            # filtered.append(ch)
 
             if ch.length() > 0:
                 ch_start_vertex = self.p.gm.g.vertex(ch.start_node())
@@ -336,7 +333,7 @@ class LearningProcess:
         # filtered = sorted(filtered, key=lambda x: x.start_frame(self.p.gm))
         # return filtered
 
-        return filtered
+        # return filtered
 
     def __solve_if_clear(self, vertices1, vertices2):
         score = np.zeros((len(vertices1), len(vertices2)))
@@ -424,13 +421,14 @@ class LearningProcess:
         else:
             X = self.features[ch.id()]
 
-
-        self.X = np.vstack([self.X, np.array(X)])
-
-        y = [id_] * len(X)
-        self.y = np.append(self.y, np.array(y))
-
-        # self.class_frequences[id_] += len(X)
+        # if empty, create... else there is a problem with vstack...
+        if self.y is None or len(self.y) == 0:
+            self.X = np.array(X)
+            self.y = np.array([id_] * len(X))
+        else:
+            self.X = np.vstack([self.X, np.array(X)])
+            y = [id_] * len(X)
+            self.y = np.append(self.y, np.array(y))
 
     def __assign_id(self, ch, id_):
         if len(self.chunk_available_ids[ch.id()]) <= 1:
@@ -470,7 +468,7 @@ class LearningProcess:
         return set(range(len(vertices)))
 
     def __precompute_availability(self):
-        for ch in self.tracklets:
+        for ch in self.p.chm.chunk_gen():
             ch.P = set()
             ch.N = set()
 
@@ -564,10 +562,10 @@ class LearningProcess:
             return
 
         if ch.id() in self.collision_chunks:
-            try:
-                del self.undecided_chunks[ch.id()]
-            except:
-                pass
+            # try:
+            #     del self.undecided_chunks[ch.id()]
+            # except:
+            #     pass
 
             print "CANNOT DECIDE COLLISION CHUNK!!!"
             return
@@ -706,24 +704,24 @@ class LearningProcess:
         for v in vertices:
             tracklets.append(self.p.chm[self.p.gm.g.vp['chunk_start_id'][self.p.gm.g.vertex(v)]])
 
-        X = []
-        y = []
+        # X = []
+        # y = []
 
-        id_ = 0
-        for t in tracklets:
-            ch_data = self.get_data(t)
-            X.extend(ch_data)
+        # id_ = 0
+        # for t in tracklets:
+        #     ch_data = self.get_data(t)
+        #     X.extend(ch_data)
+        #
+        #     self.class_frequences.append(len(ch_data))
+        #
+        #     y.extend([id_] * len(ch_data))
+        #
+        #     id_ += 1
+        #
+        # self.class_frequences = np.array(self.class_frequences)
 
-            self.class_frequences.append(len(ch_data))
-
-            y.extend([id_] * len(ch_data))
-
-            id_ += 1
-
-        self.class_frequences = np.array(self.class_frequences)
-
-        self.X = np.array(X)
-        self.y = np.array(y)
+        # self.X = np.array(X)
+        # self.y = np.array(y)
 
         # it is in this position, because we need self.X, self.y to be ready for the case when we solve something by conservation rules -> thus we will be learning -> updating self.X...
         for id_, t in enumerate(tracklets):
@@ -914,13 +912,15 @@ class LearningProcess:
 
     def reset_learning(self):
         self.undecided_tracklets = set()
+        self.tracklet_certainty = {}
+        self.tracklet_measurements = {}
         self.fill_undecided_tracklets()
 
         self.__precompute_availability()
 
         # TODO: fill self.X and self.Y only with tracklets decided by user (self.user_decisions)
-        self.X = np.array([])
-        self.y = np.array([])
+        self.X = None
+        self.y = None
 
         for d in self.user_decisions:
             tracklet_id = d['tracklet_id']
@@ -972,7 +972,8 @@ class LearningProcess:
         if len(conflicts):
             print "------------------- CONFLICT ------------"
             print tracklet, tracklet.start_frame(self.p.gm), id_, conflicts
-            return
+            if not user:
+                return
 
         if not self.__DEBUG_GT_test(id_, tracklet):
             self.mistakes.append(tracklet)
@@ -998,10 +999,14 @@ class LearningProcess:
         except KeyError:
             pass
 
-            if len(self.tracklet_measurements):
+        if len(self.tracklet_measurements):
+            try:
                 del self.tracklet_certainty[tracklet.id()]
-                # TODO: commented so we can save it for visualisation
-                #     del self.tracklet_measurements[tracklet.id()]
+            except KeyError:
+                pass
+
+            # TODO: commented so we can save it for visualisation
+            #     del self.tracklet_measurements[tracklet.id()]
 
         if learn:
             self.__learn(tracklet, id_)

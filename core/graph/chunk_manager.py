@@ -81,3 +81,6 @@ class ChunkManager:
 
         return self.get_chunks_from_intervals_(intervals)
 
+    def chunk_gen(self):
+        for ch in self.chunks_.itervalues():
+            yield ch
