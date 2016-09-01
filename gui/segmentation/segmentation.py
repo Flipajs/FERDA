@@ -99,8 +99,6 @@ class SegmentationPicker(QtGui.QWidget):
         # reshape mask to be a grid, not a list
         mask1 = mask1[:, 1]
         mask1.shape = ((h, w))
-        cv2.imshow("mask", mask1)
-        cv2.waitKey(0)
 
         # create a rgba image from mask
         r = np.zeros((h, w), dtype=np.uint8)
