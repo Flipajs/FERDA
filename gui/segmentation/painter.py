@@ -3,6 +3,7 @@ from my_view import MyView
 from PyQt4 import QtGui, QtCore, Qt
 import numpy as np
 import cv2
+from qimage2ndarray import array2qimage
 
 __author__ = 'dita'
 
@@ -48,6 +49,7 @@ class Painter(QtGui.QWidget):
         # PAINT SETUP
         # current color ("Color" or "Eraser"), purple by default
         self.colors = {}
+        self.eraser = False
         self.add_color(paint_name, paint_r, paint_g, paint_b, paint_a)
         self.pen_size = pen_size
         self.set_pen_color(paint_name)
@@ -72,12 +74,30 @@ class Painter(QtGui.QWidget):
         self.overlay_image = img
         self.scene.removeItem(self.overlay_pixmap)
         self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.overlay_image))
-        self.overlay_pixmap.setZValue(10)
+        self.overlay_pixmap.setZValue(9)
+
+    def draw_mask(self, name):
+        self.scene.removeItem(self.colors[name][2])
+        w, h = self.background.width(), self.background.height()
+        r = self.colors[name][0] * self.colors[name][1][0]
+        g = self.colors[name][0] * self.colors[name][1][1]
+        b = self.colors[name][0] * self.colors[name][1][2]
+        a = self.colors[name][0] * self.colors[name][1][3]
+        r.shape = ((w*h))
+        g.shape = ((w*h))
+        b.shape = ((w*h))
+        a.shape = ((w*h))
+        rgba = np.dstack((r, g, b, a))
+        rgba.shape = ((w, h, 4))
+        qimg = array2qimage(rgba)
+        self.colors[name][2] = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
+        self.colors[name][2].setZValue(10)
 
     def add_color(self, name, r, g, b, a=100):
         mask = np.zeros((self.bg_width, self.bg_height))
-        color = QtGui.qRgba(r, g, b, a)
-        self.colors[name] = [mask, color]
+        color = (r, g, b, a)
+        self.colors[name] = [mask, color, None]
+        self.colors[name][2] = None
 
     def get_result(self):
         return self.colors
@@ -92,17 +112,14 @@ class Painter(QtGui.QWidget):
 
     def set_pen_color(self, name):
         """ Change pen size
-        :param value: new pen size
+        :param value: new pen color (name)
         :return: None
         """
-
-        if not name:
-            self.color = None
-            return
-        # change pen size
-        self.color_name = name
-        self.color = self.colors[name][1]
-        self.pick_mask = self.colors[name][0]
+        if name:
+            self.color_name = name
+            self.eraser = False
+        else:
+            self.eraser = True
 
     def mouse_press_event(self, event):
         point = self.view.mapToScene(event.pos())
@@ -125,10 +142,9 @@ class Painter(QtGui.QWidget):
         :return:
         """
         # save the image and mask
-        img = self.paint_image.copy()
-        mask = self.pick_mask.copy()
+        mask = self.colors[self.color_name][0].copy()
         name = self.color_name
-        self.backup.append((img, mask, name))
+        self.backup.append((name, mask))
 
         # remove the oldest save if backup size got larger than self.undo_size
         if len(self.backup) > self.undo_len:
@@ -145,7 +161,6 @@ class Painter(QtGui.QWidget):
             self.refresh_image(img)
             self.colors[name][0] = mask
             # TODO: this doesn't work, since it can overwrite a mask that is different from the origin
-            # self.pick_mask = mask
             if self.update_callback:
                 self.update_callback()
 
@@ -166,29 +181,21 @@ class Painter(QtGui.QWidget):
         if type(point) == QtCore.QPointF:
             point = point.toPoint()
 
-        # use color paint
-        if self.color:
-            paint = self.color
-            old, new = 0, 1
-        # use eraser
-        else:
-            paint = QtGui.qRgba(0, 0, 0, 0)
-            old, new = 1, 0
-
         # paint the area around the point position
         fromx = point.x() - self.pen_size / 2
         tox = point.x() + self.pen_size / 2
         fromy = point.y() - self.pen_size / 2
         toy = point.y() + self.pen_size / 2
 
-        for i in range(fromx, tox):
-            for j in range(fromy, toy):
-                if 0 <= i < self.bg_width and 0 <= j < self.bg_height and self.pick_mask[i][j] == old:
-                    self.paint_image.setPixel(i, j, paint)
-
-        self.pick_mask[fromx: tox, fromy: toy] = new
+        # use color paint
+        if self.eraser:
+            self.colors[self.color_name][0][fromy: toy, fromx: tox] = 0
+        # use eraser
+        else:
+            self.colors[self.color_name][0][fromy: toy, fromx: tox] = 1
 
         # set new image and pixmap
+        self.draw_mask(self.color_name)
         self.refresh_image(self.paint_image)
 
     def get_scene_pos(self, point):
@@ -223,13 +230,6 @@ class Painter(QtGui.QWidget):
         nzero = np.nonzero(mask)
         return nzero[0].size == 0
 
-
-    def save_edits(self):
-        # if mask is empty, there is nothing to save -> skip
-        if self.is_mask_empty(self.pick_mask):
-            return
-        return self.pick_mask
-
     def refresh_image(self, img):
         """
         deletes the old image and pixmap and replaces them with the image given
@@ -263,6 +263,16 @@ class Painter(QtGui.QWidget):
         # complete the gui
         self.layout().addWidget(self.view)
 
+def mask2pixmap(mask, color):
+    r = mask * color[0]
+    g = mask * color[1]
+    b = mask * color[2]
+    a = mask * color[3]
+    print color
+    image = np.dstack((r, g, b, a))
+    return rgba2qimage(image)
+    
+
 def numpy2qimage(image):
     if type(image) == QtGui.QImage:
         return image
@@ -292,7 +302,6 @@ if __name__ == "__main__":
     image = numpy2qimage(image)
 
     ex = Painter(image)
-    ex.set_image(image)
     ex.show()
     ex.move(-500, -500)
     ex.showMaximized()

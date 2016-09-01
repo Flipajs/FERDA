@@ -92,11 +92,15 @@ class SegmentationPicker(QtGui.QWidget):
         # mask1 = np.zeros((h*w, c))
         print type(data)
         mask1 = rfc.predict_proba(data)
-        print mask1.shape
+        a, b = mask1.shape
+        if b == 1:
+            return
 
         # reshape mask to be a grid, not a list
+        mask1 = mask1[:, 1]
         mask1.shape = ((h, w))
-        print mask1.shape
+        cv2.imshow("mask", mask1)
+        cv2.waitKey(0)
 
         # create a rgba image from mask
         r = np.zeros((h, w), dtype=np.uint8)
