@@ -195,6 +195,7 @@ class GraphManager:
                     d = dists[i, j]
 
                     if d < self.max_distance:
+                        # prevent multiple edges going from tracklet (chunk) start or multiple edges incomming into chunk end. Only exception is chunk of length 1 (checked inside functions).
                         if self.ch_start_longer(v_t1) or self.ch_end_longer(v_t2):
                             continue
 
