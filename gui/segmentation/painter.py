@@ -89,6 +89,8 @@ class Painter(QtGui.QWidget):
         a.shape = ((w*h))
         rgba = np.dstack((r, g, b, a))
         rgba.shape = ((w, h, 4))
+        transposed = np.transpose(rgba, axes=[1, 0, 2])
+        print transposed.shape
         qimg = array2qimage(rgba)
         self.colors[name][2] = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
         self.colors[name][2].setZValue(10)
@@ -193,7 +195,6 @@ class Painter(QtGui.QWidget):
         # use eraser
         else:
             self.colors[self.color_name][0][fromy: toy, fromx: tox] = 1
-
         # set new image and pixmap
         self.draw_mask(self.color_name)
         self.refresh_image(self.paint_image)
