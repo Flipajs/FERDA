@@ -48,7 +48,6 @@ class SegmentationPicker(QtGui.QWidget):
         edges = cv2.Canny(blur_image, a, b)
 
         laplace = cv2.Laplacian(blur_image, cv2.CV_64F)
-        print laplace.shape
 
         shiftx = get_shift(self.image, shift_x=2, shift_y=0)
         shifty = get_shift(self.image, shift_x=0, shift_y=2)
@@ -69,7 +68,7 @@ class SegmentationPicker(QtGui.QWidget):
             self.get_data(i, j, shiftx, shifty, X, y, 1)
 
         # create the classifier
-        rfc = RandomForestClassifier()
+        rfc = RandomForestClassifier(class_weight='balanced')
         rfc.fit(X, y)
 
         h, w, c = self.image.shape
@@ -84,21 +83,20 @@ class SegmentationPicker(QtGui.QWidget):
         # also format edges to be a single row
         shiftx.shape = ((h*w, 1))
         shifty.shape = ((h*w, 1))
-        print red.shape
-        print blue.shape
-        print green.shape
-
         # create a 4D image that has edge value as the fourth channel
         data = np.dstack((red, green, blue, shiftx, shifty))
         # reshape the image so it contains 4-tuples, each descripting a single pixel
         data.shape = ((h*w, 5))
 
         # prepare a mask and predict result for data (current image)
-        mask1 = np.zeros((h*w, c))
-        mask1 = rfc.predict(data)
+        # mask1 = np.zeros((h*w, c))
+        print type(data)
+        mask1 = rfc.predict_proba(data)
+        print mask1.shape
 
         # reshape mask to be a grid, not a list
         mask1.shape = ((h, w))
+        print mask1.shape
 
         # create a rgba image from mask
         r = np.zeros((h, w), dtype=np.uint8)
