@@ -236,7 +236,7 @@ class SegmentationPicker(QtGui.QWidget):
         self.layout().addWidget(self.view)
 
     def get_data(self, i, j, shiftx, shifty, X, y, classification):
-        b, g, r = self.image[j][i]
+        b, g, r = self.image[i][j]
         sx = shiftx[j][i]
         sy = shiftx[j][i]
         X.append((b, g, r, sx, sy))
