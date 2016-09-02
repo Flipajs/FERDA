@@ -23,49 +23,46 @@ class Painter(QtGui.QWidget):
         self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
         self.scene = MyScene(update_callback_release=self.mouse_released)
         self.view.setScene(self.scene)
-        self.view.setMouseTracking(True)
 
         # store last 10 QImages to support the "undo()" function
         self.backup = []
         self.undo_len = undo_len
 
+        # show background in one pixmap
         self.background = numpy2qimage(image)
-
-        # create empty image and pixmap to view painting
-        bg_size = QtCore.QSize(self.background.width(), self.background.height())
-        fmt = QtGui.QImage.Format_ARGB32
-        self.paint_image = QtGui.QImage(bg_size, fmt)
-        self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.background))
 
+        self.w = self.background.width()
+        self.h = self.background.height()
+
+        # create empty overlay - this can be used to set masks from outside the painter
+        bg_size = QtCore.QSize(self.w, self.h)
+        fmt = QtGui.QImage.Format_ARGB32
         overlay_image = QtGui.QImage(bg_size, fmt)
         overlay_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
-      
-        self.bg_width = self.paint_image.width()
-        self.bg_height = self.paint_image.height()
 
         # PAINT SETUP
-        # current color ("Color" or "Eraser"), purple by default
-        self.colors = {}
-        self.eraser = False
-        self.add_color(paint_name, paint_r, paint_g, paint_b, paint_a)
         self.pen_size = pen_size
+        self.eraser = 1  # 1 for painting (eraser off), 0 for erasing
+
+        self.colors = {} # dictionary: [name] : (mask, color, pixmap)
+        self.add_color(paint_name, paint_r, paint_g, paint_b, paint_a) # add the first - default color
         self.set_pen_color(paint_name)
 
         # create the main view and left panel with buttons
         self.make_gui()
 
     def set_image_visible(self, visibility):
-        """ Deletes the old image and pixmap and replaces them with a new image	
-        :param img: a new image to use
+        """ Toggles background visibility
+        :param visibility: new visibility (True/False)
         :return: None
         """
         self.paint_pixmap.setVisible(visibility)
 
     def set_overlay(self, img):
-        """ Deletes the old image and pixmap and replaces them with a new image
-        :param img: a new image to use
+        """ Deletes the old overlay image and pixmap and replaces them with a new image. The image should have an alpha channel, otherwise it can hide other scene contents.
+        :param img: a new image to use, None to delete overlay completely.
         :return: None
         """
         if self.overlay_pixmap and self.overlay_pixmap in self.scene.items():
@@ -75,30 +72,45 @@ class Painter(QtGui.QWidget):
             self.overlay_pixmap.setZValue(9)
 
     def draw_mask(self, name):
+        """ Paints the mask with given color on the image"""
+
+        # delete old pixmap
         self.scene.removeItem(self.colors[name][2])
-        w, h = self.background.width(), self.background.height()
-        r = self.colors[name][0] * self.colors[name][1][0]
-        g = self.colors[name][0] * self.colors[name][1][1]
-        b = self.colors[name][0] * self.colors[name][1][2]
-        a = self.colors[name][0] * self.colors[name][1][3]
-        r.shape = ((w*h))
-        g.shape = ((w*h))
-        b.shape = ((w*h))
-        a.shape = ((w*h))
-        rgba = np.dstack((r, g, b, a))
-        rgba.shape = ((w, h, 4))
+
+        # create a RGBA image from mask and color data
+        r = (self.colors[name][0] * self.colors[name][1][0]).reshape((self.w*self.h))
+        g = (self.colors[name][0] * self.colors[name][1][1]).reshape((self.w*self.h))
+        b = (self.colors[name][0] * self.colors[name][1][2]).reshape((self.w*self.h))
+        a = (self.colors[name][0] * self.colors[name][1][3]).reshape((self.w*self.h))
+        rgba = np.dstack((r, g, b, a)).reshape((self.w, self.h, 4))
         transposed = np.transpose(rgba, axes=[1, 0, 2])
+
+        # convert to Qt compatible qimage
         qimg = array2qimage(rgba)
+        
+        # add pixmap to scene and move it to the foreground
         self.colors[name][2] = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
         self.colors[name][2].setZValue(10)
 
     def add_color(self, name, r, g, b, a=100):
-        mask = np.zeros((self.bg_width, self.bg_height))
+        """ Adds a new color option to painter.
+        :param name: The name and unique ID of new color. Using duplicate names will overwrite previous data and can have unexpected behavior.
+        :param r, g, b: R, G, B color values (respectively)
+        :param a: Alpha channel, 100 by default
+        :return: None
+        """
+        
+        # prepare new mask
+        mask = np.zeros((self.w, self.h))
+        # save color data
         color = (r, g, b, a)
+        # fill the dictionary (pixmap will be set once the mask is not empty)
         self.colors[name] = [mask, color, None]
-        self.colors[name][2] = None
 
     def get_result(self):
+        """ Retrieves painter data
+        :return: Dictionary with color names as keys [color_name] : (ndarray mask, (r, g, b, a), pixmap)
+        """
         return self.colors
 
     def set_pen_size(self, value):
@@ -116,9 +128,9 @@ class Painter(QtGui.QWidget):
         """
         if name:
             self.color_name = name
-            self.eraser = False
+            self.eraser = 1
         else:
-            self.eraser = True
+            self.eraser = 0
 
     def mouse_press_event(self, event):
         point = self.view.mapToScene(event.pos())
@@ -156,16 +168,20 @@ class Painter(QtGui.QWidget):
         length = len(self.backup)
         if self.DEBUG:
             print "Length is %s" % length
+
         # proceed to undo if there is something to undo
         if length > 0:
             name, mask = self.backup.pop(length - 1)
+
+            # set mask to previous state
             self.colors[name][0] = mask
+
+            # repaint the color
             self.draw_mask(name)
+
+            # also inform parent widget
             if self.update_callback:
                 self.update_callback()
-
-    def clear_undo_history(self):
-        self.backup = []
 
     def draw(self, point):
         """ Draw a point with a pen
@@ -183,11 +199,8 @@ class Painter(QtGui.QWidget):
         toy = point.y() + self.pen_size / 2
 
         # use color paint
-        if self.eraser:
-            self.colors[self.color_name][0][fromy: toy, fromx: tox] = 0
-        # use eraser
-        else:
-            self.colors[self.color_name][0][fromy: toy, fromx: tox] = 1
+        self.colors[self.color_name][0][fromy: toy, fromx: tox] = self.eraser
+
         # set new image and pixmap
         self.draw_mask(self.color_name)
 
@@ -214,15 +227,10 @@ class Painter(QtGui.QWidget):
         :param point: Qpoint or QPointF
         :return: True or False
         """
-        if self.scene.itemsBoundingRect().contains(point) and point.x() <= self.bg_width and point.y() <= self.bg_height:
+        if self.scene.itemsBoundingRect().contains(point) and point.x() <= self.w and point.y() <= self.h:
             return True
         else:
             return False
-
-    def is_mask_empty(self, mask):
-        nzero = np.nonzero(mask)
-        return nzero[0].size == 0
-
 
     def make_gui(self):
         """
