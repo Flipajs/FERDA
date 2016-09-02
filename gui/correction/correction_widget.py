@@ -699,6 +699,15 @@ class ResultsWidget(QtGui.QWidget):
     def pn_pixmap_clicked(self, id_):
         self._gt_marker_clicked(id_)
 
+    def __compute_radius(self, r):
+        from scipy.spatial.distance import cdist
+        c = r.centroid()
+        c.shape = (1, 2)
+        D = cdist(c, r.contour())
+        radius = np.max(D)
+
+        return radius
+
     def _gt_marker_clicked(self, id_):
         self.decide_tracklet_button.setDisabled(False)
         self.active_tracklet_id = id_
@@ -707,19 +716,23 @@ class ResultsWidget(QtGui.QWidget):
         ch = self.project.chm[id_]
         f = self.video.frame_number()
         r = RegionChunk(ch, self.project.gm, self.project.rm).region_in_t(f)
+        import textwrap
         s += "\n" + str(r)
+        s += " radius: {:.3}".format(self.__compute_radius(r))
 
         if ch.start_frame(self.project.gm) == f:
-            s += "\n in_degree: " + str(ch.start_vertex(self.project.gm).in_degree())
+            s += "\nin_degree: " + str(ch.start_vertex(self.project.gm).in_degree())
 
         if ch.end_frame(self.project.gm) == f:
-            s += "\n out degree: " + str(ch.end_vertex(self.project.gm).out_degree())
+            s += "\nout degree: " + str(ch.end_vertex(self.project.gm).out_degree())
 
-        s += "len: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(ch.end_frame(self.project.gm))
+        s += " len: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(ch.end_frame(self.project.gm))
 
         from core.learning.learning_process import get_features_var1, features2str_var1
         s += "\nFeature vector: "+ features2str_var1(get_features_var1(r, self.project))
 
+
+        s = textwrap.fill(s, 50)
         self.info_l.setText(s)
 
     def init_speed_slider(self):
