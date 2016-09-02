@@ -106,7 +106,6 @@ class SegmentationPicker(QtGui.QWidget):
 
         # prepare a mask and predict result for data (current image)
         # mask1 = np.zeros((h*w, c))
-        print type(data)
         mask1 = rfc.predict_proba(data)
 
         # reshape mask to be a grid, not a list
@@ -135,6 +134,11 @@ class SegmentationPicker(QtGui.QWidget):
 
     def set_eraser(self):
         self.view.set_pen_color(None)
+
+    def toggle_bg(self):
+        c = self.toggle_bg_button.isChecked()
+        self.toggle_bg_button.setChecked(c)
+        self.view.set_image_visible(not c)
 
     def show_edges(self):
         blur_image = cv2.GaussianBlur(self.image, (15, 15), 0.1)
@@ -233,6 +237,12 @@ class SegmentationPicker(QtGui.QWidget):
         self.edge_button = QtGui.QPushButton("Show edges")
         self.edge_button.clicked.connect(self.show_edges)
         self.left_panel.layout().addWidget(self.edge_button)
+
+        self.toggle_bg_button = QtGui.QPushButton("Toggle background")
+        self.toggle_bg_button.setCheckable(True)
+        self.toggle_bg_button.setChecked(False)
+        self.toggle_bg_button.clicked.connect(self.toggle_bg)
+        self.left_panel.layout().addWidget(self.toggle_bg_button)
 
         self.color_label = QtGui.QLabel()
         self.color_label.setWordWrap(True)

@@ -30,14 +30,13 @@ class Painter(QtGui.QWidget):
         self.undo_len = undo_len
 
         self.background = numpy2qimage(image)
-        self.scene.addPixmap(QtGui.QPixmap.fromImage(self.background))
 
         # create empty image and pixmap to view painting
         bg_size = QtCore.QSize(self.background.width(), self.background.height())
         fmt = QtGui.QImage.Format_ARGB32
         self.paint_image = QtGui.QImage(bg_size, fmt)
         self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
-        self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
+        self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.background))
 
         overlay_image = QtGui.QImage(bg_size, fmt)
         overlay_image.fill(QtGui.qRgba(0, 0, 0, 0))
@@ -57,15 +56,12 @@ class Painter(QtGui.QWidget):
         # create the main view and left panel with buttons
         self.make_gui()
 
-    def set_image(self, img):
+    def set_image_visible(self, visibility):
         """ Deletes the old image and pixmap and replaces them with a new image	
         :param img: a new image to use
         :return: None
         """
-        self.paint_image = img
-        if self.paint_pixmap and self.paint_pixmap in self.scene.items():
-            self.scene.removeItem(self.paint_pixmap)
-        self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
+        self.paint_pixmap.setVisible(visibility)
 
     def set_overlay(self, img):
         """ Deletes the old image and pixmap and replaces them with a new image
@@ -92,7 +88,6 @@ class Painter(QtGui.QWidget):
         rgba = np.dstack((r, g, b, a))
         rgba.shape = ((w, h, 4))
         transposed = np.transpose(rgba, axes=[1, 0, 2])
-        print transposed.shape
         qimg = array2qimage(rgba)
         self.colors[name][2] = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
         self.colors[name][2].setZValue(10)
@@ -172,11 +167,6 @@ class Painter(QtGui.QWidget):
     def clear_undo_history(self):
         self.backup = []
 
-    def clear_paint_image(self):
-        # remove all drawn lines
-        self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
-        self.refresh_image(self.paint_image)
-
     def draw(self, point):
         """ Draw a point with a pen
         :param point: point to be drawn
@@ -200,7 +190,6 @@ class Painter(QtGui.QWidget):
             self.colors[self.color_name][0][fromy: toy, fromx: tox] = 1
         # set new image and pixmap
         self.draw_mask(self.color_name)
-        self.refresh_image(self.paint_image)
 
     def get_scene_pos(self, point):
         """
@@ -234,15 +223,6 @@ class Painter(QtGui.QWidget):
         nzero = np.nonzero(mask)
         return nzero[0].size == 0
 
-    def refresh_image(self, img):
-        """
-        deletes the old image and pixmap and replaces them with the image given
-        :param img: the new image to use
-        :return: None
-        """
-        self.paint_image = img
-        self.scene.removeItem(self.paint_pixmap)
-        self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(img))
 
     def make_gui(self):
         """
@@ -272,7 +252,6 @@ def mask2pixmap(mask, color):
     g = mask * color[1]
     b = mask * color[2]
     a = mask * color[3]
-    print color
     image = np.dstack((r, g, b, a))
     return rgba2qimage(image)
     
