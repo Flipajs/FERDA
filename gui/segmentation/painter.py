@@ -4,6 +4,7 @@ from my_scene import MyScene
 from PyQt4 import QtGui, QtCore, Qt
 import numpy as np
 import cv2
+import time
 from qimage2ndarray import array2qimage
 
 __author__ = 'dita'
@@ -43,7 +44,7 @@ class Painter(QtGui.QWidget):
         self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
 
         # PAINT SETUP
-        self.pen_size = pen_size
+        self.pen_size = pen_size / 2
         self.eraser = 1  # 1 for painting (eraser off), 0 for erasing
 
         self.colors = {} # dictionary: [name] : (mask, color, pixmap)
@@ -74,23 +75,16 @@ class Painter(QtGui.QWidget):
     def draw_mask(self, name):
         """ Paints the mask with given color on the image"""
 
-        # delete old pixmap
-        self.scene.removeItem(self.colors[name][2])
-
         # create a RGBA image from mask and color data
-        r = (self.colors[name][0] * self.colors[name][1][0]).reshape((self.w*self.h))
-        g = (self.colors[name][0] * self.colors[name][1][1]).reshape((self.w*self.h))
-        b = (self.colors[name][0] * self.colors[name][1][2]).reshape((self.w*self.h))
-        a = (self.colors[name][0] * self.colors[name][1][3]).reshape((self.w*self.h))
-        rgba = np.dstack((r, g, b, a)).reshape((self.w, self.h, 4))
-        transposed = np.transpose(rgba, axes=[1, 0, 2])
+        transposed = self.colors[name][0][...,None]*self.colors[name][1]
 
         # convert to Qt compatible qimage
-        qimg = array2qimage(rgba)
-        
+        qimg = array2qimage(transposed)
+
         # add pixmap to scene and move it to the foreground
+        # delete old pixmap
+        self.scene.removeItem(self.colors[name][2])
         self.colors[name][2] = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
-        self.colors[name][2].setZValue(10)
 
     def add_color(self, name, r, g, b, a=100):
         """ Adds a new color option to painter.
@@ -119,7 +113,7 @@ class Painter(QtGui.QWidget):
         :return: None
         """
         # change pen size
-        self.pen_size = value
+        self.pen_size = value / 2
 
     def set_pen_color(self, name):
         """ Change pen size
@@ -193,10 +187,10 @@ class Painter(QtGui.QWidget):
             point = point.toPoint()
 
         # paint the area around the point position
-        fromx = point.x() - self.pen_size / 2
-        tox = point.x() + self.pen_size / 2
-        fromy = point.y() - self.pen_size / 2
-        toy = point.y() + self.pen_size / 2
+        fromx = point.x() - self.pen_size
+        tox = point.x() + self.pen_size
+        fromy = point.y() - self.pen_size
+        toy = point.y() + self.pen_size
 
         # use color paint
         self.colors[self.color_name][0][fromy: toy, fromx: tox] = self.eraser
