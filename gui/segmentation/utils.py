@@ -22,3 +22,14 @@ def get_shift(image, w=-1, h=-1, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift
     dif = np.abs(np.asarray(img1, dtype=np.int32) - np.asarray(img2, dtype=np.int32))
     return dif
 
+def get_avg(image):
+    shift_up = get_shift(image, shift_x=-1, shift_y=0)
+    shift_down = get_shift(image, shift_x=1, shift_y=0)
+    shift_left = get_shift(image, shift_x=0, shift_y=-1)
+    shift_right = get_shift(image, shift_x=0, shift_y=1)
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+    img_sum = shift_up + shift_down + shift_left + shift_right + img
+    avg = img_sum / 5
+    return avg
+

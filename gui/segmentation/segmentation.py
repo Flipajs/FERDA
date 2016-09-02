@@ -54,6 +54,8 @@ class SegmentationPicker(QtGui.QWidget):
         shiftx = get_shift(self.image, shift_x=2, shift_y=0)
         shifty = get_shift(self.image, shift_x=0, shift_y=2)
 
+        avg = get_avg(self.image)
+
         # channel difs
         bg = np.asarray(self.image[:,:,0], dtype=np.int32) - np.asarray(self.image[:,:,1], dtype=np.int32)
         gr = np.asarray(self.image[:,:,1], dtype=np.int32) - np.asarray(self.image[:,:,2], dtype=np.int32)
@@ -71,14 +73,14 @@ class SegmentationPicker(QtGui.QWidget):
             self.view.set_overlay(None)
             return
         for i, j in zip(nzero[0], nzero[1]):
-            self.get_data(i, j, shiftx, shifty, bg, gr, rb, X, y, 0)
+            self.get_data(i, j, shiftx, shifty, avg, bg, gr, rb, X, y, 0)
 
         nzero = np.nonzero(foreground[0])
         if len(nzero[0]) == 0:
             self.view.set_overlay(None)
             return
         for i, j in zip(nzero[0], nzero[1]):
-            self.get_data(i, j, shiftx, shifty, bg, gr, rb, X, y, 1)
+            self.get_data(i, j, shiftx, shifty, avg, bg, gr, rb, X, y, 1)
 
         # create the classifier
         rfc = RandomForestClassifier(class_weight='balanced')
@@ -96,13 +98,14 @@ class SegmentationPicker(QtGui.QWidget):
         # also format edges to be a single row
         shiftx.shape = ((h*w, 1))
         shifty.shape = ((h*w, 1))
+        avg.shape = ((h*w, 1))
         bg.shape = ((h*w, 1))
         gr.shape = ((h*w, 1))
         rb.shape = ((h*w, 1))
         # create a 4D image that has edge value as the fourth channel
-        data = np.dstack((red, green, blue, shiftx, shifty, bg, gr,rb))
+        data = np.dstack((red, green, blue, avg, shiftx, shifty, bg, gr,rb))
         # reshape the image so it contains 4-tuples, each descripting a single pixel
-        data.shape = ((h*w, 8))
+        data.shape = ((h*w, 9))
 
         # prepare a mask and predict result for data (current image)
         # mask1 = np.zeros((h*w, c))
@@ -141,17 +144,17 @@ class SegmentationPicker(QtGui.QWidget):
         self.view.set_image_visible(not c)
 
     def show_edges(self):
-        blur_image = cv2.GaussianBlur(self.image, (15, 15), 0.1)
-
-        grey = cv2.cvtColor(blur_image, cv2.COLOR_BGR2GRAY)
-    
-        # find edges on the blurred image
-        laplace = cv2.Laplacian(grey, cv2.CV_64F)
-    
-        laplace -= np.min(laplace)
-        laplace /= np.max(laplace)
-        laplace *= 255
-        laplace = np.asarray(laplace, dtype=np.uint8)
+        shift_up = get_shift(self.image, shift_x=-1, shift_y=0)
+        shift_down = get_shift(self.image, shift_x=1, shift_y=0)
+        shift_left = get_shift(self.image, shift_x=0, shift_y=-1)
+        shift_right = get_shift(self.image, shift_x=0, shift_y=1)
+        img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        
+        img_sum = shift_up + shift_down + shift_left + shift_right + img
+        avg = img_sum / 5
+        
+        plt.imshow(avg)
+        plt.show()
 
     def make_gui(self):
         """
@@ -253,14 +256,15 @@ class SegmentationPicker(QtGui.QWidget):
         self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.view)
 
-    def get_data(self, i, j, shiftx, shifty, bg, gr, rb, X, y, classification):
+    def get_data(self, i, j, shiftx, shifty, avg, bg, gr, rb, X, y, classification):
         b, g, r = self.image[i][j]
         sx = shiftx[i][j]
         sy = shifty[i][j]
+        a = avg[i][j]
         c = bg[i][j]
         d = gr[i][j]
         e = rb[i][j]
-        X.append((b, g, r, sx, sy, c, d, e))
+        X.append((b, g, r, a, sx, sy, c, d, e))
         y.append(classification)
 
 
