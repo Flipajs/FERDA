@@ -52,6 +52,7 @@ class Solver:
         if rules is None:
             rules = self.rules
 
+        # TODO: does it still make sense?
         queue = sorted(queue, key=lambda x: self.project.gm.region(x).area()+self.project.gm.region(x).centroid()[0]+self.project.gm.region(x).frame()+self.project.gm.region(x).centroid()[1])
 
         while queue:
@@ -92,6 +93,10 @@ class Solver:
 
         if not best_out_vertices[0]:
             return []
+
+        r = self.project.gm.region(vertex)
+        if r.frame() == 2191 and (r.area() == 750 or r.area() == 2191):
+            print r
 
         best_in_scores, best_in_vertices = self.project.gm.get_2_best_in_vertices(best_out_vertices[0])
         if best_in_vertices[0] == vertex and best_in_scores[0] >= self.project.solver_parameters.certainty_threshold:
@@ -708,6 +713,8 @@ class Solver:
             frames = frames_
 
         for t in frames:
+            if t == 2191:
+                print 2191
             vs = [v for v in self.project.gm.vertices_in_t[t]]
 
             while vs:
