@@ -38,9 +38,6 @@ class SegmentationPicker(QtGui.QWidget):
         background = result["PINK"]
         foreground = result["GREEN"]
 
-        plt.imshow(foreground[0])
-        plt.show()
-
         # create a blurred image
         blur = 33
         a = 0
@@ -70,10 +67,16 @@ class SegmentationPicker(QtGui.QWidget):
  
         # loop all nonzero pixels from foregound (ants) and background and add them to testing data
         nzero = np.nonzero(background[0])
+        if len(nzero[0]) == 0:
+            self.view.set_overlay(None)
+            return
         for i, j in zip(nzero[0], nzero[1]):
             self.get_data(i, j, shiftx, shifty, bg, gr, rb, X, y, 0)
 
         nzero = np.nonzero(foreground[0])
+        if len(nzero[0]) == 0:
+            self.view.set_overlay(None)
+            return
         for i, j in zip(nzero[0], nzero[1]):
             self.get_data(i, j, shiftx, shifty, bg, gr, rb, X, y, 1)
 
@@ -105,9 +108,6 @@ class SegmentationPicker(QtGui.QWidget):
         # mask1 = np.zeros((h*w, c))
         print type(data)
         mask1 = rfc.predict_proba(data)
-        a, b = mask1.shape
-        if b == 1:
-            return
 
         # reshape mask to be a grid, not a list
         mask1 = mask1[:, 1]
@@ -148,9 +148,6 @@ class SegmentationPicker(QtGui.QWidget):
         laplace /= np.max(laplace)
         laplace *= 255
         laplace = np.asarray(laplace, dtype=np.uint8)
-    
-        plt.imshow(laplace, cmap='gray')
-        plt.show()
 
     def make_gui(self):
         """
@@ -249,7 +246,7 @@ class SegmentationPicker(QtGui.QWidget):
     def get_data(self, i, j, shiftx, shifty, bg, gr, rb, X, y, classification):
         b, g, r = self.image[i][j]
         sx = shiftx[i][j]
-        sy = shiftx[i][j]
+        sy = shifty[i][j]
         c = bg[i][j]
         d = gr[i][j]
         e = rb[i][j]

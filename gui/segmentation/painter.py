@@ -39,9 +39,9 @@ class Painter(QtGui.QWidget):
         self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
 
-        self.overlay_image = QtGui.QImage(bg_size, fmt)
-        self.overlay_image.fill(QtGui.qRgba(0, 0, 0, 0))
-        self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.overlay_image))
+        overlay_image = QtGui.QImage(bg_size, fmt)
+        overlay_image.fill(QtGui.qRgba(0, 0, 0, 0))
+        self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
       
         self.bg_width = self.paint_image.width()
         self.bg_height = self.paint_image.height()
@@ -63,7 +63,8 @@ class Painter(QtGui.QWidget):
         :return: None
         """
         self.paint_image = img
-        self.scene.removeItem(self.paint_pixmap)
+        if self.paint_pixmap and self.paint_pixmap in self.scene.items():
+            self.scene.removeItem(self.paint_pixmap)
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
 
     def set_overlay(self, img):
@@ -71,10 +72,11 @@ class Painter(QtGui.QWidget):
         :param img: a new image to use
         :return: None
         """
-        self.overlay_image = img
-        self.scene.removeItem(self.overlay_pixmap)
-        self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.overlay_image))
-        self.overlay_pixmap.setZValue(9)
+        if self.overlay_pixmap and self.overlay_pixmap in self.scene.items():
+            self.scene.removeItem(self.overlay_pixmap)
+        if img:
+            self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(img))
+            self.overlay_pixmap.setZValue(9)
 
     def draw_mask(self, name):
         self.scene.removeItem(self.colors[name][2])
@@ -159,10 +161,9 @@ class Painter(QtGui.QWidget):
             print "Length is %s" % length
         # proceed to undo if there is something to undo
         if length > 0:
-            img, mask, name = self.backup.pop(length - 1)
-            self.refresh_image(img)
+            name, mask = self.backup.pop(length - 1)
             self.colors[name][0] = mask
-            # TODO: this doesn't work, since it can overwrite a mask that is different from the origin
+            self.draw_mask(name)
             if self.update_callback:
                 self.update_callback()
 
