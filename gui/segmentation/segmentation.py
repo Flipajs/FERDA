@@ -163,7 +163,7 @@ class SegmentationPicker(QtGui.QWidget):
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # drawing area
-        self.view = painter.Painter(self.image, paint_name="PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=255, update_callback=self.done)
+        self.view = painter.Painter(self.image, pen_size=5, paint_name="PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=255, update_callback=self.done)
         self.view.add_color("GREEN", 0, 255, 0, 255)
 
         # left panel widget

@@ -1,12 +1,12 @@
 import sys
 from my_view import MyView
+from my_scene import MyScene
 from PyQt4 import QtGui, QtCore, Qt
 import numpy as np
 import cv2
 from qimage2ndarray import array2qimage
 
 __author__ = 'dita'
-
 
 class Painter(QtGui.QWidget):
     """ Painter widget that can be used in all painting applications"""
@@ -21,7 +21,7 @@ class Painter(QtGui.QWidget):
 
         # WIDGET SETUP
         self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
-        self.scene = QtGui.QGraphicsScene()
+        self.scene = MyScene(update_callback_release=self.mouse_released)
         self.view.setScene(self.scene)
         self.view.setMouseTracking(True)
 
@@ -130,8 +130,6 @@ class Painter(QtGui.QWidget):
         if self.is_in_scene(point):
             self.save()
             self.draw(point)
-        if self.update_callback:
-            self.update_callback()
 
     def mouse_moving(self, event):
         # while the mouse is moving, paint it's position
@@ -139,6 +137,10 @@ class Painter(QtGui.QWidget):
         if self.is_in_scene(point):
             # no save here!
             self.draw(point)
+
+    def mouse_released(self, event):
+        if self.update_callback:
+            self.update_callback()
 
     def save(self):
         """
