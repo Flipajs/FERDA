@@ -622,6 +622,11 @@ class ResultsWidget(QtGui.QWidget):
             r = rch.region_in_t(frame)
             c = r.centroid().copy()
 
+            # TODO: solve somewhere else:
+            if not hasattr(ch, 'P'):
+                ch.P = set()
+                ch.N = set()
+
             try:
                 self.show_pn_ids_visualisation(ch, frame)
             except AttributeError:
