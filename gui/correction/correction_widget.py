@@ -300,6 +300,11 @@ class ResultsWidget(QtGui.QWidget):
             else:
                 new_active_markers.append((m_id, ch))
                 r = rch.region_in_t(frame)
+
+                if r is None:
+                    print "None region, frame: {}, ch.id_: {}".format(frame, ch.id_)
+                    continue
+
                 c = r.centroid().copy()
                 self.update_marker_position(self.items[m_id], c)
 
