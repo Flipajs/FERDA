@@ -13,7 +13,8 @@ class Painter(QtGui.QWidget):
     """ Painter widget that can be used in all painting applications"""
 
     def __init__(self, image, pen_size=10, undo_len=10, debug=False, update_callback=None, paint_name = "PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=100):
-        """ """
+        """
+        :param image: CV2 image (bgr format expected) """
 
         super(Painter, self).__init__()
 
@@ -30,7 +31,7 @@ class Painter(QtGui.QWidget):
         self.undo_len = undo_len
 
         # show background in one pixmap
-        self.background = numpy2qimage(image)
+        self.background = array2qimage(bgr2rgb(image))
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.background))
 
         self.w = self.background.width()
@@ -256,7 +257,12 @@ def mask2pixmap(mask, color):
     a = mask * color[3]
     image = np.dstack((r, g, b, a))
     return rgba2qimage(image)
-    
+
+def bgr2rgb(image):
+    b = image[:, :, 0]
+    g = image[:, :, 1]
+    r = image[:, :, 2]
+    return np.dstack((r, g, b))
 
 def numpy2qimage(image):
     if type(image) == QtGui.QImage:
