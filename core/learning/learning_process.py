@@ -1198,5 +1198,5 @@ if __name__ == '__main__':
     p.load('/Users/flipajs/Documents/wd/GT/Cam1 copy/cam1.fproj')
     p.img_manager = ImgManager(p)
 
-    learn_proc = LearningProcess(p, use_feature_cache=True, use_rf_cache=False)
+    learn_proc = LearningProcess(p, use_feature_cache=False, use_rf_cache=False)
 

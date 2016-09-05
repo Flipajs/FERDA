@@ -22,6 +22,8 @@ class LearningWidget(QtGui.QWidget):
         self.vbox.addLayout(self.top_stripe_layout)
         self.vbox.addLayout(self.hbox)
 
+        # TODO: get features...
+
         self.lp = None
         if not self.project:
             self.load_project_button = QtGui.QPushButton('load project')
