@@ -151,11 +151,11 @@ class SegmentationPicker(QtGui.QWidget):
             self.cur_eraser = True
         self.set_color()
 
-    def toggle_bg(self):
-        c = self.toggle_bg_button.isChecked()
-        self.toggle_bg_button.setChecked(c)
-        self.view.set_image_visible(not c)
-
+    def checkbox(self):
+        self.view.set_image_visible(self.check_bg.isChecked())
+        self.view.set_overlay_visible(self.check_prob.isChecked())
+        self.view.set_masks_visible(self.check_paint.isChecked())
+        
     def show_edges(self):
         shift_up = get_shift(self.image, shift_x=-1, shift_y=0)
         shift_down = get_shift(self.image, shift_x=1, shift_y=0)
@@ -254,16 +254,25 @@ class SegmentationPicker(QtGui.QWidget):
         self.edge_button.clicked.connect(self.show_edges)
         self.left_panel.layout().addWidget(self.edge_button)
 
-        self.toggle_bg_button = QtGui.QPushButton("Toggle background")
-        self.toggle_bg_button.setCheckable(True)
-        self.toggle_bg_button.setChecked(False)
-        self.toggle_bg_button.clicked.connect(self.toggle_bg)
-        self.left_panel.layout().addWidget(self.toggle_bg_button)
-
         self.color_label = QtGui.QLabel()
         self.color_label.setWordWrap(True)
         self.color_label.setText("")
         self.left_panel.layout().addWidget(self.color_label)
+
+        self.check_bg = QtGui.QCheckBox("Background image")
+        self.check_bg.setChecked(True)
+        self.check_bg.toggled.connect(self.checkbox)
+        self.left_panel.layout().addWidget(self.check_bg)
+
+        self.check_prob = QtGui.QCheckBox("Probability mask")
+        self.check_prob.setChecked(True)
+        self.check_prob.toggled.connect(self.checkbox)
+        self.left_panel.layout().addWidget(self.check_prob)
+
+        self.check_paint = QtGui.QCheckBox("Paint data")
+        self.check_paint.setChecked(True)
+        self.check_paint.toggled.connect(self.checkbox)
+        self.left_panel.layout().addWidget(self.check_paint)
 
         # complete the gui
         self.layout().addWidget(self.left_panel)

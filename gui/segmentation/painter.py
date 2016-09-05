@@ -62,6 +62,21 @@ class Painter(QtGui.QWidget):
         """
         self.paint_pixmap.setVisible(visibility)
 
+    def set_overlay_visible(self, visibility):
+        """ Toggles overlay visibility
+        :param visibility: new visibility (True/False)
+        :return: None
+        """
+        self.overlay_pixmap.setVisible(visibility)
+
+    def set_masks_visible(self, visibility):
+        """ Toggles masks visibility
+        :param visibility: new visibility (True/False)
+        :return: None
+        """
+        for color, data in self.colors.iteritems():
+            data[2].setVisible(visibility)
+
     def set_overlay(self, img):
         """ Deletes the old overlay image and pixmap and replaces them with a new image. The image should have an alpha channel, otherwise it can hide other scene contents.
         :param img: a new image to use, None to delete overlay completely.
