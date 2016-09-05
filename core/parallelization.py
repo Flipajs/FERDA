@@ -35,10 +35,28 @@ if __name__ == '__main__':
     if not os.path.exists(proj.working_directory+'/temp'):
         os.mkdir(proj.working_directory+'/temp')
 
+    temp_local_path='/localhome/casillas/'
+
+    if not os.path.exists(temp_local_path+proj_name):
+        try:
+            os.mkdir(temp_local_path+proj_name)
+        except:
+            print(temp_local_path+proj_name + "   was created between check and mkdir");
+    
+    temp_local_path=temp_local_path + proj_name
+    
+    if not os.path.exists(temp_local_path+'/temp'):
+        try:
+            os.mkdir(temp_local_path+'/temp')
+        except:
+            print(temp_local_path+'/temp' + "   was created between check and mkdir");
+
+    temp_local_path=temp_local_path+'/temp'
+
     solver = Solver(proj)
     from core.graph.graph_manager import GraphManager
     proj.gm = GraphManager(proj, proj.solver.assignment_score)
-    proj.rm = RegionManager(db_wd=proj.working_directory+'/temp', db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=S_.cache.region_manager_num_of_instances)
+    proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=S_.cache.region_manager_num_of_instances)
     proj.chm = ChunkManager()
     proj.color_manager = None
 
@@ -120,7 +138,7 @@ if __name__ == '__main__':
     # proj.gm = proj.gm
     # proj.save()
 
-    with open(proj.working_directory+'/temp/part'+str(id)+'.pkl', 'wb') as f:
+    with open(proj.working_directory+'temp/part'+str(id)+'.pkl', 'wb') as f:
         p = pickle.Pickler(f, -1)
         p.dump(proj.gm.g)
         p.dump(proj.gm.get_all_relevant_vertices())
@@ -133,3 +151,8 @@ if __name__ == '__main__':
     file_t = time.time() - s
 
     print "MSERS t:", round(msers_t, 2), "SOLVER t: ", round(solver_t, 2), "VIDEO t:", round(vid_t, 2), "FILE t: ", round(file_t, 2), "SUM t / frames_in_row:", round((msers_t + solver_t+vid_t+file_t)/float(frames_in_row), 2)
+
+    import shutil
+    import glob
+    for file in glob.glob(temp_local_path+'/part'+str(id)+'_rm.sqlite3'):
+        shutil.move(file,working_dir+'/temp')

@@ -62,7 +62,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     if not cluster:
         bgcomp.update_callback(-1, 'joining parts...')
 
-    bgcomp.project.solver.detect_split_merge_cases()
+    #bgcomp.project.solver.detect_split_merge_cases()
 
     # bgcomp.project.gm.rm = bgcomp.project.rm
 
@@ -79,7 +79,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
         connect_graphs(bgcomp, t_v, t1_v, bgcomp.project.gm, bgcomp.project.rm)
         # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
-    bgcomp.project.solver.detect_split_merge_cases()
+    #bgcomp.project.solver.detect_split_merge_cases()
     bgcomp.solver.simplify(vs_todo, rules=[bgcomp.solver.adaptive_threshold])
 
     print "simplifying "
@@ -111,7 +111,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
 
 def connect_graphs(bgcomp, vertices1, vertices2, gm, rm):
     if vertices1:
-        r1 = gm.region(vertices1[0])
+        #r1 = gm.region(vertices1[0])
 
         bgcomp.project.gm.add_edges_(vertices1, vertices2)
 
