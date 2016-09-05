@@ -26,18 +26,18 @@ class SetMSERs(QtGui.QWidget):
         self.setLayout(QtGui.QVBoxLayout())
 
         self.w_ = QtGui.QWidget()
-        self.w_.setLayout(QtGui.QVBoxLayout())
+        self.w_.setLayout(QtGui.QHBoxLayout())
         self.scroll_ = QtGui.QScrollArea()
         self.scroll_.setWidgetResizable(True)
         self.scroll_.setWidget(self.w_)
         self.layout().addWidget(self.scroll_)
 
-        self.top_row = QtGui.QHBoxLayout()
-        self.bottom_row = QtGui.QFormLayout()
+        self.main_panel = QtGui.QHBoxLayout()
+        self.left_panel = QtGui.QFormLayout()
         self.scroll_.setLayout(QtGui.QVBoxLayout())
 
-        self.w_.layout().addLayout(self.bottom_row)
-        self.w_.layout().addLayout(self.top_row)
+        self.w_.layout().addLayout(self.left_panel)
+        self.w_.layout().addLayout(self.main_panel)
 
         self.vid = get_auto_video_manager(project)
         self.im = self.vid.next_frame()
@@ -53,9 +53,9 @@ class SetMSERs(QtGui.QWidget):
         self.im = im
 
         self.img_preview = get_image_label(self.im)
-        self.top_row.addWidget(self.img_preview)
+        self.main_panel.addWidget(self.img_preview)
         self.img_grid = ImgGridWidget()
-        self.top_row.addWidget(self.img_grid)
+        self.main_panel.addWidget(self.img_grid)
 
         self.mser_max_area = QtGui.QDoubleSpinBox()
         self.mser_max_area.setMinimum(0.0001)
@@ -64,21 +64,21 @@ class SetMSERs(QtGui.QWidget):
         self.mser_max_area.setDecimals(6)
         self.mser_max_area.setValue(project.mser_parameters.max_area)
         self.mser_max_area.valueChanged.connect(self.val_changed)
-        self.bottom_row.addRow('MSER Max relative area', self.mser_max_area)
+        self.left_panel.addRow('MSER Max relative area', self.mser_max_area)
 
         self.mser_min_area = QtGui.QSpinBox()
         self.mser_min_area.setMinimum(0)
         self.mser_min_area.setMaximum(1000)
         self.mser_min_area.setValue(project.mser_parameters.min_area)
         self.mser_min_area.valueChanged.connect(self.val_changed)
-        self.bottom_row.addRow('MSER Min area', self.mser_min_area)
+        self.left_panel.addRow('MSER Min area', self.mser_min_area)
 
         self.mser_min_margin = QtGui.QSpinBox()
         self.mser_min_margin.setMinimum(3)
         self.mser_min_margin.setMaximum(100)
         self.mser_min_margin.setValue(project.mser_parameters.min_margin)
         self.mser_min_margin.valueChanged.connect(self.val_changed)
-        self.bottom_row.addRow('MSER Min margin', self.mser_min_margin)
+        self.left_panel.addRow('MSER Min margin', self.mser_min_margin)
 
         self.mser_img_subsample = QtGui.QDoubleSpinBox()
         self.mser_img_subsample.setMinimum(1.0)
@@ -86,7 +86,7 @@ class SetMSERs(QtGui.QWidget):
         self.mser_img_subsample.setSingleStep(0.1)
         self.mser_img_subsample.setValue(project.other_parameters.img_subsample_factor)
         self.mser_img_subsample.valueChanged.connect(self.val_changed)
-        self.bottom_row.addRow('MSER image subsample factor', self.mser_img_subsample)
+        self.left_panel.addRow('MSER image subsample factor', self.mser_img_subsample)
 
         self.blur_kernel_size = QtGui.QDoubleSpinBox()
         self.blur_kernel_size.setMinimum(0.0)
@@ -94,16 +94,16 @@ class SetMSERs(QtGui.QWidget):
         self.blur_kernel_size.setSingleStep(0.1)
         self.blur_kernel_size.setValue(project.mser_parameters.gaussian_kernel_std)
         self.blur_kernel_size.valueChanged.connect(self.val_changed)
-        self.bottom_row.addRow('Gblur kernel size', self.blur_kernel_size)
+        self.left_panel.addRow('Gblur kernel size', self.blur_kernel_size)
 
         self.use_only_red_ch = QtGui.QCheckBox()
         self.use_only_red_ch.stateChanged.connect(self.val_changed)
-        self.bottom_row.addRow('use only red channel in img', self.use_only_red_ch)
+        self.left_panel.addRow('use only red channel in img', self.use_only_red_ch)
 
         self.use_children_filter = QtGui.QCheckBox()
         self.use_children_filter.stateChanged.connect(self.val_changed)
         self.use_children_filter.setChecked(self.project.mser_parameters.use_children_filter)
-        self.bottom_row.addRow('use children filter', self.use_children_filter)
+        self.left_panel.addRow('use children filter', self.use_children_filter)
 
         self.intensity_threshold = QtGui.QSpinBox()
         self.intensity_threshold.setMinimum(0)
@@ -111,7 +111,7 @@ class SetMSERs(QtGui.QWidget):
         self.intensity_threshold.setSingleStep(1)
         self.intensity_threshold.setValue(256)
         self.intensity_threshold.valueChanged.connect(self.val_changed)
-        self.bottom_row.addRow('intensity threshold (ignore pixels above)', self.intensity_threshold)
+        self.left_panel.addRow('intensity threshold (ignore pixels above)', self.intensity_threshold)
 
         self.min_area_relative = QtGui.QDoubleSpinBox()
         self.min_area_relative.setMinimum(0.0)
@@ -119,7 +119,7 @@ class SetMSERs(QtGui.QWidget):
         self.min_area_relative.setValue(0.2)
         self.min_area_relative.setSingleStep(0.02)
         self.min_area_relative.valueChanged.connect(self.val_changed)
-        self.bottom_row.addRow('min_area = (median of selected regions) * ', self.min_area_relative)
+        self.left_panel.addRow('min_area = (median of selected regions) * ', self.min_area_relative)
 
         self.region_min_intensity = QtGui.QSpinBox()
         self.region_min_intensity.setMaximum(256)
@@ -127,18 +127,18 @@ class SetMSERs(QtGui.QWidget):
         self.region_min_intensity.setMinimum(0)
         self.region_min_intensity.setSingleStep(1)
         self.region_min_intensity.valueChanged.connect(self.val_changed)
-        self.bottom_row.addRow('region min intensity', self.region_min_intensity)
+        self.left_panel.addRow('region min intensity', self.region_min_intensity)
 
         self.frame_number = QtGui.QSpinBox()
         self.frame_number.setMinimum(-1)
         self.frame_number.setValue(-1)
         self.frame_number.setMaximum(10000000)
 
-        self.bottom_row.addRow('frame (-1 = random)', self.frame_number)
+        self.left_panel.addRow('frame (-1 = random)', self.frame_number)
 
         self.random_frame = QtGui.QPushButton('go 2 frame')
         self.random_frame.clicked.connect(self.choose_random_frame)
-        self.bottom_row.addRow('', self.random_frame)
+        self.left_panel.addRow('', self.random_frame)
 
         self.update()
         self.show()
@@ -175,10 +175,10 @@ class SetMSERs(QtGui.QWidget):
         print "mser takes: ", time.time() - s
 
         self.img_grid.setParent(None)
-        self.img_grid = ImgGridWidget()
+        self.img_grid = ImgGridWidget(scrolling=False)
         self.img_grid.element_width = 100
         self.img_grid.cols = 5
-        self.top_row.addWidget(self.img_grid)
+        self.main_panel.addWidget(self.img_grid)
 
         for r, id in zip(msers, range(len(msers))):
             if self.project.stats:
@@ -203,7 +203,7 @@ class SetMSERs(QtGui.QWidget):
 
         self.img_preview.setParent(None)
         self.img_preview = get_image_label(img_vis)
-        self.top_row.insertWidget(0, self.img_preview)
+        self.main_panel.insertWidget(0, self.img_preview)
 
     def val_changed(self):
         self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
@@ -224,7 +224,8 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
 
-    proj.load('/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj')
+    proj.load("/home/dita/Programovani/FERDA Projects/cam1_test/cam1_test.fproj")
+    # proj.load('/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj')
     # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
     proj.arena_model = None
     proj.bg_model = None
