@@ -144,7 +144,7 @@ for l in lines:
 	submitCommand = "ssh " +remoteUser+"@"+remoteHost+" "+clusterRunCommand + " " + remoteProjectPath+"copy_for_cluster/run_ferda_parallel.sh"
 	remoteCommandQueue = [submitCommand] + remoteCommandQueue
 
-        numFiles+=1
+    numFiles+=1
 
 	localVideoPath = ars.get_videopath(localProjectFile)
 
@@ -184,7 +184,7 @@ answer=raw_input('Proceed (y/n)' );
 if (   ( answer == 'y' )  or  ( answer == 'Y' ) ):
 	while len(remoteCommandQueue) > 0:
 		com = remoteCommandQueue.pop();
-		r=0#r = subprocess.call(com.split(" "));
+		r = subprocess.call(com.split(" "));
 		if (r != 0):
 			print("command failed: "+com);
 		else:

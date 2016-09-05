@@ -3,7 +3,7 @@ import os
 import sys
 import inspect
 import multiprocessing
-pool=multiprocessing.Pool(processes=4)
+pool=multiprocessing.Pool(processes=1)
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -36,7 +36,7 @@ if __name__ == '__main__':
         try:
             os.mkdir(proj.working_directory+'/temp')
         except:
-            print(proj.working_directory+'/temp'+ " was created between check and mkdir");    
+            print(proj.working_directory+'/temp'+ " was created between check and mkdir");
 
     temp_local_path='/localhome/casillas/'
 
@@ -45,9 +45,9 @@ if __name__ == '__main__':
             os.mkdir(temp_local_path+proj_name)
         except:
             print(temp_local_path+proj_name + "   was created between check and mkdir");
-    
+
     temp_local_path=temp_local_path + proj_name
-    
+
     if not os.path.exists(temp_local_path+'/temp'):
         try:
             os.mkdir(temp_local_path+'/temp')
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     solver = Solver(proj)
     from core.graph.graph_manager import GraphManager
     proj.gm = GraphManager(proj, proj.solver.assignment_score)
-    proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=S_.cache.region_manager_num_of_instances)
+    proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=100)
     proj.chm = ChunkManager()
     proj.color_manager = None
 
