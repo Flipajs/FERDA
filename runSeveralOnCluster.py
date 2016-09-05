@@ -146,8 +146,15 @@ for l in lines:
 
         numFiles+=1
 
+	localVideoPath = ars.get_videopath(localProjectFile)
+
 	#and add the command to the afterfinish script to retrieve all that this produces
-	localAfterFinishScript += "scp -r "+remoteUser+"@"+remoteHost+":"+remoteProjectPath+"copy_for_cluster/"+" "+localProjectPath+"\n";
+	localAfterFinishScript += "scp  "+remoteUser+"@"+remoteHost+":"+remoteProjectPath+"copy_for_cluster/*.fproj"+" "+localProjectPath+"\n";
+	localAfterFinishScript += "scp  "+remoteUser+"@"+remoteHost+":"+remoteProjectPath+"copy_for_cluster/*.pkl"+" "+localProjectPath+"\n";
+	localAfterFinishScript += "scp  "+remoteUser+"@"+remoteHost+":"+remoteProjectPath+"copy_for_cluster/*.sqlite3"+" "+localProjectPath+"\n";
+	localAfterFinishScript += "python change_property.py "+localProjectFile+" "+localProjectPath+" working_directory\n";
+	localAfterFinishScript += "python change_property.py "+localProjectFile+" "+localVideoPath[0]+" video_paths\n";
+
 
 
 #Write and copy the file containing the list of projects to assemble
@@ -177,7 +184,7 @@ answer=raw_input('Proceed (y/n)' );
 if (   ( answer == 'y' )  or  ( answer == 'Y' ) ):
 	while len(remoteCommandQueue) > 0:
 		com = remoteCommandQueue.pop();
-		r = subprocess.call(com.split(" "));
+		r=0#r = subprocess.call(com.split(" "));
 		if (r != 0):
 			print("command failed: "+com);
 		else:

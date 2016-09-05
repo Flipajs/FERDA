@@ -63,7 +63,7 @@ def prepareAssemblyForCluster(numFiles,remoteParallelizationFile,localAssemblySc
 	clusterScriptBody = 'LIMIT=$(awk \"NR==$SGE_TASK_ID\" '+ remoteParallelizationFile+')\n'
 	clusterScriptBody +='export PYTHONPATH=/cluster/home/casillas/ferda/'+'\n'
 	clusterScriptBody += 'module load graph-tool/2.10 \n'
-	clusterScriptBody += 'python -m core.cluster_bg_computer.py ' + ' $LIMIT\n'
+	clusterScriptBody += 'python -m core.cluster_bg_computer ' + ' $LIMIT\n'
 
 
 
