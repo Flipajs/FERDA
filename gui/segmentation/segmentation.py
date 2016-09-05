@@ -27,6 +27,7 @@ class SegmentationPicker(QtGui.QWidget):
         self.image = cv2.imread(self.img_path)
         self.h, self.w, c = self.image.shape
         self.pen_size = pen_size
+        self.undo_len = undo_len
 
         self.color = [paint_r, paint_g, paint_b, paint_a]
 
@@ -52,6 +53,8 @@ class SegmentationPicker(QtGui.QWidget):
         self.shifty = get_shift(self.image, shift_x=0, shift_y=2)
 
         self.avg = get_avg(self.image)
+
+        self.maxs, self.mins, self.diff = get_dif(self.image)
 
         # channel difs
         self.bg = np.asarray(self.image[:,:,0], dtype=np.int32) - np.asarray(self.image[:,:,1], dtype=np.int32)
@@ -86,7 +89,7 @@ class SegmentationPicker(QtGui.QWidget):
             self.get_data(i, j, X, y, 1)
 
         # create the classifier
-        rfc = RandomForestClassifier("""class_weight='balanced'""")
+        rfc = RandomForestClassifier(class_weight='balanced')
         rfc.fit(X, y)
 
         h, w, c = self.image.shape
@@ -99,10 +102,13 @@ class SegmentationPicker(QtGui.QWidget):
                           self.shifty.reshape((h*w, 1)),
                           self.bg.reshape((h*w, 1)),
                           self.gr.reshape((h*w, 1)),
-                          self.rb.reshape((h*w, 1))))
+                          self.rb.reshape((h*w, 1)),
+                          self.maxs.reshape((h*w, 1)),
+                          self.mins.reshape((h*w, 1)),
+                          self.diff.reshape((h*w, 1))))
 
         # reshape the image so it contains 4-tuples, each descripting a single pixel
-        data.shape = ((h*w, 9))
+        data.shape = ((h*w, 12))
 
         # prepare a mask and predict result for data (current image)
         # mask1 = np.zeros((h*w, c))
@@ -183,7 +189,7 @@ class SegmentationPicker(QtGui.QWidget):
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # drawing area
-        self.view = painter.Painter(self.image, pen_size=5, paint_name="PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=255, update_callback=self.done)
+        self.view = painter.Painter(self.image, pen_size=5, undo_len=self.undo_len, paint_name="PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=255, update_callback=self.done)
         self.view.add_color("GREEN", 0, 255, 0, 255)
 
         # left panel widget
@@ -286,7 +292,10 @@ class SegmentationPicker(QtGui.QWidget):
         c = self.bg[i][j]
         d = self.gr[i][j]
         e = self.rb[i][j]
-        X.append((b, g, r, a, sx, sy, c, d, e))
+        f = self.maxs[i][j]
+        h = self.mins[i][j]
+        k = self.diff[i][j]
+        X.append((b, g, r, a, sx, sy, c, d, e, f, h, k))
         y.append(classification)
 
 
