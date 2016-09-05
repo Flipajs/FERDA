@@ -29,6 +29,10 @@ class SegmentationPicker(QtGui.QWidget):
         self.pen_size = pen_size
 
         self.color = [paint_r, paint_g, paint_b, paint_a]
+
+        self.cur_color = "PINK"
+        self.cur_eraser = False
+
         self.prepare_images()
         self.make_gui()
 
@@ -82,7 +86,7 @@ class SegmentationPicker(QtGui.QWidget):
             self.get_data(i, j, X, y, 1)
 
         # create the classifier
-        rfc = RandomForestClassifier(class_weight='balanced')
+        rfc = RandomForestClassifier("""class_weight='balanced'""")
         rfc.fit(X, y)
 
         h, w, c = self.image.shape
@@ -119,17 +123,33 @@ class SegmentationPicker(QtGui.QWidget):
         self.view.set_overlay(foo)
 
     def pink(self):
-        self.view.set_pen_color("PINK")
-        self.color_buttons[1].setChecked(False)
-        self.color_buttons[2].setChecked(False)
+        self.cur_color = "PINK"
+        self.cur_eraser = False
+        self.set_color()
 
     def green(self):
-        self.view.set_pen_color("GREEN")
-        self.color_buttons[0].setChecked(False)
-        self.color_buttons[2].setChecked(False)
+        self.cur_color = "GREEN"
+        self.cur_eraser = False
+        self.set_color()
+
+    def set_color(self):
+        if self.cur_eraser:
+            self.view.set_pen_color(None)
+            self.color_buttons["eraser"].setChecked(True)
+        else:
+            self.view.set_pen_color(self.cur_color)
+            for color, btn in self.color_buttons.iteritems():
+                if color == self.cur_color.lower():
+                    btn.setChecked(True) 
+                else:
+                    btn.setChecked(False)
 
     def set_eraser(self):
-        self.view.set_pen_color(None)
+        if self.cur_eraser:
+            self.cur_eraser = False
+        else:
+            self.cur_eraser = True
+        self.set_color()
 
     def toggle_bg(self):
         c = self.toggle_bg_button.isChecked()
@@ -195,26 +215,26 @@ class SegmentationPicker(QtGui.QWidget):
         color_widget = QtGui.QWidget()
         color_widget.setLayout(QtGui.QHBoxLayout())
 
-        self.color_buttons = []
+        self.color_buttons = {}
         pink_button = QtGui.QPushButton("Pink")
         pink_button.setCheckable(True)
         pink_button.setChecked(True)
         pink_button.clicked.connect(self.pink)
         color_widget.layout().addWidget(pink_button)
-        self.color_buttons.append(pink_button)
+        self.color_buttons["pink"] = pink_button
 
         green_button = QtGui.QPushButton("Green")
         green_button.setCheckable(True)
         green_button.clicked.connect(self.green)
         color_widget.layout().addWidget(green_button)
-        self.color_buttons.append(green_button)
+        self.color_buttons["green"] = green_button
 
         eraser_button = QtGui.QPushButton("Eraser")
         eraser_button.setCheckable(True)
         eraser_button.clicked.connect(self.set_eraser)
         color_widget.layout().addWidget(eraser_button)
         self.left_panel.layout().addWidget(color_widget)
-        self.color_buttons.append(eraser_button)
+        self.color_buttons["eraser"] = eraser_button
 
         # UNDO key shortcut
         self.action_undo = QtGui.QAction('undo', self)
