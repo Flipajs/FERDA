@@ -622,7 +622,10 @@ class ResultsWidget(QtGui.QWidget):
             r = rch.region_in_t(frame)
             c = r.centroid().copy()
 
-            self.show_pn_ids_visualisation(ch, frame)
+            try:
+                self.show_pn_ids_visualisation(ch, frame)
+            except AttributeError:
+                pass
 
             # TODO: fix for option when only P set is displayed using circles
             try:

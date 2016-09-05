@@ -19,7 +19,6 @@ import time
 import cPickle as pickle
 import graph_tool
 from graph_manager import GraphManager
-# from core.desc.zernike_moments import ZernikeMoments
 
 class Solver:
     def __init__(self, project):
@@ -678,28 +677,49 @@ class Solver:
         print "ONLY CHUNKS PROGRESS SAVED"
 
     def dsmc_process_cc_(self, s1, s2, area_med):
-        from scripts.EMD import get_unstable_num, detect_unstable
+        from scripts.EMD import get_unstable_num, detect_stable
         if len(s1) > 1 or len(s2) > 1:
+            edges = set()
+
             regions_P = []
             for s in s1:
                 r = self.project.gm.region(s)
-                regions_P.append((r.area(), r.centroid()))
+                regions_P.append((r.area(), r.centroid(), s))
+
+                for e in s.out_edges():
+                    edges.add(e)
+
+            edges = list(edges)
 
             regions_Q = []
             for s in s2:
                 r = self.project.gm.region(s)
-                regions_Q.append((r.area(), r.centroid()))
+                regions_Q.append((r.area(), r.centroid(), s))
 
-            unstable_num, stability_P, stability_Q = detect_unstable(regions_P, regions_Q, thresh=0.7, area_med=area_med)
-            for v, i in zip(s1, range(len(s1))):
-                if not stability_P[i]:
-                    for e in v.out_edges():
+            unstable_num, stability_P, stability_Q, preferences = detect_stable(regions_P, regions_Q, thresh=0.7, area_med=area_med)
+            for i, v in enumerate(s1):
+                r = regions_P[i]
+                for e in v.out_edges():
+                    edge_prohibited = True
+
+                    if stability_P[i]:
+                        for r2_i, r2 in enumerate(regions_Q):
+                            if e.target() == r2[2] and stability_Q[r2_i]:
+                                if preferences[r[2]] == r2[2] and preferences[r2[2]] == r[2]:
+                                    edge_prohibited = False
+
+                    if edge_prohibited:
                         self.project.gm.g.ep['score'][e] = 0
 
-            for v, i in zip(s2, range(len(s2))):
-                if not stability_Q[i]:
-                    for e in v.in_edges():
-                        self.project.gm.g.ep['score'][e] = 0
+            # for v, i in zip(s1, range(len(s1))):
+            #     if not stability_P[i]:
+            #         for e in v.out_edges():
+            #             self.project.gm.g.ep['score'][e] = 0
+            #
+            # for v, i in zip(s2, range(len(s2))):
+            #     if not stability_Q[i]:
+            #         for e in v.in_edges():
+            #             self.project.gm.g.ep['score'][e] = 0
 
     def detect_split_merge_cases(self, frames=None):
         if frames is None:
