@@ -47,7 +47,7 @@ remoteWorkingPath      	= ars.fixPath("/cluster/home/casillas/COLONIESWD/");
 localLogPath    		= ars.fixPath("/home/casillas/Documents/COLONIESWD/cluster/logs/");
 
 #normally qsub  use cat for testing purposes only
-clusterRunCommand 		= "cat" #qsub after testing
+clusterRunCommand 		= "qsub" #qsub after testing
 
 separatorInFile			= ',';
 # ---- CONFIG END  -----

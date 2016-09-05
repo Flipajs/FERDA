@@ -33,7 +33,10 @@ if __name__ == '__main__':
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
     if not os.path.exists(proj.working_directory+'/temp'):
-        os.mkdir(proj.working_directory+'/temp')
+        try:
+            os.mkdir(proj.working_directory+'/temp')
+        except:
+            print(proj.working_directory+'/temp'+ " was created between check and mkdir");    
 
     temp_local_path='/localhome/casillas/'
 

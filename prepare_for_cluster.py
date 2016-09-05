@@ -57,14 +57,14 @@ def prepareForClusterDummy(local_working_directory,cluster_working_directory,clu
 
 
 def prepareAssemblyForCluster(numFiles,remoteParallelizationFile,localAssemblyScript):
-	clusterScriptHeader = '#!/bin/bash\n#$ -S /bin/bash\n#$ -v TST=abc\n#$ -M casillas@ist.ac.at\n#$ -m a\n#$ -l mf=4000M\n#$ -l h_vmem=6000M\n#$ -l h_rt=4:00:00 \n#$ -pe openmp 1\n\nulimit -c 0'	
+	clusterScriptHeader = '#!/bin/bash\n#$ -S /bin/bash\n#$ -v TST=abc\n#$ -M casillas@ist.ac.at\n#$ -m a\n#$ -l mf=4000M\n#$ -l h_vmem=6000M\n#$ -l h_rt=4:00:00 \n#$ -pe openmp 1\n\nulimit -c 0'
 	clusterScriptHeader += '\n#$ -t 1-'+str(numFiles)+':1'
 	#clusterScriptBody = 'LIMIT=$(awk \"NR==$SGE_TASK_ID\" '+ remoteParallelizationFile+')\n'
 	clusterScriptBody = 'LIMIT=$(awk \"NR==$SGE_TASK_ID\" '+ remoteParallelizationFile+')\n'
 	clusterScriptBody +='export PYTHONPATH=/cluster/home/casillas/ferda/'+'\n'
 	clusterScriptBody += 'module load graph-tool/2.10 \n'
-	clusterScriptBody += 'python -m'+ cluster_Ferda_Dir+ 	'core/cluster_bg_computer.py ' + ' $LIMIT\n'
-	
+	clusterScriptBody += 'python -m core.cluster_bg_computer.py ' + ' $LIMIT\n'
+
 
 
 	scriptFile = open(localAssemblyScript,'w');
