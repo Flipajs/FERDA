@@ -36,11 +36,14 @@ class SetMSERs(QtGui.QWidget):
         self.layout().addWidget(self.scroll_)
 
         self.main_panel = QtGui.QHBoxLayout()
-        self.left_panel = QtGui.QHBoxLayout()
+        self.left_panel = QtGui.QWidget()
+        self.left_panel.setLayout(QtGui.QVBoxLayout())
+        self.left_panel.setMaximumWidth(300)
+        self.left_panel.setMinimumWidth(300)
         self.form_panel = QtGui.QFormLayout()
         self.scroll_.setLayout(QtGui.QVBoxLayout())
 
-        self.w_.layout().addLayout(self.left_panel)
+        self.w_.layout().addWidget(self.left_panel)
         self.left_panel.layout().addLayout(self.form_panel)
         self.w_.layout().addLayout(self.main_panel)
 
@@ -186,25 +189,31 @@ class SetMSERs(QtGui.QWidget):
         s = time.time()
         msers = ferda_filtered_msers(img_, self.project)
         print "mser takes: ", time.time() - s
+        binary = np.zeros((self.im.shape[0], self.im.shape[1]))
 
-        self.main_panel.removeWidget(self.img_grid)
+        if self.img_grid:
+            self.img_grid.setParent(None)
         self.img_grid = ImgGridWidget(scrolling=False)
         self.img_grid.element_width = 100
         self.img_grid.cols = 5
-        self.main_panel.addWidget(self.img_grid)
-
-        binary = np.zeros((self.im.shape[0], self.im.shape[1]))
+        if self.main_panel.layout().indexOf(self.img_grid) == -1:
+            self.main_panel.addWidget(self.img_grid)
+        else:
+            print "Fooooo!"
 
         self.fill_new_grid(msers, img_vis, binary)
         im = np.asarray(binary[..., None]*(0, 255, 0, 200), dtype=np.uint8)
         qim = rgba2qimage(im)
 
-        self.main_panel.removeWidget(self.painter)
-        self.painter = None
+        if self.painter:
+            self.painter.setParent(None)
         self.painter = Painter(self.im)
         self.painter.set_overlay2(qim)
         self.painter.set_overlay2_visible(True)
-        self.main_panel.insertWidget(0, self.painter)
+        if self.main_panel.layout().indexOf(self.painter) == -1:
+            self.main_panel.addWidget(self.painter)
+        else:
+            print "Fooooo!"
 
     def val_changed(self):
         self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
