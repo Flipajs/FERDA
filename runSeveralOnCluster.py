@@ -144,7 +144,7 @@ for l in lines:
 	submitCommand = "ssh " +remoteUser+"@"+remoteHost+" "+clusterRunCommand + " " + remoteProjectPath+"copy_for_cluster/run_ferda_parallel.sh"
 	remoteCommandQueue = [submitCommand] + remoteCommandQueue
 
-    numFiles+=1
+        numFiles+=1
 
 	localVideoPath = ars.get_videopath(localProjectFile)
 

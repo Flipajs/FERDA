@@ -24,3 +24,8 @@ if __name__ == '__main__':
     print
     print "PROJECT WAS ASSEMBLED."
     print
+
+    #import shutil
+    #shutil.move('/localhome/casillas/rm.sqlite',working_dir)
+    #print "PROJECT WAS MOVED TO SERVER."
+    #print
