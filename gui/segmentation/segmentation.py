@@ -86,7 +86,7 @@ class SegmentationPicker(QtGui.QWidget):
             self.get_data(i, j, X, y, 1)
 
         # create the classifier
-        rfc = RandomForestClassifier("""class_weight='balanced'""")
+        rfc = RandomForestClassifier(class_weight='balanced')
         rfc.fit(X, y)
 
         h, w, c = self.image.shape

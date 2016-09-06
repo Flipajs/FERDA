@@ -43,6 +43,7 @@ class Painter(QtGui.QWidget):
         overlay_image = QtGui.QImage(bg_size, fmt)
         overlay_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
+        self.overlay2_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
 
         # PAINT SETUP
         self.pen_size = pen_size / 2
@@ -69,6 +70,13 @@ class Painter(QtGui.QWidget):
         """
         self.overlay_pixmap.setVisible(visibility)
 
+    def set_overlay2_visible(self, visibility):
+        """ Toggles overlay visibility
+        :param visibility: new visibility (True/False)
+        :return: None
+        """
+        self.overlay2_pixmap.setVisible(visibility)
+
     def set_masks_visible(self, visibility):
         """ Toggles masks visibility
         :param visibility: new visibility (True/False)
@@ -88,14 +96,21 @@ class Painter(QtGui.QWidget):
             self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(img))
             self.overlay_pixmap.setZValue(9)
 
+    def set_overlay2(self, img):
+        """ Deletes the old overlay image and pixmap and replaces them with a new image. The image should have an alpha channel, otherwise it can hide other scene contents.
+        :param img: a new image to use, None to delete overlay completely.
+        :return: None
+        """
+        if self.overlay2_pixmap and self.overlay2_pixmap in self.scene.items():
+            self.scene.removeItem(self.overlay2_pixmap)
+        if img:
+            self.overlay2_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(img))
+            self.overlay2_pixmap.setZValue(9)
+
     def draw_mask(self, name):
         """ Paints the mask with given color on the image"""
 
-        # create a RGBA image from mask and color data
-        transposed = self.colors[name][0][...,None]*self.colors[name][1]
-
-        # convert to Qt compatible qimage
-        qimg = array2qimage(transposed)
+        qimg = mask2pixmap(self.colors[name][0], self.colors[name][1])
 
         # add pixmap to scene and move it to the foreground
         # delete old pixmap
@@ -265,6 +280,7 @@ class Painter(QtGui.QWidget):
         # complete the gui
         self.layout().addWidget(self.view)
 
+
 def mask2pixmap(mask, color):
     r = mask * color[0]
     g = mask * color[1]
@@ -293,12 +309,13 @@ def rgba2qimage(image):
     bytesPerLine = channels * width
     return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format_ARGB32)
 
-def mask2qimage(image):
-    if type(image) == QtGui.QImage:
-        return image
-    height, width = image.shape
-    bytesPerLine = width
-    return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
+
+def mask2qimage(mask, color):
+    # create a RGBA image from mask and color data
+    transposed = mask[..., None]*color
+    # convert to Qt compatible qimage
+    qimg = array2qimage(transposed, normalize=True)
+    return qimg
 
 
 if __name__ == "__main__":

@@ -9,13 +9,16 @@ from utils.video_manager import get_auto_video_manager
 from core.project.project import Project
 from core.region.mser import get_msers_, ferda_filtered_msers
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
-from utils.drawing.points import draw_points_crop, draw_points, get_contour
+from utils.drawing.points import draw_points_crop, draw_points, get_contour, draw_points_binary
+from gui.segmentation.painter import Painter, rgba2qimage, mask2qimage
 from PIL import ImageQt
 from gui.gui_utils import SelectableQLabel
 from core.settings import Settings as S_
 from utils.img import prepare_for_segmentation
 import time
 import numpy as np
+import matplotlib.pyplot as plt
+import cv2
 
 
 class SetMSERs(QtGui.QWidget):
@@ -33,10 +36,12 @@ class SetMSERs(QtGui.QWidget):
         self.layout().addWidget(self.scroll_)
 
         self.main_panel = QtGui.QHBoxLayout()
-        self.left_panel = QtGui.QFormLayout()
+        self.left_panel = QtGui.QHBoxLayout()
+        self.form_panel = QtGui.QFormLayout()
         self.scroll_.setLayout(QtGui.QVBoxLayout())
 
         self.w_.layout().addLayout(self.left_panel)
+        self.left_panel.layout().addLayout(self.form_panel)
         self.w_.layout().addLayout(self.main_panel)
 
         self.vid = get_auto_video_manager(project)
@@ -52,10 +57,8 @@ class SetMSERs(QtGui.QWidget):
 
         self.im = im
 
-        self.img_preview = get_image_label(self.im)
-        self.main_panel.addWidget(self.img_preview)
-        self.img_grid = ImgGridWidget()
-        self.main_panel.addWidget(self.img_grid)
+        self.painter = None
+        self.img_grid = None
 
         self.mser_max_area = QtGui.QDoubleSpinBox()
         self.mser_max_area.setMinimum(0.0001)
@@ -64,21 +67,21 @@ class SetMSERs(QtGui.QWidget):
         self.mser_max_area.setDecimals(6)
         self.mser_max_area.setValue(project.mser_parameters.max_area)
         self.mser_max_area.valueChanged.connect(self.val_changed)
-        self.left_panel.addRow('MSER Max relative area', self.mser_max_area)
+        self.form_panel.addRow('MSER Max relative area', self.mser_max_area)
 
         self.mser_min_area = QtGui.QSpinBox()
         self.mser_min_area.setMinimum(0)
         self.mser_min_area.setMaximum(1000)
         self.mser_min_area.setValue(project.mser_parameters.min_area)
         self.mser_min_area.valueChanged.connect(self.val_changed)
-        self.left_panel.addRow('MSER Min area', self.mser_min_area)
+        self.form_panel.addRow('MSER Min area', self.mser_min_area)
 
         self.mser_min_margin = QtGui.QSpinBox()
         self.mser_min_margin.setMinimum(3)
         self.mser_min_margin.setMaximum(100)
         self.mser_min_margin.setValue(project.mser_parameters.min_margin)
         self.mser_min_margin.valueChanged.connect(self.val_changed)
-        self.left_panel.addRow('MSER Min margin', self.mser_min_margin)
+        self.form_panel.addRow('MSER Min margin', self.mser_min_margin)
 
         self.mser_img_subsample = QtGui.QDoubleSpinBox()
         self.mser_img_subsample.setMinimum(1.0)
@@ -86,7 +89,7 @@ class SetMSERs(QtGui.QWidget):
         self.mser_img_subsample.setSingleStep(0.1)
         self.mser_img_subsample.setValue(project.other_parameters.img_subsample_factor)
         self.mser_img_subsample.valueChanged.connect(self.val_changed)
-        self.left_panel.addRow('MSER image subsample factor', self.mser_img_subsample)
+        self.form_panel.addRow('MSER image subsample factor', self.mser_img_subsample)
 
         self.blur_kernel_size = QtGui.QDoubleSpinBox()
         self.blur_kernel_size.setMinimum(0.0)
@@ -94,16 +97,7 @@ class SetMSERs(QtGui.QWidget):
         self.blur_kernel_size.setSingleStep(0.1)
         self.blur_kernel_size.setValue(project.mser_parameters.gaussian_kernel_std)
         self.blur_kernel_size.valueChanged.connect(self.val_changed)
-        self.left_panel.addRow('Gblur kernel size', self.blur_kernel_size)
-
-        self.use_only_red_ch = QtGui.QCheckBox()
-        self.use_only_red_ch.stateChanged.connect(self.val_changed)
-        self.left_panel.addRow('use only red channel in img', self.use_only_red_ch)
-
-        self.use_children_filter = QtGui.QCheckBox()
-        self.use_children_filter.stateChanged.connect(self.val_changed)
-        self.use_children_filter.setChecked(self.project.mser_parameters.use_children_filter)
-        self.left_panel.addRow('use children filter', self.use_children_filter)
+        self.form_panel.addRow('Gblur kernel size', self.blur_kernel_size)
 
         self.intensity_threshold = QtGui.QSpinBox()
         self.intensity_threshold.setMinimum(0)
@@ -111,7 +105,7 @@ class SetMSERs(QtGui.QWidget):
         self.intensity_threshold.setSingleStep(1)
         self.intensity_threshold.setValue(256)
         self.intensity_threshold.valueChanged.connect(self.val_changed)
-        self.left_panel.addRow('intensity threshold (ignore pixels above)', self.intensity_threshold)
+        self.form_panel.addRow('intensity threshold (ignore pixels above)', self.intensity_threshold)
 
         self.min_area_relative = QtGui.QDoubleSpinBox()
         self.min_area_relative.setMinimum(0.0)
@@ -119,7 +113,7 @@ class SetMSERs(QtGui.QWidget):
         self.min_area_relative.setValue(0.2)
         self.min_area_relative.setSingleStep(0.02)
         self.min_area_relative.valueChanged.connect(self.val_changed)
-        self.left_panel.addRow('min_area = (median of selected regions) * ', self.min_area_relative)
+        self.form_panel.addRow('min_area = (median of selected regions) * ', self.min_area_relative)
 
         self.region_min_intensity = QtGui.QSpinBox()
         self.region_min_intensity.setMaximum(256)
@@ -127,18 +121,38 @@ class SetMSERs(QtGui.QWidget):
         self.region_min_intensity.setMinimum(0)
         self.region_min_intensity.setSingleStep(1)
         self.region_min_intensity.valueChanged.connect(self.val_changed)
-        self.left_panel.addRow('region min intensity', self.region_min_intensity)
+        self.form_panel.addRow('region min intensity', self.region_min_intensity)
 
+        """
         self.frame_number = QtGui.QSpinBox()
         self.frame_number.setMinimum(-1)
         self.frame_number.setValue(-1)
         self.frame_number.setMaximum(10000000)
-
-        self.left_panel.addRow('frame (-1 = random)', self.frame_number)
-
+        self.form_panel.addRow('frame (-1 = random)', self.frame_number)
         self.random_frame = QtGui.QPushButton('go 2 frame')
         self.random_frame.clicked.connect(self.choose_random_frame)
-        self.left_panel.addRow('', self.random_frame)
+        self.form_panel.addRow('', self.random_frame)"""
+
+        self.use_children_filter = QtGui.QCheckBox()
+        self.use_children_filter.stateChanged.connect(self.val_changed)
+        self.use_children_filter.setChecked(self.project.mser_parameters.use_children_filter)
+        self.form_panel.addRow('use children filter', self.use_children_filter)
+
+        self.button_group = QtGui.QButtonGroup()
+        self.use_only_red_ch = QtGui.QCheckBox()
+        self.use_only_red_ch.stateChanged.connect(self.val_changed)
+        self.form_panel.addRow('use only red channel in img', self.use_only_red_ch)
+        self.button_group.addButton(self.use_only_red_ch)
+
+        self.use_full_image = QtGui.QCheckBox()
+        self.use_full_image.stateChanged.connect(self.val_changed)
+        self.form_panel.addRow('full image', self.use_full_image)
+        self.button_group.addButton(self.use_full_image)
+
+        self.use_segmentation = QtGui.QCheckBox()
+        self.use_segmentation.stateChanged.connect(self.val_changed)
+        self.form_panel.addRow('segmentation', self.use_segmentation)
+        self.button_group.addButton(self.use_segmentation)
 
         self.update()
         self.show()
@@ -169,41 +183,28 @@ class SetMSERs(QtGui.QWidget):
         img_vis[:,:,1] = img_
         img_vis[:,:,2] = img_
 
-        import time
         s = time.time()
         msers = ferda_filtered_msers(img_, self.project)
         print "mser takes: ", time.time() - s
 
-        self.img_grid.setParent(None)
+        self.main_panel.removeWidget(self.img_grid)
         self.img_grid = ImgGridWidget(scrolling=False)
         self.img_grid.element_width = 100
         self.img_grid.cols = 5
         self.main_panel.addWidget(self.img_grid)
 
-        for r, id in zip(msers, range(len(msers))):
-            if self.project.stats:
-                prob = self.project.stats.antlikeness_svm.get_prob(r)
-                if prob[1] < self.project.solver_parameters.antlikeness_threshold:
-                    continue
+        binary = np.zeros((self.im.shape[0], self.im.shape[1]))
 
-            cont = get_contour(r.pts())
-            crop = draw_points_crop(img_vis, cont, (0, 255, 0, 0.9), square=True)
-            draw_points(img_vis, cont, (0, 255, 0, 0.9))
+        self.fill_new_grid(msers, img_vis, binary)
+        im = np.asarray(binary[..., None]*(0, 255, 0, 200), dtype=np.uint8)
+        qim = rgba2qimage(im)
 
-            img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
-            pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
-
-            item = SelectableQLabel(id=id)
-
-            item.setScaledContents(True)
-            item.setFixedSize(100, 100)
-            item.setPixmap(pix_map)
-
-            self.img_grid.add_item(item)
-
-        self.img_preview.setParent(None)
-        self.img_preview = get_image_label(img_vis)
-        self.main_panel.insertWidget(0, self.img_preview)
+        self.main_panel.removeWidget(self.painter)
+        self.painter = None
+        self.painter = Painter(self.im)
+        self.painter.set_overlay2(qim)
+        self.painter.set_overlay2_visible(True)
+        self.main_panel.insertWidget(0, self.painter)
 
     def val_changed(self):
         self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
@@ -218,6 +219,27 @@ class SetMSERs(QtGui.QWidget):
         self.project.mser_parameters.use_children_filter = self.use_children_filter.isChecked()
 
         self.update()
+
+    def fill_new_grid(self, msers, img_vis, binary):
+        for r, r_id in zip(msers, range(len(msers))):
+            if self.project.stats:
+                prob = self.project.stats.antlikeness_svm.get_prob(r)
+                if prob[1] < self.project.solver_parameters.antlikeness_threshold:
+                    continue
+
+            cont = get_contour(r.pts())
+            crop = draw_points_crop(img_vis, cont, (0, 255, 0, 0.9), square=True)
+            binary = draw_points_binary(binary, cont)
+            img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
+            pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
+
+            item = SelectableQLabel(id=r_id)
+
+            item.setScaledContents(True)
+            item.setFixedSize(100, 100)
+            item.setPixmap(pix_map)
+
+            self.img_grid.add_item(item)
 
 
 if __name__ == "__main__":
