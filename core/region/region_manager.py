@@ -3,7 +3,8 @@ from core.region.region import Region, encode_RLE
 __author__ = 'flipajs'
 
 import sqlite3 as sql
-import cPickle as pickle
+# import cPickle as pickle
+import pickle
 from core.region.region import encode_RLE
 
 class RegionManager:
