@@ -313,9 +313,9 @@ class LearningProcess:
                 areas.append(r.area())
 
         areas = np.array(areas)
-        area_mean_thr = np.mean(areas) + np.std(areas)**0.5
+        area_mean_thr = np.mean(areas) + np.std(areas)
 
-        print "MEAN: {} STD: {}, STD**0.5:{}".format(np.mean(areas), np.std(areas), np.std(areas)**0.5)
+        print "MEAN: {} STD: {} ".format(np.mean(areas), np.std(areas))
 
 
         print "ALL CHUNKS:", len(ch_list)
@@ -331,11 +331,11 @@ class LearningProcess:
 
                 # ignore chunks of merged regions
                 # is_merged = False
-                for e in ch_start_vertex.in_edges():
-                    if self.p.gm.g.ep['score'][e] == 0 and ch_start_vertex.in_degree() > 1:
-                        # is_merged = True
-                        self.collision_chunks[ch.id()] = True
-                        break
+                # for e in ch_start_vertex.in_edges():
+                #     if self.p.gm.g.ep['score'][e] == 0 and ch_start_vertex.in_degree() > 1:
+                #         # is_merged = True
+                #         self.collision_chunks[ch.id()] = True
+                #         break
 
                 rch = RegionChunk(ch, self.p.gm, self.p.rm)
 
