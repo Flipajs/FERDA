@@ -11,8 +11,7 @@ sys.path.insert(0,parentdir)
 
 import sys
 from utils.video_manager import get_auto_video_manager
-# import cPickle as pickle
-import pickle
+import cPickle as pickle
 from core.region.mser import ferda_filtered_msers
 from core.graph.solver import Solver
 from core.project.project import Project
