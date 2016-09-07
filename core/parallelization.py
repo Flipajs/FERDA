@@ -122,7 +122,7 @@ if __name__ == '__main__':
     with open(f_log_name, 'a') as f:
         f.write('before detect_split_merge_cases')
 
-    solver.detect_split_merge_cases()
+    # solver.detect_split_merge_cases()
 
     with open(f_log_name, 'a') as f:
         f.write('before simplify')
