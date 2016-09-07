@@ -26,26 +26,21 @@ class SetMSERs(QtGui.QWidget):
         super(SetMSERs, self).__init__()
         self.project = project
 
-        self.setLayout(QtGui.QVBoxLayout())
+        self.setLayout(QtGui.QHBoxLayout())
 
-        self.w_ = QtGui.QWidget()
-        self.w_.setLayout(QtGui.QHBoxLayout())
-        self.scroll_ = QtGui.QScrollArea()
-        self.scroll_.setWidgetResizable(True)
-        self.scroll_.setWidget(self.w_)
-        self.layout().addWidget(self.scroll_)
-
-        self.main_panel = QtGui.QHBoxLayout()
         self.left_panel = QtGui.QWidget()
         self.left_panel.setLayout(QtGui.QVBoxLayout())
         self.left_panel.setMaximumWidth(300)
         self.left_panel.setMinimumWidth(300)
-        self.form_panel = QtGui.QFormLayout()
-        self.scroll_.setLayout(QtGui.QVBoxLayout())
 
-        self.w_.layout().addWidget(self.left_panel)
+        self.form_panel = QtGui.QFormLayout()
         self.left_panel.layout().addLayout(self.form_panel)
-        self.w_.layout().addLayout(self.main_panel)
+
+        self.main_panel = QtGui.QWidget()
+        self.main_panel.setLayout(QtGui.QHBoxLayout())
+
+        self.layout().addWidget(self.left_panel)
+        self.layout().addWidget(self.main_panel)
 
         self.vid = get_auto_video_manager(project)
         self.im = self.vid.next_frame()
@@ -157,6 +152,9 @@ class SetMSERs(QtGui.QWidget):
         self.form_panel.addRow('segmentation', self.use_segmentation)
         self.button_group.addButton(self.use_segmentation)
 
+        self.painter = Painter(self.im)
+        self.layout().addWidget(self.painter)
+
         self.update()
         self.show()
 
@@ -193,27 +191,17 @@ class SetMSERs(QtGui.QWidget):
 
         if self.img_grid:
             self.img_grid.setParent(None)
-        self.img_grid = ImgGridWidget(scrolling=False)
+        self.img_grid = ImgGridWidget()
         self.img_grid.element_width = 100
         self.img_grid.cols = 5
-        if self.main_panel.layout().indexOf(self.img_grid) == -1:
-            self.main_panel.addWidget(self.img_grid)
-        else:
-            print "Fooooo!"
+        self.layout().addWidget(self.img_grid)
 
         self.fill_new_grid(msers, img_vis, binary)
         im = np.asarray(binary[..., None]*(0, 255, 0, 200), dtype=np.uint8)
         qim = rgba2qimage(im)
 
-        if self.painter:
-            self.painter.setParent(None)
-        self.painter = Painter(self.im)
         self.painter.set_overlay2(qim)
         self.painter.set_overlay2_visible(True)
-        if self.main_panel.layout().indexOf(self.painter) == -1:
-            self.main_panel.addWidget(self.painter)
-        else:
-            print "Fooooo!"
 
     def val_changed(self):
         self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()

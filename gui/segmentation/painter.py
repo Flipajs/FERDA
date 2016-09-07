@@ -12,7 +12,7 @@ __author__ = 'dita'
 class Painter(QtGui.QWidget):
     """ Painter widget that can be used in all painting applications"""
 
-    def __init__(self, image, pen_size=10, undo_len=10, debug=False, update_callback=None, paint_name = "PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=100):
+    def __init__(self, image, pen_size=10, undo_len=10, debug=False, update_callback=None, paint_name="PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=100):
         """
         :param image: CV2 image (bgr format expected) """
 
@@ -83,7 +83,8 @@ class Painter(QtGui.QWidget):
         :return: None
         """
         for color, data in self.colors.iteritems():
-            data[2].setVisible(visibility)
+            if data[2]:
+                data[2].setVisible(visibility)
 
     def set_overlay(self, img):
         """ Deletes the old overlay image and pixmap and replaces them with a new image. The image should have an alpha channel, otherwise it can hide other scene contents.
@@ -110,12 +111,13 @@ class Painter(QtGui.QWidget):
     def draw_mask(self, name):
         """ Paints the mask with given color on the image"""
 
-        qimg = mask2pixmap(self.colors[name][0], self.colors[name][1])
+        qimg = mask2qimage(self.colors[name][0], self.colors[name][1])
 
         # add pixmap to scene and move it to the foreground
         # delete old pixmap
         self.scene.removeItem(self.colors[name][2])
         self.colors[name][2] = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
+        k = 3
 
     def add_color(self, name, r, g, b, a=100):
         """ Adds a new color option to painter.
@@ -314,7 +316,7 @@ def mask2qimage(mask, color):
     # create a RGBA image from mask and color data
     transposed = mask[..., None]*color
     # convert to Qt compatible qimage
-    qimg = array2qimage(transposed, normalize=True)
+    qimg = array2qimage(transposed)
     return qimg
 
 
