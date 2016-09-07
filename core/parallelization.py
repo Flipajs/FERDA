@@ -56,7 +56,9 @@ if __name__ == '__main__':
     solver = Solver(proj)
     from core.graph.graph_manager import GraphManager
     proj.gm = GraphManager(proj, proj.solver.assignment_score)
-    proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=S_.cache.region_manager_num_of_instances)
+    # TODO: add global params
+    proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=5)
+    # proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=S_.cache.region_manager_num_of_instances)
     proj.chm = ChunkManager()
     proj.color_manager = None
 
