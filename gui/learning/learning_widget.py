@@ -40,7 +40,7 @@ class LearningWidget(QtGui.QWidget):
 
         self.info_table = QtGui.QTableWidget()
         self.info_table.setColumnCount(2)
-        self.info_table.setRowCount(11)
+        self.info_table.setRowCount(12)
 
         self.info_table.setMinimumHeight(500)
         self.info_table.setFixedWidth(220)
@@ -135,6 +135,9 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setItem(10, 0, QtGui.QTableWidgetItem('# user decisions: '))
         self.info_table.setItem(10, 1, QtGui.QTableWidgetItem(str(len(self.lp.user_decisions))))
 
+        self.info_table.setItem(11, 0, QtGui.QTableWidgetItem('id coverage:'))
+        self.info_table.setItem(11, 1, QtGui.QTableWidgetItem(self.__f2str(self.get_id_coverage())))
+
         # update tracklet info...
         num_animals = len(self.project.animals)
         self.tracklets_table.clear()
@@ -185,6 +188,23 @@ class LearningWidget(QtGui.QWidget):
 
         self.tracklets_table.setSortingEnabled(True)
         self.tracklets_table.resizeColumnsToContents()
+
+    def test_one_id_in_tracklet(self, t):
+        return len(t.P) == 1 and \
+               len(t.N) == len(self.project.animals) - 1
+
+    def get_id_coverage(self):
+        from utils.video_manager import get_auto_video_manager
+        vm = get_auto_video_manager(self.project)
+
+        frames = vm.total_frame_count()
+
+        coverage = 0
+        for t in self.project.chm.chunk_gen():
+            if self.test_one_id_in_tracklet(t):
+                coverage += t.length()
+
+        return coverage / float(frames*len(self.project.animals))
 
     def __f2str(self, f, prec=3):
         return ('{:.'+str(prec)+'}').format(f)
