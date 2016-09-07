@@ -18,7 +18,7 @@ S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 if is_flipajs_pc():
-    sn_id = 2
+    sn_id = 875
     cam_ = 1
     name = 'Cam'+str(cam_)+' copy'
     wd = '/Users/flipajs/Documents/wd/gt/'
@@ -27,12 +27,14 @@ if is_flipajs_pc():
                 'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
     project.load(wd+name+'/cam'+str(cam_)+'.fproj')
+    # project.load_snapshot(snapshot)
 
     try:
         # WORKAROUND:
         for t in project.chm.chunk_list():
-            t.N = set()
-            t.P = set()
+            if not hasattr(t, 'N'):
+                t.N = set()
+                t.P = set()
 
         # with open(project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
         #     data = pickle.load(f_)

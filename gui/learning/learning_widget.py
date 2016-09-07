@@ -65,6 +65,10 @@ class LearningWidget(QtGui.QWidget):
         self.reset_learning_button.clicked.connect(self.reset_learning)
         self.top_stripe_layout.addWidget(self.reset_learning_button)
 
+        self.save_button = QtGui.QPushButton('save')
+        self.save_button.clicked.connect(self.save)
+        self.top_stripe_layout.addWidget(self.save_button)
+
         # TODO: last info label
         # TODO: add saving
         # TODO: update callback... info about decisions...
@@ -80,6 +84,12 @@ class LearningWidget(QtGui.QWidget):
         self.hbox.addWidget(self.tracklets_table)
 
         self.update_callback()
+
+    def save(self):
+        self.lp.save_learning()
+        self.project.save()
+
+        print "SAVED"
 
     def reset_learning(self):
         self.lp.reset_learning()

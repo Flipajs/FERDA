@@ -54,13 +54,13 @@ class LearningProcess:
 
             self.features = self.precompute_features_()
 
-            with open(p.working_directory+'/temp/features.pkl', 'wb') as f:
+            with open(p.working_directory+'/features.pkl', 'wb') as f:
                 d = {'chunks_itree': self.chunks_itree, 'features': self.features,
                      'collision_chunks': self.collision_chunks}
                 pickle.dump(d, f, -1)
         else:
             print "LOADING features..."
-            with open(p.working_directory+'/temp/features.pkl', 'rb') as f:
+            with open(p.working_directory+'/features.pkl', 'rb') as f:
                 d = pickle.load(f)
                 self.chunks_itree = d['chunks_itree']
                 self.features = d['features']
@@ -88,7 +88,7 @@ class LearningProcess:
             self.__train_rfc()
             print "TRAINED"
 
-            with open(p.working_directory+'/temp/rfc.pkl', 'wb') as f:
+            with open(p.working_directory+'/rfc.pkl', 'wb') as f:
                 d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.all_ids,
                      'class_frequences': self.class_frequences,
                      'ids_present_in_tracklet': self.ids_present_in_tracklet,
@@ -99,7 +99,7 @@ class LearningProcess:
                      'tracklet_measurements': self.tracklet_measurements}
                 pickle.dump(d, f, -1)
         else:
-            with open(p.working_directory+'/temp/rfc.pkl', 'rb') as f:
+            with open(p.working_directory+'/rfc.pkl', 'rb') as f:
                 d = pickle.load(f)
                 self.rfc = d['rfc']
                 self.X = d['X']
@@ -114,8 +114,23 @@ class LearningProcess:
                 self.tracklet_certainty = d['tracklet_certainty']
                 self.tracklet_measurements = d['tracklet_measurements']
 
-        self.save_ids_()
-        # self.run_learning()
+        # self.save_ids_()
+        self.load_learning()
+        self.reset_learning()
+
+    def load_learning(self):
+        try:
+            with open(self.p.working_directory+'/learning.pkl', 'rb') as f:
+                d = pickle.load(f)
+                self.user_decisions = d['user_decisions']
+                self.undecided_tracklets = d['undecided_tracklets']
+        except IOError:
+            pass
+
+    def save_learning(self):
+        with open(self.p.working_directory+'/learning.pkl', 'wb') as f:
+            d = {'user_decisions': self.user_decisions, 'undecided_tracklets': self.undecided_tracklets}
+            pickle.dump(d, f)
 
     def fill_undecided_tracklets(self):
         for t in self.p.chm.chunk_gen():
@@ -573,7 +588,7 @@ class LearningProcess:
         if learn:
             self.__learn(ch, id_)
 
-        self.save_ids_()
+        # self.save_ids_()
 
         if not self.__assign_id(ch, id_):
             return
@@ -627,7 +642,7 @@ class LearningProcess:
 
             id_ = np.argmax(x_)
             self.assign_identity(id_, best_tracklet, learn=learn)
-            self.save_ids_()
+            # self.save_ids_()
         else:
             # if new training data, retrain
             if len(self.X) - self.old_x_size > min_new_samples_to_retrain:
