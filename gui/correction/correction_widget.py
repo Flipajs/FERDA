@@ -848,6 +848,8 @@ class ResultsWidget(QtGui.QWidget):
         if self.video is not None:
             self.video.next_frame()
             self.update_positions(self.video.frame_number())
+        else:
+            self.play_pause()
 
         if self.video.frame_number() == self.loop_end:
             # TODO: global parameter
