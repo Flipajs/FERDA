@@ -302,6 +302,22 @@ class LearningProcess:
     def get_candidate_chunks(self):
         ch_list = self.p.chm.chunk_list()
 
+        # TODO: do it better... What if first chunks are merged...
+        vertices = self.p.gm.get_vertices_in_t(0)
+
+        areas = []
+        for v in vertices:
+            t = self.p.chm[self.p.gm.g.vp['chunk_start_id'][self.p.gm.g.vertex(v)]]
+
+            for r in RegionChunk(t, self.p.gm, self.p.rm):
+                areas.append(r.area())
+
+        areas = np.array(areas)
+        area_mean_thr = np.mean(areas) + np.std(areas)**0.5
+
+        print "MEAN: {} STD: {}, STD**0.5:{}".format(np.mean(areas), np.std(areas), np.std(areas)**0.5)
+
+
         print "ALL CHUNKS:", len(ch_list)
         # filtered = []
         for ch in ch_list:
@@ -332,7 +348,7 @@ class LearningProcess:
 
                     area_mean = sum/float(ch.length())
                     c = 'C' if ch.id() in self.collision_chunks else ' '
-                    area_mean_thr = 1000
+
                     p = 'C' if area_mean > area_mean_thr else ' '
                     print "%s %s %s area: %.2f, id:%d, length:%d" % (p==c, c, p, area_mean, ch.id(), ch.length())
 
