@@ -260,9 +260,8 @@ class RegionManager:
         if l == 1:
             # if only one id has to be taken from db
             cmd = "SELECT data FROM regions WHERE id = '%s'" % sql_ids[0]
-            self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
-            self.con.commit()
+
             row = self.cur.fetchone()
             # add it to result
             id = sql_ids[0]
