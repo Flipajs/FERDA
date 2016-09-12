@@ -8,7 +8,7 @@ from utils.video_manager import get_auto_video_manager
 from core.project.project import Project
 from core.region.mser import ferda_filtered_msers
 from utils.drawing.points import draw_points_crop, get_contour, draw_points_binary
-from gui.segmentation.painter import Painter, rgba2qimage
+from gui.segmentation.painter import Painter, rgba2qimage, array2qimage
 from helper import Helper
 from PIL import ImageQt
 from gui.gui_utils import SelectableQLabel
@@ -26,6 +26,7 @@ class SetMSERs(QtGui.QWidget):
         self.project = project
         self.vid = get_auto_video_manager(project)
         self.im = self.vid.next_frame()
+        self.w, self.h, c = self.im.shape
         # self.im = self.vid.seek_frame(659)
 
         im = self.im
@@ -36,6 +37,8 @@ class SetMSERs(QtGui.QWidget):
             im = self.project.arena_model.mask_image(im)
 
         self.im = im
+        self.use_segmentation_ = False
+        self.segmentation = None
 
         self.pen_size = 5
 
@@ -89,9 +92,10 @@ class SetMSERs(QtGui.QWidget):
         self.update()
 
     def update(self):
-        img_ = self.im.copy()
-
-        img_ = prepare_for_segmentation(img_, self.project, grayscale_speedup=True)
+        if self.use_segmentation_ and not self.segmentation is None:
+            img_ = np.asarray((-self.segmentation*255)+255, dtype=np.uint8)
+        else:
+            img_ = prepare_for_segmentation(self.im.copy(), self.project, grayscale_speedup=True)
 
         img_vis = np.zeros((img_.shape[0], img_.shape[1], 3), dtype=np.uint8)
         img_vis[:,:,0] = img_
@@ -109,11 +113,11 @@ class SetMSERs(QtGui.QWidget):
         self.right_panel.layout().addWidget(self.img_grid)
 
         self.fill_new_grid(msers, img_vis, binary)
-        im = np.asarray(binary[..., None]*(0, 255, 0, 200), dtype=np.uint8)
-        qim = rgba2qimage(im)
+        im = np.asarray(binary[..., None]*(0, 255, 255, 200), dtype=np.uint8)
+        qim = array2qimage(im)
 
         self.painter.set_overlay2(qim)
-        self.painter.set_overlay2_visible(True)
+        # self.painter.set_overlay2_visible(True)
 
     def val_changed(self):
         self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
@@ -122,6 +126,7 @@ class SetMSERs(QtGui.QWidget):
         self.project.mser_parameters.min_margin = self.mser_min_margin.value()
         self.project.mser_parameters.gaussian_kernel_std = self.blur_kernel_size.value()
         self.project.other_parameters.use_only_red_channel = self.use_only_red_ch.isChecked()
+        self.use_segmentation_ = self.use_segmentation.isChecked()
         self.project.mser_parameters.intensity_threshold = self.intensity_threshold.value()
         self.project.mser_parameters.min_area_relative = self.min_area_relative.value()
         self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
@@ -133,9 +138,13 @@ class SetMSERs(QtGui.QWidget):
         result = self.painter.get_result()
         background = result["PINK"]
         foreground = result["GREEN"]
-        image = self.helper.done(background, foreground)
-        if not image is None:
-            self.painter.set_overlay(rgba2qimage(image))
+        self.segmentation = self.helper.done(background, foreground)
+        if not self.segmentation is None:
+            im = np.asarray(self.segmentation[..., None]*(0, 255, 0, 200), dtype=np.uint8)
+            qim = array2qimage(im)
+            self.painter.set_overlay(qim)
+        else:
+            self.painter.set_overlay(None)
         self.update()
 
     def fill_new_grid(self, msers, img_vis, binary):
@@ -273,6 +282,7 @@ class SetMSERs(QtGui.QWidget):
         self.button_group = QtGui.QButtonGroup()
         self.use_only_red_ch = QtGui.QCheckBox()
         self.use_full_image = QtGui.QCheckBox()
+        self.use_segmentation = QtGui.QCheckBox()
 
         self.use_children_filter.stateChanged.connect(self.val_changed)
         self.use_children_filter.setChecked(self.project.mser_parameters.use_children_filter)
@@ -286,10 +296,10 @@ class SetMSERs(QtGui.QWidget):
         self.form_panel.addRow('full image', self.use_full_image)
         self.button_group.addButton(self.use_full_image)
 
-        self.use_segmentation = QtGui.QCheckBox()
         self.use_segmentation.stateChanged.connect(self.val_changed)
         self.form_panel.addRow('segmentation', self.use_segmentation)
         self.button_group.addButton(self.use_segmentation)
+        self.use_segmentation.setChecked(True)
 
     def prepare_paint_panel(self):
 

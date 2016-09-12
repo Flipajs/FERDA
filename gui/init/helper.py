@@ -94,14 +94,7 @@ class Helper:
         mask1 = mask1[:, 1]
         mask1.shape = ((h, w))
 
-        # create a rgba image from mask
-        r = np.zeros((h, w), dtype=np.uint8)
-        g = np.asarray(mask1 * 255, dtype=np.uint8)
-        b = np.zeros((h, w), dtype=np.uint8)
-        a = np.full((h, w), 100, dtype=np.uint8)
-        rgb = np.dstack((b, g, r, a))
-
-        return rgb
+        return mask1
 
 
 def get_shift(image, w=-1, h=-1, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift_y=2):
