@@ -96,7 +96,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     from utils.color_manager import colorize_project
     import time
     s = time.time()
-    colorize_project(bgcomp.project)
+    # colorize_project(bgcomp.project)
     print "color manager takes %f seconds" % (time.time() - s)
 
     if not cluster:
