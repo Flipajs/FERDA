@@ -134,6 +134,9 @@ class Painter(QtGui.QWidget):
         # fill the dictionary (pixmap will be set once the mask is not empty)
         self.colors[name] = [mask, color, None]
 
+    def add_color_(self, name, rgba):
+        self.add_color(name, rgba[0], rgba[1], rgba[2], rgba[3])
+
     def get_result(self):
         """ Retrieves painter data
         :return: Dictionary with color names as keys [color_name] : (ndarray mask, (r, g, b, a), pixmap)
