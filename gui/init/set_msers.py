@@ -273,11 +273,13 @@ class SetMSERs(QtGui.QWidget):
         self.form_panel.addRow('min_area = (median of selected regions) * ', self.min_area_relative)
 
         self.region_min_intensity.setMaximum(256)
-        self.region_min_intensity.setValue(256)
+        self.region_min_intensity.setValue(56)
         self.region_min_intensity.setMinimum(0)
         self.region_min_intensity.setSingleStep(1)
         self.region_min_intensity.valueChanged.connect(self.val_changed)
         self.form_panel.addRow('region min intensity', self.region_min_intensity)
+        # this line is necessary to avoid possible bugs in the future
+        self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
 
         """
         self.frame_number = QtGui.QSpinBox()
