@@ -98,15 +98,11 @@ class SetMSERs(QtGui.QWidget):
         self.update()
 
     def update(self):
+        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
         if self.use_segmentation_ and not self.segmentation is None:
             img_ = np.asarray((-self.segmentation*255)+255, dtype=np.uint8)
         else:
             img_ = prepare_for_segmentation(self.im.copy(), self.project, grayscale_speedup=True)
-
-        img_vis = np.zeros((img_.shape[0], img_.shape[1], 3), dtype=np.uint8)
-        img_vis[:,:,0] = img_
-        img_vis[:,:,1] = img_
-        img_vis[:,:,2] = img_
 
         s = time.time()
         msers = ferda_filtered_msers(img_, self.project)
@@ -118,12 +114,13 @@ class SetMSERs(QtGui.QWidget):
         self.img_grid = ImgGridWidget(cols=3, element_width=100)
         self.right_panel.layout().addWidget(self.img_grid)
 
-        self.fill_new_grid(msers, img_vis, binary)
+        self.fill_new_grid(msers, self.im.copy(), binary)
         im = np.asarray(binary[..., None]*self.color_mser, dtype=np.uint8)
         qim = array2qimage(im)
 
         self.painter.set_overlay2(qim)
         self.painter.set_overlay2_visible(self.check_mser.isChecked())
+        QtGui.QApplication.restoreOverrideCursor()
 
     def val_changed(self):
         self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
@@ -141,6 +138,7 @@ class SetMSERs(QtGui.QWidget):
         self.update()
 
     def paint_changed(self):
+        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
         result = self.painter.get_result()
         background = result["PINK"]
         foreground = result["GREEN"]
@@ -151,6 +149,7 @@ class SetMSERs(QtGui.QWidget):
             self.painter.set_overlay(qim)
         else:
             self.painter.set_overlay(None)
+        QtGui.QApplication.restoreOverrideCursor()
         self.update()
 
     def fill_new_grid(self, msers, img_vis, binary):
@@ -278,11 +277,13 @@ class SetMSERs(QtGui.QWidget):
         self.form_panel.addRow('min_area = (median of selected regions) * ', self.min_area_relative)
 
         self.region_min_intensity.setMaximum(256)
-        self.region_min_intensity.setValue(256)
+        self.region_min_intensity.setValue(56)
         self.region_min_intensity.setMinimum(0)
         self.region_min_intensity.setSingleStep(1)
         self.region_min_intensity.valueChanged.connect(self.val_changed)
         self.form_panel.addRow('region min intensity', self.region_min_intensity)
+        # this line is necessary to avoid possible bugs in the future
+        self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
 
         """
         self.frame_number = QtGui.QSpinBox()
