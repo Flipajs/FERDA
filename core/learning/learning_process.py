@@ -24,6 +24,9 @@ class LearningProcess:
         self._eps1 = 0.01
         self._eps2 = 0.1
 
+        # TODO: global parameter
+        self.eps_certainty = 0.3
+
         self.get_features = get_features_var1
 
         self.old_x_size = 0
@@ -129,6 +132,7 @@ class LearningProcess:
 
     def save_learning(self):
         with open(self.p.working_directory+'/learning.pkl', 'wb') as f:
+            print "SAVING learning.pkl"
             d = {'user_decisions': self.user_decisions, 'undecided_tracklets': self.undecided_tracklets}
             pickle.dump(d, f)
 
@@ -197,7 +201,11 @@ class LearningProcess:
 
                     gt_pt = np.array(val)
 
-                    d = np.linalg.norm(gt_pt - region.centroid())
+                    try:
+                        d = np.linalg.norm(gt_pt - region.centroid())
+                    except:
+                        return -1
+
                     if d < best_dist:
                         if gt_pt[0] > -1:
                             best_dist = d
@@ -628,8 +636,6 @@ class LearningProcess:
             queue.extend(self.__propagate_availability(ch))
 
     def next_step(self):
-        # TODO: global parameter
-        eps_certainty = 0.3
         eps_certainty_learning = 0.05
         min_new_samples_to_retrain = 50
 
@@ -641,7 +647,7 @@ class LearningProcess:
         # if not good enough, raise question
         # different strategies... 1) pick the longest tracklet, 2) tracklet with the longest intersection impact
         certainty = self.tracklet_certainty[best_tracklet.id()]
-        if certainty >= 1 - eps_certainty:
+        if certainty >= 1 - self.eps_certainty:
             learn = False
             # if good enough, use for learning
             if certainty >= 1 - eps_certainty_learning:
@@ -966,13 +972,13 @@ class LearningProcess:
                 return
 
             if type == 'P':
-                self.assign_identity(id_, tracklet, learn=True)
+                self.assign_identity(id_, tracklet, learn=True, user=False, gt=True)
             elif type == 'N':
                 self.__update_definitely_not_present(set([id_]), tracklet)
 
         self.__train_rfc()
 
-    def assign_identity(self, id_, tracklet, learn=True, not_affecting=False, oversegmented=False, user=False):
+    def assign_identity(self, id_, tracklet, learn=True, not_affecting=False, oversegmented=False, user=False, gt=False):
         """
         Sets set definitelyPresent (P) = ids
         and set definitelyNotPresent (N) = complement of ids in all IDS
@@ -1001,21 +1007,34 @@ class LearningProcess:
         # conflict test
         conflicts = self.__find_conflict(tracklet, id_=id_)
         if len(conflicts):
+            print
             print "------------------- CONFLICT ------------"
-            print tracklet, tracklet.start_frame(self.p.gm), id_, conflicts
-            if not user:
+            print tracklet, tracklet.start_frame(self.p.gm), id_
+            print "WITH:"
+            for c in conflicts:
+                print c
+
+            print
+            print
+            if not gt:
                 return
 
-        if not self.__DEBUG_GT_test(id_, tracklet):
-            self.mistakes.append(tracklet)
+        if tracklet.id() == 612:
+            print 612
 
-            print "MISTAKE ", "P:", tracklet.P, "N: ", tracklet.N,\
-                "MEASUREMENTS", self.tracklet_measurements[tracklet.id()], "Certainty: ", self.tracklet_certainty[tracklet.id()], "tracklet id:",  tracklet.id(), " ID: ", id_
-
-            # TODO: remove in future...
-            self.assign_identity(self.__DEBUG_get_answer_from_GT(tracklet), tracklet, learn=True)
-
-            return
+        # if not self.__DEBUG_GT_test(id_, tracklet):
+        #     self.mistakes.append(tracklet)
+        #
+        #     try:
+        #         print "\nMISTAKE ", tracklet, " P:", tracklet.P, "N: ", tracklet.N,\
+        #             "MEASUREMENTS", self.tracklet_measurements[tracklet.id()], "Certainty: ", self.tracklet_certainty[tracklet.id()], "tracklet id:",  tracklet.id(), " ID: ", id_
+        #     except:
+        #         pass
+        #
+        #     # TODO: remove in future...
+        #     # self.assign_identity(self.__DEBUG_get_answer_from_GT(tracklet), tracklet, learn=True)
+        #
+        #     # return
 
         print "ASSIGNING ID: ", id_, " to tracklet: ", tracklet.id(), "length: ", tracklet.length(), "start: ", tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)
         try:

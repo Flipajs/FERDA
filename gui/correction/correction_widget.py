@@ -726,6 +726,7 @@ class ResultsWidget(QtGui.QWidget):
         r = RegionChunk(ch, self.project.gm, self.project.rm).region_in_t(f)
         import textwrap
         s += "\n" + str(r)
+        s = textwrap.fill(s, 50)
         s += " radius: {:.3}".format(self.__compute_radius(r))
 
         if ch.start_frame(self.project.gm) == f:
@@ -734,13 +735,13 @@ class ResultsWidget(QtGui.QWidget):
         if ch.end_frame(self.project.gm) == f:
             s += "\nout degree: " + str(ch.end_vertex(self.project.gm).out_degree())
 
-        s += " len: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(ch.end_frame(self.project.gm))
+        s += "\nlength: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(ch.end_frame(self.project.gm))
 
-        from core.learning.learning_process import get_features_var1, features2str_var1
-        s += "\nFeature vector: "+ features2str_var1(get_features_var1(r, self.project))
+        # from core.learning.learning_process import get_features_var1, features2str_var1
+        # s += "\nFeature vector: "+ features2str_var1(get_features_var1(r, self.project))
 
 
-        s = textwrap.fill(s, 50)
+
         self.info_l.setText(s)
 
     def init_speed_slider(self):

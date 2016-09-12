@@ -50,6 +50,18 @@ class LearningWidget(QtGui.QWidget):
         self.next_step_button.clicked.connect(self.lp.next_step)
         self.top_stripe_layout.addWidget(self.next_step_button)
 
+        self.label_certainty_eps = QtGui.QLabel('certainty eps:')
+        self.top_stripe_layout.addWidget(self.label_certainty_eps)
+
+        self.certainty_eps_spinbox = QtGui.QDoubleSpinBox()
+        self.certainty_eps_spinbox.setSingleStep(0.01)
+        self.certainty_eps_spinbox.setValue(0.3)
+        self.certainty_eps_spinbox.setMaximum(1)
+        self.certainty_eps_spinbox.setMinimum(0)
+
+        self.certainty_eps_spinbox.valueChanged.connect(self.certainty_eps_changed)
+        self.top_stripe_layout.addWidget(self.certainty_eps_spinbox)
+
         self.num_next_step = QtGui.QLineEdit()
         self.num_next_step.setText('10')
         self.top_stripe_layout.addWidget(self.num_next_step)
@@ -85,6 +97,9 @@ class LearningWidget(QtGui.QWidget):
 
         self.update_callback()
 
+    def certainty_eps_changed(self):
+        self.lp.eps_certainty = self.certainty_eps_spinbox.value()
+
     def save(self):
         self.lp.save_learning()
         self.project.save()
@@ -93,6 +108,7 @@ class LearningWidget(QtGui.QWidget):
 
     def reset_learning(self):
         self.lp.reset_learning()
+        self.update_callback()
 
     def show_tracklet(self):
         indexes = self.tracklets_table.selectionModel().selectedRows()
