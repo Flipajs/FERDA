@@ -372,8 +372,9 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
 
-    proj.load("/home/dita/Programovani/FERDA Projects/cam1_test/cam1_test.fproj")
+    # proj.load("/home/dita/Programovani/FERDA Projects/cam1_test/cam1_test.fproj")
     # proj.load('/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj')
+    proj.load('/Users/flipajs/Documents/wd/GT/Cam1 copy/cam1.fproj')
     # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
     proj.arena_model = None
     proj.bg_model = None

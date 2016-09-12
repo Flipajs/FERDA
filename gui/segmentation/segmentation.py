@@ -304,6 +304,8 @@ if __name__ == "__main__":
 
     # ex = SegmentationPicker('/home/dita/vlcsnap-2016-08-16-17h28m57s150.png')
     ex = SegmentationPicker('/Users/flipajs/Pictures/vlcsnap-2016-08-31-15h33m56s683.png')
+    # ex = SegmentationPicker('/Users/flipajs/Pictures/vlcsnap-2016-09-05-10h36m15s229.png')
+    # ex = SegmentationPicker('/Users/flipajs/Pictures/vlcsnap-2016-09-05-10h28m49s847.png')
     # ex = SegmentationPicker('/home/dita/img_67.png')
     ex.show()
     ex.move(-500, -500)
