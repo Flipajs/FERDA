@@ -98,6 +98,7 @@ class SetMSERs(QtGui.QWidget):
         self.update()
 
     def update(self):
+        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
         if self.use_segmentation_ and not self.segmentation is None:
             img_ = np.asarray((-self.segmentation*255)+255, dtype=np.uint8)
         else:
@@ -119,6 +120,7 @@ class SetMSERs(QtGui.QWidget):
 
         self.painter.set_overlay2(qim)
         self.painter.set_overlay2_visible(self.check_mser.isChecked())
+        QtGui.QApplication.restoreOverrideCursor()
 
     def val_changed(self):
         self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
@@ -136,6 +138,7 @@ class SetMSERs(QtGui.QWidget):
         self.update()
 
     def paint_changed(self):
+        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
         result = self.painter.get_result()
         background = result["PINK"]
         foreground = result["GREEN"]
@@ -146,6 +149,7 @@ class SetMSERs(QtGui.QWidget):
             self.painter.set_overlay(qim)
         else:
             self.painter.set_overlay(None)
+        QtGui.QApplication.restoreOverrideCursor()
         self.update()
 
     def fill_new_grid(self, msers, img_vis, binary):
