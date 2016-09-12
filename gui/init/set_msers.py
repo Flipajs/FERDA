@@ -9,6 +9,7 @@ from core.project.project import Project
 from core.region.mser import ferda_filtered_msers
 from utils.drawing.points import draw_points_crop, get_contour, draw_points_binary
 from gui.segmentation.painter import Painter, rgba2qimage
+from helper import Helper
 from PIL import ImageQt
 from gui.gui_utils import SelectableQLabel
 from utils.img import prepare_for_segmentation
@@ -39,6 +40,7 @@ class SetMSERs(QtGui.QWidget):
         self.pen_size = 5
 
         self.painter = Painter(self.im)
+        self.helper = Helper(self.im)
         self.painter.add_color("GREEN", 0, 255, 0, 255)
         self.img_grid = None
 
@@ -64,6 +66,8 @@ class SetMSERs(QtGui.QWidget):
         self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.painter)
         self.layout().addWidget(self.right_panel)
+
+        self.painter.update_callback = self.paint_changed
 
         self.update()
         self.show()
@@ -125,6 +129,15 @@ class SetMSERs(QtGui.QWidget):
 
         self.update()
 
+    def paint_changed(self):
+        result = self.painter.get_result()
+        background = result["PINK"]
+        foreground = result["GREEN"]
+        image = self.helper.done(background, foreground)
+        if not image is None:
+            self.painter.set_overlay(rgba2qimage(image))
+        self.update()
+
     def fill_new_grid(self, msers, img_vis, binary):
         for r, r_id in zip(msers, range(len(msers))):
             if self.project.stats:
@@ -179,6 +192,7 @@ class SetMSERs(QtGui.QWidget):
         self.painter.set_image_visible(self.check_bg.isChecked())
         self.painter.set_overlay_visible(self.check_prob.isChecked())
         self.painter.set_masks_visible(self.check_paint.isChecked())
+        self.painter.set_overlay2_visible(self.check_mser.isChecked())
 
     def prepare_form_panel(self):
         self.mser_max_area = QtGui.QDoubleSpinBox()
@@ -278,10 +292,6 @@ class SetMSERs(QtGui.QWidget):
         self.button_group.addButton(self.use_segmentation)
 
     def prepare_paint_panel(self):
-        self.pen_label = QtGui.QLabel()
-        self.pen_label.setWordWrap(True)
-        self.pen_label.setText("")
-        # self.left_panel.layout().addWidget(self.pen_label)
 
         # PEN SIZE slider
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
@@ -320,21 +330,6 @@ class SetMSERs(QtGui.QWidget):
         self.left_panel.layout().addWidget(color_widget)
         self.color_buttons["eraser"] = eraser_button
 
-        # UNDO key shortcut
-        self.action_undo = QtGui.QAction('undo', self)
-        self.action_undo.triggered.connect(self.painter.undo)
-        self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Z))
-        self.addAction(self.action_undo)
-
-        self.undo_button = QtGui.QPushButton("Undo \n (key_Z)")
-        self.undo_button.clicked.connect(self.painter.undo)
-        self.left_panel.layout().addWidget(self.undo_button)
-
-        self.color_label = QtGui.QLabel()
-        self.color_label.setWordWrap(True)
-        self.color_label.setText("")
-        # self.left_panel.layout().addWidget(self.color_label)
-
         self.check_bg = QtGui.QCheckBox("Background image")
         self.check_bg.setChecked(True)
         self.check_bg.toggled.connect(self.checkbox)
@@ -349,6 +344,11 @@ class SetMSERs(QtGui.QWidget):
         self.check_paint.setChecked(True)
         self.check_paint.toggled.connect(self.checkbox)
         self.left_panel.layout().addWidget(self.check_paint)
+
+        self.check_mser = QtGui.QCheckBox("MSER view")
+        self.check_mser.setChecked(True)
+        self.check_mser.toggled.connect(self.checkbox)
+        self.left_panel.layout().addWidget(self.check_mser)
 
 
 if __name__ == "__main__":
