@@ -45,7 +45,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     # for i in range(part_num):
     for i in range(part_num):
         rm_old = RegionManager(db_wd=bgcomp.project.working_directory + '/temp',
-                               db_name='part' + str(i) + '_rm.sqlite3')
+                               db_name='part' + str(i) + '_rm.sqlite3', cache_size_limit=1)
 
         with open(bgcomp.project.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
             up = pickle.Unpickler(f)
