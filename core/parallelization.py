@@ -30,8 +30,8 @@ if __name__ == '__main__':
     last_n_frames = int(sys.argv[5])
 
     f_log_name = 'id'+str(id)+'.log'
-    with open(f_log_name, 'wb') as f:
-        f.write('init...')
+    # with open(f_log_name, 'wb') as f:
+    #     f.write('init...')
 
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
@@ -82,8 +82,8 @@ if __name__ == '__main__':
     file_t = 0
 
     for i in range(frames_in_row + last_n_frames):
-        with open(f_log_name, 'a') as f:
-            f.write('frame: '+str(i)+' is being processed...')
+        # with open(f_log_name, 'a') as f:
+        #     f.write('frame: '+str(i)+' is being processed...')
 
         frame = id*frames_in_row + i
 
@@ -119,13 +119,13 @@ if __name__ == '__main__':
         #     print i
         #     sys.stdout.flush()
 
-    with open(f_log_name, 'a') as f:
-        f.write('before detect_split_merge_cases')
+    # with open(f_log_name, 'a') as f:
+    #     f.write('before detect_split_merge_cases')
 
     # solver.detect_split_merge_cases()
 
-    with open(f_log_name, 'a') as f:
-        f.write('before simplify')
+    # with open(f_log_name, 'a') as f:
+    #     f.write('before simplify')
 
     s = time.time()
     print "#Edges BEFORE: ", proj.gm.g.num_edges()
@@ -153,8 +153,8 @@ if __name__ == '__main__':
     # proj.gm = proj.gm
     # proj.save()
 
-    with open(f_log_name, 'a') as f:
-        f.write('before pickle dumping...')
+    # with open(f_log_name, 'a') as f:
+    #     f.write('before pickle dumping...')
 
     with open(proj.working_directory+'temp/part'+str(id)+'.pkl', 'wb') as f:
         p = pickle.Pickler(f, -1)
