@@ -9,7 +9,7 @@ class MyView(QtGui.QGraphicsView):
         self.setMouseTracking(True)
         self.update_callback_move = update_callback_move
         self.update_callback_press = update_callback_press
-        self.scale = 1
+        self.scale(1, 1)
         self.scale_step = 0
         self.scene = None
 
