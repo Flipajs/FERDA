@@ -42,7 +42,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     bgcomp.project.color_manager = None
 
 
-    with open(bgcomp.project.working_directory+'temp/assembly_log.pkl', 'wb') as f:
+    with open(bgcomp.project.working_directory+'/temp/assembly_log.txt', 'wb') as f:
         f.write("")
 
     print "merging..."
@@ -60,7 +60,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
             merge_parts(bgcomp.project.gm, g_, relevant_vertices, bgcomp.project, rm_old, chm_)
 
             if i > 0 and i % 100 == 0:
-                with open(bgcomp.project.working_directory+'temp/assembly_log.pkl', 'a') as f:
+                with open(bgcomp.project.working_directory+'/temp/assembly_log.txt', 'a') as f:
                     f.write('#vertices: '+str(bgcomp.project.gm.g.num_vertices())+', #edges: '+str(bgcomp.project.gm.g.num_edges())+'\n')
                     f.write('chm size: '+str(sys.getsizeof(bgcomp.project.chm))+' rm size: '+str(sys.getsizeof(bgcomp.project.rm))+' gm size: '+str(sys.getsizeof(bgcomp.project.gm))+' G size: '+str(sys.getsizeof(bgcomp.project.gm.g)))
 
