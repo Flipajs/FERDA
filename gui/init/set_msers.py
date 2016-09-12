@@ -47,9 +47,10 @@ class SetMSERs(QtGui.QWidget):
 
         self.pen_size = 5
 
-        self.painter = Painter(self.im)
+        r, g, b, a = self.color_background
+        self.painter = Painter(self.im, paint_name="background", paint_r=r, paint_g=g, paint_b=b, paint_a=a)
         self.helper = Helper(self.im)
-        self.painter.add_color_("GREEN", self.color_foreground)
+        self.painter.add_color_("foreground", self.color_foreground)
         self.img_grid = None
 
         self.setLayout(QtGui.QHBoxLayout())
@@ -140,8 +141,8 @@ class SetMSERs(QtGui.QWidget):
     def paint_changed(self):
         QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
         result = self.painter.get_result()
-        background = result["PINK"]
-        foreground = result["GREEN"]
+        background = result["background"]
+        foreground = result["foreground"]
         self.segmentation = self.helper.done(background, foreground)
         if not self.segmentation is None:
             im = np.asarray(self.segmentation[..., None]*self.color_prob, dtype=np.uint8)
@@ -173,13 +174,13 @@ class SetMSERs(QtGui.QWidget):
 
             self.img_grid.add_item(item)
 
-    def pink(self):
-        self.cur_color = "PINK"
+    def set_color_bg(self):
+        self.cur_color = "background"
         self.cur_eraser = False
         self.set_color()
 
-    def green(self):
-        self.cur_color = "GREEN"
+    def set_color_fg(self):
+        self.cur_color = "foreground"
         self.cur_eraser = False
         self.set_color()
 
@@ -332,18 +333,18 @@ class SetMSERs(QtGui.QWidget):
         color_widget.setLayout(QtGui.QHBoxLayout())
 
         self.color_buttons = {}
-        pink_button = QtGui.QPushButton("Pink")
-        pink_button.setCheckable(True)
-        pink_button.setChecked(True)
-        pink_button.clicked.connect(self.pink)
-        color_widget.layout().addWidget(pink_button)
-        self.color_buttons["pink"] = pink_button
+        button_bg = QtGui.QPushButton("background")
+        button_bg.setCheckable(True)
+        button_bg.setChecked(True)
+        button_bg.clicked.connect(self.set_color_bg)
+        color_widget.layout().addWidget(button_bg)
+        self.color_buttons["background"] = button_bg
 
-        green_button = QtGui.QPushButton("Green")
-        green_button.setCheckable(True)
-        green_button.clicked.connect(self.green)
-        color_widget.layout().addWidget(green_button)
-        self.color_buttons["green"] = green_button
+        button_fg = QtGui.QPushButton("foreground")
+        button_fg.setCheckable(True)
+        button_fg.clicked.connect(self.set_color_fg)
+        color_widget.layout().addWidget(button_fg)
+        self.color_buttons["foreground"] = button_fg
 
         eraser_button = QtGui.QPushButton("Eraser")
         eraser_button.setCheckable(True)
