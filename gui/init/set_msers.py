@@ -103,11 +103,6 @@ class SetMSERs(QtGui.QWidget):
         else:
             img_ = prepare_for_segmentation(self.im.copy(), self.project, grayscale_speedup=True)
 
-        img_vis = np.zeros((img_.shape[0], img_.shape[1], 3), dtype=np.uint8)
-        img_vis[:,:,0] = img_
-        img_vis[:,:,1] = img_
-        img_vis[:,:,2] = img_
-
         s = time.time()
         msers = ferda_filtered_msers(img_, self.project)
         print "mser takes: ", time.time() - s
@@ -118,7 +113,7 @@ class SetMSERs(QtGui.QWidget):
         self.img_grid = ImgGridWidget(cols=3, element_width=100)
         self.right_panel.layout().addWidget(self.img_grid)
 
-        self.fill_new_grid(msers, img_vis, binary)
+        self.fill_new_grid(msers, self.im.copy(), binary)
         im = np.asarray(binary[..., None]*self.color_mser, dtype=np.uint8)
         qim = array2qimage(im)
 
