@@ -13,7 +13,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     # TODO: add to settings
 
     if cluster:
-        bgcomp.project.rm = RegionManager(db_wd=bgcomp.project.working_directory, cache_size_limit=5)
+        bgcomp.project.rm = RegionManager(db_wd=bgcomp.project.working_directory, cache_size_limit=0.01)
     else:
         from core.settings import Settings as S_
         bgcomp.project.rm = RegionManager(db_wd=bgcomp.project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
@@ -59,10 +59,19 @@ def assembly_after_parallelization(bgcomp, cluster=False):
 
             merge_parts(bgcomp.project.gm, g_, relevant_vertices, bgcomp.project, rm_old, chm_)
 
-            if i > 0 and i % 100 == 0:
+            if i % 5  == 0:
                 with open(bgcomp.project.working_directory+'/temp/assembly_log.txt', 'a') as f:
                     f.write('#vertices: '+str(bgcomp.project.gm.g.num_vertices())+', #edges: '+str(bgcomp.project.gm.g.num_edges())+'\n')
-                    f.write('chm size: '+str(sys.getsizeof(bgcomp.project.chm))+' rm size: '+str(sys.getsizeof(bgcomp.project.rm))+' gm size: '+str(sys.getsizeof(bgcomp.project.gm))+' G size: '+str(sys.getsizeof(bgcomp.project.gm.g)))
+                    f.write('chm size: '+str(sys.getsizeof(pickle.dumps(bgcomp.project.chm))/1000000)+'MB\n')
+                    con = bgcomp.project.rm.con
+                    cur = bgcomp.project.rm.cur
+                    bgcomp.project.rm.con = None
+                    bgcomp.project.rm.cur = None
+                    f.write('rm size: '+str(sys.getsizeof(pickle.dumps(bgcomp.project.rm))/1000000)+'MB\n')
+                    bgcomp.project.rm.con = con
+                    bgcomp.project.rm.cur = cur
+                    # f.write('gm size: '+str(sys.getsizeof(pickle.dumps(bgcomp.project.gm)))+'B\n')
+                    f.write('G size: '+str(sys.getsizeof(pickle.dumps(bgcomp.project.gm.g))/1000000)+'MB\n\n')
 
         if not cluster:
             bgcomp.update_callback((i + 1) / float(part_num))
