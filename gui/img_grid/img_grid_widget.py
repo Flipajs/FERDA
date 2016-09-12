@@ -1,14 +1,15 @@
-__author__ = 'fnaiser'
-
 from PyQt4 import QtGui
 
+__author__ = 'fnaiser'
+
+
 class ImgGridWidget(QtGui.QWidget):
-    def __init__(self, scrolling=True):
+    def __init__(self, scrolling=True, cols=5, element_width=300):
         super(ImgGridWidget, self).__init__()
 
         self.scrolling = scrolling
-        self.element_width = 300
-        self.cols = 5
+        self.element_width = element_width
+        self.cols = cols
         self.id = 0
 
         self.grid = QtGui.QGridLayout()
@@ -24,15 +25,14 @@ class ImgGridWidget(QtGui.QWidget):
         self.layout().setSpacing(0)
         self.layout().setMargin(0)
 
+        self.layout().addWidget(self.grid_widget)
         if self.scrolling:
             self.scroll_ = QtGui.QScrollArea()
-            self.scroll_.setWidgetResizable(True)
             self.scroll_.setWidget(self.grid_widget)
+            self.scroll_.setWidgetResizable(True)
             self.set_width_()
 
             self.layout().addWidget(self.scroll_)
-
-        self.layout().addWidget(self.grid_widget)
 
     def reshape(self, cols, element_width=100):
         self.cols = cols
