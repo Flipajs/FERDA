@@ -171,6 +171,10 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
     used_chunks_ids = set()
     # reindex vertices
     for v_id in old_g_relevant_vertices:
+        # skip "dead" nodes
+        if old_v.in_degree() == 0 and old_v.out_degree() == 0:
+            continue
+
         old_v = old_g.vertex(v_id)
         old_reg = old_rm[old_g.vp['region_id'][old_v]]
         new_rm.add(old_reg)

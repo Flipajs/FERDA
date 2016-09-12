@@ -11,7 +11,7 @@ from core.graph.region_chunk import RegionChunk
 from pympler import asizeof
 import gc
 
-class StatisticsWidget(QtGui.QWidget):
+class   StatisticsWidget(QtGui.QWidget):
     def __init__(self, project):
         super(StatisticsWidget, self).__init__()
 

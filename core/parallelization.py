@@ -112,7 +112,7 @@ if __name__ == '__main__':
         #     print i
         #     sys.stdout.flush()
 
-    solver.detect_split_merge_cases()
+    # solver.detect_split_merge_cases()
 
     s = time.time()
     print "#Edges BEFORE: ", proj.gm.g.num_edges()
