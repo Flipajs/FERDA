@@ -2,7 +2,7 @@ import sys
 
 __author__ = 'filip@naiser.cz'
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from utils.video_manager import get_auto_video_manager
 from core.project.project import Project
@@ -36,7 +36,10 @@ class SetMSERs(QtGui.QWidget):
 
         self.im = im
 
+        self.pen_size = 5
+
         self.painter = Painter(self.im)
+        self.painter.add_color("GREEN", 0, 255, 0, 255)
         self.img_grid = None
 
         self.setLayout(QtGui.QHBoxLayout())
@@ -48,12 +51,14 @@ class SetMSERs(QtGui.QWidget):
         self.left_panel.setMinimumWidth(300)
 
         self.form_panel = QtGui.QFormLayout()
-        self.fill_form_panel()
         self.left_panel.layout().addLayout(self.form_panel)
 
         # Right panel with image grid
         self.right_panel = QtGui.QWidget()
         self.right_panel.setLayout(QtGui.QVBoxLayout())
+
+        self.prepare_form_panel()
+        self.prepare_paint_panel()
 
         # Complete the gui
         self.layout().addWidget(self.left_panel)
@@ -141,7 +146,41 @@ class SetMSERs(QtGui.QWidget):
 
             self.img_grid.add_item(item)
 
-    def fill_form_panel(self):
+    def pink(self):
+        self.cur_color = "PINK"
+        self.cur_eraser = False
+        self.set_color()
+
+    def green(self):
+        self.cur_color = "GREEN"
+        self.cur_eraser = False
+        self.set_color()
+
+    def set_color(self):
+        if self.cur_eraser:
+            self.painter.set_pen_color(None)
+            self.color_buttons["eraser"].setChecked(True)
+        else:
+            self.painter.set_pen_color(self.cur_color)
+            for color, btn in self.color_buttons.iteritems():
+                if color == self.cur_color.lower():
+                    btn.setChecked(True)
+                else:
+                    btn.setChecked(False)
+
+    def set_eraser(self):
+        if self.cur_eraser:
+            self.cur_eraser = False
+        else:
+            self.cur_eraser = True
+        self.set_color()
+
+    def checkbox(self):
+        self.painter.set_image_visible(self.check_bg.isChecked())
+        self.painter.set_overlay_visible(self.check_prob.isChecked())
+        self.painter.set_masks_visible(self.check_paint.isChecked())
+
+    def prepare_form_panel(self):
         self.mser_max_area = QtGui.QDoubleSpinBox()
         self.mser_max_area.setMinimum(0.0001)
         self.mser_max_area.setSingleStep(0.0001)
@@ -237,6 +276,79 @@ class SetMSERs(QtGui.QWidget):
         self.use_segmentation.stateChanged.connect(self.val_changed)
         self.form_panel.addRow('segmentation', self.use_segmentation)
         self.button_group.addButton(self.use_segmentation)
+
+    def prepare_paint_panel(self):
+        self.pen_label = QtGui.QLabel()
+        self.pen_label.setWordWrap(True)
+        self.pen_label.setText("")
+        # self.left_panel.layout().addWidget(self.pen_label)
+
+        # PEN SIZE slider
+        self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.slider.setGeometry(30, 40, 50, 30)
+        self.slider.setRange(2, 30)
+        self.slider.setTickInterval(1)
+        self.slider.setValue(self.pen_size)
+        self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider.valueChanged[int].connect(self.painter.set_pen_size)
+        self.slider.setVisible(True)
+        self.left_panel.layout().addWidget(self.slider)
+
+        # color switcher widget
+        color_widget = QtGui.QWidget()
+        color_widget.setLayout(QtGui.QHBoxLayout())
+
+        self.color_buttons = {}
+        pink_button = QtGui.QPushButton("Pink")
+        pink_button.setCheckable(True)
+        pink_button.setChecked(True)
+        pink_button.clicked.connect(self.pink)
+        color_widget.layout().addWidget(pink_button)
+        self.color_buttons["pink"] = pink_button
+
+        green_button = QtGui.QPushButton("Green")
+        green_button.setCheckable(True)
+        green_button.clicked.connect(self.green)
+        color_widget.layout().addWidget(green_button)
+        self.color_buttons["green"] = green_button
+
+        eraser_button = QtGui.QPushButton("Eraser")
+        eraser_button.setCheckable(True)
+        eraser_button.clicked.connect(self.set_eraser)
+        color_widget.layout().addWidget(eraser_button)
+        self.left_panel.layout().addWidget(color_widget)
+        self.color_buttons["eraser"] = eraser_button
+
+        # UNDO key shortcut
+        self.action_undo = QtGui.QAction('undo', self)
+        self.action_undo.triggered.connect(self.painter.undo)
+        self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Z))
+        self.addAction(self.action_undo)
+
+        self.undo_button = QtGui.QPushButton("Undo \n (key_Z)")
+        self.undo_button.clicked.connect(self.painter.undo)
+        self.left_panel.layout().addWidget(self.undo_button)
+
+        self.color_label = QtGui.QLabel()
+        self.color_label.setWordWrap(True)
+        self.color_label.setText("")
+        # self.left_panel.layout().addWidget(self.color_label)
+
+        self.check_bg = QtGui.QCheckBox("Background image")
+        self.check_bg.setChecked(True)
+        self.check_bg.toggled.connect(self.checkbox)
+        self.left_panel.layout().addWidget(self.check_bg)
+
+        self.check_prob = QtGui.QCheckBox("Probability mask")
+        self.check_prob.setChecked(True)
+        self.check_prob.toggled.connect(self.checkbox)
+        self.left_panel.layout().addWidget(self.check_prob)
+
+        self.check_paint = QtGui.QCheckBox("Paint data")
+        self.check_paint.setChecked(True)
+        self.check_paint.toggled.connect(self.checkbox)
+        self.left_panel.layout().addWidget(self.check_paint)
 
 
 if __name__ == "__main__":
