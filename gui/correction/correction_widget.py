@@ -723,7 +723,8 @@ class ResultsWidget(QtGui.QWidget):
 
         ch = self.project.chm[id_]
         f = self.video.frame_number()
-        r = RegionChunk(ch, self.project.gm, self.project.rm).region_in_t(f)
+        rch = RegionChunk(ch, self.project.gm, self.project.rm)
+        r = rch.region_in_t(f)
         import textwrap
         s += "\n" + str(r)
         s = textwrap.fill(s, 50)
@@ -737,10 +738,16 @@ class ResultsWidget(QtGui.QWidget):
 
         s += "\nlength: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(ch.end_frame(self.project.gm))
 
+
+        avg_area = 0
+        for r in rch.regions_gen():
+            avg_area += r.area()
+
+        avg_area /= rch.chunk_.length()
+
+        s += "\navg area: "+str(avg_area)
         # from core.learning.learning_process import get_features_var1, features2str_var1
         # s += "\nFeature vector: "+ features2str_var1(get_features_var1(r, self.project))
-
-
 
         self.info_l.setText(s)
 
