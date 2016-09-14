@@ -260,7 +260,7 @@ def get_cluster_feature_vector(cluster, avg_dist):
         perimeter += vector_norm(contour[i] - contour[i - 1])
         distances.append(perimeter)
 
-    result = np.zeros((math.ceil(perimeter / avg_dist), 2))
+    result = np.zeros((int(math.ceil(perimeter / avg_dist)), 2))
     i = 0
     p = 0
     while p < con_length:
@@ -277,19 +277,25 @@ def get_cluster_feature_vector(cluster, avg_dist):
     return result.flatten()
 
 
-def view_cluster_fitting(cluster, freq):
-    contour = zip(cluster[::2], cluster[1::2])
-    n = len(contour) / freq
-    # ang_step = math.pi / n
-    ang_step = 0
-    # print ang_step
+def view_cluster_fitting(cluster, eigen_ants, head_pca, freq, head_range, bottom_range):
+    # contour = zip(cluster[::2], cluster[1::2])
+    n = len(cluster) / freq / 2
+    plt.hold(True)
+    plt.scatter(cluster[::2], cluster[1::2], c='r')
+    cluster = np.expand_dims(cluster, axis=0)
     for i in range(n):
-        points = np.array(rotate(contour, ang_step * i))
-        points = np.roll(points, - i * freq, axis=0)
+        head = extract_heads(np.roll(cluster, - i * freq, axis=0), head_range)
+        head = shift_heads_to_origin(head, head_range).squeeze()
+        ang = math.atan2(head[0], head[1])
+        head = np.array(rotate(zip(head[::2], head[1::2]), ang))
         plt.axis('equal')
-        plt.scatter(points[:, 0], points[:, 1], c='r')
-        plt.scatter(points[0, 0], points[0, 1], c='b')
+        plt.hold(True)
+        plt.plot(head[:, 0], head[:, 1])
         plt.show()
+        ant = np.dot(pca_head.transform(head.flatten()), eigen_ants) + head_pca.mean_
+        ant = np.array(rotate(zip(ant[::2], ant[1::2]), ang, method='back_projection'))
+        plt.plot(ant[:, 0], ant[:, 1])
+
 
 
 def generate_eigen_ants_figure(ants, number_of_eigen_v):
@@ -402,8 +408,8 @@ if __name__ == '__main__':
     X, avg_dist = get_matrix(chunks_without_clusters, number_of_data, results)
     head_range = number_of_data / 4
     bottom_range = number_of_data / 4
-    # H = extract_heads(X, head_range)
-    # B = extract_bottoms(X, bottom_range)
+    H = extract_heads(X, head_range)
+    B = extract_bottoms(X, bottom_range)
 
     # PCA ON WHOLE ANT
     pca_whole = PCA(number_of_eigen_v)
@@ -413,18 +419,18 @@ if __name__ == '__main__':
     X_R = pca_whole.inverse_transform(pca_whole.transform(X))
 
     # PCA ON HEADS
-    # pca_head = PCA(number_of_eigen_v)
-    # H_C = pca_head.fit_transform(H)
-    # eigen_ants_head = pca_head.components_
-    # eigen_values_head = pca_head.explained_variance_
-    # H_R = np.dot(H_C, eigen_ants_whole) + pca_whole.mean_
+    pca_head = PCA(number_of_eigen_v)
+    H_C = pca_head.fit_transform(H)
+    eigen_ants_head = pca_head.components_
+    eigen_values_head = pca_head.explained_variance_
+    H_R = np.dot(H_C, eigen_ants_whole) + pca_whole.mean_
 
     # PCA ON BOTTOMS
-    # pca_bottom = PCA(number_of_eigen_v)
-    # B_C = pca_bottom.fit_transform(B)
-    # eigen_ants_bottom = pca_bottom.components_
-    # eigen_values_bottom = pca_bottom.explained_variance_
-    # B_R = np.dot(B_C, eigen_ants_whole) + pca_whole.mean_
+    pca_bottom = PCA(number_of_eigen_v)
+    B_C = pca_bottom.fit_transform(B)
+    eigen_ants_bottom = pca_bottom.components_
+    eigen_values_bottom = pca_bottom.explained_variance_
+    B_R = np.dot(B_C, eigen_ants_whole) + pca_whole.mean_
 
     # VIEW PCA RECONSTRUCTING RESULTS
     # for j in range(1):
@@ -458,4 +464,4 @@ if __name__ == '__main__':
     #     plt.scatter([0],[0],c='r')
     #     plt.show()
     for cluster in C:
-        view_cluster_fitting(cluster, freq)
+        view_cluster_fitting(cluster, eigen_ants_whole, pca_head, freq, head_range, bottom_range)
