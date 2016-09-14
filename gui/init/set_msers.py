@@ -20,7 +20,8 @@ __author__ = 'filip@naiser.cz'
 
 
 class SetMSERs(QtGui.QWidget):
-    def __init__(self, project, mser_color=(255, 128, 0, 200), prob_color=(0, 255, 0, 200), foreground_color=(0, 255, 0, 255), background_color=(255, 0, 238, 255)):
+    def __init__(self, project, mser_color=(255, 128, 0, 200), prob_color=(0, 255, 0, 200),
+                 foreground_color=(0, 255, 0, 255), background_color=(255, 0, 238, 255)):
         super(SetMSERs, self).__init__()
 
         self.project = project
@@ -210,6 +211,13 @@ class SetMSERs(QtGui.QWidget):
         self.painter.set_overlay_visible(self.check_prob.isChecked())
         self.painter.set_masks_visible(self.check_paint.isChecked())
         self.painter.set_overlay2_visible(self.check_mser.isChecked())
+
+    def next_frame(self):
+        self.im = self.vid.next_frame()
+        self.painter.set_image(self.im)
+        self.painter.reset_masks()
+        self.helper.update_xy()
+        self.helper.set_image(self.im)
 
     def prepare_widgets(self):
         self.use_children_filter = QtGui.QCheckBox()
