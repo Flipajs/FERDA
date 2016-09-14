@@ -1,7 +1,5 @@
 import sys
 
-__author__ = 'filip@naiser.cz'
-
 from PyQt4 import QtGui, QtCore
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from utils.video_manager import get_auto_video_manager
@@ -17,6 +15,8 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+
+__author__ = 'filip@naiser.cz'
 
 
 class SetMSERs(QtGui.QWidget):
@@ -46,6 +46,8 @@ class SetMSERs(QtGui.QWidget):
         self.color_background = background_color
 
         self.pen_size = 5
+        self.cur_color = "background"
+        self.cur_eraser = False
 
         r, g, b, a = self.color_background
         self.painter = Painter(self.im, paint_name="background", paint_r=r, paint_g=g, paint_b=b, paint_a=a)

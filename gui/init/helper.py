@@ -4,8 +4,35 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 class Helper:
-
+    # TODO: prepare for multiple images sequence, complete extending data and add it to setmsers
     def __init__(self, image):
+        self.image = None
+        self.edges = None
+        self.shiftx = None
+        self.shifty = None
+        self.avg = None
+        self.maxs = None
+        self.mins = None
+        self.diff = None
+        self.bg = None
+        self.gr = None
+        self.rb = None
+
+        # these arrays contain learning data from previous frames
+        # after confirming selection on a frame, temporary data is copied here
+        self.X = []  # X is a list of tuples, each tuple contains N properties of a pixel, eg (r, g, b)
+        self.y = []  # y is a list of class ids, and contains class data for tuples in X respectively
+
+        # these arrays are used to store learn data from current frame
+        # they are recreated from scratch with every action
+        # after confirming selection, it's copied to permanent storage (self.X and self.y)
+        self.Xtmp = []
+        self.ytmp = []
+
+        self.rfc = None
+        self.set_image(image)
+
+    def set_image(self, image):
         self.image = image
 
         # create a blurred image
@@ -44,29 +71,37 @@ class Helper:
         X.append((b, g, r, a, sx, sy, c, d, e, f, h, k))
         y.append(classification)
 
-    def done(self, background, foreground):
-        # prepare learning data
-        # X contains tuples of data for each evaluated unit-pixel (R, G, B, edge?)
-        # y contains classifications for all pixels respectively
-        X = []
-        y = []
+    def done(self, background, foreground, rfc=None):
+        if rfc is None:
+            # prepare learning data
+            # X contains tuples of data for each evaluated unit-pixel (R, G, B, edge?)
+            # y contains classifications for all pixels respectively
+            self.Xtmp = []
+            self.ytmp = []
 
-        # loop all nonzero pixels from foreground (ants) and background and add them to testing data
-        nzero = np.nonzero(background[0])
-        if len(nzero[0]) == 0:
-            return None
-        for i, j in zip(nzero[0], nzero[1]):
-            self.get_data(i, j, X, y, 0)
+            # loop all nonzero pixels from foreground (ants) and background and add them to testing data
+            nzero = np.nonzero(background[0])
+            if len(nzero[0]) == 0:
+                return None
+            for i, j in zip(nzero[0], nzero[1]):
+                self.get_data(i, j, self.Xtmp, self.ytmp, 0)
 
-        nzero = np.nonzero(foreground[0])
-        if len(nzero[0]) == 0:
-            return None
-        for i, j in zip(nzero[0], nzero[1]):
-            self.get_data(i, j, X, y, 1)
+            nzero = np.nonzero(foreground[0])
+            if len(nzero[0]) == 0:
+                return None
+            for i, j in zip(nzero[0], nzero[1]):
+                self.get_data(i, j, self.Xtmp, self.ytmp, 1)
 
-        # create the classifier
-        rfc = RandomForestClassifier(class_weight='balanced')
-        rfc.fit(X, y)
+            # create the classifier
+            self.rfc = RandomForestClassifier(class_weight='balanced')
+
+            # to train on all data (current and all previous frames), join the arrays together
+            # class variables are not affected here
+            X = self.Xtmp.copy().extend(self.X)
+            y = self.ytmp.copy().extend(self.y)
+            self.rfc.fit(X, y)
+        else:
+            self.rfc = rfc
 
         h, w, c = self.image.shape
 
@@ -96,12 +131,20 @@ class Helper:
 
         return mask1
 
+    def update_xy(self):
+        # append temporary data to X and y
+        self.X.extend(self.Xtmp)
+        self.y.extend(self.ytmp)
+
+    def get_rfc(self):
+        return self.rfc
+
 
 def get_shift(image, w=-1, h=-1, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift_y=2):
     if w < 0 or h < 0:
         w, h, c = image.shape
 
-    # prepare first image (original), make it grayscale and blurre
+    # prepare first image (original), make it grayscale and blurred
     img1 = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     img1 = cv2.GaussianBlur(img1, (blur_kernel, blur_kernel), blur_sigma)
 
@@ -110,7 +153,7 @@ def get_shift(image, w=-1, h=-1, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift
     # apply shift matrix
     img2 = cv2.warpAffine(image, M, (w, h))
 
-    # prepare second image (tranlated), make it grayscale and blurred
+    # prepare second image (translated), make it grayscale and blurred
     img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     img2 = cv2.GaussianBlur(img2, (blur_kernel, blur_kernel), blur_sigma)
 
