@@ -33,3 +33,7 @@ class ChunkManager:
             l.append(ch)
 
         return l
+
+    def chunk_gen(self):
+        for ch in self.chunks_.itervalues():
+            yield ch
