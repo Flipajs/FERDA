@@ -25,5 +25,5 @@ if __name__ == "__main__":
             ch.N = set()
             ch.P = set()
 
-    with open(working_dir+'/chm.pkl', 'wb') as f:
+    with open(working_dir+'/chunk_manager.pkl', 'wb') as f:
         pickle.dump(chm, f)
