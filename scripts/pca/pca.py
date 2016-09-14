@@ -21,84 +21,6 @@ from utils.geometry import rotate
 
 average = 0
 
-def pca_basis(X):
-    # implementation trick
-    T = X.T.dot(X)
-    eigenValues, eigenVectors = np.linalg.eig(T)
-
-    # sorting
-    idx = eigenValues.argsort()[::-1]
-    eigenValues = eigenValues[idx]
-    eigenVectors = eigenVectors[:,idx]
-
-    # normalization
-    Y = X.dot(eigenVectors)
-    for i in range(Y.shape[1]):
-        Y[:, i] = Y[:, i] / norm(Y[:, i])
-
-    eigenValues = eigenValues/np.sum(eigenValues)
-
-    return Y, eigenValues
-
-
-def reconstruct(X, Y, X_mean):
-    m, num_samples = X.shape
-
-    # Apply the liner combination and add the mean image
-    Z = np.zeros((Y.shape[0], X.shape[1]))
-    for i in range(num_samples):
-        temp = (Y[:, m - 1] * X[m - 1, i] + X_mean).real
-        Z[:, i] = temp.reshape((Z.shape[0], ))
-
-    return Z
-
-
-def compact_representation(X, Y, m):
-    W = Y[:, :m].T.dot(X)
-    return W
-
-
-def get_pca(chunks, number_of_data, number_of_eigen_v, chm, gm):
-    matrix = []
-    i = 1
-    for ch in chunks:
-        print "Chunk #{0}".format(i)
-        i+= 1
-        for vector in get_matrix(ch, number_of_data, chm, gm):
-            # plt.plot(vector[::2], vector[1::2])
-            # plt.show()
-            matrix.append(vector)
-
-    print "Constructing eigen ants"
-
-    matrix = np.matrix(matrix)
-    X = matrix.T
-
-    X_mean = np.mean(X, axis=1)
-
-    # center the data
-    X = X-X_mean
-
-    eigenAnts, eigenValues = pca_basis(X)
-
-    X_c = compact_representation(X, eigenAnts, number_of_eigen_v)
-    Z = reconstruct(X_c, eigenAnts[:, :number_of_eigen_v], X_mean)
-
-    # print matrix.T - Z
-
-    return eigenAnts
-
-
-def get_eigenfaces(m, number_of_eigen_v):
-    covariance_matrix = m.T.dot(m)
-    eigenvalues, eigenvectors = eig(covariance_matrix)
-    index = eigenvalues.argsort()[::-1]
-    eigenfaces = eigenvectors[:, index]
-    eigenfaces = eigenfaces[:, :number_of_eigen_v]
-    eigenfaces = m.dot(eigenfaces)
-    return eigenfaces
-
-
 def get_chunks_regions(ch, chm, gm):
     chunk = chm[ch]
     print chunk
@@ -204,6 +126,12 @@ def prepare_matrix(chunks, number_of_data, results):
     return matrix
 
 
+def extract_heads(X, head_range):
+    return X[:, range(head_range * 2 + 2) + range(X.shape[1] - head_range * 2, X.shape[1])]
+
+def extract_bottoms(X, bottom_range):
+    return X[:, range(bottom_range * 2 + 2) + range(X.shape[1] - bottom_range * 2, X.shape[1])]
+
 class ChunkViewer(QtGui.QWidget):
 
     WIDTH = HEIGHT = 300
@@ -288,7 +216,7 @@ def generate_eigen_ants_figure(ants, number_of_eigen_v):
     f.savefig(os.path.join(fold, 'eigen_ants'), dpi=f.dpi)
     plt.ioff()
 
-def generate_ants_image(X, X1, V, r, c, i, fold):
+def generate_ants_image(X, X_R, X_C, r, c, i, fold):
     f = plt.figure(figsize=(r, c))
     gs1 = gridspec.GridSpec(r, c)
     gs1.update(wspace=0.025, hspace=0.05)
@@ -300,9 +228,9 @@ def generate_ants_image(X, X1, V, r, c, i, fold):
         ax1.set_aspect('equal')
         ax1.plot(np.append(X[j, ::2], X[j, 0]), np.append(X[j, 1::2], X[j, 1]), c='r')
         ax1.scatter(np.append(X[j, ::2], X[j, 0]), np.append(X[j, 1::2], X[j, 1]), c='r')
-        ax1.plot(np.append(X1[j, ::2], X1[j, 0]), np.append(X1[j, 1::2], X1[j, 1]), c='b')
-        ax1.scatter(np.append(X1[j, ::2], X1[j, 0]), np.append(X1[j, 1::2], X1[j, 1]), c='b')
-        ax1.plot(np.arange(len(V[j, :])) + 1, V[j, :], c='g')
+        ax1.plot(np.append(X_R[j, ::2], X_R[j, 0]), np.append(X_R[j, 1::2], X_R[j, 1]), c='b')
+        ax1.scatter(np.append(X_R[j, ::2], X_R[j, 0]), np.append(X_R[j, 1::2], X_R[j, 1]), c='b')
+        ax1.plot(np.arange(len(X_C[j, :])) + 1, X_C[j, :], c='g')
 
     # red_patch = mpatches.Patch(color='red', label='original')
     # blue_patch = mpatches.Patch(color='blue', label='reconstructed')
@@ -312,19 +240,19 @@ def generate_ants_image(X, X1, V, r, c, i, fold):
     plt.ioff()
 
 
-def generate_ants_reconstructed_figure(X, X1, V, rows, columns):
+def generate_ants_reconstructed_figure(X, X_R, X_C, rows, columns):
     number_in_pic = rows * columns
     fold = os.path.join(project.working_directory, 'pca_results')
     if not os.path.exists(fold):
         os.mkdir(fold)
     i = 0
     while X.shape[0] != 0:
-        generate_ants_image(X[:number_in_pic, :], X1[:number_in_pic, :], V[:number_in_pic, :], rows, columns, i, fold)
+        generate_ants_image(X[:number_in_pic, :], X_R[:number_in_pic, :], X_C[:number_in_pic, :], rows, columns, i, fold)
         X = np.delete(X, range(number_in_pic), axis=0)
-        X1 = np.delete(X1, range(number_in_pic), axis=0)
-        V = np.delete(V, range(number_in_pic), axis=0)
+        X_R = np.delete(X_R, range(number_in_pic), axis=0)
+        X_C = np.delete(X_C, range(number_in_pic), axis=0)
         i += 1
-    generate_ants_image(X, X1, V, rows, columns, i, fold)
+    generate_ants_image(X, X_R, X_C, rows, columns, i, fold)
 
 
 def view_ant(pca, eigen_ants, eigen_values, ant):
@@ -338,6 +266,7 @@ if __name__ == '__main__':
     project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
     chunks = project.gm.chunk_list()
 
+    # LABELING CHUNK WITHOUT ANT CLUSTERS
     # compatible chunks 0,1,2,3,4,5
     chunks = chunks[:5]
 
@@ -355,8 +284,9 @@ if __name__ == '__main__':
     number_of_data = 40
 
     logging.basicConfig(level=logging.INFO)
-    trainer = head_tag.HeadGT(project)
 
+    # TRAINING PART (HEAD LABELING AND ROTATING ANTS)
+    trainer = head_tag.HeadGT(project)
     # app = QtGui.QApplication(sys.argv)
     # training_regions = []
     # for chunk in chunks:
@@ -368,24 +298,55 @@ if __name__ == '__main__':
     # trainer.correct_answer(1790, 1796, answer=True)
     # trainer.delete_answer(597, 602)
     # app.quit()
-
-    # proper-oriented regions
     results = trainer.get_ground_truth()
 
+    # EXTRACTING DATA
     X = prepare_matrix(chunks, number_of_data, results)
-    pca = PCA(number_of_eigen_v)
-    V = pca.fit_transform(X)
-    eigen_ants = pca.components_
-    eigen_values = pca.explained_variance_
-    X1 = pca.inverse_transform(pca.transform(X))
+    head_range = 10
+    bottom_range = 20
+    H = extract_heads(X, head_range)
+    B = extract_bottoms(X, bottom_range)
 
-    app = QtGui.QApplication(sys.argv)
-    for i in range(1):
-        view_ant(pca, eigen_ants, eigen_values, V[i])
-        app.exec_()
-    app.quit()
+    # PCA ON WHOLE ANT
+    pca_whole = PCA(number_of_eigen_v)
+    X_C = pca_whole.fit_transform(X)
+    eigen_ants_whole = pca_whole.components_
+    eigen_values_whole = pca_whole.explained_variance_
+    X_R = pca_whole.inverse_transform(pca_whole.transform(X))
 
-    generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
-    rows = 3
-    columns = 11
-    generate_ants_reconstructed_figure(X, X1, V, rows, columns)
+    #PCA ON HEADS
+    pca_head = PCA(number_of_eigen_v)
+    H_C = pca_head.fit_transform(H)
+    eigen_ants_head = pca_head.components_
+    eigen_values_head = pca_head.explained_variance_
+    # WTF? TODO
+    H_R = np.dot(H_C, eigen_ants_whole) + pca_whole.mean_
+
+    #PCA ON BOTTOMS
+    pca_bottom = PCA(number_of_eigen_v)
+    B_C = pca_bottom.fit_transform(B)
+    eigen_ants_bottom = pca_bottom.components_
+    eigen_values_bottom = pca_bottom.explained_variance_
+    # WTF? TODO
+    B_R = np.dot(B_C, eigen_ants_whole) + pca_whole.mean_
+
+    for j in range(5):
+        plt.plot(np.append(H[j, ::2], H[j, 0]), np.append(H[j, 1::2], H[j, 1]), c='r')
+        plt.plot(np.append(H_R[j, ::2], H_R[j, 0]), np.append(H_R[j, 1::2], H_R[j, 1]), c='b')
+        plt.show()
+        plt.plot(np.append(B[j, ::2], B[j, 0]), np.append(B[j, 1::2], B[j, 1]), c='r')
+        plt.plot(np.append(B_R[j, ::2], B_R[j, 0]), np.append(B_R[j, 1::2], B_R[j, 1]), c='b')
+        plt.show()
+
+    # WIDGET
+    # app = QtGui.QApplication(sys.argv)
+    # for i in range(1):
+    #     view_ant(pca, eigen_ants, eigen_values, X_C[i])
+    #     app.exec_()
+    # app.quit()
+
+    # GENERATING RESULTS FIGURE
+    # generate_eigen_ants_figure(eigen_ants, number_of_eigen_v)
+    # rows = 3
+    # columns = 11
+    # generate_ants_reconstructed_figure(X, X_R, X_C, rows, columns)

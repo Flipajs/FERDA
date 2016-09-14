@@ -128,7 +128,7 @@ class EigenViewer(FigureCanvas):
         super(EigenViewer, self).mousePressEvent(event)
         dialog = QtGui.QInputDialog()
         dialog.setInputMode(QtGui.QInputDialog.DoubleInput)
-        val, ok = dialog.getDouble(self, "", "Enter coefficient", min=self.slider.SLIDE_MIN,
+        val, ok = dialog.getDouble(self, "", "Enter coefficient", value=self.slider.value(), min=self.slider.SLIDE_MIN,
                                max=self.slider.SLIDE_MAX)
         if ok:
             self.slider.setValue(val)
