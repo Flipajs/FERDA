@@ -61,8 +61,12 @@ class SetMSERs(QtGui.QWidget):
         # Left panel with options and paint tools
         self.left_panel = QtGui.QWidget()
         self.left_panel.setLayout(QtGui.QVBoxLayout())
-        self.left_panel.setMaximumWidth(300)
-        self.left_panel.setMinimumWidth(300)
+
+        left_scroll = QtGui.QScrollArea()
+        left_scroll.setWidgetResizable(True)
+        left_scroll.setWidget(self.left_panel)
+        left_scroll.setMaximumWidth(300)
+        left_scroll.setMinimumWidth(300)
 
         self.form_panel = QtGui.QFormLayout()
         self.left_panel.layout().addLayout(self.form_panel)
@@ -76,7 +80,7 @@ class SetMSERs(QtGui.QWidget):
         self.configure_paint_panel()
 
         # Complete the gui
-        self.layout().addWidget(self.left_panel)
+        self.layout().addWidget(left_scroll)  # self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.painter)
         self.layout().addWidget(self.right_panel)
 
@@ -103,7 +107,7 @@ class SetMSERs(QtGui.QWidget):
 
     def update(self):
         QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
-        if self.use_segmentation_ and not self.segmentation is None:
+        if self.use_segmentation_ and self.segmentation is not None:
             img_ = np.asarray((-self.segmentation*255)+255, dtype=np.uint8)
         else:
             img_ = prepare_for_segmentation(self.im.copy(), self.project, grayscale_speedup=True)
@@ -147,7 +151,7 @@ class SetMSERs(QtGui.QWidget):
         background = result["background"]
         foreground = result["foreground"]
         self.segmentation = self.helper.done(background, foreground)
-        if not self.segmentation is None:
+        if self.segmentation is not None:
             im = np.asarray(self.segmentation[..., None]*self.color_prob, dtype=np.uint8)
             qim = array2qimage(im)
             self.painter.set_overlay(qim)
@@ -213,11 +217,18 @@ class SetMSERs(QtGui.QWidget):
         self.painter.set_overlay2_visible(self.check_mser.isChecked())
 
     def next_frame(self):
+        # update self image
         self.im = self.vid.next_frame()
+        # set new background image in painter
         self.painter.set_image(self.im)
+        # delete old paint marks from painter and reset mask data
         self.painter.reset_masks()
+        # self.painter.
+        # save current xy data in helper
         self.helper.update_xy()
+        # update helper's image
         self.helper.set_image(self.im)
+        self.paint_changed()
 
     def prepare_widgets(self):
         self.use_children_filter = QtGui.QCheckBox()
@@ -237,6 +248,7 @@ class SetMSERs(QtGui.QWidget):
         self.check_prob = QtGui.QCheckBox("Probability mask")
         self.check_paint = QtGui.QCheckBox("Paint data")
         self.check_mser = QtGui.QCheckBox("MSER view")
+        self.button_next = QtGui.QPushButton("Next frame")
 
     def configure_form_panel(self):
         self.mser_max_area.setMinimum(0.0001)
@@ -379,6 +391,9 @@ class SetMSERs(QtGui.QWidget):
         self.check_mser.toggled.connect(self.checkbox)
         self.left_panel.layout().addWidget(self.check_mser)
 
+        self.button_next.clicked.connect(self.next_frame)
+        self.left_panel.layout().addWidget(self.button_next)
+
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
@@ -394,6 +409,8 @@ if __name__ == "__main__":
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c2.avi'
+
+    print "Done loading"
 
     ex = SetMSERs(proj)
     ex.raise_()

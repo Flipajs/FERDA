@@ -6,6 +6,7 @@ import numpy as np
 import cv2
 import time
 from qimage2ndarray import array2qimage
+import matplotlib.pyplot as plt
 
 __author__ = 'dita'
 
@@ -20,6 +21,11 @@ class Painter(QtGui.QWidget):
 
         self.DEBUG = debug
         self.update_callback = update_callback
+
+        self.background = None
+        self.paint_pixmap = None
+        self.w = None
+        self.h = None
 
         # WIDGET SETUP
         self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
@@ -54,6 +60,8 @@ class Painter(QtGui.QWidget):
 
     def set_image(self, image):
         self.background = array2qimage(bgr2rgb(image))
+        if self.paint_pixmap:
+            self.scene.removeItem(self.paint_pixmap)
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.background))
 
         self.w = self.background.width()
@@ -122,17 +130,22 @@ class Painter(QtGui.QWidget):
         # delete old pixmap
         self.scene.removeItem(self.colors[name][2])
         self.colors[name][2] = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
+        self.colors[name][2].setZValue(20)
 
     def reset_masks(self):
-        for data in self.colors.items():
+        for name, data in self.colors.iteritems():
+
             # reset mask
-            data[0] = np.zeros((self.w, self.h))
+            mask = np.zeros((self.w, self.h))
+            color = data[1]
             # remove old pixmap
             self.scene.removeItem(data[2])
             # prepare new qimage from empty mask
-            qimg = mask2qimage(data[0], data[1])
+            qimg = mask2qimage(mask, data[1])
             # add new pixmap
-            data[2] = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
+            pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
+
+            self.colors[name] = [mask, color, pixmap]
 
     def add_color(self, name, r, g, b, a=100):
         """ Adds a new color option to painter.

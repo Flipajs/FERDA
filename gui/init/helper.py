@@ -81,24 +81,26 @@ class Helper:
 
             # loop all nonzero pixels from foreground (ants) and background and add them to testing data
             nzero = np.nonzero(background[0])
-            if len(nzero[0]) == 0:
+            if len(nzero[0]) == 0 and 0 not in self.y:
                 return None
             for i, j in zip(nzero[0], nzero[1]):
-                self.get_data(i, j, self.Xtmp, self.ytmp, 0)
+                self.get_data(i, j, self.Xtmp, self.ytmp, 0)  # 0 for background
 
             nzero = np.nonzero(foreground[0])
-            if len(nzero[0]) == 0:
+            if len(nzero[0]) == 0 and 1 not in self.y:
                 return None
             for i, j in zip(nzero[0], nzero[1]):
-                self.get_data(i, j, self.Xtmp, self.ytmp, 1)
+                self.get_data(i, j, self.Xtmp, self.ytmp, 1)  # 1 for foreground
 
             # create the classifier
             self.rfc = RandomForestClassifier(class_weight='balanced')
 
             # to train on all data (current and all previous frames), join the arrays together
             # class variables are not affected here
-            X = self.Xtmp.copy().extend(self.X)
-            y = self.ytmp.copy().extend(self.y)
+            X = list(self.Xtmp)
+            X.extend(self.X)
+            y = list(self.ytmp)
+            y.extend(self.y)
             self.rfc.fit(X, y)
         else:
             self.rfc = rfc
@@ -123,7 +125,7 @@ class Helper:
 
         # prepare a mask and predict result for data (current image)
         # mask1 = np.zeros((h*w, c))
-        mask1 = rfc.predict_proba(data)
+        mask1 = self.rfc.predict_proba(data)
 
         # reshape mask to be a grid, not a list
         mask1 = mask1[:, 1]
