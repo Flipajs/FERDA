@@ -16,44 +16,58 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-__author__ = 'filip@naiser.cz'
+__author__ = 'filip@naiser.cz', 'dita'
 
 
 class SetMSERs(QtGui.QWidget):
     def __init__(self, project, mser_color=(255, 128, 0, 200), prob_color=(0, 255, 0, 200),
                  foreground_color=(0, 255, 0, 255), background_color=(255, 0, 238, 255)):
+        """
+        Interactive tool to improve msers search using segmentation.
+        :param project: Ferda project
+        :param mser_color: 0-255 rgba color to visualise mser borders (orange by default)
+        :param prob_color: 0-255 rgba color to visualise segmentation probability mask (green by default)
+        :param foreground_color: 0-255 rgba color to visualise foreground when painting (pink by default)
+        :param background_color: 0-255 rgba color to visualise background when painting (green by default)
+        """
         super(SetMSERs, self).__init__()
 
         self.project = project
         self.vid = get_auto_video_manager(project)
-        self.im = self.vid.next_frame()
-        self.w, self.h, c = self.im.shape
-        # self.im = self.vid.seek_frame(659)
 
+        self.im = self.vid.next_frame()
         im = self.im
         if self.project.bg_model:
             im = self.project.bg_model.bg_subtraction(im)
 
         if self.project.arena_model:
             im = self.project.arena_model.mask_image(im)
-
         self.im = im
+        self.w, self.h, c = self.im.shape
+
         self.use_segmentation_ = False
         self.segmentation = None
 
+        # Setup colors
         self.color_mser = mser_color
         self.color_prob = prob_color
         self.color_foreground = foreground_color
         self.color_background = background_color
 
+        # Setup painting tools
         self.pen_size = 5
         self.cur_color = "background"
         self.cur_eraser = False
 
+        # Setup painter
         r, g, b, a = self.color_background
         self.painter = Painter(self.im, paint_name="background", paint_r=r, paint_g=g, paint_b=b, paint_a=a)
-        self.helper = Helper(self.im)
         self.painter.add_color_("foreground", self.color_foreground)
+
+        # Setup segmentation helper
+        self.helper = Helper(self.im)
+
+        # Prepare img_grid variable
         self.img_grid = None
 
         self.setLayout(QtGui.QHBoxLayout())
@@ -62,6 +76,7 @@ class SetMSERs(QtGui.QWidget):
         self.left_panel = QtGui.QWidget()
         self.left_panel.setLayout(QtGui.QVBoxLayout())
 
+        # Left panel must be scrollable on smaller screens
         left_scroll = QtGui.QScrollArea()
         left_scroll.setWidgetResizable(True)
         left_scroll.setWidget(self.left_panel)
@@ -75,6 +90,7 @@ class SetMSERs(QtGui.QWidget):
         self.right_panel = QtGui.QWidget()
         self.right_panel.setLayout(QtGui.QVBoxLayout())
 
+        # Setup gui elements
         self.prepare_widgets()
         self.configure_form_panel()
         self.configure_paint_panel()
@@ -84,12 +100,141 @@ class SetMSERs(QtGui.QWidget):
         self.layout().addWidget(self.painter)
         self.layout().addWidget(self.right_panel)
 
-        self.painter.update_callback = self.paint_changed
+        # Set a callback in painter when paint event occurs
+        self.painter.update_callback = self.update_all
 
-        self.update()
+        self.update_all()
         self.show()
 
-    def choose_random_frame(self):
+    def update_all(self):
+        """
+        Computes new probability map and msers, also updates GUI. Can be called after parameter/image change as a short
+        for calling update_paint() and update_mser()
+        :return: None
+        """
+        # paint must be updated first, because segmentation results are used in msers
+        self.update_paint()
+        self.update_mser()
+
+    def update_mser(self):
+        """
+        Finds new MSERS and updates all related gui elements (grid and painter mser overlay). This must be called
+        every time a parameter or source image is changed.
+        :return: None
+        """
+        # start loading cursor animation
+        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+
+        # get working image
+        # TODO: update project settings to contain "use_segmentation_image"
+        if self.use_segmentation_ and self.segmentation is not None:
+            img_ = np.asarray((-self.segmentation*255)+255, dtype=np.uint8)
+        else:
+            img_ = prepare_for_segmentation(self.im.copy(), self.project, grayscale_speedup=True)
+
+        # get msers
+        s = time.time()
+        msers = ferda_filtered_msers(img_, self.project)
+        print "mser takes: ", time.time() - s
+
+        # prepare empty array - mser borders will be painted there and it will be visualised as painter's overlay
+        mser_vis = np.zeros((self.im.shape[0], self.im.shape[1]))
+
+        # delete old image grid if it exists and prepare a new one
+        if self.img_grid:
+            self.img_grid.setParent(None)
+        self.img_grid = ImgGridWidget(cols=3, element_width=100)
+        self.right_panel.layout().addWidget(self.img_grid)
+
+        # fill new grid with msers visualisations on current image, this also fills `mser_vis`
+        self.fill_new_grid(msers, self.im.copy(), mser_vis)
+
+        # convert `mser_vis` to 4 channel image and show it as overlay
+        im = np.asarray(mser_vis[..., None]*self.color_mser, dtype=np.uint8)
+        qim = array2qimage(im)
+        self.painter.set_overlay2(qim)
+        self.painter.set_overlay2_visible(self.check_mser.isChecked())
+
+        # restore cursor look to default
+        QtGui.QApplication.restoreOverrideCursor()
+
+    def update_paint(self):
+        """
+        Computes new probability map and updates view in painter. This must be called every time the source image
+        or any of paint masks is changed.
+        :return: None
+        """
+
+        # start cursor animation
+        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+
+        # get painted data masks from painter
+        result = self.painter.get_result()
+        background = result["background"]
+        foreground = result["foreground"]
+
+        # obtain segmentation image from helper
+        self.segmentation = self.helper.done(background, foreground)
+
+        # show result as overlay
+        if self.segmentation is not None:
+            im = np.asarray(self.segmentation[..., None]*self.color_prob, dtype=np.uint8)
+            qim = array2qimage(im)
+            self.painter.set_overlay(qim)
+        else:  # or hide it if input data was insufficient to create a result
+            self.painter.set_overlay(None)
+
+        # stop cursor animation
+        QtGui.QApplication.restoreOverrideCursor()
+
+    def fill_new_grid(self, msers, img_vis, mser_vis):
+        """
+        Loop through all regions. Add their individual cropped images to image grid and draw them in a binary array.
+        :param msers: MSERs
+        :param img_vis: RGBA background image to make crops from
+        :param mser_vis: one channel image, which will be modified to contain mser contours
+        :return: None
+        """
+        for r, r_id in zip(msers, range(len(msers))):
+            if self.project.stats:
+                prob = self.project.stats.antlikeness_svm.get_prob(r)
+                if prob[1] < self.project.solver_parameters.antlikeness_threshold:
+                    continue
+
+            # get region contours
+            cont = get_contour(r.pts())
+
+            # visualise it on a small cropped image
+            # format color to be BGRA, convert alpha channel from 0-255 to 0.0-1.0 scale
+            crop = draw_points_crop(img_vis, cont, (self.color_mser[2], self.color_mser[1], self.color_mser[0],
+                                                    self.color_mser[3]/float(255)), square=True)
+            # create qimage from crop
+            img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
+            pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
+
+            # add crop to img grid
+            item = SelectableQLabel(id=r_id)
+            item.setScaledContents(True)
+            item.setFixedSize(100, 100)
+            item.setPixmap(pix_map)
+            self.img_grid.add_item(item)
+
+            # visualise it in the binary image
+            mser_vis = draw_points_binary(mser_vis, cont)
+
+    def show_next_frame(self):
+        """
+        Show current settings on next frame
+        :return: None
+        """
+        image = self.vid.next_frame()
+        self.set_image(image)
+
+    def show_random_frame(self):
+        """
+        Show current settings on random frame
+        :return: None
+        """
         if self.frame_number.value() == -1:
             im = self.vid.random_frame()
         else:
@@ -101,85 +246,27 @@ class SetMSERs(QtGui.QWidget):
         if self.project.arena_model:
             im = self.project.arena_model.mask_image(im)
 
-        self.im = im
+        self.set_image(im)
 
-        self.update()
-
-    def update(self):
-        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
-        if self.use_segmentation_ and self.segmentation is not None:
-            img_ = np.asarray((-self.segmentation*255)+255, dtype=np.uint8)
-        else:
-            img_ = prepare_for_segmentation(self.im.copy(), self.project, grayscale_speedup=True)
-
-        s = time.time()
-        msers = ferda_filtered_msers(img_, self.project)
-        print "mser takes: ", time.time() - s
-        binary = np.zeros((self.im.shape[0], self.im.shape[1]))
-
-        if self.img_grid:
-            self.img_grid.setParent(None)
-        self.img_grid = ImgGridWidget(cols=3, element_width=100)
-        self.right_panel.layout().addWidget(self.img_grid)
-
-        self.fill_new_grid(msers, self.im.copy(), binary)
-        im = np.asarray(binary[..., None]*self.color_mser, dtype=np.uint8)
-        qim = array2qimage(im)
-
-        self.painter.set_overlay2(qim)
-        self.painter.set_overlay2_visible(self.check_mser.isChecked())
-        QtGui.QApplication.restoreOverrideCursor()
-
-    def val_changed(self):
-        self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
-        self.project.mser_parameters.min_area = self.mser_min_area.value()
-        self.project.mser_parameters.max_area = self.mser_max_area.value()
-        self.project.mser_parameters.min_margin = self.mser_min_margin.value()
-        self.project.mser_parameters.gaussian_kernel_std = self.blur_kernel_size.value()
-        self.project.other_parameters.use_only_red_channel = self.use_only_red_ch.isChecked()
-        self.use_segmentation_ = self.use_segmentation.isChecked()
-        self.project.mser_parameters.intensity_threshold = self.intensity_threshold.value()
-        self.project.mser_parameters.min_area_relative = self.min_area_relative.value()
-        self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
-        self.project.mser_parameters.use_children_filter = self.use_children_filter.isChecked()
-
-        self.update()
-
-    def paint_changed(self):
-        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
-        result = self.painter.get_result()
-        background = result["background"]
-        foreground = result["foreground"]
-        self.segmentation = self.helper.done(background, foreground)
-        if self.segmentation is not None:
-            im = np.asarray(self.segmentation[..., None]*self.color_prob, dtype=np.uint8)
-            qim = array2qimage(im)
-            self.painter.set_overlay(qim)
-        else:
-            self.painter.set_overlay(None)
-        QtGui.QApplication.restoreOverrideCursor()
-        self.update()
-
-    def fill_new_grid(self, msers, img_vis, binary):
-        for r, r_id in zip(msers, range(len(msers))):
-            if self.project.stats:
-                prob = self.project.stats.antlikeness_svm.get_prob(r)
-                if prob[1] < self.project.solver_parameters.antlikeness_threshold:
-                    continue
-
-            cont = get_contour(r.pts())
-            crop = draw_points_crop(img_vis, cont, (0, 255, 0, 0.9), square=True)
-            binary = draw_points_binary(binary, cont)
-            img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
-            pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
-
-            item = SelectableQLabel(id=r_id)
-
-            item.setScaledContents(True)
-            item.setFixedSize(100, 100)
-            item.setPixmap(pix_map)
-
-            self.img_grid.add_item(item)
+    def set_image(self, image):
+        """
+        Change current display image and adjust everything.
+        :param image: new image to display
+        :return: None
+        """
+        # update self image
+        self.im = image
+        # set new background image in painter
+        self.painter.set_image(self.im)
+        # delete old paint marks from painter and reset mask data
+        self.painter.reset_masks()
+        # delete all undo's, as they are from old frames and will never be needed again
+        self.painter.backup = []
+        # save current xy data in helper
+        self.helper.update_xy()
+        # update helper's image
+        self.helper.set_image(self.im)
+        self.update_all()
 
     def set_color_bg(self):
         self.cur_color = "background"
@@ -216,19 +303,21 @@ class SetMSERs(QtGui.QWidget):
         self.painter.set_masks_visible(self.check_paint.isChecked())
         self.painter.set_overlay2_visible(self.check_mser.isChecked())
 
-    def next_frame(self):
-        # update self image
-        self.im = self.vid.next_frame()
-        # set new background image in painter
-        self.painter.set_image(self.im)
-        # delete old paint marks from painter and reset mask data
-        self.painter.reset_masks()
-        # self.painter.
-        # save current xy data in helper
-        self.helper.update_xy()
-        # update helper's image
-        self.helper.set_image(self.im)
-        self.paint_changed()
+    def val_changed(self):
+        self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
+        self.project.mser_parameters.min_area = self.mser_min_area.value()
+        self.project.mser_parameters.max_area = self.mser_max_area.value()
+        self.project.mser_parameters.min_margin = self.mser_min_margin.value()
+        self.project.mser_parameters.gaussian_kernel_std = self.blur_kernel_size.value()
+        self.project.other_parameters.use_only_red_channel = self.use_only_red_ch.isChecked()
+        self.use_segmentation_ = self.use_segmentation.isChecked()
+        self.project.mser_parameters.intensity_threshold = self.intensity_threshold.value()
+        self.project.mser_parameters.min_area_relative = self.min_area_relative.value()
+        self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
+        self.project.mser_parameters.use_children_filter = self.use_children_filter.isChecked()
+
+        # only mser-related parameters were changed, no need to update everything
+        self.update_mser()
 
     def prepare_widgets(self):
         self.use_children_filter = QtGui.QCheckBox()
@@ -391,7 +480,7 @@ class SetMSERs(QtGui.QWidget):
         self.check_mser.toggled.connect(self.checkbox)
         self.left_panel.layout().addWidget(self.check_mser)
 
-        self.button_next.clicked.connect(self.next_frame)
+        self.button_next.clicked.connect(self.show_next_frame)
         self.left_panel.layout().addWidget(self.button_next)
 
 
