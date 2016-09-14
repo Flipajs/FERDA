@@ -19,121 +19,8 @@ from scripts.pca.eigen_widget import EigenWidget
 import head_tag
 from utils.geometry import rotate
 
-average = 0
-
-def get_chunks_regions(ch, chm, gm):
-    chunk = chm[ch]
-    print chunk
-    r_ch = RegionChunk(chunk, gm, gm.rm)
-    for region in r_ch:
-        yield region
-
-
-def get_matrix(chunk, number_of_data, chm, gm, results):
-    distance_matrix = []
-    for region in get_chunks_regions(chunk, chm, gm):
-        if region.id() in results:
-        # if results.get(region.id(), False):
-            distance_matrix.append(get_region_vector(region, number_of_data, results[region.id()]))
-    return distance_matrix
-
-
-def get_region_vector(region, number_of_data, right_orientation):
-    centroid = region.centroid()
-    contour = region.contour_without_holes() - centroid
-    ang = -region.theta_
-    if not right_orientation:
-        ang -= math.pi
-    contour = np.array(rotate(contour, ang))
-    centroid = [0,0]
-
-    if len(contour) < number_of_data * 2:
-        logging.warn("Number of data should be much smaller than contours length")
-
-    ant_head, index = find_head_index(centroid, contour, region)
-    contour[index:index] = ant_head
-    contour = np.roll(contour, - index, axis=0)
-    con_length = len(contour)
-    distances = [0]
-    perimeter = vector_norm(contour[0] - contour[-1])
-    for i in range(1, con_length):
-        perimeter += vector_norm(contour[i] - contour[i - 1])
-        distances.append(perimeter)
-    result = np.zeros((number_of_data, 2))
-    step = perimeter / float(number_of_data)
-    i = 0
-    p = 0
-    while i < number_of_data:
-        if distances[p] >= i * step:
-            result[i,] = (contour[p - 1] + (contour[p] - contour[p - 1]) * ((distances[p] - i * step) / step))
-            i += 1
-        p = (p + 1) % con_length
-
-    # plt.axis('equal')
-    # plt.scatter(contour[:,0], contour[:,1], c='r')
-    # plt.scatter(result[:,0], result[:,1], c='g')
-    # plt.hold(False)
-    # plt.show()
-    return result.flatten()
-
-
-def find_head_index(centroid, contour, region):
-    a = list(enumerate(contour))
-    a = filter(lambda v: v[1][1] - centroid[1] > region.a_ / 2, a)
-    index = 0
-    ant_head = None
-    i = 0
-    while a[i][1][0] > centroid[0]:
-        i += 1
-    for v in range(len(a)):
-        x1 = a[i][1][0]
-        x2 = a[i - 1][1][0]
-        if x1 <= centroid[0] < x2:
-            y1 = a[i][1][1]
-            y2 = a[i - 1][1][1]
-            ant_head = [centroid[0], y1 + (y2 - y1) * ((centroid[0] - x1) / (x2 - x1))]
-            index = a[i - 1][0]
-            break
-        i = (i + 1) % len(a)
-    # plt.axis('equal')
-    # plt.plot(contour[:,0], contour[:,1], c='r')
-    # plt.scatter(ant_head[0], ant_head[1], c ='g')
-    # plt.show()
-    return np.array(ant_head), index
-
-
-def compute_contour_perimeter(contour):
-    length = len(contour)
-    perimeter = vector_norm(contour[0] - contour[length - 1])
-    for i in range(1, length):
-        perimeter += vector_norm(contour[i] - contour[i - 1])
-    return perimeter
-
-
-def vector_norm(u):
-    return math.sqrt(sum(i ** 2 for i in u))
-
-
-def prepare_matrix(chunks, number_of_data, results):
-    matrix = []
-    i = 1
-    for ch in chunks:
-        print "Chunk #{0}".format(i)
-        i += 1
-        for vector in get_matrix(ch, number_of_data, project.chm, project.gm, results):
-            matrix.append(vector)
-    matrix = np.array(matrix)
-    return matrix
-
-
-def extract_heads(X, head_range):
-    return X[:, range(head_range * 2 + 2) + range(X.shape[1] - head_range * 2, X.shape[1])]
-
-def extract_bottoms(X, bottom_range):
-    return X[:, range(bottom_range * 2 + 2) + range(X.shape[1] - bottom_range * 2, X.shape[1])]
 
 class ChunkViewer(QtGui.QWidget):
-
     WIDTH = HEIGHT = 300
 
     def __init__(self, im, ch, chm, gm, rm):
@@ -185,7 +72,6 @@ class ChunkViewer(QtGui.QWidget):
             if self.current == len(self.regions) - 1:
                 self.next_b.setDisabled(True)
 
-
     def prev_action(self):
         print self.current
         if self.current != 0:
@@ -194,6 +80,199 @@ class ChunkViewer(QtGui.QWidget):
             self.next_b.setDisabled(False)
             if self.current == 0:
                 self.prev_b.setDisabled(True)
+
+
+average = 0
+
+
+def get_chunks_regions(ch, chm, gm):
+    chunk = chm[ch]
+    print chunk
+    r_ch = RegionChunk(chunk, gm, gm.rm)
+    for region in r_ch:
+        yield region
+
+
+def get_matrix(chunks, number_of_data, results):
+    matrix = []
+    sum = 0
+    i = 1
+    for ch in chunks:
+        print "Chunk #{0}".format(i)
+        i += 1
+        vectors, s = get_feature_vectors(ch, number_of_data, project.chm, project.gm, results)
+        for vector in vectors:
+            matrix.append(vector)
+        sum += s
+    matrix = np.array(matrix)
+    sum /= len(matrix)
+    return matrix, sum
+
+
+def get_feature_vectors(chunk, number_of_data, chm, gm, results):
+    vectors = []
+    sum = 0
+    for region in get_chunks_regions(chunk, chm, gm):
+        if region.id() in results:
+            # if results.get(region.id(), False):
+            v, s = get_feature_vector(region, number_of_data, results[region.id()])
+            vectors.append(v)
+            sum += s
+    return vectors, sum
+
+
+def get_feature_vector(region, number_of_data, right_orientation):
+    centroid = region.centroid()
+    contour = region.contour_without_holes() - centroid
+    ang = -region.theta_
+    if not right_orientation:
+        ang -= math.pi
+    contour = np.array(rotate(contour, ang))
+
+    if len(contour) < number_of_data * 2:
+        logging.warn("Number of data should be much smaller than contours length")
+
+    ant_head, index = find_head_index(contour, region)
+    contour[index:index] = ant_head
+    contour = np.roll(contour, - index, axis=0)
+    con_length = len(contour)
+    distances = [0]
+    perimeter = vector_norm(contour[0] - contour[-1])
+    for i in range(1, con_length):
+        perimeter += vector_norm(contour[i] - contour[i - 1])
+        distances.append(perimeter)
+    result = np.zeros((number_of_data, 2))
+    step = perimeter / float(number_of_data)
+    i = 0
+    p = 0
+    while i < number_of_data:
+        if distances[p] >= i * step:
+            result[i,] = (contour[p - 1] + (contour[p] - contour[p - 1]) * ((distances[p] - i * step) / step))
+            i += 1
+        p = (p + 1) % con_length
+
+    # plt.axis('equal')
+    # plt.scatter(contour[:,0], contour[:,1], c='r')
+    # plt.scatter(result[:,0], result[:,1], c='g')
+    # plt.hold(False)
+    # plt.show()
+    return result.flatten(), step
+
+
+def find_head_index(contour, region):
+    a = list(enumerate(contour))
+    a = filter(lambda v: v[1][1] - 0 > region.a_ / 2, a)
+    index = 0
+    ant_head = None
+    i = 0
+    while a[i][1][0] > 0:
+        i += 1
+    for v in range(len(a)):
+        x1 = a[i][1][0]
+        x2 = a[i - 1][1][0]
+        if x1 <= 0 < x2:
+            y1 = a[i][1][1]
+            y2 = a[i - 1][1][1]
+            ant_head = [0, y1 + (y2 - y1) * ((0 - x1) / (x2 - x1))]
+            index = a[i - 1][0]
+            break
+        i = (i + 1) % len(a)
+    # plt.axis('equal')
+    # plt.plot(contour[:,0], contour[:,1], c='r')
+    # plt.scatter(ant_head[0], ant_head[1], c ='g')
+    # plt.show()
+    return np.array(ant_head), index
+
+
+def compute_contour_perimeter(contour):
+    length = len(contour)
+    perimeter = vector_norm(contour[0] - contour[length - 1])
+    for i in range(1, length):
+        perimeter += vector_norm(contour[i] - contour[i - 1])
+    return perimeter
+
+
+def vector_norm(u):
+    return math.sqrt(sum(i ** 2 for i in u))
+
+
+def extract_heads(X, head_range):
+    if head_range % 2 is not 0:
+        logging.warn("Using odd range, results may vary!")
+    return X[:, range(head_range * 2 + 2) + range(X.shape[1] - head_range * 2, X.shape[1])]
+
+
+def extract_bottoms(X, bottom_range):
+    if bottom_range % 2 is not 0:
+        logging.warn("Using odd range, results may vary!")
+    part = X.shape[1] - (bottom_range * 4)
+    part /= 2
+    return X[:, range(part, X.shape[1] - part)]
+
+
+def get_cluster_region_matrix(chunks):
+    X = []
+    i = 1
+    for ch in chunks:
+        print "Chunk #{0}".format(i)
+        i += 1
+        for vector in get_cluster_regions(ch, project.chm, project.gm):
+            X.append(vector)
+    X = np.array(X)
+    return X
+
+
+def get_cluster_regions(chunk, chm, gm):
+    vectors = []
+    for region in get_chunks_regions(chunk, chm, gm):
+        v = get_cluster_feature_vector(region)
+        vectors.append(v)
+    return vectors
+
+
+def get_cluster_feature_vector(cluster, avg_dist):
+    contour = cluster.contour_without_holes() - cluster.centroid()
+    distances = [0]
+    con_length = len(contour)
+    ang = -cluster.theta_
+    contour = np.array(rotate(contour, ang))
+
+    perimeter = vector_norm(contour[0] - contour[-1])
+    for i in range(1, con_length):
+        perimeter += vector_norm(contour[i] - contour[i - 1])
+        distances.append(perimeter)
+
+    result = np.zeros((math.ceil(perimeter / avg_dist), 2))
+    i = 0
+    p = 0
+    while p < con_length:
+        if distances[p] >= i * avg_dist:
+            result[i,] = contour[p - 1] + (contour[p] - contour[p - 1]) * ((distances[p] - i * avg_dist) / avg_dist)
+            i += 1
+        p += 1
+
+    # plt.axis('equal')
+    # plt.scatter(contour[:,0], contour[:,1], c='r')
+    # plt.scatter(result[:,0], result[:,1], c='g')
+    # plt.show()
+    return result.flatten()
+
+
+def view_cluster_fitting(cluster, freq):
+    contour = cluster.contour_without_holes()
+    n = len(cluster) / freq
+    ang_step = math.pi / n
+    # print ang_step
+    for i in range(n):
+        print contour
+        print ang_step * i
+        points = np.array(rotate(contour, ang_step * i))
+        print points
+        points = np.roll(points, - i * freq, axis=0)
+        plt.axis('equal')
+        plt.scatter(points[:, 0], points[:, 1], c='r')
+        plt.scatter(points[0, 0], points[0, 1], c='b')
+        plt.show()
 
 
 def generate_eigen_ants_figure(ants, number_of_eigen_v):
@@ -215,6 +294,7 @@ def generate_eigen_ants_figure(ants, number_of_eigen_v):
         os.mkdir(fold)
     f.savefig(os.path.join(fold, 'eigen_ants'), dpi=f.dpi)
     plt.ioff()
+
 
 def generate_ants_image(X, X_R, X_C, r, c, i, fold):
     f = plt.figure(figsize=(r, c))
@@ -247,7 +327,8 @@ def generate_ants_reconstructed_figure(X, X_R, X_C, rows, columns):
         os.mkdir(fold)
     i = 0
     while X.shape[0] != 0:
-        generate_ants_image(X[:number_in_pic, :], X_R[:number_in_pic, :], X_C[:number_in_pic, :], rows, columns, i, fold)
+        generate_ants_image(X[:number_in_pic, :], X_R[:number_in_pic, :], X_C[:number_in_pic, :], rows, columns, i,
+                            fold)
         X = np.delete(X, range(number_in_pic), axis=0)
         X_R = np.delete(X_R, range(number_in_pic), axis=0)
         X_C = np.delete(X_C, range(number_in_pic), axis=0)
@@ -266,19 +347,19 @@ if __name__ == '__main__':
     project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
     chunks = project.gm.chunk_list()
 
-    # LABELING CHUNK WITHOUT ANT CLUSTERS
-    # compatible chunks 0,1,2,3,4,5
-    chunks = chunks[:5]
-
+    # LABELING CHUNK WITH/WITHOUT ANT CLUSTERS
+    chunks_without_clusters = [0, 1, 2, 3, 4, 5]
+    chunks_with_clusters = [6, 10, 12, 13]
+    chunks_without_clusters = map(lambda x: chunks[x], chunks_without_clusters)
+    chunks_with_clusters = map(lambda x: chunks[x], chunks_with_clusters)
     # app = QtGui.QApplication(sys.argv)
     # i = 0
-    # for ch in chunks:
+    # for ch in chunks_with_clusters:
     #     print i
     #     i += 1
     #     chv = ChunkViewer(project.img_manager, ch, project.chm, project.gm, project.gm.rm)
     #     chv.show()
     #     app.exec_()
-
 
     number_of_eigen_v = 10
     number_of_data = 40
@@ -301,11 +382,11 @@ if __name__ == '__main__':
     results = trainer.get_ground_truth()
 
     # EXTRACTING DATA
-    X = prepare_matrix(chunks, number_of_data, results)
-    head_range = 10
-    bottom_range = 20
-    H = extract_heads(X, head_range)
-    B = extract_bottoms(X, bottom_range)
+    X, avg_dist = get_matrix(chunks_without_clusters, number_of_data, results)
+    # head_range = number_of_data / 4
+    # bottom_range = number_of_data / 4
+    # H = extract_heads(X, head_range)
+    # B = extract_bottoms(X, bottom_range)
 
     # PCA ON WHOLE ANT
     pca_whole = PCA(number_of_eigen_v)
@@ -314,34 +395,33 @@ if __name__ == '__main__':
     eigen_values_whole = pca_whole.explained_variance_
     X_R = pca_whole.inverse_transform(pca_whole.transform(X))
 
-    #PCA ON HEADS
-    pca_head = PCA(number_of_eigen_v)
-    H_C = pca_head.fit_transform(H)
-    eigen_ants_head = pca_head.components_
-    eigen_values_head = pca_head.explained_variance_
-    # WTF? TODO
-    H_R = np.dot(H_C, eigen_ants_whole) + pca_whole.mean_
+    # PCA ON HEADS
+    # pca_head = PCA(number_of_eigen_v)
+    # H_C = pca_head.fit_transform(H)
+    # eigen_ants_head = pca_head.components_
+    # eigen_values_head = pca_head.explained_variance_
+    # H_R = np.dot(H_C, eigen_ants_whole) + pca_whole.mean_
 
-    #PCA ON BOTTOMS
-    pca_bottom = PCA(number_of_eigen_v)
-    B_C = pca_bottom.fit_transform(B)
-    eigen_ants_bottom = pca_bottom.components_
-    eigen_values_bottom = pca_bottom.explained_variance_
-    # WTF? TODO
-    B_R = np.dot(B_C, eigen_ants_whole) + pca_whole.mean_
+    # PCA ON BOTTOMS
+    # pca_bottom = PCA(number_of_eigen_v)
+    # B_C = pca_bottom.fit_transform(B)
+    # eigen_ants_bottom = pca_bottom.components_
+    # eigen_values_bottom = pca_bottom.explained_variance_
+    # B_R = np.dot(B_C, eigen_ants_whole) + pca_whole.mean_
 
-    for j in range(5):
-        plt.plot(np.append(H[j, ::2], H[j, 0]), np.append(H[j, 1::2], H[j, 1]), c='r')
-        plt.plot(np.append(H_R[j, ::2], H_R[j, 0]), np.append(H_R[j, 1::2], H_R[j, 1]), c='b')
-        plt.show()
-        plt.plot(np.append(B[j, ::2], B[j, 0]), np.append(B[j, 1::2], B[j, 1]), c='r')
-        plt.plot(np.append(B_R[j, ::2], B_R[j, 0]), np.append(B_R[j, 1::2], B_R[j, 1]), c='b')
-        plt.show()
+    # VIEW PCA RECONSTRUCTING RESULTS
+    # for j in range(1):
+    #     plt.plot(np.append(H[j, ::2], H[j, 0]), np.append(H[j, 1::2], H[j, 1]), c='r')
+    #     plt.plot(np.append(H_R[j, ::2], H_R[j, 0]), np.append(H_R[j, 1::2], H_R[j, 1]), c='b')
+    #     plt.show()
+    #     plt.plot(np.append(B[j, ::2], B[j, 0]), np.append(B[j, 1::2], B[j, 1]), c='r')
+    #     plt.plot(np.append(B_R[j, ::2], B_R[j, 0]), np.append(B_R[j, 1::2], B_R[j, 1]), c='b')
+    #     plt.show()
 
     # WIDGET
     # app = QtGui.QApplication(sys.argv)
     # for i in range(1):
-    #     view_ant(pca, eigen_ants, eigen_values, X_C[i])
+    #     view_ant(pca_whole, eigen_ants_whole, eigen_values_whole, X_C[i])
     #     app.exec_()
     # app.quit()
 
@@ -350,3 +430,9 @@ if __name__ == '__main__':
     # rows = 3
     # columns = 11
     # generate_ants_reconstructed_figure(X, X_R, X_C, rows, columns)
+
+    # CLUSTER DECOMPOSITION
+    freq = 20
+    C = get_cluster_region_matrix(chunks_with_clusters, avg_dist)
+    for cluster in C:
+        view_cluster_fitting(cluster, freq)
