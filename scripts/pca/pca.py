@@ -202,6 +202,15 @@ def extract_heads(X, head_range):
     return X[:, range(head_range * 2 + 2) + range(X.shape[1] - head_range * 2, X.shape[1])]
 
 
+def shift_heads_to_origin(X, head_range):
+    heads = extract_heads(X, head_range)
+    R = np.zeros_like(X)
+    for i in range(X.shape[0]):
+        points = zip(heads[i, ::2], heads[i, 1::2])
+        R[i, ] = (zip(X[i, ::2], X[i, 1::2]) - np.mean(points, axis=0)).flatten()
+    return R
+
+
 def extract_bottoms(X, bottom_range):
     if bottom_range % 2 is not 0:
         logging.warn("Using odd range, results may vary!")
@@ -210,22 +219,31 @@ def extract_bottoms(X, bottom_range):
     return X[:, range(part, X.shape[1] - part)]
 
 
-def get_cluster_region_matrix(chunks):
+def shift_bottoms_to_origin(X, bottom_range):
+    bottoms = extract_bottoms(X, bottom_range)
+    R = np.zeros_like(X)
+    for i in range(X.shape[0]):
+        points = zip(bottoms[i, ::2], bottoms[i, 1::2])
+        R[i, ] = (zip(X[i, ::2], X[i, 1::2]) - np.mean(points, axis=0)).flatten()
+    return R
+
+
+def get_cluster_region_matrix(chunks, avg_dist):
     X = []
     i = 1
     for ch in chunks:
         print "Chunk #{0}".format(i)
         i += 1
-        for vector in get_cluster_regions(ch, project.chm, project.gm):
+        for vector in get_cluster_regions(ch, project.chm, project.gm, avg_dist):
             X.append(vector)
     X = np.array(X)
     return X
 
 
-def get_cluster_regions(chunk, chm, gm):
+def get_cluster_regions(chunk, chm, gm, avg_dist):
     vectors = []
     for region in get_chunks_regions(chunk, chm, gm):
-        v = get_cluster_feature_vector(region)
+        v = get_cluster_feature_vector(region, avg_dist)
         vectors.append(v)
     return vectors
 
@@ -255,19 +273,18 @@ def get_cluster_feature_vector(cluster, avg_dist):
     # plt.scatter(contour[:,0], contour[:,1], c='r')
     # plt.scatter(result[:,0], result[:,1], c='g')
     # plt.show()
+    # return result.flatten()
     return result.flatten()
 
 
 def view_cluster_fitting(cluster, freq):
-    contour = cluster.contour_without_holes()
-    n = len(cluster) / freq
-    ang_step = math.pi / n
+    contour = zip(cluster[::2], cluster[1::2])
+    n = len(contour) / freq
+    # ang_step = math.pi / n
+    ang_step = 0
     # print ang_step
     for i in range(n):
-        print contour
-        print ang_step * i
         points = np.array(rotate(contour, ang_step * i))
-        print points
         points = np.roll(points, - i * freq, axis=0)
         plt.axis('equal')
         plt.scatter(points[:, 0], points[:, 1], c='r')
@@ -383,8 +400,8 @@ if __name__ == '__main__':
 
     # EXTRACTING DATA
     X, avg_dist = get_matrix(chunks_without_clusters, number_of_data, results)
-    # head_range = number_of_data / 4
-    # bottom_range = number_of_data / 4
+    head_range = number_of_data / 4
+    bottom_range = number_of_data / 4
     # H = extract_heads(X, head_range)
     # B = extract_bottoms(X, bottom_range)
 
@@ -434,5 +451,11 @@ if __name__ == '__main__':
     # CLUSTER DECOMPOSITION
     freq = 20
     C = get_cluster_region_matrix(chunks_with_clusters, avg_dist)
+    H_S = shift_heads_to_origin(X, head_range)
+    B_S = shift_bottoms_to_origin(X, bottom_range)
+    # for v in B_S:
+    #     plt.scatter(v[::2], v[1::2])
+    #     plt.scatter([0],[0],c='r')
+    #     plt.show()
     for cluster in C:
         view_cluster_fitting(cluster, freq)
