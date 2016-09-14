@@ -12,7 +12,7 @@ Goes through all chunks and set random color.
 if __name__ == "__main__":
     working_dir = sys.argv[1]
 
-    with open(working_dir+'/chm.pkl', 'rb') as f:
+    with open(working_dir+'/chunk_manager.pkl', 'rb') as f:
         chm = pickle.load(f)
 
     for ch in chm.chunk_gen():
