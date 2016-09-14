@@ -326,6 +326,8 @@ class BackgroundComputer:
         self.project.gm.project = self.project
 
         s = time.time()
+
+        # TODO: problem with huge projects
         colorize_project(self.project)
         print "color manager takes %f seconds" % (time.time() - s)
 

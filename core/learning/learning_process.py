@@ -12,6 +12,7 @@ from gui.learning.ids_names_widget import IdsNamesWidget
 from PyQt4 import QtGui
 import sys
 import operator
+import time
 
 
 class LearningProcess:
@@ -85,7 +86,8 @@ class LearningProcess:
             print "Init data..."
             self.X = None
             self.y = None
-            self.all_ids = self.get_init_data()
+            self.all_ids = set(range(len(self.p.animals)))
+            self.get_init_data()
 
             np.random.seed(42)
             self.__train_rfc()
@@ -117,6 +119,8 @@ class LearningProcess:
                 self.tracklet_certainty = d['tracklet_certainty']
                 self.tracklet_measurements = d['tracklet_measurements']
 
+        with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
+            self.GT = pickle.load(f)
         # self.save_ids_()
         self.load_learning()
         self.reset_learning()
@@ -183,33 +187,34 @@ class LearningProcess:
     def __DEBUG_get_answer_from_GT(self, tracklet):
         best_id = -1
 
-        with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
-            GT = pickle.load(f)
-            values = None
-            region = None
-            for frame in range(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm) + 1):
-                if frame in GT:
-                    values = GT[frame]
-                    rch = RegionChunk(tracklet, self.p.gm, self.p.rm)
-                    region = rch.region_in_t(frame)
-                    break
+        if self.GT is None:
+            return best_id
 
-            if values is not None:
-                for id_, val in enumerate(values):
-                    # TODO: global parameter
-                    best_dist = 20
+        values = None
+        region = None
+        for frame in range(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm) + 1):
+            if frame in self.GT:
+                values = self.GT[frame]
+                rch = RegionChunk(tracklet, self.p.gm, self.p.rm)
+                region = rch.region_in_t(frame)
+                break
 
-                    gt_pt = np.array(val)
+        if values is not None:
+            for id_, val in enumerate(values):
+                # TODO: global parameter
+                best_dist = 20
 
-                    try:
-                        d = np.linalg.norm(gt_pt - region.centroid())
-                    except:
-                        return -1
+                gt_pt = np.array(val)
 
-                    if d < best_dist:
-                        if gt_pt[0] > -1:
-                            best_dist = d
-                            best_id = id_
+                try:
+                    d = np.linalg.norm(gt_pt - region.centroid())
+                except:
+                    return -1
+
+                if d < best_dist:
+                    if gt_pt[0] > -1:
+                        best_dist = d
+                        best_id = id_
 
         return best_id
 
@@ -641,8 +646,11 @@ class LearningProcess:
 
         # pick one with best certainty
         # TODO: it is possible to improve speed (if necessary) implementing dynamic priority queue
+
+        t = time.time()
         best_tracklet_id = max(self.tracklet_certainty.iteritems(), key=operator.itemgetter(1))[0]
         best_tracklet = self.p.chm[best_tracklet_id]
+        print "BEST tracklet t: ", time.time() - t
 
         # if not good enough, raise question
         # different strategies... 1) pick the longest tracklet, 2) tracklet with the longest intersection impact
@@ -663,12 +671,16 @@ class LearningProcess:
             # TODO: test conflict in other tracklet with high certainity for given ID
 
             id_ = np.argmax(x_)
+            t = time.time()
             self.assign_identity(id_, best_tracklet, learn=learn)
+            print "assign id t: ", time.time() - t
             # self.save_ids_()
         else:
             # if new training data, retrain
             if len(self.X) - self.old_x_size > min_new_samples_to_retrain:
+                t = time.time()
                 self.__train_rfc()
+                print "RETRAIN t:", time.time() - t
                 self.old_x_size = len(self.X)
                 self.next_step()
                 return
