@@ -351,6 +351,14 @@ class Project:
         try:
             with open(chm_path, 'rb') as f:
                 self.chm = pickle.load(f)
+
+            import random
+            from PyQt4 import QtGui
+            for ch in self.chm:
+                r = random.randint(0, 255)
+                g = random.randint(0, 255)
+                b = random.randint(0, 255)
+                ch.color = QtGui.QColor.fromRgb(r, g, b)
         except:
             pass
 
