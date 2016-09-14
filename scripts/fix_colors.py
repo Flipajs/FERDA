@@ -21,5 +21,9 @@ if __name__ == "__main__":
         b = random.randint(0, 255)
         ch.color = QtGui.QColor.fromRgb(r, g, b)
 
+        if not hasattr(ch, 'N'):
+            ch.N = set()
+            ch.P = set()
+
     with open(working_dir+'/chm.pkl', 'wb') as f:
         pickle.dump(chm, f)
