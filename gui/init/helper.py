@@ -10,7 +10,6 @@ class Helper:
     def __init__(self, image, num=3, scale=2):
         self.pyramid = None
         self.images = None
-        self.gray = None
         self.image = None
         self.edges = None
         self.shiftx = None
@@ -54,8 +53,6 @@ class Helper:
         self.pyramid = self.make_pyramid()  # source image in all scales
 
         self.images = self.get_images()  # original images from pyramid, but expanded (result looks blurry)
-
-        self.gray = self.get_gray()
 
         self.edges = self.get_edges()  # canny edge detector, rescaled to largest image
 
@@ -134,12 +131,6 @@ class Helper:
         y = list(self.ytmp)
         y.extend(self.y)
 
-        for k in X:
-            types = ""
-            for l in k:
-                types += str(l.shape) + " "
-            print types
-
         # train the classifier
         start = time.time()
         self.rfc.fit(X, y)
@@ -198,9 +189,6 @@ class Helper:
             result.append(self.maxs[i].reshape((h * w, 1)))
             result.append(self.mins[i].reshape((h * w, 1)))
             result.append(self.diff[i].reshape((h * w, 1)))
-
-        for el in result:
-            print el.shape
         return result
 
     def update_xy(self):
@@ -249,16 +237,6 @@ class Helper:
             result.append(self.get_scaled(self.pyramid[i], i))
         return result
 
-    def get_gray(self):
-        """
-        Creates a black and white pyramid
-        :return: gray pyramid
-        """
-        result = []
-        for i in range(0, len(self.pyramid)):
-            result.append(cv2.cvtColor(self.pyramid[i], cv2.COLOR_BGR2GRAY))
-        return result
-
     def get_blur(self, blur=33):
         """
         Creates blurred images. They are kept in their original pyramid shape (not rescaled)
@@ -297,16 +275,9 @@ class Helper:
         """
         result = []
         for i in range(0, len(self.pyramid)):
-            # prepare first image (original), make it and blurred
-            img1 = cv2.GaussianBlur(self.gray[i], (blur_kernel, blur_kernel), blur_sigma)
-
-            # prepare second image (translated), make it and blurred
-            img2 = get_shift_im(self.gray[i], shift_x=shift_x, shift_y=shift_y)
-            img2 = cv2.GaussianBlur(img2, (blur_kernel, blur_kernel), blur_sigma)
-
-            # get dif image
-            dif = np.asarray(img1, dtype=np.int32) - np.asarray(img2, dtype=np.int32)
-            result.append(self.get_scaled(dif, i))
+            shifted = get_shift_im(self.pyramid[i], blur_kernel=blur_kernel, blur_sigma=blur_sigma,
+                                        shift_x=shift_x, shift_y=shift_y)
+            result.append(self.get_scaled(shifted, i))
         return result
 
     def get_avg(self):
@@ -316,11 +287,12 @@ class Helper:
         """
         result = []
         for i in range(0, len(self.pyramid)):
-            shift_up = get_shift_im(self.gray[i], shift_x=-1, shift_y=0)
-            shift_down = get_shift_im(self.gray[i], shift_x=1, shift_y=0)
-            shift_left = get_shift_im(self.gray[i], shift_x=0, shift_y=-1)
-            shift_right = get_shift_im(self.gray[i], shift_x=0, shift_y=1)
-            img_sum = shift_up + shift_down + shift_left + shift_right + self.gray[i]
+            shift_up = get_shift_im(self.pyramid[i], shift_x=-1, shift_y=0)
+            shift_down = get_shift_im(self.pyramid[i], shift_x=1, shift_y=0)
+            shift_left = get_shift_im(self.pyramid[i], shift_x=0, shift_y=-1)
+            shift_right = get_shift_im(self.pyramid[i], shift_x=0, shift_y=1)
+            img = cv2.cvtColor(self.pyramid[i], cv2.COLOR_BGR2GRAY)
+            img_sum = shift_up + shift_down + shift_left + shift_right + img
             result.append(self.get_scaled(img_sum / 5, i))
         return result
 
@@ -333,16 +305,16 @@ class Helper:
         result2 = []
         result3 = []
         for i in range(0, len(self.pyramid)):
-            shift_up = get_shift_im(self.gray[i], shift_x=-1, shift_y=0)
-            shift_down = get_shift_im(self.gray[i], shift_x=1, shift_y=0)
-            shift_left = get_shift_im(self.gray[i], shift_x=0, shift_y=-1)
-            shift_right = get_shift_im(self.gray[i], shift_x=0, shift_y=1)
-            img = self.gray[i]
+            shift_up = get_shift_im(self.pyramid[i], shift_x=-1, shift_y=0)
+            shift_down = get_shift_im(self.pyramid[i], shift_x=1, shift_y=0)
+            shift_left = get_shift_im(self.pyramid[i], shift_x=0, shift_y=-1)
+            shift_right = get_shift_im(self.pyramid[i], shift_x=0, shift_y=1)
+            image = cv2.cvtColor(self.pyramid[i], cv2.COLOR_BGR2GRAY)
 
-            dif_up = np.asarray(img, dtype=np.int32) - np.asarray(shift_up, dtype=np.int32)
-            dif_down = np.asarray(img, dtype=np.int32) - np.asarray(shift_down, dtype=np.int32)
-            dif_left = np.asarray(img, dtype=np.int32) - np.asarray(shift_left, dtype=np.int32)
-            dif_right = np.asarray(img, dtype=np.int32) - np.asarray(shift_right, dtype=np.int32)
+            dif_up = np.asarray(image, dtype=np.int32) - np.asarray(shift_up, dtype=np.int32)
+            dif_down = np.asarray(image, dtype=np.int32) - np.asarray(shift_down, dtype=np.int32)
+            dif_left = np.asarray(image, dtype=np.int32) - np.asarray(shift_left, dtype=np.int32)
+            dif_right = np.asarray(image, dtype=np.int32) - np.asarray(shift_right, dtype=np.int32)
 
             difs = np.dstack((dif_up, dif_down, dif_left, dif_right))
             maxs = np.amax(difs, axis=2)
@@ -384,21 +356,34 @@ class Helper:
         return np.asarray(scipy.ndimage.zoom(im, (s, s, 1), order=0), dtype=np.uint8)
 
 
-def get_shift_im(im, shift_x=2, shift_y=2):
+def get_shift_im(im, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift_y=2):
     """
     Shifts the one given image in the given direction
     :param im: source image
+    :param blur_kernel: 3 by default
+    :param blur_sigma: 0.3 by default
     :param shift_x: X-axis pixel shift (2 by default)
     :param shift_y: y-axis pixel shift (2 by default)
     :return:
     """
+    # TODO: This isn't the shift, this is diff -  fix it
+    w, h, c = im.shape
+
+    # prepare first image (original), make it grayscale and blurred
+    img1 = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    img1 = cv2.GaussianBlur(img1, (blur_kernel, blur_kernel), blur_sigma)
+
     # create shift matrix
     M = np.float32([[1, 0, shift_x], [0, 1, shift_y]])
     # apply shift matrix
-    shifted = cv2.warpAffine(im, M, (im.shape[0], im.shape[1]))
-    if len(shifted.shape) == 2:
-        shifted.shape = ((im.shape[0], im.shape[1], 1))
-    return np.asarray(shifted, dtype=np.uint8)
+    img2 = cv2.warpAffine(im, M, (w, h))
+
+    # prepare second image (translated), make it grayscale and blurred
+    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+    img2 = cv2.GaussianBlur(img2, (blur_kernel, blur_kernel), blur_sigma)
+
+    # get dif image
+    return np.abs(np.asarray(img1, dtype=np.int32) - np.asarray(img2, dtype=np.int32))
 
 
 def find_unused_features(rfc, threshold=0.001):
