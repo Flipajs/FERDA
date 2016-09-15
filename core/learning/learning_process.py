@@ -13,6 +13,7 @@ from PyQt4 import QtGui
 import sys
 import operator
 import time
+import itertools
 
 
 class LearningProcess:
@@ -169,11 +170,13 @@ class LearningProcess:
             if id_ > -1:
                 print 'Human in the loop says: tracklet id: {} is animal ID: {}'.format(best_candidate_tracklet.id(), id_)
                 self.assign_identity(id_, best_candidate_tracklet)
-                self.next_step()
+                return True
             else:
                 print "DEBUG_get_answer didn't returned an ID"
         except:
             print "human in the loop failed"
+
+        return False
 
     def __DEBUG_GT_test(self, id_, tracklet):
         gt_id_ = self.__DEBUG_get_answer_from_GT(tracklet)
@@ -326,9 +329,10 @@ class LearningProcess:
                 areas.append(r.area())
 
         areas = np.array(areas)
-        area_mean_thr = np.mean(areas) + np.std(areas)
+        area_mean_thr = np.mean(areas) + 2*np.std(areas)
 
         print "MEAN: {} STD: {} ".format(np.mean(areas), np.std(areas))
+        print "THRESHOLD = ", area_mean_thr
 
 
         print "ALL CHUNKS:", len(ch_list)
@@ -647,10 +651,8 @@ class LearningProcess:
         # pick one with best certainty
         # TODO: it is possible to improve speed (if necessary) implementing dynamic priority queue
 
-        t = time.time()
         best_tracklet_id = max(self.tracklet_certainty.iteritems(), key=operator.itemgetter(1))[0]
         best_tracklet = self.p.chm[best_tracklet_id]
-        print "BEST tracklet t: ", time.time() - t
 
         # if not good enough, raise question
         # different strategies... 1) pick the longest tracklet, 2) tracklet with the longest intersection impact
@@ -671,9 +673,7 @@ class LearningProcess:
             # TODO: test conflict in other tracklet with high certainity for given ID
 
             id_ = np.argmax(x_)
-            t = time.time()
             self.assign_identity(id_, best_tracklet, learn=learn)
-            print "assign id t: ", time.time() - t
             # self.save_ids_()
         else:
             # if new training data, retrain
@@ -685,9 +685,12 @@ class LearningProcess:
                 self.next_step()
                 return
             else:
-                self.__human_in_the_loop_request()
+                if not self.__human_in_the_loop_request():
+                    return False
 
         self.update_callback()
+
+        return True
 
     def save_ids_(self):
         with open(self.p.working_directory + '/temp/chunk_available_ids.pkl', 'wb') as f_:
@@ -940,19 +943,20 @@ class LearningProcess:
         Returns:
 
         """
+        oversegmented = False
 
-        oversegmented = True
-        if tracklet.start_frame(self.p.gm) != present_tracklet.start_frame(self.p.gm) \
-                or tracklet.end_frame(self.p.gm) != present_tracklet.end_frame(self.p.gm):
-            oversegmented = False
-        else:
-            rch1 = RegionChunk(tracklet, self.p.gm, self.p.rm)
-            rch2 = RegionChunk(present_tracklet, self.p.gm, self.p.rm)
-
-            for r1, r2 in zip(rch1.regions_gen(), rch2.regions_gen()):
-                if np.linalg.norm(r1.centroid() - r2.centroid()) > self.p.stats.major_axis_median:
-                    oversegmented = False
-                    break
+        # oversegmented = True
+        # if tracklet.start_frame(self.p.gm) != present_tracklet.start_frame(self.p.gm) \
+        #         or tracklet.end_frame(self.p.gm) != present_tracklet.end_frame(self.p.gm):
+        #     oversegmented = False
+        # else:
+        #     rch1 = RegionChunk(tracklet, self.p.gm, self.p.rm)
+        #     rch2 = RegionChunk(present_tracklet, self.p.gm, self.p.rm)
+        #
+        #     for r1, r2 in itertools.izip(rch1.regions_gen(), rch2.regions_gen()):
+        #         if np.linalg.norm(r1.centroid() - r2.centroid()) > self.p.stats.major_axis_median:
+        #             oversegmented = False
+        #             break
 
         if not oversegmented:
             self.__update_definitely_not_present(ids, tracklet)
@@ -1080,8 +1084,10 @@ class LearningProcess:
 
         # if affecting:
         affected_tracklets = self.__get_affected_tracklets(tracklet)
+
         for t in affected_tracklets:
             self.__if_possible_add_definitely_not_present(t, tracklet, id_set)
+
 
     def __get_affected_tracklets(self, tracklet):
         """

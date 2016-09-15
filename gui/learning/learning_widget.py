@@ -31,7 +31,7 @@ class LearningWidget(QtGui.QWidget):
             self.top_stripe_layout.addWidget(self.load_project_button)
         else:
             print "LOADING LP"
-            self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False,
+            self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
                                       question_callback=self.question_callback, update_callback=self.update_callback)
 
         self.start_button = QtGui.QPushButton('start')
@@ -128,7 +128,8 @@ class LearningWidget(QtGui.QWidget):
             QtGui.QMessageBox('not a valid number!')
 
         for i in range(num):
-            self.lp.next_step()
+            if not self.lp.next_step():
+                break
 
     def update_callback(self):
         self.info_table.setItem(0, 0, QtGui.QTableWidgetItem('#tracklets'))
