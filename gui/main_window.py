@@ -10,6 +10,7 @@ from gui.main_tab_widget import MainTabWidget
 import core.project.project
 from core.settings import Settings as S_
 from gui.settings.settings_dialog import SettingsDialog
+import time
 
 
 class MainWindow(QtGui.QMainWindow):

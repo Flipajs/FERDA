@@ -274,3 +274,8 @@ class Chunk:
 
         gm.g.vp['chunk_start_id'][gm.g.vertex(self.start_node())] = self.id()
         gm.g.vp['chunk_end_id'][gm.g.vertex(self.end_node())] = self.id()
+
+    def is_only_one_id_assigned(self, num_animals):
+        # if there is one and only one ID assigned to chunk
+        return len(self.P) == 1 and \
+               len(self.N) == num_animals - 1

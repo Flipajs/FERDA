@@ -325,12 +325,6 @@ class ResultsWidget(QtGui.QWidget):
         # TODO: frame loop
         # TODO: visualize loop
 
-
-    def test_one_id_in_tracklet(self, tracklet):
-        # if there is one and only one ID assigned to chunk
-        return len(tracklet.P) == 1 and \
-               len(tracklet.N) == len(self.project.animals) - 1
-
     def _evolve_gt(self):
         my_data = {}
 
@@ -344,7 +338,7 @@ class ResultsWidget(QtGui.QWidget):
             for ch in self.project.chm.chunks_in_frame(frame):
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
 
-                if self.test_one_id_in_tracklet(ch):
+                if ch.is_only_one_id_assigned(len(self.project.animals)):
                     id_ = list(ch.P)[0]
                     my_data[frame][id_] = rch.centroid_in_t(frame)
 
@@ -409,7 +403,7 @@ class ResultsWidget(QtGui.QWidget):
         self.change_frame(frame + self._gt_corr_step)
         print self._gt[frame]
 
-    def draw_region(self, r, animal_id, use_ch_color=None, alpha=120):
+    def draw_region(self, r, tracklet, use_ch_color=None, alpha=120):
         from utils.img import get_cropped_pts
 
         pts_, roi = get_cropped_pts(r, return_roi=True, only_contour=False if self.show_filled_ch.isChecked() else True)
@@ -422,8 +416,8 @@ class ResultsWidget(QtGui.QWidget):
         if use_ch_color:
             c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
         else:
-            if self.test_one_id_in_tracklet(animal_id):
-                id_ = list(animal_id['P'])[0]
+            if tracklet.is_only_one_id_assigned(len(self.project.animals)):
+                id_ = list(tracklet.P)[0]
                 c_ = self.colors_[id_]
                 c = QtGui.qRgba(c_.red(), c_.green(), c_.blue(), alpha)
 
@@ -639,7 +633,7 @@ class ResultsWidget(QtGui.QWidget):
             try:
                 for id_ in ch.P:
                     animal_ids2centroids.setdefault(id_, [])
-                    animal_ids2centroids[id_].append((c, self.test_one_id_in_tracklet(ch), ch))
+                    animal_ids2centroids[id_].append((c, ch.is_only_one_id_assigned(len(self.project.animals)), ch))
             except:
                 pass
 
@@ -647,7 +641,7 @@ class ResultsWidget(QtGui.QWidget):
                 alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
 
                 c = ch.color
-                self.draw_region(r, {'P': ch.P, 'N': ch.N}, use_ch_color=c, alpha=alpha)
+                self.draw_region(r, ch, use_ch_color=c, alpha=alpha)
 
         if self.show_gt_markers.isChecked():
             self._show_gt_markers(animal_ids2centroids)
