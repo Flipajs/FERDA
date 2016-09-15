@@ -412,17 +412,14 @@ class ResultsWidget(QtGui.QWidget):
         qim_ = QtGui.QImage(roi.width(), roi.height(), QtGui.QImage.Format_ARGB32)
         qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
-        c = QtGui.qRgba(180, 180, 180, alpha)
-        if use_ch_color:
-            c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
-        else:
+        c = QtGui.qRgba(100, 100, 100, 200)
+        if self.contour_without_colors.isChecked():
             if tracklet.is_only_one_id_assigned(len(self.project.animals)):
                 id_ = list(tracklet.P)[0]
-                c_ = self.colors_[id_]
-                c = QtGui.qRgba(c_.red(), c_.green(), c_.blue(), alpha)
-
-        if self.contour_without_colors.isChecked():
-            c = QtGui.qRgba(200, 200, 200, 200)
+                c_ = self.project.animals[id_].color_
+                c = QtGui.qRgba(c_[2], c_[1], c_[0], 255)
+        elif use_ch_color:
+            c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
 
         for i in range(pts_.shape[0]):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
