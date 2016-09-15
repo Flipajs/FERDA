@@ -7,7 +7,7 @@ import time
 
 
 class Helper:
-    def __init__(self, image, num=3):
+    def __init__(self, image, num=3, scale=2):
         self.pyramid = None
         self.images = None
         self.image = None
@@ -22,6 +22,7 @@ class Helper:
         self.gr = None
         self.rb = None
         self.num = num
+        self.scale = scale
 
         # these arrays contain learning data from previous frames
         # after confirming selection on a frame, temporary data is copied here
@@ -38,28 +39,44 @@ class Helper:
         self.set_image(image)
 
     def set_image(self, image):
-        self.image = image
-        self.pyramid = get_pyramid(self.image, layers=self.num)
-        self.images = get_images(self.pyramid)
-        blur_image = get_blur(self.pyramid)
+        """
+        Sets a new image, computes all features on the new images and prepares to use it in classification.
+        To preserve RFC training data from previous images, use "helper.update_xy()"
+        :param image: new image
+        :return: None
+        """
+        self.image = image  # original image
 
-        # find edges on the blurred image
-        self.edges = get_edges(blur_image)
+        # images are stored in lists with len corresponding to pyramid height
+        # index 0 contains data obtained from largest image, all other indices contain data from scaled images
+        #     but are expanded again to match original image size
+        self.pyramid = self.make_pyramid()  # source image in all scales
 
-        # original img - shifted img
-        self.shiftx = get_shift(self.pyramid, shift_x=2, shift_y=0)
-        self.shifty = get_shift(self.pyramid, shift_x=0, shift_y=2)
+        self.images = self.get_images()  # original images from pyramid, but expanded (result looks blurry)
 
-        self.avg = get_avg(self.pyramid)
+        self.edges = self.get_edges()  # canny edge detector, rescaled to largest image
 
-        self.maxs, self.mins, self.diff = get_dif(self.pyramid)
+        self.shiftx = self.get_shift(shift_x=2, shift_y=0)  # diff from shifted images, rescaled
+        self.shifty = self.get_shift(shift_x=0, shift_y=2)
 
-        # channel difs
-        self.bg = get_cdiff(self.pyramid, 0, 1)
-        self.gr = get_cdiff(self.pyramid, 1, 2)
-        self.rb = get_cdiff(self.pyramid, 2, 0)
+        self.avg = self.get_avg()  # average value on each pixel, rescaled
+
+        self.maxs, self.mins, self.diff = self.get_dif()
+
+        self.bg = self.get_cdiff(0, 1)  # channel difs, rescaled
+        self.gr = self.get_cdiff(1, 2)
+        self.rb = self.get_cdiff(2, 0)
 
     def get_data(self, i, j, X, y, classification):
+        """
+        Appends pixel data to given lists
+        :param i: I coordinate
+        :param j: J coordinate
+        :param X: input list with feature tuples
+        :param y: input list with classifications
+        :param classification: class of the given pixel
+        :return:
+        """
         x = []
         for k in range(0, self.num):
             b, g, r = self.images[k][i][j]
@@ -77,15 +94,20 @@ class Helper:
         y.append(classification)
 
     def done(self, background, foreground):
+        """
+        Creates a classificator using previous frame data and bg/fg examples. Computes probabilities for current frame.
+        :param background: np mask for examples in background class
+        :param foreground: np mask for examples in foreground class
+        :return: 0.0 - 1.0 probability mask
+        """
         # prepare learning data
         # X contains tuples of data for each evaluated unit-pixel (R, G, B, edge?)
         # y contains classifications for all pixels respectively
         self.Xtmp = []
         self.ytmp = []
 
-        start = time.time()
-
         # loop all nonzero pixels from foreground (ants) and background and add them to testing data
+        start = time.time()
         nzero = np.nonzero(background[0])
         if len(nzero[0]) == 0 and 0 not in self.y:
             return None
@@ -97,7 +119,6 @@ class Helper:
             return None
         for i, j in zip(nzero[0], nzero[1]):
             self.get_data(i, j, self.Xtmp, self.ytmp, 1)  # 1 for foreground
-
         print "Retrieving data takes %f" % (time.time() - start)
 
         # create the classifier
@@ -110,33 +131,36 @@ class Helper:
         y = list(self.ytmp)
         y.extend(self.y)
 
+        # train the classifier
         start = time.time()
         self.rfc.fit(X, y)
-        print "RFC fitting takes %f" % (time.time() - start)
+        print "RFC fitting takes     %f" % (time.time() - start)
 
+        # find unused features and remove them
+        # create new classifier with less features, it will be faster
         start = time.time()
         unused = find_unused_features(self.rfc)
         self.rfc = get_filtered_rfc(unused, X, y)
-        print "RFC filtering takes %f s. Using %d out of %d features." % \
+        print "RFC filtering takes   %f. Using %d out of %d features." % \
               (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
 
-        h, w, c = self.image.shape
-
-        layers = self.get_layers()
+        # get all feature data from image and create one large array
+        layers = self.get_features()
         for i in range(0, self.num):
             data = np.dstack((layers))
 
-        # reshape the image so it contains 4-tuples, each descripting a single pixel
+        # reshape the image so it contains 12*n-tuples, each descripting a features of a single pixel
+        #     on all layers in the pyramid
+        h, w, c = self.image.shape
         data.shape = ((h * w, 12 * self.num))
-        print "Data loaded"
-        filtered = get_filtered_model(unused, data)
-        print "Data ready"
 
-        # prepare a mask and predict result for data (current image)
-        # mask1 = np.zeros((h*w, c))
+        # remove features that were found unnecessary
+        filtered = get_filtered_model(unused, data)
+
+        # predict result on current image data
         start = time.time()
         mask1 = self.rfc.predict_proba(filtered)
-        print "RFC predict takes %f" % (time.time() - start)
+        print "RFC predict takes     %f" % (time.time() - start)
 
         # reshape mask to be a grid, not a list
         mask1 = mask1[:, 1]
@@ -144,7 +168,12 @@ class Helper:
 
         return mask1
 
-    def get_layers(self):
+    def get_features(self):
+        """
+        Gets all 12 features computed on the image in one array, ready for rfc.predict
+        Lowest (largest) level of the pyramid is first, then there are all features from the second layer and so on
+        :return: (h*w, 12*n) shaped array
+        """
         result = []
         h, w, c = self.pyramid[0].shape
         for i in range(0, self.num):
@@ -163,46 +192,181 @@ class Helper:
         return result
 
     def update_xy(self):
+        """
+        Saves current X and y data to permanent storage, this should be done once all data is correct and frame is
+        going to be switched soon.
+        :return: None
+        """
         # append temporary data to X and y
         self.X.extend(self.Xtmp)
         self.y.extend(self.ytmp)
 
     def get_rfc(self):
+        """
+        Returns current trained RFC
+        :return: RFC
+        """
         return self.rfc
 
+    def make_pyramid(self):
+        """
+        Creates an image pyramid from current image
+        :return: pyramid
+        """
+        result = []
+        layers = self.num
+        for (i, resized) in enumerate(pyramid_gaussian(self.image, downscale=self.scale)):
+            if layers <= 0:  # stop when all layers are ready
+                break
+            layers -= 1
 
-def get_pyramid(image, scale=2, layers=4):
-    result = []
-    for (i, resized) in enumerate(pyramid_gaussian(image, downscale=scale)):
-        if layers <= 0:
-            break
-        layers -= 1
+            # images are created as RGB 0.0 - 1.0 floats and need to be converted to 0-255 np.uint8
+            foo = resized * 255
+            bar = foo.astype(np.uint8)
+            result.append(bar)
+        return result
 
-        foo = resized * 255
-        bar = foo.astype(np.uint8)
-        result.append(bar)
-        pass
+    def get_images(self):
+        """
+        Creates a set of RGB images from the pyramid, and rescales them to their original
+        Therefore, higher layers have worst quality and bigger "pixels"
+        :return: rescaled images from pyramid
+        """
+        result = []
+        for i in range(0, len(self.pyramid)):
+            result.append(self.get_scaled(self.pyramid[i], i))
+        return result
 
-    return result
+    def get_blur(self, blur=33):
+        """
+        Creates blurred images. They are kept in their original pyramid shape (not rescaled)
+        :param blur: blur kernel (33 by default)
+        :return: blurred pyramid
+        """
+        result = []
+        for i in range(0, len(self.pyramid)):
+            result.append(cv2.GaussianBlur(self.pyramid[i], (blur, blur), 0))
+        return result
 
+    def get_edges(self, param_1=0, param_2=37):
+        """
+        Finds edges on pyramid images
+        :param param_1: Canny filter first parameter
+        :param param_2: Canny filter second parameter
+        :return: list of images with edges - rescaled to original shape
+        """
 
-def get_images(pyramid):
-    result = []
-    for i in range(0, len(pyramid)):
-        result.append(get_scaled(pyramid[i], i))
-    return result
+        blur_image = self.get_blur()   # blurred images pyramid (different scales!)
+        result = []
+        # find edges on the blurred image
+        for i in range(0, len(self.pyramid)):
+            canny = cv2.Canny(blur_image[i], param_1, param_2)
+            result.append(self.get_scaled(canny, i))
+        return result
 
+    def get_shift(self, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift_y=2):
+        """
+        Shifts all images in the pyramid.
+        :param blur_kernel: 3 by default
+        :param blur_sigma: 0.3 by default
+        :param shift_x: 2 by default
+        :param shift_y: 2 by default
+        :return: Shifted imaged, rescaled to original dimensions
+        """
+        result = []
+        for i in range(0, len(self.pyramid)):
+            shifted = self.get_shift_im(self.pyramid[i], blur_kernel=blur_kernel, blur_sigma=blur_sigma,
+                                        shift_x=shift_x, shift_y=shift_y)
+            result.append(self.get_scaled(shifted, i))
+        return result
 
-def get_blur(pyramid):
-    result = []
-    # create a blurred image
-    blur = 33
-    for i in range(0, len(pyramid)):
-        result.append(cv2.GaussianBlur(pyramid[i], (blur, blur), 0))
-    return result
+    def get_avg(self):
+        """
+        Gets average values on each pixel (and it's 4 neighbours) in every image of the pyramid
+        :return: pyramid average pixel value images, rescaled to original shape
+        """
+        result = []
+        for i in range(0, len(self.pyramid)):
+            shift_up = self.get_shift_im(self.pyramid[i], shift_x=-1, shift_y=0)
+            shift_down = self.get_shift_im(self.pyramid[i], shift_x=1, shift_y=0)
+            shift_left = self.get_shift_im(self.pyramid[i], shift_x=0, shift_y=-1)
+            shift_right = self.get_shift_im(self.pyramid[i], shift_x=0, shift_y=1)
+            img = cv2.cvtColor(self.pyramid[i], cv2.COLOR_BGR2GRAY)
+            img_sum = shift_up + shift_down + shift_left + shift_right + img
+            result.append(self.get_scaled(img_sum / 5, i))
+        return result
+
+    def get_dif(self):
+        """
+        Gets miscellaneous features for each image
+        :return: 3 pyramids, each with one feature (max, min, diff)
+        """
+        result1 = []
+        result2 = []
+        result3 = []
+        for i in range(0, len(self.pyramid)):
+            shift_up = self.get_shift_im(self.pyramid[i], shift_x=-1, shift_y=0)
+            shift_down = self.get_shift_im(self.pyramid[i], shift_x=1, shift_y=0)
+            shift_left = self.get_shift_im(self.pyramid[i], shift_x=0, shift_y=-1)
+            shift_right = self.get_shift_im(self.pyramid[i], shift_x=0, shift_y=1)
+            image = cv2.cvtColor(self.pyramid[i], cv2.COLOR_BGR2GRAY)
+
+            dif_up = np.asarray(image, dtype=np.int32) - np.asarray(shift_up, dtype=np.int32)
+            dif_down = np.asarray(image, dtype=np.int32) - np.asarray(shift_down, dtype=np.int32)
+            dif_left = np.asarray(image, dtype=np.int32) - np.asarray(shift_left, dtype=np.int32)
+            dif_right = np.asarray(image, dtype=np.int32) - np.asarray(shift_right, dtype=np.int32)
+
+            difs = np.dstack((dif_up, dif_down, dif_left, dif_right))
+            maxs = np.amax(difs, axis=2)
+            mins = np.amin(difs, axis=2)
+
+            diff = np.asarray(maxs, dtype=np.int32) - np.asarray(mins, dtype=np.int32)
+            result1.append(self.get_scaled(maxs, i))
+            result2.append(self.get_scaled(mins, i))
+            result3.append(self.get_scaled(diff, i))
+
+        return result1, result2, result3
+
+    def get_cdiff(self, c1, c2):
+        """
+        Gets difference between color channels in 3 channel images
+        :param c1: first channel id
+        :param c2: second channel id
+        :return: pyramid of dif images, scaled to original shape
+        """
+        result = []
+        for i in range(0, len(self.pyramid)):
+            im = np.asarray(self.pyramid[i][:, :, c1], dtype=np.int32)\
+                 - np.asarray(self.pyramid[i][:, :, c2], dtype=np.int32)
+            result.append(self.get_scaled(im, i))
+        return result
+
+    def get_scaled(self, im, i):
+        """
+        Scales the image to its original size
+        :param im: small image
+        :param i: pyramid layer
+        :return: scaled image
+        """
+        s = self.scale ** i
+        if len(im.shape) == 2:
+            # all images must have 3 dimensions to be scaled successfully
+            w, h = im.shape
+            im.shape = ((w, h, 1))
+        return np.asarray(scipy.ndimage.zoom(im, (s, s, 1), order=0), dtype=np.uint8)
 
 
 def get_shift_im(im, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift_y=2):
+    """
+    Shifts the one given image in the given direction
+    :param im: source image
+    :param blur_kernel: 3 by default
+    :param blur_sigma: 0.3 by default
+    :param shift_x: X-axis pixel shift (2 by default)
+    :param shift_y: y-axis pixel shift (2 by default)
+    :return:
+    """
+    # TODO: This isn't the shift, this is diff -  fix it
     w, h, c = im.shape
 
     # prepare first image (original), make it grayscale and blurred
@@ -222,98 +386,34 @@ def get_shift_im(im, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift_y=2):
     return np.abs(np.asarray(img1, dtype=np.int32) - np.asarray(img2, dtype=np.int32))
 
 
-def get_edges(pyramid):
-    result = []
-    # find edges on the blurred image
-    a = 0
-    b = 37
-    for i in range(0, len(pyramid)):
-        canny = cv2.Canny(pyramid[i], a, b)
-        result.append(get_scaled(canny, i))
-    return result
-
-
-def get_shift(pyramid, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift_y=2):
-    result = []
-    for i in range(0, len(pyramid)):
-        shifted = get_shift_im(pyramid[i], blur_kernel=blur_kernel, blur_sigma=blur_sigma,
-                               shift_x=shift_x, shift_y=shift_y)
-        result.append(get_scaled(shifted, i))
-    return result
-
-
-def get_avg(pyramid):
-    result = []
-    for i in range(0, len(pyramid)):
-        shift_up = get_shift_im(pyramid[i], shift_x=-1, shift_y=0)
-        shift_down = get_shift_im(pyramid[i], shift_x=1, shift_y=0)
-        shift_left = get_shift_im(pyramid[i], shift_x=0, shift_y=-1)
-        shift_right = get_shift_im(pyramid[i], shift_x=0, shift_y=1)
-        img = cv2.cvtColor(pyramid[i], cv2.COLOR_BGR2GRAY)
-        img_sum = shift_up + shift_down + shift_left + shift_right + img
-        result.append(get_scaled(img_sum / 5, i))
-    return result
-
-
-def get_dif(pyramid):
-    result1 = []
-    result2 = []
-    result3 = []
-    for i in range(0, len(pyramid)):
-        shift_up = get_shift_im(pyramid[i], shift_x=-1, shift_y=0)
-        shift_down = get_shift_im(pyramid[i], shift_x=1, shift_y=0)
-        shift_left = get_shift_im(pyramid[i], shift_x=0, shift_y=-1)
-        shift_right = get_shift_im(pyramid[i], shift_x=0, shift_y=1)
-        image = cv2.cvtColor(pyramid[i], cv2.COLOR_BGR2GRAY)
-
-        dif_up = np.asarray(image, dtype=np.int32) - np.asarray(shift_up, dtype=np.int32)
-        dif_down = np.asarray(image, dtype=np.int32) - np.asarray(shift_down, dtype=np.int32)
-        dif_left = np.asarray(image, dtype=np.int32) - np.asarray(shift_left, dtype=np.int32)
-        dif_right = np.asarray(image, dtype=np.int32) - np.asarray(shift_right, dtype=np.int32)
-
-        difs = np.dstack((dif_up, dif_down, dif_left, dif_right))
-        maxs = np.amax(difs, axis=2)
-        mins = np.amin(difs, axis=2)
-
-        diff = np.asarray(maxs, dtype=np.int32) - np.asarray(mins, dtype=np.int32)
-        result1.append(get_scaled(maxs, i))
-        result2.append(get_scaled(mins, i))
-        result3.append(get_scaled(diff, i))
-
-    return result1, result2, result3
-
-
-def get_cdiff(pyramid, c1, c2):
-    result = []
-    for i in range(0, len(pyramid)):
-        im = np.asarray(pyramid[i][:,:,c1], dtype=np.int32) - np.asarray(pyramid[i][:,:,c2], dtype=np.int32)
-        result.append(get_scaled(im, i))
-    return result
-
-
-def get_scaled(im, i):
-    scale = 2**i
-    if len(im.shape) == 2:
-        w, h = im.shape
-        im.shape = ((w, h, 1))
-        print im.shape
-    return np.asarray(scipy.ndimage.zoom(im, (scale, scale, 1), order=0), dtype=np.uint8)
-
-
 def find_unused_features(rfc, threshold=0.001):
+    """
+    Find indexes of insignificant features
+    :param rfc: trained random forest classifier
+    :param threshold: features with importance lower than threshold will be found useless
+    :return: array indices of unused features
+    """
     return np.where(rfc.feature_importances_ < threshold)
 
 
 def get_filtered_model(zeros, data):
+    """
+    Removes unused features from data
+    :param zeros: List of indices with to-be-deleted features
+    :param data: all features data
+    :return: new data array without some features
+    """
     return np.delete(data, zeros, axis=1)
-    # newX = []
-    # for tup in data:
-    #  newtup = np.delete(tup, zeros)
-    # newX.append(newtup)
-    # return newX
 
 
 def get_filtered_rfc(zeros, X, y):
+    """
+    Trains a new RFC with less features
+    :param zeros: features to be removed from rfc
+    :param X: training data - features
+    :param y: training data - classifications
+    :return: new faster RFC with less features
+    """
     newX = []
     for tup in X:
         newtup = np.delete(tup, zeros)
@@ -323,5 +423,6 @@ def get_filtered_rfc(zeros, X, y):
 
 
 if __name__ == "__main__":
-    image = cv2.imread("/home/dita/img_67.png")
+    pass
+    # image = cv2.imread("/home/dita/img_67.png")
     # scale_test(image)
