@@ -3,10 +3,11 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from skimage.transform import pyramid_gaussian
 import scipy.ndimage
+import time
 
 
 class Helper:
-    def __init__(self, image, num=4):
+    def __init__(self, image, num=3):
         self.pyramid = None
         self.images = None
         self.image = None
@@ -57,12 +58,11 @@ class Helper:
         self.bg = get_cdiff(self.pyramid, 0, 1)
         self.gr = get_cdiff(self.pyramid, 1, 2)
         self.rb = get_cdiff(self.pyramid, 2, 0)
-        pass
 
     def get_data(self, i, j, X, y, classification):
         x = []
         for k in range(0, self.num):
-            b, g, r = self.images[k][i][j] # TODO out of bounds here
+            b, g, r = self.images[k][i][j]
             sx = self.shiftx[k][i][j]
             sy = self.shifty[k][i][j]
             a = self.avg[k][i][j]
@@ -76,39 +76,49 @@ class Helper:
         X.append(x)
         y.append(classification)
 
-    def done(self, background, foreground, rfc=None):
-        if rfc is None:
-            # prepare learning data
-            # X contains tuples of data for each evaluated unit-pixel (R, G, B, edge?)
-            # y contains classifications for all pixels respectively
-            self.Xtmp = []
-            self.ytmp = []
+    def done(self, background, foreground):
+        # prepare learning data
+        # X contains tuples of data for each evaluated unit-pixel (R, G, B, edge?)
+        # y contains classifications for all pixels respectively
+        self.Xtmp = []
+        self.ytmp = []
 
-            # loop all nonzero pixels from foreground (ants) and background and add them to testing data
-            nzero = np.nonzero(background[0])
-            if len(nzero[0]) == 0 and 0 not in self.y:
-                return None
-            for i, j in zip(nzero[0], nzero[1]):
-                self.get_data(i, j, self.Xtmp, self.ytmp, 0)  # 0 for background
+        start = time.time()
 
-            nzero = np.nonzero(foreground[0])
-            if len(nzero[0]) == 0 and 1 not in self.y:
-                return None
-            for i, j in zip(nzero[0], nzero[1]):
-                self.get_data(i, j, self.Xtmp, self.ytmp, 1)  # 1 for foreground
+        # loop all nonzero pixels from foreground (ants) and background and add them to testing data
+        nzero = np.nonzero(background[0])
+        if len(nzero[0]) == 0 and 0 not in self.y:
+            return None
+        for i, j in zip(nzero[0], nzero[1]):
+            self.get_data(i, j, self.Xtmp, self.ytmp, 0)  # 0 for background
 
-            # create the classifier
-            self.rfc = RandomForestClassifier(class_weight='balanced')
+        nzero = np.nonzero(foreground[0])
+        if len(nzero[0]) == 0 and 1 not in self.y:
+            return None
+        for i, j in zip(nzero[0], nzero[1]):
+            self.get_data(i, j, self.Xtmp, self.ytmp, 1)  # 1 for foreground
 
-            # to train on all data (current and all previous frames), join the arrays together
-            # class variables are not affected here
-            X = list(self.Xtmp)
-            X.extend(self.X)
-            y = list(self.ytmp)
-            y.extend(self.y)
-            self.rfc.fit(X, y)
-        else:
-            self.rfc = rfc
+        print "Retrieving data takes %f" % (time.time() - start)
+
+        # create the classifier
+        self.rfc = RandomForestClassifier(class_weight='balanced')
+
+        # to train on all data (current and all previous frames), join the arrays together
+        # class variables are not affected here
+        X = list(self.Xtmp)
+        X.extend(self.X)
+        y = list(self.ytmp)
+        y.extend(self.y)
+
+        start = time.time()
+        self.rfc.fit(X, y)
+        print "RFC fitting takes %f" % (time.time() - start)
+
+        start = time.time()
+        unused = find_unused_features(self.rfc)
+        self.rfc = get_filtered_rfc(unused, X, y)
+        print "RFC filtering takes %f s. Using %d out of %d features." % \
+              (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
 
         h, w, c = self.image.shape
 
@@ -117,11 +127,16 @@ class Helper:
             data = np.dstack((layers))
 
         # reshape the image so it contains 4-tuples, each descripting a single pixel
-        data.shape = ((h * w, 12*self.num))
+        data.shape = ((h * w, 12 * self.num))
+        print "Data loaded"
+        filtered = get_filtered_model(unused, data)
+        print "Data ready"
 
         # prepare a mask and predict result for data (current image)
         # mask1 = np.zeros((h*w, c))
-        mask1 = self.rfc.predict_proba(data)
+        start = time.time()
+        mask1 = self.rfc.predict_proba(filtered)
+        print "RFC predict takes %f" % (time.time() - start)
 
         # reshape mask to be a grid, not a list
         mask1 = mask1[:, 1]
@@ -281,7 +296,30 @@ def get_scaled(im, i):
     if len(im.shape) == 2:
         w, h = im.shape
         im.shape = ((w, h, 1))
+        print im.shape
     return np.asarray(scipy.ndimage.zoom(im, (scale, scale, 1), order=0), dtype=np.uint8)
+
+
+def find_unused_features(rfc, threshold=0.001):
+    return np.where(rfc.feature_importances_ < threshold)
+
+
+def get_filtered_model(zeros, data):
+    return np.delete(data, zeros, axis=1)
+    # newX = []
+    # for tup in data:
+    #  newtup = np.delete(tup, zeros)
+    # newX.append(newtup)
+    # return newX
+
+
+def get_filtered_rfc(zeros, X, y):
+    newX = []
+    for tup in X:
+        newtup = np.delete(tup, zeros)
+        newX.append(newtup)
+    rfc = RandomForestClassifier(class_weight='balanced')
+    return rfc.fit(newX, y)
 
 
 if __name__ == "__main__":
