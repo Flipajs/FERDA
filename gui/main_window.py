@@ -47,8 +47,8 @@ class MainWindow(QtGui.QMainWindow):
         self.statusBar().hide()
 
         # TODO: remove this hack...
-        self.move(-500, -500)
-        self.showMaximized()
+        # self.move(-500, -500)
+        # self.showMaximized()
 
     def closeEvent(self, event):
         event.accept()
