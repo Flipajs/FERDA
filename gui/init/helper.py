@@ -7,6 +7,8 @@ import scipy.ndimage
 
 class Helper:
     def __init__(self, image, num=4):
+        self.pyramid = None
+        self.images = None
         self.image = None
         self.edges = None
         self.shiftx = None
@@ -18,7 +20,6 @@ class Helper:
         self.bg = None
         self.gr = None
         self.rb = None
-        self.pyramid = None
         self.num = num
 
         # these arrays contain learning data from previous frames
@@ -38,7 +39,7 @@ class Helper:
     def set_image(self, image):
         self.image = image
         self.pyramid = get_pyramid(self.image, layers=self.num)
-        print type(self.pyramid)
+        self.images = get_images(self.pyramid)
         blur_image = get_blur(self.pyramid)
 
         # find edges on the blurred image
@@ -56,11 +57,12 @@ class Helper:
         self.bg = get_cdiff(self.pyramid, 0, 1)
         self.gr = get_cdiff(self.pyramid, 1, 2)
         self.rb = get_cdiff(self.pyramid, 2, 0)
+        pass
 
     def get_data(self, i, j, X, y, classification):
         x = []
         for k in range(0, self.num):
-            b, g, r = self.image[k][i][j]
+            b, g, r = self.images[k][i][j] # TODO out of bounds here
             sx = self.shiftx[k][i][j]
             sy = self.shifty[k][i][j]
             a = self.avg[k][i][j]
@@ -70,7 +72,7 @@ class Helper:
             f = self.maxs[k][i][j]
             h = self.mins[k][i][j]
             k = self.diff[k][i][j]
-            x.extend(b, g, r, a, sx, sy, c, d, e, f, h, k)
+            x.extend([b, g, r, a, sx, sy, c, d, e, f, h, k])
         X.append(x)
         y.append(classification)
 
@@ -110,7 +112,7 @@ class Helper:
 
         h, w, c = self.image.shape
 
-        layers = self.get_layers(h, w)
+        layers = self.get_layers()
         for i in range(0, self.num):
             data = np.dstack((layers))
 
@@ -127,12 +129,13 @@ class Helper:
 
         return mask1
 
-    def get_layers(self, h, w):
+    def get_layers(self):
         result = []
+        h, w, c = self.pyramid[0].shape
         for i in range(0, self.num):
-            result.append(self.pyramid[i][:, :, 2].reshape((h * w, 1)))
-            result.append(self.pyramid[i][:, :, 1].reshape((h * w, 1)))
-            result.append(self.pyramid[i][:, :, 0].reshape((h * w, 1)))
+            result.append(self.images[i][:, :, 2].reshape((h * w, 1)))
+            result.append(self.images[i][:, :, 1].reshape((h * w, 1)))
+            result.append(self.images[i][:, :, 0].reshape((h * w, 1)))
             result.append(self.avg[i].reshape((h * w, 1)))
             result.append(self.shiftx[i].reshape((h * w, 1)))
             result.append(self.shifty[i].reshape((h * w, 1)))
@@ -160,8 +163,18 @@ def get_pyramid(image, scale=2, layers=4):
             break
         layers -= 1
 
-        result.append(np.uint8(resized))
+        foo = resized * 255
+        bar = foo.astype(np.uint8)
+        result.append(bar)
+        pass
 
+    return result
+
+
+def get_images(pyramid):
+    result = []
+    for i in range(0, len(pyramid)):
+        result.append(get_scaled(pyramid[i], i))
     return result
 
 
@@ -170,11 +183,28 @@ def get_blur(pyramid):
     # create a blurred image
     blur = 33
     for i in range(0, len(pyramid)):
-        # img = np.asarray(cv2.GaussianBlur(pyramid[i], (blur, blur), 0), dtype=np.uint8)
         result.append(cv2.GaussianBlur(pyramid[i], (blur, blur), 0))
-        # scale = 2**i
-        # result.append(np.asarray(scipy.ndimage.zoom(img, (scale, scale, 1), order=0), dtype=np.int16))
     return result
+
+
+def get_shift_im(im, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift_y=2):
+    w, h, c = im.shape
+
+    # prepare first image (original), make it grayscale and blurred
+    img1 = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    img1 = cv2.GaussianBlur(img1, (blur_kernel, blur_kernel), blur_sigma)
+
+    # create shift matrix
+    M = np.float32([[1, 0, shift_x], [0, 1, shift_y]])
+    # apply shift matrix
+    img2 = cv2.warpAffine(im, M, (w, h))
+
+    # prepare second image (translated), make it grayscale and blurred
+    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+    img2 = cv2.GaussianBlur(img2, (blur_kernel, blur_kernel), blur_sigma)
+
+    # get dif image
+    return np.abs(np.asarray(img1, dtype=np.int32) - np.asarray(img2, dtype=np.int32))
 
 
 def get_edges(pyramid):
@@ -182,44 +212,31 @@ def get_edges(pyramid):
     # find edges on the blurred image
     a = 0
     b = 37
-    for im in pyramid:
-        result.append(cv2.Canny(im, a, b))
+    for i in range(0, len(pyramid)):
+        canny = cv2.Canny(pyramid[i], a, b)
+        result.append(get_scaled(canny, i))
     return result
 
 
 def get_shift(pyramid, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift_y=2):
     result = []
-    for im in pyramid:
-        w, h, c = im.shape
-
-        # prepare first image (original), make it grayscale and blurred
-        img1 = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-        img1 = cv2.GaussianBlur(img1, (blur_kernel, blur_kernel), blur_sigma)
-
-        # create shift matrix
-        M = np.float32([[1, 0, shift_x], [0, 1, shift_y]])
-        # apply shift matrix
-        img2 = cv2.warpAffine(im, M, (w, h))
-
-        # prepare second image (translated), make it grayscale and blurred
-        img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-        img2 = cv2.GaussianBlur(img2, (blur_kernel, blur_kernel), blur_sigma)
-
-        # get dif image
-        result.append(np.abs(np.asarray(img1, dtype=np.int32) - np.asarray(img2, dtype=np.int32)))
+    for i in range(0, len(pyramid)):
+        shifted = get_shift_im(pyramid[i], blur_kernel=blur_kernel, blur_sigma=blur_sigma,
+                               shift_x=shift_x, shift_y=shift_y)
+        result.append(get_scaled(shifted, i))
     return result
 
 
 def get_avg(pyramid):
     result = []
-    shift_up = get_shift(pyramid, shift_x=-1, shift_y=0)
-    shift_down = get_shift(pyramid, shift_x=1, shift_y=0)
-    shift_left = get_shift(pyramid, shift_x=0, shift_y=-1)
-    shift_right = get_shift(pyramid, shift_x=0, shift_y=1)
     for i in range(0, len(pyramid)):
+        shift_up = get_shift_im(pyramid[i], shift_x=-1, shift_y=0)
+        shift_down = get_shift_im(pyramid[i], shift_x=1, shift_y=0)
+        shift_left = get_shift_im(pyramid[i], shift_x=0, shift_y=-1)
+        shift_right = get_shift_im(pyramid[i], shift_x=0, shift_y=1)
         img = cv2.cvtColor(pyramid[i], cv2.COLOR_BGR2GRAY)
-        img_sum = shift_up[i] + shift_down[i] + shift_left[i] + shift_right[i] + img
-        result.append(img_sum / 5)
+        img_sum = shift_up + shift_down + shift_left + shift_right + img
+        result.append(get_scaled(img_sum / 5, i))
     return result
 
 
@@ -227,36 +244,44 @@ def get_dif(pyramid):
     result1 = []
     result2 = []
     result3 = []
-    shift_up = get_shift(pyramid, shift_x=-1, shift_y=0)
-    shift_down = get_shift(pyramid, shift_x=1, shift_y=0)
-    shift_left = get_shift(pyramid, shift_x=0, shift_y=-1)
-    shift_right = get_shift(pyramid, shift_x=0, shift_y=1)
-
     for i in range(0, len(pyramid)):
+        shift_up = get_shift_im(pyramid[i], shift_x=-1, shift_y=0)
+        shift_down = get_shift_im(pyramid[i], shift_x=1, shift_y=0)
+        shift_left = get_shift_im(pyramid[i], shift_x=0, shift_y=-1)
+        shift_right = get_shift_im(pyramid[i], shift_x=0, shift_y=1)
         image = cv2.cvtColor(pyramid[i], cv2.COLOR_BGR2GRAY)
 
-        dif_up = np.asarray(image, dtype=np.int32) - np.asarray(shift_up[i], dtype=np.int32)
-        dif_down = np.asarray(image, dtype=np.int32) - np.asarray(shift_down[i], dtype=np.int32)
-        dif_left = np.asarray(image, dtype=np.int32) - np.asarray(shift_left[i], dtype=np.int32)
-        dif_right = np.asarray(image, dtype=np.int32) - np.asarray(shift_right[i], dtype=np.int32)
+        dif_up = np.asarray(image, dtype=np.int32) - np.asarray(shift_up, dtype=np.int32)
+        dif_down = np.asarray(image, dtype=np.int32) - np.asarray(shift_down, dtype=np.int32)
+        dif_left = np.asarray(image, dtype=np.int32) - np.asarray(shift_left, dtype=np.int32)
+        dif_right = np.asarray(image, dtype=np.int32) - np.asarray(shift_right, dtype=np.int32)
 
         difs = np.dstack((dif_up, dif_down, dif_left, dif_right))
         maxs = np.amax(difs, axis=2)
         mins = np.amin(difs, axis=2)
 
         diff = np.asarray(maxs, dtype=np.int32) - np.asarray(mins, dtype=np.int32)
-        result1.append(maxs)
-        result2.append(mins)
-        result3.append(diff)
+        result1.append(get_scaled(maxs, i))
+        result2.append(get_scaled(mins, i))
+        result3.append(get_scaled(diff, i))
 
     return result1, result2, result3
 
 
 def get_cdiff(pyramid, c1, c2):
     result = []
-    for im in pyramid:
-        result.append(np.asarray(im[:,:,c1], dtype=np.int32) - np.asarray(im[:,:,c2], dtype=np.int32))
+    for i in range(0, len(pyramid)):
+        im = np.asarray(pyramid[i][:,:,c1], dtype=np.int32) - np.asarray(pyramid[i][:,:,c2], dtype=np.int32)
+        result.append(get_scaled(im, i))
     return result
+
+
+def get_scaled(im, i):
+    scale = 2**i
+    if len(im.shape) == 2:
+        w, h = im.shape
+        im.shape = ((w, h, 1))
+    return np.asarray(scipy.ndimage.zoom(im, (scale, scale, 1), order=0), dtype=np.uint8)
 
 
 if __name__ == "__main__":
