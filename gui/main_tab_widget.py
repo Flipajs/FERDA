@@ -1,3 +1,5 @@
+from gui.graph_widget_loader import GraphWidgetLoader
+
 __author__ = 'fnaiser'
 
 import os
@@ -9,6 +11,7 @@ from gui.statistics.statistics_widget import StatisticsWidget
 
 from core.background_computer import BackgroundComputer
 from functools import partial
+from core.graph.graph_manager import GraphManager
 
 
 class MainTabWidget(QtGui.QWidget):
@@ -24,6 +27,7 @@ class MainTabWidget(QtGui.QWidget):
         self.tracker_tab = TrackerWidget(project, show_in_visualizer_callback=self.show_in_visualizer)
         self.results_tab = QtGui.QWidget()
         self.statistics_tab = StatisticsWidget(project)
+        self.graph_tab = GraphWidgetLoader(project).get_widget()
 
         self.id_detection_tab = QtGui.QWidget()
 
@@ -33,6 +37,7 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.addTab(self.results_tab, "results viewer")
         self.tabs.addTab(self.id_detection_tab, "id detection")
         self.tabs.addTab(self.statistics_tab, "stats && results")
+        self.tabs.addTab(self.graph_tab, "graph")
 
         self.switch_to_tracking_window_action = QtGui.QAction('switch tab to tracking', self)
         self.switch_to_tracking_window_action.triggered.connect(partial(self.tabs.setCurrentIndex, 0))
@@ -43,6 +48,7 @@ class MainTabWidget(QtGui.QWidget):
 
         self.tabs.setTabEnabled(1, False)
         self.tabs.setTabEnabled(2, False)
+        self.tabs.setTabEnabled(3, False)
 
         self.ignore_tab_change = False
         self.tabs.currentChanged.connect(self.tab_changed)
@@ -56,11 +62,11 @@ class MainTabWidget(QtGui.QWidget):
 
         print "LOADING GRAPH..."
         if project.gm is None or project.gm.g.num_vertices() == 0:
+            # project.gm = GraphManager(project, project.solver.assignment_score)
             self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished, postpone_parallelisation)
             self.bc_msers.run()
         else:
             self.background_computer_finished(project.solver)
-            self.tabs.setCurrentIndex(1)
 
     def reload_ids(self):
         print "RELOADING"
@@ -100,6 +106,7 @@ class MainTabWidget(QtGui.QWidget):
 
         self.tabs.setTabEnabled(1, True)
         self.tabs.setTabEnabled(2, True)
+        self.tabs.setTabEnabled(3, True)
 
     def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
         self.tabs.setCurrentIndex(1)
@@ -143,6 +150,9 @@ class MainTabWidget(QtGui.QWidget):
 
         if i == 3:
             self.statistics_tab.update_data(self.project)
+        if i == 3:
+            # TODO
+            self.graph_tab.redraw()
 
         # if i == 0:
         #     # TODO: add interval to settings

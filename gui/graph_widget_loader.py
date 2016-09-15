@@ -1,9 +1,9 @@
+from PyQt4 import QtGui
+
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
+from core.settings import Settings as S_
 from utils.img_manager import ImgManager
-from PyQt4 import QtGui
-from core.settings import  Settings as S_
-
 
 __author__ = 'Simon Mandlik'
 
@@ -27,11 +27,10 @@ MINIMUM = 5
 OPACITY = 255
 # default text to display
 DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O, Ctrl + MWheel - zoom in or out; Q, W - shrink, " \
-               "stretch; A, S show/hide info for selected; T, Y - show/hide toggled node"
+               "stretch; A, S show/hide info for selected; T, Y - show/hide toggled node; L - zoom to chunk"
 
 
-class VisLoader:
-
+class GraphWidgetLoader:
     def __init__(self, project=None, width=WIDTH, height=HEIGHT, relative_margin=RELATIVE_MARGIN):
         self.project = project
         self.graph_manager = None
@@ -73,8 +72,6 @@ class VisLoader:
             print "No project set!"
 
     def prepare_vertices(self, frames):
-        import time
-        time1 = time.time()
         if frames is None:
             self.vertices = set(self.graph_manager.get_all_relevant_vertices())
         else:
@@ -85,36 +82,17 @@ class VisLoader:
 
             self.vertices = set(self.vertices)
 
-        time2 = time.time()
-        # s = set(self.graph_manager.get_all_relevant_vertices())
-        # i = 100
-        # while i > 0:
-        #     i -= 1
-        #     self.vertices.add(s.pop())
-
-        # print("Getting {0} vertices from graph took {1}".format(len(self.vertices), time2 - time1))
-
     def prepare_nodes(self):
-        import time
-        time1 = time.time()
-        # zmerit cas toho volani
         for vertex in self.vertices:
-
             region = self.graph_manager.region(vertex)
             self.regions_vertices[region] = vertex
             self.regions.add(region)
-        time2 = time.time()
-        print("Getting {0} regions from vertices took {1}".format(len(self.regions), time2 - time1))
 
     def prepare_edges(self):
-        import time
-        time1 = time.time()
         for vertex in self.vertices:
             v = self.graph.vertex(vertex)
             self.prepare_tuples(v.in_edges())
             self.prepare_tuples(v.out_edges())
-        time2 = time.time()
-        print("Preparing {0} edges took {1}".format(len(self.edges), time2 - time1))
 
     def prepare_tuples(self, edges):
         for edge in edges:
@@ -126,19 +104,18 @@ class VisLoader:
             target_end_id = self.graph_manager.g.vp["chunk_end_id"][target]
             sureness = self.graph_manager.g.ep['score'][edge]
             type_of_line = "chunk" if source_start_id == target_end_id and source_start_id != 0 else "line"
-            if not(r1 in self.regions and r2 in self.regions):
+            if not (r1 in self.regions and r2 in self.regions):
                 type_of_line = "partial"
 
             color = None
             if type_of_line == "chunk":
                 color = self.project.chm[source_start_id].color
 
-            new_tuple = (r1, r2, type_of_line, sureness, color)
+            new_tuple = (r1, r2, type_of_line, sureness, color, source_start_id)
 
-            self.chunks_region_chunks[new_tuple] = RegionChunk(self.project.chm[source_start_id], self.graph_manager, self.region_manager)
-
+            self.chunks_region_chunks[new_tuple] = RegionChunk(self.project.chm[source_start_id], self.graph_manager,
+                                                               self.region_manager)
             self.edges.add(new_tuple)
-
 
     def get_node_info(self, region):
         n = self.regions_vertices[region]
@@ -152,18 +129,20 @@ class VisLoader:
 
         # TODO
         # antlikeness = self.project.stats.antlikeness_svm.get_prob(region)[1]
-        antlikeness = "Dummy"
+        antlikeness = 0
 
         # TODO
         # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
         #         region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
         return "Centroid = %s\nArea = %i\nAntlikeness = %.3f\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % \
-               (str(region.centroid()), region.area(), antlikeness, region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
+               (str(region.centroid()), region.area(), antlikeness, region.margin_,
+                str(best_in_score[0]) + ', ' + str(best_in_score[1]),
+                str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info)
 
     def get_edge_info(self, edge):
-        return "Type = {0}\nSureness = {1}".format(edge[2], edge[3])
+        return "Type = {0}\nSureness = {1}\nStart id: {2}".format(edge[2], edge[3], edge[5])
 
-    def visualise(self, frames=None):
+    def get_widget(self, frames=None):
         self.prepare_vertices(frames)
         # print("Preparing nodes...")
         self.prepare_nodes()
@@ -171,31 +150,33 @@ class VisLoader:
         self.prepare_edges()
         # print("Preparing visualizer...")
         img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
-        from graph_visualizer import GraphVisualizer
+        from gui.graph_widget.graph_visualizer import GraphVisualizer
         self.g = GraphVisualizer(self, img_manager)
-        self.g.showMaximized()
+        return self.g
+
 
 if __name__ == '__main__':
-    # from scripts import fix_project
-
     project = Project()
 
-    sn_id = 2
-    name = 'Cam1_'
-    snapshot = {'chm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
-    'gm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
+    # sn_id = 2
+    # name = 'Cam1_'
+    # snapshot = {'chm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
+    # 'gm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
-    project.load('/home/sheemon/FERDA/projects/'+name+'/cam1.fproj', snapshot)
+    project.load('/home/simon/FERDA/projects/Cam1_/cam1.fproj')
 
     import cv2, sys
+
     app = QtGui.QApplication(sys.argv)
-    l1 = VisLoader(project)
+    l1 = GraphWidgetLoader(project)
     l1.set_relative_margin(1)
     # l1.set_width(60)
     # l1.set_height(60)
 
-    l1.visualise(range(300, 500))
-    # l1.visualise()
+    # g = l1.get_widget(range(300, 500))
+    g = l1.get_widget()
+    g.redraw()
+    g.show()
 
     app.exec_()
     cv2.waitKey(0)

@@ -1,24 +1,19 @@
-import time
-import sys
-import os
-import errno
-import numpy as np
-from utils.video_manager import get_auto_video_manager
-import multiprocessing as mp
-from core.region.mser import get_msers_
-from PyQt4 import QtGui, QtCore
-from functools import partial
-from core.settings import Settings as S_
 import cPickle as pickle
-import networkx as nx
-from core.graph.solver import Solver
-from core.graph.reduced import Reduced
-import cProfile
-from core.region.region_manager import RegionManager
+import errno
+import os
+import sys
+import time
+from PyQt4 import QtCore
+from functools import partial
+
+import numpy as np
+
 from core.graph.chunk_manager import ChunkManager
-from core.graph.chunk import Chunk
-from gui.graph_view.vis_loader import VisLoader
+from core.graph.solver import Solver
+from core.region.region_manager import RegionManager
+from core.settings import Settings as S_
 from utils.color_manager import colorize_project
+from utils.video_manager import get_auto_video_manager
 
 
 class BackgroundComputer:
@@ -74,6 +69,7 @@ class BackgroundComputer:
             for i in range(skip_n_first_parts):
                 self.processes.append(None)
 
+            limitsFile = open(str(self.project.working_directory)+"/limits.txt","w");
             for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
 
@@ -104,6 +100,12 @@ class BackgroundComputer:
                             self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
                             f_num) + ' ' + str(last_n_frames))
 
+                limitsFile.write(str(i)+" "+str(f_num)+" "+str(last_n_frames)+"\n");
+                status = self.WAITING
+                if i < skip_n_first_parts + self.process_n:
+                    status = self.RUNNING
+                    #p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))   ## Uncomment for cluster usage
+
                 self.processes.append([p, ex_str, status])
 
                 # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
@@ -113,6 +115,9 @@ class BackgroundComputer:
                 self.precomputed = True
 
             S_.general.log_graph_edits = True
+            limitsFile.close()
+            # sys.exit() ## Comment for cluster usage
+            
         else:
             self.precomputed = True
 

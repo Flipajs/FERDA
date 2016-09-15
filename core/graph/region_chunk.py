@@ -12,6 +12,9 @@ class RegionChunk:
         self.gm_ = gm
         self.rm_ = rm
 
+    def __len__(self):
+        return self.chunk_.length();
+
     def __str__(self):
         s = "RegionChunk start: "+str(self.start_frame())+" end: "+str(self.end_frame)
         return s

@@ -2,6 +2,8 @@ __author__ = 'fnaiser'
 import os
 import sys
 import inspect
+import multiprocessing
+pool=multiprocessing.Pool(processes=4)
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)

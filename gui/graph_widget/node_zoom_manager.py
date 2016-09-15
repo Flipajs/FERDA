@@ -9,7 +9,7 @@ class NodeZoomManager():
 
     def show_zoom(self, node):
         if not node.toggled:
-            self.toggled.append(node);
+            self.toggled.append(node)
             node.toggle()
 
     def hide_zoom_all(self):

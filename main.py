@@ -82,8 +82,37 @@ if is_flipajs_pc():
     # # l = plt.plot(bins)
     # plt.show()
     #
-    ex.widget_control('load_project', project)
 
+    ex.widget_control('load_project', project)
+#     cam_ = 2
+#     name = 'Cam'+str(cam_)
+#     wd = '/Users/flipajs/Documents/wd/gt/'
+#     # wd = '/Users/flipajs/Documents/wd/'
+#     snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
+#                 'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
+#
+#     project.load(wd+name+'/cam'+str(cam_)+'.fproj')
+#
+#     try:
+#         with open(project.working_directory+'/temp/animal_id_mapping.pkl', 'rb') as f_:
+#             animal_id_mapping = pickle.load(f_)
+#
+#         for ch_id in project.gm.chunk_list():
+#             animal_id = -1
+#             if ch_id in animal_id_mapping:
+#                 animal_id = animal_id_mapping[ch_id]
+#
+#             project.chm[ch_id].animal_id_ = animal_id
+#     except IOError:
+#         pass
+#
+#     # name = 'c2'
+#     # wd = '/Users/flipajs/Documents/wd/'
+#     # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
+#     #             'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
+#     #
+#     # project.load(wd+name+'/c2.fproj')
+#     # ex.widget_control('load_project', project)
 
 app.exec_()
 app.deleteLater()

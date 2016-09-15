@@ -73,7 +73,12 @@ class Project:
 
         return True
 
-    def save_project_file_(self):
+    def save_project_file_(self,toFolder=""):	
+        if (toFolder == ""):
+            destinationFolder = self.working_directory;
+        else:
+            destinationFolder = toFolder;
+        
         p = Project()
         p.name = self.name
         p.description = self.description
@@ -97,11 +102,14 @@ class Project:
         p.snapshot_id = self.snapshot_id
         p.active_snapshot = self.active_snapshot
 
-        with open(self.working_directory+'/'+self.name+'.fproj', 'wb') as f:
+        with open(destinationFolder+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 
-    def save(self):
-        self.save_snapshot()
+    def save(self,toFolder=""):
+        if (toFolder == ""):
+            destinationFolder = self.working_directory
+        else:
+            destinationFolder = toFolder
 
         # BG MODEL
         if self.bg_model:
@@ -109,35 +117,35 @@ class Project:
                 if self.bg_model.is_computed():
                     self.bg_model = self.bg_model.get_model()
 
-                    with open(self.working_directory+'/bg_model.pkl', 'wb') as f:
+                    with open(destinationFolder+'/bg_model.pkl', 'wb') as f:
                         pickle.dump(self.bg_model, f)
             else:
-                with open(self.working_directory+'/bg_model.pkl', 'wb') as f:
+                with open(destinationFolder+'/bg_model.pkl', 'wb') as f:
                     pickle.dump(self.bg_model, f)
 
         # ARENA MODEL
         if self.arena_model:
-            with open(self.working_directory+'/arena_model.pkl', 'wb') as f:
+            with open(destinationFolder+'/arena_model.pkl', 'wb') as f:
                 pickle.dump(self.arena_model, f)
 
         # CLASSES
         if self.classes:
-            with open(self.working_directory+'/classes.pkl', 'wb') as f:
+            with open(destinationFolder+'/classes.pkl', 'wb') as f:
                 pickle.dump(self.classes, f)
 
         # GROUPS
         if self.groups:
-            with open(self.working_directory+'/groups.pkl', 'wb') as f:
+            with open(destinationFolder+'/groups.pkl', 'wb') as f:
                 pickle.dump(self.groups, f)
 
         # ANIMALS
         if self.animals:
-            with open(self.working_directory+'/animals.pkl', 'wb') as f:
+            with open(destinationFolder+'/animals.pkl', 'wb') as f:
                 pickle.dump(self.animals, f)
 
         # STATS
         if self.stats:
-            with open(self.working_directory+'/stats.pkl', 'wb') as f:
+            with open(destinationFolder+'/stats.pkl', 'wb') as f:
                 pickle.dump(self.stats, f)
 
         # # Region Manager
@@ -149,9 +157,9 @@ class Project:
 
         self.save_gm_(self.working_directory+'/graph_manager.pkl')
 
-        self.save_qsettings()
+        self.save_qsettings(toFolder)
 
-        self.save_project_file_()
+        self.save_project_file_(toFolder)
 
     def save_gm_(self, file_path):
         # Graph Manager
@@ -192,7 +200,12 @@ class Project:
         self.active_snapshot = -1
 
 
-    def save_qsettings(self):
+    def save_qsettings(self,toFolder=""):
+        if (toFolder == ""):
+            destinationFolder = self.working_directory;
+        else:
+            destinationFolder = toFolder;
+
         s = QtCore.QSettings('FERDA')
         settings = {}
 
@@ -202,7 +215,7 @@ class Project:
             except:
                 pass
 
-        with open(self.working_directory+'/settings.pkl', 'wb') as f:
+        with open(destinationFolder+'/settings.pkl', 'wb') as f:
             pickle.dump(settings, f)
 
     def load_qsettings(self):
