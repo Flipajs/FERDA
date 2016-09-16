@@ -29,7 +29,7 @@ class MainTabWidget(QtGui.QWidget):
 
         self.results_tab = QtGui.QWidget()
         self.statistics_tab = StatisticsWidget(project)
-        self.graph_tab = QtGui.QWidget()
+        self.graph_tab = GraphWidgetLoader(self.project).get_widget()
 
         self.id_detection_tab = QtGui.QWidget()
 
@@ -158,16 +158,16 @@ class MainTabWidget(QtGui.QWidget):
         if i == 3:
             self.statistics_tab.update_data(self.project)
         if i == 4:
-            if not isinstance(self.graph_tab, GraphWidgetLoader):
-                self.ignore_tab_change = True
+            # if not isinstance(self.graph_tab, GraphWidgetLoader):
+                # self.ignore_tab_change = True
                 # TODO: show loading...
-                self.graph_tab = GraphWidgetLoader(self.project).get_widget()
-                self.tabs.removeTab(4)
-                self.tabs.insertTab(4, self.graph_tab, "graph")
-                self.tabs.setCurrentIndex(4)
-                self.ignore_tab_change = False
-
-                self.graph_tab.redraw()
+                # self.graph_tab = GraphWidgetLoader(self.project).get_widget()
+                # self.tabs.removeTab(4)
+                # self.tabs.insertTab(4, self.graph_tab, "graph")
+                # self.tabs.setCurrentIndex(4)
+                # self.ignore_tab_change = False
+            # else:
+            self.graph_tab.redraw()
 
         # if i == 0:
         #     # TODO: add interval to settings

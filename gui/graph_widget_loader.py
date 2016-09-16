@@ -1,5 +1,9 @@
 from PyQt4 import QtGui
 
+import sys
+
+import cv2
+
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from core.settings import Settings as S_
@@ -8,7 +12,7 @@ from utils.img_manager import ImgManager
 __author__ = 'Simon Mandlik'
 
 # the width of a node
-WIDTH = 5
+WIDTH = 50
 # the width of a node, should be same as width for the best result
 HEIGHT = WIDTH
 # relative margin of a node
@@ -33,6 +37,12 @@ DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O, Ctrl + MWh
 class GraphWidgetLoader:
     def __init__(self, project=None, width=WIDTH, height=HEIGHT, relative_margin=RELATIVE_MARGIN):
         self.project = project
+
+        #TODO remove this workaround
+        for t in project.chm.chunk_list():
+            if not hasattr(t, 'N'):
+                t.N = set()
+                t.P = set()
         self.graph_manager = None
         self.graph = None
         self.region_manager = None
@@ -50,6 +60,15 @@ class GraphWidgetLoader:
         self.relative_margin = relative_margin
         self.height = height
         self.width = width
+
+        self.colors_ = [
+            QtGui.QColor().fromRgbF(0, 0, 1),  #
+            QtGui.QColor().fromRgbF(1, 0, 0),
+            QtGui.QColor().fromRgbF(1, 1, 0),
+            QtGui.QColor().fromRgbF(0, 1, 0),  #
+            QtGui.QColor().fromRgbF(0, 1, 1),
+            QtGui.QColor().fromRgbF(1, 1, 1)
+        ]
 
     def set_project(self, project):
         self.project = project
@@ -107,11 +126,18 @@ class GraphWidgetLoader:
             if not (r1 in self.regions and r2 in self.regions):
                 type_of_line = "partial"
 
-            color = None
+            c = None
             if type_of_line == "chunk":
-                color = self.project.chm[source_start_id].color
+                chunk = self.project.chm[source_start_id]
+                if chunk.is_only_one_id_assigned(len(self.project.animals)):
+                    print "a"
+                    id_ = list(chunk.P)[0]
+                    c_ = self.project.animals[id_].color_
+                    c = QtGui.QColor(c_[2], c_[1], c_[0], 255)
+                else:
+                    c = self.project.chm[source_start_id].color
 
-            new_tuple = (r1, r2, type_of_line, sureness, color, source_start_id)
+            new_tuple = (r1, r2, type_of_line, sureness, c, source_start_id)
 
             self.chunks_region_chunks[new_tuple] = RegionChunk(self.project.chm[source_start_id], self.graph_manager,
                                                                self.region_manager)
@@ -164,8 +190,6 @@ if __name__ == '__main__':
     # 'gm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
     project.load('/home/simon/FERDA/projects/Cam1_/cam1.fproj')
-
-    import cv2, sys
 
     app = QtGui.QApplication(sys.argv)
     l1 = GraphWidgetLoader(project)
