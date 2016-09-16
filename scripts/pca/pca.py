@@ -87,10 +87,14 @@ average = 0
 
 def get_chunks_regions(ch, chm, gm):
     chunk = chm[ch]
-    print chunk
     r_ch = RegionChunk(chunk, gm, gm.rm)
-    for region in r_ch:
-        yield region
+    # TODO reverse
+    # for region in r_ch:
+    #     yield region
+
+    length = chunk.length()
+    for region in range(0, length, 4):
+        yield r_ch[region]
 
 
 def get_matrix(chunks, number_of_data, results):
@@ -205,16 +209,18 @@ def extract_heads(X, head_range):
 def shift_heads_to_origin(X, head_range):
     heads = extract_heads(X, head_range)
     R = np.zeros_like(X)
+    means = np.zeros((X.shape[0], 2))
     for i in range(X.shape[0]):
         points = zip(heads[i, ::2], heads[i, 1::2])
-        R[i, ] = (zip(X[i, ::2], X[i, 1::2]) - np.mean(points, axis=0)).flatten()
-    return R
+        means[i] = np.mean(points, axis=0)
+        R[i,] = (zip(X[i, ::2], X[i, 1::2]) - means[i]).flatten()
+    return R, means
 
 
 def extract_bottoms(X, bottom_range):
     if bottom_range % 2 is not 0:
         logging.warn("Using odd range, results may vary!")
-    part = X.shape[1] - (bottom_range * 4)
+    part = X.shape[1] - (bottom_range * 4 + 2)
     part /= 2
     return X[:, range(part, X.shape[1] - part)]
 
@@ -222,10 +228,12 @@ def extract_bottoms(X, bottom_range):
 def shift_bottoms_to_origin(X, bottom_range):
     bottoms = extract_bottoms(X, bottom_range)
     R = np.zeros_like(X)
+    means = np.zeros((X.shape[0], 2))
     for i in range(X.shape[0]):
         points = zip(bottoms[i, ::2], bottoms[i, 1::2])
-        R[i, ] = (zip(X[i, ::2], X[i, 1::2]) - np.mean(points, axis=0)).flatten()
-    return R
+        means[i] = np.mean(points, axis=0)
+        R[i,] = (zip(X[i, ::2], X[i, 1::2]) - means[i]).flatten()
+    return R, means
 
 
 def get_cluster_region_matrix(chunks, avg_dist):
@@ -277,25 +285,50 @@ def get_cluster_feature_vector(cluster, avg_dist):
     return result.flatten()
 
 
-def view_cluster_fitting(cluster, eigen_ants, head_pca, freq, head_range, bottom_range):
-    # contour = zip(cluster[::2], cluster[1::2])
+def fit_cluster(number_of_data, cluster, freq, r_head, pca_shifted_cut_head, pca_shifted_whole_head,
+                r_bottom, pca_shifted_cut_bottom, pca_shifted_whole_bottom):
     n = len(cluster) / freq / 2
     plt.hold(True)
-    plt.scatter(cluster[::2], cluster[1::2], c='r')
     cluster = np.expand_dims(cluster, axis=0)
+    results = np.zeros((n * 2, number_of_data * 2))
+    scores = []
     for i in range(n):
-        head = extract_heads(np.roll(cluster, - i * freq, axis=0), head_range)
-        head = shift_heads_to_origin(head, head_range).squeeze()
-        ang = math.atan2(head[0], head[1])
-        head = np.array(rotate(zip(head[::2], head[1::2]), ang))
-        plt.axis('equal')
-        plt.hold(True)
-        plt.plot(head[:, 0], head[:, 1])
-        plt.show()
-        ant = np.dot(pca_head.transform(head.flatten()), eigen_ants) + head_pca.mean_
-        ant = np.array(rotate(zip(ant[::2], ant[1::2]), ang, method='back_projection'))
-        plt.plot(ant[:, 0], ant[:, 1])
+        blob = extract_heads(np.roll(cluster, - i * freq * 2, axis=1), r_head)
+        blob, mean = shift_heads_to_origin(blob, r_head)
+        ant, score = fit_point(blob, mean, pca_shifted_cut_head, pca_shifted_whole_head)
+        results[2 * i, :] = ant
+        scores.append(score)
 
+        blob = extract_bottoms(np.roll(cluster, - i * freq * 2, axis=1), r_bottom)
+        blob, mean = shift_bottoms_to_origin(blob, r_bottom)
+        ant, score = fit_point(blob, mean, pca_shifted_cut_bottom, pca_shifted_whole_bottom)
+        results[2 * i + 1, :] = ant
+        scores.append(score)
+
+    plt.axis('equal')
+    plt.hold(True)
+    plt.scatter(cluster[0, ::2], cluster[0, 1::2], c='grey')
+    plt.plot(cluster[0, ::2], cluster[0, 1::2], c='grey')
+    for i in sorted(range(n * 2), key=lambda n: scores[n], reverse=True)[:3]:
+        ant = results[i]
+        # plt.scatter(cluster[0, freq * i * 2], cluster[0, freq * i * 2 + 1])
+        plt.plot(ant[::2], ant[1::2], c='b')
+    plt.show()
+
+
+def fit_point(blob, mean, pca_shifted_cut, pca_shifted_whole):
+    # extract bottom, shift to origin and rotate
+    blob = blob.squeeze()
+    mean = mean.squeeze()
+    ang = math.atan2(blob[0], blob[1])
+    blob = np.array(rotate(zip(blob[::2], blob[1::2]), ang))
+    # carry out pca and project back
+    blob = blob.flatten().reshape(1, -1)
+    ant = np.dot(pca_shifted_cut.transform(blob), pca_shifted_whole.components_)
+    ant += pca_shifted_whole.mean_
+    ant = np.array(rotate(ant.reshape((ant.shape[1] / 2, 2)), -ang))
+    ant = (ant + mean).flatten()
+    return ant, pca_shifted_cut.score(blob)
 
 
 def generate_eigen_ants_figure(ants, number_of_eigen_v):
@@ -372,12 +405,13 @@ if __name__ == '__main__':
 
     # LABELING CHUNK WITH/WITHOUT ANT CLUSTERS
     chunks_without_clusters = [0, 1, 2, 3, 4, 5]
-    chunks_with_clusters = [6, 10, 12, 13]
+    chunks_with_clusters = [6, 10, 12, 13, 17, 18, 26, 28, 29, 32, 37, 39, 40, 41, 43, 47, 51, 54, 57, 58, 60, 61, 65,
+                            67, 69, 73, 75, 78, 81, 84, 87, 90, 93, 94, 96, 99, 102, 105]
     chunks_without_clusters = map(lambda x: chunks[x], chunks_without_clusters)
     chunks_with_clusters = map(lambda x: chunks[x], chunks_with_clusters)
     # app = QtGui.QApplication(sys.argv)
     # i = 0
-    # for ch in chunks_with_clusters:
+    # for ch in chunks:
     #     print i
     #     i += 1
     #     chv = ChunkViewer(project.img_manager, ch, project.chm, project.gm, project.gm.rm)
@@ -406,8 +440,8 @@ if __name__ == '__main__':
 
     # EXTRACTING DATA
     X, avg_dist = get_matrix(chunks_without_clusters, number_of_data, results)
-    head_range = number_of_data / 4
-    bottom_range = number_of_data / 4
+    head_range = 4
+    bottom_range = 4
     H = extract_heads(X, head_range)
     B = extract_bottoms(X, bottom_range)
 
@@ -455,13 +489,22 @@ if __name__ == '__main__':
     # generate_ants_reconstructed_figure(X, X_R, X_C, rows, columns)
 
     # CLUSTER DECOMPOSITION
-    freq = 20
+    freq = 1
     C = get_cluster_region_matrix(chunks_with_clusters, avg_dist)
-    H_S = shift_heads_to_origin(X, head_range)
-    B_S = shift_bottoms_to_origin(X, bottom_range)
+    H_S, means = shift_heads_to_origin(X, head_range)
+    pca_head_shifted_whole = PCA(number_of_eigen_v)
+    pca_head_shifted_whole.fit(H_S)
+    pca_head_shifted_cut = PCA(number_of_eigen_v)
+    pca_head_shifted_cut.fit(extract_heads(H_S, head_range))
+    B_S, means = shift_bottoms_to_origin(X, bottom_range)
+    pca_bottom_shifted_whole = PCA(number_of_eigen_v)
+    pca_bottom_shifted_whole.fit(B_S)
+    pca_bottom_shifted_cut = PCA(number_of_eigen_v)
+    pca_bottom_shifted_cut.fit(extract_bottoms(B_S, bottom_range))
     # for v in B_S:
     #     plt.scatter(v[::2], v[1::2])
     #     plt.scatter([0],[0],c='r')
     #     plt.show()
     for cluster in C:
-        view_cluster_fitting(cluster, eigen_ants_whole, pca_head, freq, head_range, bottom_range)
+        fit_cluster(number_of_data, cluster, freq, head_range, pca_head_shifted_cut, pca_head_shifted_whole, bottom_range,
+                    pca_bottom_shifted_cut, pca_bottom_shifted_whole)
