@@ -1,20 +1,20 @@
+import cPickle as pickle
 import sys
+import time
 
+import numpy as np
+from PIL import ImageQt
 from PyQt4 import QtGui, QtCore
-from gui.img_grid.img_grid_widget import ImgGridWidget
-from utils.video_manager import get_auto_video_manager
+
+from core.segmentation_helper import SegmentationHelper
 from core.project.project import Project
 from core.region.mser import ferda_filtered_msers
-from utils.drawing.points import draw_points_crop, get_contour, draw_points_binary
-from gui.segmentation.painter import Painter, rgba2qimage, array2qimage
-from helper import Helper
-from PIL import ImageQt
 from gui.gui_utils import SelectableQLabel
+from gui.img_grid.img_grid_widget import ImgGridWidget
+from gui.segmentation.painter import Painter, array2qimage
+from utils.drawing.points import draw_points_crop, get_contour, draw_points_binary
 from utils.img import prepare_for_segmentation
-import time
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
+from utils.video_manager import get_auto_video_manager
 
 __author__ = 'filip@naiser.cz', 'dita'
 
@@ -65,7 +65,7 @@ class SetMSERs(QtGui.QWidget):
         self.painter.add_color_("foreground", self.color_foreground)
 
         # Setup segmentation helper
-        self.helper = Helper(self.im)
+        self.helper = SegmentationHelper(self.im)
 
         # Prepare img_grid variable
         self.img_grid = None
@@ -275,7 +275,8 @@ class SetMSERs(QtGui.QWidget):
         # self.update_all()
 
     def done(self):
-        pass
+        with open(self.project.working_directory+'/segmentation_model.pkl', 'wb') as f:
+            pickle.dump(self.helper, f, -1)
 
     def set_color_bg(self):
         self.cur_color = "background"
@@ -507,7 +508,7 @@ if __name__ == "__main__":
 
     # proj.load("/home/dita/Programovani/FERDA Projects/cam1_test/cam1_test.fproj")
     # proj.load('/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj')
-    proj.load('/Users/flipajs/Documents/wd/GT/Cam1 copy/cam1.fproj')
+    proj.load('/Users/flipajs/Documents/wd/GT/Cam1_/cam1.fproj')
     # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
     proj.arena_model = None
     proj.bg_model = None

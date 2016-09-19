@@ -6,7 +6,7 @@ import scipy.ndimage
 import time
 
 
-class Helper:
+class SegmentationHelper:
     def __init__(self, image, num=3, scale=2):
         self.pyramid = None
         self.images = None

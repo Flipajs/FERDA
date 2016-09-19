@@ -257,7 +257,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.case_v += 1
             self.active_node_id += 1
 
-        print self.active_node_id
+        # print self.active_node_id
 
         if not self.move_to_next_case_():
             self.project.save_snapshot()

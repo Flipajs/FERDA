@@ -131,13 +131,13 @@ if __name__ == '__main__':
     wd = '/Users/flipajs/Documents/wd/GT/'
     project.load(wd+name+'/cam1.fproj')
 
-    with open(project.working_directory+'/temp/animal_id_mapping.pkl', 'rb') as f_:
-        animal_id_mapping = pickle.load(f_)
+    with open(project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
+        chunk_available_ids = pickle.load(f_)
 
     for ch_id in project.gm.chunk_list():
         animal_id = -1
-        if ch_id in animal_id_mapping:
-            animal_id = animal_id_mapping[ch_id]
+        if ch_id in chunk_available_ids:
+            animal_id = chunk_available_ids[ch_id]
 
         project.chm[ch_id].animal_id_ = animal_id
 

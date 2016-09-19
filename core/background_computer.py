@@ -1,24 +1,19 @@
-import time
-import sys
-import os
-import errno
-import numpy as np
-from utils.video_manager import get_auto_video_manager
-import multiprocessing as mp
-from core.region.mser import get_msers_
-from PyQt4 import QtGui, QtCore
-from functools import partial
-from core.settings import Settings as S_
 import cPickle as pickle
-import networkx as nx
-from core.graph.solver import Solver
-from core.graph.reduced import Reduced
-import cProfile
-from core.region.region_manager import RegionManager
+import errno
+import os
+import sys
+import time
+from PyQt4 import QtCore
+from functools import partial
+
+import numpy as np
+
 from core.graph.chunk_manager import ChunkManager
-from core.graph.chunk import Chunk
-from gui.graph_view.vis_loader import VisLoader
+from core.graph.solver import Solver
+from core.region.region_manager import RegionManager
+from core.settings import Settings as S_
 from utils.color_manager import colorize_project
+from utils.video_manager import get_auto_video_manager
 
 
 class BackgroundComputer:
@@ -276,7 +271,7 @@ class BackgroundComputer:
         from utils.misc import is_flipajs_pc
         if is_flipajs_pc():
             # TODO: remove this line
-            # part_num = 5
+            part_num = 6
             pass
 
         self.project.color_manager = None
@@ -284,6 +279,9 @@ class BackgroundComputer:
         print "merging..."
         t1 = time.time()
         for i in range(part_num):
+            if i == 6:
+                print "test"
+
             rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
                                    db_name='part' + str(i) + '_rm.sqlite3')
 
@@ -333,6 +331,8 @@ class BackgroundComputer:
         self.project.gm.project = self.project
 
         s = time.time()
+
+        # TODO: problem with huge projects
         colorize_project(self.project)
         print "color manager takes %f seconds" % (time.time() - s)
 
