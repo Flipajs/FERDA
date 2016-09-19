@@ -268,6 +268,9 @@ class SetMSERs(QtGui.QWidget):
         self.helper.set_image(self.im)
         self.update_all()
 
+    def done(self):
+        pass
+
     def set_color_bg(self):
         self.cur_color = "background"
         self.cur_eraser = False
@@ -338,6 +341,7 @@ class SetMSERs(QtGui.QWidget):
         self.check_paint = QtGui.QCheckBox("Paint data")
         self.check_mser = QtGui.QCheckBox("MSER view")
         self.button_next = QtGui.QPushButton("Next frame")
+        self.button_done = QtGui.QPushButton("Done")
 
     def configure_form_panel(self):
         self.mser_max_area.setMinimum(0.0001)
@@ -482,6 +486,9 @@ class SetMSERs(QtGui.QWidget):
 
         self.button_next.clicked.connect(self.show_next_frame)
         self.left_panel.layout().addWidget(self.button_next)
+
+        self.button_done.clicked.connect(self.done)
+        self.left_panel.layout().addWidget(self.button_done)
 
 
 if __name__ == "__main__":
