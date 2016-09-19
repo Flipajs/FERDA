@@ -23,7 +23,7 @@ S_.general.print_log = False
 if is_flipajs_pc():
     sn_id = 875
     cam_ = 1
-    name = 'Cam'+str(cam_)+' copy'
+    name = 'Cam'+str(cam_)+''
     # name = 'Cam'+str(cam_)
     wd = '/Users/flipajs/Documents/wd/gt/'
     # wd = '/Users/flipajs/Documents/wd/'
