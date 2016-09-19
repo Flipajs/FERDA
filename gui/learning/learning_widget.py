@@ -82,7 +82,6 @@ class LearningWidget(QtGui.QWidget):
         self.top_stripe_layout.addWidget(self.save_button)
 
         # TODO: last info label
-        # TODO: add saving
         # TODO: update callback... info about decisions...
 
         self.add_tracklet_table()
