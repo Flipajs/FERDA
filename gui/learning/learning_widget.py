@@ -89,6 +89,7 @@ class LearningWidget(QtGui.QWidget):
 
     def add_tracklet_table(self):
         self.tracklets_table = QtGui.QTableWidget()
+
         self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
         num_animals = len(self.project.animals)
         self.tracklets_table.setColumnCount(2 * num_animals + 5)
@@ -158,17 +159,11 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setItem(11, 1, QtGui.QTableWidgetItem(self.__f2str(self.get_id_coverage())))
 
 
-        # TODO: fix this...
-
         # update tracklet info...
-        if self.tracklets_table.rowCount() != len(self.lp.undecided_tracklets):
-            self.hbox.removeWidget(self.tracklets_table)
-            self.tracklets_table.setParent(None)
-
-            self.add_tracklet_table()
+        self.tracklets_table.clear()
+        self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
 
         num_animals = len(self.project.animals)
-        self.tracklets_table.clear()
         self.tracklets_table.setSortingEnabled(False)
         header_labels = ("id", "len", "start", "end", "cert")
         for i in range(num_animals):
