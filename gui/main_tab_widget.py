@@ -149,8 +149,9 @@ class MainTabWidget(QtGui.QWidget):
             from gui.learning.learning_widget import LearningWidget
             if not isinstance(self.id_detection_tab, LearningWidget):
                 self.ignore_tab_change = True
-                self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet)
                 self.tabs.removeTab(2)
+                self.id_detection_tab.setParent(None)
+                self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet)
                 self.tabs.insertTab(2, self.id_detection_tab, "id detection")
                 self.tabs.setCurrentIndex(2)
                 self.ignore_tab_change = False
@@ -161,8 +162,9 @@ class MainTabWidget(QtGui.QWidget):
             if not isinstance(self.graph_tab, GraphWidgetLoader):
                 self.ignore_tab_change = True
                 # TODO: show loading...
-                self.graph_tab = GraphWidgetLoader(self.project).get_widget()
                 self.tabs.removeTab(4)
+                self.graph_tab.setParent(None)
+                self.graph_tab = GraphWidgetLoader(self.project).get_widget()
                 self.tabs.insertTab(4, self.graph_tab, "graph")
                 self.tabs.setCurrentIndex(4)
                 self.ignore_tab_change = False

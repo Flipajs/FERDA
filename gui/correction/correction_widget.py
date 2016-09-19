@@ -96,6 +96,11 @@ class ResultsWidget(QtGui.QWidget):
         self.decide_tracklet_button.setDisabled(True)
         self.left_vbox.addWidget(self.decide_tracklet_button)
 
+        self.decide_tracklet_action = QtGui.QAction('decide tracklet', self)
+        self.decide_tracklet_action.triggered.connect(self.decide_tracklet)
+        self.decide_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
+        self.addAction(self.decide_tracklet_action)
+
         self.evolve_gt_b = QtGui.QPushButton('evolve GT')
         self.evolve_gt_b.clicked.connect(self._evolve_gt)
         self.left_vbox.addWidget(self.evolve_gt_b)
@@ -215,10 +220,15 @@ class ResultsWidget(QtGui.QWidget):
         self.show_gt_markers.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_gt_markers)
 
-        self.show_staurated_ch = QtGui.QCheckBox('img saturated')
-        self.show_staurated_ch.setChecked(False)
-        self.show_staurated_ch.stateChanged.connect(lambda x: self.update_positions())
-        self.visu_controls_layout.addWidget(self.show_staurated_ch)
+        self.show_saturated_ch = QtGui.QCheckBox('img saturated')
+        self.show_saturated_ch.setChecked(False)
+        self.show_saturated_ch.stateChanged.connect(lambda x: self.update_positions())
+        self.visu_controls_layout.addWidget(self.show_saturated_ch)
+
+        self.show_saturated_action = QtGui.QAction('show saturated', self)
+        self.show_saturated_action.triggered.connect(lambda x: self.show_saturated_ch.setChecked(not self.show_saturated_ch.isChecked()))
+        self.show_saturated_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
+        self.addAction(self.show_saturated_action)
 
         self.big_video_forward_a = QtGui.QAction('big next', self)
         self.big_video_forward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() + 50))
@@ -581,7 +591,7 @@ class ResultsWidget(QtGui.QWidget):
             if self.pixMapItem is not None:
                 self.scene.removeItem(self.pixMapItem)
 
-            if self.show_staurated_ch.isChecked():
+            if self.show_saturated_ch.isChecked():
                 from utils.img import img_saturation
                 img = img_saturation(img, saturation_coef=2.0, intensity_coef=1.05)
 

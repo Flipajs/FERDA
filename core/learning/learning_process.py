@@ -31,6 +31,8 @@ class LearningProcess:
 
         self.get_features = get_features_var1
 
+        self.X = []
+        self.y = []
         self.old_x_size = 0
 
         self.collision_chunks = {}
@@ -42,7 +44,7 @@ class LearningProcess:
 
         self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
 
-        self.all_ids = self.__get_ids()
+        self.all_ids = set(range(len(self.p.animals)))
 
         self.undecided_tracklets = set()
         self.tracklet_certainty = {}
@@ -53,6 +55,8 @@ class LearningProcess:
         self.mistakes = []
 
         if not use_feature_cache:
+            # TODO:
+            return
             self.get_candidate_chunks()
 
             self.chunks_itree = self.build_itree_()
@@ -73,6 +77,8 @@ class LearningProcess:
 
             print "LOADED"
 
+        return
+
         if not use_rf_cache:
             print "precompute avalability"
             # basically set every chunk with full set of possible ids
@@ -82,14 +88,14 @@ class LearningProcess:
             self.class_frequences = []
 
             print "undecided tracklets..."
-            self.fill_undecided_tracklets()
+            self.ed_tracklets()
 
             print "Init data..."
             self.X = None
             self.y = None
-            self.all_ids = set(range(len(self.p.animals)))
-            self.get_init_data()
+            # self.get_init_data()
 
+            # TODO: wait for all necesarry examples, then finish init.
             np.random.seed(42)
             self.__train_rfc()
             print "TRAINED"
@@ -488,6 +494,7 @@ class LearningProcess:
     def __learn(self, ch, id_):
         print "LEARNING ", id_
         if ch.id() not in self.features:
+
             print "cached features are missing. COMPUTING..."
             X = self.get_data(ch)
             print "Done"
