@@ -6,6 +6,7 @@ import numpy as np
 import cv2
 import time
 from qimage2ndarray import array2qimage
+import matplotlib.pyplot as plt
 
 __author__ = 'dita'
 
@@ -21,6 +22,11 @@ class Painter(QtGui.QWidget):
         self.DEBUG = debug
         self.update_callback = update_callback
 
+        self.background = None
+        self.paint_pixmap = None
+        self.w = None
+        self.h = None
+
         # WIDGET SETUP
         self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
         self.scene = MyScene(update_callback_release=self.mouse_released)
@@ -31,11 +37,7 @@ class Painter(QtGui.QWidget):
         self.undo_len = undo_len
 
         # show background in one pixmap
-        self.background = array2qimage(bgr2rgb(image))
-        self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.background))
-
-        self.w = self.background.width()
-        self.h = self.background.height()
+        self.set_image(image)
 
         # create empty overlay - this can be used to set masks from outside the painter
         bg_size = QtCore.QSize(self.w, self.h)
@@ -55,6 +57,15 @@ class Painter(QtGui.QWidget):
 
         # create the main view and left panel with buttons
         self.make_gui()
+
+    def set_image(self, image):
+        self.background = array2qimage(bgr2rgb(image))
+        if self.paint_pixmap:
+            self.scene.removeItem(self.paint_pixmap)
+        self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.background))
+
+        self.w = self.background.width()
+        self.h = self.background.height()
 
     def set_image_visible(self, visibility):
         """ Toggles background visibility
@@ -87,7 +98,8 @@ class Painter(QtGui.QWidget):
                 data[2].setVisible(visibility)
 
     def set_overlay(self, img):
-        """ Deletes the old overlay image and pixmap and replaces them with a new image. The image should have an alpha channel, otherwise it can hide other scene contents.
+        """ Deletes the old overlay image and pixmap and replaces them with a new image. The image should have an alpha
+        channel, otherwise it can hide other scene contents.
         :param img: a new image to use, None to delete overlay completely.
         :return: None
         """
@@ -98,7 +110,8 @@ class Painter(QtGui.QWidget):
             self.overlay_pixmap.setZValue(9)
 
     def set_overlay2(self, img):
-        """ Deletes the old overlay image and pixmap and replaces them with a new image. The image should have an alpha channel, otherwise it can hide other scene contents.
+        """ Deletes the old overlay image and pixmap and replaces them with a new image. The image should have an alpha
+        channel, otherwise it can hide other scene contents.
         :param img: a new image to use, None to delete overlay completely.
         :return: None
         """
@@ -117,11 +130,27 @@ class Painter(QtGui.QWidget):
         # delete old pixmap
         self.scene.removeItem(self.colors[name][2])
         self.colors[name][2] = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
-        k = 3
+        self.colors[name][2].setZValue(20)
+
+    def reset_masks(self):
+        for name, data in self.colors.iteritems():
+
+            # reset mask
+            mask = np.zeros((self.w, self.h))
+            color = data[1]
+            # remove old pixmap
+            self.scene.removeItem(data[2])
+            # prepare new qimage from empty mask
+            qimg = mask2qimage(mask, data[1])
+            # add new pixmap
+            pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
+
+            self.colors[name] = [mask, color, pixmap]
 
     def add_color(self, name, r, g, b, a=100):
         """ Adds a new color option to painter.
-        :param name: The name and unique ID of new color. Using duplicate names will overwrite previous data and can have unexpected behavior.
+        :param name: The name and unique ID of new color. Using duplicate names will overwrite previous data and can
+        have unexpected behavior.
         :param r, g, b: R, G, B color values (respectively)
         :param a: Alpha channel, 100 by default
         :return: None
