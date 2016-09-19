@@ -370,7 +370,7 @@ def get_shift_im(im, shift_x=2, shift_y=2):
     # create shift matrix
     M = np.float32([[1, 0, shift_x], [0, 1, shift_y]])
     # apply shift matrix
-    img2 = cv2.warpAffine(im, M, (w, h))
+    img2 = cv2.warpAffine(im, M, (h, w))
     img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 
     return img2
