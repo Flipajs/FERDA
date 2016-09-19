@@ -242,10 +242,7 @@ class SetMSERs(QtGui.QWidget):
         Show current settings on random frame
         :return: None
         """
-        if self.frame_number.value() == -1:
-            im = self.vid.random_frame()
-        else:
-            im = self.vid.get_frame(self.frame_number.value())
+        im = self.vid.random_frame()
 
         if self.project.bg_model:
             im = self.project.bg_model.bg_subtraction(im)
@@ -350,6 +347,7 @@ class SetMSERs(QtGui.QWidget):
         self.check_paint = QtGui.QCheckBox("Paint data")
         self.check_mser = QtGui.QCheckBox("MSER view")
         self.button_next = QtGui.QPushButton("Next frame")
+        self.button_rand = QtGui.QPushButton("Random frame")
         self.button_done = QtGui.QPushButton("Done")
 
     def configure_form_panel(self):
@@ -495,6 +493,9 @@ class SetMSERs(QtGui.QWidget):
 
         self.button_next.clicked.connect(self.show_next_frame)
         self.left_panel.layout().addWidget(self.button_next)
+
+        self.button_rand.clicked.connect(self.show_random_frame)
+        self.left_panel.layout().addWidget(self.button_rand)
 
         self.button_done.clicked.connect(self.done)
         self.left_panel.layout().addWidget(self.button_done)
