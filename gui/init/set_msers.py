@@ -114,6 +114,7 @@ class SetMSERs(QtGui.QWidget):
         """
         # paint must be updated first, because segmentation results are used in msers
         self.update_paint()
+        self.update_img()
         self.update_mser()
 
     def update_mser(self):
@@ -174,7 +175,14 @@ class SetMSERs(QtGui.QWidget):
         foreground = result["foreground"]
 
         # obtain segmentation image from helper
-        self.segmentation = self.helper.done(background, foreground)
+        self.helper.train(background, foreground)
+
+        # stop cursor animation
+        QtGui.QApplication.restoreOverrideCursor()
+
+    def update_img(self):
+        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        self.segmentation = self.helper.predict()
 
         # show result as overlay
         if self.segmentation is not None:
@@ -183,7 +191,6 @@ class SetMSERs(QtGui.QWidget):
             self.painter.set_overlay(qim)
         else:  # or hide it if input data was insufficient to create a result
             self.painter.set_overlay(None)
-
         # stop cursor animation
         QtGui.QApplication.restoreOverrideCursor()
 
@@ -266,7 +273,9 @@ class SetMSERs(QtGui.QWidget):
         self.helper.update_xy()
         # update helper's image
         self.helper.set_image(self.im)
-        self.update_all()
+        self.update_img()
+        self.update_mser()
+        # self.update_all()
 
     def done(self):
         pass

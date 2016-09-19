@@ -36,6 +36,7 @@ class Helper:
         self.ytmp = []
 
         self.rfc = None
+        self.unused = [] # list of features that are currently ignored
         self.set_image(image)
 
     def set_image(self, image):
@@ -93,7 +94,7 @@ class Helper:
         X.append(x)
         y.append(classification)
 
-    def done(self, background, foreground):
+    def train(self, background, foreground):
         """
         Creates a classificator using previous frame data and bg/fg examples. Computes probabilities for current frame.
         :param background: np mask for examples in background class
@@ -139,11 +140,14 @@ class Helper:
         # find unused features and remove them
         # create new classifier with less features, it will be faster
         start = time.time()
-        unused = find_unused_features(self.rfc)
-        self.rfc = get_filtered_rfc(unused, X, y)
+        self.unused = find_unused_features(self.rfc)
+        self.rfc = get_filtered_rfc(self.unused, X, y)
         print "RFC filtering takes   %f. Using %d out of %d features." % \
               (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
 
+    def predict(self):
+        if self.rfc is None:
+            return
         # get all feature data from image and create one large array
         layers = self.get_features()
         for i in range(0, self.num):
@@ -155,7 +159,7 @@ class Helper:
         data.shape = ((h * w, 12 * self.num))
 
         # remove features that were found unnecessary
-        filtered = get_filtered_model(unused, data)
+        filtered = get_filtered_model(self.unused, data)
 
         # predict result on current image data
         start = time.time()
@@ -264,11 +268,9 @@ class Helper:
             result.append(self.get_scaled(canny, i))
         return result
 
-    def get_shift(self, blur_kernel=3, blur_sigma=0.3, shift_x=2, shift_y=2):
+    def get_shift(self, shift_x=2, shift_y=2):
         """
         Shifts all images in the pyramid.
-        :param blur_kernel: 3 by default
-        :param blur_sigma: 0.3 by default
         :param shift_x: 2 by default
         :param shift_y: 2 by default
         :return: Shifted imaged, rescaled to original dimensions
