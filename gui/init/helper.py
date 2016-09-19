@@ -275,8 +275,7 @@ class Helper:
         """
         result = []
         for i in range(0, len(self.pyramid)):
-            shifted = shift_im(self.pyramid[i], blur_kernel=blur_kernel, blur_sigma=blur_sigma,
-                                        shift_x=shift_x, shift_y=shift_y)
+            shifted = get_shift_im(self.pyramid[i], shift_x=shift_x, shift_y=shift_y)
             result.append(self.get_scaled(shifted, i))
         return result
 
@@ -287,10 +286,10 @@ class Helper:
         """
         result = []
         for i in range(0, len(self.pyramid)):
-            shift_up = shift_im(self.pyramid[i], shift_x=-1, shift_y=0)
-            shift_down = shift_im(self.pyramid[i], shift_x=1, shift_y=0)
-            shift_left = shift_im(self.pyramid[i], shift_x=0, shift_y=-1)
-            shift_right = shift_im(self.pyramid[i], shift_x=0, shift_y=1)
+            shift_up = get_shift_im(self.pyramid[i], shift_x=-1, shift_y=0)
+            shift_down = get_shift_im(self.pyramid[i], shift_x=1, shift_y=0)
+            shift_left = get_shift_im(self.pyramid[i], shift_x=0, shift_y=-1)
+            shift_right = get_shift_im(self.pyramid[i], shift_x=0, shift_y=1)
             img = cv2.cvtColor(self.pyramid[i], cv2.COLOR_BGR2GRAY)
             img_sum = shift_up + shift_down + shift_left + shift_right + img
             result.append(self.get_scaled(img_sum / 5, i))
@@ -305,10 +304,10 @@ class Helper:
         result2 = []
         result3 = []
         for i in range(0, len(self.pyramid)):
-            shift_up = shift_im(self.pyramid[i], shift_x=-1, shift_y=0)
-            shift_down = shift_im(self.pyramid[i], shift_x=1, shift_y=0)
-            shift_left = shift_im(self.pyramid[i], shift_x=0, shift_y=-1)
-            shift_right = shift_im(self.pyramid[i], shift_x=0, shift_y=1)
+            shift_up = get_shift_im(self.pyramid[i], shift_x=-1, shift_y=0)
+            shift_down = get_shift_im(self.pyramid[i], shift_x=1, shift_y=0)
+            shift_left = get_shift_im(self.pyramid[i], shift_x=0, shift_y=-1)
+            shift_right = get_shift_im(self.pyramid[i], shift_x=0, shift_y=1)
             image = cv2.cvtColor(self.pyramid[i], cv2.COLOR_BGR2GRAY)
 
             dif_up = np.asarray(image, dtype=np.int32) - np.asarray(shift_up, dtype=np.int32)
