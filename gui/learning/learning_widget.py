@@ -31,7 +31,7 @@ class LearningWidget(QtGui.QWidget):
             self.top_stripe_layout.addWidget(self.load_project_button)
         else:
             print "LOADING LP"
-            self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
+            self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False,
                                       question_callback=self.question_callback, update_callback=self.update_callback)
 
         self.start_button = QtGui.QPushButton('start')
@@ -82,10 +82,14 @@ class LearningWidget(QtGui.QWidget):
         self.top_stripe_layout.addWidget(self.save_button)
 
         # TODO: last info label
-        # TODO: add saving
         # TODO: update callback... info about decisions...
 
+        self.add_tracklet_table()
+        self.update_callback()
+
+    def add_tracklet_table(self):
         self.tracklets_table = QtGui.QTableWidget()
+
         self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
         num_animals = len(self.project.animals)
         self.tracklets_table.setColumnCount(2 * num_animals + 5)
@@ -95,7 +99,6 @@ class LearningWidget(QtGui.QWidget):
         self.tracklets_table.setSortingEnabled(True)
         self.hbox.addWidget(self.tracklets_table)
 
-        self.update_callback()
 
     def certainty_eps_changed(self):
         self.lp.eps_certainty = self.certainty_eps_spinbox.value()
@@ -155,9 +158,12 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setItem(11, 0, QtGui.QTableWidgetItem('id coverage:'))
         self.info_table.setItem(11, 1, QtGui.QTableWidgetItem(self.__f2str(self.get_id_coverage())))
 
+
         # update tracklet info...
-        num_animals = len(self.project.animals)
         self.tracklets_table.clear()
+        self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
+
+        num_animals = len(self.project.animals)
         self.tracklets_table.setSortingEnabled(False)
         header_labels = ("id", "len", "start", "end", "cert")
         for i in range(num_animals):
