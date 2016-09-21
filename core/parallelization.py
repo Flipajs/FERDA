@@ -159,7 +159,7 @@ if __name__ == '__main__':
     # with open(f_log_name, 'a') as f:
     #     f.write('before pickle dumping...')
 
-    with open(proj.working_directory+'temp/part'+str(id)+'.pkl', 'wb') as f:
+    with open(proj.working_directory+'/temp/part'+str(id)+'.pkl', 'wb') as f:
         p = pickle.Pickler(f, -1)
         p.dump(proj.gm.g)
         p.dump(proj.gm.get_all_relevant_vertices())
