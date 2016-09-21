@@ -359,18 +359,22 @@ class Project:
                 for ch in self.chm.chunk_gen():
                     self.chm._add_ch_itree(ch, self.gm)
 
-            if self.chm[0].color == None:
+            for ch in self.chm.chunk_gen():
+                if hasattr(ch, 'color') and ch.color is not None:
+                    break
+
                 import random
                 from PyQt4 import QtGui
 
-                for ch in self.chm.chunk_gen():
-                    r = random.randint(0, 255)
-                    g = random.randint(0, 255)
-                    b = random.randint(0, 255)
-                    ch.color = QtGui.QColor.fromRgb(r, g, b)
+                r = random.randint(0, 255)
+                g = random.randint(0, 255)
+                b = random.randint(0, 255)
+                ch.color = QtGui.QColor.fromRgb(r, g, b)
 
-            if not hasattr(self.chm[0], 'N'):
-                for ch in self.chm.chunk_gen():
+            for ch in self.chm.chunk_gen():
+                if hasattr(ch, 'N'):
+                    break
+                
                     ch.N = set()
                     ch.P = set()
 
