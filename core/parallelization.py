@@ -19,7 +19,7 @@ from core.settings import Settings as S_
 from utils.img import prepare_for_segmentation
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
-
+from utils.misc import is_flipajs_pc
 import time
 
 if __name__ == '__main__':
@@ -39,23 +39,26 @@ if __name__ == '__main__':
     if not os.path.exists(proj.working_directory+'/temp'):
         os.mkdir(proj.working_directory+'/temp')
 
-    temp_local_path='/localhome/casillas/'
+    if is_flipajs_pc():
+        temp_local_path = proj.working_directory+'/temp'
+    else:
+        temp_local_path='/localhome/casillas/'
 
-    if not os.path.exists(temp_local_path+proj_name):
-        try:
-            os.mkdir(temp_local_path+proj_name)
-        except:
-            print(temp_local_path+proj_name + "   was created between check and mkdir");
-    
-    temp_local_path=temp_local_path + proj_name
-    
-    if not os.path.exists(temp_local_path+'/temp'):
-        try:
-            os.mkdir(temp_local_path+'/temp')
-        except:
-            print(temp_local_path+'/temp' + "   was created between check and mkdir");
+        if not os.path.exists(temp_local_path+proj_name):
+            try:
+                os.mkdir(temp_local_path+proj_name)
+            except:
+                print(temp_local_path+proj_name + "   was created between check and mkdir");
 
-    temp_local_path=temp_local_path+'/temp'
+        temp_local_path=temp_local_path + proj_name
+
+        if not os.path.exists(temp_local_path+'/temp'):
+            try:
+                os.mkdir(temp_local_path+'/temp')
+            except:
+                print(temp_local_path+'/temp' + "   was created between check and mkdir");
+
+        temp_local_path=temp_local_path+'/temp'
 
     solver = Solver(proj)
     from core.graph.graph_manager import GraphManager
@@ -170,7 +173,8 @@ if __name__ == '__main__':
 
     print "MSERS t:", round(msers_t, 2), "SOLVER t: ", round(solver_t, 2), "VIDEO t:", round(vid_t, 2), "FILE t: ", round(file_t, 2), "SUM t / frames_in_row:", round((msers_t + solver_t+vid_t+file_t)/float(frames_in_row), 2)
 
-    import shutil
-    import glob
-    for file in glob.glob(temp_local_path+'/part'+str(id)+'_rm.sqlite3'):
-        shutil.move(file,working_dir+'/temp')
+    if not is_flipajs_pc():
+        import shutil
+        import glob
+        for file in glob.glob(temp_local_path+'/part'+str(id)+'_rm.sqlite3'):
+            shutil.move(file,working_dir+'/temp')
