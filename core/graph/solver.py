@@ -344,6 +344,18 @@ class Solver:
         # antlikeness_diff = 1
         s = ds * antlikeness_diff
 
+        a1 = r1.area()
+        a2 = r2.area()
+
+        if a1 < a2:
+            a1, a2 = a2, a1
+
+        area_diff = (a1 - a2)
+
+        # simple split / merge test... Quite strict.
+        if area_diff > self.project.stats.area_median * 0.5:
+            s = 0
+
         return s, ds, 0, antlikeness_diff
 
     def get_ccs(self, queue=[]):

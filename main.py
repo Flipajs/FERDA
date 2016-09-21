@@ -23,8 +23,7 @@ if is_flipajs_pc():
     wd = '/Users/flipajs/Documents/wd/GT/'
     # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
     #             'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
-
-    project.load(wd+name+'/'+name+'.fproj')
+    project.load(wd+name+'/S9T91min.fproj')
     ex.widget_control('load_project', project)
 
 

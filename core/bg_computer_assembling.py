@@ -36,7 +36,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     from utils.misc import is_flipajs_pc
     if is_flipajs_pc():
         # TODO: remove this line
-        part_num = 9
+        # part_num = 9
         pass
 
     bgcomp.project.color_manager = None
@@ -96,7 +96,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     from utils.color_manager import colorize_project
     import time
     s = time.time()
-    colorize_project(bgcomp.project)
+    # colorize_project(bgcomp.project)
     print "color manager takes %f seconds" % (time.time() - s)
 
     if not cluster:
@@ -153,6 +153,9 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
     used_chunks_ids = set()
     # reindex vertices
     for v_id in old_g_relevant_vertices:
+        if not old_g.vp['active'][v_id]:
+            continue
+
         old_v = old_g.vertex(v_id)
         old_reg = old_rm[old_g.vp['region_id'][old_v]]
         new_rm.add(old_reg)

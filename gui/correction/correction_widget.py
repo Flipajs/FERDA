@@ -452,6 +452,8 @@ class ResultsWidget(QtGui.QWidget):
             else:
                 self.out_of_frames()
 
+            print len(self.project.gm.vertices_in_t[self.video.frame_number()])
+
         if self.video.frame_number() == self.highlight_marker2nd_frame:
             print "SHOW"
             self.scene.addItem(self.highlight_marker2nd)
