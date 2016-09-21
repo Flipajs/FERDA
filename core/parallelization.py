@@ -56,7 +56,7 @@ if __name__ == '__main__':
         seg = proj.segmentation_model.predict()
         # img = np.asarray((-seg*255)+255, dtype=np.uint8)
         img = seg < 0.5
-        img = np.asarray(seg, dtype=np.uint8)*255
+        img = np.asarray(img, dtype=np.uint8)*255
     else:
         img = prepare_for_segmentation(img, proj)
 
@@ -70,6 +70,7 @@ if __name__ == '__main__':
 
         s = time.time()
         msers = ferda_filtered_msers(img, proj, frame)
+        print len(msers)
 
         if proj.colormarks_model:
             proj.colormarks_model.assign_colormarks(proj, msers)
@@ -87,7 +88,7 @@ if __name__ == '__main__':
             seg = proj.segmentation_model.predict()
             # img = np.asarray((-seg*255)+255, dtype=np.uint8)
             img = seg < 0.5
-            img = np.asarray(seg, dtype=np.uint8)*255
+            img = np.asarray(img, dtype=np.uint8)*255
         else:
             img = prepare_for_segmentation(img, proj)
 

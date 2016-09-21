@@ -176,7 +176,8 @@ class BackgroundComputer:
         print "reindexing t: ", time.time() - t1
 
         # because 0 id means - no chunk assigned!
-        used_chunks_ids.remove(0)
+        if 0 in used_chunks_ids:
+            used_chunks_ids.remove(0)
 
         t1 = time.time()
         # go through all edges and copy them with all edge properties...
