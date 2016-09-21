@@ -1,13 +1,15 @@
-__author__ = 'fnaiser'
-
 from PyQt4 import QtGui
 
+__author__ = 'fnaiser'
+
+
 class ImgGridWidget(QtGui.QWidget):
-    def __init__(self):
+    def __init__(self, scrolling=True, cols=5, element_width=300):
         super(ImgGridWidget, self).__init__()
 
-        self.element_width = 300
-        self.cols = 5
+        self.scrolling = scrolling
+        self.element_width = element_width
+        self.cols = cols
         self.id = 0
 
         self.grid = QtGui.QGridLayout()
@@ -17,17 +19,20 @@ class ImgGridWidget(QtGui.QWidget):
         self.grid_widget = QtGui.QWidget()
         self.grid_widget.setLayout(self.grid)
 
-        self.scroll_ = QtGui.QScrollArea()
-        self.scroll_.setWidgetResizable(True)
-        self.scroll_.setWidget(self.grid_widget)
-        self.set_width_()
-
         self.items = []
 
         self.setLayout(QtGui.QVBoxLayout())
         self.layout().setSpacing(0)
         self.layout().setMargin(0)
-        self.layout().addWidget(self.scroll_)
+
+        self.layout().addWidget(self.grid_widget)
+        if self.scrolling:
+            self.scroll_ = QtGui.QScrollArea()
+            self.scroll_.setWidget(self.grid_widget)
+            self.scroll_.setWidgetResizable(True)
+            self.set_width_()
+
+            self.layout().addWidget(self.scroll_)
 
     def reshape(self, cols, element_width=100):
         self.cols = cols
@@ -62,8 +67,13 @@ class ImgGridWidget(QtGui.QWidget):
         self.id += 1
 
     def set_width_(self):
-        vscroll_shint = self.scroll_.verticalScrollBar().sizeHint()
-        self.scroll_.setFixedWidth(self.cols*self.element_width + (self.cols + 1) + vscroll_shint.width())
+        w = self.cols*self.element_width + (self.cols + 1)
+        if self.scrolling:
+            vscroll_shint = self.scroll_.verticalScrollBar().sizeHint()
+            self.scroll_.setFixedWidth(w + vscroll_shint.width())
+        else:
+            self.setMaximumWidth(w)
+            self.setMinimumWidth(w)
 
     def get_selected(self):
         ids = []

@@ -3,7 +3,6 @@ __author__ = 'filip@naiser.cz'
 import cPickle as pickle
 import string
 import time
-import os
 
 from PyQt4 import QtCore
 
@@ -13,10 +12,10 @@ from core.log import Log
 from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
-from utils.color_manager import ColorManager
-from utils.img_manager import ImgManager
 from core.settings import Settings as S_
 from gui.video_loader import check_video_path
+from utils.img_manager import ImgManager
+from core import segmentation_helper
 
 class Project:
     """
@@ -277,6 +276,13 @@ class Project:
         try:
             with open(self.working_directory+'/stats.pkl', 'rb') as f:
                 self.stats = pickle.load(f)
+        except:
+            pass
+
+        # SEGMENTATION MODEL (core.segmentation_helper)
+        try:
+            with open(self.working_directory+'/segmentation_model.pkl', 'rb') as f:
+                self.segmentation_model = pickle.load(f)
         except:
             pass
 

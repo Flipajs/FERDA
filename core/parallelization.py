@@ -19,6 +19,7 @@ from core.settings import Settings as S_
 from utils.img import prepare_for_segmentation
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
+import numpy as np
 
 import time
 
@@ -50,7 +51,14 @@ if __name__ == '__main__':
     else:
         img = vid.next_frame()
 
-    img = prepare_for_segmentation(img, proj)
+    if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
+        proj.segmentation_model.set_image(img)
+        seg = proj.segmentation_model.predict()
+        # img = np.asarray((-seg*255)+255, dtype=np.uint8)
+        img = seg < 0.5
+        img = np.asarray(img, dtype=np.uint8)*255
+    else:
+        img = prepare_for_segmentation(img, proj)
 
     msers_t = 0
     solver_t = 0
@@ -62,6 +70,7 @@ if __name__ == '__main__':
 
         s = time.time()
         msers = ferda_filtered_msers(img, proj, frame)
+        print len(msers)
 
         if proj.colormarks_model:
             proj.colormarks_model.assign_colormarks(proj, msers)
@@ -74,7 +83,15 @@ if __name__ == '__main__':
         if img is None:
             break
 
-        img = prepare_for_segmentation(img, proj)
+        if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
+            proj.segmentation_model.set_image(img)
+            seg = proj.segmentation_model.predict()
+            # img = np.asarray((-seg*255)+255, dtype=np.uint8)
+            img = seg < 0.5
+            img = np.asarray(img, dtype=np.uint8)*255
+        else:
+            img = prepare_for_segmentation(img, proj)
+
         vid_t += time.time() - s
 
         s = time.time()
