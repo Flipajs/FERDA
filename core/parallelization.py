@@ -50,7 +50,7 @@ if __name__ == '__main__':
     else:
         img = vid.next_frame()
 
-    img = k(img, proj)
+    img = prepare_for_segmentation(img, proj)
 
     msers_t = 0
     solver_t = 0
