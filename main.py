@@ -24,7 +24,7 @@ if is_flipajs_pc():
     sn_id = 875
     cam_ = 1
 
-    name = 'S9T91min'
+    name = 'S9T91min_'
     # name = 'Cam'+str(cam_)+' copy'
 
     # name = 'Cam'+str(cam_)
@@ -34,7 +34,7 @@ if is_flipajs_pc():
                 'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
     # project.load(wd+name+'/cam'+str(cam_)+'.fproj')
-    project.load(wd+name+'/'+name+'.fproj')
+    project.load(wd+name+'/S9T91min.fproj')
 
     # project.load_snapshot(snapshot)
 
