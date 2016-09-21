@@ -26,7 +26,6 @@ if is_flipajs_pc():
 
     name = 'S9T91min'
     # name = 'Cam'+str(cam_)+' copy'
-    
     # name = 'Cam'+str(cam_)
     wd = '/Users/flipajs/Documents/wd/gt/'
     # wd = '/Users/flipajs/Documents/wd/'
