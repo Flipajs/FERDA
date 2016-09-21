@@ -8,7 +8,7 @@ from utils.img_manager import ImgManager
 __author__ = 'Simon Mandlik'
 
 # the width of a node
-WIDTH = 5
+WIDTH = 25
 # the width of a node, should be same as width for the best result
 HEIGHT = WIDTH
 # relative margin of a node
