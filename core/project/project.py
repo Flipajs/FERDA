@@ -359,6 +359,8 @@ class Project:
                 for ch in self.chm.chunk_gen():
                     self.chm._add_ch_itree(ch, self.gm)
 
+            self.save()
+
         self.img_manager = ImgManager(self, max_size_mb=S_.cache.img_manager_size_MB)
 
         self.active_snapshot = -1
