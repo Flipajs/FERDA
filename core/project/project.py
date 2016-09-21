@@ -342,6 +342,17 @@ class Project:
         self.gm.rm = self.rm
         # self.gm.update_nodes_in_t_refs()
 
+        # fix itree in chm...
+        if self.chm is not None and self.gm is not None and self.rm is not None:
+            if not hasattr(self.chm, 'itree'):
+                from intervaltree import IntervalTree
+                self.chm.itree = IntervalTree()
+                self.chm.eps1 = 0.01
+                self.chm.eps2 = 0.1
+
+                for ch in self.chm.chunk_gen():
+                    self.chm._add_ch_itree(ch, self.gm)
+
         self.img_manager = ImgManager(self, max_size_mb=S_.cache.img_manager_size_MB)
 
         self.active_snapshot = -1
