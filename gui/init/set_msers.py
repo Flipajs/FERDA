@@ -224,7 +224,8 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
 
-    proj.load('/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj')
+    proj.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
+    proj.video_paths = ['/Users/flipajs/Downloads/S9T95min.avi']
     # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
     proj.arena_model = None
     proj.bg_model = None
