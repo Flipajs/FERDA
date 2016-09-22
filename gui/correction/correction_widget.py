@@ -864,7 +864,9 @@ class ResultsWidget(QtGui.QWidget):
     def load_next_frame(self):
         """Loads next frame of the video and displays it. If there is no next frame, calls self.out_of_frames"""
         if self.video is not None:
-            self.video.next_frame()
+            if self.video.next_frame() is None:
+                self.play_pause()
+
             self.update_positions(self.video.frame_number())
         else:
             self.play_pause()

@@ -232,7 +232,6 @@ class RegionManager:
                 raise IndexError("Index %s is out of range (1 - %s)" % (key, len(self)))
 
             if key in self.regions_cache_:
-		
                 r = self.regions_cache_[key]
                 result.append(r)
                 self.update(key, r)

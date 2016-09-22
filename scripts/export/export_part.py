@@ -158,6 +158,10 @@ if __name__ == '__main__':
 
     p = Project()
     p.load(working_dir)
+    from core.graph.graph_manager import GraphManager
+    p.gm = GraphManager(p, None)
+    p.gm.g = g_
+    p.gm.rm = rm
 
     fname = out_dir+'/out_'+str(i)
     if first_part+part_num-1 > i:
