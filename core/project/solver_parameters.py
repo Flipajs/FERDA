@@ -28,13 +28,13 @@ class SolverParameters():
         return self.chunk_id
 
     def use_emd_for_split_merge_detection(self):
-        if hasattr(self, 'use_emd_for_split_merge_detection'):
-            return self.use_emd_for_split_merge_detection
+        if hasattr(self, 'use_emd_for_split_merge_detection_'):
+            return self.use_emd_for_split_merge_detection_
 
         return True
 
     def use_colony_split_merge_relaxation(self):
-        if hasattr(self, 'use_colony_split_merge_relaxation'):
-            return self.use_colony_split_merge_relaxation
+        if hasattr(self, 'use_colony_split_merge_relaxation_'):
+            return self.use_colony_split_merge_relaxation_
 
         return False

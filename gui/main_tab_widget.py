@@ -128,7 +128,7 @@ class MainTabWidget(QtGui.QWidget):
         self.id_detection_tab.decide_tracklet_question(tracklet)
 
     def tab_changed(self, i):
-        if self.ignore_tab_change:
+        if self.ignore_tab_change or self.project.chm is None:
             return
 
         if i == 1:

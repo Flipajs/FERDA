@@ -34,7 +34,7 @@ if is_flipajs_pc():
                 'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
     # project.load(wd+name+'/cam'+str(cam_)+'.fproj')
-    project.load(wd+name+'/S9T91min.fproj')
+    project.load(wd+name)
 
     # project.load_snapshot(snapshot)
 
@@ -44,8 +44,7 @@ if is_flipajs_pc():
             if not hasattr(t, 'N'):
                 t.N = set()
                 t.P = set()
-
-    except IOError:
+    except AttributeError:
         pass
 
     ex.widget_control('load_project', project)

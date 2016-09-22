@@ -16,6 +16,7 @@ from core.settings import Settings as S_
 from gui.video_loader import check_video_path
 from utils.img_manager import ImgManager
 from core import segmentation_helper
+import os
 
 class Project:
     """
@@ -236,6 +237,12 @@ class Project:
                     pass
 
     def load(self, path, snapshot=None, parent=None):
+        if path[-6:] != '.fproj':
+            for f in os.listdir(path):
+                if f[-6:] == '.fproj':
+                    path += '/'+f
+                    break
+
         with open(path, 'rb') as f:
             tmp_dict = pickle.load(f)
 
