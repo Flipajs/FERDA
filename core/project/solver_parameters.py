@@ -12,6 +12,9 @@ class SolverParameters():
 
         self.chunk_id = -1
 
+        self.use_emd_for_split_merge_detection_ = True
+        self.use_colony_split_merge_relaxation_ = False
+
         if refresh:
             self.__dict__.update(refresh.__dict__)
 

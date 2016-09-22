@@ -59,12 +59,14 @@ class Project:
         self.snapshot_id = 0
         self.active_snapshot = -1
 
+        self.is_cluster_ = False
+
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
 
     def is_cluster(self):
         if hasattr(self, 'is_cluster'):
-            return self.is_cluster
+            return self.is_cluster_
 
         return False
 
@@ -392,7 +394,6 @@ class Project:
                     ch.P = set()
 
             self.save()
-
 
         self.img_manager = ImgManager(self, max_size_mb=S_.cache.img_manager_size_MB)
 
