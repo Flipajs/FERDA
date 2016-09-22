@@ -533,6 +533,7 @@ class ResultsWidget(QtGui.QWidget):
         print "COLORIZING DONE..."
 
 
+
 def view_add_bg_image(g_view, pix_map):
     gv_w = g_view.geometry().width()
     gv_h = g_view.geometry().height()

@@ -20,11 +20,6 @@ from utils.img import prepare_for_segmentation
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 from utils.misc import is_flipajs_pc
-<<<<<<< HEAD
-
-
-=======
->>>>>>> cluster_preparations_test
 import time
 
 if __name__ == '__main__':
