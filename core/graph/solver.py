@@ -339,7 +339,7 @@ class Solver:
             # simple split / merge test... Quite strict.
             if area_diff > self.project.stats.area_median * 0.5:
                 # when regions are big...
-                if a1 < self.project.stats.area_median * 5:
+                if a1 > self.project.stats.area_median * 5:
                     if area_diff/float(a1) > 0.15:
                         s = 0
                 else:
