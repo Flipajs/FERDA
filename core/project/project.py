@@ -65,7 +65,7 @@ class Project:
         self.other_parameters.store_area_info = True
 
     def is_cluster(self):
-        if hasattr(self, 'is_cluster'):
+        if hasattr(self, 'is_cluster_'):
             return self.is_cluster_
 
         return False
