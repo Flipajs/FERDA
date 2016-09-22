@@ -4,7 +4,7 @@ from core.project.solver_parameters import SolverParameters
 
 if __name__ == '__main__':
     # to prepare it for cluster run as
-    # python -m scripts.fix_solver_params "/Users/flipajs/Documents/wd/GT/S9T91min_" 0 1 1
+    # python -m scripts.fix_solver_params "project root path" 0 1 1
     wd = sys.argv[1]
     use_emd_for_split_merge_detection = bool(int(sys.argv[2]))
     use_colony_split_merge_relaxation = bool(int(sys.argv[3]))

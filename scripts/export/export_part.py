@@ -120,12 +120,11 @@ class Exporter:
 
 if __name__ == '__main__':
     working_dir = sys.argv[1]
-    project_name = sys.argv[2]
-    out_dir = sys.argv[3]
-    first_part = int(sys.argv[4])
-    part_num = int(sys.argv[5])
-    min_tracklet_length = int(sys.argv[6])
-    pts_export = bool(int(sys.argv[7]))
+    out_dir = sys.argv[2]
+    first_part = int(sys.argv[3])
+    part_num = int(sys.argv[4])
+    min_tracklet_length = int(sys.argv[5])
+    pts_export = bool(int(sys.argv[6]))
 
     i = first_part
 
@@ -151,7 +150,7 @@ if __name__ == '__main__':
             chm.chunks_[ch_id] = chm_[ch_id]
 
     p = Project()
-    p.load(working_dir+'/'+project_name+'.fproj')
+    p.load(working_dir)
 
     fname = out_dir+'/out_'+str(i)
     if first_part+part_num-1 > i:
