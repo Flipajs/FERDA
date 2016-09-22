@@ -28,7 +28,8 @@ class Exporter:
              # in matlab indexed from 1...
              'first_frame': region.frame() + 1,
              'last_frame': last_frame + 1,
-             'MSD': [],
+             'MSD': 0,
+             'SSD': 0,
              'num_frames': last_frame - region.frame(),
              'region_id': [],
              }
@@ -87,13 +88,16 @@ class Exporter:
 
         obj_arr.append(d)
 
-    def export(self, file_name):
+    def export(self, file_name, min_tracklet_length=1):
         obj_arr = []
 
         # it is important to go through vertices to have access to active feature...
         # When processing one part there are inactive chunks in chm...
 
         for ch in self.chm.chunks_.itervalues():
+            if ch.length() < min_tracklet_length:
+                continue
+
             rch = RegionChunk(ch, self.gm, self.rm)
             d = self.init_struct_(rch[0], ch.end_frame(self.gm))
 
@@ -105,7 +109,9 @@ class Exporter:
 
             npx = np.array(d['x'])
             npy = np.array(d['y'])
-            d['MSD'] = np.sqrt(np.power(npx.mean() - npx, 2) + np.power(npy.mean() - npy, 2)).mean()
+            square_displacement = np.power(npx.mean() - npx, 2) + np.power(npy.mean() - npy, 2)
+            d['MSD'] = square_displacement.mean()
+            d['SSD'] = square_displacement.std()
 
             self.obj_arr_append_(obj_arr, d)
 
@@ -114,11 +120,12 @@ class Exporter:
 
 if __name__ == '__main__':
     working_dir = sys.argv[1]
-    out_dir = sys.argv[1]
-    first_part = int(sys.argv[2])
-    part_num = int(sys.argv[3])
-    min_tracklet_length = int(sys.argv[4])
-    pts_export = bool(int(sys.argv[5]))
+    project_name = sys.argv[2]
+    out_dir = sys.argv[3]
+    first_part = int(sys.argv[4])
+    part_num = int(sys.argv[5])
+    min_tracklet_length = int(sys.argv[6])
+    pts_export = bool(int(sys.argv[7]))
 
     i = first_part
 
@@ -140,18 +147,15 @@ if __name__ == '__main__':
         v = g_.vertex(v_id)
         ch_id = g_.vp['chunk_start_id'][v]
 
-        chm.chunks_[ch_id] = chm_[ch_id]
+        if ch_id > 0:
+            chm.chunks_[ch_id] = chm_[ch_id]
 
     p = Project()
-    p.gm.rm = rm
+    p.load(working_dir+'/'+project_name+'.fproj')
 
     fname = out_dir+'/out_'+str(i)
     if first_part+part_num-1 > i:
         fname += '-'+str(first_part+part_num-1)
-    fname += '.mat'
 
-    Exporter(chm, p.gm, rm, pts_export).export(fname)
-
-
-
-    # new chm based on relevant vertices...
+    # TODO: does exist chunk of length 1?
+    Exporter(chm, p.gm, rm, pts_export).export(fname, min_tracklet_length=min_tracklet_length)

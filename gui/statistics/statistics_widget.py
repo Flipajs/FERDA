@@ -17,7 +17,7 @@ class StatisticsWidget(QtGui.QWidget):
 
         self.project = project
 
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtGui.QVBoxLayout()p
         self.setLayout(self.vbox)
         self.fbox = QtGui.QFormLayout()
         self.vbox.addLayout(self.fbox)
