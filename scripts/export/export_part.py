@@ -28,8 +28,6 @@ class Exporter:
              # in matlab indexed from 1...
              'first_frame': region.frame() + 1,
              'last_frame': last_frame + 1,
-             'MSD': 0,
-             'SSD': 0,
              'num_frames': last_frame - region.frame(),
              'region_id': [],
              }
@@ -53,8 +51,8 @@ class Exporter:
         velocity_x = 0
         velocity_y = 0
         if len(d['x']) > 1:
-            velocity_x = x - d['x'][-1]
-            velocity_y = y - d['y'][-1]
+            velocity_x = x - d['x'][-2]
+            velocity_y = y - d['y'][-2]
 
         d['velocity_x'].append(velocity_x)
         d['velocity_y'].append(velocity_y)
@@ -110,8 +108,10 @@ class Exporter:
             npx = np.array(d['x'])
             npy = np.array(d['y'])
             square_displacement = np.power(npx.mean() - npx, 2) + np.power(npy.mean() - npy, 2)
-            d['MSD'] = square_displacement.mean()
-            d['SSD'] = square_displacement.std()
+            displacement = np.sqrt(square_displacement)
+            d['mean_squared_displacement'] = square_displacement.mean()
+            d['displacement_mean'] = displacement.mean()
+            d['displacement_std'] = displacement.std()
 
             self.obj_arr_append_(obj_arr, d)
 
