@@ -11,15 +11,6 @@ import sys
 import os
 import errno
 from core.settings import Settings as S_
-import cPickle as pickle
-import networkx as nx
-from core.graph.solver import Solver
-from core.graph.reduced import Reduced
-import cProfile
-from core.region.region_manager import RegionManager
-from core.graph.chunk_manager import ChunkManager
-from core.graph.chunk import Chunk
-from gui.graph_view.vis_loader import VisLoader
 from bg_computer_assembling import assembly_after_parallelization
 
 

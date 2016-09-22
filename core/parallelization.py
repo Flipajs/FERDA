@@ -139,10 +139,8 @@ if __name__ == '__main__':
         #     print i
         #     sys.stdout.flush()
 
-    # with open(f_log_name, 'a') as f:
-    #     f.write('before detect_split_merge_cases')
-
-    # solver.detect_split_merge_cases()
+    if proj.solver_parameters.use_emd_for_split_merge_detection():
+        solver.detect_split_merge_cases()
 
     # with open(f_log_name, 'a') as f:
     #     f.write('before simplify')

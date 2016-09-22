@@ -63,9 +63,10 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     if not cluster:
         bgcomp.update_callback(-1, 'joining parts...')
 
-    #bgcomp.project.solver.detect_split_merge_cases()
+    if bgcomp.project.solver_parameters.use_emd_for_split_merge_detection():
+        bgcomp.project.solver.detect_split_merge_cases()
 
-    # bgcomp.project.gm.rm = bgcomp.project.rm
+    bgcomp.project.gm.rm = bgcomp.project.rm
 
     print "reconnecting graphs"
 
@@ -80,7 +81,9 @@ def assembly_after_parallelization(bgcomp, cluster=False):
         connect_graphs(bgcomp, t_v, t1_v, bgcomp.project.gm, bgcomp.project.rm)
         # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
-    #bgcomp.project.solver.detect_split_merge_cases()
+    if bgcomp.project.solver_parameters.use_emd_for_split_merge_detection():
+        bgcomp.project.solver.detect_split_merge_cases()
+
     bgcomp.solver.simplify(vs_todo, rules=[bgcomp.solver.adaptive_threshold])
 
     print "simplifying "
@@ -93,11 +96,11 @@ def assembly_after_parallelization(bgcomp, cluster=False):
 
     bgcomp.project.gm.project = bgcomp.project
 
-    from utils.color_manager import colorize_project
-    import time
-    s = time.time()
-    # colorize_project(bgcomp.project)
-    print "color manager takes %f seconds" % (time.time() - s)
+    # from utils.color_manager import colorize_project
+    # import time
+    # s = time.time()
+    # # colorize_project(bgcomp.project)
+    # print "color manager takes %f seconds" % (time.time() - s)
 
     if not cluster:
         bgcomp.update_callback(-1, 'saving...')

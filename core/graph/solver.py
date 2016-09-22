@@ -80,9 +80,10 @@ class Solver:
         return num_changed
 
     def get_antlikeness(self, n):
-        prob = self.project.stats.antlikeness_svm.get_prob(n)[1]
+        if n.is_virtual:
+            return 1.0
 
-        return prob
+        return self.project.stats.antlikeness_svm.get_prob(n)[1]
 
     def adaptive_threshold(self, vertex):
         if self.project.gm.ch_start_longer(vertex):
@@ -332,19 +333,30 @@ class Solver:
         max_d = self.project.solver_parameters.max_edge_distance_in_ant_length
         ds = max(0, (max_d-d) / max_d)
 
-        if r1.is_virtual:
-            q1 = 1.0
-        else:
-            q1 = self.get_antlikeness(r1)
-
-        if r2.is_virtual:
-            q2 = 1.0
-        else:
-            q2 = self.get_antlikeness(r2)
+        q1 = self.get_antlikeness(r1)
+        q2 = self.get_antlikeness(r2)
 
         antlikeness_diff = 1 - abs(q1-q2)
         # antlikeness_diff = 1
         s = ds * antlikeness_diff
+
+        if self.project.solver_parameters.use_colony_split_merge_relaxation():
+            a1 = r1.area()
+            a2 = r2.area()
+
+            if a1 < a2:
+                a1, a2 = a2, a1
+
+            area_diff = (a1 - a2)
+
+            # simple split / merge test... Quite strict.
+            if area_diff > self.project.stats.area_median * 0.5:
+                # when regions are big...
+                if a1 < self.project.stats.area_median * 5:
+                    if area_diff/float(a1) > 0.15:
+                        s = 0
+                else:
+                    s = 0
 
         return s, ds, 0, antlikeness_diff
 

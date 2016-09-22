@@ -26,3 +26,15 @@ class SolverParameters():
     def new_chunk_id(self):
         self.chunk_id += 1
         return self.chunk_id
+
+    def use_emd_for_split_merge_detection(self):
+        if hasattr(self, 'use_emd_for_split_merge_detection'):
+            return self.use_emd_for_split_merge_detection
+
+        return True
+
+    def use_colony_split_merge_relaxation(self):
+        if hasattr(self, 'use_colony_split_merge_relaxation'):
+            return self.use_colony_split_merge_relaxation
+
+        return False
