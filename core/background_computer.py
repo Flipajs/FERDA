@@ -1,19 +1,26 @@
-import cPickle as pickle
-import errno
-import os
-import sys
-import time
-from PyQt4 import QtCore
-from functools import partial
+__author__ = 'fnaiser'
 
 import numpy as np
-
-from core.graph.chunk_manager import ChunkManager
-from core.graph.solver import Solver
-from core.region.region_manager import RegionManager
-from core.settings import Settings as S_
-from utils.color_manager import colorize_project
 from utils.video_manager import get_auto_video_manager
+import multiprocessing as mp
+from core.region.mser import get_msers_
+from PyQt4 import QtGui, QtCore
+import time
+from functools import partial
+import sys
+import os
+import errno
+from core.settings import Settings as S_
+import cPickle as pickle
+import networkx as nx
+from core.graph.solver import Solver
+from core.graph.reduced import Reduced
+import cProfile
+from core.region.region_manager import RegionManager
+from core.graph.chunk_manager import ChunkManager
+from core.graph.chunk import Chunk
+from gui.graph_view.vis_loader import VisLoader
+from bg_computer_assembling import assembly_after_parallelization
 
 
 class BackgroundComputer:
@@ -125,228 +132,7 @@ class BackgroundComputer:
         if self.finished.all() or self.precomputed:
             self.check_parallelization_timer.stop()
             self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
-            self.piece_results_together()
-
-    def merge_parts(self, new_gm, old_g, project, old_rm, old_chm):
-        """
-        merges all parts (from parallelisation)
-        we want to merge all these structures (graph, region and chunk managers) into one
-
-        in the beginning there were separate graphs(for given time bounds) with ids starting from 0
-        ids in region manager also starts with 0, the same for chunk manager
-        -> reindexing is needed
-
-        :param new_gm:
-        :param old_g:
-        :param old_g_relevant_vertices:
-        :param project:
-        :param old_rm:
-        :param old_chm:
-        :return:
-        """
-
-        new_chm = project.chm
-        new_rm = project.rm
-
-        vertex_map = {}
-        used_chunks_ids = set()
-
-        t1 = time.time()
-
-        single_vertices = []
-
-        # reindex vertices
-        for v_id in old_g.vertices():
-            if not old_g.vp['active'][v_id]:
-                continue
-
-            old_v = old_g.vertex(v_id)
-            old_reg = old_rm[old_g.vp['region_id'][old_v]]
-            new_rm.add(old_reg)
-
-            new_v = new_gm.add_vertex(old_reg)
-            vertex_map[old_v] = new_v
-
-            used_chunks_ids.add(old_g.vp['chunk_start_id'][old_v])
-            used_chunks_ids.add(old_g.vp['chunk_end_id'][old_v])
-
-            if old_g.vp['chunk_start_id'][old_v] == 0 and old_g.vp['chunk_end_id'][old_v] == 0:
-                single_vertices.append(new_v)
-
-        print "reindexing t: ", time.time() - t1
-
-        # because 0 id means - no chunk assigned!
-        if 0 in used_chunks_ids:
-            used_chunks_ids.remove(0)
-
-        t1 = time.time()
-        # go through all edges and copy them with all edge properties...
-        for old_e in old_g.edges():
-            v1_old = old_e.source()
-            v2_old = old_e.target()
-            old_score = old_g.ep['score'][old_e]
-
-            if v1_old in vertex_map and v2_old in vertex_map:
-                v1_new = vertex_map[v1_old]
-                v2_new = vertex_map[v2_old]
-            else:
-                # this means there was some outdated edge, it is fine to ignore it...
-                continue
-
-            # add edges only in one direction
-            if int(v1_new) > int(v2_new):
-                continue
-
-            # ep['score'] is assigned in add_edge call
-            new_e = new_gm.add_edge(v1_new, v2_new, old_score)
-            new_gm.g.ep['certainty'][new_e] = old_g.ep['certainty'][old_e]
-
-        print "edges t:", time.time() - t1
-
-        # chunk id = 0 means no chunk assigned
-        chunks_map = {0: 0}
-
-        t1 = time.time()
-
-        ids_ = []
-        # update chunks
-        for old_id_ in used_chunks_ids:
-            ch = old_chm[old_id_]
-
-            new_list = []
-            reg_ids_in_row = []
-            for old_v in ch.nodes_:
-                if old_v in vertex_map:
-                    if len(reg_ids_in_row) > 0:
-                        ids_ = new_rm.add(old_rm[reg_ids_in_row])
-                        ids_ = map(lambda x: -x, ids_)
-
-                        new_list.extend(ids_)
-                        reg_ids_in_row = []
-
-                    new_list.append(int(vertex_map[old_v]))
-                else:
-                    reg_ids_in_row.append(old_g.vp['region_id'][old_g.vertex(old_v)])
-
-            if len(reg_ids_in_row) > 0:
-                ids_ = new_rm.add(old_rm[reg_ids_in_row])
-                ids_ = map(lambda x: -x, ids_)
-
-                new_list.extend(ids_)
-
-            _, new_id_ = new_chm.new_chunk(new_list, new_gm)
-
-            chunks_map[old_id_] = new_id_
-
-        print "chunk update t: ", time.time() - t1
-
-        t1 = time.time()
-        for old_v, new_v in vertex_map.iteritems():
-            new_gm.g.vp['chunk_start_id'][new_v] = chunks_map[old_g.vp['chunk_start_id'][old_v]]
-            new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
-
-        print "graph update t: ", time.time() - t1
-
-        # create chunk for each single vertex
-        for v_id in single_vertices:
-            ch, id = project.chm.new_chunk([int(v_id)], project.gm)
-            new_gm.g.vp['chunk_start_id'][v_id] = id
-            new_gm.g.vp['chunk_end_id'][v_id] = id
-
-    def piece_results_together(self):
-        from core.graph.graph_manager import GraphManager
-        # TODO: add to settings
-        self.project.rm = RegionManager(db_wd=self.project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
-        # self.project.rm = RegionManager(db_wd=self.project.working_directory, cache_size_limit=-1)
-        self.project.chm = ChunkManager()
-        self.solver = Solver(self.project)
-        self.project.gm = GraphManager(self.project, self.solver.assignment_score)
-
-        self.update_callback(0, 're-indexing...')
-
-        # switching off... We don't want to log following...
-        S_.general.log_graph_edits = False
-
-        part_num = self.part_num
-
-        from utils.misc import is_flipajs_pc
-        if is_flipajs_pc():
-            # TODO: remove this line
-            # part_num = 3
-            pass
-
-        self.project.color_manager = None
-
-        print "merging..."
-        t1 = time.time()
-        for i in range(part_num):
-            if i == 6:
-                print "test"
-
-            rm_old = RegionManager(db_wd=self.project.working_directory + '/temp',
-                                   db_name='part' + str(i) + '_rm.sqlite3')
-
-            with open(self.project.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
-                up = pickle.Unpickler(f)
-                g_ = up.load()
-                _ = up.load()
-                chm_ = up.load()
-
-                self.merge_parts(self.project.gm, g_, self.project, rm_old, chm_)
-
-            self.update_callback((i + 1) / float(part_num))
-
-        print "merging t: ", time.time() - t1
-
-        fir = self.project.solver_parameters.frames_in_row
-
-        self.update_callback(-1, 'joining parts...')
-
-        print "reconnecting graphs"
-
-        vs_todo = []
-
-        t1 = time.time()
-        for part_end_t in range(fir, fir*part_num, fir):
-            t_v = self.project.gm.get_vertices_in_t(part_end_t-1)
-            t1_v = self.project.gm.get_vertices_in_t(part_end_t)
-
-            vs_todo.extend(t_v)
-
-            self.connect_graphs(t_v, t1_v)
-        print "connect graph t: ", time.time()-t1
-
-        t1 = time.time()
-        self.project.solver.detect_split_merge_cases(frames=range(self.frames_in_row-1, self.frames_in_row * (self.part_num + 1), self.frames_in_row))
-        print "detect split_merge_cases t: ", time.time() - t1
-
-        print "simplifying "
-        t1 = time.time()
-        self.solver.simplify(vs_todo, rules=[self.solver.adaptive_threshold])
-        print "simplifying t: ", time.time() - t1
-
-        S_.general.log_graph_edits = True
-
-        self.project.solver = self.solver
-
-        self.project.gm.project = self.project
-
-        s = time.time()
-
-        # TODO: problem with huge projects
-        colorize_project(self.project)
-        print "color manager takes %f seconds" % (time.time() - s)
-
-        self.update_callback(-1, 'saving...')
-        self.project.save()
-
-        print ("#CHUNKS: %d") % (len(self.project.chm.chunk_list()))
-
-        self.finished_callback(self.solver)
-
-    def connect_graphs(self, vertices1, vertices2):
-        if vertices1:
-            self.project.gm.add_edges_(vertices1, vertices2)
+            assembly_after_parallelization(self)
 
     def OnProcessOutputReady(self, p_id):
         while True:

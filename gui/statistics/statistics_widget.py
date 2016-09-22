@@ -17,7 +17,7 @@ class StatisticsWidget(QtGui.QWidget):
 
         self.project = project
 
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtGui.QVBoxLayout()p
         self.setLayout(self.vbox)
         self.fbox = QtGui.QFormLayout()
         self.vbox.addLayout(self.fbox)
@@ -193,8 +193,6 @@ class StatisticsWidget(QtGui.QWidget):
         chunNum  = 0
         for _, ch in self.project.chm.chunks_.iteritems():
             chunNum += 1;
-
-            print ch.length()
 
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
 

@@ -30,16 +30,43 @@ if __name__ == '__main__':
     frames_in_row = int(sys.argv[4])
     last_n_frames = int(sys.argv[5])
 
+    f_log_name = 'id'+str(id)+'.log'
+    # with open(f_log_name, 'wb') as f:
+    #     f.write('init...')
+
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
     if not os.path.exists(proj.working_directory+'/temp'):
         os.mkdir(proj.working_directory+'/temp')
 
+    if proj.is_cluster():
+        temp_local_path = proj.working_directory+'/temp'
+    else:
+        temp_local_path='/localhome/casillas/'
+
+        if not os.path.exists(temp_local_path+proj_name):
+            try:
+                os.mkdir(temp_local_path+proj_name)
+            except:
+                print(temp_local_path+proj_name + "   was created between check and mkdir");
+
+        temp_local_path=temp_local_path + proj_name
+
+        if not os.path.exists(temp_local_path+'/temp'):
+            try:
+                os.mkdir(temp_local_path+'/temp')
+            except:
+                print(temp_local_path+'/temp' + "   was created between check and mkdir");
+
+        temp_local_path=temp_local_path+'/temp'
+
     solver = Solver(proj)
     from core.graph.graph_manager import GraphManager
     proj.gm = GraphManager(proj, proj.solver.assignment_score)
-    proj.rm = RegionManager(db_wd=proj.working_directory+'/temp', db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=S_.cache.region_manager_num_of_instances)
+    # TODO: add global params
+    proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=5)
+    # proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=S_.cache.region_manager_num_of_instances)
     proj.chm = ChunkManager()
     proj.color_manager = None
 
@@ -66,6 +93,9 @@ if __name__ == '__main__':
     file_t = 0
 
     for i in range(frames_in_row + last_n_frames):
+        # with open(f_log_name, 'a') as f:
+        #     f.write('frame: '+str(i)+' is being processed...')
+
         frame = id*frames_in_row + i
 
         s = time.time()
@@ -109,7 +139,13 @@ if __name__ == '__main__':
         #     print i
         #     sys.stdout.flush()
 
-    solver.detect_split_merge_cases()
+    # with open(f_log_name, 'a') as f:
+    #     f.write('before detect_split_merge_cases')
+
+    # solver.detect_split_merge_cases()
+
+    # with open(f_log_name, 'a') as f:
+    #     f.write('before simplify')
 
     s = time.time()
     print "#Edges BEFORE: ", proj.gm.g.num_edges()
@@ -150,3 +186,9 @@ if __name__ == '__main__':
     file_t = time.time() - s
 
     print "MSERS t:", round(msers_t, 2), "SOLVER t: ", round(solver_t, 2), "VIDEO t:", round(vid_t, 2), "FILE t: ", round(file_t, 2), "SUM t / frames_in_row:", round((msers_t + solver_t+vid_t+file_t)/float(frames_in_row), 2)
+
+    if not proj.is_cluster():
+        import shutil
+        import glob
+        for file in glob.glob(temp_local_path+'/part'+str(id)+'_rm.sqlite3'):
+            shutil.move(file,working_dir+'/temp')

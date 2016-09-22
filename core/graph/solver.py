@@ -679,17 +679,17 @@ class Solver:
     def dsmc_process_cc_(self, s1, s2, area_med):
         from scripts.EMD import get_unstable_num, detect_stable
         if len(s1) > 1 or len(s2) > 1:
-            edges = set()
+            # edges = set()
 
             regions_P = []
             for s in s1:
                 r = self.project.gm.region(s)
                 regions_P.append((r.area(), r.centroid(), s))
+                #
+                # for e in s.out_edges():
+                #     edges.add(e)
 
-                for e in s.out_edges():
-                    edges.add(e)
-
-            edges = list(edges)
+            # edges = list(edges)
 
             regions_Q = []
             for s in s2:
