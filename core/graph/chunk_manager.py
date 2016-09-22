@@ -1,7 +1,7 @@
 __author__ = 'flipajs'
 
 from chunk import Chunk
-from intervaltree import IntervalTree
+from libs.intervaltree.intervaltree import IntervalTree
 
 class ChunkManager:
     def __init__(self):

@@ -366,7 +366,7 @@ class Project:
         # fix itree in chm...
         if self.chm is not None and self.gm is not None and self.rm is not None:
             if not hasattr(self.chm, 'itree'):
-                from intervaltree import IntervalTree
+                from libs.intervaltree.intervaltree import IntervalTree
                 self.chm.itree = IntervalTree()
                 self.chm.eps1 = 0.01
                 self.chm.eps2 = 0.1

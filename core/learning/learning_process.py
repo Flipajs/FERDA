@@ -7,7 +7,7 @@ import cv2
 from utils.img import get_img_around_pts, replace_everything_but_pts
 import cPickle as pickle
 import numpy as np
-from intervaltree import IntervalTree
+from libs.intervaltree.intervaltree import IntervalTree
 from gui.learning.ids_names_widget import IdsNamesWidget
 from PyQt4 import QtGui
 import sys

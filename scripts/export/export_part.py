@@ -156,5 +156,4 @@ if __name__ == '__main__':
     if first_part+part_num-1 > i:
         fname += '-'+str(first_part+part_num-1)
 
-    # TODO: does exist chunk of length 1?
     Exporter(chm, p.gm, rm, pts_export).export(fname, min_tracklet_length=min_tracklet_length)
