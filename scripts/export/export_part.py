@@ -118,6 +118,13 @@ class Exporter:
         with open(file_name+'.mat', 'wb') as f:
             sio.savemat(f, {'FERDA': obj_arr})
 
+class FakeBGComp:
+    def __init__(self, project):
+        self.project = project
+
+    def update_callback(self):
+        pass
+
 if __name__ == '__main__':
     working_dir = sys.argv[1]
     out_dir = sys.argv[2]

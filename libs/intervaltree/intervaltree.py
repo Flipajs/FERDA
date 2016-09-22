@@ -23,7 +23,7 @@ from .interval import Interval
 from .node import Node
 from numbers import Number
 import collections
-from sortedcontainers import SortedDict
+from libs.sortedcontainers.sorteddict import SortedDict
 from copy import copy
 from warnings import warn
 
