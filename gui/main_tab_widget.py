@@ -109,7 +109,7 @@ class MainTabWidget(QtGui.QWidget):
         print "GRAPH LOADED"
         self.solver = solver
         self.results_tab.solver = solver
-        self.tracker_tab.prepare_corrections(self.project.solver)
+        # self.tracker_tab.prepare_corrections(self.project.solver)
 
         self.tabs.setTabEnabled(1, True)
         self.tabs.setTabEnabled(2, True)
