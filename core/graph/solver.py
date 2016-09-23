@@ -112,13 +112,6 @@ class Solver:
                 # if area_coef > 0.5:
                 #     return []
 
-                # desc1 = self.zernike_desc.describe(r1)
-                # desc2 = self.zernike_desc.describe(r2)
-                #
-                # desc_correction = self.project.solver_parameters.zernike_plus
-                # if np.linalg.norm(desc1-desc2) > self.project.solver_parameters.zernike_thresh:
-                #     desc_correction = self.project.solver_parameters.zernike_minus
-
                 desc_correction = 0
 
                 # cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
