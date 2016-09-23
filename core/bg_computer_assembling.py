@@ -7,26 +7,34 @@ from core.graph.chunk_manager import ChunkManager
 from core.graph.solver import Solver
 
 
-def assembly_after_parallelization(bgcomp, cluster=False):
+def assembly_after_parallelization(bgcomp):
     print "Starting assembly..."
     from core.graph.graph_manager import GraphManager
     # TODO: add to settings
 
-    if cluster:
-        bgcomp.project.rm = RegionManager(db_wd=bgcomp.project.working_directory, cache_size_limit=5)
-    else:
-        from core.settings import Settings as S_
-        bgcomp.project.rm = RegionManager(db_wd=bgcomp.project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
+    cache_size_limit = 5
 
+    # Settings won't work on cluster, need PyQt libraries...
+    if not bgcomp.project.is_cluster():
+        from core.settings import Settings as S_
+        cache_size_limit = S_.cache.region_manager_num_of_instances
+
+    db_wd = bgcomp.project.working_directory
+    if bgcomp.do_semi_merge:
+        # means - do not use database, use memory only
+        cache_size_limit = -1
+        db_wd = None
+
+    bgcomp.project.rm = RegionManager(db_wd=db_wd, cache_size_limit=cache_size_limit)
 
     bgcomp.project.chm = ChunkManager()
     bgcomp.solver = Solver(bgcomp.project)
     bgcomp.project.gm = GraphManager(bgcomp.project, bgcomp.solver.assignment_score)
 
-    if not cluster:
+    if not bgcomp.project.is_cluster():
         bgcomp.update_callback(0, 're-indexing...')
 
-    if not cluster:
+    if not bgcomp.project.is_cluster():
         from core.settings import Settings as S_
         # switching off... We don't want to log following...
         S_.general.log_graph_edits = False
@@ -43,7 +51,7 @@ def assembly_after_parallelization(bgcomp, cluster=False):
 
     print "merging..."
     # for i in range(part_num):
-    for i in range(part_num):
+    for i in range(bgcomp.first_part, bgcomp.first_part + part_num):
         rm_old = RegionManager(db_wd=bgcomp.project.working_directory + '/temp',
                                db_name='part' + str(i) + '_rm.sqlite3', cache_size_limit=1)
 
@@ -55,12 +63,12 @@ def assembly_after_parallelization(bgcomp, cluster=False):
 
             merge_parts(bgcomp.project.gm, g_, relevant_vertices, bgcomp.project, rm_old, chm_)
 
-        if not cluster:
+        if not bgcomp.project.is_cluster():
             bgcomp.update_callback((i + 1) / float(part_num))
 
     fir = bgcomp.project.solver_parameters.frames_in_row
 
-    if not cluster:
+    if not bgcomp.project.is_cluster():
         bgcomp.update_callback(-1, 'joining parts...')
 
     if bgcomp.project.solver_parameters.use_emd_for_split_merge_detection():
@@ -72,7 +80,8 @@ def assembly_after_parallelization(bgcomp, cluster=False):
 
     vs_todo = []
 
-    for part_end_t in range(fir, fir*part_num, fir):
+    start_ = (bgcomp.first_part + 1) * fir
+    for part_end_t in range(start_, start_ + fir*part_num, fir):
         t_v = bgcomp.project.gm.get_vertices_in_t(part_end_t - 1)
         t1_v = bgcomp.project.gm.get_vertices_in_t(part_end_t)
 
@@ -84,11 +93,12 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     if bgcomp.project.solver_parameters.use_emd_for_split_merge_detection():
         bgcomp.project.solver.detect_split_merge_cases()
 
+    print "#CHUNKS: ", len(bgcomp.project.chm)
     bgcomp.solver.simplify(vs_todo, rules=[bgcomp.solver.adaptive_threshold])
 
     print "simplifying "
 
-    if not cluster:
+    if not bgcomp.project.is_cluster():
         from core.settings import Settings as S_
         S_.general.log_graph_edits = True
 
@@ -102,14 +112,15 @@ def assembly_after_parallelization(bgcomp, cluster=False):
     # # colorize_project(bgcomp.project)
     # print "color manager takes %f seconds" % (time.time() - s)
 
-    if not cluster:
+    if not bgcomp.project.is_cluster():
         bgcomp.update_callback(-1, 'saving...')
 
-    bgcomp.project.save()
+    if not bgcomp.do_semi_merge:
+        bgcomp.project.save()
 
     print ("#CHUNKS: %d") % (len(bgcomp.project.chm.chunk_list()))
 
-    if not cluster:
+    if not bgcomp.project.is_cluster():
         bgcomp.finished_callback(bgcomp.solver)
 
 

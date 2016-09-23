@@ -45,6 +45,10 @@ class BackgroundComputer:
         self.precomputed = False
         self.postpone_parallelisation = postpone_parallelisation
 
+        self.first_part = 0
+        # is True when semi merge is done on cluster... e.g. parts 0-9, 10-19 etc...
+        self.do_semi_merge = False
+
     def set_frames_in_row(self):
         vid = get_auto_video_manager(self.project)
         frame_num = int(vid.total_frame_count())

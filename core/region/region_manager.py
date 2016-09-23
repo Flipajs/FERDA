@@ -97,6 +97,11 @@ class RegionManager:
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute("INSERT INTO regions VALUES (?, ?)", (id, self.prepare_region(regions)))
             self.con.commit()
+        else:
+            r = regions
+            id = self.get_next_id()
+            r.id_ = id
+            self.add_to_cache_(id, r)
 
         return self.tmp_ids
 

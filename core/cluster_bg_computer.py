@@ -17,9 +17,10 @@ if __name__ == '__main__':
 
     bgcomp = BGComp()
     bgcomp.project = p
+    bgcomp.project.is_cluster_ = True
     bgcomp.part_num = part_num
 
-    assembly_after_parallelization(bgcomp, cluster=True)
+    assembly_after_parallelization(bgcomp)
 
     print
     print "PROJECT WAS ASSEMBLED."

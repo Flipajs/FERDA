@@ -119,10 +119,16 @@ class Exporter:
             sio.savemat(f, {'FERDA': obj_arr})
 
 class FakeBGComp:
-    def __init__(self, project):
+    def __init__(self, project, first_part, part_num):
         self.project = project
+        self.part_num = part_num
+        self.first_part = first_part
+        self.do_semi_merge = True
 
-    def update_callback(self):
+    def update_callback(self, fake1=None, fake2=None):
+        pass
+
+    def finished_callback(self, fake1=None, fake2=None):
         pass
 
 if __name__ == '__main__':
@@ -135,36 +141,44 @@ if __name__ == '__main__':
 
     i = first_part
 
-    rm = RegionManager(db_wd=working_dir+ '/temp',
-                       db_name='part' + str(i) + '_rm.sqlite3',
-                       cache_size_limit=1)
-
-    with open(working_dir+'/temp/part'+str(i)+'.pkl', 'rb') as f:
-        up = pickle.Unpickler(f)
-        g_ = up.load()
-        relevant_vertices = up.load()
-        chm_ = up.load()
-
-    chm = ChunkManager()
-    for v_id in relevant_vertices:
-        if not g_.vp['active'][v_id]:
-            continue
-
-        v = g_.vertex(v_id)
-        ch_id = g_.vp['chunk_start_id'][v]
-
-        if ch_id > 0:
-            chm.chunks_[ch_id] = chm_[ch_id]
-
     p = Project()
     p.load(working_dir)
-    from core.graph.graph_manager import GraphManager
-    p.gm = GraphManager(p, None)
-    p.gm.g = g_
-    p.gm.rm = rm
+
+    bgcomp = FakeBGComp(p, first_part, part_num)
+
+    from core.bg_computer_assembling import assembly_after_parallelization
+    assembly_after_parallelization(bgcomp)
+
+    # rm = RegionManager(db_wd=working_dir+ '/temp',
+    #                    db_name='part' + str(i) + '_rm.sqlite3',
+    #                    cache_size_limit=1)
+    #
+    # with open(working_dir+'/temp/part'+str(i)+'.pkl', 'rb') as f:
+    #     up = pickle.Unpickler(f)
+    #     g_ = up.load()
+    #     relevant_vertices = up.load()
+    #     chm_ = up.load()
+    #
+    # chm = ChunkManager()
+    # for v_id in relevant_vertices:
+    #     if not g_.vp['active'][v_id]:
+    #         continue
+    #
+    #     v = g_.vertex(v_id)
+    #     ch_id = g_.vp['chunk_start_id'][v]
+    #
+    #     if ch_id > 0:
+    #         chm.chunks_[ch_id] = chm_[ch_id]
+
+    # p = Project()
+    # p.load(working_dir)
+    # from core.graph.graph_manager import GraphManager
+    # p.gm = GraphManager(p, None)
+    # p.gm.g = g_
+    # p.gm.rm = rm
 
     fname = out_dir+'/out_'+str(i)
     if first_part+part_num-1 > i:
         fname += '-'+str(first_part+part_num-1)
 
-    Exporter(chm, p.gm, rm, pts_export).export(fname, min_tracklet_length=min_tracklet_length)
+    Exporter(p.chm, p.gm, p.rm, pts_export).export(fname, min_tracklet_length=min_tracklet_length)
