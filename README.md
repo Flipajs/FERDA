@@ -16,13 +16,9 @@ FERDA is a multi object tracker developed mainly to meet the needs of biologists
 * [graph-tool](https://pypi.python.org/pypi/graph-tool)
 * [matplotlib](https://pypi.python.org/pypi/matplotlib)
 * [TkInter](https://wiki.python.org/moin/TkInter)
-<<<<<<< HEAD
 * [Pympler] (https://pypi.python.org/pypi/Pympler)
 * [qimage2ndarray] (https://pypi.python.org/pypi/qimage2ndarray/0.2)
-=======
 * [Pympler](https://pypi.python.org/pypi/Pympler)
-* [intervaltree 2.0](https://pypi.python.org/pypi/intervaltree)
->>>>>>> master
 
 ## Team ##
 * **author:** Filip Naiser (naisefil@cmp.felk.cvut.cz)
@@ -30,5 +26,6 @@ FERDA is a multi object tracker developed mainly to meet the needs of biologists
 * **supervisor:** Prof. Jiří Matas
 
 ## Acknowledgement ##
+* Dita Hollmannová - long term intern in CMP. Databases, visualisations, segmentation.
+* Šimon Mandlík - long term intern in CMP. Visualisations, PCA of ant shapes, region fitting problem.
 * Michael Hlaváček - 1 month intern in CMP, he was working on early version of results visualiser.
-* Šimon Mandlík - 5 weeks intern in CMP, he was working mainly on graph visualiser tools.
