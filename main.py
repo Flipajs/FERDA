@@ -42,10 +42,10 @@ if is_flipajs_pc():
         # WORKAROUND:
         for t in project.chm.chunk_gen():
             if not hasattr(t, 'N'):
-                t.P = set([1])
-                t.N = full_set - t.P
+                t.N = set()
+                t.P = set()
 
-    except IOError:
+    except AttributeError:
         pass
 
     ex.widget_control('load_project', project)

@@ -32,7 +32,7 @@ def assembly(project_path, part_names):
     end_nodes_prev = []
     for part, i in zip(part_names, range(len(part_names))):
         print "Processing ", part
-        # this is slightly changed code from background_computer/piece_results_together
+        # this is slightly changed code from background_computer/assembly_after_parallelization
         with open(p.working_directory+'/'+part, 'rb') as f:
             up = pickle.Unpickler(f)
             g_ = up.load()

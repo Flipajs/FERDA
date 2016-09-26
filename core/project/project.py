@@ -16,6 +16,7 @@ from core.settings import Settings as S_
 from gui.video_loader import check_video_path
 from utils.img_manager import ImgManager
 from core import segmentation_helper
+import os
 
 class Project:
     """
@@ -58,8 +59,16 @@ class Project:
         self.snapshot_id = 0
         self.active_snapshot = -1
 
+        self.is_cluster_ = False
+
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
+
+    def is_cluster(self):
+        if hasattr(self, 'is_cluster_'):
+            return self.is_cluster_
+
+        return False
 
     def version_is_le(self, ver):
         # returns true if self.version is lower or equal then version
@@ -104,11 +113,11 @@ class Project:
         with open(destinationFolder+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 
-    def save(self,toFolder=""):
-        if (toFolder == ""):
+    def save(self, to_folder=""):
+        if (to_folder == ""):
             destinationFolder = self.working_directory
         else:
-            destinationFolder = toFolder
+            destinationFolder = to_folder
 
         # BG MODEL
         if self.bg_model:
@@ -152,13 +161,13 @@ class Project:
         #     with open(self.working_directory+'/region_manager.pkl', 'wb') as f:
         #         pickle.dump(self.rm, f, -1)
 
-        self.save_chm_(self.working_directory+'/chunk_manager.pkl')
+        self.save_chm_(destinationFolder+'/chunk_manager.pkl')
 
-        self.save_gm_(self.working_directory+'/graph_manager.pkl')
+        self.save_gm_(destinationFolder+'/graph_manager.pkl')
 
-        self.save_qsettings(toFolder)
+        self.save_qsettings(to_folder)
 
-        self.save_project_file_(toFolder)
+        self.save_project_file_(to_folder)
 
     def save_gm_(self, file_path):
         # Graph Manager
@@ -230,6 +239,12 @@ class Project:
                     pass
 
     def load(self, path, snapshot=None, parent=None):
+        if path[-6:] != '.fproj':
+            for f in os.listdir(path):
+                if f[-6:] == '.fproj':
+                    path += '/'+f
+                    break
+
         with open(path, 'rb') as f:
             tmp_dict = pickle.load(f)
 
@@ -354,7 +369,7 @@ class Project:
         # fix itree in chm...
         if self.chm is not None and self.gm is not None and self.rm is not None:
             if not hasattr(self.chm, 'itree'):
-                from intervaltree import IntervalTree
+                from libs.intervaltree.intervaltree import IntervalTree
                 self.chm.itree = IntervalTree()
                 self.chm.eps1 = 0.01
                 self.chm.eps2 = 0.1
@@ -382,7 +397,6 @@ class Project:
                     ch.P = set()
 
             self.save()
-
 
         self.img_manager = ImgManager(self, max_size_mb=S_.cache.img_manager_size_MB)
 

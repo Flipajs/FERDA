@@ -269,6 +269,7 @@ class GraphManager:
             ch = self.project.chm[ch_id]
             if ch.start_frame(self.project.gm) <= frame <= ch.end_frame(self.project.gm):
                 in_frame.append(ch)
+
         return in_frame
 
     def chunks_in_frame_generator(self, start_frame, end_frame):

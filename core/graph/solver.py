@@ -1,24 +1,11 @@
 __author__ = 'fnaiser'
 
-import networkx as nx
-import numpy as np
-from core.settings import Settings as S_
 from core.graph.graph_utils import *
-from core.region.mser import get_msers_
-from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from core.settings import Settings as S_
-from skimage.transform import rescale
 import numpy as np
-from chunk import Chunk
 from configuration import Configuration
-import scipy
-from core.log import LogCategories, ActionNames
-from utils.img import prepare_for_segmentation
 from utils.constants import EDGE_CONFIRMED
-import time
 import cPickle as pickle
-import graph_tool
-from graph_manager import GraphManager
 
 class Solver:
     def __init__(self, project):
@@ -80,9 +67,10 @@ class Solver:
         return num_changed
 
     def get_antlikeness(self, n):
-        prob = self.project.stats.antlikeness_svm.get_prob(n)[1]
+        if n.is_virtual:
+            return 1.0
 
-        return prob
+        return self.project.stats.antlikeness_svm.get_prob(n)[1]
 
     def adaptive_threshold(self, vertex):
         if self.project.gm.ch_start_longer(vertex):
@@ -123,13 +111,6 @@ class Solver:
                 # # hard area rule...
                 # if area_coef > 0.5:
                 #     return []
-
-                # desc1 = self.zernike_desc.describe(r1)
-                # desc2 = self.zernike_desc.describe(r2)
-                #
-                # desc_correction = self.project.solver_parameters.zernike_plus
-                # if np.linalg.norm(desc1-desc2) > self.project.solver_parameters.zernike_thresh:
-                #     desc_correction = self.project.solver_parameters.zernike_minus
 
                 desc_correction = 0
 
@@ -332,19 +313,30 @@ class Solver:
         max_d = self.project.solver_parameters.max_edge_distance_in_ant_length
         ds = max(0, (max_d-d) / max_d)
 
-        if r1.is_virtual:
-            q1 = 1.0
-        else:
-            q1 = self.get_antlikeness(r1)
-
-        if r2.is_virtual:
-            q2 = 1.0
-        else:
-            q2 = self.get_antlikeness(r2)
+        q1 = self.get_antlikeness(r1)
+        q2 = self.get_antlikeness(r2)
 
         antlikeness_diff = 1 - abs(q1-q2)
         # antlikeness_diff = 1
         s = ds * antlikeness_diff
+
+        if self.project.solver_parameters.use_colony_split_merge_relaxation():
+            a1 = r1.area()
+            a2 = r2.area()
+
+            if a1 < a2:
+                a1, a2 = a2, a1
+
+            area_diff = (a1 - a2)
+
+            # simple split / merge test... Quite strict.
+            if area_diff > self.project.stats.area_median * 0.5:
+                # when regions are big...
+                if a1 > self.project.stats.area_median * 5:
+                    if area_diff/float(a1) > 0.15:
+                        s = 0
+                else:
+                    s = 0
 
         return s, ds, 0, antlikeness_diff
 
@@ -679,17 +671,17 @@ class Solver:
     def dsmc_process_cc_(self, s1, s2, area_med):
         from scripts.EMD import get_unstable_num, detect_stable
         if len(s1) > 1 or len(s2) > 1:
-            edges = set()
+            # edges = set()
 
             regions_P = []
             for s in s1:
                 r = self.project.gm.region(s)
                 regions_P.append((r.area(), r.centroid(), s))
+                #
+                # for e in s.out_edges():
+                #     edges.add(e)
 
-                for e in s.out_edges():
-                    edges.add(e)
-
-            edges = list(edges)
+            # edges = list(edges)
 
             regions_Q = []
             for s in s2:

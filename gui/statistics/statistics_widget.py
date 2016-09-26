@@ -194,8 +194,6 @@ class StatisticsWidget(QtGui.QWidget):
         for _, ch in self.project.chm.chunks_.iteritems():
             chunNum += 1;
 
-            print ch.length()
-
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
 
 

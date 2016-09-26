@@ -111,7 +111,7 @@ class MainTabWidget(QtGui.QWidget):
         print "GRAPH LOADED"
         self.solver = solver
         self.results_tab.solver = solver
-        self.tracker_tab.prepare_corrections(self.project.solver)
+        # self.tracker_tab.prepare_corrections(self.project.solver)
 
         self.tabs.setTabEnabled(1, True)
         self.tabs.setTabEnabled(2, True)
@@ -130,7 +130,7 @@ class MainTabWidget(QtGui.QWidget):
         self.id_detection_tab.decide_tracklet_question(tracklet)
 
     def tab_changed(self, i):
-        if self.ignore_tab_change:
+        if self.ignore_tab_change or self.project.chm is None:
             return
 
         if i == 1:
