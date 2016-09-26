@@ -346,6 +346,18 @@ class Solver:
         # antlikeness_diff = 1
         s = ds * antlikeness_diff
 
+        a1 = r1.area()
+        a2 = r2.area()
+
+        if a1 < a2:
+            a1, a2 = a2, a1
+
+        area_diff = (a1 - a2)
+
+        # simple split / merge test... Quite strict.
+        if area_diff > self.project.stats.area_median * 0.5:
+            s = 0
+
         return s, ds, 0, antlikeness_diff
 
     def assignment_score_pos_orient(self, r1, r2):
@@ -684,17 +696,21 @@ class Solver:
             regions_P = []
             for s in s1:
                 r = self.project.gm.region(s)
-                regions_P.append((r.area(), r.centroid(), s))
 
-                for e in s.out_edges():
-                    edges.add(e)
-
-            edges = list(edges)
+                if isinstance(r, list):
+                    print "PROBLEM IN SOLVER.py, line 662, region doesn't exist", r, s
+                    return
+                regions_P.append((r.area(), r.centroid()))
 
             regions_Q = []
             for s in s2:
                 r = self.project.gm.region(s)
-                regions_Q.append((r.area(), r.centroid(), s))
+
+                if isinstance(r, list):
+                    print "PROBLEM IN SOLVER.py, line 662, region doesn't exist", r, s
+                    return
+
+                regions_Q.append((r.area(), r.centroid()))
 
             unstable_num, stability_P, stability_Q, preferences = detect_stable(regions_P, regions_Q, thresh=0.7, area_med=area_med)
             for i, v in enumerate(s1):

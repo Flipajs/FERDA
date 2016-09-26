@@ -17,7 +17,7 @@ class StatisticsWidget(QtGui.QWidget):
 
         self.project = project
 
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtGui.QVBoxLayout()p
         self.setLayout(self.vbox)
         self.fbox = QtGui.QFormLayout()
         self.vbox.addLayout(self.fbox)
@@ -194,8 +194,6 @@ class StatisticsWidget(QtGui.QWidget):
         for _, ch in self.project.chm.chunks_.iteritems():
             chunNum += 1;
 
-            print ch.length()
-
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
 
 
@@ -221,14 +219,12 @@ class StatisticsWidget(QtGui.QWidget):
                     sio.savemat(f, {'FERDA': obj_arr})
 
                 curr_size = 0
-                obj_arr = []
-                #reset_selective d
-                del d
-                del rch
-                del obj_arr
-                obj_arr = []
 
+                del obj_arr
+                del rch
+                del d
                 gc.collect()
+                obj_arr=[]
                 file_num += 1
 
         # save the rest

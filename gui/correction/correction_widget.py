@@ -526,6 +526,35 @@ class ResultsWidget(QtGui.QWidget):
         self.marker_pos_helper[int(y_), int(x_)] = True
         return y, x
 
+    def update_positions_optimized(self, frame):
+        new_active_markers = []
+
+        # TODO: BGR, offset 1
+        # R B G Y dark B
+        colors = [
+            [0, 0, 0],
+            [0, 0, 255],
+            [255, 0, 0],
+            [0, 255, 0],
+            [0, 255, 255],
+            [150, 0, 0]
+        ]
+
+        for m_id, ch in self.active_markers:
+            rch = RegionChunk(ch,  self.project.gm, self.project.rm)
+            if frame == rch.end_frame() + 1:
+                self.items[m_id].setVisible(False)
+            else:
+                new_active_markers.append((m_id, ch))
+                r = rch.region_in_t(frame)
+
+                if r is None:
+                    print "None region, frame: {}, ch.id_: {}".format(frame, ch.id_)
+                    continue
+
+                c = r.centroid().copy()
+                self.update_marker_position(self.items[m_id], c)
+
     def __add_marker(self, x, y, c_, id_, z_value, type_):
         radius = 13
 
@@ -879,6 +908,8 @@ class ResultsWidget(QtGui.QWidget):
             self.help_timer.timeout.connect(self.__continue_loop)
             return
 
+            print len(self.project.gm.vertices_in_t[self.video.frame_number()])
+
         if self.video.frame_number() == self.highlight_marker2nd_frame:
             print "SHOW"
             self.scene.addItem(self.highlight_marker2nd)
@@ -946,3 +977,25 @@ class ResultsWidget(QtGui.QWidget):
         colorize_project(self.project)
 
         print "COLORIZING DONE..."
+<<<<<<< HEAD
+=======
+
+
+
+def view_add_bg_image(g_view, pix_map):
+    gv_w = g_view.geometry().width()
+    gv_h = g_view.geometry().height()
+    im_w = pix_map.width()
+    im_h = pix_map.height()
+
+    m11 = g_view.transform().m11()
+    m22 = g_view.transform().m22()
+
+    if m11 and m22 == 1:
+        if gv_w / float(im_w) <= gv_h / float(im_h):
+            val = math.floor((gv_w / float(im_w))*100) / 100
+            g_view.scale(val, val)
+        else:
+            val = math.floor((gv_h / float(im_h))*100) / 100
+            g_view.scale(val, val)
+>>>>>>> cluster_preparations

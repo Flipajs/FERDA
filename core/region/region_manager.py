@@ -7,7 +7,7 @@ import cPickle as pickle
 from core.region.region import encode_RLE
 
 class RegionManager:
-    def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=-1, data=None):
+    def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=1000, data=None):
         """
         RegionManager is designed to store regions data. By default, all data is stored in memory cache (dictionary) and
         identified using unique ids. Optionally, database can be used, in which case the memory cache size can be
@@ -103,7 +103,6 @@ class RegionManager:
     def clear_cache(self):
         self.regions_cache_     = {}
         self.recent_regions_ids = []
-
 
     def add_to_cache_(self, id, region):
         """
@@ -267,8 +266,11 @@ class RegionManager:
         if l == 1:
             # if only one id has to be taken from db
             cmd = "SELECT data FROM regions WHERE id = '%s'" % sql_ids[0]
-            self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
+<<<<<<< HEAD
+=======
+
+>>>>>>> cluster_preparations
             row = self.cur.fetchone()
             self.con.commit()
             # add it to result
@@ -279,9 +281,13 @@ class RegionManager:
                 # add it to cache
                 self.add_to_cache_(id, region)
             except TypeError:
+<<<<<<< HEAD
                 # region was erased
                 print("!!!!!!!!! REGION NOT FOUND ????   "+str(id))
                 pass
+=======
+                print "TypeError in region_manager.py line 272"
+>>>>>>> cluster_preparations
 
         if l > 1:
             cmd = "SELECT id, data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
@@ -396,4 +402,3 @@ if __name__ == "__main__":
     # db size with 20 rle regions:  75 776 bytes
     # NOTE: To check sb size properly, always start in new file. File size doesn't decrease when items are deleted or
     #       when table is dropped. Instead of delete, sql VACUUM command can be used.
-
