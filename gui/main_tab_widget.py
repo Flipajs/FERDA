@@ -30,7 +30,7 @@ class MainTabWidget(QtGui.QWidget):
 
         self.results_tab = QtGui.QWidget()
         self.statistics_tab = StatisticsWidget(project)
-        self.graph_tab = GraphWidgetLoader(self.project).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet)
+        self.graph_tab = QtGui.QWidget()
 
         self.id_detection_tab = QtGui.QWidget()
 
@@ -165,7 +165,7 @@ class MainTabWidget(QtGui.QWidget):
                 # TODO: show loading...
                 self.tabs.removeTab(4)
                 self.graph_tab.setParent(None)
-                self.graph_tab = GraphWidgetLoader(self.project).get_widget()
+                self.graph_tab = GraphWidgetLoader(self.project).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet)
                 self.tabs.insertTab(4, self.graph_tab, "graph")
                 self.tabs.setCurrentIndex(4)
                 self.ignore_tab_change = False

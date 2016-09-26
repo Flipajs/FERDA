@@ -215,7 +215,7 @@ class ImgManager:
                 else:
                     # create left and right borders
                     resized = cv2.resize(crop, (0,0), fx=scalex, fy=scalex)
-                    border = (width - resized.shape[0])/2.0
+                    border = int((width - resized.shape[0])/2.0)
                     new_image[:, border:border+resized.shape[1]] = resized
                     return new_image
             # return deformed image
