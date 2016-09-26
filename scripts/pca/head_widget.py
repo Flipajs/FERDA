@@ -4,12 +4,17 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as Navigatio
 
 import numpy as np
 from skimage.viewer.utils import FigureCanvas
-import pca
+
+from scripts.pca.ant_extract import get_feature_vector
 
 BACK_UP_CONSTANT = 50
 
 
 class HeadWidget(QtGui.QWidget):
+    """
+    This widgets shows ants and user labels orientation of the ant.
+    """
+
     def __init__(self, project, trainer):
         super(HeadWidget, self).__init__()
         self.project = project
@@ -63,7 +68,7 @@ class HeadWidget(QtGui.QWidget):
         return self.results
 
     def _add_region(self, region):
-        ant = pca.get_feature_vector(region, len(region.contour_without_holes()) / 2, True)
+        ant = get_feature_vector(region, len(region.contour_without_holes()) / 2, True)
         ax = self.figure.add_subplot(111)
         ax.plot(np.append(ant[::2], ant[0]), np.append(ant[1::2], ant[1]))
         ax.grid(True)
