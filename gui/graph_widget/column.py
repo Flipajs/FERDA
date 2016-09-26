@@ -164,7 +164,7 @@ class Column:
                     self.show_node(item, vertically)
                 elif isinstance(item, tuple):
                     if item[2] is "partial":
-                        self.show_node()
+                        self.show_node(item[0], vertically)
                     if item[0].frame_ == self.frame:
                         self.show_node(item[0], vertically)
                     elif item[1].frame_ == self.frame:

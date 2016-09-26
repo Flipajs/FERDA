@@ -25,7 +25,7 @@ class GraphVisualizer(QtGui.QWidget):
     Those can be passed in constructor or using a method add_objects
     """
 
-    def __init__(self, loader, img_manager, show_vertically=False, compress_axis=True, dynamically=True):
+    def __init__(self, loader, img_manager, show_tracklet_callback=None, show_vertically=False, compress_axis=True, dynamically=True):
         super(GraphVisualizer, self).__init__()
         self.regions = set()
         self.regions_list = []
@@ -41,7 +41,10 @@ class GraphVisualizer(QtGui.QWidget):
         self.height = loader.height
         self.loader = loader
         self.dynamically = dynamically
+        self.show_tracklet_callback = show_tracklet_callback
+
         self.setLayout(QtGui.QVBoxLayout())
+        self.layout().setContentsMargins(0, 11, 0, 11)
 
         self.chunk_detail_scroll_horizontal = QtGui.QScrollArea()
         self.chunk_detail_scroll_vertical = QtGui.QScrollArea()
@@ -58,14 +61,18 @@ class GraphVisualizer(QtGui.QWidget):
         self.chunk_detail_widget_horizontal.setLayout(QtGui.QHBoxLayout())
         self.chunk_detail_widget_vertical = QtGui.QWidget()
         self.chunk_detail_widget_vertical.setLayout(QtGui.QVBoxLayout())
+        self.chunk_detail_scroll_horizontal.setContentsMargins(0, 0, 0, 0)
+        self.chunk_detail_scroll_vertical.setContentsMargins(0, 0, 0, 0)
 
         self.chunk_detail_scroll_horizontal.setWidget(self.chunk_detail_widget_horizontal)
         self.chunk_detail_scroll_vertical.setWidget(self.chunk_detail_widget_vertical)
 
         self.upper_part = QtGui.QWidget()
         self.upper_part.setLayout(QtGui.QHBoxLayout())
+        self.upper_part.setContentsMargins(0, 0, 0, 0)
 
         self.view = MyViewZoomable(self)
+        self.view.setContentsMargins(0, 0, 0, 0)
         self.view.setMouseTracking(True)
         self.view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.scene = MyScene()
@@ -74,6 +81,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.view.setLayout(QtGui.QHBoxLayout())
         # self.view.layout().addWidget(self.chunk_detail_scroll_vertical)
         self.scene.clicked.connect(self.scene_clicked)
+        self.view.setStyleSheet("QGraphicsView { border-style: none;}")
 
         self.upper_part.layout().addWidget(self.view)
         self.upper_part.layout().addWidget(self.chunk_detail_scroll_vertical)
@@ -86,7 +94,7 @@ class GraphVisualizer(QtGui.QWidget):
 
         self.text = QtGui.QLabel(DEFAULT_TEXT)
         self.text.setAlignment(QtCore.Qt.AlignCenter)
-        stylesheet = "font: 25px"
+        stylesheet = "font: 18px"
         self.text.setStyleSheet(stylesheet)
         self.layout().addWidget(self.text)
 
@@ -246,7 +254,10 @@ class GraphVisualizer(QtGui.QWidget):
             if isinstance(item, EdgeGraphical):
                 self.info_manager.add(item)
                 if isinstance(item, ChunkGraphical):
+                    # moved to menu
                     # self.show_chunk_pictures_label(item.core_obj)
+                    if self.show_tracklet_callback is not None:
+                        self.show_tracklet_callback(item.core_obj[5])
                     pass
                 else:
                     self.hide_chunk_pictures_widget()
@@ -626,7 +637,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.load_indicator_hide()
         self.scene.removeItem(rect)
         self.scene.setSceneRect(self.scene.itemsBoundingRect())
-        self.view.centerOn(0, 0)
+        # self.view.centerOn(0, 0)
 
     def add_rect_to_scene(self):
         width = self.scene_width if self.compress_axis else (WIDTH * self.columns[len(self.columns) - 1].frame +
