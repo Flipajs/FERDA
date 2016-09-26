@@ -508,7 +508,7 @@ class ResultsWidget(QtGui.QWidget):
         x_ = round(x / float(self.marker_helper_step))
         y_ = round(y / float(self.marker_helper_step))
 
-        if self.marker_pos_helper[y_, x_]:
+        if self.marker_pos_helper[int(y_), int(x_)]:
             for a, b in itertools.product([-1, 0, 1], [-1, 0, 1]):
                 if not self.marker_pos_helper[y_+a, x_+b]:
                     y_ += a
