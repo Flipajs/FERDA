@@ -134,7 +134,8 @@ if __name__ == '__main__':
     with open(project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
         chunk_available_ids = pickle.load(f_)
 
-    for ch_id in project.gm.chunk_list():
+    for ch in project.chm.chunk_gen():
+        ch_id = ch.id()
         animal_id = -1
         if ch_id in chunk_available_ids:
             animal_id = chunk_available_ids[ch_id]

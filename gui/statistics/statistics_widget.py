@@ -107,7 +107,7 @@ class StatisticsWidget(QtGui.QWidget):
         f.writerow([str(r.frame_), round(a, 2), round(b, 2)])
 
     def export_csv(self):
-        chunks = self.project.solver.chunk_list()
+        chunks = self.project.chm.chunk_list()
         chunks = sorted(chunks, key=lambda x: x.start_n.frame_)
 
         with open(self.get_out_path()+'.csv', 'wb') as f:
@@ -343,7 +343,7 @@ class StatisticsWidget(QtGui.QWidget):
         f.write('#' + str(r.frame_) + '\t' + str(round(a, 2)) + '\t' + str(round(b, 2)) + '\n')
 
     def export_txt(self):
-        chunks = self.project.solver.chunk_list()
+        chunks = self.project.chm.chunk_list()
         chunks = sorted(chunks, key=lambda x: x.start_n.frame_)
 
         with open(self.get_out_path()+'.txt', 'wb') as f:

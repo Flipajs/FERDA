@@ -83,7 +83,8 @@ class MainTabWidget(QtGui.QWidget):
             with open(self.project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
                 chunk_available_ids = pickle.load(f_)
 
-            for ch_id in self.project.gm.chunk_list():
+            for ch in self.project.chm.chunk_gen:
+                ch_id = ch.id()
                 animal_id = -1
                 if ch_id in chunk_available_ids:
                     animal_id = chunk_available_ids[ch_id]

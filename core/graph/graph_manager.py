@@ -263,28 +263,16 @@ class GraphManager:
         self.g.ep['score'][e] = float(score)
         return e
 
-    def chunk_list(self):
-        chunks = []
-        for v in self.g.vertices():
-            ch = self.g.vp['chunk_start_id'][v]
-            if ch:
-                chunks.append(ch)
-
-        return chunks
-
     def chunks_in_frame(self, frame):
-        chunks = self.chunk_list()
         in_frame = []
-        for ch_id in chunks:
+        for ch_id in self.project.chm.chunk_list():
             ch = self.project.chm[ch_id]
             if ch.start_frame(self.project.gm) <= frame <= ch.end_frame(self.project.gm):
                 in_frame.append(ch)
         return in_frame
 
     def chunks_in_frame_generator(self, start_frame, end_frame):
-        chunks = self.chunk_list()
-        chunks = [self.project.chm[ch] for ch in chunks]
-        for ch in chunks:
+        for ch in self.project.chm.chunk_gen():
             if ch.start_frame(self.project.gm) <= end_frame and ch.end_frame(self.project.gm) >= start_frame:
                yield ch
 

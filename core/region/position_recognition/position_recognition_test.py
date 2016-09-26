@@ -232,5 +232,5 @@ def interpolation(first_angle, sec_angle, first_dist, second_dist):
 if __name__ == '__main__':
     project = Project()
     project.load("/home/sheemon/FERDA/projects/Cam1_/cam1.fproj")
-    chunks = project.gm.chunk_list()
+    chunks = project.chm.chunk_list()
     get_pca(chunks[:1], NUMBER_OF_DATA, project.chm, project.gm)
