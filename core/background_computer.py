@@ -8,19 +8,9 @@ from functools import partial
 
 import numpy as np
 
-from core.graph.chunk_manager import ChunkManager
-from core.graph.solver import Solver
-from core.region.region_manager import RegionManager
-<<<<<<< HEAD
 from core.settings import Settings as S_
-from utils.color_manager import colorize_project
 from utils.video_manager import get_auto_video_manager
-=======
-from core.graph.chunk_manager import ChunkManager
-from core.graph.chunk import Chunk
-from gui.graph_view.vis_loader import VisLoader
 from bg_computer_assembling import assembly_after_parallelization
->>>>>>> cluster_preparations
 
 
 class BackgroundComputer:

@@ -977,21 +977,3 @@ class ResultsWidget(QtGui.QWidget):
         colorize_project(self.project)
 
         print "COLORIZING DONE..."
-
-
-def view_add_bg_image(g_view, pix_map):
-    gv_w = g_view.geometry().width()
-    gv_h = g_view.geometry().height()
-    im_w = pix_map.width()
-    im_h = pix_map.height()
-
-    m11 = g_view.transform().m11()
-    m22 = g_view.transform().m22()
-
-    if m11 and m22 == 1:
-        if gv_w / float(im_w) <= gv_h / float(im_h):
-            val = math.floor((gv_w / float(im_w))*100) / 100
-            g_view.scale(val, val)
-        else:
-            val = math.floor((gv_h / float(im_h))*100) / 100
-            g_view.scale(val, val)

@@ -267,10 +267,7 @@ class RegionManager:
             # if only one id has to be taken from db
             cmd = "SELECT data FROM regions WHERE id = '%s'" % sql_ids[0]
             self.cur.execute(cmd)
-<<<<<<< HEAD
-=======
 
->>>>>>> cluster_preparations
             row = self.cur.fetchone()
             self.con.commit()
             # add it to result
@@ -281,13 +278,7 @@ class RegionManager:
                 # add it to cache
                 self.add_to_cache_(id, region)
             except TypeError:
-<<<<<<< HEAD
-                # region was erased
-                print("!!!!!!!!! REGION NOT FOUND ????   "+str(id))
-                pass
-=======
                 print "TypeError in region_manager.py line 272"
->>>>>>> cluster_preparations
 
         if l > 1:
             cmd = "SELECT id, data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
