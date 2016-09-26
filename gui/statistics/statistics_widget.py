@@ -367,4 +367,4 @@ class StatisticsWidget(QtGui.QWidget):
     def update_data(self, project):
         self.project = project
         self.num_of_single_nodes.setText(str(project.gm.g.num_vertices()))
-        self.num_of_chunks.setText(str(len(project.gm.chunk_list())))
+        self.num_of_chunks.setText(str(len(project.gm.chm)))

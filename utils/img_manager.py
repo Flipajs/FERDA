@@ -209,7 +209,7 @@ class ImgManager:
                 if scaley < scalex:
                     # create top and bottom borders
                     resized = cv2.resize(crop, (0,0), fx=scaley, fy=scaley)
-                    border = (height - resized.shape[1])/2.0
+                    border = int((height - resized.shape[1])/2.0)
                     new_image[border:border+resized.shape[0], :] = resized
                     return new_image
                 else:

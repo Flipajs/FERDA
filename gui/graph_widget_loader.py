@@ -13,7 +13,7 @@ from utils.img_manager import ImgManager
 __author__ = 'Simon Mandlik'
 
 # the width of a node
-WIDTH = 50
+WIDTH = 10
 # the width of a node, should be same as width for the best result
 HEIGHT = WIDTH
 # relative margin of a node
@@ -25,7 +25,7 @@ SPACE_BETWEEN_HOR = WIDTH
 # space between nodes in column
 SPACE_BETWEEN_VER = HEIGHT
 # gap between frame_numbers and first node in columns
-GAP = WIDTH
+GAP = WIDTH + 10
 # number of columns to be displayed before dynamic loading, 0 means dynamic loading for all
 MINIMUM = 5
 # Opacity of the colors

@@ -395,7 +395,7 @@ def colorize_project(project):
     limit = min(limit, 50)
 
     project.color_manager = ColorManager(vid.total_frame_count(), limit)
-    for ch in project.chm.chunk_list():
+    for ch in project.chm.chunk_gen():
         if ch.length() > 0:
             if ch.length() < 100:
                 r = random.randint(50, 255)
