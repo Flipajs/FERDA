@@ -339,7 +339,7 @@ class BackgroundComputer:
         self.update_callback(-1, 'saving...')
         self.project.save()
 
-        print ("#CHUNKS: %d") % (len(self.project.chm.chunk_list()))
+        print ("#CHUNKS: %d") % (len(self.project.chm))
 
         self.finished_callback(self.solver)
 

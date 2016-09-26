@@ -36,11 +36,12 @@ if is_flipajs_pc():
     # project.load_snapshot(snapshot)
 
     try:
+        full_set = set(range(6))
         # WORKAROUND:
         for t in project.chm.chunk_gen():
             if not hasattr(t, 'N'):
-                t.N = set()
-                t.P = set()
+                t.P = set([1])
+                t.N = full_set - t.P
 
     except IOError:
         pass

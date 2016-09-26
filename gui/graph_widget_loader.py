@@ -39,7 +39,7 @@ class GraphWidgetLoader:
         self.project = project
 
         #TODO remove this workaround
-        for t in project.chm.chunk_list():
+        for t in project.chm.chunk_gen():
             if not hasattr(t, 'N'):
                 t.N = set()
                 t.P = set()
