@@ -1,3 +1,4 @@
+import random
 from PyQt4 import QtGui
 
 import sys
@@ -37,12 +38,6 @@ DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O, Ctrl + MWh
 class GraphWidgetLoader:
     def __init__(self, project=None, width=WIDTH, height=HEIGHT, relative_margin=RELATIVE_MARGIN):
         self.project = project
-
-        #TODO remove this workaround
-        for t in project.chm.chunk_gen():
-            if not hasattr(t, 'N'):
-                t.N = set()
-                t.P = set()
 
         self.graph_manager = None
         self.graph = None
@@ -122,17 +117,14 @@ class GraphWidgetLoader:
             if type_of_line == "chunk":
                 chunk = self.project.chm[source_start_id]
                 if chunk.is_only_one_id_assigned(len(self.project.animals)):
-                    # print "a"
                     id_ = list(chunk.P)[0]
                     c_ = self.project.animals[id_].color_
-                    # c = QtGui.QColor(c_[2], c_[1], c_[0], 255)
-
-                    c = QtGui.QColor(0, 0, 0, 255)
-                    # print c
+                    c = QtGui.QColor(c_[2], c_[1], c_[0], 255)
                 else:
-                    # c = QtGui.QColor(255, 255, 255, 255)
-                    c = self.project.chm[source_start_id].color
-                    # print c
+                    # default
+                    c = QtGui.QColor(0, 0, 0, 120)
+                    # old version
+                    # c = self.project.chm[source_start_id].color
 
                 # c = self.project.chm[source_start_id].color
 
@@ -178,6 +170,10 @@ class GraphWidgetLoader:
         from gui.graph_widget.graph_visualizer import GraphVisualizer
         self.g = GraphVisualizer(self, img_manager, show_tracklet_callback)
         return self.g
+
+    def get_chunk_by_id(self, id):
+        return self.project.chm[id]
+
 
 
 if __name__ == '__main__':
