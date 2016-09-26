@@ -43,6 +43,7 @@ class GraphWidgetLoader:
             if not hasattr(t, 'N'):
                 t.N = set()
                 t.P = set()
+
         self.graph_manager = None
         self.graph = None
         self.region_manager = None
@@ -60,15 +61,6 @@ class GraphWidgetLoader:
         self.relative_margin = relative_margin
         self.height = height
         self.width = width
-
-        self.colors_ = [
-            QtGui.QColor().fromRgbF(0, 0, 1),  #
-            QtGui.QColor().fromRgbF(1, 0, 0),
-            QtGui.QColor().fromRgbF(1, 1, 0),
-            QtGui.QColor().fromRgbF(0, 1, 0),  #
-            QtGui.QColor().fromRgbF(0, 1, 1),
-            QtGui.QColor().fromRgbF(1, 1, 1)
-        ]
 
     def set_project(self, project):
         self.project = project
@@ -134,8 +126,11 @@ class GraphWidgetLoader:
                     id_ = list(chunk.P)[0]
                     c_ = self.project.animals[id_].color_
                     c = QtGui.QColor(c_[2], c_[1], c_[0], 255)
+                    print c
                 else:
+                    # c = QtGui.QColor(255, 255, 255, 255)
                     c = self.project.chm[source_start_id].color
+                    # print c
 
             new_tuple = (r1, r2, type_of_line, sureness, c, source_start_id)
 
@@ -168,7 +163,7 @@ class GraphWidgetLoader:
     def get_edge_info(self, edge):
         return "Type = {0}\nSureness = {1}\nStart id: {2}".format(edge[2], edge[3], edge[5])
 
-    def get_widget(self, frames=None):
+    def get_widget(self, frames=None, show_tracklet_callback=None):
         self.prepare_vertices(frames)
         # print("Preparing nodes...")
         self.prepare_nodes()
@@ -177,7 +172,7 @@ class GraphWidgetLoader:
         # print("Preparing visualizer...")
         img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
         from gui.graph_widget.graph_visualizer import GraphVisualizer
-        self.g = GraphVisualizer(self, img_manager)
+        self.g = GraphVisualizer(self, img_manager, show_tracklet_callback)
         return self.g
 
 

@@ -25,7 +25,7 @@ class GraphVisualizer(QtGui.QWidget):
     Those can be passed in constructor or using a method add_objects
     """
 
-    def __init__(self, loader, img_manager, show_vertically=False, compress_axis=True, dynamically=True):
+    def __init__(self, loader, img_manager, show_tracklet_callback=None, show_vertically=False, compress_axis=True, dynamically=True):
         super(GraphVisualizer, self).__init__()
         self.regions = set()
         self.regions_list = []
@@ -41,6 +41,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.height = loader.height
         self.loader = loader
         self.dynamically = dynamically
+        self.show_tracklet_callback = show_tracklet_callback
 
         self.setLayout(QtGui.QVBoxLayout())
         self.layout().setContentsMargins(0, 11, 0, 11)
@@ -253,7 +254,10 @@ class GraphVisualizer(QtGui.QWidget):
             if isinstance(item, EdgeGraphical):
                 self.info_manager.add(item)
                 if isinstance(item, ChunkGraphical):
+                    # moved to menu
                     # self.show_chunk_pictures_label(item.core_obj)
+                    if self.show_tracklet_callback is not None:
+                        self.show_tracklet_callback(item.core_obj[5])
                     pass
                 else:
                     self.hide_chunk_pictures_widget()

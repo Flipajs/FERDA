@@ -29,7 +29,7 @@ class MainTabWidget(QtGui.QWidget):
 
         self.results_tab = QtGui.QWidget()
         self.statistics_tab = StatisticsWidget(project)
-        self.graph_tab = GraphWidgetLoader(self.project).get_widget()
+        self.graph_tab = GraphWidgetLoader(self.project).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet)
 
         self.id_detection_tab = QtGui.QWidget()
 
