@@ -122,15 +122,19 @@ class GraphWidgetLoader:
             if type_of_line == "chunk":
                 chunk = self.project.chm[source_start_id]
                 if chunk.is_only_one_id_assigned(len(self.project.animals)):
-                    print "a"
+                    # print "a"
                     id_ = list(chunk.P)[0]
                     c_ = self.project.animals[id_].color_
-                    c = QtGui.QColor(c_[2], c_[1], c_[0], 255)
-                    print c
+                    # c = QtGui.QColor(c_[2], c_[1], c_[0], 255)
+
+                    c = QtGui.QColor(0, 0, 0, 255)
+                    # print c
                 else:
                     # c = QtGui.QColor(255, 255, 255, 255)
                     c = self.project.chm[source_start_id].color
                     # print c
+
+                # c = self.project.chm[source_start_id].color
 
             new_tuple = (r1, r2, type_of_line, sureness, c, source_start_id)
 
