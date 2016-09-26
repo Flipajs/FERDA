@@ -977,9 +977,6 @@ class ResultsWidget(QtGui.QWidget):
         colorize_project(self.project)
 
         print "COLORIZING DONE..."
-<<<<<<< HEAD
-=======
-
 
 
 def view_add_bg_image(g_view, pix_map):
@@ -998,4 +995,3 @@ def view_add_bg_image(g_view, pix_map):
         else:
             val = math.floor((gv_h / float(im_h))*100) / 100
             g_view.scale(val, val)
->>>>>>> cluster_preparations
