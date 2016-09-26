@@ -82,7 +82,7 @@ class ChunkViewer(QtGui.QWidget):
                 self.prev_b.setDisabled(True)
 
 
-average = 0
+# average = 0
 
 
 def get_chunks_regions(ch, chm, gm):
