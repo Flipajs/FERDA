@@ -215,6 +215,8 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
             if old_v in vertex_map:
                 new_list.append(int(vertex_map[old_v]))
             else:
+                old_id__ = old_rm[old_g.vp['region_id'][old_g.vertex(old_v)]].id()
+
                 id_ = new_rm.add(old_rm[old_g.vp['region_id'][old_g.vertex(old_v)]])
                 # list of ids is returned [id] ...
                 id_ = id_[0]

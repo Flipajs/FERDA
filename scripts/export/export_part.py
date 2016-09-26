@@ -28,7 +28,7 @@ class Exporter:
              # in matlab indexed from 1...
              'first_frame': region.frame() + 1,
              'last_frame': last_frame + 1,
-             'num_frames': last_frame - region.frame(),
+             'num_frames': last_frame + 1 - region.frame(),
              'region_id': [],
              }
 
