@@ -11,6 +11,7 @@ from gui.statistics.statistics_widget import StatisticsWidget
 
 from core.background_computer import BackgroundComputer
 from functools import partial
+from gui.graph_widget.graph_visualizer import GraphVisualizer
 from core.graph.graph_manager import GraphManager
 import time
 
@@ -159,8 +160,8 @@ class MainTabWidget(QtGui.QWidget):
         if i == 3:
             self.statistics_tab.update_data(self.project)
         if i == 4:
-            # if not isinstance(self.graph_tab, GraphWidgetLoader):
-                # self.ignore_tab_change = True
+            if not isinstance(self.graph_tab, GraphVisualizer):
+                self.ignore_tab_change = True
                 # TODO: show loading...
                 self.tabs.removeTab(4)
                 self.graph_tab.setParent(None)
