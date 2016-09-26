@@ -36,7 +36,7 @@ if is_flipajs_pc() and False:
 
     try:
         # WORKAROUND:
-        for t in project.chm.chunk_list():
+        for t in project.chm.chunk_gen():
             if not hasattr(t, 'N'):
                 t.N = set()
                 t.P = set()

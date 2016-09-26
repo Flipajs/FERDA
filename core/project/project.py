@@ -288,8 +288,11 @@ class Project:
 
         # check if video exists
         if parent:
-            self.video_paths = check_video_path(self.video_paths, parent)
+            self.video_paths, changed = check_video_path(self.video_paths, parent)
             print "New path is %s" % self.video_paths
+
+            if changed:
+                self.save()
 
         # # Region Manager
         # try:
