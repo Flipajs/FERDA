@@ -118,6 +118,8 @@ class GraphVisualizer(QtGui.QWidget):
         self.hide_info_menu_action.triggered.connect(self.hide_info_action_method)
         self.show_detail_menu_action = QtGui.QAction('Show detail', self)
         self.show_detail_menu_action.triggered.connect(self.show_chunk_pictures_label)
+        self.view_results_menu_action = QtGui.QAction('View results', self)
+        self.view_results_menu_action.triggered.connect(self.view_results_tracklet)
         self.menu_node.addAction(self.show_info_menu_action)
         self.menu_node.addAction(self.hide_info_menu_action)
         self.menu_node.addAction(self.show_zoom_menu_action)
@@ -125,6 +127,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.menu_edge.addAction(self.show_info_menu_action)
         self.menu_edge.addAction(self.hide_info_menu_action)
         self.menu_edge.addAction(self.show_detail_menu_action)
+        self.menu_edge.addAction(self.view_results_menu_action)
         self.view.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self.view, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.menu)
 
@@ -194,6 +197,11 @@ class GraphVisualizer(QtGui.QWidget):
         if self.selected_in_menu and isinstance(self.selected_in_menu, Node):
             self.node_zoom_manager.hide_zoom(self.selected_in_menu)
 
+    def view_results_tracklet(self):
+        if self.selected_in_menu and isinstance(self.selected_in_menu, EdgeGraphical):
+            if self.show_tracklet_callback is not None:
+                self.show_tracklet_callback(self.loader.get_chunk_by_id(self.selected_in_menu.core_obj[5]))
+
     def menu(self, point):
         it = self.scene.itemAt(self.view.mapToScene(point))
         self.selected_in_menu = it
@@ -256,8 +264,6 @@ class GraphVisualizer(QtGui.QWidget):
                 if isinstance(item, ChunkGraphical):
                     # moved to menu
                     # self.show_chunk_pictures_label(item.core_obj)
-                    if self.show_tracklet_callback is not None:
-                        self.show_tracklet_callback(item.core_obj[5])
                     pass
                 else:
                     self.hide_chunk_pictures_widget()
@@ -535,12 +541,12 @@ class GraphVisualizer(QtGui.QWidget):
         self.add_sole_nodes()
         self.first_frame, self.last_frame = frames[0], frames[len(frames) - 1]
 
-    def draw_columns(self, first_frame, last_frame, minimum):
+    def draw_columns_full(self, first_frame, last_frame, minimum):
         next_x = 0
         if self.dynamically:
             event_loaded = threading.Event()
             thread_load = threading.Thread(group=None, target=self.load, args=(minimum, event_loaded))
-        QApplication.processEvents()
+            QApplication.processEvents()
         for column in self.columns:
             self.load_indicator_wheel()
             column.set_x(next_x)
@@ -565,6 +571,28 @@ class GraphVisualizer(QtGui.QWidget):
                     if col_index % minimum == 0:
                         QApplication.processEvents()
                 column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
+
+    def draw_columns_light(self, first_frame, last_frame):
+        """
+        Faster than the one above, intended for use with imageless nodes
+        """
+        next_x = 0
+        refresh_step = last_frame - first_frame / 2
+        r = first_frame
+        for column in self.columns:
+            column.set_x(next_x)
+            next_x = self.increment_x(column, next_x)
+            frame_a = frame_b = column.frame
+            if isinstance(column.frame, tuple):
+                frame_a, frame_b = column.frame[0], column.frame[1]
+            if not (frame_a < first_frame or frame_b > last_frame):
+
+                column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
+                if frame_a > r:
+                    self.load_indicator_wheel()
+                    QApplication.processEvents()
+                    r += refresh_step
+        QApplication.processEvents()
 
     def load_columns(self):
         for column in self.columns:
@@ -632,7 +660,7 @@ class GraphVisualizer(QtGui.QWidget):
         # to ensure that graphics scene has correct size
         rect = self.add_rect_to_scene()
 
-        self.draw_columns(first_frame, last_frame, MINIMUM)
+        self.draw_columns_light(first_frame, last_frame)
         self.draw_lines(first_frame, last_frame)
         self.load_indicator_hide()
         self.scene.removeItem(rect)
