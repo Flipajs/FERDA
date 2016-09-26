@@ -518,7 +518,7 @@ class ResultsWidget(QtGui.QWidget):
                     x = x_ * self.marker_helper_step
                     break
 
-        self.marker_pos_helper[y_, x_] = True
+        self.marker_pos_helper[int(y_), int(x_)] = True
         return y, x
 
     def __add_marker(self, x, y, c_, id_, z_value, type_):
