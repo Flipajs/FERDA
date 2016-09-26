@@ -364,7 +364,6 @@ class Project:
 
         self.gm.project = self
         self.gm.rm = self.rm
-        # self.gm.update_nodes_in_t_refs()
 
         # fix itree in chm...
         if self.chm is not None and self.gm is not None and self.rm is not None:
