@@ -230,6 +230,11 @@ class ResultsWidget(QtGui.QWidget):
         self.show_saturated_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
         self.addAction(self.show_saturated_action)
 
+        self.show_id_bar = QtGui.QCheckBox('id bar')
+        self.show_id_bar.setChecked(True)
+        self.show_id_bar.stateChanged.connect(lambda x: self.update_positions())
+        self.visu_controls_layout.addWidget(self.show_id_bar)
+
         self.big_video_forward_a = QtGui.QAction('big next', self)
         self.big_video_forward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() + 50))
         self.big_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
@@ -631,10 +636,11 @@ class ResultsWidget(QtGui.QWidget):
                 ch.P = set()
                 ch.N = set()
 
-            try:
-                self.show_pn_ids_visualisation(ch, frame)
-            except AttributeError:
-                pass
+            if self.show_id_bar.isChecked():
+                try:
+                    self.show_pn_ids_visualisation(ch, frame)
+                except AttributeError:
+                    pass
 
             # TODO: fix for option when only P set is displayed using circles
             try:

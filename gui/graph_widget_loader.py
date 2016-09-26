@@ -13,7 +13,11 @@ from utils.img_manager import ImgManager
 __author__ = 'Simon Mandlik'
 
 # the width of a node
+<<<<<<< HEAD
 WIDTH = 10
+=======
+WIDTH = 25
+>>>>>>> master
 # the width of a node, should be same as width for the best result
 HEIGHT = WIDTH
 # relative margin of a node

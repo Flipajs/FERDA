@@ -116,6 +116,7 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.setTabEnabled(1, True)
         self.tabs.setTabEnabled(2, True)
         self.tabs.setTabEnabled(3, True)
+        self.tabs.setCurrentIndex(1)
 
     def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
         self.tabs.setCurrentIndex(1)

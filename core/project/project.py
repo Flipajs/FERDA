@@ -3,7 +3,6 @@ __author__ = 'filip@naiser.cz'
 import cPickle as pickle
 import string
 import time
-import os
 
 from PyQt4 import QtCore
 
@@ -13,10 +12,10 @@ from core.log import Log
 from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
-from utils.color_manager import ColorManager
-from utils.img_manager import ImgManager
 from core.settings import Settings as S_
 from gui.video_loader import check_video_path
+from utils.img_manager import ImgManager
+from core import segmentation_helper
 
 class Project:
     """
@@ -280,6 +279,13 @@ class Project:
         except:
             pass
 
+        # SEGMENTATION MODEL (core.segmentation_helper)
+        try:
+            with open(self.working_directory+'/segmentation_model.pkl', 'rb') as f:
+                self.segmentation_model = pickle.load(f)
+        except:
+            pass
+
         # SETTINGS
         try:
             self.load_qsettings()
@@ -344,6 +350,39 @@ class Project:
         self.gm.project = self
         self.gm.rm = self.rm
         # self.gm.update_nodes_in_t_refs()
+
+        # fix itree in chm...
+        if self.chm is not None and self.gm is not None and self.rm is not None:
+            if not hasattr(self.chm, 'itree'):
+                from intervaltree import IntervalTree
+                self.chm.itree = IntervalTree()
+                self.chm.eps1 = 0.01
+                self.chm.eps2 = 0.1
+
+                for ch in self.chm.chunk_gen():
+                    self.chm._add_ch_itree(ch, self.gm)
+
+            for ch in self.chm.chunk_gen():
+                if hasattr(ch, 'color') and ch.color is not None:
+                    break
+
+                import random
+                from PyQt4 import QtGui
+
+                r = random.randint(0, 255)
+                g = random.randint(0, 255)
+                b = random.randint(0, 255)
+                ch.color = QtGui.QColor.fromRgb(r, g, b)
+
+            for ch in self.chm.chunk_gen():
+                if hasattr(ch, 'N'):
+                    break
+                
+                    ch.N = set()
+                    ch.P = set()
+
+            self.save()
+
 
         self.img_manager = ImgManager(self, max_size_mb=S_.cache.img_manager_size_MB)
 
