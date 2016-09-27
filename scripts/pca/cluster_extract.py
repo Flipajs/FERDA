@@ -1,6 +1,7 @@
 import math
+
 import numpy as np
-from core import project
+
 from scripts.pca.ant_extract import get_chunks_regions
 from utils.geometry import rotate
 
@@ -8,7 +9,7 @@ from utils.geometry import rotate
 # Methods below extract important data from clusters
 
 
-def get_cluster_region_matrix(chunks, avg_dist):
+def get_cluster_region_matrix(project, chunks, avg_dist):
     X = []
     i = 1
     for ch in chunks:

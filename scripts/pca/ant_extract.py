@@ -2,8 +2,8 @@ import logging
 
 import numpy as np
 
+from core.project.project import Project
 from utils.geometry import rotate
-from core import project
 from core.graph.region_chunk import RegionChunk
 
 
@@ -21,7 +21,7 @@ def get_chunks_regions(ch, chm, gm):
         yield r_ch[region]
 
 
-def get_matrix(chunks, number_of_data, results):
+def get_matrix(project, chunks, number_of_data, results):
     matrix = []
     sum = 0
     i = 1
@@ -84,7 +84,7 @@ def get_feature_vector(region, number_of_data, right_orientation):
     # plt.scatter(result[:,0], result[:,1], c='g')
     # plt.hold(False)
     # plt.show()
-    return result.flatten(), step
+    return result, step
 
 def find_head_index(contour, region):
     a = list(enumerate(contour))

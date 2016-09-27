@@ -1,14 +1,16 @@
+from PyQt4 import QtGui
 from matplotlib import gridspec
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from core import project
+import sys
+
 from scripts.pca.eigen_widget import EigenWidget
 
 # This module takes care of viewing results and saving important figures
 
-def generate_eigen_ants_figure(ants, number_of_eigen_v):
+def generate_eigen_ants_figure(project, ants, number_of_eigen_v):
     f = plt.figure(figsize=(number_of_eigen_v / 6 + 1, 6))
     gs1 = gridspec.GridSpec(number_of_eigen_v / 6 + 1, 6)
     gs1.update(wspace=0.3, hspace=0.1)
@@ -53,7 +55,7 @@ def generate_ants_image(X, X_R, X_C, r, c, i, fold):
     plt.ioff()
 
 
-def generate_ants_reconstructed_figure(X, X_R, X_C, rows, columns):
+def generate_ants_reconstructed_figure(project, X, X_R, X_C, rows, columns):
     number_in_pic = rows * columns
     fold = os.path.join(project.working_directory, 'pca_results')
     if not os.path.exists(fold):
@@ -74,4 +76,4 @@ def view_ant(pca, eigen_ants, eigen_values, ant):
     w = EigenWidget(pca, eigen_ants, eigen_values, ant)
     w.showMaximized()
     w.close_figures()
-    app.quit()
+    app.exec_()

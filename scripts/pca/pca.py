@@ -12,14 +12,15 @@ from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from scripts.pca.ant_extract import get_matrix
 from scripts.pca.cluster_extract import get_cluster_region_matrix
+from scripts.pca.range_computer import RangeComputer
 from scripts.pca.results_generate import generate_eigen_ants_figure, generate_ants_reconstructed_figure, view_ant
 from scripts.pca.tracklet_viewer import TrackletViewer
 from utils.geometry import rotate
 
 
 def extract_heads(X, head_range):
-    if head_range % 2 is not 0:
-        logging.warn("Using odd range, results may vary!")
+    # if head_range % 2 is not 0:
+    #     logging.warn("Using odd range, results may vary!")
     return X[:, range(head_range * 2 + 2) + range(X.shape[1] - head_range * 2, X.shape[1])]
 
 
@@ -35,11 +36,11 @@ def shift_heads_to_origin(X, head_range):
 
 
 def extract_bottoms(X, bottom_range):
-    if bottom_range % 2 is not 0:
-        logging.warn("Using odd range, results may vary!")
+    # if bottom_range % 2 is not 0:
+    #     logging.warn("Using odd range, results may vary!")
     part = X.shape[1] - (bottom_range * 4 + 2)
     part /= 2
-    return X[:, range(part, X.shape[1] - part)]
+    return X[:, range(part - 1, X.shape[1] - part + 1)]
 
 
 def shift_bottoms_to_origin(X, bottom_range):
@@ -51,6 +52,13 @@ def shift_bottoms_to_origin(X, bottom_range):
         means[i] = np.mean(points, axis=0)
         R[i,] = (zip(X[i, ::2], X[i, 1::2]) - means[i]).flatten()
     return R, means
+
+
+def get_pca_compatible_data(X):
+    X_comp = np.zeros((X.shape[0], X.shape[1] * 2))
+    for i in range(X.shape[0]):
+        X_comp[i] = X[i].flatten()
+    return X_comp
 
 
 def fit_cluster(number_of_data, cluster, freq, r_head, pca_shifted_cut_head, pca_shifted_whole_head,
@@ -99,8 +107,8 @@ def fit_point(blob, mean, pca_shifted_cut, pca_shifted_whole):
     return ant, pca_shifted_cut.score(blob)
 
 
-
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     project = Project()
     project.load("/home/simon/FERDA/projects/Cam1_/cam1.fproj")
     chunks = project.gm.chunk_list()
@@ -123,29 +131,36 @@ if __name__ == '__main__':
     number_of_eigen_v = 10
     number_of_data = 40
 
-    logging.basicConfig(level=logging.INFO)
+    trainer = head_tag.HeadGT(project)
 
     # TRAINING PART (HEAD LABELING AND ROTATING ANTS)
-    trainer = head_tag.HeadGT(project)
-    app = QtGui.QApplication(sys.argv)
-    training_regions = []
-    for chunk in chunks:
-        ch = project.chm[chunk]
-        r_ch = RegionChunk(ch, project.gm, project.rm)
-        training_regions += r_ch
-    trainer.improve_ground_truth(training_regions)
-    app.exec_()
+    # app = QtGui.QApplication(sys.argv)
+    # training_regions = []
+    # for chunk in chunks_without_clusters:
+    #     ch = project.chm[chunk]
+    #     r_ch = RegionChunk(ch, project.gm, project.rm)
+    #     training_regions += r_ch
+    # trainer.improve_ground_truth(training_regions)
+    # app.exec_()
     # trainer.correct_answer(1790, 1796, answer=True)
     # trainer.delete_answer(597, 602)
-    app.quit()
+    # app.quit()
+
     results = trainer.get_ground_truth()
 
     # EXTRACTING DATA
-    X, avg_dist = get_matrix(chunks_without_clusters, number_of_data, results)
-    head_range = 4
-    bottom_range = 4
+    X_ants, avg_dist = get_matrix(project, chunks_without_clusters, number_of_data, results)
+    X = get_pca_compatible_data(X_ants)
+    head_range = 3
+    bottom_range = 5
     H = extract_heads(X, head_range)
     B = extract_bottoms(X, bottom_range)
+    # VIEW RESULTS OF EXTRACTING
+    # for j in range(10):
+    #     plt.plot(np.append(X[j, :, 0], X[j, 0, 0]), np.append(X[j, :, 1], X[j, 0, 1]), c='b')
+    #     plt.plot(np.append(H[j, :, 0], H[j, 0, 0]), np.append(H[j, :, 1], H[j, 0, 1]), c='g')
+    #     plt.plot(np.append(B[j, :, 0], B[j, 0, 0]), np.append(B[j, :, 1], B[j, 0, 1]), c='r')
+    #     plt.show()
 
     # PCA ON WHOLE ANT
     pca_whole = PCA(number_of_eigen_v)
@@ -162,49 +177,53 @@ if __name__ == '__main__':
     H_R = np.dot(H_C, eigen_ants_whole) + pca_whole.mean_
 
     # PCA ON BOTTOMS
-    pca_bottom = PCA(number_of_eigen_v)
-    B_C = pca_bottom.fit_transform(B)
-    eigen_ants_bottom = pca_bottom.components_
-    eigen_values_bottom = pca_bottom.explained_variance_
-    B_R = np.dot(B_C, eigen_ants_whole) + pca_whole.mean_
+    # pca_bottom = PCA(number_of_eigen_v)
+    # B_C = pca_bottom.fit_transform(B)
+    # eigen_ants_bottom = pca_bottom.components_
+    # eigen_values_bottom = pca_bottom.explained_variance_
+    # B_R = np.dot(B_C, eigen_ants_whole) + pca_whole.mean_
 
     # VIEW PCA RECONSTRUCTING RESULTS
-    for j in range(1):
-        plt.plot(np.append(H[j, ::2], H[j, 0]), np.append(H[j, 1::2], H[j, 1]), c='r')
-        plt.plot(np.append(H_R[j, ::2], H_R[j, 0]), np.append(H_R[j, 1::2], H_R[j, 1]), c='b')
-        plt.show()
-        plt.plot(np.append(B[j, ::2], B[j, 0]), np.append(B[j, 1::2], B[j, 1]), c='r')
-        plt.plot(np.append(B_R[j, ::2], B_R[j, 0]), np.append(B_R[j, 1::2], B_R[j, 1]), c='b')
-        plt.show()
+    # for j in range(10):
+    #     plt.plot(np.append(H[j, ::2], H[j, 0]), np.append(H[j, 1::2], H[j, 1]), c='r')
+    #     plt.plot(np.append(H_R[j, ::2], H_R[j, 0]), np.append(H_R[j, 1::2], H_R[j, 1]), c='b')
+    #     plt.show()
+    #     plt.plot(np.append(B[j, ::2], B[j, 0]), np.append(B[j, 1::2], B[j, 1]), c='r')
+    #     plt.plot(np.append(B_R[j, ::2], B_R[j, 0]), np.append(B_R[j, 1::2], B_R[j, 1]), c='b')
+    #     plt.show()
 
 
     # GENERATING RESULTS FIGURE
-    generate_eigen_ants_figure(eigen_ants_whole, number_of_eigen_v)
-    rows = 3
-    columns = 11
-    generate_ants_reconstructed_figure(X, X_R, X_C, rows, columns)
+    # generate_eigen_ants_figure(project, eigen_ants_whole, number_of_eigen_v)
+    # rows = 3
+    # columns = 11
+    # generate_ants_reconstructed_figure(project, X, X_R, X_C, rows, columns)
 
     # VIEW I-TH EIGEN ANT
-    i = 1
-    view_ant(pca_whole, eigen_ants_whole, eigen_values_whole, X_C[i])
+    # i = 1
+    # view_ant(pca_whole, eigen_ants_whole, eigen_values_whole, X_C[i])
 
     # CLUSTER DECOMPOSITION
-    freq = 1
-    C = get_cluster_region_matrix(chunks_with_clusters, avg_dist)
-    H_S, means = shift_heads_to_origin(X, head_range)
-    pca_head_shifted_whole = PCA(number_of_eigen_v)
-    pca_head_shifted_whole.fit(H_S)
-    pca_head_shifted_cut = PCA(number_of_eigen_v)
-    pca_head_shifted_cut.fit(extract_heads(H_S, head_range))
-    B_S, means = shift_bottoms_to_origin(X, bottom_range)
-    pca_bottom_shifted_whole = PCA(number_of_eigen_v)
-    pca_bottom_shifted_whole.fit(B_S)
-    pca_bottom_shifted_cut = PCA(number_of_eigen_v)
-    pca_bottom_shifted_cut.fit(extract_bottoms(B_S, bottom_range))
+    # freq = 1
+    # C = get_cluster_region_matrix(project, chunks_with_clusters, avg_dist)
+    # H_S, means = shift_heads_to_origin(X, head_range)
+    # pca_head_shifted_whole = PCA(number_of_eigen_v)
+    # pca_head_shifted_whole.fit(H_S)
+    # pca_head_shifted_cut = PCA(number_of_eigen_v)
+    # pca_head_shifted_cut.fit(extract_heads(H_S, head_range))
+    # B_S, means = shift_bottoms_to_origin(X, bottom_range)
+    # pca_bottom_shifted_whole = PCA(number_of_eigen_v)
+    # pca_bottom_shifted_whole.fit(B_S)
+    # pca_bottom_shifted_cut = PCA(number_of_eigen_v)
+    # pca_bottom_shifted_cut.fit(extract_bottoms(B_S, bottom_range))
     # for v in B_S:
     #     plt.scatter(v[::2], v[1::2])
     #     plt.scatter([0],[0],c='r')
     #     plt.show()
-    for cluster in C:
-        fit_cluster(number_of_data, cluster, freq, head_range, pca_head_shifted_cut, pca_head_shifted_whole, bottom_range,
-                    pca_bottom_shifted_cut, pca_bottom_shifted_whole)
+    # for cluster in C:
+    #     fit_cluster(number_of_data, cluster, freq, head_range, pca_head_shifted_cut, pca_head_shifted_whole, bottom_range,
+    #                 pca_bottom_shifted_cut, pca_bottom_shifted_whole)
+
+    range_comp = RangeComputer(X, number_of_data, number_of_eigen_v)
+    for i in range(number_of_eigen_v):
+        print range_comp.get_optimal_k(i)
