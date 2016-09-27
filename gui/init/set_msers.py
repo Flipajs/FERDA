@@ -2,6 +2,8 @@ import cPickle as pickle
 import sys
 import time
 
+import cv2
+
 import numpy as np
 from PIL import ImageQt
 from PyQt4 import QtGui, QtCore
@@ -20,7 +22,7 @@ __author__ = 'filip@naiser.cz', 'dita'
 
 
 class SetMSERs(QtGui.QWidget):
-    def __init__(self, project, mser_color=(255, 128, 0, 200), prob_color=(0, 255, 0, 200),
+    def __init__(self, project, im, mser_color=(255, 128, 0, 200), prob_color=(0, 255, 0, 200),
                  foreground_color=(0, 255, 0, 255), background_color=(255, 0, 238, 255)):
         """
         Interactive tool to improve msers search using segmentation.
@@ -35,13 +37,6 @@ class SetMSERs(QtGui.QWidget):
         self.project = project
         self.vid = get_auto_video_manager(project)
 
-        self.im = self.vid.next_frame()
-        im = self.im
-        if self.project.bg_model:
-            im = self.project.bg_model.bg_subtraction(im)
-
-        if self.project.arena_model:
-            im = self.project.arena_model.mask_image(im)
         self.im = im
         self.w, self.h, c = self.im.shape
 
@@ -65,7 +60,7 @@ class SetMSERs(QtGui.QWidget):
         self.painter.add_color_("foreground", self.color_foreground)
 
         # Setup segmentation helper
-        self.helper = SegmentationHelper(self.im)
+        self.helper = SegmentationHelper(self.im, num=2)
 
         # Prepare img_grid variable
         self.img_grid = None
@@ -115,7 +110,7 @@ class SetMSERs(QtGui.QWidget):
         # paint must be updated first, because segmentation results are used in msers
         self.update_paint()
         self.update_img()
-        self.update_mser()
+        # self.update_mser()
 
     def update_mser(self):
         """
@@ -271,7 +266,7 @@ class SetMSERs(QtGui.QWidget):
         # update helper's image
         self.helper.set_image(self.im)
         self.update_img()
-        self.update_mser()
+        # self.update_mser()
         # self.update_all()
 
     def done(self):
@@ -501,6 +496,18 @@ class SetMSERs(QtGui.QWidget):
         self.button_done.clicked.connect(self.done)
         self.left_panel.layout().addWidget(self.button_done)
 
+        self.im_path_input = QtGui.QLineEdit()
+        self.left_panel.layout().addWidget(self.im_path_input)
+
+        self.load_im_button = QtGui.QPushButton('load img')
+        self.load_im_button.clicked.connect(self.load_im)
+        self.left_panel.layout().addWidget(self.load_im_button)
+
+    def load_im(self):
+        path = str(self.im_path_input.text())
+        new_im = cv2.imread(path)
+        self.set_image(new_im)
+
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
@@ -508,7 +515,9 @@ if __name__ == "__main__":
 
     # proj.load("/home/dita/Programovani/FERDA Projects/cam1_test/cam1_test.fproj")
     # proj.load('/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj')
-    proj.load('/Users/flipajs/Documents/wd/GT/Cam1_/cam1.fproj')
+    im = cv2.imread('/Users/flipajs/Dropbox/3doid/auto/data/fotky_sub4/a4tech-bloody_b254/DSC_157018.jpg')
+
+    proj.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
     # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
     proj.arena_model = None
     proj.bg_model = None
@@ -520,14 +529,14 @@ if __name__ == "__main__":
 
     print "Done loading"
 
-    ex = SetMSERs(proj)
+    ex = SetMSERs(proj, im)
     ex.raise_()
     ex.showMaximized()
     ex.activateWindow()
 
-    ex.mser_min_margin.setValue(proj.mser_parameters.min_margin)
-    ex.mser_min_area.setValue(proj.mser_parameters.min_area)
-    ex.mser_max_area.setValue(proj.mser_parameters.max_area)
+    # ex.mser_min_margin.setValue(proj.mser_parameters.min_margin)
+    # ex.mser_min_area.setValue(proj.mser_parameters.min_area)
+    # ex.mser_max_area.setValue(proj.mser_parameters.max_area)
 
     app.exec_()
     app.deleteLater()

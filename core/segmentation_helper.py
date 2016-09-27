@@ -91,6 +91,17 @@ class SegmentationHelper:
             h = self.mins[k][i][j]
             k = self.diff[k][i][j]
             x.extend([b, g, r, a, sx, sy, c, d, e, f, h, k])
+
+        h, w, _ = self.images[0].shape
+        cx = w/2
+        cy = h/2
+        x.append(((i-cy)**2 + (j-cx)**2)**0.5)
+
+        # x.append(i-cy)
+        # x.append(j-cx)
+
+
+
         X.append(x)
         y.append(classification)
 
@@ -137,13 +148,13 @@ class SegmentationHelper:
         self.rfc.fit(X, y)
         print "RFC fitting takes     %f" % (time.time() - start)
 
-        # find unused features and remove them
-        # create new classifier with less features, it will be faster
-        start = time.time()
-        self.unused = find_unused_features(self.rfc)
-        self.rfc = get_filtered_rfc(self.unused, X, y)
-        print "RFC filtering takes   %f. Using %d out of %d features." % \
-              (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
+        # # find unused features and remove them
+        # # create new classifier with less features, it will be faster
+        # start = time.time()
+        # self.unused = find_unused_features(self.rfc)
+        # self.rfc = get_filtered_rfc(self.unused, X, y)
+        # print "RFC filtering takes   %f. Using %d out of %d features." % \
+        #       (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
 
     def predict(self):
         if self.rfc is None:
@@ -156,14 +167,15 @@ class SegmentationHelper:
         # reshape the image so it contains 12*n-tuples, each descripting a features of a single pixel
         #     on all layers in the pyramid
         h, w, c = self.image.shape
-        data.shape = ((h * w, 12 * self.num))
+        data.shape = ((h * w, 12 * self.num + 1))
 
         # remove features that were found unnecessary
-        filtered = get_filtered_model(self.unused, data)
+        # filtered = get_filtered_model(self.unused, data)
 
         # predict result on current image data
         start = time.time()
-        mask1 = self.rfc.predict_proba(filtered)
+        # mask1 = self.rfc.predict_proba(filtered)
+        mask1 = self.rfc.predict_proba(data)
         print "RFC predict takes     %f" % (time.time() - start)
 
         # reshape mask to be a grid, not a list
@@ -193,6 +205,23 @@ class SegmentationHelper:
             result.append(self.maxs[i].reshape((h * w, 1)))
             result.append(self.mins[i].reshape((h * w, 1)))
             result.append(self.diff[i].reshape((h * w, 1)))
+
+        dist_im = np.zeros((h, w, 1), dtype=np.float)
+        # dist_x_im = np.zeros((h, w, 1), dtype=np.float)
+        # dist_y_im = np.zeros((h, w, 1), dtype=np.float)
+        cx = w/2
+        cy = h/2
+
+        for y in range(h):
+            for x in range(w):
+                dist_im[y, x, :] = ((cx-x)**2 + (cy-y)**2)**0.5
+                # dist_x_im[y, x, :] = cx-x
+                # dist_y_im[y, x, :] = cy-y
+
+        result.append(dist_im.reshape((h * w, 1)))
+        # result.append(dist_x_im.reshape((h * w, 1)))
+        # result.append(dist_y_im.reshape((h * w, 1)))
+
         return result
 
     def update_xy(self):

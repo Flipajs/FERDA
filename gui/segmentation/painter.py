@@ -157,7 +157,7 @@ class Painter(QtGui.QWidget):
         """
         
         # prepare new mask
-        mask = np.zeros((self.w, self.h))
+        mask = np.zeros((self.h, self.w))
         # save color data
         color = (r, g, b, a)
         # fill the dictionary (pixmap will be set once the mask is not empty)
