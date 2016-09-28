@@ -136,7 +136,7 @@ class Painter(QtGui.QWidget):
         for name, data in self.colors.iteritems():
 
             # reset mask
-            mask = np.zeros((self.w, self.h))
+            mask = np.zeros((self.h, self.w))
             color = data[1]
             # remove old pixmap
             self.scene.removeItem(data[2])
