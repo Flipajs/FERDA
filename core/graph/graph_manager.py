@@ -163,6 +163,20 @@ class GraphManager:
         id_ = self.g.vp['chunk_start_id'][self.g.vertex(vertex_id)]
         return self.project.chm[id_]
 
+    def ch_end_longer(self, vertex_id):
+        ch = self.chunk_end(vertex_id)
+        if ch:
+            return ch.length() > 1
+
+        return False
+
+    def ch_start_longer(self, vertex_id):
+        ch = self.chunk_start(vertex_id)
+        if ch:
+            return ch.length() > 1
+
+        return False
+
     def chunk_end(self, vertex_id):
         id_ = self.g.vp['chunk_end_id'][self.g.vertex(vertex_id)]
         return self.project.chm[id_]
@@ -181,7 +195,8 @@ class GraphManager:
                     d = dists[i, j]
 
                     if d < self.max_distance:
-                        if self.chunk_start(v_t1) or self.chunk_end(v_t2):
+                        # prevent multiple edges going from tracklet (chunk) start or multiple edges incomming into chunk end. Only exception is chunk of length 1 (checked inside functions).
+                        if self.ch_start_longer(v_t1) or self.ch_end_longer(v_t2):
                             continue
 
                         s, ds, multi, _ = self.assignment_score(r_t1, r_t2)

@@ -3,35 +3,37 @@ from PyQt4 import QtGui, QtCore
 
 from PyQt4.QtCore import Qt
 from PyQt4.QtGui import QApplication, QLabel, QSizePolicy
+from PyQt4.QtGui import QWidget
 
 import computer as comp
-from gui.graph_view.edge import EdgeGraphical, ChunkGraphical
-from gui.graph_view.info_manager import InfoManager
-from gui.graph_view.node import Node
-from gui.graph_view.node_zoom_manager import NodeZoomManager
+from gui.graph_widget_loader import DEFAULT_TEXT, GAP, SPACE_BETWEEN_HOR, \
+    MINIMUM, SPACE_BETWEEN_VER, WIDTH, FROM_TOP, HEIGHT
+from gui.graph_widget.edge import EdgeGraphical, ChunkGraphical
+from gui.graph_widget.info_manager import InfoManager
+from gui.graph_widget.node import Node
+from gui.graph_widget.node_zoom_manager import NodeZoomManager
 from gui.gui_utils import cvimg2qtpixmap
 from gui.img_controls.my_scene import MyScene
 from gui.img_controls.my_view_zoomable import MyViewZoomable
-from vis_loader import DEFAULT_TEXT, GAP, \
-    MINIMUM, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, WIDTH
 
 __author__ = 'Simon Mandlik'
 
 
-class \
-        GraphVisualizer(QtGui.QWidget):
+class GraphVisualizer(QtGui.QWidget):
     """
     Requires list of regions and list of edge-tuples (node1, node2, type - chunk, line or partial, sureness).
     Those can be passed in constructor or using a method add_objects
     """
 
-    def __init__(self, loader, img_manager, show_vertically=True, compress_axis=True, dynamically=True):
+    def __init__(self, loader, img_manager, show_vertically=False, compress_axis=True, dynamically=True):
         super(GraphVisualizer, self).__init__()
         self.regions = set()
         self.regions_list = []
         self.edges = set()
         self.edges_list = []
         self.frames_columns = {}
+        self.first_frame = None
+        self.last_frame = None
         self.columns = []
         self.img_manager = img_manager
         self.relative_margin = loader.relative_margin
@@ -106,12 +108,15 @@ class \
         self.hide_zoom_menu_action.triggered.connect(self.hide_zoom_action_method)
         self.hide_info_menu_action = QtGui.QAction('Hide Info', self)
         self.hide_info_menu_action.triggered.connect(self.hide_info_action_method)
+        self.show_detail_menu_action = QtGui.QAction('Show detail', self)
+        self.show_detail_menu_action.triggered.connect(self.show_chunk_pictures_label)
         self.menu_node.addAction(self.show_info_menu_action)
         self.menu_node.addAction(self.hide_info_menu_action)
         self.menu_node.addAction(self.show_zoom_menu_action)
         self.menu_node.addAction(self.hide_zoom_menu_action)
         self.menu_edge.addAction(self.show_info_menu_action)
         self.menu_edge.addAction(self.hide_info_menu_action)
+        self.menu_edge.addAction(self.show_detail_menu_action)
         self.view.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self.view, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.menu)
 
@@ -157,8 +162,13 @@ class \
         self.hide_zoom_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Y))
         self.addAction(self.hide_zoom_node_action)
 
-        if len(loader.edges) + len(loader.regions) > 0:
-            self.add_objects(loader.regions, loader.edges)
+        self.zoom_to_chunk_action = QtGui.QAction('zoom_to_chunk', self)
+        self.zoom_to_chunk_action.triggered.connect(self.zoom_to_chunk_event)
+        self.zoom_to_chunk_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_L))
+        self.addAction(self.zoom_to_chunk_action)
+
+        if len(self.loader.edges) + len(self.loader.regions) > 0:
+            self.add_objects(self.loader.regions, self.loader.edges)
 
     def show_info_action_method(self):
         if self.selected_in_menu:
@@ -184,17 +194,19 @@ class \
         elif isinstance(it, EdgeGraphical):
             self.menu_edge.exec_(self.view.mapToGlobal(point))
 
-    def show_chunk_pictures_label(self, chunk):
+    def show_chunk_pictures_label(self):
+        chunk = self.selected_in_menu.core_obj
         self.hide_chunk_pictures_widget()
         widget = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
 
         region_chunk = self.loader.chunks_region_chunks[chunk]
         frames = list(range(chunk[0].frame_, chunk[1].frame_ + 1))
-        freq, none = QtGui.QInputDialog.getInt(self, 'Input Dialog',
-            'Enter frequency:')
+        freq, none  = QtGui.QInputDialog.getInt(self, 'Chunk Detail',
+            'Enter frequency:', value=1, min=1)
 
         for frame in frames[::freq]:
-            img = self.img_manager.get_crop(frame, region_chunk[frame - region_chunk.start_frame()],  width=self.width, height=self.height, relative_margin=self.relative_margin)
+            img = self.img_manager.get_crop(frame, region_chunk[frame - region_chunk.start_frame()], width=self.width,
+                                            height=self.height, relative_margin=self.relative_margin)
             pixmap = cvimg2qtpixmap(img)
             label = QtGui.QLabel()
             label.setPixmap(pixmap)
@@ -206,7 +218,7 @@ class \
 
     def hide_chunk_pictures_widget(self):
         widget = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
-        for child in widget.findChildren(QLabel):
+        for child in widget.findChildren(QWidget):
             widget.layout().removeWidget(child)
             child.hide()
         self.chunk_detail_scroll_horizontal.hide()
@@ -215,15 +227,13 @@ class \
     def swap_chunk_pictures_widgets(self):
         widget_a = self.chunk_detail_widget_horizontal if self.show_vertically else self.chunk_detail_widget_vertical
         widget_b = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
-        for child in widget_a.findChildren(QLabel):
+        for child in widget_a.findChildren(QWidget):
             widget_a.layout().removeWidget(child)
             widget_b.layout().addWidget(child)
         if self.show_vertically:
             self.chunk_detail_scroll_horizontal.hide()
-            self.chunk_detail_scroll_vertical.show()
         else:
             self.chunk_detail_scroll_vertical.hide()
-            self.chunk_detail_scroll_horizontal.show()
 
     def scene_clicked(self, click_pos):
         item = self.scene.itemAt(click_pos)
@@ -231,12 +241,17 @@ class \
             self.selected = []
             self.node_zoom_manager.remove_all()
             self.info_manager.remove_info_all()
+            self.hide_chunk_pictures_widget()
         else:
             if isinstance(item, EdgeGraphical):
                 self.info_manager.add(item)
                 if isinstance(item, ChunkGraphical):
-                 self.show_chunk_pictures_label(item.core_obj)
+                    # self.show_chunk_pictures_label(item.core_obj)
+                    pass
+                else:
+                    self.hide_chunk_pictures_widget()
             elif isinstance(item, Node):
+                item.create_pixmap()
                 self.node_zoom_manager.add(item)
                 self.info_manager.add(item)
             self.selected.append(item)
@@ -250,6 +265,49 @@ class \
         global SPACE_BETWEEN_HOR
         SPACE_BETWEEN_HOR *= 0.5
         self.redraw()
+
+    def zoom_to_chunk_event(self):
+        ch_id, ok = QtGui.QInputDialog.getInt(self, 'Zoom to chunk',
+            'Enter chunk\'s id:', value=0, min=0)
+
+        if ok:
+            try:
+                self.zoom_to_chunk(ch_id)
+            except AttributeError as e:
+                dialog = QtGui.QDialog(self)
+                dialog.setLayout(QtGui.QVBoxLayout())
+                dialog.layout().addWidget(QtGui.QLabel(e.message))
+                dialog.show()
+            else:
+                pass
+
+    def zoom_to_chunk(self, ch_id):
+        ch = self.loader.project.chm[ch_id]
+        if ch is None:
+            raise AttributeError("Chunk with id {0} does not exist!".format(ch_id))
+        start_frame = ch.start_frame(self.loader.project.gm)
+        end_frame = ch.end_frame(self.loader.project.gm)
+        if start_frame > self.last_frame or end_frame < self.first_frame:
+            raise AttributeError("Chunk with id {0} out of range!".format(ch_id))
+        if start_frame < self.first_frame:
+            start_frame = self.first_frame
+        if start_frame == end_frame:
+            self.view.centerOn(self.frames_columns[start_frame].x, 0)
+        elif start_frame < self.last_frame:
+            col = self.frames_columns[start_frame]
+            x = col.x
+            position = col.get_position_with_chunk_id(ch_id)
+            y = GAP + FROM_TOP + position * self.height + SPACE_BETWEEN_VER * position
+            if self.show_vertically:
+                self.view.centerOn(y, x + QtGui.QWidget.normalGeometry(self).width() / 2)
+            else:
+                self.view.centerOn(x + QtGui.QWidget.normalGeometry(self).width() / 2, y)
+            x += WIDTH
+            y += HEIGHT / 2
+            if self.show_vertically:
+                x, y = y, x
+            g_item = self.scene.itemAt(x, y)
+            g_item.setSelected(True)
 
     def compute_positions(self):
         for edge in self.edges:
@@ -298,14 +356,15 @@ class \
                 while frame <= end:
                     column = self.get_next_to_column(frame - 1, "right")
                     frame = column.get_end_frame()
-                    if frame == start or frame == end or position == self.frames_columns[start].get_position_item(node_1):
+                    if frame == start or frame == end or position == self.frames_columns[start].get_position_item(
+                            node_1):
                         column.add_object(edge, position)
                     frame += 1
                 # print("inside {0}.".format(time.time() - time1))
                 break
             else:
                 position += 1
-        # print("outside {0}.".format(time.time() - time2))
+                # print("outside {0}.".format(time.time() - time2))
 
     def find_suitable_position_semi_placed_chunk(self, edge, col1, col2, node_1, node_2):
         """Finds the best position for semi-placed chunk. This situation should never happen!
@@ -351,7 +410,7 @@ class \
                 for num in offset_list:
                     if node_2.frame_ - node_1.frame_ == 1:
                         if self.frames_columns[node_1.frame_].is_free(position_1, node_1) and \
-                         self.frames_columns[node_2.frame_].is_free(position_1 + num, node_2):
+                                self.frames_columns[node_2.frame_].is_free(position_1 + num, node_2):
                             position_2 = position_1 + num
                             break
                     elif self.is_line_free(position_1, node_1.frame_, node_2.frame_) and \
@@ -380,7 +439,7 @@ class \
             occupied = True
             while occupied:
                 if column.is_free(position):
-                        # and next_column.is_free(position):
+                    # and next_column.is_free(position):
                     occupied = False
                 position += 1
 
@@ -417,20 +476,23 @@ class \
             end = frame + frame_offset
             while end not in self.frames_columns.keys():
                 end += frame_offset
-            return self.frames_columns[((start, end - frame_offset) if direction == "right" else (end - frame_offset, start))]
+            return self.frames_columns[
+                ((start, end - frame_offset) if direction == "right" else (end - frame_offset, start))]
 
     def prepare_columns(self, frames):
-        from gui.graph_view.column import Column
+        from gui.graph_widget.column import Column
         empty_frame_count = 0
         for x in range(frames[0], frames[len(frames) - 1] + 1):
             if x in frames:
                 if empty_frame_count > 0:
                     if empty_frame_count == 1:
-                        column = Column(x - 1, self.scene, self.img_manager, self.relative_margin, self.width, self.height, True)
+                        column = Column(x - 1, self.scene, self.img_manager, self.relative_margin, self.width,
+                                        self.height, True)
                         self.frames_columns[x - 1] = column
                         self.columns.append(column)
                     else:
-                        column = Column(((x - empty_frame_count), x - 1), self.scene, self.img_manager, self.relative_margin, self.width, self.height, True)
+                        column = Column(((x - empty_frame_count), x - 1), self.scene, self.img_manager,
+                                        self.relative_margin, self.width, self.height, True)
                         self.frames_columns[((x - empty_frame_count), x - 1)] = column
                         self.columns.append(column)
                     self.scene_width += WIDTH / 2 + SPACE_BETWEEN_HOR
@@ -444,7 +506,6 @@ class \
                 empty_frame_count += 1
 
     def add_objects(self, added_regions, added_edges):
-        print("Preparing objects...")
         frames = set()
         for node in added_regions:
             if node not in self.regions:
@@ -456,15 +517,12 @@ class \
 
         frames = list(frames)
         frames.sort()
-        first_frame, last_frame = frames[0], frames[len(frames) - 1]
 
         self.prepare_columns(frames)
         self.edges = comp.sort_edges(self.edges, frames)
         self.compute_positions()
         self.add_sole_nodes()
-        print("Visualizing...")
-        self.showMaximized()
-        self.redraw(first_frame, last_frame)
+        self.first_frame, self.last_frame = frames[0], frames[len(frames) - 1]
 
     def draw_columns(self, first_frame, last_frame, minimum):
         next_x = 0
@@ -473,24 +531,17 @@ class \
             thread_load = threading.Thread(group=None, target=self.load, args=(minimum, event_loaded))
         QApplication.processEvents()
         for column in self.columns:
-            # uncomment to achieve node-by-node loading, decreases performance, remember to comment
-            # every other call of QApplication in this function
-            # QApplication.processEvents()
-            # import time
-            # time1 = time.time()
-            # print("Drawing column {0}...".format(column.frame))
             self.load_indicator_wheel()
             column.set_x(next_x)
             next_x = self.increment_x(column, next_x)
-
             frame_a = frame_b = column.frame
             if isinstance(column.frame, tuple):
                 frame_a, frame_b = column.frame[0], column.frame[1]
             if not (frame_a < first_frame or frame_b > last_frame):
                 col_index = self.columns.index(column)
                 if col_index <= minimum:
-                        column.add_crop_to_col()
-                        QApplication.processEvents()
+                    column.add_crop_to_col()
+                    QApplication.processEvents()
                 elif self.dynamically:
                     if col_index == minimum + 1:
                         QApplication.processEvents()
@@ -498,13 +549,16 @@ class \
                         thread_load.start()
                         event_loaded.wait()
                     if col_index not in self.loaded:
-                            event_loaded.clear()
-                            event_loaded.wait()
+                        event_loaded.clear()
+                        event_loaded.wait()
                     if col_index % minimum == 0:
-                            QApplication.processEvents()
+                        QApplication.processEvents()
                 column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
-            # time2 = time.time()
-            # print("The drawing of column took {0}".format(time2 - time1))
+
+    def load_columns(self):
+        for column in self.columns:
+            column.prepare_images()
+        print "Columns loaded"
 
     def increment_x(self, column, next_x):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
@@ -527,17 +581,17 @@ class \
 
     def draw_lines(self, first_frame, last_frame):
         for edge in self.edges:
-                if edge[2] == "line" or edge[2] == "chunk":
-                    if first_frame <= edge[0].frame_ and edge[1].frame_ <= last_frame:
-                        col = self.frames_columns[edge[1].frame_]
-                        col.show_edge(edge, self.frames_columns, self.show_vertically)
-                elif edge[2] == "partial":
-                    if(edge[0] or edge[1]) and (edge[0] in self.regions or edge[1] in self.regions):
-                        direction = "left" if (edge[0] is None or not (edge[0] in self.regions)) else "right"
-                        node = edge[1] if direction == "left" else edge[0]
-                        if first_frame <= node.frame_ <= last_frame:
-                            col = self.frames_columns[node.frame_]
-                            col.show_edge(edge, self.frames_columns, self.show_vertically, direction, node)
+            if edge[2] == "line" or edge[2] == "chunk":
+                if first_frame <= edge[0].frame_ and edge[1].frame_ <= last_frame:
+                    col = self.frames_columns[edge[1].frame_]
+                    col.show_edge(edge, self.frames_columns, self.show_vertically)
+            elif edge[2] == "partial":
+                if (edge[0] or edge[1]) and (edge[0] in self.regions or edge[1] in self.regions):
+                    direction = "left" if (edge[0] is None or not (edge[0] in self.regions)) else "right"
+                    node = edge[1] if direction == "left" else edge[0]
+                    if first_frame <= node.frame_ <= last_frame:
+                        col = self.frames_columns[node.frame_]
+                        col.show_edge(edge, self.frames_columns, self.show_vertically, direction, node)
 
     def toggle_show_vertically(self):
         self.show_vertically = False if self.show_vertically else True
@@ -558,9 +612,9 @@ class \
 
     def redraw(self, first_frame=None, last_frame=None):
         if not first_frame:
-            first_frame = self.columns[0].frame
+            first_frame = self.first_frame
         if not last_frame:
-            last_frame = self.columns[len(self.columns) - 1].frame
+            last_frame = self.last_frame
         self.view.centerOn(0, 0)
         self.load_indicator_init()
 
@@ -576,7 +630,8 @@ class \
 
     def add_rect_to_scene(self):
         width = self.scene_width if self.compress_axis else (WIDTH * self.columns[len(self.columns) - 1].frame +
-                                                             (self.columns[len(self.columns) - 1].frame - 1) * SPACE_BETWEEN_VER)
+                                                             (self.columns[
+                                                                  len(self.columns) - 1].frame - 1) * SPACE_BETWEEN_VER)
         height = self.compute_height()
         if self.show_vertically:
             width, height = height, width
@@ -608,4 +663,3 @@ class \
         self.wheel_count += 1
         if self.wheel_count % 3 is 0:
             self.wheel_count = 1
-

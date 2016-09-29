@@ -70,6 +70,12 @@ class Chunk:
 
         return items
 
+    def print_info(self, gm):
+        s = "TRACKLET --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
+        s += "\tstarts at: "+str(self.start_frame(gm))+" ends at: "+str(self.end_frame(gm))
+
+        print s
+
     def append_left(self, vertex, gm, undo_action=False):
         # test: there cannot be any outgoing edge...
         for e in vertex.out_edges():
@@ -268,3 +274,8 @@ class Chunk:
 
         gm.g.vp['chunk_start_id'][gm.g.vertex(self.start_node())] = self.id()
         gm.g.vp['chunk_end_id'][gm.g.vertex(self.end_node())] = self.id()
+
+    def is_only_one_id_assigned(self, num_animals):
+        # if there is one and only one ID assigned to chunk
+        return len(self.P) == 1 and \
+               len(self.N) == num_animals - 1

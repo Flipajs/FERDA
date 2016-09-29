@@ -9,7 +9,7 @@ class MyView(QtGui.QGraphicsView):
         self.setMouseTracking(True)
         self.update_callback_move = update_callback_move
         self.update_callback_press = update_callback_press
-        self.scale = 1
+        self.scale(1, 1)
         self.scale_step = 0
         self.scene = None
 
@@ -34,31 +34,53 @@ class MyView(QtGui.QGraphicsView):
         if self.update_callback_press:
             self.update_callback_press(e)
 
-
     def wheelEvent(self, event):
-        if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
-            # if CTRL is pressed while scrolling
+        modifiers = QtGui.QApplication.keyboardModifiers()
+        if modifiers == QtCore.Qt.ControlModifier:
+            scale_factor = 1.06
 
-            # modify scale level (step)
-            if event.delta() > 0:
-                self.scale_step += 1
-            else:
-                self.scale_step -= 1
-
-            # count new scale
-            self.scale = self.get_scale()
-
-            # create a new matrix with proper scale (for some reason, modifying self.matrix doesn't work)
-            matrix = QtGui.QMatrix()
-            matrix.scale(self.scale, self.scale)
-
-            # center on mouse
             self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
 
-            self.setMatrix(matrix)
-        else:
-            # if CTRL isn't pressed, control the scrollbars (default behavior)
-            super(MyView, self).wheelEvent(event)
+            m11 = self.transform().m11()
+            m22 = self.transform().m22()
+
+            if event.delta() > 0:
+                # max zoom-out restriction
+                if m11 > 10 or m22 > 10:
+                    return
+
+                self.scale(scale_factor, scale_factor)
+            else:
+                # max zoom-in restriction
+                if m11 < 0.1 or m22 < 0.1:
+                    return
+
+                self.scale(1.0 / scale_factor, 1.0 / scale_factor)
+    #
+    # def wheelEvent(self, event):
+    #     if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
+    #         # if CTRL is pressed while scrolling
+    #
+    #         # modify scale level (step)
+    #         if event.delta() > 0:
+    #             self.scale_step += 1
+    #         else:
+    #             self.scale_step -= 1
+    #
+    #         # count new scale
+    #         self.scale = self.get_scale()
+    #
+    #         # create a new matrix with proper scale (for some reason, modifying self.matrix doesn't work)
+    #         matrix = QtGui.QMatrix()
+    #         matrix.scale(self.scale, self.scale)
+    #
+    #         # center on mouse
+    #         self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
+    #
+    #         self.setMatrix(matrix)
+    #     else:
+    #         # if CTRL isn't pressed, control the scrollbars (default behavior)
+    #         super(MyView, self).wheelEvent(event)
 
 
     def get_scale(self):

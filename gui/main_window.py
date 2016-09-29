@@ -10,6 +10,7 @@ from gui.main_tab_widget import MainTabWidget
 import core.project.project
 from core.settings import Settings as S_
 from gui.settings.settings_dialog import SettingsDialog
+import time
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -44,10 +45,11 @@ class MainWindow(QtGui.QMainWindow):
         self.update()
 
         self.show()
+        self.statusBar().hide()
 
-        # TOOD: remove this hack...
-        self.move(-500, -500)
-        self.showMaximized()
+        # TODO: remove this hack...
+        # self.move(-500, -500)
+        # self.showMaximized()
 
     def closeEvent(self, event):
         event.accept()
