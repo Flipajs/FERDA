@@ -2,6 +2,9 @@ import cv2
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from skimage.transform import pyramid_gaussian
+from skimage.feature import local_binary_pattern
+from skimage.color import label2rgb
+import matplotlib.pyplot as plt
 import scipy.ndimage
 import time
 
@@ -436,7 +439,54 @@ def get_filtered_rfc(zeros, X, y):
     return rfc.fit(newX, y)
 
 
+def get_lbp(image, method="uniform"):
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    radius = 3
+    n_points = 8 * radius
+    w = width = radius - 1
+
+    # get lbg
+    lbp = local_binary_pattern(gray_image, n_points, radius, method)
+
+    # get edge_labels
+    edge_labels = range(n_points // 2 - w, n_points // 2 + w + 1)
+    flat_labels = list(range(0, w + 1)) + list(range(n_points - w, n_points + 2))
+    i_14 = n_points // 4            # 1/4th of the histogram
+    i_34 = 3 * (n_points // 4)      # 3/4th of the histogram
+    corner_labels = (list(range(i_14 - w, i_14 + w + 1)) +
+                     list(range(i_34 - w, i_34 + w + 1)))
+
+    mask = np.logical_or.reduce([lbp == each for each in edge_labels])
+
+    # plt.imshow(mask)
+    # plt.show()
+
+    # mask = np.logical_or.reduce([lbp == each for each in flat_labels])
+
+    # plt.imshow(mask)
+    # plt.show()
+
+    # mask = np.logical_or.reduce([lbp == each for each in corner_labels])
+
+    # plt.imshow(mask)
+    # plt.show()
+    return lbp
+
+    return label2rgb(mask, image=image, bg_label=0, alpha=0.5)
+
+
 if __name__ == "__main__":
-    pass
     # image = cv2.imread("/home/dita/img_67.png")
-    # scale_test(image)
+    image = cv2.imread("/home/dita/lbp_test.png")
+    np.set_printoptions(threshold=np.inf)
+    print image[:, :, 0] / 255
+    methods = ["nri_uniform", "default", "ror", "uniform", "var"]
+
+    lbp = get_lbp(image)
+    print lbp
+    cv2.imwrite("/home/dita/lbp_test_out.png", lbp*(255/lbp.max()))
+
+    print lbp.shape
+
+    plt.imshow(lbp > 23)
+    plt.show()
