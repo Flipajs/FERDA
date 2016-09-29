@@ -21,6 +21,8 @@ class Helper:
         self.bg = None
         self.gr = None
         self.rb = None
+        self.h = None
+        self.w = None
         self.num = num
         self.scale = scale
 
@@ -47,6 +49,7 @@ class Helper:
         :return: None
         """
         self.image = image  # original image
+        self.h, self.w, c = self.image.shape
 
         # images are stored in lists with len corresponding to pyramid height
         # index 0 contains data obtained from largest image, all other indices contain data from scaled images
@@ -123,7 +126,7 @@ class Helper:
         print "Retrieving data takes %f" % (time.time() - start)
 
         # create the classifier
-        self.rfc = RandomForestClassifier(class_weight='balanced')
+        self.rfc = RandomForestClassifier()
 
         # to train on all data (current and all previous frames), join the arrays together
         # class variables are not affected here
@@ -171,6 +174,26 @@ class Helper:
         mask1.shape = ((h, w))
 
         return mask1
+
+    def train_raw_(self, X, y):
+        """ Create the RFC classifier from raw X and y data
+        """
+
+        # create the classifier
+        self.rfc = RandomForestClassifier()
+
+        # train the classifier
+        start = time.time()
+        self.rfc.fit(X, y)
+        print "RFC fitting takes     %f" % (time.time() - start)
+
+        # find unused features and remove them
+        # create new classifier with less features, it will be faster
+        start = time.time()
+        self.unused = find_unused_features(self.rfc)
+        self.rfc = get_filtered_rfc(self.unused, X, y)
+        print "RFC filtering takes   %f. Using %d out of %d features." % \
+              (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
 
     def get_features(self):
         """
@@ -354,7 +377,8 @@ class Helper:
             # all images must have 3 dimensions to be scaled successfully
             w, h = im.shape
             im.shape = ((w, h, 1))
-        return np.asarray(scipy.ndimage.zoom(im, (s, s, 1), order=0), dtype=np.uint8)
+        im = np.asarray(im, dtype=np.uint8)
+        return cv2.resize(im, (self.w, self.h))
 
 
 def get_shift_im(im, shift_x=2, shift_y=2):
@@ -408,7 +432,7 @@ def get_filtered_rfc(zeros, X, y):
     for tup in X:
         newtup = np.delete(tup, zeros)
         newX.append(newtup)
-    rfc = RandomForestClassifier(class_weight='balanced')
+    rfc = RandomForestClassifier()
     return rfc.fit(newX, y)
 
 
