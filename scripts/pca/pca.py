@@ -12,7 +12,7 @@ from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from scripts.pca.ant_extract import get_matrix
 from scripts.pca.cluster_extract import get_cluster_region_matrix
-from scripts.pca.range_computer import RangeComputer
+from scripts.pca.range_computer import OptimalRange
 from scripts.pca.results_generate import generate_eigen_ants_figure, generate_ants_reconstructed_figure, view_ant
 from scripts.pca.tracklet_viewer import TrackletViewer
 from utils.geometry import rotate
@@ -149,7 +149,7 @@ if __name__ == '__main__':
     results = trainer.get_ground_truth()
 
     # EXTRACTING DATA
-    X_ants, avg_dist = get_matrix(project, chunks_without_clusters, number_of_data, results)
+    X_ants, avg_dist, sizes = get_matrix(project, chunks_without_clusters, number_of_data, results)
     X = get_pca_compatible_data(X_ants)
     head_range = 3
     bottom_range = 5
@@ -224,6 +224,6 @@ if __name__ == '__main__':
     #     fit_cluster(number_of_data, cluster, freq, head_range, pca_head_shifted_cut, pca_head_shifted_whole, bottom_range,
     #                 pca_bottom_shifted_cut, pca_bottom_shifted_whole)
 
-    range_comp = RangeComputer(X, number_of_data, number_of_eigen_v)
-    for i in range(number_of_eigen_v):
+    range_comp = OptimalRange(X, sizes, number_of_data, number_of_eigen_v)
+    for i in range(number_of_data):
         print range_comp.get_optimal_k(i)

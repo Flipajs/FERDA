@@ -25,20 +25,23 @@ def get_matrix(project, chunks, number_of_data, results):
     matrix = []
     sum = 0
     i = 1
+    sizes = []
     for ch in chunks:
         print "Chunk #{0}".format(i)
         i += 1
-        vectors, s = get_feature_vectors(ch, number_of_data, project.chm, project.gm, results)
+        vectors, s, size = get_feature_vectors(ch, number_of_data, project.chm, project.gm, results)
         for vector in vectors:
             matrix.append(vector)
         sum += s
+        sizes += size
     matrix = np.array(matrix)
     sum /= len(matrix)
-    return matrix, sum
+    return matrix, sum, sizes
 
 
 def get_feature_vectors(chunk, number_of_data, chm, gm, results):
     vectors = []
+    sizes = []
     sum = 0
     for region in get_chunks_regions(chunk, chm, gm):
         if region.id() in results:
@@ -46,7 +49,8 @@ def get_feature_vectors(chunk, number_of_data, chm, gm, results):
             v, s = get_feature_vector(region, number_of_data, results[region.id()])
             vectors.append(v)
             sum += s
-    return vectors, sum
+            sizes.append(region.area())
+    return vectors, sum, sizes
 
 
 def get_feature_vector(region, number_of_data, right_orientation):
