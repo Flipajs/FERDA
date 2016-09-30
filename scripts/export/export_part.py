@@ -131,6 +131,32 @@ class FakeBGComp:
     def finished_callback(self, fake1=None, fake2=None):
         pass
 
+
+def export_arena(out_path, project):
+    with open(out_path + '/out_arena.mat', 'wb') as f:
+        arena = None
+        if project.arena_model:
+            am = project.arena_model
+            try:
+                c = am.center
+                radius = am.radius
+            except AttributeError:
+                center = np.array([0, 0])
+                num = 0
+                # estimate center:
+                for y in range(am.im_height):
+                    for x in range(am.im_width):
+                        if am.mask_[y, x]:
+                            center += np.array([y, x])
+                            num += 1
+
+                c = center / num
+                radius = round((num / np.pi) ** 0.5)
+
+            arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
+
+        sio.savemat(f, {'arena': arena})
+
 if __name__ == '__main__':
     working_dir = sys.argv[1]
     out_dir = sys.argv[2]
@@ -143,6 +169,9 @@ if __name__ == '__main__':
 
     p = Project()
     p.load(working_dir)
+
+    if i == 0:
+        export_arena(out_dir, p)
 
     bgcomp = FakeBGComp(p, first_part, part_num)
 
@@ -164,6 +193,7 @@ if __name__ == '__main__':
     #     if not g_.vp['active'][v_id]:
     #         continue
     #
+
     #     v = g_.vertex(v_id)
     #     ch_id = g_.vp['chunk_start_id'][v]
     #
