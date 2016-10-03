@@ -1,9 +1,6 @@
 __author__ = 'fnaiser'
 
 import numpy as np
-from utils.video_manager import get_auto_video_manager
-import multiprocessing as mp
-from core.region.mser import get_msers_
 from PyQt4 import QtGui, QtCore
 import time
 from functools import partial
@@ -11,6 +8,7 @@ import sys
 import os
 import errno
 from core.settings import Settings as S_
+from utils.video_manager import get_auto_video_manager
 from bg_computer_assembling import assembly_after_parallelization
 
 

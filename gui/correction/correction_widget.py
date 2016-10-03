@@ -513,9 +513,9 @@ class ResultsWidget(QtGui.QWidget):
         x_ = round(x / float(self.marker_helper_step))
         y_ = round(y / float(self.marker_helper_step))
 
-        if self.marker_pos_helper[y_, x_]:
+        if self.marker_pos_helper[int(y_), int(x_)]:
             for a, b in itertools.product([-1, 0, 1], [-1, 0, 1]):
-                if not self.marker_pos_helper[y_+a, x_+b]:
+                if not self.marker_pos_helper[int(y_+a), int(x_+b)]:
                     y_ += a
                     x_ += b
 
@@ -523,8 +523,37 @@ class ResultsWidget(QtGui.QWidget):
                     x = x_ * self.marker_helper_step
                     break
 
-        self.marker_pos_helper[y_, x_] = True
+        self.marker_pos_helper[int(y_), int(x_)] = True
         return y, x
+
+    def update_positions_optimized(self, frame):
+        new_active_markers = []
+
+        # TODO: BGR, offset 1
+        # R B G Y dark B
+        colors = [
+            [0, 0, 0],
+            [0, 0, 255],
+            [255, 0, 0],
+            [0, 255, 0],
+            [0, 255, 255],
+            [150, 0, 0]
+        ]
+
+        for m_id, ch in self.active_markers:
+            rch = RegionChunk(ch,  self.project.gm, self.project.rm)
+            if frame == rch.end_frame() + 1:
+                self.items[m_id].setVisible(False)
+            else:
+                new_active_markers.append((m_id, ch))
+                r = rch.region_in_t(frame)
+
+                if r is None:
+                    print "None region, frame: {}, ch.id_: {}".format(frame, ch.id_)
+                    continue
+
+                c = r.centroid().copy()
+                self.update_marker_position(self.items[m_id], c)
 
     def __add_marker(self, x, y, c_, id_, z_value, type_):
         radius = 13
@@ -612,7 +641,7 @@ class ResultsWidget(QtGui.QWidget):
         self.marker_helper_step = 7
         from math import ceil
         self.marker_pos_helper = np.zeros((int(ceil(self.video.img().shape[0] / self.marker_helper_step)),
-                                           int(ceil(self.video.img().shape[1] / self.marker_helper_step))),
+                                            int(ceil(self.video.img().shape[1] / self.marker_helper_step))),
                                           dtype=np.bool)
 
 
@@ -864,9 +893,7 @@ class ResultsWidget(QtGui.QWidget):
     def load_next_frame(self):
         """Loads next frame of the video and displays it. If there is no next frame, calls self.out_of_frames"""
         if self.video is not None:
-            if self.video.next_frame() is None:
-                self.play_pause()
-
+            self.video.next_frame()
             self.update_positions(self.video.frame_number())
         else:
             self.play_pause()
@@ -880,6 +907,8 @@ class ResultsWidget(QtGui.QWidget):
             self.help_timer.start()
             self.help_timer.timeout.connect(self.__continue_loop)
             return
+
+            print len(self.project.gm.vertices_in_t[self.video.frame_number()])
 
         if self.video.frame_number() == self.highlight_marker2nd_frame:
             print "SHOW"

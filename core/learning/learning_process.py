@@ -322,8 +322,6 @@ class LearningProcess:
         return itree
 
     def get_candidate_chunks(self):
-        ch_list = self.p.chm.chunk_list()
-
         # TODO: do it better... What if first chunks are merged...
 
         # from core.graph.region_chunk import RegionChunk
@@ -366,9 +364,9 @@ class LearningProcess:
         print "THRESHOLD = ", area_mean_thr
 
 
-        print "ALL CHUNKS:", len(ch_list)
+        print "ALL CHUNKS:", len(self.p.chm)
         # filtered = []
-        for ch in ch_list:
+        for ch in self.p.chm.chunk_gen():
             # if ch.start_frame(self.p.gm) > 500:
             #     continue
             # else:

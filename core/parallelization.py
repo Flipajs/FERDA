@@ -20,7 +20,6 @@ from utils.img import prepare_for_segmentation
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 import numpy as np
-
 import time
 
 if __name__ == '__main__':

@@ -8,12 +8,10 @@ from gui.graph_widget.node import Node
 from gui.graph_widget_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 from gui.img_controls.utils import cvimg2qtpixmap
 
-
 __author__ = 'Simon Mandlik'
 
 
 class Column:
-
     def __init__(self, frame, scene, im_manager, relative_margin, width, height, empty=False):
         self.scene = scene
         self.im_manager = im_manager
@@ -54,7 +52,7 @@ class Column:
 
     def add_object(self, to_add, position):
         if position < len(self.objects):
-            if not(self.objects[position] == to_add or isinstance(self.objects[position], tuple)):
+            if not (self.objects[position] == to_add or isinstance(self.objects[position], tuple)):
                 self.objects[position] = to_add
         else:
             while len(self.objects) < position:
@@ -93,7 +91,7 @@ class Column:
             for item in self.objects:
                 if isinstance(item, tuple):
                     if item[0] == item_to_locate or item[1] == item_to_locate:
-                            return self.objects.index(item)
+                        return self.objects.index(item)
                 elif isinstance(item, Node):
                     if item_to_locate == item.region:
                         return self.objects.index(item)
@@ -147,7 +145,8 @@ class Column:
                 else:
                     img = self.regions_images[item]
                 pixmap = cvimg2qtpixmap(img)
-                node = Node(self.scene.addPixmap(pixmap), self.scene, item, self. im_manager, self.relative_margin,  self.width, self.height)
+                node = Node(self.scene.addPixmap(pixmap), self.scene, item, self.im_manager, self.relative_margin,
+                            self.width, self.height)
                 node.parent_pixmap.hide()
                 self.items_nodes[item] = node
 
@@ -164,7 +163,7 @@ class Column:
                     self.show_node(item, vertically)
                 elif isinstance(item, tuple):
                     if item[2] is "partial":
-                        self.show_node()
+                        self.show_node(item[0], vertically)
                     if item[0].frame_ == self.frame:
                         self.show_node(item[0], vertically)
                     elif item[1].frame_ == self.frame:
@@ -193,7 +192,8 @@ class Column:
         if vertically:
             from_x, from_y, to_x, to_y = from_y, from_x, to_y, to_x
 
-        if edge in self.edges.keys():
+        if edge in self.edges:
+            # print self.edges[edge]
             self.scene.removeItem(self.edges[edge].graphical_object)
         edge_obj = Edge(from_x, from_y, to_x, to_y, edge, self.scene, vertically)
         self.edges[edge] = edge_obj
@@ -208,26 +208,28 @@ class Column:
         self.scene.addItem(edge_obj.graphical_object)
 
     def show_node(self, region, vertically, compressed=True):
-            position = self.get_position_item(region)
-            x = self.x
-            y = GAP + FROM_TOP + position * self.height + SPACE_BETWEEN_VER * position
+        position = self.get_position_item(region)
+        x = self.x
+        y = GAP + FROM_TOP + position * self.height + SPACE_BETWEEN_VER * position
 
-            if vertically:
-                x, y = y, x
-            if region not in self.items_nodes.keys():
-                if region not in self.regions_images.keys():
-                    if compressed:
-                        img = self.def_img
-                    else:
-                        img = self.im_manager.get_crop(self.frame, region, width=self.width, height=self.height, relative_margin=self.relative_margin)
-                    self.regions_images[region] = img
+        if vertically:
+            x, y = y, x
+        if region not in self.items_nodes.keys():
+            if region not in self.regions_images.keys():
+                if compressed:
+                    img = self.def_img
                 else:
-                    img = self.regions_images[region]
-                pixmap = cvimg2qtpixmap(img)
-                node = Node(self.scene.addPixmap(pixmap), self.scene, region, self.im_manager, self.relative_margin,  self.width, self.height)
-                self.items_nodes[region] = node
-            self.items_nodes[region].setPos(x, y)
-            self.items_nodes[region].parent_pixmap.show()
+                    img = self.im_manager.get_crop(self.frame, region, width=self.width, height=self.height,
+                                                   relative_margin=self.relative_margin)
+                self.regions_images[region] = img
+            else:
+                img = self.regions_images[region]
+            pixmap = cvimg2qtpixmap(img)
+            node = Node(self.scene.addPixmap(pixmap), self.scene, region, self.im_manager, self.relative_margin,
+                        self.width, self.height)
+            self.items_nodes[region] = node
+        self.items_nodes[region].setPos(x, y)
+        self.items_nodes[region].parent_pixmap.show()
 
     def show_compress_marker(self, compress_axis, vertically):
         if isinstance(self.frame, tuple):

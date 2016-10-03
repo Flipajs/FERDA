@@ -11,6 +11,7 @@ from gui.statistics.statistics_widget import StatisticsWidget
 
 from core.background_computer import BackgroundComputer
 from functools import partial
+from gui.graph_widget.graph_visualizer import GraphVisualizer
 from core.graph.graph_manager import GraphManager
 import time
 
@@ -82,7 +83,8 @@ class MainTabWidget(QtGui.QWidget):
             with open(self.project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
                 chunk_available_ids = pickle.load(f_)
 
-            for ch_id in self.project.gm.chunk_list():
+            for ch in self.project.chm.chunk_gen:
+                ch_id = ch.id()
                 animal_id = -1
                 if ch_id in chunk_available_ids:
                     animal_id = chunk_available_ids[ch_id]
@@ -160,12 +162,12 @@ class MainTabWidget(QtGui.QWidget):
         if i == 3:
             self.statistics_tab.update_data(self.project)
         if i == 4:
-            if not isinstance(self.graph_tab, GraphWidgetLoader):
+            if not isinstance(self.graph_tab, GraphVisualizer):
                 self.ignore_tab_change = True
                 # TODO: show loading...
                 self.tabs.removeTab(4)
                 self.graph_tab.setParent(None)
-                self.graph_tab = GraphWidgetLoader(self.project).get_widget()
+                self.graph_tab = GraphWidgetLoader(self.project).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet)
                 self.tabs.insertTab(4, self.graph_tab, "graph")
                 self.tabs.setCurrentIndex(4)
                 self.ignore_tab_change = False

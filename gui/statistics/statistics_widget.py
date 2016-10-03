@@ -107,7 +107,7 @@ class StatisticsWidget(QtGui.QWidget):
         f.writerow([str(r.frame_), round(a, 2), round(b, 2)])
 
     def export_csv(self):
-        chunks = self.project.solver.chunk_list()
+        chunks = self.project.chm.chunk_list()
         chunks = sorted(chunks, key=lambda x: x.start_n.frame_)
 
         with open(self.get_out_path()+'.csv', 'wb') as f:
@@ -219,6 +219,7 @@ class StatisticsWidget(QtGui.QWidget):
                     sio.savemat(f, {'FERDA': obj_arr})
 
                 curr_size = 0
+
                 obj_arr = []
                 #reset_selective d
                 del d
@@ -227,6 +228,7 @@ class StatisticsWidget(QtGui.QWidget):
                 obj_arr = []
 
                 gc.collect()
+
                 file_num += 1
 
         # save the rest
@@ -341,7 +343,7 @@ class StatisticsWidget(QtGui.QWidget):
         f.write('#' + str(r.frame_) + '\t' + str(round(a, 2)) + '\t' + str(round(b, 2)) + '\n')
 
     def export_txt(self):
-        chunks = self.project.solver.chunk_list()
+        chunks = self.project.chm.chunk_list()
         chunks = sorted(chunks, key=lambda x: x.start_n.frame_)
 
         with open(self.get_out_path()+'.txt', 'wb') as f:
@@ -365,4 +367,4 @@ class StatisticsWidget(QtGui.QWidget):
     def update_data(self, project):
         self.project = project
         self.num_of_single_nodes.setText(str(project.gm.g.num_vertices()))
-        self.num_of_chunks.setText(str(len(project.gm.chunk_list())))
+        self.num_of_chunks.setText(str(len(project.gm.chm)))

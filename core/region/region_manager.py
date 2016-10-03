@@ -283,7 +283,7 @@ class RegionManager:
             except TypeError:
                 # region was erased
                 print("!!!!!!!!! REGION NOT FOUND ????   "+str(id))
-                pass
+                print "TypeError in region_manager.py line 272"
 
         if l > 1:
             cmd = "SELECT id, data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
