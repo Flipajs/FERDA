@@ -95,9 +95,6 @@ if __name__ == '__main__':
     file_t = 0
 
     for i in range(frames_in_row + last_n_frames):
-        # with open(f_log_name, 'a') as f:
-        #     f.write('frame: '+str(i)+' is being processed...')
-
         frame = id*frames_in_row + i
 
         s = time.time()
@@ -118,7 +115,6 @@ if __name__ == '__main__':
         if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
             proj.segmentation_model.set_image(img)
             seg = proj.segmentation_model.predict()
-            # img = np.asarray((-seg*255)+255, dtype=np.uint8)
             img = seg < 0.5
             img = np.asarray(img, dtype=np.uint8)*255
         else:
@@ -128,24 +124,11 @@ if __name__ == '__main__':
 
         s = time.time()
 
-        # TODO: test antlikeness before add regions_in_t
-        # if self.antlike_filter:
-        #     if self.get_antlikeness(r) < self.project.solver_parameters.antlikeness_threshold:
-        #         continue
-        #
         proj.gm.add_regions_in_t(msers, frame, fast=True)
         solver_t += time.time() - s
 
-        # if i % 20 == 0:
-        #     print
-        #     print i
-        #     sys.stdout.flush()
-
     if proj.solver_parameters.use_emd_for_split_merge_detection():
         solver.detect_split_merge_cases()
-
-    # with open(f_log_name, 'a') as f:
-    #     f.write('before simplify')
 
     s = time.time()
     print "#Edges BEFORE: ", proj.gm.g.num_edges()
@@ -156,32 +139,16 @@ if __name__ == '__main__':
         if num_changed1+num_changed2 == 0:
             break
 
-    # solver.simplify(rules=[solver.adaptive_threshold, solver.update_costs])
-    # solver.simplify(rules=[solver.adaptive_threshold])
-    # solver.simplify(rules=[solver.adaptive_threshold, solver.symmetric_cc_solver, solver.update_costs])
-    # solver.simplify(rules=[solver.adaptive_threshold])
-    # solver.simplify(rules=[solver.symmetric_cc_solver])
-
     print "#Edges AFTER: ", proj.gm.g.num_edges()
     solver_t += time.time() - s
 
     s = time.time()
-
-    # # TODO: remove this...
-    #
-    # proj.solver = solver
-    # proj.gm = proj.gm
-    # proj.save()
 
     with open(proj.working_directory+'/temp/part'+str(id)+'.pkl', 'wb') as f:
         p = pickle.Pickler(f, -1)
         p.dump(proj.gm.g)
         p.dump(proj.gm.get_all_relevant_vertices())
         p.dump(proj.chm)
-
-        # proj.gm.g.save(f)
-        # p.dump(proj.gm.start_nodes())
-        # p.dump(proj.gm.end_nodes())
 
     file_t = time.time() - s
 
