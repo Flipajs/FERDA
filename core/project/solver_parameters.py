@@ -18,10 +18,6 @@ class SolverParameters():
         if refresh:
             self.__dict__.update(refresh.__dict__)
 
-    def new_chunk_id(self):
-        self.chunk_id += 1
-        return self.chunk_id
-
     def use_emd_for_split_merge_detection(self):
         if hasattr(self, 'use_emd_for_split_merge_detection_'):
             return self.use_emd_for_split_merge_detection_

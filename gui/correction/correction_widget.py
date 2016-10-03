@@ -655,6 +655,9 @@ class ResultsWidget(QtGui.QWidget):
             return
 
         animal_ids2centroids = {}
+
+        print len(self.project.chm.chunks_in_frame(frame)) #, "GM: ", len(self.project.gm.chunks_in_frame(frame))
+
         for ch in self.project.chm.chunks_in_frame(frame):
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
             r = rch.region_in_t(frame)
