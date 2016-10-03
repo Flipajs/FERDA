@@ -38,7 +38,10 @@ if __name__ == '__main__':
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
     if not os.path.exists(proj.working_directory+'/temp'):
-        os.mkdir(proj.working_directory+'/temp')
+        try:
+            os.mkdir(proj.working_directory+'/temp')
+        except OSError:
+            pass
 
     if not proj.is_cluster():
         temp_local_path = proj.working_directory+'/temp'

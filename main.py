@@ -24,7 +24,7 @@ if is_flipajs_pc():
     sn_id = 875
     cam_ = 1
 
-    name = 'S9T91min_'
+    name = 'Cam1_'
     # name = 'Cam'+str(cam_)+' copy'
 
     # name = 'Cam'+str(cam_)
