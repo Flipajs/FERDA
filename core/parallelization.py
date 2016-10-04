@@ -99,7 +99,6 @@ if __name__ == '__main__':
 
         s = time.time()
         msers = ferda_filtered_msers(img, proj, frame)
-        print len(msers)
 
         if proj.colormarks_model:
             proj.colormarks_model.assign_colormarks(proj, msers)

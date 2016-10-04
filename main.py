@@ -28,13 +28,13 @@ if is_flipajs_pc():
     # name = 'Cam'+str(cam_)+' copy'
 
     # name = 'Cam'+str(cam_)
-    wd = '/Users/flipajs/Documents/wd/gt/'
+    wd = '/Users/flipajs/Documents/wd/zebrafish'
     # wd = '/Users/flipajs/Documents/wd/'
     snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
                 'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
     # project.load(wd+name+'/cam'+str(cam_)+'.fproj')
-    project.load(wd+name)
+    project.load(wd)
 
     # project.load_snapshot(snapshot)
 

@@ -247,6 +247,9 @@ class ArenaEditor(QtGui.QWidget):
         # 4) set all red pixels (value 1) to 0
         arena_mask[arena_mask == 1] = 0
 
+        # invert mask
+        arena_mask = np.invert(arena_mask)
+
         """
         # Create occlusion mask: 0 - occultation, 255 - visible spot
         # 1) load BLUE channel (blue color shows where occultation is -> everything not blue is visible or outside of the arena)
