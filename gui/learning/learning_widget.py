@@ -22,7 +22,8 @@ class LearningWidget(QtGui.QWidget):
         self.vbox.addLayout(self.top_stripe_layout)
         self.vbox.addLayout(self.hbox)
 
-        # TODO: get features...
+        # TODO: compute / recompute features...
+
 
         self.lp = None
         if not self.project:
@@ -175,39 +176,40 @@ class LearningWidget(QtGui.QWidget):
         it = QtGui.QTableWidgetItem
 
         self.tracklets_table.setHorizontalHeaderLabels(header_labels)
-        for i, t_id in enumerate(self.lp.undecided_tracklets):
-            t = self.project.chm[t_id]
+        if len(self.lp.tracklet_certainty):
+            for i, t_id in enumerate(self.lp.undecided_tracklets):
+                t = self.project.chm[t_id]
 
-            item = it()
-            item.setData(QtCore.Qt.EditRole, t.id())
-            self.tracklets_table.setItem(i, 0, item)
+                item = it()
+                item.setData(QtCore.Qt.EditRole, t.id())
+                self.tracklets_table.setItem(i, 0, item)
 
-            item = it()
-            item.setData(QtCore.Qt.EditRole, t.length())
-            self.tracklets_table.setItem(i, 1, item)
+                item = it()
+                item.setData(QtCore.Qt.EditRole, t.length())
+                self.tracklets_table.setItem(i, 1, item)
 
-            item = it()
-            item.setData(QtCore.Qt.EditRole, t.start_frame(self.project.gm))
-            self.tracklets_table.setItem(i, 2, item)
+                item = it()
+                item.setData(QtCore.Qt.EditRole, t.start_frame(self.project.gm))
+                self.tracklets_table.setItem(i, 2, item)
 
-            item = it()
-            item.setData(QtCore.Qt.EditRole, t.end_frame(self.project.gm))
-            self.tracklets_table.setItem(i, 3, item)
+                item = it()
+                item.setData(QtCore.Qt.EditRole, t.end_frame(self.project.gm))
+                self.tracklets_table.setItem(i, 3, item)
 
-            self.tracklets_table.setItem(i, 4, QtGui.QTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
+                self.tracklets_table.setItem(i, 4, QtGui.QTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
 
-            d = self.lp.tracklet_measurements[t_id]
-            for j in range(num_animals):
-                self.tracklets_table.setItem(i, 5+j, QtGui.QTableWidgetItem(self.__f2str(d[j])))
+                d = self.lp.tracklet_measurements[t_id]
+                for j in range(num_animals):
+                    self.tracklets_table.setItem(i, 5+j, QtGui.QTableWidgetItem(self.__f2str(d[j])))
 
-            for j in range(num_animals):
-                val = ''
-                if j in t.P:
-                    val = 'N'
-                elif j in t.N:
-                    val = 'P'
+                for j in range(num_animals):
+                    val = ''
+                    if j in t.P:
+                        val = 'N'
+                    elif j in t.N:
+                        val = 'P'
 
-                self.tracklets_table.setItem(i, 5+num_animals+j, QtGui.QTableWidgetItem(val))
+                    self.tracklets_table.setItem(i, 5+num_animals+j, QtGui.QTableWidgetItem(val))
 
         self.tracklets_table.setSortingEnabled(True)
         self.tracklets_table.resizeColumnsToContents()
@@ -220,14 +222,16 @@ class LearningWidget(QtGui.QWidget):
         from utils.video_manager import get_auto_video_manager
         vm = get_auto_video_manager(self.project)
 
-        frames = vm.total_frame_count()
-
         coverage = 0
+        max_ = 0
         for t in self.project.chm.chunk_gen():
             if self.test_one_id_in_tracklet(t):
                 coverage += t.length()
 
-        return coverage / float(frames*len(self.project.animals))
+            end_f_ = t.end_frame(self.project.gm)
+            max_ = max(max_, end_f_)
+
+        return coverage / float(max_*len(self.project.animals))
 
     def __f2str(self, f, prec=3):
         return ('{:.'+str(prec)+'}').format(f)

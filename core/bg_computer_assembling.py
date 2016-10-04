@@ -44,7 +44,7 @@ def assembly_after_parallelization(bgcomp):
     from utils.misc import is_flipajs_pc
     if is_flipajs_pc():
         # TODO: remove this line
-        part_num = 3
+        part_num = 21
         pass
 
     bgcomp.project.color_manager = None
@@ -160,6 +160,8 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
     :return:
     """
 
+    single_vertices = []
+
     new_chm = project.chm
     new_rm = project.rm
 
@@ -179,6 +181,9 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
 
         used_chunks_ids.add(old_g.vp['chunk_start_id'][old_v])
         used_chunks_ids.add(old_g.vp['chunk_end_id'][old_v])
+
+        if old_g.vp['chunk_start_id'][old_v] == 0 and old_g.vp['chunk_end_id'][old_v] == 0:
+            single_vertices.append(new_v)
 
     # because 0 id means - no chunk assigned!
     used_chunks_ids.remove(0)
@@ -232,3 +237,9 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
     for old_v, new_v in vertex_map.iteritems():
         new_gm.g.vp['chunk_start_id'][new_v] = chunks_map[old_g.vp['chunk_start_id'][old_v]]
         new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
+
+    # create chunk for each single vertex
+    for v_id in single_vertices:
+        ch, id = project.chm.new_chunk([int(v_id)], project.gm)
+        new_gm.g.vp['chunk_start_id'][v_id] = id
+        new_gm.g.vp['chunk_end_id'][v_id] = id

@@ -38,12 +38,6 @@ if is_flipajs_pc():
 
     # project.load_snapshot(snapshot)
 
-    for v in project.gm.g.vertices():
-        if not project.gm.g.vp['chunk_end_id'][v] or not project.gm.g.vp['chunk_start_id'][v]:
-            print v
-
-        project.chm.new_chunk([int(v)], project.gm)
-
     try:
         # WORKAROUND:
         for t in project.chm.chunk_list():

@@ -656,8 +656,6 @@ class ResultsWidget(QtGui.QWidget):
 
         animal_ids2centroids = {}
 
-        print len(self.project.chm.chunks_in_frame(frame)) #, "GM: ", len(self.project.gm.chunks_in_frame(frame))
-
         for ch in self.project.chm.chunks_in_frame(frame):
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
             r = rch.region_in_t(frame)
@@ -852,9 +850,6 @@ class ResultsWidget(QtGui.QWidget):
 
             for ch in self.chunks:
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
-
-                if ch.id_ == 22:
-                    print "22"
 
                 col_ = ch.color
                 if chunk_available_ids is not None:

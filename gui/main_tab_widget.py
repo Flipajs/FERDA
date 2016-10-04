@@ -134,18 +134,18 @@ class MainTabWidget(QtGui.QWidget):
             return
 
         if i == 1:
-            if not isinstance(self.results_tab, ResultsWidget):
-                self.ignore_tab_change = True
-                self.tabs.removeTab(1)
-                self.results_tab.setParent(None)
+            if len(self.project.chm):
+                if not isinstance(self.results_tab, ResultsWidget):
+                    self.ignore_tab_change = True
+                    self.tabs.removeTab(1)
+                    self.results_tab.setParent(None)
+                    self.results_tab = ResultsWidget(self.project, decide_tracklet_callback=self.decide_tracklet)
+                    self.results_tab.update_positions()
+                    self.tabs.insertTab(1, self.results_tab, 'results viewer')
+                    self.tabs.setCurrentIndex(1)
+                    self.ignore_tab_change = False
 
-                self.results_tab = ResultsWidget(self.project, decide_tracklet_callback=self.decide_tracklet)
                 self.results_tab.update_positions()
-                self.tabs.insertTab(1, self.results_tab, 'results viewer')
-                self.tabs.setCurrentIndex(1)
-                self.ignore_tab_change = False
-
-            self.results_tab.update_positions()
 
         if i == 2:
             # TODO: show loading or something...

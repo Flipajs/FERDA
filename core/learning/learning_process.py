@@ -56,7 +56,6 @@ class LearningProcess:
 
         if not use_feature_cache:
             # TODO:
-            return
             self.get_candidate_chunks()
 
             self.chunks_itree = self.build_itree_()
@@ -77,8 +76,6 @@ class LearningProcess:
 
             print "LOADED"
 
-        return
-
         if not use_rf_cache:
             print "precompute avalability"
             # basically set every chunk with full set of possible ids
@@ -88,11 +85,11 @@ class LearningProcess:
             self.class_frequences = []
 
             print "undecided tracklets..."
-            self.ed_tracklets()
+            self.fill_undecided_tracklets()
 
             print "Init data..."
-            self.X = None
-            self.y = None
+            self.X = []
+            self.y = []
             # self.get_init_data()
 
             # TODO: wait for all necesarry examples, then finish init.
@@ -262,10 +259,11 @@ class LearningProcess:
 
     def __train_rfc(self):
         print "TRAINING RFC"
-        self.rfc = RandomForestClassifier(class_weight='balanced')
-        self.rfc.fit(self.X, self.y)
 
-        self.__precompute_measurements()
+        self.rfc = RandomForestClassifier(class_weight='balanced')
+        if len(self.X):
+            self.rfc.fit(self.X, self.y)
+            self.__precompute_measurements()
 
     def __precompute_measurements(self):
         # TODO: global parameter!!!
@@ -500,7 +498,7 @@ class LearningProcess:
             X = self.features[ch.id()]
 
         # if empty, create... else there is a problem with vstack...
-        if self.y is None or len(self.y) == 0:
+        if len(self.y) == 0:
             self.X = np.array(X)
             self.y = np.array([id_] * len(X))
         else:
@@ -865,6 +863,8 @@ class LearningProcess:
         P = tracklet.P
         N = tracklet.N
 
+        import math
+
         # skip the oversegmented regions
         if len(P) == 0:
             x = self.tracklet_measurements[tracklet.id()]
@@ -882,6 +882,10 @@ class LearningProcess:
             # take maximum probability from rest after removing definitely not present ids and the second max and compute certainty
             # for 0.6 and 0.4 it is 0.6 but for 0.6 and 0.01 it is ~ 0.98
             certainty = p1 / (p1 + p2)
+
+            if math.isnan(certainty):
+                certainty = 0.0
+                print 'is NaN', p1, p2, x, P, N
 
             self.tracklet_certainty[tracklet.id()] = certainty
 
@@ -1002,8 +1006,8 @@ class LearningProcess:
         self.__precompute_availability()
 
         # TODO: fill self.X and self.Y only with tracklets decided by user (self.user_decisions)
-        self.X = None
-        self.y = None
+        self.X = []
+        self.y = []
 
         for d in self.user_decisions:
             tracklet_id = d['tracklet_id']
