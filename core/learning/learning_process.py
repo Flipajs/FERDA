@@ -17,7 +17,7 @@ import itertools
 
 
 class LearningProcess:
-    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None):
+    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False):
         self.p = p
 
         self.question_callback = question_callback
@@ -53,6 +53,9 @@ class LearningProcess:
         self.user_decisions = []
 
         self.mistakes = []
+
+        if ghost:
+            return
 
         if not use_feature_cache:
             # TODO:

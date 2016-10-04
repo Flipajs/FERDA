@@ -113,6 +113,8 @@ class MainTabWidget(QtGui.QWidget):
         self.results_tab.solver = solver
         # self.tracker_tab.prepare_corrections(self.project.solver)
 
+        self.ignore_tab_change = False
+
         self.tabs.setTabEnabled(1, True)
         self.tabs.setTabEnabled(2, True)
         self.tabs.setTabEnabled(3, True)

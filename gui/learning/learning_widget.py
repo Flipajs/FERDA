@@ -22,8 +22,6 @@ class LearningWidget(QtGui.QWidget):
         self.vbox.addLayout(self.top_stripe_layout)
         self.vbox.addLayout(self.hbox)
 
-        # TODO: compute / recompute features...
-
 
         self.lp = None
         if not self.project:
@@ -32,8 +30,7 @@ class LearningWidget(QtGui.QWidget):
             self.top_stripe_layout.addWidget(self.load_project_button)
         else:
             print "LOADING LP"
-            self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False,
-                                      question_callback=self.question_callback, update_callback=self.update_callback)
+            self.lp = LearningProcess(self.project, ghost=True)
 
         self.start_button = QtGui.QPushButton('start')
         self.start_button.clicked.connect(self.lp.run_learning)
@@ -78,12 +75,34 @@ class LearningWidget(QtGui.QWidget):
         self.reset_learning_button.clicked.connect(self.reset_learning)
         self.top_stripe_layout.addWidget(self.reset_learning_button)
 
+        self.load_features_b = QtGui.QPushButton('load features')
+        self.load_features_b.clicked.connect(self.load_features)
+        self.top_stripe_layout.addWidget(self.load_features_b)
+
+        self.compute_features_b = QtGui.QPushButton('compute features')
+        self.compute_features_b.clicked.connect(self.recompute_features)
+        self.top_stripe_layout.addWidget(self.compute_features_b)
+
         self.save_button = QtGui.QPushButton('save')
         self.save_button.clicked.connect(self.save)
         self.top_stripe_layout.addWidget(self.save_button)
 
         # TODO: last info label
         # TODO: update callback... info about decisions...
+
+        # self.add_tracklet_table()
+        # self.update_callback()
+
+    def load_features_b(self):
+        self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False,
+                                  question_callback=self.question_callback, update_callback=self.update_callback)
+
+        self.add_tracklet_table()
+        self.update_callback()
+
+    def recompute_features(self):
+        self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
+                                  question_callback=self.question_callback, update_callback=self.update_callback)
 
         self.add_tracklet_table()
         self.update_callback()
