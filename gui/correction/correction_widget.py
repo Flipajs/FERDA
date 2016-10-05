@@ -39,6 +39,8 @@ class ResultsWidget(QtGui.QWidget):
         self.project = project
         self.video = get_auto_video_manager(project)
 
+        self.video_step = 1
+
         self.frame_rate = 30
         self.timer = QtCore.QTimer()
         self.timer.setInterval(1000 / self.frame_rate)
@@ -235,15 +237,46 @@ class ResultsWidget(QtGui.QWidget):
         self.show_id_bar.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_id_bar)
 
+        self.small_video_forward_a = QtGui.QAction('small next', self)
+        self.small_video_forward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() + 3))
+        self.small_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.ALT + QtCore.Qt.Key_N))
+        self.addAction(self.small_video_forward_a)
+
+        self.small_video_backward_a = QtGui.QAction('small back', self)
+        self.small_video_backward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() - 3))
+        self.small_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.ALT + QtCore.Qt.Key_B))
+        self.addAction(self.small_video_backward_a)
+
+        self.middle_video_forward_a = QtGui.QAction('middle next', self)
+        self.middle_video_forward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() + 10))
+        self.middle_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_N))
+        self.addAction(self.middle_video_forward_a)
+
+        self.middle_video_backward_a = QtGui.QAction('middle back', self)
+        self.middle_video_backward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() - 10))
+        self.middle_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_B))
+        self.addAction(self.middle_video_backward_a)
+
         self.big_video_forward_a = QtGui.QAction('big next', self)
         self.big_video_forward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() + 50))
         self.big_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
         self.addAction(self.big_video_forward_a)
 
-        self.big_video_backward_a = QtGui.QAction('big next', self)
+        self.big_video_backward_a = QtGui.QAction('big back', self)
         self.big_video_backward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() - 50))
         self.big_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
         self.addAction(self.big_video_backward_a)
+
+        # increase video step
+        self.increase_video_step_a = QtGui.QAction('increase video step', self)
+        self.increase_video_step_a.triggered.connect(self.increase_video_step)
+        self.increase_video_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_2))
+        self.addAction(self.increase_video_step_a)
+
+        self.decrease_video_step_a = QtGui.QAction('decrease video step', self)
+        self.decrease_video_step_a.triggered.connect(self.decrease_video_step)
+        self.decrease_video_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
+        self.addAction(self.decrease_video_step_a)
 
         self.connect_GUI()
 
@@ -294,6 +327,15 @@ class ResultsWidget(QtGui.QWidget):
                 self._gt = {}
 
         # self.update_positions()
+
+    def increase_video_step(self):
+        self.video_step += 1
+
+    def decrease_video_step(self):
+        self.video_step -= 1
+
+        if self.video_step < 1:
+            self.video_step = 1
 
     def decide_tracklet(self):
         if self.active_tracklet_id > -1:
@@ -891,7 +933,11 @@ class ResultsWidget(QtGui.QWidget):
     def load_next_frame(self):
         """Loads next frame of the video and displays it. If there is no next frame, calls self.out_of_frames"""
         if self.video is not None:
-            self.video.next_frame()
+            if self.video_step == 1:
+                self.video.next_frame()
+            else:
+                self.change_frame(self.video.frame_number() + self.video_step)
+
             self.update_positions(self.video.frame_number())
         else:
             self.play_pause()
@@ -917,7 +963,10 @@ class ResultsWidget(QtGui.QWidget):
     def load_previous_frame(self):
         """Loads previous frame of the video if there is such and displays it"""
         if self.video is not None:
-            self.video.previous_frame()
+            if self.video_step == 1:
+                self.video.previous_frame()
+            else:
+                self.change_frame(self.video.frame_number() - self.video_step)
             # if img is not None:
             #     if self.pixMapItem is not None:
             #         self.scene.removeItem(self.pixMapItem)

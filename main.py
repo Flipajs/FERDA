@@ -28,7 +28,7 @@ if is_flipajs_pc():
     # name = 'Cam'+str(cam_)+' copy'
 
     # name = 'Cam'+str(cam_)
-    wd = '/Users/flipajs/Documents/wd/zebrafish'
+    wd = '/Users/flipajs/Documents/wd/zebrafish0'
     # wd = '/Users/flipajs/Documents/wd/'
     snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
                 'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}

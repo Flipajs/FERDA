@@ -111,26 +111,32 @@ class LearningProcess:
                      'tracklet_measurements': self.tracklet_measurements}
                 pickle.dump(d, f, -1)
         else:
-            with open(p.working_directory+'/rfc.pkl', 'rb') as f:
-                d = pickle.load(f)
-                self.rfc = d['rfc']
-                self.X = d['X']
-                self.y = d['y']
-                self.all_ids = d['ids']
-                self.class_frequences = d['class_frequences']
-                self.collision_chunks = d['collision_chunks']
-                self.ids_present_in_tracklet = d['ids_present_in_tracklet']
-                self.ids_not_present_in_tracklet = d['ids_not_present_in_tracklet']
-                self.undecided_tracklets = d['undecided_tracklets']
-                self.old_x_size = d['old_x_size']
-                self.tracklet_certainty = d['tracklet_certainty']
-                self.tracklet_measurements = d['tracklet_measurements']
+            # with open(p.working_directory+'/rfc.pkl', 'rb') as f:
+            #     d = pickle.load(f)
+            #     self.rfc = d['rfc']
+            #     self.X = d['X']
+            #     self.y = d['y']
+            #     self.all_ids = d['ids']
+            #     self.class_frequences = d['class_frequences']
+            #     self.collision_chunks = d['collision_chunks']
+            #     self.ids_present_in_tracklet = d['ids_present_in_tracklet']
+            #     self.ids_not_present_in_tracklet = d['ids_not_present_in_tracklet']
+            #     self.undecided_tracklets = d['undecided_tracklets']
+            #     self.old_x_size = d['old_x_size']
+            #     self.tracklet_certainty = d['tracklet_certainty']
+            #     self.tracklet_measurements = d['tracklet_measurements']
 
-        with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
-            self.GT = pickle.load(f)
+            pass
+
+        self.GT = None
+        try:
+            with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
+                self.GT = pickle.load(f)
+        except IOError:
+            pass
         # self.save_ids_()
         self.load_learning()
-        self.reset_learning()
+        # self.reset_learning()
 
     def load_learning(self):
         try:
@@ -138,6 +144,8 @@ class LearningProcess:
                 d = pickle.load(f)
                 self.user_decisions = d['user_decisions']
                 self.undecided_tracklets = d['undecided_tracklets']
+
+                self.__train_rfc()
         except IOError:
             pass
 
@@ -673,7 +681,10 @@ class LearningProcess:
 
         while queue:
             ch = queue.pop(0)
+            self.tracklet_certainty
             queue.extend(self.__propagate_availability(ch))
+
+        self.update_callback()
 
     def next_step(self):
         eps_certainty_learning = 0.05

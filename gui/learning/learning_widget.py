@@ -90,11 +90,15 @@ class LearningWidget(QtGui.QWidget):
         # TODO: last info label
         # TODO: update callback... info about decisions...
 
+        self.update_b = QtGui.QPushButton('update')
+        self.update_b.clicked.connect(self.update_callback)
+        self.top_stripe_layout.addWidget(self.update_b)
+
         # self.add_tracklet_table()
         # self.update_callback()
 
     def load_features(self):
-        self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False,
+        self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=True,
                                   question_callback=self.question_callback, update_callback=self.update_callback)
 
         self.add_tracklet_table()
