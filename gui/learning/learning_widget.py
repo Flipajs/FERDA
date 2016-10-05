@@ -93,7 +93,7 @@ class LearningWidget(QtGui.QWidget):
         # self.add_tracklet_table()
         # self.update_callback()
 
-    def load_features_b(self):
+    def load_features(self):
         self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False,
                                   question_callback=self.question_callback, update_callback=self.update_callback)
 
