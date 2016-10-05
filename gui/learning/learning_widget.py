@@ -158,6 +158,8 @@ class LearningWidget(QtGui.QWidget):
             if not self.lp.next_step():
                 break
 
+        print self.num_next_step.text(), "steps finished"
+
     def update_callback(self):
         self.info_table.setItem(0, 0, QtGui.QTableWidgetItem('#tracklets'))
         self.info_table.setItem(0, 1, QtGui.QTableWidgetItem(str(len(self.project.chm))))

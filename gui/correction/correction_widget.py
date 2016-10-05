@@ -201,28 +201,28 @@ class ResultsWidget(QtGui.QWidget):
         self.setTabOrder(self.frameEdit, self.frame_jump_button)
 
         self.show_filled_ch = QtGui.QCheckBox('show filled')
-        self.show_filled_ch.setChecked(False)
+        self.show_filled_ch.setChecked(True)
         # lambda is used because if only self.update_position is given, it will give it parameters...
         self.show_filled_ch.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_filled_ch)
 
         self.show_contour_ch = QtGui.QCheckBox('contours')
-        self.show_contour_ch.setChecked(True)
+        self.show_contour_ch.setChecked(False)
         # lambda is used because if only self.update_position is given, it will give it parameters...
         self.show_contour_ch.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_contour_ch)
 
-        self.contour_without_colors = QtGui.QCheckBox('w\'out colors')
-        self.contour_without_colors.setChecked(False)
+        self.contour_without_colors = QtGui.QCheckBox('id clrs')
+        self.contour_without_colors.setChecked(True)
         self.contour_without_colors.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.contour_without_colors)
 
-        self.show_gt_markers = QtGui.QCheckBox('gt markers')
-        self.show_gt_markers.setChecked(True)
+        self.show_gt_markers = QtGui.QCheckBox('markers')
+        self.show_gt_markers.setChecked(False)
         self.show_gt_markers.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_gt_markers)
 
-        self.show_saturated_ch = QtGui.QCheckBox('img saturated')
+        self.show_saturated_ch = QtGui.QCheckBox('img sat')
         self.show_saturated_ch.setChecked(False)
         self.show_saturated_ch.stateChanged.connect(lambda x: self.update_positions())
         self.visu_controls_layout.addWidget(self.show_saturated_ch)

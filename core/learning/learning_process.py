@@ -96,7 +96,7 @@ class LearningProcess:
             # self.get_init_data()
 
             # TODO: wait for all necesarry examples, then finish init.
-            np.random.seed(42)
+            np.random.seed(13)
             self.__train_rfc()
             print "TRAINED"
 
@@ -690,6 +690,15 @@ class LearningProcess:
         eps_certainty_learning = 0.05
         min_new_samples_to_retrain = 50
 
+        # if enough new data, retrain
+        if len(self.X) - self.old_x_size > 1000:
+            t = time.time()
+            self.__train_rfc()
+            print "RETRAIN t:", time.time() - t
+            self.old_x_size = len(self.X)
+            self.next_step()
+            return True
+
         # pick one with best certainty
         # TODO: it is possible to improve speed (if necessary) implementing dynamic priority queue
 
@@ -725,7 +734,7 @@ class LearningProcess:
                 print "RETRAIN t:", time.time() - t
                 self.old_x_size = len(self.X)
                 self.next_step()
-                return
+                return True
             else:
                 if not self.__human_in_the_loop_request():
                     return False
@@ -899,7 +908,8 @@ class LearningProcess:
 
             if math.isnan(certainty):
                 certainty = 0.0
-                print 'is NaN', p1, p2, x, P, N
+                # means conflict or noise tracklet
+                print 'is NaN', tracklet, p1, p2, x, P, N
 
             self.tracklet_certainty[tracklet.id()] = certainty
 
