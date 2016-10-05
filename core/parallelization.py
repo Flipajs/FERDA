@@ -4,7 +4,8 @@ import sys
 import inspect
 import multiprocessing
 pool=multiprocessing.Pool(processes=4)
-
+from subprocess import call
+call(["hostname"])
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
@@ -61,6 +62,14 @@ if __name__ == '__main__':
 
         temp_local_path=temp_local_path+'/temp'
 
+    # check if part was computed before
+    if os.path.isfile(working_dir+'/temp/part'+str(id)+'_rm.sqlite3'):
+        if os.stat(working_dir+'/temp/part'+str(id)+'_rm.sqlite3')!=0:
+            if os.path.isfile(working_dir+'/temp/part'+str(id)+'.pkl'):
+                if os.stat(working_dir+'/temp/part'+str(id)+'.pkl')!=0:
+                    import sys
+                    sys.exit("Part already processed")
+            
     solver = Solver(proj)
     from core.graph.graph_manager import GraphManager
     proj.gm = GraphManager(proj, proj.solver.assignment_score)
