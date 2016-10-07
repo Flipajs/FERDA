@@ -7,6 +7,7 @@ class ControlPanel(QtGui.QWidget):
     def __init__(self, graph_w_callback):
         super(ControlPanel, self).__init__()
         self.l = QtGui.QHBoxLayout()
+        self.l.setContentsMargins(20, 0, 20, 0)
         self.prepare_buttons(graph_w_callback)
         self.setLayout(self.l)
 
@@ -29,3 +30,4 @@ class ControlPanel(QtGui.QWidget):
         self.prepare_button('Decompress Display (F4)', graph_w_callback.compress_axis_toggle, QtCore.Qt.Key_F4)
         self.prepare_button('Stretch (O)', graph_w_callback.stretch, QtCore.Qt.Key_O)
         self.prepare_button('Shrink (P)', graph_w_callback.shrink, QtCore.Qt.Key_P)
+        self.prepare_button('Update colors (C)', graph_w_callback.update_lines, QtCore.Qt.Key_C)

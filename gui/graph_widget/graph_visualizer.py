@@ -284,6 +284,10 @@ class GraphVisualizer(QtGui.QWidget):
             g_item = self.scene.itemAt(x, y)
             g_item.setSelected(True)
 
+    def update_lines(self):
+        self.edges = self.loader.update_colours(self.edges)
+        self.redraw(self.first_frame, self.last_frame)
+
     def compute_positions(self):
         for edge in self.edges:
             if edge[2] == "chunk":
@@ -535,9 +539,10 @@ class GraphVisualizer(QtGui.QWidget):
         Faster than the one above, intended for use with imageless nodes
         """
         next_x = 0
-        refresh_step = last_frame - first_frame / 2
+        refresh_step = last_frame - first_frame / 3
         r = first_frame
         for column in self.columns:
+            self.load_indicator_wheel()
             column.set_x(next_x)
             next_x = self.increment_x(column, next_x)
             frame_a = frame_b = column.frame
@@ -607,7 +612,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.scene.setForegroundBrush(QtCore.Qt.transparent)
         self.view.setEnabled(True)
 
-    def redraw(self, first_frame=None, last_frame=None):
+    def redraw(self, first_frame=None, last_frame=None, columns=True):
         if not first_frame:
             first_frame = self.first_frame
         if not last_frame:
@@ -617,8 +622,8 @@ class GraphVisualizer(QtGui.QWidget):
 
         # to ensure that graphics scene has correct size
         rect = self.add_rect_to_scene()
-
-        self.draw_columns_light(first_frame, last_frame)
+        if columns:
+            self.draw_columns_light(first_frame, last_frame)
         self.draw_lines(first_frame, last_frame)
         self.load_indicator_hide()
         self.scene.removeItem(rect)
@@ -650,12 +655,12 @@ class GraphVisualizer(QtGui.QWidget):
         return self.selected
 
     def load_indicator_init(self):
-        self.load_ind.show()
         self.buttons.hide()
+        self.load_ind.show()
 
     def load_indicator_hide(self):
-        self.buttons.show()
         self.load_ind.hide()
+        self.buttons.show()
 
     def load_indicator_wheel(self):
         self.load_ind.setText(self.wheel_count * "." + "Loading" + self.wheel_count * ".")

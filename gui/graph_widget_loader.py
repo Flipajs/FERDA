@@ -105,6 +105,30 @@ class GraphWidgetLoader:
             self.prepare_tuples(v.in_edges())
             self.prepare_tuples(v.out_edges())
 
+    def update_colours(self, edges):
+        # ret = set()
+        for edge in edges:
+            c = None
+            if edge[2]== "chunk":
+                chunk = self.project.chm[edge[5]]
+                c = self.assign_color(chunk)
+            # new_tuple = edge[:4] + (c, ) + edge[5:]
+            # ret.add(new_tuple)
+            edge[4] = c
+        # return ret
+
+    def assign_color(self, chunk):
+        if chunk.is_only_one_id_assigned(len(self.project.animals)):
+            id_ = list(chunk.P)[0]
+            c_ = self.project.animals[id_].color_
+            c = QtGui.QColor(c_[2], c_[1], c_[0], 255)
+        else:
+            # default
+            c = QtGui.QColor(0, 0, 0, 120)
+            # old version
+            # c = self.project.chm[source_start_id].color
+        return c
+
     def prepare_tuples(self, edges):
         for edge in edges:
             source = edge.source()
@@ -121,15 +145,7 @@ class GraphWidgetLoader:
             c = None
             if type_of_line == "chunk":
                 chunk = self.project.chm[source_start_id]
-                if chunk.is_only_one_id_assigned(len(self.project.animals)):
-                    id_ = list(chunk.P)[0]
-                    c_ = self.project.animals[id_].color_
-                    c = QtGui.QColor(c_[2], c_[1], c_[0], 255)
-                else:
-                    # default
-                    c = QtGui.QColor(0, 0, 0, 120)
-                    # old version
-                    # c = self.project.chm[source_start_id].color
+                c = self.assign_color(chunk)
 
             new_tuple = (r1, r2, type_of_line, sureness, c, source_start_id)
 

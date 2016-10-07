@@ -1,3 +1,5 @@
+import sys
+
 from gui.graph_widget_loader import GraphWidgetLoader
 
 __author__ = 'fnaiser'
