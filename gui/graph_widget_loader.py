@@ -30,9 +30,6 @@ GAP = WIDTH
 MINIMUM = 5
 # Opacity of the colors
 OPACITY = 255
-# default text to display
-DEFAULT_TEXT = "V - toggle vertical display; C - compress axis; I, O, Ctrl + MWheel - zoom in or out; Q, W - shrink, " \
-               "stretch; A, S show/hide info for selected; T, Y - show/hide toggled node; L - zoom to chunk"
 
 
 class GraphWidgetLoader:

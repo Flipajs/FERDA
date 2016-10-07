@@ -6,7 +6,8 @@ from PyQt4.QtGui import QApplication, QLabel, QSizePolicy
 from PyQt4.QtGui import QWidget
 
 import computer as comp
-from gui.graph_widget_loader import DEFAULT_TEXT, GAP, SPACE_BETWEEN_HOR, \
+from gui.graph_widget.ControlPanel import ControlPanel
+from gui.graph_widget_loader import GAP, SPACE_BETWEEN_HOR, \
     MINIMUM, SPACE_BETWEEN_VER, WIDTH, FROM_TOP, HEIGHT
 from gui.graph_widget.edge import EdgeGraphical, ChunkGraphical
 from gui.graph_widget.info_manager import InfoManager
@@ -41,7 +42,11 @@ class GraphVisualizer(QtGui.QWidget):
         self.height = loader.height
         self.loader = loader
         self.dynamically = dynamically
+        self.compress_axis = compress_axis
+        self.show_vertically = show_vertically
         self.show_tracklet_callback = show_tracklet_callback
+        self.node_zoom_manager = NodeZoomManager()
+        self.info_manager = InfoManager(loader)
 
         self.setLayout(QtGui.QVBoxLayout())
         self.layout().setContentsMargins(0, 11, 0, 11)
@@ -53,7 +58,6 @@ class GraphVisualizer(QtGui.QWidget):
 
         # hscroll_shint = self.chunk_detail_scroll_horizontal.horizontalScrollBar().sizeHint()
         self.chunk_detail_scroll_horizontal.setFixedHeight(self.height * 2)
-
         # vscroll_shint = self.chunk_detail_scroll_vertical.verticalScrollBar().sizeHint()
         self.chunk_detail_scroll_vertical.setFixedWidth(self.width * 2)
 
@@ -79,28 +83,29 @@ class GraphVisualizer(QtGui.QWidget):
         self.scene_width = 0
         self.view.setScene(self.scene)
         self.view.setLayout(QtGui.QHBoxLayout())
-        # self.view.layout().addWidget(self.chunk_detail_scroll_vertical)
         self.scene.clicked.connect(self.scene_clicked)
         self.view.setStyleSheet("QGraphicsView { border-style: none;}")
 
         self.upper_part.layout().addWidget(self.view)
         self.upper_part.layout().addWidget(self.chunk_detail_scroll_vertical)
 
+        self.buttons = ControlPanel(self)
+
         self.layout().addWidget(self.upper_part)
         self.layout().addWidget(self.chunk_detail_scroll_horizontal)
+        self.layout().addWidget(self.buttons)
 
         self.chunk_detail_scroll_horizontal.hide()
         self.chunk_detail_scroll_vertical.hide()
 
-        self.text = QtGui.QLabel(DEFAULT_TEXT)
-        self.text.setAlignment(QtCore.Qt.AlignCenter)
+        self.load_ind = QtGui.QLabel()
+        self.load_ind.setAlignment(QtCore.Qt.AlignCenter)
         stylesheet = "font: 18px"
-        self.text.setStyleSheet(stylesheet)
-        self.layout().addWidget(self.text)
+        self.load_ind.setStyleSheet(stylesheet)
+        self.layout().addWidget(self.load_ind)
+        self.load_ind.hide()
 
         self.selected = []
-        self.node_zoom_manager = NodeZoomManager()
-        self.info_manager = InfoManager(loader)
 
         self.wheel_count = 1
         self.loaded = set()
@@ -130,53 +135,6 @@ class GraphVisualizer(QtGui.QWidget):
         self.menu_edge.addAction(self.view_results_menu_action)
         self.view.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self.view, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.menu)
-
-        self.show_vertically = show_vertically
-        self.show_vertically_action = QtGui.QAction('show vertically', self)
-        self.show_vertically_action.triggered.connect(self.toggle_show_vertically)
-        self.show_vertically_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_V))
-        self.addAction(self.show_vertically_action)
-
-        self.compress_axis = compress_axis
-        self.compress_axis_action = QtGui.QAction('compress axis', self)
-        self.compress_axis_action.triggered.connect(self.compress_axis_toggle)
-        self.compress_axis_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
-        self.addAction(self.compress_axis_action)
-
-        self.stretch_action = QtGui.QAction('stretch', self)
-        self.stretch_action.triggered.connect(self.stretch)
-        self.stretch_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_W))
-        self.addAction(self.stretch_action)
-
-        self.shrink_action = QtGui.QAction('shrink', self)
-        self.shrink_action.triggered.connect(self.shrink)
-        self.shrink_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Q))
-        self.addAction(self.shrink_action)
-
-        self.show_info_action = QtGui.QAction('show_info', self)
-        self.show_info_action.triggered.connect(self.info_manager.show_all_info)
-        self.show_info_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_A))
-        self.addAction(self.show_info_action)
-
-        self.hide_info_action = QtGui.QAction('hide_info', self)
-        self.hide_info_action.triggered.connect(self.info_manager.hide_all_info)
-        self.hide_info_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
-        self.addAction(self.hide_info_action)
-
-        self.show_zoom_node_action = QtGui.QAction('show_zoom', self)
-        self.show_zoom_node_action.triggered.connect(self.node_zoom_manager.show_zoom_all)
-        self.show_zoom_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
-        self.addAction(self.show_zoom_node_action)
-
-        self.hide_zoom_node_action = QtGui.QAction('hide_zoom', self)
-        self.hide_zoom_node_action.triggered.connect(self.node_zoom_manager.hide_zoom_all)
-        self.hide_zoom_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Y))
-        self.addAction(self.hide_zoom_node_action)
-
-        self.zoom_to_chunk_action = QtGui.QAction('zoom_to_chunk', self)
-        self.zoom_to_chunk_action.triggered.connect(self.zoom_to_chunk_event)
-        self.zoom_to_chunk_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_L))
-        self.addAction(self.zoom_to_chunk_action)
 
         if len(self.loader.edges) + len(self.loader.regions) > 0:
             self.add_objects(self.loader.regions, self.loader.edges)
@@ -692,13 +650,15 @@ class GraphVisualizer(QtGui.QWidget):
         return self.selected
 
     def load_indicator_init(self):
-        self.text.setText("Loading")
+        self.load_ind.show()
+        self.buttons.hide()
 
     def load_indicator_hide(self):
-        self.text.setText(DEFAULT_TEXT)
+        self.buttons.show()
+        self.load_ind.hide()
 
     def load_indicator_wheel(self):
-        self.text.setText(self.wheel_count * "." + "Loading" + self.wheel_count * ".")
+        self.load_ind.setText(self.wheel_count * "." + "Loading" + self.wheel_count * ".")
         self.wheel_count += 1
         if self.wheel_count % 3 is 0:
             self.wheel_count = 1
