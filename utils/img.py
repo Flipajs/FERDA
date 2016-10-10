@@ -280,7 +280,7 @@ def centered_crop(img, new_h, new_w):
 
     return img[y_:y_+new_h, x_:x_+new_w, :].copy()
 
-def get_bounding_box(r, project, relative_border=1.3, img=None):
+def get_bounding_box(r, project, relative_border=1.3, absolute_border=-1, img=None):
     from math import ceil
 
     if img is None:
@@ -291,6 +291,11 @@ def get_bounding_box(r, project, relative_border=1.3, img=None):
 
     height2 = int(ceil((roi.height() * relative_border) / 2.0))
     width2 = int(ceil((roi.width() * relative_border) / 2.0))
+
+    if absolute_border > -1:
+        height2 = absolute_border
+        width2 = absolute_border
+
     x = r.centroid()[1] - width2
     y = r.centroid()[0] - height2
 
