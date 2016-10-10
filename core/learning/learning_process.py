@@ -96,7 +96,7 @@ class LearningProcess:
             # self.get_init_data()
 
             # TODO: wait for all necesarry examples, then finish init.
-            np.random.seed(13)
+            # np.random.seed(13)
             self.__train_rfc()
             print "TRAINED"
 
@@ -137,6 +137,29 @@ class LearningProcess:
         # self.save_ids_()
         self.load_learning()
         # self.reset_learning()
+
+    def compute_distinguishability(self):
+        num_a = len(self.p.animals)
+
+        min_weighted_difs = np.zeros((num_a, num_a))
+        total_len = np.zeros((num_a, 1))
+
+        for id_ in self.tracklet_measurements:
+            t = self.p.chm[id_]
+            l_ = t.length()
+
+            total_len += l_
+            m = self.tracklet_measurements[id_]
+
+            i = np.argmax(m)
+            difs = (m[i] - m) * l_
+            total_len[i] += l_
+            min_weighted_difs[i, :] += difs
+
+        for i in range(num_a):
+            print i, min_weighted_difs[i, :] / total_len[i]
+
+        print self.rfc.feature_importances_
 
     def load_learning(self):
         try:
@@ -271,7 +294,7 @@ class LearningProcess:
     def __train_rfc(self):
         print "TRAINING RFC"
 
-        self.rfc = RandomForestClassifier(class_weight='balanced')
+        self.rfc = RandomForestClassifier(class_weight='balanced_subsample', criterion='entropy', n_estimators=10, max_features=1.0)
         if len(self.X):
             self.rfc.fit(self.X, self.y)
             self.__precompute_measurements()
@@ -292,7 +315,7 @@ class LearningProcess:
             # if it is not obvious e.g. (1.0, 0, 0, 0, 0)...
             # if 0 < np.max(x) < 1.0:
             # reduce the certainty by alpha factor depending on tracklet length
-            x = (1-alpha) * uni_probs + alpha*x
+            # x = (1-alpha) * uni_probs + alpha*x
 
             self.tracklet_measurements[tracklet.id()] = x
             self.__update_certainty(tracklet)
@@ -955,7 +978,33 @@ class LearningProcess:
             new_conflicts = self.__find_conflict(t)
             self.__print_conflicts(new_conflicts, t, depth=depth+1)
 
-    def __update_definitely_not_present(self, ids, tracklet):
+    def __get_in_v_N_union(self, v):
+        N = None
+
+        for v_in in v.in_neighbours():
+            t_ = self.p.gm.get_chunk(v_in)
+
+            if N is None:
+                N = set(t_.N)
+            else:
+                N = N.intersection(t_.N)
+
+        return N
+
+    def __get_out_v_N_union(self, v):
+        N = None
+
+        for v_out in v.out_neighbours():
+            t_ = self.p.gm.get_chunk(v_out)
+
+            if N is None:
+                N = set(t_.N)
+            else:
+                N = N.intersection(t_.N)
+
+        return N
+
+    def __update_definitely_not_present(self, ids, tracklet, skip_in=False, skip_out=False):
         P = tracklet.P
         N = tracklet.N
 
@@ -974,6 +1023,28 @@ class LearningProcess:
         tracklet.N = N
 
         self.__update_certainty(tracklet)
+
+        if not skip_out:
+            # update all outcoming
+            for v_out in tracklet.end_vertex(self.p.gm).out_neighbours():
+                t_ = self.p.gm.get_chunk(v_out)
+
+                new_N = self.__get_in_v_N_union(v_out)
+
+                if not new_N.issubset(t_.N):
+                    # print "UPDATING OUTCOMING", tracklet, t_, t_.N, new_N
+                    self.__update_definitely_not_present(new_N, t_)
+
+        if not skip_in:
+            # update all incoming
+            for v_in in tracklet.start_vertex(self.p.gm).in_neighbours():
+                t_ = self.p.gm.get_chunk(v_in)
+
+                new_N = self.__get_out_v_N_union(v_in)
+
+                if not new_N.issubset(t_.N):
+                    # print "UPDATING INCOMING", tracklet, t_, t_.N, new_N
+                    self.__update_definitely_not_present(new_N, t_)
 
         return True
 
@@ -1138,7 +1209,8 @@ class LearningProcess:
         id_set = set([id_])
         tracklet.P = id_set
         # and the rest of ids goes to not_present
-        tracklet.N = self.all_ids.difference(id_set)
+        # we want to call this function, so the information is propagated...
+        self.__update_definitely_not_present(self.all_ids.difference(id_set), tracklet)
 
         # if affecting:
         affected_tracklets = self.__get_affected_tracklets(tracklet)

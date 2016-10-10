@@ -269,7 +269,7 @@ class ResultsWidget(QtGui.QWidget):
 
         # increase video step
         self.increase_video_step_a = QtGui.QAction('increase video step', self)
-        self.increase_video_step_a.triggered.connect(self.increase_video_step)
+        self.increase_video_step_a.triggered.connect(lambda x: setattr(self, 'video_step', self.video_step + 1))
         self.increase_video_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_2))
         self.addAction(self.increase_video_step_a)
 

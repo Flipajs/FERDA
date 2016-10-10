@@ -28,10 +28,10 @@ if is_flipajs_pc():
     # name = 'Cam'+str(cam_)+' copy'
 
     # name = 'Cam'+str(cam_)
-    # wd = '/Users/flipajs/Documents/wd/zebrafish0'
-    # wd = '/Users/flipajs/Documents/wd/zebrafish4385'
+    wd = '/Users/flipajs/Documents/wd/zebrafish0'
+    wd = '/Users/flipajs/Documents/wd/zebrafish4385'
     wd = '/Users/flipajs/Documents/wd/zebrafish14206'
-    # wd = '/Users/flipajs/Documents/wd/'
+    wd = '/Users/flipajs/Documents/wd/GT/Cam1_'
     snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
                 'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 

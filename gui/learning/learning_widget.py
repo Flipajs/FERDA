@@ -45,7 +45,8 @@ class LearningWidget(QtGui.QWidget):
         self.hbox.addWidget(self.info_table)
 
         self.next_step_button = QtGui.QPushButton('next step')
-        self.next_step_button.clicked.connect(self.lp.next_step)
+        # self.lp will change...
+        self.next_step_button.clicked.connect(lambda x: self.lp.next_step())
         self.top_stripe_layout.addWidget(self.next_step_button)
 
         self.label_certainty_eps = QtGui.QLabel('certainty eps:')
@@ -93,6 +94,11 @@ class LearningWidget(QtGui.QWidget):
         self.update_b = QtGui.QPushButton('update')
         self.update_b.clicked.connect(self.update_callback)
         self.top_stripe_layout.addWidget(self.update_b)
+
+        self.compute_distinguishability_b = QtGui.QPushButton('comp. disting.')
+        # self.lp will change...
+        self.compute_distinguishability_b.clicked.connect(lambda x: self.lp.compute_distinguishability())
+        self.top_stripe_layout.addWidget(self.compute_distinguishability_b)
 
         # self.add_tracklet_table()
         # self.update_callback()
