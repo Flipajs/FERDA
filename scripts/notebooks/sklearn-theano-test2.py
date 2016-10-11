@@ -53,8 +53,8 @@ def process_tracklet(t, p, cnn):
             im_ = get_safe_selection(bb, y, x, H_, W_, fill_color=(0, 0, 0))
 
 
-            # cv2.imshow('im', np.fliplr(im_))
-            # cv2.waitKey(0)
+            cv2.imshow('im', np.fliplr(im_))
+            cv2.waitKey(0)
 
             X.append(im_)
             # flip for augmentation...
@@ -78,14 +78,20 @@ def get_features(p, tracklets, cnn):
     return features
 
 if __name__ == "__main__":
-    tracklets = {0: [6, 226, 116, 153],
-                1: [14, 227, 113, 163],
-                2: [3, 229, 108, 145],
-                3: [13, 209, 105, 152],
-                4: [12, 156, 112],
-                5: [11, 214, 94]}
+    # wd = '/Users/flipajs/Documents/wd/GT/Cam1_'
+    # tracklets = {0: [6, 226, 116, 153],
+    #             1: [14, 227, 113, 163],
+    #             2: [3, 229, 108, 145],
+    #             3: [13, 209, 105, 152],
+    #             4: [12, 156, 112],
+    #             5: [11, 214, 94]}
 
-    wd = '/Users/flipajs/Documents/wd/GT/Cam1_'
+    wd = '/Users/flipajs/Documents/wd/zebrafish0'
+    tracklets = {0: [5, 15],
+                 1: [3, 16],
+                 2: [4, 47],
+                 3: [1, 45],
+                 4: [2]}
 
     if False:
         from core.project.project import Project
@@ -113,7 +119,7 @@ if __name__ == "__main__":
             data[id_] = np.array(data[id_])
             print data[id_].shape
 
-        for_learning = 500
+        for_learning = 300
 
         X = []
         y = []
