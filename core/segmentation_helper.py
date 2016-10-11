@@ -97,10 +97,8 @@ class SegmentationHelper:
         cy = h/2
         x.append(((i-cy)**2 + (j-cx)**2)**0.5)
 
-        # x.append(i-cy)
-        # x.append(j-cx)
-
-
+        x.append(cx-j)
+        x.append(cy-i)
 
         X.append(x)
         y.append(classification)
@@ -167,7 +165,8 @@ class SegmentationHelper:
         # reshape the image so it contains 12*n-tuples, each descripting a features of a single pixel
         #     on all layers in the pyramid
         h, w, c = self.image.shape
-        data.shape = ((h * w, 12 * self.num + 1))
+        data.shape = ((h * w, 12 * self.num + 3))
+        print data.dtype
 
         # remove features that were found unnecessary
         # filtered = get_filtered_model(self.unused, data)
@@ -207,20 +206,22 @@ class SegmentationHelper:
             result.append(self.diff[i].reshape((h * w, 1)))
 
         dist_im = np.zeros((h, w, 1), dtype=np.float)
-        # dist_x_im = np.zeros((h, w, 1), dtype=np.float)
-        # dist_y_im = np.zeros((h, w, 1), dtype=np.float)
+        dist_x_im = np.zeros((h, w, 1), dtype=np.float)
+        dist_y_im = np.zeros((h, w, 1), dtype=np.float)
         cx = w/2
         cy = h/2
+
+        print h, w
 
         for y in range(h):
             for x in range(w):
                 dist_im[y, x, :] = ((cx-x)**2 + (cy-y)**2)**0.5
-                # dist_x_im[y, x, :] = cx-x
-                # dist_y_im[y, x, :] = cy-y
+                dist_x_im[y, x, :] = cx-x
+                dist_y_im[y, x, :] = cy-y
 
         result.append(dist_im.reshape((h * w, 1)))
-        # result.append(dist_x_im.reshape((h * w, 1)))
-        # result.append(dist_y_im.reshape((h * w, 1)))
+        result.append(dist_x_im.reshape((h * w, 1)))
+        result.append(dist_y_im.reshape((h * w, 1)))
 
         return result
 
@@ -437,7 +438,7 @@ def get_filtered_rfc(zeros, X, y):
     for tup in X:
         newtup = np.delete(tup, zeros)
         newX.append(newtup)
-    rfc = RandomForestClassifier(class_weight='balanced')
+    rfc = RandomForestClassifier(class_weight='balanced', max_features=1.0)
     return rfc.fit(newX, y)
 
 

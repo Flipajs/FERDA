@@ -40,7 +40,7 @@ class Painter(QtGui.QWidget):
         self.set_image(image)
 
         # create empty overlay - this can be used to set masks from outside the painter
-        bg_size = QtCore.QSize(self.w, self.h)
+        bg_size = QtCore.QSize(self.h, self.w)
         fmt = QtGui.QImage.Format_ARGB32
         overlay_image = QtGui.QImage(bg_size, fmt)
         overlay_image.fill(QtGui.qRgba(0, 0, 0, 0))
@@ -136,7 +136,7 @@ class Painter(QtGui.QWidget):
         for name, data in self.colors.iteritems():
 
             # reset mask
-            mask = np.zeros((self.w, self.h))
+            mask = np.zeros((self.h, self.w))
             color = data[1]
             # remove old pixmap
             self.scene.removeItem(data[2])

@@ -3,6 +3,7 @@ import sys
 import time
 
 import cv2
+import os
 
 import numpy as np
 from PIL import ImageQt
@@ -21,8 +22,16 @@ from utils.video_manager import get_auto_video_manager
 __author__ = 'filip@naiser.cz', 'dita'
 
 
+def gen_filtered_listdir(path):
+    for f in os.listdir(path):
+        if f in ['.DS_Store', 'Thumbs.db']:
+            continue
+
+        yield f
+
+
 class SetMSERs(QtGui.QWidget):
-    def __init__(self, project, im, mser_color=(255, 128, 0, 200), prob_color=(0, 255, 0, 200),
+    def __init__(self, wd, gt_dir, prob_color=(0, 255, 0, 200),
                  foreground_color=(0, 255, 0, 255), background_color=(255, 0, 238, 255)):
         """
         Interactive tool to improve msers search using segmentation.
@@ -34,17 +43,29 @@ class SetMSERs(QtGui.QWidget):
         """
         super(SetMSERs, self).__init__()
 
-        self.project = project
-        self.vid = get_auto_video_manager(project)
+        self.project = None
+        self.vid = None
 
-        self.im = im
+        try:
+            os.mkdir(gt_dir)
+        except OSError:
+            pass
+
+        self.wd = wd
+        self.gt_dir = gt_dir
+
+        self.im_paths = [wd+'/'+p for p in gen_filtered_listdir(wd)]
+        self.im_i = 0
+
+        self.im = None
+        self.load_im()
+
         self.w, self.h, c = self.im.shape
 
         self.use_segmentation_ = False
         self.segmentation = None
 
         # Setup colors
-        self.color_mser = mser_color
         self.color_prob = prob_color
         self.color_foreground = foreground_color
         self.color_background = background_color
@@ -100,6 +121,9 @@ class SetMSERs(QtGui.QWidget):
 
         self.update_all()
         self.show()
+
+    def load_im(self):
+        self.im = cv2.imread(self.im_paths[self.im_i])
 
     def update_all(self):
         """
@@ -229,23 +253,37 @@ class SetMSERs(QtGui.QWidget):
         Show current settings on next frame
         :return: None
         """
-        image = self.vid.next_frame()
-        self.set_image(image)
+        self.im_i += 1
+        if self.im_i >= len(self.im_paths):
+            self.im_i = 0
+            print "max im_i"
+
+        self.load_im()
+        self.set_image(self.im)
+
+    def show_prev_frame(self):
+        """
+        Show current settings on next frame
+        :return: None
+        """
+        self.im_i -= 1
+        if self.im_i < 0:
+            self.im_i = len(self.im_paths) - 1
+            print "0 im_i"
+
+        self.load_im()
+        self.set_image(self.im)
 
     def show_random_frame(self):
         """
         Show current settings on random frame
         :return: None
         """
-        im = self.vid.random_frame()
+        import random
+        self.im_i = random.randint(0, len(self.im_paths))
 
-        if self.project.bg_model:
-            im = self.project.bg_model.bg_subtraction(im)
-
-        if self.project.arena_model:
-            im = self.project.arena_model.mask_image(im)
-
-        self.set_image(im)
+        self.load_im()
+        self.set_image(self.im)
 
     def set_image(self, image):
         """
@@ -309,6 +347,8 @@ class SetMSERs(QtGui.QWidget):
         self.painter.set_overlay2_visible(self.check_mser.isChecked())
 
     def val_changed(self):
+        return
+
         self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
         self.project.mser_parameters.min_area = self.mser_min_area.value()
         self.project.mser_parameters.max_area = self.mser_max_area.value()
@@ -322,7 +362,7 @@ class SetMSERs(QtGui.QWidget):
         self.project.mser_parameters.use_children_filter = self.use_children_filter.isChecked()
 
         # only mser-related parameters were changed, no need to update everything
-        self.update_mser()
+        # self.update_mser()
 
     def prepare_widgets(self):
         self.use_children_filter = QtGui.QCheckBox()
@@ -342,87 +382,14 @@ class SetMSERs(QtGui.QWidget):
         self.check_prob = QtGui.QCheckBox("Probability mask")
         self.check_paint = QtGui.QCheckBox("Paint data")
         self.check_mser = QtGui.QCheckBox("MSER view")
-        self.button_next = QtGui.QPushButton("Next frame")
-        self.button_rand = QtGui.QPushButton("Random frame")
+        self.button_next = QtGui.QPushButton("Next")
+        self.button_prev = QtGui.QPushButton("Prev")
+        self.button_rand = QtGui.QPushButton("Random")
         self.button_done = QtGui.QPushButton("Done")
 
+        self.save_gt_button = QtGui.QPushButton("save GT")
+
     def configure_form_panel(self):
-        self.mser_max_area.setMinimum(0.0001)
-        self.mser_max_area.setSingleStep(0.0001)
-        self.mser_max_area.setMaximum(1.0)
-        self.mser_max_area.setDecimals(6)
-        self.mser_max_area.setValue(self.project.mser_parameters.max_area)
-        self.mser_max_area.valueChanged.connect(self.val_changed)
-        self.form_panel.addRow('MSER Max relative area', self.mser_max_area)
-
-        self.mser_min_area.setMinimum(0)
-        self.mser_min_area.setMaximum(1000)
-        self.mser_min_area.setValue(self.project.mser_parameters.min_area)
-        self.mser_min_area.valueChanged.connect(self.val_changed)
-        self.form_panel.addRow('MSER Min area', self.mser_min_area)
-
-        self.mser_min_margin.setMinimum(3)
-        self.mser_min_margin.setMaximum(100)
-        self.mser_min_margin.setValue(self.project.mser_parameters.min_margin)
-        self.mser_min_margin.valueChanged.connect(self.val_changed)
-        self.form_panel.addRow('MSER Min margin', self.mser_min_margin)
-
-        self.mser_img_subsample.setMinimum(1.0)
-        self.mser_img_subsample.setMaximum(12.0)
-        self.mser_img_subsample.setSingleStep(0.1)
-        self.mser_img_subsample.setValue(self.project.other_parameters.img_subsample_factor)
-        self.mser_img_subsample.valueChanged.connect(self.val_changed)
-        self.form_panel.addRow('MSER image subsample factor', self.mser_img_subsample)
-
-        self.blur_kernel_size.setMinimum(0.0)
-        self.blur_kernel_size.setMaximum(5.0)
-        self.blur_kernel_size.setSingleStep(0.1)
-        self.blur_kernel_size.setValue(self.project.mser_parameters.gaussian_kernel_std)
-        self.blur_kernel_size.valueChanged.connect(self.val_changed)
-        self.form_panel.addRow('Gblur kernel size', self.blur_kernel_size)
-
-        self.intensity_threshold.setMinimum(0)
-        self.intensity_threshold.setMaximum(256)
-        self.intensity_threshold.setSingleStep(1)
-        self.intensity_threshold.setValue(256)
-        self.intensity_threshold.valueChanged.connect(self.val_changed)
-        self.form_panel.addRow('intensity threshold (ignore pixels above)', self.intensity_threshold)
-
-        self.min_area_relative.setMinimum(0.0)
-        self.min_area_relative.setMaximum(1.0)
-        self.min_area_relative.setValue(0.2)
-        self.min_area_relative.setSingleStep(0.02)
-        self.min_area_relative.valueChanged.connect(self.val_changed)
-        self.form_panel.addRow('min_area = (median of selected regions) * ', self.min_area_relative)
-
-        self.region_min_intensity.setMaximum(256)
-        self.region_min_intensity.setValue(56)
-        self.region_min_intensity.setMinimum(0)
-        self.region_min_intensity.setSingleStep(1)
-        self.region_min_intensity.valueChanged.connect(self.val_changed)
-        self.form_panel.addRow('region min intensity', self.region_min_intensity)
-        # this line is necessary to avoid possible bugs in the future
-        self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
-
-        """
-        self.frame_number = QtGui.QSpinBox()
-        self.frame_number.setMinimum(-1)
-        self.frame_number.setValue(-1)
-        self.frame_number.setMaximum(10000000)
-        self.form_panel.addRow('frame (-1 = random)', self.frame_number)
-        self.random_frame = QtGui.QPushButton('go 2 frame')
-        self.random_frame.clicked.connect(self.choose_random_frame)
-        self.form_panel.addRow('', self.random_frame)
-        """
-
-        self.use_children_filter.stateChanged.connect(self.val_changed)
-        self.use_children_filter.setChecked(self.project.mser_parameters.use_children_filter)
-        self.form_panel.addRow('use children filter', self.use_children_filter)
-
-        self.use_only_red_ch.stateChanged.connect(self.val_changed)
-        self.form_panel.addRow('use only red channel in img', self.use_only_red_ch)
-        self.button_group.addButton(self.use_only_red_ch)
-
         self.use_full_image.stateChanged.connect(self.val_changed)
         self.form_panel.addRow('full image', self.use_full_image)
         self.button_group.addButton(self.use_full_image)
@@ -433,7 +400,6 @@ class SetMSERs(QtGui.QWidget):
         self.use_segmentation.setChecked(True)
 
     def configure_paint_panel(self):
-
         # PEN SIZE slider
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
         self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
@@ -490,6 +456,9 @@ class SetMSERs(QtGui.QWidget):
         self.button_next.clicked.connect(self.show_next_frame)
         self.left_panel.layout().addWidget(self.button_next)
 
+        self.button_prev.clicked.connect(self.show_prev_frame)
+        self.left_panel.layout().addWidget(self.button_prev)
+
         self.button_rand.clicked.connect(self.show_random_frame)
         self.left_panel.layout().addWidget(self.button_rand)
 
@@ -500,10 +469,17 @@ class SetMSERs(QtGui.QWidget):
         self.left_panel.layout().addWidget(self.im_path_input)
 
         self.load_im_button = QtGui.QPushButton('load img')
-        self.load_im_button.clicked.connect(self.load_im)
+        self.load_im_button.clicked.connect(self.load_im_path)
         self.left_panel.layout().addWidget(self.load_im_button)
 
-    def load_im(self):
+        self.save_gt_button.clicked.connect(self.save_gt)
+        self.left_panel.layout().addWidget(self.save_gt_button)
+
+    def save_gt(self):
+        # TODO:
+        pass
+
+    def load_im_path(self):
         path = str(self.im_path_input.text())
         new_im = cv2.imread(path)
         self.set_image(new_im)
@@ -513,30 +489,15 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
 
-    # proj.load("/home/dita/Programovani/FERDA Projects/cam1_test/cam1_test.fproj")
-    # proj.load('/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj')
-    im = cv2.imread('/Users/flipajs/Dropbox/3doid/auto/data/fotky_sub4/a4tech-bloody_b254/DSC_157018.jpg')
-
-    proj.load('/Users/flipajs/Documents/wd/GT/Cam1/cam1.fproj')
-    # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
-    proj.arena_model = None
-    proj.bg_model = None
-
-    # proj.video_paths = '/home/flipajs/Downloads/Camera 1_biglense1.avi'
-    # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
-    # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
-    # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c2.avi'
+    wd = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/apc_731304313649'
+    gt_dir = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/GT/apc_731304313649'
 
     print "Done loading"
 
-    ex = SetMSERs(proj, im)
+    ex = SetMSERs(wd, gt_dir)
     ex.raise_()
     ex.showMaximized()
     ex.activateWindow()
-
-    # ex.mser_min_margin.setValue(proj.mser_parameters.min_margin)
-    # ex.mser_min_area.setValue(proj.mser_parameters.min_area)
-    # ex.mser_max_area.setValue(proj.mser_parameters.max_area)
 
     app.exec_()
     app.deleteLater()
