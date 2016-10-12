@@ -31,7 +31,7 @@ def gen_filtered_listdir(path):
 
 
 class SetMSERs(QtGui.QWidget):
-    def __init__(self, wd, gt_dir, prob_color=(0, 255, 0, 200),
+    def __init__(self, wd, gt_dir, prob_color=(255, 0, 0, 200),
                  foreground_color=(0, 255, 0, 255), background_color=(255, 0, 238, 255)):
         """
         Interactive tool to improve msers search using segmentation.
@@ -333,8 +333,8 @@ class SetMSERs(QtGui.QWidget):
             pickle.dump(self.helper, f, -1)
 
     def load_helper(self):
-        # with open(self.gt_dir + '/segmentation_model.pkl', 'rb') as f:
-        with open('/Users/flipajs/Documents/wd/3Doid/sub4_photos/bg_model.pkl', 'rb') as f:
+        with open(self.gt_dir + '/segmentation_model.pkl', 'rb') as f:
+        # with open('/Users/flipajs/Documents/wd/3Doid/sub4_photos/bg_model.pkl', 'rb') as f:
             self.helper = pickle.load(f)
 
         self.update_rfc = True
@@ -573,9 +573,9 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
 
-    wd = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/test'
+    wd = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/test2'
     # wd = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/hannspree_4711404021589'
-    gt_dir = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/GT/test'
+    gt_dir = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/GT/test2'
 
     print "Done loading"
 
