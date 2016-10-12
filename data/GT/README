@@ -1,0 +1,11 @@
+Ground Truth files can be loaded using python pickle module.
+
+Format is:
+gt[frame][0] is tuple (y, x)
+
+example:
+gt[100][2] returns (y, x) of id 2 in frame 100
+
+!!!!!!!
+if y < 0 means - not present
+
