@@ -415,7 +415,7 @@ class ResultsWidget(QtGui.QWidget):
         with open(self._gt_file, 'wb') as f:
             pickle.dump(self._gt, f)
 
-        self.change_frame(frame + self._gt_corr_step)
+        # self.change_frame(frame + self._gt_corr_step)
         print self._gt[frame]
 
     def draw_region(self, r, tracklet, use_ch_color=None, alpha=120):
