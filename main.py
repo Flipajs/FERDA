@@ -24,14 +24,10 @@ if is_flipajs_pc():
     sn_id = 875
     cam_ = 1
 
-    name = 'Cam1_'
-    # name = 'Cam'+str(cam_)+' copy'
-
-    # name = 'Cam'+str(cam_)
-    wd = '/Users/flipajs/Documents/wd/zebrafish'
+    wd = '/Users/flipajs/Documents/wd/GT/S9T91min'
     # wd = '/Users/flipajs/Documents/wd/'
-    snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
-                'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
+    # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
+    #             'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
     # project.load(wd+name+'/cam'+str(cam_)+'.fproj')
     project.load(wd)
