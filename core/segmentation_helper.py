@@ -7,7 +7,7 @@ import time
 
 
 class SegmentationHelper:
-    def __init__(self, image, num=3, scale=2):
+    def __init__(self, num=3, scale=2):
         self.pyramid = None
         self.images = None
         self.image = None
@@ -24,6 +24,9 @@ class SegmentationHelper:
         self.num = num
         self.scale = scale
 
+        self.angle = 0
+        self.lvl = 0
+
         # these arrays contain learning data from previous frames
         # after confirming selection on a frame, temporary data is copied here
         self.X = []  # X is a list of tuples, each tuple contains N properties of a pixel, eg (r, g, b)
@@ -37,9 +40,9 @@ class SegmentationHelper:
 
         self.rfc = None
         self.unused = [] # list of features that are currently ignored
-        self.set_image(image)
+        # self.set_image(image, 0, 0)
 
-    def set_image(self, image):
+    def set_image(self, image, angle, lvl):
         """
         Sets a new image, computes all features on the new images and prepares to use it in classification.
         To preserve RFC training data from previous images, use "helper.update_xy()"
@@ -47,6 +50,9 @@ class SegmentationHelper:
         :return: None
         """
         self.image = image  # original image
+
+        self.angle = angle
+        self.lvl = lvl
 
         # images are stored in lists with len corresponding to pyramid height
         # index 0 contains data obtained from largest image, all other indices contain data from scaled images
@@ -100,6 +106,9 @@ class SegmentationHelper:
         x.append(cx-j)
         x.append(cy-i)
 
+        x.append(self.angle)
+        x.append(self.lvl)
+
         X.append(x)
         y.append(classification)
 
@@ -145,6 +154,7 @@ class SegmentationHelper:
         start = time.time()
         self.rfc.fit(X, y)
         print "RFC fitting takes     %f" % (time.time() - start)
+        print len(self.X), len(self.y)
 
         # # find unused features and remove them
         # # create new classifier with less features, it will be faster
@@ -165,8 +175,7 @@ class SegmentationHelper:
         # reshape the image so it contains 12*n-tuples, each descripting a features of a single pixel
         #     on all layers in the pyramid
         h, w, c = self.image.shape
-        data.shape = ((h * w, 12 * self.num + 3))
-        print data.dtype
+        data.shape = ((h * w, data.shape[2]))
 
         # remove features that were found unnecessary
         # filtered = get_filtered_model(self.unused, data)
@@ -222,6 +231,9 @@ class SegmentationHelper:
         result.append(dist_im.reshape((h * w, 1)))
         result.append(dist_x_im.reshape((h * w, 1)))
         result.append(dist_y_im.reshape((h * w, 1)))
+
+        result.append(np.ones((h*w, 1), dtype=np.float) * self.angle)
+        result.append(np.ones((h*w, 1), dtype=np.float) * self.lvl)
 
         return result
 

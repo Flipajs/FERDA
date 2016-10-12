@@ -46,6 +46,8 @@ class SetMSERs(QtGui.QWidget):
         self.project = None
         self.vid = None
 
+        self.PER_LVL = 36
+
         try:
             os.mkdir(gt_dir)
         except OSError:
@@ -75,13 +77,16 @@ class SetMSERs(QtGui.QWidget):
         self.cur_color = "background"
         self.cur_eraser = False
 
+        self.update_rfc = False
+
         # Setup painter
         r, g, b, a = self.color_background
         self.painter = Painter(self.im, paint_name="background", paint_r=r, paint_g=g, paint_b=b, paint_a=a)
         self.painter.add_color_("foreground", self.color_foreground)
 
         # Setup segmentation helper
-        self.helper = SegmentationHelper(self.im, num=2)
+        self.helper = SegmentationHelper(num=2)
+        self.helper.set_image(self.im, self.get_angle(), self.get_lvl())
 
         # Prepare img_grid variable
         self.img_grid = None
@@ -119,6 +124,9 @@ class SetMSERs(QtGui.QWidget):
         # Set a callback in painter when paint event occurs
         self.painter.update_callback = self.update_all
 
+
+        self.add_actions()
+
         self.update_all()
         self.show()
 
@@ -133,7 +141,9 @@ class SetMSERs(QtGui.QWidget):
         """
         # paint must be updated first, because segmentation results are used in msers
         self.update_paint()
-        self.update_img()
+        if self.update_rfc:
+            self.update_img()
+
         # self.update_mser()
 
     def update_mser(self):
@@ -193,8 +203,9 @@ class SetMSERs(QtGui.QWidget):
         background = result["background"]
         foreground = result["foreground"]
 
-        # obtain segmentation image from helper
-        self.helper.train(background, foreground)
+        if self.update_rfc:
+            # obtain segmentation image from helper
+            self.helper.train(background, foreground)
 
         # stop cursor animation
         QtGui.QApplication.restoreOverrideCursor()
@@ -261,6 +272,12 @@ class SetMSERs(QtGui.QWidget):
         self.load_im()
         self.set_image(self.im)
 
+    def get_angle(self):
+        return self.im_i % self.PER_LVL
+
+    def get_lvl(self):
+        return self.im_i / self.PER_LVL
+
     def show_prev_frame(self):
         """
         Show current settings on next frame
@@ -302,14 +319,27 @@ class SetMSERs(QtGui.QWidget):
         # save current xy data in helper
         self.helper.update_xy()
         # update helper's image
-        self.helper.set_image(self.im)
+        self.helper.set_image(self.im, self.get_angle(), self.get_lvl())
         self.update_img()
         # self.update_mser()
         # self.update_all()
 
     def done(self):
-        with open(self.project.working_directory+'/segmentation_model.pkl', 'wb') as f:
+        self.helper.update_xy()
+
+        # TODO:...
+        with open(self.gt_dir+'/segmentation_model.pkl', 'wb') as f:
+        # with open('/Users/flipajs/Documents/wd/3Doid/sub4_photos/bg_model.pkl', 'wb') as f:
             pickle.dump(self.helper, f, -1)
+
+    def load_helper(self):
+        # with open(self.gt_dir + '/segmentation_model.pkl', 'rb') as f:
+        with open('/Users/flipajs/Documents/wd/3Doid/sub4_photos/bg_model.pkl', 'rb') as f:
+            self.helper = pickle.load(f)
+
+        self.update_rfc = True
+        self.set_image(self.im)
+        self.update_all()
 
     def set_color_bg(self):
         self.cur_color = "background"
@@ -344,7 +374,7 @@ class SetMSERs(QtGui.QWidget):
         self.painter.set_image_visible(self.check_bg.isChecked())
         self.painter.set_overlay_visible(self.check_prob.isChecked())
         self.painter.set_masks_visible(self.check_paint.isChecked())
-        self.painter.set_overlay2_visible(self.check_mser.isChecked())
+        # self.painter.set_overlay2_visible(self.check_mser.isChecked())
 
     def val_changed(self):
         return
@@ -364,6 +394,31 @@ class SetMSERs(QtGui.QWidget):
         # only mser-related parameters were changed, no need to update everything
         # self.update_mser()
 
+    def add_actions(self):
+        from utils import gui_coding
+
+        gui_coding.add_action(self, 'bg_check', QtCore.Qt.SHIFT + QtCore.Qt.Key_B,
+                              lambda x: self.check_bg.setChecked(not self.check_bg.isChecked()))
+
+        gui_coding.add_action(self, 'proba_check', QtCore.Qt.SHIFT + QtCore.Qt.Key_P,
+                              lambda x: self.check_prob.setChecked(not self.check_prob.isChecked()))
+
+        gui_coding.add_action(self, 'background_brush', QtCore.Qt.Key_B, self.set_color_bg)
+
+        gui_coding.add_action(self, 'foreground_brush', QtCore.Qt.Key_F, self.set_color_fg)
+
+        gui_coding.add_action(self, 'eraser', QtCore.Qt.Key_E, self.set_eraser)
+
+        gui_coding.add_action(self, 'increase_brush_size', QtCore.Qt.Key_2,
+                              lambda x: self.slider.setValue(self.slider.value() + 2))
+
+        gui_coding.add_action(self, 'decrease_brush_size', QtCore.Qt.Key_1,
+                              lambda x: self.slider.setValue(self.slider.value() - 2))
+
+        gui_coding.add_action(self, 'pause_RFC_updating', QtCore.Qt.Key_Space,
+                              lambda x: setattr(self, 'update_rfc', not getattr(self, 'update_rfc')))
+
+
     def prepare_widgets(self):
         self.use_children_filter = QtGui.QCheckBox()
         self.button_group = QtGui.QButtonGroup()
@@ -379,13 +434,21 @@ class SetMSERs(QtGui.QWidget):
         self.min_area_relative = QtGui.QDoubleSpinBox()
         self.region_min_intensity = QtGui.QSpinBox()
         self.check_bg = QtGui.QCheckBox("Background image")
+
         self.check_prob = QtGui.QCheckBox("Probability mask")
+
         self.check_paint = QtGui.QCheckBox("Paint data")
-        self.check_mser = QtGui.QCheckBox("MSER view")
+
         self.button_next = QtGui.QPushButton("Next")
         self.button_prev = QtGui.QPushButton("Prev")
         self.button_rand = QtGui.QPushButton("Random")
+
+        self.button_next_lvl = QtGui.QPushButton('next lvl')
+        self.button_prev_lvl = QtGui.QPushButton('prev lvl')
+
         self.button_done = QtGui.QPushButton("Done")
+
+        self.load_button = QtGui.QPushButton("load model")
 
         self.save_gt_button = QtGui.QPushButton("save GT")
 
@@ -406,7 +469,7 @@ class SetMSERs(QtGui.QWidget):
         self.slider.setGeometry(30, 40, 50, 30)
         self.slider.setRange(2, 30)
         self.slider.setTickInterval(1)
-        self.slider.setValue(self.pen_size)
+        self.slider.setValue(self.pen_size * 2)
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.painter.set_pen_size)
         self.slider.setVisible(True)
@@ -449,10 +512,6 @@ class SetMSERs(QtGui.QWidget):
         self.check_paint.toggled.connect(self.checkbox)
         self.left_panel.layout().addWidget(self.check_paint)
 
-        self.check_mser.setChecked(True)
-        self.check_mser.toggled.connect(self.checkbox)
-        self.left_panel.layout().addWidget(self.check_mser)
-
         self.button_next.clicked.connect(self.show_next_frame)
         self.left_panel.layout().addWidget(self.button_next)
 
@@ -465,6 +524,12 @@ class SetMSERs(QtGui.QWidget):
         self.button_done.clicked.connect(self.done)
         self.left_panel.layout().addWidget(self.button_done)
 
+        self.button_next_lvl.clicked.connect(self.next_lvl)
+        self.left_panel.layout().addWidget(self.button_next_lvl)
+
+        self.button_prev_lvl.clicked.connect(self.prev_lvl)
+        self.left_panel.layout().addWidget(self.button_prev_lvl)
+
         self.im_path_input = QtGui.QLineEdit()
         self.left_panel.layout().addWidget(self.im_path_input)
 
@@ -474,6 +539,25 @@ class SetMSERs(QtGui.QWidget):
 
         self.save_gt_button.clicked.connect(self.save_gt)
         self.left_panel.layout().addWidget(self.save_gt_button)
+
+        self.load_button.clicked.connect(self.load_helper)
+        self.left_panel.layout().addWidget(self.load_button)
+
+    def next_lvl(self):
+        self.im_i += self.PER_LVL
+        if self.im_i >= len(self.im_paths):
+            self.im_i %= self.PER_LVL
+
+        self.load_im()
+        self.set_image(self.im)
+
+    def prev_lvl(self):
+        self.im_i -= self.PER_LVL
+        if self.im_i < 0:
+            self.im_i += len(self.im_paths)
+
+        self.load_im()
+        self.set_image(self.im)
 
     def save_gt(self):
         # TODO:
@@ -489,8 +573,9 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
 
-    wd = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/apc_731304313649'
-    gt_dir = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/GT/apc_731304313649'
+    wd = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/test'
+    # wd = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/hannspree_4711404021589'
+    gt_dir = '/Users/flipajs/Documents/wd/3Doid/sub4_photos/GT/test'
 
     print "Done loading"
 
