@@ -63,6 +63,12 @@ class Exporter:
 
         if self.contour_pts_export:
             pts = r.contour_without_holes()
+
+            if pts is None:
+                print r
+                with open('r_debug.pkl', 'wb') as f:
+                    pickle.dump(r, f)
+
             self.append_pts_(d, 'region_contour', pts)
 
         d['region_id'].append(r.id_)
