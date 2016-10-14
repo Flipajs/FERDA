@@ -286,8 +286,7 @@ class GraphVisualizer(QtGui.QWidget):
             g_item.setSelected(True)
 
     def update_lines(self):
-        self.edges = self.loader.update_colours(self.edges)
-        self.redraw(self.first_frame, self.last_frame)
+        self.loader.update_colours(self.edges)
 
     def compute_positions(self):
         for edge in self.edges:
@@ -582,7 +581,12 @@ class GraphVisualizer(QtGui.QWidget):
             i += 1
         event_loaded.set()
 
-    def draw_lines(self, first_frame, last_frame):
+
+    def draw_lines(self, first_frame=None, last_frame=None):
+        if first_frame is None:
+            first_frame = self.first_frame
+        if last_frame is None:
+            last_frame = self.last_frame
         for edge in self.edges:
             region_from = edge.region_from
             region_to = edge.region_to

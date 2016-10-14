@@ -41,8 +41,6 @@ class MyViewZoomable(QtGui.QGraphicsView):
             self.zoom(False)
         elif event_key == key_i:
             self.zoom(True)
-        # elif event_key == key_q or event_key == key_w:
-        #     self.stretch(event_key == key_q)
         else:
             super(MyViewZoomable, self).keyPressEvent(event)
 

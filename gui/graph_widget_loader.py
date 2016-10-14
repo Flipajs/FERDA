@@ -107,16 +107,14 @@ class GraphWidgetLoader:
             self.prepare_tuples(v.out_edges())
 
     def update_colours(self, edges):
-        # ret = set()
         for edge in edges:
-            c = None
-            if edge[2]== "chunk":
-                chunk = self.project.chm[edge[5]]
+            if edge.type == LineType.TRACKLET:
+                chunk = self.project.chm[edge.id]
                 c = self.assign_color(chunk)
-            # new_tuple = edge[:4] + (c, ) + edge[5:]
-            # ret.add(new_tuple)
-            edge[4] = c
-        # return ret
+                import random
+                c = QtGui.QColor(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+                edge.color = c
+        self.g.draw_lines()
 
     def assign_color(self, chunk):
         if chunk.is_only_one_id_assigned(len(self.project.animals)):
@@ -182,7 +180,7 @@ class GraphWidgetLoader:
                 str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info)
 
     def get_edge_info(self, edge):
-        return "Type = {0}\nSureness = {1}\nStart id: {2}".format(edge[2], edge[3], edge[5])
+        return "Type = {0}\nSureness = {1}\nTracklet id: {2}".format(edge.type, edge.sureness, edge.id)
 
     def get_widget(self, frames=None, show_tracklet_callback=None):
         self.prepare_vertices(frames)

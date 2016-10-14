@@ -2,10 +2,11 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 
 
-class ControlPanel(QtGui.QWidget):
+class ControlPanel(QtGui.QFrame):
 
     def __init__(self, graph_w_callback):
         super(ControlPanel, self).__init__()
+        # self.setStyleSheet("background-color: rgb(255,255,255); margin:5px; border:1px solid rgb(0, 0, 0); ")
         self.l = QtGui.QHBoxLayout()
         self.l.setContentsMargins(20, 0, 20, 0)
         self.prepare_buttons(graph_w_callback)
