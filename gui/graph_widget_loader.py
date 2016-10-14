@@ -8,6 +8,7 @@ import cv2
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from core.settings import Settings as S_
+from gui.graph_widget.graph_line import LineType, GraphLine
 from utils.img_manager import ImgManager
 
 __author__ = 'Simon Mandlik'
@@ -53,7 +54,7 @@ class GraphWidgetLoader:
         self.edges = set()
         self.regions = set()
 
-        self.chunks_region_chunks = {}
+        # self.chunks_region_chunks = {}
         self.regions_vertices = {}
 
         self.g = None
@@ -138,20 +139,25 @@ class GraphWidgetLoader:
             source_start_id = self.graph_manager.g.vp["chunk_start_id"][source]
             target_end_id = self.graph_manager.g.vp["chunk_end_id"][target]
             sureness = self.graph_manager.g.ep['score'][edge]
-            type_of_line = "chunk" if source_start_id == target_end_id and source_start_id != 0 else "line"
+
+            if source_start_id == target_end_id and source_start_id != 0:
+                type_of_line = LineType.TRACKLET
+            else:
+                type_of_line = LineType.LINE
             if not (r1 in self.regions and r2 in self.regions):
-                type_of_line = "partial"
+                type_of_line = LineType.PARTIAL
 
-            c = None
-            if type_of_line == "chunk":
-                chunk = self.project.chm[source_start_id]
-                c = self.assign_color(chunk)
+            if type_of_line == LineType.TRACKLET:
+                tracklet = self.project.chm[source_start_id]
+                c = self.assign_color(tracklet)
+                line = GraphLine(tracklet.id(), r1, r2, type_of_line, sureness, c)
+            else:
+                line = GraphLine(0, r1, r2, type_of_line, sureness)
 
-            new_tuple = (r1, r2, type_of_line, sureness, c, source_start_id)
+            # self.chunks_region_chunks[line] = RegionChunk(self.project.chm[source_start_id], self.graph_manager,
+            #                                                    self.region_manager)
 
-            self.chunks_region_chunks[new_tuple] = RegionChunk(self.project.chm[source_start_id], self.graph_manager,
-                                                               self.region_manager)
-            self.edges.add(new_tuple)
+            self.edges.add(line)
 
     def get_node_info(self, region):
         n = self.regions_vertices[region]

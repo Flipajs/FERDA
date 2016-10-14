@@ -6,7 +6,8 @@ from PyQt4.QtGui import QApplication, QLabel, QSizePolicy
 from PyQt4.QtGui import QWidget
 
 import computer as comp
-from gui.graph_widget.ControlPanel import ControlPanel
+from gui.graph_widget.control_panel import ControlPanel
+from gui.graph_widget.graph_line import LineType
 from gui.graph_widget_loader import GAP, SPACE_BETWEEN_HOR, \
     MINIMUM, SPACE_BETWEEN_VER, WIDTH, FROM_TOP, HEIGHT
 from gui.graph_widget.edge import EdgeGraphical, ChunkGraphical
@@ -158,7 +159,7 @@ class GraphVisualizer(QtGui.QWidget):
     def view_results_tracklet(self):
         if self.selected_in_menu and isinstance(self.selected_in_menu, EdgeGraphical):
             if self.show_tracklet_callback is not None:
-                self.show_tracklet_callback(self.loader.get_chunk_by_id(self.selected_in_menu.core_obj[5]))
+                self.show_tracklet_callback(self.loader.get_chunk_by_id(self.selected_in_menu.graph_line[5]))
 
     def menu(self, point):
         it = self.scene.itemAt(self.view.mapToScene(point))
@@ -290,9 +291,9 @@ class GraphVisualizer(QtGui.QWidget):
 
     def compute_positions(self):
         for edge in self.edges:
-            if edge[2] == "chunk":
+            if edge.type == LineType.TRACKLET:
                 self.find_suitable_position_chunk(edge)
-            elif edge[2] == "line":
+            elif edge.type == LineType.LINE:
                 self.find_suitable_position_line(edge)
             else:
                 self.find_suitable_position_partial(edge)
@@ -313,8 +314,8 @@ class GraphVisualizer(QtGui.QWidget):
         self.frames_columns[column_frame].add_object(node, position)
 
     def find_suitable_position_chunk(self, edge):
-        node_1 = edge[0]
-        node_2 = edge[1]
+        node_1 = edge.region_from
+        node_2 = edge.region_to
         col1 = self.frames_columns[node_1.frame_]
         col2 = self.frames_columns[node_2.frame_]
         if col1.contains(node_1) or col2.contains(node_2):
@@ -370,8 +371,8 @@ class GraphVisualizer(QtGui.QWidget):
         return True
 
     def find_suitable_position_line(self, edge):
-        node_1 = edge[0]
-        node_2 = edge[1]
+        node_1 = edge.region_from
+        node_2 = edge.region_to
         contains_1 = self.frames_columns[node_1.frame_].contains(node_1)
         contains_2 = self.frames_columns[node_2.frame_].contains(node_2)
         if contains_1 and contains_2:
@@ -401,11 +402,11 @@ class GraphVisualizer(QtGui.QWidget):
         self.add_node_to_column(node_2, node_2.frame_, position_2)
 
     def find_suitable_position_partial(self, edge):
-        if edge[0] is None or not edge[0] in self.regions:
-            node = edge[1]
+        if edge.region_from is None or not edge.region_from in self.regions:
+            node = edge.region_to
             direction = "left"
         else:
-            node = edge[0]
+            node = edge.region_from
             direction = "right"
 
         if not self.frames_columns.has_key(node.frame_):
@@ -583,14 +584,16 @@ class GraphVisualizer(QtGui.QWidget):
 
     def draw_lines(self, first_frame, last_frame):
         for edge in self.edges:
-            if edge[2] == "line" or edge[2] == "chunk":
-                if first_frame <= edge[0].frame_ and edge[1].frame_ <= last_frame:
-                    col = self.frames_columns[edge[1].frame_]
+            region_from = edge.region_from
+            region_to = edge.region_to
+            if edge.type == LineType.LINE or edge.type == LineType.TRACKLET:
+                if first_frame <= region_from.frame_ and region_to.frame_ <= last_frame:
+                    col = self.frames_columns[region_to.frame_]
                     col.show_edge(edge, self.frames_columns, self.show_vertically)
-            elif edge[2] == "partial":
-                if (edge[0] or edge[1]) and (edge[0] in self.regions or edge[1] in self.regions):
-                    direction = "left" if (edge[0] is None or not (edge[0] in self.regions)) else "right"
-                    node = edge[1] if direction == "left" else edge[0]
+            elif edge.type == LineType.PARTIAL:
+                if (region_from or region_to) and (region_from in self.regions or region_to in self.regions):
+                    direction = "left" if (region_from is None or not (region_from in self.regions)) else "right"
+                    node = region_to if direction == "left" else region_from
                     if first_frame <= node.frame_ <= last_frame:
                         col = self.frames_columns[node.frame_]
                         col.show_edge(edge, self.frames_columns, self.show_vertically, direction, node)
