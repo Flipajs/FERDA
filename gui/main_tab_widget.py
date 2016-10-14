@@ -27,7 +27,18 @@ class MainTabWidget(QtGui.QWidget):
         self.solver = None
 
         self.tracker_tab = TrackerWidget(project, show_in_visualizer_callback=self.show_in_visualizer)
-        self.tabs = DockTabWidget()
+        self.tabs = QtGui.QTabWidget(self)
+
+        self.undock_button = QtGui.QPushButton("Undock")
+        self.undock_button.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        self.undock_button.pressed.connect(self.detach_tab)
+        self.buttons = QtGui.QWidget()
+        self.buttons.setLayout(QtGui.QHBoxLayout())
+        spacer = QtGui.QWidget()
+        spacer.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.buttons.layout().addWidget(spacer)
+        self.buttons.layout().addWidget(self.undock_button)
+        self.undock_button.setFixedHeight(30)
 
         self.results_tab = QtGui.QWidget()
         self.statistics_tab = StatisticsWidget(project)
@@ -39,6 +50,7 @@ class MainTabWidget(QtGui.QWidget):
 
         self.tab_widgets = [self.tracker_tab, self.results_tab, self.id_detection_tab, self.statistics_tab, self.graph_tab]
         self.tab_names = ["tracking", "results viewer", "id detection", "stats && results", "graph"]
+        self.tab_docked = [False] * len(self.tab_widgets)
         for i in range(len(self.tab_widgets)):
             self.tabs.addTab(self.tab_widgets[i], self.tab_names[i])
             self.tabs.setEnabled(i)
@@ -49,6 +61,7 @@ class MainTabWidget(QtGui.QWidget):
         self.addAction(self.switch_to_tracking_window_action)
 
         self.vbox.addWidget(self.tabs)
+        self.layout().addWidget(self.buttons)
 
         self.ignore_tab_change = False
 
@@ -94,6 +107,7 @@ class MainTabWidget(QtGui.QWidget):
             self.results_tab.update_positions()
         except AttributeError:
             pass
+
 
 
     def show_in_visualizer(self, data):
@@ -156,7 +170,6 @@ class MainTabWidget(QtGui.QWidget):
             self.statistics_tab.update_data(self.project)
         if i == 4:
             self.graph_tab.redraw()
-            self.detach_tab(4)
 
         # if i == 0:
         #     # TODO: add interval to settings
@@ -166,7 +179,8 @@ class MainTabWidget(QtGui.QWidget):
 
         pass
 
-    def detach_tab(self, tab_number):
+    def detach_tab(self):
+        tab_number = self.tabs.currentIndex()
         widget = self.tabs.widget(tab_number)
         self.tabs.removeTab(tab_number)
         window = DetachedWindow(self, widget, self, tab_number)
@@ -178,32 +192,38 @@ class MainTabWidget(QtGui.QWidget):
 
 class DetachedWindow(QtGui.QMainWindow):
 
-    def __init__(self, parent, widget, tab_widget_callback, number):
+    def __init__(self, parent, widget, widget_callback, number):
         super(DetachedWindow, self).__init__(parent)
-        self.widget = widget
-        self.tab_widget_callback = tab_widget_callback
+        content = QtGui.QWidget()
+        content.setLayout(QtGui.QVBoxLayout())
+        self.dock_widget = QtGui.QWidget()
+        dock_button = QtGui.QPushButton("Dock")
+        dock_button.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        dock_button.pressed.connect(self.close)
+        self.dock_widget.setLayout(QtGui.QHBoxLayout())
+        spacer = QtGui.QWidget()
+        spacer.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.dock_widget.layout().addWidget(spacer)
+        self.dock_widget.layout().addWidget(dock_button)
+        self.widget_callback = widget_callback
         self.number = number
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setWindowTitle(widget.windowTitle())
-        self.setCentralWidget(widget)
-        self.widget.show()
+        self.setWindowTitle(self.widget_callback.tab_names[number])
+        content.layout().addWidget(widget)
+        content.layout().addWidget(self.dock_widget)
+        self.setCentralWidget(content)
+        widget.show()
 
     def closeEvent(self, event):
-        self.tab_widget_callback.attach_tab(self.number)
         super(DetachedWindow, self).closeEvent(event)
+        self.attach()
+
+    def attach(self):
+        self.dock_widget.hide()
+        self.widget_callback.attach_tab(self.number)
+        temp = self.widget_callback.ignore_tab_change
+        self.widget_callback.ignore_tab_change = False
+        self.widget_callback.tabs.setCurrentIndex(self.number)
+        self.widget_callback.ignore_tab_change = temp
 
 
-class DockTabWidget(QtGui.QTabWidget):
-
-    def __init__(self, parent=None):
-        super(DockTabWidget, self).__init__(parent)
-        self.dock_button = QtGui.QPushButton("dock")
-        self.undock_button = QtGui.QPushButton("undock")
-        self.dock_button.setFixedHeight(30)
-        self.undock_button.setFixedHeight(30)
-        self.button_group = QtGui.QButtonGroup()
-        self.buttons = QtGui.QWidget()
-        self.buttons.setLayout(QtGui.QHBoxLayout())
-        self.buttons.layout().addWidget(self.undock_button)
-        self.buttons.layout().addWidget(self.dock_button)
-        self.setCornerWidget(self.buttons, QtCore.Qt.BottomRightCorner)

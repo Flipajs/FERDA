@@ -111,8 +111,8 @@ class GraphWidgetLoader:
             if edge.type == LineType.TRACKLET:
                 chunk = self.project.chm[edge.id]
                 c = self.assign_color(chunk)
-                import random
-                c = QtGui.QColor(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+                # import random
+                # c = QtGui.QColor(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
                 edge.color = c
         self.g.draw_lines()
 

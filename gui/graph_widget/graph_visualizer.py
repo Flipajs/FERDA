@@ -49,6 +49,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.node_zoom_manager = NodeZoomManager()
         self.info_manager = InfoManager(loader)
 
+        self.setWindowTitle("graph")
         self.setLayout(QtGui.QVBoxLayout())
         self.layout().setContentsMargins(0, 11, 0, 11)
 
