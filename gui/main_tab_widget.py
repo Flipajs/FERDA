@@ -27,7 +27,7 @@ class MainTabWidget(QtGui.QWidget):
         self.solver = None
 
         self.tracker_tab = TrackerWidget(project, show_in_visualizer_callback=self.show_in_visualizer)
-        self.tabs = QtGui.QTabWidget()
+        self.tabs = DockTabWidget()
 
         self.results_tab = QtGui.QWidget()
         self.statistics_tab = StatisticsWidget(project)
@@ -37,11 +37,11 @@ class MainTabWidget(QtGui.QWidget):
 
         self.finish_callback = finish_callback
 
-        self.tabs.addTab(self.tracker_tab, "tracking")
-        self.tabs.addTab(self.results_tab, "results viewer")
-        self.tabs.addTab(self.id_detection_tab, "id detection")
-        self.tabs.addTab(self.statistics_tab, "stats && results")
-        self.tabs.addTab(self.graph_tab, "graph")
+        self.tab_widgets = [self.tracker_tab, self.results_tab, self.id_detection_tab, self.statistics_tab, self.graph_tab]
+        self.tab_names = ["tracking", "results viewer", "id detection", "stats && results", "graph"]
+        for i in range(len(self.tab_widgets)):
+            self.tabs.addTab(self.tab_widgets[i], self.tab_names[i])
+            self.tabs.setEnabled(i)
 
         self.switch_to_tracking_window_action = QtGui.QAction('switch tab to tracking', self)
         self.switch_to_tracking_window_action.triggered.connect(partial(self.tabs.setCurrentIndex, 0))
@@ -49,10 +49,6 @@ class MainTabWidget(QtGui.QWidget):
         self.addAction(self.switch_to_tracking_window_action)
 
         self.vbox.addWidget(self.tabs)
-
-        self.tabs.setTabEnabled(1, False)
-        self.tabs.setTabEnabled(2, False)
-        self.tabs.setTabEnabled(3, False)
 
         self.ignore_tab_change = False
 
@@ -113,9 +109,8 @@ class MainTabWidget(QtGui.QWidget):
         self.results_tab.solver = solver
         self.tracker_tab.prepare_corrections(self.project.solver)
 
-        self.tabs.setTabEnabled(1, True)
-        self.tabs.setTabEnabled(2, True)
-        self.tabs.setTabEnabled(3, True)
+        for i in range(len(self.tab_widgets)):
+            self.tabs.setEnabled(i)
 
     def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
         self.tabs.setCurrentIndex(1)
@@ -160,16 +155,8 @@ class MainTabWidget(QtGui.QWidget):
         if i == 3:
             self.statistics_tab.update_data(self.project)
         if i == 4:
-            # if not isinstance(self.graph_tab, GraphWidgetLoader):
-                # self.ignore_tab_change = True
-                # TODO: show loading...
-                # self.graph_tab = GraphWidgetLoader(self.project).get_widget()
-                # self.tabs.removeTab(4)
-                # self.tabs.insertTab(4, self.graph_tab, "graph")
-                # self.tabs.setCurrentIndex(4)
-                # self.ignore_tab_change = False
-            # else:
             self.graph_tab.redraw()
+            self.detach_tab(4)
 
         # if i == 0:
         #     # TODO: add interval to settings
@@ -178,3 +165,45 @@ class MainTabWidget(QtGui.QWidget):
         #     self.tracker_tab.autosave_timer.stop()
 
         pass
+
+    def detach_tab(self, tab_number):
+        widget = self.tabs.widget(tab_number)
+        self.tabs.removeTab(tab_number)
+        window = DetachedWindow(self, widget, self, tab_number)
+        window.show()
+
+    def attach_tab(self, number):
+        self.tabs.insertTab(number, self.tab_widgets[number], self.tab_names[number])
+
+
+class DetachedWindow(QtGui.QMainWindow):
+
+    def __init__(self, parent, widget, tab_widget_callback, number):
+        super(DetachedWindow, self).__init__(parent)
+        self.widget = widget
+        self.tab_widget_callback = tab_widget_callback
+        self.number = number
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setWindowTitle(widget.windowTitle())
+        self.setCentralWidget(widget)
+        self.widget.show()
+
+    def closeEvent(self, event):
+        self.tab_widget_callback.attach_tab(self.number)
+        super(DetachedWindow, self).closeEvent(event)
+
+
+class DockTabWidget(QtGui.QTabWidget):
+
+    def __init__(self, parent=None):
+        super(DockTabWidget, self).__init__(parent)
+        self.dock_button = QtGui.QPushButton("dock")
+        self.undock_button = QtGui.QPushButton("undock")
+        self.dock_button.setFixedHeight(30)
+        self.undock_button.setFixedHeight(30)
+        self.button_group = QtGui.QButtonGroup()
+        self.buttons = QtGui.QWidget()
+        self.buttons.setLayout(QtGui.QHBoxLayout())
+        self.buttons.layout().addWidget(self.undock_button)
+        self.buttons.layout().addWidget(self.dock_button)
+        self.setCornerWidget(self.buttons, QtCore.Qt.BottomRightCorner)
