@@ -28,6 +28,6 @@ class ControlPanel(QtGui.QWidget):
         self.prepare_button('Zoom to chunk id (L)', graph_w_callback.zoom_to_chunk_event, QtCore.Qt.Key_L)
         self.prepare_button('Change Display (F5)', graph_w_callback.toggle_show_vertically, QtCore.Qt.Key_F5)
         self.prepare_button('Decompress Display (F4)', graph_w_callback.compress_axis_toggle, QtCore.Qt.Key_F4)
-        self.prepare_button('Stretch (O)', graph_w_callback.stretch, QtCore.Qt.Key_O)
-        self.prepare_button('Shrink (P)', graph_w_callback.shrink, QtCore.Qt.Key_P)
+        self.prepare_button('Stretch (N)', graph_w_callback.stretch, QtCore.Qt.Key_N)
+        self.prepare_button('Shrink (M)', graph_w_callback.shrink, QtCore.Qt.Key_M)
         self.prepare_button('Update colors (C)', graph_w_callback.update_lines, QtCore.Qt.Key_C)
