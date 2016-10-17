@@ -123,16 +123,9 @@ class MainTabWidget(QtGui.QWidget):
         print "GRAPH LOADED"
         self.solver = solver
         self.results_tab.solver = solver
-        # self.tracker_tab.prepare_corrections(self.project.solver)
 
         for i in range(len(self.tab_widgets)):
             self.tabs.setEnabled(i)
-# =======
-#         self.tabs.setTabEnabled(1, True)
-#         self.tabs.setTabEnabled(2, True)
-#         self.tabs.setTabEnabled(3, True)
-#         self.tabs.setCurrentIndex(1)
-# >>>>>>> merge_fix2
 
     def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
         self.tabs.setCurrentIndex(1)
@@ -178,9 +171,6 @@ class MainTabWidget(QtGui.QWidget):
         if i == 3:
             self.statistics_tab.update_data(self.project)
         if i == 4:
-<<<<<<< HEAD
-            self.graph_tab.redraw()
-=======
             if not isinstance(self.graph_tab, GraphVisualizer):
                 self.ignore_tab_change = True
                 # TODO: show loading...
@@ -192,13 +182,6 @@ class MainTabWidget(QtGui.QWidget):
                 self.ignore_tab_change = False
 
                 self.graph_tab.redraw()
->>>>>>> merge_fix2
-
-        # if i == 0:
-        #     # TODO: add interval to settings
-        #     self.tracker_tab.autosave_timer.start(1000*60*5)
-        # else:
-        #     self.tracker_tab.autosave_timer.stop()
 
         pass
 

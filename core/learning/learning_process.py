@@ -123,8 +123,12 @@ class LearningProcess:
                 self.tracklet_certainty = d['tracklet_certainty']
                 self.tracklet_measurements = d['tracklet_measurements']
 
-        with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
-            self.GT = pickle.load(f)
+        try:
+            with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
+                self.GT = pickle.load(f)
+        except OSError:
+            pass
+        
         # self.save_ids_()
         self.load_learning()
         self.reset_learning()
