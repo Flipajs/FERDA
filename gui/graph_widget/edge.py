@@ -1,6 +1,8 @@
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
 import math
+
+from gui.graph_widget.graph_line import LineType
 from node import TextInfoItem
 
 SELECTION_OFFSET_CHUNK = 1
@@ -15,12 +17,12 @@ __author__ = 'Simon Mandlik'
 
 class Edge:
 
-    def __init__(self, from_x, from_y, to_x, to_y, core_obj, scene, vertical=False):
+    def __init__(self, from_x, from_y, to_x, to_y, graph_line, scene, vertical=False):
         self.from_x = from_x
         self.from_y = from_y
         self.to_x = to_x
         self.to_y = to_y
-        if core_obj[2] == "partial":
+        if graph_line.type == LineType.PARTIAL:
             if not vertical:
                 from_y += PARTIAL_LINE_OFFSET
                 to_y += PARTIAL_LINE_OFFSET
@@ -28,20 +30,20 @@ class Edge:
                 from_x += PARTIAL_LINE_OFFSET
                 to_x += PARTIAL_LINE_OFFSET
 
-        if core_obj[2] == "chunk":
-            self.graphical_object = ChunkGraphical(from_x, from_y, to_x, to_y, core_obj, scene, vertical)
-        elif core_obj[2] == "line":
-            self.graphical_object = LineGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), core_obj, scene)
-        elif core_obj[2] == "partial":
-            self.graphical_object = PartialGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), core_obj, scene)
-        self.core_obj = core_obj
+        if graph_line.type == LineType.TRACKLET:
+            self.graphical_object = ChunkGraphical(from_x, from_y, to_x, to_y, graph_line, scene, vertical)
+        elif graph_line.type == LineType.LINE:
+            self.graphical_object = LineGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), graph_line, scene)
+        elif graph_line.type == LineType.PARTIAL:
+            self.graphical_object = PartialGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), graph_line, scene)
+        self.core_obj = graph_line
 
 
 class EdgeGraphical(QtGui.QGraphicsLineItem):
 
     def __init__(self, parent_line, core_obj, scene, color=None):
         super(EdgeGraphical, self).__init__(parent_line)
-        self.core_obj = core_obj
+        self.graph_line = core_obj
         self.parent_line = parent_line
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
         self.selection_polygon = self.create_selection_polygon()
@@ -72,7 +74,7 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
         # self.clipped = False
 
     def create_info(self, loader):
-        text = loader.get_edge_info(self.core_obj)
+        text = loader.get_edge_info(self.graph_line)
         metrics = QtGui.QFontMetrics(QtGui.QFont())
         longest, rows = get_longest_string_rows(text)
         width = metrics.width(longest)
@@ -142,7 +144,7 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
 class LineGraphical(EdgeGraphical):
 
     def paint(self, painter, style_option_graphics_item, widget=None):
-        opacity = 100 + 155 * abs(self.core_obj[3])
+        opacity = 100 + 155 * abs(self.graph_line.sureness)
         pen = QtGui.QPen(QtGui.QColor(0, 0, 0, opacity), LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
         painter.setPen(pen)
         painter.drawLine(self.parent_line)
@@ -153,7 +155,7 @@ class LineGraphical(EdgeGraphical):
 class PartialGraphical(EdgeGraphical):
 
     def paint(self, painter, style_option_graphics_item, widget=None):
-        opacity = 100 + 155 * abs(self.core_obj[3])
+        opacity = 100 + 155 * abs(self.graph_line.sureness)
         pen = QtGui.QPen(QtGui.QColor(255, 0, 0, opacity), LINE_WIDTH, Qt.DotLine, Qt.SquareCap, Qt.RoundJoin)
         painter.setPen(pen)
         painter.drawLine(self.parent_line)
@@ -163,7 +165,7 @@ class PartialGraphical(EdgeGraphical):
 
 class ChunkGraphical(EdgeGraphical):
 
-    def __init__(self, from_x, from_y, to_x, to_y, core_obj, scene, vertical=False):
+    def __init__(self, from_x, from_y, to_x, to_y, graph_line, scene, vertical=False):
         self.parent_line = QtCore.QLineF(from_x, from_y, to_x, to_y)
 
         if vertical:
@@ -177,9 +179,9 @@ class ChunkGraphical(EdgeGraphical):
         self.selection_polygon = self.create_selection_polygon()
         self.pick_polygon = self.create_pick_polygon()
 
-        color = core_obj[4]
+        color = graph_line.color
 
-        super(ChunkGraphical, self).__init__(self.parent_line, core_obj, scene, color)
+        super(ChunkGraphical, self).__init__(self.parent_line, graph_line, scene, color)
 
     def paint(self, painter, style_option_graphics_item, widget=None):
         pen = QtGui.QPen(self.color, LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
