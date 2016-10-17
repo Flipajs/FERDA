@@ -4,6 +4,7 @@ import numpy as np
 
 from core.region.region import Region
 from gui.graph_widget.edge import Edge
+from gui.graph_widget.graph_line import LineType, GraphLine
 from gui.graph_widget.node import Node
 from gui.graph_widget_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 from gui.img_controls.utils import cvimg2qtpixmap
@@ -52,7 +53,7 @@ class Column:
 
     def add_object(self, to_add, position):
         if position < len(self.objects):
-            if not (self.objects[position] == to_add or isinstance(self.objects[position], tuple)):
+            if not (self.objects[position] == to_add or isinstance(self.objects[position], GraphLine)):
                 self.objects[position] = to_add
         else:
             while len(self.objects) < position:
@@ -69,8 +70,8 @@ class Column:
             return True
         elif isinstance(self.objects[position], (Region, Node)):
             return False
-        elif isinstance(self.objects[position], tuple):
-            if self.objects[position][2] == "chunk":
+        elif isinstance(self.objects[position], GraphLine):
+            if self.objects[position].type == LineType.TRACKLET:
                 return False
         return True
 
@@ -79,8 +80,8 @@ class Column:
             return True
         else:
             for obj in self.objects:
-                if isinstance(obj, tuple):
-                    if obj[0] is item or obj[1] is item:
+                if isinstance(obj, GraphLine):
+                    if obj.region_from is item or obj.region_to is item:
                         return True
         return False
 
@@ -89,8 +90,8 @@ class Column:
             return self.objects.index(item_to_locate)
         else:
             for item in self.objects:
-                if isinstance(item, tuple):
-                    if item[0] == item_to_locate or item[1] == item_to_locate:
+                if isinstance(item, GraphLine):
+                    if item.region_from == item_to_locate or item.region_to == item_to_locate:
                         return self.objects.index(item)
                 elif isinstance(item, Node):
                     if item_to_locate == item.region:
@@ -99,19 +100,19 @@ class Column:
     def get_position_with_chunk_id(self, ch_id):
         position = 0
         for item in self.objects:
-            if isinstance(item, tuple):
-                if item[5] == ch_id:
+            if isinstance(item, GraphLine):
+                if item.id == ch_id:
                     return position
             position += 1
 
     def prepare_images(self):
         for item in self.objects:
             if not (item in (self.items_nodes.keys() + self.regions_images.keys()) or item is None):
-                if isinstance(item, tuple):
-                    if item[0].frame_ == self.frame:
-                        region = item[0]
-                    elif item[1].frame_ == self.frame:
-                        region = item[1]
+                if isinstance(item, GraphLine):
+                    if item.region_from.frame_ == self.frame:
+                        region = item.region_from
+                    elif item.region_to.frame_ == self.frame:
+                        region = item.region_to
                     else:
                         continue
                 else:
@@ -129,11 +130,11 @@ class Column:
             if item not in self.items_nodes.keys():
                 if not item:
                     continue
-                if isinstance(item, tuple):
-                    if item[0].frame_ == self.frame:
-                        item = item[0]
-                    elif item[1].frame_ == self.frame:
-                        item = item[0]
+                if isinstance(item, GraphLine):
+                    if item.region_from.frame_ == self.frame:
+                        item = item.region_from
+                    elif item.region_to.frame_ == self.frame:
+                        item = item.region_to
                     else:
                         continue
                     if item in self.items_nodes.keys():
@@ -161,25 +162,25 @@ class Column:
             for item in self.objects:
                 if isinstance(item, Region):
                     self.show_node(item, vertically)
-                elif isinstance(item, tuple):
-                    if item[2] is "partial":
-                        self.show_node(item[0], vertically)
-                    if item[0].frame_ == self.frame:
-                        self.show_node(item[0], vertically)
-                    elif item[1].frame_ == self.frame:
-                        self.show_node(item[1], vertically)
+                elif isinstance(item, GraphLine):
+                    if item.type is LineType.PARTIAL:
+                        self.show_node(item.region_from, vertically)
+                    if item.region_from.frame_ == self.frame:
+                        self.show_node(item.region_from, vertically)
+                    elif item.region_to.frame_ == self.frame:
+                        self.show_node(item.region_to, vertically)
                         self.show_edge(item, frames_columns, vertically)
 
     def show_edge(self, edge, frame_columns, vertically, direction=None, node=None):
         from_x = self.x
         if node is None:
-            node = edge[1]
+            node = edge.region_to
         position = self.get_position_item(node)
         from_y = GAP + FROM_TOP + position * self.height + self.height / 2 + SPACE_BETWEEN_VER * position
 
-        if edge[2] is not "partial":
-            column_left = frame_columns[edge[0].frame_]
-            position = column_left.get_position_item(edge[0])
+        if edge.type is not LineType.PARTIAL:
+            column_left = frame_columns[edge.region_from.frame_]
+            position = column_left.get_position_item(edge.region_from)
             to_x = column_left.x + self.width
             to_y = GAP + FROM_TOP + position * self.height + self.height / 2 + SPACE_BETWEEN_VER * position
         else:
@@ -198,9 +199,9 @@ class Column:
         edge_obj = Edge(from_x, from_y, to_x, to_y, edge, self.scene, vertically)
         self.edges[edge] = edge_obj
 
-        if edge[2] is "chunk":
+        if edge.type is LineType.TRACKLET:
             edge_obj.graphical_object.setZValue(-1)
-        elif edge[2] is "partial":
+        elif edge.type is LineType.PARTIAL:
             edge_obj.graphical_object.setZValue(-2)
         else:
             edge_obj.graphical_object.setZValue(-3)
