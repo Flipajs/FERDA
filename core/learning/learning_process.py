@@ -295,7 +295,7 @@ class LearningProcess:
     def __train_rfc(self):
         print "TRAINING RFC"
 
-        self.rfc = RandomForestClassifier(class_weight='balanced_subsample', criterion='entropy', n_estimators=10, max_features=1.0)
+        self.rfc = RandomForestClassifier(class_weight='balanced_subsample')
         if len(self.X):
             self.rfc.fit(self.X, self.y)
             self.__precompute_measurements()
