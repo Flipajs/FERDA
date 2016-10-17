@@ -99,8 +99,7 @@ class Exporter:
             rch = RegionChunk(ch, self.gm, self.rm)
             d = self.init_struct_(rch[0], ch.end_frame(self.gm))
 
-            rs_ = rch[:]
-            for r in rs_:
+            for r in rch.regions_gen():
                 self.add_line_mat(d, r)
 
             d['mean_area'] /= float(ch.length())
@@ -158,6 +157,7 @@ def export_arena(out_path, project):
         sio.savemat(f, {'arena': arena})
 
 if __name__ == '__main__':
+    # python -m scripts.export.export_part "/Users/flipajs/Documents/wd/GT/S9T91min" "/users/flipajs/Documents/wd/GT" 1 1 20 0
     working_dir = sys.argv[1]
     out_dir = sys.argv[2]
     first_part = int(sys.argv[3])
