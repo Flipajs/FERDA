@@ -35,21 +35,12 @@ class MyViewZoomable(QtGui.QGraphicsView):
     def keyPressEvent(self, event):
         key_i = QtCore.Qt.Key_I
         key_o = QtCore.Qt.Key_O
-        key_b = QtCore.Qt.Key_B
-        key_n = QtCore.Qt.Key_N
-        # key_q = QtCore.Qt.Key_Q
-        # key_w = QtCore.Qt.Key_W
         event_key = event.key()
 
-        if event_key == key_b or event_key == key_n:
-            self.go_to_next(event_key, event)
-        self.last_event_go_to = False
         if event_key == key_o:
             self.zoom(False)
         elif event_key == key_i:
             self.zoom(True)
-        # elif event_key == key_q or event_key == key_w:
-        #     self.stretch(event_key == key_q)
         else:
             super(MyViewZoomable, self).keyPressEvent(event)
 

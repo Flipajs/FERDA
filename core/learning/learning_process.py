@@ -134,6 +134,7 @@ class LearningProcess:
                 self.GT = pickle.load(f)
         except IOError:
             pass
+
         # self.save_ids_()
         self.load_learning()
         # self.reset_learning()
