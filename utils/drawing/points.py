@@ -117,9 +117,9 @@ def get_contour(pts):
 
     roi = get_roi(pts)
 
-    img = np.zeros((roi.height(), roi.width()), dtype=np.uint8)
-
-    img[pts[:,0]-roi.y(), pts[:,1]-roi.x()] = 255
+    # +1 border offset to help findCountours algorithm in extreme cases (e.g. line)
+    img = np.zeros((roi.height() + 2, roi.width() + 2), dtype=np.uint8)
+    img[pts[:,0]-roi.y() + 1, pts[:,1]-roi.x() + 1] = 255
 
     ret, thresh = cv2.threshold(img, 127, 255, 0)
 
@@ -146,7 +146,8 @@ def get_contour(pts):
             cont = c
 
     if cont.size > 0:
-        cont += np.array([roi.y(), roi.x()])
+        # -1 to eliminate +1 border offset
+        cont += np.array([roi.y() - 1, roi.x() - 1])
 
     return cont
 
@@ -161,9 +162,9 @@ def get_contour_without_holes(pts):
 
     roi = get_roi(pts)
 
-    img = np.zeros((roi.height(), roi.width()), dtype=np.uint8)
-
-    img[pts[:,0]-roi.y(), pts[:,1]-roi.x()] = 255
+    # +1 border offset to help findCountours algorithm in extreme cases (e.g. line)
+    img = np.zeros((roi.height() + 2, roi.width() + 2), dtype=np.uint8)
+    img[pts[:,0]-roi.y() + 1, pts[:,1]-roi.x() + 1] = 255
 
     ret, thresh = cv2.threshold(img, 127, 255, 0)
 
@@ -188,6 +189,7 @@ def get_contour_without_holes(pts):
             max_rows = rows
 
     c = max_c
+
     (rows, _, _) = c.shape
     c = np.reshape(c, (rows, 2))
 
@@ -199,7 +201,8 @@ def get_contour_without_holes(pts):
         cont = c
 
     if cont.size > 0:
-        cont += np.array([roi.y(), roi.x()])
+        # -1 to eliminate +1 border offset
+        cont += np.array([roi.y() - 1, roi.x() - 1])
 
     return cont
 
