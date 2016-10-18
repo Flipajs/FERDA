@@ -2,6 +2,9 @@ import cv2
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from skimage.transform import pyramid_gaussian
+from skimage.feature import local_binary_pattern
+from skimage.color import label2rgb
+import matplotlib.pyplot as plt
 import scipy.ndimage
 import time
 
@@ -21,6 +24,8 @@ class SegmentationHelper:
         self.bg = None
         self.gr = None
         self.rb = None
+        self.h = None
+        self.w = None
         self.num = num
         self.scale = scale
 
@@ -47,6 +52,7 @@ class SegmentationHelper:
         :return: None
         """
         self.image = image  # original image
+        self.h, self.w, c = self.image.shape
 
         # images are stored in lists with len corresponding to pyramid height
         # index 0 contains data obtained from largest image, all other indices contain data from scaled images
@@ -123,7 +129,7 @@ class SegmentationHelper:
         print "Retrieving data takes %f" % (time.time() - start)
 
         # create the classifier
-        self.rfc = RandomForestClassifier(class_weight='balanced')
+        self.rfc = RandomForestClassifier()
 
         # to train on all data (current and all previous frames), join the arrays together
         # class variables are not affected here
@@ -171,6 +177,26 @@ class SegmentationHelper:
         mask1.shape = ((h, w))
 
         return mask1
+
+    def train_raw_(self, X, y):
+        """ Create the RFC classifier from raw X and y data
+        """
+
+        # create the classifier
+        self.rfc = RandomForestClassifier()
+
+        # train the classifier
+        start = time.time()
+        self.rfc.fit(X, y)
+        print "RFC fitting takes     %f" % (time.time() - start)
+
+        # find unused features and remove them
+        # create new classifier with less features, it will be faster
+        start = time.time()
+        self.unused = find_unused_features(self.rfc)
+        self.rfc = get_filtered_rfc(self.unused, X, y)
+        print "RFC filtering takes   %f. Using %d out of %d features." % \
+              (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
 
     def get_features(self):
         """
@@ -354,7 +380,8 @@ class SegmentationHelper:
             # all images must have 3 dimensions to be scaled successfully
             w, h = im.shape
             im.shape = ((w, h, 1))
-        return np.asarray(scipy.ndimage.zoom(im, (s, s, 1), order=0), dtype=np.uint8)
+        im = np.asarray(im, dtype=np.uint8)
+        return cv2.resize(im, (self.w, self.h))
 
 
 def get_shift_im(im, shift_x=2, shift_y=2):
@@ -408,11 +435,58 @@ def get_filtered_rfc(zeros, X, y):
     for tup in X:
         newtup = np.delete(tup, zeros)
         newX.append(newtup)
-    rfc = RandomForestClassifier(class_weight='balanced')
+    rfc = RandomForestClassifier()
     return rfc.fit(newX, y)
 
 
+def get_lbp(image, method="uniform"):
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    radius = 3
+    n_points = 8 * radius
+    w = width = radius - 1
+
+    # get lbg
+    lbp = local_binary_pattern(gray_image, n_points, radius, method)
+
+    # get edge_labels
+    edge_labels = range(n_points // 2 - w, n_points // 2 + w + 1)
+    flat_labels = list(range(0, w + 1)) + list(range(n_points - w, n_points + 2))
+    i_14 = n_points // 4            # 1/4th of the histogram
+    i_34 = 3 * (n_points // 4)      # 3/4th of the histogram
+    corner_labels = (list(range(i_14 - w, i_14 + w + 1)) +
+                     list(range(i_34 - w, i_34 + w + 1)))
+
+    mask = np.logical_or.reduce([lbp == each for each in edge_labels])
+
+    # plt.imshow(mask)
+    # plt.show()
+
+    # mask = np.logical_or.reduce([lbp == each for each in flat_labels])
+
+    # plt.imshow(mask)
+    # plt.show()
+
+    # mask = np.logical_or.reduce([lbp == each for each in corner_labels])
+
+    # plt.imshow(mask)
+    # plt.show()
+    return lbp
+
+    return label2rgb(mask, image=image, bg_label=0, alpha=0.5)
+
+
 if __name__ == "__main__":
-    pass
     # image = cv2.imread("/home/dita/img_67.png")
-    # scale_test(image)
+    image = cv2.imread("/home/dita/lbp_test.png")
+    np.set_printoptions(threshold=np.inf)
+    print image[:, :, 0] / 255
+    methods = ["nri_uniform", "default", "ror", "uniform", "var"]
+
+    lbp = get_lbp(image)
+    print lbp
+    cv2.imwrite("/home/dita/lbp_test_out.png", lbp*(255/lbp.max()))
+
+    print lbp.shape
+
+    plt.imshow(lbp > 23)
+    plt.show()
