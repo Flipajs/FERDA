@@ -14,7 +14,8 @@ import sys
 import operator
 import time
 import itertools
-
+import math
+from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
 
 class LearningProcess:
     def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False):
@@ -29,7 +30,7 @@ class LearningProcess:
         # TODO: global parameter
         self.eps_certainty = 0.3
 
-        self.get_features = get_features_var1
+        self.get_features = get_features_var3
 
         self.X = []
         self.y = []
@@ -130,7 +131,8 @@ class LearningProcess:
 
         self.GT = None
         try:
-            with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
+            # with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
+            with open('/Users/flipajs/Dropbox/dev/ferda/data/GT/Cam1_sparse.pkl', 'rb') as f:
                 self.GT = pickle.load(f)
         except IOError:
             pass
@@ -316,7 +318,7 @@ class LearningProcess:
             # if it is not obvious e.g. (1.0, 0, 0, 0, 0)...
             # if 0 < np.max(x) < 1.0:
             # reduce the certainty by alpha factor depending on tracklet length
-            # x = (1-alpha) * uni_probs + alpha*x
+            x = (1-alpha) * uni_probs + alpha*x
 
             self.tracklet_measurements[tracklet.id()] = x
             self.__update_certainty(tracklet)
@@ -1281,7 +1283,6 @@ def features2str_var1(vec):
 
     return s
 
-
 def get_features_var1(r, p):
     f = []
     # area
@@ -1333,8 +1334,6 @@ def get_features_var1(r, p):
         f.extend(get_hu_moments(crop_ith_channel_masked))
 
     # min, max from moments head/tail
-    import math
-    from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
     relative_border = 2.0
 
     bb, offset = get_bounding_box(r, p, relative_border)
@@ -1392,9 +1391,54 @@ def get_features_var1(r, p):
     # crop_br = crop_[:, :, 0] + crop_[:, :, 2]
     # f.extend(self.get_hu_moments(crop_br))
 
+
+def get_features_var2(r, p):
+    # f = get_features_var1(r, p)
+    f = []
+    f.append(r.area())
+
+    from skimage.feature import hog
+    img = p.img_manager.get_whole_img(r.frame_)
+
+    crop, offset = get_img_around_pts(img, r.pts(), margin=2.0)
+    crop = rotate_img(crop, r.theta_)
+
+    margin = 3
+
+    crop = centered_crop(crop, 2 * (r.b_ + margin), 2 * (r.a_ + margin))
+
+    crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    crop_r = crop[:, :, 2]
+    crop_g = crop[:, :, 1]
+    crop_b = crop[:, :, 0]
+
+    crops = [crop_gray, crop_r, crop_b, crop_g]
+
+    h, w = crop_gray.shape
+
+    for crop in crops:
+        fd = hog(crop, orientations=8, pixels_per_cell=(w, h),
+                            cells_per_block=(1, 1), visualise=False)
+
+        f.extend(fd)
+
+        fd2 = hog(crop, orientations=8, pixels_per_cell=(w/2, h/2),
+                            cells_per_block=(2, 2), visualise=False)
+
+        f.extend(fd2)
+
+    return f
+
+def get_features_var3(r, p):
+    f1 = get_features_var1(r, p)
+    f2 = get_features_var2(r, p)
+
+    return f1 + f2
+
+
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1 copy/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1_/cam1.fproj')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p, use_feature_cache=False, use_rf_cache=False)

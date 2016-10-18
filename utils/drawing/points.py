@@ -188,6 +188,7 @@ def get_contour_without_holes(pts):
             max_rows = rows
 
     c = max_c
+
     (rows, _, _) = c.shape
     c = np.reshape(c, (rows, 2))
 

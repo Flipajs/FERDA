@@ -250,7 +250,7 @@ def get_cmap(N, step):
 
     return map_index_to_rgb_color
 
-def rotate_img(img, theta):
+def rotate_img(img, theta, center=None):
     s_ = max(img.shape[0], img.shape[1])
 
     im_ = np.zeros((s_, s_, img.shape[2]), dtype=img.dtype)
@@ -259,7 +259,8 @@ def rotate_img(img, theta):
 
     im_[h_:h_+img.shape[0], w_:w_+img.shape[1], :] = img
 
-    center = (im_.shape[0] / 2, im_.shape[1] / 2)
+    if center is None:
+        center = (im_.shape[0] / 2, im_.shape[1] / 2)
 
     rot_mat = cv2.getRotationMatrix2D(center, -np.rad2deg(theta), 1.0)
     return cv2.warpAffine(im_, rot_mat, (s_, s_))
