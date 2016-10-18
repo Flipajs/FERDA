@@ -325,7 +325,7 @@ class ResultsWidget(QtGui.QWidget):
                 with open(self.project.GT_file, 'rb') as f:
                     self._gt = pickle.load(f)
             except:
-                print "GT was not loaded"
+                print "GT was not loaded", self.project.GT_file
 
 
         # self.update_positions()

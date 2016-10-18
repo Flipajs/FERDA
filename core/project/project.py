@@ -110,6 +110,11 @@ class Project:
         p.snapshot_id = self.snapshot_id
         p.active_snapshot = self.active_snapshot
 
+        try:
+            p.GT_file = self.GT_file
+        except AttributeError:
+            pass
+
         with open(destinationFolder+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 
