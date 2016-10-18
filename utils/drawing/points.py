@@ -188,6 +188,20 @@ def get_contour_without_holes(pts):
             max_rows = rows
 
     c = max_c
+
+    if c == -1:
+        with open('pts_dump.pkl', 'wb') as f:
+            pickle.dump(pts, f)
+
+        print
+        print "__________________________________________"
+        print "PROBLEM in get_contour_without_holes, len(pts): ", len(pts)
+        print "contours: ", contours
+        print "hierarchy: ", hierarchy
+        print
+        print
+        return None
+
     (rows, _, _) = c.shape
     c = np.reshape(c, (rows, 2))
 
