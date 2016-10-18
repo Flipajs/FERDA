@@ -117,9 +117,9 @@ def get_contour(pts):
 
     roi = get_roi(pts)
 
-    img = np.zeros((roi.height(), roi.width()), dtype=np.uint8)
-
-    img[pts[:,0]-roi.y(), pts[:,1]-roi.x()] = 255
+    # +1 border offset to help findCountours algorithm in extreme cases (e.g. line)
+    img = np.zeros((roi.height() + 2, roi.width() + 2), dtype=np.uint8)
+    img[pts[:,0]-roi.y() + 1, pts[:,1]-roi.x() + 1] = 255
 
     ret, thresh = cv2.threshold(img, 127, 255, 0)
 
@@ -146,7 +146,8 @@ def get_contour(pts):
             cont = c
 
     if cont.size > 0:
-        cont += np.array([roi.y(), roi.x()])
+        # -1 to eliminate +1 border offset
+        cont += np.array([roi.y() - 1, roi.x() - 1])
 
     return cont
 
@@ -161,9 +162,9 @@ def get_contour_without_holes(pts):
 
     roi = get_roi(pts)
 
-    img = np.zeros((roi.height(), roi.width()), dtype=np.uint8)
-
-    img[pts[:,0]-roi.y(), pts[:,1]-roi.x()] = 255
+    # +1 border offset to help findCountours algorithm in extreme cases (e.g. line)
+    img = np.zeros((roi.height() + 2, roi.width() + 2), dtype=np.uint8)
+    img[pts[:,0]-roi.y() + 1, pts[:,1]-roi.x() + 1] = 255
 
     ret, thresh = cv2.threshold(img, 127, 255, 0)
 
@@ -189,10 +190,11 @@ def get_contour_without_holes(pts):
 
     c = max_c
 
-    if c == -1:
+    if isinstance(c, int) and c == -1:
         with open('pts_dump.pkl', 'wb') as f:
             pickle.dump(pts, f)
 
+        # TODO: remove in future if no problems will occur.
         print
         print "__________________________________________"
         print "PROBLEM in get_contour_without_holes, len(pts): ", len(pts)
@@ -200,20 +202,21 @@ def get_contour_without_holes(pts):
         print "hierarchy: ", hierarchy
         print
         print
-        return None
+        # return None
 
-    (rows, _, _) = c.shape
-    c = np.reshape(c, (rows, 2))
+        (rows, _, _) = c.shape
+        c = np.reshape(c, (rows, 2))
 
-    c[:, [0, 1]] = c[:, [1, 0]]
+        c[:, [0, 1]] = c[:, [1, 0]]
 
-    if cont.size > 0:
-        cont = np.append(cont, c, axis=0)
-    else:
-        cont = c
+        if cont.size > 0:
+            cont = np.append(cont, c, axis=0)
+        else:
+            cont = c
 
-    if cont.size > 0:
-        cont += np.array([roi.y(), roi.x()])
+        if cont.size > 0:
+            # -1 to eliminate +1 border offset
+            cont += np.array([roi.y() - 1, roi.x() - 1])
 
     return cont
 

@@ -65,6 +65,7 @@ class Exporter:
             pts = r.contour_without_holes()
 
             if pts is None:
+                print "WARNING> PTS is None in export_part.py"
                 print r
                 with open('r_debug.pkl', 'wb') as f:
                     pickle.dump(r, f)
