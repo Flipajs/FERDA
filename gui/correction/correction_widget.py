@@ -316,15 +316,17 @@ class ResultsWidget(QtGui.QWidget):
                 QtGui.QColor().fromRgbF(1, 1, 1)
             ]
 
-        self._gt = None
-        self._gt_file = self.project.working_directory + '/GT_sparse.pkl'
-        self._gt_corr_step = 50
+        # TODO: add develop option to load from project file...
+
+        self._gt = {}
         if is_flipajs_pc():
+            self._gt_corr_step = 50
             try:
-                with open(self._gt_file, 'rb') as f:
+                with open(self.project.GT_file, 'rb') as f:
                     self._gt = pickle.load(f)
             except:
-                self._gt = {}
+                print "GT was not loaded"
+
 
         # self.update_positions()
 
