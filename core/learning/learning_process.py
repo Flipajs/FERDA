@@ -34,6 +34,11 @@ class LearningProcess:
         # to solve uncertainty about head orientation... Add both
         self.features_fliplr_hack = True
 
+        # TODO: global parameter!!!
+        self.k_ = 50.0
+        if self.features_fliplr_hack:
+            self.k_ *= 2
+
         self.X = []
         self.y = []
         self.old_x_size = 0
@@ -305,22 +310,12 @@ class LearningProcess:
             self.__precompute_measurements()
 
     def __precompute_measurements(self):
-        # TODO: global parameter!!!
-        k = 50.0
-
         for t_id in self.undecided_tracklets:
             tracklet = self.p.chm[t_id]
             x, t_length = self.__get_tracklet_proba(tracklet)
 
-            uni_probs = np.ones((len(x), )) / float(len(x))
-
-            # TODO: why 0.99 and not 1.0? Maybe to give a small chance for each option independently on classifier
-            alpha = (min((t_length/k)**2, 0.99))
-
-            # if it is not obvious e.g. (1.0, 0, 0, 0, 0)...
-            # if 0 < np.max(x) < 1.0:
-            # reduce the certainty by alpha factor depending on tracklet length
-            x = (1-alpha) * uni_probs + alpha*x
+            # c
+            # print x
 
             self.tracklet_measurements[tracklet.id()] = x
             self.__update_certainty(tracklet)
@@ -925,6 +920,16 @@ class LearningProcess:
         if len(P) == 0:
             x = self.tracklet_measurements[tracklet.id()]
 
+            uni_probs = np.ones((len(x),)) / float(len(x))
+            # TODO: why 0.99 and not 1.0? Maybe to give a small chance for each option independently on classifier
+            alpha = (min((tracklet.length()/self.k_)**2, 0.99))
+
+            # if it is not obvious e.g. (1.0, 0, 0, 0, 0)...
+            # if 0 < np.max(x) < 1.0:
+            # reduce the certainty by alpha factor depending on tracklet length
+            # print x, alpha, t_length
+            # x = (1-alpha) * uni_probs + alpha*x
+
             # compute certainty
             x_ = np.copy(x)
             for id_ in N:
@@ -937,7 +942,12 @@ class LearningProcess:
 
             # take maximum probability from rest after removing definitely not present ids and the second max and compute certainty
             # for 0.6 and 0.4 it is 0.6 but for 0.6 and 0.01 it is ~ 0.98
-            certainty = p1 / (p1 + p2)
+            div = p1 + p2
+            if div == 0:
+                certainty = 0.0
+            else:
+                certainty = p1 / div
+                certainty = (1-alpha) * 0.5 + alpha*certainty
 
             if math.isnan(certainty):
                 certainty = 0.0
@@ -1415,8 +1425,8 @@ def __process_crops(crops, fliplr):
 
         f.extend(fd)
 
-        fd2 = hog(crop, orientations=8, pixels_per_cell=(w/2, h/2),
-                            cells_per_block=(2, 2), visualise=False)
+        fd2 = hog(crop, orientations=8, pixels_per_cell=(w/4, h),
+                            cells_per_block=(1, 1), visualise=False)
 
         f.extend(fd2)
 

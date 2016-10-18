@@ -29,7 +29,6 @@ class LearningWidget(QtGui.QWidget):
             self.load_project_button.clicked.connect(self.load_project)
             self.top_stripe_layout.addWidget(self.load_project_button)
         else:
-            print "LOADING LP"
             self.lp = LearningProcess(self.project, ghost=True)
 
         self.start_button = QtGui.QPushButton('start')
