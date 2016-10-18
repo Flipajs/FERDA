@@ -190,33 +190,19 @@ def get_contour_without_holes(pts):
 
     c = max_c
 
-    if isinstance(c, int) and c == -1:
-        with open('pts_dump.pkl', 'wb') as f:
-            pickle.dump(pts, f)
+    (rows, _, _) = c.shape
+    c = np.reshape(c, (rows, 2))
 
-        # TODO: remove in future if no problems will occur.
-        print
-        print "__________________________________________"
-        print "PROBLEM in get_contour_without_holes, len(pts): ", len(pts)
-        print "contours: ", contours
-        print "hierarchy: ", hierarchy
-        print
-        print
-        # return None
+    c[:, [0, 1]] = c[:, [1, 0]]
 
-        (rows, _, _) = c.shape
-        c = np.reshape(c, (rows, 2))
+    if cont.size > 0:
+        cont = np.append(cont, c, axis=0)
+    else:
+        cont = c
 
-        c[:, [0, 1]] = c[:, [1, 0]]
-
-        if cont.size > 0:
-            cont = np.append(cont, c, axis=0)
-        else:
-            cont = c
-
-        if cont.size > 0:
-            # -1 to eliminate +1 border offset
-            cont += np.array([roi.y() - 1, roi.x() - 1])
+    if cont.size > 0:
+        # -1 to eliminate +1 border offset
+        cont += np.array([roi.y() - 1, roi.x() - 1])
 
     return cont
 
