@@ -31,6 +31,8 @@ class LearningProcess:
         self.eps_certainty = 0.3
 
         self.get_features = get_features_var3
+        # to solve uncertainty about head orientation... Add both
+        self.features_fliplr_hack = True
 
         self.X = []
         self.y = []
@@ -819,8 +821,13 @@ class LearningProcess:
         i = 0
         for r in r_ch.regions_gen():
             if not r.is_virtual:
-                f_ = self.get_features(r, self.p)
-                X.append(f_)
+                if self.features_fliplr_hack:
+                    f1_, f2_ = self.get_features(r, self.p, fliplr=True)
+                    X.append(f2_)
+                else:
+                    f1_, f2_ = self.get_features(r, self.p, fliplr=False)
+
+                X.append(f1_)
 
                 i += 1
 
@@ -1392,12 +1399,31 @@ def get_features_var1(r, p):
     # f.extend(self.get_hu_moments(crop_br))
 
 
-def get_features_var2(r, p):
-    # f = get_features_var1(r, p)
-    f = []
-    f.append(r.area())
-
+def __process_crops(crops, fliplr):
     from skimage.feature import hog
+
+    f = []
+
+    for crop in crops:
+        if fliplr:
+            crop = np.fliplr(crop)
+
+        h, w = crop.shape
+
+        fd = hog(crop, orientations=8, pixels_per_cell=(w, h),
+                            cells_per_block=(1, 1), visualise=False)
+
+        f.extend(fd)
+
+        fd2 = hog(crop, orientations=8, pixels_per_cell=(w/2, h/2),
+                            cells_per_block=(2, 2), visualise=False)
+
+        f.extend(fd2)
+
+    return f
+
+
+def get_features_var2(r, p, fliplr=False):
     img = p.img_manager.get_whole_img(r.frame_)
 
     crop, offset = get_img_around_pts(img, r.pts(), margin=2.0)
@@ -1414,26 +1440,25 @@ def get_features_var2(r, p):
 
     crops = [crop_gray, crop_r, crop_b, crop_g]
 
-    h, w = crop_gray.shape
+    if fliplr:
+        f1 = __process_crops(crops, fliplr=False)
+        f2 = __process_crops(crops, fliplr=True)
 
-    for crop in crops:
-        fd = hog(crop, orientations=8, pixels_per_cell=(w, h),
-                            cells_per_block=(1, 1), visualise=False)
+        return f1, f2
+    else:
+        f = __process_crops(crops, fliplr=False)
 
-        f.extend(fd)
+        return f
 
-        fd2 = hog(crop, orientations=8, pixels_per_cell=(w/2, h/2),
-                            cells_per_block=(2, 2), visualise=False)
 
-        f.extend(fd2)
-
-    return f
-
-def get_features_var3(r, p):
+def get_features_var3(r, p, fliplr=False):
     f1 = get_features_var1(r, p)
-    f2 = get_features_var2(r, p)
-
-    return f1 + f2
+    if fliplr:
+        f2_a, f2_b = get_features_var2(r, p, fliplr=fliplr)
+        return f1 + f2_a, f1 + f2_b
+    else:
+        f2= get_features_var2(r, p, fliplr=fliplr)
+        return f1 + f2
 
 
 if __name__ == '__main__':
