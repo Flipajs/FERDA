@@ -185,10 +185,12 @@ class VideoManager():
         if sequence_access:
             if reversed:
                 while self.frame_number() > frame:
-                    self.previous_frame()
+                    if self.previous_frame() is None:
+                        return None
             else:
                 while self.frame_number() < frame:
-                    self.next_frame()
+                    if self.next_frame() is None:
+                        return None
 
             return self.img()
         else:

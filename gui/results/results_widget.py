@@ -7,12 +7,11 @@ from PyQt4 import QtGui, QtCore
 
 from core.graph.region_chunk import RegionChunk
 from core.settings import Settings as S_
-from gui.img_controls.my_view import MyView
 from gui.img_controls.utils import cvimg2qtpixmap
-from select_all_line_edit import SelectAllLineEdit
+from gui.video_player.video_player import VideoPlayer
 from utils.misc import is_flipajs_pc
 from utils.video_manager import get_auto_video_manager
-from video_slider import VideoSlider
+
 from viewer.gui.img_controls import markers
 
 MARKER_SIZE = 15
@@ -37,13 +36,10 @@ class ResultsWidget(QtGui.QWidget):
         self.right_vbox.setContentsMargins(0, 0, 0, 0)
         self.solver = None
         self.project = project
+
+        #TODO: remove
         self.video = get_auto_video_manager(project)
 
-        self.video_step = 1
-
-        self.frame_rate = 30
-        self.timer = QtCore.QTimer()
-        self.timer.setInterval(1000 / self.frame_rate)
         self.help_timer = QtCore.QTimer()
         self.scene = QtGui.QGraphicsScene()
         self.pixMap = None
@@ -114,91 +110,20 @@ class ResultsWidget(QtGui.QWidget):
 
         self.hbox.addWidget(self.splitter)
 
-        graphics_view_widget = QtGui.QWidget()
-        self.graphics_view = MyView(graphics_view_widget)
-        self.graphics_view.setScene(self.scene)
-
-        self.video_widget = QtGui.QWidget()
         self.video_layout = QtGui.QVBoxLayout()
         self.right_vbox.addLayout(self.video_layout)
 
-        self.video_control_widget = QtGui.QWidget()
-        self.video_control_layout = QtGui.QVBoxLayout()
-        self.video_control_widget.setLayout(self.video_control_layout)
-        self.video_control_widget.setMaximumHeight(70)
-        self.video_control_widget.setContentsMargins(0, 0, 0, 0)
-
-        self.video_control_buttons_widget = QtGui.QWidget()
-        self.video_control_buttons_layout = QtGui.QHBoxLayout()
-        self.video_control_buttons_layout.setContentsMargins(0, 0, 0, 0)
-        self.video_control_buttons_widget.setLayout(self.video_control_buttons_layout)
-
-        self.video_layout.addWidget(self.graphics_view)
-        self.video_layout.addWidget(self.video_control_widget)
-
-        self.speedSlider = QtGui.QSlider()
-        self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
-        self.speedSlider.setMinimum(0)
-        self.speedSlider.setMaximum(99)
-
-        self.backward = QtGui.QPushButton('<')
-        self.backward.setShortcut(S_.controls.video_prev)
-        self.playPause = QtGui.QPushButton('play')
-        self.playPause.setShortcut(S_.controls.video_play_pause)
-        self.forward = QtGui.QPushButton('>')
-        self.forward.setShortcut(S_.controls.video_next)
-        self.frameEdit = SelectAllLineEdit()
-        self.frameEdit.returnPressed.connect(self.frame_jump)
-        self.frameEdit.setFixedHeight(30)
-        # self.showFrame = QtGui.QPushButton('show')
-        self.fpsLabel = QtGui.QLabel()
-        self.fpsLabel.setAlignment(QtCore.Qt.AlignRight)
-        self.videoSlider = VideoSlider()
-        self.videoSlider.setOrientation(QtCore.Qt.Horizontal)
-        self.videoSlider.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.videoSlider.setMaximumHeight(15)
-        self.videoSlider.setMaximum(self.video.total_frame_count())
-
-
-
-        self.video_control_layout.addWidget(self.videoSlider)
-        self.video_control_layout.addWidget(self.video_control_buttons_widget)
-
-        self.frame_jump_button = QtGui.QPushButton('go')
-        self.frame_jump_button.clicked.connect(self.frame_jump)
-
-        self.frame_jump_button.setFocusPolicy(QtCore.Qt.StrongFocus)
-
-        self.visu_controls_layout = QtGui.QHBoxLayout()
-        self.video_control_buttons_layout.addLayout(self.visu_controls_layout)
-        self.video_control_buttons_layout.addWidget(self.speedSlider)
-
-        self.video_control_buttons_layout.addWidget(self.speedSlider)
-        self.video_control_buttons_layout.addWidget(self.fpsLabel)
-        self.video_control_buttons_layout.addWidget(self.backward)
-        self.video_control_buttons_layout.addWidget(self.playPause)
-        self.video_control_buttons_layout.addWidget(self.forward)
-        # self.video_control_buttons_layout.addWidget(self.showFrame)
-        self.video_control_buttons_layout.addWidget(self.frameEdit)
-        self.video_control_buttons_layout.addWidget(self.frame_jump_button)
-
-        self.init_speed_slider()
+        # TODO: connect video change callback
+        self.video_player = VideoPlayer(self.video, frame_change_callback=self.update_visualisations)
+        self.video_layout.addWidget(self.video_player)
 
         self.hide_visualisation_action = QtGui.QAction('hide visualisation', self)
         self.hide_visualisation_action.triggered.connect(self.hide_visualisation)
         self.hide_visualisation_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
         self.addAction(self.hide_visualisation_action)
 
-        # self.reset_colors_b = QtGui.QPushButton('reset colors')
-        # self.reset_colors_b.clicked.connect(self.reset_colors)
-        # self.video_control_buttons_layout.addWidget(self.reset_colors_b)
-
-        self.reset_colors_action = QtGui.QAction('reset_colors', self)
-        self.reset_colors_action.triggered.connect(self.reset_colors)
-        self.reset_colors_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Control + QtCore.Qt.Key_0))
-        self.addAction(self.reset_colors_action)
-
-        self.setTabOrder(self.frameEdit, self.frame_jump_button)
+        # TODO: VP deal with visu controls
+        self.visu_controls_layout = QtGui.QHBoxLayout()
 
         self.show_filled_ch = QtGui.QCheckBox('show filled')
         self.show_filled_ch.setChecked(True)
@@ -267,20 +192,6 @@ class ResultsWidget(QtGui.QWidget):
         self.big_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
         self.addAction(self.big_video_backward_a)
 
-        # increase video step
-        self.increase_video_step_a = QtGui.QAction('increase video step', self)
-        self.increase_video_step_a.triggered.connect(lambda x: setattr(self, 'video_step', self.video_step + 1))
-        self.increase_video_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_2))
-        self.addAction(self.increase_video_step_a)
-
-        self.decrease_video_step_a = QtGui.QAction('decrease video step', self)
-        self.decrease_video_step_a.triggered.connect(self.decrease_video_step)
-        self.decrease_video_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
-        self.addAction(self.decrease_video_step_a)
-
-        self.connect_GUI()
-
-        self.video.next_frame()
         self.chunks = []
         self.starting_frames = {}
         self.markers = []
@@ -325,19 +236,9 @@ class ResultsWidget(QtGui.QWidget):
                 with open(self.project.GT_file, 'rb') as f:
                     self._gt = pickle.load(f)
             except:
-                print "GT was not loaded", self.project.GT_file
-
+                print "GT was not loaded"
 
         # self.update_positions()
-
-    def increase_video_step(self):
-        self.video_step += 1
-
-    def decrease_video_step(self):
-        self.video_step -= 1
-
-        if self.video_step < 1:
-            self.video_step = 1
 
     def decide_tracklet(self):
         if self.active_tracklet_id > -1:
@@ -378,7 +279,9 @@ class ResultsWidget(QtGui.QWidget):
             frame = self.loop_begin
 
         self.change_frame(frame)
-        self.timer.stop()
+
+        # TODO: VP
+        # self.timer.stop()
         self.play_pause()
 
         # TODO: frame loop
@@ -663,25 +566,43 @@ class ResultsWidget(QtGui.QWidget):
 
         self.colormarks_items = []
 
-    def _update_bg_img(self, frame):
-        img = self.video.get_frame(frame)
-        if img is not None:
-            if self.pixMapItem is not None:
-                self.scene.removeItem(self.pixMapItem)
+    def update_visualisations(self):
+        if self.hide_visualisation_:
+            return
 
-            if self.show_saturated_ch.isChecked():
-                from utils.img import img_saturation
-                img = img_saturation(img, saturation_coef=2.0, intensity_coef=1.05)
+        frame = self.video_player.current_frame()
+
+        for ch in self.project.chm.chunks_in_frame(frame):
+            rch = RegionChunk(ch, self.project.gm, self.project.rm)
+            r = rch.region_in_t(frame)
+            c = r.centroid().copy()
+
+            if self.show_id_bar.isChecked():
+                try:
+                    self.show_pn_ids_visualisation(ch, frame)
+                except AttributeError:
+                    pass
+
+            if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
+                alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
+
+                c = ch.color
+                self.draw_region(r, ch, use_ch_color=c, alpha=alpha)
+
+        animal_ids2centroids = {}
+        # # TODO: fix for option when only P set is displayed using circles
+        # try:
+        #     for id_ in ch.P:
+        #         animal_ids2centroids.setdefault(id_, [])
+        #         animal_ids2centroids[id_].append((c, ch.is_only_one_id_assigned(len(self.project.animals)), ch))
+        # except:
+        #     pass
+        #
+        # if self.show_gt_markers.isChecked():
+        #     self._show_gt_markers(animal_ids2centroids)
 
 
-            self.pixMap = cvimg2qtpixmap(img)
-            item = self.scene.addPixmap(self.pixMap)
-            self.pixMapItem = item
-            self.update_frame_number()
-        else:
-            self.out_of_frames()
-
-    def update_positions(self, frame=-1):
+    def _update_positions(self, frame):
         self.marker_helper_step = 7
 
         from math import ceil
@@ -690,49 +611,8 @@ class ResultsWidget(QtGui.QWidget):
                                           dtype=np.bool)
 
 
-        if frame == -1:
-            frame = self.video.frame_number()
-
         self._clear_items()
-        self._update_bg_img(frame)
 
-        if self.hide_visualisation_:
-            return
-
-        animal_ids2centroids = {}
-
-        for ch in self.project.chm.chunks_in_frame(frame):
-            rch = RegionChunk(ch, self.project.gm, self.project.rm)
-            r = rch.region_in_t(frame)
-            c = r.centroid().copy()
-
-            # TODO: solve somewhere else:
-            if not hasattr(ch, 'P'):
-                ch.P = set()
-                ch.N = set()
-
-            if self.show_id_bar.isChecked():
-                try:
-                    self.show_pn_ids_visualisation(ch, frame)
-                except AttributeError:
-                    pass
-
-            # TODO: fix for option when only P set is displayed using circles
-            try:
-                for id_ in ch.P:
-                    animal_ids2centroids.setdefault(id_, [])
-                    animal_ids2centroids[id_].append((c, ch.is_only_one_id_assigned(len(self.project.animals)), ch))
-            except:
-                pass
-
-            if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
-                alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
-
-                c = ch.color
-                self.draw_region(r, ch, use_ch_color=c, alpha=alpha)
-
-        if self.show_gt_markers.isChecked():
-            self._show_gt_markers(animal_ids2centroids)
 
         self.__highlight_tracklets()
 
@@ -836,20 +716,6 @@ class ResultsWidget(QtGui.QWidget):
 
         self.info_l.setText(s)
 
-    def init_speed_slider(self):
-        """Initiates components associated with speed of viewing videos"""
-        self.speedSlider.setValue(self.frame_rate)
-        self.timer.setInterval(1000 / self.frame_rate)
-        self.fpsLabel.setText(str(self.frame_rate) + ' fps')
-        self.speedSlider.setMinimum(1)
-        self.speedSlider.setMaximum(120)
-
-    def speed_slider_changed(self):
-        """Method invoked when value of slider controlling speed of video changed it's value"""
-        self.frame_rate = self.speedSlider.value()
-        self.timer.setInterval(1000 / self.frame_rate)
-        self.fpsLabel.setText(str(self.frame_rate) + ' fps')
-
     def add_data(self, solver, just_around_frame=-1, margin=1000):
         self.solver = solver
 
@@ -917,113 +783,8 @@ class ResultsWidget(QtGui.QWidget):
 
         self.update_positions(0)
 
-    def connect_GUI(self):
-        """Connects GUI elements to appropriate methods"""
-        self.forward.clicked.connect(self.load_next_frame)
-        self.backward.clicked.connect(self.load_previous_frame)
-        self.playPause.clicked.connect(self.play_pause)
-        self.speedSlider.valueChanged.connect(self.speed_slider_changed)
-        # self.showFrame.clicked.connect(self.show_frame)
-        self.videoSlider.valueChanged.connect(self.video_slider_changed)
-        self.timer.timeout.connect(self.load_next_frame)
-
     def __continue_loop(self):
         self.help_timer.stop()
         # TODO: if loop only once... check something and remove flags...
         self.change_frame(self.loop_begin)
         self.timer.start()
-
-    def load_next_frame(self):
-        """Loads next frame of the video and displays it. If there is no next frame, calls self.out_of_frames"""
-        if self.video is not None:
-            if self.video_step == 1:
-                self.video.next_frame()
-            else:
-                self.change_frame(self.video.frame_number() + self.video_step)
-
-            self.update_positions(self.video.frame_number())
-        else:
-            self.play_pause()
-
-        if self.video.frame_number() == self.loop_end:
-            # TODO: global parameter
-            wait_in_the_end = 600
-
-            self.timer.stop()
-            self.help_timer.setInterval(wait_in_the_end)
-            self.help_timer.start()
-            self.help_timer.timeout.connect(self.__continue_loop)
-            return
-
-            print len(self.project.gm.vertices_in_t[self.video.frame_number()])
-
-        if self.video.frame_number() == self.highlight_marker2nd_frame:
-            print "SHOW"
-            self.scene.addItem(self.highlight_marker2nd)
-            self.highlight_timer2nd.start(50)
-            self.highlight_marker2nd_frame = -1
-
-    def load_previous_frame(self):
-        """Loads previous frame of the video if there is such and displays it"""
-        if self.video is not None:
-            if self.video_step == 1:
-                self.video.previous_frame()
-            else:
-                self.change_frame(self.video.frame_number() - self.video_step)
-            # if img is not None:
-            #     if self.pixMapItem is not None:
-            #         self.scene.removeItem(self.pixMapItem)
-            #     self.pixMap = cvimg2qtpixmap(img)
-            #     # view_add_bg_image(self.graphics_view, self.pixMap)
-            #     item = self.scene.addPixmap(self.pixMap)
-            #     self.pixMapItem = item
-            #     self.update_frame_number()
-            self.update_positions(self.video.frame_number())
-
-    def play_pause(self):
-        """Method of playPause button."""
-        # settings = QSettings("Ants results tool")
-        if self.video is not None:
-            if self.timer.isActive():
-                self.timer.stop()
-                self.playPause.setText("play")
-                self.playPause.setShortcut(S_.controls.video_play_pause)
-            else:
-                self.timer.start()
-                self.playPause.setText("pause")
-                self.playPause.setShortcut(S_.controls.video_play_pause)
-
-    def update_frame_number(self):
-        """Updates values of components displaying frame number"""
-        self.frameEdit.setText(str(int(self.video.frame_number() + 1)) + '/' + str(self.video.total_frame_count()))
-        self.videoSlider.setValue(self.video.frame_number())
-
-    def out_of_frames(self):
-        """Stops playing of the video if it is playing."""
-        if self.timer.isActive():
-            self.timer.stop()
-            self.playPause.setText("play")
-
-    def video_slider_changed(self):
-        """Method invoked when slider controlling video position changed. To differentiate between
-        situations when the slider was changed by user or by part of the program, use videoSlider.usercontrolled
-        and videoSlider.recentlyreleased
-        """
-        if self.videoSlider.usercontrolled:
-            self.change_frame(self.videoSlider.value())
-        elif self.videoSlider.recentlyreleased:
-            self.videoSlider.recentlyreleased = False
-            self.change_frame(self.videoSlider.value())
-
-    def change_frame(self, position):
-        """Changes current frame to position given. If there is no such position, calls self.out_of_frames"""
-        if self.video is not None:
-            self.video.seek_frame(position)
-            self.update_positions(self.video.frame_number())
-
-    def reset_colors(self):
-        print "COLORIZING "
-        from utils.color_manager import colorize_project
-        colorize_project(self.project)
-
-        print "COLORIZING DONE..."
