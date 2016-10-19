@@ -147,6 +147,8 @@ class LearningProcess:
         # self.save_ids_()
         self.load_learning()
 
+        self.test_RF_per_tracklet()
+
     def test_RF_per_tracklet(self):
         ##########################
         num_classified = np.zeros((len(self.p.animals),))
