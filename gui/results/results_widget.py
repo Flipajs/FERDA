@@ -683,6 +683,7 @@ class ResultsWidget(QtGui.QWidget):
 
     def update_positions(self, frame=-1):
         self.marker_helper_step = 7
+
         from math import ceil
         self.marker_pos_helper = np.zeros((int(ceil(self.video.img().shape[0] / self.marker_helper_step)),
                                             int(ceil(self.video.img().shape[1] / self.marker_helper_step))),
