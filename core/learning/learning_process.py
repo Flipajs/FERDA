@@ -146,6 +146,28 @@ class LearningProcess:
 
         # self.save_ids_()
         self.load_learning()
+
+    def test_RF_per_tracklet(self):
+        ##########################
+        num_classified = np.zeros((len(self.p.animals),))
+        num_correct = np.zeros((len(self.p.animals),))
+
+        for t in self.p.chm.chunk_gen():
+            m = self.tracklet_measurements[t.id()]
+            id_ = self.__DEBUG_get_answer_from_GT(t)
+
+            if id_ > -1:
+                num_classified[id_] += 1
+                if id_ == np.argmax(m):
+                    num_correct[id_] += 1
+
+        print "NUM CLASSIFIED:"
+        print num_classified
+        print "NUM CORRECT:"
+        print num_correct
+        print "PERCENTS:"
+        np.divide(num_correct, np.asarray(num_classified, dtype=np.float))
+
         # self.reset_learning()
 
     def compute_distinguishability(self):
@@ -1475,8 +1497,8 @@ def get_features_var3(r, p, fliplr=False):
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1_/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/GT/Cam1_')
     p.img_manager = ImgManager(p)
 
-    learn_proc = LearningProcess(p, use_feature_cache=False, use_rf_cache=False)
+    learn_proc = LearningProcess(p, use_feature_cache=True, use_rf_cache=False)
 
