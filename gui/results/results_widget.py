@@ -11,8 +11,9 @@ from gui.img_controls.utils import cvimg2qtpixmap
 from gui.video_player.video_player import VideoPlayer
 from utils.misc import is_flipajs_pc
 from utils.video_manager import get_auto_video_manager
-
 from viewer.gui.img_controls import markers
+from utils.img import img_saturation
+from functools import partial
 
 MARKER_SIZE = 15
 
@@ -114,7 +115,8 @@ class ResultsWidget(QtGui.QWidget):
         self.right_vbox.addLayout(self.video_layout)
 
         # TODO: connect video change callback
-        self.video_player = VideoPlayer(self.video, frame_change_callback=self.update_visualisations)
+        self.video_player = VideoPlayer(self.video)
+        self.video_player.set_frame_change_callback(self.update_visualisations)
         self.video_layout.addWidget(self.video_player)
 
         self.hide_visualisation_action = QtGui.QAction('hide visualisation', self)
@@ -124,32 +126,33 @@ class ResultsWidget(QtGui.QWidget):
 
         # TODO: VP deal with visu controls
         self.visu_controls_layout = QtGui.QHBoxLayout()
+        self.video_layout.addLayout(self.visu_controls_layout)
 
         self.show_filled_ch = QtGui.QCheckBox('show filled')
         self.show_filled_ch.setChecked(True)
         # lambda is used because if only self.update_position is given, it will give it parameters...
-        self.show_filled_ch.stateChanged.connect(lambda x: self.update_positions())
+        self.show_filled_ch.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_filled_ch)
 
         self.show_contour_ch = QtGui.QCheckBox('contours')
         self.show_contour_ch.setChecked(False)
         # lambda is used because if only self.update_position is given, it will give it parameters...
-        self.show_contour_ch.stateChanged.connect(lambda x: self.update_positions())
+        self.show_contour_ch.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_contour_ch)
 
         self.contour_without_colors = QtGui.QCheckBox('id clrs')
         self.contour_without_colors.setChecked(True)
-        self.contour_without_colors.stateChanged.connect(lambda x: self.update_positions())
+        self.contour_without_colors.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.contour_without_colors)
 
-        self.show_gt_markers = QtGui.QCheckBox('markers')
-        self.show_gt_markers.setChecked(False)
-        self.show_gt_markers.stateChanged.connect(lambda x: self.update_positions())
-        self.visu_controls_layout.addWidget(self.show_gt_markers)
+        self.show_markers = QtGui.QCheckBox('markers')
+        self.show_markers.setChecked(True)
+        self.show_markers.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
+        self.visu_controls_layout.addWidget(self.show_markers)
 
         self.show_saturated_ch = QtGui.QCheckBox('img sat')
         self.show_saturated_ch.setChecked(False)
-        self.show_saturated_ch.stateChanged.connect(lambda x: self.update_positions())
+        self.show_saturated_ch.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_saturated_ch)
 
         self.show_saturated_action = QtGui.QAction('show saturated', self)
@@ -159,7 +162,7 @@ class ResultsWidget(QtGui.QWidget):
 
         self.show_id_bar = QtGui.QCheckBox('id bar')
         self.show_id_bar.setChecked(True)
-        self.show_id_bar.stateChanged.connect(lambda x: self.update_positions())
+        self.show_id_bar.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_id_bar)
 
         self.small_video_forward_a = QtGui.QAction('small next', self)
@@ -216,6 +219,7 @@ class ResultsWidget(QtGui.QWidget):
         self.alpha_contour = 240
         self.alpha_filled = 120
 
+        # TODO: remove
         self.gitems = {'gt_markers': []}
 
         self.colors_ = [
@@ -238,7 +242,7 @@ class ResultsWidget(QtGui.QWidget):
             except:
                 print "GT was not loaded"
 
-        # self.update_positions()
+        # self.redraw_video_player_visualisations()
 
     def decide_tracklet(self):
         if self.active_tracklet_id > -1:
@@ -246,17 +250,17 @@ class ResultsWidget(QtGui.QWidget):
             self.active_tracklet_id = -1
             self.decide_tracklet_button.setDisabled(True)
 
-            self.update_positions()
+            self.redraw_video_player_visualisations()
 
     def hide_visualisation(self):
         self.hide_visualisation_ = not self.hide_visualisation_
-        self.update_positions()
+        self.redraw_video_player_visualisations()
 
     def stop_highlight_tracklet_clicked(self):
         self.loop_highlight_tracklets = []
         self.help_timer.stop()
         self.loop_end = -1
-        self.update_positions()
+        self.redraw_video_player_visualisations()
 
     def highlight_tracklet_button_clicked(self):
         try:
@@ -386,9 +390,12 @@ class ResultsWidget(QtGui.QWidget):
         for i in range(pts_.shape[0]):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
 
-        self.one_frame_items.append(self.scene.addPixmap(QtGui.QPixmap.fromImage(qim_)))
-        self.one_frame_items[-1].setPos(offset[1], offset[0])
-        self.one_frame_items[-1].setZValue(0.6)
+        pixmap = QtGui.QPixmap.fromImage(qim_)
+        item = QtGui.QGraphicsPixmapItem(pixmap)
+        item.setPos(offset[1], offset[0])
+        item.setZValue(0.6)
+
+        return item
 
     def frame_jump(self):
         f = int(self.frameEdit.text())
@@ -455,52 +462,36 @@ class ResultsWidget(QtGui.QWidget):
             self.highlight_marker2nd.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
             self.highlight_marker2nd_frame = data['n2'].frame_
 
-    def __find_nearest_free_marker_pos(self, y, x):
-        import itertools
-        x_ = round(x / float(self.marker_helper_step))
-        y_ = round(y / float(self.marker_helper_step))
-
-        if self.marker_pos_helper[int(y_), int(x_)]:
-            for a, b in itertools.product([-1, 0, 1], [-1, 0, 1]):
-                if not self.marker_pos_helper[int(y_+a), int(x_+b)]:
-                    y_ += a
-                    x_ += b
-
-                    y = y_ * self.marker_helper_step
-                    x = x_ * self.marker_helper_step
-                    break
-
-        self.marker_pos_helper[int(y_), int(x_)] = True
-        return y, x
-
     def update_positions_optimized(self, frame):
-        new_active_markers = []
+        return
 
-        # TODO: BGR, offset 1
-        # R B G Y dark B
-        colors = [
-            [0, 0, 0],
-            [0, 0, 255],
-            [255, 0, 0],
-            [0, 255, 0],
-            [0, 255, 255],
-            [150, 0, 0]
-        ]
-
-        for m_id, ch in self.active_markers:
-            rch = RegionChunk(ch,  self.project.gm, self.project.rm)
-            if frame == rch.end_frame() + 1:
-                self.items[m_id].setVisible(False)
-            else:
-                new_active_markers.append((m_id, ch))
-                r = rch.region_in_t(frame)
-
-                if r is None:
-                    print "None region, frame: {}, ch.id_: {}".format(frame, ch.id_)
-                    continue
-
-                c = r.centroid().copy()
-                self.update_marker_position(self.items[m_id], c)
+        # new_active_markers = []
+        #
+        # # TODO: BGR, offset 1
+        # # R B G Y dark B
+        # colors = [
+        #     [0, 0, 0],
+        #     [0, 0, 255],
+        #     [255, 0, 0],
+        #     [0, 255, 0],
+        #     [0, 255, 255],
+        #     [150, 0, 0]
+        # ]
+        #
+        # for m_id, ch in self.active_markers:
+        #     rch = RegionChunk(ch,  self.project.gm, self.project.rm)
+        #     if frame == rch.end_frame() + 1:
+        #         self.items[m_id].setVisible(False)
+        #     else:
+        #         new_active_markers.append((m_id, ch))
+        #         r = rch.region_in_t(frame)
+        #
+        #         if r is None:
+        #             print "None region, frame: {}, ch.id_: {}".format(frame, ch.id_)
+        #             continue
+        #
+        #         c = r.centroid().copy()
+        #         self.update_marker_position(self.items[m_id], c)
 
     def __add_marker(self, x, y, c_, id_, z_value, type_):
         radius = 13
@@ -510,19 +501,14 @@ class ResultsWidget(QtGui.QWidget):
         elif type_ == 'multiple':
             radius = 9
 
+        m = markers.CenterMarker(0, 0, radius, c_, id=id_, changeHandler=self._gt_marker_clicked)
 
-        if type_ != 'GT':
-            y, x = self.__find_nearest_free_marker_pos(y, x)
+        m.setPos(x - radius/2, y-radius/2)
+        m.setZValue(z_value)
 
-        gt_m = markers.CenterMarker(0, 0, radius, c_, id=id_, changeHandler=self._gt_marker_clicked)
+        self.video_player.visualise_temp(m, category=type_)
 
-        gt_m.setPos(x - radius/2, y-radius/2)
-        gt_m.setZValue(z_value)
-
-        self.gitems['gt_markers'].append(gt_m)
-        self.scene.addItem(gt_m)
-
-    def _show_gt_markers(self, animal_ids2centroids):
+    def _show_gt_markers(self):
         if self._gt is None:
             return
 
@@ -536,13 +522,18 @@ class ResultsWidget(QtGui.QWidget):
                 x = self._gt[frame][a.id][1]
                 self.__add_marker(x, y, c_, a.id, 0.7, type_='GT')
 
+    def _show_id_markers(self, animal_ids2centroids):
+        for a in self.project.animals:
+            c_ = QtGui.QColor(a.color_[2], a.color_[1], a.color_[0])
+
             if a.id in animal_ids2centroids:
                 for i, data in enumerate(animal_ids2centroids[a.id]):
                     centroid = data[0]
-                    decided = data[1]
-                    ch = data[2]
                     y = centroid[0]
                     x = centroid[1]
+                    decided = data[1]
+
+                    ch = data[2]
                     type_ = 'normal' if decided else 'multiple'
                     self.__add_marker(x, y, c_, ch.id_, 0.75, type_=type_)
             else:
@@ -551,70 +542,59 @@ class ResultsWidget(QtGui.QWidget):
 
                 self.__add_marker(x, y, c_, a.id, 0.75, type_='undef')
 
-    def _clear_items(self):
-        for it in self.gitems['gt_markers']:
-            self.scene.removeItem(it)
-
-        self.gitems['gt_markers'] = []
-
-        for i in range(len(self.one_frame_items)):
-            self.scene.removeItem(self.one_frame_items[0])
-            self.one_frame_items.pop(0)
-
-        for c in self.colormarks_items:
-            c.setVisible(False)
-
-        self.colormarks_items = []
-
     def update_visualisations(self):
         if self.hide_visualisation_:
             return
 
         frame = self.video_player.current_frame()
 
+        animal_ids2centroids = {}
+
         for ch in self.project.chm.chunks_in_frame(frame):
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
             r = rch.region_in_t(frame)
-            c = r.centroid().copy()
+            centroid = r.centroid().copy()
 
             if self.show_id_bar.isChecked():
                 try:
-                    self.show_pn_ids_visualisation(ch, frame)
+                    item = self.show_pn_ids_visualisation(ch, frame)
+
+                    self.video_player.visualise_temp(item, category='id_bar')
                 except AttributeError:
                     pass
 
             if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
                 alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
 
-                c = ch.color
-                self.draw_region(r, ch, use_ch_color=c, alpha=alpha)
+                c_ = ch.color
+                item = self.draw_region(r, ch, use_ch_color=c_, alpha=alpha)
 
-        animal_ids2centroids = {}
-        # # TODO: fix for option when only P set is displayed using circles
-        # try:
-        #     for id_ in ch.P:
-        #         animal_ids2centroids.setdefault(id_, [])
-        #         animal_ids2centroids[id_].append((c, ch.is_only_one_id_assigned(len(self.project.animals)), ch))
-        # except:
-        #     pass
-        #
-        # if self.show_gt_markers.isChecked():
-        #     self._show_gt_markers(animal_ids2centroids)
+                self.video_player.visualise_temp(item, category='region')
 
+            # # TODO: fix for option when only P set is displayed using circles
+            try:
+                for id_ in ch.P:
+                    animal_ids2centroids.setdefault(id_, [])
+                    animal_ids2centroids[id_].append((centroid, ch.is_only_one_id_assigned(len(self.project.animals)), ch))
+            except:
+                pass
 
-    def _update_positions(self, frame):
-        self.marker_helper_step = 7
+        if self.show_markers.isChecked():
+            self._show_gt_markers()
+            self._show_id_markers(animal_ids2centroids)
 
-        from math import ceil
-        self.marker_pos_helper = np.zeros((int(ceil(self.video.img().shape[0] / self.marker_helper_step)),
-                                            int(ceil(self.video.img().shape[1] / self.marker_helper_step))),
-                                          dtype=np.bool)
+    def _img_saturation(self, img):
+        return img_saturation(img, 2.0, 1.05)
 
+    def redraw_video_player_visualisations(self):
+        callback = None
+        if self.show_saturated_ch.isChecked():
+            callback = self._img_saturation
 
-        self._clear_items()
-
-
-        self.__highlight_tracklets()
+        self.video_player.set_image_processor_callback(callback)
+        self.video_player.redraw_visualisations()
+        # TODO: looper
+        # self.__highlight_tracklets()
 
     def __highlight_tracklets(self):
         for id_ in self.loop_highlight_tracklets:
@@ -660,14 +640,13 @@ class ResultsWidget(QtGui.QWidget):
                                                      )
 
         reg = rch.region_in_t(frame)
+        # self.scene.addItem(item)
+        item.setPos(reg.centroid()[1], reg.centroid()[0])
+        item.setZValue(0.9)
+        item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
+        # self.one_frame_items.append(item)
 
-        self.scene.addItem(item)
-
-        self.one_frame_items.append(item)
-        self.one_frame_items[-1].setPos(reg.centroid()[1], reg.centroid()[0])
-        self.one_frame_items[-1].setZValue(0.9)
-        # self.one_frame_items[-1].setOpacity(0.9)
-        self.one_frame_items[-1].setFlags(QtGui.QGraphicsItem.ItemIsMovable)
+        return item
 
     def pn_pixmap_clicked(self, id_):
         self._gt_marker_clicked(id_)
@@ -781,7 +760,7 @@ class ResultsWidget(QtGui.QWidget):
 
                 i += 1
 
-        self.update_positions(0)
+        self.redraw_video_player_visualisations(0)
 
     def __continue_loop(self):
         self.help_timer.stop()

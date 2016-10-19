@@ -11,7 +11,6 @@ from core.settings import Settings as S_
 class VideoPlayer(QtGui.QWidget):
     # TODO:
     _play_forward = True
-    # TODO:
     _scene = None
     _video_step = 1
     _PERMANENT_VISUALISATION_Z_LVL = 1.0
@@ -40,7 +39,7 @@ class VideoPlayer(QtGui.QWidget):
         self._view.setScene(self._scene)
         self.layout().addWidget(self._view)
 
-        self._scene_items = {'temp': {'bg': None}, 'permanent': {}}
+        self._scene_items = {'temp': {}, 'permanent': {}}
 
         self.frame_rate = 30
         self.timer = QtCore.QTimer()
@@ -51,6 +50,12 @@ class VideoPlayer(QtGui.QWidget):
 
         self.next()
         self.updateGeometry()
+
+    def set_frame_change_callback(self, frame_change_callback):
+        self._frame_change_callback = frame_change_callback
+
+    def set_image_processor_callback(self, image_processor_callback):
+        self._image_processor_callback = image_processor_callback
 
     def _video_controls(self):
         from video_slider import VideoSlider
@@ -160,8 +165,6 @@ class VideoPlayer(QtGui.QWidget):
 
     def play_reversed(self):
         self._play_forward = False
-        # TODO: remove when functionality is implemented
-        warnings.warn("not implemented yet", UserWarning)
 
     def _get_next_operator(self):
         if self._play_forward:
@@ -175,53 +178,55 @@ class VideoPlayer(QtGui.QWidget):
         else:
             return operator.add
 
+    def redraw_visualisations(self):
+        self.clear_all_temp_visualisations()
+        self._update_bg(self._vm.img())
+        self._frame_change_callback()
+
     def _change_frame(self, operator=operator.add, frame=None):
+        self.clear_all_temp_visualisations()
         # TODO: if looper?
-        try:
-            if frame is None:
-                frame = operator(self._vm.frame_number(), self._video_step)
+        # try:
+        if frame is None:
+            frame = operator(self._vm.frame_number(), self._video_step)
 
-            img = self._vm.get_frame(frame)
+        img = self._vm.get_frame(frame)
 
-            if self._image_processor_callback:
-                img = self._image_processor_callback(img)
+        if img is None:
+            warnings.warn("img is None")
+            if frame != self._vm.total_frame_count():
+                warnings.warn("cannot read frame: "+frame)
+        else:
+            self._update_bg(img)
+            if self._frame_change_callback:
+                self._frame_change_callback()
 
-            if img is None:
-                warnings.warn("img is None")
-                if frame != self._vm.total_frame_count():
-                    warnings.warn("cannot read frame: "+frame)
-            else:
-                self._update_bg(img)
-                if self._frame_change_callback:
-                    self._frame_change_callback()
-
-                self.update_frame_number()
-        except Exception as e:
-            warnings.warn('EXCEPTION catched: '+str(e))
+            self.update_frame_number()
+        # except Exception as e:
+        #     warnings.warn('EXCEPTION catched: '+str(e))
 
     def current_frame(self):
         return self._vm.frame_number()
 
-    def _remove_items(self, type):
-        if type == 'bg':
-            it = self._scene_items['temp']['bg']
-            if it is not None:
-                self._scene.removeItem(it)
+    def remove_items_category(self, type='temp', category=''):
+        except_for = set(self._scene_items[type])
+        if category in except_for:
+            except_for.remove(category)
         else:
-            warnings.warn('No matching category...'+type)
+            warnings.warn('category: '+category+' doesn\'t exist')
+
+        if type == 'permanent':
+            warnings.warn('remove all permanent not implemented yet', UserWarning)
+        else:
+            self.clear_all_temp_visualisations(except_for=except_for)
 
     def _update_bg(self, img):
-        self._remove_items('bg')
+        if self._image_processor_callback:
+            img = self._image_processor_callback(img)
 
-        # TODO:
-        # if self.show_saturated_ch.isChecked():
-        #     from utils.img import img_saturation
-        #     img = img_saturation(img, saturation_coef=2.0, intensity_coef=1.05)
-
+        self.clear_all_temp_visualisations()
         pixmap = cvimg2qtpixmap(img)
-        item = self._scene.addPixmap(pixmap)
-
-        self._scene_items['temp']['bg'] = item
+        self.visualise_temp(QtGui.QGraphicsPixmapItem(pixmap), 'bg')
 
     def next(self):
         self._change_frame(self._get_next_operator())
@@ -251,18 +256,28 @@ class VideoPlayer(QtGui.QWidget):
     def decrease_video_step(self, value=1):
         self.video_step = self._video_step - value
 
-    def visualise_temp(self, obj, lvl=-1):
-        # TODO: add to scene
-        # TODO: register to remove in next step...
-        pass
+    def visualise_temp(self, item, category='others'):
+        self._scene.addItem(item)
+        self._scene_items['temp'].setdefault(category, [])
+        self._scene_items['temp'][category].append(item)
 
     def visualise_permanent(self, obj):
         # TODO: implement
         warnings.warn("not implemented yet", UserWarning)
 
-    def clear_all_visualisations(self):
-        # TODO: go through all items and remove them (except for background)
-        pass
+    def clear_all_temp_visualisations(self, except_for=[]):
+        delete_ = []
+        for key, arr in self._scene_items['temp'].iteritems():
+            if key in except_for:
+                continue
+
+            for item in arr:
+                self._scene.removeItem(item)
+
+            delete_.append(key)
+
+        for key in delete_:
+            del self._scene_items['temp'][key]
 
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""

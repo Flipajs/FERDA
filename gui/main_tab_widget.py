@@ -149,7 +149,7 @@ class MainTabWidget(QtGui.QWidget):
                     self.tabs.removeTab(1)
                     self.results_tab.setParent(None)
                     self.results_tab = ResultsWidget(self.project, decide_tracklet_callback=self.decide_tracklet)
-                    # self.results_tab.update_positions()
+                    # self.results_tab.redraw_video_player_visualisations()
                     self.tabs.insertTab(1, self.results_tab, 'results viewer')
                     self.tabs.setCurrentIndex(1)
                     self.ignore_tab_change = False
