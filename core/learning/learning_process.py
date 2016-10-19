@@ -710,7 +710,9 @@ class LearningProcess:
         self.update_callback()
 
     def next_step(self):
-        eps_certainty_learning = 0.05
+        # do not learn
+        eps_certainty_learning = 1.1
+
         min_new_samples_to_retrain = 50
 
         # if enough new data, retrain
