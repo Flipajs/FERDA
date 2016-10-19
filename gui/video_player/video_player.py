@@ -6,6 +6,7 @@ from gui.img_controls.my_view import MyView
 from gui.img_controls.utils import cvimg2qtpixmap
 from gui.select_all_line_edit import SelectAllLineEdit
 from core.settings import Settings as S_
+from utils.video_manager import get_auto_video_manager
 
 
 class VideoPlayer(QtGui.QWidget):
@@ -16,7 +17,7 @@ class VideoPlayer(QtGui.QWidget):
     _PERMANENT_VISUALISATION_Z_LVL = 1.0
     _looper = None
 
-    def __init__(self, video_manager, frame_change_callback=None, image_processor_callback=None):
+    def __init__(self, project, frame_change_callback=None, image_processor_callback=None):
         """
         image_processor_callback will be called on every frame. img = image_processor_callback(img)
 
@@ -29,7 +30,7 @@ class VideoPlayer(QtGui.QWidget):
 
         self.setLayout(QtGui.QVBoxLayout())
 
-        self._vm = video_manager
+        self._vm = get_auto_video_manager(project)
         self._frame_change_callback = frame_change_callback
         self._image_processor_callback = image_processor_callback
 
@@ -135,6 +136,36 @@ class VideoPlayer(QtGui.QWidget):
         self.decrease_video_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
         self.addAction(self.decrease_video_step_a)
 
+        self.small_video_forward_a = QtGui.QAction('small next', self)
+        self.small_video_forward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() + 3))
+        self.small_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.ALT + QtCore.Qt.Key_N))
+        self.addAction(self.small_video_forward_a)
+
+        self.small_video_backward_a = QtGui.QAction('small back', self)
+        self.small_video_backward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() - 3))
+        self.small_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.ALT + QtCore.Qt.Key_B))
+        self.addAction(self.small_video_backward_a)
+
+        self.middle_video_forward_a = QtGui.QAction('middle next', self)
+        self.middle_video_forward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() + 10))
+        self.middle_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_N))
+        self.addAction(self.middle_video_forward_a)
+
+        self.middle_video_backward_a = QtGui.QAction('middle back', self)
+        self.middle_video_backward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() - 10))
+        self.middle_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_B))
+        self.addAction(self.middle_video_backward_a)
+
+        self.big_video_forward_a = QtGui.QAction('big next', self)
+        self.big_video_forward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() + 50))
+        self.big_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
+        self.addAction(self.big_video_forward_a)
+
+        self.big_video_backward_a = QtGui.QAction('big back', self)
+        self.big_video_backward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() - 50))
+        self.big_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
+        self.addAction(self.big_video_backward_a)
+
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""
         self.forward.clicked.connect(self.next)
@@ -235,6 +266,12 @@ class VideoPlayer(QtGui.QWidget):
         self._change_frame(self._get_prev_operator())
 
     def goto(self, frame):
+        if frame < 0:
+            frame = 0
+
+        if frame >= self._vm.total_frame_count():
+            frame = self._vm.total_frame_count() - 1
+            
         self._change_frame(frame=frame)
         pass
 

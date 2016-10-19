@@ -38,9 +38,6 @@ class ResultsWidget(QtGui.QWidget):
         self.solver = None
         self.project = project
 
-        #TODO: remove
-        self.video = get_auto_video_manager(project)
-
         self.help_timer = QtCore.QTimer()
         self.scene = QtGui.QGraphicsScene()
         self.pixMap = None
@@ -114,8 +111,7 @@ class ResultsWidget(QtGui.QWidget):
         self.video_layout = QtGui.QVBoxLayout()
         self.right_vbox.addLayout(self.video_layout)
 
-        # TODO: connect video change callback
-        self.video_player = VideoPlayer(self.video)
+        self.video_player = VideoPlayer(self.project)
         self.video_player.set_frame_change_callback(self.update_visualisations)
         self.video_layout.addWidget(self.video_player)
 
@@ -124,7 +120,6 @@ class ResultsWidget(QtGui.QWidget):
         self.hide_visualisation_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
         self.addAction(self.hide_visualisation_action)
 
-        # TODO: VP deal with visu controls
         self.visu_controls_layout = QtGui.QHBoxLayout()
         self.video_layout.addLayout(self.visu_controls_layout)
 
@@ -165,36 +160,6 @@ class ResultsWidget(QtGui.QWidget):
         self.show_id_bar.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_id_bar)
 
-        self.small_video_forward_a = QtGui.QAction('small next', self)
-        self.small_video_forward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() + 3))
-        self.small_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.ALT + QtCore.Qt.Key_N))
-        self.addAction(self.small_video_forward_a)
-
-        self.small_video_backward_a = QtGui.QAction('small back', self)
-        self.small_video_backward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() - 3))
-        self.small_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.ALT + QtCore.Qt.Key_B))
-        self.addAction(self.small_video_backward_a)
-
-        self.middle_video_forward_a = QtGui.QAction('middle next', self)
-        self.middle_video_forward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() + 10))
-        self.middle_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_N))
-        self.addAction(self.middle_video_forward_a)
-
-        self.middle_video_backward_a = QtGui.QAction('middle back', self)
-        self.middle_video_backward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() - 10))
-        self.middle_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_B))
-        self.addAction(self.middle_video_backward_a)
-
-        self.big_video_forward_a = QtGui.QAction('big next', self)
-        self.big_video_forward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() + 50))
-        self.big_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
-        self.addAction(self.big_video_forward_a)
-
-        self.big_video_backward_a = QtGui.QAction('big back', self)
-        self.big_video_backward_a.triggered.connect(lambda x: self.change_frame(self.video.frame_number() - 50))
-        self.big_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
-        self.addAction(self.big_video_backward_a)
-
         self.chunks = []
         self.starting_frames = {}
         self.markers = []
@@ -218,9 +183,6 @@ class ResultsWidget(QtGui.QWidget):
 
         self.alpha_contour = 240
         self.alpha_filled = 120
-
-        # TODO: remove
-        self.gitems = {'gt_markers': []}
 
         self.colors_ = [
                 QtGui.QColor().fromRgbF(0, 0, 1), #
@@ -273,6 +235,11 @@ class ResultsWidget(QtGui.QWidget):
         self.play_and_highlight_tracklet(tracklet, margin=5)
 
     def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
+        import warnings
+        warnings.warn('not reimplemented in video_player', UserWarning)
+
+        return
+
         # frame=-1 ... start from beginning
 
         self.loop_begin = max(0, tracklet.start_frame(self.project.gm) - margin)
@@ -284,12 +251,8 @@ class ResultsWidget(QtGui.QWidget):
 
         self.change_frame(frame)
 
-        # TODO: VP
         # self.timer.stop()
         self.play_pause()
-
-        # TODO: frame loop
-        # TODO: visualize loop
 
     def _evolve_gt(self):
         my_data = {}
@@ -353,6 +316,11 @@ class ResultsWidget(QtGui.QWidget):
         return new_
 
     def __save_gt(self):
+        # TODO:
+        import warnings
+        warnings.warn('not reimplemented YET!')
+        return
+
         if self._gt is None:
             print "No GT file opened"
             return
@@ -430,7 +398,7 @@ class ResultsWidget(QtGui.QWidget):
 
         ch = self.project.chm[id_]
         rch = RegionChunk(ch, self.project.gm, self.project.rm)
-        f = self.video.frame_number()
+        f = self.video_player.current_frame()
 
         print id_, rch.region_in_t(f)
 
@@ -515,7 +483,7 @@ class ResultsWidget(QtGui.QWidget):
         for a in self.project.animals:
             c_ = QtGui.QColor(a.color_[2], a.color_[1], a.color_[0])
 
-            frame = self.video.frame_number()
+            frame = self.video_player.current_frame()
 
             if frame in self._gt:
                 y = self._gt[frame][a.id][0]
@@ -599,7 +567,7 @@ class ResultsWidget(QtGui.QWidget):
     def __highlight_tracklets(self):
         for id_ in self.loop_highlight_tracklets:
             tracklet = self.project.chm[id_]
-            frame = self.video.frame_number()
+            frame = self.video_player.current_frame()
 
             r = RegionChunk(tracklet, self.project.gm, self.project.rm).region_in_t(frame)
 
@@ -666,7 +634,7 @@ class ResultsWidget(QtGui.QWidget):
         s = 'id: '+str(id_)
 
         ch = self.project.chm[id_]
-        f = self.video.frame_number()
+        f = self.video_player.current_frame()
         rch = RegionChunk(ch, self.project.gm, self.project.rm)
         r = rch.region_in_t(f)
         import textwrap
