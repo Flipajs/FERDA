@@ -30,6 +30,11 @@ class LearningProcess:
         # TODO: global parameter
         self.eps_certainty = 0.3
 
+        self.USE_FEATURES = slice(0, 42)
+        # self.USE_FEATURES = slice(0, 1000)
+        # self.USE_FEATURES = slice(42, 1000)
+        print self.USE_FEATURES
+
         self.get_features = get_features_var3
         # to solve uncertainty about head orientation... Add both
         self.features_fliplr_hack = True
@@ -150,27 +155,69 @@ class LearningProcess:
         self.test_RF_per_tracklet()
 
     def test_RF_per_tracklet(self):
-        ##########################
-        num_classified = np.zeros((len(self.p.animals),))
-        num_correct = np.zeros((len(self.p.animals),))
+        self.reset_learning()
+
+        num_a = len(self.p.animals)
+
+        min_weighted_difs = np.zeros((num_a, num_a))
+        total_len = np.zeros((num_a, 1))
+
+        min_weighted_difs_c = np.zeros((num_a, num_a))
+        total_len_c = np.zeros((num_a, 1))
+
+        num_classified = np.zeros((num_a,))
+        num_correct = np.zeros((num_a,))
+
+        np.set_printoptions(precision=3)
 
         for t in self.p.chm.chunk_gen():
-            m = self.tracklet_measurements[t.id()]
-            id_ = self.__DEBUG_get_answer_from_GT(t)
+            if t.id() in self.tracklet_measurements:
+                m = self.tracklet_measurements[t.id()]
+                id_ = self.__DEBUG_get_answer_from_GT(t)
 
-            if id_ > -1:
-                num_classified[id_] += 1
-                if id_ == np.argmax(m):
-                    num_correct[id_] += 1
+                if id_ > -1:
+                    l_ = t.length()
+                    num_classified[id_] += 1
+
+                    if id_ == np.argmax(m):
+                        i = np.argmax(m)
+                        difs = (m[id_] - m) * l_
+                        total_len_c[i] += l_
+                        min_weighted_difs_c[i, :] += difs
+
+                        num_correct[id_] += 1
+                    else:
+                        print "MISTAKE GT_id: ", id_, "M: ", m, " argmax:", np.argmax(m), "t.id: ", t.id(), "len: ", t.length()
+
+                    i = np.argmax(m)
+                    difs = (m[id_] - m) * l_
+                    total_len[i] += l_
+                    min_weighted_difs[i, :] += difs
 
         print "NUM CLASSIFIED:"
-        print num_classified
+        print num_classified, np.sum(num_classified)
         print "NUM CORRECT:"
-        print num_correct
+        print num_correct, np.sum(num_correct)
         print "PERCENTS:"
-        np.divide(num_correct, np.asarray(num_classified, dtype=np.float))
+        print np.divide(num_correct, np.asarray(num_classified, dtype=np.float))
+        num_mistakes = np.sum(num_classified)-np.sum(num_correct)
+        print "MISTAKES: ", num_mistakes, "SUCCESS: ", np.sum(num_correct)/float(np.sum(num_classified))
 
-        # self.reset_learning()
+        print
+        print "CLASS DIFFS when CORRECT:"
+        for i in range(num_a):
+            print i, min_weighted_difs_c[i, :] / total_len_c[i]
+
+        print
+        print "CLASS DIFFS total:"
+        for i in range(num_a):
+            print i, min_weighted_difs[i, :] / total_len[i]
+
+        print "FEATURE IMPORTANCES:"
+        print self.rfc.feature_importances_
+
+        # Set to DEFAULT
+        np.set_printoptions()
 
     def compute_distinguishability(self):
         num_a = len(self.p.animals)
@@ -182,7 +229,7 @@ class LearningProcess:
             t = self.p.chm[id_]
             l_ = t.length()
 
-            total_len += l_
+            # total_len += l_
             m = self.tracklet_measurements[id_]
 
             i = np.argmax(m)
@@ -554,7 +601,8 @@ class LearningProcess:
             print "Done"
         else:
             X = self.features[ch.id()]
-
+            X = np.array(X)
+            X = X[:, self.USE_FEATURES]
         # if empty, create... else there is a problem with vstack...
         if len(self.y) == 0:
             self.X = np.array(X)
@@ -807,6 +855,9 @@ class LearningProcess:
 
     def __get_tracklet_proba(self, ch):
         X = self.features[ch.id()]
+        X = np.array(X)
+        X = X[:, self.USE_FEATURES]
+
         if len(X) == 0:
             return None, 0
 
