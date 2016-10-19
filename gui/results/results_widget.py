@@ -68,7 +68,7 @@ class ResultsWidget(QtGui.QWidget):
         if self.show_identities:
             self.scroll_ = QtGui.QScrollArea()
             self.scroll_.setWidgetResizable(True)
-            from gui.correction.identities_widget import IdentitiesWidget
+            from gui.results.identities_widget import IdentitiesWidget
             self.identities_widget = IdentitiesWidget(self.project)
             self.identities_widget.setMinimumWidth(200)
             self.scroll_.setWidget(self.identities_widget)
@@ -981,7 +981,7 @@ class ResultsWidget(QtGui.QWidget):
 
     def play_pause(self):
         """Method of playPause button."""
-        # settings = QSettings("Ants correction tool")
+        # settings = QSettings("Ants results tool")
         if self.video is not None:
             if self.timer.isActive():
                 self.timer.stop()

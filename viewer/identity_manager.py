@@ -41,7 +41,7 @@ class IdentityManager():
         self.find_max_certainty()
         self.normalize_certainties(self.max_certainty)
 
-        settings = QtCore.QSettings("Ants correction tool")
+        settings = QtCore.QSettings("Ants results tool")
 
         if settings.value('head_detection', default_settings.get_default('head_detection'), bool):
             self.pair_points()
@@ -402,7 +402,7 @@ class IdentityManager():
     def set_new_settings(self):
         """This method should be called when the settings that are relevant for identity_manager were changed. Recalculates
         all that is needed to adapt to new settings"""
-        settings = QtCore.QSettings("Ants correction tool")
+        settings = QtCore.QSettings("Ants results tool")
         self.tester = FaultTester(self, self.switch_causes, len_test=settings.value('len_test', default_settings.get_default('len_test'), bool), certainty_test=settings.value('certainty_test', default_settings.get_default('certainty_test'), bool), proximity_test=settings.value('proximity_test', default_settings.get_default('proximity_test'), bool), angular_test=settings.value('angular_test', default_settings.get_default('angular_test'), bool), lost_test=settings.value('lost_test', default_settings.get_default('lost_test'), bool), collision_test=settings.value('collision_test', default_settings.get_default('collision_test'), bool), overlap_test=settings.value('overlap_test', default_settings.get_default('overlap_test'), bool))
         self.tester.set_tolerances(len_tolerance=settings.value('length_tolerance', default_settings.get_default('length_tolerance'), float), min_certainty=settings.value('minimal_certainty', default_settings.get_default('minimal_certainty'), float), proximity_tolerance=settings.value('proximity_tolerance', default_settings.get_default('proximity_tolerance'), float), angular_tolerance=settings.value('angular_tolerance', default_settings.get_default('angular_tolerance'), int))
         old_undo_redo_mode = self.undo_redo_mode

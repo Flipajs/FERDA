@@ -22,7 +22,7 @@ from scripts.similarity_test import similarity_loss
 from core.bg_model.max_intensity import MaxIntensity
 from core.antlikeness import Antlikeness
 import ant_number_svm
-from gui.correction.configurations_visualizer import ConfigurationsVisualizer
+from gui.results.configurations_visualizer import ConfigurationsVisualizer
 from core.graph.solver import Solver
 
 

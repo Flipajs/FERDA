@@ -710,11 +710,11 @@ class LearningProcess:
         self.update_callback()
 
     def next_step(self):
-        eps_certainty_learning = 0.05
+        eps_certainty_learning = self.eps_certainty / 2
         min_new_samples_to_retrain = 50
 
         # if enough new data, retrain
-        if len(self.X) - self.old_x_size > 1000:
+        if len(self.X) - self.old_x_size > 10000:
             t = time.time()
             self.__train_rfc()
             print "RETRAIN t:", time.time() - t
@@ -1473,7 +1473,7 @@ def get_features_var3(r, p, fliplr=False):
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1_/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/zebrafish')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p, use_feature_cache=False, use_rf_cache=False)

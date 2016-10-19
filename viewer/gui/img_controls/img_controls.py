@@ -173,7 +173,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
     def connect_shortcuts(self):
         """Connects shortcuts from settings to all settable buttons"""
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         for button in self.settable_buttons:
             button.setShortcut(settings.value(str(button.objectName()), default_settings.get_default(str(button.objectName())), QtGui.QKeySequence))
 
@@ -188,7 +188,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
     def position_bottom_panel(self):
         """Sets correct positions to all components on bottom of the window"""
-        settings = QtCore.QSettings("Ants correction tool")
+        settings = QtCore.QSettings("Ants results tool")
         w = self.width()
         h = self.height()
         button_width = 100
@@ -279,7 +279,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
     def graphics_view_full(self):
         """Positions graphics view onto the correct place"""
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         w = self.width()
         h = self.height()
         self.graphics_view.setGeometry(settings.value('side_panel_width', default_settings.get_default('side_panel_width'), int), 0, w - settings.value('side_panel_width', default_settings.get_default('side_panel_width'), int), h - settings.value('bottom_panel_height', default_settings.get_default('bottom_panel_height'), int))
@@ -356,7 +356,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
     def play_pause(self):
         """Method of playPause button."""
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         if self.video is not None:
             if self.timer.isActive():
                 self.timer.stop()
@@ -387,7 +387,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         """Initiates marker that show positions of individual ants. Note that they are all positioned in the topleft
         corner of the window. To position them, use self.position_identity_markers
         """
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         for i in range(identity_num):
             ant_markers = []
 
@@ -603,7 +603,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         """A method invoked when a mouse was released from one of the identity markers. Scans for all markers, remembers
         which were selected and writes those into changes.
         """
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         if self.identity_manager is not None and self.video is not None:
             changes = dict()
             for ant_id in range(self.identity_manager.ant_num):
@@ -651,7 +651,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         """Adds markers indicating future positions of the ant given. Number of markers = depth. If 'markers_shown_history'
         setting equals all, displays all three markers, otherwise just the centre one.
         """
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         if self.identity_manager is not None and self.video is not None:
             for i in range(1, min(depth, int(self.video.total_frame_count() - self.video.frame_number() - 1)) + 1):
                 pos = self.identity_manager.get_positions(self.video.frame_number() + i, ant_id)
@@ -699,7 +699,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         """Adds markers indicating previous positions of the ant given. Number of markers = depth. If 'markers_shown_history'
         setting equals all, displays all three markers, otherwise just the centre one.
         """
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         if self.identity_manager is not None and self.video is not None:
             for i in range(1, min(depth, self.video.frame_number()) + 1):
                 pos = self.identity_manager.get_positions(self.video.frame_number() - i, ant_id)
@@ -750,7 +750,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
     def show_history(self):
         """Iterates through all markers and shows history of those selected"""
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         for marker_list in self.identity_markers:
             for marker in marker_list:
                 if marker.isSelected():
@@ -771,7 +771,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
     def show_forward_positions(self):
         """Iterates through all markers and shows future of those selected"""
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         for marker_list in self.identity_markers:
             for marker in marker_list:
                 if marker.isSelected():
@@ -815,7 +815,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
 
     def swap_ants(self):
         """Method of swapAnts button. If two ants are selected, swaps their positions."""
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         selected = []
         for marker_list in self.identity_markers:
             for marker in marker_list:
@@ -841,7 +841,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         """Method of showFaults button. Computes possible faults, prepares all necessities for showing them
         and proceeds to call next_fault.
         """
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         if self.video is not None and self.identity_manager is not None:
 
             dialog = QMessageBox(QtGui.QMessageBox.NoIcon, "Computing", "Computing possible detection faults", QtGui.QMessageBox.Ok)
@@ -901,7 +901,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         """Method of nextFault button. Shows next fault in the list of faults. The order of faults is determined by
         the 'switches first' setting.
         """
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         if self.video is not None and self.identity_manager is not None and self.showing_faulty_frames:
             self.remove_highlighters()
             if settings.value('zoom_on_faults', default_settings.get_default('zoom_on_faults'), bool):
@@ -933,7 +933,7 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
         """Method of previousFault button. Shows previous fault in the list of faults. The order of faults is determined by
         the 'switches first' setting.
         """
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         if self.video is not None and self.identity_manager is not None and self.showing_faulty_frames and self.current_fault_index > 0:
             self.remove_highlighters()
 
@@ -1072,13 +1072,13 @@ class ImgControls(QtGui.QMainWindow, img_controls_qt.Ui_MainWindow):
     def show_settings_dialog(self):
         """Method of showSettings button. Shows settings dialog. If it was accepted, updates all components affected
         by changes"""
-        settings = QSettings("Ants correction tool")
+        settings = QSettings("Ants results tool")
         prev_head_detection = settings.value('head_detection', default_settings.get_default('head_detection'), bool)
         dialog = SettingsDialog(self, self.settable_buttons)
         dialog.exec_()
         if dialog.Accepted:
             self.position_bottom_panel()
-            settings = QSettings("Ants correction tool")
+            settings = QSettings("Ants results tool")
             self.position_side_panel(settings.value('side_panel_width', default_settings.get_default('side_panel_width'), int))
             self.graphics_view_full()
             if self.identity_manager is not None:

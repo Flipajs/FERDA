@@ -4,14 +4,14 @@ import copy
 
 
 class SettingsDialog(QtGui.QDialog):
-    """A dialog used for settings of almost everything in the ants correction tool. Note that the QSettings name is
-    'Ants correction tool'. When you need to add a settings, add it onto tab you want or add a new tab. The method
+    """A dialog used for settings of almost everything in the ants results tool. Note that the QSettings name is
+    'Ants results tool'. When you need to add a settings, add it onto tab you want or add a new tab. The method
     populate of each tab is used to set initial values, the method restore_defaults populates the dialog with settings
     from default_settings file and the method harvest saves the values from dialog into settings. Should you add new
     settings, update all three methods accordingly. Also keep in mind that you need to add corresponding setting
     into default_settings.
     A propos: the construction for getting settings is:
-    settings = QSettings("Ants correction tool")
+    settings = QSettings("Ants results tool")
     settings.value(key, default_value, type)
     """
 
@@ -119,7 +119,7 @@ class AppearanceTab(QtGui.QWidget):
 
         self.setLayout(main_layout)
     def populate(self):
-        settings = QtCore.QSettings("Ants correction tool")
+        settings = QtCore.QSettings("Ants results tool")
         if settings.value('view_mode', default_settings.get_default('view_mode'), str) == 'individual':
             self.individual_button.setChecked(True)
         elif settings.value('view_mode', default_settings.get_default('view_mode'), str) == 'group':
@@ -132,7 +132,7 @@ class AppearanceTab(QtGui.QWidget):
         self.opacity_slider.setValue(int(settings.value('marker_opacity', default_settings.get_default('marker_opacity'), float) * 1000))
 
     def harvest(self):
-        settings = QtCore.QSettings("Ants correction tool")
+        settings = QtCore.QSettings("Ants results tool")
         if self.individual_button.isChecked():
             settings.setValue('view_mode', 'individual')
         elif self.group_button.isChecked():
@@ -211,7 +211,7 @@ class FaultTestTab(QtGui.QWidget):
         self.setLayout(main_layout)
 
     def populate(self):
-        settings = QtCore.QSettings("Ants correction tool")
+        settings = QtCore.QSettings("Ants results tool")
         if settings.value('correction_mode', default_settings.get_default('correction_mode'), str) == 'individual':
             self.individual_button.setChecked(True)
         elif settings.value('correction_mode', default_settings.get_default('correction_mode'), str) == 'group':
@@ -229,7 +229,7 @@ class FaultTestTab(QtGui.QWidget):
         self.overlap_checkbox.setChecked(settings.value('overlap_test', default_settings.get_default('overlap_test'), bool))
 
     def harvest(self):
-        settings = QtCore.QSettings("Ants correction tool")
+        settings = QtCore.QSettings("Ants results tool")
         if self.individual_button.isChecked():
             settings.setValue('correction_mode', 'individual')
         elif self.group_button.isChecked():
@@ -318,7 +318,7 @@ class ControlsTab(QtGui.QWidget):
         self.zoom_checkbox = QtGui.QCheckBox("On")
         main_layout.addWidget(self.zoom_checkbox)
 
-        main_layout.addWidget(QtGui.QLabel("Fault correction order:"))
+        main_layout.addWidget(QtGui.QLabel("Fault results order:"))
         self.switch_first_button = QtGui.QRadioButton("Possible switches first")
         self.in_order_button = QtGui.QRadioButton("In order of appearance")
 
@@ -350,7 +350,7 @@ class ControlsTab(QtGui.QWidget):
         self.setLayout(main_layout)
 
     def populate(self):
-        settings = QtCore.QSettings("Ants correction tool")
+        settings = QtCore.QSettings("Ants results tool")
         if settings.value('markers_shown_history', default_settings.get_default('markers_shown_history'), str) == 'all':
             self.all_button.setChecked(True)
         elif settings.value('markers_shown_history', default_settings.get_default('markers_shown_history'), str) == 'center':
@@ -370,7 +370,7 @@ class ControlsTab(QtGui.QWidget):
         self.forward_edit.setValue(settings.value('forward_depth', default_settings.get_default('forward_depth'), int))
 
     def harvest(self):
-        settings = QtCore.QSettings("Ants correction tool")
+        settings = QtCore.QSettings("Ants results tool")
         settings.setValue('history_depth', self.history_edit.value())
         settings.setValue('forward_depth', self.forward_edit.value())
         settings.setValue('autosave_count', self.autosave_edit.value())
@@ -475,7 +475,7 @@ class KeyBindingsTab(QtGui.QWidget):
             self.table.item(i, 1).setText(default_settings.get_default(str(self.buttons[i].objectName())).toString())
 
     def harvest(self):
-        settings = QtCore.QSettings("Ants correction tool")
+        settings = QtCore.QSettings("Ants results tool")
         for i in range(len(self.buttons)):
             settings.setValue(self.buttons[i].objectName(), QtGui.QKeySequence(self.table.item(i, 1).text()))
             self.buttons[i].setShortcut(QtGui.QKeySequence(self.table.item(i, 1).text()))

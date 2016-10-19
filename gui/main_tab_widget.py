@@ -8,7 +8,7 @@ import os
 
 from PyQt4 import QtGui, QtCore
 from gui.tracker.tracker_widget import TrackerWidget
-from gui.correction.correction_widget import ResultsWidget
+from gui.results.results_widget import ResultsWidget
 from gui.statistics.statistics_widget import StatisticsWidget
 
 from core.background_computer import BackgroundComputer

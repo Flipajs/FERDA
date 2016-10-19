@@ -20,7 +20,7 @@ from gui.colleditor.drawing_manager import *
 settings = QtCore.QSettings("FERDA")
 
 class CollisionEditor(QtGui.QMainWindow):
-    """A tool for correction of collision including MSER region editing and
+    """A tool for results of collision including MSER region editing and
         ant contour fitting."""
 
     def __init__(self):

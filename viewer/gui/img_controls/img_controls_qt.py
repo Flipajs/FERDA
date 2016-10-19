@@ -152,7 +152,7 @@ class Ui_MainWindow(object):
         self.faultLabel.setObjectName(_fromUtf8("faultLabel"))
 
         self.cancelButton = QtGui.QPushButton(self.centralwidget)
-        self.cancelButton.setObjectName(_fromUtf8("cancel correction"))
+        self.cancelButton.setObjectName(_fromUtf8("cancel results"))
 
         self.settingsButton = QtGui.QPushButton(self.centralwidget)
         self.settingsButton.setObjectName(_fromUtf8("settings"))
