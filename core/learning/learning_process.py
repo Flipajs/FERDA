@@ -16,6 +16,7 @@ import time
 import itertools
 import math
 from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
+from skimage.feature import local_binary_pattern
 
 class LearningProcess:
     def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False):
@@ -30,7 +31,7 @@ class LearningProcess:
         # TODO: global parameter
         self.eps_certainty = 0.3
 
-        self.get_features = get_features_var3
+        self.get_features = get_features_var4
         # to solve uncertainty about head orientation... Add both
         self.features_fliplr_hack = True
 
@@ -335,8 +336,6 @@ class LearningProcess:
             if ch in self.collision_chunks:
                 continue
 
-            # if i > 20:
-            #     break
             X = self.get_data(ch)
 
             i += 1
@@ -398,7 +397,15 @@ class LearningProcess:
 
         print "ALL CHUNKS:", len(self.p.chm)
         # filtered = []
+
+        # TODO: remvoe
+        i = 0
         for ch in self.p.chm.chunk_gen():
+            # if i > 1:
+            #     continue
+
+            i += 1
+
             # if ch.start_frame(self.p.gm) > 500:
             #     continue
             # else:
@@ -1472,10 +1479,64 @@ def get_features_var3(r, p, fliplr=False):
         f2= get_features_var2(r, p, fliplr=fliplr)
         return f1 + f2
 
+def get_lbp_vect(crop):
+    f = []
+
+    h, w = crop.shape
+
+    configs = [(24, 3), (8, 1)]
+    for c in configs:
+        lbp = local_binary_pattern(crop, c[0], c[1])
+        lbp_ = lbp.copy()
+        lbp_.shape = (lbp_.shape[0]*lbp_.shape[1], )
+        h, _ = np.histogram(lbp_, bins=32, density=True)
+
+        f += list(h)
+
+        # subhists:
+        num_parts = 3
+        ls = np.linspace(0, w, num_parts+1, dtype=np.int32)
+        for i in range(num_parts):
+            lbp_ = lbp[:, ls[i]:ls[i+1]].copy()
+            lbp_.shape = (lbp_.shape[0] * lbp_.shape[1],)
+
+            h, _ = np.histogram(lbp_, bins=32, density=True)
+
+            f += list(h)
+
+    return f
+
+def get_features_var4(r, p, fliplr=False):
+    img = p.img_manager.get_whole_img(r.frame_)
+
+    crop, offset = get_img_around_pts(img, r.pts(), margin=2.0)
+    crop = rotate_img(crop, r.theta_)
+
+    margin = 3
+
+    crop = centered_crop(crop, 2 * (r.b_ + margin), 2 * (r.a_ + margin))
+
+    crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    crop_r = crop[:, :, 2]
+    crop_g = crop[:, :, 1]
+    crop_b = crop[:, :, 0]
+
+    crops = [crop_gray, crop_r, crop_b, crop_g]
+
+    f1 = []
+    f2 = []
+    for c in crops:
+        f1 += get_lbp_vect(c)
+        if fliplr:
+            f2 += get_lbp_vect(np.fliplr(c))
+
+    return f1, f2
+
+
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1_/cam1.fproj')
+    p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p, use_feature_cache=False, use_rf_cache=False)
