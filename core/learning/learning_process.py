@@ -31,7 +31,7 @@ class LearningProcess:
         # TODO: global parameter
         self.eps_certainty = 0.3
 
-        self.get_features = get_features_var4
+        self.get_features = get_features_var5
         # to solve uncertainty about head orientation... Add both
         self.features_fliplr_hack = True
 
@@ -77,7 +77,9 @@ class LearningProcess:
             with open(p.working_directory+'/features.pkl', 'wb') as f:
                 d = {'chunks_itree': self.chunks_itree, 'features': self.features,
                      'collision_chunks': self.collision_chunks}
-                pickle.dump(d, f, -1)
+                # pickle.dump(d, f, -1)
+                # withou -1, compression, faster?
+                pickle.dump(d, f)
         else:
             print "LOADING features..."
             with open(p.working_directory+'/features.pkl', 'rb') as f:
@@ -1529,6 +1531,57 @@ def get_features_var4(r, p, fliplr=False):
         f1 += get_lbp_vect(c)
         if fliplr:
             f2 += get_lbp_vect(np.fliplr(c))
+
+    return f1, f2
+
+def get_chist_vect(crop):
+    f = []
+
+    h, w = crop.shape
+
+    crop_ = crop.copy()
+    crop_.shape = (h*w, )
+    h, _ = np.histogram(crop_, bins=32, density=True)
+
+    f += list(h)
+
+    # subhist, take only first third
+    num_parts = 3
+    ls = np.linspace(0, w, num_parts+1, dtype=np.int32)
+    crop_ = crop[:, ls[0]:ls[1]].copy()
+    crop_.shape = (crop_.shape[0]*crop_.shape[1],)
+    h, _ = np.histogram(crop_, bins=32, density=True)
+
+    f += list(h)
+
+    return f
+
+def get_features_var5(r, p, fliplr=False):
+    img = p.img_manager.get_whole_img(r.frame_)
+
+    crop, offset = get_img_around_pts(img, r.pts(), margin=2.0)
+    crop = rotate_img(crop, r.theta_)
+
+    margin = 3
+
+    crop = centered_crop(crop, 2 * (r.b_ + margin), 2 * (r.a_ + margin))
+
+    crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    crop_r = crop[:, :, 2]
+    crop_g = crop[:, :, 1]
+    crop_b = crop[:, :, 0]
+
+    crops = [crop_gray, crop_r, crop_b, crop_g,
+             np.asarray(crop_r, dtype=np.int32) - np.asarray(crop_b, dtype=np.int32),
+             np.asarray(crop_r, dtype=np.int32) - np.asarray(crop_g, dtype=np.int32),
+             np.asarray(crop_g, dtype=np.int32) - np.asarray(crop_b, dtype=np.int32),
+             ]
+    f1 = []
+    f2 = []
+    for c in crops:
+        f1 += get_chist_vect(c)
+        if fliplr:
+            f2 += get_chist_vect(np.fliplr(c))
 
     return f1, f2
 
