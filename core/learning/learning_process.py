@@ -30,9 +30,9 @@ class LearningProcess:
         # TODO: global parameter
         self.eps_certainty = 0.3
 
-        self.USE_FEATURES = slice(0, 42)
-        # self.USE_FEATURES = slice(0, 1000)
-        # self.USE_FEATURES = slice(42, 1000)
+        # self.USE_FEATURES = slice(0, 42)
+        self.USE_FEATURES = slice(0, 10000)
+        # self.USE_FEATURES = slice(42, 10000)
         print self.USE_FEATURES
 
         self.get_features = get_features_var3
@@ -84,11 +84,18 @@ class LearningProcess:
                 pickle.dump(d, f, -1)
         else:
             print "LOADING features..."
-            with open(p.working_directory+'/features.pkl', 'rb') as f:
+            with open(p.working_directory+'/features_var3.pkl', 'rb') as f:
                 d = pickle.load(f)
                 self.chunks_itree = d['chunks_itree']
                 self.features = d['features']
                 self.collision_chunks = d['collision_chunks']
+            #
+            # with open(p.working_directory+'/features_var3.pkl', 'rb') as f:
+            #     d = pickle.load(f)
+            #     # self.chunks_itree = d['chunks_itree']
+            #     self.features2 = d['features']
+            #     # self.collision_chunks = d['collision_chunks']
+
 
             print "LOADED"
 
@@ -187,7 +194,9 @@ class LearningProcess:
 
                         num_correct[id_] += 1
                     else:
-                        print "MISTAKE GT_id: ", id_, "M: ", m, " argmax:", np.argmax(m), "t.id: ", t.id(), "len: ", t.length()
+                        print "MISTAKE GT_id: ", id_, "M: ", m, " argmax:", np.argmax(m), "t.id: ", t.id(), "len: ", t.length(), self.tracklet_certainty[t.id()],
+                        probs, _ = self.__get_tracklet_proba(t, debug=True)
+                        print probs
 
                     i = np.argmax(m)
                     difs = (m[id_] - m) * l_
@@ -602,7 +611,9 @@ class LearningProcess:
         else:
             X = self.features[ch.id()]
             X = np.array(X)
-            X = X[:, self.USE_FEATURES]
+            # X2 = np.array(self.features2[ch.id()])
+            # X = np.hstack((X, X2))
+            # X = X[:, self.USE_FEATURES]
         # if empty, create... else there is a problem with vstack...
         if len(self.y) == 0:
             self.X = np.array(X)
@@ -853,16 +864,19 @@ class LearningProcess:
     def get_frequence_vector_(self):
         return float(np.sum(self.class_frequences)) / self.class_frequences
 
-    def __get_tracklet_proba(self, ch):
+    def __get_tracklet_proba(self, ch, debug=False):
         X = self.features[ch.id()]
         X = np.array(X)
-        X = X[:, self.USE_FEATURES]
+        # X2 = np.array(self.features2[ch.id()])
+        # X = np.hstack((X, X2))
+        # X = X[:, self.USE_FEATURES]
 
         if len(X) == 0:
             return None, 0
 
         probs = self.rfc.predict_proba(np.array(X))
-        probs = np.mean(probs, 0)
+        if not debug:
+            probs = np.mean(probs, 0)
 
         # probs = self.apply_consistency_rule(ch, probs)
         #
@@ -1550,7 +1564,7 @@ def get_features_var3(r, p, fliplr=False):
 
 if __name__ == '__main__':
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/GT/Cam1_')
+    p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p, use_feature_cache=True, use_rf_cache=False)
