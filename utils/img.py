@@ -365,10 +365,15 @@ def alter_img_saturation(img, alpha=1.0):
 
 
 def img_saturation_coef(img, saturation_coef=2.0, intensity_coef=1.0):
-    img_hsv = mpl.colors.rgb_to_hsv(img)
-    img_hsv[:,:,1] *= saturation_coef
-    img_hsv[:,:,2] *= intensity_coef
-    img = mpl.colors.hsv_to_rgb(img_hsv)
-    img = np.asarray(np.clip(img - img.min(), 0, 255), dtype=np.uint8)
-    print img.shape
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    img_hsv = np.asarray(img_hsv, dtype=float)
+    # img_hsv = mpl.colors.rgb_to_hsv(img)
+    img_hsv[:,:,1] *= 2.0
+    img_hsv[:,:,2] *= 2.2
+    # img = np.asarray(img_hsv, dtype=np.uint8)
+    img = np.asarray(np.clip(img_hsv - img_hsv.min(), 0, 255), dtype=np.uint8)
+    img = cv2.cvtColor(img, cv2.COLOR_HSV2BGR)
+    # img = np.asarray(np.clip(img_hsv - img_hsv.min(), 0, 255), dtype=np.uint8)
+    # img = mpl.colors.hsv_to_rgb(img_hsv)
+
     return img

@@ -620,18 +620,17 @@ class ResultsWidget(QtGui.QWidget):
         self.colormarks_items = []
 
     def _update_bg_img(self, frame):
-        img = self.video.get_frame(frame)
+        img = self.video.get_frame(frame).copy()
         if img is not None:
             if self.pixMapItem is not None:
                 self.scene.removeItem(self.pixMapItem)
 
             if self.show_saturated_ch.isChecked():
                 from utils.img import img_saturation_coef, alter_img_saturation, alter_img_intensity, alter_img_saturation_intensity
-                # img = img_saturation_coef(img, saturation_coef=2.0, intensity_coef=1.00)
+                img = img_saturation_coef(img, saturation_coef=2.0, intensity_coef=1.00)
                 # img = alter_img_saturation(img, alpha=0.6)
                 # img = alter_img_intensity(img, alpha=1.2)
-                img = alter_img_saturation_intensity(img, sat_alpha=0.6, int_alpha=1.2)
-
+                # img = alter_img_saturation_intensity(img, sat_alpha=0.6, int_alpha=1.2)
 
             self.pixMap = cvimg2qtpixmap(img)
             item = self.scene.addPixmap(self.pixMap)
