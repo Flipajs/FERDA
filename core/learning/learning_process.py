@@ -84,17 +84,17 @@ class LearningProcess:
                 pickle.dump(d, f, -1)
         else:
             print "LOADING features..."
-            with open(p.working_directory+'/features.pkl', 'rb') as f:
+            with open(p.working_directory+'/features_var4.pkl', 'rb') as f:
                 d = pickle.load(f)
                 self.chunks_itree = d['chunks_itree']
                 self.features = d['features']
                 self.collision_chunks = d['collision_chunks']
-            #
-            with open(p.working_directory+'/features_var3.pkl', 'rb') as f:
-                d = pickle.load(f)
-                # self.chunks_itree = d['chunks_itree']
-                self.features2 = d['features']
-                # self.collision_chunks = d['collision_chunks']
+            # #
+            # with open(p.working_directory+'/features_var3.pkl', 'rb') as f:
+            #     d = pickle.load(f)
+            #     # self.chunks_itree = d['chunks_itree']
+            #     self.features2 = d['features']
+            #     # self.collision_chunks = d['collision_chunks']
 
 
             print "LOADED"
@@ -611,8 +611,8 @@ class LearningProcess:
         else:
             X = self.features[ch.id()]
             X = np.array(X)
-            X2 = np.array(self.features2[ch.id()])
-            X = np.hstack((X, X2))
+            # X2 = np.array(self.features2[ch.id()])
+            # X = np.hstack((X, X2))
             # X = X[:, self.USE_FEATURES]
         # if empty, create... else there is a problem with vstack...
         if len(self.y) == 0:
@@ -867,8 +867,8 @@ class LearningProcess:
     def __get_tracklet_proba(self, ch, debug=False):
         X = self.features[ch.id()]
         X = np.array(X)
-        X2 = np.array(self.features2[ch.id()])
-        X = np.hstack((X, X2))
+        # X2 = np.array(self.features2[ch.id()])
+        # X = np.hstack((X, X2))
         # X = X[:, self.USE_FEATURES]
 
         if len(X) == 0:
