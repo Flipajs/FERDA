@@ -37,8 +37,7 @@ class LearningProcess:
 
         # TODO: global parameter!!!
         self.k_ = 50.0
-        if self.features_fliplr_hack:
-            self.k_ *= 2
+        self.min_new_samples_to_retrain = 2000
 
         self.X = []
         self.y = []
@@ -722,10 +721,8 @@ class LearningProcess:
         # do not learn
         eps_certainty_learning = 1.1
 
-        min_new_samples_to_retrain = 50
-
         # if enough new data, retrain
-        if len(self.X) - self.old_x_size > 1000:
+        if len(self.X) - self.old_x_size > self.min_new_samples_to_retrain:
             t = time.time()
             self.__train_rfc()
             print "RETRAIN t:", time.time() - t
@@ -762,7 +759,7 @@ class LearningProcess:
             # self.save_ids_()
         else:
             # if new training data, retrain
-            if len(self.X) - self.old_x_size > min_new_samples_to_retrain:
+            if len(self.X) - self.old_x_size > self.min_new_samples_to_retrain:
                 t = time.time()
                 self.__train_rfc()
                 print "RETRAIN t:", time.time() - t
