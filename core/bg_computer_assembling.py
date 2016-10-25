@@ -185,7 +185,7 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
         if old_g.vp['chunk_start_id'][old_v] == 0 and old_g.vp['chunk_end_id'][old_v] == 0:
             single_vertices.append(new_v)
 
-    # because 0 id means - no chunk assigned!
+    # because 0 id means - no chunk assigned to this node!
     used_chunks_ids.remove(0)
 
     # go through all edges and copy them with all edge properties...
