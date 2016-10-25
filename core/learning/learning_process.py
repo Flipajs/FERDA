@@ -1506,7 +1506,8 @@ def get_lbp_vect(crop):
 
     return f
 
-def get_features_var4(r, p, fliplr=False):
+
+def __get_crop(r, p):
     img = p.img_manager.get_whole_img(r.frame_)
 
     crop, offset = get_img_around_pts(img, r.pts(), margin=2.0)
@@ -1515,6 +1516,12 @@ def get_features_var4(r, p, fliplr=False):
     margin = 3
 
     crop = centered_crop(crop, 2 * (r.b_ + margin), 2 * (r.a_ + margin))
+
+    return crop
+
+
+def get_features_var4(r, p, fliplr=False):
+    crop = __get_crop(r, p)
 
     crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
     crop_r = crop[:, :, 2]
@@ -1533,6 +1540,19 @@ def get_features_var4(r, p, fliplr=False):
     return f1, f2
 
 
+def get_features_var5(r, p, fliplr=False):
+    import img_features
+
+    crop = __get_crop(r, p)
+
+    f1 = []
+    f2 = []
+
+    f1 = img_features.colornames_descriptor(crop, pyramid_levels=2)
+    if fliplr:
+        f2 = img_features.colornames_descriptor(crop, pyramid_levels=2)
+
+    return f1, f2
 
 if __name__ == '__main__':
     p = Project()
