@@ -1443,14 +1443,7 @@ def __process_crops(crops, fliplr):
 
 
 def get_features_var2(r, p, fliplr=False):
-    img = p.img_manager.get_whole_img(r.frame_)
-
-    crop, offset = get_img_around_pts(img, r.pts(), margin=2.0)
-    crop = rotate_img(crop, r.theta_)
-
-    margin = 3
-
-    crop = centered_crop(crop, 2 * (r.b_ + margin), 2 * (r.a_ + margin))
+    crop = __get_crop(r, p)
 
     crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
     crop_r = crop[:, :, 2]
