@@ -31,7 +31,7 @@ class LearningProcess:
         # TODO: global parameter
         self.eps_certainty = 0.3
 
-        self.get_features = get_features_var4
+        self.get_features = get_features_var5
         # to solve uncertainty about head orientation... Add both
         self.features_fliplr_hack = True
 
@@ -77,7 +77,7 @@ class LearningProcess:
             with open(p.working_directory+'/features.pkl', 'wb') as f:
                 d = {'chunks_itree': self.chunks_itree, 'features': self.features,
                      'collision_chunks': self.collision_chunks}
-                pickle.dump(d, f)
+                pickle.dump(d, f, -1)
         else:
             print "LOADING features..."
             with open(p.working_directory+'/features.pkl', 'rb') as f:
@@ -1538,12 +1538,11 @@ def get_features_var5(r, p, fliplr=False):
 
     crop = __get_crop(r, p)
 
-    f1 = []
     f2 = []
 
-    f1 = img_features.colornames_descriptor(crop, pyramid_levels=2)
+    f1 = img_features.colornames_descriptor(crop, pyramid_levels=3)
     if fliplr:
-        f2 = img_features.colornames_descriptor(crop, pyramid_levels=2)
+        f2 = img_features.colornames_descriptor(np.fliplr(crop), pyramid_levels=3)
 
     return f1, f2
 
