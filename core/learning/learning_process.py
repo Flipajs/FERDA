@@ -84,7 +84,7 @@ class LearningProcess:
                 pickle.dump(d, f, -1)
         else:
             print "LOADING features..."
-            with open(p.working_directory+'/features_var4.pkl', 'rb') as f:
+            with open(p.working_directory+'/features_var5.pkl', 'rb') as f:
                 d = pickle.load(f)
                 self.chunks_itree = d['chunks_itree']
                 self.features = d['features']
