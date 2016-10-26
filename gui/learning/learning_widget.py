@@ -189,60 +189,60 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setItem(11, 0, QtGui.QTableWidgetItem('id coverage:'))
         self.info_table.setItem(11, 1, QtGui.QTableWidgetItem(self.__f2str(self.get_id_coverage())))
 
+        if hasattr(self, 'tracklets_table'):
+            # update tracklet info...
+            self.tracklets_table.clear()
+            self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
 
-        # update tracklet info...
-        self.tracklets_table.clear()
-        self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
+            num_animals = len(self.project.animals)
+            self.tracklets_table.setSortingEnabled(False)
+            header_labels = ("id", "len", "start", "end", "cert")
+            for i in range(num_animals):
+                header_labels += ('m'+str(i), )
 
-        num_animals = len(self.project.animals)
-        self.tracklets_table.setSortingEnabled(False)
-        header_labels = ("id", "len", "start", "end", "cert")
-        for i in range(num_animals):
-            header_labels += ('m'+str(i), )
+            for i in range(num_animals):
+                header_labels += (str(i), )
 
-        for i in range(num_animals):
-            header_labels += (str(i), )
+            it = QtGui.QTableWidgetItem
 
-        it = QtGui.QTableWidgetItem
+            self.tracklets_table.setHorizontalHeaderLabels(header_labels)
+            if len(self.lp.tracklet_certainty):
+                for i, t_id in enumerate(self.lp.undecided_tracklets):
+                    t = self.project.chm[t_id]
 
-        self.tracklets_table.setHorizontalHeaderLabels(header_labels)
-        if len(self.lp.tracklet_certainty):
-            for i, t_id in enumerate(self.lp.undecided_tracklets):
-                t = self.project.chm[t_id]
+                    item = it()
+                    item.setData(QtCore.Qt.EditRole, t.id())
+                    self.tracklets_table.setItem(i, 0, item)
 
-                item = it()
-                item.setData(QtCore.Qt.EditRole, t.id())
-                self.tracklets_table.setItem(i, 0, item)
+                    item = it()
+                    item.setData(QtCore.Qt.EditRole, t.length())
+                    self.tracklets_table.setItem(i, 1, item)
 
-                item = it()
-                item.setData(QtCore.Qt.EditRole, t.length())
-                self.tracklets_table.setItem(i, 1, item)
+                    item = it()
+                    item.setData(QtCore.Qt.EditRole, t.start_frame(self.project.gm))
+                    self.tracklets_table.setItem(i, 2, item)
 
-                item = it()
-                item.setData(QtCore.Qt.EditRole, t.start_frame(self.project.gm))
-                self.tracklets_table.setItem(i, 2, item)
+                    item = it()
+                    item.setData(QtCore.Qt.EditRole, t.end_frame(self.project.gm))
+                    self.tracklets_table.setItem(i, 3, item)
 
-                item = it()
-                item.setData(QtCore.Qt.EditRole, t.end_frame(self.project.gm))
-                self.tracklets_table.setItem(i, 3, item)
+                    self.tracklets_table.setItem(i, 4, QtGui.QTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
 
-                self.tracklets_table.setItem(i, 4, QtGui.QTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
+                    d = self.lp.tracklet_measurements[t_id]
+                    for j in range(num_animals):
+                        self.tracklets_table.setItem(i, 5+j, QtGui.QTableWidgetItem(self.__f2str(d[j])))
 
-                d = self.lp.tracklet_measurements[t_id]
-                for j in range(num_animals):
-                    self.tracklets_table.setItem(i, 5+j, QtGui.QTableWidgetItem(self.__f2str(d[j])))
+                    for j in range(num_animals):
+                        val = ''
+                        if j in t.P:
+                            val = 'N'
+                        elif j in t.N:
+                            val = 'P'
 
-                for j in range(num_animals):
-                    val = ''
-                    if j in t.P:
-                        val = 'N'
-                    elif j in t.N:
-                        val = 'P'
+                        self.tracklets_table.setItem(i, 5+num_animals+j, QtGui.QTableWidgetItem(val))
 
-                    self.tracklets_table.setItem(i, 5+num_animals+j, QtGui.QTableWidgetItem(val))
-
-        self.tracklets_table.setSortingEnabled(True)
-        self.tracklets_table.resizeColumnsToContents()
+            self.tracklets_table.setSortingEnabled(True)
+            self.tracklets_table.resizeColumnsToContents()
 
     def test_one_id_in_tracklet(self, t):
         return len(t.P) == 1 and \

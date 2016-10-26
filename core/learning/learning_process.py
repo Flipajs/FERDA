@@ -62,6 +62,8 @@ class LearningProcess:
 
         self.mistakes = []
 
+        self.features = {}
+
         if ghost:
             return
 
@@ -522,6 +524,9 @@ class LearningProcess:
         return False
 
     def __learn(self, ch, id_):
+        if len(self.features) == 0:
+            return
+
         print "LEARNING ", id_
         if ch.id() not in self.features:
             print "cached features are missing. COMPUTING..."
