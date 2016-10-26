@@ -95,14 +95,14 @@ class VideoPlayer(QtGui.QWidget):
         self.forward = QtGui.QPushButton('>')
         self.forward.setShortcut(S_.controls.video_next)
         self.frame_edit = SelectAllLineEdit()
-        self.frame_edit.returnPressed.connect(lambda x: self.goto(int(self.frame_edit.text())))
+        self.frame_edit.returnPressed.connect(self.goto)
         self.frame_edit.setFixedHeight(30)
 
         self.fpsLabel = QtGui.QLabel()
         self.fpsLabel.setAlignment(QtCore.Qt.AlignRight)
 
         self.frame_jump_button = QtGui.QPushButton('go')
-        self.frame_jump_button.clicked.connect(lambda x: self.goto(int(self.frame_edit.text())))
+        self.frame_jump_button.clicked.connect(self.goto)
 
         self.frame_jump_button.setFocusPolicy(QtCore.Qt.StrongFocus)
 
@@ -123,6 +123,8 @@ class VideoPlayer(QtGui.QWidget):
 
         self.init_speed_slider()
         self.connect_GUI()
+
+
 
     def _add_actions(self):
         #   video step
@@ -245,6 +247,9 @@ class VideoPlayer(QtGui.QWidget):
     def current_frame(self):
         return self._vm.frame_number()
 
+    def total_frame_count(self):
+        return self._vm.total_frame_count()
+
     def remove_items_category(self, type='temp', category=''):
         except_for = set(self._scene_items[type])
         if category in except_for:
@@ -271,7 +276,10 @@ class VideoPlayer(QtGui.QWidget):
     def prev(self):
         self._change_frame(self._get_prev_operator())
 
-    def goto(self, frame):
+    def goto(self, frame=None):
+        if frame is None:
+            frame = int(self.frame_edit.text())
+
         if frame < 0:
             frame = 0
 

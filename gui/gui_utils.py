@@ -134,3 +134,10 @@ def get_img_qlabel(pts, img, id, height=100, width=100, filled=False):
     item.setPixmap(pix_map)
 
     return item
+
+class MyLineEdit(QtGui.QLineEdit):
+    def __init__(self, parent=None):
+        super(MyLineEdit, self).__init__(parent)
+
+    def mousePressEvent(self, e):
+        self.selectAll()

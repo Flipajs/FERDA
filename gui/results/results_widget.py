@@ -47,6 +47,10 @@ class ResultsWidget(QtGui.QWidget):
         # used when save GT is called
         self._gt_markers = {}
 
+        self._highlight_regions = set()
+        self._highlight_tracklets = set()
+        self.highlight_color = QtGui.qRgba(175, 255, 56, 200)  # green
+
         self.setLayout(self.hbox)
         self.splitter = QtGui.QSplitter()
 
@@ -107,7 +111,9 @@ class ResultsWidget(QtGui.QWidget):
         # TODO: show list of tracklets instead of QLine edit...
         # TODO: show range on frame time line
         # TODO: checkbox - stop at the end...
-        self.highlight_tracklet_input = QtGui.QLineEdit('tracklet id')
+        from gui.gui_utils import MyLineEdit
+        self.highlight_tracklet_input = MyLineEdit('tracklet id')
+        self.highlight_tracklet_input.returnPressed.connect(self.highlight_tracklet_button_clicked)
         self.highlight_tracklet_button = QtGui.QPushButton('show tracklet')
         self.highlight_tracklet_button.clicked.connect(self.highlight_tracklet_button_clicked)
         self.stop_highlight_tracklet = QtGui.QPushButton('stop highlight tracklet')
@@ -127,7 +133,6 @@ class ResultsWidget(QtGui.QWidget):
         self.decide_tracklet_action.triggered.connect(self.decide_tracklet)
         self.decide_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
         self.addAction(self.decide_tracklet_action)
-
 
         self.right_w = QtGui.QWidget()
         self.right_w.setLayout(self.right_vbox)
@@ -249,9 +254,11 @@ class ResultsWidget(QtGui.QWidget):
         self.loop_highlight_tracklets = []
         self.help_timer.stop()
         self.loop_end = -1
+        self._highlight_tracklets = set()
         self.redraw_video_player_visualisations()
 
     def highlight_tracklet_button_clicked(self):
+        self._highlight_tracklets = set()
         try:
             id_ = int(self.highlight_tracklet_input.text())
             tracklet = self.project.chm[id_]
@@ -262,24 +269,27 @@ class ResultsWidget(QtGui.QWidget):
         self.play_and_highlight_tracklet(tracklet, margin=5)
 
     def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
-        import warnings
-        warnings.warn('not reimplemented in video_player', UserWarning)
+        self._highlight_tracklets.add(tracklet)
 
-        return
+        import warnings
+        warnings.warn('not fully reimplemented in video_player', UserWarning)
+
+        # return
 
         # frame=-1 ... start from beginning
 
         self.loop_begin = max(0, tracklet.start_frame(self.project.gm) - margin)
-        self.loop_end = min(tracklet.end_frame(self.project.gm) + margin, self.video.total_frame_count()-1)
+        self.loop_end = min(tracklet.end_frame(self.project.gm) + margin, self.video_player.total_frame_count()-1)
         self.loop_highlight_tracklets = [tracklet.id()]
 
         if frame < 0:
             frame = self.loop_begin
 
-        self.change_frame(frame)
+        self.video_player.goto(frame)
 
         # self.timer.stop()
-        self.play_pause()
+        self.video_player.play()
+        self.video_player.setFocus()
 
     def _evolve_gt(self):
         my_data = {}
@@ -353,10 +363,9 @@ class ResultsWidget(QtGui.QWidget):
         for it in self._gt_markers.itervalues():
             self._gt[frame][it.id] = (it.centerPos().y(), it.centerPos().x())
 
-        with open(self._gt_file, 'wb') as f:
+        with open(self.project.GT_file, 'wb') as f:
             pickle.dump(self._gt, f)
 
-        # self.change_frame(frame + self._gt_corr_step)
         print self._gt[frame]
 
     def __auto_gt_assignment(self):
@@ -391,23 +400,61 @@ class ResultsWidget(QtGui.QWidget):
 
         self.video_player.redraw_visualisations()
 
-    def draw_region(self, r, tracklet, use_ch_color=None, alpha=120):
+    def __dilate(self, pts, roi):
+        iterations = 7
+
+        im = np.zeros((roi.height() + 2*iterations, roi.width() + 2*iterations), dtype=np.bool)
+        im[pts[:, 0] + iterations, pts[:, 1] + iterations] = True
+
+        from scipy.ndimage.morphology import binary_dilation
+
+        im1 = binary_dilation(im, iterations=1)
+        im = binary_dilation(im, iterations=iterations)
+
+        # remove previous pts with 1 px border
+        im -= im1
+        # im[pts[:, 0] + iterations, pts[:, 1] + iterations] = False
+
+        pts = np.where(im)
+        pts = np.vstack((pts[0], pts[1]))
+        pts = pts.T
+
+        from utils.roi import ROI
+        roi = ROI(roi.y()-iterations,
+                  roi.x()-iterations,
+                  roi.height()+2*iterations,
+                  roi.width()+2*iterations)
+
+        return pts, roi
+
+
+    def draw_region(self, r, tracklet, use_ch_color=None, alpha=120, highlight_contour=False, force_color=None):
         from utils.img import get_cropped_pts
 
-        pts_, roi = get_cropped_pts(r, return_roi=True, only_contour=False if self.show_filled_ch.isChecked() else True)
+        only_contour = False if self.show_filled_ch.isChecked() else True
+        # we need region pts to dilate and substract previous pts to get result
+        only_contour = only_contour and not highlight_contour
+
+        pts_, roi = get_cropped_pts(r, return_roi=True, only_contour=only_contour)
+        if highlight_contour:
+            pts_, roi = self.__dilate(pts_, roi)
+
         offset = roi.top_left_corner()
 
         qim_ = QtGui.QImage(roi.width(), roi.height(), QtGui.QImage.Format_ARGB32)
         qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
-        c = QtGui.qRgba(100, 100, 100, 200)
-        if self.contour_without_colors.isChecked():
-            if tracklet.is_only_one_id_assigned(len(self.project.animals)):
-                id_ = list(tracklet.P)[0]
-                c_ = self.project.animals[id_].color_
-                c = QtGui.qRgba(c_[2], c_[1], c_[0], 255)
-        elif use_ch_color:
-            c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
+        if force_color is None:
+            c = QtGui.qRgba(100, 100, 100, 200)
+            if self.contour_without_colors.isChecked():
+                if tracklet.is_only_one_id_assigned(len(self.project.animals)):
+                    id_ = list(tracklet.P)[0]
+                    c_ = self.project.animals[id_].color_
+                    c = QtGui.qRgba(c_[2], c_[1], c_[0], 255)
+            elif use_ch_color:
+                c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
+        else:
+            c = force_color
 
         for i in range(pts_.shape[0]):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
@@ -575,9 +622,14 @@ class ResultsWidget(QtGui.QWidget):
             except:
                 pass
 
+            if r in self._highlight_regions or ch in self._highlight_tracklets:
+                item = self.draw_region(r, ch, highlight_contour=True, force_color=self.highlight_color)
+                self.video_player.visualise_temp(item, category='region_highlight')
+
         if self.show_markers.isChecked():
             self._show_gt_markers()
             self._show_id_markers(animal_ids2centroids)
+
 
     def _img_saturation(self, img):
         return img_saturation_coef(img, 2.0, 1.05)
