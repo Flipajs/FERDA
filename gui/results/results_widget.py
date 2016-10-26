@@ -192,6 +192,11 @@ class ResultsWidget(QtGui.QWidget):
         self.show_id_bar.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_id_bar)
 
+        self.toggle_id_bar_action = QtGui.QAction('toggle id bar', self)
+        self.toggle_id_bar_action.triggered.connect(lambda x: self.show_id_bar.setChecked(not self.show_id_bar.isChecked()))
+        self.toggle_id_bar_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
+        self.addAction(self.toggle_id_bar_action)
+
         self.chunks = []
         self.starting_frames = {}
         self.markers = []
@@ -622,7 +627,7 @@ class ResultsWidget(QtGui.QWidget):
             except:
                 pass
 
-            if r in self._highlight_regions or ch in self._highlight_tracklets:
+            if r.id() in self._highlight_regions or ch in self._highlight_tracklets:
                 item = self.draw_region(r, ch, highlight_contour=True, force_color=self.highlight_color)
                 self.video_player.visualise_temp(item, category='region_highlight')
 
@@ -732,8 +737,8 @@ class ResultsWidget(QtGui.QWidget):
 
 
         avg_area = 0
-        for r in rch.regions_gen():
-            avg_area += r.area()
+        for r_ in rch.regions_gen():
+            avg_area += r_.area()
 
         avg_area /= rch.chunk_.length()
 
@@ -742,6 +747,9 @@ class ResultsWidget(QtGui.QWidget):
         # s += "\nFeature vector: "+ features2str_var1(get_features_var1(r, self.project))
 
         self.info_l.setText(s)
+        self._highlight_regions.add(r.id())
+        self.video_player.redraw_visualisations()
+        self._highlight_regions.remove(r.id())
 
     def add_data(self, solver, just_around_frame=-1, margin=1000):
         self.solver = solver
