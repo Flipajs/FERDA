@@ -316,11 +316,68 @@ def endpoint_rot(bb_img, pt, theta, centroid):
 
     return new_pt
 
-def img_saturation(img, saturation_coef=2.0, intensity_coef=1.0):
-    img_hsv = mpl.colors.rgb_to_hsv(img)
-    img_hsv[:,:,1] *= saturation_coef
-    img_hsv[:,:,2] *= intensity_coef
-    img = mpl.colors.hsv_to_rgb(img_hsv)
-    img = np.asarray(np.clip(img - img.min(), 0, 255), dtype=np.uint8)
+
+def alter_img_saturation_intensity(img, sat_alpha=1.0, int_alpha=1.0):
+    intensity_matrix = np.diag([int_alpha] * 3)
+    rwgt = 0.3086
+    gwgt = 0.6094
+    bwgt = 0.0820
+
+    saturation_matrix = np.full([3, 3], 1.0 - sat_alpha)
+    saturation_matrix[0, :] *= rwgt
+    saturation_matrix[1, :] *= gwgt
+    saturation_matrix[2, :] *= bwgt
+
+
+    for x in range(3): saturation_matrix[x, x] += sat_alpha
+
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            img[i, j] = img[i, j].dot(saturation_matrix).dot(intensity_matrix)
+
+    return img
+
+
+def alter_img_intensity(img, alpha=1.0):
+    intensity_matrix = np.diag([alpha] * 3)
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            img[i, j] = img[i, j].dot(intensity_matrix)
+    return img
+
+
+def alter_img_saturation(img, alpha=1.0):
+    """To alter saturation, pixel components must move towards or away from the pixel's luminance value.
+    By using a black-and-white image as the degenerate version, saturation can be decreased using interpolation,
+    and increased using extrapolation. This avoids computationally more expensive conversions to and from HSV space.
+    Repeated update in an interactive application is especially fast,
+    since the luminance of each pixel need not be recomputed.
+    Negative alpha preserves luminance but inverts the hue of the input image"""
+    rwgt = 0.3086
+    gwgt = 0.6094
+    bwgt = 0.0820
+
+    saturation_matrix = np.full([3, 3], 1.0 - alpha)
+    saturation_matrix[0, :] *= rwgt
+    saturation_matrix[1, :] *= gwgt
+    saturation_matrix[2, :] *= bwgt
+    for x in range(3): saturation_matrix[x, x] += alpha
+
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            img[i, j] = img[i, j].dot(saturation_matrix)
+
+    return img
+
+
+def img_saturation_coef(img, saturation_coef=2.0, intensity_coef=1.0):
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    img_hsv = np.asarray(img_hsv, dtype=float)
+
+    img_hsv[:,:,1] *= 2.0
+    img_hsv[:,:,2] *= 2.2
+
+    img = np.asarray(np.clip(img_hsv - img_hsv.min(), 0, 255), dtype=np.uint8)
+    img = cv2.cvtColor(img, cv2.COLOR_HSV2BGR)
 
     return img

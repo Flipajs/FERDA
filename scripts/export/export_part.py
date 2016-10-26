@@ -63,6 +63,13 @@ class Exporter:
 
         if self.contour_pts_export:
             pts = r.contour_without_holes()
+
+            if pts is None:
+                print "WARNING> PTS is None in export_part.py"
+                print r
+                with open('r_debug.pkl', 'wb') as f:
+                    pickle.dump(r, f)
+
             self.append_pts_(d, 'region_contour', pts)
 
         d['region_id'].append(r.id_)
@@ -99,8 +106,7 @@ class Exporter:
             rch = RegionChunk(ch, self.gm, self.rm)
             d = self.init_struct_(rch[0], ch.end_frame(self.gm))
 
-            rs_ = rch[:]
-            for r in rs_:
+            for r in rch.regions_gen():
                 self.add_line_mat(d, r)
 
             d['mean_area'] /= float(ch.length())

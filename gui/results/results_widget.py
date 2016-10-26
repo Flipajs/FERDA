@@ -510,7 +510,59 @@ class ResultsWidget(QtGui.QWidget):
 
                 self.__add_marker(x, y, c_, a.id, 0.75, type_='undef')
 
+<<<<<<< HEAD:gui/results/results_widget.py
     def update_visualisations(self):
+=======
+    def _clear_items(self):
+        for it in self.gitems['gt_markers']:
+            self.scene.removeItem(it)
+
+        self.gitems['gt_markers'] = []
+
+        for i in range(len(self.one_frame_items)):
+            self.scene.removeItem(self.one_frame_items[0])
+            self.one_frame_items.pop(0)
+
+        for c in self.colormarks_items:
+            c.setVisible(False)
+
+        self.colormarks_items = []
+
+    def _update_bg_img(self, frame):
+        img = self.video.get_frame(frame).copy()
+        if img is not None:
+            if self.pixMapItem is not None:
+                self.scene.removeItem(self.pixMapItem)
+
+            if self.show_saturated_ch.isChecked():
+                from utils.img import img_saturation_coef, alter_img_saturation, alter_img_intensity, alter_img_saturation_intensity
+                img = img_saturation_coef(img, saturation_coef=2.0, intensity_coef=1.00)
+                # img = alter_img_saturation(img, alpha=0.6)
+                # img = alter_img_intensity(img, alpha=1.2)
+                # img = alter_img_saturation_intensity(img, sat_alpha=0.6, int_alpha=1.2)
+
+            self.pixMap = cvimg2qtpixmap(img)
+            item = self.scene.addPixmap(self.pixMap)
+            self.pixMapItem = item
+            self.update_frame_number()
+        else:
+            self.out_of_frames()
+
+    def update_positions(self, frame=-1):
+        self.marker_helper_step = 7
+        from math import ceil
+        self.marker_pos_helper = np.zeros((int(ceil(self.video.img().shape[0] / self.marker_helper_step)),
+                                            int(ceil(self.video.img().shape[1] / self.marker_helper_step))),
+                                          dtype=np.bool)
+
+
+        if frame == -1:
+            frame = self.video.frame_number()
+
+        self._clear_items()
+        self._update_bg_img(frame)
+
+>>>>>>> master:gui/correction/correction_widget.py
         if self.hide_visualisation_:
             return
 
