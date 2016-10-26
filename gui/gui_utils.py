@@ -141,3 +141,14 @@ class MyLineEdit(QtGui.QLineEdit):
 
     def mousePressEvent(self, e):
         self.selectAll()
+
+class ClickableQGraphicsPixmapItem(QtGui.QGraphicsPixmapItem):
+    def __init__(self, pixmap, id_, callback):
+        super(ClickableQGraphicsPixmapItem, self).__init__(pixmap)
+        self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+        self.id_ = id_
+        self.callback = callback
+
+    def mouseReleaseEvent(self, event):
+        super(ClickableQGraphicsPixmapItem, self).mouseReleaseEvent(event)
+        self.callback(self.id_)

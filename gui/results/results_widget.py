@@ -6,15 +6,13 @@ import numpy as np
 from PyQt4 import QtGui, QtCore
 
 from core.graph.region_chunk import RegionChunk
-from core.settings import Settings as S_
-from gui.img_controls.gui_utils import cvimg2qtpixmap
 from gui.video_player.video_player import VideoPlayer
 from utils.misc import is_flipajs_pc
-from utils.video_manager import get_auto_video_manager
 from gui.img_controls import markers
 from utils.img import img_saturation_coef
 from functools import partial
 import warnings
+from gui.gui_utils import MyLineEdit, ClickableQGraphicsPixmapItem
 
 MARKER_SIZE = 15
 
@@ -106,33 +104,65 @@ class ResultsWidget(QtGui.QWidget):
 
         self.left_vbox.addWidget(self.gt_box)
 
-        self.info_l = QtGui.QLabel('info')
+        # TRACKLET BOX
+        self.tracklet_box = QtGui.QGroupBox('Tracklet controls')
+        self.tracklet_box.setLayout(QtGui.QVBoxLayout())
 
-        # TODO: show list of tracklets instead of QLine edit...
-        # TODO: show range on frame time line
-        # TODO: checkbox - stop at the end...
-        from gui.gui_utils import MyLineEdit
         self.highlight_tracklet_input = MyLineEdit('tracklet id')
         self.highlight_tracklet_input.returnPressed.connect(self.highlight_tracklet_button_clicked)
+
+        self.tracklet_p_label = QtGui.QLabel('P: ')
+        self.tracklet_n_label = QtGui.QLabel('N: ')
+
         self.highlight_tracklet_button = QtGui.QPushButton('show tracklet')
         self.highlight_tracklet_button.clicked.connect(self.highlight_tracklet_button_clicked)
+
         self.stop_highlight_tracklet = QtGui.QPushButton('stop highlight tracklet')
         self.stop_highlight_tracklet.clicked.connect(self.stop_highlight_tracklet_clicked)
-        self.left_vbox.addWidget(self.highlight_tracklet_input)
-        self.left_vbox.addWidget(self.highlight_tracklet_button)
-        self.left_vbox.addWidget(self.stop_highlight_tracklet)
-
-        self.left_vbox.addWidget(self.info_l)
 
         self.decide_tracklet_button = QtGui.QPushButton('decide tracklet')
         self.decide_tracklet_button.clicked.connect(self.decide_tracklet)
         self.decide_tracklet_button.setDisabled(True)
-        self.left_vbox.addWidget(self.decide_tracklet_button)
 
         self.decide_tracklet_action = QtGui.QAction('decide tracklet', self)
         self.decide_tracklet_action.triggered.connect(self.decide_tracklet)
         self.decide_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
         self.addAction(self.decide_tracklet_action)
+
+        self.tracklet_end_button = QtGui.QPushButton('go to end')
+        self.tracklet_end_button.clicked.connect(self.tracklet_end)
+
+        self.tracklet_end_action = QtGui.QAction('tracklet end', self)
+        self.tracklet_end_action.triggered.connect(self.tracklet_end)
+        self.tracklet_end_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_E))
+        self.addAction(self.tracklet_end_action)
+
+        self.tracklet_begin_button = QtGui.QPushButton('go to beginning')
+        self.tracklet_begin_button.clicked.connect(self.tracklet_begin)
+
+        self.tracklet_begin_action = QtGui.QAction('tracklet begin', self)
+        self.tracklet_begin_action.triggered.connect(self.tracklet_begin)
+        self.tracklet_begin_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
+        self.addAction(self.tracklet_begin_action)
+
+        self.tracklet_box.layout().addWidget(self.highlight_tracklet_input)
+        self.tracklet_box.layout().addWidget(self.tracklet_p_label)
+        self.tracklet_box.layout().addWidget(self.tracklet_n_label)
+        self.tracklet_box.layout().addWidget(self.highlight_tracklet_button)
+        self.tracklet_box.layout().addWidget(self.stop_highlight_tracklet)
+        self.tracklet_box.layout().addWidget(self.decide_tracklet_button)
+        self.tracklet_box.layout().addWidget(self.tracklet_end_button)
+        self.tracklet_box.layout().addWidget(self.tracklet_begin_button)
+
+        self.left_vbox.addWidget(self.tracklet_box)
+
+        self.info_l = QtGui.QLabel('info')
+
+        # TODO: show list of tracklets instead of QLine edit...
+        # TODO: show range on frame time line
+        # TODO: checkbox - stop at the end...
+
+        self.left_vbox.addWidget(self.info_l)
 
         self.right_w = QtGui.QWidget()
         self.right_w.setLayout(self.right_vbox)
@@ -184,11 +214,11 @@ class ResultsWidget(QtGui.QWidget):
 
         self.show_saturated_action = QtGui.QAction('show saturated', self)
         self.show_saturated_action.triggered.connect(lambda x: self.show_saturated_ch.setChecked(not self.show_saturated_ch.isChecked()))
-        self.show_saturated_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
+        self.show_saturated_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_S))
         self.addAction(self.show_saturated_action)
 
         self.show_id_bar = QtGui.QCheckBox('id bar')
-        self.show_id_bar.setChecked(True)
+        self.show_id_bar.setChecked(False)
         self.show_id_bar.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_id_bar)
 
@@ -246,10 +276,24 @@ class ResultsWidget(QtGui.QWidget):
     def decide_tracklet(self):
         if self.active_tracklet_id > -1:
             self.decide_tracklet_callback(self.project.chm[self.active_tracklet_id])
-            self.active_tracklet_id = -1
+            # self._set_active_tracklet_id(-1)
             self.decide_tracklet_button.setDisabled(True)
 
             self.redraw_video_player_visualisations()
+
+    def tracklet_begin(self):
+        if self.active_tracklet_id > -1:
+            tracklet = self.project.chm[self.active_tracklet_id]
+            frame = tracklet.start_frame(self.project.gm)
+
+            self.video_player.goto(frame)
+
+    def tracklet_end(self):
+        if self.active_tracklet_id > -1:
+            tracklet = self.project.chm[self.active_tracklet_id]
+            frame = tracklet.end_frame(self.project.gm)
+
+            self.video_player.goto(frame)
 
     def hide_visualisation(self):
         self.hide_visualisation_ = not self.hide_visualisation_
@@ -259,6 +303,7 @@ class ResultsWidget(QtGui.QWidget):
         self.loop_highlight_tracklets = []
         self.help_timer.stop()
         self.loop_end = -1
+        self._set_active_tracklet_id(-1)
         self._highlight_tracklets = set()
         self.redraw_video_player_visualisations()
 
@@ -274,6 +319,7 @@ class ResultsWidget(QtGui.QWidget):
         self.play_and_highlight_tracklet(tracklet, margin=5)
 
     def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
+        self._set_active_tracklet_id(tracklet.id())
         self._highlight_tracklets.add(tracklet)
 
         import warnings
@@ -349,6 +395,7 @@ class ResultsWidget(QtGui.QWidget):
                 y = data[0]
                 x = data[1]
 
+                # TODO: fix old GT files based on new specification....
                 if y < 50 and x < 100:
                     continue
 
@@ -465,7 +512,8 @@ class ResultsWidget(QtGui.QWidget):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
 
         pixmap = QtGui.QPixmap.fromImage(qim_)
-        item = QtGui.QGraphicsPixmapItem(pixmap)
+
+        item = ClickableQGraphicsPixmapItem(pixmap, tracklet.id(), self._gt_marker_clicked)
         item.setPos(offset[1], offset[0])
         item.setZValue(0.6)
 
@@ -546,10 +594,11 @@ class ResultsWidget(QtGui.QWidget):
 
         m = markers.CenterMarker(0, 0, radius, c_, id=id_, changeHandler=self._gt_marker_clicked)
 
-        self._gt_markers[id_] = m
-
         m.setPos(x - radius/2, y-radius/2)
         m.setZValue(z_value)
+
+        if type_ == 'GT':
+            self._gt_markers[id_] = m
 
         self.video_player.visualise_temp(m, category=type_)
 
@@ -580,12 +629,12 @@ class ResultsWidget(QtGui.QWidget):
 
                     ch = data[2]
                     type_ = 'normal' if decided else 'multiple'
-                    self.__add_marker(x, y, c_, a.id, 0.75, type_=type_)
+                    self.__add_marker(x, y, c_, ch.id(), 0.75, type_=type_)
             else:
                 x = 10*a.id
                 y = -1
 
-                self.__add_marker(x, y, c_, a.id, 0.75, type_='undef')
+                self.__add_marker(x, y, c_, None, 0.75, type_='undef')
 
     def update_visualisations(self):
         if self.hide_visualisation_:
@@ -627,7 +676,7 @@ class ResultsWidget(QtGui.QWidget):
             except:
                 pass
 
-            if r.id() in self._highlight_regions or ch in self._highlight_tracklets:
+            if ch.id() == self.active_tracklet_id: # in self._highlight_regions or ch in self._highlight_tracklets:
                 item = self.draw_region(r, ch, highlight_contour=True, force_color=self.highlight_color)
                 self.video_player.visualise_temp(item, category='region_highlight')
 
@@ -713,10 +762,16 @@ class ResultsWidget(QtGui.QWidget):
 
         return radius
 
-    def _gt_marker_clicked(self, id_):
-        self.decide_tracklet_button.setDisabled(False)
-        self.active_tracklet_id = id_
-        s = 'id: '+str(id_)
+    def _update_tracklet_info(self):
+        id_ = self.active_tracklet_id
+        if id_ < 0:
+            self.info_l.setText(' ')
+            self.tracklet_p_label.setText(' ')
+            self.tracklet_n_label.setText(' ')
+
+            return
+
+        s = 'id: ' + str(id_)
 
         ch = self.project.chm[id_]
         f = self.video_player.current_frame()
@@ -733,8 +788,8 @@ class ResultsWidget(QtGui.QWidget):
         if ch.end_frame(self.project.gm) == f:
             s += "\nout degree: " + str(ch.end_vertex(self.project.gm).out_degree())
 
-        s += "\nlength: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(ch.end_frame(self.project.gm))
-
+        s += "\nlength: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(
+            ch.end_frame(self.project.gm))
 
         avg_area = 0
         for r_ in rch.regions_gen():
@@ -742,14 +797,26 @@ class ResultsWidget(QtGui.QWidget):
 
         avg_area /= rch.chunk_.length()
 
-        s += "\navg area: "+str(avg_area)
+        s += "\navg area: " + str(avg_area)
         # from core.learning.learning_process import get_features_var1, features2str_var1
         # s += "\nFeature vector: "+ features2str_var1(get_features_var1(r, self.project))
 
         self.info_l.setText(s)
-        self._highlight_regions.add(r.id())
+
+        self.tracklet_p_label.setText(str(ch.P))
+        self.tracklet_n_label.setText(str(ch.N))
+
+        # TODO: solve better... something like set
+        # self._highlight_tracklets = set()
+        # self._highlight_tracklets.add(id_)
         self.video_player.redraw_visualisations()
-        self._highlight_regions.remove(r.id())
+
+    def _gt_marker_clicked(self, id_):
+        self.decide_tracklet_button.setDisabled(False)
+        self._set_active_tracklet_id(id_)
+        self.highlight_tracklet_input.setText(str(id_))
+
+        self._update_tracklet_info()
 
     def add_data(self, solver, just_around_frame=-1, margin=1000):
         self.solver = solver
@@ -823,3 +890,13 @@ class ResultsWidget(QtGui.QWidget):
         # TODO: if loop only once... check something and remove flags...
         self.change_frame(self.loop_begin)
         self.timer.start()
+
+    def _set_active_tracklet_id(self, id_=None):
+        if id_ == None:
+            try:
+                id_ = int(self.highlight_tracklet_input.text())
+            except:
+                return
+
+        self.active_tracklet_id = id_
+        self._update_tracklet_info()
