@@ -12,8 +12,9 @@ from gui.video_player.video_player import VideoPlayer
 from utils.misc import is_flipajs_pc
 from utils.video_manager import get_auto_video_manager
 from viewer.gui.img_controls import markers
-from utils.img import img_saturation
+from utils.img import img_saturation_coef
 from functools import partial
+import warnings
 
 MARKER_SIZE = 15
 
@@ -43,6 +44,9 @@ class ResultsWidget(QtGui.QWidget):
         self.pixMap = None
         self.pixMapItem = None
 
+        # used when save GT is called
+        self._gt_markers = []
+
         self.setLayout(self.hbox)
         self.splitter = QtGui.QSplitter()
 
@@ -50,14 +54,6 @@ class ResultsWidget(QtGui.QWidget):
         self.left_vbox = QtGui.QVBoxLayout()
         self.left_vbox.setContentsMargins(0, 0, 0, 0)
         self.left_w.setLayout(self.left_vbox)
-        self.save_gt_b = QtGui.QPushButton('save gt')
-        self.save_gt_b.clicked.connect(self.__save_gt)
-        self.save_gt_a = QtGui.QAction('save gt', self)
-        self.save_gt_a.triggered.connect(self.__save_gt)
-        self.save_gt_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_G))
-        self.addAction(self.save_gt_a)
-
-        self.left_vbox.addWidget(self.save_gt_b)
 
         if self.show_identities:
             self.scroll_ = QtGui.QScrollArea()
@@ -70,6 +66,28 @@ class ResultsWidget(QtGui.QWidget):
             self.left_vbox.addWidget(self.scroll_)
 
         self.splitter.addWidget(self.left_w)
+
+        # GT Box
+        self.gt_box = QtGui.QGroupBox('Ground Truth')
+        self.gt_box.setLayout(QtGui.QVBoxLayout())
+        self.evolve_gt_b = QtGui.QPushButton('evolve GT')
+        self.evolve_gt_b.clicked.connect(self._evolve_gt)
+        self.gt_box.layout().addWidget(self.evolve_gt_b)
+
+        self.save_gt_b = QtGui.QPushButton('save gt')
+        self.save_gt_b.clicked.connect(self.__save_gt)
+        self.gt_box.layout().addWidget(self.save_gt_b)
+        self.save_gt_a = QtGui.QAction('save gt', self)
+        self.save_gt_a.triggered.connect(self.__save_gt)
+        self.save_gt_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_G))
+        self.addAction(self.save_gt_a)
+
+        self.auto_gt_assignment_b = QtGui.QPushButton('auto GT')
+        self.auto_gt_assignment_b.clicked.connect(self.__auto_gt_assignment)
+        self.gt_box.layout().addWidget(self.auto_gt_assignment_b)
+
+
+        self.left_vbox.addWidget(self.gt_box)
 
         self.info_l = QtGui.QLabel('info')
 
@@ -96,10 +114,6 @@ class ResultsWidget(QtGui.QWidget):
         self.decide_tracklet_action.triggered.connect(self.decide_tracklet)
         self.decide_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
         self.addAction(self.decide_tracklet_action)
-
-        self.evolve_gt_b = QtGui.QPushButton('evolve GT')
-        self.evolve_gt_b.clicked.connect(self._evolve_gt)
-        self.left_vbox.addWidget(self.evolve_gt_b)
 
 
         self.right_w = QtGui.QWidget()
@@ -316,19 +330,14 @@ class ResultsWidget(QtGui.QWidget):
         return new_
 
     def __save_gt(self):
-        # TODO:
-        import warnings
-        warnings.warn('not reimplemented YET!')
-        return
-
         if self._gt is None:
             print "No GT file opened"
             return
 
-        frame = self.video.frame_number()
+        frame = self.video_player.current_frame()
         self._gt.setdefault(frame, [None]*len(self.project.animals))
 
-        for it in self.gitems['gt_markers']:
+        for it in self.gt_markers:
             self._gt[frame][it.id] = (it.centerPos().y(), it.centerPos().x())
 
         with open(self._gt_file, 'wb') as f:
@@ -430,37 +439,6 @@ class ResultsWidget(QtGui.QWidget):
             self.highlight_marker2nd.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
             self.highlight_marker2nd_frame = data['n2'].frame_
 
-    def update_positions_optimized(self, frame):
-        return
-
-        # new_active_markers = []
-        #
-        # # TODO: BGR, offset 1
-        # # R B G Y dark B
-        # colors = [
-        #     [0, 0, 0],
-        #     [0, 0, 255],
-        #     [255, 0, 0],
-        #     [0, 255, 0],
-        #     [0, 255, 255],
-        #     [150, 0, 0]
-        # ]
-        #
-        # for m_id, ch in self.active_markers:
-        #     rch = RegionChunk(ch,  self.project.gm, self.project.rm)
-        #     if frame == rch.end_frame() + 1:
-        #         self.items[m_id].setVisible(False)
-        #     else:
-        #         new_active_markers.append((m_id, ch))
-        #         r = rch.region_in_t(frame)
-        #
-        #         if r is None:
-        #             print "None region, frame: {}, ch.id_: {}".format(frame, ch.id_)
-        #             continue
-        #
-        #         c = r.centroid().copy()
-        #         self.update_marker_position(self.items[m_id], c)
-
     def __add_marker(self, x, y, c_, id_, z_value, type_):
         radius = 13
 
@@ -471,6 +449,8 @@ class ResultsWidget(QtGui.QWidget):
 
         m = markers.CenterMarker(0, 0, radius, c_, id=id_, changeHandler=self._gt_marker_clicked)
 
+        self._gt_markers.append(m)
+
         m.setPos(x - radius/2, y-radius/2)
         m.setZValue(z_value)
 
@@ -479,6 +459,8 @@ class ResultsWidget(QtGui.QWidget):
     def _show_gt_markers(self):
         if self._gt is None:
             return
+
+        self._gt_markers = []
 
         for a in self.project.animals:
             c_ = QtGui.QColor(a.color_[2], a.color_[1], a.color_[0])
@@ -552,7 +534,7 @@ class ResultsWidget(QtGui.QWidget):
             self._show_id_markers(animal_ids2centroids)
 
     def _img_saturation(self, img):
-        return img_saturation(img, 2.0, 1.05)
+        return img_saturation_coef(img, 2.0, 1.05)
 
     def redraw_video_player_visualisations(self):
         callback = None
