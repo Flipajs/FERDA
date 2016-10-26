@@ -12,7 +12,7 @@ from gui.img_controls.my_view import MyView
 from gui.img_controls.my_scene import MyScene
 import sys
 from PyQt4 import QtGui, QtCore
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 import numpy as np
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from matplotlib.mlab import normpdf

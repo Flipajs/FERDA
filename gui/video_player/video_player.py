@@ -3,7 +3,7 @@ import operator
 from PyQt4 import QtCore, QtGui
 
 from gui.img_controls.my_view import MyView
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 from gui.select_all_line_edit import SelectAllLineEdit
 from core.settings import Settings as S_
 from utils.video_manager import get_auto_video_manager

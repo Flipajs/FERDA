@@ -16,7 +16,7 @@ from utils.drawing.points import draw_points_crop
 from utils.video_manager import get_auto_video_manager
 from core.region.mser import get_msers_, get_all_msers
 from gui.img_controls.my_scene import MyScene
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from scripts.similarity_test import similarity_loss
 from core.bg_model.max_intensity import MaxIntensity

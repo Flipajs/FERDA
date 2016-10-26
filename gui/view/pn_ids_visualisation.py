@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 from PyQt4 import QtGui
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 
 default_params = {'P_width': 20,
                   'P_height': 20,

@@ -5,7 +5,7 @@ from utils.drawing.points import draw_points_crop, draw_points
 from skimage.transform import resize
 from gui.img_controls.my_scene import MyScene
 from PyQt4 import QtGui, QtCore
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 import numpy as np
 from functools import partial
 from core.animal import colors_

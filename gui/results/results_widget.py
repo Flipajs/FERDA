@@ -7,11 +7,11 @@ from PyQt4 import QtGui, QtCore
 
 from core.graph.region_chunk import RegionChunk
 from core.settings import Settings as S_
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 from gui.video_player.video_player import VideoPlayer
 from utils.misc import is_flipajs_pc
 from utils.video_manager import get_auto_video_manager
-from viewer.gui.img_controls import markers
+from gui.img_controls import markers
 from utils.img import img_saturation_coef
 from functools import partial
 import warnings
@@ -45,7 +45,7 @@ class ResultsWidget(QtGui.QWidget):
         self.pixMapItem = None
 
         # used when save GT is called
-        self._gt_markers = []
+        self._gt_markers = {}
 
         self.setLayout(self.hbox)
         self.splitter = QtGui.QSplitter()
@@ -79,13 +79,17 @@ class ResultsWidget(QtGui.QWidget):
         self.gt_box.layout().addWidget(self.save_gt_b)
         self.save_gt_a = QtGui.QAction('save gt', self)
         self.save_gt_a.triggered.connect(self.__save_gt)
-        self.save_gt_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_G))
+        self.save_gt_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_G))
         self.addAction(self.save_gt_a)
 
         self.auto_gt_assignment_b = QtGui.QPushButton('auto GT')
         self.auto_gt_assignment_b.clicked.connect(self.__auto_gt_assignment)
         self.gt_box.layout().addWidget(self.auto_gt_assignment_b)
 
+        self.auto_gt_assignment_action = QtGui.QAction('save gt', self)
+        self.auto_gt_assignment_action.triggered.connect(self.__auto_gt_assignment)
+        self.auto_gt_assignment_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_A))
+        self.addAction(self.auto_gt_assignment_action)
 
         self.left_vbox.addWidget(self.gt_box)
 
@@ -346,6 +350,25 @@ class ResultsWidget(QtGui.QWidget):
         # self.change_frame(frame + self._gt_corr_step)
         print self._gt[frame]
 
+    def __auto_gt_assignment(self):
+        print "AUTO GT ASSIGNMENT "
+
+        frame = self.video_player.current_frame()
+        for ch in self.project.chm.chunks_in_frame(frame):
+            rch = RegionChunk(ch, self.project.gm, self.project.rm)
+            r = rch.region_in_t(frame)
+            centroid = r.centroid().copy()
+
+            try:
+                if len(ch.P) == 1:
+                    id_ = list(ch.p)[0]
+                    if self._gt_markers[id_].centerPos().y() < 0:
+                        self.update_marker_position(self._gt_markers[id_], centroid)
+            except:
+                pass
+
+
+
     def draw_region(self, r, tracklet, use_ch_color=None, alpha=120):
         from utils.img import get_cropped_pts
 
@@ -449,7 +472,7 @@ class ResultsWidget(QtGui.QWidget):
 
         m = markers.CenterMarker(0, 0, radius, c_, id=id_, changeHandler=self._gt_marker_clicked)
 
-        self._gt_markers.append(m)
+        self._gt_markers[id_] = m
 
         m.setPos(x - radius/2, y-radius/2)
         m.setZValue(z_value)
@@ -460,7 +483,7 @@ class ResultsWidget(QtGui.QWidget):
         if self._gt is None:
             return
 
-        self._gt_markers = []
+        self._gt_markers = {}
 
         for a in self.project.animals:
             c_ = QtGui.QColor(a.color_[2], a.color_[1], a.color_[0])
