@@ -12,7 +12,7 @@ from gui.img_controls import markers
 from utils.img import img_saturation_coef
 from functools import partial
 import warnings
-from gui.gui_utils import MyLineEdit, ClickableQGraphicsPixmapItem
+from gui.gui_utils import SelectAllLineEdit, ClickableQGraphicsPixmapItem
 
 MARKER_SIZE = 15
 
@@ -53,6 +53,7 @@ class ResultsWidget(QtGui.QWidget):
         self.splitter = QtGui.QSplitter()
 
         self.left_w = QtGui.QWidget()
+        self.left_w.setMaximumWidth(250)
         self.left_vbox = QtGui.QVBoxLayout()
         self.left_vbox.setContentsMargins(0, 0, 0, 0)
         self.left_w.setLayout(self.left_vbox)
@@ -108,7 +109,7 @@ class ResultsWidget(QtGui.QWidget):
         self.tracklet_box = QtGui.QGroupBox('Tracklet controls')
         self.tracklet_box.setLayout(QtGui.QVBoxLayout())
 
-        self.highlight_tracklet_input = MyLineEdit('tracklet id')
+        self.highlight_tracklet_input = SelectAllLineEdit('tracklet id')
         self.highlight_tracklet_input.returnPressed.connect(self.highlight_tracklet_button_clicked)
 
         self.tracklet_p_label = QtGui.QLabel('P: ')
@@ -227,6 +228,31 @@ class ResultsWidget(QtGui.QWidget):
         self.toggle_id_bar_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
         self.addAction(self.toggle_id_bar_action)
 
+        self.goto_frame_action = QtGui.QAction('go to frame', self)
+        self.goto_frame_action.triggered.connect(lambda x: self.video_player.frame_edit.setFocus())
+        self.goto_frame_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_F))
+        self.addAction(self.goto_frame_action)
+
+        self.down_region_action = QtGui.QAction('down region', self)
+        self.down_region_action.triggered.connect(partial(self.__set_active_relative_tracklet, -1, True))
+        self.down_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Up))
+        self.addAction(self.down_region_action)
+
+        self.up_region_action = QtGui.QAction('up region', self)
+        self.up_region_action.triggered.connect(partial(self.__set_active_relative_tracklet, 1, True))
+        self.up_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Down))
+        self.addAction(self.up_region_action)
+
+        self.left_region_action = QtGui.QAction('left region', self)
+        self.left_region_action.triggered.connect(partial(self.__set_active_relative_tracklet, -1, False))
+        self.left_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Left))
+        self.addAction(self.left_region_action)
+
+        self.right_region_action = QtGui.QAction('right region', self)
+        self.right_region_action.triggered.connect(partial(self.__set_active_relative_tracklet, 1, False))
+        self.right_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Right))
+        self.addAction(self.right_region_action)
+
         self.chunks = []
         self.starting_frames = {}
         self.markers = []
@@ -241,7 +267,7 @@ class ResultsWidget(QtGui.QWidget):
         self.highlight_marker2nd = None
         self.highlight_marker2nd_frame = -1
         self.highlight_timer2nd = QtCore.QTimer()
-        from functools import partial
+
         self.highlight_timer2nd.timeout.connect(partial(self.decrease_highlight_marker_opacity, True))
 
         self.colormarks_items = []
@@ -479,7 +505,6 @@ class ResultsWidget(QtGui.QWidget):
 
         return pts, roi
 
-
     def draw_region(self, r, tracklet, use_ch_color=None, alpha=120, highlight_contour=False, force_color=None):
         from utils.img import get_cropped_pts
 
@@ -497,7 +522,7 @@ class ResultsWidget(QtGui.QWidget):
         qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
         if force_color is None:
-            c = QtGui.qRgba(100, 100, 100, 200)
+            c = QtGui.qRgba(150, 150, 150, 200)
             if self.contour_without_colors.isChecked():
                 if tracklet.is_only_one_id_assigned(len(self.project.animals)):
                     id_ = list(tracklet.P)[0]
@@ -779,7 +804,7 @@ class ResultsWidget(QtGui.QWidget):
         r = rch.region_in_t(f)
         import textwrap
         s += "\n" + str(r)
-        s = textwrap.fill(s, 50)
+        s = textwrap.fill(s, 40)
         s += " radius: {:.3}".format(self.__compute_radius(r))
 
         if ch.start_frame(self.project.gm) == f:
@@ -900,3 +925,29 @@ class ResultsWidget(QtGui.QWidget):
 
         self.active_tracklet_id = id_
         self._update_tracklet_info()
+
+    def __set_active_relative_tracklet(self, offset, ud=True):
+        frame = self.video_player.current_frame()
+
+        data = []
+        for t in self.project.chm.chunks_in_frame(frame):
+            rch = RegionChunk(t, self.project.gm, self.project.rm)
+            c = rch.centroid_in_t(frame)
+            data.append((t.id(), c[0], c[1]))
+
+        if ud:
+            data.sort(key=lambda tup: tup[1])
+        else:
+            data.sort(key=lambda tup: tup[2])
+
+        ids_ = []
+        for tup in data:
+            ids_.append(tup[0])
+
+        try:
+            self._set_active_tracklet_id(ids_[ids_.index(self.active_tracklet_id) + offset])
+        except:
+            if offset < 0:
+                self._set_active_tracklet_id(ids_[-1])
+            else:
+                self._set_active_tracklet_id(ids_[0])

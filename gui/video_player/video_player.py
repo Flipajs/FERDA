@@ -4,7 +4,7 @@ from PyQt4 import QtCore, QtGui
 
 from gui.img_controls.my_view import MyView
 from gui.img_controls.gui_utils import cvimg2qtpixmap
-from gui.select_all_line_edit import SelectAllLineEdit
+from gui.gui_utils import SelectAllLineEdit
 from core.settings import Settings as S_
 from utils.video_manager import get_auto_video_manager
 
@@ -287,7 +287,7 @@ class VideoPlayer(QtGui.QWidget):
             frame = self._vm.total_frame_count() - 1
             
         self._change_frame(frame=frame)
-        pass
+        self.setFocus()
 
     @property
     def video_step(self):

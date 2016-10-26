@@ -524,7 +524,6 @@ class LearningProcess:
     def __learn(self, ch, id_):
         print "LEARNING ", id_
         if ch.id() not in self.features:
-
             print "cached features are missing. COMPUTING..."
             X = self.get_data(ch)
             print "Done"
