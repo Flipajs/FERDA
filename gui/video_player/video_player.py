@@ -221,6 +221,12 @@ class VideoPlayer(QtGui.QWidget):
         if frame is None:
             frame = operator(self._vm.frame_number(), self._video_step)
 
+        # TODO: maybe allow cycling in future?
+        if frame < 0:
+            frame = 0
+        if frame >= self._vm.total_frame_count():
+            frame = self._vm.total_frame_count()
+
         img = self._vm.get_frame(frame)
 
         if img is None:

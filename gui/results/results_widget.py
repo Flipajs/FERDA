@@ -91,6 +91,15 @@ class ResultsWidget(QtGui.QWidget):
         self.auto_gt_assignment_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_A))
         self.addAction(self.auto_gt_assignment_action)
 
+        self.add_gt_markers_b = QtGui.QPushButton('add GT markers')
+        self.add_gt_markers_b.clicked.connect(self.__add_gt_markers)
+        self.gt_box.layout().addWidget(self.add_gt_markers_b)
+
+        self.add_gt_markers_action = QtGui.QAction('add gt markers', self)
+        self.add_gt_markers_action.triggered.connect(self.__add_gt_markers)
+        self.add_gt_markers_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
+        self.addAction(self.add_gt_markers_action)
+
         self.left_vbox.addWidget(self.gt_box)
 
         self.info_l = QtGui.QLabel('info')
@@ -341,7 +350,7 @@ class ResultsWidget(QtGui.QWidget):
         frame = self.video_player.current_frame()
         self._gt.setdefault(frame, [None]*len(self.project.animals))
 
-        for it in self.gt_markers:
+        for it in self._gt_markers.itervalues():
             self._gt[frame][it.id] = (it.centerPos().y(), it.centerPos().x())
 
         with open(self._gt_file, 'wb') as f:
@@ -351,8 +360,6 @@ class ResultsWidget(QtGui.QWidget):
         print self._gt[frame]
 
     def __auto_gt_assignment(self):
-        print "AUTO GT ASSIGNMENT "
-
         frame = self.video_player.current_frame()
         for ch in self.project.chm.chunks_in_frame(frame):
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
@@ -361,13 +368,28 @@ class ResultsWidget(QtGui.QWidget):
 
             try:
                 if len(ch.P) == 1:
-                    id_ = list(ch.p)[0]
-                    if self._gt_markers[id_].centerPos().y() < 0:
-                        self.update_marker_position(self._gt_markers[id_], centroid)
+                    id_ = list(ch.P)[0]
+                    print id_, self._gt_markers[id_].centerPos().y()
+                    if self._gt[frame][id_][0] < 0:
+                        print id_
+                        self._gt[frame][id_] = (centroid[0], centroid[1])
             except:
                 pass
 
+        self.video_player.redraw_visualisations()
 
+    def __add_gt_markers(self):
+        if self._gt is None:
+            print "No GT file opened"
+            return
+
+        frame = self.video_player.current_frame()
+        self._gt.setdefault(frame, [None]*len(self.project.animals))
+        for i in range(len(self.project.animals)):
+            if self._gt[frame][i] is None:
+                self._gt[frame][i] = (-10, i*10)
+
+        self.video_player.redraw_visualisations()
 
     def draw_region(self, r, tracklet, use_ch_color=None, alpha=120):
         from utils.img import get_cropped_pts
@@ -483,8 +505,6 @@ class ResultsWidget(QtGui.QWidget):
         if self._gt is None:
             return
 
-        self._gt_markers = {}
-
         for a in self.project.animals:
             c_ = QtGui.QColor(a.color_[2], a.color_[1], a.color_[0])
 
@@ -508,7 +528,7 @@ class ResultsWidget(QtGui.QWidget):
 
                     ch = data[2]
                     type_ = 'normal' if decided else 'multiple'
-                    self.__add_marker(x, y, c_, ch.id_, 0.75, type_=type_)
+                    self.__add_marker(x, y, c_, a.id, 0.75, type_=type_)
             else:
                 x = 10*a.id
                 y = -1
@@ -519,6 +539,8 @@ class ResultsWidget(QtGui.QWidget):
         if self.hide_visualisation_:
             return
 
+        # reset...
+        self._gt_markers = {}
         frame = self.video_player.current_frame()
 
         animal_ids2centroids = {}
@@ -546,7 +568,8 @@ class ResultsWidget(QtGui.QWidget):
 
             # # TODO: fix for option when only P set is displayed using circles
             try:
-                for id_ in ch.P:
+                if len(ch.P) == 1:
+                    id_ = list(ch.P)[0]
                     animal_ids2centroids.setdefault(id_, [])
                     animal_ids2centroids[id_].append((centroid, ch.is_only_one_id_assigned(len(self.project.animals)), ch))
             except:
