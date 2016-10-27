@@ -31,6 +31,9 @@ class LearningProcess:
 
         self.p = p
 
+        # TODO: add whole knowledge class...
+        self.tracklet_knowledge = {}
+
         self.question_callback = question_callback
         self.update_callback = update_callback
 
@@ -526,12 +529,6 @@ class LearningProcess:
         #     probs /= float(np.sum(probs))
 
         return probs, len(X)
-
-    def classify_chunk(self, ch, proba):
-        pass
-
-    def recompute_rfc(self):
-        pass
 
     def apply_consistency_rule(self, ch, probs):
         mask = np.zeros(probs.shape)
