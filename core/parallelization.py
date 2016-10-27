@@ -23,6 +23,7 @@ from core.graph.chunk_manager import ChunkManager
 import numpy as np
 import time
 
+
 if __name__ == '__main__':
     working_dir = sys.argv[1]
     proj_name = sys.argv[2]
@@ -89,6 +90,9 @@ if __name__ == '__main__':
     else:
         img = vid.next_frame()
 
+    if img is None:
+        raise Exception("img is None, there is something wrong with frame: "+str(id*frames_in_row))
+
     if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
         proj.segmentation_model.set_image(img)
         seg = proj.segmentation_model.predict()
@@ -118,7 +122,7 @@ if __name__ == '__main__':
         s = time.time()
         img = vid.next_frame()
         if img is None:
-            break
+            raise Exception("img is None, there is something wrong with frame: " + str(id * frames_in_row))
 
         if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
             proj.segmentation_model.set_image(img)
