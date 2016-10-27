@@ -77,19 +77,17 @@ class LearningProcess:
             # TODO:
             self.get_candidate_chunks()
 
-            self.chunks_itree = self.build_itree_()
-
             self.features = self.precompute_features_()
 
             with open(p.working_directory+'/features.pkl', 'wb') as f:
-                d = {'chunks_itree': self.chunks_itree, 'features': self.features,
+                d = {'features': self.features,
                      'collision_chunks': self.collision_chunks}
                 pickle.dump(d, f, -1)
         else:
             print "LOADING features..."
+
             with open(p.working_directory+'/features.pkl', 'rb') as f:
                 d = pickle.load(f)
-                self.chunks_itree = d['chunks_itree']
                 self.features = d['features']
                 self.collision_chunks = d['collision_chunks']
 
@@ -334,13 +332,6 @@ class LearningProcess:
             print i
 
         return features
-
-    def build_itree_(self):
-        itree = IntervalTree()
-        for ch in self.p.chm.chunk_gen():
-            itree.addi(ch.start_frame(self.p.gm) - self._eps1, ch.end_frame(self.p.gm) + self._eps1, ch.id())
-
-        return itree
 
     def get_candidate_chunks(self):
         # TODO: do it better... What if first chunks are merged...
