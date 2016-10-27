@@ -11,6 +11,7 @@ from core.region.mser_operations import get_region_groups, margin_filter, area_f
 import time
 from utils.misc import is_flipajs_pc
 from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_, antlikeness_filter
+import warnings
 
 
 class Mser():
@@ -126,7 +127,10 @@ def ferda_filtered_msers(img, project, frame=-1):
         # # ids = area_filter(m, ids, min_area)
         ids = children_filter(m, ids)
         if project.stats:
+            num_before = len(ids)
             ids = antlikeness_filter(project.stats.antlikeness_svm, project.solver_parameters.antlikeness_threshold, m, ids)
+            if len(ids) == 0 and num_before > 0:
+                warnings.warn("There is something fishy with antlikeness filter. After filtering, there is 0 regions")
 
         return [m[id] for id in ids]
     else:
