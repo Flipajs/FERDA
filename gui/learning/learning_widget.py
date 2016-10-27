@@ -134,7 +134,7 @@ class LearningWidget(QtGui.QWidget):
 
 
     def certainty_eps_changed(self):
-        self.lp.eps_certainty = self.certainty_eps_spinbox.value()
+        self.lp.set_eps_certainty(self.certainty_eps_spinbox.value())
 
     def save(self):
         self.lp.save_learning()

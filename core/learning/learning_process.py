@@ -1,23 +1,19 @@
-from sklearn.ensemble import RandomForestClassifier
-from core.project.project import Project
-from core.graph.region_chunk import RegionChunk
-from skimage.measure import moments_central, moments_hu, moments_normalized, moments
-from utils.img_manager import ImgManager
-import cv2
-from utils.img import get_img_around_pts, replace_everything_but_pts
 import cPickle as pickle
-import numpy as np
-from libs.intervaltree.intervaltree import IntervalTree
-from gui.learning.ids_names_widget import IdsNamesWidget
-from PyQt4 import QtGui
-import sys
 import operator
+import sys
 import time
-import itertools
-import math
-from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
 import warnings
-from features import *
+
+import numpy as np
+from PyQt4 import QtGui
+from sklearn.ensemble import RandomForestClassifier
+
+from core.graph.region_chunk import RegionChunk
+from core.project.project import Project
+from features import get_features_var3
+from gui.learning.ids_names_widget import IdsNamesWidget
+from utils.img_manager import ImgManager
+
 
 class LearningProcess:
     def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False):
@@ -29,30 +25,21 @@ class LearningProcess:
         self.question_callback = question_callback
         self.update_callback = update_callback
 
-        self._eps1 = 0.01
+        self._eps_certainty = 0.3
 
-        # TODO: global parameter
-        self.eps_certainty = 0.3
-
+        # TODO: make standalone feature extractor...
         self.get_features = get_features_var3
         # to solve uncertainty about head orientation... Add both
         self.features_fliplr_hack = True
 
         # TODO: global parameter!!!
         self.k_ = 50.0
-        if self.features_fliplr_hack:
-            self.k_ *= 2
 
         self.X = []
         self.y = []
         self.old_x_size = 0
 
         self.collision_chunks = {}
-
-        # TODO: remove these
-        # TODO: saving chunks info...
-        self.ids_present_in_tracklet = {}
-        self.ids_not_present_in_tracklet = {}
 
         self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
 
@@ -70,11 +57,12 @@ class LearningProcess:
 
         self.load_learning()
 
+        # when creating without feature data... e.g. in main_tab_widget
         if ghost:
             return
 
         if not use_feature_cache:
-            # TODO:
+            # TODO: do better... Idealy chunks should already have labels
             self.get_candidate_chunks()
 
             self.features = self.precompute_features_()
@@ -92,7 +80,6 @@ class LearningProcess:
                 self.collision_chunks = d['collision_chunks']
 
             print "LOADED"
-
 
         print "precompute avalability"
         # basically set every chunk with full set of possible ids
@@ -117,8 +104,6 @@ class LearningProcess:
         with open(p.working_directory+'/rfc.pkl', 'wb') as f:
             d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.all_ids,
                  'class_frequences': self.class_frequences,
-                 'ids_present_in_tracklet': self.ids_present_in_tracklet,
-                 'ids_not_present_in_tracklet': self.ids_not_present_in_tracklet,
                  'undecided_tracklets': self.undecided_tracklets,
                  'old_x_size': self.old_x_size,
                  'tracklet_certainty': self.tracklet_certainty,
@@ -133,8 +118,8 @@ class LearningProcess:
         except IOError:
             pass
 
-        # self.save_ids_()
-        # self.reset_learning()
+    def set_eps_certainty(self, eps):
+        self._eps_certainty = eps
 
     def compute_distinguishability(self):
         num_a = len(self.p.animals)
@@ -665,8 +650,6 @@ class LearningProcess:
         if learn:
             self.__learn(ch, id_)
 
-        # self.save_ids_()
-
         if not self.__assign_id(ch, id_):
             return
 
@@ -692,7 +675,7 @@ class LearningProcess:
         self.update_callback()
 
     def next_step(self):
-        eps_certainty_learning = self.eps_certainty / 2
+        eps_certainty_learning = self._eps_certainty / 2
         min_new_samples_to_retrain = 50
 
         # if enough new data, retrain
@@ -713,7 +696,7 @@ class LearningProcess:
         # if not good enough, raise question
         # different strategies... 1) pick the longest tracklet, 2) tracklet with the longest intersection impact
         certainty = self.tracklet_certainty[best_tracklet.id()]
-        if certainty >= 1 - self.eps_certainty:
+        if certainty >= 1 - self._eps_certainty:
             learn = False
             # if good enough, use for learning
             if certainty >= 1 - eps_certainty_learning:
@@ -730,7 +713,6 @@ class LearningProcess:
 
             id_ = np.argmax(x_)
             self.assign_identity(id_, best_tracklet, learn=learn)
-            # self.save_ids_()
         else:
             # if new training data, retrain
             if len(self.X) - self.old_x_size > min_new_samples_to_retrain:
@@ -747,16 +729,6 @@ class LearningProcess:
         self.update_callback()
 
         return True
-
-    def save_ids_(self):
-        with open(self.p.working_directory + '/temp/chunk_available_ids.pkl', 'wb') as f_:
-            d_ = {'ids_present_in_tracklet': self.ids_present_in_tracklet,
-                  'ids_not_present_in_tracklet': self.ids_not_present_in_tracklet,
-                  'probabilities': self.tracklet_measurements,
-                  'rfc': self.rfc,
-                  'X': self.X,
-                  'y': self.y}
-            pickle.dump(d_, f_, -1)
 
     def get_frequence_vector_(self):
         return float(np.sum(self.class_frequences)) / self.class_frequences
