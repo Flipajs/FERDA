@@ -16,6 +16,15 @@ from utils.img_manager import ImgManager
 
 
 class LearningProcess:
+    """
+    each tracklet has 2 id sets.
+    P - ids are definitely present
+
+
+    basic operations
+    add
+
+    """
     def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False):
         if use_rf_cache:
             warnings.warn("use_rf_cache is Deprecated!", DeprecationWarning)
@@ -82,8 +91,7 @@ class LearningProcess:
             print "LOADED"
 
         print "precompute avalability"
-        # basically set every chunk with full set of possible ids
-        self.__precompute_availability()
+        self.__reset_chunk_PN_sets()
 
         # TODO: remove this
         self.class_frequences = []
@@ -292,14 +300,6 @@ class LearningProcess:
             self.tracklet_measurements[tracklet.id()] = x
             self.__update_certainty(tracklet)
 
-    def set_ids_(self):
-        app = QtGui.QApplication(sys.argv)
-        ex = IdsNamesWidget()
-        ex.show()
-
-        app.exec_()
-        app.deleteLater()
-
     def precompute_features_(self):
         features = {}
         i = 0
@@ -409,83 +409,6 @@ class LearningProcess:
 
         # return filtered
 
-    def __solve_if_clear(self, vertices1, vertices2):
-        score = np.zeros((len(vertices1), len(vertices2)))
-
-        for i, v1 in enumerate(vertices1):
-            for j, v2 in enumerate(vertices2):
-                s, _, _, _ = self.p.solver.assignment_score(self.p.gm.region(v1), self.p.gm.region(v2))
-
-                score[i, j] = s
-
-        confirmed = []
-
-        for i in range(len(vertices1)):
-            j = np.argmax(score[i, :])
-            if i == np.argmax(score[:, j]):
-                confirmed.append([i, j])
-
-        assign_new_ids = []
-
-        if len(confirmed) == len(vertices1):
-            for i, j in confirmed:
-                v1 = vertices1[i]
-                v2 = vertices2[j]
-
-                ch1, _ = self.p.gm.is_chunk(v1)
-                ch2, _ = self.p.gm.is_chunk(v2)
-
-                ids1 = self.chunk_available_ids.get(ch1.id(), [])
-                id1 = -1 if len(ids1) != 1 else ids1[0]
-                ids2 = self.chunk_available_ids.get(ch2.id(), [])
-                id2 = -1 if len(ids2) != 1 else ids2[0]
-
-                if id1 > -1 and id2 > -1 and id1 != id2:
-                    assign_new_ids = []
-                    break
-
-                if id1 == id2:
-                    continue
-
-                if id1 > -1:
-                    assign_new_ids.append((id1, ch2))
-                elif id2 > -1:
-                    assign_new_ids.append((id2, ch1))
-
-        b = False
-        for id_, ch in assign_new_ids:
-            if len(self.chunk_available_ids[ch.id()]) > 1:
-                if ch.id() in self.features:
-                    self.__learn(ch, id_)
-
-                if self.__assign_id(ch, id_):
-                    b = True
-
-        return b
-
-    def test_connected_with_merged(self, ch):
-        s_vertex = ch.start_vertex(self.p.gm)
-        e_vertext = ch.end_vertex(self.p.gm)
-
-        # test previous...
-        if s_vertex.in_degree() == 1:
-            for v in s_vertex.in_neighbours():
-                pass
-
-            ch, _ = self.p.gm.is_chunk(v)
-
-            ch_s_v = ch.start_vertex(self.p.gm)
-            ch_e_v = ch.end_vertex(self.p.gm)
-
-            if ch.length() <= 5 and ch_s_v.in_degree() == ch_e_v.out_degree():
-                vertices1 = [v for v in ch_s_v.in_neighbours()]
-                vertices2 = [v for v in ch_e_v.out_neighbours()]
-
-                if self.__solve_if_clear(vertices1, vertices2):
-                    return True
-
-        return False
-
     def __learn(self, ch, id_):
         if len(self.features) == 0:
             return
@@ -507,27 +430,6 @@ class LearningProcess:
             y = [id_] * len(X)
             self.y = np.append(self.y, np.array(y))
 
-    def __assign_id(self, ch, id_):
-        if len(self.chunk_available_ids[ch.id()]) <= 1:
-            try:
-                del self.undecided_chunks[ch.id()]
-            except:
-                pass
-
-            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            print "WARNING: Strange behaviour occured attempting to assign id to already resolved chunk in __assign_id/learning_process.py"
-            return False
-
-        try:
-            del self.undecided_chunks[ch.id()]
-        except:
-            print "PROBLEMATIC CHUNK", ch.id(),  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "A_ID: ", id_
-
-        self.chunk_available_ids[ch.id()] = [id_]
-        self.update_after_hard_decision(ch, id_)
-
-        return True
-
     def __get_ids(self):
         """
         TODO: improve
@@ -544,135 +446,11 @@ class LearningProcess:
         vertices = map(self.p.gm.g.vertex, self.p.gm.get_vertices_in_t(0))
         return set(range(len(vertices)))
 
-    def __precompute_availability(self):
+    def __reset_chunk_PN_sets(self):
         for ch in self.p.chm.chunk_gen():
             ch.P = set()
             ch.N = set()
 
-    def __propagate_availability(self, ch, remove_id=[]):
-        S_in = set()
-        affected = []
-        for u in ch.start_vertex(self.p.gm).in_neighbours():
-            ch_, _ = self.p.gm.is_chunk(u)
-            # if ch_ in self.chunks:
-            affected.append(ch_)
-            S_in.update(self.chunk_available_ids[ch_.id()])
-
-        S_out = set()
-        for u in ch.end_vertex(self.p.gm).out_neighbours():
-            ch_, _ = self.p.gm.is_chunk(u)
-            # if ch_ in self.chunks:
-            affected.append(ch_)
-            S_out.update(self.chunk_available_ids[ch_.id()])
-
-        S_self = set(self.chunk_available_ids[ch.id()])
-
-        # first chunks
-        if not S_in:
-            if not S_out:
-                new_S_self = S_self
-            else:
-                new_S_self = S_self.intersection(S_out)
-        else:
-            if not S_out:
-                new_S_self = S_self.intersection(S_in)
-            else:
-                new_S_self = S_self.intersection(S_in).intersection(S_out)
-
-        if ch.start_frame(self.p.gm) > 0:
-            for id_ in S_self.difference(new_S_self):
-                if id_ not in S_in:
-                    in_chunks = self.p.chm.chunks_in_frame(ch.start_frame(self.p.gm)-1)
-                    ids_test = set()
-                    for ch_ in in_chunks:
-                        ids_test.update(self.chunk_available_ids[ch_.id()])
-
-                    # Id is lost
-                    if id_ not in ids_test:
-                        new_S_self.add(id_)
-
-                if id_ not in S_out:
-                    out_chunks = self.p.chm.chunks_in_frame(ch.end_frame(self.p.gm) + 1)
-                    ids_test = set()
-                    for ch_ in out_chunks:
-                        ids_test.update(self.chunk_available_ids[ch_.id()])
-
-                    # Id is lost
-                    if id_ not in ids_test:
-                        new_S_self.add(id_)
-
-        for id_ in remove_id:
-            new_S_self.discard(id_)
-
-        if S_self == new_S_self:
-            return []
-
-        if len(S_self) < len(new_S_self):
-            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            print "WARNING: S_self < new_S_self!"
-
-        if not new_S_self:
-            print "ZERO available IDs set", ch.id(),  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch
-
-        new_S_self = list(new_S_self)
-        if len(new_S_self) == 1:
-            self.__assign_id(ch, new_S_self[0])
-            # self.update_availability(ch, new_S_self[0], learn=True)
-            # in_time = set(self.p.chm.chunks_in_interval(ch.start_frame(self.p.gm), ch.end_frame(self.p.gm)))
-            # in_time.remove(ch)
-            # affected.extend(list(in_time))
-
-            print "Chunk solved by ID conservation rules", ch.id(),  ch.start_frame(self.p.gm), ch.end_frame(self.p.gm), ch, "AID: ", new_S_self[0]
-        else:
-            self.chunk_available_ids[ch.id()] = new_S_self
-            if not new_S_self:
-                try:
-                    del self.undecided_chunks[ch.id()]
-                except:
-                    pass
-
-        return affected
-
-    def update_availability(self, ch, id_, learn=False):
-        # TODO: remove this function
-        if len(self.chunk_available_ids[ch.id()]) <= 1:
-            return
-
-        if ch.id() in self.collision_chunks:
-            # try:
-            #     del self.undecided_chunks[ch.id()]
-            # except:
-            #     pass
-
-            print "CANNOT DECIDE COLLISION CHUNK!!!"
-            return
-
-        if learn:
-            self.__learn(ch, id_)
-
-        if not self.__assign_id(ch, id_):
-            return
-
-        print "Ch.id: %d assigned animal id: %d. Ch.start: %d, Ch.end: %d" % (ch.id(), id_, ch.start_frame(self.p.gm), ch.end_frame(self.p.gm))
-
-
-    def update_after_hard_decision(self, ch, id_):
-        queue = [self.p.gm.get_chunk(u) for u in ch.start_vertex(self.p.gm).in_neighbours()] + \
-                [self.p.gm.get_chunk(u) for u in ch.end_vertex(self.p.gm).out_neighbours()]
-
-        # remove from all chunks in same time
-        in_time = set(self.p.chm.chunks_in_interval(ch.start_frame(self.p.gm), ch.end_frame(self.p.gm)))
-        in_time.remove(ch)
-        in_time = list(in_time)
-        for ch in in_time:
-            queue.extend(self.__propagate_availability(ch, remove_id=[id_]))
-
-        while queue:
-            ch = queue.pop(0)
-            self.tracklet_certainty
-            queue.extend(self.__propagate_availability(ch))
-
-        self.update_callback()
 
     def next_step(self):
         eps_certainty_learning = self._eps_certainty / 2
@@ -931,11 +709,6 @@ class LearningProcess:
             if id_ in t.P:
                 conflicts.append(t)
 
-        # TODO: remove this
-        # # repairing conflict...
-        # tracklet.P = set([gt_id])
-        # tracklet.N = self.all_ids - set([gt_id])
-
         return conflicts
 
     def __print_conflicts(self, conflicts, tracklet, depth=0):
@@ -1072,9 +845,8 @@ class LearningProcess:
         self.tracklet_measurements = {}
         self.fill_undecided_tracklets()
 
-        self.__precompute_availability()
+        self.__reset_chunk_PN_sets()
 
-        # TODO: fill self.X and self.Y only with tracklets decided by user (self.user_decisions)
         self.X = []
         self.y = []
 
@@ -1088,6 +860,7 @@ class LearningProcess:
                 id_ = ids[0]
             else:
                 # TODO: multi ID decisions
+                warnings.warn("Multiple ids in tracklet. Not supported yet")
                 return
 
             if type == 'P':
@@ -1192,7 +965,6 @@ class LearningProcess:
         for t in affected_tracklets:
             self.__if_possible_add_definitely_not_present(t, tracklet, id_set)
 
-
     def __get_affected_tracklets(self, tracklet):
         """
         Returns all tracklets overlapping range <tracklet.startFrame, tracklet.endFrame>
@@ -1210,7 +982,6 @@ class LearningProcess:
         affected = list(affected)
 
         return affected
-
 
 
 if __name__ == '__main__':
