@@ -98,7 +98,7 @@ def draw_P(img, w, id_, params):
 
 def draw_N(img, w, id_, params):
     from utils.visualization_utils import get_contrast_color
-    
+
     new_w = w + params['N_width']
     y1 = (params['P_height'] - params['N_height']) / 2
     y2 = params['N_height'] + y1
