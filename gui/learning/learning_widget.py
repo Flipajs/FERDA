@@ -94,6 +94,10 @@ class LearningWidget(QtGui.QWidget):
         self.update_b.clicked.connect(self.update_callback)
         self.top_stripe_layout.addWidget(self.update_b)
 
+        self.delete_user_decisions_b = QtGui.QPushButton('delete user decisions')
+        self.delete_user_decisions_b.clicked.connect(self.clear_user_decisions)
+        self.top_stripe_layout.addWidget(self.delete_user_decisions_b)
+
         self.compute_distinguishability_b = QtGui.QPushButton('comp. disting.')
         # self.lp will change...
         self.compute_distinguishability_b.clicked.connect(lambda x: self.lp.compute_distinguishability())
@@ -292,7 +296,14 @@ class LearningWidget(QtGui.QWidget):
             print "..."
 
     def clear_user_decisions(self):
-        self.lp.user_decisions = []
+        msg = "Do you really want to delete all USERs decisions?"
+        reply = QtGui.QMessageBox.question(self, 'Message',
+                                           msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+
+        if reply == QtGui.QMessageBox.Yes:
+            self.lp.user_decisions = []
+
+        self.update_callback()
 
 
 if __name__ == '__main__':

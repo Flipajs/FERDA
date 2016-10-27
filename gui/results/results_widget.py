@@ -17,11 +17,10 @@ from gui.gui_utils import SelectAllLineEdit, ClickableQGraphicsPixmapItem
 MARKER_SIZE = 15
 
 class ResultsWidget(QtGui.QWidget):
-    def __init__(self, project, start_on_frame=-1, decide_tracklet_callback=None, clear_user_decisions_callback=None):
+    def __init__(self, project, start_on_frame=-1, decide_tracklet_callback=None):
         super(ResultsWidget, self).__init__()
 
         self.decide_tracklet_callback = decide_tracklet_callback
-        self.clear_user_decisions_callback = clear_user_decisions_callback
 
         self.show_identities = False
         self.loop_highlight_tracklets = []
@@ -159,6 +158,7 @@ class ResultsWidget(QtGui.QWidget):
         self.left_vbox.addWidget(self.tracklet_box)
 
         self.debug_box = QtGui.QGroupBox('debug box')
+        self.debug_box.setLayout(QtGui.QVBoxLayout())
         self.reset_chunk_ids_b = QtGui.QPushButton('Reset chunk IDs')
         self.reset_chunk_ids_b.clicked.connect(self.reset_chunk_ids)
         self.debug_box.layout().addWidget(self.reset_chunk_ids_b)
@@ -319,6 +319,8 @@ class ResultsWidget(QtGui.QWidget):
 
             if self.clear_user_decisions_callback:
                 self.clear_user_decisions_callback()
+
+            self.video_player.redraw_visualisations()
 
     def decide_tracklet(self):
         if self.active_tracklet_id > -1:

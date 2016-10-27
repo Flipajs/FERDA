@@ -380,24 +380,26 @@ class StatisticsWidget(QtGui.QWidget):
         self.num_of_single_nodes.setText(str(project.gm.g.num_vertices()))
         self.num_of_chunks.setText(str(len(project.chm)))
 
-        lens_ = []
-        mean_areas_ = []
-        for ch in self.project.chm.chunk_gen():
-            lens_.append(ch.length())
-            areas_ = []
-            rch = RegionChunk(ch, self.project.gm, self.project.rm)
+        # TODO: takes too much time... Compute statistics during project creation
 
-            for r in rch.regions_gen():
-                areas_.append(r.area())
-
-            mean_areas_.append(np.mean(areas_))
-
-
-
-        mean_ = np.mean(lens_)
-        mean_mean_areas_ = np.mean(mean_areas_)
-        med_ch_area = np.median(mean_areas_)
-
-        self.mean_ch_len.setText('{:.2f}'.format(mean_))
-        self.mean_ch_area.setText('{:.2f}'.format(mean_mean_areas_))
-        self.med_ch_area.setText('{:.2f}'.format(med_ch_area))
+        # lens_ = []
+        # mean_areas_ = []
+        # for ch in self.project.chm.chunk_gen():
+        #     lens_.append(ch.length())
+        #     areas_ = []
+        #     rch = RegionChunk(ch, self.project.gm, self.project.rm)
+        #
+        #     for r in rch.regions_gen():
+        #         areas_.append(r.area())
+        #
+        #     mean_areas_.append(np.mean(areas_))
+        #
+        #
+        #
+        # mean_ = np.mean(lens_)
+        # mean_mean_areas_ = np.mean(mean_areas_)
+        # med_ch_area = np.median(mean_areas_)
+        #
+        # self.mean_ch_len.setText('{:.2f}'.format(mean_))
+        # self.mean_ch_area.setText('{:.2f}'.format(mean_mean_areas_))
+        # self.med_ch_area.setText('{:.2f}'.format(med_ch_area))

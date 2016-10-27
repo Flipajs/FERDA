@@ -64,6 +64,8 @@ class LearningProcess:
 
         self.features = {}
 
+        self.load_learning()
+
         if ghost:
             return
 
@@ -147,7 +149,6 @@ class LearningProcess:
             pass
 
         # self.save_ids_()
-        self.load_learning()
         # self.reset_learning()
 
     def compute_distinguishability(self):
@@ -304,10 +305,9 @@ class LearningProcess:
         return best_tracklet
 
     def __train_rfc(self):
-        print "TRAINING RFC"
-
         self.rfc = RandomForestClassifier(class_weight='balanced_subsample')
         if len(self.X):
+            print "TRAINING RFC"
             self.rfc.fit(self.X, self.y)
             self.__precompute_measurements()
 
