@@ -675,11 +675,6 @@ class ResultsWidget(QtGui.QWidget):
                     ch = data[2]
                     type_ = 'normal' if decided else 'multiple'
                     self.__add_marker(x, y, c_, ch.id(), 0.75, type_=type_)
-            # else:
-                # x = 10*a.id
-                # y = -1
-                #
-                # self.__add_marker(x, y, c_, None, 0.75, type_='undef')
 
     def update_visualisations(self):
         if self.hide_visualisation_:
