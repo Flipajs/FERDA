@@ -310,14 +310,7 @@ class LearningWidget(QtGui.QWidget):
         self.update_callback()
 
     def update_undecided_tracklets(self):
-        self.lp.undecided_tracklets = set()
-        for t in self.project.chm.chunk_gen():
-            if t.id() in self.lp.collision_chunks:
-                continue
-
-            if not self.lp.__tracklet_is_decided(t.P, t.N):
-                self.lp.undecided_tracklets.add(t.id())
-                print t.id()
+        self.lp.update_undecided_tracklets()
 
 
 if __name__ == '__main__':

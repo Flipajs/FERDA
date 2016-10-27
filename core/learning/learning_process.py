@@ -185,6 +185,22 @@ class LearningProcess:
 
             self.undecided_tracklets.add(t.id())
 
+    def update_undecided_tracklets(self):
+        self.undecided_tracklets = set()
+        for t in self.p.chm.chunk_gen():
+            if t.id() in self.collision_chunks:
+                continue
+
+            if not self.__tracklet_is_decided(t.P, t.N):
+                self.undecided_tracklets.add(t.id())
+
+        # TODO: remove in future, this is to fix already labeled data...
+        for t in self.p.chm.chunk_gen():
+            if t.id() in self.undecided_tracklets:
+                if self.__only_one_P_possibility(t):
+                    id_ = self.__get_one_possible_P(t)
+                    self.__if_possible_update_P(t, id_)
+
     def run_learning(self):
         while len(self.undecided_tracklets):
             self.next_step()
