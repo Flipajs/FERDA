@@ -11,7 +11,7 @@ from core.settings import Settings as S_
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from utils.misc import is_flipajs_pc
 from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_, antlikeness_filter
-
+import numpy as np
 
 class Mser():
     def __init__(self, max_area=0.005, min_margin=5, min_area=5):
@@ -21,9 +21,6 @@ class Mser():
         self.mser.set_min_size(min_area)
 
     def process_image(self, img, frame=-1, intensity_threshold=256, prefiltered=False, region_min_intensity=None):
-        # if is_flipajs_pc():
-        #     intensity_threshold = 200
-
         if len(img.shape) > 2:
             if img.shape[2] > 1:
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -34,6 +31,9 @@ class Mser():
 
         if intensity_threshold > 256:
             intensity_threshold = 256
+
+        if not isinstance(gray, np.ndarray):
+            raise Exception("gray is not a np.ndarray, it is "+str(type(gray))+" frame: "+str(frame))
 
         self.mser.process_image(gray, intensity_threshold)
         regions = self.mser.get_regions()
