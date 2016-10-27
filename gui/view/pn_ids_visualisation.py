@@ -97,6 +97,8 @@ def draw_P(img, w, id_, params):
 
 
 def draw_N(img, w, id_, params):
+    from utils.visualization_utils import get_contrast_color
+    
     new_w = w + params['N_width']
     y1 = (params['P_height'] - params['N_height']) / 2
     y2 = params['N_height'] + y1
@@ -111,8 +113,8 @@ def draw_N(img, w, id_, params):
     img[y1:y2, w:new_w, :] = c
 
     # draw diagonal cross
-    cv2.line(img, (w, y1), (new_w, y2), params['cross_color'], thickness=params['cross_thickness'])
-    cv2.line(img, (new_w, y1), (w, y2), params['cross_color'], thickness=params['cross_thickness'])
+    cv2.line(img, (w, y1), (new_w, y2), get_contrast_color(c[0], c[1], c[2]), thickness=params['cross_thickness'])
+    cv2.line(img, (new_w, y1), (w, y2), get_contrast_color(c[0], c[1], c[2]), thickness=params['cross_thickness'])
 
     return new_w
 

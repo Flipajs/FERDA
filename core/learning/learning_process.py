@@ -637,12 +637,14 @@ class LearningProcess:
         then tries to add ids into N (definitelyNotPresent) in others tracklets if possible.
 
         Args:
-            id_: int
+            id_: list
             tracklet: class Tracklet (Chunk)
 
         Returns:
 
         """
+
+        warnings.warn("not tested yet", UserWarning)
 
         # TODO: check knowledge base:
         # for k in self.tracklet_knowledge[tracklet.id()] .......
