@@ -30,7 +30,6 @@ class LearningProcess:
         self.update_callback = update_callback
 
         self._eps1 = 0.01
-        self._eps2 = 0.1
 
         # TODO: global parameter
         self.eps_certainty = 0.3
