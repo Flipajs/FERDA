@@ -145,6 +145,17 @@ class ResultsWidget(QtGui.QWidget):
         self.tracklet_begin_action.triggered.connect(self.tracklet_begin)
         self.tracklet_begin_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
         self.addAction(self.tracklet_begin_action)
+        
+        # goto next / prev node (something like go to next interesting point)
+        self.next_graph_node_action = QtGui.QAction('next graph node', self)
+        self.next_graph_node_action.triggered.connect(self.goto_next_graph_node)
+        self.next_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_N))
+        self.addAction(self.next_graph_node_action)
+
+        self.prev_graph_node_action = QtGui.QAction('prev graph node', self)
+        self.prev_graph_node_action.triggered.connect(self.goto_prev_graph_node)
+        self.prev_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_B))
+        self.addAction(self.prev_graph_node_action)
 
         self.tracklet_box.layout().addWidget(self.highlight_tracklet_input)
         self.tracklet_box.layout().addWidget(self.tracklet_p_label)
@@ -966,3 +977,21 @@ class ResultsWidget(QtGui.QWidget):
                 self._set_active_tracklet_id(ids_[-1])
             else:
                 self._set_active_tracklet_id(ids_[0])
+
+    def goto_next_graph_node(self):
+        frame = self.video_player.current_frame()
+
+        min_frame = self.video_player.total_frame_count()
+        for t in self.project.chm.chunks_in_frame(frame):
+            min_frame = min(t.end_frame(self.project.gm), min_frame)
+
+        self.video_player.goto(min_frame)
+
+    def goto_prev_graph_node(self):
+        frame = self.video_player.current_frame()
+
+        max_frame = 0
+        for t in self.project.chm.chunks_in_frame(frame):
+            max_frame = max(t.start_frame(self.project.gm), max_frame)
+
+        self.video_player.goto(max_frame)
