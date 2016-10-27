@@ -1,8 +1,7 @@
 from PyQt4 import QtCore, QtGui
 
-from utils import visualization_utils
+import utils
 from core.settings import Settings as S_
-
 
 class BaseMarker(QtGui.QGraphicsEllipseItem, object):
     """An ancestor to all ant markers. Note the changeHandler attribute. The changeHandler's marker_changed method
@@ -130,7 +129,7 @@ class HeadMarker(TailHeadMarker):
     def __init__(self, x, y, size, color, antId, changeHandler = None):
         super(HeadMarker, self).__init__(x, y, size, color, antId, changeHandler)
 
-        r, g, b = visualization_utils.get_contrast_color(color.red(), color.green(), color.blue())
+        r, g, b = utils.visualization_utils.get_contrast_color(color.red(), color.green(), color.blue())
 
         dotsize = float(size)/2
         self.head_circle = QtGui.QGraphicsEllipseItem(self.rect().center().x() - dotsize/2, self.rect().center().y() - dotsize/2, dotsize, dotsize, self)

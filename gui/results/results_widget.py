@@ -490,7 +490,7 @@ class ResultsWidget(QtGui.QWidget):
         im = binary_dilation(im, iterations=iterations)
 
         # remove previous pts with 1 px border
-        im -= im1
+        im ^= im1
         # im[pts[:, 0] + iterations, pts[:, 1] + iterations] = False
 
         pts = np.where(im)
