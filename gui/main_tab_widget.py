@@ -132,11 +132,16 @@ class MainTabWidget(QtGui.QWidget):
         self.results_tab.play_and_highlight_tracklet(tracklet, frame=frame, margin=margin)
 
     def decide_tracklet(self, tracklet):
-        self.tab_changed(2)
-        # if not self.id_detection_tab:
-        #     self.tab_changed(2)
-
+        # self.tab_changed(2)
+        if not self.id_detection_tab:
+            self.tab_changed(2)
         self.id_detection_tab.decide_tracklet_question(tracklet)
+
+    def id_detection_clear_user_decisions(self):
+        if not self.id_detection_tab:
+            self.tab_changed(2)
+
+        self.id_detection_tab.clear_user_decisions()
 
     def tab_changed(self, i):
         if self.ignore_tab_change or self.project.chm is None:
@@ -148,7 +153,9 @@ class MainTabWidget(QtGui.QWidget):
                     self.ignore_tab_change = True
                     self.tabs.removeTab(1)
                     self.results_tab.setParent(None)
-                    self.results_tab = ResultsWidget(self.project, decide_tracklet_callback=self.decide_tracklet)
+                    self.results_tab = ResultsWidget(self.project,
+                                                     decide_tracklet_callback=self.decide_tracklet,
+                                                     clear_user_decisions_callback=self.id_detection_clear_user_decisions)
                     # self.results_tab.redraw_video_player_visualisations()
                     self.tabs.insertTab(1, self.results_tab, 'results viewer')
                     self.tabs.setCurrentIndex(1)

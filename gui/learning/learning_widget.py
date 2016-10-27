@@ -291,6 +291,9 @@ class LearningWidget(QtGui.QWidget):
         else:
             print "..."
 
+    def clear_user_decisions(self):
+        self.lp.user_decisions = []
+
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

@@ -17,10 +17,11 @@ from gui.gui_utils import SelectAllLineEdit, ClickableQGraphicsPixmapItem
 MARKER_SIZE = 15
 
 class ResultsWidget(QtGui.QWidget):
-    def __init__(self, project, start_on_frame=-1, decide_tracklet_callback=None):
+    def __init__(self, project, start_on_frame=-1, decide_tracklet_callback=None, clear_user_decisions_callback=None):
         super(ResultsWidget, self).__init__()
 
         self.decide_tracklet_callback = decide_tracklet_callback
+        self.clear_user_decisions_callback = clear_user_decisions_callback
 
         self.show_identities = False
         self.loop_highlight_tracklets = []
@@ -156,6 +157,13 @@ class ResultsWidget(QtGui.QWidget):
         self.tracklet_box.layout().addWidget(self.tracklet_begin_button)
 
         self.left_vbox.addWidget(self.tracklet_box)
+
+        self.debug_box = QtGui.QGroupBox('debug box')
+        self.reset_chunk_ids_b = QtGui.QPushButton('Reset chunk IDs')
+        self.reset_chunk_ids_b.clicked.connect(self.reset_chunk_ids)
+        self.debug_box.layout().addWidget(self.reset_chunk_ids_b)
+
+        self.left_vbox.addWidget(self.debug_box)
 
         self.info_l = QtGui.QLabel('info')
 
@@ -298,6 +306,19 @@ class ResultsWidget(QtGui.QWidget):
                 print "GT was not loaded"
 
         # self.redraw_video_player_visualisations()
+
+    def reset_chunk_ids(self):
+        msg = "Do you really want to delete all assigned ids to chunks?"
+        reply = QtGui.QMessageBox.question(self, 'Message',
+                                           msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+
+        if reply == QtGui.QMessageBox.Yes:
+            for ch in self.project.chm.chunk_gen():
+                ch.P = set()
+                ch.N = set()
+
+            if self.clear_user_decisions_callback:
+                self.clear_user_decisions_callback()
 
     def decide_tracklet(self):
         if self.active_tracklet_id > -1:
