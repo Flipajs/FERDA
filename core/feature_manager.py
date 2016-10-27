@@ -1,6 +1,8 @@
 import sqlite3 as sql
 import cPickle as pickle
+import random
 
+DEBUG = False
 __author__ = 'dita'
 
 
@@ -31,7 +33,9 @@ class FeatureManager:
             print "Initializing db at %s " % self.db_path
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
-            # DEBUG, do not use! self.cur.execute("DROP TABLE IF EXISTS features;")
+            # DEBUG, do not use!
+            if DEBUG:
+                self.cur.execute("DROP TABLE IF EXISTS features;")
 
             self.cur.execute("CREATE TABLE IF NOT EXISTS features(\
                     id INTEGER PRIMARY KEY, \
@@ -76,7 +80,7 @@ class FeatureManager:
             if self.use_db:
                 # insert into db - use iterative insert, then commit (end transaction)
                 self.cur.execute("BEGIN TRANSACTION;")
-                self.cur.executemany("INSERT INTO regions VALUES (?, ?)", self.add_iter_(f_id, feature))
+                self.cur.executemany("INSERT INTO features VALUES (?, ?)", self.add_iter_(f_id, feature))
                 self.con.commit()
                 return
             else:
@@ -146,22 +150,20 @@ class FeatureManager:
         else:
             self.add_to_cache_(key, region)
 
-    def add_iter_(self, regions):
+    def add_iter_(self, ids, data):
         """
         Iterator over given regions, yields a tuple used for sql executemany. self.tmp_ids and self.id_ get modified.
         :return tuple (id, binary region data)
         """
-        for r in regions:
-            if not isinstance(r, Region):
+        for id_, d in zip(ids, data):
+            if not isinstance(d, tuple):
                 self.con.rollback()
-                raise TypeError("Region manager can only work with Region objects, not %s" % type(r))
-            id = self.get_next_id()
-            r.id_ = id
+                raise TypeError("Feature manager can only work with tuple objects, not %s" % type(d))
 
             if self.cache_size_limit_ != 0:
-                self.add_to_cache_(id, r)
+                self.add_to_cache_(id_, d)
 
-            yield (id, self.pickle_data(r))
+            yield (id_, self.pickle_data(d))
 
     def get_next_id(self):
         self.id_ += 1
@@ -176,30 +178,32 @@ class FeatureManager:
             # return [self[ii] for ii in xrange(*key.indices(len(self)))]
             # get values from slice
             start = key.start
-            if start == None or start == 0:
-                start = 1
             stop = key.stop
-            # value of "stop" is 9223372036854775807 when using [:], but it works fine with [::]. Hotfixed.
-            if stop == None or stop == 9223372036854775807:
-                stop = len(self) + 1
             step = key.step
-            if step == None:
+            if start is None or start == 0:
+                start = 1
+            # value of "stop" is 9223372036854775807 when using [:] and None with [::]. Hotfixed.
+            if stop is None or stop == 9223372036854775807:
+                raise ValueError("Invalid slice parameters (%s:%s:%s), this can be caused by calling [:] or [::]."
+                                 "Please use list of ids to fix this." % (start, stop, step))
+            #     stop = len(self) + 1
+            if step is None:
                 step = 1
             # check if slice parameters are ok
-            if start < 0 or start > len(self) or stop > len(self) + 1 or stop < 0 or (
-                    stop < start and step > 0) or step == 0:
+            if (start < 0 or stop < 0 or (stop < start and step > 0) or step == 0) and not DEBUG:
                 raise ValueError("Invalid slice parameters (%s:%s:%s)" % (start, stop, step))
 
+            print start, step, stop
             # go through slice
             for i in range(start, stop, step):
                 if i in self.features_cache_:
-                    # print "%s is in cache" % i
+                    # print "----%s is in cache" % i
                     # use cache if region is available
                     r = self.features_cache_[i]
                     result.append(r)
                     self.update(i, r)
                 else:
-                    # print "%s is not in cache" % i
+                    # print "----%s is not in cache" % i
                     # if not, add id to the list of ids to be fetched from db
                     sql_ids.append(i)
             if self.use_db:
@@ -226,9 +230,6 @@ class FeatureManager:
             if key < 0:  # Handle negative indices
                 key += len(self)
 
-            if key not in self:
-                raise IndexError("Index %s is out of range (1 - %s)" % (key, len(self)))
-
             if key in self.features_cache_:
                 r = self.features_cache_[key]
                 result.append(r)
@@ -242,8 +243,9 @@ class FeatureManager:
         else:
             raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
 
-        if len(result) == 0:
-            print("!!!!  " + str(key))
+        if not result or len(result) == 0:
+            if DEBUG:
+                print "[!] FM: Key %d not found." % key
             return []
         elif len(result) == 1:
             return result[0]
@@ -257,7 +259,7 @@ class FeatureManager:
         """
         if not self.use_db:
             raise SyntaxError(
-                "Don't call this method when database is not used! Most likely, this is an error of region"
+                "Don't call this method when database is not used! Most likely, this is an error of feature"
                 " manager itself")
 
         l = len(sql_ids)
@@ -271,12 +273,12 @@ class FeatureManager:
             # add it to result
             id = sql_ids[0]
             try:
-                region = pickle.loads(str(row[0]))
-                result.append(region)
+                data = pickle.loads(str(row[0]))
+                result.append(data)
                 # add it to cache
-                self.add_to_cache_(id, region)
+                self.add_to_cache_(id, data)
             except TypeError:
-                print "TypeError in region_manager.py line 272"
+                return None
 
         if l > 1:
             cmd = "SELECT id, data FROM features WHERE id IN %s;" % self.pretty_list(sql_ids)
@@ -289,9 +291,9 @@ class FeatureManager:
                 if row[0] in tmp_ids:
                     continue
                 tmp_ids.append(row[0])
-                region = pickle.loads(str(row[1]))
-                self.add_to_cache_(row[0], region)
-                result.append(region)
+                data = pickle.loads(str(row[1]))
+                self.add_to_cache_(row[0], data)
+                result.append(data)
         return result
 
     def removemany_(self, regions):
@@ -354,29 +356,60 @@ class FeatureManager:
         param += ")"
         return param
 
-    def __len__(self):
-        return self.id_
 
-    def __contains__(self, item):
-        if isinstance(item, Region):
-            return len(self) + 1 > item.id() > 0
-        return isinstance(item, (int, long)) and len(self) + 1 > item > 0
+def get_rnd_tuple(size=10, min=0, max=100):
+    rand_list = []
+    for i in range(random.randint(1, size)):
+        rand_list.append(random.randint(min, max))
+    return tuple(rand_list)
 
 
 if __name__ == "__main__":
     # rm = RegionManager()
-    f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
-    up = pickle.Unpickler(f)
-    regions = up.load()
-    for r in regions:
-        r.pts_rle_ = None
-    f.close()
+    # f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
+    # up = pickle.Unpickler(f)
+    # regions = up.load()
+    # for r in regions:
+    #     r.pts_rle_ = None
+    # f.close()
+
+    # data = [(1, (get_rnd_tuple())),
+    #         (2, (get_rnd_tuple())),
+    #         (5, (get_rnd_tuple())),
+    #         (200, (get_rnd_tuple())),
+    #         (38, (get_rnd_tuple())),
+    #         (14, (get_rnd_tuple())),
+    #         (3, (get_rnd_tuple())),
+    #         (151, (get_rnd_tuple())),
+    #         (16, (get_rnd_tuple())),
+    #         (18, (get_rnd_tuple())),
+    #         (17, (get_rnd_tuple())),
+    #         (98, (get_rnd_tuple())),
+    #         (71, (get_rnd_tuple())),
+    #         (4, (get_rnd_tuple()))]
+    
+    ids = [1, 2, 5, 200, 38, 14, 3, 151, 16, 18, 17, 98, 71, 4]
+    data = [(17, 50, 84, 26, 79, 22, 16),
+            (30, 55, 44, 58, 9, 0, 83, 28, 9, 63),
+            (78, 22, 67, 87, 95, 80, 8),
+            (45, 39, 9, 33, 26, 85, 93, 2, 36, 72),
+            (22, 80, 83, 86, 65, 69, 0, 98, 55),
+            (85, 68, 45),
+            (62, 7, 43, 81, 59, 30, 31, 57, 2),
+            (66, 100, 12, 59, 62, 31),
+            (11, 68),
+            (55, 49),
+            (87, 49, 19, 79, 45, 79, 63, 73),
+            (74,),
+            (81, 69, 66, 58),
+            (58, 94, 54, 75, 32, 77, 90, 16)]
 
     rm = FeatureManager(db_wd="/home/dita", cache_size_limit=1)
-    rm.add(regions)
+    # rm.add(ids, data)
 
-    print rm[4]
-    print rm[2:6]
+    print rm[1]
+    print rm[16:19]
+    print rm[20]
 
     # db size with 20 pts regions: 306 176 bytes
     # db size with 20 rle regions:  75 776 bytes
