@@ -629,7 +629,7 @@ class LearningProcess:
                 # TODO: possible CONFLICT ? At least we cannot decide this tracklet now.
                 return False
 
-        return self.__update_P(id_, tracklet)
+        return self.assign_identity(id_, tracklet)
 
     def __update_P(self, id_, tracklet):
         """
