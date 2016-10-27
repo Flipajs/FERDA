@@ -403,7 +403,7 @@ class Project:
 
             self.save()
 
-        self.img_manager = ImgManager(self, max_size_mb=-1)
+        self.img_manager = ImgManager(self, max_num_of_instances=500)
 
         self.active_snapshot = -1
 
@@ -431,7 +431,7 @@ class Project:
         except:
             pass
 
-        self.img_manager = ImgManager(self, max_size_mb=-1)
+        self.img_manager = ImgManager(self, max_num_of_instances=500)
 
     def snapshot_undo(self):
         if self.active_snapshot < 0:
