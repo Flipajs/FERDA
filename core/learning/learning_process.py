@@ -16,9 +16,14 @@ import time
 import itertools
 import math
 from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
+import warnings
+
 
 class LearningProcess:
     def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False):
+        if use_rf_cache:
+            warnings.warn("use_rf_cache is Deprecated!", DeprecationWarning)
+
         self.p = p
 
         self.question_callback = question_callback
@@ -91,54 +96,37 @@ class LearningProcess:
 
             print "LOADED"
 
-        if not use_rf_cache:
-            print "precompute avalability"
-            # basically set every chunk with full set of possible ids
-            self.__precompute_availability()
 
-            # TODO: remove this
-            self.class_frequences = []
+        print "precompute avalability"
+        # basically set every chunk with full set of possible ids
+        self.__precompute_availability()
 
-            print "undecided tracklets..."
-            self.fill_undecided_tracklets()
+        # TODO: remove this
+        self.class_frequences = []
 
-            print "Init data..."
-            self.X = []
-            self.y = []
-            # self.get_init_data()
+        print "undecided tracklets..."
+        self.fill_undecided_tracklets()
 
-            # TODO: wait for all necesarry examples, then finish init.
-            # np.random.seed(13)
-            self.__train_rfc()
-            print "TRAINED"
+        print "Init data..."
+        self.X = []
+        self.y = []
+        # self.get_init_data()
 
-            with open(p.working_directory+'/rfc.pkl', 'wb') as f:
-                d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.all_ids,
-                     'class_frequences': self.class_frequences,
-                     'ids_present_in_tracklet': self.ids_present_in_tracklet,
-                     'ids_not_present_in_tracklet': self.ids_not_present_in_tracklet,
-                     'undecided_tracklets': self.undecided_tracklets,
-                     'old_x_size': self.old_x_size,
-                     'tracklet_certainty': self.tracklet_certainty,
-                     'tracklet_measurements': self.tracklet_measurements}
-                pickle.dump(d, f, -1)
-        else:
-            # with open(p.working_directory+'/rfc.pkl', 'rb') as f:
-            #     d = pickle.load(f)
-            #     self.rfc = d['rfc']
-            #     self.X = d['X']
-            #     self.y = d['y']
-            #     self.all_ids = d['ids']
-            #     self.class_frequences = d['class_frequences']
-            #     self.collision_chunks = d['collision_chunks']
-            #     self.ids_present_in_tracklet = d['ids_present_in_tracklet']
-            #     self.ids_not_present_in_tracklet = d['ids_not_present_in_tracklet']
-            #     self.undecided_tracklets = d['undecided_tracklets']
-            #     self.old_x_size = d['old_x_size']
-            #     self.tracklet_certainty = d['tracklet_certainty']
-            #     self.tracklet_measurements = d['tracklet_measurements']
+        # TODO: wait for all necesarry examples, then finish init.
+        # np.random.seed(13)
+        self.__train_rfc()
+        print "TRAINED"
 
-            pass
+        with open(p.working_directory+'/rfc.pkl', 'wb') as f:
+            d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.all_ids,
+                 'class_frequences': self.class_frequences,
+                 'ids_present_in_tracklet': self.ids_present_in_tracklet,
+                 'ids_not_present_in_tracklet': self.ids_not_present_in_tracklet,
+                 'undecided_tracklets': self.undecided_tracklets,
+                 'old_x_size': self.old_x_size,
+                 'tracklet_certainty': self.tracklet_certainty,
+                 'tracklet_measurements': self.tracklet_measurements}
+            pickle.dump(d, f, -1)
 
         self.GT = None
         try:
