@@ -978,20 +978,30 @@ class ResultsWidget(QtGui.QWidget):
             else:
                 self._set_active_tracklet_id(ids_[0])
 
-    def goto_next_graph_node(self):
-        frame = self.video_player.current_frame()
+    def goto_next_graph_node(self, frame=None):
+        if frame is None:
+            frame = self.video_player.current_frame()
 
         min_frame = self.video_player.total_frame_count()
         for t in self.project.chm.chunks_in_frame(frame):
             min_frame = min(t.end_frame(self.project.gm), min_frame)
 
+        if min_frame == frame and frame < self.video_player.total_frame_count():
+            self.goto_next_graph_node(frame+1)
+            return
+
         self.video_player.goto(min_frame)
 
-    def goto_prev_graph_node(self):
-        frame = self.video_player.current_frame()
+    def goto_prev_graph_node(self, frame=None):
+        if frame is None:
+            frame = self.video_player.current_frame()
 
         max_frame = 0
         for t in self.project.chm.chunks_in_frame(frame):
             max_frame = max(t.start_frame(self.project.gm), max_frame)
 
+        if max_frame == frame and frame > 0:
+            self.goto_prev_graph_node(frame-1)
+            return
+        
         self.video_player.goto(max_frame)
