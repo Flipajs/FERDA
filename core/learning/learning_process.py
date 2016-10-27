@@ -594,6 +594,9 @@ class LearningProcess:
 
         """
 
+        # TODO: check knowledge base:
+        # for k in self.tracklet_knowledge[tracklet.id()] .......
+
         P = tracklet.P
         N = tracklet.N
 
@@ -613,10 +616,10 @@ class LearningProcess:
             self.undecided_tracklets.remove(tracklet.id())
 
         # update affected
-        affected_tracklets = self.__get_affected_tracklets(tracklet)
+        affected_tracklets = self.__get_affected_undecided_tracklets(tracklet)
         for t in affected_tracklets:
             # there was self.__if_possible_update_N(t, tracklet, ids), but it was too slow..
-            self.__update_N(ids, tracklet)
+            self.__update_N(ids, t)
 
         # everything is OK
         return True
@@ -742,23 +745,28 @@ class LearningProcess:
         return N
 
     def __update_N(self, ids, tracklet, skip_in=False, skip_out=False):
+        # TODO: knowledge base check
+
         P = tracklet.P
         N = tracklet.N
 
+        old_len = len(N)
+
         N = N.union(ids)
+
+        if len(N) == old_len:
+            # nothing happened
+            return True
 
         # consistency check
         if not self.__consistency_check_PN(P, N):
-            print "MISTAKES: ", self.mistakes, "\n\n"
-
-            conflicts = self.__find_conflict(tracklet)
-            self.__print_conflicts(conflicts, tracklet)
-
+            # TODO: CONFLICT
             return False
 
         # propagate changes
         tracklet.N = N
 
+        # TODO: gather all and update_certainty at the end, it is possible that it will be called multiple times
         self.__update_certainty(tracklet)
 
         if not skip_out:
@@ -782,6 +790,14 @@ class LearningProcess:
                 if not new_N.issubset(t_.N):
                     # print "UPDATING INCOMING", tracklet, t_, t_.N, new_N
                     self.__update_N(new_N, t_)
+
+        # if only one id possible for P
+        if len(self.all_ids) - 1 == len(tracklet.N):
+            id_ = (self.all_ids - tracklet.N).pop()
+
+            # for all intersecting, test there is no tracklet with same id
+            for t in self.__get_affected_undecided_tracklets(tracklet):
+                continue
 
         return True
 
@@ -931,15 +947,6 @@ class LearningProcess:
         except KeyError:
             pass
 
-        if len(self.tracklet_measurements):
-            try:
-                # del self.tracklet_certainty[tracklet.id()]
-            except KeyError:
-                pass
-
-            # TODO: commented so we can save it for visualisation
-            #     del self.tracklet_measurements[tracklet.id()]
-
         if learn:
             self.__learn(tracklet, id_)
 
@@ -950,28 +957,22 @@ class LearningProcess:
         self.__update_N(self.all_ids.difference(id_set), tracklet)
 
         # if affecting:
-        affected_tracklets = self.__get_affected_tracklets(tracklet)
+        affected_tracklets = self.__get_affected_undecided_tracklets(tracklet)
 
         for t in affected_tracklets:
             self.__if_possible_update_N(t, tracklet, id_set)
 
-    def __get_affected_tracklets(self, tracklet):
+    def __get_affected_undecided_tracklets(self, tracklet):
         """
         Returns all tracklets overlapping range <tracklet.startFrame, tracklet.endFrame>
-
-        Args:
-            tracklet:
-
-        Returns:
-
+        which ids are in self.undecided_tracklets
         """
 
         affected = set(self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm),
                                                      tracklet.end_frame(self.p.gm)))
-        affected.remove(tracklet)
-        # affected = affected
 
-        return affected
+        # ignore already decided chunks...
+        return filter(lambda x: x.id() in self.undecided_tracklets, affected)
 
 
 if __name__ == '__main__':
