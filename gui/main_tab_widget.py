@@ -164,6 +164,7 @@ class MainTabWidget(QtGui.QWidget):
                 self.tabs.removeTab(2)
                 self.id_detection_tab.setParent(None)
                 self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet)
+                self.id_detection_tab.update_callback()
                 self.tabs.insertTab(2, self.id_detection_tab, "id detection")
                 self.tabs.setCurrentIndex(2)
                 self.ignore_tab_change = False
