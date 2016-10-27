@@ -140,6 +140,7 @@ class VideoManager():
         if self.start_t > 0:
             vid_frame_num -= self.start_t
 
+        vid_frame_num = 4500
         return vid_frame_num
 
     def video_frame_count_without_bounds(self):
