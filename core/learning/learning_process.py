@@ -105,29 +105,19 @@ class LearningProcess:
         print "Init data..."
         self.X = []
         self.y = []
-        # self.get_init_data()
 
         # TODO: wait for all necesarry examples, then finish init.
         # np.random.seed(13)
         self.__train_rfc()
         print "TRAINED"
 
-        with open(p.working_directory+'/rfc.pkl', 'wb') as f:
-            d = {'rfc': self.rfc, 'X': self.X, 'y': self.y, 'ids': self.all_ids,
-                 'class_frequences': self.class_frequences,
-                 'undecided_tracklets': self.undecided_tracklets,
-                 'old_x_size': self.old_x_size,
-                 'tracklet_certainty': self.tracklet_certainty,
-                 'tracklet_measurements': self.tracklet_measurements}
-            pickle.dump(d, f, -1)
-
         self.GT = None
-        try:
-            # with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
-            with open('/Users/flipajs/Dropbox/dev/ferda/data/GT/Cam1_sparse.pkl', 'rb') as f:
-                self.GT = pickle.load(f)
-        except IOError:
-            pass
+        # try:
+        #     # with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
+        #     with open('/Users/flipajs/Dropbox/dev/ferda/data/GT/Cam1_sparse.pkl', 'rb') as f:
+        #         self.GT = pickle.load(f)
+        # except IOError:
+        #     pass
 
     def set_eps_certainty(self, eps):
         self._eps_certainty = eps
@@ -591,7 +581,7 @@ class LearningProcess:
 
         return set(range(len(tracklets)))
 
-    def __update_definitely_present(self, ids, tracklet):
+    def __update_P(self, ids, tracklet):
         """
         updates set P (definitelyPresent) as follows P = P.union(ids)
         then tries to add ids into N (definitelyNotPresent) in others tracklets if possible.
@@ -612,24 +602,27 @@ class LearningProcess:
 
         # consistency check
         if not self.__consistency_check_PN(P, N):
+            # TODO: CONFLICT
             return False
 
-        # if the tracklet labellign is fully decided
-        if P.union(N) == self.all_ids:
+        # moved from the end... I think it is better to have the decision here
+        tracklet.P = P
+
+        # if the tracklet labelling is fully decided
+        if self.__tracklet_is_decided(P, N):
             self.undecided_tracklets.remove(tracklet.id())
-            del self.tracklet_certainty[tracklet.id()]
-            # TODO: commented so we can save the measurements for visualisation
-            # del self.tracklet_measurements[tracklet.id()]
 
         # update affected
         affected_tracklets = self.__get_affected_tracklets(tracklet)
         for t in affected_tracklets:
-            self.__if_possible_add_definitely_not_present(t, tracklet, ids)
-
-        tracklet.P = P
+            # there was self.__if_possible_update_N(t, tracklet, ids), but it was too slow..
+            self.__update_N(ids, tracklet)
 
         # everything is OK
         return True
+
+    def __tracklet_is_decided(self, P, N):
+        return P.union(N) == self.all_ids
 
     def __update_certainty(self, tracklet):
         if len(self.tracklet_measurements) == 0:
@@ -748,7 +741,7 @@ class LearningProcess:
 
         return N
 
-    def __update_definitely_not_present(self, ids, tracklet, skip_in=False, skip_out=False):
+    def __update_N(self, ids, tracklet, skip_in=False, skip_out=False):
         P = tracklet.P
         N = tracklet.N
 
@@ -777,7 +770,7 @@ class LearningProcess:
 
                 if not new_N.issubset(t_.N):
                     # print "UPDATING OUTCOMING", tracklet, t_, t_.N, new_N
-                    self.__update_definitely_not_present(new_N, t_)
+                    self.__update_N(new_N, t_)
 
         if not skip_in:
             # update all incoming
@@ -788,7 +781,7 @@ class LearningProcess:
 
                 if not new_N.issubset(t_.N):
                     # print "UPDATING INCOMING", tracklet, t_, t_.N, new_N
-                    self.__update_definitely_not_present(new_N, t_)
+                    self.__update_N(new_N, t_)
 
         return True
 
@@ -800,7 +793,7 @@ class LearningProcess:
             pass
         print "\tP:", tracklet.P, " N: ", tracklet.N
 
-    def __if_possible_add_definitely_not_present(self, tracklet, present_tracklet, ids):
+    def __if_possible_update_N(self, tracklet, present_tracklet, ids):
         """
         check whether there is a risk of tracklet being a second part of present_tracklet (undersegmentation). If not
         add it to definitelyNotPresent
@@ -832,7 +825,7 @@ class LearningProcess:
         #             break
 
         if not oversegmented:
-            self.__update_definitely_not_present(ids, tracklet)
+            self.__update_N(ids, tracklet)
 
         return not oversegmented
 
@@ -863,7 +856,7 @@ class LearningProcess:
             if type == 'P':
                 self.assign_identity(id_, tracklet, learn=True, user=False, gt=True)
             elif type == 'N':
-                self.__update_definitely_not_present(set([id_]), tracklet)
+                self.__update_N(set([id_]), tracklet)
 
         self.__train_rfc()
 
@@ -940,7 +933,7 @@ class LearningProcess:
 
         if len(self.tracklet_measurements):
             try:
-                del self.tracklet_certainty[tracklet.id()]
+                # del self.tracklet_certainty[tracklet.id()]
             except KeyError:
                 pass
 
@@ -954,13 +947,13 @@ class LearningProcess:
         tracklet.P = id_set
         # and the rest of ids goes to not_present
         # we want to call this function, so the information is propagated...
-        self.__update_definitely_not_present(self.all_ids.difference(id_set), tracklet)
+        self.__update_N(self.all_ids.difference(id_set), tracklet)
 
         # if affecting:
         affected_tracklets = self.__get_affected_tracklets(tracklet)
 
         for t in affected_tracklets:
-            self.__if_possible_add_definitely_not_present(t, tracklet, id_set)
+            self.__if_possible_update_N(t, tracklet, id_set)
 
     def __get_affected_tracklets(self, tracklet):
         """
@@ -976,7 +969,7 @@ class LearningProcess:
         affected = set(self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm),
                                                      tracklet.end_frame(self.p.gm)))
         affected.remove(tracklet)
-        affected = list(affected)
+        # affected = affected
 
         return affected
 
