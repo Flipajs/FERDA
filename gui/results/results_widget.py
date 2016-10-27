@@ -148,12 +148,12 @@ class ResultsWidget(QtGui.QWidget):
         
         # goto next / prev node (something like go to next interesting point)
         self.next_graph_node_action = QtGui.QAction('next graph node', self)
-        self.next_graph_node_action.triggered.connect(self.goto_next_graph_node)
+        self.next_graph_node_action.triggered.connect(partial(self.goto_next_graph_node, None))
         self.next_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_N))
         self.addAction(self.next_graph_node_action)
 
         self.prev_graph_node_action = QtGui.QAction('prev graph node', self)
-        self.prev_graph_node_action.triggered.connect(self.goto_prev_graph_node)
+        self.prev_graph_node_action.triggered.connect(partial(self.goto_prev_graph_node, None))
         self.prev_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_B))
         self.addAction(self.prev_graph_node_action)
 
@@ -990,6 +990,8 @@ class ResultsWidget(QtGui.QWidget):
             self.goto_next_graph_node(frame+1)
             return
 
+        if self.active_tracklet_id > -1:
+        self.active_tracklet_id
         self.video_player.goto(min_frame)
 
     def goto_prev_graph_node(self, frame=None):
@@ -1003,5 +1005,5 @@ class ResultsWidget(QtGui.QWidget):
         if max_frame == frame and frame > 0:
             self.goto_prev_graph_node(frame-1)
             return
-        
+
         self.video_player.goto(max_frame)
