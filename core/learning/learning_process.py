@@ -18,12 +18,28 @@ from utils.img_manager import ImgManager
 class LearningProcess:
     """
     each tracklet has 2 id sets.
-    P - ids are definitely present
+    P - ids are present for sure
+    N - ids are not present for sure
 
+    A - set of all animal ids.
+    When P.union(N) == A, tracklet is decided. When len(P) == 1, it is a tracklet with one id.
 
-    basic operations
-    add
+    When len(P.intersection(N)) > 0 it is a CONFLICT
 
+    I(t) - set of all tracklets having intersection with tracklet t
+
+    t ~ u means has the same id set
+    knowledge[t.id()] - list of all additional information obtained from user tracklet t e.g.
+    - t is decided (P, N is known)
+    - t ~ u (has the same id set)
+    - t.P has id
+    - t.N has id (same as t.P has not id)
+    - t !~ u (has the different id set to u)
+
+    basic operations:
+        update_P
+        update_N
+        before each basic operation check knowledge[t.id()]
     """
     def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False):
         if use_rf_cache:
@@ -581,13 +597,47 @@ class LearningProcess:
 
         return set(range(len(tracklets)))
 
-    def __update_P(self, ids, tracklet):
+    def __if_possible_update_P(self, tracklet, id_, is_in_intersetion_Ps=False):
+        """
+
+        Args:
+            tracklet:
+            id_:
+            is_in_intersetion_Ps: - for strict test, whether
+
+        Returns:
+
+        """
+
+        for t in self.__get_affected_undecided_tracklets(tracklet):
+            if t == tracklet:
+                continue
+
+            # stronger test, but maybe not always necessary...
+            if is_in_intersetion_Ps:
+                if id_ not in t.N:
+                    return False
+            else:
+                # Test if there is an intersection with tracklet which has also only one possible id == id_
+                if self.__only_one_P_possibility(t):
+                    if id_ == self.__get_one_possible_P(t):
+                        # TODO: possible CONFLICT ? At least we cannot decide this tracklet now.
+                        return False
+
+            # Test if there is an intersection with tracklet that already has id == id_
+            if id_ in t.P:
+                # TODO: possible CONFLICT ? At least we cannot decide this tracklet now.
+                return False
+
+        return self.__update_P(id_, tracklet)
+
+    def __update_P(self, id_, tracklet):
         """
         updates set P (definitelyPresent) as follows P = P.union(ids)
         then tries to add ids into N (definitelyNotPresent) in others tracklets if possible.
 
         Args:
-            ids: list
+            id_: int
             tracklet: class Tracklet (Chunk)
 
         Returns:
@@ -600,8 +650,8 @@ class LearningProcess:
         P = tracklet.P
         N = tracklet.N
 
-        P = P.union(ids)
-        N = N.remove(ids)
+        P = P.union(id_)
+        N = N.remove(id_)
 
         # consistency check
         if not self.__consistency_check_PN(P, N):
@@ -619,7 +669,7 @@ class LearningProcess:
         affected_tracklets = self.__get_affected_undecided_tracklets(tracklet)
         for t in affected_tracklets:
             # there was self.__if_possible_update_N(t, tracklet, ids), but it was too slow..
-            self.__update_N(ids, t)
+            self.__update_N(id_, t)
 
         # everything is OK
         return True
@@ -791,15 +841,19 @@ class LearningProcess:
                     # print "UPDATING INCOMING", tracklet, t_, t_.N, new_N
                     self.__update_N(new_N, t_)
 
-        # if only one id possible for P
-        if len(self.all_ids) - 1 == len(tracklet.N):
-            id_ = (self.all_ids - tracklet.N).pop()
+        if self.__only_one_P_possibility(tracklet):
+            id_ = self.__get_one_possible_P(tracklet)
 
-            # for all intersecting, test there is no tracklet with same id
-            for t in self.__get_affected_undecided_tracklets(tracklet):
-                continue
+            self.__if_possible_update_P(tracklet, id_, is_in_intersetion_Ps=True)
 
         return True
+
+    def __get_one_possible_P(self, tracklet):
+        return (self.all_ids - tracklet.N).pop()
+
+    def __only_one_P_possibility(self, tracklet):
+        # if only one id possible for P
+        return len(self.all_ids) - 1 == len(tracklet.N)
 
     def print_tracklet(self, tracklet):
         tracklet.print_info(self.p.gm)
@@ -902,23 +956,20 @@ class LearningProcess:
         if user:
             self.user_decisions.append({'tracklet_id': tracklet.id(), 'type': 'P', 'ids': [id_]})
 
-        # conflict test
-        conflicts = self.__find_conflict(tracklet, id_=id_)
-        if len(conflicts):
-            print
-            print "------------------- CONFLICT ------------"
-            print tracklet, tracklet.start_frame(self.p.gm), id_
-            print "WITH:"
-            for c in conflicts:
-                print c
-
-            print
-            print
-            if not gt:
-                return
-
-        if tracklet.id() == 612:
-            print 612
+        # # conflict test
+        # conflicts = self.__find_conflict(tracklet, id_=id_)
+        # if len(conflicts):
+        #     print
+        #     print "------------------- CONFLICT ------------"
+        #     print tracklet, tracklet.start_frame(self.p.gm), id_
+        #     print "WITH:"
+        #     for c in conflicts:
+        #         print c
+        #
+        #     print
+        #     print
+        #     if not gt:
+        #         return
 
         # if not self.__DEBUG_GT_test(id_, tracklet):
         #     self.mistakes.append(tracklet)
@@ -945,7 +996,8 @@ class LearningProcess:
         try:
             self.undecided_tracklets.remove(tracklet.id())
         except KeyError:
-            pass
+            # it might means it is already in user_decisions
+            warnings.warn("tracklet.id(): "+str(tracklet.id())+" not in self.undecided_tracklets")
 
         if learn:
             self.__learn(tracklet, id_)
@@ -956,11 +1008,8 @@ class LearningProcess:
         # we want to call this function, so the information is propagated...
         self.__update_N(self.all_ids.difference(id_set), tracklet)
 
-        # if affecting:
-        affected_tracklets = self.__get_affected_undecided_tracklets(tracklet)
-
-        for t in affected_tracklets:
-            self.__if_possible_update_N(t, tracklet, id_set)
+        for t in self.__get_affected_undecided_tracklets(tracklet):
+            self.__update_N(id_set, t)
 
     def __get_affected_undecided_tracklets(self, tracklet):
         """
