@@ -98,6 +98,10 @@ class LearningWidget(QtGui.QWidget):
         self.delete_user_decisions_b.clicked.connect(self.clear_user_decisions)
         self.top_stripe_layout.addWidget(self.delete_user_decisions_b)
 
+        self.update_undecided_tracklets_b = QtGui.QPushButton('debug: update undecided')
+        self.update_undecided_tracklets_b.clicked.connect(self.update_undecided_tracklets)
+        self.top_stripe_layout.addWidget(self.update_undecided_tracklets_b)
+
         self.compute_distinguishability_b = QtGui.QPushButton('comp. disting.')
         # self.lp will change...
         self.compute_distinguishability_b.clicked.connect(lambda x: self.lp.compute_distinguishability())
@@ -304,6 +308,16 @@ class LearningWidget(QtGui.QWidget):
             self.lp.user_decisions = []
 
         self.update_callback()
+
+    def update_undecided_tracklets(self):
+        self.lp.undecided_tracklets = set()
+        for t in self.project.chm.chunk_gen():
+            if t.id() in self.lp.collision_chunks:
+                continue
+
+            if not self.lp.__tracklet_is_decided(t.P, t.N):
+                self.lp.undecided_tracklets.add(t.id())
+                print t.id()
 
 
 if __name__ == '__main__':

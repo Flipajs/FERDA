@@ -148,12 +148,12 @@ class ResultsWidget(QtGui.QWidget):
         
         # goto next / prev node (something like go to next interesting point)
         self.next_graph_node_action = QtGui.QAction('next graph node', self)
-        self.next_graph_node_action.triggered.connect(partial(self.goto_next_graph_node, None))
+        self.next_graph_node_action.triggered.connect(lambda x: self.goto_next_graph_node(frame=None))
         self.next_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_N))
         self.addAction(self.next_graph_node_action)
 
         self.prev_graph_node_action = QtGui.QAction('prev graph node', self)
-        self.prev_graph_node_action.triggered.connect(partial(self.goto_prev_graph_node, None))
+        self.prev_graph_node_action.triggered.connect(lambda x: self.goto_prev_graph_node(frame=None))
         self.prev_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_B))
         self.addAction(self.prev_graph_node_action)
 
@@ -982,7 +982,7 @@ class ResultsWidget(QtGui.QWidget):
         if frame is None:
             frame = self.video_player.current_frame()
 
-        min_frame = self.video_player.total_frame_count()
+        min_frame = self.video_player.total_frame_count() - 1
         t_id = -1
 
         for t in self.project.chm.chunks_in_frame(frame):
@@ -990,13 +990,14 @@ class ResultsWidget(QtGui.QWidget):
                 min_frame = t.end_frame(self.project.gm)
                 t_id = t.id()
 
-        if min_frame == frame and frame < self.video_player.total_frame_count():
-            self.goto_next_graph_node(frame+1)
+        if min_frame == frame and frame < self.video_player.total_frame_count() - 1:
+            self.goto_next_graph_node(frame=frame+1)
             return
 
-        self._set_active_tracklet_id(t_id)
-
         self.video_player.goto(min_frame)
+        if t_id > -1:
+            self._set_active_tracklet_id(t_id)
+            self.video_player.redraw_visualisations()
 
     def goto_prev_graph_node(self, frame=None):
         if frame is None:
@@ -1013,6 +1014,8 @@ class ResultsWidget(QtGui.QWidget):
             self.goto_prev_graph_node(frame-1)
             return
 
-        self._set_active_tracklet_id(t_id)
-
         self.video_player.goto(max_frame)
+        if t_id > -1:
+            self._set_active_tracklet_id(t_id)
+            self.video_player.redraw_visualisations()
+
