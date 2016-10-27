@@ -5,6 +5,7 @@ from core.project.project import Project
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 from core.graph.solver import Solver
+import warnings
 
 
 def assembly_after_parallelization(bgcomp):
@@ -185,8 +186,11 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
         if old_g.vp['chunk_start_id'][old_v] == 0 and old_g.vp['chunk_end_id'][old_v] == 0:
             single_vertices.append(new_v)
 
-    # because 0 id means - no chunk assigned!
-    used_chunks_ids.remove(0)
+    # because 0 id means - no chunk assigned to this node!
+    if 0 in used_chunks_ids:
+        used_chunks_ids.remove(0)
+    elif len(used_chunks_ids) == 0:
+        warnings.warn("There is 0 chunks in old graph", Warning)
 
     # go through all edges and copy them with all edge properties...
     for old_e in old_g.edges():

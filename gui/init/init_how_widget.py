@@ -58,6 +58,7 @@ class InitHowWidget(QtGui.QWidget):
         self.inverse_selection_b.clicked.connect(self.img_grid.swap_selection)
 
         self.im_grid_layout.addWidget(self.inverse_selection_b)
+        self.im_grid_layout.addWidget(QtGui.QLabel('Select only regions you want to detect as animals!'))
         self.im_grid_layout.addWidget(self.img_grid)
 
         self.use_dummy_antlikness_b = QtGui.QPushButton('use dummy antlikeness')

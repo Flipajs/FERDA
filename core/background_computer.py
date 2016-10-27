@@ -55,6 +55,9 @@ class BackgroundComputer:
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
+        if not os.path.exists(self.project.working_directory + '/temp'):
+            os.mkdir(self.project.working_directory + '/temp')
+            
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
             if self.postpone_parallelisation:
                 f = open(self.project.working_directory+'/limits.txt', 'w')
