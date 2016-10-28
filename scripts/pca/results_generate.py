@@ -1,12 +1,13 @@
+import matplotlib.pyplot as plt
+import os
+import sys
 from PyQt4 import QtGui
 from matplotlib import gridspec
-import os
+
 import numpy as np
-import matplotlib.pyplot as plt
 
-import sys
+from scripts.pca.gui.eigen_widget import EigenWidget
 
-from scripts.pca.eigen_widget import EigenWidget
 
 # This module takes care of viewing results and saving important figures
 

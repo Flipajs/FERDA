@@ -1,20 +1,15 @@
 import logging
 import math
-from PyQt4 import QtGui
 from matplotlib import pyplot as plt
 
 import numpy as np
-import sys
 from sklearn.decomposition import PCA
 
 import head_tag
-from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from scripts.pca.ant_extract import get_matrix
-from scripts.pca.cluster_extract import get_cluster_region_matrix
+# from scripts.pca.cluster_range.gt_widget import GTWidget
 from scripts.pca.range_computer import OptimalRange
-from scripts.pca.results_generate import generate_eigen_ants_figure, generate_ants_reconstructed_figure, view_ant
-from scripts.pca.tracklet_viewer import TrackletViewer
 from utils.geometry import rotate
 
 
@@ -128,10 +123,10 @@ if __name__ == '__main__':
     #     chv.show()
     #     app.exec_()
 
-    number_of_eigen_v = 10
-    number_of_data = 40
+    # number_of_eigen_v = 10
+    # number_of_data = 40
 
-    trainer = head_tag.HeadGT(project)
+    # trainer = head_tag.HeadGT(project)
 
     # TRAINING PART (HEAD LABELING AND ROTATING ANTS)
     # app = QtGui.QApplication(sys.argv)
@@ -146,15 +141,15 @@ if __name__ == '__main__':
     # trainer.delete_answer(597, 602)
     # app.quit()
 
-    results = trainer.get_ground_truth()
+    # results = trainer.get_ground_truth()
 
     # EXTRACTING DATA
-    X_ants, avg_dist, sizes = get_matrix(project, chunks_without_clusters, number_of_data, results)
-    X = get_pca_compatible_data(X_ants)
-    head_range = 3
-    bottom_range = 5
-    H = extract_heads(X, head_range)
-    B = extract_bottoms(X, bottom_range)
+    # X_ants, avg_dist, sizes = get_matrix(project, chunks_without_clusters, number_of_data, results)
+    # X = get_pca_compatible_data(X_ants)
+    # head_range = 3
+    # bottom_range = 5
+    # H = extract_heads(X, head_range)
+    # B = extract_bottoms(X, bottom_range)
     # VIEW RESULTS OF EXTRACTING
     # for j in range(10):
     #     plt.plot(np.append(X[j, :, 0], X[j, 0, 0]), np.append(X[j, :, 1], X[j, 0, 1]), c='b')
@@ -163,18 +158,18 @@ if __name__ == '__main__':
     #     plt.show()
 
     # PCA ON WHOLE ANT
-    pca_whole = PCA(number_of_eigen_v)
-    X_C = pca_whole.fit_transform(X)
-    eigen_ants_whole = pca_whole.components_
-    eigen_values_whole = pca_whole.explained_variance_
-    X_R = pca_whole.inverse_transform(pca_whole.transform(X))
+    # pca_whole = PCA(number_of_eigen_v)
+    # X_C = pca_whole.fit_transform(X)
+    # eigen_ants_whole = pca_whole.components_
+    # eigen_values_whole = pca_whole.explained_variance_
+    # X_R = pca_whole.inverse_transform(pca_whole.transform(X))
 
     # PCA ON HEADS
-    pca_head = PCA(number_of_eigen_v)
-    H_C = pca_head.fit_transform(H)
-    eigen_ants_head = pca_head.components_
-    eigen_values_head = pca_head.explained_variance_
-    H_R = np.dot(H_C, eigen_ants_whole) + pca_whole.mean_
+    # pca_head = PCA(number_of_eigen_v)
+    # H_C = pca_head.fit_transform(H)
+    # eigen_ants_head = pca_head.components_
+    # eigen_values_head = pca_head.explained_variance_
+    # H_R = np.dot(H_C, eigen_ants_whole) + pca_whole.mean_
 
     # PCA ON BOTTOMS
     # pca_bottom = PCA(number_of_eigen_v)
@@ -224,6 +219,10 @@ if __name__ == '__main__':
     #     fit_cluster(number_of_data, cluster, freq, head_range, pca_head_shifted_cut, pca_head_shifted_whole, bottom_range,
     #                 pca_bottom_shifted_cut, pca_bottom_shifted_whole)
 
-    range_comp = OptimalRange(X, sizes, number_of_data, number_of_eigen_v)
-    for i in range(number_of_data):
-        print range_comp.get_optimal_k(i)
+    # optimal k for each point in contour
+    # range_comp = OptimalRange(X, sizes, number_of_data, number_of_eigen_v)
+    # for i in range(number_of_data):
+    #     print range_comp.get_optimal_k(i)
+
+    # optimal k for clusters
+    # gt = GTWidget(project, chunks_with_clusters)

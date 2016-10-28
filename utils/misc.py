@@ -1,11 +1,12 @@
 import os
 import sys
 
+from gui.settings.default import get_default
+
 __author__ = 'filip@naiser.cz'
 import pickle
 import numpy as np
 from PyQt4 import QtCore
-from gui.settings.default import get_default
 
 def get_pickle_data(filepath):
     f = open(filepath, "rb")

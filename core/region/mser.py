@@ -1,16 +1,15 @@
 __author__ = 'fnaiser'
 
+import pickle
+
 import cv2
 
-from core.region.region import Region
 from core.region import cyMser
-import pickle
-from utils.video_manager import get_auto_video_manager
+from core.region.mser_operations import get_region_groups, margin_filter, children_filter
+from core.region.region import Region
 from core.settings import Settings as S_
-from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
-import time
-from utils.misc import is_flipajs_pc
 from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_, antlikeness_filter
+from utils.video_manager import get_auto_video_manager
 
 
 class Mser():
