@@ -36,7 +36,7 @@ class AreaUpdatingThread(QtCore.QThread):
         register = self.chunk_register(self.solver)
         for f in range(self.step, vid.total_frame_count(), self.step):
             if f in register:
-                img = vid.get_frame(f, auto=True)
+                img = vid.get_frame(f)
                 msers = get_msers_(img, self.project, frame=f, prefiltered=True)
 
                 for ch in register[f]:

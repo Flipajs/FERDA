@@ -84,7 +84,7 @@ class RegionReconstruction(QtGui.QWidget):
 
         for f in frames:
             ch_in_frame = self.project.solver.chunks_in_frame(f)
-            im = vid.get_frame(f, auto=True)
+            im = vid.get_frame(f)
             regions = get_msers_(im, self.project, frame=f)
 
             for ch in ch_in_frame:
@@ -140,7 +140,7 @@ class RegionReconstruction(QtGui.QWidget):
         for f in frames:
             reconstructed[f] = []
             ch_in_frame = self.project.solver.chunks_in_frame(f)
-            im = vid.get_frame(f, auto=True)
+            im = vid.get_frame(f)
             regions = get_msers_(im, self.project, frame=f)
 
             for ch in ch_in_frame:

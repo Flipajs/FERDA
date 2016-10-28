@@ -130,6 +130,11 @@ class GraphManager:
 
         return None, False
 
+    def get_chunk(self, vertex):
+        ch, _ = self.is_chunk(vertex)
+
+        return ch
+
     def update_nodes_in_t_refs(self):
         self.vertices_in_t = {}
         for v in self.g.vertices():
@@ -158,6 +163,20 @@ class GraphManager:
         id_ = self.g.vp['chunk_start_id'][self.g.vertex(vertex_id)]
         return self.project.chm[id_]
 
+    def ch_end_longer(self, vertex_id):
+        ch = self.chunk_end(vertex_id)
+        if ch:
+            return ch.length() > 1
+
+        return False
+
+    def ch_start_longer(self, vertex_id):
+        ch = self.chunk_start(vertex_id)
+        if ch:
+            return ch.length() > 1
+
+        return False
+
     def chunk_end(self, vertex_id):
         id_ = self.g.vp['chunk_end_id'][self.g.vertex(vertex_id)]
         return self.project.chm[id_]
@@ -176,7 +195,8 @@ class GraphManager:
                     d = dists[i, j]
 
                     if d < self.max_distance:
-                        if self.chunk_start(v_t1) or self.chunk_end(v_t2):
+                        # prevent multiple edges going from tracklet (chunk) start or multiple edges incomming into chunk end. Only exception is chunk of length 1 (checked inside functions).
+                        if self.ch_start_longer(v_t1) or self.ch_end_longer(v_t2):
                             continue
 
                         s, ds, multi, _ = self.assignment_score(r_t1, r_t2)
@@ -186,7 +206,7 @@ class GraphManager:
                         else:
                             self.add_edge(v_t1, v_t2, s)
 
-    def update_time_boundaries(self):
+    def time_boundaries(self):
         self.start_t = np.inf
         self.end_t = -1
 
@@ -254,13 +274,19 @@ class GraphManager:
 
     def chunks_in_frame(self, frame):
         chunks = self.chunk_list()
-
         in_frame = []
-        for ch in chunks:
-            if ch.start_t() <= frame <= ch.end_t():
+        for ch_id in chunks:
+            ch = self.project.chm[ch_id]
+            if ch.start_frame(self.project.gm) <= frame <= ch.end_frame(self.project.gm):
                 in_frame.append(ch)
-
         return in_frame
+
+    def chunks_in_frame_generator(self, start_frame, end_frame):
+        chunks = self.chunk_list()
+        chunks = [self.project.chm[ch] for ch in chunks]
+        for ch in chunks:
+            if ch.start_frame(self.project.gm) <= end_frame and ch.end_frame(self.project.gm) >= start_frame:
+               yield ch
 
     def start_nodes(self):
         return self.vertices_in_t[self.start_t]
@@ -401,7 +427,6 @@ class GraphManager:
     def get_vertices_in_t(self, t):
         if t in self.vertices_in_t:
             return self.vertices_in_t[t]
-
         return []
 
     def all_vertices_and_regions(self, start_frame=-1, end_frame=np.inf):

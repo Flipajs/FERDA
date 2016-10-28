@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 
 from gui.correction.configurations_visualizer import ConfigurationsVisualizer
 from utils.video_manager import get_auto_video_manager

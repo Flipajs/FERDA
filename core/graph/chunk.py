@@ -10,27 +10,29 @@ from core.region.region import Region
 
 class Chunk:
     def __init__(self, vertices_ids, id_, gm, color=None):
-        if not isinstance(vertices_ids, list):
-            raise Exception('vertices_ids must be a list! (in chunk.py)')
-        if len(vertices_ids) < 2:
-            raise Exception('vertices_ids must be a list with length >= 2 (in chunk.py)')
+        # if not isinstance(vertices_ids, list):
+        #     raise Exception('vertices_ids must be a list! (in chunk.py)')
+        # if len(vertices_ids) < 2:
+        #     raise Exception('vertices_ids must be a list with length >= 2 (in chunk.py)')
         self.id_ = id_
 
         # list of integers. If >= 0 means vertex_id, if < 0 direct link -> region_id
         self.nodes_ = vertices_ids
         self.color = color
         self.statistics = {}
+        self.animal_id_ = -1
 
-        if vertices_ids[0] > 0:
-            v1 = gm.g.vertex(vertices_ids[0])
-            for e in v1.out_edges():
-                gm.remove_edge_(e)
+        if len(vertices_ids) > 1:
+            if vertices_ids[0] > 0:
+                v1 = gm.g.vertex(vertices_ids[0])
+                for e in v1.out_edges():
+                    gm.remove_edge_(e)
 
-        if vertices_ids[1] > 0:
-            v2 = gm.g.vertex(vertices_ids[1])
+            if vertices_ids[1] > 0:
+                v2 = gm.g.vertex(vertices_ids[1])
 
-            for e in v2.in_edges():
-                gm.remove_edge_(e)
+                for e in v2.in_edges():
+                    gm.remove_edge_(e)
 
         self.chunk_reconnect_(gm)
 
@@ -67,6 +69,12 @@ class Chunk:
             items.append(self.nodes_[i])
 
         return items
+
+    def print_info(self, gm):
+        s = "TRACKLET --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
+        s += "\tstarts at: "+str(self.start_frame(gm))+" ends at: "+str(self.end_frame(gm))
+
+        print s
 
     def append_left(self, vertex, gm, undo_action=False):
         # test: there cannot be any outgoing edge...
@@ -186,6 +194,9 @@ class Chunk:
         ch1end = self.end_node()
         ch2start = ch2.start_node()
 
+        gm.project.chm.remove_chunk(ch2, gm)
+        gm.project.chm._try_ch_itree_delete(self, gm)
+
         if not undo_action:
             gm.remove_vertex(ch1end, disassembly=False)
             gm.remove_vertex(ch2start, disassembly=False)
@@ -194,6 +205,8 @@ class Chunk:
 
         if not undo_action:
             self.chunk_reconnect_(gm)
+
+        gm.project.chm._add_ch_itree(self, gm)
 
     def merge_and_interpolate(self, ch2, gm, undo_action=False):
         if self.end_frame(gm) > ch2.start_frame(gm):
@@ -231,8 +244,14 @@ class Chunk:
     def end_vertex_id(self):
         return self.nodes_[-1]
 
+    def end_vertex(self, gm):
+        return gm.g.vertex(self.end_vertex_id())
+
     def end_node(self):
         return self.end_vertex_id()
+
+    def start_vertex(self, gm):
+        return gm.g.vertex(self.start_vertex_id())
 
     def start_node(self):
         return self.start_vertex_id()
@@ -250,6 +269,13 @@ class Chunk:
         return True if self.length() == 0 else False
 
     def chunk_reconnect_(self, gm):
-        gm.add_edge(self.start_node(), self.end_node(), 1.0)
+        if len(self.nodes_) > 1:
+            gm.add_edge(self.start_node(), self.end_node(), 1.0)
+
         gm.g.vp['chunk_start_id'][gm.g.vertex(self.start_node())] = self.id()
         gm.g.vp['chunk_end_id'][gm.g.vertex(self.end_node())] = self.id()
+
+    def is_only_one_id_assigned(self, num_animals):
+        # if there is one and only one ID assigned to chunk
+        return len(self.P) == 1 and \
+               len(self.N) == num_animals - 1

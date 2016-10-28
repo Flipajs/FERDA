@@ -100,6 +100,11 @@ class RegionManager:
 
         return self.tmp_ids
 
+    def clear_cache(self):
+        self.regions_cache_     = {}
+        self.recent_regions_ids = []
+
+
     def add_to_cache_(self, id, region):
         """
         This method adds region with id to the cache. It also updates it's position in recent_regions_ids and checks
@@ -112,7 +117,7 @@ class RegionManager:
         # print "Cache: %s" % self.recent_regions_ids
         if id in self.recent_regions_ids:
             # remove region from recent_regions_ids
-            self.recent_regions_ids.pop(0)
+            self.recent_regions_ids.remove(id)
             # print "Moving %s up" % id
             # add region to fresh position in recent_regions_ids and add it to cache
             self.recent_regions_ids.append(id)
@@ -139,7 +144,7 @@ class RegionManager:
 
         # remove region from recent_regions_ids
         if key in self.recent_regions_ids:
-            self.recent_regions_ids.pop(0)
+            self.recent_regions_ids.remove(key)
             # add region to fresh position in recent_regions_ids and add it to cache
             self.recent_regions_ids.append(key)
         else:
@@ -156,7 +161,10 @@ class RegionManager:
                 raise TypeError ("Region manager can only work with Region objects, not %s" % type(r))
             id = self.get_next_id()
             r.id_ = id
-            self.add_to_cache_(id, r)
+
+            if self.cache_size_limit_ != 0:
+                self.add_to_cache_(id, r)
+
             yield (id, self.prepare_region(r))
 
     def get_next_id(self):
@@ -225,18 +233,21 @@ class RegionManager:
                 raise IndexError("Index %s is out of range (1 - %s)" % (key, len(self)))
 
             if key in self.regions_cache_:
+		
                 r = self.regions_cache_[key]
                 result.append(r)
                 self.update(key, r)
+                
                 return r
 
             sql_ids.append(key)
             if self.use_db:
-                self.db_search_(result, sql_ids)
+                result = self.db_search_(result, sql_ids)
         else:
             raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
 
         if len(result) == 0:
+            print("!!!!  "+str(key))
             return []
         elif len(result) == 1:
             return result[0]
@@ -258,8 +269,8 @@ class RegionManager:
             cmd = "SELECT data FROM regions WHERE id = '%s'" % sql_ids[0]
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
-            self.con.commit()
             row = self.cur.fetchone()
+            self.con.commit()
             # add it to result
             id = sql_ids[0]
             try:
@@ -269,14 +280,15 @@ class RegionManager:
                 self.add_to_cache_(id, region)
             except TypeError:
                 # region was erased
+                print("!!!!!!!!! REGION NOT FOUND ????   "+str(id))
                 pass
 
         if l > 1:
             cmd = "SELECT id, data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
-            self.con.commit()
             rows = self.cur.fetchall()
+            self.con.commit()
             tmp_ids = []
             for row in rows:
                 if row[0] in tmp_ids:
@@ -285,6 +297,7 @@ class RegionManager:
                 region = pickle.loads(str(row[1]))
                 self.add_to_cache_(row[0], region)
                 result.append(region)
+        return result
 
     def removemany_(self, regions):
         sql_ids = []

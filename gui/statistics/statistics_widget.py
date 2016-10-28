@@ -9,6 +9,7 @@ from fix_area import FixArea
 import sys
 from core.graph.region_chunk import RegionChunk
 from pympler import asizeof
+import gc
 
 class StatisticsWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -148,6 +149,7 @@ class StatisticsWidget(QtGui.QWidget):
         for i in range(1, ch_test_num+1):
             rch = RegionChunk(self.project.chm[i], self.project.gm, self.project.rm)
             # so we have some idea about uncompressed pts size
+            rch[0]  #!!!! BUG, ONE HAS TO ASK FOR THE SAME REGION TWICE IF THE CACHE IS CLEARED OR HAS LIMITED SIZE!
             rch[0].pts()
             size_sum += asizeof.asizeof(rch[0])
 
@@ -155,6 +157,8 @@ class StatisticsWidget(QtGui.QWidget):
 
     def export_mat(self):
         import time
+
+        self.project.rm.cache_size_limit_ = 1;
 
         t = time.time()
 
@@ -186,23 +190,45 @@ class StatisticsWidget(QtGui.QWidget):
 
         t2 = time.time()
         file_num = 0
-        for ch in self.project.gm.chunk_list():
-            rch = RegionChunk(self.project.chm[ch], self.project.gm, self.project.rm)
+        chunNum  = 0
+        for _, ch in self.project.chm.chunks_.iteritems():
+            chunNum += 1;
+
+            print ch.length()
+
+            rch = RegionChunk(ch, self.project.gm, self.project.rm)
+
+
+            rch[0] #!!!! BUG, ONE HAS TO ASK FOR THE SAME REGION TWICE IF THE CACHE IS CLEARED OR HAS LIMITED SIZE!
             d = self.init_struct_(rch[0])
 
-            rs_ = rch[:]
-            for r in rs_:
+            #rs_ = rch[:]
+            #for r in rs_:
+
+            for regionNum in range(len(rch)):
+                rch[regionNum] #!!!! BUG, ONE HAS TO ASK FOR THE SAME REGION TWICE IF THE CACHE IS CLEARED OR HAS LIMITED SIZE!
+                r = rch[regionNum]
                 self.add_line_mat(d, r)
 
             curr_size += asizeof.asizeof(d)
             self.obj_arr_append_(obj_arr, d)
 
-            if curr_size > limit:
+            
+            if (curr_size > limit):
                 with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
+                    print "saving ", str(file_num)
+                    print(str(chunNum)+"\n")
                     sio.savemat(f, {'FERDA': obj_arr})
 
                 curr_size = 0
                 obj_arr = []
+                #reset_selective d
+                del d
+                del rch
+                del obj_arr
+                obj_arr = []
+
+                gc.collect()
                 file_num += 1
 
         # save the rest

@@ -1,7 +1,9 @@
 from PyQt4 import QtGui, QtCore
+import numpy as np
 from PyQt4.QtCore import Qt
+
+from gui.graph_widget_loader import WIDTH, HEIGHT
 from gui.img_controls.utils import cvimg2qtpixmap
-from vis_loader import WIDTH, HEIGHT, RELATIVE_MARGIN
 
 SELECTION_LINE_WIDTH = 2
 DEFAULT_INFO_TEXT_OPACITY = 150
@@ -26,6 +28,7 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
         self.selection_polygon = self.create_selection_polygon()
 
+        self.pixmapped = False
         self.toggled = False
         self.clipped = False
         self.shown = False
@@ -37,7 +40,7 @@ class Node(QtGui.QGraphicsPixmapItem):
     def toggle(self):
         if not self.toggled:
             if self.pixmap_toggled is None:
-                self.create_pixmap()
+                self.create_zoom_pixmap()
             else:
                 self.scene.addItem(self.pixmap_toggled)
         else:
@@ -51,7 +54,7 @@ class Node(QtGui.QGraphicsPixmapItem):
             self.info_item.set_color(self.color)
         if not self.shown:
             self.scene.addItem(self.info_item)
-            self.shown = True;
+            self.shown = True
         self.scene.update()
 
     def hide_info(self):
@@ -82,13 +85,25 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.color = None
         self.scene.update()
 
-    def create_pixmap(self):
+    def create_zoom_pixmap(self):
         img_toggled = self.img_manager.get_crop(self.region.frame_, self.region, width=self.width * 3, height=self.height * 3, relative_margin=self.relative_margin)
         pixmap = cvimg2qtpixmap(img_toggled)
         self.pixmap_toggled = self.scene.addPixmap(pixmap)
         x, y = self.compute_toggle_rectangle_pos()
         self.pixmap_toggled.setPos(x, y)
         self.pixmap_toggled.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
+
+    def create_pixmap(self):
+        if not self.pixmapped:
+            self.pixmapped = True
+            img = self.img_manager.get_crop(self.region.frame_, self.region, width=self.width,
+                                                    height=self.height, relative_margin=self.relative_margin)
+            pixmap = cvimg2qtpixmap(img)
+            pixmap = self.scene.addPixmap(pixmap)
+            self.setParentItem(pixmap)
+            self.scene.removeItem(self.parent_pixmap)
+            self.parent_pixmap = pixmap
+            self.parent_pixmap.setPos(self.x, self.y)
 
     def compute_rectangle_size(self):
         width, height = self.scene.width(), self.scene.height()

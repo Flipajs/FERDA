@@ -44,6 +44,17 @@ def draw_points(img, pts, color=None):
 
     return img
 
+def draw_points_binary(img, pts):
+    if pts.size == 0:
+        return img
+
+    valid_ids1 = np.logical_and(pts[:, 0] > 0, pts[:,0] < img.shape[0])
+    valid_ids2 = np.logical_and(pts[:, 1] > 0, pts[:,1] < img.shape[1])
+    ids = np.logical_and(valid_ids1, valid_ids2)
+    img[pts[ids, 0], pts[ids, 1]] = 1
+
+    return img
+
 
 def draw_points_crop(img, pts, color=None, margin=0.1, square=False, fill_color=(255, 255, 255)):
     """
@@ -138,6 +149,7 @@ def get_contour(pts):
         cont += np.array([roi.y(), roi.x()])
 
     return cont
+
 
 def get_contour_without_holes(pts):
     """

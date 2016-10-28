@@ -18,7 +18,9 @@ class BaseMarker(QtGui.QGraphicsEllipseItem, object):
         self.setBrush(brush)
         self.setFlag(self.ItemSendsGeometryChanges, True)
 
+        # antId is deprecated
         self.antId = antId
+        self.id = antId
         self.changeHandler = changeHandler
         self.recently_changed = False
 
@@ -68,8 +70,8 @@ class CenterMarker(BaseMarker):
     """Marker that indicates center of the ant. When it is clicked and ctrl is pressed, it moves head and tail marker of
     the same ant."""
 
-    def __init__(self, x, y, size, color, antId, changeHandler = None):
-        super(CenterMarker, self).__init__(x, y, size, color, antId, changeHandler)
+    def __init__(self, x, y, size, color, id=-1, changeHandler = None):
+        super(CenterMarker, self).__init__(x, y, size, color, id, changeHandler)
 
         self.head_marker = None
         self.tail_marker = None

@@ -1,9 +1,13 @@
 from PyQt4 import QtGui
+
+import numpy as np
+
 from core.region.region import Region
-from gui.graph_view.node import Node
-from gui.graph_view.edge import Edge
+from gui.graph_widget.edge import Edge
+from gui.graph_widget.node import Node
+from gui.graph_widget_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 from gui.img_controls.utils import cvimg2qtpixmap
-from vis_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
+
 
 __author__ = 'Simon Mandlik'
 
@@ -31,16 +35,20 @@ class Column:
         self.objects.append(0)
         self.compress_marker.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
         self.scene.addItem(self.compress_marker)
+        self.def_img = np.zeros((self.height, self.width, 3), dtype=np.uint8)
+        self.def_img[:, :, :] = 255
+        # color borders
+        self.def_img[:3, :, :] = self.def_img[:, :3, :] = self.def_img[-3:, :, :] = self.def_img[:, -3:, :] = 30
 
     def get_start_frame(self):
         if isinstance(self.frame, tuple):
-            return  self.frame[0]
+            return self.frame[0]
         else:
             return self.frame
 
     def get_end_frame(self):
         if isinstance(self.frame, tuple):
-            return  self.frame[1]
+            return self.frame[1]
         else:
             return self.frame
 
@@ -90,6 +98,14 @@ class Column:
                     if item_to_locate == item.region:
                         return self.objects.index(item)
 
+    def get_position_with_chunk_id(self, ch_id):
+        position = 0
+        for item in self.objects:
+            if isinstance(item, tuple):
+                if item[5] == ch_id:
+                    return position
+            position += 1
+
     def prepare_images(self):
         for item in self.objects:
             if not (item in (self.items_nodes.keys() + self.regions_images.keys()) or item is None):
@@ -106,11 +122,8 @@ class Column:
                     continue
 
                 if not isinstance(region, int):
-                    import time
-                    # time1 = time.time()
-                    img = self.im_manager.get_crop(self.frame, region,  width=self.width, height=self.height, relative_margin=self.relative_margin)
-                    # time2 = time.time()
-                    # print("Getting image in prepare imgs took {0}".format(time2 - time1))
+                    img = self.def_img
+                    # img = self.im_manager.get_crop(self.frame, region,  width=self.width, height=self.height, relative_margin=self.relative_margin)
                     self.regions_images[region] = img
 
     def add_crop_to_col(self):
@@ -128,11 +141,9 @@ class Column:
                     if item in self.items_nodes.keys():
                         continue
                 if item not in self.regions_images.keys():
-                    import time
-                    # time1 = time.time()
-                    img = self.im_manager.get_crop(self.frame, item,  width=self.width, height=self.height, relative_margin=self.relative_margin)
-                    # time2 = time.time()
-                    # print("Getting image took {0}".format(time2 - time1))
+                    img = self.def_img
+                    self.regions_images[item] = img
+                    # img = self.im_manager.get_crop(self.frame, item,  width=self.width, height=self.height, relative_margin=self.relative_margin)
                 else:
                     img = self.regions_images[item]
                 pixmap = cvimg2qtpixmap(img)
@@ -196,23 +207,27 @@ class Column:
 
         self.scene.addItem(edge_obj.graphical_object)
 
-    def show_node(self, region, vertically):
-        position = self.get_position_item(region)
-        x = self.x
-        y = GAP + FROM_TOP + position * self.height + SPACE_BETWEEN_VER * position
+    def show_node(self, region, vertically, compressed=True):
+            position = self.get_position_item(region)
+            x = self.x
+            y = GAP + FROM_TOP + position * self.height + SPACE_BETWEEN_VER * position
 
-        if vertically:
-            x, y = y, x
-        if region not in self.items_nodes.keys():
-            if region not in self.regions_images.keys():
-                img = self.im_manager.get_crop(self.frame, region, width=self.width, height=self.height, relative_margin=self.relative_margin)
-            else:
-                img = self.regions_images[region]
-            pixmap = cvimg2qtpixmap(img)
-            node = Node(self.scene.addPixmap(pixmap), self.scene, region, self.im_manager, self.relative_margin,  self.width, self.height)
-            self.items_nodes[region] = node
-        self.items_nodes[region].setPos(x, y)
-        self.items_nodes[region].parent_pixmap.show()
+            if vertically:
+                x, y = y, x
+            if region not in self.items_nodes.keys():
+                if region not in self.regions_images.keys():
+                    if compressed:
+                        img = self.def_img
+                    else:
+                        img = self.im_manager.get_crop(self.frame, region, width=self.width, height=self.height, relative_margin=self.relative_margin)
+                    self.regions_images[region] = img
+                else:
+                    img = self.regions_images[region]
+                pixmap = cvimg2qtpixmap(img)
+                node = Node(self.scene.addPixmap(pixmap), self.scene, region, self.im_manager, self.relative_margin,  self.width, self.height)
+                self.items_nodes[region] = node
+            self.items_nodes[region].setPos(x, y)
+            self.items_nodes[region].parent_pixmap.show()
 
     def show_compress_marker(self, compress_axis, vertically):
         if isinstance(self.frame, tuple):
