@@ -103,6 +103,10 @@ class ResultsWidget(QtGui.QWidget):
         self.add_gt_markers_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
         self.addAction(self.add_gt_markers_action)
 
+        self.create_gt_from_results_b = QtGui.QPushButton('create gt from results')
+        self.create_gt_from_results_b.clicked.connect(self.__create_gt_from_results)
+        self.gt_box.layout().addWidget(self.create_gt_from_results_b)
+
         self.left_vbox.addWidget(self.gt_box)
 
         # TRACKLET BOX
@@ -672,8 +676,13 @@ class ResultsWidget(QtGui.QWidget):
             frame = self.video_player.current_frame()
 
             if frame in self._gt:
-                y = self._gt[frame][a.id][0]
-                x = self._gt[frame][a.id][1]
+                data = self._gt[frame][a.id]
+                if data is None:
+                    y = -10
+                    x = 10 * a.id
+                else:
+                    y = data[0]
+                    x = data[1]
                 self.__add_marker(x, y, c_, a.id, 0.7, type_='GT')
 
     def _show_id_markers(self, animal_ids2centroids):
@@ -1023,3 +1032,54 @@ class ResultsWidget(QtGui.QWidget):
             self._set_active_tracklet_id(t_id)
             self.video_player.redraw_visualisations()
 
+    def __get_gt_stats(self, gt):
+        frames = sorted(map(int, gt.iterkeys()))
+
+        num_ids = len(gt[frames[0]])
+        id_coverage = np.zeros((num_ids, ))
+
+        for f in frames:
+            for id_, data in enumerate(gt[f]):
+                if data is not None:
+                    id_coverage[id_] += 1
+
+        print "--- GT info ---"
+        print "#frames: ", len(frames)
+        print "ID coverage: "
+        for i in range(num_ids):
+            print " {}:{:.2%}".format(i, id_coverage[i] / float(len(frames)))
+
+    def __create_gt_from_results(self):
+        from utils.misc import print_progress
+        print "... CREATING GT from results ..."
+
+        gt_ = {}
+        all_ids = set(range(len(self.project.animals)))
+
+        i = 0
+        l = len(self.project.chm)
+        print_progress(i, l, prefix='Progress:', suffix='Complete', barLength=50)
+
+        total_frames = self.video_player.total_frame_count()
+        for frame in range(total_frames):
+            gt_[frame] = [None for i in range(len(self.project.animals))]
+
+        for t in self.project.chm.chunk_gen():
+            if len(t.P) == 1 and t.P.union(t.N) == all_ids:
+                id_ = list(t.P)[0]
+                rch = RegionChunk(t, self.project.gm, self.project.rm)
+
+                for r in rch.regions_gen():
+                    gt_[r.frame()][id_] = (r.centroid()[0], r.centroid()[1])
+
+            print_progress(i, l, prefix='Progress:', suffix='Complete', barLength=50)
+            i += 1
+
+        print
+
+        path = self.project.working_directory+'/'+'GT.pkl'
+        with open(path, 'w') as f:
+            pickle.dump(gt_, f)
+
+        print "... DONE & SAVED to ", path
+        self.__get_gt_stats(gt_)
