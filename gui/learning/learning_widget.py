@@ -289,7 +289,7 @@ class LearningWidget(QtGui.QWidget):
         self.show_tracklet_callback(tracklet)
 
     def decide_tracklet_question(self, tracklet):
-        items = map(str, range(len(self.project.animals)))
+        items = map(str, self.lp.all_ids - tracklet.N)
 
         item, ok = QtGui.QInputDialog.getItem(self, "select animal ID for tracklet ID: "+str(tracklet.id()),
                                               "list of ids", items, 0, False)

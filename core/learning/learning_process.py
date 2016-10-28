@@ -188,9 +188,8 @@ class LearningProcess:
     def update_undecided_tracklets(self):
         self.undecided_tracklets = set()
         for t in self.p.chm.chunk_gen():
-            if t.id() in self.collision_chunks:
-                continue
-
+            # if t.id() in self.collision_chunks:
+            #     continue
             if not self.__tracklet_is_decided(t.P, t.N):
                 self.undecided_tracklets.add(t.id())
 
@@ -613,13 +612,13 @@ class LearningProcess:
 
         return set(range(len(tracklets)))
 
-    def __if_possible_update_P(self, tracklet, id_, is_in_intersetion_Ps=False):
+    def __if_possible_update_P(self, tracklet, id_, is_in_intersection_Ps=False):
         """
 
         Args:
             tracklet:
             id_:
-            is_in_intersetion_Ps: - for strict test, whether
+            is_in_intersection_Ps: - for strict test, whether
 
         Returns:
 
@@ -630,7 +629,8 @@ class LearningProcess:
                 continue
 
             # stronger test, but maybe not always necessary...
-            if is_in_intersetion_Ps:
+            # maybe it should be if there is a frame, where every tracklet has id_ in t.N ?
+            if is_in_intersection_Ps:
                 if id_ not in t.N:
                     return False
             else:
@@ -862,7 +862,7 @@ class LearningProcess:
         if self.__only_one_P_possibility(tracklet):
             id_ = self.__get_one_possible_P(tracklet)
 
-            self.__if_possible_update_P(tracklet, id_, is_in_intersetion_Ps=True)
+            self.__if_possible_update_P(tracklet, id_, is_in_intersection_Ps=False)
 
         return True
 

@@ -338,6 +338,8 @@ class ResultsWidget(QtGui.QWidget):
 
             self.redraw_video_player_visualisations()
 
+            self.setFocus()
+
     def tracklet_begin(self):
         if self.active_tracklet_id > -1:
             tracklet = self.project.chm[self.active_tracklet_id]
@@ -372,8 +374,10 @@ class ResultsWidget(QtGui.QWidget):
         except:
             return
 
-        # TODO: global parameter - margin
-        self.play_and_highlight_tracklet(tracklet, margin=5)
+        frame = tracklet.start_frame(self.project.gm)
+        self.video_player.goto(frame)
+        print id_
+        self._set_active_tracklet_id(id_)
 
     def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
         self._set_active_tracklet_id(tracklet.id())
