@@ -8,6 +8,24 @@ from core.settings import Settings as S_
 import numpy as np
 
 
+class Filter(QtCore.QObject):
+    def __init__(self, line_edit, callback):
+        super(Filter, self).__init__()
+        self.line_edit = line_edit
+        self.callback = callback
+    
+    def eventFilter(self, widget, event):
+        # FocusOut event
+        if event.type() == QtCore.QEvent.FocusOut:
+            # do custom stuff
+            self.callback(int(self.line_edit.text()))
+            # return False so that the widget will also handle the event
+            # otherwise it won't focus out
+            return False
+        else:
+            # we don't care about other events
+            return False
+
 class LearningWidget(QtGui.QWidget):
     def __init__(self, project=None, show_tracklet_callback=None):
         super(LearningWidget, self).__init__()
@@ -21,7 +39,6 @@ class LearningWidget(QtGui.QWidget):
 
         self.vbox.addLayout(self.top_stripe_layout)
         self.vbox.addLayout(self.hbox)
-
 
         self.lp = None
         if not self.project:
@@ -47,6 +64,17 @@ class LearningWidget(QtGui.QWidget):
         # self.lp will change...
         self.next_step_button.clicked.connect(lambda x: self.lp.next_step())
         self.top_stripe_layout.addWidget(self.next_step_button)
+
+        self.top_stripe_layout.addWidget(QtGui.QLabel('min examples to retrain'))
+
+        self.min_examples_to_retrain_i = QtGui.QLineEdit()
+        if self.lp is not None:
+            self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
+        self.min_examples_to_retrain_i.adjustSize()
+
+        self._filter = Filter(self.min_examples_to_retrain_i, self.lp.set_min_new_samples_to_retrain)
+        self.min_examples_to_retrain_i.installEventFilter(self._filter)
+        self.top_stripe_layout.addWidget(self.min_examples_to_retrain_i)
 
         self.label_certainty_eps = QtGui.QLabel('certainty eps:')
         self.top_stripe_layout.addWidget(self.label_certainty_eps)
@@ -114,12 +142,16 @@ class LearningWidget(QtGui.QWidget):
         self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=True,
                                   question_callback=self.question_callback, update_callback=self.update_callback)
 
+        self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
+
         self.add_tracklet_table()
         self.update_callback()
 
     def recompute_features(self):
         self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
                                   question_callback=self.question_callback, update_callback=self.update_callback)
+
+        self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
 
         self.add_tracklet_table()
         self.update_callback()
@@ -135,7 +167,6 @@ class LearningWidget(QtGui.QWidget):
 
         self.tracklets_table.setSortingEnabled(True)
         self.hbox.addWidget(self.tracklets_table)
-
 
     def certainty_eps_changed(self):
         self.lp.set_eps_certainty(self.certainty_eps_spinbox.value())

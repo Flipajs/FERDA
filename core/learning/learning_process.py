@@ -47,6 +47,8 @@ class LearningProcess:
 
         self.p = p
 
+        self.min_new_samples_to_retrain = 10000
+
         # TODO: add whole knowledge class...
         self.tracklet_knowledge = {}
 
@@ -478,10 +480,9 @@ class LearningProcess:
 
     def next_step(self):
         eps_certainty_learning = self._eps_certainty / 2
-        min_new_samples_to_retrain = 50
 
         # if enough new data, retrain
-        if len(self.X) - self.old_x_size > 10000:
+        if len(self.X) - self.old_x_size > self.min_new_samples_to_retrain:
             t = time.time()
             self.__train_rfc()
             print "RETRAIN t:", time.time() - t
@@ -517,7 +518,7 @@ class LearningProcess:
             self.assign_identity(id_, best_tracklet, learn=learn)
         else:
             # if new training data, retrain
-            if len(self.X) - self.old_x_size > min_new_samples_to_retrain:
+            if len(self.X) - self.old_x_size > self.min_new_samples_to_retrain:
                 t = time.time()
                 self.__train_rfc()
                 print "RETRAIN t:", time.time() - t
@@ -1042,6 +1043,8 @@ class LearningProcess:
         # ignore already decided chunks...
         return filter(lambda x: x.id() in self.undecided_tracklets, affected)
 
+    def set_min_new_samples_to_retrain(self, val):
+        self.min_new_samples_to_retrain = val
 
 if __name__ == '__main__':
     p = Project()
