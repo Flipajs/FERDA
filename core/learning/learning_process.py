@@ -967,11 +967,11 @@ class LearningProcess:
         if not isinstance(id_, int):
             print "FAIL in learning_process.py assign_identity, id is not a number"
 
-        if tracklet.id() in self.collision_chunks:
-            del self.collision_chunks[tracklet.id()]
-            print "Fixing tracklet wrongly labeled as OVERSEGMENTED"
-
         if user:
+            if tracklet.id() in self.collision_chunks:
+                del self.collision_chunks[tracklet.id()]
+                print "Fixing tracklet wrongly labeled as OVERSEGMENTED"
+
             self.user_decisions.append({'tracklet_id': tracklet.id(), 'type': 'P', 'ids': [id_]})
 
         # # conflict test
@@ -1013,6 +1013,7 @@ class LearningProcess:
         # TODO: test collision chunk, if yes and learn - compute features...
         try:
             self.undecided_tracklets.remove(tracklet.id())
+            del self.tracklet_certainty[tracklet.id()]
         except KeyError:
             # it might means it is already in user_decisions
             warnings.warn("tracklet.id(): "+str(tracklet.id())+" not in self.undecided_tracklets")
