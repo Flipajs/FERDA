@@ -9,10 +9,12 @@ import scipy.io as sio
 
 
 class Exporter:
-    def __init__(self, chm, gm, rm, pts_export=False, contour_pts_export=True):
+    def __init__(self, chm, gm, rm, pts_export=False, contour_pts_export=True, do_mat_compression=False):
         self.chm = chm
         self.gm = gm
         self.rm = rm
+
+        self.do_mat_compression = do_mat_compression
 
         self.pts_export = pts_export
         self.contour_pts_export = contour_pts_export
@@ -122,7 +124,7 @@ class Exporter:
             self.obj_arr_append_(obj_arr, d)
 
         with open(file_name+'.mat', 'wb') as f:
-            sio.savemat(f, {'FERDA': obj_arr})
+            sio.savemat(f, {'FERDA': obj_arr}, do_compression=self.do_mat_compression)
 
 class FakeBGComp:
     def __init__(self, project, first_part, part_num):
@@ -171,6 +173,10 @@ if __name__ == '__main__':
     min_tracklet_length = int(sys.argv[5])
     pts_export = bool(int(sys.argv[6]))
 
+    mat_compression = False
+    if len(sys.argv) > 7:
+        mat_compression = bool(int(sys.argv[7]))
+
     i = first_part
 
     p = Project()
@@ -217,4 +223,4 @@ if __name__ == '__main__':
     if first_part+part_num-1 > i:
         fname += '-'+str(first_part+part_num-1)
 
-    Exporter(p.chm, p.gm, p.rm, pts_export).export(fname, min_tracklet_length=min_tracklet_length)
+    Exporter(p.chm, p.gm, p.rm, pts_export, do_mat_compression=mat_compression).export(fname, min_tracklet_length=min_tracklet_length)
