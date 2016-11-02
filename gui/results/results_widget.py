@@ -1101,20 +1101,20 @@ class ResultsWidget(QtGui.QWidget):
         if os.path.isdir(S_.temp.last_gt_path):
             path = S_.temp.last_gt_path
 
-        new_path = gui.gui_utils.file_name_dialog(self, 'Select GT file', filter_="Pickle (*.pkl)", path=path)
+        self.project.GT_file = gui.gui_utils.file_name_dialog(self, 'Select GT file', filter_="Pickle (*.pkl)", path=path)
 
-        if new_path:
-            S_.temp.last_gt_path = os.path.dirname(new_path)
+        if self.project.GT_file:
+            S_.temp.last_gt_path = os.path.dirname(self.project.GT_file)
 
-        self._load_gt(new_path)
+        self._load_gt()
+        self.video_player.redraw_visualisations()
 
-    def _load_gt(self, path=None):
+    def _load_gt(self):
         self._gt = {}
         if is_flipajs_pc():
             self._gt_corr_step = 50
 
-            if path is None:
-                path = self.project.GT_file
+            path = self.project.GT_file
 
             try:
                 with open(path, 'rb') as f:
@@ -1123,3 +1123,7 @@ class ResultsWidget(QtGui.QWidget):
                 print "GT was sucessfully loaded from ", path
             except:
                 print "GT was not loaded ", path
+
+    def assign_ids_from_gt(self):
+        # TODO: for each tracklet, try to get id from GT
+        pass

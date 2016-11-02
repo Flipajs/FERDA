@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
-from features import get_features_var3
+from features import get_features_var3, get_features_var5
 from gui.learning.ids_names_widget import IdsNamesWidget
 from utils.img_manager import ImgManager
 
@@ -62,7 +62,7 @@ class LearningProcess:
         self._eps_certainty = 0.3
 
         # TODO: make standalone feature extractor...
-        self.get_features = get_features_var3
+        self.get_features = get_features_var5
 
         # to solve uncertainty about head orientation... Add both
         self.features_fliplr_hack = True
