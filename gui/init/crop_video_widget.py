@@ -7,8 +7,8 @@ from PyQt4 import QtGui, QtCore
 
 from gui.img_controls.my_view import MyView
 from utils.video_manager import get_auto_video_manager
-from gui.img_controls.utils import cvimg2qtpixmap
-from viewer.gui.img_controls import markers
+from gui.img_controls.gui_utils import cvimg2qtpixmap
+from gui.img_controls import markers
 from core.animal import colors_
 from core.settings import Settings as S_
 from core.project.project import Project

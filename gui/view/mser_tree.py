@@ -10,7 +10,7 @@ from skimage.transform import resize
 
 from core.project.project import Project
 from core.region.mser import get_msers_
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 from scripts.region_graph3 import visualize_nodes
 
 

@@ -12,7 +12,7 @@ import sys
 import math
 import numpy as np
 from core.project.project import Project
-from gui.img_controls     import utils
+from gui.img_controls     import gui_utils
 from gui.arena.my_ellipse import MyEllipse
 from gui.arena.my_view    import MyView
 
@@ -38,7 +38,7 @@ class ArenaEditor(QtGui.QWidget):
         self.view.setScene(self.scene)
 
         # background image
-        self.scene.addPixmap(utils.cvimg2qtpixmap(self.background))
+        self.scene.addPixmap(gui_utils.cvimg2qtpixmap(self.background))
         self.view.setMouseTracking(True)
 
         # store the current paint mode "polygons" or "paint" or "circles"

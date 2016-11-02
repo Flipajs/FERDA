@@ -38,7 +38,7 @@ default_settings = {
 }
 
 tooltips = {
-    'cache_use': 'There will be stored information in working directory to speed up mainly the correction tool.',
+    'cache_use': 'There will be stored information in working directory to speed up mainly the results tool.',
     'cache_mser': 'Storing MSERs have huge impact on speed but it also needs huge space amount.',
 
     'igbr_i_weight': 'Used in Igbr space. Defines I component weight compared to gbr, this is useful during computation of distance in Igbr space when you want to have this distance predominantly based on color',

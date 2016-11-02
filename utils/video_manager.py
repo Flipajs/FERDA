@@ -97,7 +97,8 @@ class VideoManager():
 
     def seek_frame(self, frame_number):
         if frame_number < 0 or frame_number >= self.total_frame_count():
-            raise Exception("Frame_number is invalid: "+str(frame_number))
+            frame_number = self.total_frame_count() - 1
+            # raise Exception("Frame_number is invalid: "+str(frame_number))
 
         frame_number_ = frame_number + self.start_t
         # Reset buffer as buffered images are now from other part of the video
@@ -184,10 +185,12 @@ class VideoManager():
         if sequence_access:
             if reversed:
                 while self.frame_number() > frame:
-                    self.previous_frame()
+                    if self.previous_frame() is None:
+                        return None
             else:
                 while self.frame_number() < frame:
-                    self.next_frame()
+                    if self.next_frame() is None:
+                        return None
 
             return self.img()
         else:

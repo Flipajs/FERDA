@@ -8,6 +8,24 @@ from core.settings import Settings as S_
 import numpy as np
 
 
+class Filter(QtCore.QObject):
+    def __init__(self, line_edit, callback):
+        super(Filter, self).__init__()
+        self.line_edit = line_edit
+        self.callback = callback
+    
+    def eventFilter(self, widget, event):
+        # FocusOut event
+        if event.type() == QtCore.QEvent.FocusOut:
+            # do custom stuff
+            self.callback(int(self.line_edit.text()))
+            # return False so that the widget will also handle the event
+            # otherwise it won't focus out
+            return False
+        else:
+            # we don't care about other events
+            return False
+
 class LearningWidget(QtGui.QWidget):
     def __init__(self, project=None, show_tracklet_callback=None):
         super(LearningWidget, self).__init__()
@@ -22,18 +40,13 @@ class LearningWidget(QtGui.QWidget):
         self.vbox.addLayout(self.top_stripe_layout)
         self.vbox.addLayout(self.hbox)
 
-        # TODO: compute / recompute features...
-
-
         self.lp = None
         if not self.project:
             self.load_project_button = QtGui.QPushButton('load project')
             self.load_project_button.clicked.connect(self.load_project)
             self.top_stripe_layout.addWidget(self.load_project_button)
         else:
-            print "LOADING LP"
-            self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False,
-                                      question_callback=self.question_callback, update_callback=self.update_callback)
+            self.lp = LearningProcess(self.project, ghost=True)
 
         self.start_button = QtGui.QPushButton('start')
         self.start_button.clicked.connect(self.lp.run_learning)
@@ -48,8 +61,20 @@ class LearningWidget(QtGui.QWidget):
         self.hbox.addWidget(self.info_table)
 
         self.next_step_button = QtGui.QPushButton('next step')
-        self.next_step_button.clicked.connect(self.lp.next_step)
+        # self.lp will change...
+        self.next_step_button.clicked.connect(lambda x: self.lp.next_step())
         self.top_stripe_layout.addWidget(self.next_step_button)
+
+        self.top_stripe_layout.addWidget(QtGui.QLabel('min examples to retrain'))
+
+        self.min_examples_to_retrain_i = QtGui.QLineEdit()
+        if self.lp is not None:
+            self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
+        self.min_examples_to_retrain_i.adjustSize()
+
+        self._filter = Filter(self.min_examples_to_retrain_i, self.lp.set_min_new_samples_to_retrain)
+        self.min_examples_to_retrain_i.installEventFilter(self._filter)
+        self.top_stripe_layout.addWidget(self.min_examples_to_retrain_i)
 
         self.label_certainty_eps = QtGui.QLabel('certainty eps:')
         self.top_stripe_layout.addWidget(self.label_certainty_eps)
@@ -78,12 +103,55 @@ class LearningWidget(QtGui.QWidget):
         self.reset_learning_button.clicked.connect(self.reset_learning)
         self.top_stripe_layout.addWidget(self.reset_learning_button)
 
+        self.load_features_b = QtGui.QPushButton('load features')
+        self.load_features_b.clicked.connect(self.load_features)
+        self.top_stripe_layout.addWidget(self.load_features_b)
+
+        self.compute_features_b = QtGui.QPushButton('compute features')
+        self.compute_features_b.clicked.connect(self.recompute_features)
+        self.top_stripe_layout.addWidget(self.compute_features_b)
+
         self.save_button = QtGui.QPushButton('save')
         self.save_button.clicked.connect(self.save)
         self.top_stripe_layout.addWidget(self.save_button)
 
         # TODO: last info label
         # TODO: update callback... info about decisions...
+
+        self.update_b = QtGui.QPushButton('update')
+        self.update_b.clicked.connect(self.update_callback)
+        self.top_stripe_layout.addWidget(self.update_b)
+
+        self.delete_user_decisions_b = QtGui.QPushButton('delete user decisions')
+        self.delete_user_decisions_b.clicked.connect(self.clear_user_decisions)
+        self.top_stripe_layout.addWidget(self.delete_user_decisions_b)
+
+        self.update_undecided_tracklets_b = QtGui.QPushButton('debug: update undecided')
+        self.update_undecided_tracklets_b.clicked.connect(self.update_undecided_tracklets)
+        self.top_stripe_layout.addWidget(self.update_undecided_tracklets_b)
+
+        self.compute_distinguishability_b = QtGui.QPushButton('comp. disting.')
+        # self.lp will change...
+        self.compute_distinguishability_b.clicked.connect(lambda x: self.lp.compute_distinguishability())
+        self.top_stripe_layout.addWidget(self.compute_distinguishability_b)
+
+        # self.add_tracklet_table()
+        # self.update_callback()
+
+    def load_features(self):
+        self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=True,
+                                  question_callback=self.question_callback, update_callback=self.update_callback)
+
+        self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
+
+        self.add_tracklet_table()
+        self.update_callback()
+
+    def recompute_features(self):
+        self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
+                                  question_callback=self.question_callback, update_callback=self.update_callback)
+
+        self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
 
         self.add_tracklet_table()
         self.update_callback()
@@ -100,9 +168,8 @@ class LearningWidget(QtGui.QWidget):
         self.tracklets_table.setSortingEnabled(True)
         self.hbox.addWidget(self.tracklets_table)
 
-
     def certainty_eps_changed(self):
-        self.lp.eps_certainty = self.certainty_eps_spinbox.value()
+        self.lp.set_eps_certainty(self.certainty_eps_spinbox.value())
 
     def save(self):
         self.lp.save_learning()
@@ -135,6 +202,8 @@ class LearningWidget(QtGui.QWidget):
             if not self.lp.next_step():
                 break
 
+        print self.num_next_step.text(), "steps finished"
+
     def update_callback(self):
         self.info_table.setItem(0, 0, QtGui.QTableWidgetItem('#tracklets'))
         self.info_table.setItem(0, 1, QtGui.QTableWidgetItem(str(len(self.project.chm))))
@@ -159,60 +228,60 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setItem(11, 0, QtGui.QTableWidgetItem('id coverage:'))
         self.info_table.setItem(11, 1, QtGui.QTableWidgetItem(self.__f2str(self.get_id_coverage())))
 
+        if hasattr(self, 'tracklets_table'):
+            # update tracklet info...
+            self.tracklets_table.clear()
+            self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
 
-        # update tracklet info...
-        self.tracklets_table.clear()
-        self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
+            num_animals = len(self.project.animals)
+            self.tracklets_table.setSortingEnabled(False)
+            header_labels = ("id", "len", "start", "end", "cert")
+            for i in range(num_animals):
+                header_labels += ('m'+str(i), )
 
-        num_animals = len(self.project.animals)
-        self.tracklets_table.setSortingEnabled(False)
-        header_labels = ("id", "len", "start", "end", "cert")
-        for i in range(num_animals):
-            header_labels += ('m'+str(i), )
+            for i in range(num_animals):
+                header_labels += (str(i), )
 
-        for i in range(num_animals):
-            header_labels += (str(i), )
+            it = QtGui.QTableWidgetItem
 
-        it = QtGui.QTableWidgetItem
+            self.tracklets_table.setHorizontalHeaderLabels(header_labels)
+            if len(self.lp.tracklet_certainty):
+                for i, t_id in enumerate(self.lp.undecided_tracklets):
+                    t = self.project.chm[t_id]
 
-        self.tracklets_table.setHorizontalHeaderLabels(header_labels)
-        if len(self.lp.tracklet_certainty):
-            for i, t_id in enumerate(self.lp.undecided_tracklets):
-                t = self.project.chm[t_id]
+                    item = it()
+                    item.setData(QtCore.Qt.EditRole, t.id())
+                    self.tracklets_table.setItem(i, 0, item)
 
-                item = it()
-                item.setData(QtCore.Qt.EditRole, t.id())
-                self.tracklets_table.setItem(i, 0, item)
+                    item = it()
+                    item.setData(QtCore.Qt.EditRole, t.length())
+                    self.tracklets_table.setItem(i, 1, item)
 
-                item = it()
-                item.setData(QtCore.Qt.EditRole, t.length())
-                self.tracklets_table.setItem(i, 1, item)
+                    item = it()
+                    item.setData(QtCore.Qt.EditRole, t.start_frame(self.project.gm))
+                    self.tracklets_table.setItem(i, 2, item)
 
-                item = it()
-                item.setData(QtCore.Qt.EditRole, t.start_frame(self.project.gm))
-                self.tracklets_table.setItem(i, 2, item)
+                    item = it()
+                    item.setData(QtCore.Qt.EditRole, t.end_frame(self.project.gm))
+                    self.tracklets_table.setItem(i, 3, item)
 
-                item = it()
-                item.setData(QtCore.Qt.EditRole, t.end_frame(self.project.gm))
-                self.tracklets_table.setItem(i, 3, item)
+                    self.tracklets_table.setItem(i, 4, QtGui.QTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
 
-                self.tracklets_table.setItem(i, 4, QtGui.QTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
+                    d = self.lp.tracklet_measurements[t_id]
+                    for j in range(num_animals):
+                        self.tracklets_table.setItem(i, 5+j, QtGui.QTableWidgetItem(self.__f2str(d[j])))
 
-                d = self.lp.tracklet_measurements[t_id]
-                for j in range(num_animals):
-                    self.tracklets_table.setItem(i, 5+j, QtGui.QTableWidgetItem(self.__f2str(d[j])))
+                    for j in range(num_animals):
+                        val = ''
+                        if j in t.P:
+                            val = 'N'
+                        elif j in t.N:
+                            val = 'P'
 
-                for j in range(num_animals):
-                    val = ''
-                    if j in t.P:
-                        val = 'N'
-                    elif j in t.N:
-                        val = 'P'
+                        self.tracklets_table.setItem(i, 5+num_animals+j, QtGui.QTableWidgetItem(val))
 
-                    self.tracklets_table.setItem(i, 5+num_animals+j, QtGui.QTableWidgetItem(val))
-
-        self.tracklets_table.setSortingEnabled(True)
-        self.tracklets_table.resizeColumnsToContents()
+            self.tracklets_table.setSortingEnabled(True)
+            self.tracklets_table.resizeColumnsToContents()
 
     def test_one_id_in_tracklet(self, t):
         return len(t.P) == 1 and \
@@ -251,7 +320,7 @@ class LearningWidget(QtGui.QWidget):
         self.show_tracklet_callback(tracklet)
 
     def decide_tracklet_question(self, tracklet):
-        items = map(str, range(len(self.project.animals)))
+        items = map(str, self.lp.all_ids - tracklet.N)
 
         item, ok = QtGui.QInputDialog.getItem(self, "select animal ID for tracklet ID: "+str(tracklet.id()),
                                               "list of ids", items, 0, False)
@@ -260,6 +329,19 @@ class LearningWidget(QtGui.QWidget):
             self.update_callback()
         else:
             print "..."
+
+    def clear_user_decisions(self):
+        msg = "Do you really want to delete all USERs decisions?"
+        reply = QtGui.QMessageBox.question(self, 'Message',
+                                           msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+
+        if reply == QtGui.QMessageBox.Yes:
+            self.lp.user_decisions = []
+
+        self.update_callback()
+
+    def update_undecided_tracklets(self):
+        self.lp.update_undecided_tracklets()
 
 
 if __name__ == '__main__':

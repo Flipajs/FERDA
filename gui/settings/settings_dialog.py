@@ -8,14 +8,14 @@ from core.settings import Settings as S_
 
 
 class SettingsDialog(QtGui.QDialog):
-    """A dialog used for settings of almost everything in the ants correction tool. Note that the QSettings name is
-    'Ants correction tool'. When you need to add a settings, add it onto tab you want or add a new tab. The method
+    """A dialog used for settings of almost everything in the ants results tool. Note that the QSettings name is
+    'Ants results tool'. When you need to add a settings, add it onto tab you want or add a new tab. The method
     populate of each tab is used to set initial values, the method restore_defaults populates the dialog with settings
     from default_settings file and the method harvest saves the values from dialog into settings. Should you add new
     settings, update all three methods accordingly. Also keep in mind that you need to add corresponding setting
     into default_settings.
     A propos: the construction for getting settings is:
-    settings = QSettings("Ants correction tool")
+    settings = QSettings("Ants results tool")
     settings.value(key, default_value, type)
     """
 

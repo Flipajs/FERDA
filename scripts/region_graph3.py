@@ -13,7 +13,7 @@ from core.settings import Settings as S_
 from gui.graph_widget.custom_line_selectable import Custom_Line_Selectable
 from gui.graph_widget.pixmap_selectable import Pixmap_Selectable
 from gui.img_controls.my_scene import MyScene
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 from gui.plot.plot_chunks import PlotChunks
 from gui.view.chunks_on_frame import ChunksOnFrame
 from utils.drawing.points import draw_points_crop

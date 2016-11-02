@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 
 from utils import video_manager
-from gui.img_controls import my_view, utils
+from gui.img_controls import my_view, gui_utils
 from gui.init.arena.arena_circle import ArenaCircle
 from gui.init.arena.arena_mark import ArenaMark
 from gui.init.background.bg_fix_widget import BgFixWidget
@@ -61,7 +61,7 @@ class InitWhereWidget(QtGui.QWidget):
         self.scene = QtGui.QGraphicsScene()
         self.graphics_view = my_view.MyView()
         self.graphics_view.setScene(self.scene)
-        self.scene.addPixmap(utils.cvimg2qtpixmap(self.first_frame))
+        self.scene.addPixmap(gui_utils.cvimg2qtpixmap(self.first_frame))
         self.bg_model_pixmap = None
 
         self.add_circle_selection()

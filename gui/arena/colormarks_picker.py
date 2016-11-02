@@ -7,7 +7,7 @@ from gui.arena.my_view import MyView
 from utils.video_manager import get_auto_video_manager
 from PyQt4 import QtGui, QtCore
 from core.project.project import Project
-from gui.img_controls import utils
+from gui.img_controls import gui_utils
 import numpy as np
 
 __author__ = 'dita'
@@ -386,7 +386,7 @@ class ColormarksPicker(QtGui.QWidget):
             self.scene.removeItem(self.bg_pixmap)
 
         # setup new pixmap
-        self.bg_pixmap = self.scene.addPixmap(utils.cvimg2qtpixmap(self.background))
+        self.bg_pixmap = self.scene.addPixmap(gui_utils.cvimg2qtpixmap(self.background))
         self.view.update_scale()
 
         # adjust mask frame if frame is changed and nothing was drawn in the mask yet

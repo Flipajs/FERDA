@@ -134,3 +134,38 @@ def get_img_qlabel(pts, img, id, height=100, width=100, filled=False):
     item.setPixmap(pix_map)
 
     return item
+
+class ClickableQGraphicsPixmapItem(QtGui.QGraphicsPixmapItem):
+    def __init__(self, pixmap, id_, callback):
+        super(ClickableQGraphicsPixmapItem, self).__init__(pixmap)
+        self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+        self.id_ = id_
+        self.callback = callback
+
+    def mouseReleaseEvent(self, event):
+        super(ClickableQGraphicsPixmapItem, self).mouseReleaseEvent(event)
+        self.callback(self.id_)
+
+
+class SelectAllLineEdit(QtGui.QLineEdit):
+    def __init__(self, parent=None):
+        super(SelectAllLineEdit, self).__init__(parent)
+        self.readyToEdit = True
+        self.setFixedHeight(15)
+
+    def mousePressEvent(self, e, Parent=None):
+        super(SelectAllLineEdit, self).mousePressEvent(e) #required to deselect on 2e click
+        if self.readyToEdit:
+            self.selectAll()
+            self.readyToEdit = False
+
+    def focusInEvent(self, e):
+        super(SelectAllLineEdit, self).focusInEvent(e)
+        if self.readyToEdit:
+            self.selectAll()
+            self.readyToEdit = False
+
+    def focusOutEvent(self, e):
+        super(SelectAllLineEdit, self).focusOutEvent(e) #required to remove cursor on focusOut
+        self.deselect()
+        self.readyToEdit = True

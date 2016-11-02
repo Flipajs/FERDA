@@ -250,7 +250,7 @@ def get_cmap(N, step):
 
     return map_index_to_rgb_color
 
-def rotate_img(img, theta):
+def rotate_img(img, theta, center=None):
     s_ = max(img.shape[0], img.shape[1])
 
     im_ = np.zeros((s_, s_, img.shape[2]), dtype=img.dtype)
@@ -259,7 +259,8 @@ def rotate_img(img, theta):
 
     im_[h_:h_+img.shape[0], w_:w_+img.shape[1], :] = img
 
-    center = (im_.shape[0] / 2, im_.shape[1] / 2)
+    if center is None:
+        center = (im_.shape[0] / 2, im_.shape[1] / 2)
 
     rot_mat = cv2.getRotationMatrix2D(center, -np.rad2deg(theta), 1.0)
     return cv2.warpAffine(im_, rot_mat, (s_, s_))
@@ -280,7 +281,7 @@ def centered_crop(img, new_h, new_w):
 
     return img[y_:y_+new_h, x_:x_+new_w, :].copy()
 
-def get_bounding_box(r, project, relative_border=1.3, img=None):
+def get_bounding_box(r, project, relative_border=1.3, absolute_border=-1, img=None):
     from math import ceil
 
     if img is None:
@@ -291,6 +292,11 @@ def get_bounding_box(r, project, relative_border=1.3, img=None):
 
     height2 = int(ceil((roi.height() * relative_border) / 2.0))
     width2 = int(ceil((roi.width() * relative_border) / 2.0))
+
+    if absolute_border > -1:
+        height2 = absolute_border
+        width2 = absolute_border
+
     x = r.centroid()[1] - width2
     y = r.centroid()[0] - height2
 

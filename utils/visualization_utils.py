@@ -7,6 +7,7 @@ def get_q_color(id, ant_num):
     r, g, b = get_color(id, ant_num)
     return QtGui.QColor(r, g, b)
 
+
 def get_color(id, ant_num):
     colors = cm.rainbow(np.linspace(0, 1, ant_num))
     return int(colors[id][0] * 255), int(colors[id][1] * 255), int(colors[id][2] * 255)

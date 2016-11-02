@@ -84,7 +84,7 @@ class BackgroundComputer:
 
                 last_n_frames = 0
                 if i == self.part_num - 1:
-                    last_n_frames = self.frames_in_row_last - self.frames_in_row
+                    last_n_frames = self.frames_in_row_last - self.frames_in_row + 1
 
                 ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
                     self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(

@@ -8,7 +8,7 @@ import os
 
 from PyQt4 import QtGui, QtCore
 from gui.tracker.tracker_widget import TrackerWidget
-from gui.correction.correction_widget import ResultsWidget
+from gui.results.results_widget import ResultsWidget
 from gui.statistics.statistics_widget import StatisticsWidget
 
 from core.background_computer import BackgroundComputer
@@ -132,10 +132,9 @@ class MainTabWidget(QtGui.QWidget):
         self.results_tab.play_and_highlight_tracklet(tracklet, frame=frame, margin=margin)
 
     def decide_tracklet(self, tracklet):
-        self.tab_changed(2)
-        # if not self.id_detection_tab:
-        #     self.tab_changed(2)
-
+        # self.tab_changed(2)
+        if not self.id_detection_tab:
+            self.tab_changed(2)
         self.id_detection_tab.decide_tracklet_question(tracklet)
 
     def tab_changed(self, i):
@@ -148,13 +147,14 @@ class MainTabWidget(QtGui.QWidget):
                     self.ignore_tab_change = True
                     self.tabs.removeTab(1)
                     self.results_tab.setParent(None)
-                    self.results_tab = ResultsWidget(self.project, decide_tracklet_callback=self.decide_tracklet)
-                    self.results_tab.update_positions()
+                    self.results_tab = ResultsWidget(self.project,
+                                                     decide_tracklet_callback=self.decide_tracklet)
+                    # self.results_tab.redraw_video_player_visualisations()
                     self.tabs.insertTab(1, self.results_tab, 'results viewer')
                     self.tabs.setCurrentIndex(1)
                     self.ignore_tab_change = False
 
-                self.results_tab.update_positions()
+                self.results_tab.update_visualisations()
 
         if i == 2:
             # TODO: show loading or something...
@@ -164,6 +164,7 @@ class MainTabWidget(QtGui.QWidget):
                 self.tabs.removeTab(2)
                 self.id_detection_tab.setParent(None)
                 self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet)
+                self.id_detection_tab.update_callback()
                 self.tabs.insertTab(2, self.id_detection_tab, "id detection")
                 self.tabs.setCurrentIndex(2)
                 self.ignore_tab_change = False

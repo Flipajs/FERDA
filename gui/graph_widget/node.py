@@ -3,7 +3,7 @@ import numpy as np
 from PyQt4.QtCore import Qt
 
 from gui.graph_widget_loader import WIDTH, HEIGHT
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 
 SELECTION_LINE_WIDTH = 2
 DEFAULT_INFO_TEXT_OPACITY = 150

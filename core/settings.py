@@ -57,7 +57,7 @@ class Item():
 
 class Cache(object):
     __metaclass__ = SettingsType
-    use = Item('cache/use', True, 'There will be stored information in working directory to speed up mainly the correction tool.')
+    use = Item('cache/use', True, 'There will be stored information in working directory to speed up mainly the results tool.')
     mser = Item('cache/mser', True, 'Storing MSERs have huge impact on speed but it also needs huge space amount.')
     img_manager_size_MB = Item('cache/img_manager_size_MB', 500, '')
     region_manager_num_of_instances = Item('cache/region_manager_num_of_instances', 0, '')
@@ -109,7 +109,7 @@ class Controls:
     # general
     show_settings = Item('controls/show_settings', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Comma), 'Show settings tab')
 
-    # step by step correction
+    # step by step results
     next_case = Item('controls/sbs/next_case', QtGui.QKeySequence(QtCore.Qt.Key_N))
     prev_case = Item('controls/sbs/prev_case', QtGui.QKeySequence(QtCore.Qt.Key_B))
     confirm = Item('controls/sbs/confirm', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Space))
