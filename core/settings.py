@@ -96,6 +96,7 @@ class Temp:
     __metaclass__ = SettingsType
     last_vid_path = Item('temp/last_vid_path', '')
     last_wd_path = Item('temp/last_wd_path', '')
+    last_gt_path = Item('temp/last_gt_path', '')
 
 
 class General:

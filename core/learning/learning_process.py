@@ -62,7 +62,7 @@ class LearningProcess:
         self._eps_certainty = 0.3
 
         # TODO: make standalone feature extractor...
-        self.get_features = get_features_var5
+        self.get_features = get_features_var3
 
         # to solve uncertainty about head orientation... Add both
         self.features_fliplr_hack = True

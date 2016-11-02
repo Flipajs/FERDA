@@ -13,6 +13,7 @@ from utils.img import img_saturation_coef
 from functools import partial
 import warnings
 from gui.gui_utils import SelectAllLineEdit, ClickableQGraphicsPixmapItem
+from core.settings import Settings as S_
 
 MARKER_SIZE = 15
 
@@ -73,6 +74,16 @@ class ResultsWidget(QtGui.QWidget):
         # GT Box
         self.gt_box = QtGui.QGroupBox('Ground Truth')
         self.gt_box.setLayout(QtGui.QVBoxLayout())
+
+        self.gt_file_label = QtGui.QLabel('None')
+        self.gt_box.layout().addWidget(self.gt_file_label)
+        if hasattr(self.project, 'GT_file'):
+            self.gt_file_label.setText(self.project.GT_file)
+
+        self.load_gt_b = QtGui.QPushButton('load GT')
+        self.load_gt_b.clicked.connect(self.load_gt_file_dialog)
+        self.gt_box.layout().addWidget(self.load_gt_b)
+
         self.evolve_gt_b = QtGui.QPushButton('evolve GT')
         self.evolve_gt_b.clicked.connect(self._evolve_gt)
         self.gt_box.layout().addWidget(self.evolve_gt_b)
@@ -149,7 +160,7 @@ class ResultsWidget(QtGui.QWidget):
         self.tracklet_begin_action.triggered.connect(self.tracklet_begin)
         self.tracklet_begin_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
         self.addAction(self.tracklet_begin_action)
-        
+
         # goto next / prev node (something like go to next interesting point)
         self.next_graph_node_action = QtGui.QAction('next graph node', self)
         self.next_graph_node_action.triggered.connect(lambda x: self.goto_next_graph_node(frame=None))
@@ -177,6 +188,10 @@ class ResultsWidget(QtGui.QWidget):
         self.reset_chunk_ids_b = QtGui.QPushButton('Reset chunk IDs')
         self.reset_chunk_ids_b.clicked.connect(self.reset_chunk_ids)
         self.debug_box.layout().addWidget(self.reset_chunk_ids_b)
+
+        self.assign_ids_from_gt_b = QtGui.QPushButton('assign ID from GT')
+        self.assign_ids_from_gt_b.clicked.connect(self.assign_ids_from_gt)
+        self.debug_box.layout().addWidget(self.assign_ids_from_gt_b)
 
         self.left_vbox.addWidget(self.debug_box)
 
@@ -301,24 +316,18 @@ class ResultsWidget(QtGui.QWidget):
         self.alpha_filled = 120
 
         self.colors_ = [
-                QtGui.QColor().fromRgbF(0, 0, 1), #
-                QtGui.QColor().fromRgbF(1, 0, 0),
-                QtGui.QColor().fromRgbF(1, 1, 0),
-                QtGui.QColor().fromRgbF(0, 1, 0), #
-                QtGui.QColor().fromRgbF(0, 1, 1),
-                QtGui.QColor().fromRgbF(1, 1, 1)
-            ]
+            QtGui.QColor().fromRgbF(0, 0, 1), #
+            QtGui.QColor().fromRgbF(1, 0, 0),
+            QtGui.QColor().fromRgbF(1, 1, 0),
+            QtGui.QColor().fromRgbF(0, 1, 0), #
+            QtGui.QColor().fromRgbF(0, 1, 1),
+            QtGui.QColor().fromRgbF(1, 1, 1)
+        ]
 
         # TODO: add develop option to load from project file...
 
-        self._gt = {}
-        if is_flipajs_pc():
-            self._gt_corr_step = 50
-            try:
-                with open(self.project.GT_file, 'rb') as f:
-                    self._gt = pickle.load(f)
-            except:
-                print "GT was not loaded"
+
+        self._load_gt()
 
         # self.redraw_video_player_visualisations()
 
@@ -1083,3 +1092,34 @@ class ResultsWidget(QtGui.QWidget):
 
         print "... DONE & SAVED to ", path
         self.__get_gt_stats(gt_)
+
+    def load_gt_file_dialog(self):
+        import os
+        import gui.gui_utils
+
+        path = ''
+        if os.path.isdir(S_.temp.last_gt_path):
+            path = S_.temp.last_gt_path
+
+        new_path = gui.gui_utils.file_name_dialog(self, 'Select GT file', filter_="Pickle (*.pkl)", path=path)
+
+        if new_path:
+            S_.temp.last_gt_path = os.path.dirname(new_path)
+
+        self._load_gt(new_path)
+
+    def _load_gt(self, path=None):
+        self._gt = {}
+        if is_flipajs_pc():
+            self._gt_corr_step = 50
+
+            if path is None:
+                path = self.project.GT_file
+
+            try:
+                with open(path, 'rb') as f:
+                    self._gt = pickle.load(f)
+
+                print "GT was sucessfully loaded from ", path
+            except:
+                print "GT was not loaded ", path

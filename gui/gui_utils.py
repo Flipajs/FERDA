@@ -43,6 +43,11 @@ class SelectableQLabel(QtGui.QLabel):
             self.setStyleSheet("border: 0px;")
             self.selected = False
 
+
+def file_name_dialog(window, text='Select files', path='', filter_=''):
+    return file_names_dialog(window, text=text, path=path, filter_=filter_)[0]
+
+
 def file_names_dialog(window, text='Select files', path='', filter_=''):
     file_names = QtGui.QFileDialog.getOpenFileNames(window, text, path, filter=filter_)
 

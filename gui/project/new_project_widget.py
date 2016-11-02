@@ -13,9 +13,7 @@ import gui.gui_utils
 import utils.video_manager
 import utils.misc
 import utils.img
-from utils.video_manager import VideoType
 from core.bg_model.max_intensity import MaxIntensity
-from core.settings import Settings as S_
 from gui.project.import_widget import ImportWidget
 from gui.init.set_msers import SetMSERs
 from core.project.project import Project
