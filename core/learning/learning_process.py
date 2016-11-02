@@ -64,19 +64,11 @@ class LearningProcess:
         # TODO: make standalone feature extractor...
         self.get_features = get_features_var5
 
-<<<<<<< HEAD
-=======
-        self.get_features = get_features_var5
->>>>>>> random_forest
         # to solve uncertainty about head orientation... Add both
         self.features_fliplr_hack = True
 
         # TODO: global parameter!!!
         self.k_ = 50.0
-<<<<<<< HEAD
-=======
-        self.min_new_samples_to_retrain = 2000
->>>>>>> random_forest
 
         self.X = []
         self.y = []
@@ -500,12 +492,7 @@ class LearningProcess:
 
 
     def next_step(self):
-<<<<<<< HEAD
         eps_certainty_learning = self._eps_certainty / 2
-=======
-        # do not learn
-        eps_certainty_learning = 1.1
->>>>>>> random_forest
 
         # if enough new data, retrain
         if len(self.X) - self.old_x_size > self.min_new_samples_to_retrain:
