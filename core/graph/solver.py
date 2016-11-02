@@ -8,6 +8,8 @@ from utils.constants import EDGE_CONFIRMED
 import cPickle as pickle
 
 class Solver:
+    SPLIT_JOIN_THRESHOLD = 0.5
+
     def __init__(self, project):
         """
         We are maximizing.
@@ -21,6 +23,7 @@ class Solver:
 
         self.major_axis_median = project.stats.major_axis_median
 
+        # TODO: add to config
         # TODO: add to config
         self.antlike_filter = True
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]

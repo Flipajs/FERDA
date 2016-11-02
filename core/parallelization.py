@@ -152,6 +152,7 @@ if __name__ == '__main__':
             break
 
     print "#Edges AFTER: ", proj.gm.g.num_edges()
+
     solver_t += time.time() - s
 
     s = time.time()

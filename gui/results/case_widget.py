@@ -146,10 +146,10 @@ class CaseWidget(QtGui.QWidget):
         self.col_right.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Right))
         self.addAction(self.col_right)
 
-        self.hide_visualization_a = QtGui.QAction('hide visualization', self)
-        self.hide_visualization_a.triggered.connect(self.hide_visualization)
-        self.hide_visualization_a.setShortcut(S_.controls.hide_show)
-        self.addAction(self.hide_visualization_a)
+        # self.hide_visualization_a = QtGui.QAction('hide visualization', self)
+        # self.hide_visualization_a.triggered.connect(self.hide_visualization)
+        # self.hide_visualization_a.setShortcut(S_.controls.hide_show)
+        # self.addAction(self.hide_visualization_a)
 
         self.pop_menu_node.addAction(self.action_remove_node)
         # self.pop_menu_node.addAction(self.action_mark_merged)
