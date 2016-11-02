@@ -14,6 +14,10 @@ from features import get_features_var3
 from gui.learning.ids_names_widget import IdsNamesWidget
 from utils.img_manager import ImgManager
 
+import itertools
+import math
+from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
+from skimage.feature import local_binary_pattern
 
 class LearningProcess:
     """
@@ -58,7 +62,8 @@ class LearningProcess:
         self._eps_certainty = 0.3
 
         # TODO: make standalone feature extractor...
-        self.get_features = get_features_var3
+        self.get_features = get_features_var5
+
         # to solve uncertainty about head orientation... Add both
         self.features_fliplr_hack = True
 
@@ -333,8 +338,6 @@ class LearningProcess:
             if ch in self.collision_chunks:
                 continue
 
-            # if i > 20:
-            #     break
             X = self.get_data(ch)
 
             i += 1
@@ -389,7 +392,15 @@ class LearningProcess:
 
         print "ALL CHUNKS:", len(self.p.chm)
         # filtered = []
+
+        # TODO: remvoe
+        i = 0
         for ch in self.p.chm.chunk_gen():
+            # if i > 1:
+            #     continue
+
+            i += 1
+
             # if ch.start_frame(self.p.gm) > 500:
             #     continue
             # else:
@@ -1049,6 +1060,7 @@ class LearningProcess:
 if __name__ == '__main__':
     p = Project()
     p.load('/Users/flipajs/Documents/wd/zebrafish')
+
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p, use_feature_cache=False, use_rf_cache=False)
