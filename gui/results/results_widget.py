@@ -569,6 +569,8 @@ class ResultsWidget(QtGui.QWidget):
         qim_ = QtGui.QImage(roi.width(), roi.height(), QtGui.QImage.Format_ARGB32)
         qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
+        step = 1
+
         if force_color is None:
             c = QtGui.qRgba(150, 150, 150, 200)
             if self.contour_without_colors.isChecked():
@@ -576,12 +578,16 @@ class ResultsWidget(QtGui.QWidget):
                     id_ = list(tracklet.P)[0]
                     c_ = self.project.animals[id_].color_
                     c = QtGui.qRgba(c_[2], c_[1], c_[0], 255)
+                else:
+                    step = 3
+                    c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
             elif use_ch_color:
                 c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
         else:
             c = force_color
 
-        for i in range(pts_.shape[0]):
+
+        for i in range(0, pts_.shape[0], step):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
 
         pixmap = QtGui.QPixmap.fromImage(qim_)
