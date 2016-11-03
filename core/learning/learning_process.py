@@ -96,45 +96,45 @@ class LearningProcess:
         if ghost:
             return
 
-        if not use_feature_cache:
-            # TODO: do better... Idealy chunks should already have labels
-            self.get_candidate_chunks()
-
-            self.features = self.precompute_features_()
-
-            with open(p.working_directory+'/features.pkl', 'wb') as f:
-                d = {'features': self.features,
-                     'collision_chunks': self.collision_chunks}
-                # pickle.dump(d, f, -1)
-                # withou -1, compression, faster?
-                pickle.dump(d, f)
-        else:
-            print "LOADING features..."
-
-            with open(p.working_directory+'/features.pkl', 'rb') as f:
-                d = pickle.load(f)
-                self.features = d['features']
-                self.collision_chunks = d['collision_chunks']
-
-            print "LOADED"
-
-        print "precompute avalability"
-        self.__reset_chunk_PN_sets()
-
-        # TODO: remove this
-        self.class_frequences = []
-
-        print "undecided tracklets..."
-        self.fill_undecided_tracklets()
-
-        print "Init data..."
-        self.X = []
-        self.y = []
-
-        # TODO: wait for all necesarry examples, then finish init.
-        # np.random.seed(13)
-        self.__train_rfc()
-        print "TRAINED"
+        # if not use_feature_cache:
+        #     # TODO: do better... Idealy chunks should already have labels
+        #     self.get_candidate_chunks()
+        #
+        #     self.features = self.precompute_features_()
+        #
+        #     with open(p.working_directory+'/features.pkl', 'wb') as f:
+        #         d = {'features': self.features,
+        #              'collision_chunks': self.collision_chunks}
+        #         # pickle.dump(d, f, -1)
+        #         # withou -1, compression, faster?
+        #         pickle.dump(d, f)
+        # else:
+        #     print "LOADING features..."
+        #
+        #     with open(p.working_directory+'/features.pkl', 'rb') as f:
+        #         d = pickle.load(f)
+        #         self.features = d['features']
+        #         self.collision_chunks = d['collision_chunks']
+        #
+        #     print "LOADED"
+        #
+        # print "precompute avalability"
+        # self.__reset_chunk_PN_sets()
+        #
+        # # TODO: remove this
+        # self.class_frequences = []
+        #
+        # print "undecided tracklets..."
+        # self.fill_undecided_tracklets()
+        #
+        # print "Init data..."
+        # self.X = []
+        # self.y = []
+        #
+        # # TODO: wait for all necesarry examples, then finish init.
+        # # np.random.seed(13)
+        # self.__train_rfc()
+        # print "TRAINED"
 
         self.GT = None
         # try:
@@ -1058,6 +1058,21 @@ class LearningProcess:
 
     def set_min_new_samples_to_retrain(self, val):
         self.min_new_samples_to_retrain = val
+
+    def edit_tracklet(self, tracklet, new_P, new_N, method='fix_tracklet_only'):
+        old_P = set(tracklet.P)
+        old_N = set(tracklet.N)
+
+        print "edit tracklet old P", old_P, "old N", old_N, "new P", new_P, "new N", new_N, method, tracklet
+
+        if method == 'fix_affected':
+            for t in self.__get_affected_undecided_tracklets(tracklet):
+                print t
+        elif method == 'fix_tracklet_only':
+            # TODO: check conflict?
+            tracklet.N = new_N
+            tracklet.P = new_P
+
 
 if __name__ == '__main__':
     p = Project()

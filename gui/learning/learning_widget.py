@@ -319,6 +319,11 @@ class LearningWidget(QtGui.QWidget):
     def question_callback(self, tracklet):
         self.show_tracklet_callback(tracklet)
 
+    def edit_tracklet(self, tracklet):
+        from gui.learning.edit_tracklet_advanced import EditTrackletAdvanced
+        w = EditTrackletAdvanced(tracklet, len(self.lp.all_ids), self.lp.edit_tracklet)
+        w.show()
+
     def decide_tracklet_question(self, tracklet, id_=None):
         if id_ is None:
             items = map(str, self.lp.all_ids - tracklet.N)

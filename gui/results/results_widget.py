@@ -18,10 +18,16 @@ from core.settings import Settings as S_
 MARKER_SIZE = 15
 
 class ResultsWidget(QtGui.QWidget):
-    def __init__(self, project, start_on_frame=-1, decide_tracklet_callback=None):
+    def __init__(self, project, start_on_frame=-1, callbacks=None):
         super(ResultsWidget, self).__init__()
 
-        self.decide_tracklet_callback = decide_tracklet_callback
+        self.decide_tracklet_callback = None
+        if 'decide_tracklet' in callbacks:
+            self.decide_tracklet_callback = callbacks['decide_tracklet']
+
+        self.edit_tracklet_callback = None
+        if 'edit_tracklet' in callbacks:
+            self.edit_tracklet_callback = callbacks['edit_tracklet']
 
         self.show_identities = False
         self.loop_highlight_tracklets = []
@@ -109,10 +115,10 @@ class ResultsWidget(QtGui.QWidget):
         self.add_gt_markers_b.clicked.connect(self.__add_gt_markers)
         self.gt_box.layout().addWidget(self.add_gt_markers_b)
 
-        self.add_gt_markers_action = QtGui.QAction('add gt markers', self)
-        self.add_gt_markers_action.triggered.connect(self.__add_gt_markers)
-        self.add_gt_markers_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
-        self.addAction(self.add_gt_markers_action)
+        # self.add_gt_markers_action = QtGui.QAction('add gt markers', self)
+        # self.add_gt_markers_action.triggered.connect(self.__add_gt_markers)
+        # self.add_gt_markers_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
+        # self.addAction(self.add_gt_markers_action)
 
         self.create_gt_from_results_b = QtGui.QPushButton('create gt from results')
         self.create_gt_from_results_b.clicked.connect(self.__create_gt_from_results)
@@ -144,6 +150,12 @@ class ResultsWidget(QtGui.QWidget):
         self.decide_tracklet_action.triggered.connect(self.decide_tracklet)
         self.decide_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
         self.addAction(self.decide_tracklet_action)
+
+        self.edit_tracklet_action = QtGui.QAction('edit tracklet', self)
+        self.edit_tracklet_action.triggered.connect(self.edit_tracklet)
+        self.edit_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
+        self.addAction(self.edit_tracklet_action)
+
 
         self.tracklet_end_button = QtGui.QPushButton('go to end')
         self.tracklet_end_button.clicked.connect(self.tracklet_end)
@@ -361,6 +373,11 @@ class ResultsWidget(QtGui.QWidget):
             self.redraw_video_player_visualisations()
 
             self.setFocus()
+
+    def edit_tracklet(self):
+        if self.active_tracklet_id > -1:
+            if self.edit_tracklet_callback:
+                self.edit_tracklet_callback(self.project.chm[self.active_tracklet_id])
 
     def tracklet_begin(self):
         if self.active_tracklet_id > -1:
