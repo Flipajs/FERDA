@@ -404,7 +404,7 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_labels_repaint()
 
     def video_labels_repaint(self):
-
+        print "repaint"
         self.width = self.videoSlider.width()
         self.ratio = self.width / float(self.video.total_frame_count())
 
