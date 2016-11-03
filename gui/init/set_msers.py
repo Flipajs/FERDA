@@ -349,7 +349,7 @@ class SetMSERs(QtGui.QWidget):
         self.check_mser = QtGui.QCheckBox("MSER view")
         self.button_next = QtGui.QPushButton("Next frame")
         self.button_rand = QtGui.QPushButton("Random frame")
-        self.button_done = QtGui.QPushButton("Done")
+        self.button_done = QtGui.QPushButton("Finish segmentation model")
 
     def configure_form_panel(self):
         self.mser_max_area.setMinimum(0.0001)
