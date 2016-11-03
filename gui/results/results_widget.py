@@ -191,6 +191,15 @@ class ResultsWidget(QtGui.QWidget):
 
         self.assign_ids_from_gt_b = QtGui.QPushButton('assign ID from GT')
         self.assign_ids_from_gt_b.clicked.connect(self.assign_ids_from_gt)
+
+        self.print_conflic_tracklets_b = QtGui.QPushButton('print conflicts')
+        self.print_conflic_tracklets_b.clicked.connect(self.print_conflicts)
+
+        self.print_undecided_tracklets_b = QtGui.QPushButton('print undecided')
+        self.print_undecided_tracklets_b.clicked.connect(self.print_undecided)
+
+        self.debug_box.layout().addWidget(self.print_conflic_tracklets_b)
+        self.debug_box.layout().addWidget(self.print_undecided_tracklets_b)
         self.debug_box.layout().addWidget(self.assign_ids_from_gt_b)
 
         self.left_vbox.addWidget(self.debug_box)
@@ -579,7 +588,7 @@ class ResultsWidget(QtGui.QWidget):
                     c_ = self.project.animals[id_].color_
                     c = QtGui.qRgba(c_[2], c_[1], c_[0], 255)
                 else:
-                    step = 3
+                    step = 2
                     c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
             elif use_ch_color:
                 c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
@@ -1154,3 +1163,15 @@ class ResultsWidget(QtGui.QWidget):
                     tracklet = arr[0]
                     if len(tracklet.P) != 1:
                         self.decide_tracklet_callback(tracklet, id_)
+
+    def print_conflicts(self):
+        print "CONFLICTS: "
+        for t in self.project.chm.chunk_gen():
+            if len(t.P.intersection(t.N)):
+                print t, t.P, t.N
+
+    def print_undecided(self):
+        print "UNDECIDED: "
+        for t in self.project.chm.chunk_gen():
+            if len(t.P.union(t.N)) != len(self.project.animals):
+                print t, t.P, t.N
