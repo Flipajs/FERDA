@@ -684,8 +684,9 @@ class ResultsWidget(QtGui.QWidget):
 
             frame = self.video_player.current_frame()
 
-            if frame in self._gt:
-                data = self._gt[frame][a.id]
+            positions = self._gt.get_clear_positions(frame)
+            if a.id < len(positions):
+                data = positions[a.id]
                 if data is None:
                     y = -10
                     x = 10 * a.id
@@ -1110,19 +1111,14 @@ class ResultsWidget(QtGui.QWidget):
         self.video_player.redraw_visualisations()
 
     def _load_gt(self):
-        self._gt = {}
+        from utils.gt.gt import GT
+        self._gt = GT()
         if is_flipajs_pc():
             self._gt_corr_step = 50
 
             path = self.project.GT_file
+            self._gt.load(path)
 
-            try:
-                with open(path, 'rb') as f:
-                    self._gt = pickle.load(f)
-
-                print "GT was sucessfully loaded from ", path
-            except:
-                print "GT was not loaded ", path
 
     def assign_ids_from_gt(self):
         # TODO: for each tracklet, try to get id from GT
