@@ -131,11 +131,11 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.setCurrentIndex(1)
         self.results_tab.play_and_highlight_tracklet(tracklet, frame=frame, margin=margin)
 
-    def decide_tracklet(self, tracklet):
+    def decide_tracklet(self, tracklet, id_=None):
         # self.tab_changed(2)
         if not self.id_detection_tab:
             self.tab_changed(2)
-        self.id_detection_tab.decide_tracklet_question(tracklet)
+        self.id_detection_tab.decide_tracklet_question(tracklet, id_=id_)
 
     def tab_changed(self, i):
         if self.ignore_tab_change or self.project.chm is None:

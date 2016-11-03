@@ -876,7 +876,7 @@ class LearningProcess:
         if self.__only_one_P_possibility(tracklet):
             id_ = self.__get_one_possible_P(tracklet)
 
-            self.__if_possible_update_P(tracklet, id_, is_in_intersection_Ps=False)
+            self.__if_possible_update_P(tracklet, id_, is_in_intersection_Ps=True)
 
         return True
 

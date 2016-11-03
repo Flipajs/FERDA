@@ -1131,7 +1131,7 @@ class ResultsWidget(QtGui.QWidget):
                 rch = RegionChunk(t, self.project.gm, self.project.rm)
                 c = rch.centroid_in_t(frame)
 
-                best_d = np.inf
+                best_d = 50
                 best_id = -1
                 for id_, c2 in enumerate(data):
                     if c2 is not None:
