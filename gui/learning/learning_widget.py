@@ -319,11 +319,16 @@ class LearningWidget(QtGui.QWidget):
     def question_callback(self, tracklet):
         self.show_tracklet_callback(tracklet)
 
-    def decide_tracklet_question(self, tracklet):
-        items = map(str, self.lp.all_ids - tracklet.N)
+    def decide_tracklet_question(self, tracklet, id=None):
+        if id is None:
+            items = map(str, self.lp.all_ids - tracklet.N)
 
-        item, ok = QtGui.QInputDialog.getItem(self, "select animal ID for tracklet ID: "+str(tracklet.id()),
-                                              "list of ids", items, 0, False)
+            item, ok = QtGui.QInputDialog.getItem(self, "select animal ID for tracklet ID: "+str(tracklet.id()),
+                                                  "list of ids", items, 0, False)
+        else:
+            ok = True
+            item = id
+
         if ok:
             self.lp.assign_identity(int(item), tracklet, user=True)
             self.update_callback()

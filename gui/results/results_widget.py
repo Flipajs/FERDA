@@ -1125,5 +1125,26 @@ class ResultsWidget(QtGui.QWidget):
                 print "GT was not loaded ", path
 
     def assign_ids_from_gt(self):
-        # TODO: for each tracklet, try to get id from GT
-        pass
+        for frame, data in self._gt.iteritems():
+            matches = [list() for _ in range(len(self.project.animals))]
+            for t in self.project.chm.chunks_in_frame(frame):
+                rch = RegionChunk(t, self.project.gm, self.project.rm)
+                c = rch.centroid_in_t(frame)
+
+                best_d = np.inf
+                best_id = -1
+                for id_, c2 in enumerate(data):
+                    if c2 is not None:
+                        d = ((c[0]-c2[0])**2 + (c[1]-c2[1])**2)**0.5
+                        if best_d > d:
+                            best_d = d
+                            best_id = id_
+
+                if best_id > -1:
+                    matches[best_id].append(t)
+
+            for id_, arr in enumerate(matches):
+                if len(arr) == 1:
+                    tracklet = arr[0]
+                    if len(tracklet.P) != 1:
+                        self.decide_tracklet_callback(tracklet, id_)
