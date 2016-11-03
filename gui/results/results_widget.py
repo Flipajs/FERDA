@@ -1078,6 +1078,7 @@ class ResultsWidget(QtGui.QWidget):
             self.video_player.redraw_visualisations()
 
     def __get_gt_stats(self, gt):
+        # TODO move to utils.gt.gt
         frames = sorted(map(int, gt.iterkeys()))
 
         num_ids = len(gt[frames[0]])
@@ -1095,39 +1096,17 @@ class ResultsWidget(QtGui.QWidget):
             print " {}:{:.2%}".format(i, id_coverage[i] / float(len(frames)))
 
     def __create_gt_from_results(self):
-        from utils.misc import print_progress
-        print "... CREATING GT from results ..."
+        from utils.gt.gt import GT
 
-        gt_ = {}
-        all_ids = set(range(len(self.project.animals)))
+        if not hasattr(self.project, 'GT_file'):
+            path = self.project.working_directory + '/' + 'GT.pkl'
+        else:
+            path = self.project.GT_file
 
-        i = 0
-        l = len(self.project.chm)
-        print_progress(i, l, prefix='Progress:', suffix='Complete', barLength=50)
+        self._gt = GT()
+        self._gt.build_from_PN(self.project)
 
-        total_frames = self.video_player.total_frame_count()
-        for frame in range(total_frames):
-            gt_[frame] = [None for i in range(len(self.project.animals))]
-
-        for t in self.project.chm.chunk_gen():
-            if len(t.P) == 1 and t.P.union(t.N) == all_ids:
-                id_ = list(t.P)[0]
-                rch = RegionChunk(t, self.project.gm, self.project.rm)
-
-                for r in rch.regions_gen():
-                    gt_[r.frame()][id_] = (r.centroid()[0], r.centroid()[1])
-
-            print_progress(i, l, prefix='Progress:', suffix='Complete', barLength=50)
-            i += 1
-
-        print
-
-        path = self.project.working_directory+'/'+'GT.pkl'
-        with open(path, 'w') as f:
-            pickle.dump(gt_, f)
-
-        print "... DONE & SAVED to ", path
-        self.__get_gt_stats(gt_)
+        self._gt.save(path)
 
     def load_gt_file_dialog(self):
         import os
