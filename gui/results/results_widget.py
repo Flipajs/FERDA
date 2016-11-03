@@ -184,6 +184,9 @@ class ResultsWidget(QtGui.QWidget):
         self.prev_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_B))
         self.addAction(self.prev_graph_node_action)
 
+        self.split_tracklet_b = QtGui.QPushButton('split tracklet')
+        self.split_tracklet_b.clicked.connect(self.split_tracklet)
+
         self.tracklet_box.layout().addWidget(self.highlight_tracklet_input)
         self.tracklet_box.layout().addWidget(self.tracklet_p_label)
         self.tracklet_box.layout().addWidget(self.tracklet_n_label)
@@ -192,6 +195,7 @@ class ResultsWidget(QtGui.QWidget):
         self.tracklet_box.layout().addWidget(self.decide_tracklet_button)
         self.tracklet_box.layout().addWidget(self.tracklet_end_button)
         self.tracklet_box.layout().addWidget(self.tracklet_begin_button)
+        self.tracklet_box.layout().addWidget(self.split_tracklet_b)
 
         self.left_vbox.addWidget(self.tracklet_box)
 
@@ -1192,3 +1196,28 @@ class ResultsWidget(QtGui.QWidget):
         for t in self.project.chm.chunk_gen():
             if len(t.P.union(t.N)) != len(self.project.animals):
                 print t, t.P, t.N
+
+    def split_tracklet(self):
+        import random
+
+        if self.active_tracklet_id > -1:
+            tracklet = self.project.chm[self.active_tracklet_id]
+            frame = self.video_player.current_frame()
+
+            left_nodes, right_nodes = tracklet.split_at(frame, self.project.gm)
+            if len(left_nodes) and len(right_nodes):
+                self.project.chm.remove_chunk(tracklet, self.project.gm)
+
+                ch1, _ = self.project.chm.new_chunk(left_nodes, self.project.gm)
+                r = random.randint(0, 255)
+                g = random.randint(0, 255)
+                b = random.randint(0, 255)
+                ch1.color = QtGui.QColor.fromRgb(r, g, b)
+
+                ch2, _ = self.project.chm.new_chunk(right_nodes, self.project.gm)
+                r = random.randint(0, 255)
+                g = random.randint(0, 255)
+                b = random.randint(0, 255)
+                ch2.color = QtGui.QColor.fromRgb(r, g, b)
+
+        self.video_player.redraw_visualisations()
