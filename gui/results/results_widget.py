@@ -18,10 +18,16 @@ from core.settings import Settings as S_
 MARKER_SIZE = 15
 
 class ResultsWidget(QtGui.QWidget):
-    def __init__(self, project, start_on_frame=-1, decide_tracklet_callback=None):
+    def __init__(self, project, start_on_frame=-1, callbacks=None):
         super(ResultsWidget, self).__init__()
 
-        self.decide_tracklet_callback = decide_tracklet_callback
+        self.decide_tracklet_callback = None
+        if 'decide_tracklet' in callbacks:
+            self.decide_tracklet_callback = callbacks['decide_tracklet']
+
+        self.edit_tracklet_callback = None
+        if 'edit_tracklet' in callbacks:
+            self.edit_tracklet_callback = callbacks['edit_tracklet']
 
         self.show_identities = False
         self.loop_highlight_tracklets = []
@@ -109,10 +115,10 @@ class ResultsWidget(QtGui.QWidget):
         self.add_gt_markers_b.clicked.connect(self.__add_gt_markers)
         self.gt_box.layout().addWidget(self.add_gt_markers_b)
 
-        self.add_gt_markers_action = QtGui.QAction('add gt markers', self)
-        self.add_gt_markers_action.triggered.connect(self.__add_gt_markers)
-        self.add_gt_markers_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
-        self.addAction(self.add_gt_markers_action)
+        # self.add_gt_markers_action = QtGui.QAction('add gt markers', self)
+        # self.add_gt_markers_action.triggered.connect(self.__add_gt_markers)
+        # self.add_gt_markers_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
+        # self.addAction(self.add_gt_markers_action)
 
         self.create_gt_from_results_b = QtGui.QPushButton('create gt from results')
         self.create_gt_from_results_b.clicked.connect(self.__create_gt_from_results)
@@ -145,6 +151,12 @@ class ResultsWidget(QtGui.QWidget):
         self.decide_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
         self.addAction(self.decide_tracklet_action)
 
+        self.edit_tracklet_action = QtGui.QAction('edit tracklet', self)
+        self.edit_tracklet_action.triggered.connect(self.edit_tracklet)
+        self.edit_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
+        self.addAction(self.edit_tracklet_action)
+
+
         self.tracklet_end_button = QtGui.QPushButton('go to end')
         self.tracklet_end_button.clicked.connect(self.tracklet_end)
 
@@ -172,6 +184,9 @@ class ResultsWidget(QtGui.QWidget):
         self.prev_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_B))
         self.addAction(self.prev_graph_node_action)
 
+        self.split_tracklet_b = QtGui.QPushButton('split tracklet')
+        self.split_tracklet_b.clicked.connect(self.split_tracklet)
+
         self.tracklet_box.layout().addWidget(self.highlight_tracklet_input)
         self.tracklet_box.layout().addWidget(self.tracklet_p_label)
         self.tracklet_box.layout().addWidget(self.tracklet_n_label)
@@ -180,6 +195,7 @@ class ResultsWidget(QtGui.QWidget):
         self.tracklet_box.layout().addWidget(self.decide_tracklet_button)
         self.tracklet_box.layout().addWidget(self.tracklet_end_button)
         self.tracklet_box.layout().addWidget(self.tracklet_begin_button)
+        self.tracklet_box.layout().addWidget(self.split_tracklet_b)
 
         self.left_vbox.addWidget(self.tracklet_box)
 
@@ -191,6 +207,15 @@ class ResultsWidget(QtGui.QWidget):
 
         self.assign_ids_from_gt_b = QtGui.QPushButton('assign ID from GT')
         self.assign_ids_from_gt_b.clicked.connect(self.assign_ids_from_gt)
+
+        self.print_conflic_tracklets_b = QtGui.QPushButton('print conflicts')
+        self.print_conflic_tracklets_b.clicked.connect(self.print_conflicts)
+
+        self.print_undecided_tracklets_b = QtGui.QPushButton('print undecided')
+        self.print_undecided_tracklets_b.clicked.connect(self.print_undecided)
+
+        self.debug_box.layout().addWidget(self.print_conflic_tracklets_b)
+        self.debug_box.layout().addWidget(self.print_undecided_tracklets_b)
         self.debug_box.layout().addWidget(self.assign_ids_from_gt_b)
 
         self.left_vbox.addWidget(self.debug_box)
@@ -352,6 +377,11 @@ class ResultsWidget(QtGui.QWidget):
             self.redraw_video_player_visualisations()
 
             self.setFocus()
+
+    def edit_tracklet(self):
+        if self.active_tracklet_id > -1:
+            if self.edit_tracklet_callback:
+                self.edit_tracklet_callback(self.project.chm[self.active_tracklet_id])
 
     def tracklet_begin(self):
         if self.active_tracklet_id > -1:
@@ -569,6 +599,8 @@ class ResultsWidget(QtGui.QWidget):
         qim_ = QtGui.QImage(roi.width(), roi.height(), QtGui.QImage.Format_ARGB32)
         qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
+        step = 1
+
         if force_color is None:
             c = QtGui.qRgba(150, 150, 150, 200)
             if self.contour_without_colors.isChecked():
@@ -576,12 +608,16 @@ class ResultsWidget(QtGui.QWidget):
                     id_ = list(tracklet.P)[0]
                     c_ = self.project.animals[id_].color_
                     c = QtGui.qRgba(c_[2], c_[1], c_[0], 255)
+                else:
+                    step = 2
+                    c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
             elif use_ch_color:
                 c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
         else:
             c = force_color
 
-        for i in range(pts_.shape[0]):
+
+        for i in range(0, pts_.shape[0], step):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
 
         pixmap = QtGui.QPixmap.fromImage(qim_)
@@ -1043,6 +1079,7 @@ class ResultsWidget(QtGui.QWidget):
             self.video_player.redraw_visualisations()
 
     def __get_gt_stats(self, gt):
+        # TODO move to utils.gt.gt
         frames = sorted(map(int, gt.iterkeys()))
 
         num_ids = len(gt[frames[0]])
@@ -1060,39 +1097,17 @@ class ResultsWidget(QtGui.QWidget):
             print " {}:{:.2%}".format(i, id_coverage[i] / float(len(frames)))
 
     def __create_gt_from_results(self):
-        from utils.misc import print_progress
-        print "... CREATING GT from results ..."
+        from utils.gt.gt import GT
 
-        gt_ = {}
-        all_ids = set(range(len(self.project.animals)))
+        if not hasattr(self.project, 'GT_file'):
+            path = self.project.working_directory + '/' + 'GT.pkl'
+        else:
+            path = self.project.GT_file
 
-        i = 0
-        l = len(self.project.chm)
-        print_progress(i, l, prefix='Progress:', suffix='Complete', barLength=50)
+        self._gt = GT()
+        self._gt.build_from_PN(self.project)
 
-        total_frames = self.video_player.total_frame_count()
-        for frame in range(total_frames):
-            gt_[frame] = [None for i in range(len(self.project.animals))]
-
-        for t in self.project.chm.chunk_gen():
-            if len(t.P) == 1 and t.P.union(t.N) == all_ids:
-                id_ = list(t.P)[0]
-                rch = RegionChunk(t, self.project.gm, self.project.rm)
-
-                for r in rch.regions_gen():
-                    gt_[r.frame()][id_] = (r.centroid()[0], r.centroid()[1])
-
-            print_progress(i, l, prefix='Progress:', suffix='Complete', barLength=50)
-            i += 1
-
-        print
-
-        path = self.project.working_directory+'/'+'GT.pkl'
-        with open(path, 'w') as f:
-            pickle.dump(gt_, f)
-
-        print "... DONE & SAVED to ", path
-        self.__get_gt_stats(gt_)
+        self._gt.save(path)
 
     def load_gt_file_dialog(self):
         import os
@@ -1121,5 +1136,63 @@ class ResultsWidget(QtGui.QWidget):
 
 
     def assign_ids_from_gt(self):
-        # TODO: for each tracklet, try to get id from GT
-        pass
+        for frame, data in self._gt.iteritems():
+            matches = [list() for _ in range(len(self.project.animals))]
+            for t in self.project.chm.chunks_in_frame(frame):
+                rch = RegionChunk(t, self.project.gm, self.project.rm)
+                c = rch.centroid_in_t(frame)
+
+                best_d = 50
+                best_id = -1
+                for id_, c2 in enumerate(data):
+                    if c2 is not None:
+                        d = ((c[0]-c2[0])**2 + (c[1]-c2[1])**2)**0.5
+                        if best_d > d:
+                            best_d = d
+                            best_id = id_
+
+                if best_id > -1:
+                    matches[best_id].append(t)
+
+            for id_, arr in enumerate(matches):
+                if len(arr) == 1:
+                    tracklet = arr[0]
+                    if len(tracklet.P) != 1:
+                        self.decide_tracklet_callback(tracklet, id_)
+
+    def print_conflicts(self):
+        print "CONFLICTS: "
+        for t in self.project.chm.chunk_gen():
+            if len(t.P.intersection(t.N)):
+                print t, t.P, t.N
+
+    def print_undecided(self):
+        print "UNDECIDED: "
+        for t in self.project.chm.chunk_gen():
+            if len(t.P.union(t.N)) != len(self.project.animals):
+                print t, t.P, t.N
+
+    def split_tracklet(self):
+        import random
+
+        if self.active_tracklet_id > -1:
+            tracklet = self.project.chm[self.active_tracklet_id]
+            frame = self.video_player.current_frame()
+
+            left_nodes, right_nodes = tracklet.split_at(frame, self.project.gm)
+            if len(left_nodes) and len(right_nodes):
+                self.project.chm.remove_chunk(tracklet, self.project.gm)
+
+                ch1, _ = self.project.chm.new_chunk(left_nodes, self.project.gm)
+                r = random.randint(0, 255)
+                g = random.randint(0, 255)
+                b = random.randint(0, 255)
+                ch1.color = QtGui.QColor.fromRgb(r, g, b)
+
+                ch2, _ = self.project.chm.new_chunk(right_nodes, self.project.gm)
+                r = random.randint(0, 255)
+                g = random.randint(0, 255)
+                b = random.randint(0, 255)
+                ch2.color = QtGui.QColor.fromRgb(r, g, b)
+
+        self.video_player.redraw_visualisations()

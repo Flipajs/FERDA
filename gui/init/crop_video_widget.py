@@ -387,7 +387,6 @@ class CropVideoWidget(QtGui.QWidget):
                 self.out_of_frames()
 
     def get_start_frame_number(self):
-
         self.start_frame = self.video.frame_number() + 1
         self.to_start.show()
         self.to_stop.show()

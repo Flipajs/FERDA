@@ -16,6 +16,7 @@ from functools import partial
 from gui.graph_widget.graph_visualizer import GraphVisualizer
 from core.graph.graph_manager import GraphManager
 import time
+from gui.learning.learning_widget import LearningWidget
 
 
 class MainTabWidget(QtGui.QWidget):
@@ -45,7 +46,7 @@ class MainTabWidget(QtGui.QWidget):
         self.statistics_tab = StatisticsWidget(project)
         self.graph_tab = QtGui.QWidget()
 
-        self.id_detection_tab = QtGui.QWidget()
+        self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet)
 
         self.finish_callback = finish_callback
 
@@ -131,11 +132,11 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.setCurrentIndex(1)
         self.results_tab.play_and_highlight_tracklet(tracklet, frame=frame, margin=margin)
 
-    def decide_tracklet(self, tracklet):
+    def decide_tracklet(self, tracklet, id_=None):
         # self.tab_changed(2)
         if not self.id_detection_tab:
             self.tab_changed(2)
-        self.id_detection_tab.decide_tracklet_question(tracklet)
+        self.id_detection_tab.decide_tracklet_question(tracklet, id_=id_)
 
     def tab_changed(self, i):
         if self.ignore_tab_change or self.project.chm is None:
@@ -148,7 +149,8 @@ class MainTabWidget(QtGui.QWidget):
                     self.tabs.removeTab(1)
                     self.results_tab.setParent(None)
                     self.results_tab = ResultsWidget(self.project,
-                                                     decide_tracklet_callback=self.decide_tracklet)
+                                                     callbacks={'decide_tracklet': self.decide_tracklet,
+                                                                'edit_tracklet': self.id_detection_tab.edit_tracklet})
                     # self.results_tab.redraw_video_player_visualisations()
                     self.tabs.insertTab(1, self.results_tab, 'results viewer')
                     self.tabs.setCurrentIndex(1)
@@ -158,7 +160,6 @@ class MainTabWidget(QtGui.QWidget):
 
         if i == 2:
             # TODO: show loading or something...
-            from gui.learning.learning_widget import LearningWidget
             if not isinstance(self.id_detection_tab, LearningWidget):
                 self.ignore_tab_change = True
                 self.tabs.removeTab(2)

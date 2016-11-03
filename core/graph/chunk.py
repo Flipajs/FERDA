@@ -21,6 +21,8 @@ class Chunk:
         self.color = color
         self.statistics = {}
         self.animal_id_ = -1
+        self.P = set()
+        self.N = set()
 
         if len(vertices_ids) > 1:
             if vertices_ids[0] > 0:
@@ -234,6 +236,52 @@ class Chunk:
                 i += 1
 
         self.merge(ch2, gm, undo_action)
+
+    def split_at(self, frame, gm):
+        """
+        splits tracklet so the node in t=frame stays in the left tracklet
+
+        Args:
+            frame:
+            gm:
+
+        Returns:
+
+        """
+        start_frame = self.start_frame(gm)
+
+        key = frame - start_frame
+        left_nodes = []
+        right_nodes = []
+
+        if key >= 0 and key < self.length():
+            left_nodes = list(self.nodes_[:key+1])
+            right_nodes = self.nodes_[key+1:]
+
+            # TODO: undo action?
+            # TODO: what if chunk is of length 2?
+            new_end = left_nodes[-1]
+            new_end = gm.add_vertex(gm.region(new_end))
+            left_nodes[-1] = int(new_end)
+
+            # remove previous edge...
+            gm.remove_edge(gm.g.vertex(self.start_node()), gm.g.vertex(right_nodes[-1]))
+            next_nodes = gm.get_vertices_in_t(gm.region(new_end).frame() + 1)
+            gm.add_edges_([new_end], next_nodes)
+
+            gm.g.vp['chunk_start_id'][gm.g.vertex(right_nodes[-1])] = 0
+            gm.g.vp['chunk_end_id'][gm.g.vertex(right_nodes[-1])] = 0
+
+            # not last node of tracklet... because it is already in graph
+            if key < self.length() - 1:
+                new_start = right_nodes[0]
+                new_start = gm.add_vertex(gm.region(new_start))
+                right_nodes[0] = int(new_start)
+
+            # self.nodes_ = left_nodes
+            # self.chunk_reconnect_(gm)
+
+        return left_nodes, right_nodes
 
     def id(self):
         return self.id_
