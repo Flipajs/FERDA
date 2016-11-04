@@ -1,19 +1,18 @@
 __author__ = 'fnaiser'
 
 import cPickle as pickle
+from functools import partial
 
 import numpy as np
 from PyQt4 import QtGui, QtCore
 
 from core.graph.region_chunk import RegionChunk
-from gui.video_player.video_player import VideoPlayer
-from utils.misc import is_flipajs_pc
-from gui.img_controls import markers
-from utils.img import img_saturation_coef
-from functools import partial
-import warnings
-from gui.gui_utils import SelectAllLineEdit, ClickableQGraphicsPixmapItem
 from core.settings import Settings as S_
+from gui.gui_utils import SelectAllLineEdit, ClickableQGraphicsPixmapItem
+from gui.img_controls import markers
+from gui.video_player.video_player import VideoPlayer
+from utils.img import img_saturation_coef
+from utils.misc import is_flipajs_pc
 
 MARKER_SIZE = 15
 
@@ -468,7 +467,7 @@ class ResultsWidget(QtGui.QWidget):
         for f in xrange(max_frame+100):
             my_data.setdefault(f, np.array([None] * len(self.project.animals)))
 
-        from utils.clearmetrics.clearmetrics import ClearMetrics
+        from utils.clearmetrics import ClearMetrics
         threshold = 10
 
         gt_ = self.__prepare_gt()

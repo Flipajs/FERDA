@@ -242,8 +242,6 @@ class ClearMetrics(object):
                                         -1 for FP
         @rtype: list, list, list
         """
-        if frame == 4000:
-            print "4000"
 
         sq_distance = self._get_sq_distance_matrix(frame)
         sq_distance_undefined = math.ceil(np.nanmax(sq_distance)) + 1

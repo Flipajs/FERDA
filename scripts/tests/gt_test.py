@@ -1,7 +1,6 @@
 from core.project.project import Project
-from utils.clearmetrics.clearmetrics import ClearMetrics
-import cPickle as pickle
 from gui.statistics.region_reconstruction import get_trajectories
+from utils.clearmetrics import ClearMetrics
 
 
 def test_project(gt_measurements, test_measurements, frames, threshold):
