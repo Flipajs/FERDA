@@ -6,7 +6,9 @@ import sys
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
+from gui.arena.my_view import MyView
 from gui.gui_utils import cvimg2qtpixmap
+from gui.segmentation.my_scene import MyScene
 from gui.segmentation.segmentation import SegmentationPicker
 from utils.video_manager import get_auto_video_manager
 import cPickle
@@ -67,17 +69,18 @@ class GTWidget(QtGui.QWidget):
 
     def _set_threshold(self, value):
         self.threshold = value
+        self.img_viewer.update_selection()
 
     def _init_gui(self):
         self.showMaximized()
 
         self.layout = QtGui.QHBoxLayout()
         self.left_part = QtGui.QWidget()
+        self.left_part.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         self.left_part.setLayout(QtGui.QVBoxLayout())
-        self.left_part.layout().setAlignment(QtCore.Qt.AlignCenter)
+        self.left_part.layout().setAlignment(QtCore.Qt.AlignTop)
 
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
-        # self.slider.setGeometry(30, 40, 50, 30)
         self.slider.setRange(0, 100)
         self.slider.setTickInterval(10)
         self.slider.setValue(self.threshold)
@@ -87,19 +90,25 @@ class GTWidget(QtGui.QWidget):
         self.roi_tickbox = QtGui.QCheckBox("Roi")
         self.roi_tickbox.clicked.connect(self._toggle_roi)
 
+
+        self.buttons = QtGui.QWidget()
+        self.buttons.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Expanding)
+        self.buttons.setLayout(QtGui.QVBoxLayout())
+        self.buttons.layout().setAlignment(QtCore.Qt.AlignBottom)
         self.next_button = QtGui.QPushButton('Next')
         self.next_button.clicked.connect(self._next)
 
         self.next_region_button = QtGui.QPushButton('Next Region')
         self.next_region_button.clicked.connect(self._next_region)
 
+        self.buttons.layout().addWidget(self.next_button)
+        self.buttons.layout().addWidget(self.next_region_button)
 
         self.left_part.layout().addWidget(self.slider)
         self.left_part.layout().addWidget(self.roi_tickbox)
-        self.left_part.layout().addWidget(self.next_button)
-        self.left_part.layout().addWidget(self.next_region_button)
+        self.left_part.layout().addWidget(self.buttons)
 
-        self.img_viewer = ImgViewer(self.project.img_manager)
+        self.img_viewer = ImgViewer(self.project.img_manager, self.slider)
 
         self.layout.addWidget(self.left_part)
         self.layout.addWidget(self.img_viewer)
@@ -107,27 +116,66 @@ class GTWidget(QtGui.QWidget):
         self.setLayout(self.layout)
 
 
-class ImgViewer(QtGui.QLabel):
+class ImgViewer(MyView):
 
     img = None
     img_roi = None
 
-    def __init__(self, img_manager):
-        QtGui.QLabel.__init__(self)
+    def __init__(self, img_manager, slider):
+        MyView.__init__(self)
+        # self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.img_manager = img_manager
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.scene = MyScene(update_callback_release=self.mouse_release)
+        self.setScene(self.scene)
+        self.slider = slider
 
     def show_img(self):
-        self.setPixmap(cvimg2qtpixmap(self.img))
+        self.scene.addPixmap(cvimg2qtpixmap(self.img))
 
     def show_roi(self):
-        self.setPixmap(cvimg2qtpixmap(self.img_roi))
+        self.scene.addPixmap(cvimg2qtpixmap(self.img_roi))
 
     def set_next(self, region):
         print self.height(), self.width()
-        self.img = self.img_manager.get_crop(region.frame(), region, width=self.width(), height=self.height(), default_color=(255,255,255,0))
-        self.img_roi = self.img_manager.get_crop(region.frame(), region)
-        self.setPixmap(cvimg2qtpixmap(self.img_roi))
+        # self.img = self.img_manager.get_crop(region.frame(), region, width=self.width(), height=self.height(), default_color=(255,255,255,0))
+        # self.img_roi = self.img_manager.get_crop(region.frame(), region, width=self.width(), height=self.height())
+        self.img = self.img_manager.get_crop(region.frame(), region, width=1000, height=1000,
+                                             default_color=(255, 255, 255, 0))
+        self.img_roi = self.img_manager.get_crop(region.frame(), region, width=1000, height=1000)
+        self.scene.addPixmap(cvimg2qtpixmap(self.img_roi))
+
+    def mouse_release(self, event):
+        point = self.mapToScene(event.pos())
+        if self.is_in_scene(point):
+            self.draw(point)
+
+    def update_selection(self):
+        threshold = self.slider.getValue()
+        print "Updating"
+        print threshold
+        print self.x, self.y
+
+
+    def draw(self, point):
+        if type(point) == QtCore.QPointF:
+            point = point.toPoint()
+
+        self.x = point.x()
+        self.y = point.y()
+
+        # self.colors[self.color_name][0][fromy: toy, fromx: tox] = self.eraser
+        self.draw_mask(self.color_name)
+
+    # def draw_mask(self, name):
+    #
+    #     qimg = mask2qimage(self.colors[name][0], self.colors[name][1])
+    #
+    #     # add pixmap to scene and move it to the foreground
+    #     # delete old pixmap
+    #     self.scene.removeItem(self.colors[name][2])
+    #     self.colors[name][2] = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
+    #     self.colors[name][2].setZValue(20)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
