@@ -2,7 +2,7 @@ import sqlite3 as sql
 import cPickle as pickle
 import random
 
-DEBUG = False
+DEBUG = True
 __author__ = 'dita'
 
 
@@ -17,6 +17,7 @@ class FeatureManager:
         :param cache_size_limit: Number of instances to be held in cache
         :return: None
         """
+
         if db_wd == None:
             # cache mode (no db set)
             if cache_size_limit == -1:
@@ -24,7 +25,6 @@ class FeatureManager:
                 self.features_cache_ = {}
                 self.recent_feature_ids = []
                 self.cache_size_limit_ = cache_size_limit
-                self.id_ = 0
             else:
                 raise SyntaxError("Cache limit can only be set when database is used!")
         else:
@@ -46,19 +46,14 @@ class FeatureManager:
             self.features_cache_ = {}
             self.recent_feature_ids = []
             self.cache_size_limit_ = cache_size_limit
-            # if database has been used before, get last used ID and continue from it (IDs always have to stay unique)
-            try:
-                self.cur.execute("SELECT id FROM features ORDER BY id DESC LIMIT 1;")
-                row = self.cur.fetchone()
-                self.id_ = row[0]
-            except TypeError:  # TypeError is raised when row is empty (no IDs were found)
-                self.id_ = 0
         self.tmp_ids = []
 
         if isinstance(data, FeatureManager):
+            # TODO: Fix copying from previous Feature Managers
             newdata = data[:]
             self.add(newdata)
         elif isinstance(data, list):
+            # TODO: Fix initial data import
             for datas in data:
                 if isinstance(datas, FeatureManager):
                     self.add(datas[:])
@@ -96,7 +91,7 @@ class FeatureManager:
         # TODO: why is this commented?
         if self.use_db:
             self.cur.execute("BEGIN TRANSACTION;")
-            self.cur.execute("INSERT INTO regions VALUES (?, ?)", (f_id, self.pickle_data(feature)))
+            self.cur.execute("INSERT INTO regions VALUES (?, ?)", (f_id, pickle_data(feature)))
             self.con.commit()
 
         return self.tmp_ids
@@ -105,40 +100,38 @@ class FeatureManager:
         self.features_cache_ = {}
         self.recent_feature_ids = []
 
-    def add_to_cache_(self, id, region):
+    def add_to_cache_(self, id_, region):
         """
         This method adds region with id to the cache. It also updates it's position in recent_regions_ids and checks
         the cache size.
-        :param id:
+        :param id_:
         :param region:
         :return None
         """
-        # print "Adding %s %s" % (id, region)
+        # print "Adding %s %s" % (id_, region)
         # print "Cache: %s" % self.recent_regions_ids
-        if id in self.recent_feature_ids:
+        if id_ in self.recent_feature_ids:
             # remove region from recent_regions_ids
-            self.recent_feature_ids.remove(id)
-            # print "Moving %s up" % id
+            self.recent_feature_ids.remove(id_)
+            # print "Moving %s up" % id_
             # add region to fresh position in recent_regions_ids and add it to cache
-            self.recent_feature_ids.append(id)
-            self.features_cache_[id] = region
+            self.recent_feature_ids.append(id_)
+            self.features_cache_[id_] = region
         else:
             # add region to fresh position in recent_regions_ids and add it to cache
-            self.recent_feature_ids.append(id)
-            self.features_cache_[id] = region
+            self.recent_feature_ids.append(id_)
+            self.features_cache_[id_] = region
 
-            if self.cache_size_limit_ > 0 and len(self.features_cache_) > self.cache_size_limit_:
+            if 0 < self.cache_size_limit_ < len(self.features_cache_):
                 pop_id = self.recent_feature_ids.pop(0)
-                # TODO: Dita why .id() ?
-                # self.regions_cache_.pop(pop_id, None).id()
                 self.features_cache_.pop(pop_id, None)
-
                 # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
 
-    def update(self, key, region):
+    def update(self, key, feature):
         """
         Renew the position of key in recent_regions_ids
-        :param key: key of the region
+        :param key: key of the feature
+        :param feature: feature data
         :return: None
         """
 
@@ -148,11 +141,11 @@ class FeatureManager:
             # add region to fresh position in recent_regions_ids and add it to cache
             self.recent_feature_ids.append(key)
         else:
-            self.add_to_cache_(key, region)
+            self.add_to_cache_(key, feature)
 
     def add_iter_(self, ids, data):
         """
-        Iterator over given regions, yields a tuple used for sql executemany. self.tmp_ids and self.id_ get modified.
+        Iterator over given regions, yields a tuple used for sql executemany. Self.tmp_ids  get modified.
         :return tuple (id, binary region data)
         """
         for id_, d in zip(ids, data):
@@ -163,16 +156,11 @@ class FeatureManager:
             if self.cache_size_limit_ != 0:
                 self.add_to_cache_(id_, d)
 
-            yield (id_, self.pickle_data(d))
-
-    def get_next_id(self):
-        self.id_ += 1
-        self.tmp_ids.append(self.id_)
-        return self.id_
+            yield (id_, pickle_data(d))
 
     def __getitem__(self, key):
         sql_ids = []
-        result = []
+        result_ = []
         if isinstance(key, slice):
             # TODO: check how this example works and if it can be used
             # return [self[ii] for ii in xrange(*key.indices(len(self)))]
@@ -186,45 +174,56 @@ class FeatureManager:
             if stop is None or stop == 9223372036854775807:
                 raise ValueError("Invalid slice parameters (%s:%s:%s), this can be caused by calling [:] or [::]."
                                  "Please use list of ids to fix this." % (start, stop, step))
-            #     stop = len(self) + 1
+            # stop = len(self) + 1
             if step is None:
                 step = 1
             # check if slice parameters are ok
             if (start < 0 or stop < 0 or (stop < start and step > 0) or step == 0) and not DEBUG:
                 raise ValueError("Invalid slice parameters (%s:%s:%s)" % (start, stop, step))
 
-            print start, step, stop
             # go through slice
+            count = len(range(start, stop, step))
+            result_ = [None] * count
+            pos = {}
+            k = 0
             for i in range(start, stop, step):
+                pos[i] = k
+                k += 1
                 if i in self.features_cache_:
                     # print "----%s is in cache" % i
                     # use cache if region is available
                     r = self.features_cache_[i]
-                    result.append(r)
+                    result_[pos[i]] = r
                     self.update(i, r)
                 else:
                     # print "----%s is not in cache" % i
                     # if not, add id to the list of ids to be fetched from db
                     sql_ids.append(i)
             if self.use_db:
-                self.db_search_(result, sql_ids)
+                self.db_search_(result_, sql_ids, pos)
 
         elif isinstance(key, list):
+            count = len(key)
+            result_ = [None] * count
+            pos = {}
+            k = 0
             for id in key:
+                pos[id] = k
+                k += 1
                 if not isinstance(id, int):
                     print "TypeError: int expected, %s given! Skipping key '%s'." % (type(id), id)
                     continue
                 if id in self.features_cache_:
                     # print "%s was found in cache" % id
                     r = self.features_cache_[id]
-                    result.append(r)
+                    result_[pos[id]] = r
                     self.update(id, r)
                 else:
                     # print "%s was not found in cache" % id
                     sql_ids.append(id)
 
             if self.use_db:
-                self.db_search_(result, sql_ids)
+                self.db_search_(result_, sql_ids, pos)
 
         elif isinstance(key, int):
             if key < 0:  # Handle negative indices
@@ -232,27 +231,29 @@ class FeatureManager:
 
             if key in self.features_cache_:
                 r = self.features_cache_[key]
-                result.append(r)
+                result_[0] = r
                 self.update(key, r)
 
                 return r
 
             sql_ids.append(key)
+            result_ = [None] * 1
+            pos = {key: 0}
             if self.use_db:
-                result = self.db_search_(result, sql_ids)
+                self.db_search_(result_, sql_ids, pos)
         else:
             raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
 
-        if not result or len(result) == 0:
+        if not result_ or len(result_) == 0:
             if DEBUG:
                 print "[!] FM: Key %d not found." % key
             return []
-        elif len(result) == 1:
-            return result[0]
+        elif len(result_) == 1:
+            return result_[0]
         else:
-            return result
+            return result_
 
-    def db_search_(self, result, sql_ids):
+    def db_search_(self, result_, sql_ids, pos):
         """
         :param result: The list to which the results should be appended
         :param sql_ids: ids to be fetched from database
@@ -271,62 +272,58 @@ class FeatureManager:
             row = self.cur.fetchone()
             self.con.commit()
             # add it to result
-            id = sql_ids[0]
+            id_ = sql_ids[0]
             try:
                 data = pickle.loads(str(row[0]))
-                result.append(data)
+                result_[pos[id_]] = data
                 # add it to cache
-                self.add_to_cache_(id, data)
+                self.add_to_cache_(id_, data)
             except TypeError:
                 return None
 
         if l > 1:
-            cmd = "SELECT id, data FROM features WHERE id IN %s;" % self.pretty_list(sql_ids)
+            cmd = "SELECT id, data FROM features WHERE id IN %s;" % pretty_list(sql_ids)
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
             rows = self.cur.fetchall()
             self.con.commit()
             tmp_ids = []
+            i = 0
             for row in rows:
                 if row[0] in tmp_ids:
                     continue
                 tmp_ids.append(row[0])
                 data = pickle.loads(str(row[1]))
                 self.add_to_cache_(row[0], data)
-                result.append(data)
-        return result
+                result_[pos[row[0]]] = data
+                i += 1
+        return result_
 
     def removemany_(self, regions):
         sql_ids = []
         if isinstance(regions, list):
             for r in regions:
-                if isinstance(r, Region):
-                    sql_ids.append(r.id())
-                elif isinstance(r, (int, long)):
+                if isinstance(r, (int, long)):
                     sql_ids.append(r)
                 else:
-                    raise TypeError("Remove method only accepts Regions or their ids (int)")
+                    raise TypeError("Remove method can only work with tuple objects, not %s" % type(r))
         for id_ in sql_ids:
             if id_ in self.features_cache_:
                 self.features_cache_.pop(id_)
             if id_ in self.recent_feature_ids:
                 self.recent_feature_ids.remove(id_)
 
-        cmd = "DELETE FROM features WHERE id IN %s" % self.pretty_list(sql_ids)
+        cmd = "DELETE FROM features WHERE id IN %s" % pretty_list(sql_ids)
         self.cur.execute("BEGIN TRANSACTION;")
         self.cur.execute(cmd)
         self.con.commit()
 
-    def remove(self, region):
-        if isinstance(region, list):
-            self.removemany_(region)
+    def remove(self, ids):
+        if isinstance(ids, list):
+            self.removemany_(ids)
             return
-        elif isinstance(region, (int, long)):
-            id_ = region
-        else:
-            raise TypeError("Remove method only accepts Regions or their ids (int)")
-
-        if id_ in self:
+        elif isinstance(ids, (int, long)):
+            id_ = ids
             if self.use_db:
                 cmd = "DELETE FROM features WHERE id = %s;" % id_
                 self.cur.execute("BEGIN TRANSACTION;")
@@ -336,25 +333,29 @@ class FeatureManager:
                 self.features_cache_.pop(id_)
             if id_ in self.recent_feature_ids:
                 self.recent_feature_ids.remove(id_)
+        else:
+            raise TypeError("Remove method only accepts an integer (long) ids and their lists, %s given" % type(ids))
 
-    def pickle_data(self, data):
-        """ Convert data object to sql Binary object using pickle."""
-        return sql.Binary(pickle.dumps(data, -1))
 
-    def pretty_list(self, list):
-        """
-        Converts a list of elements [1, 2, 3] to pretty string "(1, 2, 3)"
-        :param list: list to convert
-        """
+def pickle_data(data):
+    """ Convert data object to sql Binary object using pickle."""
+    return sql.Binary(pickle.dumps(data, -1))
 
-        l = len(list)
-        param = "("
-        for i in range(0, l):
-            param += str(list[i])
-            if i != l - 1:
-                param += ", "
-        param += ")"
-        return param
+
+def pretty_list(list):
+    """
+    Converts a list of elements [1, 2, 3] to pretty string "(1, 2, 3)"
+    :param list: list to convert
+    """
+
+    l = len(list)
+    param = "("
+    for i in range(0, l):
+        param += str(list[i])
+        if i != l - 1:
+            param += ", "
+    param += ")"
+    return param
 
 
 def get_rnd_tuple(size=10, min=0, max=100):
@@ -365,29 +366,7 @@ def get_rnd_tuple(size=10, min=0, max=100):
 
 
 if __name__ == "__main__":
-    # rm = RegionManager()
-    # f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
-    # up = pickle.Unpickler(f)
-    # regions = up.load()
-    # for r in regions:
-    #     r.pts_rle_ = None
-    # f.close()
 
-    # data = [(1, (get_rnd_tuple())),
-    #         (2, (get_rnd_tuple())),
-    #         (5, (get_rnd_tuple())),
-    #         (200, (get_rnd_tuple())),
-    #         (38, (get_rnd_tuple())),
-    #         (14, (get_rnd_tuple())),
-    #         (3, (get_rnd_tuple())),
-    #         (151, (get_rnd_tuple())),
-    #         (16, (get_rnd_tuple())),
-    #         (18, (get_rnd_tuple())),
-    #         (17, (get_rnd_tuple())),
-    #         (98, (get_rnd_tuple())),
-    #         (71, (get_rnd_tuple())),
-    #         (4, (get_rnd_tuple()))]
-    
     ids = [1, 2, 5, 200, 38, 14, 3, 151, 16, 18, 17, 98, 71, 4]
     data = [(17, 50, 84, 26, 79, 22, 16),
             (30, 55, 44, 58, 9, 0, 83, 28, 9, 63),
@@ -405,11 +384,22 @@ if __name__ == "__main__":
             (58, 94, 54, 75, 32, 77, 90, 16)]
 
     rm = FeatureManager(db_wd="/home/dita", cache_size_limit=1)
-    # rm.add(ids, data)
+    rm.add(ids, data)
 
-    print rm[1]
-    print rm[16:19]
-    print rm[20]
+    print "1-5: ", rm[1:5]
+    print "1: ", rm[1]
+    print "2: ", rm[2]
+    print "3: ", rm[3]
+    print "4: ", rm[4]
+    print "5: ", rm[5]
+
+    rm.remove(2)
+    rm.remove(3)
+
+    print "1-5: ", rm[1:5]
+
+    #print rm[16:19]
+    #print rm[20]
 
     # db size with 20 pts regions: 306 176 bytes
     # db size with 20 rle regions:  75 776 bytes
