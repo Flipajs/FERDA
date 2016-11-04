@@ -48,11 +48,9 @@ class FeatureManager:
             self.cache_size_limit_ = cache_size_limit
 
         if isinstance(data, FeatureManager):
-            # TODO: Fix copying from previous Feature Managers
             ids, features = data.get_all()
             self.add(ids, features)
         elif isinstance(data, list):
-            # TODO: Fix initial data import
             for fm in data:
                 if isinstance(fm, FeatureManager):
                     ids, features = fm.get_all()
@@ -288,42 +286,53 @@ class FeatureManager:
         return result
 
     def get_all(self):
-        cmd = "SELECT id, data FROM features;"
-        self.cur.execute("BEGIN TRANSACTION;")
-        self.cur.execute(cmd)
-        rows = self.cur.fetchall()
-        self.con.commit()
         ids = []
         result = []
-        i = 0
-        for row in rows:
-            if row[0] in ids:
-                continue
-            ids.append(row[0])
-            data = cPickle.loads(str(row[1]))
-            self.add_to_cache_(row[0], data)
-            result.append(data)
-            i += 1
+        if self.use_db:
+            cmd = "SELECT id, data FROM features;"
+            self.cur.execute("BEGIN TRANSACTION;")
+            self.cur.execute(cmd)
+            rows = self.cur.fetchall()
+            self.con.commit()
+            i = 0
+            for row in rows:
+                if row[0] in ids:
+                    continue
+                ids.append(row[0])
+                data = cPickle.loads(str(row[1]))
+                self.add_to_cache_(row[0], data)
+                result.append(data)
+                i += 1
+        else:
+            (ids, result) = zip(*self.features_cache_.iteritems())
         return ids, result
 
     def removemany_(self, features):
-        sql_ids = []
-        if isinstance(features, list):
-            for f in features:
-                if isinstance(f, (int, long)):
-                    sql_ids.append(f)
-                else:
-                    raise TypeError("Remove method can only work with tuple objects, not %s" % type(f))
-        for id_ in sql_ids:
-            if id_ in self.features_cache_:
-                self.features_cache_.pop(id_)
-            if id_ in self.recent_feature_ids:
-                self.recent_feature_ids.remove(id_)
+        if self.use_db:
+            sql_ids = []
+            if isinstance(features, list):
+                for f in features:
+                    if isinstance(f, (int, long)):
+                        sql_ids.append(f)
+                    else:
+                        raise TypeError("Remove method can only work with tuple objects, not %s" % type(f))
+            for id_ in sql_ids:
+                if id_ in self.features_cache_:
+                    self.features_cache_.pop(id_)
+                if id_ in self.recent_feature_ids:
+                    self.recent_feature_ids.remove(id_)
 
-        cmd = "DELETE FROM features WHERE id IN %s" % pretty_list(sql_ids)
-        self.cur.execute("BEGIN TRANSACTION;")
-        self.cur.execute(cmd)
-        self.con.commit()
+            cmd = "DELETE FROM features WHERE id IN %s" % pretty_list(sql_ids)
+            self.cur.execute("BEGIN TRANSACTION;")
+            self.cur.execute(cmd)
+            self.con.commit()
+
+        else:
+            for id_ in features:
+                if id_ in self.features_cache_:
+                    self.features_cache_.pop(id_)
+                if id_ in self.recent_feature_ids:
+                    self.recent_feature_ids.remove(id_)
 
     def remove(self, ids):
         if isinstance(ids, list):
@@ -391,24 +400,30 @@ if __name__ == "__main__":
                  (58, 94, 54, 75, 32, 77, 90, 16),
                  (0, 0, 0)]
 
-    # rm = FeatureManager(db_wd="/home/dita", cache_size_limit=1)
-    rm = FeatureManager()
+    # TEST 1: Feature manager in cache only
+
+    rm = FeatureManager(db_wd="/home/dita", cache_size_limit=30)
     rm.add(test_ids, test_data)
 
-    print "1:5: ", rm[1:5]
-    print "1: ", rm[1]
-    print "2: ", rm[2]
-    print "3: ", rm[3]
-    print "4: ", rm[4]
-    print "5: ", rm[5]
-
-    print "Deleting 2 and 3"
-    rm.remove(2)
+    print "\nINDIVIDUAL ID GET TEST"
+    print "3 (present): ", rm[3]
+    print "DELETING INDIVIDUAL ID (3)"
     rm.remove(3)
+    print "3 (missing): ", rm[3]
 
-    print "1:5: ", rm[1:5]
+    print "\nLIST IDS GET TEST"
+    print "[16, 17]:                  ", rm[[16, 17]]
+    print "[3] (missing):             ", rm[[3]]
+    print "[1, 2, 3, 7, 38, 14, -77]: ", rm[[1, 2, 3, 7, 38, 14, -77]]
 
-    print "[266]: ", rm[[266]]
-    print rm[20]
-    print rm[-77]
+    print "DELITING LIST OF IDS (7, 38, 14)"
+    rm.remove([7, 38, 14])
+    print "[1, 2, 3, 7, 38, 14, -77]: ", rm[[1, 2, 3, 7, 38, 14, -77]]
 
+    print "\nSLICE GET TEST"
+
+    print "(1:5) ", rm[1:5]
+    print "(8:20) ", rm[8:20]
+
+    print "\nGET ALL TEST"
+    print rm.get_all()
