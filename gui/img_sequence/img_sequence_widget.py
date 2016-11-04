@@ -238,7 +238,7 @@ class ImgSequenceWidget(QtGui.QWidget):
     def update_sequence(self, frame, length, id_manager, ant_id, width=200, height=200):
         #storing these values so they can be used when it is asked for more self.frames
 
-        # obtaining copy of video solves multiple calling of this method (calling from gui is asynchronous,
+        # obtaining copy of video solves multiple calling of this method (calling from widgets is asynchronous,
         # thus wrong self.frame number might be read during another call of this method.
         self.local_vid = self.video.get_manager_copy()
         self.frame = frame

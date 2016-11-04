@@ -5,7 +5,7 @@ import cv2
 
 class clicker_class(object):
     """
-    credit: tcaswell on http://stackoverflow.com/questions/19592422/python-gui-that-draw-a-dot-when-clicking-on-plot
+    credit: tcaswell on http://stackoverflow.com/questions/19592422/python-widgets-that-draw-a-dot-when-clicking-on-plot
     """
     def __init__(self, ax, vm, out_path, set_id=0, frame=0, del_limit=30):
         self.canvas = ax.get_figure().canvas

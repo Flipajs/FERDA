@@ -6,7 +6,7 @@ from PyQt4 import QtGui
 from os.path import exists
 
 from core.project.project import Project
-from scripts.pca.gui import head_widget
+from scripts.pca.widgets import head_widget
 
 PRIME = 2 ** 8 + 1
 FNAME = 'head_gt_results.p'

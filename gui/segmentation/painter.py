@@ -311,7 +311,7 @@ class Painter(QtGui.QWidget):
         self.addAction(self.action_undo)
 
 
-        # complete the gui
+        # complete the widgets
         self.layout().addWidget(self.view)
 
 

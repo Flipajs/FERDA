@@ -8,10 +8,9 @@ from sklearn.decomposition import PCA
 import head_tag
 from core.project.project import Project
 from scripts.pca.ant_extract import get_matrix
-# from scripts.pca.cluster_range.gt_widget import GTWidget
+from scripts.pca.cluster_range.gt_widget import GTWidget
 from scripts.pca.range_computer import OptimalRange
 from utils.geometry import rotate
-
 
 def extract_heads(X, head_range):
     # if head_range % 2 is not 0:
@@ -225,4 +224,4 @@ if __name__ == '__main__':
     #     print range_comp.get_optimal_k(i)
 
     # optimal k for clusters
-    # gt = GTWidget(project, chunks_with_clusters)
+    gt = GTWidget(project, chunks_with_clusters)

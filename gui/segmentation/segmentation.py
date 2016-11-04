@@ -23,8 +23,11 @@ class SegmentationPicker(QtGui.QWidget):
         self.DEBUG = debug
         self.done_callback = done_callback
 
-        self.img_path = img
-        self.image = cv2.imread(self.img_path)
+        self.image = img
+        if isinstance(img, str):
+            self.img_path = img
+            self.image = cv2.imread(self.img_path)
+
         self.h, self.w, c = self.image.shape
         self.pen_size = pen_size
         self.undo_len = undo_len
@@ -280,7 +283,7 @@ class SegmentationPicker(QtGui.QWidget):
         self.check_paint.toggled.connect(self.checkbox)
         self.left_panel.layout().addWidget(self.check_paint)
 
-        # complete the gui
+        # complete the widgets
         self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.view)
 

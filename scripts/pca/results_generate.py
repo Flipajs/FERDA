@@ -6,7 +6,7 @@ from matplotlib import gridspec
 
 import numpy as np
 
-from scripts.pca.gui.eigen_widget import EigenWidget
+from scripts.pca.widgets.eigen_widget import EigenWidget
 
 
 # This module takes care of viewing results and saving important figures

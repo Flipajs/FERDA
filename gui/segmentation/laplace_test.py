@@ -167,7 +167,7 @@ class LaplacianTest(QtGui.QWidget):
         self.edge_button.clicked.connect(self.show_edges)
         self.left_panel.layout().addWidget(self.edge_button)
 
-        # complete the gui
+        # complete the widgets
         self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.view1)
         self.layout().addWidget(self.view2)

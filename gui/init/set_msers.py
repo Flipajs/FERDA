@@ -90,12 +90,12 @@ class SetMSERs(QtGui.QWidget):
         self.right_panel = QtGui.QWidget()
         self.right_panel.setLayout(QtGui.QVBoxLayout())
 
-        # Setup gui elements
+        # Setup widgets elements
         self.prepare_widgets()
         self.configure_form_panel()
         self.configure_paint_panel()
 
-        # Complete the gui
+        # Complete the widgets
         self.layout().addWidget(left_scroll)  # self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.painter)
         self.layout().addWidget(self.right_panel)
@@ -119,7 +119,7 @@ class SetMSERs(QtGui.QWidget):
 
     def update_mser(self):
         """
-        Finds new MSERS and updates all related gui elements (grid and painter mser overlay). This must be called
+        Finds new MSERS and updates all related widgets elements (grid and painter mser overlay). This must be called
         every time a parameter or source image is changed.
         :return: None
         """

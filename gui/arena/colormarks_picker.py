@@ -500,7 +500,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.set_pen_label_text()
         self.set_color_label_text()
 
-        # complete the gui
+        # complete the widgets
         self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.view)
 

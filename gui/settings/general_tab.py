@@ -55,7 +55,7 @@ class GeneralTab(QtGui.QWidget):
         return
 
     def clear_cache_(self):
-        raise Exception("CLEAR CACHE - clear_cache_ in gui.settings.general_tab is not implemented!")
+        raise Exception("CLEAR CACHE - clear_cache_ in widgets.settings.general_tab is not implemented!")
 
     def harvest(self):
         S_.parallelization.processes_num = self.number_of_processes.value()

@@ -712,7 +712,7 @@ class ArenaEditor(QtGui.QWidget):
 
         paintmode_button.toggle()
 
-        # complete the gui
+        # complete the widgets
         self.layout().addWidget(widget)
         self.layout().addWidget(self.view)
 

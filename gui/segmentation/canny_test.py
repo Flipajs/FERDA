@@ -118,7 +118,7 @@ class CannyTest(QtGui.QWidget):
         self.pen_label.setText("")
         self.left_panel.layout().addWidget(self.pen_label)
 
-        # complete the gui
+        # complete the widgets
         self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.view)
 

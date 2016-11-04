@@ -13,7 +13,7 @@ from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
 from core.settings import Settings as S_
-from gui.video_loader import check_video_path
+import gui
 from utils.img_manager import ImgManager
 from core import segmentation_helper
 
@@ -294,7 +294,7 @@ class Project:
 
         # check if video exists
         if parent:
-            self.video_paths = check_video_path(self.video_paths, parent)
+            self.video_paths = gui.check_video_path(self.video_paths, parent)
             print "New path is %s" % self.video_paths
 
         # # Region Manager

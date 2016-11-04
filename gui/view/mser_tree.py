@@ -86,7 +86,7 @@ class MSERTree(QtGui.QWidget):
 
 
         qt_points[0], qt_points[3] = qt_points[3], qt_points[0]
-        # TODO: z gui/view/graph_visualizer.py kolem line 60... vykresleni oblasti
+        # TODO: z widgets/view/graph_visualizer.py kolem line 60... vykresleni oblasti
         # z scripts/region_graph3.py kolem line 307 fce show_node... tam se da zjistit jak
         # pridat obrazek do sceny na nejakou pozici a jak ho mit klikaci...
         self.view.update()

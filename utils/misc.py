@@ -1,7 +1,7 @@
 import os
 import sys
 
-from gui.settings.default import get_default
+import gui
 
 __author__ = 'filip@naiser.cz'
 import pickle
@@ -54,7 +54,7 @@ def is_flipajs_pc():
 
 def get_settings(key, type=str):
     settings = QtCore.QSettings('FERDA')
-    return settings.value(key, get_default(key), type)
+    return settings.value(key, gui.settings.default.get_default(key), type)
 
 
 def set_settings(key, value):
