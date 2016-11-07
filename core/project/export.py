@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 from core.graph.region_chunk import RegionChunk
 
 
@@ -26,7 +27,7 @@ def ferda_single_trajectories_dict(project, frame_limits_start=0, frame_limits_e
         trajectories[frame] = [None for i in range(num_animals)]
 
     for t in project.chm.chunk_gen():
-        if len(t.P) == 1 and t.P.union(t.N) == num_animals:
+        if len(t.P) == 1 and len(t.P.union(t.N)) == num_animals:
 
             rch = RegionChunk(t, project.gm, project.rm)
             for r in rch.regions_gen():
@@ -44,6 +45,6 @@ def ferda_single_trajectories_dict(project, frame_limits_start=0, frame_limits_e
 
                 if len(t.P) == 1:
                     id_ = list(t.P)[0]
-                    trajectories[frame][id_] = (r.centroid()[0], r.centroid()[1])
+                    trajectories[frame][id_] = np.array((r.centroid()[0], r.centroid()[1]))
 
     return trajectories
