@@ -467,12 +467,12 @@ class ResultsWidget(QtGui.QWidget):
         for f in xrange(max_frame+100):
             my_data.setdefault(f, np.array([None] * len(self.project.animals)))
 
-        from utils.clearmetrics import ClearMetrics
+        from utils.clearmetrics import _clearmetrics
         threshold = 10
 
         gt_ = self.__prepare_gt()
 
-        clear = ClearMetrics(gt_, my_data, threshold)
+        clear = _clearmetrics(gt_, my_data, threshold)
         clear.match_sequence()
         evaluation = [clear.get_mota(),
                       clear.get_motp(),

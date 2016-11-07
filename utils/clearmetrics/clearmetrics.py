@@ -162,7 +162,8 @@ class ClearMetrics(object):
             if frame >= len(self.measurements):
                 break
             targets = self.groundtruth[frame]
-            object_count += len(targets) - targets.count(None)  # TODO np.array([]) empty arrays?
+            none_empty_count = len(filter(lambda x: x is None or len(x) == 0))
+            object_count += len(targets) - none_empty_count
         return object_count
 
     def get_matches_count(self):

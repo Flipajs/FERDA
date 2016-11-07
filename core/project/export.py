@@ -34,9 +34,6 @@ def ferda_single_trajectories_dict(project, frame_limits_start=0, frame_limits_e
                 frame = r.frame()
                 roi = r.roi()
 
-                y1, x1 = roi.top_left_corner()
-                y2, x2 = roi.bottom_right_corner()
-
                 if frame_limits_start > frame:
                     continue
 

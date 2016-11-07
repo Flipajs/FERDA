@@ -1,10 +1,10 @@
 from core.project.project import Project
 from gui.statistics.region_reconstruction import get_trajectories
-from utils.clearmetrics import ClearMetrics
+from utils.clearmetrics import _clearmetrics
 
 
 def test_project(gt_measurements, test_measurements, frames, threshold):
-    clear = ClearMetrics(gt_measurements, test_measurements, threshold)
+    clear = _clearmetrics(gt_measurements, test_measurements, threshold)
     clear.match_sequence()
     evaluation = [clear.get_mota(),
               clear.get_motp(),
