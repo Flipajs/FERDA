@@ -145,8 +145,18 @@ class ClearMetrics(object):
                 break
             matches = np.array(self.gt_matches[frame])
             mask_match_in_both_frames = (matches != -1) & (last_matches != -1)
-            mismatches += np.count_nonzero(
+            new_mismatches_count = np.count_nonzero(
                 matches[mask_match_in_both_frames] != last_matches[mask_match_in_both_frames])
+
+            if new_mismatches_count:
+                print "mismatch in frame:{:}".format(frame)
+                print self.measurements[frame]
+                print self.groundtruth[frame]
+                print last_matches
+                print matches
+                print
+
+            mismatches += new_mismatches_count
             last_matches = matches
         return mismatches
 
@@ -247,10 +257,9 @@ class ClearMetrics(object):
         sq_distance = self._get_sq_distance_matrix(frame)
         # if all entries = NaN
         sq_distance_undefined = math.ceil(np.nanmax(sq_distance)) + 1
-        print sq_distance_undefined
         if np.isnan(sq_distance_undefined):
-            print "TEST"
-            sq_distance_undefined = 1000000.0
+            # TODO: it is just quick fix... Right now don't know how to solve it better
+            sq_distance_undefined = 100000000.0
         # sq_distance_undefined = math.ceil(np.nanmax(sq_distance)) + 1
         sq_distance[np.isnan(sq_distance)] = sq_distance_undefined
         sq_distance[sq_distance > (self.thresh ** 2)] = sq_distance_undefined
