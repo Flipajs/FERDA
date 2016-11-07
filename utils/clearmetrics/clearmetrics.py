@@ -162,7 +162,7 @@ class ClearMetrics(object):
             if frame >= len(self.measurements):
                 break
             targets = self.groundtruth[frame]
-            none_empty_count = len(filter(lambda x: x is None or len(x) == 0))
+            none_empty_count = len(filter(lambda x: x is None or len(x) == 0, targets))
             object_count += len(targets) - none_empty_count
         return object_count
 
@@ -245,7 +245,13 @@ class ClearMetrics(object):
         """
 
         sq_distance = self._get_sq_distance_matrix(frame)
+        # if all entries = NaN
         sq_distance_undefined = math.ceil(np.nanmax(sq_distance)) + 1
+        print sq_distance_undefined
+        if np.isnan(sq_distance_undefined):
+            print "TEST"
+            sq_distance_undefined = 1000000.0
+        # sq_distance_undefined = math.ceil(np.nanmax(sq_distance)) + 1
         sq_distance[np.isnan(sq_distance)] = sq_distance_undefined
         sq_distance[sq_distance > (self.thresh ** 2)] = sq_distance_undefined
 
