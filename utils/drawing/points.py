@@ -56,7 +56,7 @@ def draw_points_binary(img, pts):
     return img
 
 
-def draw_points_crop(img, pts, color=None, margin=0.1, square=False, fill_color=(255, 255, 255)):
+def draw_points_crop(img, pts, color=None, margin=0.1, square=False, fill_color=(255, 255, 255), fill_pts=None):
     """
     returns image with region visualization cropped around region with margin which is specified by percentage of max(height, width)
     :param img:
@@ -88,6 +88,10 @@ def draw_points_crop(img, pts, color=None, margin=0.1, square=False, fill_color=
 
     im_ = np.copy(img)
     im_ = draw_points(im_, pts, color)
+
+    if fill_pts is not None:
+        print fill_pts
+        im_ = draw_points(im_, fill_pts, color)
 
     crop = get_safe_selection(im_, y_, x_, height_, width_, fill_color=fill_color)
 

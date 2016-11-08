@@ -211,10 +211,15 @@ class SetMSERs(QtGui.QWidget):
             # get region contours
             cont = get_contour(r.pts())
 
+            fill_pts = None
+            if r.area() > self.project.mser_parameters.min_area:
+                fill_pts = r.pts()[:self.project.mser_parameters.min_area]
+
             # visualise it on a small cropped image
             # format color to be BGRA, convert alpha channel from 0-255 to 0.0-1.0 scale
             crop = draw_points_crop(img_vis, cont, (self.color_mser[2], self.color_mser[1], self.color_mser[0],
-                                                    self.color_mser[3]/float(255)), square=True)
+                                                    self.color_mser[3]/float(255)), square=True, fill_pts=fill_pts)
+
             # create qimage from crop
             img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
             pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
@@ -224,6 +229,7 @@ class SetMSERs(QtGui.QWidget):
             item.setScaledContents(True)
             item.setFixedSize(100, 100)
             item.setPixmap(pix_map)
+
             self.img_grid.add_item(item)
 
             # visualise it in the binary image
@@ -508,7 +514,7 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
 
-    proj.load('/Users/flipajs/Documents/wd/GT/Cam2')
+    proj.load('/Users/flipajs/Documents/wd/FERDA/Cam1_')
     # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
     proj.arena_model = None
     proj.bg_model = None
