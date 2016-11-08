@@ -479,9 +479,11 @@ class Solver:
             # test chunk existence, if there is none, create new one.
             v1_ch = self.project.gm.chunk_end(v1)
             v2_ch = self.project.gm.chunk_start(v2)
-            if v1_ch:
+            if v1_ch and v2_ch:
+                v1_ch.merge(v2_ch, self.project.gm)
+            elif v1_ch and not v2_ch:
                 v1_ch.append_right(v2, self.project.gm)
-            elif v2_ch:
+            elif v2_ch and not v1_ch:
                 v2_ch.append_left(v1, self.project.gm)
             else:
                 self.project.chm.new_chunk(map(int, [v1, v2]), self.project.gm)

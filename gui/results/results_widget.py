@@ -1164,8 +1164,11 @@ class ResultsWidget(QtGui.QWidget):
         if is_flipajs_pc():
             self._gt_corr_step = 50
 
-            path = self.project.GT_file
-            self._gt.load(path)
+            try:
+                path = self.project.GT_file
+                self._gt.load(path)
+            except:
+                pass
 
 
     def assign_ids_from_gt(self):

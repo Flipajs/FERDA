@@ -200,8 +200,10 @@ class Chunk:
         gm.project.chm._try_ch_itree_delete(self, gm)
 
         if not undo_action:
-            gm.remove_vertex(ch1end, disassembly=False)
-            gm.remove_vertex(ch2start, disassembly=False)
+            if self.length() > 1:
+                gm.remove_vertex(ch1end, disassembly=False)
+            if ch2.length() > 1:
+                gm.remove_vertex(ch2start, disassembly=False)
 
         self.nodes_.extend(ch2.nodes_)
 
