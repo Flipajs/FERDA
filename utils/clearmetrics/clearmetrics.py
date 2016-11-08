@@ -127,7 +127,7 @@ class ClearMetrics(object):
             count += matches.count(-1)
         return count
 
-    def get_mismatches_count(self):
+    def get_mismatches_count(self, verbose=True):
         """
         Return number of identity mismatches.
 
@@ -148,7 +148,7 @@ class ClearMetrics(object):
             new_mismatches_count = np.count_nonzero(
                 matches[mask_match_in_both_frames] != last_matches[mask_match_in_both_frames])
 
-            if new_mismatches_count:
+            if new_mismatches_count and verbose:
                 print "mismatch in frame:{:}".format(frame)
                 print self.measurements[frame]
                 print self.groundtruth[frame]
@@ -209,7 +209,7 @@ class ClearMetrics(object):
         @return: MOTA score, <= 1
         @rtype: float
         """
-        return 1 - (self.get_fp_count() + self.get_fn_count() + self.get_mismatches_count()) / \
+        return 1 - (self.get_fp_count() + self.get_fn_count() + self.get_mismatches_count(verbose=False)) / \
                float(self.get_object_count())
 
     def _get_sq_distance_matrix(self, frame):

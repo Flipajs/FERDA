@@ -96,9 +96,9 @@ if __name__ == '__main__':
     if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
         proj.segmentation_model.set_image(img)
         seg = proj.segmentation_model.predict()
-        # img = np.asarray((-seg*255)+255, dtype=np.uint8)
-        img = seg < 0.5
-        img = np.asarray(img, dtype=np.uint8)*255
+        img = np.asarray((-seg*255)+255, dtype=np.uint8)
+        # img = seg < 0.5
+        # img = np.asarray(img, dtype=np.uint8)*255
     else:
         img = prepare_for_segmentation(img, proj)
 

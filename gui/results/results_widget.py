@@ -51,6 +51,9 @@ class ResultsWidget(QtGui.QWidget):
         # used when save GT is called
         self._gt_markers = {}
 
+        self.idtracker_data = None
+        self.idtracker_data_permutation = {}
+
         self._highlight_regions = set()
         self._highlight_tracklets = set()
         self.highlight_color = QtGui.qRgba(175, 255, 56, 200)  # green
@@ -212,10 +215,15 @@ class ResultsWidget(QtGui.QWidget):
 
         self.print_undecided_tracklets_b = QtGui.QPushButton('print undecided')
         self.print_undecided_tracklets_b.clicked.connect(self.print_undecided)
+        self.show_idtracker_i = QtGui.QLineEdit('/Users/flipajs/Dropbox/FERDA/idTracker_Cam1/trajectories.mat')
+        self.show_idtracker_b = QtGui.QPushButton('show idtracker')
+        self.show_idtracker_b.clicked.connect(self.show_idtracker_data)
 
         self.debug_box.layout().addWidget(self.print_conflic_tracklets_b)
         self.debug_box.layout().addWidget(self.print_undecided_tracklets_b)
         self.debug_box.layout().addWidget(self.assign_ids_from_gt_b)
+        self.debug_box.layout().addWidget(self.show_idtracker_i)
+        self.debug_box.layout().addWidget(self.show_idtracker_b)
 
         self.left_vbox.addWidget(self.debug_box)
 
@@ -700,6 +708,9 @@ class ResultsWidget(QtGui.QWidget):
         elif type_ == 'multiple':
             radius = 9
 
+        if type_ == 'tracker1':
+            radius = 7
+
         m = markers.CenterMarker(0, 0, radius, c_, id=id_, changeHandler=self._gt_marker_clicked)
 
         m.setPos(x - radius/2, y-radius/2)
@@ -793,6 +804,29 @@ class ResultsWidget(QtGui.QWidget):
             self._show_gt_markers()
             self._show_id_markers(animal_ids2centroids)
 
+        if self.idtracker_data is not None:
+            for id_, it in enumerate(self.idtracker_data[frame]):
+                id_ = self.idtracker_data_permutation[id_]
+                a = self.project.animals[id_]
+                c_ = QtGui.QColor(a.color_[2], a.color_[1], a.color_[0])
+                x, y = it[0], it[1]
+
+                if np.isnan(x):
+                    x, y = 10*id_, -10
+
+                type_ = 'tracker1'
+
+                item = QtGui.QGraphicsRectItem(0, 0, 10, 10)
+                brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+                brush.setColor(c_)
+                item.setBrush(brush)
+                item.setOpacity(0.8)
+                item.setZValue(1.0)
+                item.setPos(x, y)
+
+                self.video_player.visualise_temp(item, category=type_)
+
+                # self.__add_marker(x, y, c_, None, 0.75, type_=type_)
 
     def _img_saturation(self, img):
         return img_saturation_coef(img, 2.0, 1.05)
@@ -1195,3 +1229,24 @@ class ResultsWidget(QtGui.QWidget):
                 ch2.color = QtGui.QColor.fromRgb(r, g, b)
 
         self.video_player.redraw_visualisations()
+
+    def show_idtracker_data(self):
+        path = str(self.show_idtracker_i.text())
+
+        try:
+            import scipy.io as sio
+            data = sio.loadmat(path)
+            data = data['trajectories']
+            self.idtracker_data = data
+
+            permutation_data = []
+            frame = 0
+            for id_, it in enumerate(data[frame]):
+                x, y = it[0], it[1]
+                permutation_data.append((frame, id_, y, x))
+
+            self.idtracker_data_permutation = self._gt.get_permutation(permutation_data)
+
+        except IOError:
+            print "idtracker data was not loaded", path
+            pass

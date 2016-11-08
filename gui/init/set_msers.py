@@ -278,6 +278,8 @@ class SetMSERs(QtGui.QWidget):
         with open(self.project.working_directory+'/segmentation_model.pkl', 'wb') as f:
             pickle.dump(self.helper, f, -1)
 
+        self.project.segmentation_model = self.helper
+
     def set_color_bg(self):
         self.cur_color = "background"
         self.cur_eraser = False

@@ -78,8 +78,14 @@ class InitHowWidget(QtGui.QWidget):
         r_id = 0
         for i in range(3):
             img = vid.next_frame()
-            img = prepare_for_segmentation(img, project, grayscale_speedup=False)
-            img_ = img.copy()
+            if hasattr(project, 'segmentation_model') and project.segmentation_model is not None:
+                project.segmentation_model.set_image(img)
+                seg = project.segmentation_model.predict()
+                img_ = np.asarray((-seg * 255) + 255, dtype=np.uint8)
+            else:
+                img_ = prepare_for_segmentation(img, project, grayscale_speedup=False)
+
+            img_ = img_.copy()
 
             msers = get_msers_(img_, self.project)
             groups = get_region_groups(msers)
