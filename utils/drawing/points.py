@@ -90,7 +90,6 @@ def draw_points_crop(img, pts, color=None, margin=0.1, square=False, fill_color=
     im_ = draw_points(im_, pts, color)
 
     if fill_pts is not None:
-        print fill_pts
         im_ = draw_points(im_, fill_pts, color)
 
     crop = get_safe_selection(im_, y_, x_, height_, width_, fill_color=fill_color)
