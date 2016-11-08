@@ -113,8 +113,6 @@ class InitHowWidget(QtGui.QWidget):
             self.classes[i] = 1
 
         self.class_stats.compute_stats(self.regions, self.classes)
-        c = self.project.mser_parameters.min_area_relative
-        # self.project.mser_parameters.min_area = int(self.class_stats.area_median * c)
         self.project.stats = self.class_stats
 
         do_cluster_parall = self.do_cluster_parallelisation_ch.isChecked()

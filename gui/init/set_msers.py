@@ -330,7 +330,6 @@ class SetMSERs(QtGui.QWidget):
         self.project.other_parameters.use_only_red_channel = self.use_only_red_ch.isChecked()
         self.use_segmentation_ = self.use_segmentation.isChecked()
         self.project.mser_parameters.intensity_threshold = self.intensity_threshold.value()
-        self.project.mser_parameters.min_area_relative = self.min_area_relative.value()
         self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
         self.project.mser_parameters.use_children_filter = self.use_children_filter.isChecked()
 
@@ -349,7 +348,6 @@ class SetMSERs(QtGui.QWidget):
         self.mser_img_subsample = QtGui.QDoubleSpinBox()
         self.blur_kernel_size = QtGui.QDoubleSpinBox()
         self.intensity_threshold = QtGui.QSpinBox()
-        self.min_area_relative = QtGui.QDoubleSpinBox()
         self.region_min_intensity = QtGui.QSpinBox()
         self.check_bg = QtGui.QCheckBox("Background image")
         self.check_prob = QtGui.QCheckBox("Probability mask")
@@ -400,13 +398,6 @@ class SetMSERs(QtGui.QWidget):
         self.intensity_threshold.setValue(256)
         self.intensity_threshold.valueChanged.connect(self.val_changed)
         self.form_panel.addRow('intensity threshold (ignore pixels above)', self.intensity_threshold)
-
-        self.min_area_relative.setMinimum(0.0)
-        self.min_area_relative.setMaximum(1.0)
-        self.min_area_relative.setValue(0.2)
-        self.min_area_relative.setSingleStep(0.02)
-        self.min_area_relative.valueChanged.connect(self.val_changed)
-        self.form_panel.addRow('min_area = (median of selected regions) * ', self.min_area_relative)
 
         self.region_min_intensity.setMaximum(256)
         self.region_min_intensity.setValue(56)

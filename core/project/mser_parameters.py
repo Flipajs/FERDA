@@ -8,7 +8,6 @@ class MSERParameters():
         self.min_margin = 5
         self.gaussian_kernel_std = 0.0
         self.intensity_threshold = 256
-        self.min_area_relative = 0.2
         self.region_min_intensity = 256
         self.use_children_filter = True
 
@@ -22,7 +21,6 @@ class MSERParameters():
         s += "min_margin: "+str(self.min_margin)+"\n"
         s += "gaussian_kernel_std: "+str(self.gaussian_kernel_std)+"\n"
         s += "intensity_threshold: "+str(self.intensity_threshold)+"\n"
-        s += "min_area_relative: "+str(self.min_area_relative)+"\n"
         s += "region_min_intensity: "+str(self.region_min_intensity)+"\n"
         s += "use_children_filter: "+str(self.use_children_filter)+"\n"
 
