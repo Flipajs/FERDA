@@ -70,6 +70,10 @@ class SetMSERs(QtGui.QWidget):
         # Prepare img_grid variable
         self.img_grid = None
 
+        # max area helper
+        self.old_max_area_helper = None
+        self.old_max_area_helper_text = None
+
         self.setLayout(QtGui.QHBoxLayout())
 
         # Left panel with options and paint tools
@@ -117,6 +121,29 @@ class SetMSERs(QtGui.QWidget):
         self.update_img()
         self.update_mser()
 
+    def draw_max_area_helper(self):
+        if self.old_max_area_helper is not None:
+            self.painter.scene.removeItem(self.old_max_area_helper)
+            self.painter.scene.removeItem(self.old_max_area_helper_text)
+
+        import math
+        from gui.img_controls import markers
+        radius = math.ceil((self.project.mser_parameters.max_area/np.pi)**0.5)
+
+        c = QtGui.QColor(167, 255, 36)
+        it = markers.CenterMarker(0, 0, 2*radius, c, 0, None)
+        it.setOpacity(0.2)
+
+        text = QtGui.QGraphicsTextItem()
+        text.setPos(radius/3, radius/3)
+        text.setPlainText("max area helper")
+
+        self.painter.scene.addItem(text)
+
+        self.old_max_area_helper = it
+        self.old_max_area_helper_text = text
+        self.painter.scene.addItem(it)
+
     def update_mser(self):
         """
         Finds new MSERS and updates all related gui elements (grid and painter mser overlay). This must be called
@@ -158,6 +185,8 @@ class SetMSERs(QtGui.QWidget):
 
         # restore cursor look to default
         QtGui.QApplication.restoreOverrideCursor()
+
+        self.draw_max_area_helper()
 
     def update_paint(self):
         """
@@ -342,7 +371,7 @@ class SetMSERs(QtGui.QWidget):
         self.use_only_red_ch = QtGui.QCheckBox()
         self.use_full_image = QtGui.QCheckBox()
         self.use_segmentation = QtGui.QCheckBox()
-        self.mser_max_area = QtGui.QDoubleSpinBox()
+        self.mser_max_area = QtGui.QSpinBox()
         self.mser_min_area = QtGui.QSpinBox()
         self.mser_min_margin = QtGui.QSpinBox()
         self.mser_img_subsample = QtGui.QDoubleSpinBox()
@@ -358,13 +387,13 @@ class SetMSERs(QtGui.QWidget):
         self.button_done = QtGui.QPushButton("Done")
 
     def configure_form_panel(self):
-        self.mser_max_area.setMinimum(0.0001)
-        self.mser_max_area.setSingleStep(0.0001)
-        self.mser_max_area.setMaximum(1.0)
-        self.mser_max_area.setDecimals(6)
+        self.mser_max_area.setMinimum(10)
+        self.mser_max_area.setSingleStep(1)
+        self.mser_max_area.setMaximum(1000000000)
+        # self.mser_max_area.setDecimals(6)
         self.mser_max_area.setValue(self.project.mser_parameters.max_area)
         self.mser_max_area.valueChanged.connect(self.val_changed)
-        self.form_panel.addRow('MSER Max relative area', self.mser_max_area)
+        self.form_panel.addRow('MSER Max area', self.mser_max_area)
 
         self.mser_min_area.setMinimum(0)
         self.mser_min_area.setMaximum(1000)

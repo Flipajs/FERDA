@@ -21,7 +21,7 @@ default_settings = {
     'cancel_fixing': QtGui.QKeySequence(QtCore.Qt.Key_Escape),
 
     #MSER
-    'mser_max_area': 0.005,
+    'mser_max_area': 100000,
     'mser_min_margin': 5,
     'mser_min_area': 5,
 

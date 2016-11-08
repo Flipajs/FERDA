@@ -339,7 +339,7 @@ def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
     dist_im /= np.max(dist_im)
     dist_im = np.asarray(dist_im * 255, dtype=np.uint8)
 
-    mser.set_max_area(MSER_MAX_SIZE / float(im.shape[0] * im.shape[1]))
+    mser.set_max_area_relative(MSER_MAX_SIZE / float(im.shape[0] * im.shape[1]))
     regions = mser.process_image(dist_im)
     groups = mser_operations.get_region_groups(regions)
     ids = mser_operations.margin_filter(regions, groups)

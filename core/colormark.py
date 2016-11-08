@@ -59,7 +59,7 @@ class Colormark():
         self.darkest_neighbour_intensity_ = neigh_intensity
 
 def get_colormark_mser(num_px):
-    max_area_ = get_settings('colormarks_mser_max_area', int) / float(num_px)
+    max_area_ = get_settings('colormarks_mser_max_area', int)
     min_area_ = get_settings('colormarks_mser_min_area', int)
     min_margin_ = get_settings('colormarks_mser_min_margin', int)
     mser = Mser(max_area=max_area_, min_area=min_area_, min_margin=min_margin_)

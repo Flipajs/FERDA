@@ -50,8 +50,8 @@ class Mser():
 
         return regions
 
-    def set_max_area(self, max_area):
-        self.mser.set_max_area(max_area)
+    def set_max_area_relative(self, max_area_relative):
+        self.mser.set_max_area(max_area_relative)
 
 
 def get_mser(frame_number, id, project):
@@ -111,9 +111,11 @@ def get_msers_(img, project, frame=-1, prefiltered=False):
     min_area = project.mser_parameters.min_area
     min_margin = project.mser_parameters.min_margin
 
+    max_area_relative = max_area / float(img.shape[0]*img.shape[1])
+
     region_min_intensity = project.mser_parameters.region_min_intensity
 
-    mser = Mser(max_area=max_area, min_margin=min_margin, min_area=min_area)
+    mser = Mser(max_area=max_area_relative, min_margin=min_margin, min_area=min_area)
     return mser.process_image(img, frame, intensity_threshold=project.mser_parameters.intensity_threshold, prefiltered=prefiltered, region_min_intensity=region_min_intensity)
 
 

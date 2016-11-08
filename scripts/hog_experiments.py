@@ -21,7 +21,7 @@ from utils.roi import get_roi
 
 
 def get_mser(im, p):
-    p.mser_parameters.max_area = 0.99
+    p.mser_parameters.max_area = 1000000
     msers = ferda_filtered_msers(np.asarray(im*255, dtype=np.uint8), p, 0)
 
     m = msers[0]
