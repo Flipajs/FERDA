@@ -66,7 +66,8 @@ class VideoManager():
         if self.dec_pos_(self.buffer_position_) == self.view_position_:
             f, self.buffer_[self.buffer_position_] = self.capture.read()
 
-            if not f or self.position_ >= self.total_frame_count():
+            print "position", self.position_
+            if not f or self.position_ > self.total_frame_count():
                 print "No more frames, end of video file. (video_manager.py)"
                 return None
 

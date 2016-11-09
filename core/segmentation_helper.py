@@ -168,9 +168,9 @@ class SegmentationHelper:
         filtered = get_filtered_model(self.unused, data)
 
         # predict result on current image data
-        start = time.time()
+        # start = time.time()
         mask1 = self.rfc.predict_proba(filtered)
-        print "RFC predict takes     %f" % (time.time() - start)
+        # print "RFC predict takes     %f" % (time.time() - start)
 
         # reshape mask to be a grid, not a list
         mask1 = mask1[:, 1]

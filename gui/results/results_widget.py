@@ -460,8 +460,10 @@ class ResultsWidget(QtGui.QWidget):
         self.video_player.setFocus()
 
     def _evolve_gt(self):
-        
-
+        from utils.gt.evaluator import Evaluator
+        if self._gt is not None:
+            ev = Evaluator(None, self._gt)
+            ev.evaluate_FERDA(self.project, step=20)
 
         return
         my_data = {}

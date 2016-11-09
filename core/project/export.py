@@ -3,7 +3,7 @@ import numpy as np
 from core.graph.region_chunk import RegionChunk
 
 
-def ferda_trajectories_dict(project, frame_limits_start=0, frame_limits_end=-1):
+def ferda_trajectories_dict(project, frame_limits_start=0, frame_limits_end=-1, step=1):
     """
     frame_limits_end = -1 means - no limit
     Args:
@@ -30,9 +30,7 @@ def ferda_trajectories_dict(project, frame_limits_start=0, frame_limits_end=-1):
         # if len(t.P) == 1 and len(t.P.union(t.N)) == num_animals:
 
         rch = RegionChunk(t, project.gm, project.rm)
-        for r in rch.regions_gen():
-            frame = r.frame()
-
+        for frame in range(t.start_frame(project.gm), t.end_frame(project.gm), step):
             if frame_limits_start > frame:
                 continue
 
@@ -45,6 +43,7 @@ def ferda_trajectories_dict(project, frame_limits_start=0, frame_limits_end=-1):
                 ids = list(set(range(len(project.animals))) - t.N)
 
             for id_ in ids:
+                r = rch.region_in_t(frame)
                 trajectories[frame][id_] = np.array((r.centroid()[0], r.centroid()[1]))
 
     return trajectories

@@ -93,14 +93,14 @@ if __name__ == '__main__':
     if img is None:
         raise Exception("img is None, there is something wrong with frame: "+str(id*frames_in_row))
 
-    if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
-        proj.segmentation_model.set_image(img)
-        seg = proj.segmentation_model.predict()
-        img = np.asarray((-seg*255)+255, dtype=np.uint8)
-        # img = seg < 0.5
-        # img = np.asarray(img, dtype=np.uint8)*255
-    else:
-        img = prepare_for_segmentation(img, proj)
+    # if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
+    #     proj.segmentation_model.set_image(img)
+    #     seg = proj.segmentation_model.predict()
+    #     # img = np.asarray((-seg*255)+255, dtype=np.uint8)
+    #     img = seg < 0.5
+    #     img = np.asarray(img, dtype=np.uint8)*255
+    # else:
+    img_gray = prepare_for_segmentation(img, proj)
 
     msers_t = 0
     solver_t = 0
@@ -110,8 +110,51 @@ if __name__ == '__main__':
     for i in range(frames_in_row + last_n_frames):
         frame = id*frames_in_row + i
 
+        print frame
         s = time.time()
-        msers = ferda_filtered_msers(img, proj, frame)
+        msers = ferda_filtered_msers(img_gray, proj, frame)
+
+        if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
+            new_msers = []
+            border = 10
+            for m in msers:
+                roi = m.roi()
+                tl = roi.top_left_corner()
+                br = roi.bottom_right_corner()
+
+                h1 = max(0, tl[0]-border)
+                h2 = min(img.shape[0]-1, br[0] + border)
+
+                w1 = max(0, tl[1]-border)
+                w2 = min(img.shape[1]-1, br[1] + border)
+
+                crop = img[h1:h2, w1:w2, :].copy()
+
+                proj.segmentation_model.set_image(crop)
+                seg = proj.segmentation_model.predict()
+                seg_img = np.asarray((-seg*255)+255, dtype=np.uint8)
+
+                msers_ = ferda_filtered_msers(seg_img, proj, frame)
+                for m in msers_:
+                    # update offsets
+                    offset = np.array([h1, w1])
+                    for it in m.pts_rle_:
+                        it['line'] += h1
+                        it['col1'] += w1
+                        it['col2'] += w1
+
+                    m.pts_ += offset
+                    m.pts_rle_
+                    m.contour_ += offset
+                    m.centroid_ += offset
+                    if hasattr(m, 'roi_') and m.roi_ is not None:
+                        m.roi_.y_ += h1
+                        m.roi_.x_ += w1
+                        m.roi_.y_max_ += h1
+                        m.roi_.x_max_ += w1
+                    new_msers.append(m)
+
+            msers = new_msers
 
         if proj.colormarks_model:
             proj.colormarks_model.assign_colormarks(proj, msers)
@@ -120,17 +163,18 @@ if __name__ == '__main__':
         msers_t += time.time()-s
 
         s = time.time()
+        print frame
         img = vid.next_frame()
         if img is None:
-            raise Exception("img is None, there is something wrong with frame: " + str(id * frames_in_row))
+            raise Exception("img is None, there is something wrong with frame: " + str(frame))
 
-        if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
-            proj.segmentation_model.set_image(img)
-            seg = proj.segmentation_model.predict()
-            img = seg < 0.5
-            img = np.asarray(img, dtype=np.uint8)*255
-        else:
-            img = prepare_for_segmentation(img, proj)
+        # if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
+        #     proj.segmentation_model.set_image(img)
+        #     seg = proj.segmentation_model.predict()
+        #     img = seg < 0.5
+        #     img = np.asarray(img, dtype=np.uint8)*255
+        # else:
+        img_gray = prepare_for_segmentation(img, proj)
 
         vid_t += time.time() - s
 
