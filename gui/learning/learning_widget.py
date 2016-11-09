@@ -35,9 +35,11 @@ class LearningWidget(QtGui.QWidget):
         self.vbox = QtGui.QVBoxLayout()
         self.hbox = QtGui.QHBoxLayout()
         self.top_stripe_layout = QtGui.QHBoxLayout()
+        self.top_stripe2_layout = QtGui.QHBoxLayout()
         self.setLayout(self.vbox)
 
         self.vbox.addLayout(self.top_stripe_layout)
+        self.vbox.addLayout(self.top_stripe2_layout)
         self.vbox.addLayout(self.hbox)
 
         self.lp = None
@@ -130,14 +132,14 @@ class LearningWidget(QtGui.QWidget):
         self.update_undecided_tracklets_b.clicked.connect(self.update_undecided_tracklets)
         self.top_stripe_layout.addWidget(self.update_undecided_tracklets_b)
 
-        self.auto_init_b = QtGui.QPushButton('auto_init')
-        self.auto_init_b.clicked.connect(self.auto_init)
-        self.top_stripe_layout.addWidget(self.auto_init_b)
-
         self.compute_distinguishability_b = QtGui.QPushButton('comp. disting.')
         # self.lp will change...
         self.compute_distinguishability_b.clicked.connect(lambda x: self.lp.compute_distinguishability())
         self.top_stripe_layout.addWidget(self.compute_distinguishability_b)
+
+        self.auto_init_b = QtGui.QPushButton('auto_init')
+        self.auto_init_b.clicked.connect(self.auto_init)
+        self.top_stripe2_layout.addWidget(self.auto_init_b)
 
         # self.add_tracklet_table()
         # self.update_callback()
@@ -148,6 +150,9 @@ class LearningWidget(QtGui.QWidget):
 
         self.add_tracklet_table()
         self.update_callback()
+
+        self.lp.update_callback = self.update_callback
+        self.lp.question_callback = self.question_callback
 
         # self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=True,
         #                           question_callback=self.question_callback, update_callback=self.update_callback)
@@ -368,6 +373,9 @@ class LearningWidget(QtGui.QWidget):
         best_frame = None
         best_score = 0
 
+        max_best_frame = None
+        max_best_score = 0
+
         frame = 0
         while True:
             group = self.project.chm.chunks_in_frame(frame)
@@ -376,16 +384,31 @@ class LearningWidget(QtGui.QWidget):
 
             if len(group) == len(self.project.animals):
                 m = min([t.length() for t in group])
+                mm = sum([t.length() for t in group])
                 if m > best_score:
                     best_frame = frame
                     best_score = m
 
+                if mm > max_best_score:
+                    max_best_frame = frame
+                    max_best_score = mm
+
             frame = min([t.end_frame(self.project.gm) for t in group]) + 1
 
+        print "BEST min: "
         print best_frame, best_score
         for t in self.project.chm.chunks_in_frame(best_frame):
             print t.length()
 
+        print "BEST sum (USED)"
+        # TODO: add to user settings
+        print max_best_frame, max_best_score
+        self.lp.user_decisions = []
+        for id_, t in enumerate(self.project.chm.chunks_in_frame(max_best_frame)):
+            print t.length()
+            self.lp.user_decisions.append({'tracklet_id': t.id(), 'type': 'P', 'ids': [id_]})
+
+        self.update_callback()
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

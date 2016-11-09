@@ -460,6 +460,10 @@ class ResultsWidget(QtGui.QWidget):
         self.video_player.setFocus()
 
     def _evolve_gt(self):
+        
+
+
+        return
         my_data = {}
 
         # TODO: clearmetrics bug workaround...

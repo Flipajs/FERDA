@@ -331,7 +331,10 @@ class LearningProcess:
     def __precompute_measurements(self):
         for t_id in self.undecided_tracklets:
             tracklet = self.p.chm[t_id]
-            x, t_length = self.__get_tracklet_proba(tracklet)
+            try:
+                x, t_length = self.__get_tracklet_proba(tracklet)
+            except KeyError:
+                print "features missing for ", tracklet.id()
 
             # c
             # print x
