@@ -1,6 +1,7 @@
 __author__ = 'fnaiser'
 
 import cPickle as pickle
+import Queue
 from functools import partial
 
 import numpy as np
@@ -805,7 +806,7 @@ class ResultsWidget(QtGui.QWidget):
                 self.video_player.visualise_temp(item, category='region_highlight')
 
             head, _ = get_region_endpoints(r)
-            head_item = markers.CenterMarker(head[1], head[0], 3, QtGui.QColor(0, 0, 0), ch.id(),
+            head_item = markers.CenterMarker(head[1], head[0], 5, QtGui.QColor(0, 0, 0), ch.id(),
                                              self._gt_marker_clicked)
 
             head_item.setZValue(0.95)
@@ -1266,73 +1267,88 @@ class ResultsWidget(QtGui.QWidget):
             print "idtracker data was not loaded", path
             pass
 
-    def head_fix(self):
-        import Queue
+    def __head_fix(self, tracklet):
+        import heapq
+        rch = RegionChunk(tracklet, self.project.gm, self.project.rm)
 
-        if self.active_tracklet_id > -1:
-            tracklet = self.project.chm[self.active_tracklet_id]
-            rch = RegionChunk(tracklet, self.project.gm, self.project.rm)
+        q = []
+
+        # q = Queue.PriorityQueue()
+        heapq.heappush(q, (0, [False]))
+        heapq.heappush(q, (0, [True]))
+        # q.put((0, [False]))
+        # q.put((0, [True]))
+
+        result = []
+        i = 0
+        max_i = 0
+
+        cut_diff = 10
+
+        while True:
+            i += 1
+
+            # cost, state = q.get()
+            cost, state = heapq.heappop(q)
+            if len(state) > max_i:
+                max_i = len(state)
+
+            if len(state) + cut_diff < max_i:
+                continue
+
+            # print i, cost, len(state), max_i
+
+            if len(state) == tracklet.length():
+                result = state
+                break
+
+            prev_r = rch[len(state) - 1]
+            r = rch[len(state)]
+
+            prev_c = prev_r.centroid()
+            p1, p2 = get_region_endpoints(r)
 
             dist = np.linalg.norm
+            d1 = dist(p1 - prev_c)
+            d2 = dist(p2 - prev_c)
 
-            path = []
-            costs = [(0, 0)]
+            prev_head, prev_tail = get_region_endpoints(prev_r)
+            if state[-1]:
+                prev_head, prev_tail = prev_tail, prev_head
 
-            prev_head, prev_tail = get_region_endpoints(rch[0])
+            d3 = dist(p1 - prev_head) + dist(p2 - prev_tail)
+            d4 = dist(p1 - prev_tail) + dist(p2 - prev_head)
 
-            pi_val = 0
+            # state = list(state)
+            state2 = list(state)
+            state.append(False)
+            state2.append(True)
 
-            prev_c = None
-            i = 0
-            for r in rch:
-                if i == 0:
-                    i += 1
-                    prev_c = r.centroid()
-                    continue
+            new_cost1 = d3
+            new_cost2 = d4
 
-                p1, p2 = get_region_endpoints(r)
+            # TODO: param
+            if dist(prev_c - r.centroid()) > 5:
+                new_cost1 += d2 - d1
+                new_cost2 += d1 - d2
 
-                d1 = dist(p1-prev_c)
-                d2 = dist(p2-prev_c)
+            heapq.heappush(q, (cost + new_cost1, state))
+            heapq.heappush(q, (cost + new_cost2, state2))
+            # q.put((cost + new_cost1, state))
+            # q.put((cost + new_cost2, state2))
 
-                if d1 < d2:
-                    r.theta_ += np.pi
-                    if r.theta_ > 2*np.pi:
-                        r.theta_ -= 2*np.pi
+        for b, r in zip(result, rch.regions_gen()):
+            if b:
+                r.theta_ += np.pi
+                if r.theta_ >= 2 * np.pi:
+                    r.theta_ -= 2 * np.pi
 
-                prev_c = r.centroid()
+        # del q
 
-
-            # fix consistency
-            for r in rch:
-                d1 = dist(head-prev_head) + dist(tail - prev_tail)
-                d2 = dist(head-prev_tail) + dist(tail-prev_head)
-
-                swap = False
-                cost1 = costs[-1][0] + d1
-                if cost1 > costs[-1][1] + d2:
-                    swap = True
-                    cost1 = costs[-1][1] + d2
-                    pi_val += np.pi
-                    if pi_val >= 2*np.pi:
-                        pi_val -= 2*np.pi
-
-                cost2 = costs[-1][1] + d1
-                if cost2 > costs[-1][0] + d2:
-                    cost2 = costs[-1][0] + d2
-
-                costs.append((cost1, cost2))
-                path.append(swap)
-
-                prev_head, prev_tail = head, tail
-
-                i += 1
-
-                r.theta_ += pi_val
-                if r.theta_ >= 2*np.pi:
-                    r.theta_ -= 2*np.pi
-
-                print i, path[-1], d1, d2, costs[-1]
-
-            print path
-            print costs
+    def head_fix(self):
+        if self.active_tracklet_id < 0:
+            for t in self.project.chm.chunk_gen():
+                print t.id(), t.length()
+                self.__head_fix(t)
+        else:
+            self.__head_fix(self.project.chm[self.active_tracklet_id])
