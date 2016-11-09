@@ -115,8 +115,8 @@ class LearningProcess:
         #         d = pickle.load(f)
         #         self.features = d['features']
         #         self.collision_chunks = d['collision_chunks']
-        #
-        #     print "LOADED"
+
+            print "LOADED"
         #
         # print "precompute avalability"
         # self.__reset_chunk_PN_sets()
@@ -143,6 +143,12 @@ class LearningProcess:
         #         self.GT = pickle.load(f)
         # except IOError:
         #     pass
+
+    def load_features(self, path):
+            with open(path, 'rb') as f:
+                d = pickle.load(f)
+                self.features = d['features']
+                self.collision_chunks = d['collision_chunks']
 
     def set_eps_certainty(self, eps):
         self._eps_certainty = eps

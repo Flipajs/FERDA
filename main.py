@@ -31,7 +31,8 @@ if is_flipajs_pc():
     # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
     #             'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
-    # project.load(wd+name+'/cam'+str(cam_)+'.fproj')
+    # project.load(wd+name+'/cam'+str(ca
+    # m_)+'.fproj')
     project.load(wd)
 
     # project.load_snapshot(snapshot)

@@ -130,6 +130,10 @@ class LearningWidget(QtGui.QWidget):
         self.update_undecided_tracklets_b.clicked.connect(self.update_undecided_tracklets)
         self.top_stripe_layout.addWidget(self.update_undecided_tracklets_b)
 
+        self.auto_init_b = QtGui.QPushButton('auto_init')
+        self.auto_init_b.clicked.connect(self.auto_init)
+        self.top_stripe_layout.addWidget(self.auto_init_b)
+
         self.compute_distinguishability_b = QtGui.QPushButton('comp. disting.')
         # self.lp will change...
         self.compute_distinguishability_b.clicked.connect(lambda x: self.lp.compute_distinguishability())
@@ -139,13 +143,19 @@ class LearningWidget(QtGui.QWidget):
         # self.update_callback()
 
     def load_features(self):
-        self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=True,
-                                  question_callback=self.question_callback, update_callback=self.update_callback)
-
-        self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
+        path = self.project.working_directory+'/features.pkl'
+        self.lp.load_features(path)
 
         self.add_tracklet_table()
         self.update_callback()
+
+        # self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=True,
+        #                           question_callback=self.question_callback, update_callback=self.update_callback)
+        #
+        # self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
+        #
+        # self.add_tracklet_table()
+        # self.update_callback()
 
     def recompute_features(self):
         self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
@@ -157,16 +167,17 @@ class LearningWidget(QtGui.QWidget):
         self.update_callback()
 
     def add_tracklet_table(self):
-        self.tracklets_table = QtGui.QTableWidget()
+        if not hasattr(self, 'tracklets_table') or self.tracklets_table is None:
+            self.tracklets_table = QtGui.QTableWidget()
 
-        self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
-        num_animals = len(self.project.animals)
-        self.tracklets_table.setColumnCount(2 * num_animals + 5)
-        self.tracklets_table.setMinimumWidth(1000)
-        self.tracklets_table.setMinimumHeight(1000)
+            self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
+            num_animals = len(self.project.animals)
+            self.tracklets_table.setColumnCount(2 * num_animals + 5)
+            self.tracklets_table.setMinimumWidth(1000)
+            self.tracklets_table.setMinimumHeight(1000)
 
-        self.tracklets_table.setSortingEnabled(True)
-        self.hbox.addWidget(self.tracklets_table)
+            self.tracklets_table.setSortingEnabled(True)
+            self.hbox.addWidget(self.tracklets_table)
 
     def certainty_eps_changed(self):
         self.lp.set_eps_certainty(self.certainty_eps_spinbox.value())
@@ -352,6 +363,28 @@ class LearningWidget(QtGui.QWidget):
 
     def update_undecided_tracklets(self):
         self.lp.update_undecided_tracklets()
+
+    def auto_init(self):
+        best_frame = None
+        best_score = 0
+
+        frame = 0
+        while True:
+            group = self.project.chm.chunks_in_frame(frame)
+            if len(group) == 0:
+                break
+
+            if len(group) == len(self.project.animals):
+                m = min([t.length() for t in group])
+                if m > best_score:
+                    best_frame = frame
+                    best_score = m
+
+            frame = min([t.end_frame(self.project.gm) for t in group]) + 1
+
+        print best_frame, best_score
+        for t in self.project.chm.chunks_in_frame(best_frame):
+            print t.length()
 
 
 if __name__ == '__main__':
