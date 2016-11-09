@@ -220,8 +220,14 @@ def encode_RLE(pts):
     """
     return rle
 
+def get_region_endpoints(r):
+    # returns head, tail
 
+    p_ = np.array([r.a_ * math.sin(-r.theta_), r.a_ * math.cos(-r.theta_)])
+    endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
+    endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
 
+    return endpoint1, endpoint2
 
 def compute_region_axis_(sxx, syy, sxy):
     la = (sxx + syy) / 2

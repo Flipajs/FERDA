@@ -13,6 +13,7 @@ from gui.img_controls import markers
 from gui.video_player.video_player import VideoPlayer
 from utils.img import img_saturation_coef
 from utils.misc import is_flipajs_pc
+from core.region.region import get_region_endpoints
 
 MARKER_SIZE = 15
 
@@ -219,11 +220,15 @@ class ResultsWidget(QtGui.QWidget):
         self.show_idtracker_b = QtGui.QPushButton('show idtracker')
         self.show_idtracker_b.clicked.connect(self.show_idtracker_data)
 
+        self.head_fix_b = QtGui.QPushButton('head fix')
+        self.head_fix_b.clicked.connect(self.head_fix)
+
         self.debug_box.layout().addWidget(self.print_conflic_tracklets_b)
         self.debug_box.layout().addWidget(self.print_undecided_tracklets_b)
         self.debug_box.layout().addWidget(self.assign_ids_from_gt_b)
         self.debug_box.layout().addWidget(self.show_idtracker_i)
         self.debug_box.layout().addWidget(self.show_idtracker_b)
+        self.debug_box.layout().addWidget(self.head_fix_b)
 
         self.left_vbox.addWidget(self.debug_box)
 
@@ -623,7 +628,6 @@ class ResultsWidget(QtGui.QWidget):
         else:
             c = force_color
 
-
         for i in range(0, pts_.shape[0], step):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
 
@@ -799,6 +803,14 @@ class ResultsWidget(QtGui.QWidget):
             if ch.id() == self.active_tracklet_id: # in self._highlight_regions or ch in self._highlight_tracklets:
                 item = self.draw_region(r, ch, highlight_contour=True, force_color=self.highlight_color)
                 self.video_player.visualise_temp(item, category='region_highlight')
+
+            head, _ = get_region_endpoints(r)
+            head_item = markers.CenterMarker(head[1], head[0], 3, QtGui.QColor(0, 0, 0), ch.id(),
+                                             self._gt_marker_clicked)
+
+            head_item.setZValue(0.95)
+
+            self.video_player.visualise_temp(head_item, category='head')
 
         if self.show_markers.isChecked():
             self._show_gt_markers()
@@ -1253,3 +1265,74 @@ class ResultsWidget(QtGui.QWidget):
         except IOError:
             print "idtracker data was not loaded", path
             pass
+
+    def head_fix(self):
+        import Queue
+
+        if self.active_tracklet_id > -1:
+            tracklet = self.project.chm[self.active_tracklet_id]
+            rch = RegionChunk(tracklet, self.project.gm, self.project.rm)
+
+            dist = np.linalg.norm
+
+            path = []
+            costs = [(0, 0)]
+
+            prev_head, prev_tail = get_region_endpoints(rch[0])
+
+            pi_val = 0
+
+            prev_c = None
+            i = 0
+            for r in rch:
+                if i == 0:
+                    i += 1
+                    prev_c = r.centroid()
+                    continue
+
+                p1, p2 = get_region_endpoints(r)
+
+                d1 = dist(p1-prev_c)
+                d2 = dist(p2-prev_c)
+
+                if d1 < d2:
+                    r.theta_ += np.pi
+                    if r.theta_ > 2*np.pi:
+                        r.theta_ -= 2*np.pi
+
+                prev_c = r.centroid()
+
+
+            # fix consistency
+            for r in rch:
+                d1 = dist(head-prev_head) + dist(tail - prev_tail)
+                d2 = dist(head-prev_tail) + dist(tail-prev_head)
+
+                swap = False
+                cost1 = costs[-1][0] + d1
+                if cost1 > costs[-1][1] + d2:
+                    swap = True
+                    cost1 = costs[-1][1] + d2
+                    pi_val += np.pi
+                    if pi_val >= 2*np.pi:
+                        pi_val -= 2*np.pi
+
+                cost2 = costs[-1][1] + d1
+                if cost2 > costs[-1][0] + d2:
+                    cost2 = costs[-1][0] + d2
+
+                costs.append((cost1, cost2))
+                path.append(swap)
+
+                prev_head, prev_tail = head, tail
+
+                i += 1
+
+                r.theta_ += pi_val
+                if r.theta_ >= 2*np.pi:
+                    r.theta_ -= 2*np.pi
+
+                print i, path[-1], d1, d2, costs[-1]
+
+            print path
+            print costs
