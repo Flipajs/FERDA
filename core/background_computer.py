@@ -51,7 +51,7 @@ class BackgroundComputer:
         vid = get_auto_video_manager(self.project)
         frame_num = int(vid.total_frame_count())
 
-        self.part_num = int(frame_num / self.frames_in_row)
+        self.part_num = int(int(frame_num) / int(self.frames_in_row))
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
@@ -84,7 +84,7 @@ class BackgroundComputer:
 
                 last_n_frames = 0
                 if i == self.part_num - 1:
-                    last_n_frames = self.frames_in_row_last - self.frames_in_row + 1
+                    last_n_frames = self.frames_in_row_last - self.frames_in_row
 
                 ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
                     self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(

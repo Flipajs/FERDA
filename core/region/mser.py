@@ -42,6 +42,22 @@ class Mser():
             groups = get_region_groups_dict_(regions)
             ids = margin_filter_dict_(regions, groups)
             if region_min_intensity is not None and region_min_intensity < 256:
+
+                # fix minI:
+                for r_id in ids:
+                    r = regions[r_id]
+                    min_i_ = 255
+                    for it in r['rle']:
+                        d = img[it['line'], it['col1']:it['col2'] + 1]
+                        m_ = d.min()
+
+                        min_i_ = min(min_i_, m_)
+
+                    if min_i_ != r['minI']:
+                        r['minI'] = min_i_
+                        # print r
+                        # print
+
                 ids = min_intensity_filter_dict_(regions, ids, region_min_intensity)
 
             regions = [Region(regions[id], frame, id) for id in ids]

@@ -227,7 +227,7 @@ class VideoPlayer(QtGui.QWidget):
         if frame < 0:
             frame = 0
         if frame >= self._vm.total_frame_count():
-            frame = self._vm.total_frame_count()
+            frame = self._vm.total_frame_count() - 1
 
         img = self._vm.get_frame(frame)
 

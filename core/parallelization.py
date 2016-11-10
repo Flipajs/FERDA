@@ -31,10 +31,6 @@ if __name__ == '__main__':
     frames_in_row = int(sys.argv[4])
     last_n_frames = int(sys.argv[5])
 
-    f_log_name = 'id'+str(id)+'.log'
-    # with open(f_log_name, 'wb') as f:
-    #     f.write('init...')
-
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
@@ -78,7 +74,6 @@ if __name__ == '__main__':
     proj.gm = GraphManager(proj, proj.solver.assignment_score)
     # TODO: add global params
     proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=5)
-    # proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=S_.cache.region_manager_num_of_instances)
     proj.chm = ChunkManager()
     proj.color_manager = None
 
@@ -93,13 +88,6 @@ if __name__ == '__main__':
     if img is None:
         raise Exception("img is None, there is something wrong with frame: "+str(id*frames_in_row))
 
-    # if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
-    #     proj.segmentation_model.set_image(img)
-    #     seg = proj.segmentation_model.predict()
-    #     # img = np.asarray((-seg*255)+255, dtype=np.uint8)
-    #     img = seg < 0.5
-    #     img = np.asarray(img, dtype=np.uint8)*255
-    # else:
     img_gray = prepare_for_segmentation(img, proj)
 
     msers_t = 0
@@ -109,14 +97,14 @@ if __name__ == '__main__':
 
     for i in range(frames_in_row + last_n_frames):
         frame = id*frames_in_row + i
-
         print frame
+
         s = time.time()
         msers = ferda_filtered_msers(img_gray, proj, frame)
 
         if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
             new_msers = []
-            border = 10
+            border = 15
             for m in msers:
                 roi = m.roi()
                 tl = roi.top_left_corner()
@@ -132,7 +120,12 @@ if __name__ == '__main__':
 
                 proj.segmentation_model.set_image(crop)
                 seg = proj.segmentation_model.predict()
-                seg_img = np.asarray((-seg*255)+255, dtype=np.uint8)
+                # make hard threshold
+                if False:
+                    seg_img = seg < 0.5
+                    seg_img = np.asarray(seg_img, dtype=np.uint8) * 255
+                else:
+                    seg_img = np.asarray((-seg*255)+255, dtype=np.uint8)
 
                 msers_ = ferda_filtered_msers(seg_img, proj, frame)
                 for m in msers_:
@@ -154,7 +147,9 @@ if __name__ == '__main__':
                         m.roi_.x_max_ += w1
                     new_msers.append(m)
 
-            msers = new_msers
+            from core.region.mser_operations import children_filter
+            ids = children_filter(new_msers, range(len(new_msers)))
+            msers = [new_msers[id_] for id_ in ids]
 
         if proj.colormarks_model:
             proj.colormarks_model.assign_colormarks(proj, msers)
@@ -163,17 +158,13 @@ if __name__ == '__main__':
         msers_t += time.time()-s
 
         s = time.time()
-        print frame
-        img = vid.next_frame()
-        if img is None:
-            raise Exception("img is None, there is something wrong with frame: " + str(frame))
 
-        # if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
-        #     proj.segmentation_model.set_image(img)
-        #     seg = proj.segmentation_model.predict()
-        #     img = seg < 0.5
-        #     img = np.asarray(img, dtype=np.uint8)*255
-        # else:
+        # Check for last frame...
+        if i+1 < frames_in_row + last_n_frames:
+            img = vid.next_frame()
+            if img is None:
+                raise Exception("img is None, there is something wrong with frame: " + str(frame))
+
         img_gray = prepare_for_segmentation(img, proj)
 
         vid_t += time.time() - s

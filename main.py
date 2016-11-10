@@ -24,7 +24,8 @@ if is_flipajs_pc():
     sn_id = 875
     cam_ = 1
 
-    wd = '/Users/flipajs/Documents/wd/FERDA/C210min'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/C210min'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam2_'
     # wd = '/Users/flipajs/Documents/wd/zebrafish'
 
     # wd = '/Users/flipajs/Documents/wd/'
