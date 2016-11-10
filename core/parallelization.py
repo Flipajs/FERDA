@@ -120,21 +120,23 @@ if __name__ == '__main__':
         msers_t += time.time()-s
 
         s = time.time()
-        img = vid.next_frame()
-        if img is None:
-            raise Exception("img is None, there is something wrong with frame: " + str(id * frames_in_row))
 
-        if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
-            proj.segmentation_model.set_image(img)
-            seg = proj.segmentation_model.predict()
-            img = seg < 0.5
-            img = np.asarray(img, dtype=np.uint8)*255
-        else:
-            img = prepare_for_segmentation(img, proj)
+        if i + 1 < frames_in_row + last_n_frames:
+            img = vid.next_frame()
+            if img is None:
+                raise Exception("img is None, there is something wrong with frame: " + str(id * frames_in_row))
 
-        vid_t += time.time() - s
+            if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
+                proj.segmentation_model.set_image(img)
+                seg = proj.segmentation_model.predict()
+                img = seg < 0.5
+                img = np.asarray(img, dtype=np.uint8)*255
+            else:
+                img = prepare_for_segmentation(img, proj)
 
-        s = time.time()
+            vid_t += time.time() - s
+
+            s = time.time()
 
         proj.gm.add_regions_in_t(msers, frame, fast=True)
         solver_t += time.time() - s
