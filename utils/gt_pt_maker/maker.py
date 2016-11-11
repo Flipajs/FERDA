@@ -152,7 +152,7 @@ class clicker_class(object):
         plt.title(s1+', '+s2)
         plt.hold(False)
 
-        self.canvas.draw()
+        self.canvas.add_point()
 
     def return_points(self):
         '''Returns the clicked points in the format the rest of the
