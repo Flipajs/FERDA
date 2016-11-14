@@ -12,6 +12,15 @@ class ROI():
         self.height_ = height
         self.width_ = width
 
+    def __str__(self):
+        s = ""
+        s += "y: "+self.y_
+        s += "\nx: "+self.x_
+        s += "\nheight:"+self.height_
+        s += "\nwidth:"+self.width_
+
+        return s
+
     def y(self):
         return self.y_
 
@@ -49,19 +58,19 @@ class ROI():
 
         return np.array([y_, x_])
 
-    def is_inside(self, pt, strict=True):
+    def is_inside(self, pt, tolerance=0):
         y = pt[0]
         x = pt[1]
-        if y < self.y_:
+        if y < self.y_ + tolerance:
             return False
 
-        if y > self.y_max_ or strict and y == self.y_max_:
+        if y > self.y_max_ - tolerance:
             return False
 
-        if x < self.x_:
+        if x < self.x_ + tolerance:
             return False
 
-        if x > self.x_max_ or strict and x == self.x_max_:
+        if x > self.x_max_ - tolerance:
             return False
 
         return True

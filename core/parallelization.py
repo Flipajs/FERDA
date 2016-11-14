@@ -22,6 +22,8 @@ from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 import numpy as np
 import time
+import cv2
+from core.region.mser_operations import children_filter
 
 
 if __name__ == '__main__':
@@ -95,16 +97,18 @@ if __name__ == '__main__':
     vid_t = 0
     file_t = 0
 
+    jj = 0
     for i in range(frames_in_row + last_n_frames):
         frame = id*frames_in_row + i
-        print frame
 
         s = time.time()
         msers = ferda_filtered_msers(img_gray, proj, frame)
 
-        if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
+        if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None and False:
             new_msers = []
-            border = 15
+            border = 10
+            border2 = 5
+
             for m in msers:
                 roi = m.roi()
                 tl = roi.top_left_corner()
@@ -118,8 +122,17 @@ if __name__ == '__main__':
 
                 crop = img[h1:h2, w1:w2, :].copy()
 
+                # add border2 (to prevent segmentation artefacts
+                crop = cv2.copyMakeBorder(crop, border2, border2, border2, border2, cv2.BORDER_REPLICATE)
+
                 proj.segmentation_model.set_image(crop)
                 seg = proj.segmentation_model.predict()
+
+                # remove border2
+                seg = seg[border2:-border2, border2:-border2].copy()
+
+                jj += 1
+
                 # make hard threshold
                 if False:
                     seg_img = seg < 0.5
@@ -127,7 +140,15 @@ if __name__ == '__main__':
                 else:
                     seg_img = np.asarray((-seg*255)+255, dtype=np.uint8)
 
-                msers_ = ferda_filtered_msers(seg_img, proj, frame)
+                from scripts.gcut.segmentation import Segmentation
+                gcut_segmentation = Segmentation(seg_img)
+                mask = gcut_segmentation.segmentation()
+                mask = np.asarray(np.logical_not(mask), dtype=np.uint8) * 255
+
+                # cv2.imwrite('/Users/flipajs/Desktop/temp/rf/' + str(jj) + '_i.png', crop[border2:-border2, border2:-border2, :].copy())
+                # cv2.imwrite('/Users/flipajs/Desktop/temp/rf/' + str(jj) + '.png', seg_img)
+
+                msers_ = ferda_filtered_msers(mask, proj, frame)
                 for m in msers_:
                     # update offsets
                     offset = np.array([h1, w1])
@@ -147,8 +168,7 @@ if __name__ == '__main__':
                         m.roi_.x_max_ += w1
                     new_msers.append(m)
 
-            from core.region.mser_operations import children_filter
-            ids = children_filter(new_msers, range(len(new_msers)))
+            ids = children_filter(new_msers, range(len(new_msers)), tolerance=5)
             msers = [new_msers[id_] for id_ in ids]
 
         if proj.colormarks_model:

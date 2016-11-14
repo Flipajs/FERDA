@@ -75,7 +75,6 @@ class Region():
                     pts[i, 1] = c
 
                     i += 1
-
         else:
             pts = []
 

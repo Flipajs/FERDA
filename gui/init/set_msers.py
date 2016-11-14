@@ -15,6 +15,7 @@ from gui.segmentation.painter import Painter, array2qimage
 from utils.drawing.points import draw_points_crop, get_contour, draw_points_binary
 from utils.img import prepare_for_segmentation
 from utils.video_manager import get_auto_video_manager
+from core.region.mser import ferda_filtered_msers
 
 __author__ = 'filip@naiser.cz', 'dita'
 
@@ -162,7 +163,9 @@ class SetMSERs(QtGui.QWidget):
 
         # get msers
         s = time.time()
-        msers = ferda_filtered_msers(img_, self.project)
+        from core.region.mser import get_msers_
+        msers = get_msers_(img_, self.project, 0, prefiltered=False)
+        # msers = ferda_filtered_msers(img_, self.project)
         print "mser takes: ", time.time() - s
 
         # prepare empty array - mser borders will be painted there and it will be visualised as painter's overlay
@@ -171,7 +174,7 @@ class SetMSERs(QtGui.QWidget):
         # delete old image grid if it exists and prepare a new one
         if self.img_grid:
             self.img_grid.setParent(None)
-        self.img_grid = ImgGridWidget(cols=3, element_width=100)
+        self.img_grid = ImgGridWidget(cols=3, element_width=150)
         self.right_panel.layout().addWidget(self.img_grid)
 
         # fill new grid with msers visualisations on current image, this also fills `mser_vis`
@@ -231,6 +234,12 @@ class SetMSERs(QtGui.QWidget):
         :param mser_vis: one channel image, which will be modified to contain mser contours
         :return: None
         """
+
+        from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
+
+        groups = get_region_groups(msers)
+        ids = margin_filter(msers, groups)
+
         for r, r_id in zip(msers, range(len(msers))):
             if self.project.stats:
                 prob = self.project.stats.antlikeness_svm.get_prob(r)
@@ -246,8 +255,18 @@ class SetMSERs(QtGui.QWidget):
 
             # visualise it on a small cropped image
             # format color to be BGRA, convert alpha channel from 0-255 to 0.0-1.0 scale
-            crop = draw_points_crop(img_vis, cont, (self.color_mser[2], self.color_mser[1], self.color_mser[0],
-                                                    self.color_mser[3]/float(255)), square=True, fill_pts=fill_pts)
+
+            if r_id in ids:
+                crop = draw_points_crop(img_vis, cont, (255, 0, 255,
+                                                        self.color_mser[3]/float(255)), square=True, fill_pts=fill_pts)
+            else:
+                crop = draw_points_crop(img_vis, cont, (self.color_mser[2], self.color_mser[1], self.color_mser[0],
+                                                        self.color_mser[3] / float(255)), square=True,
+                                        fill_pts=fill_pts)
+
+            import cv2
+
+            cv2.putText(crop, str(r.margin_)+' '+str(r.area())+' '+str(r.max_intensity_), (10, 10), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.25, (255, 255, 255))
 
             # create qimage from crop
             img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
@@ -256,7 +275,7 @@ class SetMSERs(QtGui.QWidget):
             # add crop to img grid
             item = SelectableQLabel(id=r_id)
             item.setScaledContents(True)
-            item.setFixedSize(100, 100)
+            item.setFixedSize(150, 150)
             item.setPixmap(pix_map)
 
             self.img_grid.add_item(item)
@@ -534,7 +553,7 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
 
-    proj.load('/Users/flipajs/Documents/wd/FERDA/Cam1_')
+    proj.load('/Users/flipajs/Documents/wd/FERDA/Cam2_')
     # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
     proj.arena_model = None
     proj.bg_model = None
