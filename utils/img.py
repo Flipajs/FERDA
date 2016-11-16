@@ -259,7 +259,9 @@ def rotate_img(img, theta, center=None):
 
     im_[h_:h_+img.shape[0], w_:w_+img.shape[1], :] = img
 
-    if center is None:
+    if isinstance(center, np.ndarray):
+        center = (center[0], center[1])
+    elif center is None:
         center = (im_.shape[0] / 2, im_.shape[1] / 2)
 
     rot_mat = cv2.getRotationMatrix2D(center, -np.rad2deg(theta), 1.0)

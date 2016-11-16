@@ -6,12 +6,16 @@ import math
 from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
 
 
-def get_nu_moments(img):
+def get_mu_moments(img):
     m = moments(img)
     cr = m[0, 1] / m[0, 0]
     cc = m[1, 0] / m[0, 0]
 
     mu = moments_central(img, cr, cc)
+    return mu
+
+def get_nu_moments(img):
+    mu = get_mu_moments(img)
     nu = moments_normalized(mu)
 
     return nu
@@ -382,11 +386,12 @@ def get_features_var2(r, p, fliplr=False):
     crop = __get_crop(r, p)
 
     crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-    crop_r = crop[:, :, 2]
-    crop_g = crop[:, :, 1]
-    crop_b = crop[:, :, 0]
+    # crop_r = crop[:, :, 2]
+    # crop_g = crop[:, :, 1]
+    # crop_b = crop[:, :, 0]
 
-    crops = [crop_gray, crop_r, crop_b, crop_g]
+    # crops = [crop_gray, crop_r, crop_b, crop_g]
+    crops = [crop_gray]
 
     if fliplr:
         f1 = __process_crops(crops, fliplr=False)
@@ -436,13 +441,14 @@ def get_lbp_vect(crop):
     return f
 
 
-def __get_crop(r, p):
+def get_crop(r, p, margin=0):
+    return __get_crop(r, p, margin=margin)
+
+def __get_crop(r, p, margin=3):
     img = p.img_manager.get_whole_img(r.frame_)
 
     crop, offset = get_img_around_pts(img, r.pts(), margin=2.0)
     crop = rotate_img(crop, r.theta_)
-
-    margin = 3
 
     crop = centered_crop(crop, 2 * (r.b_ + margin), 2 * (r.a_ + margin))
 

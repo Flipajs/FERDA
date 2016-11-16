@@ -19,16 +19,9 @@ from utils.drawing.points import draw_points
 from utils.drawing.collage import create_collage_rows
 from PyQt4.QtGui import QColor
 from utils.img import rotate_img, get_bounding_box, centered_crop
+from core.learning.features import get_features_var2, get_crop
 
-def area_filter(x, p, area_thresh):
-    if x[0] is None or x[2] is None:
-        return False
-
-    a1 = p.gm.region(x[0]).area()
-    a2 = p.gm.region(x[2]).area()
-    t1 = abs(area_med - a1) < area_thresh
-    t2 = abs(a1 - a2) < area_thresh
-    return t1 and t2
+EXP = 'exp1'
 
 
 def plotNdto3d(data, labels, core_samples_mask, indices=[0, 1, 2], ax_labels=['', '', ''], title=''):
@@ -228,9 +221,9 @@ def prepare_pairs(project):
 
     hickle.dump(pairs, '/Users/flipajs/Desktop/temp/pairs/pairs.pkl')
 
-def __get_nu_moments_pick(img):
-    from core.learning.features import get_nu_moments
-    nu = get_nu_moments(img)
+def __get_mu_moments_pick(img):
+    from core.learning.features import get_mu_moments
+    nu = get_mu_moments(img)
 
     return list(nu[np.logical_not(np.isnan(nu))])
 
@@ -249,11 +242,11 @@ def head_features(r, swap=False):
         img = np.fliplr(img)
 
     features = []
-    nu = __get_nu_moments_pick(img)
+    nu = __get_mu_moments_pick(img)
     features.extend(nu)
-    nu = __get_nu_moments_pick(img[:, :img.shape[1]/2])
+    nu = __get_mu_moments_pick(img[:, :img.shape[1] / 2])
     features.extend(nu)
-    nu = __get_nu_moments_pick(img[:, img.shape[1] / 2:])
+    nu = __get_mu_moments_pick(img[:, img.shape[1] / 2:])
     features.extend(nu)
 
     # cv2.imshow('test', img*255)
@@ -261,40 +254,73 @@ def head_features(r, swap=False):
 
     return features
 
-def head_detector_features(p):
+def head_detector_features(p, display=False):
     from core.region.region import get_region_endpoints
 
     pairs = hickle.load('/Users/flipajs/Desktop/temp/pairs/head_pairs.pkl')
 
+    BORDER = 20
+    COLS = 10
+    IT_H = 50
+    IT_W = 100
+
     data_heads = []
     data_swap = []
+    data = []
+    i = 0
+    part = 0
     for (v1, v2), _, _ in pairs:
         r = p.gm.region(v1)
         r2 = p.gm.region(v2)
         f1 = head_features(r)
+
         f2 = head_features(r, swap=True)
 
+        f1_, f2_ = get_features_var2(r, p, fliplr=True)
+        f1.extend(f1_)
+        f2.extend(f2_)
+        #
         p1, p2 = get_region_endpoints(r)
-
-        # if p1 is a head, than knowing that the ant moved in direction of main axis at least by major_axis_mean...
+        #
+        # # if p1 is a head, than knowing that the ant moved in direction of main axis at least by major_axis_mean...
         if np.linalg.norm(r2.centroid() - p1) > np.linalg.norm(r2.centroid() - p2):
+            r.theta_ += np.pi
+            if r.theta_ > 2*np.pi:
+                r.theta_ -= 2*np.pi
+
             f1, f2 = f2, f1
+        #
+        data_heads.append(np.array(f1))
+        data_swap.append(np.array(f2))
 
-        data_heads.append(f1)
-        data_swap.append(f2)
+        if display:
+            crop = get_crop(r, p)
+            data.append(crop)
 
-    hickle.dump(data_heads, '/Users/flipajs/Desktop/temp/pairs/head_data.pkl')
-    hickle.dump(data_swap, '/Users/flipajs/Desktop/temp/pairs/head_data_swap.pkl')
+            if i % (500) == 0 and i > 0:
+                collage = create_collage_rows(data, COLS, IT_H, IT_W)
+                cv2.imwrite('/Users/flipajs/Desktop/temp/pairs/' + EXP + '/heads_train' + str(part) + '.jpg', collage)
+                data = []
+                part += 1
+
+        i += 1
+
+    collage = create_collage_rows(data, COLS, IT_H, IT_W)
+    cv2.imwrite('/Users/flipajs/Desktop/temp/pairs/' + EXP + '/heads_train' + str(part) + '.jpg', collage)
+
+
+    hickle.dump(data_heads, '/Users/flipajs/Desktop/temp/pairs/'+EXP+'/head_data.pkl')
+    hickle.dump(data_swap, '/Users/flipajs/Desktop/temp/pairs/'+EXP+'/head_data_swap.pkl')
 
 def head_detector_classify(p):
     from sklearn.ensemble import RandomForestClassifier
 
-    data_head = hickle.load('/Users/flipajs/Desktop/temp/pairs/head_data.pkl')
-    data_swap = hickle.load('/Users/flipajs/Desktop/temp/pairs/head_data_swap.pkl')
+    data_head = hickle.load('/Users/flipajs/Desktop/temp/pairs/'+EXP+'/head_data.pkl')
+    data_swap = hickle.load('/Users/flipajs/Desktop/temp/pairs/'+EXP+'/head_data_swap.pkl')
     rfc = RandomForestClassifier()
 
     X = np.vstack((np.array(data_head), np.array(data_swap)))
-    y = np.hstack((np.zeros((len(data_head), )), np.ones(len(data_swap), )))
+    y = np.hstack((np.zeros((len(data_head), ), dtype=np.int), np.ones((len(data_swap), ), dtype=np.int)))
     rfc.fit(X, y)
 
     print rfc.feature_importances_
@@ -308,7 +334,6 @@ def head_detector_classify(p):
     IT_H = 50
     IT_W = 100
 
-    pairs = []
     data = []
     part = 0
     i = 0
@@ -316,33 +341,36 @@ def head_detector_classify(p):
         r = p.gm.region(v)
 
         f = head_features(r)
-        probs = rfc.predict_proba(f)[0]
+        f.extend(get_features_var2(r, p))
+
+        probs = rfc.predict_proba(np.array([f]))[0]
 
         if probs[1] > 0.5:
             r.theta_ += np.pi
             if r.theta_ > 2*np.pi:
                 r.theta_ -= 2*np.pi
 
-        crop, _ = get_bounding_box(r, p, absolute_border=20)
-        crop = rotate_img(crop, r.theta_)
-        crop = centered_crop(crop, 2 * r.b_ + BORDER, 2 * r.a_ + BORDER)
-        crop = rotate_img(crop, r.theta_)
-        cv2.putText(crop, str(r.probs[0]), (10, 10),
-                    cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.25, (255, 255, 255))
+        crop = get_crop(r, p, margin=10)
+        # bb, offset = get_bounding_box(r, p)
+        # bb = rotate_img(bb, r.theta_)
+        # bb = centered_crop(bb, 8 * r.b_, 4 * r.a_)
+        # crop = bb
 
-        cv2.imshow('c', crop)
-        cv2.waitKey(0)
+        cv2.putText(crop, str(probs[0]), (10, 10),
+                    cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.4, (255, 255, 255))
+
+        data.append(crop)
 
         if i % (500) == 0 and i > 0:
             collage = create_collage_rows(data, COLS, IT_H, IT_W)
-            cv2.imwrite('/Users/flipajs/Desktop/temp/pairs/heads' + str(part) + '.jpg', collage)
+            cv2.imwrite('/Users/flipajs/Desktop/temp/pairs/'+EXP+'/heads' + str(part) + '.jpg', collage)
             data = []
             part += 1
 
         i += 1
 
     collage = create_collage_rows(data, COLS, IT_H, IT_W)
-    cv2.imwrite('/Users/flipajs/Desktop/temp/pairs/heads' + str(part) + '.jpg', collage)
+    cv2.imwrite('/Users/flipajs/Desktop/temp/pairs/'+EXP+'/heads' + str(part) + '.jpg', collage)
 
 
 
