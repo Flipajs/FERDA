@@ -6,13 +6,18 @@ import math
 from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
 
 
-def get_hu_moments(img):
+def get_nu_moments(img):
     m = moments(img)
     cr = m[0, 1] / m[0, 0]
     cc = m[1, 0] / m[0, 0]
 
     mu = moments_central(img, cr, cc)
     nu = moments_normalized(mu)
+
+    return nu
+
+def get_hu_moments(img):
+    nu = get_nu_moments(img)
     hu = moments_hu(nu)
 
     features = [m_ for m_ in hu]

@@ -31,7 +31,9 @@ def draw_points(img, pts, color=None):
         return img
 
     if not color:
-        color = S_.visualization.default_region_color
+        # TODO:
+        color = QtGui.QColor(255, 0, 255, 70)
+        # color = S_.visualization.default_region_color
 
     color = process_color(color)
     alpha = color[3]

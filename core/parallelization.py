@@ -36,6 +36,8 @@ if __name__ == '__main__':
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
+    proj.solver_parameters.max_edge_distance_in_ant_length = 100
+
     if not os.path.exists(proj.working_directory+'/temp'):
         try:
             os.mkdir(proj.working_directory+'/temp')
@@ -194,19 +196,19 @@ if __name__ == '__main__':
         proj.gm.add_regions_in_t(msers, frame, fast=True)
         solver_t += time.time() - s
 
-    if proj.solver_parameters.use_emd_for_split_merge_detection():
-        solver.detect_split_merge_cases()
+    # if proj.solver_parameters.use_emd_for_split_merge_detection():
+    #     solver.detect_split_merge_cases()
 
     s = time.time()
-    print "#Edges BEFORE: ", proj.gm.g.num_edges()
-    while True:
-        num_changed1 = solver.simplify(rules=[solver.update_costs])
-        num_changed2 = solver.simplify(rules=[solver.adaptive_threshold])
-
-        if num_changed1+num_changed2 == 0:
-            break
-
-    print "#Edges AFTER: ", proj.gm.g.num_edges()
+    # print "#Edges BEFORE: ", proj.gm.g.num_edges()
+    # while True:
+    #     num_changed1 = solver.simplify(rules=[solver.update_costs])
+    #     num_changed2 = solver.simplify(rules=[solver.adaptive_threshold])
+    #
+    #     if num_changed1+num_changed2 == 0:
+    #         break
+    #
+    # print "#Edges AFTER: ", proj.gm.g.num_edges()
 
     solver_t += time.time() - s
 

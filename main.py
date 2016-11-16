@@ -25,7 +25,7 @@ if is_flipajs_pc():
     cam_ = 1
 
     wd = '/Users/flipajs/Documents/wd/FERDA/C210min'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/zebrafish'
 
     # wd = '/Users/flipajs/Documents/wd/'

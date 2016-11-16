@@ -174,6 +174,34 @@ class Region():
     def frame(self):
         return self.frame_
 
+    def vector_on_major_axis_projection_head_unknown(self, region):
+        """
+        projection of movement vector onto main axis vector in range <0, pi/2> due to the head orientation uncertainty
+        Returns:
+
+        """
+
+        p1, _ = get_region_endpoints(self)
+
+        u = p1 - self.centroid()
+        v = self.centroid() - region.centroid()
+        u_d = np.linalg.norm(u)
+        if u_d == 0:
+            return 0
+
+        a = np.dot(v, u/u_d)
+
+        return abs(a)
+
+        # c = np.dot(u, v) / np.norm(u) / np.norm(v)  # -> cosine of the angle
+        # # <0, pi>
+        # angle = np.arccos(np.clip(c, -1, 1))  # if you really want the angle
+        #
+        # if angle > np.pi/2:
+        #     angle -= np.pi/2
+
+
+
 def encode_RLE(pts):
     """
     returns list of dictionaries

@@ -77,23 +77,29 @@ def _rotate_back_projection(pts, th, center, roi):
 
     x_range = roi_x_range(roi_img)
     y_range = roi_y_range(roi_img)
+
+    from utils.drawing.points import draw_points_crop_binary
+    im = draw_points_crop_binary(pts)
+
     for i in x_range:
         for j in y_range:
             pt = _rotate([[i, j]], -th, center, inv_rot_matrix)
-            if pt[0] in pts:
-                new_pts.append([i, j])
+            # TODO: old format roi [[min_x, min_y], [...]]
+            y = pt[0][0] - roi[0][0]
+            x = pt[0][1] - roi[0][1]
+            if 0 <= y < im.shape[0]:
+                if 0 <= x < im.shape[1]:
+                    if im[y, x]:
+                        new_pts.append([i, j])
 
-    print new_pts
     return new_pts
 
 
 def roi_x_range(roi):
-    print "x_range", roi[0][0], roi[1][0] + 1
     return range(roi[0][0], roi[1][0] + 1)
 
 
 def roi_y_range(roi):
-    print "y_range", roi[0][1], roi[1][1] + 1
     return range(roi[0][1], roi[1][1] + 1)
 
 

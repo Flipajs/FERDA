@@ -83,6 +83,17 @@ class ROI():
             [self.y_max_, self.x_]
         ])
 
+    def slices(self):
+        return [slice(self.y_, self.y_max_), slice(self.x_, self.x_max_)]
+
+    def safe_roi(self, img, border=30):
+        y_ = max(0, self.y_-border)
+        y_max_ = min(img.shape[0], self.y_max_+border)
+
+        x_ = max(0, self.x_-border)
+        x_max_ = min(img.shape[1], self.x_max_+border)
+        return img[[slice(y_, y_max_), slice(x_, x_max_)]].copy()
+
 
 def get_roi(pts):
     """

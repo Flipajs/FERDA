@@ -11,7 +11,7 @@ from utils.img_manager import ImgManager
 from core.project.project import Project
 import math
 from ft import FASTex
-
+from utils.img import rotate_img
 
 def get_fastext(project):
     scaleFactor = 1.4
@@ -57,20 +57,6 @@ def get_fastext(project):
 
     return ft
 
-
-def rotate_img(img, theta):
-    s_ = max(img.shape[0], img.shape[1])
-
-    im_ = np.zeros((s_, s_, img.shape[2]), dtype=img.dtype)
-    h_ = (s_ - img.shape[0]) / 2
-    w_ = (s_ - img.shape[1]) / 2
-
-    im_[h_:h_+img.shape[0], w_:w_+img.shape[1], :] = img
-
-    center = (im_.shape[0] / 2, im_.shape[1] / 2)
-
-    rot_mat = cv2.getRotationMatrix2D(center, -np.rad2deg(theta), 1.0)
-    return cv2.warpAffine(im_, rot_mat, (s_, s_))
 
 def centered_crop(img, new_h, new_w):
     new_h = int(new_h)
