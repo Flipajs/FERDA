@@ -3,6 +3,7 @@ from PyQt4.QtGui import QMatrix
 __author__ = 'filip@naiser.cz'
 from PyQt4 import QtGui, QtCore
 
+
 class MyView(QtGui.QGraphicsView):
     def __init__(self, update_callback_move=None, update_callback_press=None):
         super(MyView, self).__init__()
@@ -34,28 +35,30 @@ class MyView(QtGui.QGraphicsView):
         if self.update_callback_press:
             self.update_callback_press(e)
 
+    def zoomAction(self, event, scale_factor=1.06):
+        self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
+
+        m11 = self.transform().m11()
+        m22 = self.transform().m22()
+
+        if event.delta() > 0:
+            # max zoom-out restriction
+            if m11 > 10 or m22 > 10:
+                return
+
+            self.scale(scale_factor, scale_factor)
+        else:
+            # max zoom-in restriction
+            if m11 < 0.1 or m22 < 0.1:
+                return
+
+            self.scale(1.0 / scale_factor, 1.0 / scale_factor)
+
     def wheelEvent(self, event):
         modifiers = QtGui.QApplication.keyboardModifiers()
         if modifiers == QtCore.Qt.ControlModifier:
-            scale_factor = 1.06
+            self.zoomAction(event)
 
-            self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
-
-            m11 = self.transform().m11()
-            m22 = self.transform().m22()
-
-            if event.delta() > 0:
-                # max zoom-out restriction
-                if m11 > 10 or m22 > 10:
-                    return
-
-                self.scale(scale_factor, scale_factor)
-            else:
-                # max zoom-in restriction
-                if m11 < 0.1 or m22 < 0.1:
-                    return
-
-                self.scale(1.0 / scale_factor, 1.0 / scale_factor)
     #
     # def wheelEvent(self, event):
     #     if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:

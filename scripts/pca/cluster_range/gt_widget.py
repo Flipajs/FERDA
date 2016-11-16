@@ -6,23 +6,47 @@ import sys
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
-from gui.arena.my_view import MyView
 import numpy as np
 from gui.gui_utils import cvimg2qtpixmap
 from gui.segmentation.my_scene import MyScene
+from gui.segmentation.my_view import MyView
 from gui.segmentation.painter import mask2qimage
 from gui.segmentation.segmentation import SegmentationPicker
+from utils.drawing.points import get_contour
 from utils.video_manager import get_auto_video_manager
 import cPickle
 
 __author__ = 'simon'
 
 
+def convex_hull(points):
+    if len(points) < 3: return points
+    ret = []
+    comp = lambda A, B: -1 if A[0] < B[0] or A[0] == B[0] and A[1] < B[1] else 1
+    points = sorted(points, comp)
+
+    ret.append(points[0])
+    ret.append(points[1])
+
+    for p in points[2:] + list(reversed(points)):
+        while len(ret) > 1 and wedge_product(ret[-2], ret[-1], p) <= 0:
+            ret.pop()
+        ret.append(p)
+
+    ret.pop() # first == last
+
+    return np.array(ret)
+
+
+def wedge_product(A, B, X):
+    return (X[0] - A[0]) * (B[1] - A[1]) - (X[1] - A[1]) * (B[0] - A[0])
+
+
 class GTWidget(QtGui.QWidget):
     width = 1000
     height = 1000
 
-    def __init__(self, project, cluster_tracklets_id, threshold=12):
+    def __init__(self, project, cluster_tracklets_id, threshold=.1):
         QtGui.QWidget.__init__(self)
         self.project = project
         self.threshold = threshold
@@ -30,27 +54,26 @@ class GTWidget(QtGui.QWidget):
         self.region_generator = self.regions_gen(cluster_tracklets_id)
         self.init_gui()
 
-    #         for t_id in cluster_tracklets_id:
-    #             tracklet = project.chm[t_id]
-    #             for region in RegionChunk(tracklet, project.gm, project.rm).regions_gen():
-    #
-    #                 app = QtGui.QApplication(sys.argv)
-    #                 ex = SegmentationPicker(self.im_manager.get_crop(region.frame(), region,  width=self.width, height=self.height, default_color=(255,255,255,0))
-    # )
-    #                 ex.show()
-    #                 ex.move(-500, -500)
-    #                 ex.showMaximized()
-    #                 ex.setFocus()
-    #
-    #                 app.exec_()
-    #         sys.exit()
-
-    # self._next()
-
     def next_ant(self):
-        pass
+        import matplotlib.pyplot as plt
+        bm = (self.img_viewer.get_current_ant_bitmap())
+        plt.spy(bm)
+        plt.hold(True)
+
+        points = set()
+        a, b = np.nonzero(bm)
+        for (y, x) in zip(a, b):
+            points.add((x,y))
+
+        hull = convex_hull(list(points))
+        plt.scatter(hull[:,0], hull[:,1], c='r')
+        contour = get_contour(np.array(list(points)))
+        plt.scatter(contour[:,0], contour[:,1], c='g')
+        plt.show()
+        self.img_viewer.reset_view()
 
     def next_region(self):
+        self.img_viewer.reset()
         self.img_viewer.set_next(self.region_generator.next())
         self.roi_tickbox.setChecked(True)
 
@@ -58,7 +81,14 @@ class GTWidget(QtGui.QWidget):
         if self.roi_tickbox.isChecked():
             self.img_viewer.show_roi()
         else:
-            self.img_viewer.show_img()
+            self.img_viewer.hide_roi()
+
+    def toggle_mode(self):
+        if self.img_viewer.mode == 1:
+            self.mode_button.setText("GREEN")
+        else:
+            self.mode_button.setText("RED")
+        self.img_viewer.mode = 1 - self.img_viewer.mode
 
     def regions_gen(self, tracklets_id):
         for t_id in tracklets_id:
@@ -67,6 +97,8 @@ class GTWidget(QtGui.QWidget):
                 yield region
 
     def set_threshold(self, value):
+        value /= 100.0
+        value *= value
         self.threshold = value
         self.img_viewer.set_threshold(value)
 
@@ -82,13 +114,13 @@ class GTWidget(QtGui.QWidget):
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
         self.slider.setRange(0, 100)
         self.slider.setTickInterval(10)
-        self.slider.setValue(self.threshold)
+        self.slider.setValue(self.threshold * 100)
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.set_threshold)
-        self.slider.sliderReleased.connect(self.img_viewer.update_selection)
 
         self.roi_tickbox = QtGui.QCheckBox("Roi")
         self.roi_tickbox.clicked.connect(self.toggle_roi)
+        self.roi_tickbox.toggled.connect(self.toggle_roi)
 
         self.buttons = QtGui.QWidget()
         self.buttons.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Expanding)
@@ -101,13 +133,17 @@ class GTWidget(QtGui.QWidget):
         self.next_region_button.clicked.connect(self.next_ant)
 
         self.reset_button = QtGui.QPushButton('Reset')
-        self.reset_button.clicked.connect(self.img_viewer.reset)
+        self.reset_button.clicked.connect(self.img_viewer.reset_view)
+
+        self.mode_button = QtGui.QPushButton('RED')
+        self.mode_button.clicked.connect(self.toggle_mode)
 
         self.buttons.layout().addWidget(self.next_button)
         self.buttons.layout().addWidget(self.next_region_button)
         self.buttons.layout().addWidget(self.reset_button)
+        self.buttons.layout().addWidget(self.mode_button)
 
-        self.help = QtGui.QLabel("Ctrl + Scroll to zoom, Shift + click for multi-selection")
+        self.help = QtGui.QLabel("Scroll to change sensitivity")
 
         self.left_part.layout().addWidget(self.slider)
         self.left_part.layout().addWidget(self.roi_tickbox)
@@ -121,76 +157,79 @@ class GTWidget(QtGui.QWidget):
 
 
 class ImgPainter(MyView):
+    WB_dist = np.math.sqrt(3 * np.math.pow(255, 2))
     img = None
     img_roi = None
+    img_pixmap = None
+    roi_pixmap = None
 
-    def __init__(self, img_manager, threshold=12):
-        MyView.__init__(self)
-        # self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+    img_z_value = 0
+    roi_z_value = 1
+    bitmaps_z_value = 2
+
+    GREEN = 1
+    RED = 0
+
+    def __init__(self, img_manager, threshold=.1):
+        super(ImgPainter, self).__init__()
+        self.setMouseTracking(False) #override parent
         self.img_manager = img_manager
         self.scene = MyScene()
         self.setScene(self.scene)
 
         self.threshold = threshold
-        self.last_x = 0
-        self.last_y = 0
+        self.last_x = None
+        self.last_y = None
         self.x = []
         self.y = []
 
         self.visited = np.array((0,0))
         self.selected = np.array((0,0))
-        self.bitmask_pixmap = np.array((0,0))
+        self.excluded = np.array((0,0))
+        self.tmp = np.array((0,0))
+        self.bitmask_pixmap = None
+        self.exclude_pixmap = None
+        self.points_pixmap = None
+
+        self.mode = self.GREEN
+        self.pen_size = 1
 
     def set_threshold(self, threshold):
         self.threshold = threshold
-        self.visited.fill(False)
-        self.selected.fill(False)
-        self.update_selection()
+        self.update_last()
         self.draw()
 
-    def show_img(self):
-        self.scene.addPixmap(cvimg2qtpixmap(self.img))
+    def update_last(self):
+        if self.last_x is not None and self.last_y is not None:
+            self.visited.fill(False)
+            self.tmp.fill(False)
+            self.floodfill(self.img[self.last_x, self.last_y], self.last_x, self.last_y)
 
-    def show_roi(self):
-        self.scene.addPixmap(cvimg2qtpixmap(self.img_roi))
-
-    def set_next(self, region):
-        self.img = self.img_manager.get_crop(region.frame(), region, width=self.width(), height=self.height(),
-                                             default_color=(255, 255, 255, 0))
-        self.img_roi = self.img_manager.get_crop(region.frame(), region, width=self.width(), height=self.height())
-        self.visited = np.zeros(self.img.shape[:2], dtype=bool)
-        self.selected = np.zeros(self.img.shape[:2], dtype=bool)
-        self.scene.addPixmap(cvimg2qtpixmap(self.img_roi))
-
-    def mousePressEvent(self, e):
-        super(MyView, self).mousePressEvent(e)
-        point = self.mapToScene(e.pos())
-        if self.scene.itemsBoundingRect().contains(point):
-            self.add_point(point)
-
-    def update_selection(self):
+    def update_all(self):
+        self.selected.fill(False)
+        self.tmp.fill(False)
         for x, y in zip(self.x, self.y):
+            self.visited.fill(False)
             self.floodfill(self.img[x, y], x, y)
 
-        # np.set_printoptions(threshold=np.inf)
-        # print self.selected.ndim
-        # print self.selected.shape
-        # print self.selected[range(self.last_x-3, self.last_x+3), :]
-        import matplotlib.pyplot as plt
-        fig = plt.figure()
-        # ax1 = fig.add_subplot(221)
-        # ax2 = fig.add_subplot(222)
-        ax3 = fig.add_subplot(223)
-        # ax4 = fig.add_subplot(224)
+    def save_results(self):
+        self.selected = (self.selected | self.tmp) & (1 - self.excluded)
 
-        # ax1.spy(self.selected, markersize=5)
-        # ax2.spy(self.selected, precision=0.1, markersize=5)
+    def get_current_ant_bitmap(self):
+        self.save_results()
+        return self.selected
 
-        ax3.spy(self.selected)
-        # ax4.spy(self.selected, precision=0.1)
+    def reset_view(self):
+        self.reset()
+        self.draw()
 
-        plt.show()
-
+    def reset(self):
+        self.x = []
+        self.y = []
+        self.visited.fill(False)
+        self.selected.fill(False)
+        self.excluded.fill(False)
+        self.tmp.fill(False)
 
     def floodfill(self, color, x, y):
         stack = [self.find_line_segment(color, x, y)]
@@ -212,66 +251,161 @@ class ImgPainter(MyView):
     def find_line_segment(self, color, x, y):
         y1 = y2 = y
         self.visited[x, y] = True
-        self.selected[x, y] = True
+        self.tmp[x, y] = True
         while y1 - 1 >= 0:
             self.visited[x, y1] = True
             if self.is_similar(color, x, y1 - 1):
-                self.selected[x, y1] = True
+                self.tmp[x, y1] = True
                 y1 -= 1
             else:
                 break
         while y2 + 1 < self.img.shape[1]:
             self.visited[x, y2] = True
             if self.is_similar(color, x, y2 + 1):
-                self.selected[x, y2] = True
+                self.tmp[x, y2] = True
                 y2 += 1
             else:
                 break
         return x, y1, y2
 
     def is_similar(self, color, x, y):
-        return not self.visited[x, y] and self.are_colors_similar(color, self.img[x, y])
+        return not self.visited[x, y] and not self.excluded[x, y] and self.are_colors_similar(color, self.img[x, y])
 
     def are_colors_similar(self, color1, color2):
+        # euclidian distance
+        dist = 0
         for c1, c2 in zip(color1, color2):
-            if abs(int(c1) - int(c2)) > self.threshold:
-                return False
-        return True
-
-    def reset(self):
-        self.x = []
-        self.y = []
-        self.visited.fill(False)
-        self.selected.fill(False)
-        self.draw()
+            dist += np.math.pow(int(c1) - int(c2), 2)
+        return self.threshold * self.WB_dist >= np.math.sqrt(dist)
 
     def add_point(self, point):
         if type(point) == QtCore.QPointF:
             point = point.toPoint()
-        self.last_x = point.x()
-        self.last_y = point.y()
-        self.x.append(point.x())
-        self.y.append(point.y())
+        # different canvas and array indexing
 
-        print self.last_x, self.last_y
-        # TODO uncomment!!!
-        # self.update_selection()
 
-    def draw_bitmask(self, mask, color=(20, 20, 20)):
-        qimg = mask2qimage(mask, color)
+        if self.mode == self.GREEN:
+            x = point.x()
+            y = point.y()
+            x, y = y, x
+            if not self.excluded[x, y]:
+                self.last_x = x
+                self.last_y = y
+                self.x.append(x)
+                self.y.append(y)
+                self.update_last()
+        else:
+            fromx = point.x() - self.pen_size
+            tox = point.x() + self.pen_size
+            fromy = point.y() - self.pen_size
+            toy = point.y() + self.pen_size
+            fromx, tox, fromy, toy = fromy, toy, fromx, tox
+            self.excluded[fromx:tox, fromy:toy] = True
+            self.update_all()
+
+        self.draw()
+
+    def show_img(self):
+        self.img_pixmap.setZValue(self.img_z_value)
+        self.exclude_pixmap.setZValue(self.img_z_value)
+        self.points_pixmap.setZValue(self.img_z_value)
+
+    def show_roi(self):
+        self.roi_pixmap.setZValue(self.roi_z_value)
+
+    def hide_roi(self):
+        self.roi_pixmap.setZValue(-1)
+
+    def set_next(self, region):
+        self.scene.clear()
+        self.exclude_pixmap = None
+        self.bitmask_pixmap = None
+        self.points_pixmap = None
+        self.img = self.img_manager.get_crop(region.frame(), region,
+                                             default_color=(255, 255, 255, 0))
+        self.img_roi = self.img_manager.get_crop(region.frame(), region)
+        self.visited = np.zeros(self.img.shape[:2], dtype=bool)
+        self.selected = np.zeros(self.img.shape[:2], dtype=bool)
+        self.excluded = np.zeros(self.img.shape[:2], dtype=bool)
+        self.tmp = np.zeros(self.img.shape[:2], dtype=bool)
+
+        self.img_pixmap = self.scene.addPixmap(cvimg2qtpixmap(self.img))
+        self.roi_pixmap = self.scene.addPixmap(cvimg2qtpixmap(self.img_roi))
+
+        self.fitInView(self.scene.sceneRect(), QtCore.Qt.KeepAspectRatio)
+
+    def draw_bitmask(self, mask, r=0, g=0, b=0):
+        r = np.asarray(mask * r, dtype=np.uint8)
+        g = np.asarray(mask * g, dtype=np.uint8)
+        b = np.asarray(mask * b, dtype=np.uint8)
+        a = np.full_like(mask, 80, dtype=np.uint8)
+        rgb = np.dstack((r, g, b, a))
+
+        qimg = mask2qimage(mask, rgb)
         pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
-        pixmap.setZValue(20)
         return pixmap
 
+    def draw_points(self, x, y):
+        r = g =  np.zeros_like(self.selected, dtype=np.uint8)
+        b = np.zeros_like(self.selected, dtype=np.uint8)
+        mask = np.zeros_like(self.selected)
+
+        for x, y in zip(x, y):
+            mask[x, y] = True
+            b[x, y] = 255
+
+        a = np.full_like(mask, 255, dtype=np.uint8)
+        rgb = np.dstack((r, g, b, a))
+        qimg = mask2qimage(mask, rgb)
+        pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
+        return pixmap
 
     def draw(self):
-        # qimg = mask2qimage(self.selected, (10, 10, 10, 10))
-        #
-        # self.colors[name][2] = self.scene.addPixmap(QtGui.QPixmap.fromImage(qimg))
-        # self.colors[name][2].setZValue(20)
         if self.bitmask_pixmap is not None:
             self.scene.removeItem(self.bitmask_pixmap)
-        self.bitmask_pixmap = self.draw_bitmask(self.selected)
+        if self.exclude_pixmap is not None:
+            self.scene.removeItem(self.exclude_pixmap)
+        if self.points_pixmap is not None:
+            self.scene.removeItem(self.points_pixmap)
+        self.bitmask_pixmap = self.draw_bitmask((self.selected | self.tmp) & (1 - self.excluded), g=255)
+        self.bitmask_pixmap.setZValue(self.bitmaps_z_value)
+        self.exclude_pixmap = self.draw_bitmask(self.excluded, r=255)
+        self.exclude_pixmap.setZValue(self.bitmaps_z_value)
+        self.points_pixmap = self.draw_points(self.x, self.y)
+        self.points_pixmap.setZValue(self.bitmaps_z_value)
+
+    def mousePressEvent(self, e):
+        super(ImgPainter, self).mousePressEvent(e)
+        point = self.mapToScene(e.pos())
+        if self.scene.itemsBoundingRect().contains(point):
+            if self.mode == self.GREEN:
+                self.save_results()
+            self.add_point(point)
+
+    def mouseMoveEvent(self, e):
+        super(ImgPainter, self).mouseMoveEvent(e)
+        point = self.mapToScene(e.pos())
+        if self.scene.itemsBoundingRect().contains(point):
+            if self.mode == self.GREEN:
+                self.save_results()
+            else:
+                self.add_point(point)
+
+    def mouseReleaseEvent(self, QMouseEvent):
+        self.draw()
+
+    def wheelEvent(self, event):
+        # TODO disabled for the time being due to the bug
+        modifiers = QtGui.QApplication.keyboardModifiers()
+        if modifiers != QtCore.Qt.ControlModifier:
+            val = np.sqrt(self.threshold)
+            if event.delta() > 0:
+                val += 0.01
+            else:
+                val -= 0.01
+            self.set_threshold(max(0, min(1, val * val)))
+        # else:
+        #     self.zoomAction(event, scale_factor=1.04)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

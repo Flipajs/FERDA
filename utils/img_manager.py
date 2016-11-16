@@ -64,7 +64,8 @@ class ImgManager:
         """
         Gets a crop around the given ROI. The crop can be modified with the following parameters.
         :param frame:                         int (<0, len(video)>)
-        Frame number to make the crop from
+        Fra
+        me number to make the crop from
         :param roi:                           list of ROI, or tuple with ROI parameters
         Regions of interest
         :param margin:                        int (<0, infinity>)           default=-1
