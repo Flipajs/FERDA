@@ -415,56 +415,7 @@ if __name__ == '__main__':
             r_data.append([r.area(), r.a_, r.b_, hu_m[0], hu_m[1]])
             r_arr.append(int(v))
 
-            # areas.append(r.area())
-            # major_axes.append(r.a_)
-            #
-            # best_d = np.inf
-            # second_d = np.inf
-            #
-            # best_v = None
-            # second_v = None
-            #
-            # for v2 in v.out_neighbours():
-            #     r2 = p.gm.region(v2)
-            #
-            #     d = np.linalg.norm(r.centroid() - r2.centroid())
-            #     if d < best_d:
-            #         second_d = best_d
-            #         second_v = best_v
-            #
-            #         best_d = d
-            #         best_v = v2
-            #     elif d < second_d:
-            #         second_d = d
-            #         second_v = v2
-            #
-            # if second_v:
-            #     best_r2 = p.gm.region(second_v)
-            #     data.append([r.area(), r.area()-best_r2.area(), best_d, second_d, r.a_ / r.b_])
-            #     arr.append((int(v), best_d, int(best_v), second_d, int(second_v)))
-            #     second_dists.append(second_d)
-            #
             i += 1
-
-        # area_med = np.median(areas)
-        # area_thresh = area_med*0.2
-
-        # print "med:{} min:{} max:{}".format(np.median(second_dists), np.min(second_dists), np.max(filter(lambda x: x!=np.inf, second_dists)))
-        #
-        # plt.figure()
-        # plt.hist(areas, bins=50)
-
-        # arr2 = sorted(arr, key=lambda x: (0 if (x[1] is None or x[3] is None) else -x[3]))
-        # arr2 = filter(lambda x: area_filter(x, p, area_thresh), arr2)
-        # N_BEST = int(len(arr2) ** 0.5)
-        # N_BEST = len(arr2)
-        # arr2 = sorted(arr2, key=lambda x: x[1])[0:N_BEST]
-
-        # for v, d1, v1, d2, v2 in arr2:
-        #     print p.gm.region(v).area(), p.gm.region(v1).area(), p.gm.region(v2).area(), d1, d2
-
-        # plt.figure()
-        # plt.scatter(areas, major_axes)
 
         data = np.array(data)
         label_names = np.array(['area', 'area_t1 - area_t2', 'best distance', 'second best distance', 'axis ratio'])
@@ -488,8 +439,6 @@ if __name__ == '__main__':
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
 
         print('Estimated number of clusters: %d' % n_clusters_)
-        # print("Silhouette Coefficient: %0.3f"
-        #       % metrics.silhouette_score(X, labels))
 
         # plotNdto3d(data, labels, core_samples_mask, [0, 1, 2], label_names[[0, 1, 2]])
         # plotNdto3d(data, labels, core_samples_mask, [0, 2, 3], label_names[[0, 2, 3]])
