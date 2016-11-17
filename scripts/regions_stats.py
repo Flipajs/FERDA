@@ -20,6 +20,11 @@ from utils.drawing.collage import create_collage_rows
 from PyQt4.QtGui import QColor
 from utils.img import rotate_img, get_bounding_box, centered_crop
 from core.learning.features import get_features_var2, get_crop
+from sklearn.cluster import DBSCAN
+from sklearn import metrics
+from sklearn.datasets.samples_generator import make_blobs
+from sklearn.preprocessing import StandardScaler
+
 
 EXP = 'exp1'
 
@@ -373,6 +378,94 @@ def head_detector_classify(p):
     cv2.imwrite('/Users/flipajs/Desktop/temp/pairs/'+EXP+'/heads' + str(part) + '.jpg', collage)
 
 
+def get_movement_descriptor(p, v1, v2, v3):
+    from math import atan2
+    from utils.geometry import rotate
+
+    r1 = p.gm.region(v1)
+    r2 = p.gm.region(v2)
+    r3 = p.gm.region(v3)
+
+    v1 = r2.centroid() - r1.centroid()
+    v2 = r3.centroid() - r2.centroid()
+
+    theta = atan2(v1[0], v[1])
+
+    d = np.linalg.norm(v1)
+    v2 = rotate(v2, theta)
+
+    return (d, v2[0], v2[1])
+
+# def prepare_triplets(p):
+#     print "preparing pairs..."
+#     d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+#     labels = d['labels']
+#     arr = d['arr']
+#
+#     vs = set(arr[labels == 0])
+#
+#     pairs = []
+#     for v in arr[labels == 0]:
+#         r1 = project.gm.region(v)
+#         best_v = None
+#         best_d = np.inf
+#         second_best_d = np.inf
+#
+#         for v_out in project.gm.g.vertex(v).out_neighbours():
+#             r2 = p.gm.region(v_out)
+#
+#             if r1.frame() + 1 != r2.frame():
+#                 continue
+#
+#             d = np.linalg.norm(r1.centroid() - r2.centroid())
+#
+#             if d < best_d:
+#                 second_best_d = best_d
+#                 best_d = d
+#                 best_v = v_out
+#
+#             elif d < second_best_d:
+#                 second_best_d = d
+#
+#         if best_v is not None and int(best_v) in vs:
+#             pairs.append(((int(v), int(best_v)), best_d, second_best_d))
+#
+#     hickle.dump(pairs, '/Users/flipajs/Desktop/temp/pairs/pairs.pkl')
+
+
+def get_max_dist(project):
+    pairs = hickle.load('/Users/flipajs/Desktop/temp/pairs/pairs.pkl')
+
+    max_dist = 0
+    max_v1 = None
+    max_v2 = None
+
+    for (v1, v2), d1, _ in pairs:
+        if d1 > max_dist:
+            max_dist = d1
+            max_v1 = v1
+            max_v2 = v2
+
+    r1 = project.gm.region(max_v1)
+    r2 = project.gm.region(max_v2)
+
+    if r1.frame() + 1 != r2.frame():
+        print "FRAMES? ", r1.frame(), r2.frame()
+
+    vm = get_auto_video_manager(project)
+
+    im1 = vm.get_frame(r1.frame()).copy()
+    im2 = vm.get_frame(r2.frame()).copy()
+
+    draw_points(im1, r1.pts())
+    draw_points(im2, r2.pts())
+    draw_points(im2, r1.pts(), color=QColor(0, 255, 255, 40))
+
+    im = np.hstack((im1, im2))
+    cv2.imshow('im', im)
+    cv2.waitKey(0)
+
+    return max_dist
 
 if __name__ == '__main__':
     p = Project()
@@ -392,7 +485,9 @@ if __name__ == '__main__':
     # display_head_pairs(p)
 
     # head_detector_features(p)
-    head_detector_classify(p)
+    # head_detector_classify(p)
+
+    print "MAX DIST: {}".format(get_max_dist(p))
 
     i = 0
     if False:
@@ -424,11 +519,6 @@ if __name__ == '__main__':
         label_names = np.array(['area', 'major axis', 'minor axis', 'hu1', 'hu2'])
 
         arr = np.array(r_arr)
-
-        from sklearn.cluster import DBSCAN
-        from sklearn import metrics
-        from sklearn.datasets.samples_generator import make_blobs
-        from sklearn.preprocessing import StandardScaler
 
         X = StandardScaler().fit_transform(data)
         db = DBSCAN(eps=0.1, min_samples=int(len(data)*0.001)).fit(X)
