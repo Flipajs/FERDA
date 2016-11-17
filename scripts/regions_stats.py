@@ -389,10 +389,10 @@ def get_movement_descriptor(p, v1, v2, v3):
     v1 = r2.centroid() - r1.centroid()
     v2 = r3.centroid() - r2.centroid()
 
-    theta = atan2(v1[0], v[1])
+    theta = atan2(v1[0], v1[1])
 
     d = np.linalg.norm(v1)
-    v2 = rotate(v2, theta)
+    v2 = rotate([v2], theta)[0]
 
     return (d, v2[0], v2[1])
 
@@ -433,6 +433,34 @@ def get_movement_descriptor(p, v1, v2, v3):
 #     hickle.dump(pairs, '/Users/flipajs/Desktop/temp/pairs/pairs.pkl')
 
 
+def filter_edges(project, max_dist):
+    to_remove = []
+
+    g = project.gm.g
+    print "avg degree before {}".format(np.mean([v.out_degree() for v in g.vertices()]))
+
+    for (v1, v2) in g.edges():
+        r1 = project.gm.region(v1)
+        r2 = project.gm.region(v2)
+
+        if r1.is_ignorable(r2, max_dist):
+            to_remove.append((v1, v2))
+
+    print "#edges: {}, will be removed: {}".format(g.num_edges(), len(to_remove))
+    for (v1, v2) in to_remove:
+        g.remove_edge(g.edge(v1, v2))
+
+    degrees = [v.out_degree() for v in g.vertices()]
+    print "avg degree after {}".format(np.mean(degrees))
+
+    # plt.hist(degrees)
+    # plt.show()
+    #
+
+    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_modified.pkl', 'wb') as f:
+        pickle.dump(g, f)
+
+
 def get_max_dist(project):
     pairs = hickle.load('/Users/flipajs/Desktop/temp/pairs/pairs.pkl')
 
@@ -467,6 +495,164 @@ def get_max_dist(project):
 
     return max_dist
 
+def hist_query(h, edges, it, default=0):
+    ids = []
+    for i in range(3):
+        id_ = np.argmax(it[i] < edges[i]) - 1
+
+        if 0 < id_ < len(edges[i]):
+            ids.append(id_)
+        else:
+            return default
+
+    return h[ids[0], ids[1], ids[2]]
+
+def get_movement_histogram(p):
+    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_modified.pkl', 'rb') as f:
+        g = pickle.load(f)
+
+    p.gm.g = g
+
+    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    labels = d['labels']
+    arr = d['arr']
+
+    data = []
+    data2 = []
+    cases = []
+
+    for v in arr[labels==0]:
+        v = p.gm.g.vertex(v)
+
+        if v.out_degree() == 1:
+            for w in v.out_neighbours():
+                if w.in_degree() == 1 and w.out_degree() == 1:
+                    for x in w.out_neighbours():
+                        if x.in_degree() == 1:
+                            data.append(get_movement_descriptor(p, v, w, x))
+                elif w.in_degree() == 1 and w.out_degree() > 1:
+                    data2.append([])
+                    cases.append([])
+                    for x in w.out_neighbours():
+                        data2[-1].append(get_movement_descriptor(p, v, w, x))
+                        cases[-1].append(map(int, (v, w, x)))
+
+    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/movement_data.pkl', 'wb') as f:
+        pickle.dump(data, f)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    data = np.array(data)
+
+    H, edges = np.histogramdd(data, bins=10)
+    data = data[::5, :]
+
+    ax.scatter(data[:, 1], data[:, 2], data[:, 0], c=data[:, 0]/data[:, 0].max())
+    DEFAULT_H_DENSITY = 1e-10
+
+    data2 = np.array(data2)
+    from itertools import izip
+
+    cases_p = []
+    cases_n = []
+
+    for it, case in izip(data2, cases):
+        it = np.array(it)
+
+        # if np.linalg.norm(it[0, :] - it[1, :]) > 60:
+        #     continue
+
+        vals = []
+        for i in range(it.shape[0]):
+            val = hist_query(H, edges, it[i, :], default=DEFAULT_H_DENSITY)
+            vals.append(val)
+
+        if max(vals) > DEFAULT_H_DENSITY:
+            cases_p.append((vals, case))
+            # print case
+            # print vals
+        else:
+            cases_n.append((vals, case))
+            continue
+
+        ax.plot(it[:, 1], it[:, 2], it[:, 0], marker='v', c='m')
+    
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('d')
+
+    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/case_p.pkl', 'wb') as f:
+        pickle.dump(cases_p, f)
+
+    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/case_n.pkl', 'wb') as f:
+        pickle.dump(cases_n, f)
+
+    plt.ion()
+    plt.show()
+
+
+def observe_cases(project, type='case_p'):
+    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/'+type+'.pkl') as f:
+        cases = pickle.load(f)
+
+    from utils.video_manager import get_auto_video_manager
+    import cv2
+    from utils.drawing.points import draw_points
+    from itertools import izip
+
+    BORDER = 150
+    COLS = 1
+    IT_H = 500
+    IT_W = 900
+
+    vm = get_auto_video_manager(project)
+
+    i = 0
+    part = 0
+    data = []
+    for vals, case in cases:
+        for val, (v, x, w) in izip(vals, case):
+            c = QColor(0, 255, 0, 70)
+            if val <= 1e-10:
+                c = QColor(255, 0, 0, 70)
+                # continue
+
+            r1 = project.gm.region(v)
+            r2 = project.gm.region(x)
+            r3 = project.gm.region(w)
+
+            im1 = vm.get_frame(r1.frame()).copy()
+            im2 = vm.get_frame(r2.frame()).copy()
+            im3 = vm.get_frame(r3.frame()).copy()
+
+            draw_points(im1, r1.pts(), color=c)
+            draw_points(im2, r2.pts(), color=c)
+            draw_points(im3, r3.pts(), color=c)
+            # draw_points(im2, r1.pts(), color=QColor(0, 255, 255, 40))
+
+            im1 = r1.roi().safe_roi(im1, border=BORDER)
+            im2 = r1.roi().safe_roi(im2, border=BORDER)
+            im3 = r1.roi().safe_roi(im3, border=BORDER)
+
+            im = np.hstack((im1, im2, im3))
+
+            cv2.putText(im, str(val), (50, 50),
+                        cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 1.0, (255, 255, 255))
+            data.append(im)
+
+            if i % (50) == 0 and i > 0:
+                collage = create_collage_rows(data, COLS, IT_H, IT_W)
+                cv2.imwrite('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/'+type+'_'+ str(part) + '.jpg', collage)
+                data = []
+                part += 1
+
+            i += 1
+
+    collage = create_collage_rows(data, COLS, IT_H, IT_W)
+    cv2.imwrite('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/'+type+'_' + str(part) + '.jpg', collage)
+
+
 if __name__ == '__main__':
     p = Project()
     p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
@@ -487,7 +673,17 @@ if __name__ == '__main__':
     # head_detector_features(p)
     # head_detector_classify(p)
 
-    print "MAX DIST: {}".format(get_max_dist(p))
+    # get_movement_histogram(p)
+    observe_cases(p)
+    # observe_cases(p, type='case_n')
+
+    max_dist = 94.59
+    # max_dist = get_max_dist(p)
+    print "MAX DIST: {}".format(max_dist)
+
+    # filter_edges(p, max_dist)
+
+    get_movement_histogram(p)
 
     i = 0
     if False:

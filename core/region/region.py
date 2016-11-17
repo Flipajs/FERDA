@@ -147,7 +147,6 @@ class Region():
         return np.copy(self.pts_)
 
     def centroid(self):
-
         return np.copy(self.centroid_)
 
     def set_centroid(self, centroid):
@@ -200,6 +199,20 @@ class Region():
         # if angle > np.pi/2:
         #     angle -= np.pi/2
 
+    def is_ignorable(self, r2, max_dist):
+        """
+
+
+        Args:
+            r2:
+            max_dist:
+
+        Returns:
+
+        """
+        term1 = np.linalg.norm(self.centroid() - r2.centroid()) > max_dist
+        b = term1 or not self.roi().is_intersecting_expanded(r2.roi(), max_dist)
+        return b
 
 
 def encode_RLE(pts):

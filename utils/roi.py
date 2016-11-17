@@ -94,6 +94,30 @@ class ROI():
         x_max_ = min(img.shape[1], self.x_max_+border)
         return img[[slice(y_, y_max_), slice(x_, x_max_)]].copy()
 
+    def expand(self, border):
+        return ROI(self.y_ - border,
+                   self.x_ - border,
+                   self.height_ + 2*border,
+                   self.width_ + 2*border)
+
+    def is_intersecting(self, roi2):
+        """
+        returns True even when they intersects by edge
+        Args:
+            roi2:
+
+        Returns:
+
+        """
+        return not(self.x_ > roi2.x() + roi2.width() or
+                   self.x_max_ < roi2.x() or
+                   self.y_ > roi2.y() + roi2.height() or
+                   self.y_max_ < roi2.y()
+                   )
+
+
+    def is_intersecting_expanded(self, roi2, offset):
+        return self.expand(offset).is_intersecting(roi2)
 
 def get_roi(pts):
     """
