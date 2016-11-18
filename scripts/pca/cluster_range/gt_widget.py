@@ -12,7 +12,7 @@ from gui.segmentation.my_scene import MyScene
 from gui.segmentation.my_view import MyView
 from gui.segmentation.painter import mask2qimage
 from gui.segmentation.segmentation import SegmentationPicker
-from utils.drawing.points import get_contour
+from utils.drawing.points import get_contour, get_contour_without_holes
 from utils.video_manager import get_auto_video_manager
 import cPickle
 
@@ -46,19 +46,21 @@ class GTWidget(QtGui.QWidget):
     width = 1000
     height = 1000
 
-    def __init__(self, project, cluster_tracklets_id, threshold=.1):
+    def __init__(self, project, manager, cluster_tracklets_id, threshold=.1):
         QtGui.QWidget.__init__(self)
         self.project = project
+        self.manager = manager
         self.threshold = threshold
         self.img_viewer = ImgPainter(self.project.img_manager, threshold)
         self.region_generator = self.regions_gen(cluster_tracklets_id)
         self.init_gui()
 
+        self.r = None
+        self.ants = []
+        self.results = {} # id, contours
+
     def next_ant(self):
-        import matplotlib.pyplot as plt
         bm = (self.img_viewer.get_current_ant_bitmap())
-        plt.spy(bm)
-        plt.hold(True)
 
         points = set()
         a, b = np.nonzero(bm)
@@ -66,16 +68,46 @@ class GTWidget(QtGui.QWidget):
             points.add((x,y))
 
         hull = convex_hull(list(points))
-        plt.scatter(hull[:,0], hull[:,1], c='r')
-        contour = get_contour(np.array(list(points)))
-        plt.scatter(contour[:,0], contour[:,1], c='g')
-        plt.show()
+        contour = get_contour_without_holes(np.array(list(points)))
+
+        self.ants.append(contour)
         self.img_viewer.reset_view()
 
     def next_region(self):
         self.img_viewer.reset()
-        self.img_viewer.set_next(self.region_generator.next())
+        self.show_current_selected_ants()
+        self.save_region()
+
+        self.last_id.setText("Last ID: {0}".format(self.r.id() if self.r is not None else '-'))
+        self.r = self.region_generator.next()
+        self.curr_id.setText("Current ID: {0}".format(self.r.id()))
+        self.img_viewer.set_next(self.r)
         self.roi_tickbox.setChecked(True)
+
+    def show_current_selected_ants(self):
+        if len(self.ants) == 0: return
+        import matplotlib.pyplot as plt
+        for c in self.ants:
+            plt.plot(c[:, 0], c[:, 1])
+
+        plt.gca().invert_yaxis()
+        plt.axis('equal')
+        plt.show()
+
+    def save_region(self):
+        if self.r is not None and len(self.ants) > 0:
+            self.results[self.r.id()] = self.ants
+            self.ants = []
+
+    def reset_region(self):
+        self.ants = []
+        self.reset_ant()
+
+    def reset_ant(self):
+        self.img_viewer.reset_view()
+
+    def get_results(self):
+        return self.results
 
     def toggle_roi(self):
         if self.roi_tickbox.isChecked():
@@ -102,6 +134,11 @@ class GTWidget(QtGui.QWidget):
         self.threshold = value
         self.img_viewer.set_threshold(value)
 
+    def closeEvent(self, QCloseEvent):
+        super(GTWidget, self).closeEvent(QCloseEvent)
+        self.save_region()
+        self.manager.accept_results(self.results)
+
     def init_gui(self):
         self.showMaximized()
 
@@ -126,29 +163,44 @@ class GTWidget(QtGui.QWidget):
         self.buttons.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Expanding)
         self.buttons.setLayout(QtGui.QVBoxLayout())
         self.buttons.layout().setAlignment(QtCore.Qt.AlignBottom)
-        self.next_button = QtGui.QPushButton('Next')
-        self.next_button.clicked.connect(self.next_region)
+        self.next_region_button = QtGui.QPushButton('Next Region')
+        self.next_region_button.clicked.connect(self.next_region)
 
-        self.next_region_button = QtGui.QPushButton('Next Ant')
-        self.next_region_button.clicked.connect(self.next_ant)
+        self.next_ant_button = QtGui.QPushButton('Next Ant')
+        self.next_ant_button.clicked.connect(self.next_ant)
 
-        self.reset_button = QtGui.QPushButton('Reset')
-        self.reset_button.clicked.connect(self.img_viewer.reset_view)
+        self.reset_ant_button = QtGui.QPushButton('Reset Ant')
+        self.reset_ant_button.clicked.connect(self.reset_ant)
+
+        self.reset_region_button = QtGui.QPushButton('Reset Region')
+        self.reset_region_button.clicked.connect(self.reset_region)
 
         self.mode_button = QtGui.QPushButton('RED')
         self.mode_button.clicked.connect(self.toggle_mode)
 
-        self.buttons.layout().addWidget(self.next_button)
-        self.buttons.layout().addWidget(self.next_region_button)
-        self.buttons.layout().addWidget(self.reset_button)
+        self.show_selected_button = QtGui.QPushButton('Show selected')
+        self.show_selected_button.clicked.connect(self.show_current_selected_ants)
+
+        self.quit = QtGui.QPushButton('save and quit', self)
+        self.quit.clicked.connect(self.close)
+
         self.buttons.layout().addWidget(self.mode_button)
+        self.buttons.layout().addWidget(self.next_ant_button)
+        self.buttons.layout().addWidget(self.reset_ant_button)
+        self.buttons.layout().addWidget(self.show_selected_button)
+        self.buttons.layout().addWidget(self.next_region_button)
+        self.buttons.layout().addWidget(self.reset_region_button)
+        self.buttons.layout().addWidget(self.quit)
 
         self.help = QtGui.QLabel("Scroll to change sensitivity")
+        self.curr_id = QtGui.QLabel("")
+        self.last_id = QtGui.QLabel("")
 
         self.left_part.layout().addWidget(self.slider)
         self.left_part.layout().addWidget(self.roi_tickbox)
         self.left_part.layout().addWidget(self.buttons)
         self.left_part.layout().addWidget(self.help)
+        self.left_part.layout().addWidget(self.curr_id)
 
         self.layout.addWidget(self.left_part)
         self.layout.addWidget(self.img_viewer)
