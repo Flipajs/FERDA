@@ -35,7 +35,10 @@ class Item():
         self.key_ = key
         self.val_ = val
         self.tooltip_ = tooltip
+
         self.default_type = type(val)
+        if type(val) == QtGui.QColor:
+            self.val_ = str([val.red(), val.green(), val.blue(), val.alpha()])
 
     def get(self, type_=None):
         t = self.default_type
@@ -43,12 +46,20 @@ class Item():
             t = type_
 
         settings = QtCore.QSettings('ferda1')
-        # QtCore.QSettings()
+
+        if t == QtGui.QColor:
+            from ast import literal_eval
+            val = str(settings.value(self.key_, self.val_, str))
+            val = literal_eval(val)
+            return QtGui.QColor(val[0], val[1], val[2], val[3])
 
         return settings.value(self.key_, self.val_, t)
 
     def set(self, val):
         settings = QtCore.QSettings('ferda1')
+        if self.default_type == QtGui.QColor:
+            val = str([val.red(), val.green(), val.blue(), val.alpha()])
+
         settings.setValue(self.key_, val)
 
     def tooltip(self):

@@ -4,6 +4,7 @@ from PyQt4 import QtGui, QtCore
 import copy
 from gui.settings.parameters_tab import ParametersTab
 from gui.settings.general_tab import GeneralTab
+from gui.settings.visualisation_tab import VisualisationTab
 from core.settings import Settings as S_
 
 
@@ -48,6 +49,9 @@ class SettingsDialog(QtGui.QDialog):
 
         self.parameters_tab = ParametersTab()
         self.tabWidget.addTab(self.parameters_tab, "Parameters")
+
+        self.visualisation_tab = VisualisationTab()
+        self.tabWidget.addTab(self.visualisation_tab, "Visualisation")
         # self.tabWidget.setCurrentWidget(self.parameters_tab)
 
         self.layout = QtGui.QVBoxLayout()
@@ -70,6 +74,7 @@ class SettingsDialog(QtGui.QDialog):
         self.general_tab.harvest()
         self.parameters_tab.harvest()
         #self.key_binding_tab.harvest()
+        self.visualisation_tab.harvest()
 
     def restore_defaults(self):
         self.tabWidget.currentWidget().restore_defaults()

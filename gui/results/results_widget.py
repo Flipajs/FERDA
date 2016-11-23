@@ -224,12 +224,16 @@ class ResultsWidget(QtGui.QWidget):
         self.head_fix_b = QtGui.QPushButton('head fix')
         self.head_fix_b.clicked.connect(self.head_fix)
 
+        self.show_movement_model_b = QtGui.QPushButton('show movement model')
+        self.show_movement_model_b.clicked.connect(self.show_movement_model)
+
         self.debug_box.layout().addWidget(self.print_conflic_tracklets_b)
         self.debug_box.layout().addWidget(self.print_undecided_tracklets_b)
         self.debug_box.layout().addWidget(self.assign_ids_from_gt_b)
         self.debug_box.layout().addWidget(self.show_idtracker_i)
         self.debug_box.layout().addWidget(self.show_idtracker_b)
         self.debug_box.layout().addWidget(self.head_fix_b)
+        self.debug_box.layout().addWidget(self.show_movement_model_b)
 
         self.left_vbox.addWidget(self.debug_box)
 
@@ -621,7 +625,16 @@ class ResultsWidget(QtGui.QWidget):
         step = 1
 
         if force_color is None:
-            c = QtGui.qRgba(150, 150, 150, 200)
+            # c = QtGui.qRgba(102, 51, 0, 200)
+            # c = QtGui.qRgba(255, 255, 0, 200)
+            # c = QtGui.qRgba(102, 0, 204, 200)
+            c = S_.visualization.default_region_color
+
+            if tracklet.length() == 1:
+                c = QtGui.qRgba(c.blue(), c.green(), c.red(), c.alpha())
+            else:
+                c = QtGui.qRgba(c.red(), c.green(), c.blue(), c.alpha())
+
             if self.contour_without_colors.isChecked():
                 if tracklet.is_only_one_id_assigned(len(self.project.animals)):
                     id_ = list(tracklet.P)[0]
@@ -629,7 +642,8 @@ class ResultsWidget(QtGui.QWidget):
                     c = QtGui.qRgba(c_[2], c_[1], c_[0], 255)
                 else:
                     step = 2
-                    c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
+                    if use_ch_color:
+                        c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
             elif use_ch_color:
                 c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
         else:
@@ -768,6 +782,9 @@ class ResultsWidget(QtGui.QWidget):
                     self.__add_marker(x, y, c_, ch.id(), 0.75, type_=type_)
 
     def update_visualisations(self):
+        # with open('/Users/flipajs/Desktop/temp/pairs/' + 'exp1' + '/head_rfc.pkl', 'rb') as f:
+        #     rfc = pickle.load(f)
+
         if self.hide_visualisation_:
             return
 
@@ -780,6 +797,10 @@ class ResultsWidget(QtGui.QWidget):
         for ch in self.project.chm.chunks_in_frame(frame):
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
             r = rch.region_in_t(frame)
+
+            if r is None:
+                print ch
+
             centroid = r.centroid().copy()
 
             if self.show_id_bar.isChecked():
@@ -811,13 +832,16 @@ class ResultsWidget(QtGui.QWidget):
                 item = self.draw_region(r, ch, highlight_contour=True, force_color=self.highlight_color)
                 self.video_player.visualise_temp(item, category='region_highlight')
 
-            head, _ = get_region_endpoints(r)
-            head_item = markers.CenterMarker(head[1], head[0], 5, QtGui.QColor(0, 0, 0), ch.id(),
-                                             self._gt_marker_clicked)
+            # from scripts.regions_stats import fix_head
+            # fix_head(self.project, r, rfc)
 
-            head_item.setZValue(0.95)
+            # head, _ = get_region_endpoints(r)
+            # head_item = markers.CenterMarker(head[1], head[0], 5, QtGui.QColor(0, 0, 0), ch.id(),
+            #                                  self._gt_marker_clicked)
+            #
+            # head_item.setZValue(0.95)
 
-            self.video_player.visualise_temp(head_item, category='head')
+            # self.video_player.visualise_temp(head_item, category='head')
 
         if self.show_markers.isChecked():
             self._show_gt_markers()
@@ -1358,3 +1382,94 @@ class ResultsWidget(QtGui.QWidget):
                 self.__head_fix(t)
         else:
             self.__head_fix(self.project.chm[self.active_tracklet_id])
+
+    def show_movement_model(self):
+        from scripts.regions_stats import hist_query, get_movement_descriptor_
+
+        with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/movement_data.pkl', 'rb') as f:
+            data = pickle.load(f)
+
+        data = np.array(data)
+
+        H, edges = np.histogramdd(data, bins=10)
+        THRESH = 100.0
+
+        frame = self.video_player.current_frame()
+
+        if self.active_tracklet_id > 0:
+            t = self.project.chm[self.active_tracklet_id]
+            sf = t.start_frame(self.project.gm)
+            vertex = t[frame - sf]
+            if isinstance(vertex, int):
+                vertex = self.project.gm.g.vertex(vertex)
+
+            v1 = None
+            if frame != t.start_frame(self.project.gm) and t.length() > 1:
+                v1 = self.project.gm.g.vertex(t[frame-sf-1])
+            else:
+                best_e = None
+                best_val = 0
+                for e in vertex.in_edges():
+                    val = self.project.gm.g.ep['score'][e]
+                    if val > best_val:
+                        best_val = val
+                        best_e = e
+
+                if best_e is not None:
+                    v1 = best_e.source()
+
+            if v1 is None:
+                return
+
+            v2 = vertex
+
+            r1 = self.project.gm.region(v1)
+            r2 = self.project.gm.region(v2)
+
+            v1 = r2.centroid() - r1.centroid()
+
+            h_ = 200
+            w_ = 200
+            data = np.zeros((h_, w_), dtype=np.float)
+
+            offset = np.array([int(r2.centroid()[0] - h_/2), int(r2.centroid()[1] - w_/2)])
+
+            for i in range(h_):
+                for j in range(w_):
+                    c = np.array([i, j])
+                    v2 = c + offset - r2.centroid()
+                    desc = get_movement_descriptor_(v1, v2)
+                    val = hist_query(H, edges, desc)
+                    data[i, j] = val
+
+            qim_ = QtGui.QImage(w_, h_, QtGui.QImage.Format_ARGB32)
+            qim_.fill(QtGui.qRgba(0, 0, 0, 0))
+
+            if data.max() == 0:
+                print "MAX is 0"
+                return
+
+            data /= data.max()
+
+            for i in range(h_):
+                for j in range(w_):
+                    val = int(round(data[i, j] * 255))
+                    c = QtGui.qRgba(0, 255, 255, val)
+                    qim_.setPixel(j, i, c)
+
+            pixmap = QtGui.QPixmap.fromImage(qim_)
+
+            item = QtGui.QGraphicsPixmapItem(pixmap)
+            item.setPos(offset[1], offset[0])
+            item.setZValue(0.99)
+
+            self.video_player.visualise_temp(item)
+
+            # start = QtCore.QPointF(r1.centroid()[0], r1.centroid()[1])
+            # end = QtCore.QPointF(r2.centroid()[0], r2.centroid()[1])
+            # item2 = QtGui.QGraphicsLineItem(QtCore.QLineF(start, end))
+            item2 = QtGui.QGraphicsLineItem(r1.centroid()[1], r1.centroid()[0], r2.centroid()[1], r2.centroid()[0])
+            pen = QtGui.QPen(QtGui.QColor(250, 255, 0, 255), 2, QtCore.Qt.SolidLine)
+            item2.setPen(pen)
+            item2.setZValue(0.99)
+            self.video_player.visualise_temp(item2)

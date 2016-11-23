@@ -25,7 +25,7 @@ if is_flipajs_pc():
     cam_ = 1
 
     wd = '/Users/flipajs/Documents/wd/FERDA/C210min'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_'
     # wd = '/Users/flipajs/Documents/wd/zebrafish'
 
     # wd = '/Users/flipajs/Documents/wd/'
@@ -35,6 +35,23 @@ if is_flipajs_pc():
     # project.load(wd+name+'/cam'+str(ca
     # m_)+'.fproj')
     project.load(wd)
+    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_tracklets_expanded.pkl', 'rb') as f:
+        up = pickle.Unpickler(f)
+        project.gm.g = up.load()
+        up.load()
+        chm = up.load()
+        project.chm = chm
+
+    from core.region.region_manager import RegionManager
+    project.rm = RegionManager('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp', db_name='part0_rm.sqlite3')
+    project.gm.rm = project.rm
+    project.gm.update_nodes_in_t_refs()
+
+
+    from scripts.regions_stats import fix_heads
+    # print "FIXING head orientations..."
+    # fix_heads(project, frames=set(range(100)))
+    # print "FIXING done"
 
     # project.load_snapshot(snapshot)
 
@@ -47,7 +64,12 @@ if is_flipajs_pc():
     except AttributeError:
         pass
 
+    from utils.color_manager import colorize_project
+    colorize_project(project)
+
     ex.widget_control('load_project', project)
+
+
 
 print "FERDA is READY, loaded in {:.3}s".format(time.time()-t_)
 ex.move(-500, -500)

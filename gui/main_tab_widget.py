@@ -178,7 +178,7 @@ class MainTabWidget(QtGui.QWidget):
                 # TODO: show loading...
                 self.tabs.removeTab(4)
                 self.graph_tab.setParent(None)
-                self.graph_tab = GraphWidgetLoader(self.project).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet)
+                self.graph_tab = GraphWidgetLoader(self.project).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet, frames=range(100))
                 self.tabs.insertTab(4, self.graph_tab, "graph")
                 self.tabs.setCurrentIndex(4)
                 self.ignore_tab_change = False

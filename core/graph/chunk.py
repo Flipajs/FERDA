@@ -27,14 +27,24 @@ class Chunk:
         if len(vertices_ids) > 1:
             if vertices_ids[0] > 0:
                 v1 = gm.g.vertex(vertices_ids[0])
-                for e in v1.out_edges():
+                out_edges = [e for e in v1.out_edges()]
+                for e in out_edges:
                     gm.remove_edge_(e)
 
-            if vertices_ids[1] > 0:
-                v2 = gm.g.vertex(vertices_ids[1])
+            if vertices_ids[-1] > 0:
+                v2 = gm.g.vertex(vertices_ids[-1])
 
-                for e in v2.in_edges():
+                in_edges = [e for e in v2.in_edges()]
+                for e in in_edges:
                     gm.remove_edge_(e)
+
+            if len(vertices_ids) > 2:
+                for v in vertices_ids[1:-1]:
+                    if v > 0:
+                        gm.remove_vertex(v)
+                        # v = gm.g.vertex(v)
+                        # for e in v.in_edges():
+                        #     gm.remove_edge_(e)
 
         self.chunk_reconnect_(gm)
 
@@ -67,7 +77,9 @@ class Chunk:
             ids = key
 
         items = []
+
         for i in ids:
+
             items.append(self.nodes_[i])
 
         return items
@@ -79,8 +91,12 @@ class Chunk:
         print s
 
     def append_left(self, vertex, gm, undo_action=False):
+        if int(vertex) == 4:
+            print vertex
+
         # test: there cannot be any outgoing edge...
-        for e in vertex.out_edges():
+        out_edges = [e for e in vertex.out_edges()]
+        for e in out_edges:
             gm.remove_edge_(e)
 
 
@@ -106,7 +122,8 @@ class Chunk:
 
     def append_right(self, vertex, gm, undo_action=False):
         # test: there cannot be any incomming edge...
-        for e in vertex.in_edges():
+        in_edges = [e for e in vertex.in_edges()]
+        for e in in_edges:
             gm.remove_edge_(e)
 
         vertex_id = int(vertex)

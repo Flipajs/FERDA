@@ -14,7 +14,7 @@ from utils.img_manager import ImgManager
 __author__ = 'Simon Mandlik'
 
 # the width of a node
-WIDTH = 25
+WIDTH = 35
 # the width of a node, should be same as width for the best result
 HEIGHT = WIDTH
 # relative margin of a node
@@ -166,10 +166,10 @@ class GraphWidgetLoader:
         # TODO
         # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
         #         region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
-        return "Centroid = %s\nArea = %i\nAntlikeness = %.3f\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % \
+        return "Centroid = %s\nArea = %i\nAntlikeness = %.3f\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s\nVertex id = %s" % \
                (str(region.centroid()), region.area(), antlikeness, region.margin_,
                 str(best_in_score[0]) + ', ' + str(best_in_score[1]),
-                str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info)
+                str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info, str(n))
 
     def get_edge_info(self, edge):
         return "Type = {0}\nSureness = {1}\nTracklet id: {2}".format(edge.type, edge.sureness, edge.id)

@@ -84,3 +84,9 @@ class ChunkManager:
     def chunk_gen(self):
         for ch in self.chunks_.itervalues():
             yield ch
+
+    def reset_itree(self, gm):
+        self.itree = IntervalTree()
+
+        for ch in self.chunk_gen():
+            self._add_ch_itree(ch, gm)

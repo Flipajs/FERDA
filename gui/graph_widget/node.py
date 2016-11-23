@@ -204,6 +204,9 @@ class TextInfoItem(QtGui.QGraphicsItem):
         text_item.setPos(self.x, self.y)
         text_item.setPlainText(self.text)
         text_item.setParentItem(self.rect)
+        r, g, b = self.color.red(), self.color.green(), self.color.blue()
+        if r+g+b < 250 and min(r, g, b) < 200:
+            text_item.setDefaultTextColor(QtGui.QColor(255, 255, 255))
         return text_item
 
     def boundingRect(self):

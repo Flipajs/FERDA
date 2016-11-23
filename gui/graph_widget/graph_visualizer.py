@@ -289,6 +289,11 @@ class GraphVisualizer(QtGui.QWidget):
     def update_lines(self):
         self.loader.update_colours(self.edges)
 
+    def show_node_images(self):
+        for it in self.scene.items():
+            if isinstance(it, Node):
+                it.create_pixmap()
+
     def compute_positions(self):
         for edge in self.edges:
             if edge.type == LineType.TRACKLET:

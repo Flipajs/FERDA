@@ -82,11 +82,13 @@ class GraphManager:
                 ch.pop_last(self) if chunk_end else ch.pop_first(self)
 
         # save all edges
-        for e in vertex.in_edges():
+        in_edges = [e for e in vertex.in_edges()]
+        for e in in_edges:
             affected.append(e.source())
             self.remove_edge_(e)
 
-        for e in vertex.out_edges():
+        out_edges = [e for e in vertex.out_edges()]
+        for e in out_edges:
             affected.append(e.target())
             self.remove_edge_(e)
 
@@ -144,6 +146,11 @@ class GraphManager:
                 self.vertices_in_t.setdefault(n.frame_, []).append(v_id)
 
         self.update_time_boundaries()
+
+    def update_time_boundaries(self):
+        keys = [self.vertices_in_t.keys()]
+        self.end_t = np.max(keys)
+        self.start_t = np.min(keys)
 
     def add_regions_in_t(self, regions, t, fast=False):
         self.add_vertices(regions)
@@ -225,7 +232,8 @@ class GraphManager:
                 print "ERROR in (graph_manager.py) remove_edge target_vertex is None, source_vertex: ", source_vertex
             return
 
-        for e in source_vertex.out_edges():
+        out_edges = [e for e in source_vertex.out_edges()]
+        for e in out_edges:
             if e.target == target_vertex:
                 self.remove_edge_(e)
 
@@ -477,3 +485,25 @@ class GraphManager:
                 return t
 
         return None
+
+    def out_v(self, v):
+        if v.out_degree() == 1:
+            for v2 in v.out_neighbours():
+                return v2
+
+        return None
+
+    def out_e(self, v):
+        if v.out_degree() == 1:
+            for e in v.out_edges():
+                return e
+
+    def one2one_check(self, v):
+        if v.out_degree() != 1:
+            return False
+
+        for v2 in v.out_neighbours():
+            if v2.in_degree() != 1:
+                return False
+
+        return True
