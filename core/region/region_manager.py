@@ -4,6 +4,7 @@ __author__ = 'flipajs'
 
 import sqlite3 as sql
 import cPickle as pickle
+import random
 
 
 class RegionManager:
@@ -33,7 +34,8 @@ class RegionManager:
             print "Initializing db at %s " % self.db_path
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
-            # DEBUG, do not use! self.cur.execute("DROP TABLE IF EXISTS regions;")
+            # DEBUG, do not use!
+            # self.cur.execute("DROP TABLE IF EXISTS regions;")
             self.cur.execute("CREATE TABLE regions(\
                 id INTEGER PRIMARY KEY, \
                 data BLOB);")
@@ -362,24 +364,94 @@ class RegionManager:
             return len(self)+1 > item.id() > 0
         return isinstance(item, (int, long)) and len(self)+1 > item > 0
 
+
+def remove_none(data):
+    new_data = []
+    for d in data:
+        if data is not None:
+            new_data.append(d)
+    return new_data
+
+
+def get_random_vector(max_id, size=100):
+    data = []
+    for j in range(0, size):
+        data.append(random.randint(0, max_id))
+    return data
+
+
 if __name__ == "__main__":
-    # rm = RegionManager()
-    f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
-    up = pickle.Unpickler(f)
-    regions = up.load()
-    for r in regions:
-        r.pts_rle_ = None
-    f.close()
+    # This part contains (apart from usage showcases) code that was used to measure RM performance
+    # load regions from other Ferda projects to get "real" data
+    projects = [(44, "cam1_test"), (44, "cam1_test1"), (7, "F3C51minAssembly-2")]  # (temp parts, "project folder")
+    regions = []
+    k = 0
+    # load regions
+    for limit, name in projects:
+        for i in range(0, limit):
+            db_path = "/home/dita/Programovani/FERDA Projects/{0}/temp/part{1}_rm.sqlite3".format(name, i)
+            con = sql.connect(db_path)
+            cur = con.cursor()
+            cmd = "SELECT * FROM regions;"
+            res = cur.execute(cmd)
+            rows = res.fetchall()
+            for row in rows:
+                region = pickle.loads(str(row[1]))
+                region.pts_rle_ = None
+                region.id = k
+                k += 1
+                regions.append(region)
 
-    rm = RegionManager(db_wd="/home/dita", cache_size_limit=1)
-    rm.add(regions)
+            con.close()
 
-    print rm[4]
-    print rm[2:6]
+    # prepare region manager
+    wd = "/home/dita/Programovani/FERDA Projects/region-manager-speed-test"
+    name = "db3.sqlite3"
 
+    import time
+    t0 = time.time()
+    rm = RegionManager(db_wd=wd, db_name=name)
+
+    print "%d regions were loaded. Init takes %d seconds" % (k, time.time()-t0)
+
+    load = 1000
+
+    # insert regions in groups of 1000
+    for m in range(0, 20):
+        index = 0
+        while index + load < len(regions):
+            insert = regions[index:index+load]
+
+            # measure insert
+            print "RM now contains %d regions, adding %d more....." % (len(rm), len(insert))
+            index += load
+            t0 = time.time()
+            rm.add(insert)
+            print "---DONE:", (time.time() - t0)
+
+            # get random ids to work with
+            data_list = get_random_vector(len(rm))
+            data_one = random.randint(0, len(rm))
+
+            # measure reading individual id
+            t0 = time.time()
+            print "Reading 1 random id from RM..."
+            rm[data_one]
+            print "---DONE:", (time.time() - t0)
+
+            # measure reading 100 ids at once
+            t0 = time.time()
+            print "Reading 100 random ids from RM..."
+            rm[data_list]
+            print "---DONE:", (time.time() - t0)
+
+        # insert = regions[index:len(regions)-1]
+        # print "RM now contains %d regions, adding %d more....." % (len(rm), len(insert))
+        # t0 = time.time()
+        # rm.add(insert)
+        # print "---DONE (%d ms)" % (time.time() - t0)
 
     # db size with 20 pts regions: 306 176 bytes
     # db size with 20 rle regions:  75 776 bytes
     # NOTE: To check sb size properly, always start in new file. File size doesn't decrease when items are deleted or
     #       when table is dropped. Instead of delete, sql VACUUM command can be used.
-
