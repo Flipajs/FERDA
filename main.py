@@ -35,7 +35,9 @@ if is_flipajs_pc():
     # project.load(wd+name+'/cam'+str(ca
     # m_)+'.fproj')
     project.load(wd)
-    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_tracklets_expanded.pkl', 'rb') as f:
+    from core.graph.chunk_manager import ChunkManager
+    project.chm = ChunkManager()
+    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/isolation_score.pkl', 'rb') as f:
         up = pickle.Unpickler(f)
         project.gm.g = up.load()
         up.load()
@@ -45,13 +47,9 @@ if is_flipajs_pc():
     from core.region.region_manager import RegionManager
     project.rm = RegionManager('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp', db_name='part0_rm.sqlite3')
     project.gm.rm = project.rm
+
     project.gm.update_nodes_in_t_refs()
-
-
-    from scripts.regions_stats import fix_heads
-    # print "FIXING head orientations..."
-    # fix_heads(project, frames=set(range(100)))
-    # print "FIXING done"
+    project.chm.reset_itree(project.gm)
 
     # project.load_snapshot(snapshot)
 

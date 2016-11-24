@@ -41,6 +41,14 @@ class StatisticsWidget(QtGui.QWidget):
 
         self.fbox.addRow('Min certainty value: ', QtGui.QLabel(str(self.project.solver_parameters.certainty_threshold)))
 
+        self.tracklet_coverage_step = QtGui.QLineEdit()
+        self.tracklet_coverage_step.setText('10')
+
+        self.show_tracklet_coverage_b = QtGui.QPushButton('show coverage')
+        self.show_tracklet_coverage_b.clicked.connect(self.show_tracklet_coverage)
+        self.fbox.addWidget(self.tracklet_coverage_step)
+        self.fbox.addWidget(self.show_tracklet_coverage_b)
+
         self.export_fbox = QtGui.QFormLayout()
         self.vbox.addLayout(self.export_fbox)
 
@@ -403,3 +411,34 @@ class StatisticsWidget(QtGui.QWidget):
         # self.mean_ch_len.setText('{:.2f}'.format(mean_))
         # self.mean_ch_area.setText('{:.2f}'.format(mean_mean_areas_))
         # self.med_ch_area.setText('{:.2f}'.format(med_ch_area))
+
+    def show_tracklet_coverage(self):
+        frames = self.project.gm.end_t - self.project.gm.start_t
+        try:
+            step = int(self.tracklet_coverage_step.text())
+        except:
+            step = 1
+
+
+        import matplotlib.pyplot as plt
+
+        vals = []
+        ff = range(0, frames, step)
+        for f in ff:
+            vals.append(len(self.project.chm.chunks_in_frame(f)))
+
+        ind = np.arange(len(vals))
+        ff = np.array(ff)
+
+        width = 1.0
+        fig, ax = plt.subplots()
+        ax.bar(ind, np.array(vals), width, color='r')
+
+        how_many_labels_do_we_want = 30
+        labels_step = max(1, int(len(vals) / how_many_labels_do_we_want))
+
+        ax.set_xticks(ind[::labels_step])
+        ax.set_xticklabels(map(str, ff[::labels_step]))
+
+        plt.ion()
+        plt.show()

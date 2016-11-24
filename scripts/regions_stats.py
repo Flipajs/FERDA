@@ -24,8 +24,12 @@ from sklearn.cluster import DBSCAN
 from sklearn import metrics
 from sklearn.datasets.samples_generator import make_blobs
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier, IsolationForest
 from sklearn import svm, preprocessing
 from itertools import izip
+
+from core.graph.solver import Solver
+from core.graph.chunk_manager import ChunkManager
 
 
 EXP = 'exp1'
@@ -59,6 +63,45 @@ def plotNdto3d(data, labels, core_samples_mask, indices=[0, 1, 2], ax_labels=[''
     ax.set_ylabel(ax_labels[1])
     ax.set_zlabel(ax_labels[2])
     plt.title(title)
+
+def display_pairs(p, pairs, file_name, cols=7, item_height=100, item_width=200, border=20):
+    vm = get_auto_video_manager(p)
+
+    part = 0
+    i = 0
+    data = []
+    for r1, r2 in pairs:
+        if r1.frame() + 1 != r2.frame():
+            print "FRAMES? ", r1.frame(), r2.frame()
+
+        im1 = vm.get_frame(r1.frame()).copy()
+        im2 = vm.get_frame(r2.frame()).copy()
+
+        draw_points(im1, r1.pts())
+        draw_points(im2, r2.pts())
+        draw_points(im2, r1.pts(), color=QColor(0, 255, 255, 40))
+
+        im1 = r1.roi().safe_roi(im1, border=border)
+        cv2.putText(im1, str(r1.frame()), (10, 10),
+                    cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.4, (255, 255, 255))
+
+        im2 = r1.roi().safe_roi(im2, border=border)
+
+        im = np.hstack((im1, im2))
+        data.append(im)
+
+        if i % (100) == 0 and i > 0:
+            collage = create_collage_rows(data, cols, item_height, item_width)
+            cv2.imwrite(p.working_directory+'/temp/'+file_name + str(part) + '.jpg', collage)
+            data = []
+            part += 1
+
+        i += 1
+
+    collage = create_collage_rows(data, cols, item_height, item_width)
+    cv2.imwrite(p.working_directory+'/temp/'+ file_name + str(part) + '.jpg', collage)
+
+
 
 def display_head_pairs(project):
     print "displaying pairs..."
@@ -108,40 +151,18 @@ def display_head_pairs(project):
     i = 0
     part = 0
     data = []
+    region_pairs = []
     for ((v1, v2), d1, d2) in pairs:
-
         if v1 is None or v2 is None:
             continue
 
         r1 = project.gm.region(v1)
         r2 = project.gm.region(v2)
 
-        if r1.frame() + 1 != r2.frame():
-            print "FRAMES? ", r1.frame(), r2.frame()
+        region_pairs.append((r1, r2))
 
-        im1 = vm.get_frame(r1.frame()).copy()
-        im2 = vm.get_frame(r2.frame()).copy()
+    display_pairs(region_pairs)
 
-        draw_points(im1, r1.pts())
-        draw_points(im2, r2.pts())
-        draw_points(im2, r1.pts(), color=QColor(0, 255, 255, 40))
-
-        im1 = r1.roi().safe_roi(im1, border=BORDER)
-        im2 = r1.roi().safe_roi(im2, border=BORDER)
-
-        im = np.hstack((im1, im2))
-        data.append(im)
-
-        if i % (100) == 0 and i > 0:
-            collage = create_collage_rows(data, COLS, IT_H, IT_W)
-            cv2.imwrite('/Users/flipajs/Desktop/temp/pairs/' + str(part) + '.jpg', collage)
-            data = []
-            part += 1
-
-        i += 1
-
-    collage = create_collage_rows(data, COLS, IT_H, IT_W)
-    cv2.imwrite('/Users/flipajs/Desktop/temp/pairs/' + str(part) + '.jpg', collage)
 
 def display_regions(project, arr=None, labels=None,
                     in_f_name='/Users/flipajs/Desktop/temp/clustering/data1.pkl',
@@ -363,8 +384,6 @@ def fix_heads(p, frames):
 
 
 def head_detector_classify(p):
-    from sklearn.ensemble import RandomForestClassifier
-
     data_head = hickle.load('/Users/flipajs/Desktop/temp/pairs/'+EXP+'/head_data.pkl')
     data_swap = hickle.load('/Users/flipajs/Desktop/temp/pairs/'+EXP+'/head_data_swap.pkl')
     rfc = RandomForestClassifier()
@@ -1129,34 +1148,197 @@ def display_n_representatives(p, label=0, N=30):
     #     pickle.dump({'data': X_, 'labels': kmeans.labels_, 'arr': arr}, f)
 
 
+def decide_one2one(p):
+    solver = Solver(p)
+    p.chm = ChunkManager()
+
+    confirm_later = []
+    for v in p.gm.g.vertices():
+        if p.gm.one2one_check(v):
+            e = p.gm.out_e(v)
+            confirm_later.append((e.source(), e.target()))
+
+    solver.confirm_edges(confirm_later)
+
+    p.gm.update_nodes_in_t_refs()
+    p.chm.reset_itree(p.gm)
+
+    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_1to1_tracklets.pkl', 'wb') as f:
+        pic = pickle.Pickler(f)
+        pic.dump(p.gm.g)
+        pic.dump(None)
+        pic.dump(p.chm)
+
+def tracklet_stats(p):
+    lengths = np.array([t.length() for t in p.chm.chunk_gen()])
+
+
+    print "#chunks: {}".format(len(p.chm))
+    print "LENGTHS mean: {} median: {}, max: {}, sum: {} coverage: {:.2%}".format(np.mean(lengths), np.median(lengths),
+                                                                                  lengths.max(), np.sum(lengths),
+                                                                                  np.sum(lengths) / (4500 * 6.0))
+
+def load_p_checkpoint(p, name=''):
+    with open(p.working_directory+'/temp/'+name+'.pkl', 'rb') as f:
+        up = pickle.Unpickler(f)
+        p.gm.g = up.load()
+        up.load()
+        p.chm = up.load()
+
+
+def save_p_checkpoint(p, name=''):
+    with open(p.working_directory+'/temp/'+name+'.pkl', 'wb') as f:
+        pic = pickle.Pickler(f)
+        pic.dump(p.gm.g)
+        pic.dump(None)
+        pic.dump(p.chm)
+
+def get_pair_fetures(r1, r2):
+    f = [
+        r1.area() - r2.area(),
+        r1.area() / float(r2.area()),
+        np.linalg.norm(r1.centroid() - r2.centroid()),
+        r1.theta_ - r2.theta_, # modulo?
+        r1.a_ - r2.a_,
+        r1.a_ / r2.a_,
+        (r1.a_/r1.b_) / (r2.a_/r2.b_),
+        r1.eccentricity() - r2.eccentricity(),
+        r1.sxx_ - r2.sxx_,
+        r1.syy_ - r2.syy_,
+        r1.sxy_ - r2.sxy_,
+        int(r1.min_intensity_) - int(r2.min_intensity_),
+        r1.get_phi(r2)
+    ]
+
+    return f
+
+def learn_assignments(p):
+    X = []
+
+    # TODO: remove
+    chgen = p.chm.chunk_gen()
+    # chgen.next()
+
+    i = 0
+
+    pairs = []
+    for t in chgen:
+        # TODO: remove
+        # if i > 500:
+        #     break
+
+        i += 1
+
+        rch = RegionChunk(t, p.gm, p.rm)
+        gen = rch.regions_gen()
+        r1 = gen.next()
+
+        for r2 in gen:
+            X.append(get_pair_fetures(r1, r2))
+            pairs.append((r1, r2))
+            r1 = r2
+
+    IF = IsolationForest(contamination=0.005)
+    IF.fit(X)
+
+    with open(p.working_directory + '/temp/isolation_forest.pkl', 'wb') as f:
+        pickle.dump(IF, f)
+
+    f = IF.decision_function(X)
+    plt.figure()
+    plt.plot(f)
+    plt.figure()
+    plt.hist(f, 20)
+
+    y = IF.predict(X)
+    print len(y), np.sum(y == -1)
+    pairs = np.array(pairs)
+
+    display_pairs(p, pairs[y == -1], 'anomaly_parts', cols=3, item_height=250, item_width=500, border=70)
+    plt.show()
+
+def add_score_to_edges(p):
+    with open(p.working_directory + '/temp/isolation_forest.pkl', 'rb') as f:
+        IF = pickle.load(f)
+
+    print "#edges: {}".format(p.gm.g.num_edges())
+    i = 0
+
+    features = []
+    edges = []
+
+    for e in p.gm.g.edges():
+        i += 1
+        if p.gm.edge_is_chunk(e):
+            continue
+
+        f = get_pair_fetures(p.gm.region(e.source()), p.gm.region(e.target()))
+
+        features.append(f)
+        edges.append(e)
+
+        if i % 1000:
+            print "{:.2%}".format(i / float(p.gm.g.num_edges()))
+
+    print "computing isolation score..."
+    vals = IF.decision_function(features)
+    print "assigning score to edges.."
+    for val, e in izip(vals, edges):
+        p.gm.g.ep['score'][e] = val
+    print "saving..."
+
+    save_p_checkpoint(p, 'isolation_score')
+
+
 if __name__ == '__main__':
+    FILTER_EDGES = False
+    DO_DECIDEONE2ONE = True
+    LEARN_ASSIGNMENTS = False
+
     p = Project()
     p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
 
     # display_n_representatives(p, label=-1, N=50)
 
-    if True:
+    from core.region.region_manager import RegionManager
+    p.rm = RegionManager('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp', db_name='part0_rm.sqlite3')
+    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0.pkl', 'rb') as f:
+        up = pickle.Unpickler(f)
+        g_ = up.load()
 
-        from core.region.region_manager import RegionManager
-        p.rm = RegionManager('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp', db_name='part0_rm.sqlite3')
-        with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0.pkl', 'rb') as f:
-            up = pickle.Unpickler(f)
-            g_ = up.load()
-            # relevant_vertices = up.load()
-            # chm_ = up.load()
+    p.gm.g = g_
+    p.gm.rm = p.rm
 
-        p.gm.g = g_
-        p.gm.rm = p.rm
+    max_dist = 94.59
+    # max_dist = get_max_dist(p)
+    print "MAX DIST: {}".format(max_dist)
 
+    if FILTER_EDGES:
+        filter_edges(p, max_dist)
+    else:
+        with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_modified.pkl', 'rb') as f:
+            p.gm.g = pickle.load(f)
+
+        p.gm.update_nodes_in_t_refs()
+
+    if DO_DECIDEONE2ONE:
+        decide_one2one(p)
+        tracklet_stats(p)
+    else:
+        load_p_checkpoint(p, name='part0_1to1_tracklets')
+
+    if LEARN_ASSIGNMENTS:
+        learn_assignments(p)
+
+    add_score_to_edges(p)
+
+
+    if False:
         # prepare_pairs(p)
         # display_head_pairs(p)
 
         # head_detector_features(p)
         # head_detector_classify(p)
-
-        max_dist = 94.59
-        # max_dist = get_max_dist(p)
-        print "MAX DIST: {}".format(max_dist)
 
         # filter_edges(p, max_dist)
 
@@ -1169,8 +1351,6 @@ if __name__ == '__main__':
         # singles_classifier(p)
 
         assign_costs(p, set(range(1000)))
-        from core.graph.solver import Solver
-        from core.graph.chunk_manager import ChunkManager
         solver = Solver(p)
         p.chm = ChunkManager()
 
@@ -1256,10 +1436,8 @@ if __name__ == '__main__':
         # build_tracklets_from_others(p)
 
 
-        lengths = np.array([t.length() for t in p.chm.chunk_gen()])
+        tracklet_stats(p)
 
-        print "#chunks: {}".format(len(p.chm))
-        print "LENGTHS mean: {} median: {}, max: {}, sum: {} coverage: {:.2%}".format(np.mean(lengths), np.median(lengths), lengths.max(), np.sum(lengths), np.sum(lengths)/(4500*6.0))
         # plt.hist(lengths, bins=500)
         # plt.show()
 

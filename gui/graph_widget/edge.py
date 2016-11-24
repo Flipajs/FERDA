@@ -144,8 +144,24 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
 class LineGraphical(EdgeGraphical):
 
     def paint(self, painter, style_option_graphics_item, widget=None):
-        opacity = 100 + 155 * abs(self.graph_line.sureness)
-        pen = QtGui.QPen(QtGui.QColor(0, 0, 0, opacity), LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+        # TODO: remove in future...
+        # TODO: read sureness range...
+        sureness_min = -0.2
+        sureness_max = 0.2
+
+        s = self.graph_line.sureness
+
+        red = 0
+        green = 0
+        if self.graph_line.sureness < 0:
+            red = int(min(255, (s / sureness_min) * 255))
+        else:
+            green = int(min(255, (s / sureness_max) * 255))
+
+        # opacity = 100 + 155 * abs(self.graph_line.sureness)
+        opacity = 255
+
+        pen = QtGui.QPen(QtGui.QColor(red, green, 0, opacity), LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
         painter.setPen(pen)
         painter.drawLine(self.parent_line)
 

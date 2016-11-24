@@ -210,9 +210,42 @@ class Region():
         Returns:
 
         """
-        term1 = np.linalg.norm(self.centroid() - r2.centroid()) > max_dist
-        b = term1 or not self.roi().is_intersecting_expanded(r2.roi(), max_dist)
-        return b
+        # # term1 for speedup...
+        # term1 = np.linalg.norm(self.centroid() - r2.centroid()) < max_dist
+        # b = not term1 and not self.roi().is_intersecting_expanded(r2.roi(), max_dist)
+
+        # term1 = np.linalg.norm(self.centroid() - r2.centroid()) < max_dist
+        # b = not term1 and not self.roi().is_intersecting_expanded(r2.roi(), max_dist)
+        return not self.roi().is_intersecting_expanded(r2.roi(), max_dist)
+
+    def eccentricity(self):
+        return 1-(self.b_ / self.a_)**0.5
+
+
+    def get_phi(self, r2):
+        """
+        angle between movement vector and major axis <0, pi>
+        Args:
+            r2:
+
+        Returns:
+
+        """
+
+        u = self.centroid() - r2.centroid()
+        u_ = np.linalg.norm(u)
+        p1, _ = get_region_endpoints(self)
+        v = self.centroid() - p1
+        v_ = np.linalg.norm(v)
+
+        if u_ < 2.0 or v_ < 2.0:
+            return 0
+
+        c = np.dot(u, v) / np.linalg.norm(u) / np.linalg.norm(v)  # -> cosine of the angle
+        # <0, pi>
+        phi = np.arccos(np.clip(c, -1, 1))  # clip to prevent numerical imprecision
+
+        return phi
 
 
 def encode_RLE(pts):

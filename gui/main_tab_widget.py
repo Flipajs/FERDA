@@ -173,12 +173,23 @@ class MainTabWidget(QtGui.QWidget):
         if i == 3:
             self.statistics_tab.update_data(self.project)
         if i == 4:
-            if not isinstance(self.graph_tab, GraphVisualizer):
+            from utils.video_manager import get_auto_video_manager
+            vm = get_auto_video_manager(self.project)
+            max_f = vm.total_frame_count()
+
+            from_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", 1, 1, max_f)
+            if ok or not isinstance(self.graph_tab, GraphVisualizer):
+                frames = None
+
+                to_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", 1, from_frame+1, max_f)
+                if ok:
+                    frames = range(from_frame, to_frame)
+
                 self.ignore_tab_change = True
                 # TODO: show loading...
                 self.tabs.removeTab(4)
                 self.graph_tab.setParent(None)
-                self.graph_tab = GraphWidgetLoader(self.project).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet, frames=range(100))
+                self.graph_tab = GraphWidgetLoader(self.project, width=50, height=50).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet, frames=frames)
                 self.tabs.insertTab(4, self.graph_tab, "graph")
                 self.tabs.setCurrentIndex(4)
                 self.ignore_tab_change = False

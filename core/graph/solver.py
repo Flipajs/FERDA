@@ -456,7 +456,8 @@ class Solver:
             affected.add(v1)
             affected.add(v2)
 
-            for e in v1.out_edges():
+            out_edges = [e for e in v1.out_edges()]
+            for e in out_edges:
                 affected.add(e.target())
 
                 for aff_neigh in e.target().in_neighbours():
@@ -464,7 +465,8 @@ class Solver:
 
                 self.project.gm.remove_edge_(e)
 
-            for e in v2.in_edges():
+            in_edges = [e for e in v2.in_edges()]
+            for e in in_edges:
                 affected.add(e.source())
 
                 for aff_neigh in e.source().out_neighbours():
