@@ -506,7 +506,10 @@ class GraphManager:
             if v2.in_degree() != 1:
                 return False
 
-        return True
+        if self.get_chunk(v) is None:
+            return True
+
+        return False
 
     def edge_is_chunk(self, e):
         return self.get_chunk(e.source()) is not None and self.get_chunk(e.target()) is not None
@@ -516,3 +519,19 @@ class GraphManager:
 
         for e in out_edges:
             self.remove_edge_(e)
+
+    def edges_with_score_in_range(self, lower_bound=-np.inf, upper_bound=np.inf):
+        filtered = []
+        for e in self.g.edges():
+            if self.edge_is_chunk(e):
+                continue
+
+            if lower_bound <= self.g.ep['score'][e] <= upper_bound:
+                filtered.append(e)
+
+        return filtered
+
+    def remove_edges(self, edges):
+        for e in edges:
+            self.remove_edge_(e)
+

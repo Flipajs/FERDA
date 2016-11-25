@@ -1150,7 +1150,6 @@ def display_n_representatives(p, label=0, N=30):
 
 def decide_one2one(p):
     solver = Solver(p)
-    p.chm = ChunkManager()
 
     confirm_later = []
     for v in p.gm.g.vertices():
@@ -1163,11 +1162,11 @@ def decide_one2one(p):
     p.gm.update_nodes_in_t_refs()
     p.chm.reset_itree(p.gm)
 
-    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_1to1_tracklets.pkl', 'wb') as f:
-        pic = pickle.Pickler(f)
-        pic.dump(p.gm.g)
-        pic.dump(None)
-        pic.dump(p.chm)
+    # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_1to1_tracklets.pkl', 'wb') as f:
+    #     pic = pickle.Pickler(f)
+    #     pic.dump(p.gm.g)
+    #     pic.dump(None)
+    #     pic.dump(p.chm)
 
 def tracklet_stats(p):
     lengths = np.array([t.length() for t in p.chm.chunk_gen()])
@@ -1292,8 +1291,17 @@ def add_score_to_edges(p):
 
 if __name__ == '__main__':
     FILTER_EDGES = False
-    DO_DECIDEONE2ONE = True
+    DO_DECIDEONE2ONE = False
     LEARN_ASSIGNMENTS = False
+
+    FILTER_EDGES2 = True
+
+
+    pipeline = [
+        ('', '')
+
+    ]
+
 
     p = Project()
     p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
@@ -1313,25 +1321,47 @@ if __name__ == '__main__':
     # max_dist = get_max_dist(p)
     print "MAX DIST: {}".format(max_dist)
 
-    if FILTER_EDGES:
-        filter_edges(p, max_dist)
-    else:
-        with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_modified.pkl', 'rb') as f:
-            p.gm.g = pickle.load(f)
+    if False:
+        if FILTER_EDGES:
+            filter_edges(p, max_dist)
+        else:
+            with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_modified.pkl', 'rb') as f:
+                p.gm.g = pickle.load(f)
 
+            p.gm.update_nodes_in_t_refs()
+
+        if DO_DECIDEONE2ONE:
+            p.chm = ChunkManager()
+            decide_one2one(p)
+            save_p_checkpoint(p, 'part0_1to1_tracklets')
+            tracklet_stats(p)
+        else:
+            load_p_checkpoint(p, name='part0_1to1_tracklets')
+
+        if LEARN_ASSIGNMENTS:
+            learn_assignments(p)
+
+        add_score_to_edges(p)
+    else:
+        load_p_checkpoint(p, 'isolation_score')
         p.gm.update_nodes_in_t_refs()
 
-    if DO_DECIDEONE2ONE:
-        decide_one2one(p)
+        solver = Solver(p)
+
+        edges = p.gm.edges_with_score_in_range(lower_bound=0.1)
+        solver.confirm_edges([(e.source(), e.target()) for e in edges])
         tracklet_stats(p)
-    else:
-        load_p_checkpoint(p, name='part0_1to1_tracklets')
+        decide_one2one(p)
 
-    if LEARN_ASSIGNMENTS:
-        learn_assignments(p)
+        edges = p.gm.edges_with_score_in_range(upper_bound=-0.1)
+        p.gm.remove_edges(edges)
 
-    add_score_to_edges(p)
+        # save_p_checkpoint(p, 'removed_edges')
 
+        tracklet_stats(p)
+        decide_one2one(p)
+        save_p_checkpoint(p, 'part0_1to1_tracklets2')
+        tracklet_stats(p)
 
     if False:
         # prepare_pairs(p)

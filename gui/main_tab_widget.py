@@ -177,11 +177,11 @@ class MainTabWidget(QtGui.QWidget):
             vm = get_auto_video_manager(self.project)
             max_f = vm.total_frame_count()
 
-            from_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", 1, 1, max_f)
+            from_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", 0, 0, max_f-1)
             if ok or not isinstance(self.graph_tab, GraphVisualizer):
                 frames = None
 
-                to_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", 1, from_frame+1, max_f)
+                to_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", from_frame+1, from_frame+1, max_f)
                 if ok:
                     frames = range(from_frame, to_frame)
 
