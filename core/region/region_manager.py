@@ -1,24 +1,25 @@
 from core.region.region import Region, encode_RLE
-
-__author__ = 'flipajs'
-
 import sqlite3 as sql
 import cPickle as pickle
 import random
 
+__author__ = 'flipajs'
+
 
 class RegionManager:
-    def __init__(self, db_wd=None, db_name="regions.db", cache_size_limit=-1, data=None):
+    def __init__(self, db_wd=None, db_name="regions.db", db_size=-1, cache_size_limit=-1, data=None):
         """
         RegionManager is designed to store regions data. By default, all data is stored in memory cache (dictionary) and
         identified using unique ids. Optionally, database can be used, in which case the memory cache size can be
         limited to reduce memory usage.
         :param db_wd: Working directory in which the database file should be stored
         :param db_name: Database name, "regions.db" by default
+        :param db_size: Size limit. When exceeded, new database will be created. Use -1 (default) to disable. Databases
+        will be named: 0_db_name, 1_db_name, 2_db_name etc.
         :param cache_size_limit: Number of instances to be held in cache
         :return: None
         """
-        if db_wd == None:
+        if db_wd is None:
             # cache mode (no db set)
             if cache_size_limit == -1:
                 self.use_db = False
@@ -30,7 +31,7 @@ class RegionManager:
                 raise SyntaxError("Cache limit can only be set when database is used!")
         else:
             self.use_db = True
-            self.db_path = db_wd+"/"+db_name
+            self.db_path = db_wd+"/0_"+db_name
             print "Initializing db at %s " % self.db_path
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
@@ -49,13 +50,18 @@ class RegionManager:
                 self.cur.execute("SELECT id FROM regions ORDER BY id DESC LIMIT 1;")
                 row = self.cur.fetchone()
                 self.id_ = row[0]
-            except TypeError: # TypeError is raised when row is empty (no IDs were found)
+                # TODO: if database is full, check for other database files
+                # TODO: check if database size isn't greater that size limit and handle it
+            except TypeError:  # TypeError is raised when row is empty (no IDs were found)
                 self.id_ = 0
+            if db_size > 0:
+                # TODO: use list of cons instead of self.con (same for self.cur)
+                pass
         self.tmp_ids = []
 
         if isinstance(data, RegionManager):
-            newdata = data[:]
-            self.add(newdata)
+            new_data = data[:]
+            self.add(new_data)
         elif isinstance(data, list):
             for datas in data:
                 if isinstance(datas, RegionManager):
@@ -65,7 +71,7 @@ class RegionManager:
         """
         Save one or more regions in RegionManager
         :param regions: (region/list of regions) - regions that should be added into RegionManager.
-        :return (list of int/ints) - ids that were given to appended regions. Regions can be later accessed via these ids
+        :return (list of ints) - ids that were given to appended regions. Regions can be later accessed via these ids
         """
 
         # use one return list for simplicity - the ids are appended to it from the get_next_id function
@@ -81,52 +87,52 @@ class RegionManager:
             else:
                 for r in regions:
                     if not isinstance(r, Region):
-                        raise TypeError ("Region manager can only work with Region objects, not %s" % type(r))
-                    id = self.get_next_id()
-                    r.id_ = id
-                    self.add_to_cache_(id, r)
+                        raise TypeError("Region manager can only work with Region objects, not %s" % type(r))
+                    id_ = self.get_next_id()
+                    r.id_ = id_
+                    self.add_to_cache_(id_, r)
                 return self.tmp_ids
 
         if not isinstance(regions, Region):
-            raise TypeError ("Region manager can only work with Region objects, not %s" % type(regions))
+            raise TypeError("Region manager can only work with Region objects, not %s" % type(regions))
 
         if self.use_db:
-            id = self.get_next_id()
-            regions.id_ = id
-            self.add_to_cache_(id, regions)
+            id_ = self.get_next_id()
+            regions.id_ = id_
+            self.add_to_cache_(id_, regions)
             self.cur.execute("BEGIN TRANSACTION;")
-            self.cur.execute("INSERT INTO regions VALUES (?, ?)", (id, self.prepare_region(regions)))
+            self.cur.execute("INSERT INTO regions VALUES (?, ?)", (id_, self.prepare_region(regions)))
             self.con.commit()
         else:
-            id = self.get_next_id()
-            regions.id_ = id
-            self.add_to_cache_(id, regions)
+            id_ = self.get_next_id()
+            regions.id_ = id_
+            self.add_to_cache_(id_, regions)
 
         return self.tmp_ids
 
-    def add_to_cache_(self, id, region):
+    def add_to_cache_(self, id_, region):
         """
         This method adds region with id to the cache. It also updates it's position in recent_regions_ids and checks
         the cache size.
-        :param id:
+        :param id_:
         :param region:
         :return None
         """
         # print "Adding %s %s" % (id, region)
         # print "Cache: %s" % self.recent_regions_ids
-        if id in self.recent_regions_ids:
+        if id_ in self.recent_regions_ids:
             # remove region from recent_regions_ids
             self.recent_regions_ids.pop(0)
             # print "Moving %s up" % id
             # add region to fresh position in recent_regions_ids and add it to cache
-            self.recent_regions_ids.append(id)
-            self.regions_cache_[id] = region
+            self.recent_regions_ids.append(id_)
+            self.regions_cache_[id_] = region
         else:
             # add region to fresh position in recent_regions_ids and add it to cache
-            self.recent_regions_ids.append(id)
-            self.regions_cache_[id] = region
+            self.recent_regions_ids.append(id_)
+            self.regions_cache_[id_] = region
 
-            if self.cache_size_limit_ > 0 and len(self.regions_cache_) > self.cache_size_limit_:
+            if 0 < self.cache_size_limit_ < len(self.regions_cache_):
                 pop_id = self.recent_regions_ids.pop(0)
                 self.regions_cache_.pop(pop_id, None).id()
 
@@ -136,6 +142,7 @@ class RegionManager:
         """
         Renew the position of key in recent_regions_ids
         :param key: key of the region
+        :param region: region object
         :return: None
         """
 
@@ -155,11 +162,11 @@ class RegionManager:
         for r in regions:
             if not isinstance(r, Region):
                 self.con.rollback()
-                raise TypeError ("Region manager can only work with Region objects, not %s" % type(r))
-            id = self.get_next_id()
-            r.id_ = id
-            self.add_to_cache_(id, r)
-            yield (id, self.prepare_region(r))
+                raise TypeError("Region manager can only work with Region objects, not %s" % type(r))
+            id_ = self.get_next_id()
+            r.id_ = id_
+            self.add_to_cache_(id_, r)
+            yield (id_, self.prepare_region(r))
 
     def get_next_id(self):
         self.id_ += 1
@@ -174,17 +181,18 @@ class RegionManager:
             # return [self[ii] for ii in xrange(*key.indices(len(self)))]
             # get values from slice
             start = key.start
-            if start == None or start == 0:
+            if start is None or start == 0:
                 start = 1
             stop = key.stop
             # value of "stop" is 9223372036854775807 when using [:], but it works fine with [::]. Hotfixed.
-            if stop == None or stop == 9223372036854775807:
-                stop = len(self) +1
+            if stop is None or stop == 9223372036854775807:
+                stop = len(self) + 1
             step = key.step
-            if step == None:
+            if step is None:
                 step = 1
             # check if slice parameters are ok
-            if start < 0 or start > len(self) or stop > len(self)+1 or stop < 0 or (stop < start and step > 0) or step == 0:
+            if start < 0 or start > len(self) or stop > len(self)+1 or stop < 0\
+                    or (stop < start and step > 0) or step == 0:
                 raise ValueError("Invalid slice parameters (%s:%s:%s)" % (start, stop, step))
 
             # go through slice
@@ -203,18 +211,18 @@ class RegionManager:
                 self.db_search_(result, sql_ids)
 
         elif isinstance(key, list):
-            for id in key:
-                if not isinstance(id, int):
-                    print "TypeError: int expected, %s given! Skipping key '%s'." % (type(id), id)
+            for id_ in key:
+                if not isinstance(id_, int):
+                    print "TypeError: int expected, %s given! Skipping key '%s'." % (type(id_), id_)
                     continue
-                if id in self.regions_cache_:
+                if id_ in self.regions_cache_:
                     # print "%s was found in cache" % id
-                    r = self.regions_cache_[id]
+                    r = self.regions_cache_[id_]
                     result.append(r)
-                    self.update(id, r)
+                    self.update(id_, r)
                 else:
                     # print "%s was not found in cache" % id
-                    sql_ids.append(id)
+                    sql_ids.append(id_)
 
             if self.use_db:
                 self.db_search_(result, sql_ids)
@@ -236,7 +244,7 @@ class RegionManager:
             if self.use_db:
                 self.db_search_(result, sql_ids)
         else:
-            raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
+            raise TypeError("Invalid argument type. Slice or int expected, %s given." % type(key))
 
         if len(result) == 0:
             return None
@@ -251,8 +259,8 @@ class RegionManager:
         :param sql_ids: ids to be fetched from database
         """
         if not self.use_db:
-            raise SyntaxError("Don't call this method when database is not used! Most likely, this is an error of region"
-                              " manager itself")
+            raise SyntaxError("Don't call this method when database is not used! Most likely, this is an error of "
+                              "region manager itself")
 
         l = len(sql_ids)
         if l == 1:
@@ -263,12 +271,12 @@ class RegionManager:
             self.con.commit()
             row = self.cur.fetchone()
             # add it to result
-            id = sql_ids[0]
+            id_ = sql_ids[0]
             try:
                 region = pickle.loads(str(row[0]))
                 result.append(region)
                 # add it to cache
-                self.add_to_cache_(id, region)
+                self.add_to_cache_(id_, region)
             except TypeError:
                 # region was erased
                 pass
@@ -333,7 +341,7 @@ class RegionManager:
                 self.recent_regions_ids.remove(id_)
 
     def prepare_region(self, region):
-        if region.pts_rle_ == None:
+        if region.pts_rle_ is None:
             region.pts_rle_ = encode_RLE(region.pts_)
         tmp_pts = region.pts_
         region.pts_ = None
@@ -341,16 +349,16 @@ class RegionManager:
         region.pts_ = tmp_pts
         return data
 
-    def pretty_list(self, list):
+    def pretty_list(self, list_):
         """
         Converts a list of elements [1, 2, 3] to pretty string "(1, 2, 3)"
-        :param list: list to convert
+        :param list_: list to convert
         """
 
-        l = len(list)
+        l = len(list_)
         param = "("
         for i in range(0, l):
-            param += str(list[i])
+            param += str(list_[i])
             if i != l-1:
                 param += ", "
         param += ")"
@@ -383,34 +391,34 @@ def get_random_vector(max_id, size=100):
 if __name__ == "__main__":
     # This part contains (apart from usage showcases) code that was used to measure RM performance
     # load regions from other Ferda projects to get "real" data
-    projects = [(44, "cam1_test"), (44, "cam1_test1"), (7, "F3C51minAssembly-2")]  # (temp parts, "project folder")
-    regions = []
+    projects_ = [(44, "cam1_test"), (44, "cam1_test1"), (7, "F3C51minAssembly-2")]  # (temp parts, "project folder")
+    regions_ = []
     k = 0
     # load regions
-    for limit, name in projects:
-        for i in range(0, limit):
-            db_path = "/home/dita/Programovani/FERDA Projects/{0}/temp/part{1}_rm.sqlite3".format(name, i)
-            con = sql.connect(db_path)
-            cur = con.cursor()
-            cmd = "SELECT * FROM regions;"
-            res = cur.execute(cmd)
-            rows = res.fetchall()
-            for row in rows:
-                region = pickle.loads(str(row[1]))
-                region.pts_rle_ = None
-                region.id = k
+    for limit_, name_ in projects_:
+        for i_ in range(0, limit_):
+            db_path = "/home/dita/Programovani/FERDA Projects/{0}/temp/part{1}_rm.sqlite3".format(name_, i_)
+            con_ = sql.connect(db_path)
+            cur_ = con_.cursor()
+            cmd_ = "SELECT * FROM regions;"
+            res = cur_.execute(cmd_)
+            rows_ = res.fetchall()
+            for row_ in rows_:
+                region_ = pickle.loads(str(row_[1]))
+                region_.pts_rle_ = None
+                region_.id = k
                 k += 1
-                regions.append(region)
+                regions_.append(region_)
 
-            con.close()
+            con_.close()
 
     # prepare region manager
     wd = "/home/dita/Programovani/FERDA Projects/region-manager-speed-test"
-    name = "db3.sqlite3"
+    name_ = "db3.sqlite3"
 
     import time
     t0 = time.time()
-    rm = RegionManager(db_wd=wd, db_name=name)
+    rm = RegionManager(db_wd=wd, db_name=name_)
 
     print "%d regions were loaded. Init takes %d seconds" % (k, time.time()-t0)
 
@@ -419,8 +427,8 @@ if __name__ == "__main__":
     # insert regions in groups of 1000
     for m in range(0, 20):
         index = 0
-        while index + load < len(regions):
-            insert = regions[index:index+load]
+        while index + load < len(regions_):
+            insert = regions_[index:index + load]
 
             # measure insert
             print "RM now contains %d regions, adding %d more....." % (len(rm), len(insert))
