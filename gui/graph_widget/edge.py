@@ -145,18 +145,14 @@ class LineGraphical(EdgeGraphical):
 
     def paint(self, painter, style_option_graphics_item, widget=None):
         # TODO: remove in future...
-        # TODO: read sureness range...
-        sureness_min = -0.2
-        sureness_max = 0.2
-
         s = self.graph_line.sureness
 
         red = 0
         green = 0
-        if self.graph_line.sureness < 0:
-            red = int(min(255, (s / sureness_min) * 255))
+        if self.graph_line.sureness < 0.5:
+            red = int(255 - (s*255*2))
         else:
-            green = int(min(255, (s / sureness_max) * 255))
+            green = int((s-0.5) * 255 * 2)
 
         # opacity = 100 + 155 * abs(self.graph_line.sureness)
         opacity = 255

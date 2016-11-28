@@ -1263,6 +1263,8 @@ def add_score_to_edges(p):
     print "#edges: {}".format(p.gm.g.num_edges())
     i = 0
 
+    use_for_learning = 0.02
+
     features = []
     edges = []
 
@@ -1281,8 +1283,27 @@ def add_score_to_edges(p):
 
     print "computing isolation score..."
     vals = IF.decision_function(features)
+
+    from sklearn.linear_model import LogisticRegression
+    lr = LogisticRegression()
+
+    part_len = int(len(vals)*use_for_learning)
+
+    vals_sorted = sorted(vals)
+    part1 = np.array(vals_sorted[:part_len])
+    part2 = np.array(vals_sorted[-part_len:])
+
+    X = np.hstack((part1, part2))
+    print X.shape
+    X.shape = ((X.shape[0], 1))
+
+    y = np.array([1 if i < len(part1) else 0 for i in range(X.shape[0])])
+    print X.shape, y.shape
+    lr.fit(X, y)
+    probs = lr.predict_proba(np.array(vals).reshape((len(vals), 1)))
+
     print "assigning score to edges.."
-    for val, e in izip(vals, edges):
+    for val, e in izip(probs[:, 0], edges):
         p.gm.g.ep['score'][e] = val
     print "saving..."
 
@@ -1292,9 +1313,9 @@ def add_score_to_edges(p):
 if __name__ == '__main__':
     FILTER_EDGES = False
     DO_DECIDEONE2ONE = False
-    LEARN_ASSIGNMENTS = True
+    LEARN_ASSIGNMENTS = False
 
-    FILTER_EDGES2 = True
+    FILTER_EDGES2 = False
 
 
     pipeline = [
