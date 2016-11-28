@@ -227,6 +227,9 @@ class ResultsWidget(QtGui.QWidget):
         self.show_movement_model_b = QtGui.QPushButton('show movement model')
         self.show_movement_model_b.clicked.connect(self.show_movement_model)
 
+        self.export_video_b = QtGui.QPushButton('export visualisation')
+        self.export_video_b.clicked.connect(self.export_visualisation)
+
         self.debug_box.layout().addWidget(self.print_conflic_tracklets_b)
         self.debug_box.layout().addWidget(self.print_undecided_tracklets_b)
         self.debug_box.layout().addWidget(self.assign_ids_from_gt_b)
@@ -234,6 +237,7 @@ class ResultsWidget(QtGui.QWidget):
         self.debug_box.layout().addWidget(self.show_idtracker_b)
         self.debug_box.layout().addWidget(self.head_fix_b)
         self.debug_box.layout().addWidget(self.show_movement_model_b)
+        self.debug_box.layout().addWidget(self.export_video_b)
 
         self.left_vbox.addWidget(self.debug_box)
 
@@ -609,6 +613,8 @@ class ResultsWidget(QtGui.QWidget):
     def draw_region(self, r, tracklet, use_ch_color=None, alpha=120, highlight_contour=False, force_color=None):
         from utils.img import get_cropped_pts
 
+        alpha = S_.visualization.segmentation_alpha
+
         only_contour = False if self.show_filled_ch.isChecked() else True
         # we need region pts to dilate and substract previous pts to get result
         only_contour = only_contour and not highlight_contour
@@ -639,7 +645,7 @@ class ResultsWidget(QtGui.QWidget):
                 if tracklet.is_only_one_id_assigned(len(self.project.animals)):
                     id_ = list(tracklet.P)[0]
                     c_ = self.project.animals[id_].color_
-                    c = QtGui.qRgba(c_[2], c_[1], c_[0], 255)
+                    c = QtGui.qRgba(c_[2], c_[1], c_[0], alpha)
                 else:
                     step = 2
                     if use_ch_color:
@@ -1215,7 +1221,9 @@ class ResultsWidget(QtGui.QWidget):
 
 
     def assign_ids_from_gt(self):
-        for frame, data in self._gt.iteritems():
+        # for frame, data in self._gt.iteritems():
+        for frame, data in self._gt.get_clear_positions_dict().iteritems():
+            print frame
             matches = [list() for _ in range(len(self.project.animals))]
             for t in self.project.chm.chunks_in_frame(frame):
                 rch = RegionChunk(t, self.project.gm, self.project.rm)
@@ -1237,7 +1245,10 @@ class ResultsWidget(QtGui.QWidget):
                 if len(arr) == 1:
                     tracklet = arr[0]
                     if len(tracklet.P) != 1:
-                        self.decide_tracklet_callback(tracklet, id_)
+                        tracklet.P = set([id_])
+                        tracklet.N = set(range(len(self.project.animals))) - set([id_])
+                        # TODO: renew this...
+                        # self.decide_tracklet_callback(tracklet, id_)
 
     def print_conflicts(self):
         print "CONFLICTS: "
@@ -1382,6 +1393,57 @@ class ResultsWidget(QtGui.QWidget):
                 self.__head_fix(t)
         else:
             self.__head_fix(self.project.chm[self.active_tracklet_id])
+
+    def QImageToCvMat(self, incomingImage):
+        '''  Converts a QImage into an opencv MAT format  '''
+
+        incomingImage = incomingImage.convertToFormat(QtGui.QImage.Format_RGB32)
+
+        width = incomingImage.width()
+        height = incomingImage.height()
+
+        ptr = incomingImage.constBits()
+        arr = np.array(ptr).reshape(height, width, 3)  # Copies the data
+        return arr
+
+    def export_visualisation(self):
+        start = 4000
+        end = 7000
+
+        self.video_player.goto(start)
+        import cv2
+        import time
+
+
+        qim_ = QtGui.QImage(1920, 1080, QtGui.QImage.Format_RGB32)
+        qim_.fill(QtGui.qRgba(0, 0, 0, 0))
+        pixmap = QtGui.QPixmap.fromImage(qim_)
+        painter = QtGui.QPainter(pixmap)
+        self.video_player._scene.render(painter)
+        pixmap.save('out1.png')
+        # img = pixmap.toImage()
+        #
+        # im = self.QImageToCvMat(img)
+        # cv2.imshow('test', im)
+        # cv2.waitKey(0)
+        del painter
+        # vw = cv2.VideoWriter('out.mp4')
+        for i in range(end-start):
+            painter = QtGui.QPainter(pixmap)
+            self.video_player._scene.render(painter)
+            name = str(self.video_player.current_frame())
+            while len(name) != 5:
+                name = '0'+name
+
+            pixmap.save('/Users/flipajs/Desktop/temp/zebrafish/'+name+'.jpg')
+            del painter
+
+            self.video_player.next()
+            pass
+
+        # TODO: wait
+
+        pass
 
     def show_movement_model(self):
         from scripts.regions_stats import hist_query, get_movement_descriptor_

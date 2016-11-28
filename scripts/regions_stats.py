@@ -1292,7 +1292,7 @@ def add_score_to_edges(p):
 if __name__ == '__main__':
     FILTER_EDGES = False
     DO_DECIDEONE2ONE = False
-    LEARN_ASSIGNMENTS = False
+    LEARN_ASSIGNMENTS = True
 
     FILTER_EDGES2 = True
 
@@ -1321,7 +1321,7 @@ if __name__ == '__main__':
     # max_dist = get_max_dist(p)
     print "MAX DIST: {}".format(max_dist)
 
-    if False:
+    if True:
         if FILTER_EDGES:
             filter_edges(p, max_dist)
         else:

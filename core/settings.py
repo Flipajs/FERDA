@@ -89,6 +89,7 @@ class Visualization:
     __metaclass__ = SettingsType
     default_region_color = Item('visualization/default_region_color', QtGui.QColor(0, 255, 255, 50), '')
     basic_marker_opacity = Item('visualization/basic_marker_opacity', 0.8, '...')
+    segmentation_alpha = Item('visualization/segmentation_alpha', 230, '...')
 
 class Parallelization:
     __metaclass__ = SettingsType
