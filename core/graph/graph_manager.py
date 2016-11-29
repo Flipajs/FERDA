@@ -502,14 +502,17 @@ class GraphManager:
         if v.out_degree() != 1:
             return False
 
+        if self.g.vp['chunk_start_id'][v]:
+            return False
+
         for v2 in v.out_neighbours():
             if v2.in_degree() != 1:
                 return False
 
-        if self.get_chunk(v) is None:
-            return True
+        # if self.get_chunk(v) is None:
+        #     return True
 
-        return False
+        return True
 
     def edge_is_chunk(self, e):
         return self.get_chunk(e.source()) is not None and self.get_chunk(e.target()) is not None
@@ -530,6 +533,46 @@ class GraphManager:
                 filtered.append(e)
 
         return filtered
+
+    def active_v_gen(self):
+        for v in self.g.vertices():
+            if self.g.vp['active']:
+                yield v
+
+    def get_2_best_out_edges(self, v):
+        best_e = [None, None]
+        best_s = [0, 0]
+        for e in v.out_edges():
+            s = self.g.ep['score'][e]
+
+            if self.edge_is_chunk(e):
+                continue
+
+            if s > best_s[0]:
+                best_s[1] = best_s[0]
+                best_e[1] = best_e[0]
+
+                best_s[0] = s
+                best_e[0] = e
+            elif s > best_s[1]:
+                best_s[1] = s
+                best_e[1] = e
+
+        return best_e, best_s
+
+    def strongly_better(self, min_prob=0.9, better_n_times=10):
+        from itertools import izip
+
+        strongly_better_e = []
+
+        for v in self.active_v_gen():
+            e, s = self.get_2_best_out_edges(v)
+            if e[0] is not None:
+                if s[0] > min_prob:
+                    if e[1] is None or s[1] == 0 or s[0] / s[1] > better_n_times:
+                        strongly_better_e.append(e[0])
+
+        return strongly_better_e
 
     def remove_edges(self, edges):
         for e in edges:

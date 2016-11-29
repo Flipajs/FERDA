@@ -1152,6 +1152,7 @@ def decide_one2one(p):
     solver = Solver(p)
 
     confirm_later = []
+
     for v in p.gm.g.vertices():
         if p.gm.one2one_check(v):
             e = p.gm.out_e(v)
@@ -1161,12 +1162,6 @@ def decide_one2one(p):
 
     p.gm.update_nodes_in_t_refs()
     p.chm.reset_itree(p.gm)
-
-    # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_1to1_tracklets.pkl', 'wb') as f:
-    #     pic = pickle.Pickler(f)
-    #     pic.dump(p.gm.g)
-    #     pic.dump(None)
-    #     pic.dump(p.chm)
 
 def tracklet_stats(p):
     lengths = np.array([t.length() for t in p.chm.chunk_gen()])
@@ -1342,7 +1337,7 @@ if __name__ == '__main__':
     # max_dist = get_max_dist(p)
     print "MAX DIST: {}".format(max_dist)
 
-    if True:
+    if False:
         if FILTER_EDGES:
             filter_edges(p, max_dist)
         else:
@@ -1363,7 +1358,7 @@ if __name__ == '__main__':
             learn_assignments(p)
 
         add_score_to_edges(p)
-    else:
+    elif False:
         load_p_checkpoint(p, 'isolation_score')
         p.gm.update_nodes_in_t_refs()
 
@@ -1383,6 +1378,42 @@ if __name__ == '__main__':
         decide_one2one(p)
         save_p_checkpoint(p, 'part0_1to1_tracklets2')
         tracklet_stats(p)
+    else:
+        load_p_checkpoint(p, 'isolation_score')
+        p.gm.update_nodes_in_t_refs()
+        p.chm.reset_itree(p.gm)
+
+        solver = Solver(p)
+
+        tracklet_stats(p)
+
+        strongly_better_e = p.gm.strongly_better(min_prob=0.8, better_n_times=1.5)
+        print "strongly better: {}".format(len(strongly_better_e))
+        for e in strongly_better_e:
+            solver.confirm_edges([(e.source(), e.target())])
+
+        tracklet_stats(p)
+
+        strongly_better_e = p.gm.strongly_better(min_prob=0.8, better_n_times=1.5)
+        print "strongly better: {}".format(len(strongly_better_e))
+        for e in strongly_better_e:
+            solver.confirm_edges([(e.source(), e.target())])
+
+        tracklet_stats(p)
+        strongly_better_e = p.gm.strongly_better(min_prob=0.8, better_n_times=1.5)
+        print "strongly better: {}".format(len(strongly_better_e))
+        for e in strongly_better_e:
+            solver.confirm_edges([(e.source(), e.target())])
+
+        tracklet_stats(p)
+        decide_one2one(p)
+
+        # p.gm.update_nodes_in_t_refs()
+        p.chm.reset_itree(p.gm)
+
+        save_p_checkpoint(p, 'strongly_better_filter')
+        tracklet_stats(p)
+
 
     if False:
         # prepare_pairs(p)
