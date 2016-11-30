@@ -120,7 +120,7 @@ class Solver:
                 # cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
                 cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
 
-            self.project.gm.g.ep['certainty'][self.project.gm.g.edge(v1, v2)] = cert
+            self.project.gm.g.ep['movement_score'][self.project.gm.g.edge(v1, v2)] = cert
 
             if cert > self.project.solver_parameters.certainty_threshold:
                 affected = self.confirm_edges([(v1, v2)])
@@ -222,13 +222,13 @@ class Solver:
                         # affected.append(n2)
 
                         e = self.project.gm.g.edge(n1, n2)
-                        self.project.gm.g.ep['certainty'][e] = cert
+                        self.project.gm.g.ep['movement_score'][e] = cert
                         affected += self.confirm_edges([(n1, n2)])
             else:
                 for n1, n2 in matchings[0]:
                     if n1 and n2:
                         e = self.project.gm.g.edge(n1, n2)
-                        self.project.gm.g.ep['certainty'][e] = cert
+                        self.project.gm.g.ep['movement_score'][e] = cert
 
         return affected
 

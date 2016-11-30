@@ -32,7 +32,7 @@ class GraphManager:
         self.g.vp['chunk_end_id'] = self.g.new_vertex_property("int")
 
         self.g.ep['score'] = self.g.new_edge_property("float")
-        self.g.ep['certainty'] = self.g.new_edge_property("float")
+        self.g.ep['movement_score'] = self.g.new_edge_property("float")
 
     def add_vertex(self, region):
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
@@ -560,17 +560,41 @@ class GraphManager:
 
         return best_e, best_s
 
-    def strongly_better(self, min_prob=0.9, better_n_times=10):
+    def get_2_best_out_edges_appearance_motion_mix(self, v):
+        best_e = [None, None]
+        best_s = [0, 0]
+        for e in v.out_edges():
+            s = self.g.ep['score'][e] * self.g.ep['movement_score'][e]
+
+            if self.edge_is_chunk(e):
+                continue
+
+            if s > best_s[0]:
+                best_s[1] = best_s[0]
+                best_e[1] = best_e[0]
+
+                best_s[0] = s
+                best_e[0] = e
+            elif s > best_s[1]:
+                best_s[1] = s
+                best_e[1] = e
+
+        return best_e, best_s
+
+    def strongly_better(self, min_prob=0.9, better_n_times=10, score_type='appearance_motion_mix'):
         from itertools import izip
 
         strongly_better_e = []
 
         for v in self.active_v_gen():
-            e, s = self.get_2_best_out_edges(v)
+            if score_type == 'appearance_motion_mix':
+                e, s = self.get_2_best_out_edges_appearance_motion_mix(v)
+            else:
+                e, s = self.get_2_best_out_edges(v)
             if e[0] is not None:
                 if s[0] > min_prob:
                     if e[1] is None or s[1] == 0 or s[0] / s[1] > better_n_times:
-                        strongly_better_e.append(e[0])
+                        strongly_beter_e.append(e[0])
 
         return strongly_better_e
 
@@ -578,3 +602,19 @@ class GraphManager:
         for e in edges:
             self.remove_edge_(e)
 
+
+    def z_case_detection(self, v):
+        if v.out_degree() == 1:
+            v2 = self.out_v(v)
+
+            if v2.in_degree() == 2:
+                vv = None
+                for v_ in v2.in_neighbours():
+                    if v_ != v:
+                        vv = v_
+
+                if vv.out_degree() == 2:
+                    return True
+
+
+        return False

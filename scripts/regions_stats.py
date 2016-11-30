@@ -27,6 +27,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier, IsolationForest
 from sklearn import svm, preprocessing
 from itertools import izip
+from utils.misc import print_progress
 
 from core.graph.solver import Solver
 from core.graph.chunk_manager import ChunkManager
@@ -164,42 +165,25 @@ def display_head_pairs(project):
     display_pairs(region_pairs)
 
 
-def display_regions(project, arr=None, labels=None,
-                    in_f_name='/Users/flipajs/Desktop/temp/clustering/data1.pkl',
-                    f_name='/Users/flipajs/Desktop/temp/clustering/'):
-    print "display regions"
-
-    COLS = 15
-    IT_W = 100
-    IT_H = 100
-
+def display_clustering_results(project, vertices=None, labels=None, cols=15, it_w=100, it_h=100, max_rows=100):
     vm = get_auto_video_manager(project)
 
-    if arr is None:
-        try:
-        # with open('/Users/flipajs/Desktop/temp/clustering/data1.pkl', 'rb') as f:
-            d = hickle.load(in_f_name)
-
-            labels = d['labels']
-            arr = np.array(d['arr'])
-        except:
-            with open(in_f_name) as f:
-                d = pickle.load(f)
-
-                labels = d['labels']
-                arr = np.array(d['arr'])
+    if vertices is None:
+        with open(project.working_directory+'/temp/clustering.pkl') as f:
+            up = pickle.Unpickler(f)
+            _ = up.load()
+            vertices = up.load()
+            vertices = np.array(vertices)
+            labels = up.load()
 
     unique_labels = set(labels)
     for class_, k in enumerate(unique_labels):
         class_member_mask = (labels == k)
-        a_ = arr[class_member_mask]
+        a_ = vertices[class_member_mask]
 
         data = []
         part = 0
         for i, v1 in enumerate(a_):
-            if i%1000 == 0:
-                print i
-
             if v1 is None:
                 continue
 
@@ -212,27 +196,31 @@ def display_regions(project, arr=None, labels=None,
             im = im1[r1.roi().slices()].copy()
             data.append(im)
 
-            if i % (15*300) == 0 and i > 0:
-                collage = create_collage_rows(data, COLS, IT_H, IT_W)
-                cv2.imwrite(f_name + str(class_) + '_' + str(part)+ '.jpg', collage)
+            if (i + 1) % (cols*max_rows) == 0:
+                collage = create_collage_rows(data, cols, it_h, it_w)
+                cv2.imwrite(project.working_directory+'/temp/clustering_' + str(class_) + '_' + str(part)+ '.jpg', collage)
                 part += 1
                 data = []
 
-                print "TEST"
-
-        collage = create_collage_rows(data, COLS, IT_H, IT_W)
-        cv2.imwrite(f_name + str(class_) + '_' + str(part) + '.jpg', collage)
+        collage = create_collage_rows(data, cols, it_h, it_w)
+        cv2.imwrite(project.working_directory+'/temp/clustering_' + str(class_) + '_' + str(part) + '.jpg', collage)
 
 def prepare_pairs(project):
+    print "__________________________"
     print "preparing pairs..."
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
-    labels = d['labels']
-    arr = d['arr']
+    with open(project.working_directory+'/temp/clustering.pkl') as f:
+        up = pickle.Unpickler(f)
+        _ = up.load()
+        vertices = up.load()
+        labels = up.load()
 
-    vs = set(arr[labels == 0])
+    vs = set(vertices[labels == 0])
 
     pairs = []
-    for v in arr[labels == 0]:
+    filtered_v = vertices[labels == 0]
+    v_num = len(filtered_v)
+    i = 0
+    for v in filtered_v:
         r1 = project.gm.region(v)
         best_v = None
         best_d = np.inf
@@ -257,7 +245,19 @@ def prepare_pairs(project):
         if best_v is not None and int(best_v) in vs:
             pairs.append(((int(v), int(best_v)), best_d, second_best_d))
 
-    hickle.dump(pairs, '/Users/flipajs/Desktop/temp/pairs/pairs.pkl')
+        if i % 100 == 0:
+            print_progress(i, v_num)
+
+        i += 1
+
+    print_progress(v_num, v_num)
+    print
+
+    print "saving..."
+    with open(project.working_directory+'/temp/pairs.pkl', 'wb') as f:
+        pickle.dump(pairs, f, -1)
+
+    print "---------------------------------"
 
 def __get_mu_moments_pick(img):
     from core.learning.features import get_mu_moments
@@ -535,17 +535,28 @@ def filter_edges(project, max_dist):
 
 
 def get_max_dist(project):
-    pairs = hickle.load('/Users/flipajs/Desktop/temp/pairs/pairs.pkl')
+    print "____________________________"
+    print "Estimating max distance"
+    with open(project.working_directory+'/temp/pairs.pkl') as f:
+        pairs = pickle.load(f)
 
     max_dist = 0
     max_v1 = None
     max_v2 = None
 
+    num_pairs = len(pairs)
+    i = 0
     for (v1, v2), d1, _ in pairs:
         if d1 > max_dist:
             max_dist = d1
             max_v1 = v1
             max_v2 = v2
+
+        if i % 1000 == 0:
+            print_progress(i, num_pairs)
+
+    print print_progress(num_pairs, num_pairs)
+    print
 
     r1 = project.gm.region(max_v1)
     r2 = project.gm.region(max_v2)
@@ -555,17 +566,16 @@ def get_max_dist(project):
 
     vm = get_auto_video_manager(project)
 
-    im1 = vm.get_frame(r1.frame()).copy()
     im2 = vm.get_frame(r2.frame()).copy()
 
-    draw_points(im1, r1.pts())
     draw_points(im2, r2.pts())
     draw_points(im2, r1.pts(), color=QColor(0, 255, 255, 40))
 
-    im = np.hstack((im1, im2))
-    cv2.imshow('im', im)
-    cv2.waitKey(0)
+    print "MAX DIST: {:.1f}".format(max_dist)
+    cv2.imshow('max distance visualisation', im2)
+    cv2.waitKey(5)
 
+    print "-----------------------------"
     return max_dist
 
 def hist_query(h, edges, it):
@@ -1103,50 +1113,54 @@ def assign_costs(p, frames):
     #     pickle.dump(p.gm.g, f)
 
 
-def display_n_representatives(p, label=0, N=30):
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+def display_cluster_representants(p, N=30):
+    with open(p.working_directory+'/temp/clustering.pkl') as f:
+        up = pickle.Unpickler(f)
+        data = up.load()
+        vertices = up.load()
+        labels = up.load()
 
-    labels = d['labels']
-    arr = np.array(d['arr'])
-    data = d['data']
-
+    labels_set = set(labels)
     scaler = StandardScaler()
 
     X = scaler.fit_transform(data)
 
-    X_ = X[labels==label,:]
-    arr = arr[labels==label]
+    for label in labels_set:
+        X_ = X[labels==label,:]
+        print "displaying cluster {} representants, cluster size: {}".format(label, len(X_))
+        vertices_ = vertices[labels==label]
 
-    from sklearn.cluster import KMeans
-    kmeans = KMeans(n_clusters=N, random_state=0).fit(X_)
+        if len(X_) == 0:
+            print "ZERO SIZE CLUSTER: ", label
+            continue
 
-    labels = kmeans.labels_
-    data = []
+        n_clusters = min(N, len(X_))
 
-    vm = get_auto_video_manager(p)
+        from sklearn.cluster import KMeans
+        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(X_)
 
-    for k in range(N):
-        class_member_mask = (labels == k)
-        a_ = arr[class_member_mask]
+        kmeans_labels = kmeans.labels_
+        data = []
 
-        v1 = a_[0]
+        vm = get_auto_video_manager(p)
 
-        r1 = p.gm.region(v1)
+        for k in range(n_clusters):
+            class_member_mask = (kmeans_labels == k)
+            a_ = vertices_[class_member_mask]
 
-        im1 = vm.get_frame(r1.frame()).copy()
+            v1 = a_[0]
 
-        draw_points(im1, r1.pts())
+            r1 = p.gm.region(v1)
 
-        im = im1[r1.roi().slices()].copy()
-        data.append(im)
+            im1 = vm.get_frame(r1.frame()).copy()
 
-    collage = create_collage_rows(data, 7, 100, 100)
-    cv2.imshow('collage', collage)
-    cv2.waitKey(0)
+            draw_points(im1, r1.pts())
 
-    # with open('/Users/flipajs/Desktop/temp/clustering/sub_0_labels.pkl', 'wb') as f:
-    #     pickle.dump({'data': X_, 'labels': kmeans.labels_, 'arr': arr}, f)
+            im = im1[r1.roi().slices()].copy()
+            data.append(im)
 
+        collage = create_collage_rows(data, 7, 100, 100)
+        cv2.imwrite(p.working_directory+'/temp/cluster_representant_'+str(label)+'.jpg', collage)
 
 def decide_one2one(p):
     solver = Solver(p)
@@ -1168,9 +1182,9 @@ def tracklet_stats(p):
 
 
     print "#chunks: {}".format(len(p.chm))
-    print "LENGTHS mean: {} median: {}, max: {}, sum: {} coverage: {:.2%}".format(np.mean(lengths), np.median(lengths),
+    print "LENGTHS mean: {:.1f} median: {}, max: {}, sum: {} coverage: {:.2%}".format(np.mean(lengths), np.median(lengths),
                                                                                   lengths.max(), np.sum(lengths),
-                                                                                  np.sum(lengths) / (4500 * 6.0))
+                                                                                  np.sum(lengths) / float((p.gm.end_t - p.gm.start_t) * len(p.animals)))
 
 def load_p_checkpoint(p, name=''):
     with open(p.working_directory+'/temp/'+name+'.pkl', 'rb') as f:
@@ -1178,7 +1192,10 @@ def load_p_checkpoint(p, name=''):
         p.gm.g = up.load()
         up.load()
         p.chm = up.load()
-
+        try:
+            p.gm.vertices_in_t = up.load()
+        except:
+            print "vertices_in_t not loaded..."
 
 def save_p_checkpoint(p, name=''):
     with open(p.working_directory+'/temp/'+name+'.pkl', 'wb') as f:
@@ -1186,13 +1203,12 @@ def save_p_checkpoint(p, name=''):
         pic.dump(p.gm.g)
         pic.dump(None)
         pic.dump(p.chm)
+        pic.dump(p.gm.vertices_in_t)
 
-def get_pair_fetures(r1, r2):
+def get_pair_fetures_appearance(r1, r2):
     f = [
         r1.area() - r2.area(),
         r1.area() / float(r2.area()),
-        np.linalg.norm(r1.centroid() - r2.centroid()),
-        r1.theta_ - r2.theta_, # modulo?
         r1.a_ - r2.a_,
         r1.a_ / r2.a_,
         (r1.a_/r1.b_) / (r2.a_/r2.b_),
@@ -1201,13 +1217,24 @@ def get_pair_fetures(r1, r2):
         r1.syy_ - r2.syy_,
         r1.sxy_ - r2.sxy_,
         int(r1.min_intensity_) - int(r2.min_intensity_),
-        r1.get_phi(r2)
     ]
 
     return f
 
+def get_pair_fetures_movement(r1, r2):
+    f = [
+        np.linalg.norm(r1.centroid() - r2.centroid()),
+        r1.theta_ - r2.theta_, # modulo?
+        r1.get_phi(r2),
+        # TODO: dist to prediction if present?
+    ]
+
+    return f
+
+
 def learn_assignments(p):
-    X = []
+    X_appearance = []
+    X_movement = []
 
     # TODO: remove
     chgen = p.chm.chunk_gen()
@@ -1228,350 +1255,493 @@ def learn_assignments(p):
         r1 = gen.next()
 
         for r2 in gen:
-            X.append(get_pair_fetures(r1, r2))
+            X_appearance.append(get_pair_fetures_appearance(r1, r2))
+            X_movement.append(get_pair_fetures_movement(r1, r2))
             pairs.append((r1, r2))
             r1 = r2
 
-    IF = IsolationForest(contamination=0.005)
-    IF.fit(X)
+    # TODO: I think contamination doesn't matter...
+    IF_appearance = IsolationForest(contamination=0.005)
+    IF_appearance.fit(X_appearance)
 
-    with open(p.working_directory + '/temp/isolation_forest.pkl', 'wb') as f:
-        pickle.dump(IF, f)
+    IF_movement = IsolationForest(contamination=0.005)
+    IF_movement.fit(X_movement)
 
-    f = IF.decision_function(X)
-    plt.figure()
-    plt.plot(f)
-    plt.figure()
-    plt.hist(f, 20)
+    with open(p.working_directory + '/temp/isolation_forests.pkl', 'wb') as f:
+        pickle.dump({'movement': IF_movement, 'appearance': IF_appearance}, f)
 
-    y = IF.predict(X)
+    y = IF_appearance.predict(X_appearance)
     print len(y), np.sum(y == -1)
     pairs = np.array(pairs)
 
-    display_pairs(p, pairs[y == -1], 'anomaly_parts', cols=3, item_height=250, item_width=500, border=70)
-    plt.show()
+    display_pairs(p, pairs[y == -1], 'anomaly_parts_appearance', cols=3, item_height=250, item_width=500, border=70)
+
+    y = IF_movement.predict(X_movement)
+    print len(y), np.sum(y == -1)
+    pairs = np.array(pairs)
+
+    display_pairs(p, pairs[y == -1], 'anomaly_parts_movement', cols=3, item_height=250, item_width=500, border=70)
 
 def add_score_to_edges(p):
-    with open(p.working_directory + '/temp/isolation_forest.pkl', 'rb') as f:
-        IF = pickle.load(f)
+    with open(p.working_directory + '/temp/isolation_forests.pkl', 'rb') as f:
+        d = pickle.load(f)
+        IF_appearance = d['appearance']
+        IF_movement = d['movement']
 
     print "#edges: {}".format(p.gm.g.num_edges())
     i = 0
 
-    use_for_learning = 0.02
+    # use_for_learning = 0.02
+    use_for_learning = 0.1
 
-    features = []
+    features_appearance = []
+    features_movement = []
     edges = []
 
+    num_edges = p.gm.g.num_edges()
     for e in p.gm.g.edges():
         i += 1
         if p.gm.edge_is_chunk(e):
             continue
 
-        f = get_pair_fetures(p.gm.region(e.source()), p.gm.region(e.target()))
+        f = get_pair_fetures_appearance(p.gm.region(e.source()), p.gm.region(e.target()))
+        features_appearance.append(f)
 
-        features.append(f)
+        f = get_pair_fetures_movement(p.gm.region(e.source()), p.gm.region(e.target()))
+        features_movement.append(f)
+        
         edges.append(e)
 
         if i % 1000:
-            print "{:.2%}".format(i / float(p.gm.g.num_edges()))
+            print_progress(i, num_edges)
+
+    print_progress(num_edges, num_edges)
 
     print "computing isolation score..."
-    vals = IF.decision_function(features)
+    vals_appearance = IF_appearance.decision_function(features_appearance)
+    vals_movement = IF_movement.decision_function(features_movement)
 
     from sklearn.linear_model import LogisticRegression
-    lr = LogisticRegression()
 
-    part_len = int(len(vals)*use_for_learning)
+    for type in ['appearance', 'movement']:
+        if type == 'appearance':
+            vals = vals_appearance
+        else:
+            vals = vals_movement
 
-    vals_sorted = sorted(vals)
-    part1 = np.array(vals_sorted[:part_len])
-    part2 = np.array(vals_sorted[-part_len:])
+        lr = LogisticRegression()
+        part_len = int(len(vals)*use_for_learning)
 
-    X = np.hstack((part1, part2))
-    print X.shape
-    X.shape = ((X.shape[0], 1))
+        vals_sorted = sorted(vals)
+        part1 = np.array(vals_sorted[:part_len])
+        part2 = np.array(vals_sorted[-part_len:])
 
-    y = np.array([1 if i < len(part1) else 0 for i in range(X.shape[0])])
-    print X.shape, y.shape
-    lr.fit(X, y)
-    probs = lr.predict_proba(np.array(vals).reshape((len(vals), 1)))
+        X = np.hstack((part1, part2))
+        X.shape = ((X.shape[0], 1))
 
-    print "assigning score to edges.."
-    for val, e in izip(probs[:, 0], edges):
-        p.gm.g.ep['score'][e] = val
-    print "saving..."
+        y = np.array([1 if i < len(part1) else 0 for i in range(X.shape[0])])
+        lr.fit(X, y)
+        probs = lr.predict_proba(np.array(vals).reshape((len(vals), 1)))
+
+        print "assigning score to edges.."
+        for val, e in izip(probs[:, 0], edges):
+            if type == 'appearance':
+                p.gm.g.ep['score'][e] = val
+            else:
+                p.gm.g.ep['movement_score'][e] = val
+
+        print "saving..."
 
     save_p_checkpoint(p, 'isolation_score')
 
+def process_project(p):
+    from core.graph.solver2 import Solver2
+    solver2 = Solver2(p)
+
+    # clustering(p, compute_data=False)
+    # display_clustering_results(p)
+    # display_cluster_representants(p)
+    #
+    # prepare_pairs(p)
+    # max_dist = get_max_dist(p)
+    # with open(p.working_directory+'/temp/data.pkl', 'wb') as f:
+    #     pickle.dump({'max_measured_distance': max_dist}, f)
+    #
+    # solver2.prune_distant_connections(max_dist)
+    # save_p_checkpoint(p, 'g_pruned')
+    #
+    # load_p_checkpoint(p, 'g_pruned')
+    # p.chm = ChunkManager()
+    # p.gm.update_nodes_in_t_refs()
+    # decide_one2one(p)
+    # tracklet_stats(p)
+    # save_p_checkpoint(p, 'first_tracklets')
+    #
+    # learn_assignments(p)
+
+    load_p_checkpoint(p, 'first_tracklets')
+
+    p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
+
+    add_score_to_edges(p)
+
+
+
+
+    p.gm.update_nodes_in_t_refs()
+    p.chm.reset_itree(p.gm)
+
+    solver = Solver(p)
+
+    tracklet_stats(p)
+
+    score_type = 'appearance_motion_mix'
+
+    min_prob = 0.8 ** 2
+    better_n_times = 1.5 ** 2
+
+    strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
+    print "strongly better: {}".format(len(strongly_better_e))
+    for e in strongly_better_e:
+        solver.confirm_edges([(e.source(), e.target())])
+
+    tracklet_stats(p)
+
+    strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
+    print "strongly better: {}".format(len(strongly_better_e))
+    for e in strongly_better_e:
+        solver.confirm_edges([(e.source(), e.target())])
+
+    tracklet_stats(p)
+    strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
+    print "strongly better: {}".format(len(strongly_better_e))
+    for e in strongly_better_e:
+        solver.confirm_edges([(e.source(), e.target())])
+
+    tracklet_stats(p)
+    decide_one2one(p)
+
+    # p.gm.update_nodes_in_t_refs()
+    p.chm.reset_itree(p.gm)
+
+    save_p_checkpoint(p, 'strongly_better_filter')
+    tracklet_stats(p)
+
+
+
+def clustering(p, compute_data=True):
+    print "___________________________________"
+    print "Preparing data for clustering..."
+
+    i = 0
+
+    if not compute_data:
+        try:
+            with open(p.working_directory + '/temp/clustering.pkl') as f:
+                up = pickle.Unpickler(f)
+                data = up.load()
+                vertices = up.load()
+        except:
+            compute_data = True
+
+    if compute_data:
+        r_data = []
+        vertices = []
+
+        num_v = p.gm.g.num_vertices()
+        for v in p.gm.g.vertices():
+            r = p.gm.region(v)
+
+            from utils.drawing.points import draw_points_crop_binary
+            bimg = draw_points_crop_binary(r.pts())
+            hu_m = get_hu_moments(np.asarray(bimg, dtype=np.uint8))
+            r_data.append([r.area(), r.a_, r.b_, hu_m[0], hu_m[1]])
+            vertices.append(int(v))
+
+            i += 1
+            if i % 100 == 0:
+                print_progress(i, num_v)
+
+        data = np.array(r_data)
+        vertices=np.array(vertices)
+
+        print_progress(num_v, num_v)
+        print
+
+    # label_names = np.array(['area', 'major axis', 'minor axis', 'hu1', 'hu2'])
+
+    min_samples = max(5, int(len(data) * 0.001))
+    eps = 0.1
+
+    print "Normalising data..."
+    X = StandardScaler().fit_transform(data)
+    print "Clustering using DBSCAN... min samples: {}, eps: {}".format(min_samples, eps)
+
+    db = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
+    # core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+    # core_samples_mask[db.core_sample_indices_] = True
+    labels = db.labels_
+
+    labels_set = set(labels)
+    n_clusters_ = len(labels_set) - (1 if -1 in labels_set else 0)
+
+    print('Estimated number of clusters: %d' % n_clusters_)
+
+    for i in labels_set:
+        print "\tLabel: {}, #{}".format(i, np.sum(labels == i))
+
+    # plotNdto3d(data, labels, core_samples_mask, [0, 1, 2], label_names[[0, 1, 2]])
+    # plotNdto3d(data, labels, core_samples_mask, [0, 2, 3], label_names[[0, 2, 3]])
+    # plotNdto3d(data, labels, core_samples_mask, [0, 2, 4], label_names[[0, 2, 4]])
+
+    print "saving results"
+    with open(p.working_directory+'/temp/clustering.pkl', 'wb') as f:
+        pic = pickle.Pickler(f)
+        pic.dump(data)
+        pic.dump(vertices)
+        pic.dump(labels)
+
+    print "clustering part finished"
+    print "_________________________________"
+
 
 if __name__ == '__main__':
-    FILTER_EDGES = False
-    DO_DECIDEONE2ONE = False
-    LEARN_ASSIGNMENTS = False
-
-    FILTER_EDGES2 = False
-
-
-    pipeline = [
-        ('', '')
-
-    ]
-
-
     p = Project()
+    # p.load('/Users/flipajs/Documents/wd/zebrafish_playground')
     p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
-
-    # display_n_representatives(p, label=-1, N=50)
-
     from core.region.region_manager import RegionManager
-    p.rm = RegionManager('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp', db_name='part0_rm.sqlite3')
-    with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0.pkl', 'rb') as f:
+
+    p.rm = RegionManager(p.working_directory + '/temp', db_name='part0_rm.sqlite3')
+    with open(p.working_directory + '/temp/part0.pkl', 'rb') as f:
         up = pickle.Unpickler(f)
         g_ = up.load()
 
     p.gm.g = g_
     p.gm.rm = p.rm
 
-    max_dist = 94.59
-    # max_dist = get_max_dist(p)
-    print "MAX DIST: {}".format(max_dist)
+    # process_project(p)
 
-    if False:
-        if FILTER_EDGES:
-            filter_edges(p, max_dist)
-        else:
-            with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_modified.pkl', 'rb') as f:
-                p.gm.g = pickle.load(f)
+    if True:
+        FILTER_EDGES = False
+        DO_DECIDEONE2ONE = False
+        LEARN_ASSIGNMENTS = False
 
+        FILTER_EDGES2 = False
+
+        # p = Project()
+        # p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
+
+        # display_cluster_representants(p, label=-1, N=50)
+
+
+        max_dist = 94.59
+        # max_dist = get_max_dist(p)
+        print "MAX DIST: {}".format(max_dist)
+
+        if False:
+            if FILTER_EDGES:
+                filter_edges(p, max_dist)
+            else:
+                with open(p.working_directory+'/temp/part0_modified.pkl', 'rb') as f:
+                    p.gm.g = pickle.load(f)
+
+                p.gm.update_nodes_in_t_refs()
+
+            if DO_DECIDEONE2ONE:
+                p.chm = ChunkManager()
+                decide_one2one(p)
+                save_p_checkpoint(p, 'part0_1to1_tracklets')
+                tracklet_stats(p)
+            else:
+                load_p_checkpoint(p, name='part0_1to1_tracklets')
+
+            if LEARN_ASSIGNMENTS:
+                learn_assignments(p)
+
+            p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
+
+            add_score_to_edges(p)
+        elif False:
+            load_p_checkpoint(p, 'isolation_score')
             p.gm.update_nodes_in_t_refs()
 
-        if DO_DECIDEONE2ONE:
-            p.chm = ChunkManager()
+            solver = Solver(p)
+
+            edges = p.gm.edges_with_score_in_range(lower_bound=0.1)
+            solver.confirm_edges([(e.source(), e.target()) for e in edges])
+            tracklet_stats(p)
             decide_one2one(p)
-            save_p_checkpoint(p, 'part0_1to1_tracklets')
+
+            edges = p.gm.edges_with_score_in_range(upper_bound=-0.1)
+            p.gm.remove_edges(edges)
+
+            # save_p_checkpoint(p, 'removed_edges')
+
+            tracklet_stats(p)
+            decide_one2one(p)
+            save_p_checkpoint(p, 'part0_1to1_tracklets2')
             tracklet_stats(p)
         else:
-            load_p_checkpoint(p, name='part0_1to1_tracklets')
+            load_p_checkpoint(p, 'isolation_score')
+            p.gm.update_nodes_in_t_refs()
+            p.chm.reset_itree(p.gm)
 
-        if LEARN_ASSIGNMENTS:
-            learn_assignments(p)
+            # TODO: deal with noise...
+            d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+            labels = d['labels']
+            vertices = d['arr']
 
-        add_score_to_edges(p)
-    elif False:
-        load_p_checkpoint(p, 'isolation_score')
-        p.gm.update_nodes_in_t_refs()
-
-        solver = Solver(p)
-
-        edges = p.gm.edges_with_score_in_range(lower_bound=0.1)
-        solver.confirm_edges([(e.source(), e.target()) for e in edges])
-        tracklet_stats(p)
-        decide_one2one(p)
-
-        edges = p.gm.edges_with_score_in_range(upper_bound=-0.1)
-        p.gm.remove_edges(edges)
-
-        # save_p_checkpoint(p, 'removed_edges')
-
-        tracklet_stats(p)
-        decide_one2one(p)
-        save_p_checkpoint(p, 'part0_1to1_tracklets2')
-        tracklet_stats(p)
-    else:
-        load_p_checkpoint(p, 'isolation_score')
-        p.gm.update_nodes_in_t_refs()
-        p.chm.reset_itree(p.gm)
-
-        solver = Solver(p)
-
-        tracklet_stats(p)
-
-        strongly_better_e = p.gm.strongly_better(min_prob=0.8, better_n_times=1.5)
-        print "strongly better: {}".format(len(strongly_better_e))
-        for e in strongly_better_e:
-            solver.confirm_edges([(e.source(), e.target())])
-
-        tracklet_stats(p)
-
-        strongly_better_e = p.gm.strongly_better(min_prob=0.8, better_n_times=1.5)
-        print "strongly better: {}".format(len(strongly_better_e))
-        for e in strongly_better_e:
-            solver.confirm_edges([(e.source(), e.target())])
-
-        tracklet_stats(p)
-        strongly_better_e = p.gm.strongly_better(min_prob=0.8, better_n_times=1.5)
-        print "strongly better: {}".format(len(strongly_better_e))
-        for e in strongly_better_e:
-            solver.confirm_edges([(e.source(), e.target())])
-
-        tracklet_stats(p)
-        decide_one2one(p)
-
-        # p.gm.update_nodes_in_t_refs()
-        p.chm.reset_itree(p.gm)
-
-        save_p_checkpoint(p, 'strongly_better_filter')
-        tracklet_stats(p)
+            for l in [1, 2, 3]:
+                for v in vertices[labels == l]:
+                    p.gm.remove_vertex(v, disassembly=False)
 
 
-    if False:
-        # prepare_pairs(p)
-        # display_head_pairs(p)
+            solver = Solver(p)
 
-        # head_detector_features(p)
-        # head_detector_classify(p)
+            tracklet_stats(p)
 
-        # filter_edges(p, max_dist)
+            score_type = 'appearance_motion_mix'
 
-        # get_assignment_histogram(p)
+            min_prob = 0.8**2
+            better_n_times = 1.5**2
 
-        # get_movement_histogram(p)
-        # observe_cases(p)
-        # observe_cases(p, type='case_n')
+            strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
+            print "strongly better: {}".format(len(strongly_better_e))
+            for e in strongly_better_e:
+                solver.confirm_edges([(e.source(), e.target())])
 
-        # singles_classifier(p)
+            tracklet_stats(p)
 
-        assign_costs(p, set(range(1000)))
-        solver = Solver(p)
-        p.chm = ChunkManager()
+            strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
+            print "strongly better: {}".format(len(strongly_better_e))
+            for e in strongly_better_e:
+                solver.confirm_edges([(e.source(), e.target())])
 
-        THRESH = 100.
+            tracklet_stats(p)
+            strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
+            print "strongly better: {}".format(len(strongly_better_e))
+            for e in strongly_better_e:
+                solver.confirm_edges([(e.source(), e.target())])
 
-        confirm_later = []
-        for v in p.gm.g.vertices():
-            if v.out_degree() == 0:
-                continue
+            tracklet_stats(p)
+            decide_one2one(p)
 
-            r = p.gm.region(v)
-            if r.frame() > 1000:
-                continue
+            # p.gm.update_nodes_in_t_refs()
+            p.chm.reset_itree(p.gm)
 
-            if p.gm.one2one_check(v):
-                e = p.gm.out_e(v)
-                confirm_later.append((e.source(), e.target()))
-            else:
-                pairs = []
-                for e in v.out_edges():
-                    pairs.append((e, p.gm.g.ep['score'][e]))
-
-                pairs = sorted(pairs, key=lambda x: -x[1])
-                if len(pairs) == 1 or pairs[0][1] / pairs[1][1] > THRESH:
-                    best_s = 1
-                    for e in pairs[0][0].target().in_edges():
-                        if e == pairs[0][0]:
-                            continue
-
-                        s = p.gm.g.ep['score'][e]
-                        if s > best_s:
-                            best_s = s
-
-                    if pairs[0][1] / best_s > THRESH:
-                        confirm_later.append((pairs[0][0].source(), pairs[0][0].target()))
-
-        solver.confirm_edges(confirm_later)
-
-        p.chm.reset_itree(p.gm)
-
-        with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_tracklets_expanded.pkl', 'wb') as f:
-            pic = pickle.Pickler(f)
-            pic.dump(p.gm.g)
-            pic.dump([])
-            pic.dump(p.chm)
+            save_p_checkpoint(p, 'strongly_better_filter')
+            tracklet_stats(p)
 
 
-        # simple_tracklets(p)
-        # solve_nearby_passings(p)
-
-        # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_tracklets.pkl', 'rb') as f:
-        #     up = pickle.Unpickler(f)
-        #     g = up.load()
-        #     _ = up.load()
-        #     chm = up.load()
-        #
-        # p.chm = chm
-        # p.gm.g = g
-        # p.gm.update_nodes_in_t_refs()
-        #
-        # lengths = np.array([t.length() for t in p.chm.chunk_gen()])
-        #
-        # print "#chunks: {}".format(len(p.chm))
-        # print "LENGTHS mean: {} median: {}, max: {}, sum: {} coverage: {:.2%}".format(np.mean(lengths), np.median(lengths),
-        #                                                                               lengths.max(), np.sum(lengths), np.sum(lengths)/(4500*6.0))
-        #
-        # # get_movement_histogram(p)
-        #
-        # # expand_based_on_movement_model(p)
-        # #
-        # # lengths = np.array([t.length() for t in p.chm.chunk_gen()])
-        # #
-        # # print "#chunks: {}".format(len(p.chm))
-        # # print "LENGTHS mean: {} median: {}, max: {}, sum: {} coverage: {:.2%}".format(np.mean(lengths), np.median(lengths),
-        # #                                                                               lengths.max(), np.sum(lengths),
-        # #                                                                               np.sum(lengths) / (4500 * 6.0))
-        #
-        # expand_based_on_movement_model(p)
-        # add_single_chunks(p, set(range(100)))
-
-        p.chm.reset_itree(p.gm)
-        # TODO: hack... no check for 1 to 1 assignment
-        # build_tracklets_from_others(p)
-
-
-        tracklet_stats(p)
-
-        # plt.hist(lengths, bins=500)
-        # plt.show()
-
-
-        i = 0
         if False:
-            arr = []
-            data = []
-            areas = []
-            major_axes = []
+            # prepare_pairs(p)
+            # display_head_pairs(p)
 
-            r_data = []
-            r_arr = []
+            # head_detector_features(p)
+            # head_detector_classify(p)
 
-            second_dists = []
+            # filter_edges(p, max_dist)
 
+            # get_assignment_histogram(p)
+
+            # get_movement_histogram(p)
+            # observe_cases(p)
+            # observe_cases(p, type='case_n')
+
+            # singles_classifier(p)
+
+            assign_costs(p, set(range(1000)))
+            solver = Solver(p)
+            p.chm = ChunkManager()
+
+            THRESH = 100.
+
+            confirm_later = []
             for v in p.gm.g.vertices():
+                if v.out_degree() == 0:
+                    continue
+
                 r = p.gm.region(v)
+                if r.frame() > 1000:
+                    continue
 
-                from utils.drawing.points import draw_points_crop_binary
-                bimg = draw_points_crop_binary(r.pts())
-                hu_m = get_hu_moments(np.asarray(bimg, dtype=np.uint8))
-                r_data.append([r.area(), r.a_, r.b_, hu_m[0], hu_m[1]])
-                r_arr.append(int(v))
+                if p.gm.one2one_check(v):
+                    e = p.gm.out_e(v)
+                    confirm_later.append((e.source(), e.target()))
+                else:
+                    pairs = []
+                    for e in v.out_edges():
+                        pairs.append((e, p.gm.g.ep['score'][e]))
 
-                i += 1
+                    pairs = sorted(pairs, key=lambda x: -x[1])
+                    if len(pairs) == 1 or pairs[0][1] / pairs[1][1] > THRESH:
+                        best_s = 1
+                        for e in pairs[0][0].target().in_edges():
+                            if e == pairs[0][0]:
+                                continue
 
-            data = np.array(data)
-            label_names = np.array(['area', 'area_t1 - area_t2', 'best distance', 'second best distance', 'axis ratio'])
+                            s = p.gm.g.ep['score'][e]
+                            if s > best_s:
+                                best_s = s
 
-            data = np.array(r_data)
-            label_names = np.array(['area', 'major axis', 'minor axis', 'hu1', 'hu2'])
+                        if pairs[0][1] / best_s > THRESH:
+                            confirm_later.append((pairs[0][0].source(), pairs[0][0].target()))
 
-            arr = np.array(r_arr)
+            solver.confirm_edges(confirm_later)
 
-            X = StandardScaler().fit_transform(data)
-            db = DBSCAN(eps=0.1, min_samples=int(len(data)*0.001)).fit(X)
-            core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-            core_samples_mask[db.core_sample_indices_] = True
-            labels = db.labels_
+            p.chm.reset_itree(p.gm)
 
-            n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+            with open(p.working_directory+'/temp/part0_tracklets_expanded.pkl', 'wb') as f:
+                pic = pickle.Pickler(f)
+                pic.dump(p.gm.g)
+                pic.dump([])
+                pic.dump(p.chm)
 
-            print('Estimated number of clusters: %d' % n_clusters_)
 
-            # plotNdto3d(data, labels, core_samples_mask, [0, 1, 2], label_names[[0, 1, 2]])
-            # plotNdto3d(data, labels, core_samples_mask, [0, 2, 3], label_names[[0, 2, 3]])
-            # plotNdto3d(data, labels, core_samples_mask, [0, 2, 4], label_names[[0, 2, 4]])
+            # simple_tracklets(p)
+            # solve_nearby_passings(p)
 
-            # with open('/Users/flipajs/Desktop/temp/clustering/data1.pkl', 'wb') as f:
-            hickle.dump({'arr': arr, 'labels': labels, 'data': data}, '/Users/flipajs/Desktop/temp/clustering/labels.pkl')
-                # pickle.dump({'data': data, 'arr': arr, 'labels': labels, 'core_samples_mask': core_samples_mask}, f)
+            # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_tracklets.pkl', 'rb') as f:
+            #     up = pickle.Unpickler(f)
+            #     g = up.load()
+            #     _ = up.load()
+            #     chm = up.load()
+            #
+            # p.chm = chm
+            # p.gm.g = g
+            # p.gm.update_nodes_in_t_refs()
+            #
+            # lengths = np.array([t.length() for t in p.chm.chunk_gen()])
+            #
+            # print "#chunks: {}".format(len(p.chm))
+            # print "LENGTHS mean: {} median: {}, max: {}, sum: {} coverage: {:.2%}".format(np.mean(lengths), np.median(lengths),
+            #                                                                               lengths.max(), np.sum(lengths), np.sum(lengths)/(4500*6.0))
+            #
+            # # get_movement_histogram(p)
+            #
+            # # expand_based_on_movement_model(p)
+            # #
+            # # lengths = np.array([t.length() for t in p.chm.chunk_gen()])
+            # #
+            # # print "#chunks: {}".format(len(p.chm))
+            # # print "LENGTHS mean: {} median: {}, max: {}, sum: {} coverage: {:.2%}".format(np.mean(lengths), np.median(lengths),
+            # #                                                                               lengths.max(), np.sum(lengths),
+            # #                                                                               np.sum(lengths) / (4500 * 6.0))
+            #
+            # expand_based_on_movement_model(p)
+            # add_single_chunks(p, set(range(100)))
 
-        # display_regions(p, arr, labels)
-        # plt.show()
+            p.chm.reset_itree(p.gm)
+            # TODO: hack... no check for 1 to 1 assignment
+            # build_tracklets_from_others(p)
+
+
+            tracklet_stats(p)
+
+            # plt.hist(lengths, bins=500)
+            # plt.show()
+
+            if False:
+                clustering()
+            # display_clustering_results(p, arr, labels)
+            # plt.show()

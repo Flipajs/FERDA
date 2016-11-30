@@ -12,7 +12,7 @@ class LineType:
 
 class GraphLine:
 
-    def __init__(self, id, region_from, region_to, type=LineType.LINE, sureness=0, color=QtGui.QColor(0, 0, 0, 120)):
+    def __init__(self, id, region_from, region_to, type=LineType.LINE, sureness=0, color=QtGui.QColor(0, 0, 0, 120), appearance_score=0, movement_score=0):
         self.id = id
         self.region_from = region_from
         self.region_to = region_to
@@ -20,6 +20,8 @@ class GraphLine:
         self.set_type(type)
         self.sureness = sureness
         self.color = color
+        self.appearance_score = appearance_score
+        self.movement_score = movement_score
 
     def __hash__(self):
         if self.type == LineType.TRACKLET:

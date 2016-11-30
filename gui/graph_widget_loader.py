@@ -128,7 +128,13 @@ class GraphWidgetLoader:
             r2 = self.project.gm.region(target)
             source_start_id = self.graph_manager.g.vp["chunk_start_id"][source]
             target_end_id = self.graph_manager.g.vp["chunk_end_id"][target]
-            sureness = self.graph_manager.g.ep['score'][edge]
+
+            appaearance_score = self.graph_manager.g.ep['score'][edge]
+            try:
+                movement_score = self.graph_manager.g.ep['movement_score'][edge]
+            except:
+                movement_score = 0
+
 
             if source_start_id == target_end_id and source_start_id != 0:
                 type_of_line = LineType.TRACKLET
@@ -140,9 +146,9 @@ class GraphWidgetLoader:
             if type_of_line == LineType.TRACKLET:
                 tracklet = self.project.chm[source_start_id]
                 c = self.assign_color(tracklet)
-                line = GraphLine(tracklet.id(), r1, r2, type_of_line, sureness, c)
+                line = GraphLine(tracklet.id(), r1, r2, type_of_line, color=c)
             else:
-                line = GraphLine(0, r1, r2, type_of_line, sureness)
+                line = GraphLine(0, r1, r2, type_of_line, appearance_score=appaearance_score, movement_score=movement_score)
 
             # self.chunks_region_chunks[line] = RegionChunk(self.project.chm[source_start_id], self.graph_manager,
             #                                                    self.region_manager)
@@ -172,7 +178,7 @@ class GraphWidgetLoader:
                 str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info, str(n))
 
     def get_edge_info(self, edge):
-        return "Type = {0}\nSureness = {1}\nTracklet id: {2}".format(edge.type, edge.sureness, edge.id)
+        return "Type = {}\nAppearance score = {}\nMovement score={}\nScore product={}\nTracklet id: {}".format(edge.type, edge.appearance_score, edge.movement_score, edge.appearance_score * edge.movement_score, edge.id)
 
     def get_widget(self, frames=None, show_tracklet_callback=None):
         self.prepare_vertices(frames)

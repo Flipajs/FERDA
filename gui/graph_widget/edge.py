@@ -145,11 +145,14 @@ class LineGraphical(EdgeGraphical):
 
     def paint(self, painter, style_option_graphics_item, widget=None):
         # TODO: remove in future...
-        s = self.graph_line.sureness
+        sa = self.graph_line.appearance_score
+        sm = self.graph_line.movement_score
+
+        s = sa*sm
 
         red = 0
         green = 0
-        if self.graph_line.sureness < 0.5:
+        if s < 0.5:
             red = int(255 - (s*255*2))
         else:
             green = int((s-0.5) * 255 * 2)

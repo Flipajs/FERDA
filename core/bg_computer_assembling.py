@@ -211,7 +211,7 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
 
         # ep['score'] is assigned in add_edge call
         new_e = new_gm.add_edge(v1_new, v2_new, old_score)
-        new_gm.g.ep['certainty'][new_e] = old_g.ep['certainty'][old_e]
+        new_gm.g.ep['movement_score'][new_e] = old_g.ep['movement_score'][old_e]
 
     # chunk id = 0 means no chunk assigned
     chunks_map = {0: 0}
