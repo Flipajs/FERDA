@@ -117,6 +117,12 @@ class ResultsWidget(QtGui.QWidget):
 
         self.add_gt_markers_b = QtGui.QPushButton('add GT markers')
         self.add_gt_markers_b.clicked.connect(self.__add_gt_markers)
+
+        self.gt_duplicate_from_prev_frame = QtGui.QAction('duplicat gt from previous frame', self)
+        self.gt_duplicate_from_prev_frame.triggered.connect(self.__duplicate_gt)
+        self.gt_duplicate_from_prev_frame.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_D))
+        self.addAction(self.gt_duplicate_from_prev_frame)
+
         self.gt_box.layout().addWidget(self.add_gt_markers_b)
 
         # self.add_gt_markers_action = QtGui.QAction('add gt markers', self)
@@ -536,20 +542,23 @@ class ResultsWidget(QtGui.QWidget):
         return new_
 
     def __save_gt(self):
-        if self._gt is None:
-            print "No GT file opened"
-            return
+        self._gt.save(self.project.GT_file)
+        print "GT saved..."
 
-        frame = self.video_player.current_frame()
-        self._gt.setdefault(frame, [None]*len(self.project.animals))
-
-        for it in self._gt_markers.itervalues():
-            self._gt[frame][it.id] = (it.centerPos().y(), it.centerPos().x())
-
-        with open(self.project.GT_file, 'wb') as f:
-            pickle.dump(self._gt, f)
-
-        print self._gt[frame]
+        # if self._gt is None:
+        #     print "No GT file opened"
+        #     return
+        #
+        # frame = self.video_player.current_frame()
+        # self._gt.setdefault(frame, [None]*len(self.project.animals))
+        #
+        # for it in self._gt_markers.itervalues():
+        #     self._gt[frame][it.id] = (it.centerPos().y(), it.centerPos().x())
+        #
+        # with open(self.project.GT_file, 'wb') as f:
+        #     pickle.dump(self._gt, f)
+        #
+        # print self._gt[frame]
 
     def __auto_gt_assignment(self):
         frame = self.video_player.current_frame()
@@ -1004,11 +1013,15 @@ class ResultsWidget(QtGui.QWidget):
         self.video_player.redraw_visualisations()
 
     def _gt_marker_clicked(self, id_):
-        self.decide_tracklet_button.setDisabled(False)
-        self._set_active_tracklet_id(id_)
-        self.highlight_tracklet_input.setText(str(id_))
+        frame = self.video_player.current_frame()
+        y, x = self._gt_markers[id_].centerPos().y(), self._gt_markers[id_].centerPos().x()
+        self._gt.set_position(frame, id_, y, x)
 
-        self._update_tracklet_info()
+        # self.decide_tracklet_button.setDisabled(False)
+        # self._set_active_tracklet_id(id_)
+        # self.highlight_tracklet_input.setText(str(id_))
+
+        # self._update_tracklet_info()
 
     def add_data(self, solver, just_around_frame=-1, margin=1000):
         self.solver = solver
@@ -1444,6 +1457,20 @@ class ResultsWidget(QtGui.QWidget):
         # TODO: wait
 
         pass
+
+    def __duplicate_gt(self):
+        frame = self.video_player.current_frame()
+        prev_frame = frame - 1
+
+        id_ = 0
+        for a, b, in zip(self._gt.get_clear_positions(prev_frame), self._gt.get_clear_positions(frame)):
+            if b is None and a is not None:
+                self._gt.set_position(frame, id_, a[0], a[1])
+
+            id_ += 1
+
+        self.video_player.redraw_visualisations()
+
 
     def show_movement_model(self):
         from scripts.regions_stats import hist_query, get_movement_descriptor_

@@ -594,7 +594,7 @@ class GraphManager:
             if e[0] is not None:
                 if s[0] > min_prob:
                     if e[1] is None or s[1] == 0 or s[0] / s[1] > better_n_times:
-                        strongly_beter_e.append(e[0])
+                        strongly_better_e.append(e[0])
 
         return strongly_better_e
 
