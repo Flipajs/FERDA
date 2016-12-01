@@ -123,6 +123,11 @@ class ResultsWidget(QtGui.QWidget):
         self.gt_duplicate_from_prev_frame.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_D))
         self.addAction(self.gt_duplicate_from_prev_frame)
 
+        self.big_gt_duplicate_from_prev_frame = QtGui.QAction('duplicat gt from previous frame', self)
+        self.big_gt_duplicate_from_prev_frame.triggered.connect(partial(self.__duplicate_gt, 60))
+        self.big_gt_duplicate_from_prev_frame.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_D))
+        self.addAction(self.big_gt_duplicate_from_prev_frame)
+
         self.gt_box.layout().addWidget(self.add_gt_markers_b)
 
         # self.add_gt_markers_action = QtGui.QAction('add gt markers', self)
@@ -1458,16 +1463,30 @@ class ResultsWidget(QtGui.QWidget):
 
         pass
 
-    def __duplicate_gt(self):
+    def __duplicate_gt(self, max_history=1):
         frame = self.video_player.current_frame()
-        prev_frame = frame - 1
 
-        id_ = 0
-        for a, b, in zip(self._gt.get_clear_positions(prev_frame), self._gt.get_clear_positions(frame)):
-            if b is None and a is not None:
-                self._gt.set_position(frame, id_, a[0], a[1])
+        missing_in_current_frame = []
+        found_in_frame = {}
+        for i, a in enumerate(self._gt.get_clear_positions(frame)):
+            if a is None:
+                missing_in_current_frame.append(i)
+                found_in_frame[i] = -1
+            else:
+                found_in_frame[i] = frame + 1
 
-            id_ += 1
+        gt_pos = {}
+        for prev_frame in reversed(range(max(0, frame-max_history), frame)):
+            for i, a in enumerate(self._gt.get_clear_positions(prev_frame)):
+                if a is not None:
+                    if found_in_frame[i] < 0:
+                        found_in_frame[i] = prev_frame
+                        gt_pos[i] = a
+
+        for id_ in range(len(self.project.animals)):
+            if id_ in gt_pos:
+                for f in range(found_in_frame[id_], frame + 1):
+                    self._gt.set_position(f, id_, gt_pos[id_][0], gt_pos[id_][1])
 
         self.video_player.redraw_visualisations()
 

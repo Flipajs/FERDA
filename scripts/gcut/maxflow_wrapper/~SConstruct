@@ -1,0 +1,14 @@
+# This builder takes the cython source code and generates c code.
+cythonBuilder = Builder(action ='cython $SOURCE --cplus', suffix = '.cpp', src_suffix = '.pyx')
+
+# Setup the compilation environment.
+env = Environment(BUILDERS={'Py2C':cythonBuilder}, CCFLAGS=' -fPIC -O2 -I/usr/include/python2.7/ -I/usr/include', LIBPATH='/usr/lib/')
+
+# Method that calls routines neccessary to create shared library.
+def cythonPseudoBuilder(env,source):
+	cCode = env.Py2C(source)
+	env.SharedLibrary(source,cCode,LIBPREFIX='')
+
+env.AddMethod(cythonPseudoBuilder,'Cython')
+
+env.Cython('cyRect')

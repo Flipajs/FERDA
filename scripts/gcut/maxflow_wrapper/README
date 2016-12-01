@@ -1,0 +1,7 @@
+python wrapper for Kolmogrov's maxflow algorithm (http://pub.ist.ac.at/~vnk/software.html).
+
+to run the main.cpp (test programm)
+g++ main.cpp ../maxflow-v3.03.src/graph.o ../maxflow-v3.03.src/maxflow.o maxflow.o
+
+
+env CC=g++ python setup.py build_ext --inplace
