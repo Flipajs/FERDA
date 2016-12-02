@@ -259,6 +259,7 @@ def prepare_pairs(project):
 
     print "---------------------------------"
 
+
 def __get_mu_moments_pick(img):
     from core.learning.features import get_mu_moments
     nu = get_mu_moments(img)
@@ -566,6 +567,7 @@ def get_max_dist(project):
 
     vm = get_auto_video_manager(project)
 
+    im1 = vm.get_frame(r1.frame()).copy()
     im2 = vm.get_frame(r2.frame()).copy()
 
     draw_points(im2, r2.pts())
@@ -573,6 +575,72 @@ def get_max_dist(project):
 
     print "MAX DIST: {:.1f}".format(max_dist)
     cv2.imshow('max distance visualisation', im2)
+    cv2.imshow('im1', im1)
+    cv2.waitKey(5)
+
+    print "-----------------------------"
+    return max_dist
+
+def get_max_dist2(project):
+    print "____________________________"
+    print "Estimating max distance"
+
+    max_dist = 0
+    max_v1 = None
+    max_v2 = None
+
+    i = 0
+
+    reg = project.gm.region
+
+    safe_dists = []
+    pairs = []
+
+    num_v = project.gm.g.num_vertices()
+    for v in project.gm.g.vertices():
+        if v.out_degree() < 2:
+            continue
+
+        best_e, _ = project.gm.get_2_best_out_edges(v)
+
+        distances = []
+        for e in best_e:
+            d = np.linalg.norm(reg(e.source()).centroid() - reg(e.target()).centroid())
+            distances.append(d)
+
+        if distances[1] / distances[0] > 2:
+            safe_dists.append(distances[0])
+            pairs.append((best_e[0].source(), best_e[0].target()))
+
+        if i % 1000 == 0:
+            print_progress(i, num_v)
+
+        i += 1
+
+    print print_progress(num_v, num_v)
+    print
+
+    id_ = np.argmax(safe_dists)
+    max_dist = safe_dists[id_]
+    max_v1, max_v2 = pairs[id_]
+
+    r1 = project.gm.region(max_v1)
+    r2 = project.gm.region(max_v2)
+
+    if r1.frame() + 1 != r2.frame():
+        print "FRAMES? ", r1.frame(), r2.frame()
+
+    vm = get_auto_video_manager(project)
+
+    im1 = vm.get_frame(r1.frame()).copy()
+    im2 = vm.get_frame(r2.frame()).copy()
+
+    draw_points(im2, r2.pts())
+    draw_points(im2, r1.pts(), color=QColor(0, 255, 255, 40))
+
+    print "MAX DIST: {:.1f}".format(max_dist)
+    cv2.imshow('max distance visualisation', im2)
+    cv2.imshow('im1', im1)
     cv2.waitKey(5)
 
     print "-----------------------------"
@@ -1361,32 +1429,29 @@ def process_project(p):
     # clustering(p, compute_data=False)
     # display_clustering_results(p)
     # display_cluster_representants(p)
-    #
+
     # prepare_pairs(p)
-    # max_dist = get_max_dist(p)
-    # with open(p.working_directory+'/temp/data.pkl', 'wb') as f:
-    #     pickle.dump({'max_measured_distance': max_dist}, f)
-    #
-    # solver2.prune_distant_connections(max_dist)
-    # save_p_checkpoint(p, 'g_pruned')
-    #
-    # load_p_checkpoint(p, 'g_pruned')
-    # p.chm = ChunkManager()
-    # p.gm.update_nodes_in_t_refs()
-    # decide_one2one(p)
-    # tracklet_stats(p)
-    # save_p_checkpoint(p, 'first_tracklets')
-    #
-    # learn_assignments(p)
+    max_dist = get_max_dist2(p)
+    with open(p.working_directory+'/temp/data.pkl', 'wb') as f:
+        pickle.dump({'max_measured_distance': max_dist}, f)
+
+    solver2.prune_distant_connections(max_dist)
+    save_p_checkpoint(p, 'g_pruned')
+
+    load_p_checkpoint(p, 'g_pruned')
+    p.chm = ChunkManager()
+    p.gm.update_nodes_in_t_refs()
+    decide_one2one(p)
+    tracklet_stats(p)
+    save_p_checkpoint(p, 'first_tracklets')
+
+    learn_assignments(p)
 
     load_p_checkpoint(p, 'first_tracklets')
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
 
     add_score_to_edges(p)
-
-
-
 
     p.gm.update_nodes_in_t_refs()
     p.chm.reset_itree(p.gm)
@@ -1509,6 +1574,8 @@ if __name__ == '__main__':
     p = Project()
     # p.load('/Users/flipajs/Documents/wd/zebrafish_playground')
     p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
+    # p.load('/Users/flipajs/Documents/wd/FERDA/Sowbug3')
+    # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_int_limit')
     from core.region.region_manager import RegionManager
 
     p.rm = RegionManager(p.working_directory + '/temp', db_name='part0_rm.sqlite3')
@@ -1602,7 +1669,7 @@ if __name__ == '__main__':
 
             score_type = 'appearance_motion_mix'
 
-            min_prob = 0.8**2
+            min_prob = 0.5**2
             better_n_times = 1.5**2
 
             strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)

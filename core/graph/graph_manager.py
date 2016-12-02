@@ -618,3 +618,31 @@ class GraphManager:
 
 
         return False
+
+    def regions_in_t(self, frame):
+        from core.graph.region_chunk import RegionChunk
+        regions = set()
+
+        for t in self.project.chm.chunks_in_frame(frame):
+            rch = RegionChunk(t, self, self.project.rm)
+            regions.add(rch.region_in_t(frame))
+
+        for v in self.vertices_in_t[frame]:
+            regions.add(self.region(v))
+
+        return list(regions)
+
+    def regions_and_t_ids_in_t(self, frame):
+        from core.graph.region_chunk import RegionChunk
+        regions = set()
+
+        for t in self.project.chm.chunks_in_frame(frame):
+            rch = RegionChunk(t, self, self.project.rm)
+            regions.add((rch.region_in_t(frame), t.id()))
+
+        return list(regions)
+
+
+
+
+

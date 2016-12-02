@@ -247,6 +247,24 @@ class Region():
 
         return phi
 
+    def is_inside(self, pt, tolerance=0):
+        tolerance = int(tolerance)
+        from utils.drawing.points import draw_points_crop_binary
+        if self.roi().is_inside(pt):
+            pt_ = np.asarray(np.round(pt - self.roi().top_left_corner()), dtype=np.uint)
+            im = draw_points_crop_binary(self.pts())
+
+            y1 = int(max(0, pt_[0] - tolerance))
+            y2 = int(min(pt_[0] + tolerance + 1, im.shape[0]))
+            x1 = int(max(0, pt_[1] - tolerance))
+            x2 = int(min(pt_[1] + tolerance + 1, im.shape[1]))
+            for y in range(y1, y2):
+                for x in range(x1, x2):
+                    if im[y, x]:
+                        return True
+
+        return False
+
 
 def encode_RLE(pts):
     """

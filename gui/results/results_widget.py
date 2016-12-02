@@ -1018,15 +1018,21 @@ class ResultsWidget(QtGui.QWidget):
         self.video_player.redraw_visualisations()
 
     def _gt_marker_clicked(self, id_):
-        frame = self.video_player.current_frame()
-        y, x = self._gt_markers[id_].centerPos().y(), self._gt_markers[id_].centerPos().x()
-        self._gt.set_position(frame, id_, y, x)
+        try:
+            frame = self.video_player.current_frame()
+            y, x = self._gt_markers[id_].centerPos().y(), self._gt_markers[id_].centerPos().x()
+            self._gt.set_position(frame, id_, y, x)
+        except:
+            pass
 
-        # self.decide_tracklet_button.setDisabled(False)
-        # self._set_active_tracklet_id(id_)
-        # self.highlight_tracklet_input.setText(str(id_))
+        try:
+            self.decide_tracklet_button.setDisabled(False)
+            self._set_active_tracklet_id(id_)
+            self.highlight_tracklet_input.setText(str(id_))
 
-        # self._update_tracklet_info()
+            self._update_tracklet_info()
+        except:
+            pass
 
     def add_data(self, solver, just_around_frame=-1, margin=1000):
         self.solver = solver
