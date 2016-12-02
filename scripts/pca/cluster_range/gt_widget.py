@@ -46,7 +46,7 @@ class GTWidget(QtGui.QWidget):
     width = 1000
     height = 1000
 
-    def __init__(self, project, manager, cluster_tracklets_id, threshold=.1):
+    def __init__(self, project, results, manager, cluster_tracklets_id, threshold=.1):
         QtGui.QWidget.__init__(self)
         self.project = project
         self.manager = manager
@@ -54,10 +54,11 @@ class GTWidget(QtGui.QWidget):
         self.img_viewer = ImgPainter(self.project.img_manager, threshold)
         self.region_generator = self.regions_gen(cluster_tracklets_id)
         self.init_gui()
+        self.set_threshold(0.1)
 
         self.r = None
         self.ants = []
-        self.results = {} # id, contours
+        self.results = results # id, contours
 
     def next_ant(self):
         bm = (self.img_viewer.get_current_ant_bitmap())
@@ -80,6 +81,7 @@ class GTWidget(QtGui.QWidget):
 
         self.last_id.setText("Last ID: {0}".format(self.r.id() if self.r is not None else '-'))
         self.r = self.region_generator.next()
+        while self.r.id() in self.results.keys(): self.r = self.region_generator.next()
         self.curr_id.setText("Current ID: {0}".format(self.r.id()))
         self.img_viewer.set_next(self.r)
         self.roi_tickbox.setChecked(True)
@@ -247,6 +249,8 @@ class ImgPainter(MyView):
         self.pen_size = 1
 
     def set_threshold(self, threshold):
+        # TODO another bug : when user has some points selected, sets threshold and then clicks green point,
+        # data are saved
         self.threshold = threshold
         self.update_last()
         self.draw()
@@ -278,10 +282,15 @@ class ImgPainter(MyView):
     def reset(self):
         self.x = []
         self.y = []
+        self.last_x = None
+        self.last_y = None
         self.visited.fill(False)
         self.selected.fill(False)
         self.excluded.fill(False)
         self.tmp.fill(False)
+        # self.bitmask_pixmap = None
+        # self.exclude_pixmap = None
+        # self.points_pixmap = None
 
     def floodfill(self, color, x, y):
         stack = [self.find_line_segment(color, x, y)]
@@ -334,12 +343,11 @@ class ImgPainter(MyView):
         if type(point) == QtCore.QPointF:
             point = point.toPoint()
         # different canvas and array indexing
-
+        x = point.x()
+        y = point.y()
+        x, y = y, x
 
         if self.mode == self.GREEN:
-            x = point.x()
-            y = point.y()
-            x, y = y, x
             if not self.excluded[x, y]:
                 self.last_x = x
                 self.last_y = y
@@ -347,12 +355,7 @@ class ImgPainter(MyView):
                 self.y.append(y)
                 self.update_last()
         else:
-            fromx = point.x() - self.pen_size
-            tox = point.x() + self.pen_size
-            fromy = point.y() - self.pen_size
-            toy = point.y() + self.pen_size
-            fromx, tox, fromy, toy = fromy, toy, fromx, tox
-            self.excluded[fromx:tox, fromy:toy] = True
+            self.excluded[x, y] = True
             self.update_all()
 
         self.draw()
@@ -440,14 +443,12 @@ class ImgPainter(MyView):
         if self.scene.itemsBoundingRect().contains(point):
             if self.mode == self.GREEN:
                 self.save_results()
-            else:
-                self.add_point(point)
+            self.add_point(point)
 
     def mouseReleaseEvent(self, QMouseEvent):
         self.draw()
 
     def wheelEvent(self, event):
-        # TODO disabled for the time being due to the bug
         modifiers = QtGui.QApplication.keyboardModifiers()
         if modifiers != QtCore.Qt.ControlModifier:
             val = np.sqrt(self.threshold)
@@ -456,6 +457,7 @@ class ImgPainter(MyView):
             else:
                 val -= 0.01
             self.set_threshold(max(0, min(1, val * val)))
+        # TODO disabled for the time being due to the bug
         # else:
         #     self.zoomAction(event, scale_factor=1.04)
 
