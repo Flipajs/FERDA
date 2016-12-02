@@ -17,7 +17,7 @@ class TrackletViewer(QtGui.QWidget):
         self.regions = list(self.get_regions(ch, chm, gm, rm))
         self.setLayout(QtGui.QVBoxLayout())
         self.buttons = QtGui.QHBoxLayout()
-        self.next_b = QtGui.QPushButton('next')
+        self.next_b = QtGui.QPushButton('next (n)')
         self.prev_b = QtGui.QPushButton('prev')
         self.img = QtGui.QLabel()
         self.current = -1
@@ -34,6 +34,9 @@ class TrackletViewer(QtGui.QWidget):
         self.buttons.addWidget(self.next_b)
         self.connect(self.prev_b, QtCore.SIGNAL('clicked()'), self.prev_action)
         self.connect(self.next_b, QtCore.SIGNAL('clicked()'), self.next_action)
+        self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N), self), QtCore.SIGNAL('activated()'),
+                     self.next_action)
+
 
     def view_region(self):
         region = self.regions[self.current]
@@ -52,7 +55,6 @@ class TrackletViewer(QtGui.QWidget):
         return r_ch
 
     def next_action(self):
-        print self.current
         if self.current != len(self.regions) - 1:
             self.current += 1
             self.view_region()
@@ -61,7 +63,6 @@ class TrackletViewer(QtGui.QWidget):
                 self.next_b.setDisabled(True)
 
     def prev_action(self):
-        print self.current
         if self.current != 0:
             self.current -= 1
             self.view_region()
