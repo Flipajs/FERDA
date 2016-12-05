@@ -79,6 +79,11 @@ class MainTabWidget(QtGui.QWidget):
         self.reload_id_data.setShortcut(QtGui.QKeySequence(QtCore.Qt.ShiftModifier + QtCore.Qt.Key_R))
         self.addAction(self.reload_id_data)
 
+        self.update_undecided_a = QtGui.QAction('update undecided', self)
+        self.update_undecided_a.triggered.connect(self.learning_widget_update_undecided)
+        self.update_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_U))
+        self.addAction(self.update_undecided_a)
+
 
         print "LOADING GRAPH..."
         if project.gm is None or project.gm.g.num_vertices() == 0:
@@ -208,6 +213,9 @@ class MainTabWidget(QtGui.QWidget):
     def attach_tab(self, number):
         self.tabs.insertTab(number, self.tab_widgets[number], self.tab_names[number])
 
+    def learning_widget_update_undecided(self):
+        if isinstance(self.id_detection_tab, LearningWidget):
+            self.id_detection_tab.update_undecided_tracklets()
 
 class DetachedWindow(QtGui.QMainWindow):
 

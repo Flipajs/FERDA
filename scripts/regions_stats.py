@@ -1462,7 +1462,8 @@ def process_project(p):
 
     score_type = 'appearance_motion_mix'
 
-    min_prob = 0.8 ** 2
+    # min_prob = 0.8 ** 2
+    min_prob = 0.1
     better_n_times = 1.5 ** 2
 
     strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
@@ -1573,9 +1574,9 @@ def clustering(p, compute_data=True):
 if __name__ == '__main__':
     p = Project()
     # p.load('/Users/flipajs/Documents/wd/zebrafish_playground')
-    p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
+    # p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
     # p.load('/Users/flipajs/Documents/wd/FERDA/Sowbug3')
-    # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_int_limit')
+    p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_int_limit')
     from core.region.region_manager import RegionManager
 
     p.rm = RegionManager(p.working_directory + '/temp', db_name='part0_rm.sqlite3')
@@ -1586,9 +1587,9 @@ if __name__ == '__main__':
     p.gm.g = g_
     p.gm.rm = p.rm
 
-    # process_project(p)
+    process_project(p)
 
-    if True:
+    if False:
         FILTER_EDGES = False
         DO_DECIDEONE2ONE = False
         LEARN_ASSIGNMENTS = False

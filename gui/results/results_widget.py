@@ -1122,6 +1122,10 @@ class ResultsWidget(QtGui.QWidget):
 
         data = []
         for t in self.project.chm.chunks_in_frame(frame):
+            # TODO: remove this... temp skip decided.
+            if len(t.P) == 1:
+                continue
+
             rch = RegionChunk(t, self.project.gm, self.project.rm)
             c = rch.centroid_in_t(frame)
             data.append((t.id(), c[0], c[1]))

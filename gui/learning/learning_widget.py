@@ -343,6 +343,7 @@ class LearningWidget(QtGui.QWidget):
     def decide_tracklet_question(self, tracklet, id_=None):
         if id_ is None:
             items = map(str, self.lp.all_ids - tracklet.N)
+            items = sorted(items)
 
             item, ok = QtGui.QInputDialog.getItem(self, "select animal ID for tracklet ID: "+str(tracklet.id()),
                                                   "list of ids", items, 0, False)
@@ -367,6 +368,7 @@ class LearningWidget(QtGui.QWidget):
         self.update_callback()
 
     def update_undecided_tracklets(self):
+        print "UPDATING UNDECIDED"
         self.lp.update_undecided_tracklets()
 
     def auto_init(self):

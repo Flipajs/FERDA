@@ -28,8 +28,8 @@ if is_flipajs_pc():
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_'
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/zebrafish_playground'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
     # wd = '/Users/flipajs/Documents/wd/'
     # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
@@ -40,17 +40,17 @@ if is_flipajs_pc():
     project.load(wd)
     from core.graph.chunk_manager import ChunkManager
 
-    project.chm = ChunkManager()
-    # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
-    with open(wd+'/temp/strongly_better_filter.pkl', 'rb') as f:
-    # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
-    # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/isolation_score.pkl', 'rb') as f:
-        up = pickle.Unpickler(f)
-        project.gm.g = up.load()
-        up.load()
-        chm = up.load()
-        project.chm = chm
-
+    # project.chm = ChunkManager()
+    # # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
+    # with open(wd+'/temp/strongly_better_filter.pkl', 'rb') as f:
+    # # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
+    # # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/isolation_score.pkl', 'rb') as f:
+    #     up = pickle.Unpickler(f)
+    #     project.gm.g = up.load()
+    #     up.load()
+    #     chm = up.load()
+    #     project.chm = chm
+    #
     from core.region.region_manager import RegionManager
     project.rm = RegionManager(wd+'/temp', db_name='part0_rm.sqlite3')
     project.gm.rm = project.rm
@@ -125,7 +125,7 @@ if is_flipajs_pc():
 
     try:
         # WORKAROUND:
-        for t in project.chm.chunk_list():
+        for t in project.chm.chunk_gen():
             if not hasattr(t, 'N'):
                 t.N = set()
                 t.P = set()
@@ -134,6 +134,7 @@ if is_flipajs_pc():
 
     from utils.color_manager import colorize_project
     colorize_project(project)
+
 
     ex.widget_control('load_project', project)
 
