@@ -29,7 +29,7 @@ if is_flipajs_pc():
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
     # wd = '/Users/flipajs/Documents/wd/'
     # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
@@ -54,24 +54,61 @@ if is_flipajs_pc():
     from core.region.region_manager import RegionManager
     project.rm = RegionManager(wd+'/temp', db_name='part0_rm.sqlite3')
     project.gm.rm = project.rm
-
-    project.gm.update_nodes_in_t_refs()
-
-    # # Z detection
-    # for v in project.gm.active_v_gen():
-    #     if project.gm.z_case_detection(v):
-    #         print "z in frame: {}".format(project.gm.region(v).frame_)
-
-
-
-    project.chm.add_single_vertices_chunks(project, frames=range(4500))
-    from utils.gt.gt import GT
-    gt = GT()
-    gt.load(project.GT_file)
-    # gt.check_none_occurence()
-    match = gt.match_on_data(project, max_d=3)
-    with open('/Users/flipajs/Desktop/temp/match.pkl', 'wb') as f:
-        pickle.dump(match, f)
+    #
+    # project.gm.update_nodes_in_t_refs()
+    #
+    # # # Z detection
+    # # for v in project.gm.active_v_gen():
+    # #     if project.gm.z_case_detection(v):
+    # #         print "z in frame: {}".format(project.gm.region(v).frame_)
+    #
+    #
+    # # test_vs = []
+    # # for v in project.gm.active_v_gen():
+    # #     if int(v) == 25419:
+    # #         print "a"
+    # #     es, sc = project.gm.get_2_best_out_edges_appearance_motion_mix(v)
+    # #     if int(v) == 25419:
+    # #         print es, sc
+    # #
+    # #     if es[1] is not None:
+    # #         ratio = sc[0] / sc[1]
+    # #         test_vs.append((v, ratio))
+    # #
+    # #
+    # # test_vs = sorted(test_vs, key=lambda x: -x[1])
+    # #
+    # # for v, ratio in test_vs:
+    # #     print project.gm.region(v).frame(), v, ratio
+    #
+    #
+    # # edges = []
+    # # for e in project.gm.g.edges():
+    # #     if not project.gm.edge_is_chunk(e):
+    # #         edges.append(e)
+    # #
+    # # edges = sorted(edges, key=lambda x: -project.gm.g.ep['score'][x]*project.gm.g.ep['movement_score'][x])
+    # #
+    # # i = 0
+    # # for e in edges:
+    # #     if i == 500:
+    # #         break
+    # #
+    # #     r = project.gm.region(e.source())
+    # #
+    # #     print r.frame(), e.source(), e.target(), project.gm.g.ep['score'][e]*project.gm.g.ep['movement_score'][e], project.gm.g.ep['score'][e], project.gm.g.ep['movement_score'][e]
+    # #
+    # #     i += 1
+    #
+    #
+    # project.chm.add_single_vertices_chunks(project, frames=range(4500))
+    # from utils.gt.gt import GT
+    # gt = GT()
+    # gt.load(project.GT_file)
+    # # gt.check_none_occurence()
+    # match = gt.match_on_data(project, max_d=3)
+    # with open('/Users/flipajs/Desktop/temp/match.pkl', 'wb') as f:
+    #     pickle.dump(match, f)
 
 
     # match = {}

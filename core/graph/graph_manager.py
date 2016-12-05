@@ -515,7 +515,9 @@ class GraphManager:
         return True
 
     def edge_is_chunk(self, e):
-        return self.get_chunk(e.source()) is not None and self.get_chunk(e.target()) is not None
+        ch_s = self.g.vp['chunk_start_id'][e.source()]
+        return ch_s != 0 and ch_s == self.g.vp['chunk_end_id'][e.target()]
+        # return self.get_chunk(e.source()) is not None and self.get_chunk(e.target()) is not None
 
     def remove_outgoing_edges(self, v):
         out_edges = [e for e in v.out_edges()]

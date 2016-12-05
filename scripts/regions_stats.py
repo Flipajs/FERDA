@@ -1670,7 +1670,8 @@ if __name__ == '__main__':
             score_type = 'appearance_motion_mix'
 
             min_prob = 0.5**2
-            better_n_times = 1.5**2
+            min_prob = 0.1
+            better_n_times = 50
 
             strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
             print "strongly better: {}".format(len(strongly_better_e))
