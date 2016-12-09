@@ -145,7 +145,7 @@ class LearningWidget(QtGui.QWidget):
         # self.update_callback()
 
     def load_features(self):
-        path = self.project.working_directory+'/features.pkl'
+        path = self.project.working_directory+'/temp/features.pkl'
         self.lp.load_features(path)
 
         self.add_tracklet_table()
@@ -163,9 +163,12 @@ class LearningWidget(QtGui.QWidget):
         # self.update_callback()
 
     def recompute_features(self):
-        self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
-                                  question_callback=self.question_callback, update_callback=self.update_callback)
+        # self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
+        #                           question_callback=self.question_callback, update_callback=self.update_callback)
 
+        self.lp.compute_features()
+        self.lp.update_callback = self.update_callback
+        self.lp.question_callback = self.question_callback
         self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
 
         self.add_tracklet_table()
@@ -406,11 +409,15 @@ class LearningWidget(QtGui.QWidget):
         # TODO: add to user settings
         print max_best_frame, max_best_score
         self.lp.user_decisions = []
+        self.lp.separated_frame = max_best_frame
         for id_, t in enumerate(self.project.chm.chunks_in_frame(max_best_frame)):
             print t.length()
-            self.lp.user_decisions.append({'tracklet_id': t.id(), 'type': 'P', 'ids': [id_]})
+            self.lp.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
 
         self.update_callback()
+
+    def get_separated_frame(self):
+        return self.lp.separated_frame
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

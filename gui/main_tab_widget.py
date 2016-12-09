@@ -143,6 +143,12 @@ class MainTabWidget(QtGui.QWidget):
             self.tab_changed(2)
         self.id_detection_tab.decide_tracklet_question(tracklet, id_=id_)
 
+    def get_separated_frame(self):
+        if not self.id_detection_tab:
+            self.tab_changed(2)
+
+        return self.id_detection_tab.get_separated_frame()
+
     def tab_changed(self, i):
         if self.ignore_tab_change or self.project.chm is None:
             return
@@ -155,7 +161,8 @@ class MainTabWidget(QtGui.QWidget):
                     self.results_tab.setParent(None)
                     self.results_tab = ResultsWidget(self.project,
                                                      callbacks={'decide_tracklet': self.decide_tracklet,
-                                                                'edit_tracklet': self.id_detection_tab.edit_tracklet})
+                                                                'edit_tracklet': self.id_detection_tab.edit_tracklet,
+                                                                'get_separated_frame': self.get_separated_frame,})
                     # self.results_tab.redraw_video_player_visualisations()
                     self.tabs.insertTab(1, self.results_tab, 'results viewer')
                     self.tabs.setCurrentIndex(1)

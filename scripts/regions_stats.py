@@ -585,10 +585,6 @@ def get_max_dist2(project):
     print "____________________________"
     print "Estimating max distance"
 
-    max_dist = 0
-    max_v1 = None
-    max_v2 = None
-
     i = 0
 
     reg = project.gm.region
@@ -619,6 +615,7 @@ def get_max_dist2(project):
 
     print print_progress(num_v, num_v)
     print
+
 
     id_ = np.argmax(safe_dists)
     max_dist = safe_dists[id_]
@@ -1274,16 +1271,29 @@ def save_p_checkpoint(p, name=''):
         pic.dump(p.gm.vertices_in_t)
 
 def get_pair_fetures_appearance(r1, r2):
+    # f = [
+    #     r1.area() - r2.area(),
+    #     r1.area() / float(r2.area()),
+    #     r1.a_ - r2.a_,
+    #     r1.a_ / r2.a_,
+    #     (r1.a_/r1.b_) / (r2.a_/r2.b_),
+    #     r1.eccentricity() - r2.eccentricity(),
+    #     r1.sxx_ - r2.sxx_,
+    #     r1.syy_ - r2.syy_,
+    #     r1.sxy_ - r2.sxy_,
+    #     int(r1.min_intensity_) - int(r2.min_intensity_),
+    # ]
+
     f = [
-        r1.area() - r2.area(),
+        abs(r1.area() - r2.area()),
         r1.area() / float(r2.area()),
         r1.a_ - r2.a_,
         r1.a_ / r2.a_,
-        (r1.a_/r1.b_) / (r2.a_/r2.b_),
-        r1.eccentricity() - r2.eccentricity(),
-        r1.sxx_ - r2.sxx_,
-        r1.syy_ - r2.syy_,
-        r1.sxy_ - r2.sxy_,
+        (r1.a_ / r1.b_) / (r2.a_ / r2.b_),
+        # r1.eccentricity() - r2.eccentricity(),
+        # r1.sxx_ - r2.sxx_,
+        # r1.syy_ - r2.syy_,
+        # r1.sxy_ - r2.sxy_,
         int(r1.min_intensity_) - int(r2.min_intensity_),
     ]
 
@@ -1292,7 +1302,7 @@ def get_pair_fetures_appearance(r1, r2):
 def get_pair_fetures_movement(r1, r2):
     f = [
         np.linalg.norm(r1.centroid() - r2.centroid()),
-        r1.theta_ - r2.theta_, # modulo?
+        abs(r1.theta_ - r2.theta_), # modulo?
         r1.get_phi(r2),
         # TODO: dist to prediction if present?
     ]
@@ -1431,7 +1441,8 @@ def process_project(p):
     # display_cluster_representants(p)
 
     # prepare_pairs(p)
-    max_dist = get_max_dist2(p)
+    # max_dist = get_max_dist2(p)
+    max_dist = 80.
     with open(p.working_directory+'/temp/data.pkl', 'wb') as f:
         pickle.dump({'max_measured_distance': max_dist}, f)
 
@@ -1466,20 +1477,16 @@ def process_project(p):
     min_prob = 0.1
     better_n_times = 1.5 ** 2
 
-    strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
+    eps = 0.15
+
+    strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
     print "strongly better: {}".format(len(strongly_better_e))
     for e in strongly_better_e:
         solver.confirm_edges([(e.source(), e.target())])
 
     tracklet_stats(p)
 
-    strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
-    print "strongly better: {}".format(len(strongly_better_e))
-    for e in strongly_better_e:
-        solver.confirm_edges([(e.source(), e.target())])
-
-    tracklet_stats(p)
-    strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
+    strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
     print "strongly better: {}".format(len(strongly_better_e))
     for e in strongly_better_e:
         solver.confirm_edges([(e.source(), e.target())])
@@ -1574,9 +1581,9 @@ def clustering(p, compute_data=True):
 if __name__ == '__main__':
     p = Project()
     # p.load('/Users/flipajs/Documents/wd/zebrafish_playground')
-    # p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
+    p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
     # p.load('/Users/flipajs/Documents/wd/FERDA/Sowbug3')
-    p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_int_limit')
+    # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_int_limit')
     from core.region.region_manager import RegionManager
 
     p.rm = RegionManager(p.working_directory + '/temp', db_name='part0_rm.sqlite3')

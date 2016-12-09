@@ -562,10 +562,14 @@ class GraphManager:
 
         return best_e, best_s
 
-    def get_2_best_out_edges_appearance_motion_mix(self, v):
+    def get_2_best_out_edges_appearance_motion_mix(self, v, func=None):
         best_e = [None, None]
         best_s = [0, 0]
-        for e in v.out_edges():
+
+        if func is None:
+            func = v.out_edges
+
+        for e in func():
             s = self.g.ep['score'][e] * self.g.ep['movement_score'][e]
 
             if self.edge_is_chunk(e):
@@ -583,6 +587,9 @@ class GraphManager:
 
         return best_e, best_s
 
+    def get_2_best_in_edges_appearance_motion_mix(self, v):
+        return self.get_2_best_out_edges_appearance_motion_mix(v, func=v.in_edges)
+
     def strongly_better(self, min_prob=0.9, better_n_times=10, score_type='appearance_motion_mix'):
         from itertools import izip
 
@@ -597,6 +604,26 @@ class GraphManager:
                 if s[0] > min_prob:
                     if e[1] is None or s[1] == 0 or s[0] / s[1] > better_n_times:
                         strongly_better_e.append(e[0])
+
+        return strongly_better_e
+
+    def strongly_better_eps(self, eps=0.2, score_type='appearance_motion_mix'):
+        from itertools import izip
+
+        strongly_better_e = []
+
+        for v in self.active_v_gen():
+            if score_type == 'appearance_motion_mix':
+                e, s = self.get_2_best_out_edges_appearance_motion_mix(v)
+            else:
+                e, s = self.get_2_best_out_edges(v)
+
+            if e[0] is not None:
+                val = s[0] / (s[0] + s[1] + eps)
+
+                if val > 0.5:
+                    strongly_better_e.append(e[0])
+
 
         return strongly_better_e
 

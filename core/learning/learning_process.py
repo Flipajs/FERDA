@@ -19,6 +19,8 @@ import math
 from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
 from skimage.feature import local_binary_pattern
 
+from utils.misc import print_progress
+
 class LearningProcess:
     """
     each tracklet has 2 id sets.
@@ -50,6 +52,8 @@ class LearningProcess:
             warnings.warn("use_rf_cache is Deprecated!", DeprecationWarning)
 
         self.p = p
+
+        self.show_key_error_warnings = False
 
         self.min_new_samples_to_retrain = 10000
 
@@ -91,6 +95,8 @@ class LearningProcess:
         self.features = {}
 
         self.load_learning()
+
+        self.separated_frame = -1
 
         # when creating without feature data... e.g. in main_tab_widget
         if ghost:
@@ -145,10 +151,22 @@ class LearningProcess:
         #     pass
 
     def load_features(self, path):
-            with open(path, 'rb') as f:
-                d = pickle.load(f)
-                self.features = d['features']
-                self.collision_chunks = d['collision_chunks']
+        with open(path, 'rb') as f:
+            d = pickle.load(f)
+            self.features = d['features']
+            self.collision_chunks = d['collision_chunks']
+
+    def compute_features(self):
+        self.get_candidate_chunks()
+
+        self.features = self.precompute_features_()
+
+        with open(self.p.working_directory+'/temp/features.pkl', 'wb') as f:
+            d = {'features': self.features,
+                 'collision_chunks': self.collision_chunks}
+            # pickle.dump(d, f, -1)
+            # withou -1, compression, faster?
+            pickle.dump(d, f)
 
     def set_eps_certainty(self, eps):
         self._eps_certainty = eps
@@ -343,8 +361,14 @@ class LearningProcess:
             self.__update_certainty(tracklet)
 
     def precompute_features_(self):
+        from utils.misc import print_progress
+
         features = {}
         i = 0
+
+        print "COMPUTING FEATURES..."
+        ch_num = len(self.p.chm)
+
         for ch in self.p.chm.chunk_gen():
             if ch in self.collision_chunks:
                 continue
@@ -354,7 +378,9 @@ class LearningProcess:
             i += 1
             features[ch.id()] = X
 
-            print i
+            print_progress(i, ch_num)
+        print_progress(ch_num, ch_num)
+        print "DONE"
 
         return features
 
@@ -385,7 +411,7 @@ class LearningProcess:
         # plt.show()
         #
 
-        vertices = self.p.gm.get_vertices_in_t(0)
+        vertices = self.p.gm.get_vertices_in_t(self.separated_frame)
 
         areas = []
         for v in vertices:
@@ -397,6 +423,7 @@ class LearningProcess:
         areas = np.array(areas)
         area_mean_thr = np.mean(areas) + 2*np.std(areas)
 
+        print "SINGLE / MERGED classification..."
         print "MEAN: {} STD: {} ".format(np.mean(areas), np.std(areas))
         print "THRESHOLD = ", area_mean_thr
 
@@ -404,8 +431,8 @@ class LearningProcess:
         print "ALL CHUNKS:", len(self.p.chm)
         # filtered = []
 
-        # TODO: remvoe
         i = 0
+        num_chunks = len(self.p.chm)
         for ch in self.p.chm.chunk_gen():
             # if i > 1:
             #     continue
@@ -441,11 +468,12 @@ class LearningProcess:
                     c = 'C' if ch.id() in self.collision_chunks else ' '
 
                     p = 'C' if area_mean > area_mean_thr else ' '
-                    print "%s %s %s area: %.2f, id:%d, length:%d" % (p==c, c, p, area_mean, ch.id(), ch.length())
+                    # print "%s %s %s area: %.2f, id:%d, length:%d" % (p==c, c, p, area_mean, ch.id(), ch.length())
 
                     if area_mean > area_mean_thr:
                         self.collision_chunks[ch.id()] = True
 
+                print_progress(i, num_chunks)
 
                 # if not is_merged:
                 #     filtered.append(ch)
@@ -631,7 +659,7 @@ class LearningProcess:
         for id_, t in enumerate(tracklets):
             self.assign_identity(id_, t)
 
-            self.user_decisions.append({'tracklet_id': t.id(), 'type': 'P', 'ids': [id_]})
+            self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
 
         return set(range(len(tracklets)))
 
@@ -952,7 +980,7 @@ class LearningProcess:
         self.y = []
 
         for d in self.user_decisions:
-            tracklet_id = d['tracklet_id']
+            tracklet_id = d['tracklet_id_set']
             tracklet = self.p.chm[tracklet_id]
             ids = d['ids']
             type = d['type']
@@ -995,7 +1023,7 @@ class LearningProcess:
                 del self.collision_chunks[tracklet.id()]
                 print "Fixing tracklet wrongly labeled as OVERSEGMENTED"
 
-            self.user_decisions.append({'tracklet_id': tracklet.id(), 'type': 'P', 'ids': [id_]})
+            self.user_decisions.append({'tracklet_id_set': tracklet.id(), 'type': 'P', 'ids': [id_]})
 
         # # conflict test
         # conflicts = self.__find_conflict(tracklet, id_=id_)
@@ -1034,12 +1062,20 @@ class LearningProcess:
 
         # finalize
         # TODO: test collision chunk, if yes and learn - compute features...
+
         try:
             self.undecided_tracklets.remove(tracklet.id())
-            del self.tracklet_certainty[tracklet.id()]
         except KeyError:
             # it might means it is already in user_decisions
-            warnings.warn("tracklet.id(): "+str(tracklet.id())+" not in self.undecided_tracklets")
+            if self.show_key_error_warnings:
+                warnings.warn("tracklet.id(): "+str(tracklet.id())+" not in self.undecided_tracklets")
+
+        try:
+            del self.tracklet_certainty[tracklet.id()]
+        except KeyError:
+            if self.show_key_error_warnings:
+                warnings.warn("tracklet.id(): "+str(tracklet.id())+" not in self.tracklet_certainty")
+
 
         if learn:
             self.__learn(tracklet, id_)

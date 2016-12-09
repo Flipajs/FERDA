@@ -28,7 +28,7 @@ if is_flipajs_pc():
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_'
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/zebrafish_playground'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
     # wd = '/Users/flipajs/Documents/wd/'
@@ -40,16 +40,17 @@ if is_flipajs_pc():
     project.load(wd)
     from core.graph.chunk_manager import ChunkManager
 
-    # project.chm = ChunkManager()
-    # # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
+    project.chm = ChunkManager()
+    # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
     # with open(wd+'/temp/strongly_better_filter.pkl', 'rb') as f:
-    # # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
-    # # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/isolation_score.pkl', 'rb') as f:
-    #     up = pickle.Unpickler(f)
-    #     project.gm.g = up.load()
-    #     up.load()
-    #     chm = up.load()
-    #     project.chm = chm
+    # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
+    with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
+    # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/isolation_score.pkl', 'rb') as f:
+        up = pickle.Unpickler(f)
+        project.gm.g = up.load()
+        up.load()
+        chm = up.load()
+        project.chm = chm
     #
     from core.region.region_manager import RegionManager
     project.rm = RegionManager(wd+'/temp', db_name='part0_rm.sqlite3')
@@ -102,6 +103,7 @@ if is_flipajs_pc():
     #
     #
     # project.chm.add_single_vertices_chunks(project, frames=range(4500))
+    project.gm.update_nodes_in_t_refs()
     # from utils.gt.gt import GT
     # gt = GT()
     # gt.load(project.GT_file)

@@ -30,6 +30,10 @@ class ResultsWidget(QtGui.QWidget):
         if 'edit_tracklet' in callbacks:
             self.edit_tracklet_callback = callbacks['edit_tracklet']
 
+        self.get_separated_frame_callback = None
+        if 'get_separated_frame' in callbacks:
+            self.get_separated_frame_callback = callbacks['get_separated_frame']
+
         self.show_identities = False
         self.loop_highlight_tracklets = []
         self.loop_end = -1
@@ -79,7 +83,11 @@ class ResultsWidget(QtGui.QWidget):
 
             self.left_vbox.addWidget(self.scroll_)
 
-        self.splitter.addWidget(self.left_w)
+        self.l_scroll_ = QtGui.QScrollArea()
+        self.l_scroll_.setWidgetResizable(True)
+        self.l_scroll_.setWidget(self.left_w)
+
+        self.splitter.addWidget(self.l_scroll_)
 
         # GT Box
         self.gt_box = QtGui.QGroupBox('Ground Truth')
@@ -105,6 +113,10 @@ class ResultsWidget(QtGui.QWidget):
         self.save_gt_a.triggered.connect(self.__save_gt)
         self.save_gt_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_G))
         self.addAction(self.save_gt_a)
+
+        self.gt_find_permutation_b = QtGui.QPushButton('find permutation')
+        self.gt_find_permutation_b.clicked.connect(self._gt_find_permutation)
+        self.gt_box.layout().addWidget(self.gt_find_permutation_b)
 
         self.auto_gt_assignment_b = QtGui.QPushButton('auto GT')
         self.auto_gt_assignment_b.clicked.connect(self.__auto_gt_assignment)
@@ -213,6 +225,8 @@ class ResultsWidget(QtGui.QWidget):
         self.tracklet_box.layout().addWidget(self.split_tracklet_b)
 
         self.left_vbox.addWidget(self.tracklet_box)
+        self.info_l = QtGui.QLabel('info')
+        self.left_vbox.addWidget(self.info_l)
 
         self.debug_box = QtGui.QGroupBox('debug box')
         self.debug_box.setLayout(QtGui.QVBoxLayout())
@@ -252,13 +266,9 @@ class ResultsWidget(QtGui.QWidget):
 
         self.left_vbox.addWidget(self.debug_box)
 
-        self.info_l = QtGui.QLabel('info')
-
         # TODO: show list of tracklets instead of QLine edit...
         # TODO: show range on frame time line
         # TODO: checkbox - stop at the end...
-
-        self.left_vbox.addWidget(self.info_l)
 
         self.right_w = QtGui.QWidget()
         self.right_w.setLayout(self.right_vbox)
@@ -371,6 +381,8 @@ class ResultsWidget(QtGui.QWidget):
 
         self.alpha_contour = 240
         self.alpha_filled = 120
+
+        self.splitter.setSizes([270, 1500])
 
         self.colors_ = [
             QtGui.QColor().fromRgbF(0, 0, 1), #
@@ -1591,3 +1603,17 @@ class ResultsWidget(QtGui.QWidget):
             item2.setPen(pen)
             item2.setZValue(0.99)
             self.video_player.visualise_temp(item2)
+
+    def _gt_find_permutation(self):
+        if self.get_separated_frame_callback:
+            frame = self.get_separated_frame_callback()
+            print "SEPARATED IN: ", frame
+
+            permutation_data = []
+            for t in self.project.chm.chunks_in_frame(frame):
+                id_ = list(t.P)[0]
+                y, x = RegionChunk(t, self.project.gm, self.project.rm).centroid_in_t(frame)
+                permutation_data.append((frame, id_, y, x))
+
+            self.idtracker_data_permutation = self._gt.set_permutation(permutation_data)
+            self.video_player.redraw_visualisations()
