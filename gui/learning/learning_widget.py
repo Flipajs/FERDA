@@ -3,7 +3,7 @@ import sys
 import os
 from core.project.project import Project
 from utils.img_manager import ImgManager
-from core.learning.learning_process import LearningProcess
+from core.id_detection.learning_process import LearningProcess
 from core.settings import Settings as S_
 import numpy as np
 

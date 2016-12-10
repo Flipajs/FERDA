@@ -11,7 +11,7 @@ import math
 from functools import partial
 import cPickle as pickle
 import json
-from core.learning.features import get_hu_moments
+from core.id_detection.features import get_hu_moments
 import hickle
 from utils.video_manager import get_auto_video_manager
 import cv2
@@ -19,7 +19,7 @@ from utils.drawing.points import draw_points
 from utils.drawing.collage import create_collage_rows
 from PyQt4.QtGui import QColor
 from utils.img import rotate_img, get_bounding_box, centered_crop
-from core.learning.features import get_features_var2, get_crop
+from core.id_detection.features import get_features_var2, get_crop
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
 from sklearn.datasets.samples_generator import make_blobs
@@ -261,7 +261,7 @@ def prepare_pairs(project):
 
 
 def __get_mu_moments_pick(img):
-    from core.learning.features import get_mu_moments
+    from core.id_detection.features import get_mu_moments
     nu = get_mu_moments(img)
 
     return list(nu[np.logical_not(np.isnan(nu))])

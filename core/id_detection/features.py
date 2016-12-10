@@ -57,15 +57,11 @@ def features2str_var1(vec):
 
     return s
 
-def get_features_var1(r, p):
+def get_basic_properties(r, p):
     f = []
     # area
     f.append(r.area())
 
-    # # area, modifications
-    # f.append(r.area()**0.5)
-    # f.append(r.area()**2)
-    #
     # contour length
     f.append(len(r.contour()))
 
@@ -96,75 +92,10 @@ def get_features_var1(r, p):
     crop_b_mask = replace_everything_but_pts(np.ones(crop_gray.shape, dtype=np.uint8), pts_)
     f.extend(get_hu_moments(crop_b_mask))
 
-
     #### ONLY MSER PXs
     # in GRAY
     crop_gray_masked = replace_everything_but_pts(crop_gray, pts_)
     f.extend(get_hu_moments(crop_gray_masked))
-
-    # B G R
-    for i in range(3):
-        crop_ith_channel_masked = replace_everything_but_pts(crop[:, :, i], pts_)
-        f.extend(get_hu_moments(crop_ith_channel_masked))
-
-    # min, max from moments head/tail
-    relative_border = 2.0
-
-    bb, offset = get_bounding_box(r, p, relative_border)
-    p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
-    endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
-    endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
-
-    bb = rotate_img(bb, r.theta_)
-    bb = centered_crop(bb, 8*r.b_, 4*r.a_)
-
-    c_ = endpoint_rot(bb, r.centroid(), -r.theta_, r.centroid())
-
-    endpoint1_ = endpoint_rot(bb, endpoint1, -r.theta_, r.centroid())
-    endpoint2_ = endpoint_rot(bb, endpoint2, -r.theta_, r.centroid())
-    if endpoint1_[1] > endpoint2_[1]:
-        endpoint1_, endpoint2_ = endpoint2_, endpoint1_
-
-    y_ = int(c_[0] - r.b_)
-    y2_ = int(c_[0]+r.b_)
-    x_ = int(c_[1] - r.a_)
-    x2_ = int(c_[1] + r.a_)
-    im1_ = bb[y_:y2_, x_:int(c_[1]), :].copy()
-    im2_ = bb[y_:y2_, int(c_[1]):x2_, :].copy()
-
-    # ### ALL PXs in crop image given margin
-    # crop, offset = get_img_around_pts(img, r.pts(), margin=0.3)
-    #
-    # # in GRAY
-    # crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-    # f.extend(self.get_hu_moments(crop_gray))
-    #
-
-    # B G R
-    for i in range(3):
-        hu1 = get_hu_moments(im1_[:, :, i])
-        hu2 = get_hu_moments(im2_[:, :, i])
-
-        f.extend(list(np.min(np.vstack([hu1, hu2]), axis=0)))
-        f.extend(list(np.max(np.vstack([hu1, hu2]), axis=0)))
-
-    return f
-
-
-    crop_ = np.asarray(crop, dtype=np.int32)
-
-    # # R G combination
-    # crop_rg = crop_[:, :, 1] + crop_[:, :, 2]
-    # f.extend(self.get_hu_moments(crop_rg))
-    #
-    # # B G
-    # crop_bg = crop_[:, :, 0] + crop_[:, :, 1]
-    # f.extend(self.get_hu_moments(crop_bg))
-    #
-    # # B R
-    # crop_br = crop_[:, :, 0] + crop_[:, :, 2]
-    # f.extend(self.get_hu_moments(crop_br))
-
 
 def __process_crops(crops, fliplr):
     from skimage.feature import hog
@@ -487,3 +418,33 @@ def get_features_var5(r, p, fliplr=False):
         f2 = img_features.colornames_descriptor(np.fliplr(crop), pyramid_levels=3)
 
     return f1, f2
+
+
+
+
+if __name__ == '__main__':
+    from core.project.project import Project
+    import cPickle as pickle
+
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    p = Project()
+    p.load(wd)
+
+    from core.graph.chunk_manager import ChunkManager
+
+    p.chm = ChunkManager()
+    with open(wd + '/temp/isolation_score.pkl', 'rb') as f:
+        up = pickle.Unpickler(f)
+        p.gm.g = up.load()
+        up.load()
+        chm = up.load()
+        p.chm = chm
+    #
+    from core.region.region_manager import RegionManager
+
+    p.rm = RegionManager(wd + '/temp', db_name='part0_rm.sqlite3')
+    p.gm.rm = p.rm
+    
+    
+    for r in p.rm[:]:
+
