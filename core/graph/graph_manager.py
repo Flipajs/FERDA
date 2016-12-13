@@ -656,8 +656,9 @@ class GraphManager:
             rch = RegionChunk(t, self, self.project.rm)
             regions.add(rch.region_in_t(frame))
 
-        for v in self.vertices_in_t[frame]:
-            regions.add(self.region(v))
+        if frame in self.vertices_in_t:
+            for v in self.vertices_in_t[frame]:
+                regions.add(self.region(v))
 
         return list(regions)
 

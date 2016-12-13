@@ -150,17 +150,18 @@ class LineGraphical(EdgeGraphical):
 
         s = sa*sm
 
-        red = 0
-        green = 0
+        red = 255
+        green = 255
         if s < 0.5:
-            red = int(255 - (s*255*2))
+            green = int((s*255*2))
         else:
-            green = int((s-0.5) * 255 * 2)
+            red = ((1 - s) * 255 * 2)
+            # red = int((s-0.5) * 255 * 2)
 
         # opacity = 100 + 155 * abs(self.graph_line.sureness)
         opacity = 255
 
-        pen = QtGui.QPen(QtGui.QColor(red, green, 0, opacity), LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+        pen = QtGui.QPen(QtGui.QColor(red, green, 0, opacity), LINE_WIDTH, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
         painter.setPen(pen)
         painter.drawLine(self.parent_line)
 

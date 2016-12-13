@@ -27,7 +27,7 @@ if is_flipajs_pc():
     wd = '/Users/flipajs/Documents/wd/FERDA/C210min'
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_'
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    # wd = '/Users/flipajs/Documents/wd/zebrafish_playground'
+    wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
@@ -44,8 +44,9 @@ if is_flipajs_pc():
     # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
     # with open(wd+'/temp/strongly_better_filter.pkl', 'rb') as f:
     # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
-    with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
+    # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
     # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/isolation_score.pkl', 'rb') as f:
+    with open('/Users/flipajs/Documents/wd/FERDA/zebrafish_playground/temp/isolation_score.pkl', 'rb') as f:
         up = pickle.Unpickler(f)
         project.gm.g = up.load()
         up.load()

@@ -250,7 +250,7 @@ class Region():
     def is_inside(self, pt, tolerance=0):
         tolerance = int(tolerance)
         from utils.drawing.points import draw_points_crop_binary
-        if self.roi().is_inside(pt):
+        if self.roi().is_inside(pt, tolerance=tolerance):
             pt_ = np.asarray(np.round(pt - self.roi().top_left_corner()), dtype=np.uint)
             im = draw_points_crop_binary(self.pts())
 

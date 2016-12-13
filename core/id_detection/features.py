@@ -4,6 +4,10 @@ from utils.img import get_img_around_pts, replace_everything_but_pts
 import numpy as np
 import math
 from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
+from skimage.feature import local_binary_pattern
+from core.id_detection.feature_manager import FeatureManager
+from utils.gt.gt import GT
+from utils.misc import print_progress
 
 
 def get_mu_moments(img):
@@ -32,28 +36,6 @@ def __hu2str(vec):
     s = ''
     for i in vec:
         s += '\t{}\n'.format(i)
-
-    return s
-
-
-def features2str_var1(vec):
-    s = 'area: {} cont. len: {} \n' \
-        'axis major:{:.2f} min: {:.2f} ratio: {:.2f}\n'.format(vec[0], vec[1], vec[2], vec[3], vec[4])
-
-    #
-    # s = "area: " + str(vec[0]) + " cont len: " + str(vec[1]) + " major ax : " + str(vec[2]) + "minor ax: " + str(vec[3]) + \
-    #     "ax ratio: " + str(vec[4]) + "\npts bin HU: "
-    #
-    # for i in range(7, 7+7):
-    #     s = s + " " + str(vec[i])
-    #
-    # s += "\n"
-
-    HU_START = 7
-    HU_LEN = 7
-
-    start = HU_START+5*HU_LEN
-    s += __hu2str(vec[start:start+HU_LEN])
 
     return s
 
@@ -97,31 +79,9 @@ def get_basic_properties(r, p):
     crop_gray_masked = replace_everything_but_pts(crop_gray, pts_)
     f.extend(get_hu_moments(crop_gray_masked))
 
-def __process_crops(crops, fliplr):
-    from skimage.feature import hog
-
-    f = []
-
-    for crop in crops:
-        if fliplr:
-            crop = np.fliplr(crop)
-
-        h, w = crop.shape
-
-        fd = hog(crop, orientations=8, pixels_per_cell=(w, h),
-                            cells_per_block=(1, 1), visualise=False)
-
-        f.extend(fd)
-
-        fd2 = hog(crop, orientations=8, pixels_per_cell=(w/4, h),
-                            cells_per_block=(1, 1), visualise=False)
-
-        f.extend(fd2)
-
     return f
 
-
-def get_features_var2(r, p, fliplr=False):
+def get_hog_features(r, p, fliplr=False):
     img = p.img_manager.get_whole_img(r.frame_)
 
     crop, offset = get_img_around_pts(img, r.pts(), margin=2.0)
@@ -148,147 +108,6 @@ def get_features_var2(r, p, fliplr=False):
 
         return f
 
-
-def get_features_var3(r, p, fliplr=False):
-    f1 = get_features_var1(r, p)
-    if fliplr:
-        f2_a, f2_b = get_features_var2(r, p, fliplr=fliplr)
-        return f1 + f2_a, f1 + f2_b
-    else:
-        f2= get_features_var2(r, p, fliplr=fliplr)
-        return f1 + f2
-
-
-def features2str_var1(vec):
-    s = 'area: {} cont. len: {} \n' \
-        'axis major:{:.2f} min: {:.2f} ratio: {:.2f}\n'.format(vec[0], vec[1], vec[2], vec[3], vec[4])
-
-    #
-    # s = "area: " + str(vec[0]) + " cont len: " + str(vec[1]) + " major ax : " + str(vec[2]) + "minor ax: " + str(vec[3]) + \
-    #     "ax ratio: " + str(vec[4]) + "\npts bin HU: "
-    #
-    # for i in range(7, 7+7):
-    #     s = s + " " + str(vec[i])
-    #
-    # s += "\n"
-
-    HU_START = 7
-    HU_LEN = 7
-
-    start = HU_START+5*HU_LEN
-    s += __hu2str(vec[start:start+HU_LEN])
-
-    return s
-
-def get_features_var1(r, p):
-    f = []
-    # area
-    f.append(r.area())
-
-    # # area, modifications
-    # f.append(r.area()**0.5)
-    # f.append(r.area()**2)
-    #
-    # contour length
-    f.append(len(r.contour()))
-
-    # major axis
-    f.append(r.a_)
-
-    # minor axis
-    f.append(r.b_)
-
-    # axis ratio
-    f.append(r.a_ / r.b_)
-
-    # axis ratio sqrt
-    f.append((r.a_ / r.b_)**0.5)
-
-    # axis ratio to power of 2
-    f.append((r.a_ / r.b_)**2.0)
-
-    img = p.img_manager.get_whole_img(r.frame_)
-    crop, offset = get_img_around_pts(img, r.pts())
-
-    pts_ = r.pts() - offset
-
-    crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGRA2GRAY)
-
-    ###### MOMENTS #####
-    # #### BINARY
-    crop_b_mask = replace_everything_but_pts(np.ones(crop_gray.shape, dtype=np.uint8), pts_)
-    f.extend(get_hu_moments(crop_b_mask))
-
-
-    #### ONLY MSER PXs
-    # in GRAY
-    crop_gray_masked = replace_everything_but_pts(crop_gray, pts_)
-    f.extend(get_hu_moments(crop_gray_masked))
-
-    # B G R
-    for i in range(3):
-        crop_ith_channel_masked = replace_everything_but_pts(crop[:, :, i], pts_)
-        f.extend(get_hu_moments(crop_ith_channel_masked))
-
-    # min, max from moments head/tail
-    relative_border = 2.0
-
-    bb, offset = get_bounding_box(r, p, relative_border)
-    p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
-    endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
-    endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
-
-    bb = rotate_img(bb, r.theta_)
-    bb = centered_crop(bb, 8*r.b_, 4*r.a_)
-
-    c_ = endpoint_rot(bb, r.centroid(), -r.theta_, r.centroid())
-
-    endpoint1_ = endpoint_rot(bb, endpoint1, -r.theta_, r.centroid())
-    endpoint2_ = endpoint_rot(bb, endpoint2, -r.theta_, r.centroid())
-    if endpoint1_[1] > endpoint2_[1]:
-        endpoint1_, endpoint2_ = endpoint2_, endpoint1_
-
-    y_ = int(c_[0] - r.b_)
-    y2_ = int(c_[0]+r.b_)
-    x_ = int(c_[1] - r.a_)
-    x2_ = int(c_[1] + r.a_)
-    im1_ = bb[y_:y2_, x_:int(c_[1]), :].copy()
-    im2_ = bb[y_:y2_, int(c_[1]):x2_, :].copy()
-
-    # ### ALL PXs in crop image given margin
-    # crop, offset = get_img_around_pts(img, r.pts(), margin=0.3)
-    #
-    # # in GRAY
-    # crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-    # f.extend(self.get_hu_moments(crop_gray))
-    #
-
-    # B G R
-    for i in range(3):
-        hu1 = get_hu_moments(im1_[:, :, i])
-        hu2 = get_hu_moments(im2_[:, :, i])
-
-        f.extend(list(np.min(np.vstack([hu1, hu2]), axis=0)))
-        f.extend(list(np.max(np.vstack([hu1, hu2]), axis=0)))
-
-    return f
-
-
-    crop_ = np.asarray(crop, dtype=np.int32)
-
-    # # R G combination
-    # crop_rg = crop_[:, :, 1] + crop_[:, :, 2]
-    # f.extend(self.get_hu_moments(crop_rg))
-    #
-    # # B G
-    # crop_bg = crop_[:, :, 0] + crop_[:, :, 1]
-    # f.extend(self.get_hu_moments(crop_bg))
-    #
-    # # B R
-    # crop_br = crop_[:, :, 0] + crop_[:, :, 2]
-    # f.extend(self.get_hu_moments(crop_br))
-
-
 def __process_crops(crops, fliplr):
     from skimage.feature import hog
 
@@ -311,38 +130,6 @@ def __process_crops(crops, fliplr):
         f.extend(fd2)
 
     return f
-
-
-def get_features_var2(r, p, fliplr=False):
-    crop = __get_crop(r, p)
-
-    crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-    # crop_r = crop[:, :, 2]
-    # crop_g = crop[:, :, 1]
-    # crop_b = crop[:, :, 0]
-
-    # crops = [crop_gray, crop_r, crop_b, crop_g]
-    crops = [crop_gray]
-
-    if fliplr:
-        f1 = __process_crops(crops, fliplr=False)
-        f2 = __process_crops(crops, fliplr=True)
-
-        return f1, f2
-    else:
-        f = __process_crops(crops, fliplr=False)
-
-        return f
-
-
-def get_features_var3(r, p, fliplr=False):
-    f1 = get_features_var1(r, p)
-    if fliplr:
-        f2_a, f2_b = get_features_var2(r, p, fliplr=fliplr)
-        return f1 + f2_a, f1 + f2_b
-    else:
-        f2= get_features_var2(r, p, fliplr=fliplr)
-        return f1 + f2
 
 def get_lbp_vect(crop):
     f = []
@@ -385,28 +172,7 @@ def __get_crop(r, p, margin=3):
 
     return crop
 
-
-def get_features_var4(r, p, fliplr=False):
-    crop = __get_crop(r, p)
-
-    crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-    crop_r = crop[:, :, 2]
-    crop_g = crop[:, :, 1]
-    crop_b = crop[:, :, 0]
-
-    crops = [crop_gray, crop_r, crop_b, crop_g]
-
-    f1 = []
-    f2 = []
-    for c in crops:
-        f1 += get_lbp_vect(c)
-        if fliplr:
-            f2 += get_lbp_vect(np.fliplr(c))
-
-    return f1, f2
-
-
-def get_features_var5(r, p, fliplr=False):
+def get_colornames_hists(r, p, fliplr=False):
     import img_features
 
     crop = __get_crop(r, p)
@@ -419,12 +185,197 @@ def get_features_var5(r, p, fliplr=False):
 
     return f1, f2
 
+def evaluate_features_performance(project, fm_names):
+    gt = GT()
+    gt.load(project.GT_file)
 
+    single_region_ids = []
+    single_region_ids, animal_ids = get_single_region_ids(project)
+    print len(single_region_ids), len(animal_ids)
+
+    if not isinstance(fm_names, list):
+        fm_names = [fm_names]
+
+    fms = []
+
+    for fm_n in fm_names:
+        fms.append(FeatureManager(project.working_directory, fm_n))
+
+    import itertools
+
+    seeds = [42, 1, 3, 30, 209]
+
+    # Todo: guarantee min number per id class
+    for test_size_ratio in [0.9, 0.95, 0.98, 0.99]:
+        print "Training/Learning ratio: {}, #train: {}, #test: {}".format(test_size_ratio, int(len(animal_ids)*(1 - test_size_ratio)), int(len(animal_ids)*test_size_ratio))
+
+        for num_f_types in range(1, len(fms)+1):
+            for combination in itertools.combinations(fms, num_f_types):
+                s = ""
+                for fm in combination:
+                    s += fm.db_path.split('/')[-1].split('.')[-2] + ' '
+
+                print s
+
+                X = []
+                for r_id in single_region_ids:
+                    f = []
+                    for fm in combination:
+                        _, f_ = fm[r_id]
+                        f.extend(f_)
+
+                    X.append(f[0])
+
+                X = np.array(X)
+                y = np.array(animal_ids)
+
+
+                rf = RandomForestClassifier()
+
+                from sklearn.model_selection import train_test_split
+
+                a_num_correct = []
+                a_num_test = []
+
+                for i in range(5):
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size_ratio, random_state=seeds[i])
+
+                    rf.fit(X_train, y_train)
+                    num_correct = np.sum(rf.predict(X_test) == y_test)
+                    num_test = len(y_test)
+
+                    a_num_correct.append(num_correct)
+                    a_num_test.append(num_test)
+
+
+                print "Mean Correct: {}(std:{})/{}(std:{}) ({:.2%})".format(np.mean(a_num_correct),
+                                                                            np.std(a_num_correct),
+                                                                            np.mean(a_num_test),
+                                                                            np.std(a_num_test),
+                                                                            np.mean(a_num_correct)/np.mean(a_num_test))
+
+                print
+
+def get_idtracker_features(r, p):
+    # import time
+
+    max_d = 20
+    max_i = 100
+    max_c = 50
+    img = p.img_manager.get_whole_img(r.frame_)
+    crop, offset = get_img_around_pts(img, r.pts())
+
+    # t1 = time.time()
+    intensity_map_ = np.zeros((max_d, max_i + 1))
+    contrast_map_ = np.zeros((max_d, max_c + 1))
+
+    pts = r.pts() - offset
+
+
+    ids1_ = []
+    ids2_ = []
+
+    n_p = len(pts)
+    for i in range(n_p):
+        ids1_.extend([i for _ in xrange(n_p - (i+1))])
+        ids2_.extend(range(i+1, n_p))
+
+    ids1_ = np.array(ids1_)
+    ids2_ = np.array(ids2_)
+    pts_ = np.array(pts)
+
+    x1_ = pts_[ids1_, :]
+    x2_ = pts_[ids2_, :]
+
+    d_ = np.linalg.norm(x1_ - x2_, axis=1) -1
+
+    x1_ = x1_[d_ < max_d]
+    x2_ = x2_[d_ < max_d]
+    # -1 because 0 never occurs
+    d_ = d_[d_ < max_d]
+
+    crop = np.asarray(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY), dtype=np.int)
+
+    x1_i = crop[x1_[:, 0], x1_[:, 1]]
+    x2_i = crop[x2_[:, 0], x2_[:, 1]]
+
+    i_ = x1_i + x2_i
+    c_ = np.abs(x1_i - x2_i)
+
+    for d in range(max_d):
+        ids_ = np.logical_and(d_ <= d, (d-1) < d_)
+
+        i__ = i_[ids_]
+        if len(i__) == 0:
+            continue
+
+        for i in range(i__.min(), min(i__.max(), max_i)+1):
+            intensity_map_[d, i] += np.sum(i__ == i)
+
+        c__ = c_[ids_]
+        for c in range(c__.min(), min(c__.max(), max_c)+1):
+            contrast_map_[d, c] += np.sum(c__ == c)
+
+    # print time.time() - t1
+
+    # import matplotlib.pyplot as plt
+    # plt.figure()
+    # plt.imshow(intensity_map_, aspect='auto')
+    # plt.figure()
+    # plt.imshow(contrast_map_, aspect='auto')
+
+    return list(np.ravel(intensity_map_)), list(np.ravel(contrast_map_))
+    # ########## slower variant
+    #
+    # t2 = time.time()
+    # intensity_map = np.zeros((max_d, max_i + 1))
+    # contrast_map = np.zeros((max_d, max_c + 1))
+    #
+    # for i, px1 in enumerate(pts):
+    #     for px2 in pts[i+1:]:
+    #         d = int(round(np.linalg.norm(px1-px2)) - 1)
+    #
+    #         if d >= max_d:
+    #             continue
+    #
+    #         i1 = int(crop[px1[0], px1[1]])
+    #         i2 = int(crop[px2[0], px2[1]])
+    #
+    #         i = min(max_i, i1 + i2)
+    #         c = min(abs(i1 - i2), max_c)
+    #         intensity_map[d, i] += 1
+    #         contrast_map[d, c] += 1
+    #
+    # print time.time() - t2
+    # print np.sum(intensity_map - intensity_map_), np.sum(contrast_map_ - contrast_map)
+    #
+    # return list(np.ravel(intensity_map)), list(np.ravel(contrast_map))
+
+def get_single_region_ids(project):
+    gt = GT()
+    gt.load(project.GT_file)
+
+    single_region_ids = []
+    animal_ids = []
+    match = gt.match_on_data(project, match_on='regions')
+
+    for frame in match.iterkeys():
+        for a_id, r_id in enumerate(match[frame]):
+            if r_id is None:
+                continue
+
+            if match[frame].count(r_id) == 1:
+                single_region_ids.append(r_id)
+                animal_ids.append(a_id)
+
+    return single_region_ids, animal_ids
 
 
 if __name__ == '__main__':
     from core.project.project import Project
     import cPickle as pickle
+
+    from sklearn.ensemble import RandomForestClassifier
 
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     p = Project()
@@ -439,12 +390,65 @@ if __name__ == '__main__':
         up.load()
         chm = up.load()
         p.chm = chm
-    #
+
+
     from core.region.region_manager import RegionManager
 
     p.rm = RegionManager(wd + '/temp', db_name='part0_rm.sqlite3')
     p.gm.rm = p.rm
-    
-    
-    for r in p.rm[:]:
 
+    import matplotlib.pyplot as plt
+    # for i in range(1, 7):
+    #     r = p.rm[i]
+    #     get_idtracker_features(r, p)
+
+    # plt.show()
+
+
+    # f1, f2 = get_idtracker_features(p.rm[1], p)
+    # f1, f2 = get_idtracker_features(p.rm[2], p)
+    # f1, f2 = get_idtracker_features(p.rm[3], p)
+    # f1, f2 = get_idtracker_features(p.rm[4], p)
+    # f1, f2 = get_idtracker_features(p.rm[5], p)
+    # f1, f2 = get_idtracker_features(p.rm[6], p)
+    # plt.show()
+
+    if True:
+        # p.chm.add_single_vertices_chunks(p, fra mes=range(4500))
+        p.gm.update_nodes_in_t_refs()
+
+        fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
+
+        if True:
+            evaluate_features_performance(p, fm_names)
+
+        if False:
+            single_region_ids, _ = get_single_region_ids(p)
+            # fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
+            # fm_colornames = FeatureManager(p.working_directory, db_name='fm_colornames.sqlite3')
+            fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50.sqlite3')
+            fm_idtracker_c = FeatureManager(p.working_directory, db_name='fm_idtracker_c_d50.sqlite3')
+
+            # fms = [fm_basic, fm_colornames]
+            # methods = [get_basic_properties, get_colornames_hists]
+
+            # for r in p.rm[:]:
+            #     for m, fm in zip(methods, fms):
+            #         f = m(r, p)
+            #         if len(f) == 2:
+            #             f = f[0]
+            #
+            #         fm.add(r.id(), f)
+
+            j = 0
+            num_regions = len(single_region_ids)
+            for r_id in single_region_ids:
+                r = p.rm[r_id]
+                j += 1
+
+                f1, f2 = get_idtracker_features(r, p)
+
+                fm_idtracker_i.add(r.id(), f1)
+                fm_idtracker_c.add(r.id(), f2)
+
+                print_progress(j, num_regions)

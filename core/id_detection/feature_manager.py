@@ -2,7 +2,7 @@ import sqlite3 as sql
 import cPickle
 import random
 
-DEBUG = True
+DEBUG = False
 __author__ = 'dita'
 
 

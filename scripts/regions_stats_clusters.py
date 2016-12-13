@@ -18,7 +18,7 @@ from utils.drawing.points import draw_points
 from utils.drawing.collage import create_collage_rows
 from PyQt4.QtGui import QColor
 from utils.img import rotate_img, get_bounding_box, centered_crop
-from core.id_detection.features import get_features_var2, get_crop
+from core.id_detection.features import get_hog_features, get_crop
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
 from sklearn.datasets.samples_generator import make_blobs
@@ -257,7 +257,7 @@ def head_detector_features(p, display=False):
 
         f2 = head_features(r, swap=True)
 
-        f1_, f2_ = get_features_var2(r, p, fliplr=True)
+        f1_, f2_ = get_hog_features(r, p, fliplr=True)
         f1.extend(f1_)
         f2.extend(f2_)
         #
@@ -322,7 +322,7 @@ def head_detector_classify(p):
         r = p.gm.region(v)
 
         f = head_features(r)
-        f.extend(get_features_var2(r, p))
+        f.extend(get_hog_features(r, p))
 
         probs = rfc.predict_proba(np.array([f]))[0]
 
