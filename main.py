@@ -27,7 +27,7 @@ if is_flipajs_pc():
     wd = '/Users/flipajs/Documents/wd/FERDA/C210min'
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_'
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
@@ -46,7 +46,9 @@ if is_flipajs_pc():
     # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
     # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
     # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/isolation_score.pkl', 'rb') as f:
-    with open('/Users/flipajs/Documents/wd/FERDA/zebrafish_playground/temp/isolation_score.pkl', 'rb') as f:
+    with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
+    # with open(wd+'/temp/strongly_better_filter.pkl', 'rb') as f:
+    # with open('/Users/flipajs/Documents/wd/FERDA/Sowbug3/temp/isolation_score.pkl', 'rb') as f:
         up = pickle.Unpickler(f)
         project.gm.g = up.load()
         up.load()
@@ -103,13 +105,13 @@ if is_flipajs_pc():
     # #     i += 1
     #
     #
-    # project.chm.add_single_vertices_chunks(project, frames=range(4500))
+    project.chm.add_single_vertices_chunks(project, frames=range(5000))
     project.gm.update_nodes_in_t_refs()
     # from utils.gt.gt import GT
     # gt = GT()
     # gt.load(project.GT_file)
     # # gt.check_none_occurence()
-    # match = gt.match_on_data(project, max_d=3)
+    # match = gt.match_on_data(project, max_d=3, frames=range(5000))
     # with open('/Users/flipajs/Desktop/temp/match.pkl', 'wb') as f:
     #     pickle.dump(match, f)
 
@@ -137,6 +139,9 @@ if is_flipajs_pc():
 
     from utils.color_manager import colorize_project
     colorize_project(project)
+
+    # from core.id_detection.feature_manager import FeatureManager
+    # fm = FeatureManager(project.working_directory, db_name='fm_idtracker_i_d50.sqlite3')
 
 
     ex.widget_control('load_project', project)

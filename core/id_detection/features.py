@@ -92,11 +92,8 @@ def get_hog_features(r, p, fliplr=False):
     crop = centered_crop(crop, 2 * (r.b_ + margin), 2 * (r.a_ + margin))
 
     crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-    crop_r = crop[:, :, 2]
-    crop_g = crop[:, :, 1]
-    crop_b = crop[:, :, 0]
 
-    crops = [crop_gray, crop_r, crop_b, crop_g]
+    crops = [crop_gray]
 
     if fliplr:
         f1 = __process_crops(crops, fliplr=False)
@@ -128,6 +125,23 @@ def __process_crops(crops, fliplr):
                             cells_per_block=(1, 1), visualise=False)
 
         f.extend(fd2)
+
+    return f
+
+def get_lbp(r, p):
+    img = p.img_manager.get_whole_img(r.frame_)
+
+    crop, offset = get_img_around_pts(img, r.pts(), margin=2.0)
+    crop = rotate_img(crop, r.theta_)
+
+    margin = 3
+
+    crop = centered_crop(crop, 2 * (r.b_ + margin), 2 * (r.a_ + margin))
+
+    crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+
+    crops = [crop_gray]
+    f = __process_crops(crops, fliplr=False)
 
     return f
 
@@ -182,16 +196,22 @@ def get_colornames_hists(r, p, fliplr=False):
     f1 = img_features.colornames_descriptor(crop, pyramid_levels=3)
     if fliplr:
         f2 = img_features.colornames_descriptor(np.fliplr(crop), pyramid_levels=3)
+        return f1, f2
 
-    return f1, f2
+    return f1
 
-def evaluate_features_performance(project, fm_names):
+def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10, test_split_method='random',
+                                  verbose=1, rf_class_weight=None, rf_criterion='gini'):
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForestClassifier
+
     gt = GT()
     gt.load(project.GT_file)
 
-    single_region_ids = []
     single_region_ids, animal_ids = get_single_region_ids(project)
-    print len(single_region_ids), len(animal_ids)
+    if verbose:
+        np.set_printoptions(precision=4)
+        print len(single_region_ids), len(animal_ids)
 
     if not isinstance(fm_names, list):
         fm_names = [fm_names]
@@ -203,70 +223,138 @@ def evaluate_features_performance(project, fm_names):
 
     import itertools
 
-    seeds = [42, 1, 3, 30, 209]
+    if seed is not None:
+        np.random.seed(seed)
+
+    seeds = np.random.randint(0, 100000, train_n_times)
+
+    results = {'layer': 'test_size_ratio'}
 
     # Todo: guarantee min number per id class
-    for test_size_ratio in [0.9, 0.95, 0.98, 0.99]:
-        print "Training/Learning ratio: {}, #train: {}, #test: {}".format(test_size_ratio, int(len(animal_ids)*(1 - test_size_ratio)), int(len(animal_ids)*test_size_ratio))
+    for test_size_ratio in [0.8, 0.9, 0.95, 0.99]:
+        results[test_size_ratio] = {'layer': 'features'}
 
-        for num_f_types in range(1, len(fms)+1):
+        if verbose:
+            print
+            print
+            print "#########################################################"
+            print "Training/Learning ratio: {}, #train: {}, #test: {}".format(test_size_ratio, int(len(animal_ids)*(1 - test_size_ratio)), int(len(animal_ids)*test_size_ratio))
+
+        # for num_f_types in range(1, len(fms)+1):
+        for num_f_types in range(1, 2):
             for combination in itertools.combinations(fms, num_f_types):
                 s = ""
                 for fm in combination:
                     s += fm.db_path.split('/')[-1].split('.')[-2] + ' '
 
-                print s
+                if verbose:
+                    print
+                    print "##### ", s , " #####"
+
+                results[test_size_ratio][s] = {}
 
                 X = []
                 for r_id in single_region_ids:
                     f = []
                     for fm in combination:
                         _, f_ = fm[r_id]
+
                         f.extend(f_)
 
                     X.append(f[0])
 
+                num_animals = len(set(animal_ids))
+
                 X = np.array(X)
                 y = np.array(animal_ids)
 
+                results[test_size_ratio][s]['X_shape'] = X.shape
+                results[test_size_ratio][s]['class_frequency'] = []
+                results[test_size_ratio][s]['train_class_frequency'] = []
 
-                rf = RandomForestClassifier()
+                for ai in range(num_animals):
+                    results[test_size_ratio][s]['class_frequency'].append(np.sum(y == ai))
 
-                from sklearn.model_selection import train_test_split
+                rf = RandomForestClassifier(class_weight=rf_class_weight, criterion=rf_criterion)
 
-                a_num_correct = []
-                a_num_test = []
+                results[test_size_ratio][s]['num_correct'] = []
+                results[test_size_ratio][s]['accuracy'] = []
+                results[test_size_ratio][s]['class_accuracy'] = []
 
-                for i in range(5):
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size_ratio, random_state=seeds[i])
+                for i in range(train_n_times):
+                    if test_split_method == 'random':
+                        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size_ratio, random_state=seeds[i])
+                    elif test_split_method == 'equivalent_class_num':
+                        # TODO:...
+                        raise Exception('Not implemented yet')
+                    else:
+                        split_ = int(X.shape[0]*(1 - test_size_ratio))
+                        X_train, X_test = X[:split_, :], X[split_:, :]
+                        y_train, y_test = y[:split_], y[split_:]
 
                     rf.fit(X_train, y_train)
-                    num_correct = np.sum(rf.predict(X_test) == y_test)
+                    correct_ids = rf.predict(X_test) == y_test
+                    num_correct = np.sum(correct_ids)
                     num_test = len(y_test)
 
-                    a_num_correct.append(num_correct)
-                    a_num_test.append(num_test)
+                    class_accuracy = []
+                    train_class_frequency = []
+                    for ic in range(num_animals):
+                        num_c = np.sum(y_test == ic)
+                        train_num_c = np.sum(y_train == ic)
+                        train_class_frequency.append(train_num_c)
+                        correct_c = np.sum(np.logical_and(correct_ids, y_test == ic))
+                        class_accuracy.append(correct_c / float(num_c))
 
+                    results[test_size_ratio][s]['num_correct'].append(num_correct)
+                    results[test_size_ratio][s]['accuracy'].append(num_correct / float(num_test))
+                    results[test_size_ratio][s]['class_accuracy'].append(class_accuracy)
+                    results[test_size_ratio][s]['train_class_frequency'].append(train_class_frequency)
 
-                print "Mean Correct: {}(std:{})/{}(std:{}) ({:.2%})".format(np.mean(a_num_correct),
-                                                                            np.std(a_num_correct),
-                                                                            np.mean(a_num_test),
-                                                                            np.std(a_num_test),
-                                                                            np.mean(a_num_correct)/np.mean(a_num_test))
+                if verbose:
+                    num_test = int(test_size_ratio*X.shape[0])
+                    print "Mean Correct: {}(std:{})/{} ({:.2%}, std: {})".format(
+                        np.mean(results[test_size_ratio][s]['num_correct']),
+                        np.std(results[test_size_ratio][s]['num_correct']),
+                        num_test,
+                        np.mean(results[test_size_ratio][s]['accuracy']),
+                        np.std(results[test_size_ratio][s]['accuracy'])
+                    )
 
-                print
+                    print "class frequency", results[test_size_ratio][s]['class_frequency']
+                    print "train class frequency, mean: ", np.mean(results[test_size_ratio][s]['train_class_frequency'], axis=0), "std: ", np.std(results[test_size_ratio][s]['train_class_frequency'], axis=0)
+                    print "class accuracy mean", np.mean(results[test_size_ratio][s]['class_accuracy'], axis=0), "std: ", np.std(results[test_size_ratio][s]['class_accuracy'], axis=0)
 
-def get_idtracker_features(r, p):
+    # reset...
+    np.set_printoptions()
+
+    return results
+
+def get_idtracker_features(r, p, debug=False):
     # import time
 
-    max_d = 20
-    max_i = 100
+    max_d = 50
+    # max_i = 100
+
+    # zebrafish settings
+    min_i = 0
+    max_i = 210
     max_c = 50
+
+
+    # # Camera3 Settings
+    # max_d = 70
+    #
+    # min_i = 20
+    # max_i = 90
+    # max_c = 40
+
+
     img = p.img_manager.get_whole_img(r.frame_)
     crop, offset = get_img_around_pts(img, r.pts())
 
     # t1 = time.time()
-    intensity_map_ = np.zeros((max_d, max_i + 1))
+    intensity_map_ = np.zeros((max_d, max_i + 1 - min_i))
     contrast_map_ = np.zeros((max_d, max_c + 1))
 
     pts = r.pts() - offset
@@ -309,8 +397,8 @@ def get_idtracker_features(r, p):
         if len(i__) == 0:
             continue
 
-        for i in range(i__.min(), min(i__.max(), max_i)+1):
-            intensity_map_[d, i] += np.sum(i__ == i)
+        for i in range(max(i__.min(), min_i), min(i__.max(), max_i)+1):
+            intensity_map_[d, i - min_i] += np.sum(i__ == i)
 
         c__ = c_[ids_]
         for c in range(c__.min(), min(c__.max(), max_c)+1):
@@ -318,11 +406,13 @@ def get_idtracker_features(r, p):
 
     # print time.time() - t1
 
-    # import matplotlib.pyplot as plt
-    # plt.figure()
-    # plt.imshow(intensity_map_, aspect='auto')
-    # plt.figure()
-    # plt.imshow(contrast_map_, aspect='auto')
+    if debug:
+        import matplotlib.pyplot as plt
+        plt.figure()
+        plt.imshow(intensity_map_, aspect='auto')
+        plt.figure()
+        plt.imshow(contrast_map_, aspect='auto')
+
 
     return list(np.ravel(intensity_map_)), list(np.ravel(contrast_map_))
     # ########## slower variant
@@ -375,9 +465,10 @@ if __name__ == '__main__':
     from core.project.project import Project
     import cPickle as pickle
 
-    from sklearn.ensemble import RandomForestClassifier
-
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     p = Project()
     p.load(wd)
 
@@ -391,64 +482,84 @@ if __name__ == '__main__':
         chm = up.load()
         p.chm = chm
 
-
     from core.region.region_manager import RegionManager
 
     p.rm = RegionManager(wd + '/temp', db_name='part0_rm.sqlite3')
     p.gm.rm = p.rm
 
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
     # for i in range(1, 7):
     #     r = p.rm[i]
-    #     get_idtracker_features(r, p)
-
-    # plt.show()
-
-
-    # f1, f2 = get_idtracker_features(p.rm[1], p)
-    # f1, f2 = get_idtracker_features(p.rm[2], p)
-    # f1, f2 = get_idtracker_features(p.rm[3], p)
-    # f1, f2 = get_idtracker_features(p.rm[4], p)
-    # f1, f2 = get_idtracker_features(p.rm[5], p)
-    # f1, f2 = get_idtracker_features(p.rm[6], p)
+    #     get_idtracker_features(r, p, debug=True)
+    #
     # plt.show()
 
     if True:
         # p.chm.add_single_vertices_chunks(p, fra mes=range(4500))
         p.gm.update_nodes_in_t_refs()
 
-        fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
-
-        if True:
-            evaluate_features_performance(p, fm_names)
-
         if False:
             single_region_ids, _ = get_single_region_ids(p)
-            # fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
-            # fm_colornames = FeatureManager(p.working_directory, db_name='fm_colornames.sqlite3')
+            fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
+            fm_colornames = FeatureManager(p.working_directory, db_name='fm_colornames.sqlite3')
             fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50.sqlite3')
             fm_idtracker_c = FeatureManager(p.working_directory, db_name='fm_idtracker_c_d50.sqlite3')
+            fm_hog = FeatureManager(p.working_directory, db_name='fm_hog.sqlite3')
+            fm_lbp = FeatureManager(p.working_directory, db_name='fm_lbp.sqlite3')
 
-            # fms = [fm_basic, fm_colornames]
-            # methods = [get_basic_properties, get_colornames_hists]
-
-            # for r in p.rm[:]:
-            #     for m, fm in zip(methods, fms):
-            #         f = m(r, p)
-            #         if len(f) == 2:
-            #             f = f[0]
-            #
-            #         fm.add(r.id(), f)
+            # fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
+            fms = [(fm_idtracker_i, fm_idtracker_c)]
+            # methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
+            methods = [get_idtracker_features]
 
             j = 0
             num_regions = len(single_region_ids)
             for r_id in single_region_ids:
                 r = p.rm[r_id]
+
                 j += 1
 
-                f1, f2 = get_idtracker_features(r, p)
+                for m, fm in zip(methods, fms):
+                    if not isinstance(fm, tuple):
+                        if fm[r_id][1][0] is not None:
+                            continue
+                    else:
+                        if fm[0][r_id][1][0] is not None and fm[0][r_id][1][0] is not None:
+                            continue
 
-                fm_idtracker_i.add(r.id(), f1)
-                fm_idtracker_c.add(r.id(), f2)
+                    f = m(r, p)
+                    if len(f) == 2:
+
+                        f0 = f[0]
+                        f1 = f[1]
+
+                        try:
+                            fm[0].add(r.id(), f0)
+                            fm[1].add(r.id(), f1)
+                        except Exception as e:
+                            print e
+                    else:
+                        fm.add(r.id(), f)
 
                 print_progress(j, num_regions)
+
+            # j = 0
+
+            # for r_id in single_region_ids:
+            #     r = p.rm[r_id]
+            #     j += 1
+            #
+            #     f1, f2 = get_idtracker_features(r, p)
+            #
+            #     fm_idtracker_i.add(r.id(), f1)
+            #     fm_idtracker_c.add(r.id(), f2)
+            #
+            #     print_progress(j, num_regions)
+
+
+        # fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
+        fm_names = ['fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
+        fm_names = ['fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
+
+        if True:
+            evaluate_features_performance(p, fm_names)
