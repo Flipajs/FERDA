@@ -83,6 +83,9 @@ def get_basic_properties(r, p):
 
     return f
 
+def get_hog_features_fliplr(r, p):
+    return get_hog_features(r, p, True)
+
 def get_hog_features(r, p, fliplr=False):
     img = p.img_manager.get_whole_img(r.frame_)
 
@@ -514,7 +517,7 @@ if __name__ == '__main__':
             # fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
             fms = [(fm_idtracker_i, fm_idtracker_c)]
             # methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
-            methods = [features2.get_idtracker_features]
+            methods = [get_hog_features_fliplr]
 
             j = 0
             num_regions = len(single_region_ids)
