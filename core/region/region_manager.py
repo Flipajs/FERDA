@@ -2,6 +2,7 @@ from core.region.region import Region, encode_RLE
 import sqlite3 as sql
 import cPickle as pickle
 import random
+from math import floor
 
 __author__ = 'flipajs'
 
@@ -29,35 +30,61 @@ class RegionManager:
                 self.id_ = 0
             else:
                 raise SyntaxError("Cache limit can only be set when database is used!")
-        else:
+        elif db_size <= 0:
+            # single database mode
+
             self.use_db = True
-            self.db_path = db_wd+"/0_"+db_name
-            print "Initializing db at %s " % self.db_path
-            self.con = sql.connect(self.db_path)
-            self.cur = self.con.cursor()
+            self.db_path = [db_wd+db_name]
+            print "Initializing db at %s " % self.db_path[0]
+            self.con = [sql.connect(self.db_path[0])]
+            self.cur = [self.con[0].cursor()]
             # DEBUG, do not use!
             # self.cur.execute("DROP TABLE IF EXISTS regions;")
-            self.cur.execute("CREATE TABLE regions(\
+            self.cur[0].execute("CREATE TABLE regions(\
                 id INTEGER PRIMARY KEY, \
                 data BLOB);")
-            self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
+            self.cur[0].execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
             self.use_db = True
             self.regions_cache_ = {}
             self.recent_regions_ids = []
             self.cache_size_limit_ = cache_size_limit
             # if database has been used before, get last used ID and continue from it (IDs always have to stay unique)
             try:
-                self.cur.execute("SELECT id FROM regions ORDER BY id DESC LIMIT 1;")
-                row = self.cur.fetchone()
+                self.cur[0].execute("SELECT id FROM regions ORDER BY id DESC LIMIT 1;")
+                row = self.cur[0].fetchone()
                 self.id_ = row[0]
-                # TODO: if database is full, check for other database files
-                # TODO: check if database size isn't greater that size limit and handle it
+                # TODO: check for other database files and merge them into one
             except TypeError:  # TypeError is raised when row is empty (no IDs were found)
                 self.id_ = 0
-            if db_size > 0:
-                # TODO: use list of cons instead of self.con (same for self.cur)
-                pass
+
+        else:
+            self.use_db = True
+            self.db_path = [db_wd+"/0_"+db_name]
+            print "Initializing db at %s " % self.db_path[0]
+            self.con = [sql.connect(self.db_path[0])]
+            self.cur = [self.con[0].cursor()]
+            # DEBUG, do not use!
+            # self.cur.execute("DROP TABLE IF EXISTS regions;")
+            self.cur[0].execute("CREATE TABLE regions(\
+                id INTEGER PRIMARY KEY, \
+                data BLOB);")
+            self.cur[0].execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
+            self.use_db = True
+            self.regions_cache_ = {}
+            self.recent_regions_ids = []
+            self.cache_size_limit_ = cache_size_limit
+            # if database has been used before, get last used ID and continue from it (IDs always have to stay unique)
+            try:
+                self.cur[0].execute("SELECT id FROM regions ORDER BY id DESC LIMIT 1;")
+                row = self.cur[0].fetchone()
+                self.id_ = row[0]
+                # TODO: make sure database is not larger than db_size allows
+                # TODO: if database is full, check for other database files (and check their sizes, too)
+            except TypeError:  # TypeError is raised when row is empty (no IDs were found)
+                self.id_ = 0
+
         self.tmp_ids = []
+        self.db_size = db_size
 
         if isinstance(data, RegionManager):
             new_data = data[:]
@@ -79,6 +106,8 @@ class RegionManager:
 
         if isinstance(regions, list):
             if self.use_db:
+                # TODO: Handle adding more elements. Eg. first db has 5 spaces left and list of 10 is inserted... It
+                # TODO:    gets even harder when db size limit is 100 and 250 elements are added.
                 self.cur.execute("BEGIN TRANSACTION;")
                 self.cur.executemany("INSERT INTO regions VALUES (?, ?)", self.add_iter_(regions))
                 # self.id and self.tmp_ids are updated in self.add_iter_
@@ -97,12 +126,13 @@ class RegionManager:
             raise TypeError("Region manager can only work with Region objects, not %s" % type(regions))
 
         if self.use_db:
-            id_ = self.get_next_id()
+            id_ = self.get_next_id()  # TODO: perhaps also save next database id
+            search_db = self.get_db_id(id_)
             regions.id_ = id_
             self.add_to_cache_(id_, regions)
-            self.cur.execute("BEGIN TRANSACTION;")
-            self.cur.execute("INSERT INTO regions VALUES (?, ?)", (id_, self.prepare_region(regions)))
-            self.con.commit()
+            self.cur[search_db].execute("BEGIN TRANSACTION;")
+            self.cur[search_db].execute("INSERT INTO regions VALUES (?, ?)", (id_, self.prepare_region(regions)))
+            self.con[search_db].commit()
         else:
             id_ = self.get_next_id()
             regions.id_ = id_
@@ -161,6 +191,7 @@ class RegionManager:
         """
         for r in regions:
             if not isinstance(r, Region):
+                # TODO
                 self.con.rollback()
                 raise TypeError("Region manager can only work with Region objects, not %s" % type(r))
             id_ = self.get_next_id()
@@ -265,11 +296,12 @@ class RegionManager:
         l = len(sql_ids)
         if l == 1:
             # if only one id has to be taken from db
+            search_db = self.get_db_id(sql_ids[0])
             cmd = "SELECT data FROM regions WHERE id = %s" % sql_ids[0]
-            self.cur.execute("BEGIN TRANSACTION;")
-            self.cur.execute(cmd)
-            self.con.commit()
-            row = self.cur.fetchone()
+            self.cur[search_db].execute("BEGIN TRANSACTION;")
+            self.cur[search_db].execute(cmd)
+            self.con[search_db].commit()
+            row = self.cur[search_db].fetchone()
             # add it to result
             id_ = sql_ids[0]
             try:
@@ -282,6 +314,7 @@ class RegionManager:
                 pass
 
         if l > 1:
+            # TODO: find all db ids, if they belong to multiple dbs, run multiple transactions
             cmd = "SELECT id, data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
             self.cur.execute("BEGIN TRANSACTION;")
             self.cur.execute(cmd)
@@ -312,6 +345,7 @@ class RegionManager:
             if id_ in self.recent_regions_ids:
                 self.recent_regions_ids.remove(id_)
 
+        # TODO: find all db ids, if they belong to multiple dbs, run multiple transactions
         cmd = "DELETE FROM regions WHERE id IN %s" % self.pretty_list(sql_ids)
         self.cur.execute("BEGIN TRANSACTION;")
         self.cur.execute(cmd)
@@ -331,10 +365,11 @@ class RegionManager:
 
         if id_ in self:
             if self.use_db:
+                search_db = self.get_db_id(id_)
                 cmd = "DELETE FROM regions WHERE id = %s;" % id_
-                self.cur.execute("BEGIN TRANSACTION;")
-                self.cur.execute(cmd)
-                self.con.commit()
+                self.cur[search_db].execute("BEGIN TRANSACTION;")
+                self.cur[search_db].execute(cmd)
+                self.con[search_db].commit()
             if id_ in self.regions_cache_:
                 self.regions_cache_.pop(id_)
             if id_ in self.recent_regions_ids:
@@ -371,6 +406,12 @@ class RegionManager:
         if isinstance(item, Region):
             return len(self)+1 > item.id() > 0
         return isinstance(item, (int, long)) and len(self)+1 > item > 0
+
+    def get_db_id(self, region_id):
+        if self.db_size <= 0 or not self.use_db:
+            return 0
+        else:
+            return floor(region_id / self.db_size)
 
 
 def remove_none(data):
