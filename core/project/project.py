@@ -243,6 +243,21 @@ class Project:
                 except:
                     pass
 
+    def load_hybrid(self, path, state='isolation_score'):
+        self.load(path)
+
+        with open(self.working_directory + '/temp/'+state+'.pkl', 'rb') as f:
+            up = pickle.Unpickler(f)
+            self.gm.g = up.load()
+            up.load()
+            self.chm = up.load()
+
+        from core.region.region_manager import RegionManager
+        self.rm = RegionManager(self.working_directory + '/temp', db_name='part0_rm.sqlite3')
+        self.gm.rm = self.rm
+
+
+
     def load(self, path, snapshot=None, parent=None):
         if path[-6:] != '.fproj':
             for f in os.listdir(path):
