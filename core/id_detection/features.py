@@ -8,6 +8,8 @@ from skimage.feature import local_binary_pattern
 from core.id_detection.feature_manager import FeatureManager
 from utils.gt.gt import GT
 from utils.misc import print_progress
+# import pyximport; pyximport.install()
+# import features2
 
 
 def get_mu_moments(img):
@@ -487,30 +489,32 @@ if __name__ == '__main__':
     p.rm = RegionManager(wd + '/temp', db_name='part0_rm.sqlite3')
     p.gm.rm = p.rm
 
-    # import matplotlib.pyplot as plt
-    # for i in range(1, 7):
-    #     r = p.rm[i]
-    #     get_idtracker_features(r, p, debug=True)
-    #
-    # plt.show()
+    import matplotlib.pyplot as plt
+    for i in range(1, 7):
+        r = p.rm[i]
+        get_idtracker_features(r, p, debug=True)
+
+    plt.show()
+
+    test_regions = []
 
     if True:
         # p.chm.add_single_vertices_chunks(p, fra mes=range(4500))
         p.gm.update_nodes_in_t_refs()
 
-        if False:
+        if True:
             single_region_ids, _ = get_single_region_ids(p)
             fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
             fm_colornames = FeatureManager(p.working_directory, db_name='fm_colornames.sqlite3')
-            fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50.sqlite3')
-            fm_idtracker_c = FeatureManager(p.working_directory, db_name='fm_idtracker_c_d50.sqlite3')
+            fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50_test.sqlite3')
+            fm_idtracker_c = FeatureManager(p.working_directory, db_name='fm_idtracker_c_d50_test.sqlite3')
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog.sqlite3')
             fm_lbp = FeatureManager(p.working_directory, db_name='fm_lbp.sqlite3')
 
             # fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
             fms = [(fm_idtracker_i, fm_idtracker_c)]
             # methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
-            methods = [get_idtracker_features]
+            methods = [features2.get_idtracker_features]
 
             j = 0
             num_regions = len(single_region_ids)
@@ -534,8 +538,9 @@ if __name__ == '__main__':
                         f1 = f[1]
 
                         try:
-                            fm[0].add(r.id(), f0)
-                            fm[1].add(r.id(), f1)
+                            pass
+                            # fm[0].add(r.id(), f0)
+                            # fm[1].add(r.id(), f1)
                         except Exception as e:
                             print e
                     else:
