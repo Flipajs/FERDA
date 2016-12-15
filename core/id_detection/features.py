@@ -8,6 +8,7 @@ from skimage.feature import local_binary_pattern
 from core.id_detection.feature_manager import FeatureManager
 from utils.gt.gt import GT
 from utils.misc import print_progress
+from itertools import izip
 # import pyximport; pyximport.install()
 # import features2
 
@@ -84,7 +85,10 @@ def get_basic_properties(r, p):
     return f
 
 def get_hog_features_fliplr(r, p):
-    return get_hog_features(r, p, True)
+    f1, f2 = get_hog_features(r, p, True)
+
+    f1.extend(f2)
+    return f1
 
 def get_hog_features(r, p, fliplr=False):
     img = p.img_manager.get_whole_img(r.frame_)
@@ -248,9 +252,15 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
         # for num_f_types in range(1, len(fms)+1):
         for num_f_types in range(1, 2):
             for combination in itertools.combinations(fms, num_f_types):
+                fliplr = False
+
                 s = ""
                 for fm in combination:
                     s += fm.db_path.split('/')[-1].split('.')[-2] + ' '
+
+                # TODO: for combinations
+                if s[-6:] == 'fliplr':
+                    fliplr = True
 
                 if verbose:
                     print
@@ -296,6 +306,20 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
                         split_ = int(X.shape[0]*(1 - test_size_ratio))
                         X_train, X_test = X[:split_, :], X[split_:, :]
                         y_train, y_test = y[:split_], y[split_:]
+
+                    # concatenated vector of features for left and
+                    if fliplr:
+                        X_train_new = []
+                        y_train_new = []
+                        for line, id_ in izip(X_train, y_train):
+                            X_train_new.append(line[:len(line)/2])
+                            X_train_new.append(line[len(line)/2:])
+                            y_train_new.append(id_)
+                            y_train_new.append(id_)
+
+                        X_test_new = []
+                        for line in izip(X_test):
+                            X_test_new.append(line[:len(line)/2])
 
                     rf.fit(X_train, y_train)
                     correct_ids = rf.predict(X_test) == y_test
@@ -492,12 +516,12 @@ if __name__ == '__main__':
     p.rm = RegionManager(wd + '/temp', db_name='part0_rm.sqlite3')
     p.gm.rm = p.rm
 
-    import matplotlib.pyplot as plt
-    for i in range(1, 7):
-        r = p.rm[i]
-        get_idtracker_features(r, p, debug=True)
-
-    plt.show()
+    # import matplotlib.pyplot as plt
+    # for i in range(1, 7):
+    #     r = p.rm[i]
+    #     get_idtracker_features(r, p, debug=True)
+    #
+    # plt.show()
 
     test_regions = []
 
@@ -514,8 +538,11 @@ if __name__ == '__main__':
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog.sqlite3')
             fm_lbp = FeatureManager(p.working_directory, db_name='fm_lbp.sqlite3')
 
+            fm_hog = FeatureManager(p.working_directory, db_name='fm_hog_fliplr.sqlite3')
+
             # fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
-            fms = [(fm_idtracker_i, fm_idtracker_c)]
+            # fms = [(fm_idtracker_i, fm_idtracker_c)]
+            fms = [fm_hog]
             # methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
             methods = [get_hog_features_fliplr]
 
@@ -536,11 +563,12 @@ if __name__ == '__main__':
 
                     f = m(r, p)
                     if len(f) == 2:
-
                         f0 = f[0]
                         f1 = f[1]
 
                         try:
+                            # fm.add(r.id())
+
                             pass
                             # fm[0].add(r.id(), f0)
                             # fm[1].add(r.id(), f1)
@@ -568,6 +596,10 @@ if __name__ == '__main__':
         # fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
         fm_names = ['fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
         fm_names = ['fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
+        fm_names = ['fm_hog_fliplr.sqlite3']
 
         if True:
-            evaluate_features_performance(p, fm_names)
+            results = evaluate_features_performance(p, fm_names, seed=42, test_split_method='random',
+                                                    rf_class_weight='balanced_subsample', rf_criterion='entropy')
+
+            print results

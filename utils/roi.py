@@ -61,16 +61,16 @@ class ROI():
     def is_inside(self, pt, tolerance=0):
         y = pt[0]
         x = pt[1]
-        if y < self.y_ + tolerance:
+        if y < self.y_ - tolerance:
             return False
 
-        if y > self.y_max_ - tolerance:
+        if y > self.y_max_ + tolerance:
             return False
 
-        if x < self.x_ + tolerance:
+        if x < self.x_ - tolerance:
             return False
 
-        if x > self.x_max_ - tolerance:
+        if x > self.x_max_ + tolerance:
             return False
 
         return True

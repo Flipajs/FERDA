@@ -252,6 +252,7 @@ class Region():
         from utils.drawing.points import draw_points_crop_binary
         if self.roi().is_inside(pt, tolerance=tolerance):
             pt_ = np.asarray(np.round(pt - self.roi().top_left_corner()), dtype=np.uint)
+            # TODO + tolerance margin, and fix offset
             im = draw_points_crop_binary(self.pts())
 
             y1 = int(max(0, pt_[0] - tolerance))
