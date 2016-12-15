@@ -516,12 +516,12 @@ if __name__ == '__main__':
     p.rm = RegionManager(wd + '/temp', db_name='part0_rm.sqlite3')
     p.gm.rm = p.rm
 
-    # import matplotlib.pyplot as plt
-    # for i in range(1, 7):
-    #     r = p.rm[i]
-    #     get_idtracker_features(r, p, debug=True)
-    #
-    # plt.show()
+    import matplotlib.pyplot as plt
+    for i in range(1, 7):
+        r = p.rm[i]
+        get_idtracker_features(r, p, debug=True)
+
+    plt.show()
 
     test_regions = []
 
