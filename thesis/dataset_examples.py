@@ -19,14 +19,14 @@ if __name__ == '__main__':
              }
 
 
-    for p_name, p in project_paths.iteritems():
+    for p_name, p in projects.iteritems():
         if p_name != 'Camera3':
             continue
 
         vm = get_auto_video_manager(p)
         imgs = []
 
-        for i, frame in enumerate(frames[p_name]):
+        for i, frame in enumerate(1, len(frames[p_name]) + 1):
             plt.subplot(3, 2, i)
             imgs.append(vm.get_frame(frame).copy())
             plt.imshow(imgs[-1])
