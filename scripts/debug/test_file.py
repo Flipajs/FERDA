@@ -36,7 +36,7 @@ for path in paths:
 
     print "#undecided: {}, eps: {:.3f}, maxA: {:.3f}".format(np.sum(ids2_), eps_.max(), AA[ids2_].max())
 
-    for i in range(10):
+    for i in range(3):
         id_ = np.argmax(eps_)
         e = edges[ids_][id_]
         eps_[id_] = 0
