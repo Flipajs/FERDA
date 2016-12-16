@@ -9,7 +9,10 @@ from core.project.project import Project
 from scripts.pca.cluster_range.gt_widget import GTWidget
 from scripts.pca.widgets import head_widget
 
-FNAME = 'clusters_Cam_1_gt.p'
+# FNAME = 'clusters_Cam_1_gt.p'
+from scripts.pca.widgets.tracklet_viewer import TrackletViewer
+
+FNAME = 'clusters_zebrafish_gt.p'
 
 
 class GTManager:
@@ -65,16 +68,26 @@ class GTManager:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     project = Project()
-    project.load("/home/simon/FERDA/projects/clusters_gt/Cam1_/cam1.fproj")
+    # project.load("/home/simon/FERDA/projects/clusters_gt/Cam1_/cam1.fproj")
+    project.load("/home/simon/FERDA/projects/clusters_gt/zebrafish/zebrafish.fproj")
+    app = QtGui.QApplication(sys.argv)
+
     chunks = project.gm.chunk_list()
 
+    for ch in chunks:
+        tracklet_viewer = TrackletViewer(project.img_manager, ch, project.chm, project.gm, project.rm)
+        tracklet_viewer.show()
+        app.exec_()
+
+
     # data for clusters_gt/Cam1_
-    f = open('/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_cluster_tracklets')
+    # f = open('/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_cluster_tracklets')
+    # f = open('/home/simon/FERDA/ferda/scripts/pca/data/clusters_zebrafish_cluster_tracklets')
     chunks_with_clusters = []
-    for line in f:
-        chunks_with_clusters += line.split()
-    chunks_with_clusters = map(lambda x: int(x), chunks_with_clusters)
-    f.close()
+    # for line in f:
+    #     chunks_with_clusters += line.split()
+    # chunks_with_clusters = map(lambda x: int(x), chunks_with_clusters)
+    # f.close()
     chunks_without_clusters = list(set(range(579)) - set(chunks_with_clusters))
 
     chunks_with_clusters = map(lambda x: chunks[x], chunks_with_clusters)
