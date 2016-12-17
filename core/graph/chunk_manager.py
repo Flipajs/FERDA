@@ -91,7 +91,10 @@ class ChunkManager:
         for ch in self.chunk_gen():
             self._add_ch_itree(ch, gm)
 
-    def add_single_vertices_chunks(self, p, frames):
+    def add_single_vertices_chunks(self, p, frames=None):
+        if frames is None:
+            frames = range(p.gm.end_t)
+
         self.reset_itree(p.gm)
 
         for n in p.gm.g.vertices():

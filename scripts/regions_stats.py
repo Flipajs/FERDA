@@ -1442,27 +1442,30 @@ def process_project(p):
 
     # prepare_pairs(p)
     # max_dist = get_max_dist2(p)
-    max_dist = 80.
-    with open(p.working_directory+'/temp/data.pkl', 'wb') as f:
-        pickle.dump({'max_measured_distance': max_dist}, f)
+    # max_dist = 80.
+    # with open(p.working_directory+'/temp/data.pkl', 'wb') as f:
+    #     pickle.dump({'max_measured_distance': max_dist}, f)
+    #
+    # solver2.prune_distant_connections(max_dist)
+    # save_p_checkpoint(p, 'g_pruned')
+    #
+    # load_p_checkpoint(p, 'g_pruned')
+    # p.chm = ChunkManager()
+    # p.gm.update_nodes_in_t_refs()
+    # decide_one2one(p)
+    # tracklet_stats(p)
+    # save_p_checkpoint(p, 'first_tracklets')
+    #
+    # learn_assignments(p)
 
-    solver2.prune_distant_connections(max_dist)
-    save_p_checkpoint(p, 'g_pruned')
-
-    load_p_checkpoint(p, 'g_pruned')
-    p.chm = ChunkManager()
-    p.gm.update_nodes_in_t_refs()
-    decide_one2one(p)
-    tracklet_stats(p)
-    save_p_checkpoint(p, 'first_tracklets')
-
-    learn_assignments(p)
-
-    load_p_checkpoint(p, 'first_tracklets')
-
-    p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
-
-    add_score_to_edges(p)
+    # load_p_checkpoint(p, 'first_tracklets')
+    #
+    # p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
+    #
+    # add_score_to_edges(p)
+    #
+    # save_p_checkpoint(p, 'edge_cost_updated')
+    load_p_checkpoint(p, 'edge_cost_updated')
 
     p.gm.update_nodes_in_t_refs()
     p.chm.reset_itree(p.gm)
@@ -1471,36 +1474,42 @@ def process_project(p):
 
     tracklet_stats(p)
 
-    score_type = 'appearance_motion_mix'
+    if False:
+        score_type = 'appearance_motion_mix'
+        eps = 0.3
 
-    # min_prob = 0.8 ** 2
-    min_prob = 0.1
-    better_n_times = 1.5 ** 2
+        strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
+        print "strongly better: {}".format(len(strongly_better_e))
+        for e in strongly_better_e:
+            solver.confirm_edges([(e.source(), e.target())])
 
-    eps = 0.15
+        tracklet_stats(p)
 
-    strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
-    print "strongly better: {}".format(len(strongly_better_e))
-    for e in strongly_better_e:
-        solver.confirm_edges([(e.source(), e.target())])
+        strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
+        print "strongly better: {}".format(len(strongly_better_e))
+        for e in strongly_better_e:
+            solver.confirm_edges([(e.source(), e.target())])
 
-    tracklet_stats(p)
+        tracklet_stats(p)
+        decide_one2one(p)
 
-    strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
-    print "strongly better: {}".format(len(strongly_better_e))
-    for e in strongly_better_e:
-        solver.confirm_edges([(e.source(), e.target())])
+        p.gm.update_nodes_in_t_refs()
+        p.chm.reset_itree(p.gm)
 
-    tracklet_stats(p)
-    decide_one2one(p)
+        save_p_checkpoint(p, 'eps_edge_filter')
+        tracklet_stats(p)
+    else:
+        from utils.geometry import get_region_group_overlaps
 
-    # p.gm.update_nodes_in_t_refs()
-    p.chm.reset_itree(p.gm)
+        for i in range(0, 1000, 10):
+            print i
+            rt1 = p.gm.regions_in_t(i)
+            rt2 = p.gm.regions_in_t(i+1)
 
-    save_p_checkpoint(p, 'strongly_better_filter')
-    tracklet_stats(p)
-
-
+            get_region_group_overlaps(rt1, rt2)
+        # overlap test...
+        # boolean matrix regions_t x regions_t+1
+        pass
 
 def clustering(p, compute_data=True):
     print "___________________________________"
@@ -1580,10 +1589,10 @@ def clustering(p, compute_data=True):
 
 if __name__ == '__main__':
     p = Project()
-    # p.load('/Users/flipajs/Documents/wd/zebrafish_playground')
+    # p.load('/Users/flipajs/Documents/wd/FERDA/zebrafish_playground')
     p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
     # p.load('/Users/flipajs/Documents/wd/FERDA/Sowbug3')
-    # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_int_limit')
+    # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3')
     from core.region.region_manager import RegionManager
 
     p.rm = RegionManager(p.working_directory + '/temp', db_name='part0_rm.sqlite3')

@@ -11,6 +11,9 @@ from utils.misc import print_progress
 from itertools import izip
 # import pyximport; pyximport.install()
 # import features2
+import matplotlib.pyplot as plt
+import time
+from math import ceil
 
 
 def get_mu_moments(img):
@@ -359,11 +362,25 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
 
     return results
 
-def get_idtracker_features(r, p, debug=False):
+def get_idtracker_features_sub2(r, p, debug=False):
+    return get_idtracker_features(r, p, debug, sub=2)
+
+def get_idtracker_features_sub4(r, p, debug=False):
+    return get_idtracker_features(r, p, debug, sub=4)
+
+def get_idtracker_features_sub8(r, p, debug=False):
+    return get_idtracker_features(r, p, debug, sub=8)
+
+def get_idtracker_features(r, p, debug=False, sub=1):
     # import time
 
     max_d = 50
+    min_i = 0
     # max_i = 100
+
+    # Cam1 settings
+    max_i = 100
+    max_c = 50
 
     # zebrafish settings
     min_i = 0
@@ -381,24 +398,30 @@ def get_idtracker_features(r, p, debug=False):
 
     img = p.img_manager.get_whole_img(r.frame_)
     crop, offset = get_img_around_pts(img, r.pts())
+    crop = np.asarray(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY), dtype=np.int)
 
     # t1 = time.time()
-    intensity_map_ = np.zeros((max_d, max_i + 1 - min_i))
-    contrast_map_ = np.zeros((max_d, max_c + 1))
+    intensity_map_ = np.zeros((max_d, max_i + 1 - min_i), dtype=np.int)
+    contrast_map_ = np.zeros((max_d, max_c + 1), dtype=np.int)
 
     pts = r.pts() - offset
-
 
     ids1_ = []
     ids2_ = []
 
     n_p = len(pts)
-    for i in range(n_p):
-        ids1_.extend([i for _ in xrange(n_p - (i+1))])
-        ids2_.extend(range(i+1, n_p))
+    for i in xrange(0, n_p):
+        # ids1_.extend([i for _ in xrange(0, n_p - (i+1), sub)])
+        # ids2_.extend(range(i + 1, n_p, sub))
+        r = xrange(i + 1, n_p, sub)
+        ids2_.extend(r)
+        ids1_.extend([i] * len(r))
 
     ids1_ = np.array(ids1_)
     ids2_ = np.array(ids2_)
+
+    # print ids1_.shape, ids2_.shape
+
     pts_ = np.array(pts)
 
     x1_ = pts_[ids1_, :]
@@ -410,8 +433,6 @@ def get_idtracker_features(r, p, debug=False):
     x2_ = x2_[d_ < max_d]
     # -1 because 0 never occurs
     d_ = d_[d_ < max_d]
-
-    crop = np.asarray(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY), dtype=np.int)
 
     x1_i = crop[x1_[:, 0], x1_[:, 1]]
     x2_i = crop[x2_[:, 0], x2_[:, 1]]
@@ -427,11 +448,13 @@ def get_idtracker_features(r, p, debug=False):
             continue
 
         for i in range(max(i__.min(), min_i), min(i__.max(), max_i)+1):
-            intensity_map_[d, i - min_i] += np.sum(i__ == i)
+            # intensity_map_[d, i - min_i] += np.sum(i__ == i)
+            intensity_map_[d, i - min_i] += np.count_nonzero(i__ == i)
 
         c__ = c_[ids_]
         for c in range(c__.min(), min(c__.max(), max_c)+1):
-            contrast_map_[d, c] += np.sum(c__ == c)
+            # contrast_map_[d, c] += np.sum(c__ == c)
+            contrast_map_[d, c] += np.count_nonzero(i__ == i)
 
     # print time.time() - t1
 
@@ -443,7 +466,8 @@ def get_idtracker_features(r, p, debug=False):
         plt.imshow(contrast_map_, aspect='auto')
 
 
-    return list(np.ravel(intensity_map_)), list(np.ravel(contrast_map_))
+    return np.ravel(intensity_map_), np.ravel(contrast_map_)
+    # return list(np.ravel(intensity_map_)), list(np.ravel(contrast_map_))
     # ########## slower variant
     #
     # t2 = time.time()
@@ -515,17 +539,20 @@ if __name__ == '__main__':
 
     p.rm = RegionManager(wd + '/temp', db_name='part0_rm.sqlite3')
     p.gm.rm = p.rm
+    #
+    # t = time.time()
+    # for j in range(10):
+    #     for i in range(1, 7):
+    #         r = p.rm[i]
+    #         get_idtracker_features(r, p, debug=False, sub=8)
+    #
+    # print time.time() - t
 
-    import matplotlib.pyplot as plt
-    for i in range(1, 7):
-        r = p.rm[i]
-        get_idtracker_features(r, p, debug=True)
-
-    plt.show()
+    # plt.show()
 
     test_regions = []
 
-    if True:
+    if False:
         # p.chm.add_single_vertices_chunks(p, fra mes=range(4500))
         p.gm.update_nodes_in_t_refs()
 
@@ -534,18 +561,26 @@ if __name__ == '__main__':
             fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
             fm_colornames = FeatureManager(p.working_directory, db_name='fm_colornames.sqlite3')
             fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50_test.sqlite3')
+            fm_idtracker_i_sub2 = FeatureManager(p.working_directory, db_name='fm_idtracker_i_sub2.sqlite3')
+            fm_idtracker_i_sub4 = FeatureManager(p.working_directory, db_name='fm_idtracker_i_sub4.sqlite3')
+            fm_idtracker_i_sub8 = FeatureManager(p.working_directory, db_name='fm_idtracker_i_sub8.sqlite3')
             fm_idtracker_c = FeatureManager(p.working_directory, db_name='fm_idtracker_c_d50_test.sqlite3')
+            fm_idtracker_c_sub2 = FeatureManager(p.working_directory, db_name='fm_idtracker_c_sub2.sqlite3')
+            fm_idtracker_c_sub4 = FeatureManager(p.working_directory, db_name='fm_idtracker_c_sub4.sqlite3')
+            fm_idtracker_c_sub8 = FeatureManager(p.working_directory, db_name='fm_idtracker_c_sub8.sqlite3')
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog.sqlite3')
             fm_lbp = FeatureManager(p.working_directory, db_name='fm_lbp.sqlite3')
 
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog_fliplr.sqlite3')
 
             # fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
-            # fms = [(fm_idtracker_i, fm_idtracker_c)]
-            fms = [fm_hog]
+            fms = [(fm_idtracker_i_sub2, fm_idtracker_c_sub2)]
+            # fms = [fm_hog]
             # methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
-            methods = [get_hog_features_fliplr]
+            methods = [get_idtracker_features_sub2]
 
+            import time
+            t1 = time.time()
             j = 0
             num_regions = len(single_region_ids)
             for r_id in single_region_ids:
@@ -567,17 +602,17 @@ if __name__ == '__main__':
                         f1 = f[1]
 
                         try:
-                            # fm.add(r.id())
-
-                            pass
-                            # fm[0].add(r.id(), f0)
-                            # fm[1].add(r.id(), f1)
+                            fm[0].add(r.id(), f0)
+                            fm[1].add(r.id(), f1)
                         except Exception as e:
                             print e
                     else:
                         fm.add(r.id(), f)
 
                 print_progress(j, num_regions)
+
+
+            print "TIME: ", time.time() - t1
 
             # j = 0
 
@@ -596,7 +631,8 @@ if __name__ == '__main__':
         # fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
         fm_names = ['fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
         fm_names = ['fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
-        fm_names = ['fm_hog_fliplr.sqlite3']
+        # fm_names = ['fm_hog_fliplr.sqlite3']
+        fm_names = ['fm_idtracker_i_sub8.sqlite3', 'fm_idtracker_c_sub8.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3']
 
         if True:
             results = evaluate_features_performance(p, fm_names, seed=42, test_split_method='random',

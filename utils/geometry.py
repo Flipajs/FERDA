@@ -193,3 +193,29 @@ def roi_size(roi):
     rows = roi[1][1] - roi[0][1] + 1
 
     return cols, rows
+
+
+def get_region_group_overlaps(rt1, rt2):
+    import cv2
+    roi_union = rt1[0].roi()
+
+    for r in rt1 + rt2:
+        roi_union = roi_union.union(r.roi())
+
+    print roi_union
+
+    h = roi_union.y_ + roi_union.height_
+    w = roi_union.x_ + roi_union.width_
+
+    im = np.zeros((h, w, 3), dtype=np.uint8)
+
+    for i, r in enumerate(rt1):
+        pts = r.pts()
+        im[pts[:,0], pts[:, 1], 1] = 150
+
+    for i, r in enumerate(rt2):
+        pts = r.pts()
+        im[pts[:,0], pts[:, 1], 2] = 150
+
+    cv2.imshow('test', im)
+    cv2.waitKey(0)

@@ -24,12 +24,10 @@ if is_flipajs_pc():
     sn_id = 875
     cam_ = 1
 
-    wd = '/Users/flipajs/Documents/wd/FERDA/C210min'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_'
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
     # wd = '/Users/flipajs/Documents/wd/'
     # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
@@ -37,27 +35,27 @@ if is_flipajs_pc():
 
     # project.load(wd+name+'/cam'+str(ca
     # m_)+'.fproj')
-    project.load(wd)
-    from core.graph.chunk_manager import ChunkManager
-
-    project.chm = ChunkManager()
-    # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
-    # with open(wd+'/temp/strongly_better_filter.pkl', 'rb') as f:
-    # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
-    # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
-    # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/isolation_score.pkl', 'rb') as f:
-    with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
-    # with open(wd+'/temp/strongly_better_filter.pkl', 'rb') as f:
-    # with open('/Users/flipajs/Documents/wd/FERDA/Sowbug3/temp/isolation_score.pkl', 'rb') as f:
-        up = pickle.Unpickler(f)
-        project.gm.g = up.load()
-        up.load()
-        chm = up.load()
-        project.chm = chm
+    project.load_hybrid(wd, 'eps_edge_filter')
+    # from core.graph.chunk_manager import ChunkManager
     #
-    from core.region.region_manager import RegionManager
-    project.rm = RegionManager(wd+'/temp', db_name='part0_rm.sqlite3')
-    project.gm.rm = project.rm
+    # project.chm = ChunkManager()
+    # # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
+    # # with open(wd+'/temp/strongly_better_filter.pkl', 'rb') as f:
+    # # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
+    # # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
+    # # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/isolation_score.pkl', 'rb') as f:
+    # with open(wd+'/temp/isolation_score.pkl', 'rb') as f:
+    # # with open(wd+'/temp/strongly_better_filter.pkl', 'rb') as f:
+    # # with open('/Users/flipajs/Documents/wd/FERDA/Sowbug3/temp/isolation_score.pkl', 'rb') as f:
+    #     up = pickle.Unpickler(f)
+    #     project.gm.g = up.load()
+    #     up.load()
+    #     chm = up.load()
+    #     project.chm = chm
+    #
+    # from core.region.region_manager import RegionManager
+    # project.rm = RegionManager(wd+'/temp', db_name='part0_rm.sqlite3')
+    # project.gm.rm = project.rm
     #
     # project.gm.update_nodes_in_t_refs()
     #

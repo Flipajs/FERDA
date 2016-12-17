@@ -1119,10 +1119,14 @@ class LearningProcess:
 
 
 if __name__ == '__main__':
-    p = Project()
-    p.load('/Users/flipajs/Documents/wd/zebrafish')
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Zebrafish_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
+
+    p = Project()
+    p.load_hybrid(wd, state='eps_edge_filter')
     p.img_manager = ImgManager(p)
 
-    learn_proc = LearningProcess(p, use_feature_cache=False, use_rf_cache=False)
-
+    learn_proc = LearningProcess(p)

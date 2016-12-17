@@ -14,10 +14,10 @@ class ROI():
 
     def __str__(self):
         s = ""
-        s += "y: "+self.y_
-        s += "\nx: "+self.x_
-        s += "\nheight:"+self.height_
-        s += "\nwidth:"+self.width_
+        s += "y: {}".format(self.y_)
+        s += "\nx: {}".format(self.x_)
+        s += "\nheight: {}".format(self.height_)
+        s += "\nwidth: {}".format(self.width_)
 
         return s
 
@@ -118,6 +118,14 @@ class ROI():
 
     def is_intersecting_expanded(self, roi2, offset):
         return self.expand(offset).is_intersecting(roi2)
+
+    def union(self, roi):
+        y_ = min(self.y_, roi.y_)
+        x_ = min(self.x_, roi.x_)
+        height = max(self.y_max_, roi.y_max_) - y_
+        width = max(self.x_max_, roi.x_max_) - x_
+
+        return ROI(y_, x_, height, width)
 
 def get_roi(pts):
     """
