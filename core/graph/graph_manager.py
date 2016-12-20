@@ -158,13 +158,16 @@ class GraphManager:
         if t-1 in self.vertices_in_t and t in self.vertices_in_t:
             self.add_edges_(self.vertices_in_t[t-1], self.vertices_in_t[t], fast=fast)
 
-    def region(self, vertex):
+    def region_id(self, vertex):
         if int(vertex) < 0:
             id_ = -int(vertex)
         else:
             id_ = self.g.vp['region_id'][self.g.vertex(vertex)]
 
-        return self.project.rm[id_]
+        return id_
+
+    def region(self, vertex):
+        return self.project.rm[self.region_id(vertex)]
 
     def chunk_start(self, vertex_id):
         id_ = self.g.vp['chunk_start_id'][self.g.vertex(vertex_id)]
@@ -663,14 +666,12 @@ class GraphManager:
         return list(regions)
 
     def regions_and_t_ids_in_t(self, frame):
-        from core.graph.region_chunk import RegionChunk
-        regions = set()
-
+        regions = []
         for t in self.project.chm.chunks_in_frame(frame):
-            rch = RegionChunk(t, self, self.project.rm)
-            regions.add((rch.region_in_t(frame), t.id()))
+            r_id = t.r_id_in_t(t, self.project.gm)
+            regions.append((r_id, t.id()))
 
-        return list(regions)
+        return regions
 
 
 

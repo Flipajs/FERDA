@@ -150,10 +150,44 @@ class LearningProcess:
         #     pass
 
     def load_features(self, path):
-        with open(path, 'rb') as f:
-            d = pickle.load(f)
-            self.features = d['features']
-            self.collision_chunks = d['collision_chunks']
+        from core.id_detection.features import FeatureManager
+
+        self.collision_chunks = set()
+        self.features = {}
+        self.fm = FeatureManager(self.p.working_directory, db_name='fm_idtracker_i_d50.sqlite3')
+
+        t_len = len(self.p.chm)
+        i = 0
+        for t in self.p.chm.chunk_gen():
+            i += 1
+            print_progress(i, t_len)
+
+            X = []
+
+            r_ids = [id_ for id_ in t.rid_gen(self.p.gm)]
+
+            _, f = self.fm[r_ids]
+
+            # if len(X) > 0:
+            if f[0] is not None:
+                self.features[t.id()] = f
+            else:
+                self.collision_chunks.add(t.id())
+
+        print "LOADED", len(self.features), len(self.collision_chunks)
+        print self.features.keys()
+        print
+        print
+        print self.collision_chunks
+        self.update_undecided_tracklets()
+
+
+        # with open(self.p.working_directory+'/temp/')
+
+        # with open(path, 'rb') as f:
+        #     d = pickle.load(f)
+        #     self.features = d['features']
+        #     self.collision_chunks = d['collision_chunks']
 
     def compute_features(self):
         self.get_candidate_chunks()
@@ -225,12 +259,12 @@ class LearningProcess:
             if not self.__tracklet_is_decided(t.P, t.N):
                 self.undecided_tracklets.add(t.id())
 
-        # TODO: remove in future, this is to fix already labeled data...
-        for t in self.p.chm.chunk_gen():
-            if t.id() in self.undecided_tracklets:
-                if self.__only_one_P_possibility(t):
-                    id_ = self.__get_one_possible_P(t)
-                    self.__if_possible_update_P(t, id_)
+        # # TODO: remove in future, this is to fix already labeled data...
+        # for t in self.p.chm.chunk_gen():
+        #     if t.id() in self.undecided_tracklets:
+        #         if self.__only_one_P_possibility(t):
+        #             id_ = self.__get_one_possible_P(t)
+        #             self.__if_possible_update_P(t, id_)
 
     def run_learning(self):
         while len(self.undecided_tracklets):
@@ -338,11 +372,23 @@ class LearningProcess:
 
         return best_tracklet
 
+    def __tid2features(self):
+        X = []
+        for t_id in self.X:
+            x = self.features[t_id]
+            if len(X) == 0:
+                X = np.array(x)
+            else:
+                X = np.vstack([X, np.array(x)])
+
+        return X
+
     def __train_rfc(self):
         self.rfc = RandomForestClassifier(class_weight='balanced_subsample')
         if len(self.X):
             print "TRAINING RFC"
-            self.rfc.fit(self.X, self.y)
+
+            self.rfc.fit(self.__tid2features(), self.y)
             self.__precompute_measurements()
 
     def __precompute_measurements(self):
@@ -369,7 +415,7 @@ class LearningProcess:
         ch_num = len(self.p.chm)
 
         for ch in self.p.chm.chunk_gen():
-            if ch in self.collision_chunks:
+            if ch.id() in self.collision_chunks:
                 continue
 
             X = self.get_data(ch)
@@ -470,7 +516,7 @@ class LearningProcess:
                     # print "%s %s %s area: %.2f, id:%d, length:%d" % (p==c, c, p, area_mean, ch.id(), ch.length())
 
                     if area_mean > area_mean_thr:
-                        self.collision_chunks[ch.id()] = True
+                        self.collision_chunks.add(ch.id())
 
                 print_progress(i, num_chunks)
 
@@ -488,22 +534,28 @@ class LearningProcess:
         if len(self.features) == 0:
             return
 
-        print "LEARNING ", id_
-        if ch.id() not in self.features:
-            print "cached features are missing. COMPUTING..."
-            X = self.get_data(ch)
-            print "Done"
-        else:
-            X = self.features[ch.id()]
+        X = [r_id for r_id in ch.rid_gen(self.p.gm)]
+
+        # print "LEARNING ", id_
+        # if ch.id() not in self.features:
+        #     print "cached features are missing. COMPUTING..."
+        #     X = self.get_data(ch)
+        #     print "Done"
+        # else:
+        #     X = self.features[ch.id()]
 
         # if empty, create... else there is a problem with vstack...
-        if len(self.y) == 0:
-            self.X = np.array(X)
-            self.y = np.array([id_] * len(X))
-        else:
-            self.X = np.vstack([self.X, np.array(X)])
-            y = [id_] * len(X)
-            self.y = np.append(self.y, np.array(y))
+        # if len(self.y) == 0:
+        #     self.X = np.array(X)
+        #     self.y = np.array([id_] * len(X))
+        # else:
+        #     self.X = np.vstack([self.X, np.array(X)])
+        y = [id_] * len(self.features[ch.id()])
+
+        self.X.append(ch.id())
+        self.y.extend(y)
+
+        # self.y = np.append(self.y, np.array(y))
 
     def __get_ids(self):
         """
@@ -1019,7 +1071,7 @@ class LearningProcess:
 
         if user:
             if tracklet.id() in self.collision_chunks:
-                del self.collision_chunks[tracklet.id()]
+                self.collision_chunks.discard(tracklet.id())
                 print "Fixing tracklet wrongly labeled as OVERSEGMENTED"
 
             self.user_decisions.append({'tracklet_id_set': tracklet.id(), 'type': 'P', 'ids': [id_]})
@@ -1075,6 +1127,9 @@ class LearningProcess:
             if self.show_key_error_warnings:
                 warnings.warn("tracklet.id(): "+str(tracklet.id())+" not in self.tracklet_certainty")
 
+        if tracklet.id() in self.collision_chunks:
+            print tracklet.id(), "in collision chunks"
+            return
 
         if learn:
             self.__learn(tracklet, id_)

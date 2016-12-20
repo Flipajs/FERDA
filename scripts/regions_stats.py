@@ -32,6 +32,8 @@ from utils.misc import print_progress
 from core.graph.solver import Solver
 from core.graph.chunk_manager import ChunkManager
 
+from core.region.clustering import clustering, display_cluster_representants
+
 
 EXP = 'exp1'
 DEFAULT_H_DENSITY = 1e-10
@@ -109,8 +111,6 @@ def display_head_pairs(project):
     pairs = hickle.load('/Users/flipajs/Desktop/temp/pairs/pairs.pkl')
     print "loaded.."
     from utils.video_manager import get_auto_video_manager
-    import cv2
-    from utils.drawing.points import draw_points
 
     BORDER = 150
     COLS = 7
@@ -1178,55 +1178,6 @@ def assign_costs(p, frames):
     #     pickle.dump(p.gm.g, f)
 
 
-def display_cluster_representants(p, N=30):
-    with open(p.working_directory+'/temp/clustering.pkl') as f:
-        up = pickle.Unpickler(f)
-        data = up.load()
-        vertices = up.load()
-        labels = up.load()
-
-    labels_set = set(labels)
-    scaler = StandardScaler()
-
-    X = scaler.fit_transform(data)
-
-    for label in labels_set:
-        X_ = X[labels==label,:]
-        print "displaying cluster {} representants, cluster size: {}".format(label, len(X_))
-        vertices_ = vertices[labels==label]
-
-        if len(X_) == 0:
-            print "ZERO SIZE CLUSTER: ", label
-            continue
-
-        n_clusters = min(N, len(X_))
-
-        from sklearn.cluster import KMeans
-        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(X_)
-
-        kmeans_labels = kmeans.labels_
-        data = []
-
-        vm = get_auto_video_manager(p)
-
-        for k in range(n_clusters):
-            class_member_mask = (kmeans_labels == k)
-            a_ = vertices_[class_member_mask]
-
-            v1 = a_[0]
-
-            r1 = p.gm.region(v1)
-
-            im1 = vm.get_frame(r1.frame()).copy()
-
-            draw_points(im1, r1.pts())
-
-            im = im1[r1.roi().slices()].copy()
-            data.append(im)
-
-        collage = create_collage_rows(data, 7, 100, 100)
-        cv2.imwrite(p.working_directory+'/temp/cluster_representant_'+str(label)+'.jpg', collage)
-
 def decide_one2one(p):
     solver = Solver(p)
 
@@ -1498,93 +1449,18 @@ def process_project(p):
 
         save_p_checkpoint(p, 'eps_edge_filter')
         tracklet_stats(p)
-    else:
-        from utils.geometry import get_region_group_overlaps
-
-        for i in range(0, 1000, 10):
-            print i
-            rt1 = p.gm.regions_in_t(i)
-            rt2 = p.gm.regions_in_t(i+1)
-
-            get_region_group_overlaps(rt1, rt2)
-        # overlap test...
-        # boolean matrix regions_t x regions_t+1
-        pass
-
-def clustering(p, compute_data=True):
-    print "___________________________________"
-    print "Preparing data for clustering..."
-
-    i = 0
-
-    if not compute_data:
-        try:
-            with open(p.working_directory + '/temp/clustering.pkl') as f:
-                up = pickle.Unpickler(f)
-                data = up.load()
-                vertices = up.load()
-        except:
-            compute_data = True
-
-    if compute_data:
-        r_data = []
-        vertices = []
-
-        num_v = p.gm.g.num_vertices()
-        for v in p.gm.g.vertices():
-            r = p.gm.region(v)
-
-            from utils.drawing.points import draw_points_crop_binary
-            bimg = draw_points_crop_binary(r.pts())
-            hu_m = get_hu_moments(np.asarray(bimg, dtype=np.uint8))
-            r_data.append([r.area(), r.a_, r.b_, hu_m[0], hu_m[1]])
-            vertices.append(int(v))
-
-            i += 1
-            if i % 100 == 0:
-                print_progress(i, num_v)
-
-        data = np.array(r_data)
-        vertices=np.array(vertices)
-
-        print_progress(num_v, num_v)
-        print
-
-    # label_names = np.array(['area', 'major axis', 'minor axis', 'hu1', 'hu2'])
-
-    min_samples = max(5, int(len(data) * 0.001))
-    eps = 0.1
-
-    print "Normalising data..."
-    X = StandardScaler().fit_transform(data)
-    print "Clustering using DBSCAN... min samples: {}, eps: {}".format(min_samples, eps)
-
-    db = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
-    # core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-    # core_samples_mask[db.core_sample_indices_] = True
-    labels = db.labels_
-
-    labels_set = set(labels)
-    n_clusters_ = len(labels_set) - (1 if -1 in labels_set else 0)
-
-    print('Estimated number of clusters: %d' % n_clusters_)
-
-    for i in labels_set:
-        print "\tLabel: {}, #{}".format(i, np.sum(labels == i))
-
-    # plotNdto3d(data, labels, core_samples_mask, [0, 1, 2], label_names[[0, 1, 2]])
-    # plotNdto3d(data, labels, core_samples_mask, [0, 2, 3], label_names[[0, 2, 3]])
-    # plotNdto3d(data, labels, core_samples_mask, [0, 2, 4], label_names[[0, 2, 4]])
-
-    print "saving results"
-    with open(p.working_directory+'/temp/clustering.pkl', 'wb') as f:
-        pic = pickle.Pickler(f)
-        pic.dump(data)
-        pic.dump(vertices)
-        pic.dump(labels)
-
-    print "clustering part finished"
-    print "_________________________________"
+    # else:
+        # from utils.geometry import get_region_group_overlaps
+        #
+        # for i in range(0, 1000, 10):
+        #     print i
+        #     rt1 = p.gm.regions_in_t(i)
+        #     rt2 = p.gm.regions_in_t(i+1)
+        #
+        #     get_region_group_overlaps(rt1, rt2)
+        # # overlap test...
+        # # boolean matrix regions_t x regions_t+1
+        # pass
 
 
 if __name__ == '__main__':
@@ -1603,7 +1479,32 @@ if __name__ == '__main__':
     p.gm.g = g_
     p.gm.rm = p.rm
 
-    process_project(p)
+
+    load_p_checkpoint(p, 'eps_edge_filter')
+
+    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    labels = d['labels']
+    vertices = d['arr']
+
+    print len([v for v in p.gm.active_v_gen()])
+
+    for l in [1, 2, 3]:
+        print np.sum(labels == l)
+        for v in vertices[labels == l]:
+            ch = p.gm.get_chunk(v)
+            if ch is not None:
+                p.chm.remove_chunk(ch, p.gm)
+                # print v
+
+            p.gm.remove_vertex(v, disassembly=False)
+
+    print len([v for v in p.gm.active_v_gen()])
+
+    p.gm.update_nodes_in_t_refs()
+
+    save_p_checkpoint(p, 'eps_without_noise')
+
+    # process_project(p)
 
     if False:
         FILTER_EDGES = False

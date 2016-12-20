@@ -92,15 +92,16 @@ class ChunkManager:
             self._add_ch_itree(ch, gm)
 
     def add_single_vertices_chunks(self, p, frames=None):
-        if frames is None:
-            frames = range(p.gm.end_t)
-
         self.reset_itree(p.gm)
 
         for n in p.gm.g.vertices():
-            r = p.gm.region(n)
-            if r.frame() not in frames or p.gm.get_chunk(n) is not None:
-                continue
+            if frames is None:
+                if p.gm.get_chunk(n) is not None:
+                    continue
+            else:
+                r = p.gm.region(n)
+                if r.frame() not in frames or p.gm.get_chunk(n) is not None:
+                    continue
 
             if not p.gm.g.vp['active'][n]:
                 continue

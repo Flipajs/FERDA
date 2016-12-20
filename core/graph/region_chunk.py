@@ -67,3 +67,7 @@ class RegionChunk:
         while i < self.chunk_.length():
             yield self[i]
             i += 1
+
+    def rid_gen(self):
+        for r in self.regions_gen():
+            yield r.id()

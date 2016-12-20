@@ -277,14 +277,19 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
                     for fm in combination:
                         _, f_ = fm[r_id]
 
-                        f.extend(f_)
+                        if f_[0] is None:
+                            print r_id
 
-                    X.append(f[0])
+                        f.extend(f_[0])
+
+                    X.append(f)
 
                 num_animals = len(set(animal_ids))
 
                 X = np.array(X)
                 y = np.array(animal_ids)
+
+                print X.shape, y.shape
 
                 results[test_size_ratio][s]['X_shape'] = X.shape
                 results[test_size_ratio][s]['class_frequency'] = []
@@ -325,6 +330,28 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
                             X_test_new.append(line[:len(line)/2])
 
                     rf.fit(X_train, y_train)
+
+                    # arr = rf.feature_importances_
+                    # indices = np.where(arr > 0.000001)[0]
+                    # print indices.shape
+                    # arr.shape = (50, 81)
+                    # y, x = np.where(arr > 0.000001)
+                    #
+                    # print 0.01, np.sum(arr > 0.01)
+                    # print 0.001, np.sum(arr > 0.001)
+                    # print 0.0001, np.sum(arr > 0.0001)
+                    # print 0.00001, np.sum(arr > 0.00001)
+                    # print 0.000001, np.sum(arr > 0.000001)
+                    # print 0.0000001, np.sum(arr > 0.0000001)
+                    #
+                    # with open(p.working_directory+'/temp/'+s+'_indices.pkl', 'wb') as f:
+                    #     pickle.dump((indices, y, x, rf.feature_importances_), f)
+                    #
+                    # plt.scatter(x, y)
+                    # plt.figure()
+                    # plt.imshow(arr)
+                    # plt.show()
+
                     correct_ids = rf.predict(X_test) == y_test
                     num_correct = np.sum(correct_ids)
                     num_test = len(y_test)
@@ -372,20 +399,24 @@ def get_idtracker_features_sub8(r, p, debug=False):
     return get_idtracker_features(r, p, debug, sub=8)
 
 def get_idtracker_features(r, p, debug=False, sub=1):
+    # TODO: features_importance speedup...
+    # TODO:
+
+
     # import time
 
     max_d = 50
-    min_i = 0
+    min_i = 20
     # max_i = 100
 
     # Cam1 settings
     max_i = 100
     max_c = 50
 
-    # zebrafish settings
-    min_i = 0
-    max_i = 210
-    max_c = 50
+    # # zebrafish settings
+    # min_i = 0
+    # max_i = 210
+    # max_c = 50
 
 
     # # Camera3 Settings
@@ -454,7 +485,7 @@ def get_idtracker_features(r, p, debug=False, sub=1):
         c__ = c_[ids_]
         for c in range(c__.min(), min(c__.max(), max_c)+1):
             # contrast_map_[d, c] += np.sum(c__ == c)
-            contrast_map_[d, c] += np.count_nonzero(i__ == i)
+            contrast_map_[d, c] += np.count_nonzero(c__ == c)
 
     # print time.time() - t1
 
@@ -462,8 +493,15 @@ def get_idtracker_features(r, p, debug=False, sub=1):
         import matplotlib.pyplot as plt
         plt.figure()
         plt.imshow(intensity_map_, aspect='auto')
-        plt.figure()
-        plt.imshow(contrast_map_, aspect='auto')
+
+        # with open(p.working_directory + '/temp/rf_f_importance.pkl') as f:
+        #     y, x = pickle.load(f)
+
+        # plt.scatter(x, y)
+        # plt.show()
+
+        # plt.figure()
+        # plt.imshow(contrast_map_, aspect='auto')
 
 
     return np.ravel(intensity_map_), np.ravel(contrast_map_)
@@ -513,6 +551,21 @@ def get_single_region_ids(project):
 
     return single_region_ids, animal_ids
 
+def optimise_features(wd, fm_name):
+    fm = FeatureManager(p.working_directory, db_name=wd +'/'+fm_name + '.sqlite3')
+    fm_new = FeatureManager(p.working_directory, db_name=wd+'/'+ fm_name + '_opt.sqlite3')
+
+    with open(wd+'/temp/'+fm_name+ '.pkl') as f:
+        ids_, _, _, f_im = pickle.load(f)
+
+    print np.sum(f_im > 0.00001)
+
+    ids, fs = fm.get_all()
+
+    # for id_, f in izip(ids, fs):
+    #     f_new = f[ids_]
+    #     fm_new.add(id_, f_new)
+
 
 if __name__ == '__main__':
     from core.project.project import Project
@@ -523,61 +576,50 @@ if __name__ == '__main__':
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     p = Project()
-    p.load(wd)
+    # p.load_hybrid(wd, state='isolation_score')
+    p.load_hybrid(wd, state='eps_edge_filter')
 
-    from core.graph.chunk_manager import ChunkManager
-
-    p.chm = ChunkManager()
-    with open(wd + '/temp/isolation_score.pkl', 'rb') as f:
-        up = pickle.Unpickler(f)
-        p.gm.g = up.load()
-        up.load()
-        chm = up.load()
-        p.chm = chm
-
-    from core.region.region_manager import RegionManager
-
-    p.rm = RegionManager(wd + '/temp', db_name='part0_rm.sqlite3')
-    p.gm.rm = p.rm
+    # optimise_features(wd, 'fm_idtracker_c_d50')
     #
-    # t = time.time()
-    # for j in range(10):
-    #     for i in range(1, 7):
-    #         r = p.rm[i]
-    #         get_idtracker_features(r, p, debug=False, sub=8)
-    #
-    # print time.time() - t
+    # #
+    t = time.time()
+    for j in range(1):
+        for i in range(1, 7):
+            r = p.rm[i]
+            get_idtracker_features(r, p, debug=True, sub=4)
+
+    print time.time() - t
 
     # plt.show()
 
-    test_regions = []
+    # test_regions = []
+    single_region_ids, _ = get_single_region_ids(p)
+    print len(single_region_ids)
+    # print len(single_region_ids)
+    # fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50_test.sqlite3')
+    # print "test"
 
     if False:
         # p.chm.add_single_vertices_chunks(p, fra mes=range(4500))
         p.gm.update_nodes_in_t_refs()
 
-        if True:
+        if False:
             single_region_ids, _ = get_single_region_ids(p)
+
             fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
             fm_colornames = FeatureManager(p.working_directory, db_name='fm_colornames.sqlite3')
-            fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50_test.sqlite3')
-            fm_idtracker_i_sub2 = FeatureManager(p.working_directory, db_name='fm_idtracker_i_sub2.sqlite3')
-            fm_idtracker_i_sub4 = FeatureManager(p.working_directory, db_name='fm_idtracker_i_sub4.sqlite3')
-            fm_idtracker_i_sub8 = FeatureManager(p.working_directory, db_name='fm_idtracker_i_sub8.sqlite3')
-            fm_idtracker_c = FeatureManager(p.working_directory, db_name='fm_idtracker_c_d50_test.sqlite3')
-            fm_idtracker_c_sub2 = FeatureManager(p.working_directory, db_name='fm_idtracker_c_sub2.sqlite3')
-            fm_idtracker_c_sub4 = FeatureManager(p.working_directory, db_name='fm_idtracker_c_sub4.sqlite3')
-            fm_idtracker_c_sub8 = FeatureManager(p.working_directory, db_name='fm_idtracker_c_sub8.sqlite3')
+            fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50.sqlite3')
+            fm_idtracker_c = FeatureManager(p.working_directory, db_name='fm_idtracker_c_d50.sqlite3')
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog.sqlite3')
             fm_lbp = FeatureManager(p.working_directory, db_name='fm_lbp.sqlite3')
 
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog_fliplr.sqlite3')
 
             # fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
-            fms = [(fm_idtracker_i_sub2, fm_idtracker_c_sub2)]
+            fms = [(fm_idtracker_i, fm_idtracker_c)]
             # fms = [fm_hog]
             # methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
-            methods = [get_idtracker_features_sub2]
+            methods = [get_idtracker_features]
 
             import time
             t1 = time.time()
@@ -632,7 +674,7 @@ if __name__ == '__main__':
         fm_names = ['fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
         fm_names = ['fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
         # fm_names = ['fm_hog_fliplr.sqlite3']
-        fm_names = ['fm_idtracker_i_sub8.sqlite3', 'fm_idtracker_c_sub8.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3']
+        fm_names = ['fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3']
 
         if True:
             results = evaluate_features_performance(p, fm_names, seed=42, test_split_method='random',

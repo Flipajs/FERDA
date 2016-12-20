@@ -172,10 +172,10 @@ class GraphWidgetLoader:
         # TODO
         # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
         #         region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
-        return "Centroid = %s\nArea = %i\nAntlikeness = %.3f\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s\nVertex id = %s" % \
+        return "Centroid = %s\nArea = %i\nAntlikeness = %.3f\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s\nVertex/region id = %s/%s" % \
                (str(region.centroid()), region.area(), antlikeness, region.margin_,
                 str(best_in_score[0]) + ', ' + str(best_in_score[1]),
-                str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info, str(n))
+                str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info, str(n), str(region.id()))
 
     def get_edge_info(self, edge):
         return "Type = {}\nAppearance score = {}\nMovement score={}\nScore product={}\nTracklet id: {}".format(edge.type, edge.appearance_score, edge.movement_score, edge.appearance_score * edge.movement_score, edge.id)

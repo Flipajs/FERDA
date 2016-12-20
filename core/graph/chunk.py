@@ -349,3 +349,14 @@ class Chunk:
         # if there is one and only one ID assigned to chunk
         return len(self.P) == 1 and \
                len(self.N) == num_animals - 1
+
+    def rid_gen(self, gm):
+        for id_ in self.nodes_:
+            yield gm.region_id(id_)
+
+    def r_id_in_t(self, t, gm):
+        t = t-self.start_frame(gm)
+        if -1 < t < len(self.nodes_):
+            return gm.region_id(self.nodes_[t])
+        else:
+            return None

@@ -25,9 +25,9 @@ if is_flipajs_pc():
     cam_ = 1
 
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
     # wd = '/Users/flipajs/Documents/wd/'
     # snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_amanager.pkl',
@@ -35,6 +35,8 @@ if is_flipajs_pc():
 
     # project.load(wd+name+'/cam'+str(ca
     # m_)+'.fproj')
+    # project.load_hybrid(wd, 'eps_edge_filter')
+    # project.load_hybrid(wd, 'eps_without_noise')
     project.load_hybrid(wd, 'eps_edge_filter')
     # from core.graph.chunk_manager import ChunkManager
     #

@@ -1337,7 +1337,21 @@ class ResultsWidget(QtGui.QWidget):
             self.idtracker_data = data
 
             permutation_data = []
-            frame = 0
+
+            for frame in range(len(data)):
+                i = 0
+                for x, y in data[frame]:
+                    if np.isnan(x):
+                        continue
+
+                    i += 1
+
+                if i == len(self.project.animals):
+                    break
+
+            print "permutation search in frame", frame
+
+            # frame = 0
             for id_, it in enumerate(data[frame]):
                 x, y = it[0], it[1]
                 permutation_data.append((frame, id_, y, x))
