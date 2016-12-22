@@ -182,16 +182,7 @@ class InitHowWidget(QtGui.QWidget):
         cont = get_contour(pts)
         crop = draw_points_crop(img.copy(), cont, (0, 0, 255, 0.5), square=True, margin=0.3)
 
-        img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
-        pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
-
-        item = SelectableQLabel(id=id)
-
-        item.setScaledContents(True)
-        item.setFixedSize(height, width)
-        item.setPixmap(pix_map)
-
-        return item
+        se
 
     def grid_dialog_selection_confirmed(self, ids):
         print "SELECTED ID: ", ids

@@ -54,8 +54,9 @@ class ImgGridWidget(QtGui.QWidget):
 
         self.set_width_()
 
-    def add_item(self, item):
-        self.items.append(item)
+    def add_item(self, item, append=True):
+        if append:
+            self.items.append(item)
 
         row = self.id/self.cols
         col = self.id%self.cols
@@ -65,6 +66,23 @@ class ImgGridWidget(QtGui.QWidget):
         self.set_width_()
 
         self.id += 1
+
+    def delete_item(self, item):
+        try:
+            self.items.remove(item)
+        except ValueError:
+            pass
+
+        self.redraw()
+
+    def redraw(self):
+        for it in self.items:
+            self.grid.removeWidget(it)
+
+        self.id = 0
+
+        for it in self.items():
+            self.add_item(it, False)
 
     def set_width_(self):
         w = self.cols*self.element_width + (self.cols + 1)
@@ -95,3 +113,18 @@ class ImgGridWidget(QtGui.QWidget):
     def swap_selection(self):
         for i in range(len(self.items)):
             self.items[i].set_selected(not self.items[i].selected)
+
+    def deselect_all(self):
+        for i in range(len(self.items)):
+            self.items[i].set_selected(False)
+
+    def select_all(self):
+        for i in range(len(self.items)):
+            self.items[i].set_selected(True)
+
+    def select_all_until_first(self):
+        for i in range(len(self.items)):
+            if not self.items[i].selected:
+                self.items[i].set_selected(True)
+            else:
+                break

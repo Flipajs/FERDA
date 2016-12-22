@@ -406,12 +406,13 @@ def get_idtracker_features(r, p, debug=False, sub=1):
     # import time
 
     max_d = 50
-    min_i = 20
-    # max_i = 100
+    min_i = 0
+    max_i = 255
+    max_c = 255
 
-    # Cam1 settings
-    max_i = 100
-    max_c = 50
+    # # Cam1 settings
+    # max_i = 100
+    # max_c = 50
 
     # # zebrafish settings
     # min_i = 0
@@ -574,7 +575,7 @@ if __name__ == '__main__':
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     p = Project()
     # p.load_hybrid(wd, state='isolation_score')
     p.load_hybrid(wd, state='eps_edge_filter')
@@ -590,7 +591,7 @@ if __name__ == '__main__':
 
     print time.time() - t
 
-    # plt.show()
+    plt.show()
 
     # test_regions = []
     single_region_ids, _ = get_single_region_ids(p)
@@ -603,7 +604,7 @@ if __name__ == '__main__':
         # p.chm.add_single_vertices_chunks(p, fra mes=range(4500))
         p.gm.update_nodes_in_t_refs()
 
-        if False:
+        if True:
             single_region_ids, _ = get_single_region_ids(p)
 
             fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
@@ -616,7 +617,7 @@ if __name__ == '__main__':
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog_fliplr.sqlite3')
 
             # fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
-            fms = [(fm_idtracker_i, fm_idtracker_c)]
+            fms = [(fm_idtracker_i, fm_idtracker_c, fm_basic, fm_hog, fm_lbp, fm_colornames)]
             # fms = [fm_hog]
             # methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
             methods = [get_idtracker_features]
@@ -674,7 +675,7 @@ if __name__ == '__main__':
         fm_names = ['fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
         fm_names = ['fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
         # fm_names = ['fm_hog_fliplr.sqlite3']
-        fm_names = ['fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3']
+        fm_names = ['fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3']
 
         if True:
             results = evaluate_features_performance(p, fm_names, seed=42, test_split_method='random',

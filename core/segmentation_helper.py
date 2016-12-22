@@ -46,7 +46,7 @@ class SegmentationHelper:
 
     def set_image(self, image):
         """
-        Sets a new image, computes all features on the new images and prepares to use it in classification.
+        Sets a new image, computes all features on the new images and prepares to use it in human_iloop_classification.
         To preserve RFC training data from previous images, use "helper.update_xy()"
         :param image: new image
         :return: None

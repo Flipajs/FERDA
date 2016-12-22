@@ -11,6 +11,7 @@ from utils.video_manager import get_auto_video_manager
 from utils.drawing.collage import create_collage_rows
 from scipy.spatial.distance import cdist
 import cv2
+from PyQt4 import QtGui
 
 def clustering(p, compute_data=True):
     print "___________________________________"
@@ -38,7 +39,7 @@ def clustering(p, compute_data=True):
             from utils.drawing.points import draw_points_crop_binary
             bimg = draw_points_crop_binary(r.pts())
             hu_m = get_hu_moments(np.asarray(bimg, dtype=np.uint8))
-            r_data.append([r.area(), r.a_, r.b_, hu_m[0], hu_m[1]])
+            r_data.append([r.area(), r.a_, r.b_, r.min_intensity_, r.max_intensity_, r.margin_, len(r.contour())])
             vertices.append(int(v))
 
             i += 1
@@ -139,97 +140,22 @@ def display_cluster_representants(p, N=30):
         cv2.waitKey(0)
         # cv2.imwrite(p.working_directory+'/temp/cluster_representant_'+str(label)+'.jpg', collage)
 
-def __draw_region(p, vm, v):
+def draw_region(p, vm, v):
     r1 = p.gm.region(v)
     im1 = vm.get_frame(r1.frame()).copy()
-    draw_points(im1, r1.pts())
-    im = im1[r1.roi().slices()].copy()
+    c1 = QtGui.QColor(255, 0, 0, 255)
+    draw_points(im1, r1.contour(), color=c1)
+    c2 = QtGui.QColor(255, 0, 0, 20)
+    draw_points(im1, r1.pts(), color=c2)
+    roi = r1.roi().safe_expand(30, im1)
+    im = im1[roi.slices()].copy()
 
     return im
 
-def __controls():
-    k = cv2.waitKey()
+if __name__ == '__main__':
+    from core.project.project import Project
 
-    if k == 115:
-        print "single"
-    elif k == 109:
-        print "multi"
-    elif k == 110:
-        print "noise"
-    elif k == 112:
-        print "part"
+    p = Project()
+    p.load_hybrid('/Users/flipajs/Documents/wd/FERDA/zebrafish_playground')
 
-
-def most_distant(p):
-    with open(p.working_directory+'/temp/clustering.pkl') as f:
-        up = pickle.Unpickler(f)
-        data = up.load()
-        vertices = up.load()
-        labels = up.load()
-
-    labels_set = set(labels)
-    scaler = StandardScaler()
-    X = scaler.fit_transform(data)
-
-    vm = get_auto_video_manager(p)
-    id_ = 0
-
-
-    # data =
-    
-    data = [__draw_region(p, vm, vertices[id_])]
-
-    d = None
-    for i in range(1):
-        new_d = cdist([X[id_]], X)
-        if d is None:
-            d = new_d
-        else:
-            d = np.minimum(d, new_d)
-
-        id_ = np.argmax(d)
-        print d[0, id_], id_
-        data.append(__draw_region(p, vm, vertices[id_]))
-
-    collage = create_collage_rows(data, 18, 100, 100)
-    cv2.imshow('collage', collage)
-    print "wait key"
-    print cv2.waitKey(0)
-    print cv2.waitKey(0)
-    print cv2.waitKey(0)
-    print cv2.waitKey(0)
-    print cv2.waitKey(0)
-
-    pass
-
-    # for label in labels_set:
-    #     X_ = X[labels==label,:]
-    #     print "displaying cluster {} representants, cluster size: {}".format(label, len(X_))
-    #     vertices_ = vertices[labels==label]
-    #
-    #     if len(X_) == 0:
-    #         print "ZERO SIZE CLUSTER: ", label
-    #         continue
-    #
-    #     n_clusters = min(N, len(X_))
-    #
-    #     from sklearn.cluster import KMeans
-    #     kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(X_)
-    #
-    #     kmeans_labels = kmeans.labels_
-    #     data = []
-    #
-    #     vm = get_auto_video_manager(p)
-    #
-    #     for k in range(n_clusters):
-    #         class_member_mask = (kmeans_labels == k)
-    #         a_ = vertices_[class_member_mask]
-    #
-    #         v1 = a_[0]
-    #
-    #         im = __draw_region(p, vm, v1)
-    #         data.append(im)
-    #
-    #     collage = create_collage_rows(data, 7, 100, 100)
-    #     cv2.imshow('collage', collage)
-    #     cv2.waitKey(0)
+    clustering(p, compute_data=True)

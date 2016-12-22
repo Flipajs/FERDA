@@ -100,6 +100,16 @@ class ROI():
                    self.height_ + 2*border,
                    self.width_ + 2*border)
 
+    def safe_expand(self, border, image):
+        y = max(0, self.y_ - border)
+        x = max(0, self.x_ - border)
+        h = min(image.shape[0], self.height_ + 2 * border)
+        w = min(image.shape[1], self.width_ + 2 * border)
+        return ROI(y,
+                   x,
+                   h,
+                   w)
+
     def is_intersecting(self, roi2):
         """
         returns True even when they intersects by edge

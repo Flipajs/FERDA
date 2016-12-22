@@ -27,6 +27,8 @@ class SelectableQLabel(QtGui.QLabel):
         self.selected_callback = selected_callback
         self.selected = False
 
+        self.setMouseTracking(True)
+
     def mouseReleaseEvent(self, ev):
         if self.selected:
             self.set_selected(False)
@@ -35,9 +37,17 @@ class SelectableQLabel(QtGui.QLabel):
             if self.selected_callback:
                 self.selected_callback(self, self.id_)
 
+    def mouseMoveEvent(self, event):
+        modifiers = QtGui.QApplication.keyboardModifiers()
+        # mbutt = QtGui.QApplication.mouseButtons()
+        if modifiers == QtCore.Qt.ControlModifier:
+            self.set_selected(True)
+        # elif modifiers == QtCore.Qt.ControlModifier:
+        #     self.set_selected(False)
+
     def set_selected(self, selected):
         if selected:
-            self.setStyleSheet("border: 2px dashed black;")
+            self.setStyleSheet("border: 2px dashed red;")
             self.selected = True
         else:
             self.setStyleSheet("border: 0px;")

@@ -154,7 +154,7 @@ class LearningProcess:
 
         self.collision_chunks = set()
         self.features = {}
-        self.fm = FeatureManager(self.p.working_directory, db_name='fm_idtracker_i_d50.sqlite3')
+        self.fm = FeatureManager(self.p.working_directory, db_name='fm_basic.sqlite3')
 
         t_len = len(self.p.chm)
         i = 0
@@ -376,9 +376,11 @@ class LearningProcess:
         X = []
         for t_id in self.X:
             x = self.features[t_id]
+            print len(x)
             if len(X) == 0:
                 X = np.array(x)
             else:
+                print np.array(x).shape, X.shape
                 X = np.vstack([X, np.array(x)])
 
         return X
@@ -468,7 +470,7 @@ class LearningProcess:
         areas = np.array(areas)
         area_mean_thr = np.mean(areas) + 2*np.std(areas)
 
-        print "SINGLE / MERGED classification..."
+        print "SINGLE / MERGED human_iloop_classification..."
         print "MEAN: {} STD: {} ".format(np.mean(areas), np.std(areas))
         print "THRESHOLD = ", area_mean_thr
 
@@ -838,6 +840,11 @@ class LearningProcess:
             # take maximum probability from rest after removing definitely not present ids and the second max and compute certainty
             # for 0.6 and 0.4 it is 0.6 but for 0.6 and 0.01 it is ~ 0.98
             div = p1 + p2
+
+            # if prob is too low...
+            if div < 0.3:
+                div = 1.0
+
             if div == 0:
                 certainty = 0.0
             else:
