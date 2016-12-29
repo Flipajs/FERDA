@@ -243,7 +243,7 @@ class Project:
                 except:
                     pass
 
-    def load_hybrid(self, path, state='isolation_score'):
+    def load_semistate(self, path, state='isolation_score', one_vertex_chunk=False, update_t_nodes=False):
         self.load(path)
 
         with open(self.working_directory + '/temp/'+state+'.pkl', 'rb') as f:
@@ -256,6 +256,19 @@ class Project:
         self.rm = RegionManager(self.working_directory + '/temp', db_name='part0_rm.sqlite3')
         self.gm.rm = self.rm
 
+        if one_vertex_chunk:
+            self.chm.add_single_vertices_chunks(self)
+
+        if update_t_nodes:
+            self.gm.update_nodes_in_t_refs()
+
+
+    def save_semistate(self, state):
+        with open(self.working_directory + '/temp/'+state+'.pkl', 'wb') as f:
+            p = pickle.Pickler(f)
+            p.dump(self.gm.g)
+            p.dump(None)
+            p.dump(self.chm)
 
 
     def load(self, path, snapshot=None, parent=None):

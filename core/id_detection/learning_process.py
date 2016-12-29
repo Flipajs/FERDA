@@ -46,12 +46,12 @@ class LearningProcess:
         update_N
         before each basic operation check knowledge[t.id()]
     """
-    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False):
+    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False, verbose=0):
         if use_rf_cache:
             warnings.warn("use_rf_cache is Deprecated!", DeprecationWarning)
 
         self.p = p
-
+        self.verbose = verbose
         self.show_key_error_warnings = False
 
         self.min_new_samples_to_retrain = 10000
@@ -97,6 +97,11 @@ class LearningProcess:
 
         self.separated_frame = -1
 
+        self.consistency_violated = False
+        self.last_id = -1
+
+        self.ignore_inconsistency = False
+
         # when creating without feature data... e.g. in main_tab_widget
         if ghost:
             return
@@ -141,7 +146,16 @@ class LearningProcess:
         # self.__train_rfc()
         # print "TRAINED"
 
-        self.GT = None
+
+        # False mean - don't ask
+        self.human_in_the_loop = False
+        self.GT_in_the_loop = True
+
+        if self.GT_in_the_loop:
+            from utils.gt.gt import GT
+            self.GT = GT()
+            self.GT.load(self.p.GT_file)
+
         # try:
         #     # with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
         #     with open('/Users/flipajs/Dropbox/dev/ferda/data/GT/Cam1_sparse.pkl', 'rb') as f:
@@ -149,12 +163,13 @@ class LearningProcess:
         # except IOError:
         #     pass
 
-    def load_features(self, path):
+    def load_features(self, db_name='fm_idtracker_i.sqlite3'):
         from core.id_detection.features import FeatureManager
 
         self.collision_chunks = set()
         self.features = {}
-        self.fm = FeatureManager(self.p.working_directory, db_name='fm_basic.sqlite3')
+        # self.fm = FeatureManager(self.p.working_directory, db_name='fm_basic.sqlite3')
+        self.fm = FeatureManager(self.p.working_directory, db_name=db_name)
 
         t_len = len(self.p.chm)
         i = 0
@@ -246,7 +261,8 @@ class LearningProcess:
 
     def fill_undecided_tracklets(self):
         for t in self.p.chm.chunk_gen():
-            if t.id() in self.collision_chunks:
+            # if t.id() in self.collision_chunks or t.is_multi():
+            if not t.is_single() or t.length() < 5:
                 continue
 
             self.undecided_tracklets.add(t.id())
@@ -275,7 +291,7 @@ class LearningProcess:
 
         # TODO:
         try:
-            best_candidate_tracklet = self.__get_best_question()
+            best_candidate_tracklet = self.get_best_question()
 
             id_ = -1
             if not self.question_callback:
@@ -339,7 +355,7 @@ class LearningProcess:
 
         return best_id
 
-    def __get_best_question(self, strategy='default'):
+    def get_best_question(self, strategy='default'):
         best_tracklet = None
         best_value = -1
         for t_id in self.undecided_tracklets:
@@ -376,11 +392,9 @@ class LearningProcess:
         X = []
         for t_id in self.X:
             x = self.features[t_id]
-            print len(x)
             if len(X) == 0:
                 X = np.array(x)
             else:
-                print np.array(x).shape, X.shape
                 X = np.vstack([X, np.array(x)])
 
         return X
@@ -388,7 +402,11 @@ class LearningProcess:
     def __train_rfc(self):
         self.rfc = RandomForestClassifier(class_weight='balanced_subsample')
         if len(self.X):
-            print "TRAINING RFC"
+            y = []
+            for i in range(len(self.p.animals)):
+                y.append(np.sum(np.array(self.y) == i))
+
+            print "TRAINING RFC",
 
             self.rfc.fit(self.__tid2features(), self.y)
             self.__precompute_measurements()
@@ -399,7 +417,11 @@ class LearningProcess:
             try:
                 x, t_length = self.__get_tracklet_proba(tracklet)
             except KeyError:
-                print "features missing for ", tracklet.id()
+                # TODO: remove this, instead compute features...
+                x = np.random.rand(len(self.p.animals))
+                x = x / np.sum(x)
+                if self.verbose > 2:
+                    print "features missing for ", tracklet.id()
 
             # c
             # print x
@@ -576,12 +598,19 @@ class LearningProcess:
         return set(range(len(vertices)))
 
     def __reset_chunk_PN_sets(self):
+        full_set = set(range(len(self.p.animals)))
         for ch in self.p.chm.chunk_gen():
             ch.P = set()
             ch.N = set()
 
+            if ch.is_noise() or ch.is_part():
+                ch.N = set(full_set)
 
     def next_step(self):
+        if len(self.undecided_tracklets) == 0:
+            print "ALL is done"
+            return True
+
         eps_certainty_learning = self._eps_certainty / 2
 
         # if enough new data, retrain
@@ -595,8 +624,11 @@ class LearningProcess:
 
         # pick one with best certainty
         # TODO: it is possible to improve speed (if necessary) implementing dynamic priority queue
+        try:
+            best_tracklet_id = max(self.tracklet_certainty.iteritems(), key=operator.itemgetter(1))[0]
+        except ValueError:
+            print len(self.tracklet_certainty), len(self.undecided_tracklets)
 
-        best_tracklet_id = max(self.tracklet_certainty.iteritems(), key=operator.itemgetter(1))[0]
         best_tracklet = self.p.chm[best_tracklet_id]
 
         # if not good enough, raise question
@@ -618,6 +650,7 @@ class LearningProcess:
             # TODO: test conflict in other tracklet with high certainity for given ID
 
             id_ = np.argmax(x_)
+            self.last_id = id_
             self.assign_identity(id_, best_tracklet, learn=learn)
         else:
             # if new training data, retrain
@@ -629,10 +662,15 @@ class LearningProcess:
                 self.next_step()
                 return True
             else:
-                if not self.__human_in_the_loop_request():
-                    return False
+                if self.human_in_the_loop:
+                    if not self.__human_in_the_loop_request():
+                        return False
+                else:
+                    self.last_id = best_tracklet_id
+                    self.consistency_violated = True
 
-        self.update_callback()
+        if self.update_callback is not None:
+            self.update_callback()
 
         return True
 
@@ -775,6 +813,7 @@ class LearningProcess:
         P = P.union(id_)
         N = N.remove(id_)
 
+        self.last_id = tracklet.id()
         # consistency check
         if not self.__consistency_check_PN(P, N):
             # TODO: CONFLICT
@@ -791,7 +830,10 @@ class LearningProcess:
         affected_tracklets = self.__get_affected_undecided_tracklets(tracklet)
         for t in affected_tracklets:
             # there was self.__if_possible_update_N(t, tracklet, ids), but it was too slow..
-            self.__update_N(id_, t)
+
+            self.last_id = t.id()
+            if not self.__update_N(id_, t):
+                return
 
         # everything is OK
         return True
@@ -805,7 +847,8 @@ class LearningProcess:
             return
 
         # ignore collision tracklets because there are no measurements etc...
-        if tracklet.id() in self.collision_chunks:
+        if not tracklet.is_single():
+        # if tracklet.id() in self.collision_chunks:
             return
 
         P = tracklet.P
@@ -842,7 +885,7 @@ class LearningProcess:
             div = p1 + p2
 
             # if prob is too low...
-            if div < 0.3:
+            if div < 0.3 and tracklet.length() < 10:
                 div = 1.0
 
             if div == 0:
@@ -859,9 +902,13 @@ class LearningProcess:
             self.tracklet_certainty[tracklet.id()] = certainty
 
     def __consistency_check_PN(self, P, N):
+        if self.ignore_inconsistency:
+            return True
+
         if len(P.intersection(N)) > 0:
+            self.consistency_violated = True
             print "WARNING: inconsistency in learning_process.", P, N
-            print "Intersection of DefinitelyPresent and DefinitelyNotPresent is NOT empty!!!"
+            # print "Intersection of DefinitelyPresent and DefinitelyNotPresent is NOT empty!!!"
 
             return False
 
@@ -935,8 +982,17 @@ class LearningProcess:
             # nothing happened
             return True
 
+
+        # if tracklet.id() == 1083:
+        #     print ids
+
+        self.last_id = tracklet.id()
         # consistency check
         if not self.__consistency_check_PN(P, N):
+            print "ID: ", tracklet.id()
+            # print "IN CONFLICT WITH: "
+            # for tc in self.__find_conflict(tracklet, list(tracklet.P)[0]):
+            #     print tc.id(), tc, tc.segmentation_class
             # TODO: CONFLICT
             return False
 
@@ -951,22 +1007,30 @@ class LearningProcess:
             for v_out in tracklet.end_vertex(self.p.gm).out_neighbours():
                 t_ = self.p.gm.get_chunk(v_out)
 
+                if t_.is_single() and t_.id not in self.undecided_tracklets:
+                    continue
+
                 new_N = self.__get_in_v_N_union(v_out)
 
                 if not new_N.issubset(t_.N):
                     # print "UPDATING OUTCOMING", tracklet, t_, t_.N, new_N
-                    self.__update_N(new_N, t_)
+                    if not self.__update_N(new_N, t_):
+                        return
 
         if not skip_in:
             # update all incoming
             for v_in in tracklet.start_vertex(self.p.gm).in_neighbours():
                 t_ = self.p.gm.get_chunk(v_in)
 
+                if t_.is_single() and t_.id not in self.undecided_tracklets:
+                    continue
+
                 new_N = self.__get_out_v_N_union(v_in)
 
                 if not new_N.issubset(t_.N):
                     # print "UPDATING INCOMING", tracklet, t_, t_.N, new_N
-                    self.__update_N(new_N, t_)
+                    if not self.__update_N(new_N, t_):
+                        return
 
         if self.__only_one_P_possibility(tracklet):
             id_ = self.__get_one_possible_P(tracklet)
@@ -1022,7 +1086,8 @@ class LearningProcess:
         #             break
 
         if not oversegmented:
-            self.__update_N(ids, tracklet)
+            if not self.__update_N(ids, tracklet):
+                return False
 
         return not oversegmented
 
@@ -1036,6 +1101,9 @@ class LearningProcess:
 
         self.X = []
         self.y = []
+
+        self.consistency_violated = False
+        self.last_id = -1
 
         for d in self.user_decisions:
             tracklet_id = d['tracklet_id_set']
@@ -1056,6 +1124,7 @@ class LearningProcess:
                 self.__update_N(set([id_]), tracklet)
 
         self.__train_rfc()
+        print "TRAINED"
 
     def assign_identity(self, id_, tracklet, learn=True, not_affecting=False, oversegmented=False, user=False, gt=False):
         """
@@ -1112,11 +1181,12 @@ class LearningProcess:
         #
         #     # return
 
-        print "ASSIGNING ID: ", id_, " to tracklet: ", tracklet.id(), "length: ", tracklet.length(), "start: ", tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)
-        try:
-            print "\t\tcertainty: ", self.tracklet_certainty[tracklet.id()], " measurements: ", self.tracklet_measurements[tracklet.id()]
-        except:
-            pass
+        if self.verbose > 2:
+            print "ASSIGNING ID: ", id_, " to tracklet: ", tracklet.id(), "length: ", tracklet.length(), "start: ", tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)
+            try:
+                print "\t\tcertainty: ", self.tracklet_certainty[tracklet.id()], " measurements: ", self.tracklet_measurements[tracklet.id()]
+            except:
+                pass
 
         # finalize
         # TODO: test collision chunk, if yes and learn - compute features...
@@ -1135,7 +1205,8 @@ class LearningProcess:
                 warnings.warn("tracklet.id(): "+str(tracklet.id())+" not in self.tracklet_certainty")
 
         if tracklet.id() in self.collision_chunks:
-            print tracklet.id(), "in collision chunks"
+            if self.verbose > 2:
+                print tracklet.id(), "in collision chunks"
             return
 
         if learn:
@@ -1143,9 +1214,13 @@ class LearningProcess:
 
         id_set = set([id_])
         tracklet.P = id_set
+
+        self.last_id = id_
+
         # and the rest of ids goes to not_present
         # we want to call this function, so the information is propagated...
         self.__update_N(self.all_ids.difference(id_set), tracklet)
+
 
         for t in self.__get_affected_undecided_tracklets(tracklet):
             self.__update_N(id_set, t)
@@ -1180,6 +1255,55 @@ class LearningProcess:
             tracklet.P = new_P
 
 
+    def auto_init(self):
+        best_frame = None
+        best_score = 0
+
+        max_best_frame = None
+        max_best_score = 0
+
+        frame = 0
+        while True:
+            group = self.p.chm.chunks_in_frame(frame)
+            if len(group) == 0:
+                break
+
+            singles_group = filter(lambda x: x.is_single(), group)
+
+            if len(singles_group) == len(self.p.animals):
+                m = min([t.length() for t in singles_group])
+                mm = sum([t.length() for t in singles_group])
+                if m > best_score:
+                    best_frame = frame
+                    best_score = m
+
+                if mm > max_best_score:
+                    max_best_frame = frame
+                    max_best_score = mm
+
+            frame = min([t.end_frame(self.p.gm) for t in group]) + 1
+
+        print "BEST min: "
+        print best_frame, best_score
+        for t in self.p.chm.chunks_in_frame(best_frame):
+            print "id: {}, len: {}".format(t.id(), t.length())
+
+        print "BEST sum (USED)"
+        # TODO: add to user settings
+        print max_best_frame, max_best_score
+        self.user_decisions = []
+        self.separated_frame = max_best_frame
+
+        group = self.p.chm.chunks_in_frame(max_best_frame)
+        group = filter(lambda x: x.is_single(), group)
+
+        for id_, t in enumerate(group):
+            print "id: {}, len: {}".format(t.id(), t.length())
+            self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
+
+        return max_best_frame
+
+
 if __name__ == '__main__':
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Zebrafish_playground'
@@ -1188,7 +1312,7 @@ if __name__ == '__main__':
 
 
     p = Project()
-    p.load_hybrid(wd, state='eps_edge_filter')
+    p.load_semistate(wd, state='eps_edge_filter')
     p.img_manager = ImgManager(p)
 
     learn_proc = LearningProcess(p)

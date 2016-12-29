@@ -220,7 +220,7 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
     gt = GT()
     gt.load(project.GT_file)
 
-    single_region_ids, animal_ids = get_single_region_ids(project)
+    single_region_ids, animal_ids = gt.get_singlele_region_ids(project)
     if verbose:
         np.set_printoptions(precision=4)
         print len(single_region_ids), len(animal_ids)
@@ -410,6 +410,12 @@ def get_idtracker_features(r, p, debug=False, sub=1):
     max_i = 255
     max_c = 255
 
+    # # # Sowbug3
+    # min_i = 20
+    # max_i = 90
+    # max_c = 30
+    # max_d = 30
+
     # # Cam1 settings
     # max_i = 100
     # max_c = 50
@@ -420,12 +426,12 @@ def get_idtracker_features(r, p, debug=False, sub=1):
     # max_c = 50
 
 
-    # # Camera3 Settings
-    # max_d = 70
-    #
-    # min_i = 20
-    # max_i = 90
-    # max_c = 40
+    # Camera3 Settings
+    max_d = 70
+
+    min_i = 20
+    max_i = 90
+    max_c = 40
 
 
     img = p.img_manager.get_whole_img(r.frame_)
@@ -501,8 +507,8 @@ def get_idtracker_features(r, p, debug=False, sub=1):
         # plt.scatter(x, y)
         # plt.show()
 
-        # plt.figure()
-        # plt.imshow(contrast_map_, aspect='auto')
+        plt.figure()
+        plt.imshow(contrast_map_, aspect='auto')
 
 
     return np.ravel(intensity_map_), np.ravel(contrast_map_)
@@ -533,25 +539,6 @@ def get_idtracker_features(r, p, debug=False, sub=1):
     #
     # return list(np.ravel(intensity_map)), list(np.ravel(contrast_map))
 
-def get_single_region_ids(project):
-    gt = GT()
-    gt.load(project.GT_file)
-
-    single_region_ids = []
-    animal_ids = []
-    match = gt.match_on_data(project, match_on='regions')
-
-    for frame in match.iterkeys():
-        for a_id, r_id in enumerate(match[frame]):
-            if r_id is None:
-                continue
-
-            if match[frame].count(r_id) == 1:
-                single_region_ids.append(r_id)
-                animal_ids.append(a_id)
-
-    return single_region_ids, animal_ids
-
 def optimise_features(wd, fm_name):
     fm = FeatureManager(p.working_directory, db_name=wd +'/'+fm_name + '.sqlite3')
     fm_new = FeatureManager(p.working_directory, db_name=wd+'/'+ fm_name + '_opt.sqlite3')
@@ -574,53 +561,56 @@ if __name__ == '__main__':
 
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     p = Project()
-    # p.load_hybrid(wd, state='isolation_score')
-    p.load_hybrid(wd, state='eps_edge_filter')
+    # p.load_semistate(wd, state='isolation_score')
+    p.load_semistate(wd, state='eps_edge_filter')
 
     # optimise_features(wd, 'fm_idtracker_c_d50')
     #
-    # #
-    t = time.time()
-    for j in range(1):
-        for i in range(1, 7):
-            r = p.rm[i]
-            get_idtracker_features(r, p, debug=True, sub=4)
-
-    print time.time() - t
+    #
+    # t = time.time()
+    # for j in range(1):
+    #     for i in range(1, 7):
+    #         r = p.rm[i]
+    #         get_idtracker_features(r, p, debug=True, sub=4)
+    #
+    # print time.time() - t
 
     plt.show()
 
+    gt = GT()
+    gt.load(p.GT_file)
+
     # test_regions = []
-    single_region_ids, _ = get_single_region_ids(p)
+    single_region_ids, _ = gt.get_singlele_region_ids(p)
     print len(single_region_ids)
     # print len(single_region_ids)
     # fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50_test.sqlite3')
     # print "test"
 
-    if False:
+    if True:
         # p.chm.add_single_vertices_chunks(p, fra mes=range(4500))
         p.gm.update_nodes_in_t_refs()
 
         if True:
-            single_region_ids, _ = get_single_region_ids(p)
+            single_region_ids, _ = gt.get_singlele_region_ids(p)
 
             fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
             fm_colornames = FeatureManager(p.working_directory, db_name='fm_colornames.sqlite3')
-            fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50.sqlite3')
-            fm_idtracker_c = FeatureManager(p.working_directory, db_name='fm_idtracker_c_d50.sqlite3')
+            fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i.sqlite3')
+            fm_idtracker_c = FeatureManager(p.working_directory, db_name='fm_idtracker_c.sqlite3')
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog.sqlite3')
             fm_lbp = FeatureManager(p.working_directory, db_name='fm_lbp.sqlite3')
 
-            fm_hog = FeatureManager(p.working_directory, db_name='fm_hog_fliplr.sqlite3')
+            # fm_hog = FeatureManager(p.working_directory, db_name='fm_hog_fliplr.sqlite3')
 
-            # fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
-            fms = [(fm_idtracker_i, fm_idtracker_c, fm_basic, fm_hog, fm_lbp, fm_colornames)]
+            fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
+            # fms = [(fm_idtracker_i, fm_idtracker_c, fm_basic, fm_hog, fm_lbp, fm_colornames)]
             # fms = [fm_hog]
-            # methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
-            methods = [get_idtracker_features]
+            methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
+            # methods = [get_idtracker_features]
 
             import time
             t1 = time.time()
@@ -672,10 +662,10 @@ if __name__ == '__main__':
 
 
         # fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
-        fm_names = ['fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
-        fm_names = ['fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
-        # fm_names = ['fm_hog_fliplr.sqlite3']
-        fm_names = ['fm_idtracker_i_d50.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3']
+        # fm_names = ['fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_idtracker_i.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
+        # fm_names = ['fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
+        # # fm_names = ['fm_hog_fliplr.sqlite3']
+        fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_basic.sqlite3']
 
         if True:
             results = evaluate_features_performance(p, fm_names, seed=42, test_split_method='random',

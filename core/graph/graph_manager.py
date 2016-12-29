@@ -275,6 +275,8 @@ class GraphManager:
         return e
 
     def chunks_in_frame(self, frame):
+        import warnings
+        warnings.warn('DEPRECATED!')
         in_frame = []
         for ch_id in self.project.chm.chunk_list():
             ch = self.project.chm[ch_id]
@@ -668,7 +670,7 @@ class GraphManager:
     def regions_and_t_ids_in_t(self, frame):
         regions = []
         for t in self.project.chm.chunks_in_frame(frame):
-            r_id = t.r_id_in_t(t, self.project.gm)
+            r_id = t.r_id_in_t(frame, self.project.gm)
             regions.append((r_id, t.id()))
 
         return regions

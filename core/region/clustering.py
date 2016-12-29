@@ -156,6 +156,6 @@ if __name__ == '__main__':
     from core.project.project import Project
 
     p = Project()
-    p.load_hybrid('/Users/flipajs/Documents/wd/FERDA/zebrafish_playground')
+    p.load_semistate('/Users/flipajs/Documents/wd/FERDA/zebrafish_playground')
 
     clustering(p, compute_data=True)

@@ -23,7 +23,7 @@ if __name__ == '__main__':
     from core.project.project import Project
 
     p = Project()
-    p.load_hybrid('/Users/flipajs/Documents/wd/FERDA/Camera3')
+    p.load_semistate('/Users/flipajs/Documents/wd/FERDA/Camera3')
 
     vm = get_auto_video_manager(p)
     frame = vm.get_frame(25)

@@ -156,17 +156,17 @@ class ClusteringTool(QtGui.QWidget):
         self.hbox_check.addWidget(self.ch_b)
 
         self.ch_min_i = QtGui.QCheckBox('min_i')
-        self.ch_min_i.setChecked(True)
+        self.ch_min_i.setChecked(False)
         self.ch_min_i.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_min_i)
 
         self.ch_max_i = QtGui.QCheckBox('max_i')
-        self.ch_max_i.setChecked(True)
+        self.ch_max_i.setChecked(False)
         self.ch_max_i.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_max_i)
 
         self.ch_margin = QtGui.QCheckBox('margin')
-        self.ch_margin.setChecked(True)
+        self.ch_margin.setChecked(False)
         self.ch_margin.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_margin)
 
@@ -447,12 +447,9 @@ class ClusteringTool(QtGui.QWidget):
 
         return item
 
-    def eval(self, training_n=5):
+    def train(self, n):
         with open(p.working_directory + '/temp/clustering_tool.pkl') as f:
             _, undecided = pickle.load(f)
-
-        print training_n
-
 
         gt = self.data
         print "#S: {} #M: {} #N: {} #P: {}".format(len(gt['single']),
@@ -482,19 +479,20 @@ class ClusteringTool(QtGui.QWidget):
             in_gt.add(id_)
             i += 1
 
-            if i == training_n:
+            if i == n:
                 break
 
         print "TRAINING SET: #S: {} #M: {} #N: {} #P: {}".format(len(self.data['single']),
                                                    len(self.data['multi']),
                                                    len(self.data['noise']),
                                                    len(self.data['part']))
-        
-        # # for key, d in gt.iteritems():
-        #     for i in range(min(len(d), training_n)):
-        #         self.data[key].append(d[i])
-        #
-        #     undecided = undecided.union(set(d[i:]))
+
+        return gt_map, in_gt
+
+
+
+    def eval(self, training_n=5):
+        gt_map, in_gt = self.train(training_n)
 
         active_f = self.active_features_vect()
 
@@ -514,18 +512,65 @@ class ClusteringTool(QtGui.QWidget):
 
         print correct, len(mistakes)
 
-        self.data = {'single': [],
-                     'multi': [],
-                     'noise': [],
-                     'part': []}
-
-        for id_, (c, _, _) in mistakes:
-            self.data[c].append(id_)
+        # self.data = {'single': [],
+        #              'multi': [],
+        #              'noise': [],
+        #              'part': []}
+        #
+        # for id_, (c, _, _) in mistakes:
+        #     self.data[c].append(id_)
 
         self.show_decided.setChecked(True)
         self.show_undecided.setChecked(False)
         self.redraw_grids()
         # self.data = gt
+
+    def classify_project(self, p, data=None, train_n=30):
+        from utils.gt.gt import GT
+        gt = GT(num_ids = len(p.animals))
+        gt.load(p.GT_file)
+
+        gt.get_single_region_ids(p)
+
+        if data is None:
+            self.train(train_n)
+        else:
+            self.data = data
+
+        active_f = self.active_features_vect()
+
+        type_map = {'single': 0, 'multi': 1, 'noise': 2, 'part': 3}
+
+        t_classes = {}
+        for t in p.chm.chunk_gen():
+            freq = [0, 0, 0, 0]
+            for v in t.v_gen():
+                c, d_ = self.classify(v, active_f)
+
+                freq[type_map[c]] += 1
+
+            gt_id = gt.tracklet_id_set(t, p)
+
+            t_class = np.argmax(freq)
+
+            if len(gt_id) == 1 and t_class != 0:
+                print "ERROR, SINGLE not classified properly"
+
+            if len(gt_id) == 0 and t_class != 2:
+                print "ERROR, NOISE not classified properly"
+
+            if len(gt_id) > 1 and t_class != 1:
+                print "ERROR, MULTI not classified properly"
+
+            t.segmentation_class = t_class
+
+            t_classes[t.id()] = t_class
+            print t.id(), t.length(), t_class, freq, "{:.2%}".format(freq[t_class] / float(np.sum(freq)))
+
+        self.p.save_semistate('tracklets_s_classified')
+        print "Classification DONE"
+
+
 
 
 if __name__ == '__main__':
@@ -534,19 +579,24 @@ if __name__ == '__main__':
     from core.project.project import Project
 
     p = Project()
-    # p.load_hybrid('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
-    p.load_hybrid('/Users/flipajs/Documents/wd/FERDA/Sowbug3')
-    # p.load_hybrid('/Users/flipajs/Documents/wd/FERDA/Camera3')
-    # p.load_hybrid('/Users/flipajs/Documents/wd/FERDA/zebrafish_playground')
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    p.load_semistate(wd, state='eps_edge_filter',
+                     one_vertex_chunk=True, update_t_nodes=True)
 
     ex = ClusteringTool(p)
     ex.raise_()
     ex.activateWindow()
 
     ex.human_iloop_classification()
-    for n in [10, 30, 50, 100, 200]:
-        ex.eval(training_n=n)
-        ex.load_data(False)
+
+    ex.classify_project(p, train_n=30)
+    # for n in [10, 30, 50, 100, 200]:
+    # for n in [100]:
+    #     ex.eval(training_n=n)
+    #     ex.load_data(False)
 
     app.exec_()
     app.deleteLater()

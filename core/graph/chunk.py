@@ -23,6 +23,7 @@ class Chunk:
         self.animal_id_ = -1
         self.P = set()
         self.N = set()
+        self.segmentation_class = -1
 
         if len(vertices_ids) > 1:
             if vertices_ids[0] > 0:
@@ -350,6 +351,10 @@ class Chunk:
         return len(self.P) == 1 and \
                len(self.N) == num_animals - 1
 
+    def v_gen(self):
+        for v in self.nodes_:
+            yield v
+
     def rid_gen(self, gm):
         for id_ in self.nodes_:
             yield gm.region_id(id_)
@@ -360,3 +365,18 @@ class Chunk:
             return gm.region_id(self.nodes_[t])
         else:
             return None
+
+    def is_single(self):
+        return self.segmentation_class == 0
+
+    def is_multi(self):
+        return self.segmentation_class == 1
+
+    def is_noise(self):
+        return self.segmentation_class == 2
+
+    def is_part(self):
+        return self.segmentation_class == 3
+
+    def is_undefined(self):
+        return self.segmentation_class == -1

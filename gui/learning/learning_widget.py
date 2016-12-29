@@ -375,44 +375,7 @@ class LearningWidget(QtGui.QWidget):
         self.lp.update_undecided_tracklets()
 
     def auto_init(self):
-        best_frame = None
-        best_score = 0
-
-        max_best_frame = None
-        max_best_score = 0
-
-        frame = 0
-        while True:
-            group = self.project.chm.chunks_in_frame(frame)
-            if len(group) == 0:
-                break
-
-            if len(group) == len(self.project.animals):
-                m = min([t.length() for t in group])
-                mm = sum([t.length() for t in group])
-                if m > best_score:
-                    best_frame = frame
-                    best_score = m
-
-                if mm > max_best_score:
-                    max_best_frame = frame
-                    max_best_score = mm
-
-            frame = min([t.end_frame(self.project.gm) for t in group]) + 1
-
-        print "BEST min: "
-        print best_frame, best_score
-        for t in self.project.chm.chunks_in_frame(best_frame):
-            print t.length()
-
-        print "BEST sum (USED)"
-        # TODO: add to user settings
-        print max_best_frame, max_best_score
-        self.lp.user_decisions = []
-        self.lp.separated_frame = max_best_frame
-        for id_, t in enumerate(self.project.chm.chunks_in_frame(max_best_frame)):
-            print t.length()
-            self.lp.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
+        self.lp_auto_init()
 
         self.update_callback()
 

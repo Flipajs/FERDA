@@ -15,6 +15,8 @@ from gui.video_player.video_player import VideoPlayer
 from utils.img import img_saturation_coef
 from utils.misc import is_flipajs_pc
 from core.region.region import get_region_endpoints
+from utils.idtracker import load_idtracker_data
+
 
 MARKER_SIZE = 15
 
@@ -106,6 +108,10 @@ class ResultsWidget(QtGui.QWidget):
         self.evolve_gt_b.clicked.connect(self._evolve_gt)
         self.gt_box.layout().addWidget(self.evolve_gt_b)
 
+        self.evolve_gt_id_b = QtGui.QPushButton('ID assignment STATS')
+        self.evolve_gt_id_b.clicked.connect(self._evolve_gt_id)
+        self.gt_box.layout().addWidget(self.evolve_gt_id_b)
+
         self.save_gt_b = QtGui.QPushButton('save gt')
         self.save_gt_b.clicked.connect(self.__save_gt)
         self.gt_box.layout().addWidget(self.save_gt_b)
@@ -117,6 +123,10 @@ class ResultsWidget(QtGui.QWidget):
         self.gt_find_permutation_b = QtGui.QPushButton('find permutation')
         self.gt_find_permutation_b.clicked.connect(self._gt_find_permutation)
         self.gt_box.layout().addWidget(self.gt_find_permutation_b)
+
+        self.gt_find_permutation_here_b = QtGui.QPushButton('find permutation here')
+        self.gt_find_permutation_here_b.clicked.connect(partial(self._gt_find_permutation, True))
+        self.gt_box.layout().addWidget(self.gt_find_permutation_here_b)
 
         self.auto_gt_assignment_b = QtGui.QPushButton('auto GT')
         self.auto_gt_assignment_b.clicked.connect(self.__auto_gt_assignment)
@@ -538,6 +548,15 @@ class ResultsWidget(QtGui.QWidget):
         )
 
         return evaluation
+
+    def _evolve_gt_id(self):
+        from utils.gt.evaluator import Evaluator
+        if self._gt is not None:
+            ev = Evaluator(None, self._gt)
+            ev.eval_ids(self.project)
+
+
+
 
     def __prepare_gt(self):
         new_ = {}
@@ -1329,38 +1348,7 @@ class ResultsWidget(QtGui.QWidget):
 
     def show_idtracker_data(self):
         path = str(self.show_idtracker_i.text())
-
-        try:
-            import scipy.io as sio
-            data = sio.loadmat(path)
-            data = data['trajectories']
-            self.idtracker_data = data
-
-            permutation_data = []
-
-            for frame in range(len(data)):
-                i = 0
-                for x, y in data[frame]:
-                    if np.isnan(x):
-                        continue
-
-                    i += 1
-
-                if i == len(self.project.animals):
-                    break
-
-            print "permutation search in frame", frame
-
-            # frame = 0
-            for id_, it in enumerate(data[frame]):
-                x, y = it[0], it[1]
-                permutation_data.append((frame, id_, y, x))
-
-            self.idtracker_data_permutation = self._gt.get_permutation(permutation_data)
-
-        except IOError:
-            print "idtracker data was not loaded", path
-            pass
+        self.idtracker_data, self.idtracker_data_permutation = load_idtracker_data(path, self.project, self._gt)
 
     def __head_fix(self, tracklet):
         import heapq
@@ -1618,16 +1606,22 @@ class ResultsWidget(QtGui.QWidget):
             item2.setZValue(0.99)
             self.video_player.visualise_temp(item2)
 
-    def _gt_find_permutation(self):
-        if self.get_separated_frame_callback:
-            frame = self.get_separated_frame_callback()
-            print "SEPARATED IN: ", frame
+    def _gt_find_permutation(self, current_frame=False):
+        if self.get_separated_frame_callback or current_frame:
+            if current_frame:
+                frame = self.video_player.current_frame()
+            else:
+                frame = self.get_separated_frame_callback()
+                print "SEPARATED IN: ", frame
 
-            permutation_data = []
-            for t in self.project.chm.chunks_in_frame(frame):
-                id_ = list(t.P)[0]
-                y, x = RegionChunk(t, self.project.gm, self.project.rm).centroid_in_t(frame)
-                permutation_data.append((frame, id_, y, x))
+        permutation_data = []
+        for t in self.project.chm.chunks_in_frame(frame):
+            if not t.is_single():
+                continue
 
-            self.idtracker_data_permutation = self._gt.set_permutation(permutation_data)
-            self.video_player.redraw_visualisations()
+            id_ = list(t.P)[0]
+            y, x = RegionChunk(t, self.project.gm, self.project.rm).centroid_in_t(frame)
+            permutation_data.append((frame, id_, y, x))
+
+        self.idtracker_data_permutation = self._gt.set_permutation_reversed(permutation_data)
+        self.video_player.redraw_visualisations()

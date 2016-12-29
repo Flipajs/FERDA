@@ -16,7 +16,7 @@ max_eps = 0
 for path in paths:
     print path.split('/')[-3]
     p = Project()
-    p.load_hybrid('/'.join(path.split('/')[:-2]), state='isolation_score')
+    p.load_semistate('/'.join(path.split('/')[:-2]), state='isolation_score')
 
     with open(path) as f:
         (epsilons, edges, variant, AA, BB) = pickle.load(f)
