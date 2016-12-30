@@ -3,7 +3,7 @@ from core.project.project import Project
 import cPickle as pickle
 
 
-def load_all_projects(semistate='', update_t_nodes=False, add_single_vertices=False):
+def load_all_projects(semistate='isolation_score', update_t_nodes=False, add_single_vertices=False):
     """
     Returns: dictionary with projects
 

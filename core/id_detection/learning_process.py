@@ -163,29 +163,54 @@ class LearningProcess:
         # except IOError:
         #     pass
 
-    def load_features(self, db_name='fm_idtracker_i.sqlite3'):
+    def load_features(self, db_names='fm_idtracker_i.sqlite3'):
         from core.id_detection.features import FeatureManager
 
         self.collision_chunks = set()
         self.features = {}
-        # self.fm = FeatureManager(self.p.working_directory, db_name='fm_basic.sqlite3')
-        self.fm = FeatureManager(self.p.working_directory, db_name=db_name)
+
+        self.fms = []
+        if isinstance(db_names, str):
+            db_names = [db_names]
+
+        for n in db_names:
+            self.fms.append(FeatureManager(self.p.working_directory, db_name=n))
 
         t_len = len(self.p.chm)
         i = 0
         for t in self.p.chm.chunk_gen():
+            if t.id() == 240:
+                print "test "
+
             i += 1
             print_progress(i, t_len)
 
-            X = []
-
             r_ids = [id_ for id_ in t.rid_gen(self.p.gm)]
 
-            _, f = self.fm[r_ids]
+            ff = []
+            for fm in self.fms:
+                _, f = fm[r_ids]
 
-            # if len(X) > 0:
-            if f[0] is not None:
-                self.features[t.id()] = f
+                ff.append(f)
+
+            F = []
+            #merge
+            for j in range(len(ff[0])):
+                X = []
+                for fi in range(len(self.fms)):
+                    f = ff[fi][j]
+                    if f is None:
+                        X = []
+                        break
+
+                    X.extend(f)
+                if len(X) > 0:
+                    F.append(X)
+                # # skip None
+                # f = filter(lambda x: x is not None, f)
+
+            if len(F):
+                self.features[t.id()] = F
             else:
                 self.collision_chunks.add(t.id())
 
@@ -406,7 +431,7 @@ class LearningProcess:
             for i in range(len(self.p.animals)):
                 y.append(np.sum(np.array(self.y) == i))
 
-            print "TRAINING RFC",
+            print "TRAINING RFC", y
 
             self.rfc.fit(self.__tid2features(), self.y)
             self.__precompute_measurements()
@@ -558,7 +583,7 @@ class LearningProcess:
         if len(self.features) == 0:
             return
 
-        X = [r_id for r_id in ch.rid_gen(self.p.gm)]
+        # X = [r_id for r_id in ch.rid_gen(self.p.gm)]
 
         # print "LEARNING ", id_
         # if ch.id() not in self.features:
@@ -682,7 +707,10 @@ class LearningProcess:
         if len(X) == 0:
             return None, 0
 
-        probs = self.rfc.predict_proba(np.array(X))
+        try:
+            probs = self.rfc.predict_proba(np.array(X))
+        except:
+            print X
         probs = np.mean(probs, 0)
 
         # probs = self.apply_consistency_rule(ch, probs)
@@ -1255,7 +1283,7 @@ class LearningProcess:
             tracklet.P = new_P
 
 
-    def auto_init(self):
+    def auto_init(self, method='best_sum'):
         best_frame = None
         best_score = 0
 
@@ -1294,7 +1322,12 @@ class LearningProcess:
         self.user_decisions = []
         self.separated_frame = max_best_frame
 
-        group = self.p.chm.chunks_in_frame(max_best_frame)
+        if method == 'best_sum':
+            group = self.p.chm.chunks_in_frame(max_best_frame)
+        else:
+            group = self.p.chm.chunks_in_frame(best_frame)
+            max_best_frame = best_frame
+
         group = filter(lambda x: x.is_single(), group)
 
         for id_, t in enumerate(group):
@@ -1302,6 +1335,41 @@ class LearningProcess:
             self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
 
         return max_best_frame
+
+    def id_with_least_examples(self):
+        m = np.inf
+        mi = -1
+        for i in range(len(self.p.animals)):
+            x = np.sum(np.array(self.y) == i)
+            if x < m:
+                m = x
+                mi = i
+
+        return mi
+
+    def question_to_increase_smallest(self, gt):
+        id_ = self.id_with_least_examples()
+
+        used = set()
+        for it in self.user_decisions:
+            used.add(it['tracklet_id_set'])
+
+        best_len = 0
+        best_id_ = -1
+        for t in self.p.chm.chunk_gen():
+            if t not in used:
+                _, val = gt.get_class_and_id(t, self.p)
+                # val = self.__DEBUG_get_answer_from_GT(t)
+
+                if len(val) == 1 and val[0] == id_:
+                    if t.length() > best_len:
+                        best_len = t.length()
+                        best_id_ = t.id()
+
+        if best_id_ == -1:
+            best_id_ = self.get_best_question()
+
+        return self.p.chm[best_id_]
 
 
 if __name__ == '__main__':

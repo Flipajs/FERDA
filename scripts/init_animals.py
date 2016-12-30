@@ -4,13 +4,13 @@ import cPickle as pickle
 
 
 if __name__ == '__main__':
-    wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    num = 10
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
+    num = 6
 
     p = Project()
     p.load(wd)
-    p.GT_file = '/Users/flipajs/Documents/dev/ferda/data/GT/Camera3.pkl'
-    p.save()
+    # p.GT_file = '/Users/flipajs/Documents/dev/ferda/data/GT/Camera3.pkl'
+    # p.save()
 
     animals = []
     for id_ in range(num):

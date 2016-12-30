@@ -315,7 +315,6 @@ class ClusteringTool(QtGui.QWidget):
                     print p.gm.region(vertices[id_]).area(), vertices[id_]
                     continue
 
-                print im.shape
                 cv2.imshow('im', im)
                 if ask:
                     key = self.__controls()
@@ -580,9 +579,10 @@ if __name__ == '__main__':
 
     p = Project()
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     p.load_semistate(wd, state='eps_edge_filter',
                      one_vertex_chunk=True, update_t_nodes=True)
 

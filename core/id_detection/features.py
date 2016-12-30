@@ -220,7 +220,7 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
     gt = GT()
     gt.load(project.GT_file)
 
-    single_region_ids, animal_ids = gt.get_singlele_region_ids(project)
+    single_region_ids, animal_ids = gt.get_single_region_ids(project)
     if verbose:
         np.set_printoptions(precision=4)
         print len(single_region_ids), len(animal_ids)
@@ -416,9 +416,14 @@ def get_idtracker_features(r, p, debug=False, sub=1):
     # max_c = 30
     # max_d = 30
 
-    # # Cam1 settings
-    # max_i = 100
-    # max_c = 50
+    # Cam1 settings
+    max_i = 100
+    max_c = 50
+
+    # Cam1_rf settings
+    min_i = 20
+    max_i = 80
+    max_c = 30
 
     # # zebrafish settings
     # min_i = 0
@@ -427,11 +432,11 @@ def get_idtracker_features(r, p, debug=False, sub=1):
 
 
     # Camera3 Settings
-    max_d = 70
-
-    min_i = 20
-    max_i = 90
-    max_c = 40
+    # max_d = 70
+    #
+    # min_i = 20
+    # max_i = 90
+    # max_c = 40
 
 
     img = p.img_manager.get_whole_img(r.frame_)
@@ -560,8 +565,9 @@ if __name__ == '__main__':
     import cPickle as pickle
 
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     p = Project()
     # p.load_semistate(wd, state='isolation_score')
@@ -584,7 +590,7 @@ if __name__ == '__main__':
     gt.load(p.GT_file)
 
     # test_regions = []
-    single_region_ids, _ = gt.get_singlele_region_ids(p)
+    single_region_ids, _ = gt.get_single_region_ids(p)
     print len(single_region_ids)
     # print len(single_region_ids)
     # fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50_test.sqlite3')
@@ -595,7 +601,7 @@ if __name__ == '__main__':
         p.gm.update_nodes_in_t_refs()
 
         if True:
-            single_region_ids, _ = gt.get_singlele_region_ids(p)
+            single_region_ids, _ = gt.get_single_region_ids(p)
 
             fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
             fm_colornames = FeatureManager(p.working_directory, db_name='fm_colornames.sqlite3')
@@ -604,13 +610,8 @@ if __name__ == '__main__':
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog.sqlite3')
             fm_lbp = FeatureManager(p.working_directory, db_name='fm_lbp.sqlite3')
 
-            # fm_hog = FeatureManager(p.working_directory, db_name='fm_hog_fliplr.sqlite3')
-
             fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
-            # fms = [(fm_idtracker_i, fm_idtracker_c, fm_basic, fm_hog, fm_lbp, fm_colornames)]
-            # fms = [fm_hog]
             methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
-            # methods = [get_idtracker_features]
 
             import time
             t1 = time.time()

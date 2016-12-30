@@ -4,10 +4,9 @@ from utils.gt.evaluator import compare_trackers
 import cPickle as pickle
 from thesis.config import *
 
-
-def run():
-    WD = '/Users/flipajs/Documents/dev/ferda'
-    ps = load_all_projects(semistate='id_classified', update_t_nodes=True, add_single_vertices=True)
+FORMAT_PERCENTS = "{:.2%}"
+def run(semistate='id_classified', dir_name=''):
+    ps = load_all_projects(semistate=semistate, update_t_nodes=True, add_single_vertices=True)
 
     results = {}
     for nogaps in ['', '_nogaps']:
@@ -19,17 +18,67 @@ def run():
 
             p = ps[name]
             path = idTracker_results_paths[name] + nogaps + '.mat'
-            impath = WD+'/thesis/out/imgs/overall_' + name + nogaps + '.png'
+            impath = DEV_WD + '/thesis/out/imgs/' + dir_name + '/' + name + nogaps + '.png'
 
             print path, p.working_directory, impath
-            r = compare_trackers(p, path, impath=impath)
+            r = compare_trackers(p, path, impath=impath, name=name)
 
-        results[name + nogaps] = r
+            results[name + nogaps] = r
 
-        with open(WD+'/thesis/results/overall.pkl', 'wb') as f:
-            pickle.dump(results, f)
+    with open(DEV_WD+ '/thesis/results/overall.pkl', 'wb') as f:
+        pickle.dump(results, f)
 
+def best(val, all, func=max):
+    f = FORMAT_PERCENTS
 
+    from pylatex.utils import NoEscape
+    s = f.format(val)
+    if func(all) == val:
+        return NoEscape(r'\cellcolor{LimeGreen}')+NoEscape(r'\textbf{'+'{:.2f}\%'.format(val*100)+'}')
+    else:
+        return s
+
+def results2latex():
+    from pylatex import Document, Section, Subsection, Tabular, Tabularx, MultiColumn, MultiRow
+    from pylatex.utils import bold, italic, verbatim, escape_latex, NoEscape
+    from pylatex.package import Package
+    with open(DEV_WD+ '/thesis/results/overall.pkl') as f:
+        results = pickle.load(f)
+
+    doc = Document("multirow")
+    doc.packages.add(Package('xcolor', options='table, dvipsnames'))
+    # doc.append(Package('xcolors', options='table'))
+    keys = ['Cam1', 'Zebrafish', 'Camera3', 'Sowbug3']
+
+    # table1 = Tabular('|c|c|c|c|', booktabs=True)
+    table1 = Tabular('|c|c||c|c|c|')
+    table1.add_hline()
+    table1.add_row('', '', bold('FERDA'), bold('idTracker'), bold('idTracker I'))
+    table1.add_hline()
+
+    f = FORMAT_PERCENTS
+    for key in keys:
+        x = results[key]
+        xx = results[key+'_nogaps']
+        table1.add_hline()
+
+        all = [x[2], x[0], xx[0]]
+        table1.add_row((MultiRow(3, data=bold(key)), italic('correct'), best(x[2], all), best(x[0], all), best(xx[0], all)))
+        table1.add_hline(start=2)
+        all = [x[3], x[1], xx[1]]
+        table1.add_row('', italic('wrong'), best(x[3], all, min), best(x[1], all, min), best(xx[1], all, min))
+        table1.add_hline(start=2)
+        all = [1-x[2]-x[3], 1-x[0]-x[1], 1-xx[0]-xx[1]]
+        table1.add_row('', italic('unassigned'), f.format(all[0]), f.format(all[1]), f.format(all[2]))
+        table1.add_hline()
+
+    doc.append(table1)
+
+    table1.generate_tex('overall_no_HIL')
+    doc.generate_pdf(clean_tex=False)
 
 if __name__ == '__main__':
-    run()
+    # run(semistate='id_classified_no_HIL', dir_name='overall_no_HIL')
+    run(semistate='id_classified', dir_name='overall_HIL')
+
+    # results2latex()

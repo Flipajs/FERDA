@@ -1393,6 +1393,7 @@ def process_project(p):
 
     # prepare_pairs(p)
     # max_dist = get_max_dist2(p)
+
     # max_dist = 80.
     # with open(p.working_directory+'/temp/data.pkl', 'wb') as f:
     #     pickle.dump({'max_measured_distance': max_dist}, f)
@@ -1408,7 +1409,7 @@ def process_project(p):
     # save_p_checkpoint(p, 'first_tracklets')
     #
     # learn_assignments(p)
-
+    #
     # load_p_checkpoint(p, 'first_tracklets')
     #
     # p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
@@ -1420,12 +1421,12 @@ def process_project(p):
 
     p.gm.update_nodes_in_t_refs()
     p.chm.reset_itree(p.gm)
-
+    #
     solver = Solver(p)
 
     tracklet_stats(p)
 
-    if False:
+    if True:
         score_type = 'appearance_motion_mix'
         eps = 0.3
 
@@ -1466,7 +1467,8 @@ def process_project(p):
 if __name__ == '__main__':
     p = Project()
     # p.load('/Users/flipajs/Documents/wd/FERDA/zebrafish_playground')
-    p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
+    # p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
+    p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_rf')
     # p.load('/Users/flipajs/Documents/wd/FERDA/Sowbug3')
     # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3')
     from core.region.region_manager import RegionManager
@@ -1479,32 +1481,7 @@ if __name__ == '__main__':
     p.gm.g = g_
     p.gm.rm = p.rm
 
-
-    load_p_checkpoint(p, 'eps_edge_filter')
-
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
-    labels = d['labels']
-    vertices = d['arr']
-
-    print len([v for v in p.gm.active_v_gen()])
-
-    for l in [1, 2, 3]:
-        print np.sum(labels == l)
-        for v in vertices[labels == l]:
-            ch = p.gm.get_chunk(v)
-            if ch is not None:
-                p.chm.remove_chunk(ch, p.gm)
-                # print v
-
-            p.gm.remove_vertex(v, disassembly=False)
-
-    print len([v for v in p.gm.active_v_gen()])
-
-    p.gm.update_nodes_in_t_refs()
-
-    save_p_checkpoint(p, 'eps_without_noise')
-
-    # process_project(p)
+    process_project(p)
 
     if False:
         FILTER_EDGES = False

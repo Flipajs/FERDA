@@ -1,6 +1,9 @@
 from core.project.project import Project
 
 WD = '/Users/flipajs/Documents/wd/FERDA/'
+DEV_WD = '/Users/flipajs/Documents/dev/ferda'
+OUT_WD = DEV_WD+'/thesis/out/'
+OUT_IMGS_WD = OUT_WD+'/imgs/'
 
 cam1_path = WD+'Cam1_playground'
 sowbug3_path = WD+'Sowbug3'
