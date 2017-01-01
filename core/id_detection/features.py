@@ -62,11 +62,11 @@ def get_basic_properties(r, p):
     # axis ratio
     f.append(r.a_ / r.b_)
 
-    # axis ratio sqrt
-    f.append((r.a_ / r.b_)**0.5)
-
-    # axis ratio to power of 2
-    f.append((r.a_ / r.b_)**2.0)
+    # # axis ratio sqrt
+    # f.append((r.a_ / r.b_)**0.5)
+    #
+    # # axis ratio to power of 2
+    # f.append((r.a_ / r.b_)**2.0)
 
     img = p.img_manager.get_whole_img(r.frame_)
     crop, offset = get_img_around_pts(img, r.pts())
@@ -152,8 +152,7 @@ def get_lbp(r, p):
 
     crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
-    crops = [crop_gray]
-    f = __process_crops(crops, fliplr=False)
+    f = get_lbp_vect(crop_gray)
 
     return f
 
@@ -243,7 +242,8 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
     results = {'layer': 'test_size_ratio'}
 
     # Todo: guarantee min number per id class
-    for test_size_ratio in [0.8, 0.9, 0.95, 0.99]:
+    # for test_size_ratio in [0.8, 0.9, 0.95, 0.99]:
+    for test_size_ratio in [0.75]:
         results[test_size_ratio] = {'layer': 'features'}
 
         if verbose:
@@ -253,7 +253,7 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
             print "Training/Learning ratio: {}, #train: {}, #test: {}".format(test_size_ratio, int(len(animal_ids)*(1 - test_size_ratio)), int(len(animal_ids)*test_size_ratio))
 
         # for num_f_types in range(1, len(fms)+1):
-        for num_f_types in range(1, 2):
+        for num_f_types in range(1, 3):
             for combination in itertools.combinations(fms, num_f_types):
                 fliplr = False
 
@@ -278,11 +278,14 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
                         _, f_ = fm[r_id]
 
                         if f_[0] is None:
-                            print r_id
+                            print r_id, "MISSING"
+                            animal_ids.pop(len(X))
+                            break
 
                         f.extend(f_[0])
 
-                    X.append(f)
+                    if len(f):
+                        X.append(f)
 
                 num_animals = len(set(animal_ids))
 
@@ -398,54 +401,53 @@ def get_idtracker_features_sub4(r, p, debug=False):
 def get_idtracker_features_sub8(r, p, debug=False):
     return get_idtracker_features(r, p, debug, sub=8)
 
-def get_idtracker_features(r, p, debug=False, sub=1):
+def get_idtracker_features(r, p, debug=False, sub=1, config=None, vectorize=True):
     # TODO: features_importance speedup...
     # TODO:
-
-
     # import time
 
-    max_d = 50
-    min_i = 0
-    max_i = 255
-    max_c = 255
+    default_config = {
+            'max_d': 50,
+            'min_i': 0,
+            'max_i': 255,
+            'max_c': 255
+        }
 
-    # # # Sowbug3
-    # min_i = 20
-    # max_i = 90
-    # max_c = 30
-    # max_d = 30
+    if isinstance(config, str):
+        if config == 'Sowbug3':
+            default_config['min_i'] = 20
+            default_config['max_i'] = 90
+            default_config['max_c'] = 30
+            default_config['max_d'] = 30
+        elif config == 'Camera3':
+            default_config['max_d'] = 70
+            default_config['min_i'] = 20
+            default_config['max_i'] = 90
+            default_config['max_c'] = 40
+        elif config == 'Cam1':
+            default_config['max_i'] = 100
+            default_config['max_c'] = 50
+        elif config == 'Cam1_rf':
+            default_config['min_i'] = 20
+            default_config['max_i'] = 80
+            default_config['max_c'] = 30
+        elif config == 'Zebrafish':
+            default_config['min_i'] = 0
+            default_config['max_i'] = 210
+            default_config['max_c'] = 50
 
-    # Cam1 settings
-    max_i = 100
-    max_c = 50
+        config = None
 
-    # Cam1_rf settings
-    min_i = 20
-    max_i = 80
-    max_c = 30
-
-    # # zebrafish settings
-    # min_i = 0
-    # max_i = 210
-    # max_c = 50
-
-
-    # Camera3 Settings
-    # max_d = 70
-    #
-    # min_i = 20
-    # max_i = 90
-    # max_c = 40
-
+    if config is None:
+        config = default_config
 
     img = p.img_manager.get_whole_img(r.frame_)
     crop, offset = get_img_around_pts(img, r.pts())
     crop = np.asarray(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY), dtype=np.int)
 
     # t1 = time.time()
-    intensity_map_ = np.zeros((max_d, max_i + 1 - min_i), dtype=np.int)
-    contrast_map_ = np.zeros((max_d, max_c + 1), dtype=np.int)
+    intensity_map_ = np.zeros((config['max_d'], config['max_i'] + 1 - config['min_i']), dtype=np.int)
+    contrast_map_ = np.zeros((config['max_d'], config['max_c'] + 1), dtype=np.int)
 
     pts = r.pts() - offset
 
@@ -472,10 +474,10 @@ def get_idtracker_features(r, p, debug=False, sub=1):
 
     d_ = np.linalg.norm(x1_ - x2_, axis=1) -1
 
-    x1_ = x1_[d_ < max_d]
-    x2_ = x2_[d_ < max_d]
+    x1_ = x1_[d_ < config['max_d']]
+    x2_ = x2_[d_ < config['max_d']]
     # -1 because 0 never occurs
-    d_ = d_[d_ < max_d]
+    d_ = d_[d_ < config['max_d']]
 
     x1_i = crop[x1_[:, 0], x1_[:, 1]]
     x2_i = crop[x2_[:, 0], x2_[:, 1]]
@@ -483,19 +485,19 @@ def get_idtracker_features(r, p, debug=False, sub=1):
     i_ = x1_i + x2_i
     c_ = np.abs(x1_i - x2_i)
 
-    for d in range(max_d):
+    for d in range(config['max_d']):
         ids_ = np.logical_and(d_ <= d, (d-1) < d_)
 
         i__ = i_[ids_]
         if len(i__) == 0:
             continue
 
-        for i in range(max(i__.min(), min_i), min(i__.max(), max_i)+1):
-            # intensity_map_[d, i - min_i] += np.sum(i__ == i)
-            intensity_map_[d, i - min_i] += np.count_nonzero(i__ == i)
+        for i in range(max(i__.min(), config['min_i']), min(i__.max(), config['max_i'])+1):
+            # intensity_map_[d, i - config['min_i']] += np.sum(i__ == i)
+            intensity_map_[d, i - config['min_i']] += np.count_nonzero(i__ == i)
 
         c__ = c_[ids_]
-        for c in range(c__.min(), min(c__.max(), max_c)+1):
+        for c in range(c__.min(), min(c__.max(), config['max_c'])+1):
             # contrast_map_[d, c] += np.sum(c__ == c)
             contrast_map_[d, c] += np.count_nonzero(c__ == c)
 
@@ -515,8 +517,10 @@ def get_idtracker_features(r, p, debug=False, sub=1):
         plt.figure()
         plt.imshow(contrast_map_, aspect='auto')
 
-
-    return np.ravel(intensity_map_), np.ravel(contrast_map_)
+    if vectorize:
+        return np.ravel(intensity_map_), np.ravel(contrast_map_)
+    else:
+        return intensity_map_, contrast_map_
     # return list(np.ravel(intensity_map_)), list(np.ravel(contrast_map_))
     # ########## slower variant
     #
@@ -564,10 +568,10 @@ if __name__ == '__main__':
     from core.project.project import Project
     import cPickle as pickle
 
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
+    wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     p = Project()
     # p.load_semistate(wd, state='isolation_score')
@@ -600,7 +604,7 @@ if __name__ == '__main__':
         # p.chm.add_single_vertices_chunks(p, fra mes=range(4500))
         p.gm.update_nodes_in_t_refs()
 
-        if True:
+        if False:
             single_region_ids, _ = gt.get_single_region_ids(p)
 
             fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
@@ -610,8 +614,10 @@ if __name__ == '__main__':
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog.sqlite3')
             fm_lbp = FeatureManager(p.working_directory, db_name='fm_lbp.sqlite3')
 
-            fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
-            methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
+            # fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
+            # methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
+            fms = [fm_basic, fm_lbp]
+            methods = [get_basic_properties, get_lbp]
 
             import time
             t1 = time.time()
@@ -666,10 +672,16 @@ if __name__ == '__main__':
         # fm_names = ['fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_idtracker_i.sqlite3', 'fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
         # fm_names = ['fm_idtracker_c_d50.sqlite3', 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
         # # fm_names = ['fm_hog_fliplr.sqlite3']
-        fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_basic.sqlite3']
+        # fm_names = ['fm_basic.sqlite3', 'fm_colornames.sqlite3', 'fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3',
+        #             'fm_hog.sqlite3', 'fm_lbp.sqlite3']
+        fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_colornames.sqlite3', 'fm_hog.sqlite3']
 
         if True:
             results = evaluate_features_performance(p, fm_names, seed=42, test_split_method='random',
                                                     rf_class_weight='balanced_subsample', rf_criterion='entropy')
+
+
+            with open('/Users/flipajs/Desktop/results_Camera3_75_.pkl', 'wb') as f:
+                pickle.dump(results, f)
 
             print results

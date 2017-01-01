@@ -24,8 +24,8 @@ if is_flipajs_pc():
     sn_id = 875
     cam_ = 1
 
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'

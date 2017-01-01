@@ -5,7 +5,7 @@ import cPickle as pickle
 from thesis.config import *
 
 FORMAT_PERCENTS = "{:.2%}"
-def run(semistate='id_classified', dir_name=''):
+def run(semistate='id_classified', dir_name='', HIL=False):
     ps = load_all_projects(semistate=semistate, update_t_nodes=True, add_single_vertices=True)
 
     results = {}
@@ -25,7 +25,13 @@ def run(semistate='id_classified', dir_name=''):
 
             results[name + nogaps] = r
 
-    with open(DEV_WD+ '/thesis/results/overall.pkl', 'wb') as f:
+    name = '/thesis/results/overall'
+    if not HIL:
+        name += '_HIL'
+    else:
+        name += '_no_HIL'
+
+    with open(DEV_WD+ name +'.pkl', 'wb') as f:
         pickle.dump(results, f)
 
 def best(val, all, func=max):
@@ -38,7 +44,7 @@ def best(val, all, func=max):
     else:
         return s
 
-def results2latex():
+def results2latex(name='overall'):
     from pylatex import Document, Section, Subsection, Tabular, Tabularx, MultiColumn, MultiRow
     from pylatex.utils import bold, italic, verbatim, escape_latex, NoEscape
     from pylatex.package import Package
@@ -74,11 +80,11 @@ def results2latex():
 
     doc.append(table1)
 
-    table1.generate_tex('overall_no_HIL')
-    doc.generate_pdf(clean_tex=False)
+    table1.generate_tex(OUT_WD+'/tables/'+name)
+    # doc.generate_pdf(clean_tex=False, filepath=OUT_WD+'/'+)
 
 if __name__ == '__main__':
     # run(semistate='id_classified_no_HIL', dir_name='overall_no_HIL')
-    run(semistate='id_classified', dir_name='overall_HIL')
+    run(semistate='id_classified_no_HIL', dir_name='overall_no_HIL', HIL=False)
 
-    # results2latex()
+    results2latex('overall_no_HIL')

@@ -4,8 +4,8 @@ import cPickle as pickle
 
 
 if __name__ == '__main__':
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
-    num = 6
+    wd = '/Users/flipajs/Documents/wd/FERDA/Zebrafish_playground'
+    num = 5
 
     p = Project()
     p.load(wd)

@@ -55,6 +55,7 @@ class LearningProcess:
         self.show_key_error_warnings = False
 
         self.min_new_samples_to_retrain = 10000
+        self.rf_retrain_up_to_min = np.inf
 
         # TODO: add whole knowledge class...
         self.tracklet_knowledge = {}
@@ -76,6 +77,8 @@ class LearningProcess:
         self.X = []
         self.y = []
         self.old_x_size = 0
+
+        self.rf_max_features = 'auto'
 
         self.collision_chunks = {}
 
@@ -101,6 +104,7 @@ class LearningProcess:
         self.last_id = -1
 
         self.ignore_inconsistency = False
+
 
         # when creating without feature data... e.g. in main_tab_widget
         if ghost:
@@ -179,9 +183,6 @@ class LearningProcess:
         t_len = len(self.p.chm)
         i = 0
         for t in self.p.chm.chunk_gen():
-            if t.id() == 240:
-                print "test "
-
             i += 1
             print_progress(i, t_len)
 
@@ -215,10 +216,10 @@ class LearningProcess:
                 self.collision_chunks.add(t.id())
 
         print "LOADED", len(self.features), len(self.collision_chunks)
-        print self.features.keys()
-        print
-        print
-        print self.collision_chunks
+        # print self.features.keys()
+        # print
+        # print
+        # print self.collision_chunks
         self.update_undecided_tracklets()
 
 
@@ -425,16 +426,23 @@ class LearningProcess:
         return X
 
     def __train_rfc(self):
-        self.rfc = RandomForestClassifier(class_weight='balanced_subsample')
+        self.rfc = RandomForestClassifier(class_weight='balanced_subsample', max_features=self.rf_max_features)
         if len(self.X):
             y = []
             for i in range(len(self.p.animals)):
                 y.append(np.sum(np.array(self.y) == i))
 
+            if min(y) >= self.rf_retrain_up_to_min:
+                return False
+
             print "TRAINING RFC", y
 
             self.rfc.fit(self.__tid2features(), self.y)
             self.__precompute_measurements()
+
+            return True
+
+        return False
 
     def __precompute_measurements(self):
         for t_id in self.undecided_tracklets:
@@ -641,11 +649,11 @@ class LearningProcess:
         # if enough new data, retrain
         if len(self.X) - self.old_x_size > self.min_new_samples_to_retrain:
             t = time.time()
-            self.__train_rfc()
-            print "RETRAIN t:", time.time() - t
-            self.old_x_size = len(self.X)
-            self.next_step()
-            return True
+            if self.__train_rfc():
+                print "RETRAIN t:", time.time() - t
+                self.old_x_size = len(self.X)
+                self.next_step()
+                return True
 
         # pick one with best certainty
         # TODO: it is possible to improve speed (if necessary) implementing dynamic priority queue
@@ -970,11 +978,14 @@ class LearningProcess:
             new_conflicts = self.__find_conflict(t)
             self.__print_conflicts(new_conflicts, t, depth=depth+1)
 
-    def __get_in_v_N_union(self, v):
+    def __get_in_v_N_union(self, v, ignore_noise=False):
         N = None
 
         for v_in in v.in_neighbours():
             t_ = self.p.gm.get_chunk(v_in)
+
+            if ignore_noise and t_.is_noise():
+                continue
 
             if N is None:
                 N = set(t_.N)
@@ -983,11 +994,14 @@ class LearningProcess:
 
         return N
 
-    def __get_out_v_N_union(self, v):
+    def __get_out_v_N_union(self, v, ignore_noise=False):
         N = None
 
         for v_out in v.out_neighbours():
             t_ = self.p.gm.get_chunk(v_out)
+
+            if ignore_noise and t_.is_noise():
+                continue
 
             if N is None:
                 N = set(t_.N)
@@ -1038,7 +1052,7 @@ class LearningProcess:
                 if t_.is_single() and t_.id not in self.undecided_tracklets:
                     continue
 
-                new_N = self.__get_in_v_N_union(v_out)
+                new_N = self.__get_in_v_N_union(v_out, ignore_noise=True)
 
                 if not new_N.issubset(t_.N):
                     # print "UPDATING OUTCOMING", tracklet, t_, t_.N, new_N
@@ -1053,7 +1067,7 @@ class LearningProcess:
                 if t_.is_single() and t_.id not in self.undecided_tracklets:
                     continue
 
-                new_N = self.__get_out_v_N_union(v_in)
+                new_N = self.__get_out_v_N_union(v_in, ignore_noise=True)
 
                 if not new_N.issubset(t_.N):
                     # print "UPDATING INCOMING", tracklet, t_, t_.N, new_N
@@ -1127,11 +1141,14 @@ class LearningProcess:
 
         self.__reset_chunk_PN_sets()
 
+        self.old_x_size = 0
+
         self.X = []
         self.y = []
 
         self.consistency_violated = False
         self.last_id = -1
+
 
         for d in self.user_decisions:
             tracklet_id = d['tracklet_id_set']
@@ -1242,6 +1259,7 @@ class LearningProcess:
 
         id_set = set([id_])
         tracklet.P = id_set
+        # tracklet.N = self.all_ids.difference(id_set)
 
         self.last_id = id_
 
