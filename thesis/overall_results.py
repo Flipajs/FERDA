@@ -86,5 +86,4 @@ def results2latex(name='overall'):
 if __name__ == '__main__':
     # run(semistate='id_classified_no_HIL', dir_name='overall_no_HIL')
     run(semistate='id_classified_no_HIL', dir_name='overall_no_HIL', HIL=False)
-
     results2latex('overall_no_HIL')

@@ -509,7 +509,7 @@ class ClusteringTool(QtGui.QWidget):
             else:
                 mistakes.append((id_, (c, d_, gt_map[id_])))
 
-        print correct, len(mistakes)
+        # print correct, len(mistakes)
 
         # self.data = {'single': [],
         #              'multi': [],
@@ -523,6 +523,8 @@ class ClusteringTool(QtGui.QWidget):
         self.show_undecided.setChecked(False)
         self.redraw_grids()
         # self.data = gt
+
+        return correct, len(mistakes)
 
     def classify_project(self, p, data=None, train_n=30):
         from utils.gt.gt import GT
@@ -576,27 +578,55 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
     from core.project.project import Project
+    import matplotlib.pyplot as plt
 
     p = Project()
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     p.load_semistate(wd, state='eps_edge_filter',
                      one_vertex_chunk=True, update_t_nodes=True)
 
-    ex = ClusteringTool(p)
-    ex.raise_()
-    ex.activateWindow()
+    from thesis.config import *
+    from thesis.thesis_utils import load_all_projects
 
-    ex.human_iloop_classification()
+    ps = load_all_projects(semistate='eps_edge_filter')
 
-    ex.classify_project(p, train_n=30)
-    # for n in [10, 30, 50, 100, 200]:
-    # for n in [100]:
-    #     ex.eval(training_n=n)
-    #     ex.load_data(False)
+    Ns = [5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200]
+    results = {'Ns': Ns}
+    for pname in project_paths.iterkeys():
+        p = ps[pname]
+        ex = ClusteringTool(p)
+        ex.raise_()
+        ex.activateWindow()
+
+        ex.human_iloop_classification()
+
+        cs = []
+        ms = []
+        # ex.classify_project(p, train_n=30)
+
+        print pname
+        for n in Ns:
+            n_correct, n_mistakes = ex.eval(training_n=n)
+            print n, n_correct / float(n_correct+n_mistakes)
+
+            cs.append(n_correct)
+            ms.append(n_mistakes)
+
+            ex.load_data(False)
+
+        results[pname] = (cs, ms)
+
+    with open(DEV_WD+'/thesis/results/clustering_k_.pkl', 'wb') as f:
+        pickle.dump(results, f)
+
+    # c_percentages = [c/float(c+m) for c, m in zip(cs, ms)]
+    #
+    # plt.plot(c_percentages, Ns)
+    # plt.show()
 
     app.exec_()
     app.deleteLater()

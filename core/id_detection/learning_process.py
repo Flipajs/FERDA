@@ -72,7 +72,7 @@ class LearningProcess:
         self.features_fliplr_hack = True
 
         # TODO: global parameter!!!
-        self.k_ = 50.0
+        self.k_ = 10.0
 
         self.X = []
         self.y = []
@@ -640,7 +640,7 @@ class LearningProcess:
                 ch.N = set(full_set)
 
     def next_step(self):
-        if len(self.undecided_tracklets) == 0:
+        if len(self.tracklet_certainty) == 0:
             print "ALL is done"
             return True
 
@@ -1042,15 +1042,19 @@ class LearningProcess:
         tracklet.N = N
 
         # TODO: gather all and update_certainty at the end, it is possible that it will be called multiple times
-        self.__update_certainty(tracklet)
+        if tracklet.id() in self.tracklet_measurements:
+            self.__update_certainty(tracklet)
 
         if not skip_out:
             # update all outcoming
             for v_out in tracklet.end_vertex(self.p.gm).out_neighbours():
                 t_ = self.p.gm.get_chunk(v_out)
 
-                if t_.is_single() and t_.id not in self.undecided_tracklets:
+                if len(t_.P) > 0:
                     continue
+
+                # if t_.is_single() and t_.id not in self.undecided_tracklets:
+                #     continue
 
                 new_N = self.__get_in_v_N_union(v_out, ignore_noise=True)
 
@@ -1064,7 +1068,10 @@ class LearningProcess:
             for v_in in tracklet.start_vertex(self.p.gm).in_neighbours():
                 t_ = self.p.gm.get_chunk(v_in)
 
-                if t_.is_single() and t_.id not in self.undecided_tracklets:
+                # if t_.is_single() and t_.id not in self.undecided_tracklets:
+                #     continue
+
+                if len(t_.P) > 0:
                     continue
 
                 new_N = self.__get_out_v_N_union(v_in, ignore_noise=True)
@@ -1267,7 +1274,6 @@ class LearningProcess:
         # we want to call this function, so the information is propagated...
         self.__update_N(self.all_ids.difference(id_set), tracklet)
 
-
         for t in self.__get_affected_undecided_tracklets(tracklet):
             self.__update_N(id_set, t)
 
@@ -1301,7 +1307,7 @@ class LearningProcess:
             tracklet.P = new_P
 
 
-    def auto_init(self, method='best_sum'):
+    def auto_init(self, method='max_sum'):
         best_frame = None
         best_score = 0
 
@@ -1340,7 +1346,7 @@ class LearningProcess:
         self.user_decisions = []
         self.separated_frame = max_best_frame
 
-        if method == 'best_sum':
+        if method == 'max_sum':
             group = self.p.chm.chunks_in_frame(max_best_frame)
         else:
             group = self.p.chm.chunks_in_frame(best_frame)

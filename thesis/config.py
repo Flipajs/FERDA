@@ -11,6 +11,8 @@ zebrafish_path = WD+'zebrafish_playground'
 camera3_path = WD+'Camera3'
 
 project_paths = {'Cam1': cam1_path, 'Sowbug3': sowbug3_path, 'Zebrafish': zebrafish_path, 'Camera3': camera3_path}
+project_colors = {'Cam1': 'r', 'Sowbug3': 'g', 'Zebrafish': 'b', 'Camera3': 'm'}
+
 
 idTracker_results_paths = {'Cam1': '/Users/flipajs/Documents/wd/idTracker/Cam1/trajectories',
                      'Sowbug3': '/Users/flipajs/Documents/wd/idTracker/Sowbug3/trajectories',
