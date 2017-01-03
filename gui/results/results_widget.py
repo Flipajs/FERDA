@@ -1028,6 +1028,8 @@ class ResultsWidget(QtGui.QWidget):
         s += "\nlength: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(
             ch.end_frame(self.project.gm))
 
+        s += "\nseg_c: "+str(ch.segmentation_class)
+
         avg_area = 0
         for r_ in rch.regions_gen():
             avg_area += r_.area()

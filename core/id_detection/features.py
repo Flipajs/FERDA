@@ -14,6 +14,8 @@ from itertools import izip
 import matplotlib.pyplot as plt
 import time
 from math import ceil
+import img_features
+from utils.img import img_saturation_coef
 
 
 def get_mu_moments(img):
@@ -197,22 +199,24 @@ def __get_crop(r, p, margin=3):
 
     return crop
 
-def get_colornames_hists(r, p, fliplr=False):
-    import img_features
-
+def get_colornames_hists(r, p, fliplr=False, saturated=False, lvls=3):
     crop = __get_crop(r, p)
 
-    f2 = []
+    if saturated:
+        crop = img_saturation_coef(crop, 2.0, 1.05)
 
-    f1 = img_features.colornames_descriptor(crop, pyramid_levels=3)
+    f1 = img_features.colornames_descriptor(crop, pyramid_levels=lvls)
     if fliplr:
-        f2 = img_features.colornames_descriptor(np.fliplr(crop), pyramid_levels=3)
+        f2 = img_features.colornames_descriptor(np.fliplr(crop), pyramid_levels=lvls)
         return f1, f2
 
     return f1
 
+def get_colornames_hists_saturated(r, p):
+    return get_colornames_hists(r, p, saturated=True, lvls=1)
+
 def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10, test_split_method='random',
-                                  verbose=1, rf_class_weight=None, rf_criterion='gini'):
+                                  verbose=1, rf_class_weight=None, rf_criterion='gini', rf_max_features='auto'):
     from sklearn.model_selection import train_test_split
     from sklearn.ensemble import RandomForestClassifier
 
@@ -243,7 +247,7 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
 
     # Todo: guarantee min number per id class
     # for test_size_ratio in [0.8, 0.9, 0.95, 0.99]:
-    for test_size_ratio in [0.75]:
+    for test_size_ratio in [0.8]:
         results[test_size_ratio] = {'layer': 'features'}
 
         if verbose:
@@ -252,8 +256,8 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
             print "#########################################################"
             print "Training/Learning ratio: {}, #train: {}, #test: {}".format(test_size_ratio, int(len(animal_ids)*(1 - test_size_ratio)), int(len(animal_ids)*test_size_ratio))
 
-        # for num_f_types in range(1, len(fms)+1):
-        for num_f_types in range(1, 3):
+        for num_f_types in range(1, len(fms)+1):
+        # for num_f_types in range(1, ):
             for combination in itertools.combinations(fms, num_f_types):
                 fliplr = False
 
@@ -301,7 +305,7 @@ def evaluate_features_performance(project, fm_names, seed=None, train_n_times=10
                 for ai in range(num_animals):
                     results[test_size_ratio][s]['class_frequency'].append(np.sum(y == ai))
 
-                rf = RandomForestClassifier(class_weight=rf_class_weight, criterion=rf_criterion)
+                rf = RandomForestClassifier(class_weight=rf_class_weight, criterion=rf_criterion, max_features=rf_max_features)
 
                 results[test_size_ratio][s]['num_correct'] = []
                 results[test_size_ratio][s]['accuracy'] = []
@@ -569,9 +573,9 @@ if __name__ == '__main__':
     import cPickle as pickle
 
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
-    wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     p = Project()
     # p.load_semistate(wd, state='isolation_score')
@@ -604,11 +608,12 @@ if __name__ == '__main__':
         # p.chm.add_single_vertices_chunks(p, fra mes=range(4500))
         p.gm.update_nodes_in_t_refs()
 
-        if False:
+        if True:
             single_region_ids, _ = gt.get_single_region_ids(p)
 
             fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
             fm_colornames = FeatureManager(p.working_directory, db_name='fm_colornames.sqlite3')
+            fm_colornames_lvl1 = FeatureManager(p.working_directory, db_name='fm_colornames_lvl1.sqlite3')
             fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i.sqlite3')
             fm_idtracker_c = FeatureManager(p.working_directory, db_name='fm_idtracker_c.sqlite3')
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog.sqlite3')
@@ -616,8 +621,8 @@ if __name__ == '__main__':
 
             # fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
             # methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
-            fms = [fm_basic, fm_lbp]
-            methods = [get_basic_properties, get_lbp]
+            fms = [fm_colornames_lvl1]
+            methods = [get_colornames_hists_saturated]
 
             import time
             t1 = time.time()
@@ -674,14 +679,18 @@ if __name__ == '__main__':
         # # fm_names = ['fm_hog_fliplr.sqlite3']
         # fm_names = ['fm_basic.sqlite3', 'fm_colornames.sqlite3', 'fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3',
         #             'fm_hog.sqlite3', 'fm_lbp.sqlite3']
-        fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_colornames.sqlite3', 'fm_hog.sqlite3']
 
-        if True:
+        fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_colornames.sqlite3', 'fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_basic.sqlite3']
+
+        from thesis.config import RESULT_WD
+
+        if False:
             results = evaluate_features_performance(p, fm_names, seed=42, test_split_method='random',
-                                                    rf_class_weight='balanced_subsample', rf_criterion='entropy')
+                                                    rf_class_weight='balanced_subsample', rf_criterion='entropy',
+                                                    rf_max_features=0.5)
 
 
-            with open('/Users/flipajs/Desktop/results_Camera3_75_.pkl', 'wb') as f:
+            with open(RESULT_WD+'/results_Cam1_rfmax50_80.pkl', 'wb') as f:
                 pickle.dump(results, f)
 
             print results

@@ -105,6 +105,8 @@ class LearningProcess:
 
         self.ignore_inconsistency = False
 
+        self.map_decisions = False
+
 
         # when creating without feature data... e.g. in main_tab_widget
         if ghost:
@@ -425,14 +427,15 @@ class LearningProcess:
 
         return X
 
-    def __train_rfc(self):
+    def __train_rfc(self, init=False):
         self.rfc = RandomForestClassifier(class_weight='balanced_subsample', max_features=self.rf_max_features)
         if len(self.X):
             y = []
             for i in range(len(self.p.animals)):
                 y.append(np.sum(np.array(self.y) == i))
 
-            if min(y) >= self.rf_retrain_up_to_min:
+            # and - allow it if it is a first training.
+            if min(y) >= self.rf_retrain_up_to_min and not init:
                 return False
 
             print "TRAINING RFC", y
@@ -638,6 +641,13 @@ class LearningProcess:
 
             if ch.is_noise() or ch.is_part():
                 ch.N = set(full_set)
+
+            if self.map_decisions:
+                try:
+                    del ch.decision_certainty
+                    del ch.measurements
+                except:
+                    pass
 
     def next_step(self):
         if len(self.tracklet_certainty) == 0:
@@ -1024,9 +1034,9 @@ class LearningProcess:
             # nothing happened
             return True
 
-
         # if tracklet.id() == 1083:
-        #     print ids
+        if tracklet.id() == 1019:
+            print ids
 
         self.last_id = tracklet.id()
         # consistency check
@@ -1175,7 +1185,7 @@ class LearningProcess:
             elif type == 'N':
                 self.__update_N(set([id_]), tracklet)
 
-        self.__train_rfc()
+        self.__train_rfc(init=True)
         print "TRAINED"
 
     def assign_identity(self, id_, tracklet, learn=True, not_affecting=False, oversegmented=False, user=False, gt=False):
@@ -1233,6 +1243,14 @@ class LearningProcess:
         #
         #     # return
 
+        # TODO: debug reasons:
+        if self.map_decisions:
+            try:
+                tracklet.decision_cert = self.tracklet_certainty[tracklet.id()]
+                tracklet.measurements = self.tracklet_measurements[tracklet.id()]
+            except:
+                pass
+
         if self.verbose > 2:
             print "ASSIGNING ID: ", id_, " to tracklet: ", tracklet.id(), "length: ", tracklet.length(), "start: ", tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)
             try:
@@ -1266,6 +1284,7 @@ class LearningProcess:
 
         id_set = set([id_])
         tracklet.P = id_set
+
         # tracklet.N = self.all_ids.difference(id_set)
 
         self.last_id = id_

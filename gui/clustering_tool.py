@@ -175,6 +175,9 @@ class ClusteringTool(QtGui.QWidget):
         self.ch_c_len.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_c_len)
 
+        self.f_ch = [self.ch_area, self.ch_a, self.ch_b, self.ch_min_i, self.ch_max_i, self.ch_margin, self.ch_c_len]
+        self.redraw_ = True
+
         self.grids = {'single': self.singles, 'multi': self.multi, 'noise': self.noise, 'part': self.part}
 
         self.compute_or_load()
@@ -233,6 +236,9 @@ class ClusteringTool(QtGui.QWidget):
                 raise Exception("loading failed...")
 
     def __controls(self):
+        if self.redraw_:
+            return "exit"
+
         k = cv2.waitKey()
 
         if k == 115:
@@ -289,13 +295,14 @@ class ClusteringTool(QtGui.QWidget):
 
         return X, vertices, undecided, images, compute
 
-    def human_iloop_classification(self, compute=False):
+    def human_iloop_classification(self, compute=False, sort=False):
         p = self.p
 
         X, vertices, undecided, images, compute = self.load_data(compute)
         vm = get_auto_video_manager(p)
 
-        if compute:
+        X = X[:, self.active_features_vect()]
+        if compute or sort:
             id_ = 0
 
             data = {'single': [],
@@ -310,12 +317,14 @@ class ClusteringTool(QtGui.QWidget):
             ask = True
             n = 1000
             for i in range(n):
-                im = draw_region(p, vm, vertices[id_])
-                if im.shape[0] == 0 or im.shape[1] == 0:
-                    print p.gm.region(vertices[id_]).area(), vertices[id_]
-                    continue
+                if self.redraw_:
+                    im = draw_region(p, vm, vertices[id_])
+                    if im.shape[0] == 0 or im.shape[1] == 0:
+                        print p.gm.region(vertices[id_]).area(), vertices[id_]
+                        continue
 
-                cv2.imshow('im', im)
+                    cv2.imshow('im', im)
+
                 if ask:
                     key = self.__controls()
 
@@ -325,7 +334,7 @@ class ClusteringTool(QtGui.QWidget):
                         data[key].append(id_)
 
                 if not ask:
-                    if id_ not in self.used_ids:
+                    # if id_ not in self.used_ids:
                         undecided.append(id_)
 
                 images[id_] = im
@@ -354,16 +363,17 @@ class ClusteringTool(QtGui.QWidget):
         self.redraw_grids()
 
     def active_features_vect(self):
-        f_ch = [self.ch_area, self.ch_a, self.ch_b, self.ch_min_i, self.ch_max_i, self.ch_margin, self.ch_c_len]
-
-        num_f = 7
+        num_f = len(self.f_ch)
         active = [False] * num_f
         for i in range(num_f):
-            active[i] = f_ch[i].isChecked()
+            active[i] = self.f_ch[i].isChecked()
 
         return np.array(active)
 
     def redraw_grids(self):
+        if not self.redraw_:
+            return
+
         for g in self.grids.itervalues():
             self.vbox.removeWidget(g)
 
@@ -414,7 +424,11 @@ class ClusteringTool(QtGui.QWidget):
             if len(ids_) == 0:
                 continue
 
-            dists_ = cdist([self.X[id_][active_f]], self.X[ids_][:, active_f])
+            if self.X.shape[1] > len(active_f):
+                dists_ = cdist([self.X[id_][active_f]], self.X[ids_][:, active_f])
+            else:
+                dists_ = cdist([self.X[id_]], self.X[ids_][:])
+
             m_ = dists_.min()
 
             if m_ < m:
@@ -446,6 +460,7 @@ class ClusteringTool(QtGui.QWidget):
 
         return item
 
+
     def train(self, n):
         with open(p.working_directory + '/temp/clustering_tool.pkl') as f:
             _, undecided = pickle.load(f)
@@ -466,9 +481,10 @@ class ClusteringTool(QtGui.QWidget):
             for id_ in d:
                 gt_map[id_] = key
 
+
         in_gt = set()
         i = 0
-        # undecided are in order based on diferences
+        # undecided are in order based on differences
         for id_ in undecided:
             if id_ not in gt_map:
                 continue
@@ -544,6 +560,9 @@ class ClusteringTool(QtGui.QWidget):
 
         t_classes = {}
         for t in p.chm.chunk_gen():
+            if t.id() == 950:
+                print "test"
+
             freq = [0, 0, 0, 0]
             for v in t.v_gen():
                 c, d_ = self.classify(v, active_f)
@@ -581,52 +600,76 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     p = Project()
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     p.load_semistate(wd, state='eps_edge_filter',
                      one_vertex_chunk=True, update_t_nodes=True)
 
-    from thesis.config import *
-    from thesis.thesis_utils import load_all_projects
-
-    ps = load_all_projects(semistate='eps_edge_filter')
-
-    Ns = [5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200]
-    results = {'Ns': Ns}
-    for pname in project_paths.iterkeys():
-        p = ps[pname]
+    if False:
         ex = ClusteringTool(p)
         ex.raise_()
         ex.activateWindow()
 
         ex.human_iloop_classification()
+        ex.classify_project(p, train_n=20)
 
-        cs = []
-        ms = []
-        # ex.classify_project(p, train_n=30)
+    if True:
+        from thesis.config import *
+        from thesis.thesis_utils import load_all_projects
 
-        print pname
-        for n in Ns:
-            n_correct, n_mistakes = ex.eval(training_n=n)
-            print n, n_correct / float(n_correct+n_mistakes)
+        ps = load_all_projects(semistate='eps_edge_filter')
 
-            cs.append(n_correct)
-            ms.append(n_mistakes)
+        ii = 0
+        for fch in [[0, 1, 2, 6], [0, 1, 2, 3, 6], [0, 1, 2, 3, 5, 6]]:
+            ii += 1
+            Ns = [5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 25, 30, 40, 50, 75, 100, 150, 200]
+            # Ns = [5, 10, 15, 16, 17, 18, 19, 20, 21, 22, 25, 30]
+            results = {'Ns': Ns}
+            for pname in project_paths.iterkeys():
+                p = ps[pname]
+                ex = ClusteringTool(p)
+                ex.raise_()
+                ex.activateWindow()
 
-            ex.load_data(False)
+                ex.redraw_ = False
+                for i in range(len(ex.f_ch)):
+                    ex.f_ch[i].setChecked(False)
 
-        results[pname] = (cs, ms)
+                for i in fch:
+                    ex.f_ch[i].setChecked(True)
+                ex.redraw_ = True
 
-    with open(DEV_WD+'/thesis/results/clustering_k_.pkl', 'wb') as f:
-        pickle.dump(results, f)
+                ex.human_iloop_classification(sort=True)
 
-    # c_percentages = [c/float(c+m) for c, m in zip(cs, ms)]
-    #
-    # plt.plot(c_percentages, Ns)
-    # plt.show()
+                cs = []
+                ms = []
+                print pname
+                for n in Ns:
+                    n_correct, n_mistakes = ex.eval(training_n=n)
+                    print n, n_correct / float(n_correct+n_mistakes)
+
+                    cs.append(n_correct)
+                    ms.append(n_mistakes)
+
+                    ex.load_data(False)
+
+                results[pname] = (cs, ms)
+
+            print
+            print
+            print "SAVING"
+            print
+            print
+            with open(DEV_WD+'/thesis/results/clustering_k_f'+str(ii)+'.pkl', 'wb') as f:
+                pickle.dump((results, fch), f)
+
+        # c_percentages = [c/float(c+m) for c, m in zip(cs, ms)]
+        #
+        # plt.plot(c_percentages, Ns)
+        # plt.show()
 
     app.exec_()
     app.deleteLater()
