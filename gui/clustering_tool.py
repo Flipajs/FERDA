@@ -75,6 +75,11 @@ class ClusteringTool(QtGui.QWidget):
         self.to_part_b = QtGui.QPushButton('to parts')
         self.to_part_b.clicked.connect(partial(self.move_selected_to, 'part'))
         self.hbox_buttons.addWidget(self.to_part_b)
+
+        self.to_undecided_a = QtGui.QAction('to undecided', self)
+        self.to_undecided_a.triggered.connect(partial(self.move_selected_to, 'undecided'))
+        self.to_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_U))
+        self.addAction(self.to_undecided_a)
         
         self.save_b = QtGui.QPushButton('save')
         self.save_b.clicked.connect(self.save)
@@ -216,7 +221,10 @@ class ClusteringTool(QtGui.QWidget):
                 except ValueError:
                     print "not present in undecided", id_
 
-                self.data[to_key].append(id_)
+                if to_key =='undecided':
+                    self.undecided.append(id_)
+                else:
+                    self.data[to_key].append(id_)
 
             g.deselect_all()
 
@@ -461,7 +469,7 @@ class ClusteringTool(QtGui.QWidget):
         return item
 
 
-    def train(self, n):
+    def train(self, n, more_singles=False):
         with open(p.working_directory + '/temp/clustering_tool.pkl') as f:
             _, undecided = pickle.load(f)
 
@@ -506,8 +514,8 @@ class ClusteringTool(QtGui.QWidget):
 
 
 
-    def eval(self, training_n=5):
-        gt_map, in_gt = self.train(training_n)
+    def eval(self, training_n=5, more_singles=False):
+        gt_map, in_gt = self.train(training_n, more_singles)
 
         active_f = self.active_features_vect()
 
@@ -602,8 +610,8 @@ if __name__ == '__main__':
     p = Project()
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     p.load_semistate(wd, state='eps_edge_filter',
                      one_vertex_chunk=True, update_t_nodes=True)
@@ -613,8 +621,18 @@ if __name__ == '__main__':
         ex.raise_()
         ex.activateWindow()
 
+        fch = [0, 1, 2, 3, 4, 5, 6]
+        ex.redraw_ = False
+        for i in range(len(ex.f_ch)):
+            ex.f_ch[i].setChecked(False)
+
+        for i in fch:
+            ex.f_ch[i].setChecked(True)
+        ex.redraw_ = True
+
         ex.human_iloop_classification()
-        ex.classify_project(p, train_n=20)
+        # n_correct, n_mistakes = ex.eval(training_n=100)
+        # ex.classify_project(p, train_n=30)
 
     if True:
         from thesis.config import *
@@ -622,10 +640,12 @@ if __name__ == '__main__':
 
         ps = load_all_projects(semistate='eps_edge_filter')
 
-        ii = 0
-        for fch in [[0, 1, 2, 6], [0, 1, 2, 3, 6], [0, 1, 2, 3, 5, 6]]:
+        ii = 3
+        # for fch in [[0, 1, 2, 6], [0, 1, 2, 3, 6], [0, 1, 2, 3, 5, 6]]:
+        for fch in [[0, 1, 2, 3, 4, 5, 6]]:
             ii += 1
-            Ns = [5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 25, 30, 40, 50, 75, 100, 150, 200]
+            Ns = [5, 10, 15, 17, 19, 22, 25, 30, 40, 50]
+            # Ns = [5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 25, 30, 40, 50, 75, 100, 150, 200]
             # Ns = [5, 10, 15, 16, 17, 18, 19, 20, 21, 22, 25, 30]
             results = {'Ns': Ns}
             for pname in project_paths.iterkeys():
