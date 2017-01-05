@@ -272,8 +272,8 @@ class ClusteringTool(QtGui.QWidget):
 
         images = {}
         self.used_ids = set()
+        undecided = []
         if not compute:
-            undecided = []
             try:
                 with open(p.working_directory + '/temp/clustering_tool.pkl') as f:
                     images, undecided = pickle.load(f)
@@ -309,6 +309,7 @@ class ClusteringTool(QtGui.QWidget):
         X, vertices, undecided, images, compute = self.load_data(compute)
         vm = get_auto_video_manager(p)
 
+        distances = []
         X = X[:, self.active_features_vect()]
         if compute or sort:
             id_ = 0
@@ -354,9 +355,13 @@ class ClusteringTool(QtGui.QWidget):
                     d = np.minimum(d, new_d)
 
                 new_id = np.argmax(d)
+
                 # if not enough data...
                 if new_id == id_:
                     break
+
+                # if new_id < d.shape[0]:
+                distances.append(d[0, new_id])
 
                 id_ = new_id
 
@@ -365,10 +370,15 @@ class ClusteringTool(QtGui.QWidget):
             with open(p.working_directory+'/temp/clustering_tool.pkl', 'wb') as f:
                 pickle.dump((images, undecided), f)
 
+        # print "DISTANCES"
+        # print distances[:100]
+
         self.images = images
         self.undecided = undecided
         self.X = X
         self.redraw_grids()
+
+        return distances
 
     def active_features_vect(self):
         num_f = len(self.f_ch)
@@ -550,7 +560,7 @@ class ClusteringTool(QtGui.QWidget):
 
         return correct, len(mistakes)
 
-    def classify_project(self, p, data=None, train_n=30):
+    def classify_project(self, p, data=None, train_n=30, semistate='tracklets_s_classified'):
         from utils.gt.gt import GT
         gt = GT(num_ids = len(p.animals))
         gt.load(p.GT_file)
@@ -595,7 +605,7 @@ class ClusteringTool(QtGui.QWidget):
             t_classes[t.id()] = t_class
             print t.id(), t.length(), t_class, freq, "{:.2%}".format(freq[t_class] / float(np.sum(freq)))
 
-        self.p.save_semistate('tracklets_s_classified')
+        self.p.save_semistate(semistate)
         print "Classification DONE"
 
 
@@ -605,46 +615,48 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
     from core.project.project import Project
+    from thesis.config import *
+    from thesis.thesis_utils import load_all_projects
     import matplotlib.pyplot as plt
 
-    p = Project()
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
-    p.load_semistate(wd, state='eps_edge_filter',
-                     one_vertex_chunk=True, update_t_nodes=True)
+    # p = Project()
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    # # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
+    # # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    # # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    # # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    # p.load_semistate(wd, state='eps_edge_filter',
+    #                  one_vertex_chunk=True, update_t_nodes=True)
 
-    if False:
-        ex = ClusteringTool(p)
-        ex.raise_()
-        ex.activateWindow()
-
-        fch = [0, 1, 2, 3, 4, 5, 6]
-        ex.redraw_ = False
-        for i in range(len(ex.f_ch)):
-            ex.f_ch[i].setChecked(False)
-
-        for i in fch:
-            ex.f_ch[i].setChecked(True)
-        ex.redraw_ = True
-
-        ex.human_iloop_classification()
-        # n_correct, n_mistakes = ex.eval(training_n=100)
-        # ex.classify_project(p, train_n=30)
+    ps = load_all_projects(semistate='eps_edge_filter')
 
     if True:
-        from thesis.config import *
-        from thesis.thesis_utils import load_all_projects
+        for pname in project_paths.iterkeys():
+            p = ps[pname]
+            ex = ClusteringTool(p)
+            ex.raise_()
+            ex.activateWindow()
 
-        ps = load_all_projects(semistate='eps_edge_filter')
+            fch = [0, 1, 2, 3, 4, 5, 6]
+            ex.redraw_ = False
+            for i in range(len(ex.f_ch)):
+                ex.f_ch[i].setChecked(False)
 
-        ii = 3
-        # for fch in [[0, 1, 2, 6], [0, 1, 2, 3, 6], [0, 1, 2, 3, 5, 6]]:
-        for fch in [[0, 1, 2, 3, 4, 5, 6]]:
+            for i in fch:
+                ex.f_ch[i].setChecked(True)
+            ex.redraw_ = True
+
+            ex.human_iloop_classification(sort=True)
+            # n_correct, n_mistakes = ex.eval(training_n=100)
+            ex.classify_project(p, train_n=50, semistate='tracklets_s_classified2')
+
+    if False:
+        dlist = {}
+        ii = 0
+        for fch in [[0, 1, 2, 6], [0, 1, 2, 3, 6], [0, 1, 2, 3, 5, 6], [0, 1, 2, 3, 4, 5, 6]]:
+        # for fch in [[0, 1, 2, 3, 4, 5, 6]]:
             ii += 1
-            Ns = [5, 10, 15, 17, 19, 22, 25, 30, 40, 50]
+            Ns = [5, 7, 9, 11, 13, 15, 17, 19, 22, 25, 30, 40, 50, 100, 200]
             # Ns = [5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 25, 30, 40, 50, 75, 100, 150, 200]
             # Ns = [5, 10, 15, 16, 17, 18, 19, 20, 21, 22, 25, 30]
             results = {'Ns': Ns}
@@ -662,7 +674,8 @@ if __name__ == '__main__':
                     ex.f_ch[i].setChecked(True)
                 ex.redraw_ = True
 
-                ex.human_iloop_classification(sort=True)
+                dlist[pname] = ex.human_iloop_classification(sort=True)
+                continue
 
                 cs = []
                 ms = []
@@ -678,18 +691,22 @@ if __name__ == '__main__':
 
                 results[pname] = (cs, ms)
 
+
+
             print
             print
             print "SAVING"
             print
             print
-            with open(DEV_WD+'/thesis/results/clustering_k_f'+str(ii)+'.pkl', 'wb') as f:
-                pickle.dump((results, fch), f)
+            # with open(DEV_WD+'/thesis/results/clustering_k_f'+str(ii)+'.pkl', 'wb') as f:
+            #     pickle.dump((results, fch), f)
+            with open(DEV_WD+'/thesis/results/clustering_k_d'+str(ii)+'.pkl', 'wb') as f:
+                pickle.dump((dlist, fch), f)
 
-        # c_percentages = [c/float(c+m) for c, m in zip(cs, ms)]
-        #
-        # plt.plot(c_percentages, Ns)
-        # plt.show()
+                # c_percentages = [c/float(c+m) for c, m in zip(cs, ms)]
+                #
+                # plt.plot(c_percentages, Ns)
+                # plt.show()
 
     app.exec_()
     app.deleteLater()

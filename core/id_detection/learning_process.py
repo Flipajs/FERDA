@@ -72,7 +72,7 @@ class LearningProcess:
         self.features_fliplr_hack = True
 
         # TODO: global parameter!!!
-        self.k_ = 10.0
+        self.k_ = 50.0
 
         self.X = []
         self.y = []
@@ -443,7 +443,7 @@ class LearningProcess:
             self.rfc.fit(self.__tid2features(), self.y)
             self.__precompute_measurements()
 
-            return True
+            return y
 
         return False
 
@@ -909,6 +909,7 @@ class LearningProcess:
             uni_probs = np.ones((len(x),)) / float(len(x))
             # TODO: why 0.99 and not 1.0? Maybe to give a small chance for each option independently on classifier
             alpha = (min((tracklet.length()/self.k_)**2, 0.99))
+            # alpha = (min((tracklet.length()/self.k_)**1.1, 0.99))
 
             # if it is not obvious e.g. (1.0, 0, 0, 0, 0)...
             # if 0 < np.max(x) < 1.0:
@@ -1185,8 +1186,10 @@ class LearningProcess:
             elif type == 'N':
                 self.__update_N(set([id_]), tracklet)
 
-        self.__train_rfc(init=True)
-        print "TRAINED"
+        ret = self.__train_rfc(init=True)
+        print "TRAINING FINISHED"
+
+        return ret
 
     def assign_identity(self, id_, tracklet, learn=True, not_affecting=False, oversegmented=False, user=False, gt=False):
         """

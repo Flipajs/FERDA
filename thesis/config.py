@@ -5,6 +5,7 @@ DEV_WD = '/Users/flipajs/Documents/dev/ferda'
 OUT_WD = DEV_WD+'/thesis/out/'
 OUT_IMGS_WD = OUT_WD+'/imgs/'
 RESULT_WD = DEV_WD+'/thesis/results'
+RESULTS_WD = RESULT_WD
 
 cam1_path = WD+'Cam1_playground'
 sowbug3_path = WD+'Sowbug3'
