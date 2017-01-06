@@ -1032,6 +1032,7 @@ class LearningProcess:
         return N
 
     def __update_N(self, ids, tracklet, skip_in=False, skip_out=False):
+        return False
         # TODO: knowledge base check
 
         P = tracklet.P
@@ -1223,35 +1224,6 @@ class LearningProcess:
                 print "Fixing tracklet wrongly labeled as OVERSEGMENTED"
 
             self.user_decisions.append({'tracklet_id_set': tracklet.id(), 'type': 'P', 'ids': [id_]})
-
-        # # conflict test
-        # conflicts = self.__find_conflict(tracklet, id_=id_)
-        # if len(conflicts):
-        #     print
-        #     print "------------------- CONFLICT ------------"
-        #     print tracklet, tracklet.start_frame(self.p.gm), id_
-        #     print "WITH:"
-        #     for c in conflicts:
-        #         print c
-        #
-        #     print
-        #     print
-        #     if not gt:
-        #         return
-
-        # if not self.__DEBUG_GT_test(id_, tracklet):
-        #     self.mistakes.append(tracklet)
-        #
-        #     try:
-        #         print "\nMISTAKE ", tracklet, " P:", tracklet.P, "N: ", tracklet.N,\
-        #             "MEASUREMENTS", self.tracklet_measurements[tracklet.id()], "Certainty: ", self.tracklet_certainty[tracklet.id()], "tracklet id:",  tracklet.id(), " ID: ", id_
-        #     except:
-        #         pass
-        #
-        #     # TODO: remove in future...
-        #     # self.assign_identity(self.__DEBUG_get_answer_from_GT(tracklet), tracklet, learn=True)
-        #
-        #     # return
 
         # TODO: debug reasons:
         if self.map_decisions:

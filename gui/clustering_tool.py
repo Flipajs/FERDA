@@ -560,7 +560,7 @@ class ClusteringTool(QtGui.QWidget):
 
         return correct, len(mistakes)
 
-    def classify_project(self, p, data=None, train_n=30, semistate='tracklets_s_classified'):
+    def classify_project(self, p, data=None, train_n=30, semistate='tracklets_s_classified', gt_classify=False):
         from utils.gt.gt import GT
         gt = GT(num_ids = len(p.animals))
         gt.load(p.GT_file)
@@ -578,9 +578,6 @@ class ClusteringTool(QtGui.QWidget):
 
         t_classes = {}
         for t in p.chm.chunk_gen():
-            if t.id() == 950:
-                print "test"
-
             freq = [0, 0, 0, 0]
             for v in t.v_gen():
                 c, d_ = self.classify(v, active_f)
@@ -588,6 +585,11 @@ class ClusteringTool(QtGui.QWidget):
                 freq[type_map[c]] += 1
 
             gt_id = gt.tracklet_id_set(t, p)
+            gt_class = 2
+            if len(gt_id) > 1:
+                gt_class = 1
+            elif len(gt_id) == 1:
+                gt_class = 0
 
             t_class = np.argmax(freq)
 
@@ -600,7 +602,10 @@ class ClusteringTool(QtGui.QWidget):
             if len(gt_id) > 1 and t_class != 1:
                 print "ERROR, MULTI not classified properly"
 
-            t.segmentation_class = t_class
+            if gt_classify:
+                t.segmentation_class = gt_class
+            else:
+                t.segmentation_class = t_class
 
             t_classes[t.id()] = t_class
             print t.id(), t.length(), t_class, freq, "{:.2%}".format(freq[t_class] / float(np.sum(freq)))
@@ -633,9 +638,6 @@ if __name__ == '__main__':
     #
     if True:
         for pname in project_paths.iterkeys():
-            if pname[:4] != 'Cam1':
-                continue
-
             p = ps[pname]
             ex = ClusteringTool(p)
             ex.raise_()
@@ -652,7 +654,7 @@ if __name__ == '__main__':
 
             ex.human_iloop_classification(sort=True)
             # n_correct, n_mistakes = ex.eval(training_n=100)
-            ex.classify_project(p, train_n=50, semistate='tracklets_s_classified2')
+            ex.classify_project(p, train_n=50, semistate='tracklets_s_classified_gt', gt_classify=True)
 
     if False:
         dlist = {}

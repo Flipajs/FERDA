@@ -22,6 +22,7 @@ def best(val, all, func=max):
     else:
         return s
 
+
 def comparison2latex(name1='default', name2='', out_name='', highlight=True):
     from pylatex import Document, Section, Subsection, Tabular, Tabularx, MultiColumn, MultiRow
     from pylatex.utils import bold, italic, verbatim, escape_latex, NoEscape
@@ -178,7 +179,7 @@ def overall2latex(name1='', name2='', out_name='', highlight=True):
                    best(vals1[2], [vals1[2], vals2[2]]), best(vals1[3], [vals1[3], vals2[3]]))
 
     table1.add_hline()
-    table1.add_row(bold('tunned'), best(vals2[0], [vals1[0], vals2[0]]), best(vals2[1], [vals1[1], vals2[1]]),
+    table1.add_row(bold('tuned'), best(vals2[0], [vals1[0], vals2[0]]), best(vals2[1], [vals1[1], vals2[1]]),
                    best(vals2[2], [vals1[2], vals2[2]]), best(vals2[3], [vals1[3], vals2[3]]))
 
     table1.add_hline()
@@ -193,40 +194,68 @@ def overall2latex(name1='', name2='', out_name='', highlight=True):
 
 
 if __name__ == '__main__':
+
     # comparison2latex(name2=None, out_name='default')
     # #
+
     # comparison2latex(name2='gini')
     #
-    # comparison2latex(name2='min_samples_leaf_2')
-    # comparison2latex(name2='min_samples_leaf_3')
+
+    # comparison2latex(name2='
+    # min_samples_leaf_2')
+    # comparison2latex(name2='
+    # min_samples_leaf_3')
     # comparison2latex(name2='min_samples_leaf_5')
     #
-    # comparison2latex(name2='max_depth_5')
-    # comparison2latex(name2='max_depth_10')
-    # comparison2latex(name2='max_depth_15')
-    # comparison2latex(name2='max_depth_20')
-    # comparison2latex(name2='max_depth_25')
-    # comparison2latex(name2='max_depth_50')
+
+    # comparison2latex(name2='
+    # max_depth_5')
+    # comparison2latex(name2='
+    # max_depth_10')
+    # comparison2latex(name2='
+    # max_depth_15')
+    # comparison2latex(name2='
+    # max_depth_20')
+    # comparison2latex(name2='
+    # max_depth_25')
+    # comparison2latex(name2='
+    # max_depth_50')
     # comparison2latex(name2='max_depth_100')
     #
-    # comparison2latex(name2='max_features_auto')
-    # comparison2latex(name2='max_features_10')
-    # comparison2latex(name2='max_features_20')
-    # comparison2latex(name2='max_features_30')
-    # comparison2latex(name2='max_features_40')
-    # comparison2latex(name2='max_features_50')
-    # # comparison2latex(name2='max_features_60')
-    # comparison2latex(name2='max_features_75')
+
+    # comparison2latex(name2='
+    # max_features_auto')
+    # comparison2latex(name2='
+    # max_features_10')
+    # comparison2latex(name2='
+    # max_features_20')
+    # comparison2latex(name2='
+    # max_features_30')
+    # comparison2latex(name2='
+    # max_features_40')
+    # comparison2latex(name2='ma
+    # x_features_50')
+    # # comparison2latex(name2
+    # ='max_features_60')
+    # comparison2latex(name2='
+    # max_features_75')
     # comparison2latex(name2='max_features_100')
 
-    # comparison2latex(name2='n_estimators_20')
-    # comparison2latex(name2='n_estimators_30')
-    # comparison2latex(name2='n_estimators_40')
-    # comparison2latex(name2='n_estimators_50')
-    # comparison2latex(name2='n_estimators_75')
-    # comparison2latex(name2='n_estimators_100')
+
+    # comparison2latex(name2='
+    # n_estimators_20')
+    # comparison2latex(name2='
+    # n_estimators_30')
+    # comparison2latex(name2='
+    # n_estimators_40')
+    # comparison2latex(name2='
+    # n_estimators_50')
+    # comparison2latex(name2='
+    # n_estimators_75')
+    # comparison2latex(name2='
+    # n_estimators_100')
     # comparison2latex(name2='n_estimators_200')
 
-    # overall2latex('default_all', 'best1_all', 'best1')
+    overall2latex('default_all', 'best1_all', 'best1')
 
     pass
