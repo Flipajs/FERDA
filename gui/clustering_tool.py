@@ -630,8 +630,12 @@ if __name__ == '__main__':
 
     ps = load_all_projects(semistate='eps_edge_filter')
 
+    #
     if True:
         for pname in project_paths.iterkeys():
+            if pname[:4] != 'Cam1':
+                continue
+
             p = ps[pname]
             ex = ClusteringTool(p)
             ex.raise_()

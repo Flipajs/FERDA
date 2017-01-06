@@ -554,6 +554,130 @@ def evaluate_features_performance_opt(
 
     return results
 
+
+def evaluate_features_performance_all(
+                    project,
+                    X_data,
+                    y_data,
+                    fm_names,
+                    seed=None,
+                    train_n_times=10,
+                    test_split_method='random',
+                    test_split_ratio=0.9,
+                    verbose=1,
+                    rf_class_weight=None,
+                    rf_criterion='entropy',
+                    rf_min_samples_leaf=1,
+                    rf_min_samples_split=2,
+                    rf_n_estimators=10,
+                    rf_max_depth=None,
+                    rf_max_features=0.5):
+
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForestClassifier
+
+    if verbose:
+        np.set_printoptions(precision=4)
+
+    import itertools
+
+    if seed is not None:
+        np.random.seed(seed)
+
+    seeds = np.random.randint(0, 100000, train_n_times)
+
+    results = {'layer': 'test_size_ratio'}
+
+    for test_size_ratio in [test_split_ratio]:
+        results[test_size_ratio] = {'layer': 'features'}
+
+        X = None
+        for fm_name in fm_names:
+            if X is None:
+                X = X_data[fm_name]
+            else:
+                X = np.hstack((X, X_data[fm_name]))
+
+        s = 'all'
+        results[test_size_ratio][s] = {}
+
+        num_animals = len(project.animals)
+
+
+        y = y_data
+
+        print X.shape, y.shape
+
+        results[test_size_ratio][s]['X_shape'] = X.shape
+        results[test_size_ratio][s]['class_frequency'] = []
+        results[test_size_ratio][s]['train_class_frequency'] = []
+
+        for ai in range(num_animals):
+            results[test_size_ratio][s]['class_frequency'].append(np.sum(y == ai))
+
+        rf = RandomForestClassifier(class_weight=rf_class_weight,
+                                    criterion=rf_criterion,
+                                    max_features=rf_max_features,
+                                    min_samples_leaf=rf_min_samples_leaf,
+                                    min_samples_split=rf_min_samples_split,
+                                    n_estimators=rf_n_estimators,
+                                    max_depth=rf_max_depth,
+                                    )
+
+        results[test_size_ratio][s]['num_correct'] = []
+        results[test_size_ratio][s]['accuracy'] = []
+        results[test_size_ratio][s]['class_accuracy'] = []
+
+        for i in range(train_n_times):
+            if test_split_method == 'random':
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size_ratio, random_state=seeds[i])
+            elif test_split_method == 'equivalent_class_num':
+                # TODO:...
+                raise Exception('Not implemented yet')
+            else:
+                split_ = int(X.shape[0]*(1 - test_size_ratio))
+                X_train, X_test = X[:split_, :], X[split_:, :]
+                y_train, y_test = y[:split_], y[split_:]
+
+            rf.fit(X_train, y_train)
+
+            correct_ids = rf.predict(X_test) == y_test
+            num_correct = np.sum(correct_ids)
+            num_test = len(y_test)
+
+            class_accuracy = []
+            train_class_frequency = []
+            for ic in range(num_animals):
+                num_c = np.sum(y_test == ic)
+                train_num_c = np.sum(y_train == ic)
+                train_class_frequency.append(train_num_c)
+                correct_c = np.sum(np.logical_and(correct_ids, y_test == ic))
+                class_accuracy.append(correct_c / float(num_c))
+
+            results[test_size_ratio][s]['num_correct'].append(num_correct)
+            results[test_size_ratio][s]['accuracy'].append(num_correct / float(num_test))
+            results[test_size_ratio][s]['class_accuracy'].append(class_accuracy)
+            results[test_size_ratio][s]['train_class_frequency'].append(train_class_frequency)
+
+        if verbose:
+            num_test = int(test_size_ratio*X.shape[0])
+            print "Mean Correct: {}(std:{})/{} ({:.2%}, std: {})".format(
+                np.mean(results[test_size_ratio][s]['num_correct']),
+                np.std(results[test_size_ratio][s]['num_correct']),
+                num_test,
+                np.mean(results[test_size_ratio][s]['accuracy']),
+                np.std(results[test_size_ratio][s]['accuracy'])
+            )
+
+            print "class frequency", results[test_size_ratio][s]['class_frequency']
+            print "train class frequency, mean: ", np.mean(results[test_size_ratio][s]['train_class_frequency'], axis=0), "std: ", np.std(results[test_size_ratio][s]['train_class_frequency'], axis=0)
+            print "class accuracy mean", np.mean(results[test_size_ratio][s]['class_accuracy'], axis=0), "std: ", np.std(results[test_size_ratio][s]['class_accuracy'], axis=0)
+
+    # reset...
+    np.set_printoptions()
+
+    return results
+
 def get_idtracker_features_sub2(r, p, debug=False):
     return get_idtracker_features(r, p, debug, sub=2)
 

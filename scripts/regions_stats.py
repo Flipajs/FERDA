@@ -1410,13 +1410,13 @@ def process_project(p):
     #
     # learn_assignments(p)
     #
-    # load_p_checkpoint(p, 'first_tracklets')
+    load_p_checkpoint(p, 'first_tracklets')
     #
-    # p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
-    #
-    # add_score_to_edges(p)
-    #
-    # save_p_checkpoint(p, 'edge_cost_updated')
+    p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
+
+    add_score_to_edges(p)
+
+    save_p_checkpoint(p, 'edge_cost_updated')
     load_p_checkpoint(p, 'edge_cost_updated')
 
     p.gm.update_nodes_in_t_refs()
@@ -1426,7 +1426,7 @@ def process_project(p):
 
     tracklet_stats(p)
 
-    if True:
+    if False:
         score_type = 'appearance_motion_mix'
         eps = 0.3
 
@@ -1470,7 +1470,7 @@ if __name__ == '__main__':
     # p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_playground')
     p.load('/Users/flipajs/Documents/wd/FERDA/Cam1_rf')
     # p.load('/Users/flipajs/Documents/wd/FERDA/Sowbug3')
-    # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3')
+    p.load('/Users/flipajs/Documents/wd/FERDA/Camera3')
     from core.region.region_manager import RegionManager
 
     p.rm = RegionManager(p.working_directory + '/temp', db_name='part0_rm.sqlite3')

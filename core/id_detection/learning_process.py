@@ -46,7 +46,7 @@ class LearningProcess:
         update_N
         before each basic operation check knowledge[t.id()]
     """
-    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False, verbose=0):
+    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False, verbose=0, id_N_propagate=True):
         if use_rf_cache:
             warnings.warn("use_rf_cache is Deprecated!", DeprecationWarning)
 
@@ -65,6 +65,8 @@ class LearningProcess:
 
         self._eps_certainty = 0.3
 
+        self.id_N_propagate = id_N_propagate
+
         # TODO: make standalone feature extractor...
         self.get_features = get_colornames_hists
 
@@ -79,6 +81,9 @@ class LearningProcess:
         self.old_x_size = 0
 
         self.rf_max_features = 'auto'
+        self.rf_n_estimators = 10
+        self.rf_min_samples_leafs = 1
+        self.rf_max_depth = None
 
         self.collision_chunks = {}
 
@@ -428,7 +433,11 @@ class LearningProcess:
         return X
 
     def __train_rfc(self, init=False):
-        self.rfc = RandomForestClassifier(class_weight='balanced_subsample', max_features=self.rf_max_features)
+        self.rfc = RandomForestClassifier(class_weight='balanced_subsample',
+                                          max_features=self.rf_max_features,
+                                          n_estimators=self.rf_n_estimators,
+                                          min_samples_leaf=self.rf_min_samples_leafs,
+                                          max_depth=self.rf_max_depth)
         if len(self.X):
             y = []
             for i in range(len(self.p.animals)):
@@ -611,9 +620,10 @@ class LearningProcess:
         # else:
         #     self.X = np.vstack([self.X, np.array(X)])
         y = [id_] * len(self.features[ch.id()])
-
-        self.X.append(ch.id())
-        self.y.extend(y)
+        # TODO: performance
+        if ch.id() not in self.X:
+            self.X.append(ch.id())
+            self.y.extend(y)
 
         # self.y = np.append(self.y, np.array(y))
 
@@ -1035,10 +1045,6 @@ class LearningProcess:
             # nothing happened
             return True
 
-        # if tracklet.id() == 1083:
-        if tracklet.id() == 1019:
-            print ids
-
         self.last_id = tracklet.id()
         # consistency check
         if not self.__consistency_check_PN(P, N):
@@ -1056,41 +1062,42 @@ class LearningProcess:
         if tracklet.id() in self.tracklet_measurements:
             self.__update_certainty(tracklet)
 
-        if not skip_out:
-            # update all outcoming
-            for v_out in tracklet.end_vertex(self.p.gm).out_neighbours():
-                t_ = self.p.gm.get_chunk(v_out)
+        if self.id_N_propagate:
+            if not skip_out:
+                # update all outcoming
+                for v_out in tracklet.end_vertex(self.p.gm).out_neighbours():
+                    t_ = self.p.gm.get_chunk(v_out)
 
-                if len(t_.P) > 0:
-                    continue
+                    if len(t_.P) > 0:
+                        continue
 
-                # if t_.is_single() and t_.id not in self.undecided_tracklets:
-                #     continue
+                    # if t_.is_single() and t_.id not in self.undecided_tracklets:
+                    #     continue
 
-                new_N = self.__get_in_v_N_union(v_out, ignore_noise=True)
+                    new_N = self.__get_in_v_N_union(v_out, ignore_noise=True)
 
-                if not new_N.issubset(t_.N):
-                    # print "UPDATING OUTCOMING", tracklet, t_, t_.N, new_N
-                    if not self.__update_N(new_N, t_):
-                        return
+                    if not new_N.issubset(t_.N):
+                        # print "UPDATING OUTCOMING", tracklet, t_, t_.N, new_N
+                        if not self.__update_N(new_N, t_):
+                            return
 
-        if not skip_in:
-            # update all incoming
-            for v_in in tracklet.start_vertex(self.p.gm).in_neighbours():
-                t_ = self.p.gm.get_chunk(v_in)
+            if not skip_in:
+                # update all incoming
+                for v_in in tracklet.start_vertex(self.p.gm).in_neighbours():
+                    t_ = self.p.gm.get_chunk(v_in)
 
-                # if t_.is_single() and t_.id not in self.undecided_tracklets:
-                #     continue
+                    # if t_.is_single() and t_.id not in self.undecided_tracklets:
+                    #     continue
 
-                if len(t_.P) > 0:
-                    continue
+                    if len(t_.P) > 0:
+                        continue
 
-                new_N = self.__get_out_v_N_union(v_in, ignore_noise=True)
+                    new_N = self.__get_out_v_N_union(v_in, ignore_noise=True)
 
-                if not new_N.issubset(t_.N):
-                    # print "UPDATING INCOMING", tracklet, t_, t_.N, new_N
-                    if not self.__update_N(new_N, t_):
-                        return
+                    if not new_N.issubset(t_.N):
+                        # print "UPDATING INCOMING", tracklet, t_, t_.N, new_N
+                        if not self.__update_N(new_N, t_):
+                            return
 
         if self.__only_one_P_possibility(tracklet):
             id_ = self.__get_one_possible_P(tracklet)
@@ -1417,6 +1424,75 @@ class LearningProcess:
 
         return self.p.chm[best_id_]
 
+    def question_near_assigned(self, tracklet_gt, min_samples=500, max_frame_d=100):
+        y = [0] * len(self.p.animals)
+        id2tid = [[] for i in range(len(self.p.animals))]
+        for i in range(len(self.user_decisions)):
+            d = self.user_decisions[i]
+            t_id = d['trackle' \
+                     't_id_set']
+            id_ = d['ids'][0]
+            # id_ = list(tracklet_gt[t_id])[0]
+            y[id_] += self.p.chm[t_id].length()
+            id2tid[id_].append(t_id)
+
+        print y
+
+        id_least = -1
+        if min(y) < min_samples:
+            id_least = np.argmin(y)
+        else:
+            return None
+
+        possibilities = []
+        for tid, id_ in tracklet_gt.iteritems():
+            if len(id_) == 1:
+                id_ = list(id_)[0]
+            else:
+                continue
+
+            if id_ == id_least:
+                possibilities.append(tid)
+
+        best_t_id_ = -1
+        len_ = 0
+        for tid in id2tid[id_least]:
+            start = self.p.chm[tid].start_frame(self.p.gm)
+            end = self.p.chm[tid].end_frame(self.p.gm)
+
+            for tid2 in possibilities:
+                if tid2 in id2tid[id_least]:
+                    continue
+
+                t2 = self.p.chm[tid2]
+                if t2.length() < len_:
+                    continue
+
+                t = self.p.chm[tid2]
+
+                if 0 <= t.start_frame(self.p.gm) - end <= max_frame_d:
+                    best_t_id_ = t.id()
+                    len_ = t2.length()
+                elif 0 <=start - t.end_frame(self.p.gm) <= max_frame_d:
+                    best_t_id_ = t.id()
+                    len_ = t2.length()
+
+        len_ = 0
+        if best_t_id_ == -1:
+            for tid2 in possibilities:
+                if tid2 in id2tid[id_least]:
+                    continue
+
+                l_ = self.p.chm[tid].length()
+                if l_ > len_:
+                    best_t_id_ = tid2
+                    len_ = l_
+            print "NOT FOUND WITHIN 100 frames, choosing ", best_t_id_
+
+        self.user_decisions.append({'tracklet_id_set': best_t_id_, 'type': 'P', 'ids': [id_least]})
+        # print "HIL INIT, adding t_id: {}, len: {}".format(best_t_id_, len_)
+
+        return best_t_id_
 
 if __name__ == '__main__':
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'

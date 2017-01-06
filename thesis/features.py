@@ -1,5 +1,5 @@
 from thesis_utils import load_all_projects
-from core.id_detection.features import evaluate_features_performance_opt
+from core.id_detection.features import evaluate_features_performance_opt, evaluate_features_performance_all
 import datetime
 import cPickle as pickle
 
@@ -30,6 +30,36 @@ def _compute(X_data, y_data, fm_names, projects, c, out_name=None):
         pickle.dump((results, c), f)
 
     print results
+
+
+def _compute_all_f(X_data, y_data, fm_names, projects, c, out_name=None):
+    results = {}
+
+    for p_name, p in projects.iteritems():
+        print "----------------- ", p_name, "-------------------------"
+        results[p_name] = evaluate_features_performance_all(p, X_data[p_name], y_data[p_name], fm_names,
+                        seed=c['seed'],
+                        train_n_times=c['train_n_times'],
+                        test_split_method=c['test_split_method'],
+                        test_split_ratio=c['test_split_ratio'],
+                        rf_class_weight=c['rf_class_weight'],
+                        rf_criterion=c['rf_criterion'],
+                        rf_max_features=c['rf_max_features'],
+                        rf_min_samples_split=c['rf_min_samples_split'],
+                        rf_min_samples_leaf=c['rf_min_samples_leaf'],
+                        rf_n_estimators=c['rf_n_estimators'],
+                        rf_max_depth=c['rf_max_depth'])
+
+
+    if out_name is None:
+        dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        out_name = 'results/features_' + dt + '.pkl'
+
+    with open(out_name, 'wb') as f:
+        pickle.dump((results, c), f)
+
+    print results
+
 
 #
 # def compute1():
@@ -66,7 +96,6 @@ if __name__ == '__main__':
     cdefault['test_split_ratio'] = 0.95
     cdefault['rf_class_weight'] = 'balanced_subsample'
     cdefault['rf_criterion'] = 'entropy'
-    cdefault['rf_max_features'] = 'auto'
     cdefault['rf_min_samples_split'] = 2
     cdefault['rf_min_samples_leaf'] = 1
     cdefault['rf_n_estimators'] = 10
@@ -74,7 +103,7 @@ if __name__ == '__main__':
     cdefault['rf_max_depth'] = None
     cdefault['train_n_times'] = 10
 
-    c = cdefault
+    c = dict(cdefault)
 
     # LOAD ALL FEATURES BEFORE...
     from thesis.thesis_utils import load_all_projects
@@ -126,213 +155,248 @@ if __name__ == '__main__':
     # c['rf_min_samples_leaf'] = 3
     # _compute(X_data, y_data, fm_names, projects, c, wd+'min_samples_leaf_3')
     #
+
+    ## MAX DEPTH
     # c = dict(cdefault)
-    # c['rf_min_samples_leaf'] = 5
-    # _compute(X_data, y_data, fm_names, projects, c, wd + 'min_samples_leaf_5')
-
-    #
-    # ##### min_samples_leaf 5 vs 1
-    # c = cdefault
-    # c['rf_min_samples_leaf'] = 5
+    # c['rf_max_depth'] = 5
     # print
     # print "----------------------------------------"
-    # print "MIN_SAMPLES_LEAF_5"
+    # print "MAX_DEPTH_5"
     # print
-    # _compute(c, wd + 'min_samples_leaf_5')
-
-    ##### min_samples_split 2 vs 10
-    # c['rf_min_samples_leaf'] = 10
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_depth_5')
+    # 
+    # ## MAX DEPTH
+    # c = dict(cdefault)
+    # c['rf_max_depth'] = 10
     # print
     # print "----------------------------------------"
-    # print "MIN_F_10"
+    # print "MAX_DEPTH_10"
     # print
-    # _compute(c, wd+'min_f_10')
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_depth_10')
+
+    ## MAX DEPTH
+    # c = dict(cdefault)
+    # c['rf_max_depth'] = 15
+    # print
+    # print "----------------------------------------"
+    # print "MAX_DEPTH_15"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_depth_15')
+
+    ## MAX DEPTH
+    # c = dict(cdefault)
+    # c['rf_max_depth'] = 20
+    # print
+    # print "----------------------------------------"
+    # print "MAX_DEPTH_20"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_depth_20')
+
+    # ## MAX DEPTH
+    # c = dict(cdefault)
+    # c['rf_max_depth'] = 25
+    # print
+    # print "----------------------------------------"
+    # print "MAX_DEPTH_25"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_depth_25')
     #
+    # ## MAX DEPTH
+    # c = dict(cdefault)
+    # c['rf_max_depth'] = 50
+    # print
+    # print "----------------------------------------"
+    # print "MAX_DEPTH_50"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_depth_50')
+    #
+    # ## MAX DEPTH
+    # c = dict(cdefault)
+    # c['rf_max_depth'] = 100
+    # print
+    # print "----------------------------------------"
+    # print "MAX_DEPTH_100"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_depth_100')
+
+
+    # ## MAX FEATURES
+    # c = dict(cdefault)
+    # c['rf_max_features'] = 'auto'
+    # print
+    # print "----------------------------------------"
+    # print "MAX_FEATURES_AUTO"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_features_auto')
+    #
+    # ## MAX FEATURES
+    # c = dict(cdefault)
+    # c['rf_max_features'] = 0.10
+    # print
+    # print "----------------------------------------"
+    # print "MAX_FEATURES_10"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_features_10')
+    #
+    # ## MAX FEATURES
+    # c = dict(cdefault)
+    # c['rf_max_features'] = 0.20
+    # print
+    # print "----------------------------------------"
+    # print "MAX_FEATURES_20"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_features_20')
+    #
+    # ## MAX FEATURES
+    # c = dict(cdefault)
+    # c['rf_max_features'] = 0.30
+    # print
+    # print "----------------------------------------"
+    # print "MAX_FEATURES_30"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_features_30')
+    #
+    # ## MAX FEATURES
+    # c = dict(cdefault)
+    # c['rf_max_features'] = 0.40
+    # print
+    # print "----------------------------------------"
+    # print "MAX_FEATURES_40"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_features_40')
+    #
+    # ## MAX FEATURES
+    # c = dict(cdefault)
+    # c['rf_max_features'] = 0.50
+    # print
+    # print "----------------------------------------"
+    # print "MAX_FEATURES_50"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_features_50')
+    #
+    ## MAX FEATURES
+    # c = dict(cdefault)
+    # c['rf_max_features'] = 0.60
+    # print
+    # print "----------------------------------------"
+    # print "MAX_FEATURES_60"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_features_60')
+    #
+    # c['rf_max_features'] = 0.70
+    # print
+    # print "----------------------------------------"
+    # print "MAX_FEATURES_70"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_features_70')
+    #
+    # c['rf_max_features'] = 0.80
+    # print
+    # print "----------------------------------------"
+    # print "MAX_FEATURES_80"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_features_80')
+
+    # ## MAX FEATURES
+    # c = dict(cdefault)
+    # c['rf_max_features'] = 0.75
+    # print
+    # print "----------------------------------------"
+    # print "MAX_FEATURES_75"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_features_75')
+    #
+    # ## MAX FEATURES
+    # c = dict(cdefault)
+    # c['rf_max_features'] = 1.0
+    # print
+    # print "----------------------------------------"
+    # print "MAX_FEATURES_100"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'max_features_100')
+
+
+    # #### N_ESTIMATORS
+    # c = dict(cdefault)
+    # c['rf_n_estimators'] = 20
+    # print
+    # print "----------------------------------------"
+    # print "N_ESTIMATORS_20"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd+'n_estimators_20')
+    #
+    # #### N_ESTIMATORS
+    # c = dict(cdefault)
+    # c['rf_n_estimators'] = 30
+    # print
+    # print "----------------------------------------"
+    # print "N_ESTIMATORS_30"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'n_estimators_30')
+    #
+
+    ##### N_ESTIMATORS
+    # c = dict(cdefault)
+    # c['rf_n_estimators'] = 40
+    # print
+    # print "----------------------------------------"
+    # print "N_ESTIMATORS_40"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'n_estimators_40')
+
+    # ##### N_ESTIMATORS
+    # c = dict(cdefault)
+    # c['rf_n_estimators'] = 50
+    # print
+    # print "----------------------------------------"
+    # print "N_ESTIMATORS_50"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd+'n_estimators_50')
+    #
+    # ##### N_ESTIMATORS
+    # c = dict(cdefault)
+    # c['rf_n_estimators'] = 75
+    # print
+    # print "----------------------------------------"
+    # print "N_ESTIMATORS_75"
+    # print
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'n_estimators_75')
+
     #
     # ##### N_ESTIMATORS
     # c = dict(cdefault)
     # c['rf_n_estimators'] = 100
     # print
     # print "----------------------------------------"
-    # print "N_ESTIMATORS_100"
-    # print
-    # _compute(c, wd+'n_estimators_100')
-
-
-    # ##### GINI
-    # c = dict(cdefault)
-    # c['rf_criterion'] = 'gini'
-    # print
-    # print "----------------------------------------"
-    # print "GINI"
-    # print
-    # _compute(c, wd+'gini')
-
-
-    # # ##### min_samples_leaf 3 vs 1
-    # c = cdefault
-    # c['rf_min_samples_leaf'] = 2
-    # print
-    # print "----------------------------------------"
-    # print "MIN_SAMPLES_LEAF_2"
-    # print
-    # _compute(c, wd+'min_samples_leaf_2')
-
-    # c = cdefault
-    # c['rf_min_samples_leaf'] = 3
-    # print
-    # print "----------------------------------------"
-    # print "MIN_SAMPLES_LEAF_3"
-    # print
-    # _compute(c, wd+'min_samples_leaf_3')
-    #
-    # ##### min_samples_leaf 5 vs 1
-    # c = cdefault
-    # c['rf_min_samples_leaf'] = 5
-    # print
-    # print "----------------------------------------"
-    # print "MIN_SAMPLES_LEAF_5"
-    # print
-    # _compute(c, wd + 'min_samples_leaf_5')
-
-
-
-
-
-    # ## MAX DEPTH
-    # c = cdefault
-    # c['rf_max_depth'] = 10
-    # print
-    # print "----------------------------------------"
-    # print "MAX_DEPTH_10"
-    # print
-    # _compute(c, wd + 'max_depth_10')
-    #
-    # ## MAX DEPTH
-    # c = cdefault
-    # c['rf_max_depth'] = 25
-    # print
-    # print "----------------------------------------"
-    # print "MAX_DEPTH_25"
-    # print
-    # _compute(c, wd + 'max_depth_25')
-    #
-    # ## MAX DEPTH
-    # c = cdefault
-    # c['rf_max_depth'] = 50
-    # print
-    # print "----------------------------------------"
-    # print "MAX_DEPTH_50"
-    # print
-    # _compute(c, wd + 'max_depth_50')
-    #
-    # ## MAX DEPTH
-    # c = cdefault
-    # c['rf_max_depth'] = 100
-    # print
-    # print "----------------------------------------"
-    # print "MAX_DEPTH_100"
-    # print
-    # _compute(c, wd + 'max_depth_100')
-
-
-    # ## MAX FEATURES
-    # c = cdefault
-    # c['rf_max_features'] = 'auto'
-    # print
-    # print "----------------------------------------"
-    # print "MAX_FEATURES_AUTO"
-    # print
-    # _compute(c, wd + 'max_features_auto')
-    #
-    # ## MAX FEATURES
-    # c = cdefault
-    # c['rf_max_features'] = 0.10
-    # print
-    # print "----------------------------------------"
-    # print "MAX_FEATURES_10"
-    # print
-    # _compute(c, wd + 'max_features_10')
-    #
-    # ## MAX FEATURES
-    # c = cdefault
-    # c['rf_max_features'] = 0.20
-    # print
-    # print "----------------------------------------"
-    # print "MAX_FEATURES_20"
-    # print
-    # _compute(c, wd + 'max_features_20')
-    #
-    # ## MAX FEATURES
-    # c = cdefault
-    # c['rf_max_features'] = 0.30
-    # print
-    # print "----------------------------------------"
-    # print "MAX_FEATURES_30"
-    # print
-    # _compute(c, wd + 'max_features_30')
-    #
-    # ## MAX FEATURES
-    # c = cdefault
-    # c['rf_max_features'] = 0.40
-    # print
-    # print "----------------------------------------"
-    # print "MAX_FEATURES_40"
-    # print
-    # _compute(c, wd + 'max_features_40')
-    #
-    # ## MAX FEATURES
-    # c = cdefault
-    # c['rf_max_features'] = 0.50
-    # print
-    # print "----------------------------------------"
-    # print "MAX_FEATURES_50"
-    # print
-    # _compute(c, wd + 'max_features_50_2')
-    #
-    # ## MAX FEATURES
-    # c = cdefault
-    # c['rf_max_features'] = 0.75
-    # print
-    # print "----------------------------------------"
-    # print "MAX_FEATURES_75"
-    # print
-    # _compute(c, wd + 'max_features_75')
-    #
-    # ## MAX FEATURES
-    # c = cdefault
-    # c['rf_max_features'] = 1.0
-    # print
-    # print "----------------------------------------"
-    # print "MAX_FEATURES_100"
-    # print
-    # _compute(c, wd + 'max_features_100')
-
-
-    ##### N_ESTIMATORS
-    # c = cdefault
-    # c['rf_n_estimators'] = 20
-    # print
-    # print "----------------------------------------"
-    # print "N_ESTIMATORS_20"
-    # print
-    # _compute(c, wd+'n_estimators_20')
-    #
-    #
-    # ##### N_ESTIMATORS
-    # c = cdefault
-    # c['rf_n_estimators'] = 50
-    # print
-    # print "----------------------------------------"
     # print "N_ESTIMATORS_50"
     # print
-    # _compute(c, wd+'n_estimators_50')
+    # _compute(X_data, y_data, fm_names, projects, c, wd + 'n_estimators_100')
     #
     # ##### N_ESTIMATORS
-    # c = cdefault
+    # c = dict(cdefault)
     # c['rf_n_estimators'] = 200
     # print
     # print "----------------------------------------"
     # print "N_ESTIMATORS_200"
     # print
-    # _compute(c, wd+'n_estimators_200')
+    # _compute(X_data, y_data, fm_names, projects, c, wd+'n_estimators_200')
+
+
+
+    # c = dict(cdefault)
+    # print
+    # print "----------------------------------------"
+    # print "ALL"
+    # print
+    # _compute_all_f(X_data, y_data, fm_names, projects, c, wd + 'default_all')
+    #
+    # c = dict(cdefault)
+    # c['rf_max_features'] = 0.5
+    # c['rf_n_estimators'] = 100
+    # c['rf_max_depth'] = 10
+    # c['rf_min_samples_leaf'] = 3
+    # print
+    # print "----------------------------------------"
+    # print "ALL"
+    # print
+    # _compute_all_f(X_data, y_data, fm_names, projects, c, wd + 'best1_all')

@@ -84,6 +84,24 @@ def results2latex(name='overall'):
     # doc.generate_pdf(clean_tex=False, filepath=OUT_WD+'/'+)
 
 if __name__ == '__main__':
+    wd = RESULTS_WD+'/id_assignment/'
+
+    for fn in ['Cam1_playground2017-01-04_19-04-31',
+               'Sowbug32017-01-02_15-20-56',
+               'zebrafish_playground2017-01-02_20-37-12',
+               'Camera32017-01-04_19-39-45']:
+
+        print fn
+        with open(wd+fn) as f:
+            r = pickle.load(f)
+
+            for it in r[1]:
+                if isinstance(it, tuple):
+                    print "{:.2%} {:.2%}".format(it[0], it[1])
+                else:
+                    print "{:.2%} {:.2%}".format(it['cc'], it['mc'])
+
+
     # run(semistate='id_classified_no_HIL', dir_name='overall_no_HIL')
-    run(semistate='id_classified_no_HIL', dir_name='overall_no_HIL', HIL=False)
-    results2latex('overall_no_HIL')
+    # run(semistate='id_classified_no_HIL', dir_name='overall_no_HIL', HIL=False)
+    # results2latex('overall_no_HIL')

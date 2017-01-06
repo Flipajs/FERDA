@@ -31,6 +31,7 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
 
+    # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
     project.load_semistate(wd, 'id_classified_no_HIL_1')
     # project.load_semistate(wd, 'tracklets_s_classified2')
 
