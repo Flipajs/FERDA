@@ -560,6 +560,27 @@ class ClusteringTool(QtGui.QWidget):
 
         return correct, len(mistakes)
 
+    def gt_classify_project(self, p):
+        from utils.gt.gt import GT
+        gt = GT(num_ids=len(p.animals))
+        gt.load(p.GT_file)
+
+        gt.get_single_region_ids(p)
+
+        for t in p.chm.chunk_gen():
+            gt_id = gt.tracklet_id_set(t, p)
+            gt_class = 2
+            if len(gt_id) > 1:
+                gt_class = 1
+            elif len(gt_id) == 1:
+                gt_class = 0
+
+            t.segmentation_class = gt_class
+
+        self.p.save_semistate('tracklets_s_classified_gt')
+        print "Classification DONE"
+
+
     def classify_project(self, p, data=None, train_n=30, semistate='tracklets_s_classified', gt_classify=False):
         from utils.gt.gt import GT
         gt = GT(num_ids = len(p.animals))
@@ -633,7 +654,7 @@ if __name__ == '__main__':
     # p.load_semistate(wd, state='eps_edge_filter',
     #                  one_vertex_chunk=True, update_t_nodes=True)
 
-    ps = load_all_projects(semistate='eps_edge_filter')
+    ps = load_all_projects(semistate='eps_edge_filter', add_single_vertices=True)
 
     #
     if True:
@@ -652,9 +673,11 @@ if __name__ == '__main__':
                 ex.f_ch[i].setChecked(True)
             ex.redraw_ = True
 
-            ex.human_iloop_classification(sort=True)
+            # ex.human_iloop_classification(sort=True)
             # n_correct, n_mistakes = ex.eval(training_n=100)
-            ex.classify_project(p, train_n=50, semistate='tracklets_s_classified_gt', gt_classify=True)
+
+            # ex.classify_project(p, train_n=50, semistate='tracklets_s_classified_gt', gt_classify=True)
+            ex.gt_classify_project(p)
 
     if False:
         dlist = {}

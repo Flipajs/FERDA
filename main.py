@@ -32,8 +32,8 @@ if is_flipajs_pc():
 
 
     # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
-    # project.load_semistate(wd, 'id_classified_no_HIL_1')
-    project.load_semistate(wd, 'tracklets_s_classified2')
+    # project.load_semistate(wd, 'id_classified_HIL_init_0')
+    project.load_semistate(wd, 'tracklets_s_classified_gt')
 
     # project.load(wd)
     # project.save_semistate('init_state')

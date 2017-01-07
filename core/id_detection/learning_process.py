@@ -463,8 +463,10 @@ class LearningProcess:
                 x, t_length = self.__get_tracklet_proba(tracklet)
             except KeyError:
                 # TODO: remove this, instead compute features...
-                x = np.random.rand(len(self.p.animals))
-                x = x / np.sum(x)
+                x = np.random.rand(len(self.p.animals)) * 0
+                # x = x / np.sum(x)
+
+                # x =
                 if self.verbose > 2:
                     print "features missing for ", tracklet.id()
 
@@ -649,7 +651,7 @@ class LearningProcess:
             ch.P = set()
             ch.N = set()
 
-            if ch.is_noise() or ch.is_part():
+            if ch.is_noise() or ch.is_part() or ch.is_undefined():
                 ch.N = set(full_set)
 
             if self.map_decisions:
@@ -1032,7 +1034,7 @@ class LearningProcess:
         return N
 
     def __update_N(self, ids, tracklet, skip_in=False, skip_out=False):
-        return False
+        # return False
         # TODO: knowledge base check
 
         P = tracklet.P
@@ -1423,6 +1425,9 @@ class LearningProcess:
             else:
                 continue
 
+            if tid is None:
+                continue
+
             if id_ == id_least:
                 possibilities.append(tid)
 
@@ -1436,9 +1441,12 @@ class LearningProcess:
                 if tid2 in id2tid[id_least]:
                     continue
 
-                t2 = self.p.chm[tid2]
-                if t2.length() < len_:
-                    continue
+                try:
+                    t2 = self.p.chm[tid2]
+                    if t2.length() < len_:
+                        continue
+                except:
+                    print "tid2: ", tid2
 
                 t = self.p.chm[tid2]
 

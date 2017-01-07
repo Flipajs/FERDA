@@ -86,6 +86,53 @@ def _compute_all_f(X_data, y_data, fm_names, projects, c, out_name=None):
 #
 #     print results
 
+def NN_test(X_data, y_data, fm_names, c, out_name=None):
+    from sklearn.model_selection import train_test_split
+
+    results = {}
+    seed = c['seed']
+    train_n_times = c['train_n_times']
+    test_size_ratio = c['test_split_ratio']
+
+    np.random.seed(seed)
+    seeds = np.random.randint(0, 100000, train_n_times)
+
+    y = y_data
+
+    for fm_name in fm_names:
+        results[fm_name] = []
+
+    from utils.misc import print_progress
+
+    for i in range(train_n_times):
+        for fm_name in fm_names:
+            X = X_data[fm_name]
+
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_ratio,
+                                                                random_state=seeds[i])
+            decisions = np.zeros((X_test.shape[0],))
+            correct = np.zeros((X_test.shape[0], ), dtype=np.bool)
+            num_correct_ids = 0
+
+            for j in range(X_test.shape[0]):
+                print_progress(j, X_test.shape[0])
+
+                d = np.zeros((X_train.shape[0], ))
+                for k in range(X_train.shape[0]):
+                    d[k] = np.mean(abs(X_train[k, :] - X_test[j, :]))
+
+                nn = np.argmin(d)
+                decisions[j] = y_train[nn]
+
+                if y_train[nn] == y_test[j]:
+                    num_correct_ids += 1
+                    correct[j] = True
+
+            print "NN accuracy: {:.2%}".format(num_correct_ids/float(X_test.shape[0]))
+
+            results[fm_name].append((decisions.tolist(), num_correct_ids, X_test.shape[0], correct.tolist()))
+
+    return results
 
 
 if __name__ == '__main__':
@@ -101,7 +148,7 @@ if __name__ == '__main__':
     cdefault['rf_n_estimators'] = 10
     cdefault['rf_max_features'] = 0.5
     cdefault['rf_max_depth'] = None
-    cdefault['train_n_times'] = 10
+    cdefault['train_n_times'] = 3
 
     c = dict(cdefault)
 
@@ -113,15 +160,21 @@ if __name__ == '__main__':
     fm_names = ['fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3',
                 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
 
-    # fm_names = ['fm_hog.sqlite3', 'fm_lbp.sqlite3',
-    #             'fm_basic.sqlite3', 'fm_colornames.sqlite3']
+    # fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3']
+    fm_names = ['fm_idtracker_c.sqlite3']
+    # fm_names = ['fm_idtracker_i.sqlite3']
+    # fm_names = ['fm_basic.sqlite3']
 
     X_data = {}
     y_data = {}
 
     projects = load_all_projects()
 
+    pn = 'Zebr'
     for p_name, project in projects.iteritems():
+        if p_name[:4] != pn:
+            continue
+
         X_data[p_name] = {}
         y_data[p_name] = None
 
@@ -139,6 +192,17 @@ if __name__ == '__main__':
 
             X_data[p_name][fm_name] = np.array(X)
         y_data[p_name] = np.array(animal_ids)
+
+        print "loading done"
+
+        results = NN_test(X_data[p_name], y_data[p_name], fm_names, c)
+
+        dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        out_name = 'results/nn_'+pn+'-c' + dt + '.pkl'
+
+        with open(out_name, 'wb') as f:
+            pickle.dump(results, f)
+
 
     # c = dict(cdefault)
     # _compute(X_data, y_data, fm_names, projects, c, wd + 'default')
