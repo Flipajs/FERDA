@@ -46,7 +46,7 @@ class LearningProcess:
         update_N
         before each basic operation check knowledge[t.id()]
     """
-    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False, verbose=0, id_N_propagate=True):
+    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False, verbose=0, id_N_propagate=True, id_N_f=True):
         if use_rf_cache:
             warnings.warn("use_rf_cache is Deprecated!", DeprecationWarning)
 
@@ -66,6 +66,7 @@ class LearningProcess:
         self._eps_certainty = 0.3
 
         self.id_N_propagate = id_N_propagate
+        self.id_N_f = id_N_f
 
         # TODO: make standalone feature extractor...
         self.get_features = get_colornames_hists
@@ -84,6 +85,8 @@ class LearningProcess:
         self.rf_n_estimators = 10
         self.rf_min_samples_leafs = 1
         self.rf_max_depth = None
+
+        self.min_tracklet_len = 1
 
         self.collision_chunks = {}
 
@@ -295,7 +298,7 @@ class LearningProcess:
     def fill_undecided_tracklets(self):
         for t in self.p.chm.chunk_gen():
             # if t.id() in self.collision_chunks or t.is_multi():
-            if not t.is_single() or t.length() < 5:
+            if not t.is_single() or t.length() < self.min_tracklet_len:
                 continue
 
             self.undecided_tracklets.add(t.id())
@@ -1034,6 +1037,9 @@ class LearningProcess:
         return N
 
     def __update_N(self, ids, tracklet, skip_in=False, skip_out=False):
+        if not self.id_N_f:
+            return
+
         # return False
         # TODO: knowledge base check
 

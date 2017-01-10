@@ -789,10 +789,18 @@ def get_idtracker_features(r, p, debug=False, sub=1, config=None, vectorize=True
 
     # print time.time() - t1
 
+    from thesis.config import *
+    import datetime
+    dt = datetime.datetime.now().time()
+
     if debug:
         import matplotlib.pyplot as plt
         plt.figure()
         plt.imshow(intensity_map_, aspect='auto')
+        plt.ylabel('distance')
+        plt.xlabel('intensity sum')
+        plt.title('I-co-occurrence')
+        plt.savefig(OUT_IMGS_WD + '/cooc/i_' + str(dt)+'.png')
 
         # with open(p.working_directory + '/temp/rf_f_importance.pkl') as f:
         #     y, x = pickle.load(f)
@@ -802,6 +810,10 @@ def get_idtracker_features(r, p, debug=False, sub=1, config=None, vectorize=True
 
         plt.figure()
         plt.imshow(contrast_map_, aspect='auto')
+        plt.ylabel('distance')
+        plt.xlabel('absolute value of intensity difference')
+        plt.title('C-co-occurrence')
+        plt.savefig(OUT_IMGS_WD+'/cooc/c_'+str(dt)+'.png')
 
     if vectorize:
         return np.ravel(intensity_map_), np.ravel(contrast_map_)
@@ -864,15 +876,14 @@ if __name__ == '__main__':
     p.load_semistate(wd, state='eps_edge_filter')
 
     # optimise_features(wd, 'fm_idtracker_c_d50')
-    #
-    #
-    # t = time.time()
-    # for j in range(1):
-    #     for i in range(1, 7):
-    #         r = p.rm[i]
-    #         get_idtracker_features(r, p, debug=True, sub=4)
-    #
-    # print time.time() - t
+
+    t = time.time()
+    for j in range(1):
+        for i in range(1, 7):
+            r = p.rm[i]
+            get_idtracker_features(r, p, debug=True, sub=1, config='Cam1')
+
+    print time.time() - t
 
     plt.show()
 

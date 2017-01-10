@@ -161,7 +161,7 @@ if __name__ == '__main__':
                 'fm_basic.sqlite3', 'fm_colornames.sqlite3']
 
     # fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3']
-    fm_names = ['fm_idtracker_c.sqlite3']
+    # fm_names = ['fm_idtracker_c.sqlite3']
     # fm_names = ['fm_idtracker_i.sqlite3']
     # fm_names = ['fm_basic.sqlite3']
 
@@ -170,15 +170,12 @@ if __name__ == '__main__':
 
     projects = load_all_projects()
 
-    pn = 'Zebr'
     for p_name, project in projects.iteritems():
-        if p_name[:4] != pn:
-            continue
-
         X_data[p_name] = {}
         y_data[p_name] = None
 
         from utils.gt.gt import GT
+
         gt = GT()
         gt.load(project.GT_file)
 
@@ -193,15 +190,38 @@ if __name__ == '__main__':
             X_data[p_name][fm_name] = np.array(X)
         y_data[p_name] = np.array(animal_ids)
 
-        print "loading done"
-
-        results = NN_test(X_data[p_name], y_data[p_name], fm_names, c)
-
-        dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        out_name = 'results/nn_'+pn+'-c' + dt + '.pkl'
-
-        with open(out_name, 'wb') as f:
-            pickle.dump(results, f)
+    # pn = 'Zebr'
+    # for p_name, project in projects.iteritems():
+    #     if p_name[:4] != pn:
+    #         continue
+    #
+    #     X_data[p_name] = {}
+    #     y_data[p_name] = None
+    #
+    #     from utils.gt.gt import GT
+    #     gt = GT()
+    #     gt.load(project.GT_file)
+    #
+    #     single_region_ids, animal_ids = gt.get_single_region_ids(project, max_frame=5000)
+    #     for fm_name in fm_names:
+    #         fm = FeatureManager(project.working_directory, fm_name)
+    #         X = []
+    #         for r_id in single_region_ids:
+    #             _, f_ = fm[r_id]
+    #             X.append(f_[0])
+    #
+    #         X_data[p_name][fm_name] = np.array(X)
+    #     y_data[p_name] = np.array(animal_ids)
+    #
+    #     print "loading done"
+    #
+    #     results = NN_test(X_data[p_name], y_data[p_name], fm_names, c)
+    #
+    #     dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    #     out_name = 'results/nn_'+pn+'-c' + dt + '.pkl'
+    #
+    #     with open(out_name, 'wb') as f:
+    #         pickle.dump(results, f)
 
 
     # c = dict(cdefault)
@@ -444,6 +464,22 @@ if __name__ == '__main__':
     # print "N_ESTIMATORS_200"
     # print
     # _compute(X_data, y_data, fm_names, projects, c, wd+'n_estimators_200')
+
+
+    ##### N_ESTIMATORS
+    c = dict(cdefault)
+    cdefault['test_split_ratio'] = 0.95
+    cdefault['rf_criterion'] = 'entropy'
+    cdefault['rf_min_samples_leaf'] = 3
+    cdefault['rf_max_features'] = 0.5
+    cdefault['rf_max_depth'] = 10
+    cdefault['train_n_times'] = 3
+    c['rf_n_estimators'] = 50
+    print
+    print "----------------------------------------"
+    print "N_ESTIMATORS_200"
+    print
+    _compute(X_data, y_data, fm_names, projects, c, wd+'_tuned')
 
 
 
