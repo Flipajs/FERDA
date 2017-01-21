@@ -73,10 +73,12 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
     chunks = project.gm.chunk_list()
-
+    i = 0
+    print len(chunks)
     for ch in chunks:
         tracklet_viewer = TrackletViewer(project.img_manager, ch, project.chm, project.gm, project.rm)
         tracklet_viewer.show()
+        i += 1
         app.exec_()
 
 
