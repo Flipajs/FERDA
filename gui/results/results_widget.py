@@ -16,6 +16,7 @@ from utils.img import img_saturation_coef
 from utils.misc import is_flipajs_pc
 from core.region.region import get_region_endpoints
 from utils.idtracker import load_idtracker_data
+import cv2
 
 
 MARKER_SIZE = 15
@@ -252,7 +253,7 @@ class ResultsWidget(QtGui.QWidget):
 
         self.print_undecided_tracklets_b = QtGui.QPushButton('print undecided')
         self.print_undecided_tracklets_b.clicked.connect(self.print_undecided)
-        self.show_idtracker_i = QtGui.QLineEdit('/Users/flipajs/Dropbox/FERDA/idTracker_Cam1/trajectories.mat')
+        self.show_idtracker_i = QtGui.QLineEdit('/Users/flipajs/Documents/wd/idTracker/'+self.project.name+'/trajectories.mat')
         self.show_idtracker_b = QtGui.QPushButton('show idtracker')
         self.show_idtracker_b.clicked.connect(self.show_idtracker_data)
 
@@ -334,7 +335,7 @@ class ResultsWidget(QtGui.QWidget):
         self.addAction(self.show_saturated_action)
 
         self.show_id_bar = QtGui.QCheckBox('id bar')
-        self.show_id_bar.setChecked(False)
+        self.show_id_bar.setChecked(True)
         self.show_id_bar.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_id_bar)
 
@@ -394,6 +395,8 @@ class ResultsWidget(QtGui.QWidget):
 
         self.splitter.setSizes([270, 1500])
 
+        self.old_crops = [None] * len(self.project.animals)
+
         self.colors_ = [
             QtGui.QColor().fromRgbF(0, 0, 1), #
             QtGui.QColor().fromRgbF(1, 0, 0),
@@ -407,6 +410,12 @@ class ResultsWidget(QtGui.QWidget):
 
 
         self._load_gt()
+
+        try:
+            if len(self.project.animals) == len(self.project.chm.chunks_in_frame(self.video_player.current_frame())):
+                self._gt_find_permutation(True)
+        except:
+            pass
 
         # self.redraw_video_player_visualisations()
 
@@ -664,6 +673,9 @@ class ResultsWidget(QtGui.QWidget):
         # we need region pts to dilate and substract previous pts to get result
         only_contour = only_contour and not highlight_contour
 
+        if S_.visualization.no_single_id_filled and not tracklet.is_only_one_id_assigned(len(self.project.animals)):
+            only_contour = True
+
         pts_, roi = get_cropped_pts(r, return_roi=True, only_contour=only_contour)
         if highlight_contour:
             pts_, roi = self.__dilate(pts_, roi)
@@ -776,9 +788,7 @@ class ResultsWidget(QtGui.QWidget):
             self.highlight_marker2nd.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
             self.highlight_marker2nd_frame = data['n2'].frame_
 
-    def __add_marker(self, x, y, c_, id_, z_value, type_):
-        radius = 13
-
+    def __add_marker(self, x, y, c_, id_, z_value, type_, radius=13, alpha=None):
         if type_ == 'GT':
             radius = 20
         elif type_ == 'multiple':
@@ -788,6 +798,9 @@ class ResultsWidget(QtGui.QWidget):
             radius = 7
 
         m = markers.CenterMarker(0, 0, radius, c_, id=id_, changeHandler=self._gt_marker_clicked)
+
+        if alpha:
+            m.setOpacity(alpha)
 
         m.setPos(x - radius/2, y-radius/2)
         m.setZValue(z_value)
@@ -810,7 +823,7 @@ class ResultsWidget(QtGui.QWidget):
             if a.id < len(positions):
                 data = positions[a.id]
                 if data is None:
-                    y = -10
+                    y = 10
                     x = 10 * a.id
                 else:
                     y = data[0]
@@ -832,7 +845,126 @@ class ResultsWidget(QtGui.QWidget):
                     type_ = 'normal' if decided else 'multiple'
                     self.__add_marker(x, y, c_, ch.id(), 0.75, type_=type_)
 
+    def draw_history(self):
+        # TODO: settings
+        radius = 13
+
+        num_animals = len(self.project.animals)
+        current_frame = self.video_player.current_frame()
+        h_depth = S_.visualization.history_depth
+        for frame in range(max(0, current_frame - h_depth), current_frame, S_.visualization.history_depth_step):
+            h = h_depth - (current_frame - frame)
+            h_ratio = (h / float(h_depth))
+            a = S_.visualization.basic_marker_opacity
+            exponent = S_.visualization.history_alpha
+            alpha = a * (h_ratio) ** exponent
+
+            r_ = max(1, int(round(radius * h_ratio)))
+
+            if alpha < 0.01:
+                continue
+
+            for ch in self.project.chm.chunks_in_frame(frame):
+                if ch.is_only_one_id_assigned(num_animals):
+                    rch = RegionChunk(ch, self.project.gm, self.project.rm)
+                    r = rch.region_in_t(frame)
+                    centroid = r.centroid()
+
+                    id_ = list(ch.P)[0]
+                    c_ = self.project.animals[id_].color_
+                    c_ = QtGui.QColor(c_[2], c_[1], c_[0])
+
+                    y = centroid[0]
+                    x = centroid[1]
+
+                    self.__add_marker(x, y, c_, None, 0.5, type_='default', radius=r_, alpha=alpha)
+
+    def draw_id_profiles(self):
+        from utils.img import get_safe_selection
+        from gui.img_controls.gui_utils import cvimg2qtpixmap
+        from core.animal import colors_
+
+        frame = self.video_player.current_frame()
+        img = self.video_player._vm.img().copy()
+
+        A = 50
+        it_x = img.shape[1] + 1
+
+        stripe_w = 10
+        for i in range(len(self.project.animals)):
+            it_y = (2*A) * i
+            s = np.zeros((2*A, stripe_w, 3), dtype=np.uint8)
+            for j in range(3):
+                s[:, :, j] = colors_[i][j]
+
+            pixmap = cvimg2qtpixmap(s)
+            pixmap = QtGui.QGraphicsPixmapItem(pixmap)
+            pixmap.setPos(it_x, it_y)
+
+            self.video_player.visualise_temp(pixmap)
+
+        it_x += stripe_w + 1
+
+        idset = set(range(len(self.project.animals)))
+        for ch in self.project.chm.chunks_in_frame(frame):
+            id_ = 0
+            if len(ch.P) == 1:
+                id_ = list(ch.P)[0]
+                it_y = (2 * A) * id_
+            else:
+                continue
+
+            idset.discard(id_)
+
+            rch = RegionChunk(ch, self.project.gm, self.project.rm)
+            r = rch.region_in_t(frame)
+
+            cenY, cenX = r.centroid()
+
+            crop = get_safe_selection(img, cenY-A, cenX-A, 2*A, 2*A, fill_color=(0, 0, 0))
+
+            self.old_crops[id_] = crop
+
+            pixmap = cvimg2qtpixmap(crop)
+            pixmap = QtGui.QGraphicsPixmapItem(pixmap)
+            pixmap.setPos(it_x, it_y)
+
+            self.video_player.visualise_temp(pixmap)
+
+        DARKEN = 25
+        DARKEN_COLOR = 35
+
+        # TODO: if frame seek, reset self.old_crops
+
+        # display last positions of unknown...
+        for id_ in idset:
+            crop = self.old_crops[id_]
+
+            if crop is None:
+                continue
+
+            it_y = (2 * A) * id_
+
+            crop = np.asarray(np.maximum(0, np.asarray(self.old_crops[id_], dtype=np.int) - DARKEN), dtype=np.uint8)
+            pixmap = cvimg2qtpixmap(crop)
+            pixmap = QtGui.QGraphicsPixmapItem(pixmap)
+            pixmap.setPos(it_x, it_y)
+
+            self.video_player.visualise_temp(pixmap)
+
+            s = np.zeros((2 * A, stripe_w, 3), dtype=np.uint8)
+            for j in range(3):
+                s[:, :, j] = max(0, colors_[id_][j]-DARKEN-DARKEN_COLOR)
+
+            pixmap = cvimg2qtpixmap(s)
+            pixmap = QtGui.QGraphicsPixmapItem(pixmap)
+            pixmap.setPos(it_x - stripe_w - 1, it_y)
+
+            self.video_player.visualise_temp(pixmap)
+
+
     def update_visualisations(self):
+        self.draw_id_profiles()
         # with open('/Users/flipajs/Desktop/temp/pairs/' + 'exp1' + '/head_rfc.pkl', 'rb') as f:
         #     rfc = pickle.load(f)
 
@@ -854,7 +986,7 @@ class ResultsWidget(QtGui.QWidget):
 
             centroid = r.centroid().copy()
 
-            if self.show_id_bar.isChecked():
+            if self.show_id_bar.isChecked() and len(ch.N) < len(self.project.animals)-1:
                 try:
                     item = self.show_pn_ids_visualisation(ch, frame)
 
@@ -894,9 +1026,12 @@ class ResultsWidget(QtGui.QWidget):
 
             # self.video_player.visualise_temp(head_item, category='head')
 
+        if S_.visualization.history_depth > 0:
+            self.draw_history()
+
         if self.show_markers.isChecked():
             self._show_gt_markers()
-            self._show_id_markers(animal_ids2centroids)
+            # self._show_id_markers(animal_ids2centroids)
 
         if self.idtracker_data is not None:
             for id_, it in enumerate(self.idtracker_data[frame]):
@@ -906,17 +1041,18 @@ class ResultsWidget(QtGui.QWidget):
                 x, y = it[0], it[1]
 
                 if np.isnan(x):
-                    x, y = 10*id_, -10
+                    x, y = 10*(id_+1), 10
 
                 type_ = 'tracker1'
 
-                item = QtGui.QGraphicsRectItem(0, 0, 10, 10)
+                w = 10
+                item = QtGui.QGraphicsRectItem(0, 0, w, w)
                 brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
                 brush.setColor(c_)
                 item.setBrush(brush)
                 item.setOpacity(0.8)
                 item.setZValue(1.0)
-                item.setPos(x, y)
+                item.setPos(x-w/2, y-w/2)
 
                 self.video_player.visualise_temp(item, category=type_)
 
@@ -1451,35 +1587,42 @@ class ResultsWidget(QtGui.QWidget):
         return arr
 
     def export_visualisation(self):
-        start = 4000
-        end = 7000
+        import os
+
+        start = 0
+        end = 4500
+
+        a = self.project.working_directory.split('/')[-1]
+        wd = '/Users/flipajs/Desktop/temp/'+a+'/'
+
+        try:
+            os.mkdir(wd)
+        except:
+            pass
 
         self.video_player.goto(start)
-        import cv2
-        import time
 
+        # qim_ = QtGui.QImage(1000, 1102, QtGui.QImage.Format_RGB32)
 
-        qim_ = QtGui.QImage(1920, 1080, QtGui.QImage.Format_RGB32)
-        qim_.fill(QtGui.qRgba(0, 0, 0, 0))
-        pixmap = QtGui.QPixmap.fromImage(qim_)
-        painter = QtGui.QPainter(pixmap)
-        self.video_player._scene.render(painter)
-        pixmap.save('out1.png')
-        # img = pixmap.toImage()
-        #
-        # im = self.QImageToCvMat(img)
-        # cv2.imshow('test', im)
-        # cv2.waitKey(0)
-        del painter
-        # vw = cv2.VideoWriter('out.mp4')
+        # painter = QtGui.QPainter(pixmap)
+        # self.video_player._scene.render(painter)
+        # pixmap.save('out1.png')
+
+        # del painter
         for i in range(end-start):
+            # qim_ = QtGui.QImage(2022, 1080, QtGui.QImage.Format_RGB32)
+            # qim_ = QtGui.QImage(1102, 1000, QtGui.QImage.Format_RGB32)
+            qim_ = QtGui.QImage(1102, 732, QtGui.QImage.Format_RGB32)
+            qim_.fill(QtGui.qRgba(0, 0, 0, 0))
+            pixmap = QtGui.QPixmap.fromImage(qim_)
+
             painter = QtGui.QPainter(pixmap)
             self.video_player._scene.render(painter)
             name = str(self.video_player.current_frame())
             while len(name) != 5:
                 name = '0'+name
 
-            pixmap.save('/Users/flipajs/Desktop/temp/zebrafish/'+name+'.jpg')
+            pixmap.save(wd+name+'.png')
             del painter
 
             self.video_player.next()

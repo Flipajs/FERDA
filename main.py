@@ -26,14 +26,16 @@ if is_flipajs_pc():
 
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
 
     # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
     # project.load_semistate(wd, 'id_classified_HIL_init_0')
-    project.load_semistate(wd, 'tracklets_s_classified_gt')
+    # project.load_semistate(wd, 'lp_id_SEG_IDCR_0')
+    project.load_semistate(wd, 'lp_HIL_INIT3_0')
+    # project.load_semistate(wd, 'tracklets_s_classified_gt')
 
     # project.load(wd)
     # project.save_semistate('init_state')

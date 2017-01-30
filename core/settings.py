@@ -90,6 +90,11 @@ class Visualization:
     default_region_color = Item('visualization/default_region_color', QtGui.QColor(0, 255, 255, 50), '')
     basic_marker_opacity = Item('visualization/basic_marker_opacity', 0.8, '...')
     segmentation_alpha = Item('visualization/segmentation_alpha', 230, '...')
+    no_single_id_filled = Item('visualization/no_single_id_filled', True, '...')
+    trajectory_history = Item('visualization/trajectory_history', True, '...')
+    history_depth = Item('visualization/history_depth', 10, '...')
+    history_depth_step = Item('visualization/history_depth_step', 1, '...')
+    history_alpha = Item('visualization/history_alpha', 2.0, '...')
 
 class Parallelization:
     __metaclass__ = SettingsType
