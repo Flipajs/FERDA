@@ -25,16 +25,28 @@ if is_flipajs_pc():
     cam_ = 1
 
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
+    # from core.region.region_manager import RegionManager
+    #
+    # project.load(wd)
+    # project.rm = RegionManager(project.working_directory + '/temp', db_name='part0_rm.sqlite3')
+    # with open(project.working_directory + '/temp/part0.pkl', 'rb') as f:
+    #     up = pickle.Unpickler(f)
+    #     g_ = up.load()
+    #
+    # project.gm.g = g_
+    # project.gm.rm = project.rm
+    #
+    # project.gm.update_nodes_in_t_refs()
 
     # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
     # project.load_semistate(wd, 'id_classified_HIL_init_0')
     # project.load_semistate(wd, 'lp_id_SEG_IDCR_0')
-    project.load_semistate(wd, 'lp_HIL_INIT3_0')
+    project.load_semistate(wd, 'lp_HIL_INIT3_0', update_t_nodes=True)
     # project.load_semistate(wd, 'tracklets_s_classified_gt')
 
     # project.load(wd)
