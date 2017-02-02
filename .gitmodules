@@ -1,3 +1,0 @@
-[submodule "utils/clearmetrics/clearmetrics"]
-	path = utils/clearmetrics/clearmetrics
-	url = git://github.com/Flipajs/clearmetrics
