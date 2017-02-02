@@ -1,3 +1,0 @@
-All paths and settings could be found in config.py
-
-It is necessary to run all scripts from root (e.g. "python -m thesis.segmentation_examples")
