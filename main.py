@@ -9,7 +9,6 @@ import time
 
 app = QtGui.QApplication(sys.argv)
 ex = main_window.MainWindow()
-# ex.showMaximized()
 ex.setFocus()
 
 t_ = time.time()
@@ -20,29 +19,17 @@ project = Project()
 S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
-if is_flipajs_pc():
-    sn_id = 875
-    cam_ = 1
-
+if is_flipajs_pc() and False:
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
-
     # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
     # project.load_semistate(wd, 'id_classified_HIL_init_0')
     # project.load_semistate(wd, 'lp_id_SEG_IDCR_0')
     project.load_semistate(wd, 'lp_HIL_INIT3_0')
-    # project.load_semistate(wd, 'tracklets_s_classified_gt')
-
-    # project.load(wd)
-    # project.save_semistate('init_state')
-
-    # project.chm.reset_itree(project.gm)
-
-    # project.load_snapshot(snapshot)
 
     try:
         # WORKAROUND:
@@ -55,13 +42,7 @@ if is_flipajs_pc():
 
     from utils.color_manager import colorize_project
     colorize_project(project)
-
-    # from core.id_detection.feature_manager import FeatureManager
-    # fm = FeatureManager(project.working_directory, db_name='fm_idtracker_i_d50.sqlite3')
-
-
     ex.widget_control('load_project', project)
-
 
 
 print "FERDA is READY, loaded in {:.3}s".format(time.time()-t_)

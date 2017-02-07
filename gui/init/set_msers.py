@@ -165,6 +165,8 @@ class SetMSERs(QtGui.QWidget):
         s = time.time()
         from core.region.mser import get_msers_
         msers = get_msers_(img_, self.project, 0, prefiltered=False)
+        # msers = filter(lambda x: x.area() <= 50, msers)
+
         # msers = ferda_filtered_msers(img_, self.project)
         print "mser takes: ", time.time() - s
 
@@ -264,9 +266,15 @@ class SetMSERs(QtGui.QWidget):
                                                         self.color_mser[3] / float(255)), square=True,
                                         fill_pts=fill_pts)
 
+            if crop.shape[1] < 100:
+                temp = np.zeros((crop.shape[0], 100, 3), dtype=np.uint8)
+                temp[:, :crop.shape[1], :] = crop
+
+                crop = temp
+
             import cv2
 
-            cv2.putText(crop, str(r.margin_)+' '+str(r.area())+' '+str(r.max_intensity_), (10, 10), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.25, (255, 255, 255))
+            cv2.putText(crop, str(r.margin_)+' '+str(r.area())+' '+str(r.label_), (10, 10), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.25, (255, 255, 255))
 
             # create qimage from crop
             img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
@@ -406,7 +414,7 @@ class SetMSERs(QtGui.QWidget):
         self.button_done = QtGui.QPushButton("Done")
 
     def configure_form_panel(self):
-        self.mser_max_area.setMinimum(10)
+        self.mser_max_area.setMinimum(100)
         self.mser_max_area.setSingleStep(1)
         self.mser_max_area.setMaximum(1000000000)
         # self.mser_max_area.setDecimals(6)
@@ -558,7 +566,7 @@ if __name__ == "__main__":
     proj.arena_model = None
     proj.bg_model = None
 
-    # proj.video_paths = '/home/flipajs/Downloads/Camera 1_biglense1.avi'
+    proj.video_paths = '/Users/flipajs/Desktop/S9T95min.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c2.avi'
