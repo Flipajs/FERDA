@@ -151,7 +151,7 @@ if __name__ == '__main__':
                 # mask = gcut_segmentation.segmentation()
                 # mask = np.asarray(np.logical_not(mask), dtype=np.uint8) * 255
 
-                # cv2.imwrite('/Users/flipajs/Desktop/temp/rf/' + str(jj) + '_i.png', crop[border2:-border2, border2:-border2, :].copy())
+                # cv2.imwrite('/Users/flipajs/Desktop/temp/rf/' + str(jj) + '_i.png', crop_[border2:-border2, border2:-border2, :].copy())
                 # cv2.imwrite('/Users/flipajs/Desktop/temp/rf/' + str(jj) + '.png', seg_img)
 
             #     msers_ = ferda_filtered_msers(mask, proj, frame)

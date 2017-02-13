@@ -833,8 +833,8 @@ def get_idtracker_features(r, p, debug=False, sub=1, config=None, vectorize=True
     #         if d >= max_d:
     #             continue
     #
-    #         i1 = int(crop[px1[0], px1[1]])
-    #         i2 = int(crop[px2[0], px2[1]])
+    #         i1 = int(crop_[px1[0], px1[1]])
+    #         i2 = int(crop_[px2[0], px2[1]])
     #
     #         i = min(max_i, i1 + i2)
     #         c = min(abs(i1 - i2), max_c)

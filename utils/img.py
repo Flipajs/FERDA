@@ -51,7 +51,7 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), ret
         crop = np.copy(img_[y:y + height, x:x + width, :])
     else:
         # TODO: why is height twice here?
-        # crop = np.copy(img[y:y + height, x:x + height, :])
+        # crop_ = np.copy(img[y:y + height, x:x + height, :])
         crop = np.copy(img[y:y + height, x:x + width, :])
 
     if return_offset:

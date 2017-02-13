@@ -99,7 +99,7 @@ def get_features1(r, p):
         f.extend(get_hu_moments(crop_ith_channel_masked))
 
 
-    ### ALL PXs in crop image given margin
+    ### ALL PXs in crop_ image given margin
     crop, offset = get_img_around_pts(img, r.pts(), margin=0.3)
 
     # in GRAY

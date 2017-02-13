@@ -276,11 +276,11 @@ class SetMSERs(QtGui.QWidget):
 
             cv2.putText(crop, str(r.margin_)+' '+str(r.area())+' '+str(r.label_), (10, 10), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.25, (255, 255, 255))
 
-            # create qimage from crop
+            # create qimage from crop_
             img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
             pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
 
-            # add crop to img grid
+            # add crop_ to img grid
             item = SelectableQLabel(id=r_id)
             item.setScaledContents(True)
             item.setFixedSize(150, 150)
@@ -428,7 +428,7 @@ class SetMSERs(QtGui.QWidget):
         self.mser_min_area.valueChanged.connect(self.val_changed)
         self.form_panel.addRow('MSER Min area', self.mser_min_area)
 
-        self.mser_min_margin.setMinimum(3)
+        self.mser_min_margin.setMinimum(1)
         self.mser_min_margin.setMaximum(100)
         self.mser_min_margin.setValue(self.project.mser_parameters.min_margin)
         self.mser_min_margin.valueChanged.connect(self.val_changed)
@@ -566,7 +566,9 @@ if __name__ == "__main__":
     proj.arena_model = None
     proj.bg_model = None
 
-    proj.video_paths = '/Users/flipajs/Desktop/S9T95min.avi'
+    proj.video_crop_model = {'y1': 110, 'y2': 950, 'x1': 70, 'x2': 910}
+
+    # proj.video_paths = '/Users/flipajs/Desktop/S9T95min.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c2.avi'
