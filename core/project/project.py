@@ -116,7 +116,7 @@ class Project:
             pass
 
         try:
-            p.video_crop_model  = self.video_crop_model
+            p.video_crop_model = self.video_crop_model
         except AttributeError:
             pass
 

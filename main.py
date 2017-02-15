@@ -6,6 +6,8 @@ from gui import main_window
 from core.settings import Settings as S_
 from utils.misc import is_flipajs_pc
 import time
+from core.project.project import Project
+
 
 app = QtGui.QApplication(sys.argv)
 ex = main_window.MainWindow()
@@ -13,7 +15,6 @@ ex.setFocus()
 
 t_ = time.time()
 
-from core.project.project import Project
 project = Project()
 
 S_.general.print_log = False
@@ -43,11 +44,11 @@ if is_flipajs_pc() and False:
     from utils.color_manager import colorize_project
     colorize_project(project)
     ex.widget_control('load_project', project)
-
+    ex.move(-500, -500)
+    ex.showMaximized()
 
 print "FERDA is READY, loaded in {:.3}s".format(time.time()-t_)
-ex.move(-500, -500)
-ex.showMaximized()
+
 app.exec_()
 app.deleteLater()
 sys.exit()

@@ -83,6 +83,8 @@ class VideoManager():
         self.position_ += 1
         return self.buffer_[self.view_position_]
 
+    def prev_frame(self):
+        return self.previous_frame()
 
     def previous_frame(self):
         if self.position_ > 0:
@@ -93,8 +95,8 @@ class VideoManager():
                 self.view_position_ = self.dec_pos_(self.view_position_)
                 self.buffer_[self.view_position_] = self.seek_frame(self.position_)
 
-                if self.crop_model:
-                    self.buffer_[self.view_position_] = self.crop_(self.buffer_[self.view_position_])
+                # if self.crop_model:
+                #     self.buffer_[self.view_position_] = self.crop_(self.buffer_[self.view_position_])
 
                 return self.buffer_[self.view_position_]
             else:
@@ -165,8 +167,11 @@ class VideoManager():
         self.buffer_position_ = 0
         self.buffer_length_ = 51
         self.view_position_ = self.buffer_length_ - 1
-        self.buffer_ = [None] * self.buffer_length_
+        self.reset_buffer()
         self.position_ = -1
+
+    def reset_buffer(self):
+        self.buffer_ = [None] * self.buffer_length_
 
     def get_manager_copy(self):
         """

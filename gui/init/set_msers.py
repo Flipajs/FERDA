@@ -299,6 +299,14 @@ class SetMSERs(QtGui.QWidget):
         image = self.vid.next_frame()
         self.set_image(image)
 
+    def show_prev_frame(self):
+        """
+        Show current settings on next frame
+        :return: None
+        """
+        image = self.vid.prev_frame()
+        self.set_image(image)
+
     def show_random_frame(self):
         """
         Show current settings on random frame
@@ -410,6 +418,7 @@ class SetMSERs(QtGui.QWidget):
         self.check_paint = QtGui.QCheckBox("Paint data")
         self.check_mser = QtGui.QCheckBox("MSER view")
         self.button_next = QtGui.QPushButton("Next frame")
+        self.button_prev = QtGui.QPushButton("Prev frame")
         self.button_rand = QtGui.QPushButton("Random frame")
         self.button_done = QtGui.QPushButton("Done")
 
@@ -546,6 +555,9 @@ class SetMSERs(QtGui.QWidget):
         self.check_mser.setChecked(True)
         self.check_mser.toggled.connect(self.checkbox)
         self.left_panel.layout().addWidget(self.check_mser)
+
+        self.button_prev.clicked.connect(self.show_prev_frame)
+        self.left_panel.layout().addWidget(self.button_prev)
 
         self.button_next.clicked.connect(self.show_next_frame)
         self.left_panel.layout().addWidget(self.button_next)

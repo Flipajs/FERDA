@@ -113,7 +113,7 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_widget = QtGui.QWidget()
         self.video_layout = QtGui.QVBoxLayout()
         self.vbox.addLayout(self.video_layout)
-        self.video_widget.setLayout(self.video_layout)
+        # self.video_widget.setLayout(self.video_layout)
 
         self.video_control_widget = QtGui.QWidget()
         self.video_control_layout = QtGui.QVBoxLayout()
@@ -225,9 +225,39 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_crop_buttons_layout.addWidget(self.start_frame_sign)
         self.video_crop_buttons_layout.addWidget(self.end_frame_sign)
 
-        self.connect_GUI()
-
         img = self.video.next_frame()
+
+        # self.spatial_crop_layout = QtGui.QHBoxLayout()
+        #
+        # self.spatial_crop_layout.addWidget(QtGui.QLabel('img crop: '))
+        #
+        # self.sc_y1 = QtGui.QSpinBox()
+        # self.sc_y1.setMinimum(0)
+        # self.sc_y1.setMaximum(img.shape[0]-1)
+        # self.sc_y1.setValue(0)
+        # self.spatial_crop_layout.addWidget(self.sc_y1)
+        #
+        # self.sc_x1 = QtGui.QSpinBox()
+        # self.sc_x1.setMinimum(0)
+        # self.sc_x1.setMaximum(img.shape[1] - 1)
+        # self.sc_x1.setValue(0)
+        # self.spatial_crop_layout.addWidget(self.sc_x1)
+        #
+        # self.sc_y2 = QtGui.QSpinBox()
+        # self.sc_y2.setMinimum(0)
+        # self.sc_y2.setMaximum(img.shape[0])
+        # self.sc_y2.setValue(img.shape[0])
+        # self.spatial_crop_layout.addWidget(self.sc_y2)
+        #
+        # self.sc_x2 = QtGui.QSpinBox()
+        # self.sc_x2.setMinimum(0)
+        # self.sc_x2.setMaximum(img.shape[1])
+        # self.sc_x2.setValue(img.shape[1])
+        # self.spatial_crop_layout.addWidget(self.sc_x2)
+        #
+        # self.video_layout.addLayout(self.spatial_crop_layout)
+
+        self.connect_GUI()
 
         if img is not None:
             self.pixMap = cvimg2qtpixmap(img)
@@ -238,6 +268,17 @@ class CropVideoWidget(QtGui.QWidget):
         self.chunks = []
         self.markers = []
         self.items = []
+
+    def sc_changed(self):
+        self.video.crop_model = {'y1': self.sc_y1.value(),
+                                 'y2': self.sc_y2.value(),
+                                 'x1': self.sc_x1.value(),
+                                 'x2': self.sc_x2.value()}
+        frame = self.video.frame_number()
+        self.video.reset()
+        self.change_frame(frame)
+        # self.load_next_frame()
+        # self.load_previous_frame()
 
     def marker_changed(self):
         pass
@@ -298,6 +339,12 @@ class CropVideoWidget(QtGui.QWidget):
         self.toggle_borders.clicked.connect(self.set_borders_action)
         self.to_start.clicked.connect(self.go_to_start)
         self.to_stop.clicked.connect(self.go_to_stop)
+
+        # self.sc_y1.valueChanged.connect(self.sc_changed)
+        # self.sc_x1.valueChanged.connect(self.sc_changed)
+        # self.sc_y2.valueChanged.connect(self.sc_changed)
+        # self.sc_x2.valueChanged.connect(self.sc_changed)
+
 
 
     def load_next_frame(self):
