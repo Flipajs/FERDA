@@ -1,7 +1,11 @@
+import logging
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
+import sys
+
 from core.graph.region_chunk import RegionChunk
+from core.project.project import Project
 from gui.gui_utils import cvimg2qtpixmap
 
 
@@ -69,3 +73,5 @@ class TrackletViewer(QtGui.QWidget):
             self.next_b.setDisabled(False)
             if self.current == 0:
                 self.prev_b.setDisabled(True)
+
+

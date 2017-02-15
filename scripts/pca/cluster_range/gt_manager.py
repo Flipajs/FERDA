@@ -12,13 +12,15 @@ from scripts.pca.widgets import head_widget
 # FNAME = 'clusters_Cam_1_gt.p'
 from scripts.pca.widgets.tracklet_viewer import TrackletViewer
 
-FNAME = 'clusters_zebrafish_gt.p'
+FNAME = '/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_clusters.p'
 
 
 class GTManager:
-    def __init__(self, project):
+
+    def __init__(self, project, fname=FNAME):
         self.project = project
-        self.fname = os.path.join(self.project.working_directory, FNAME)
+        # self.fname = os.path.join(self.project.working_directory, FNAME)
+        self.fname = fname
         logging.info("Loading previous results from %s" % self.fname)
         if exists(self.fname):
             self.results = pickle.load(open(self.fname, 'rb'))
@@ -73,14 +75,6 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
     chunks = project.gm.chunk_list()
-    i = 0
-    print len(chunks)
-    for ch in chunks:
-        tracklet_viewer = TrackletViewer(project.img_manager, ch, project.chm, project.gm, project.rm)
-        tracklet_viewer.show()
-        i += 1
-        app.exec_()
-
 
     # data for clusters_gt/Cam1_
     # f = open('/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_cluster_tracklets')

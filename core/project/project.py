@@ -234,8 +234,6 @@ class Project:
             tmp_dict = pickle.load(f)
 
         self.__dict__.update(tmp_dict)
-        self.__dict__['video_paths'] = '/home/simon/FERDA/projects/clusters_gt/zebrafish/5Zebrafish_nocover_22min.avi'
-        self.__dict__['working_directory'] = '/home/simon/FERDA/projects/clusters_gt/zebrafish'
         a_ = path.split('/')
         self.working_directory = str(path[:-(len(a_[-1])+1)])
 
