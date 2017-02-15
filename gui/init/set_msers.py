@@ -428,47 +428,47 @@ class SetMSERs(QtGui.QWidget):
         self.mser_max_area.setMaximum(1000000000)
         # self.mser_max_area.setDecimals(6)
         self.mser_max_area.setValue(self.project.mser_parameters.max_area)
-        self.mser_max_area.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('MSER Max area', self.mser_max_area)
 
         self.mser_min_area.setMinimum(0)
         self.mser_min_area.setMaximum(1000)
         self.mser_min_area.setValue(self.project.mser_parameters.min_area)
-        self.mser_min_area.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('MSER Min area', self.mser_min_area)
 
         self.mser_min_margin.setMinimum(1)
         self.mser_min_margin.setMaximum(100)
         self.mser_min_margin.setValue(self.project.mser_parameters.min_margin)
-        self.mser_min_margin.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('MSER Min margin', self.mser_min_margin)
 
         self.mser_img_subsample.setMinimum(1.0)
         self.mser_img_subsample.setMaximum(12.0)
         self.mser_img_subsample.setSingleStep(0.1)
         self.mser_img_subsample.setValue(self.project.other_parameters.img_subsample_factor)
-        self.mser_img_subsample.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('MSER image subsample factor', self.mser_img_subsample)
 
         self.blur_kernel_size.setMinimum(0.0)
         self.blur_kernel_size.setMaximum(5.0)
         self.blur_kernel_size.setSingleStep(0.1)
         self.blur_kernel_size.setValue(self.project.mser_parameters.gaussian_kernel_std)
-        self.blur_kernel_size.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('Gblur kernel size', self.blur_kernel_size)
 
         self.intensity_threshold.setMinimum(0)
         self.intensity_threshold.setMaximum(256)
         self.intensity_threshold.setSingleStep(1)
         self.intensity_threshold.setValue(256)
-        self.intensity_threshold.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('intensity threshold (ignore pixels above)', self.intensity_threshold)
 
         self.region_min_intensity.setMaximum(256)
         self.region_min_intensity.setValue(56)
         self.region_min_intensity.setMinimum(0)
         self.region_min_intensity.setSingleStep(1)
-        self.region_min_intensity.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('region min intensity', self.region_min_intensity)
         # this line is necessary to avoid possible bugs in the future
         self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
@@ -484,22 +484,34 @@ class SetMSERs(QtGui.QWidget):
         self.form_panel.addRow('', self.random_frame)
         """
 
-        self.use_children_filter.stateChanged.connect(self.val_changed)
+
         self.use_children_filter.setChecked(self.project.mser_parameters.use_children_filter)
         self.form_panel.addRow('use children filter', self.use_children_filter)
 
-        self.use_only_red_ch.stateChanged.connect(self.val_changed)
+
         self.form_panel.addRow('use only red channel in img', self.use_only_red_ch)
         self.button_group.addButton(self.use_only_red_ch)
 
-        self.use_full_image.stateChanged.connect(self.val_changed)
+
         self.form_panel.addRow('full image', self.use_full_image)
         self.button_group.addButton(self.use_full_image)
 
-        self.use_segmentation.stateChanged.connect(self.val_changed)
+
         self.form_panel.addRow('segmentation', self.use_segmentation)
         self.button_group.addButton(self.use_segmentation)
         self.use_segmentation.setChecked(True)
+
+        self.mser_max_area.valueChanged.connect(self.val_changed)
+        self.mser_min_area.valueChanged.connect(self.val_changed)
+        self.mser_min_margin.valueChanged.connect(self.val_changed)
+        self.mser_img_subsample.valueChanged.connect(self.val_changed)
+        self.blur_kernel_size.valueChanged.connect(self.val_changed)
+        self.intensity_threshold.valueChanged.connect(self.val_changed)
+        self.region_min_intensity.valueChanged.connect(self.val_changed)
+        self.use_children_filter.stateChanged.connect(self.val_changed)
+        self.use_only_red_ch.stateChanged.connect(self.val_changed)
+        self.use_full_image.stateChanged.connect(self.val_changed)
+        self.use_segmentation.stateChanged.connect(self.val_changed)
 
     def configure_paint_panel(self):
 
