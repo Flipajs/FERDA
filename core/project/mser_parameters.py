@@ -6,10 +6,13 @@ class MSERParameters():
         self.max_area = 100000
         self.min_area = 15
         self.min_margin = 5
+        self.use_min_margin_filter = True
         self.gaussian_kernel_std = 0.0
         self.intensity_threshold = 256
         self.region_min_intensity = 256
         self.use_children_filter = True
+        self.intensity_percentile = 10
+        self.use_intensity_percentile_threshold = False
 
         if refresh:
             self.__dict__.update(refresh.__dict__)
