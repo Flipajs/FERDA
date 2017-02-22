@@ -5,13 +5,12 @@ from skimage.transform import pyramid_gaussian
 from skimage.feature import local_binary_pattern
 from skimage.color import label2rgb
 import matplotlib.pyplot as plt
-import scipy.ndimage
-import time
+import imutils
 import time
 
 
 class SegmentationHelper:
-    def __init__(self, image, num=3, scale=2):
+    def __init__(self, image, num=2, scale=2):
         self.pyramid = None
         self.images = None
         self.image = None
@@ -28,7 +27,7 @@ class SegmentationHelper:
         self.h = None
         self.w = None
         self.num = num
-        self.scale = scale
+        self.scale = 2**0.5
 
         self.rfc_n_jobs = -1
 
@@ -58,6 +57,7 @@ class SegmentationHelper:
         :return: None
         """
 
+        tt = time.time()
         t = time.time()
 
         self.image = image  # original image
@@ -66,15 +66,19 @@ class SegmentationHelper:
         # images are stored in lists with len corresponding to pyramid height
         # index 0 contains data obtained from largest image, all other indices contain data from scaled images
         #     but are expanded again to match original image size
-        self.pyramid = self.make_pyramid()  # source image in all scales
+        # self.pyramid = self.make_pyramid()  # source image in all scales
+        self.pyramid = pyramid(self.image, scale=self.scale, num=self.num)  # source image in all scales
 
+        print "set_image pyramid time: {:.4f}".format(time.time() - t)
+
+        t = time.time()
         self.images = self.get_images()  # original images from pyramid, but expanded (result looks blurry)
+        print "set_image rescale time: {:.4f}".format(time.time() - t)
 
-        self.edges = self.get_edges()  # canny edge detector, rescaled to largest image
-
-
+        t = time.time()
         self.shiftx = self.get_shift(shift_x=2, shift_y=0)  # diff from shifted images, rescaled
         self.shifty = self.get_shift(shift_x=0, shift_y=2)
+        print "set_image shift time: {:.4f}".format(time.time() - t)
 
         if not self.use_reduced_feature_set:
             self.bg = self.get_cdiff(0, 1)  # channel difs, rescaled
@@ -83,10 +87,15 @@ class SegmentationHelper:
 
             self.avg = self.get_avg()  # average value on each pixel, rescaled
 
-            # self.maxs, self.mins, self.diff = self.get_dif()
-        self.diff = self.get_dif()
+            self.edges = self.get_edges()  # canny edge detector, rescaled to largest image
 
-        print "set_image time: {:.4f}".format(time.time() - t)
+            # self.maxs, self.mins, self.diff = self.get_dif()
+
+        t = time.time()
+        self.diff = self.get_dif()
+        print "set_image diff time: {:.4f}".format(time.time() - t)
+
+        print "set_image time: {:.4f}".format(time.time() - tt)
 
     def get_data(self, i, j, X, y, classification):
         """
@@ -381,11 +390,22 @@ class SegmentationHelper:
         # result2 = []
         # result3 = []
         for i in range(0, len(self.pyramid)):
-            shift_up = get_shift_im(self.pyramid[i], shift_x=-1, shift_y=0)
-            shift_down = get_shift_im(self.pyramid[i], shift_x=1, shift_y=0)
-            shift_left = get_shift_im(self.pyramid[i], shift_x=0, shift_y=-1)
-            shift_right = get_shift_im(self.pyramid[i], shift_x=0, shift_y=1)
+            t = time.time()
             image = cv2.cvtColor(self.pyramid[i], cv2.COLOR_BGR2GRAY)
+            # shift_up = get_shift_im(self.pyramid[i], shift_x=-1, shift_y=0)
+            # shift_down = get_shift_im(self.pyramid[i], shift_x=1, shift_y=0)
+            # shift_left = get_shift_im(self.pyramid[i], shift_x=0, shift_y=-1)
+            # shift_right = get_shift_im(self.pyramid[i], shift_x=0, shift_y=1)
+
+            shift_up = np.zeros_like(image)
+            shift_up[0:-1, :] = image[1:, :].copy()
+
+            shift_down = np.zeros_like(image)
+            shift_down[1:, :] = image[0:-1, :].copy()
+            shift_left = np.zeros_like(image)
+            shift_left[:, 0:-1] = image[:, 1:].copy()
+            shift_right = np.zeros_like(image)
+            shift_right[:, 1:] = image[:, 0:-1].copy()
 
             dif_up = np.asarray(image, dtype=np.int32) - np.asarray(shift_up, dtype=np.int32)
             dif_down = np.asarray(image, dtype=np.int32) - np.asarray(shift_down, dtype=np.int32)
@@ -397,9 +417,9 @@ class SegmentationHelper:
             mins = np.amin(difs, axis=2)
 
             diff = np.asarray(maxs, dtype=np.int32) - np.asarray(mins, dtype=np.int32)
-            result1.append(self.get_scaled(maxs, i))
+            # result1.append(self.get_scaled(maxs, i))
             # result2.append(self.get_scaled(mins, i))
-            # result3.append(self.get_scaled(diff, i))
+            result1.append(self.get_scaled(diff, i))
 
         # return result1, result2, result3
         return result1
@@ -523,6 +543,28 @@ def get_lbp(image, method="uniform"):
     return lbp
 
     return label2rgb(mask, image=image, bg_label=0, alpha=0.5)
+
+# import the necessary packages
+def pyramid(image, scale=1.5, minSize=(30, 30), num=-1):
+    # yield the original image
+
+    results = [image]
+    i = 0
+    # keep looping over the pyramid
+    while True and (num < 0 or i < num):
+        i += 1
+        # compute the new dimensions of the image and resize it
+        w = int(image.shape[1] / scale)
+        image = imutils.resize(image, width=w)
+
+        # if the resized image does not meet the supplied minimum
+        # size, then stop constructing the pyramid
+        if image.shape[0] < minSize[1] or image.shape[1] < minSize[0]:
+            break
+
+        results.append(image)
+
+    return results
 
 
 if __name__ == "__main__":

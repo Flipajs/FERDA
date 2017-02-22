@@ -624,8 +624,8 @@ if __name__ == "__main__":
 
     # proj.video_crop_model = {'y1': 110, 'y2': 950, 'x1': 70, 'x2': 910}
 
-    # proj.video_paths = '/Users/flipajs/Desktop/S9T95min.avi'
-    proj.video_paths = '/Volumes/Transcend/Dropbox/FERDA/F3C51min.avi'
+    proj.video_paths = '/Users/flipajs/Desktop/S9T95min.avi'
+    # proj.video_paths = '/Volumes/Transcend/Dropbox/FERDA/F3C51min.avi'
 
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
