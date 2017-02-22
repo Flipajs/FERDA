@@ -46,7 +46,7 @@ class SetMSERs(QtGui.QWidget):
         self.im = im
         self.w, self.h, c = self.im.shape
 
-        self.use_segmentation_ = False
+        self.use_segmentation_ = True
         self.segmentation = None
 
         # Setup colors
@@ -120,6 +120,7 @@ class SetMSERs(QtGui.QWidget):
         # paint must be updated first, because segmentation results are used in msers
         self.update_paint()
         self.update_img()
+
         self.update_mser()
 
     def draw_max_area_helper(self):
@@ -216,15 +217,22 @@ class SetMSERs(QtGui.QWidget):
 
     def update_img(self):
         QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
-        self.segmentation = self.helper.predict()
 
-        # show result as overlay
-        if self.segmentation is not None:
-            im = np.asarray(self.segmentation[..., None]*self.color_prob, dtype=np.uint8)
-            qim = array2qimage(im)
-            self.painter.set_overlay(qim)
-        else:  # or hide it if input data was insufficient to create a result
+        if self.use_segmentation_:
+            t = time.time()
+            self.segmentation = self.helper.predict()
+            print "prediction takes: {:.4f}".format(time.time() - t)
+
+            # show result as overlay
+            if self.segmentation is not None:
+                im = np.asarray(self.segmentation[..., None]*self.color_prob, dtype=np.uint8)
+                qim = array2qimage(im)
+                self.painter.set_overlay(qim)
+            else:  # or hide it if input data was insufficient to create a result
+                self.painter.set_overlay(None)
+        else:
             self.painter.set_overlay(None)
+
         # stop cursor animation
         QtGui.QApplication.restoreOverrideCursor()
 
@@ -386,6 +394,8 @@ class SetMSERs(QtGui.QWidget):
         self.painter.set_overlay2_visible(self.check_mser.isChecked())
 
     def val_changed(self):
+        prev_use_s = self.use_segmentation_
+
         self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
         self.project.mser_parameters.min_area = self.mser_min_area.value()
         self.project.mser_parameters.max_area = self.mser_max_area.value()
@@ -400,8 +410,11 @@ class SetMSERs(QtGui.QWidget):
         self.project.mser_parameters.use_intensity_percentile_threshold = self.use_intensity_percentile_threshold.isChecked()
         self.project.mser_parameters.intensity_percentile = self.intensity_percentile.value()
 
-        # only mser-related parameters were changed, no need to update everything
-        self.update_mser()
+        if prev_use_s == self.use_segmentation_:
+            # only mser-related parameters were changed, no need to update everything
+            self.update_mser()
+        else:
+            self.update_all()
 
     def prepare_widgets(self):
         self.use_intensity_percentile_threshold = QtGui.QCheckBox()
@@ -510,11 +523,10 @@ class SetMSERs(QtGui.QWidget):
         self.button_group.addButton(self.use_only_red_ch)
 
 
-        self.form_panel.addRow('full image', self.use_full_image)
+        self.form_panel.addRow('work on intensity', self.use_full_image)
         self.button_group.addButton(self.use_full_image)
 
-
-        self.form_panel.addRow('segmentation', self.use_segmentation)
+        self.form_panel.addRow('work on prob. map', self.use_segmentation)
         self.button_group.addButton(self.use_segmentation)
         self.use_segmentation.setChecked(True)
 
@@ -612,7 +624,9 @@ if __name__ == "__main__":
 
     # proj.video_crop_model = {'y1': 110, 'y2': 950, 'x1': 70, 'x2': 910}
 
-    proj.video_paths = '/Users/flipajs/Desktop/S9T95min.avi'
+    # proj.video_paths = '/Users/flipajs/Desktop/S9T95min.avi'
+    proj.video_paths = '/Volumes/Transcend/Dropbox/FERDA/F3C51min.avi'
+
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c2.avi'

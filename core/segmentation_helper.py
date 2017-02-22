@@ -7,6 +7,7 @@ from skimage.color import label2rgb
 import matplotlib.pyplot as plt
 import scipy.ndimage
 import time
+import time
 
 
 class SegmentationHelper:
@@ -28,6 +29,11 @@ class SegmentationHelper:
         self.w = None
         self.num = num
         self.scale = scale
+
+        self.rfc_n_jobs = -1
+
+        self.use_reduced_feature_set = True
+        self.num_features = 6
 
         # these arrays contain learning data from previous frames
         # after confirming selection on a frame, temporary data is copied here
@@ -51,6 +57,9 @@ class SegmentationHelper:
         :param image: new image
         :return: None
         """
+
+        t = time.time()
+
         self.image = image  # original image
         self.h, self.w, c = self.image.shape
 
@@ -63,16 +72,21 @@ class SegmentationHelper:
 
         self.edges = self.get_edges()  # canny edge detector, rescaled to largest image
 
+
         self.shiftx = self.get_shift(shift_x=2, shift_y=0)  # diff from shifted images, rescaled
         self.shifty = self.get_shift(shift_x=0, shift_y=2)
 
-        self.avg = self.get_avg()  # average value on each pixel, rescaled
+        if not self.use_reduced_feature_set:
+            self.bg = self.get_cdiff(0, 1)  # channel difs, rescaled
+            self.gr = self.get_cdiff(1, 2)
+            self.rb = self.get_cdiff(2, 0)
 
-        self.maxs, self.mins, self.diff = self.get_dif()
+            self.avg = self.get_avg()  # average value on each pixel, rescaled
 
-        self.bg = self.get_cdiff(0, 1)  # channel difs, rescaled
-        self.gr = self.get_cdiff(1, 2)
-        self.rb = self.get_cdiff(2, 0)
+            # self.maxs, self.mins, self.diff = self.get_dif()
+        self.diff = self.get_dif()
+
+        print "set_image time: {:.4f}".format(time.time() - t)
 
     def get_data(self, i, j, X, y, classification):
         """
@@ -84,19 +98,35 @@ class SegmentationHelper:
         :param classification: class of the given pixel
         :return:
         """
+
         x = []
-        for k in range(0, self.num):
-            b, g, r = self.images[k][i][j]
-            sx = self.shiftx[k][i][j]
-            sy = self.shifty[k][i][j]
-            a = self.avg[k][i][j]
-            c = self.bg[k][i][j]
-            d = self.gr[k][i][j]
-            e = self.rb[k][i][j]
-            f = self.maxs[k][i][j]
-            h = self.mins[k][i][j]
-            k = self.diff[k][i][j]
-            x.extend([b, g, r, a, sx, sy, c, d, e, f, h, k])
+        if not self.use_reduced_feature_set:
+            for k in range(0, self.num):
+                b, g, r = self.images[k][i][j]
+                sx = self.shiftx[k][i][j]
+                sy = self.shifty[k][i][j]
+                a = self.avg[k][i][j]
+                c = self.bg[k][i][j]
+                d = self.gr[k][i][j]
+                e = self.rb[k][i][j]
+                f = self.maxs[k][i][j]
+                h = self.mins[k][i][j]
+                k = self.diff[k][i][j]
+                x.extend([b, g, r, a, sx, sy, c, d, e, f, h, k])
+        else:
+            for k in range(0, self.num):
+                b, g, r = self.images[k][i][j]
+                sx = self.shiftx[k][i][j]
+                sy = self.shifty[k][i][j]
+                # a = self.avg[k][i][j]
+                # c = self.bg[k][i][j]
+                # d = self.gr[k][i][j]
+                # e = self.rb[k][i][j]
+                # f = self.maxs[k][i][j]
+                # h = self.mins[k][i][j]
+                k = self.diff[k][i][j]
+                x.extend([b, g, r, sx, sy, k])
+
         X.append(x)
         y.append(classification)
 
@@ -129,7 +159,7 @@ class SegmentationHelper:
         print "Retrieving data takes %f" % (time.time() - start)
 
         # create the classifier
-        self.rfc = RandomForestClassifier()
+        self.rfc = RandomForestClassifier(n_jobs=self.rfc_n_jobs)
 
         # to train on all data (current and all previous frames), join the arrays together
         # class variables are not affected here
@@ -147,7 +177,7 @@ class SegmentationHelper:
         # create new classifier with less features, it will be faster
         start = time.time()
         self.unused = find_unused_features(self.rfc)
-        self.rfc = get_filtered_rfc(self.unused, X, y)
+        self.rfc = get_filtered_rfc(self.unused, X, y, self.rfc_n_jobs)
         print "RFC filtering takes   %f. Using %d out of %d features." % \
               (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
 
@@ -162,15 +192,17 @@ class SegmentationHelper:
         # reshape the image so it contains 12*n-tuples, each descripting a features of a single pixel
         #     on all layers in the pyramid
         h, w, c = self.image.shape
-        data.shape = ((h * w, 12 * self.num))
+        data.shape = ((h * w, self.num_features * self.num))
+
+        print self.unused, self.rfc.feature_importances_
 
         # remove features that were found unnecessary
         filtered = get_filtered_model(self.unused, data)
 
         # predict result on current image data
-        # start = time.time()
+        start = time.time()
         mask1 = self.rfc.predict_proba(filtered)
-        # print "RFC predict takes     %f" % (time.time() - start)
+        print "RFC predict takes     %f" % (time.time() - start)
 
         # reshape mask to be a grid, not a list
         mask1 = mask1[:, 1]
@@ -183,7 +215,7 @@ class SegmentationHelper:
         """
 
         # create the classifier
-        self.rfc = RandomForestClassifier()
+        self.rfc = RandomForestClassifier(n_jobs=self.rfc_n_jobs)
 
         # train the classifier
         start = time.time()
@@ -206,19 +238,36 @@ class SegmentationHelper:
         """
         result = []
         h, w, c = self.pyramid[0].shape
-        for i in range(0, self.num):
-            result.append(self.images[i][:, :, 2].reshape((h * w, 1)))
-            result.append(self.images[i][:, :, 1].reshape((h * w, 1)))
-            result.append(self.images[i][:, :, 0].reshape((h * w, 1)))
-            result.append(self.avg[i].reshape((h * w, 1)))
-            result.append(self.shiftx[i].reshape((h * w, 1)))
-            result.append(self.shifty[i].reshape((h * w, 1)))
-            result.append(self.bg[i].reshape((h * w, 1)))
-            result.append(self.gr[i].reshape((h * w, 1)))
-            result.append(self.rb[i].reshape((h * w, 1)))
-            result.append(self.maxs[i].reshape((h * w, 1)))
-            result.append(self.mins[i].reshape((h * w, 1)))
-            result.append(self.diff[i].reshape((h * w, 1)))
+
+        if not self.use_reduced_feature_set:
+            for i in range(0, self.num):
+                result.append(self.images[i][:, :, 2].reshape((h * w, 1)))
+                result.append(self.images[i][:, :, 1].reshape((h * w, 1)))
+                result.append(self.images[i][:, :, 0].reshape((h * w, 1)))
+                result.append(self.avg[i].reshape((h * w, 1)))
+                result.append(self.shiftx[i].reshape((h * w, 1)))
+                result.append(self.shifty[i].reshape((h * w, 1)))
+                result.append(self.bg[i].reshape((h * w, 1)))
+                result.append(self.gr[i].reshape((h * w, 1)))
+                result.append(self.rb[i].reshape((h * w, 1)))
+                result.append(self.maxs[i].reshape((h * w, 1)))
+                result.append(self.mins[i].reshape((h * w, 1)))
+                result.append(self.diff[i].reshape((h * w, 1)))
+        else:
+            for i in range(0, self.num):
+                result.append(self.images[i][:, :, 2].reshape((h * w, 1)))
+                result.append(self.images[i][:, :, 1].reshape((h * w, 1)))
+                result.append(self.images[i][:, :, 0].reshape((h * w, 1)))
+                # result.append(self.avg[i].reshape((h * w, 1)))
+                result.append(self.shiftx[i].reshape((h * w, 1)))
+                result.append(self.shifty[i].reshape((h * w, 1)))
+                # result.append(self.bg[i].reshape((h * w, 1)))
+                # result.append(self.gr[i].reshape((h * w, 1)))
+                # result.append(self.rb[i].reshape((h * w, 1)))
+                # result.append(self.maxs[i].reshape((h * w, 1)))
+                # result.append(self.mins[i].reshape((h * w, 1)))
+                result.append(self.diff[i].reshape((h * w, 1)))
+
         return result
 
     def update_xy(self):
@@ -329,8 +378,8 @@ class SegmentationHelper:
         :return: 3 pyramids, each with one feature (max, min, diff)
         """
         result1 = []
-        result2 = []
-        result3 = []
+        # result2 = []
+        # result3 = []
         for i in range(0, len(self.pyramid)):
             shift_up = get_shift_im(self.pyramid[i], shift_x=-1, shift_y=0)
             shift_down = get_shift_im(self.pyramid[i], shift_x=1, shift_y=0)
@@ -349,10 +398,11 @@ class SegmentationHelper:
 
             diff = np.asarray(maxs, dtype=np.int32) - np.asarray(mins, dtype=np.int32)
             result1.append(self.get_scaled(maxs, i))
-            result2.append(self.get_scaled(mins, i))
-            result3.append(self.get_scaled(diff, i))
+            # result2.append(self.get_scaled(mins, i))
+            # result3.append(self.get_scaled(diff, i))
 
-        return result1, result2, result3
+        # return result1, result2, result3
+        return result1
 
     def get_cdiff(self, c1, c2):
         """
@@ -403,7 +453,7 @@ def get_shift_im(im, shift_x=2, shift_y=2):
     return img2
 
 
-def find_unused_features(rfc, threshold=0.001):
+def find_unused_features(rfc, threshold=0.01):
     """
     Find indexes of insignificant features
     :param rfc: trained random forest classifier
@@ -423,7 +473,7 @@ def get_filtered_model(zeros, data):
     return np.delete(data, zeros, axis=1)
 
 
-def get_filtered_rfc(zeros, X, y):
+def get_filtered_rfc(zeros, X, y, n_jobs):
     """
     Trains a new RFC with less features
     :param zeros: features to be removed from rfc
@@ -435,7 +485,7 @@ def get_filtered_rfc(zeros, X, y):
     for tup in X:
         newtup = np.delete(tup, zeros)
         newX.append(newtup)
-    rfc = RandomForestClassifier()
+    rfc = RandomForestClassifier(n_jobs=n_jobs)
     return rfc.fit(newX, y)
 
 
