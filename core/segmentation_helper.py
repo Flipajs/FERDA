@@ -29,7 +29,8 @@ class SegmentationHelper:
         self.num = num
         self.scale = 2**0.5
 
-        self.rfc_n_jobs = -1
+        self.rfc_n_jobs = 4
+        self.rfc_n_estimators = 10
 
         self.use_reduced_feature_set = True
         self.num_features = 6
@@ -168,7 +169,7 @@ class SegmentationHelper:
         print "Retrieving data takes %f" % (time.time() - start)
 
         # create the classifier
-        self.rfc = RandomForestClassifier(n_jobs=self.rfc_n_jobs)
+        self.rfc = RandomForestClassifier(n_estimators=self.rfc_n_estimators, n_jobs=self.rfc_n_jobs)
 
         # to train on all data (current and all previous frames), join the arrays together
         # class variables are not affected here
@@ -186,31 +187,39 @@ class SegmentationHelper:
         # create new classifier with less features, it will be faster
         start = time.time()
         self.unused = find_unused_features(self.rfc)
-        self.rfc = get_filtered_rfc(self.unused, X, y, self.rfc_n_jobs)
+        self.rfc = get_filtered_rfc(self.unused, X, y, self.rfc_n_estimators, self.rfc_n_jobs)
         print "RFC filtering takes   %f. Using %d out of %d features." % \
               (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
 
     def predict(self):
         if self.rfc is None:
             return
+
+        t = time.time()
         # get all feature data from image and create one large array
         layers = self.get_features()
+
+        for id_ in sorted(self.unused[0], key=lambda x: -x):
+            layers.pop(id_)
+
         for i in range(0, self.num):
             data = np.dstack((layers))
 
         # reshape the image so it contains 12*n-tuples, each descripting a features of a single pixel
         #     on all layers in the pyramid
         h, w, c = self.image.shape
-        data.shape = ((h * w, self.num_features * self.num))
+        data.shape = ((h * w, len(layers)))
 
-        print self.unused, self.rfc.feature_importances_
+        # print self.unused, self.rfc.feature_importances_
 
         # remove features that were found unnecessary
-        filtered = get_filtered_model(self.unused, data)
+        # filtered = get_filtered_model(self.unused, data)
+
+        print "data preparation time: ", time.time() - t
 
         # predict result on current image data
         start = time.time()
-        mask1 = self.rfc.predict_proba(filtered)
+        mask1 = self.rfc.predict_proba(data)
         print "RFC predict takes     %f" % (time.time() - start)
 
         # reshape mask to be a grid, not a list
@@ -224,7 +233,7 @@ class SegmentationHelper:
         """
 
         # create the classifier
-        self.rfc = RandomForestClassifier(n_jobs=self.rfc_n_jobs)
+        self.rfc = RandomForestClassifier(n_estimators=self.rfc_n_estimators, n_jobs=self.rfc_n_jobs)
 
         # train the classifier
         start = time.time()
@@ -493,7 +502,7 @@ def get_filtered_model(zeros, data):
     return np.delete(data, zeros, axis=1)
 
 
-def get_filtered_rfc(zeros, X, y, n_jobs):
+def get_filtered_rfc(zeros, X, y, n_estimators, n_jobs):
     """
     Trains a new RFC with less features
     :param zeros: features to be removed from rfc
@@ -505,7 +514,7 @@ def get_filtered_rfc(zeros, X, y, n_jobs):
     for tup in X:
         newtup = np.delete(tup, zeros)
         newX.append(newtup)
-    rfc = RandomForestClassifier(n_jobs=n_jobs)
+    rfc = RandomForestClassifier(n_estimators=n_estimators, n_jobs=n_jobs)
     return rfc.fit(newX, y)
 
 

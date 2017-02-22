@@ -20,6 +20,7 @@ from core.project.project import Project
 from gui.init.crop_video_widget import CropVideoWidget
 from functools import partial
 from core.settings import Settings as S_
+import cPickle as pickle
 
 class NewProjectWidget(QtGui.QWidget):
     def __init__(self, finish_callback):
@@ -113,6 +114,7 @@ class NewProjectWidget(QtGui.QWidget):
         self.create_project_button.setFocus()
 
         self.project = Project()
+        self.project.working_directory = '/Users/flipajs/Documents/wd/FERDA/test/'
         self.__go_to_3()
 
     def __go_to_3(self):
@@ -167,31 +169,7 @@ class NewProjectWidget(QtGui.QWidget):
         tentative_name = working_directory.split('/')[-1]
         self.project_name.setText(tentative_name)
 
-        # self.bg_computation = MaxIntensity(self.project)
-        # self.connect(self.bg_computation, QtCore.SIGNAL("update(int)"), self.update_progress_label)
-        # self.bg_computation.start()
         self.activateWindow()
-
-        # vid = utils.video_manager.get_auto_video_manager(self.project)
-        # im = vid.random_frame()
-        # h, w, _ = im.shape
-        # im = np.asarray(skimage.transform.resize(im, (100, 100))*255, dtype=np.uint8)
-        #
-        # img_label = QtGui.QLabel()
-        # img_label.setPixmap(utils.img.get_pixmap_from_np_bgr(im))
-        # layout = QtGui.QLabel('preview: ')
-        # self.video_preview_layout.addRow(layout, img_label)
-        # layout = QtGui.QLabel('#frames: ')
-        # value_layout = QtGui.QLabel(str(vid.total_frame_count()))
-        # self.video_preview_layout.addRow(layout, value_layout)
-        #
-        # layout = QtGui.QLabel('resolution: ')
-        # value_layout = QtGui.QLabel(str(w)+'x'+str(h)+'px')
-        # self.video_preview_layout.addRow(layout, value_layout)
-        # self.video_preview_layout.addRow(None, self.bg_progress_bar)
-        # layout = QtGui.QLabel('Video pre-processing in progress running in background... But don\'t worry, you can continue with your project creation and initialization meanwhile it will be finished.')
-        # layout.setWordWrap(True)
-        # self.video_preview_layout.addRow(None, layout)
 
         self.project.working_directory = working_directory
 
@@ -251,16 +229,31 @@ class NewProjectWidget(QtGui.QWidget):
         if self.finish_callback:
             self.finish_callback('project_created', self.project)
 
-    def set_msers(self):
-        if self.project.video_paths:
-            self.d_ = QtGui.QDialog()
-            self.d_.setLayout(QtGui.QVBoxLayout())
-            sm = SetMSERs(self.project)
-            self.d_.layout().addWidget(sm)
-            self.d_.showMaximized()
-            self.d_.exec_()
-        else:
-            QtGui.QMessageBox.warning(self, "Warning", "Choose video path first", QtGui.QMessageBox.Ok)
+    # def set_msers(self):
+        # if self.project.video_paths:
+        #     self.d_ = QtGui.QDialog()
+        #     self.d_.setLayout(QtGui.QVBoxLayout())
+        #     sm = SetMSERs(self.project)
+        #     self.d_.layout().addWidget(sm)
+        #     self.d_.showMaximized()
+        #     self.d_.exec_()
+        #
+        #     button = QtGui.QPushButton('confirm and continue')
+        #     button.clicked.connect(self.segmentation_confirmed)
+        #     sm.left_panel.layout().addWidget(self.button_done)
+        # else:
+        #     QtGui.QMessageBox.warning(self, "Warning", "Choose video path first", QtGui.QMessageBox.Ok)
+
+    def segmentation_confirmed(self):
+        print "segmentation_confirmed"
+
+        with open(self.project.working_directory+'/segmentation_model.pkl', 'wb') as f:
+            pickle.dump(self.step4_w.helper, f, -1)
+
+        self.project.segmentation_model = self.step4_w.helper
+
+        self.step4_w.hide()
+        pass
 
     def video_boundaries_confirmed(self):
         self.project.video_start_t = self.step2_w.start_frame + 1
@@ -305,6 +298,9 @@ class NewProjectWidget(QtGui.QWidget):
         from gui.init.set_msers import SetMSERs
         self.step3_w.hide()
         self.step4_w = SetMSERs(self.project)
+        button = QtGui.QPushButton('confirm and continue')
+        button.clicked.connect(self.segmentation_confirmed)
+        self.step4_w.left_panel.layout().addWidget(button)
 
         self.left_vbox.addWidget(self.step4_w)
 

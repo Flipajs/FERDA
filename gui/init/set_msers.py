@@ -445,14 +445,14 @@ class SetMSERs(QtGui.QWidget):
         self.button_next = QtGui.QPushButton("Next frame")
         self.button_prev = QtGui.QPushButton("Prev frame")
         self.button_rand = QtGui.QPushButton("Random frame")
-        self.button_done = QtGui.QPushButton("Done")
+        # self.button_done = QtGui.QPushButton("Done")
 
     def configure_form_panel(self):
         self.mser_max_area.setMinimum(100)
         self.mser_max_area.setSingleStep(1)
         self.mser_max_area.setMaximum(1000000000)
         # self.mser_max_area.setValue(self.project.mser_parameters.max_area)
-        self.mser_max_area.setValue(10000)
+        self.mser_max_area.setValue(50000)
 
         self.form_panel.addRow('MSER Max area', self.mser_max_area)
 
@@ -523,7 +523,7 @@ class SetMSERs(QtGui.QWidget):
         self.button_group.addButton(self.use_only_red_ch)
 
 
-        self.form_panel.addRow('work on intensity', self.use_full_image)
+        self.form_panel.addRow('work on intensity only', self.use_full_image)
         self.button_group.addButton(self.use_full_image)
 
         self.form_panel.addRow('work on prob. map', self.use_segmentation)
@@ -609,8 +609,8 @@ class SetMSERs(QtGui.QWidget):
         self.button_rand.clicked.connect(self.show_random_frame)
         self.left_panel.layout().addWidget(self.button_rand)
 
-        self.button_done.clicked.connect(self.done)
-        self.left_panel.layout().addWidget(self.button_done)
+        # self.button_done.clicked.connect(self.done)
+        # self.left_panel.layout().addWidget(self.button_done)
 
 
 if __name__ == "__main__":
