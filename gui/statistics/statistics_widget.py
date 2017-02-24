@@ -235,7 +235,7 @@ class StatisticsWidget(QtGui.QWidget):
                 with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
                     print "saving ", str(file_num)
                     print(str(chunNum)+"\n")
-                    sio.savemat(f, {'FERDA': obj_arr})
+                    sio.savemat(f, {'FERDA': obj_arr}, do_compression=True)
 
                 curr_size = 0
 
@@ -252,7 +252,7 @@ class StatisticsWidget(QtGui.QWidget):
 
         # save the rest
         with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
-            sio.savemat(f, {'FERDA': obj_arr})
+            sio.savemat(f, {'FERDA': obj_arr}, do_compression=True)
 
         print "chunks regions t:", time.time() - t2
 
@@ -279,7 +279,7 @@ class StatisticsWidget(QtGui.QWidget):
 
                 arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
 
-            sio.savemat(f, {'arena': arena})
+            sio.savemat(f, {'arena': arena}, do_compression=True)
 
         print "save t:", time.time()-t3
 
