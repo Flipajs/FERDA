@@ -645,21 +645,21 @@ if __name__ == '__main__':
     from thesis.thesis_utils import load_all_projects
     import matplotlib.pyplot as plt
 
-    # p = Project()
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    p = Project()
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     # # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
-    # p.load_semistate(wd, state='eps_edge_filter',
-    #                  one_vertex_chunk=True, update_t_nodes=True)
+    p.load_semistate(wd, state='eps_edge_filter',
+                     one_vertex_chunk=True, update_t_nodes=True)
 
-    ps = load_all_projects(semistate='eps_edge_filter', add_single_vertices=True)
+    # ps = load_all_projects(semistate='eps_edge_filter', add_single_vertices=True)
 
     #
     if True:
-        for pname in project_paths.iterkeys():
-            p = ps[pname]
+        # for pname in project_paths.iterkeys():
+        #     p = ps[pname]
             ex = ClusteringTool(p)
             ex.raise_()
             ex.activateWindow()
@@ -673,11 +673,11 @@ if __name__ == '__main__':
                 ex.f_ch[i].setChecked(True)
             ex.redraw_ = True
 
-            # ex.human_iloop_classification(sort=True)
+            ex.human_iloop_classification(sort=True)
             # n_correct, n_mistakes = ex.eval(training_n=100)
 
             # ex.classify_project(p, train_n=50, semistate='tracklets_s_classified_gt', gt_classify=True)
-            ex.gt_classify_project(p)
+            # ex.gt_classify_project(p)
 
     if False:
         dlist = {}

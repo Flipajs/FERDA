@@ -77,6 +77,10 @@ class SegmentationHelper:
         print "set_image rescale time: {:.4f}".format(time.time() - t)
 
         t = time.time()
+        # TODO: FASTER SHIFT USING COPY
+        # self.shiftx = np.zeros_like(imageY)
+        # shift_up[0:-1, :] = image[1:, :].copy()
+
         self.shiftx = self.get_shift(shift_x=2, shift_y=0)  # diff from shifted images, rescaled
         self.shifty = self.get_shift(shift_x=0, shift_y=2)
         print "set_image shift time: {:.4f}".format(time.time() - t)
@@ -135,7 +139,7 @@ class SegmentationHelper:
                 # f = self.maxs[k][i][j]
                 # h = self.mins[k][i][j]
                 k = self.diff[k][i][j]
-                x.extend([b, g, r, sx, sy, k])
+                x.extend([r, sx, sy, k])
 
         X.append(x)
         y.append(classification)
@@ -274,8 +278,8 @@ class SegmentationHelper:
         else:
             for i in range(0, self.num):
                 result.append(self.images[i][:, :, 2].reshape((h * w, 1)))
-                result.append(self.images[i][:, :, 1].reshape((h * w, 1)))
-                result.append(self.images[i][:, :, 0].reshape((h * w, 1)))
+                # result.append(self.images[i][:, :, 1].reshape((h * w, 1)))
+                # result.append(self.images[i][:, :, 0].reshape((h * w, 1)))
                 # result.append(self.avg[i].reshape((h * w, 1)))
                 result.append(self.shiftx[i].reshape((h * w, 1)))
                 result.append(self.shifty[i].reshape((h * w, 1)))
