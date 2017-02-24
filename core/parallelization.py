@@ -25,8 +25,26 @@ import time
 import cv2
 from core.region.mser_operations import children_filter
 
+def prepare_img(proj, img):
+    if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
+        crop = prepare_for_segmentation(img, proj, False)
+        proj.segmentation_model.set_image(crop)
+        seg = proj.segmentation_model.predict()
+
+        # make hard threshold
+        if False:
+            result = seg < 0.5
+            result = np.asarray(result, dtype=np.uint8) * 255
+        else:
+            result = np.asarray((-seg * 255) + 255, dtype=np.uint8)
+    else:
+        result = prepare_for_segmentation(img, proj)
+
+    return result
+
 
 if __name__ == '__main__':
+    print sys.argv
     working_dir = sys.argv[1]
     proj_name = sys.argv[2]
     id = int(sys.argv[3])
@@ -92,7 +110,7 @@ if __name__ == '__main__':
     if img is None:
         raise Exception("img is None, there is something wrong with frame: "+str(id*frames_in_row))
 
-    img_gray = prepare_for_segmentation(img, proj)
+    img_gray = prepare_img(proj, img)
 
     msers_t = 0
     solver_t = 0
@@ -105,79 +123,6 @@ if __name__ == '__main__':
 
         s = time.time()
         msers = ferda_filtered_msers(img_gray, proj, frame)
-
-        if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
-            new_msers = []
-            border = 10
-            border2 = 5
-
-            new_im = np.ones((img.shape[0], img.shape[1]), dtype=np.uint8) * 255
-
-            for m in msers:
-                roi = m.roi()
-                tl = roi.top_left_corner()
-                br = roi.bottom_right_corner()
-
-                h1 = max(0, tl[0]-border)
-                h2 = min(img.shape[0]-1, br[0] + border)
-
-                w1 = max(0, tl[1]-border)
-                w2 = min(img.shape[1]-1, br[1] + border)
-
-                crop = img[h1:h2, w1:w2, :].copy()
-
-                # add border2 (to prevent segmentation artefacts
-                crop = cv2.copyMakeBorder(crop, border2, border2, border2, border2, cv2.BORDER_REPLICATE)
-
-                proj.segmentation_model.set_image(crop)
-                seg = proj.segmentation_model.predict()
-
-                # remove border2
-                seg = seg[border2:-border2, border2:-border2].copy()
-
-                jj += 1
-
-                # make hard threshold
-                if True:
-                    seg_img = seg < 0.5
-                    seg_img = np.asarray(seg_img, dtype=np.uint8) * 255
-                else:
-                    seg_img = np.asarray((-seg*255)+255, dtype=np.uint8)
-
-                new_im[h1:h2, w1:w2] = seg_img.copy()
-
-                # from scripts.gcut.segmentation import Segmentation
-                # gcut_segmentation = Segmentation(seg_img)
-                # mask = gcut_segmentation.segmentation()
-                # mask = np.asarray(np.logical_not(mask), dtype=np.uint8) * 255
-
-                # cv2.imwrite('/Users/flipajs/Desktop/temp/rf/' + str(jj) + '_i.png', crop_[border2:-border2, border2:-border2, :].copy())
-                # cv2.imwrite('/Users/flipajs/Desktop/temp/rf/' + str(jj) + '.png', seg_img)
-
-            #     msers_ = ferda_filtered_msers(mask, proj, frame)
-            #     for m in msers_:
-            #         # update offsets
-            #         offset = np.array([h1, w1])
-            #         for it in m.pts_rle_:
-            #             it['line'] += h1
-            #             it['col1'] += w1
-            #             it['col2'] += w1
-            #
-            #         m.pts_ += offset
-            #         m.pts_rle_
-            #         m.contour_ += offset
-            #         m.centroid_ += offset
-            #         if hasattr(m, 'roi_') and m.roi_ is not None:
-            #             m.roi_.y_ += h1
-            #             m.roi_.x_ += w1
-            #             m.roi_.y_max_ += h1
-            #             m.roi_.x_max_ += w1
-            #         new_msers.append(m)
-            #
-            # ids = children_filter(new_msers, range(len(new_msers)), tolerance=5)
-            # msers = [new_msers[id_] for id_ in ids]
-
-        msers = ferda_filtered_msers(new_im, proj, frame)
 
         if proj.colormarks_model:
             proj.colormarks_model.assign_colormarks(proj, msers)
@@ -193,7 +138,7 @@ if __name__ == '__main__':
             if img is None:
                 raise Exception("img is None, there is something wrong with frame: " + str(frame))
 
-        img_gray = prepare_for_segmentation(img, proj)
+        img_gray = prepare_img(proj, img)
 
         vid_t += time.time() - s
 
@@ -206,15 +151,15 @@ if __name__ == '__main__':
     #     solver.detect_split_merge_cases()
 
     s = time.time()
-    # print "#Edges BEFORE: ", proj.gm.g.num_edges()
-    # while True:
-    #     num_changed1 = solver.simplify(rules=[solver.update_costs])
-    #     num_changed2 = solver.simplify(rules=[solver.adaptive_threshold])
-    #
-    #     if num_changed1+num_changed2 == 0:
-    #         break
-    #
-    # print "#Edges AFTER: ", proj.gm.g.num_edges()
+    print "#Edges BEFORE: ", proj.gm.g.num_edges()
+    while True:
+        num_changed1 = solver.simplify(rules=[solver.update_costs])
+        num_changed2 = solver.simplify(rules=[solver.adaptive_threshold])
+
+        if num_changed1+num_changed2 == 0:
+            break
+
+    print "#Edges AFTER: ", proj.gm.g.num_edges()
 
     solver_t += time.time() - s
 

@@ -3,8 +3,8 @@ __author__ = 'flipajs'
 
 class MSERParameters():
     def __init__(self, refresh=None):
-        self.max_area = 100000
-        self.min_area = 15
+        self.max_area = 50000
+        self.min_area = 50
         self.min_margin = 5
         self.use_min_margin_filter = True
         self.gaussian_kernel_std = 0.0

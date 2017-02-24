@@ -14,7 +14,8 @@ from itertools import izip
 import matplotlib.pyplot as plt
 import time
 from math import ceil
-import img_features
+# TODO: UNCOMMENT THIS AND PUBLISH...
+# import img_features
 from utils.img import img_saturation_coef
 
 

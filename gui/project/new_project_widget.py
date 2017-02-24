@@ -38,6 +38,7 @@ class NewProjectWidget(QtGui.QWidget):
         self.step2_w = QtGui.QWidget()
         self.step3_w = QtGui.QWidget()
         self.step4_w = QtGui.QWidget()
+        self.step5_w = QtGui.QWidget()
 
         self.form_layout = QtGui.QFormLayout()
         self.step1_w.setLayout(self.form_layout)
@@ -60,46 +61,21 @@ class NewProjectWidget(QtGui.QWidget):
         self.project_description = QtGui.QPlainTextEdit(self)
         self.form_layout.addRow(label, self.project_description)
 
-        # self.set_msers_button = QtGui.QPushButton('Set MSERs')
-        # self.set_msers_button.clicked.connect(self.set_msers)
-        # self.form_layout.addRow('', self.set_msers_button)
-
         self.left_vbox = QtGui.QVBoxLayout()
-        # self.import_templates = QtGui.QPushButton('Import templates')
-        # self.import_templates.clicked.connect(self.import_templates_clicked)
 
         self.import_widget = ImportWidget()
         self.import_widget.import_button.clicked.connect(self.finish_import)
         self.import_widget.hide()
         self.import_widget.setDisabled(True)
 
-        # self.certainty_slider = QtGui.QDoubleSpinBox()
-        # self.certainty_slider.setMinimum(0)
-        # self.certainty_slider.setMaximum(1)
-        # self.certainty_slider.setSingleStep(0.01)
-        # self.certainty_slider.setValue(0.5)
-        # self.form_layout.addRow('min certainty: ', self.certainty_slider)
-        # self.form_layout.addRow(QtGui.QLabel('0 means try to solve everything...'))
-
-        # self.max_edge_distance = QtGui.QDoubleSpinBox()
-        # self.max_edge_distance.setMinimum(0.1)
-        # self.max_edge_distance.setMaximum(10)
-        # self.max_edge_distance.setValue(2.5)
-        # self.max_edge_distance.setSingleStep(0.05)
-        # self.form_layout.addRow('max edge distance (in ant body length)', self.max_edge_distance)
-
-        # self.use_colormarks_ch = gui.gui_utils.get_checkbox('Use colormarks', 'colormarks_use')
-        # self.form_layout.addRow('use colormarks', self.use_colormarks_ch)
-
         self.create_project_button = QtGui.QPushButton('continue', self)
-        self.create_project_button.clicked.connect(self.go_to_video_config)
+        self.create_project_button.clicked.connect(self.create_project)
 
         self.hbox.addLayout(self.left_vbox)
 
         self.left_vbox.addWidget(self.step1_w)
 
         self.left_vbox.addWidget(self.import_widget)
-        # self.left_vbox.addWidget(self.import_templates)
         self.step1_w.layout().addWidget(self.create_project_button)
 
         self.bg_progress_bar = QtGui.QProgressBar()
@@ -114,11 +90,11 @@ class NewProjectWidget(QtGui.QWidget):
         self.create_project_button.setFocus()
 
         self.project = Project()
-        self.project.working_directory = '/Users/flipajs/Documents/wd/FERDA/test/'
-        self.__go_to_3()
+        # self.project.working_directory = '/Users/flipajs/Documents/wd/FERDA/test/'
+        # self.__go_to_3()
 
     def __go_to_3(self):
-        self.project.video_paths = ['/Users/flipajs/Dropbox/FERDA/Cam1_clip.avi']
+        self.project.video_paths = ['/Users/flipajs/Dropbox/FERDA/S9T95min.avi']
 
         setattr(self.step2_w, 'start_frame', 1)
         setattr(self.step2_w, 'end_frame', 4000)
@@ -226,23 +202,10 @@ class NewProjectWidget(QtGui.QWidget):
         from utils.img_manager import ImgManager
         self.project.img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
 
-        if self.finish_callback:
-            self.finish_callback('project_created', self.project)
+        # if self.finish_callback:
+        #     self.finish_callback('project_created', self.project)
 
-    # def set_msers(self):
-        # if self.project.video_paths:
-        #     self.d_ = QtGui.QDialog()
-        #     self.d_.setLayout(QtGui.QVBoxLayout())
-        #     sm = SetMSERs(self.project)
-        #     self.d_.layout().addWidget(sm)
-        #     self.d_.showMaximized()
-        #     self.d_.exec_()
-        #
-        #     button = QtGui.QPushButton('confirm and continue')
-        #     button.clicked.connect(self.segmentation_confirmed)
-        #     sm.left_panel.layout().addWidget(self.button_done)
-        # else:
-        #     QtGui.QMessageBox.warning(self, "Warning", "Choose video path first", QtGui.QMessageBox.Ok)
+        self.go_to_video_config()
 
     def segmentation_confirmed(self):
         print "segmentation_confirmed"
@@ -253,7 +216,46 @@ class NewProjectWidget(QtGui.QWidget):
         self.project.segmentation_model = self.step4_w.helper
 
         self.step4_w.hide()
-        pass
+
+        w = self.step5_w
+        w.setLayout(QtGui.QHBoxLayout())
+
+        # TODO: clustering_tool
+
+        button = QtGui.QPushButton('confirm and continue')
+        button.clicked.connect(self.finish_initialisation)
+        w.layout().addWidget(button)
+
+        self.left_vbox.addWidget(self.step5_w)
+        self.finish_initialisation()
+
+    def finish_initialisation(self):
+        from core.region.region_manager import RegionManager
+        from core.graph.graph_manager import GraphManager
+        from core.graph.solver import Solver
+        from core.graph.chunk_manager import ChunkManager
+        from core.classes_stats import dummy_classes_stats
+        from core.animal import Animal
+
+        self.project.stats = dummy_classes_stats()
+
+        self.project.rm = RegionManager(self.project.working_directory)
+        self.project.solver = Solver(self.project)
+        self.project.gm = GraphManager(self.project, self.project.solver)
+        self.project.chm = ChunkManager()
+
+        # TODO: num animals
+        num_a = 6
+        self.project.animals = []
+        for i in range(num_a):
+            self.project.animals.append(Animal(i))
+
+        self.project.solver_parameters.certainty_threshold = .01
+
+        self.project.save()
+
+        if self.finish_callback:
+            self.finish_callback('initialization_finished', [self.project, False])
 
     def video_boundaries_confirmed(self):
         self.project.video_start_t = self.step2_w.start_frame + 1
