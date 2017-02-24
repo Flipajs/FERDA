@@ -129,14 +129,14 @@ class ProjectWidget(QtGui.QWidget):
         # gets size in bytes from all files that should be loaded
         path = os.path.dirname(path)
         size = 0
-        file = path+'/bg_model.pkl'
-        size += os.path.getsize(file)
+        # file = path+'/bg_model.pkl'
+        # size += os.path.getsize(file)
         file = path+'/arena_model.pkl'
         size += os.path.getsize(file)
-        file = path+'/classes.pkl'
-        size += os.path.getsize(file)
-        file = path+'/groups.pkl'
-        size += os.path.getsize(file)
+        # file = path+'/classes.pkl'
+        # size += os.path.getsize(file)
+        # file = path+'/groups.pkl'
+        # size += os.path.getsize(file)
         file = path+'/animals.pkl'
         size += os.path.getsize(file)
         file = path+'/stats.pkl'
