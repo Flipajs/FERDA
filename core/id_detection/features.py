@@ -16,6 +16,7 @@ import time
 from math import ceil
 # TODO: UNCOMMENT THIS AND PUBLISH...
 # import img_features
+from thesis.config import *
 from utils.img import img_saturation_coef
 
 
@@ -790,7 +791,6 @@ def get_idtracker_features(r, p, debug=False, sub=1, config=None, vectorize=True
 
     # print time.time() - t1
 
-    from thesis.config import *
     import datetime
     dt = datetime.datetime.now().time()
 

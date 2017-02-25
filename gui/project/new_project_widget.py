@@ -40,6 +40,8 @@ class NewProjectWidget(QtGui.QWidget):
         self.step4_w = QtGui.QWidget()
         self.step5_w = QtGui.QWidget()
 
+        self.postpone_parallelisation = False
+
         self.form_layout = QtGui.QFormLayout()
         self.step1_w.setLayout(self.form_layout)
 
@@ -60,6 +62,11 @@ class NewProjectWidget(QtGui.QWidget):
         label = QtGui.QLabel('Project description')
         self.project_description = QtGui.QPlainTextEdit(self)
         self.form_layout.addRow(label, self.project_description)
+
+        self.postpone_parallelisation_ch = QtGui.QCheckBox('')
+        self.postpone_parallelisation_ch.setChecked(False)
+
+        self.form_layout.addRow('postpone parallelisation', self.postpone_parallelisation_ch)
 
         self.left_vbox = QtGui.QVBoxLayout()
 
@@ -197,6 +204,8 @@ class NewProjectWidget(QtGui.QWidget):
             QtGui.QMessageBox.warning(self, "Warning", "Please choose working directory", QtGui.QMessageBox.Ok)
             return
 
+        self.postpone_parallelisation = self.postpone_parallelisation_ch.isChecked()
+
         self.update_project_step1()
 
         from utils.img_manager import ImgManager
@@ -255,7 +264,7 @@ class NewProjectWidget(QtGui.QWidget):
         self.project.save()
 
         if self.finish_callback:
-            self.finish_callback('initialization_finished', [self.project, False])
+            self.finish_callback('initialization_finished', [self.project, self.postpone_parallelisation])
 
     def video_boundaries_confirmed(self):
         self.project.video_start_t = self.step2_w.start_frame + 1
