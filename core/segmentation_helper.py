@@ -29,7 +29,7 @@ class SegmentationHelper:
         self.num = num
         self.scale = 2**0.5
 
-        self.rfc_n_jobs = 4
+        self.rfc_n_jobs = 1
         self.rfc_n_estimators = 10
 
         self.use_reduced_feature_set = True
@@ -58,6 +58,10 @@ class SegmentationHelper:
         :return: None
         """
 
+        # TODO: remove this...
+        self.print_times = False
+        self.rfc.n_jobs = 1
+
         tt = time.time()
         t = time.time()
 
@@ -70,11 +74,13 @@ class SegmentationHelper:
         # self.pyramid = self.make_pyramid()  # source image in all scales
         self.pyramid = pyramid(self.image, scale=self.scale, num=self.num)  # source image in all scales
 
-        print "set_image pyramid time: {:.4f}".format(time.time() - t)
+        if self.print_times:
+            print "set_image pyramid time: {:.4f}".format(time.time() - t)
 
         t = time.time()
         self.images = self.get_images()  # original images from pyramid, but expanded (result looks blurry)
-        print "set_image rescale time: {:.4f}".format(time.time() - t)
+        if self.print_times:
+            print "set_image rescale time: {:.4f}".format(time.time() - t)
 
         t = time.time()
         # TODO: FASTER SHIFT USING COPY
@@ -83,7 +89,8 @@ class SegmentationHelper:
 
         self.shiftx = self.get_shift(shift_x=2, shift_y=0)  # diff from shifted images, rescaled
         self.shifty = self.get_shift(shift_x=0, shift_y=2)
-        print "set_image shift time: {:.4f}".format(time.time() - t)
+        if self.print_times:
+            print "set_image shift time: {:.4f}".format(time.time() - t)
 
         if not self.use_reduced_feature_set:
             self.bg = self.get_cdiff(0, 1)  # channel difs, rescaled
@@ -98,9 +105,11 @@ class SegmentationHelper:
 
         t = time.time()
         self.diff = self.get_dif()
-        print "set_image diff time: {:.4f}".format(time.time() - t)
+        if self.print_times:
+            print "set_image diff time: {:.4f}".format(time.time() - t)
 
-        print "set_image time: {:.4f}".format(time.time() - tt)
+        if self.print_times:
+            print "set_image time: {:.4f}".format(time.time() - tt)
 
     def get_data(self, i, j, X, y, classification):
         """
@@ -170,7 +179,9 @@ class SegmentationHelper:
             return None
         for i, j in zip(nzero[0], nzero[1]):
             self.get_data(i, j, self.Xtmp, self.ytmp, 1)  # 1 for foreground
-        print "Retrieving data takes %f" % (time.time() - start)
+
+        if self.print_times:
+            print "Retrieving data takes %f" % (time.time() - start)
 
         # create the classifier
         self.rfc = RandomForestClassifier(n_estimators=self.rfc_n_estimators, n_jobs=self.rfc_n_jobs)
@@ -185,15 +196,17 @@ class SegmentationHelper:
         # train the classifier
         start = time.time()
         self.rfc.fit(X, y)
-        print "RFC fitting takes     %f" % (time.time() - start)
+        if self.print_times:
+            print "RFC fitting takes     %f" % (time.time() - start)
 
         # find unused features and remove them
         # create new classifier with less features, it will be faster
         start = time.time()
         self.unused = find_unused_features(self.rfc)
         self.rfc = get_filtered_rfc(self.unused, X, y, self.rfc_n_estimators, self.rfc_n_jobs)
-        print "RFC filtering takes   %f. Using %d out of %d features." % \
-              (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
+        if self.print_times:
+            print "RFC filtering takes   %f. Using %d out of %d features." % \
+                  (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
 
     def predict(self):
         if self.rfc is None:
@@ -219,12 +232,15 @@ class SegmentationHelper:
         # remove features that were found unnecessary
         # filtered = get_filtered_model(self.unused, data)
 
-        print "data preparation time: ", time.time() - t
+        if self.print_times:
+            print "data preparation time: ", time.time() - t
 
         # predict result on current image data
         start = time.time()
         mask1 = self.rfc.predict_proba(data)
-        print "RFC predict takes     %f" % (time.time() - start)
+        if self.print_times:
+            print "RFC predict takes     %f" % (time.time() - start)
+            print data.shape
 
         # reshape mask to be a grid, not a list
         mask1 = mask1[:, 1]
@@ -242,15 +258,17 @@ class SegmentationHelper:
         # train the classifier
         start = time.time()
         self.rfc.fit(X, y)
-        print "RFC fitting takes     %f" % (time.time() - start)
+        if self.print_times:
+            print "RFC fitting takes     %f" % (time.time() - start)
 
         # find unused features and remove them
         # create new classifier with less features, it will be faster
         start = time.time()
         self.unused = find_unused_features(self.rfc)
         self.rfc = get_filtered_rfc(self.unused, X, y)
-        print "RFC filtering takes   %f. Using %d out of %d features." % \
-              (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
+        if self.print_times:
+            print "RFC filtering takes   %f. Using %d out of %d features." % \
+                  (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
 
     def get_features(self):
         """

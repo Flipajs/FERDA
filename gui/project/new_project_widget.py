@@ -303,7 +303,7 @@ class NewProjectWidget(QtGui.QWidget):
 
         c = np.array([c[0] - video_crop_model['y1'], c[1] - video_crop_model['x1']])
         self.project.arena_model = Circle(video_crop_model['y2'] - video_crop_model['y1'],
-                                          video_crop_model['x2'] - video_crop_model['x2'])
+                                          video_crop_model['x2'] - video_crop_model['x1'])
         self.project.arena_model.set_circle(c, r)
 
         from gui.init.set_msers import SetMSERs
