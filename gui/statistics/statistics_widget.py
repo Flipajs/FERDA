@@ -114,7 +114,7 @@ class StatisticsWidget(QtGui.QWidget):
 
 
         ex = Exporter(self.project.chm, self.project.gm, self.project.rm,
-                      pts_export=self.include_region_points,
+                      pts_export=self.include_region_points.isChecked(),
                       contour_pts_export=self.include_region_contour.isChecked())
 
         ex.export(self.get_out_path(), min_tracklet_length=1)
