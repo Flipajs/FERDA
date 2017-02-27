@@ -87,6 +87,7 @@ if __name__ == '__main__':
 
     use_roi_prediction_optimisation = True
     prediction_optimisation_border = 25
+    full_segmentation_refresh = 25
 
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
@@ -163,7 +164,7 @@ if __name__ == '__main__':
 
         s = time.time()
 
-        if rois:
+        if rois and i%full_segmentation_refresh != 0:
             t = time.time()
 
             t2 = 0
@@ -215,7 +216,7 @@ if __name__ == '__main__':
                 new_im[h1:h2, w1:w2] = seg_img.copy()
 
 
-            print "segmentation time: ", time.time() - t, t2, len(rois), area, area / float(img.shape[0] * img.shape[1])
+            print "segmentation time: {:.3f}, #roi: {} roi area: {} roi coverage: {:.3f}".format(time.time() - t, len(rois), area, area / float(img.shape[0] * img.shape[1]))
             # t = time.time()
             # segment(proj, img)
             # print "without ", time.time() - t
@@ -260,7 +261,10 @@ if __name__ == '__main__':
     s = time.time()
     print "#Edges BEFORE: ", proj.gm.g.num_edges()
     while True:
-        num_changed1 = solver.simplify(rules=[solver.update_costs])
+        num_changed1 = 0
+        # num_changed1 = solver.simplify(rules=[solver.update_costs])
+        # num_changed1 = solver.simplify(rules=[solver.update_costs, solver.adaptive_threshold])
+        num_changed2 = 0
         num_changed2 = solver.simplify(rules=[solver.adaptive_threshold])
 
         if num_changed1+num_changed2 == 0:
