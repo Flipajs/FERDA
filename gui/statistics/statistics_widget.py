@@ -10,6 +10,7 @@ import sys
 from core.graph.region_chunk import RegionChunk
 from pympler import asizeof
 import gc
+from scripts.export.export_part import Exporter
 
 class StatisticsWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -59,21 +60,21 @@ class StatisticsWidget(QtGui.QWidget):
         # self.export_trajectories.setChecked(True)
         # self.export_fbox.addRow('export trajectories', self.export_trajectories)
 
-        self.include_id = QtGui.QCheckBox('')
-        self.include_id.setChecked(True)
-        self.export_fbox.addRow('include id', self.include_id)
+        # self.include_id = QtGui.QCheckBox('')
+        # self.include_id.setChecked(True)
+        # self.export_fbox.addRow('include id', self.include_id)
 
-        self.include_orientation = QtGui.QCheckBox('')
-        self.include_orientation.setChecked(True)
-        self.export_fbox.addRow('include orientation', self.include_orientation)
+        # self.include_orientation = QtGui.QCheckBox('')
+        # self.include_orientation.setChecked(True)
+        # self.export_fbox.addRow('include orientation', self.include_orientation)
 
-        self.include_area = QtGui.QCheckBox('')
-        self.include_area.setChecked(True)
-        self.export_fbox.addRow('include area', self.include_area)
+        # self.include_area = QtGui.QCheckBox('')
+        # self.include_area.setChecked(True)
+        # self.export_fbox.addRow('include area', self.include_area)
 
-        self.include_axes = QtGui.QCheckBox('')
-        self.include_axes.setChecked(True)
-        self.export_fbox.addRow('include axes (major/minor)', self.include_axes)
+        # self.include_axes = QtGui.QCheckBox('')
+        # self.include_axes.setChecked(True)
+        # self.export_fbox.addRow('include axes (major/minor)', self.include_axes)
 
         self.include_region_points = QtGui.QCheckBox('')
         self.include_region_points.setChecked(True)

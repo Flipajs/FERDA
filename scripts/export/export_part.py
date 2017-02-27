@@ -122,7 +122,7 @@ class Exporter:
             self.obj_arr_append_(obj_arr, d)
 
         with open(file_name+'.mat', 'wb') as f:
-            sio.savemat(f, {'FERDA': obj_arr})
+            sio.savemat(f, {'FERDA': obj_arr}, do_compression=True)
 
 class FakeBGComp:
     def __init__(self, project, first_part, part_num):
@@ -161,7 +161,7 @@ def export_arena(out_path, project):
 
             arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
 
-        sio.savemat(f, {'arena': arena})
+        sio.savemat(f, {'arena': arena}, do_compression=True)
 
 if __name__ == '__main__':
     working_dir = sys.argv[1]
