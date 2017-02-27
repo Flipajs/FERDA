@@ -10,7 +10,7 @@ import sys
 from core.graph.region_chunk import RegionChunk
 from pympler import asizeof
 import gc
-from scripts.export.export_part import Exporter
+from scripts.export.export_part import Exporter, export_arena
 
 class StatisticsWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -37,7 +37,6 @@ class StatisticsWidget(QtGui.QWidget):
 
         self.med_ch_area = QtGui.QLabel('-1')
         self.fbox.addRow('Med of means of chunks area', self.med_ch_area)
-
 
 
         self.fbox.addRow('Min certainty value: ', QtGui.QLabel(str(self.project.solver_parameters.certainty_threshold)))
@@ -94,9 +93,9 @@ class StatisticsWidget(QtGui.QWidget):
 
         self.export_fbox.addRow('file type', self.file_type)
 
-        self.memory_limit_mb = QtGui.QLineEdit()
-        self.memory_limit_mb.setText('1000')
-        self.export_fbox.addRow('memory approx. limit (MB)', self.memory_limit_mb)
+        # self.memory_limit_mb = QtGui.QLineEdit()
+        # self.memory_limit_mb.setText('1000')
+        # self.export_fbox.addRow('memory approx. limit (MB)', self.memory_limit_mb)
 
         self.export_b = QtGui.QPushButton('export')
         self.export_b.clicked.connect(self.export)
@@ -112,13 +111,22 @@ class StatisticsWidget(QtGui.QWidget):
 
     def export(self):
         print "exporting..."
-        ftype = self.file_type.currentText()
-        if ftype == '.txt':
-            self.export_txt()
-        elif ftype == '.csv':
-            self.export_csv()
-        elif ftype == '.mat':
-            self.export_mat()
+
+
+        ex = Exporter(self.project.chm, self.project.gm, self.project.rm,
+                      pts_export=self.include_region_points,
+                      contour_pts_export=self.include_region_contour.isChecked())
+
+        ex.export(self.get_out_path(), min_tracklet_length=1)
+        export_arena(self.get_out_path(), self.project)
+
+        # ftype = self.file_type.currentText()
+        # if ftype == '.txt':
+        #     self.export_txt()
+        # elif ftype == '.csv':
+        #     self.export_csv()
+        # elif ftype == '.mat':
+        #     self.export_mat()
 
         print "done"
 
@@ -212,7 +220,7 @@ class StatisticsWidget(QtGui.QWidget):
         file_num = 0
         chunNum  = 0
         for _, ch in self.project.chm.chunks_.iteritems():
-            chunNum += 1;
+            chunNum += 1
 
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
 
