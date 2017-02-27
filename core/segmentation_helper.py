@@ -60,7 +60,9 @@ class SegmentationHelper:
 
         # TODO: remove this...
         self.print_times = False
-        self.rfc.n_jobs = 1
+        #
+        # try:
+        #     self.rfc.n_jobs = 1
 
         tt = time.time()
         t = time.time()

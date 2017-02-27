@@ -20,21 +20,21 @@ project = Project()
 S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
-if is_flipajs_pc() and False:
-# if is_flipajs_pc():
+# if is_flipajs_pc() and False:
+if is_flipajs_pc():
     # wd = '/Users/iflipajs/Documents/wd/FERDA/Cam1_rf'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
-    wd = '/Users/flipajs/Documents/wd/FERDA/test'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
+    project.load(wd)
     # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
     # project.load_semistate(wd, 'id_classified_HIL_init_0')
     # project.load_semistate(wd, 'lp_id_SEG_IDCR_0')
-    # project.load_semistate(wd, 'lp_HIL_INIT3_0')i
+    project.load_semistate(wd, 'lp_HIL_INIT3_0')
 
-    project.load(wd)
 
     # from core.region.region_manager import RegionManager
     # from core.graph.chunk_manager import ChunkManager
