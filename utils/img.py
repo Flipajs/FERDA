@@ -140,7 +140,8 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
                 img = img[:,:,2].copy()
             else:
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        except:
+        except Exception as e:
+            print e
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     if project.arena_model is not None:

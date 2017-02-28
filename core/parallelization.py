@@ -164,68 +164,67 @@ if __name__ == '__main__':
 
         s = time.time()
 
-        if rois and i%full_segmentation_refresh != 0:
-            t = time.time()
+        if hasattr(proj, 'segmentation_model'):
+            if rois and i%full_segmentation_refresh != 0:
+                t = time.time()
 
-            t2 = 0
-            new_im = np.ones((img.shape[0], img.shape[1]), dtype=np.uint8) * 255
+                t2 = 0
+                new_im = np.ones((img.shape[0], img.shape[1]), dtype=np.uint8) * 255
 
-            area = 0
-            for roi in rois:
-                area += roi.width() * roi.height()
+                area = 0
+                for roi in rois:
+                    area += roi.width() * roi.height()
 
-            for roi in rois:
-                tl = roi.top_left_corner()
-                br = roi.bottom_right_corner()
+                for roi in rois:
+                    tl = roi.top_left_corner()
+                    br = roi.bottom_right_corner()
 
-                h1 = tl[0]
-                h2 = min(img.shape[0] - 1, br[0])
+                    h1 = tl[0]
+                    h2 = min(img.shape[0] - 1, br[0])
 
-                w1 = tl[1]
-                w2 = br[1]
+                    w1 = tl[1]
+                    w2 = br[1]
 
-                crop = img[h1:h2, w1:w2, :].copy()
+                    crop = img[h1:h2, w1:w2, :].copy()
 
-                # add border2 (to prevent segmentation artefacts
-                crop = cv2.copyMakeBorder(crop, border2, border2, border2, border2, cv2.BORDER_REPLICATE)
+                    # add border2 (to prevent segmentation artefacts
+                    crop = cv2.copyMakeBorder(crop, border2, border2, border2, border2, cv2.BORDER_REPLICATE)
 
-                t2_  = time.time()
-                proj.segmentation_model.set_image(crop)
-                # t2_ = time.time() - t2_
-                # t2 += t2_
-                # print t2_
-                # t2_ = time.time()
-                seg = proj.segmentation_model.predict()
-                t2_ = time.time() - t2_
-                t2 += t2_
+                    t2_  = time.time()
+                    proj.segmentation_model.set_image(crop)
+                    # t2_ = time.time() - t2_
+                    # t2 += t2_
+                    # print t2_
+                    # t2_ = time.time()
+                    seg = proj.segmentation_model.predict()
+                    t2_ = time.time() - t2_
+                    t2 += t2_
 
-                # print t2_, crop.shape
+                    # print t2_, crop.shape
 
-                # remove border2
-                seg = seg[border2:-border2, border2:-border2].copy()
+                    # remove border2
+                    seg = seg[border2:-border2, border2:-border2].copy()
 
-                jj += 1
+                    jj += 1
 
-                # make hard threshold
-                if True:
-                    seg_img = seg < 0.5
-                    seg_img = np.asarray(seg_img, dtype=np.uint8) * 255
-                else:
-                    seg_img = np.asarray((-seg * 255) + 255, dtype=np.uint8)
+                    # make hard threshold
+                    if True:
+                        seg_img = seg < 0.5
+                        seg_img = np.asarray(seg_img, dtype=np.uint8) * 255
+                    else:
+                        seg_img = np.asarray((-seg * 255) + 255, dtype=np.uint8)
 
-                new_im[h1:h2, w1:w2] = seg_img.copy()
-
-
-            print "segmentation time: {:.3f}, #roi: {} roi area: {} roi coverage: {:.3f}".format(time.time() - t, len(rois), area, area / float(img.shape[0] * img.shape[1]))
-            # t = time.time()
-            # segment(proj, img)
-            # print "without ", time.time() - t
-
-            img = new_im
+                    new_im[h1:h2, w1:w2] = seg_img.copy()
 
 
-        else:
-            img = segment(proj, img)
+                print "segmentation time: {:.3f}, #roi: {} roi area: {} roi coverage: {:.3f}".format(time.time() - t, len(rois), area, area / float(img.shape[0] * img.shape[1]))
+                # t = time.time()
+                # segment(proj, img)
+                # print "without ", time.time() - t
+
+                img = new_im
+            else:
+                img = segment(proj, img)
 
         msers = ferda_filtered_msers(img, proj, frame)
 
@@ -243,7 +242,7 @@ if __name__ == '__main__':
             if img is None:
                 raise Exception("img is None, there is something wrong with frame: " + str(frame))
 
-        img = prepare_img(proj, img)
+            img = prepare_img(proj, img)
 
         vid_t += time.time() - s
 

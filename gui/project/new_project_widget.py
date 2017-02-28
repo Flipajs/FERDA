@@ -219,10 +219,11 @@ class NewProjectWidget(QtGui.QWidget):
     def segmentation_confirmed(self):
         print "segmentation_confirmed"
 
-        with open(self.project.working_directory+'/segmentation_model.pkl', 'wb') as f:
-            pickle.dump(self.step4_w.helper, f, -1)
+        if self.step4_w.use_segmentation.isChecked():
+            with open(self.project.working_directory+'/segmentation_model.pkl', 'wb') as f:
+                pickle.dump(self.step4_w.helper, f, -1)
 
-        self.project.segmentation_model = self.step4_w.helper
+            self.project.segmentation_model = self.step4_w.helper
 
         self.step4_w.hide()
 
