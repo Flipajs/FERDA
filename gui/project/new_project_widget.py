@@ -225,6 +225,9 @@ class NewProjectWidget(QtGui.QWidget):
 
             self.project.segmentation_model = self.step4_w.helper
 
+        self.project.other_parameters.segmentation_use_roi_prediction_optimisation = self.step4_w.use_roi_prediction_optimisation_ch.isChecked()
+        self.project.other_parameters.segmentation_prediction_optimisation_border = self.step4_w.prediction_optimisation_border_spin.value()
+        self.project.other_parameters.full_segmentation_refresh_in_spin = self.step4_w.full_segmentation_refresh_in_spin.value()
         self.step4_w.hide()
 
         w = self.step5_w

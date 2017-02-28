@@ -85,14 +85,20 @@ if __name__ == '__main__':
     frames_in_row = int(sys.argv[4])
     last_n_frames = int(sys.argv[5])
 
-    use_roi_prediction_optimisation = True
-    prediction_optimisation_border = 25
-    full_segmentation_refresh = 25
-
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
     proj.solver_parameters.max_edge_distance_in_ant_length = 100
+
+    try:
+        use_roi_prediction_optimisation = proj.other_parameters.segmentation_use_roi_prediction_optimisation
+        prediction_optimisation_border = proj.other_parameters.segmentation_prediction_optimisation_border
+        full_segmentation_refresh = proj.other_parameters.segmentation_full_segmentation_refresh_in
+    except:
+        use_roi_prediction_optimisation = True
+        prediction_optimisation_border = 25
+        full_segmentation_refresh = 25
+
 
     if not os.path.exists(proj.working_directory+'/temp'):
         try:

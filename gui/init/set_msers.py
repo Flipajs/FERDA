@@ -445,6 +445,11 @@ class SetMSERs(QtGui.QWidget):
         self.button_next = QtGui.QPushButton("Next frame")
         self.button_prev = QtGui.QPushButton("Prev frame")
         self.button_rand = QtGui.QPushButton("Random frame")
+
+        self.use_roi_prediction_optimisation_ch = QtGui.QCheckBox('')
+        self.prediction_optimisation_border_spin = QtGui.QSpinBox()
+        self.full_segmentation_refresh_in_spin = QtGui.QSpinBox()
+
         # self.button_done = QtGui.QPushButton("Done")
 
     def configure_form_panel(self):
@@ -529,6 +534,18 @@ class SetMSERs(QtGui.QWidget):
         self.form_panel.addRow('work on prob. map', self.use_segmentation)
         self.button_group.addButton(self.use_segmentation)
         self.use_segmentation.setChecked(True)
+
+        self.prediction_optimisation_border_spin.setMinimum(0)
+        self.prediction_optimisation_border_spin.setMaximum(10000)
+        self.prediction_optimisation_border_spin.setValue(25)
+
+        self.full_segmentation_refresh_in_spin.setMinimum(0)
+        self.full_segmentation_refresh_in_spin.setMaximum(10000)
+        self.full_segmentation_refresh_in_spin.setValue(25)
+
+        self.form_panel.addRow('use ROI prediction optimisation', self.use_roi_prediction_optimisation_ch)
+        self.form_panel.addRow('prediction ROI border', self.prediction_optimisation_border_spin)
+        self.form_panel.addRow('full segmentation every n-th frame', self.full_segmentation_refresh_in_spin)
 
         self.mser_max_area.valueChanged.connect(self.val_changed)
         self.mser_min_area.valueChanged.connect(self.val_changed)
