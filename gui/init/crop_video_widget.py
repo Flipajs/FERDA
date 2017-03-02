@@ -227,36 +227,6 @@ class CropVideoWidget(QtGui.QWidget):
 
         img = self.video.next_frame()
 
-        # self.spatial_crop_layout = QtGui.QHBoxLayout()
-        #
-        # self.spatial_crop_layout.addWidget(QtGui.QLabel('img crop: '))
-        #
-        # self.sc_y1 = QtGui.QSpinBox()
-        # self.sc_y1.setMinimum(0)
-        # self.sc_y1.setMaximum(img.shape[0]-1)
-        # self.sc_y1.setValue(0)
-        # self.spatial_crop_layout.addWidget(self.sc_y1)
-        #
-        # self.sc_x1 = QtGui.QSpinBox()
-        # self.sc_x1.setMinimum(0)
-        # self.sc_x1.setMaximum(img.shape[1] - 1)
-        # self.sc_x1.setValue(0)
-        # self.spatial_crop_layout.addWidget(self.sc_x1)
-        #
-        # self.sc_y2 = QtGui.QSpinBox()
-        # self.sc_y2.setMinimum(0)
-        # self.sc_y2.setMaximum(img.shape[0])
-        # self.sc_y2.setValue(img.shape[0])
-        # self.spatial_crop_layout.addWidget(self.sc_y2)
-        #
-        # self.sc_x2 = QtGui.QSpinBox()
-        # self.sc_x2.setMinimum(0)
-        # self.sc_x2.setMaximum(img.shape[1])
-        # self.sc_x2.setValue(img.shape[1])
-        # self.spatial_crop_layout.addWidget(self.sc_x2)
-        #
-        # self.video_layout.addLayout(self.spatial_crop_layout)
-
         self.connect_GUI()
 
         if img is not None:
@@ -325,11 +295,13 @@ class CropVideoWidget(QtGui.QWidget):
 
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""
+        from functools import partial
+
         self.forward.clicked.connect(self.load_next_frame)
         self.backward.clicked.connect(self.load_previous_frame)
         self.playPause.clicked.connect(self.play_pause)
         self.speedSlider.valueChanged.connect(self.speed_slider_changed)
-        # self.showFrame.clicked.connect(self.show_frame)
+        self.showFrame.clicked.connect(partial(self.change_frame, None))
         self.videoSlider.valueChanged.connect(self.video_slider_changed)
         self.timer.timeout.connect(self.load_next_frame)
 
@@ -418,8 +390,11 @@ class CropVideoWidget(QtGui.QWidget):
             self.videoSlider.recentlyreleased = False
             self.change_frame(self.videoSlider.value())
 
-    def change_frame(self, position):
+    def change_frame(self, position=None):
         """Changes current frame to position given. If there is no such position, calls self.out_of_frames"""
+        if position is None:
+            position = int(self.frameEdit.text())
+
         if self.video is not None:
             img = self.video.seek_frame(position)
             if img is not None:
