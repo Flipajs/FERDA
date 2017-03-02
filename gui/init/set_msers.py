@@ -446,6 +446,9 @@ class SetMSERs(QtGui.QWidget):
         self.button_prev = QtGui.QPushButton("Prev frame")
         self.button_rand = QtGui.QPushButton("Random frame")
 
+        self.button_refresh = QtGui.QPushButton("refresh (new randomized training)")
+        self.button_reset = QtGui.QPushButton("restart (delete labels)")
+
         self.use_roi_prediction_optimisation_ch = QtGui.QCheckBox('')
         self.prediction_optimisation_border_spin = QtGui.QSpinBox()
         self.full_segmentation_refresh_in_spin = QtGui.QSpinBox()
@@ -626,8 +629,22 @@ class SetMSERs(QtGui.QWidget):
         self.button_rand.clicked.connect(self.show_random_frame)
         self.left_panel.layout().addWidget(self.button_rand)
 
+        self.button_refresh.clicked.connect(self.update_all)
+        self.left_panel.layout().addWidget(self.button_refresh)
+
+        self.button_reset.clicked.connect(self.reset_classifier)
+        self.left_panel.layout().addWidget(self.button_reset)
+
         # self.button_done.clicked.connect(self.done)
         # self.left_panel.layout().addWidget(self.button_done)
+
+    def reset_classifier(self):
+        print "reset..."
+
+        self.painter.reset_masks()
+        self.helper.rfc = None
+
+        self.update_all()
 
 
 if __name__ == "__main__":
