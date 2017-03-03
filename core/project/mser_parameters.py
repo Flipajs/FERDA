@@ -12,6 +12,8 @@ class MSERParameters():
         self.region_min_intensity = 256
         self.use_children_filter = True
         self.intensity_percentile = 10
+        # if 0, ignore... we suggest 0.1 as it will ignore all thick regions on arena borders
+        self.area_roi_ratio_threshold = 0
         self.use_intensity_percentile_threshold = False
 
         if refresh:

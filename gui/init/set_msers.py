@@ -409,6 +409,7 @@ class SetMSERs(QtGui.QWidget):
         self.project.mser_parameters.use_children_filter = self.use_children_filter.isChecked()
         self.project.mser_parameters.use_intensity_percentile_threshold = self.use_intensity_percentile_threshold.isChecked()
         self.project.mser_parameters.intensity_percentile = self.intensity_percentile.value()
+        self.project.mser_parameters.area_roi_ratio_threshold = self.area_roi_ratio_threshold.value()
 
         if prev_use_s == self.use_segmentation_:
             # only mser-related parameters were changed, no need to update everything
@@ -422,6 +423,21 @@ class SetMSERs(QtGui.QWidget):
         self.intensity_percentile.setMinimum(1)
         self.intensity_percentile.setMaximum(100)
         self.intensity_percentile.setValue(10)
+
+        self.area_roi_ratio_threshold = QtGui.QDoubleSpinBox()
+        self.area_roi_ratio_threshold.setMinimum(0)
+        self.area_roi_ratio_threshold.setMaximum(1.0)
+        self.area_roi_ratio_threshold.setValue(0)
+
+        self.max_dist_object_length = QtGui.QDoubleSpinBox()
+        self.max_dist_object_length.setMinimum(0)
+        self.max_dist_object_length.setMaximum(100)
+        self.max_dist_object_length.setValue(2.0)
+
+        self.major_axis_median = QtGui.QSpinBox()
+        self.major_axis_median.setMinimum(0)
+        self.major_axis_median.setMaximum(1000)
+        self.major_axis_median.setValue(20)
 
         self.use_margin_filter = QtGui.QCheckBox()
         self.use_margin_filter.setChecked(True)
@@ -530,6 +546,8 @@ class SetMSERs(QtGui.QWidget):
         self.form_panel.addRow('use only red channel in img', self.use_only_red_ch)
         self.button_group.addButton(self.use_only_red_ch)
 
+        self.form_panel.addRow('(area / roi ratio) > ', self.area_roi_ratio_threshold)
+
 
         self.form_panel.addRow('work on intensity only', self.use_full_image)
         self.button_group.addButton(self.use_full_image)
@@ -546,6 +564,10 @@ class SetMSERs(QtGui.QWidget):
         self.full_segmentation_refresh_in_spin.setMaximum(10000)
         self.full_segmentation_refresh_in_spin.setValue(25)
 
+        self.form_panel.addRow('major axis median', self.major_axis_median)
+        self.form_panel.addRow('max dist = this x major axis median', self.max_dist_object_length)
+
+        # self.form_panel.addRow('max distance [px]', self.max_dist_object_length)
         self.form_panel.addRow('use ROI prediction optimisation', self.use_roi_prediction_optimisation_ch)
         self.form_panel.addRow('prediction ROI border', self.prediction_optimisation_border_spin)
         self.form_panel.addRow('full segmentation every n-th frame', self.full_segmentation_refresh_in_spin)
@@ -560,6 +582,7 @@ class SetMSERs(QtGui.QWidget):
         self.region_min_intensity.valueChanged.connect(self.val_changed)
         self.use_intensity_percentile_threshold.stateChanged.connect(self.val_changed)
         self.intensity_percentile.valueChanged.connect(self.val_changed)
+        self.area_roi_ratio_threshold.valueChanged.connect(self.val_changed)
         self.use_children_filter.stateChanged.connect(self.val_changed)
         self.use_only_red_ch.stateChanged.connect(self.val_changed)
         self.use_full_image.stateChanged.connect(self.val_changed)

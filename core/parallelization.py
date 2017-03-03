@@ -60,8 +60,8 @@ def get_rois(msers, img, prediction_optimisation_border):
 
     for m in msers:
         roi = m.roi().safe_expand(prediction_optimisation_border, img)
-        if roi.width() > 400 or roi.height() > 400:
-            continue
+        # if roi.width() > 400 or roi.height() > 400:
+        #     continue
 
         while True:
             intersect = check_intersection(rois, roi)
@@ -88,7 +88,8 @@ if __name__ == '__main__':
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
-    proj.solver_parameters.max_edge_distance_in_ant_length = 100
+    # proj.stats.major_axis_median = 18
+    # proj.solver_parameters.max_edge_distance_in_ant_length = 2
 
     try:
         use_roi_prediction_optimisation = proj.other_parameters.segmentation_use_roi_prediction_optimisation

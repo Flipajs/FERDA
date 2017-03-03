@@ -198,5 +198,17 @@ def ferda_filtered_msers(img, project, frame=-1):
 
         # return [m[id] for id in ids]
     # else:
-    return get_msers_(img, project, frame, prefiltered=True)
+
+    msers = get_msers_(img, project, frame, prefiltered=True)
+
+    ratio_th = project.mser_parameters.area_roi_ratio_threshold
+    if project.mser_parameters.area_roi_ratio_threshold > ratio_th:
+        new_msers = []
+        for m in msers:
+            if m.area() / float(m.roi().width() * m.roi().height()) > ratio_th:
+                new_msers.append(m)
+
+        msers = new_msers
+
+    return msers
 

@@ -217,6 +217,7 @@ class NewProjectWidget(QtGui.QWidget):
         self.go_to_video_config()
 
     def segmentation_confirmed(self):
+        from core.classes_stats import dummy_classes_stats
         print "segmentation_confirmed"
 
         if self.step4_w.use_segmentation.isChecked():
@@ -228,6 +229,11 @@ class NewProjectWidget(QtGui.QWidget):
         self.project.other_parameters.segmentation_use_roi_prediction_optimisation = self.step4_w.use_roi_prediction_optimisation_ch.isChecked()
         self.project.other_parameters.segmentation_prediction_optimisation_border = self.step4_w.prediction_optimisation_border_spin.value()
         self.project.other_parameters.full_segmentation_refresh_in_spin = self.step4_w.full_segmentation_refresh_in_spin.value()
+
+        self.project.stats = dummy_classes_stats()
+
+        self.project.stats.major_axis_median = self.step4_w.major_axis_median.value()
+        self.project.solver_parameters.max_edge_distance_in_ant_length = self.step4_w.max_dist_object_length.value()
         self.step4_w.hide()
 
         w = self.step5_w
@@ -247,10 +253,7 @@ class NewProjectWidget(QtGui.QWidget):
         from core.graph.graph_manager import GraphManager
         from core.graph.solver import Solver
         from core.graph.chunk_manager import ChunkManager
-        from core.classes_stats import dummy_classes_stats
         from core.animal import Animal
-
-        self.project.stats = dummy_classes_stats()
 
         self.project.rm = RegionManager(self.project.working_directory)
         self.project.solver = Solver(self.project)
