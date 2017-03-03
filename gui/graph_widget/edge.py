@@ -17,12 +17,12 @@ __author__ = 'Simon Mandlik'
 
 class Edge:
 
-    def __init__(self, from_x, from_y, to_x, to_y, graph_line, scene, vertical=False):
+    def __init__(self, from_x, from_y, to_x, to_y, graph_line, scene, vertical=False, partial=False):
         self.from_x = from_x
         self.from_y = from_y
         self.to_x = to_x
         self.to_y = to_y
-        if graph_line.type == LineType.PARTIAL:
+        if partial:
             if not vertical:
                 from_y += PARTIAL_LINE_OFFSET
                 to_y += PARTIAL_LINE_OFFSET
@@ -30,11 +30,11 @@ class Edge:
                 from_x += PARTIAL_LINE_OFFSET
                 to_x += PARTIAL_LINE_OFFSET
 
-        if graph_line.type == LineType.TRACKLET:
+        if graph_line.type == LineType.TRACKLET or (LineType.PARTIAL_TRACKLET and not partial):
             self.graphical_object = ChunkGraphical(from_x, from_y, to_x, to_y, graph_line, scene, vertical)
         elif graph_line.type == LineType.LINE:
             self.graphical_object = LineGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), graph_line, scene)
-        elif graph_line.type == LineType.PARTIAL:
+        elif partial:
             self.graphical_object = PartialGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), graph_line, scene)
         self.core_obj = graph_line
 
