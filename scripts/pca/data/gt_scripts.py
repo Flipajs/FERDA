@@ -1,5 +1,5 @@
 import logging
-import pickle
+import cPickle as pickle
 from PyQt4 import QtGui
 
 import sys
@@ -64,7 +64,10 @@ def get_cluster_gt(pickle_fname):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     project = Project()
-    project.load("/home/simon/FERDA/projects/clusters_gt/Cam1_/cam1.fproj")
+    # project.load("/home/simon/FERDA/projects/clusters_gt/Cam1_/cam1.fproj")
+    project.load("/home/simon/FERDA/projects/clusters_gt/zebrafish/zebrafish.fproj")
+
+    print project.chm
 
     # label chunks with chunk viewer
     # tag_chunks(project)
@@ -73,13 +76,13 @@ if __name__ == "__main__":
     # gt = get_cluster_gt('/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_clusters.p')
 
     # create gt for clusters in file
-    results_fname = '/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_clusters.p'
+    # results_fname = '/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_clusters.p'
     # cluster_gt(project, results_fname,
                # '/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_cluster_tracklets')
 
     # load
-    manager = GTManager(project, results_fname)
-    manager.view_results()
+    # manager = GTManager(project, results_fname)
+    # manager.view_results()
     # delete given REGION id's answer
-    manager.delete_answer(9)
+    # manager.delete_answer(9)
 
