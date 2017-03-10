@@ -193,14 +193,10 @@ class Column:
             z_value = -2
 
             if edge.overlaps_left():
-                edge_n = copy.copy(edge)
-                edge_n.set_overlap_left(False)
-                self.draw_edge(column_left.x, from_y, column_left.x - SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge_n, partial=True)
+                self.draw_edge(column_left.x, from_y, column_left.x - SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge, partial=True)
 
             if edge.overlaps_right():
-                edge_n = copy.copy(edge)
-                edge_n.set_overlap_right(False)
-                self.draw_edge(self.x + self.width, from_y, self.x + self.width + SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge_n, partial=True)
+                self.draw_edge(self.x + self.width, from_y, self.x + self.width + SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge, partial=True)
 
             # to_y = from_y
             # to_x = self.x - SPACE_BETWEEN_HOR / 2.5
@@ -208,17 +204,22 @@ class Column:
             #     from_x += self.width
             #     to_x += self.width + SPACE_BETWEEN_HOR * 4 / 5.0
 
-
     def draw_edge(self, from_x, from_y, to_x, to_y, vertically, z_value, edge, partial=False):
         if vertically:
             from_x, from_y, to_x, to_y = from_y, from_x, to_y, to_x
-        if edge in self.edges:
-            for edge_obj in self.edges[edge]:
-                self.scene.removeItem(edge_obj.graphical_object)
         edge_obj = Edge(from_x, from_y, to_x, to_y, edge, self.scene, vertically, partial)
-        self.edges[edge] = [edge_obj]
+        if edge in self.edges:
+            self.edges[edge].append(edge_obj)
+        else:
+            self.edges[edge] = [edge_obj]
         edge_obj.graphical_object.setZValue(z_value)
         self.scene.addItem(edge_obj.graphical_object)
+
+    def delete_scene(self):
+        for key, object in self.edges.items():
+            for o in object:
+                self.scene.removeItem(o.graphical_object)
+            del self.edges[key]
 
     def show_node(self, region, vertically, compressed=True):
         position = self.get_position_item(region)
@@ -260,6 +261,8 @@ class Column:
                 self.compress_marker.hide()
         else:
             self.show_frame_number(vertically, compress_axis, True)
+            if not compress_axis:
+                self.frame_sign.hide()
 
     def show_frame_number(self, vertically, compress_axis=True, empty=False):
         text = str(self.frame)
@@ -281,5 +284,3 @@ class Column:
         else:
             self.frame_sign.setPos(x, y)
             self.frame_sign.show()
-        if not compress_axis:
-            self.frame_sign.hide()

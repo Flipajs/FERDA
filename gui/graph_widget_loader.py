@@ -46,7 +46,7 @@ class GraphWidgetLoader:
         self.edges = set()
         self.regions = set()
 
-        # self.chunks_region_chunks = {}
+        self.chunks_region_chunks = {}
         self.regions_vertices = {}
 
         self.g = None
@@ -144,9 +144,11 @@ class GraphWidgetLoader:
 
                 line = GraphLine(tracklet.id(), r1, r2, type_of_line, overlap=overlap, color=c)
             else:
+                self.regions.add(r1)
+                self.regions.add(r2)
                 type_of_line = LineType.TRACKLET
                 line = GraphLine(tracklet.id(), r1, r2, type_of_line, color=c)
-
+            self.chunks_region_chunks[line] = RegionChunk(tracklet, self.graph_manager, self.region_manager)
             # print tracklet.id(), type_of_line, left_overlap, right_overlap
 
             self.edges.add(line)
@@ -202,6 +204,8 @@ class GraphWidgetLoader:
         return "Type = {}\nAppearance score = {}\nMovement score={}\nScore product={}\nTracklet id: {}".format(edge.type, edge.appearance_score, edge.movement_score, edge.appearance_score * edge.movement_score, edge.id)
 
     def get_widget(self, frames=None, show_tracklet_callback=None):
+        if frames is None:
+            frames = range(self.graph_manager.start_t, self.graph_manager.end_t)
         self.prepare_vertices(frames)
         # print("Preparing nodes...")
         self.prepare_nodes()

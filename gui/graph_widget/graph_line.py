@@ -23,7 +23,7 @@ class GraphLine:
         self.id = id
         self.region_from = region_from
         self.region_to = region_to
-        self.type = None
+        self.type = type
         self.overlap = overlap
         self.set_type(type)
         self.sureness = sureness
