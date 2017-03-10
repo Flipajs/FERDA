@@ -1,3 +1,4 @@
+import copy
 from PyQt4 import QtGui
 
 import numpy as np
@@ -53,8 +54,8 @@ class Column:
 
     def add_object(self, to_add, position):
         if position < len(self.objects):
-            if not (self.objects[position] == to_add or isinstance(self.objects[position], GraphLine)):
-                self.objects[position] = to_add
+            # if not (self.objects[position] == to_add or isinstance(self.objects[position], GraphLine)):
+            self.objects[position] = to_add
         else:
             while len(self.objects) < position:
                 self.objects.append(None)
@@ -71,7 +72,8 @@ class Column:
         elif isinstance(self.objects[position], (Region, Node)):
             return False
         elif isinstance(self.objects[position], GraphLine):
-            if self.objects[position].type == LineType.TRACKLET:
+            if self.objects[position].type == LineType.TRACKLET or \
+                            self.objects[position].type == LineType.PARTIAL_TRACKLET:
                 return False
         return True
 
@@ -163,8 +165,6 @@ class Column:
                 if isinstance(item, Region):
                     self.show_node(item, vertically)
                 elif isinstance(item, GraphLine):
-                    if item.type is LineType.PARTIAL:
-                        self.show_node(item.region_from, vertically)
                     if item.region_from.frame_ == self.frame:
                         self.show_node(item.region_from, vertically)
                     elif item.region_to.frame_ == self.frame:
@@ -176,37 +176,50 @@ class Column:
         if node is None:
             node = edge.region_to
         position = self.get_position_item(node)
+        if edge.type == LineType.PARTIAL_TRACKLET:
+            pass
         from_y = GAP + FROM_TOP + position * self.height + self.height / 2 + SPACE_BETWEEN_VER * position
 
-        if edge.type is not LineType.PARTIAL:
-            column_left = frame_columns[edge.region_from.frame_]
-            position = column_left.get_position_item(edge.region_from)
-            to_x = column_left.x + self.width
-            to_y = GAP + FROM_TOP + position * self.height + self.height / 2 + SPACE_BETWEEN_VER * position
-        else:
-            to_y = from_y
-            to_x = self.x - SPACE_BETWEEN_HOR / 2.5
-            if not direction == "left":
-                from_x += self.width
-                to_x += self.width + SPACE_BETWEEN_HOR * 4 / 5.0
+        column_left = frame_columns[edge.region_from.frame_]
+        position = column_left.get_position_item(edge.region_from)
+        to_x = column_left.x + self.width
+        to_y = GAP + FROM_TOP + position * self.height + self.height / 2 + SPACE_BETWEEN_VER * position
 
+        z_value = -1 if edge.type == LineType.TRACKLET or LineType.PARTIAL_TRACKLET else -3
+
+        self.draw_edge(from_x, from_y, to_x, to_y, vertically, z_value, edge)
+
+        if edge.type == LineType.PARTIAL_TRACKLET:
+            z_value = -2
+
+            if edge.overlaps_left():
+                self.draw_edge(column_left.x, from_y, column_left.x - SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge, partial=True)
+
+            if edge.overlaps_right():
+                self.draw_edge(self.x + self.width, from_y, self.x + self.width + SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge, partial=True)
+
+            # to_y = from_y
+            # to_x = self.x - SPACE_BETWEEN_HOR / 2.5
+            # if not direction == "left":
+            #     from_x += self.width
+            #     to_x += self.width + SPACE_BETWEEN_HOR * 4 / 5.0
+
+    def draw_edge(self, from_x, from_y, to_x, to_y, vertically, z_value, edge, partial=False):
         if vertically:
             from_x, from_y, to_x, to_y = from_y, from_x, to_y, to_x
-
+        edge_obj = Edge(from_x, from_y, to_x, to_y, edge, self.scene, vertically, partial)
         if edge in self.edges:
-            # print self.edges[edge]
-            self.scene.removeItem(self.edges[edge].graphical_object)
-        edge_obj = Edge(from_x, from_y, to_x, to_y, edge, self.scene, vertically)
-        self.edges[edge] = edge_obj
-
-        if edge.type is LineType.TRACKLET:
-            edge_obj.graphical_object.setZValue(-1)
-        elif edge.type is LineType.PARTIAL:
-            edge_obj.graphical_object.setZValue(-2)
+            self.edges[edge].append(edge_obj)
         else:
-            edge_obj.graphical_object.setZValue(-3)
-
+            self.edges[edge] = [edge_obj]
+        edge_obj.graphical_object.setZValue(z_value)
         self.scene.addItem(edge_obj.graphical_object)
+
+    def delete_scene(self):
+        for key, object in self.edges.items():
+            for o in object:
+                self.scene.removeItem(o.graphical_object)
+            del self.edges[key]
 
     def show_node(self, region, vertically, compressed=True):
         position = self.get_position_item(region)
@@ -248,6 +261,8 @@ class Column:
                 self.compress_marker.hide()
         else:
             self.show_frame_number(vertically, compress_axis, True)
+            if not compress_axis:
+                self.frame_sign.hide()
 
     def show_frame_number(self, vertically, compress_axis=True, empty=False):
         text = str(self.frame)
@@ -269,5 +284,3 @@ class Column:
         else:
             self.frame_sign.setPos(x, y)
             self.frame_sign.show()
-        if not compress_axis:
-            self.frame_sign.hide()
