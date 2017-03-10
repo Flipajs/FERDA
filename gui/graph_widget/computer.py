@@ -5,7 +5,6 @@ from gui.graph_widget.graph_line import LineType
 __author__ = 'Simon Mandlik'
 
 def sort_edges(edges, used_frames_sorted):
-    partial = []
     chunk_dict = {}
     heap = []
 
@@ -33,14 +32,14 @@ def sort_edges(edges, used_frames_sorted):
     while heap:
         lines.append(heappop(heap)[1])
 
-    result = list(reversed(chunks)) + lines + partial
+    result = chunks + lines
     return result
 
 
 def get_list_from_dict(dictionary):
     lengths = dictionary.keys()
     result = []
-    for length in lengths:
+    for length in sorted(lengths, reverse=True):
         value = dictionary[length]
         if isinstance(value, list):
             for edge in value:

@@ -49,3 +49,8 @@ class GraphLine:
     def overlaps_right(self):
         return self.overlap.right
 
+    def set_overlap_left(self, p):
+        self.overlap.left = p
+
+    def set_overlap_right(self, p):
+        self.overlap.right = p

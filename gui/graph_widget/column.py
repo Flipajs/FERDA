@@ -1,3 +1,4 @@
+import copy
 from PyQt4 import QtGui
 
 import numpy as np
@@ -71,7 +72,8 @@ class Column:
         elif isinstance(self.objects[position], (Region, Node)):
             return False
         elif isinstance(self.objects[position], GraphLine):
-            if self.objects[position].type == LineType.TRACKLET:
+            if self.objects[position].type == LineType.TRACKLET or \
+                            self.objects[position].type == LineType.PARTIAL_TRACKLET:
                 return False
         return True
 
@@ -174,18 +176,12 @@ class Column:
         if node is None:
             node = edge.region_to
         position = self.get_position_item(node)
-        print node
-        print position
-        print edge.id
         if edge.type == LineType.PARTIAL_TRACKLET:
             pass
         from_y = GAP + FROM_TOP + position * self.height + self.height / 2 + SPACE_BETWEEN_VER * position
 
         column_left = frame_columns[edge.region_from.frame_]
         position = column_left.get_position_item(edge.region_from)
-        print node
-        print position
-        print edge.id
         to_x = column_left.x + self.width
         to_y = GAP + FROM_TOP + position * self.height + self.height / 2 + SPACE_BETWEEN_VER * position
 
@@ -197,10 +193,14 @@ class Column:
             z_value = -2
 
             if edge.overlaps_left():
-                self.draw_edge(column_left.x, from_y, column_left.x - SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge, partial=True)
+                edge_n = copy.copy(edge)
+                edge_n.set_overlap_left(False)
+                self.draw_edge(column_left.x, from_y, column_left.x - SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge_n, partial=True)
 
             if edge.overlaps_right():
-                self.draw_edge(self.x + self.width, from_y, self.x + self.width + SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge, partial=True)
+                edge_n = copy.copy(edge)
+                edge_n.set_overlap_right(False)
+                self.draw_edge(self.x + self.width, from_y, self.x + self.width + SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge_n, partial=True)
 
             # to_y = from_y
             # to_x = self.x - SPACE_BETWEEN_HOR / 2.5
@@ -212,15 +212,11 @@ class Column:
     def draw_edge(self, from_x, from_y, to_x, to_y, vertically, z_value, edge, partial=False):
         if vertically:
             from_x, from_y, to_x, to_y = from_y, from_x, to_y, to_x
-
         if edge in self.edges:
             for edge_obj in self.edges[edge]:
                 self.scene.removeItem(edge_obj.graphical_object)
         edge_obj = Edge(from_x, from_y, to_x, to_y, edge, self.scene, vertically, partial)
-        if edge in self.edges:
-            self.edges[edge].append(edge_obj)
-        else:
-            self.edges[edge] = [edge_obj]
+        self.edges[edge] = [edge_obj]
         edge_obj.graphical_object.setZValue(z_value)
         self.scene.addItem(edge_obj.graphical_object)
 

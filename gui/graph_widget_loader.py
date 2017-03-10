@@ -92,11 +92,11 @@ class GraphWidgetLoader:
             self.regions_vertices[region] = vertex
             self.regions.add(region)
 
-    def prepare_lines(self):
+    def prepare_lines(self, first_frame, last_frame):
         for vertex in self.vertices:
             v = self.graph.vertex(vertex)
-            self.prepare_tuples(v.in_edges())
-            self.prepare_tuples(v.out_edges())
+            # self.prepare_tuples(v.in_edges()) # duplicates in output!
+            self.prepare_tuples(v.out_edges(), first_frame, last_frame)
 
     def update_colours(self, edges):
         for edge in edges:
@@ -151,12 +151,14 @@ class GraphWidgetLoader:
 
             self.edges.add(line)
 
-    def prepare_tuples(self, edges):
+    def prepare_tuples(self, edges, first_frame, last_frame):
         for edge in edges:
             source = edge.source()
             target = edge.target()
             r1 = self.project.gm.region(source)
             r2 = self.project.gm.region(target)
+            if r1.frame_ == last_frame or r2.frame_ == first_frame:
+                continue # out of snaps
             source_start_id = self.graph_manager.g.vp["chunk_start_id"][source]
             target_end_id = self.graph_manager.g.vp["chunk_end_id"][target]
 
@@ -204,7 +206,7 @@ class GraphWidgetLoader:
         # print("Preparing nodes...")
         self.prepare_nodes()
         # print("Preparing edges...")
-        self.prepare_lines()
+        self.prepare_lines(frames[0], frames[-1])
         self.prepare_tracklets(frames)
         # print("Preparing visualizer...")
         img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
@@ -232,7 +234,7 @@ if __name__ == '__main__':
     # l1.set_width(60)
     # l1.set_height(60)
 
-    g = l1.get_widget(range(300, 500))
+    g = l1.get_widget(range(300, 400))
     # g = l1.get_widget()
     g.redraw()
     g.show()
