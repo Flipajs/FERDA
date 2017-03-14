@@ -393,7 +393,10 @@ class CropVideoWidget(QtGui.QWidget):
     def change_frame(self, position=None):
         """Changes current frame to position given. If there is no such position, calls self.out_of_frames"""
         if position is None:
-            position = int(self.frameEdit.text())
+            try:
+                position = int(self.frameEdit.text())
+            except ValueError:
+                position = int(self.frameEdit.text().split('/')[0])
 
         if self.video is not None:
             img = self.video.seek_frame(position)
