@@ -216,6 +216,7 @@ class SegmentationHelper:
 
         t = time.time()
         # get all feature data from image and create one large array
+
         layers = self.get_features()
 
         for id_ in sorted(self.unused[0], key=lambda x: -x):

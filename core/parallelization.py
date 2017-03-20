@@ -183,6 +183,8 @@ if __name__ == '__main__':
                     area += roi.width() * roi.height()
 
                 for roi in rois:
+                    print roi
+
                     tl = roi.top_left_corner()
                     br = roi.bottom_right_corner()
 
