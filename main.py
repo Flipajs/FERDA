@@ -20,36 +20,17 @@ project = Project()
 S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
-if is_flipajs_pc() and False:
-# if is_flipajs_pc():
+# if is_flipajs_pc() and False:
+if is_flipajs_pc():
     # wd = '/Users/iflipajs/Documents/wd/FERDA/Cam1_rf'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
     project.load(wd)
-
-    from core.graph.region_chunk import RegionChunk
-    to_remove = []
-    for ch in project.chm.chunk_gen():
-        rch = RegionChunk(ch, project.gm, project.rm)
-
-        roi = rch[0].roi()
-        ratio = rch[0].area()/float(roi.height() * roi.width())
-        if ratio < 0.1:
-            project.gm.remove_vertex(ch.start_node(), disassembly=False)
-            project.gm.remove_vertex(ch.end_node(), disassembly=False)
-
-            to_remove.append(ch)
-            print "removing ch: ", ch.id()
-
-            # print rch[0].area(), roi.height() * roi.width(), rch[0].area()/float(roi.height() * roi.width())
-
-    for ch in to_remove:
-        project.chm.remove_chunk(ch, project.gm)
 
     # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
     project.load_semistate(wd, 'id_classified_HIL_init_0')

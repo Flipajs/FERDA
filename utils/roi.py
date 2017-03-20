@@ -103,8 +103,8 @@ class ROI():
     def safe_expand(self, border, image):
         y = max(0, self.y_ - border)
         x = max(0, self.x_ - border)
-        h = min(image.shape[0], self.height_ + 2 * border)
-        w = min(image.shape[1], self.width_ + 2 * border)
+        h = min(image.shape[0] - y, self.height_ + 2 * border)
+        w = min(image.shape[1] - x, self.width_ + 2 * border)
         return ROI(y,
                    x,
                    h,
