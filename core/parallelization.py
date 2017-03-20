@@ -193,6 +193,8 @@ if __name__ == '__main__':
                     w2 = br[1]
 
                     crop = img[h1:h2, w1:w2, :].copy()
+                    print str(roi)
+                    print crop.shape
 
                     # add border2 (to prevent segmentation artefacts
                     crop = cv2.copyMakeBorder(crop, border2, border2, border2, border2, cv2.BORDER_REPLICATE)
