@@ -115,6 +115,11 @@ class Project:
         except AttributeError:
             pass
 
+        try:
+            p.video_crop_model = self.video_crop_model
+        except AttributeError:
+            pass
+
         with open(destinationFolder+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 

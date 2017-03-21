@@ -51,7 +51,7 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), ret
         crop = np.copy(img_[y:y + height, x:x + width, :])
     else:
         # TODO: why is height twice here?
-        # crop = np.copy(img[y:y + height, x:x + height, :])
+        # crop_ = np.copy(img[y:y + height, x:x + height, :])
         crop = np.copy(img[y:y + height, x:x + width, :])
 
     if return_offset:
@@ -140,7 +140,8 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
                 img = img[:,:,2].copy()
             else:
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        except:
+        except Exception as e:
+            print e
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     if project.arena_model is not None:

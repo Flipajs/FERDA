@@ -46,7 +46,7 @@ class SetMSERs(QtGui.QWidget):
         self.im = im
         self.w, self.h, c = self.im.shape
 
-        self.use_segmentation_ = False
+        self.use_segmentation_ = True
         self.segmentation = None
 
         # Setup colors
@@ -85,7 +85,7 @@ class SetMSERs(QtGui.QWidget):
         left_scroll = QtGui.QScrollArea()
         left_scroll.setWidgetResizable(True)
         left_scroll.setWidget(self.left_panel)
-        left_scroll.setMaximumWidth(300)
+        left_scroll.setMaximumWidth(400)
         left_scroll.setMinimumWidth(300)
 
         self.form_panel = QtGui.QFormLayout()
@@ -120,6 +120,7 @@ class SetMSERs(QtGui.QWidget):
         # paint must be updated first, because segmentation results are used in msers
         self.update_paint()
         self.update_img()
+
         self.update_mser()
 
     def draw_max_area_helper(self):
@@ -164,10 +165,10 @@ class SetMSERs(QtGui.QWidget):
         # get msers
         s = time.time()
         from core.region.mser import get_msers_
-        msers = get_msers_(img_, self.project, 0, prefiltered=False)
-        # msers = filter(lambda x: x.area() <= 50, msers)
+        # msers = get_msers_(img_, self.project, 0, prefiltered=False)
 
-        # msers = ferda_filtered_msers(img_, self.project)
+        msers = ferda_filtered_msers(img_, self.project, 0)
+
         print "mser takes: ", time.time() - s
 
         # prepare empty array - mser borders will be painted there and it will be visualised as painter's overlay
@@ -216,15 +217,22 @@ class SetMSERs(QtGui.QWidget):
 
     def update_img(self):
         QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
-        self.segmentation = self.helper.predict()
 
-        # show result as overlay
-        if self.segmentation is not None:
-            im = np.asarray(self.segmentation[..., None]*self.color_prob, dtype=np.uint8)
-            qim = array2qimage(im)
-            self.painter.set_overlay(qim)
-        else:  # or hide it if input data was insufficient to create a result
+        if self.use_segmentation_:
+            t = time.time()
+            self.segmentation = self.helper.predict()
+            print "prediction takes: {:.4f}".format(time.time() - t)
+
+            # show result as overlay
+            if self.segmentation is not None:
+                im = np.asarray(self.segmentation[..., None]*self.color_prob, dtype=np.uint8)
+                qim = array2qimage(im)
+                self.painter.set_overlay(qim)
+            else:  # or hide it if input data was insufficient to create a result
+                self.painter.set_overlay(None)
+        else:
             self.painter.set_overlay(None)
+
         # stop cursor animation
         QtGui.QApplication.restoreOverrideCursor()
 
@@ -274,13 +282,13 @@ class SetMSERs(QtGui.QWidget):
 
             import cv2
 
-            cv2.putText(crop, str(r.margin_)+' '+str(r.area())+' '+str(r.label_), (10, 10), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.25, (255, 255, 255))
+            cv2.putText(crop, str(r.min_intensity_)+' '+str(r.area())+' '+str(r.label_), (10, 10), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.25, (255, 255, 255))
 
-            # create qimage from crop
+            # create qimage from crop_
             img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
             pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
 
-            # add crop to img grid
+            # add crop_ to img grid
             item = SelectableQLabel(id=r_id)
             item.setScaledContents(True)
             item.setFixedSize(150, 150)
@@ -297,6 +305,14 @@ class SetMSERs(QtGui.QWidget):
         :return: None
         """
         image = self.vid.next_frame()
+        self.set_image(image)
+
+    def show_prev_frame(self):
+        """
+        Show current settings on next frame
+        :return: None
+        """
+        image = self.vid.prev_frame()
         self.set_image(image)
 
     def show_random_frame(self):
@@ -378,21 +394,54 @@ class SetMSERs(QtGui.QWidget):
         self.painter.set_overlay2_visible(self.check_mser.isChecked())
 
     def val_changed(self):
+        prev_use_s = self.use_segmentation_
+
         self.project.other_parameters.img_subsample_factor = self.mser_img_subsample.value()
         self.project.mser_parameters.min_area = self.mser_min_area.value()
         self.project.mser_parameters.max_area = self.mser_max_area.value()
         self.project.mser_parameters.min_margin = self.mser_min_margin.value()
+        self.project.mser_parameters.use_min_margin_filter = self.use_margin_filter.isChecked()
         self.project.mser_parameters.gaussian_kernel_std = self.blur_kernel_size.value()
         self.project.other_parameters.use_only_red_channel = self.use_only_red_ch.isChecked()
         self.use_segmentation_ = self.use_segmentation.isChecked()
         self.project.mser_parameters.intensity_threshold = self.intensity_threshold.value()
         self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
         self.project.mser_parameters.use_children_filter = self.use_children_filter.isChecked()
+        self.project.mser_parameters.use_intensity_percentile_threshold = self.use_intensity_percentile_threshold.isChecked()
+        self.project.mser_parameters.intensity_percentile = self.intensity_percentile.value()
+        self.project.mser_parameters.area_roi_ratio_threshold = self.area_roi_ratio_threshold.value()
 
-        # only mser-related parameters were changed, no need to update everything
-        self.update_mser()
+        if prev_use_s == self.use_segmentation_:
+            # only mser-related parameters were changed, no need to update everything
+            self.update_mser()
+        else:
+            self.update_all()
 
     def prepare_widgets(self):
+        self.use_intensity_percentile_threshold = QtGui.QCheckBox()
+        self.intensity_percentile = QtGui.QSpinBox()
+        self.intensity_percentile.setMinimum(1)
+        self.intensity_percentile.setMaximum(100)
+        self.intensity_percentile.setValue(10)
+
+        self.area_roi_ratio_threshold = QtGui.QDoubleSpinBox()
+        self.area_roi_ratio_threshold.setMinimum(0)
+        self.area_roi_ratio_threshold.setMaximum(1.0)
+        self.area_roi_ratio_threshold.setValue(0)
+
+        self.max_dist_object_length = QtGui.QDoubleSpinBox()
+        self.max_dist_object_length.setMinimum(0)
+        self.max_dist_object_length.setMaximum(100)
+        self.max_dist_object_length.setValue(2.0)
+
+        self.major_axis_median = QtGui.QSpinBox()
+        self.major_axis_median.setMinimum(0)
+        self.major_axis_median.setMaximum(1000)
+        self.major_axis_median.setValue(20)
+
+        self.use_margin_filter = QtGui.QCheckBox()
+        self.use_margin_filter.setChecked(True)
+
         self.use_children_filter = QtGui.QCheckBox()
         self.button_group = QtGui.QButtonGroup()
         self.use_only_red_ch = QtGui.QCheckBox()
@@ -410,56 +459,67 @@ class SetMSERs(QtGui.QWidget):
         self.check_paint = QtGui.QCheckBox("Paint data")
         self.check_mser = QtGui.QCheckBox("MSER view")
         self.button_next = QtGui.QPushButton("Next frame")
+        self.button_prev = QtGui.QPushButton("Prev frame")
         self.button_rand = QtGui.QPushButton("Random frame")
-        self.button_done = QtGui.QPushButton("Done")
+
+        self.button_refresh = QtGui.QPushButton("refresh (new randomized training)")
+        self.button_reset = QtGui.QPushButton("restart (delete labels)")
+
+        self.use_roi_prediction_optimisation_ch = QtGui.QCheckBox('')
+        self.prediction_optimisation_border_spin = QtGui.QSpinBox()
+        self.full_segmentation_refresh_in_spin = QtGui.QSpinBox()
+
+        # self.button_done = QtGui.QPushButton("Done")
 
     def configure_form_panel(self):
         self.mser_max_area.setMinimum(100)
         self.mser_max_area.setSingleStep(1)
         self.mser_max_area.setMaximum(1000000000)
-        # self.mser_max_area.setDecimals(6)
-        self.mser_max_area.setValue(self.project.mser_parameters.max_area)
-        self.mser_max_area.valueChanged.connect(self.val_changed)
+        # self.mser_max_area.setValue(self.project.mser_parameters.max_area)
+        self.mser_max_area.setValue(50000)
+
         self.form_panel.addRow('MSER Max area', self.mser_max_area)
 
         self.mser_min_area.setMinimum(0)
-        self.mser_min_area.setMaximum(1000)
+        self.mser_min_area.setMaximum(100000)
         self.mser_min_area.setValue(self.project.mser_parameters.min_area)
-        self.mser_min_area.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('MSER Min area', self.mser_min_area)
 
-        self.mser_min_margin.setMinimum(3)
+        self.mser_min_margin.setMinimum(1)
         self.mser_min_margin.setMaximum(100)
         self.mser_min_margin.setValue(self.project.mser_parameters.min_margin)
-        self.mser_min_margin.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('MSER Min margin', self.mser_min_margin)
+
+        self.form_panel.addRow('use min margin filter', self.use_margin_filter)
 
         self.mser_img_subsample.setMinimum(1.0)
         self.mser_img_subsample.setMaximum(12.0)
         self.mser_img_subsample.setSingleStep(0.1)
         self.mser_img_subsample.setValue(self.project.other_parameters.img_subsample_factor)
-        self.mser_img_subsample.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('MSER image subsample factor', self.mser_img_subsample)
 
         self.blur_kernel_size.setMinimum(0.0)
         self.blur_kernel_size.setMaximum(5.0)
         self.blur_kernel_size.setSingleStep(0.1)
         self.blur_kernel_size.setValue(self.project.mser_parameters.gaussian_kernel_std)
-        self.blur_kernel_size.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('Gblur kernel size', self.blur_kernel_size)
 
         self.intensity_threshold.setMinimum(0)
         self.intensity_threshold.setMaximum(256)
         self.intensity_threshold.setSingleStep(1)
         self.intensity_threshold.setValue(256)
-        self.intensity_threshold.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('intensity threshold (ignore pixels above)', self.intensity_threshold)
 
         self.region_min_intensity.setMaximum(256)
         self.region_min_intensity.setValue(56)
         self.region_min_intensity.setMinimum(0)
         self.region_min_intensity.setSingleStep(1)
-        self.region_min_intensity.valueChanged.connect(self.val_changed)
+
         self.form_panel.addRow('region min intensity', self.region_min_intensity)
         # this line is necessary to avoid possible bugs in the future
         self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
@@ -475,22 +535,58 @@ class SetMSERs(QtGui.QWidget):
         self.form_panel.addRow('', self.random_frame)
         """
 
-        self.use_children_filter.stateChanged.connect(self.val_changed)
+        self.use_intensity_percentile_threshold.setChecked(self.project.mser_parameters.use_children_filter)
+        self.form_panel.addRow('use intensity percentile instead of min I', self.use_intensity_percentile_threshold)
+
+        self.form_panel.addRow('percentile: ', self.intensity_percentile)
+
         self.use_children_filter.setChecked(self.project.mser_parameters.use_children_filter)
         self.form_panel.addRow('use children filter', self.use_children_filter)
 
-        self.use_only_red_ch.stateChanged.connect(self.val_changed)
         self.form_panel.addRow('use only red channel in img', self.use_only_red_ch)
         self.button_group.addButton(self.use_only_red_ch)
 
-        self.use_full_image.stateChanged.connect(self.val_changed)
-        self.form_panel.addRow('full image', self.use_full_image)
+        self.form_panel.addRow('(area / roi ratio) > ', self.area_roi_ratio_threshold)
+
+
+        self.form_panel.addRow('work on intensity only', self.use_full_image)
         self.button_group.addButton(self.use_full_image)
 
-        self.use_segmentation.stateChanged.connect(self.val_changed)
-        self.form_panel.addRow('segmentation', self.use_segmentation)
+        self.form_panel.addRow('work on prob. map', self.use_segmentation)
         self.button_group.addButton(self.use_segmentation)
         self.use_segmentation.setChecked(True)
+
+        self.prediction_optimisation_border_spin.setMinimum(0)
+        self.prediction_optimisation_border_spin.setMaximum(10000)
+        self.prediction_optimisation_border_spin.setValue(25)
+
+        self.full_segmentation_refresh_in_spin.setMinimum(0)
+        self.full_segmentation_refresh_in_spin.setMaximum(10000)
+        self.full_segmentation_refresh_in_spin.setValue(25)
+
+        self.form_panel.addRow('major axis median', self.major_axis_median)
+        self.form_panel.addRow('max dist = this x major axis median', self.max_dist_object_length)
+
+        # self.form_panel.addRow('max distance [px]', self.max_dist_object_length)
+        self.form_panel.addRow('use ROI prediction optimisation', self.use_roi_prediction_optimisation_ch)
+        self.form_panel.addRow('prediction ROI border', self.prediction_optimisation_border_spin)
+        self.form_panel.addRow('full segmentation every n-th frame', self.full_segmentation_refresh_in_spin)
+
+        self.mser_max_area.valueChanged.connect(self.val_changed)
+        self.mser_min_area.valueChanged.connect(self.val_changed)
+        self.mser_min_margin.valueChanged.connect(self.val_changed)
+        self.use_margin_filter.stateChanged.connect(self.val_changed)
+        self.mser_img_subsample.valueChanged.connect(self.val_changed)
+        self.blur_kernel_size.valueChanged.connect(self.val_changed)
+        self.intensity_threshold.valueChanged.connect(self.val_changed)
+        self.region_min_intensity.valueChanged.connect(self.val_changed)
+        self.use_intensity_percentile_threshold.stateChanged.connect(self.val_changed)
+        self.intensity_percentile.valueChanged.connect(self.val_changed)
+        self.area_roi_ratio_threshold.valueChanged.connect(self.val_changed)
+        self.use_children_filter.stateChanged.connect(self.val_changed)
+        self.use_only_red_ch.stateChanged.connect(self.val_changed)
+        self.use_full_image.stateChanged.connect(self.val_changed)
+        self.use_segmentation.stateChanged.connect(self.val_changed)
 
     def configure_paint_panel(self):
 
@@ -547,14 +643,31 @@ class SetMSERs(QtGui.QWidget):
         self.check_mser.toggled.connect(self.checkbox)
         self.left_panel.layout().addWidget(self.check_mser)
 
+        self.button_prev.clicked.connect(self.show_prev_frame)
+        self.left_panel.layout().addWidget(self.button_prev)
+
         self.button_next.clicked.connect(self.show_next_frame)
         self.left_panel.layout().addWidget(self.button_next)
 
         self.button_rand.clicked.connect(self.show_random_frame)
         self.left_panel.layout().addWidget(self.button_rand)
 
-        self.button_done.clicked.connect(self.done)
-        self.left_panel.layout().addWidget(self.button_done)
+        self.button_refresh.clicked.connect(self.update_all)
+        self.left_panel.layout().addWidget(self.button_refresh)
+
+        self.button_reset.clicked.connect(self.reset_classifier)
+        self.left_panel.layout().addWidget(self.button_reset)
+
+        # self.button_done.clicked.connect(self.done)
+        # self.left_panel.layout().addWidget(self.button_done)
+
+    def reset_classifier(self):
+        print "reset..."
+
+        self.painter.reset_masks()
+        self.helper.rfc = None
+
+        self.update_all()
 
 
 if __name__ == "__main__":
@@ -566,7 +679,11 @@ if __name__ == "__main__":
     proj.arena_model = None
     proj.bg_model = None
 
-    proj.video_paths = '/Users/flipajs/Desktop/S9T95min.avi'
+    # proj.video_crop_model = {'y1': 110, 'y2': 950, 'x1': 70, 'x2': 910}
+
+    # proj.video_paths = '/Users/flipajs/Desktop/S9T95min.avi'
+    proj.video_paths = '/Volumes/Transcend/Dropbox/FERDA/F3C51min.avi'
+
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c2.avi'
@@ -580,7 +697,7 @@ if __name__ == "__main__":
 
     ex.mser_min_margin.setValue(proj.mser_parameters.min_margin)
     ex.mser_min_area.setValue(proj.mser_parameters.min_area)
-    ex.mser_max_area.setValue(proj.mser_parameters.max_area)
+    # ex.mser_max_area.setValue(proj.mser_parameters.max_area)
 
     app.exec_()
     app.deleteLater()

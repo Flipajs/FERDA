@@ -429,7 +429,7 @@ def head_detector_classify(p):
         # bb, offset = get_bounding_box(r, p)
         # bb = rotate_img(bb, r.theta_)
         # bb = centered_crop(bb, 8 * r.b_, 4 * r.a_)
-        # crop = bb
+        # crop_ = bb
 
         cv2.putText(crop, str(probs[0]), (10, 10),
                     cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.4, (255, 255, 255))

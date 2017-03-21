@@ -14,7 +14,9 @@ from itertools import izip
 import matplotlib.pyplot as plt
 import time
 from math import ceil
-import img_features
+# TODO: UNCOMMENT THIS AND PUBLISH...
+# import img_features
+from thesis.config import *
 from utils.img import img_saturation_coef
 
 
@@ -789,7 +791,6 @@ def get_idtracker_features(r, p, debug=False, sub=1, config=None, vectorize=True
 
     # print time.time() - t1
 
-    from thesis.config import *
     import datetime
     dt = datetime.datetime.now().time()
 
@@ -833,8 +834,8 @@ def get_idtracker_features(r, p, debug=False, sub=1, config=None, vectorize=True
     #         if d >= max_d:
     #             continue
     #
-    #         i1 = int(crop[px1[0], px1[1]])
-    #         i2 = int(crop[px2[0], px2[1]])
+    #         i1 = int(crop_[px1[0], px1[1]])
+    #         i2 = int(crop_[px2[0], px2[1]])
     #
     #         i = min(max_i, i1 + i2)
     #         c = min(abs(i1 - i2), max_c)

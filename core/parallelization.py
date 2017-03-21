@@ -26,7 +26,59 @@ import cv2
 from core.region.mser_operations import children_filter
 
 
+def segment(proj, img):
+    proj.segmentation_model.set_image(img)
+    seg = proj.segmentation_model.predict()
+
+    # make hard threshold
+    if False:
+        result = seg < 0.5
+        result = np.asarray(result, dtype=np.uint8) * 255
+    else:
+        result = np.asarray((-seg * 255) + 255, dtype=np.uint8)
+
+    return result
+
+def prepare_img(proj, img):
+    grayscale = True
+    if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
+        grayscale = False
+
+    return prepare_for_segmentation(img, proj, grayscale)
+
+def check_intersection(rois, roi):
+    intersect = -1
+
+    for i, r in enumerate(rois):
+        if r.is_intersecting(roi):
+            return i
+
+    return intersect
+
+def get_rois(msers, img, prediction_optimisation_border):
+    rois = []
+
+    for m in msers:
+        roi = m.roi().safe_expand(prediction_optimisation_border, img)
+        # if roi.width() > 400 or roi.height() > 400:
+        #     continue
+
+        while True:
+            intersect = check_intersection(rois, roi)
+
+            if intersect > -1:
+                roi = rois[intersect].union(roi)
+                rois.pop(intersect)
+            else:
+                rois.append(roi)
+                break
+
+        # rois.append(roi)
+
+    return rois
+
 if __name__ == '__main__':
+    print sys.argv
     working_dir = sys.argv[1]
     proj_name = sys.argv[2]
     id = int(sys.argv[3])
@@ -36,7 +88,18 @@ if __name__ == '__main__':
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
-    proj.solver_parameters.max_edge_distance_in_ant_length = 100
+    # proj.stats.major_axis_median = 18
+    # proj.solver_parameters.max_edge_distance_in_ant_length = 2
+
+    try:
+        use_roi_prediction_optimisation = proj.other_parameters.segmentation_use_roi_prediction_optimisation
+        prediction_optimisation_border = proj.other_parameters.segmentation_prediction_optimisation_border
+        full_segmentation_refresh = proj.other_parameters.segmentation_full_segmentation_refresh_in
+    except:
+        use_roi_prediction_optimisation = True
+        prediction_optimisation_border = 25
+        full_segmentation_refresh = 25
+
 
     if not os.path.exists(proj.working_directory+'/temp'):
         try:
@@ -53,7 +116,7 @@ if __name__ == '__main__':
             try:
                 os.mkdir(temp_local_path+proj_name)
             except:
-                print(temp_local_path+proj_name + "   was created between check and mkdir");
+                print(temp_local_path+proj_name + "   was created between check and mkdir")
 
         temp_local_path=temp_local_path + proj_name
 
@@ -61,7 +124,7 @@ if __name__ == '__main__':
             try:
                 os.mkdir(temp_local_path+'/temp')
             except:
-                print(temp_local_path+'/temp' + "   was created between check and mkdir");
+                print(temp_local_path+'/temp' + "   was created between check and mkdir")
 
         temp_local_path=temp_local_path+'/temp'
 
@@ -77,7 +140,7 @@ if __name__ == '__main__':
     from core.graph.graph_manager import GraphManager
     proj.gm = GraphManager(proj, proj.solver.assignment_score)
     # TODO: add global params
-    proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=5)
+    proj.rm = RegionManager(db_wd=temp_local_path, db_name='part'+str(id)+'_rm.sqlite3', cache_size_limit=10000)
     proj.chm = ChunkManager()
     proj.color_manager = None
 
@@ -92,92 +155,88 @@ if __name__ == '__main__':
     if img is None:
         raise Exception("img is None, there is something wrong with frame: "+str(id*frames_in_row))
 
-    img_gray = prepare_for_segmentation(img, proj)
+    rois = []
+    img = prepare_img(proj, img)
 
     msers_t = 0
     solver_t = 0
     vid_t = 0
     file_t = 0
 
+    border2 = 3
+
     jj = 0
     for i in range(frames_in_row + last_n_frames):
         frame = id*frames_in_row + i
 
         s = time.time()
-        msers = ferda_filtered_msers(img_gray, proj, frame)
 
-        if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
-            new_msers = []
-            border = 10
-            border2 = 5
+        if hasattr(proj, 'segmentation_model'):
+            if rois and i%full_segmentation_refresh != 0:
+                try:
+                    t = time.time()
 
-            new_im = np.ones((img.shape[0], img.shape[1]), dtype=np.uint8) * 255
+                    t2 = 0
+                    new_im = np.ones((img.shape[0], img.shape[1]), dtype=np.uint8) * 255
 
-            for m in msers:
-                roi = m.roi()
-                tl = roi.top_left_corner()
-                br = roi.bottom_right_corner()
+                    area = 0
+                    for roi in rois:
+                        area += roi.width() * roi.height()
 
-                h1 = max(0, tl[0]-border)
-                h2 = min(img.shape[0]-1, br[0] + border)
+                    for roi in rois:
+                        tl = roi.top_left_corner()
+                        br = roi.bottom_right_corner()
 
-                w1 = max(0, tl[1]-border)
-                w2 = min(img.shape[1]-1, br[1] + border)
+                        h1 = tl[0]
+                        h2 = min(img.shape[0] - 1, br[0])
 
-                crop = img[h1:h2, w1:w2, :].copy()
+                        w1 = tl[1]
+                        w2 = br[1]
 
-                # add border2 (to prevent segmentation artefacts
-                crop = cv2.copyMakeBorder(crop, border2, border2, border2, border2, cv2.BORDER_REPLICATE)
+                        crop = img[h1:h2, w1:w2, :].copy()
 
-                proj.segmentation_model.set_image(crop)
-                seg = proj.segmentation_model.predict()
+                        # add border2 (to prevent segmentation artefacts
+                        crop = cv2.copyMakeBorder(crop, border2, border2, border2, border2, cv2.BORDER_REPLICATE)
 
-                # remove border2
-                seg = seg[border2:-border2, border2:-border2].copy()
+                        t2_  = time.time()
+                        proj.segmentation_model.set_image(crop)
+                        # t2_ = time.time() - t2_
+                        # t2 += t2_
+                        # print t2_
+                        # t2_ = time.time()
+                        seg = proj.segmentation_model.predict()
+                        t2_ = time.time() - t2_
+                        t2 += t2_
 
-                jj += 1
+                        # print t2_, crop.shape
 
-                # make hard threshold
-                if True:
-                    seg_img = seg < 0.5
-                    seg_img = np.asarray(seg_img, dtype=np.uint8) * 255
-                else:
-                    seg_img = np.asarray((-seg*255)+255, dtype=np.uint8)
+                        # remove border2
+                        seg = seg[border2:-border2, border2:-border2].copy()
 
-                new_im[h1:h2, w1:w2] = seg_img.copy()
+                        jj += 1
 
-                # from scripts.gcut.segmentation import Segmentation
-                # gcut_segmentation = Segmentation(seg_img)
-                # mask = gcut_segmentation.segmentation()
-                # mask = np.asarray(np.logical_not(mask), dtype=np.uint8) * 255
+                        # make hard threshold
+                        if True:
+                            seg_img = seg < 0.5
+                            seg_img = np.asarray(seg_img, dtype=np.uint8) * 255
+                        else:
+                            seg_img = np.asarray((-seg * 255) + 255, dtype=np.uint8)
 
-                # cv2.imwrite('/Users/flipajs/Desktop/temp/rf/' + str(jj) + '_i.png', crop[border2:-border2, border2:-border2, :].copy())
-                # cv2.imwrite('/Users/flipajs/Desktop/temp/rf/' + str(jj) + '.png', seg_img)
+                        new_im[h1:h2, w1:w2] = seg_img.copy()
 
-            #     msers_ = ferda_filtered_msers(mask, proj, frame)
-            #     for m in msers_:
-            #         # update offsets
-            #         offset = np.array([h1, w1])
-            #         for it in m.pts_rle_:
-            #             it['line'] += h1
-            #             it['col1'] += w1
-            #             it['col2'] += w1
-            #
-            #         m.pts_ += offset
-            #         m.pts_rle_
-            #         m.contour_ += offset
-            #         m.centroid_ += offset
-            #         if hasattr(m, 'roi_') and m.roi_ is not None:
-            #             m.roi_.y_ += h1
-            #             m.roi_.x_ += w1
-            #             m.roi_.y_max_ += h1
-            #             m.roi_.x_max_ += w1
-            #         new_msers.append(m)
-            #
-            # ids = children_filter(new_msers, range(len(new_msers)), tolerance=5)
-            # msers = [new_msers[id_] for id_ in ids]
 
-        msers = ferda_filtered_msers(new_im, proj, frame)
+                    print "segmentation time: {:.3f}, #roi: {} roi area: {} roi coverage: {:.3f}".format(time.time() - t, len(rois), area, area / float(img.shape[0] * img.shape[1]))
+                    # t = time.time()
+                    # segment(proj, img)
+                    # print "without ", time.time() - t
+
+                    img = new_im
+                except:
+                    img = segment(proj, img)
+            else:
+                img = segment(proj, img)
+
+        msers = ferda_filtered_msers(img, proj, frame)
 
         if proj.colormarks_model:
             proj.colormarks_model.assign_colormarks(proj, msers)
@@ -193,11 +252,14 @@ if __name__ == '__main__':
             if img is None:
                 raise Exception("img is None, there is something wrong with frame: " + str(frame))
 
-        img_gray = prepare_for_segmentation(img, proj)
+            img = prepare_img(proj, img)
 
         vid_t += time.time() - s
 
         s = time.time()
+
+        if use_roi_prediction_optimisation:
+            rois = get_rois(msers, img, prediction_optimisation_border)
 
         proj.gm.add_regions_in_t(msers, frame, fast=True)
         solver_t += time.time() - s
@@ -206,15 +268,18 @@ if __name__ == '__main__':
     #     solver.detect_split_merge_cases()
 
     s = time.time()
-    # print "#Edges BEFORE: ", proj.gm.g.num_edges()
-    # while True:
-    #     num_changed1 = solver.simplify(rules=[solver.update_costs])
-    #     num_changed2 = solver.simplify(rules=[solver.adaptive_threshold])
-    #
-    #     if num_changed1+num_changed2 == 0:
-    #         break
-    #
-    # print "#Edges AFTER: ", proj.gm.g.num_edges()
+    print "#Edges BEFORE: ", proj.gm.g.num_edges()
+    while True:
+        num_changed1 = 0
+        # num_changed1 = solver.simplify(rules=[solver.update_costs])
+        # num_changed1 = solver.simplify(rules=[solver.update_costs, solver.adaptive_threshold])
+        num_changed2 = 0
+        num_changed2 = solver.simplify(rules=[solver.adaptive_threshold])
+
+        if num_changed1+num_changed2 == 0:
+            break
+
+    print "#Edges AFTER: ", proj.gm.g.num_edges()
 
     solver_t += time.time() - s
 

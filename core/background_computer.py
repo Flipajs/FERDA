@@ -125,7 +125,7 @@ class BackgroundComputer:
             self.precomputed = True
 
     def check_parallelization(self):
-        if self.finished.all() or self.precomputed:
+        if not self.postpone_parallelisation and (self.finished.all() or self.precomputed):
             self.check_parallelization_timer.stop()
             self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
             assembly_after_parallelization(self)

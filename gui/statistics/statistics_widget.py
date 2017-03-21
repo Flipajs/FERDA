@@ -10,6 +10,7 @@ import sys
 from core.graph.region_chunk import RegionChunk
 from pympler import asizeof
 import gc
+from scripts.export.export_part import Exporter, export_arena
 
 class StatisticsWidget(QtGui.QWidget):
     def __init__(self, project):
@@ -38,7 +39,6 @@ class StatisticsWidget(QtGui.QWidget):
         self.fbox.addRow('Med of means of chunks area', self.med_ch_area)
 
 
-
         self.fbox.addRow('Min certainty value: ', QtGui.QLabel(str(self.project.solver_parameters.certainty_threshold)))
 
         self.tracklet_coverage_step = QtGui.QLineEdit()
@@ -59,21 +59,21 @@ class StatisticsWidget(QtGui.QWidget):
         # self.export_trajectories.setChecked(True)
         # self.export_fbox.addRow('export trajectories', self.export_trajectories)
 
-        self.include_id = QtGui.QCheckBox('')
-        self.include_id.setChecked(True)
-        self.export_fbox.addRow('include id', self.include_id)
+        # self.include_id = QtGui.QCheckBox('')
+        # self.include_id.setChecked(True)
+        # self.export_fbox.addRow('include id', self.include_id)
 
-        self.include_orientation = QtGui.QCheckBox('')
-        self.include_orientation.setChecked(True)
-        self.export_fbox.addRow('include orientation', self.include_orientation)
+        # self.include_orientation = QtGui.QCheckBox('')
+        # self.include_orientation.setChecked(True)
+        # self.export_fbox.addRow('include orientation', self.include_orientation)
 
-        self.include_area = QtGui.QCheckBox('')
-        self.include_area.setChecked(True)
-        self.export_fbox.addRow('include area', self.include_area)
+        # self.include_area = QtGui.QCheckBox('')
+        # self.include_area.setChecked(True)
+        # self.export_fbox.addRow('include area', self.include_area)
 
-        self.include_axes = QtGui.QCheckBox('')
-        self.include_axes.setChecked(True)
-        self.export_fbox.addRow('include axes (major/minor)', self.include_axes)
+        # self.include_axes = QtGui.QCheckBox('')
+        # self.include_axes.setChecked(True)
+        # self.export_fbox.addRow('include axes (major/minor)', self.include_axes)
 
         self.include_region_points = QtGui.QCheckBox('')
         self.include_region_points.setChecked(True)
@@ -93,9 +93,9 @@ class StatisticsWidget(QtGui.QWidget):
 
         self.export_fbox.addRow('file type', self.file_type)
 
-        self.memory_limit_mb = QtGui.QLineEdit()
-        self.memory_limit_mb.setText('1000')
-        self.export_fbox.addRow('memory approx. limit (MB)', self.memory_limit_mb)
+        # self.memory_limit_mb = QtGui.QLineEdit()
+        # self.memory_limit_mb.setText('1000')
+        # self.export_fbox.addRow('memory approx. limit (MB)', self.memory_limit_mb)
 
         self.export_b = QtGui.QPushButton('export')
         self.export_b.clicked.connect(self.export)
@@ -111,13 +111,22 @@ class StatisticsWidget(QtGui.QWidget):
 
     def export(self):
         print "exporting..."
-        ftype = self.file_type.currentText()
-        if ftype == '.txt':
-            self.export_txt()
-        elif ftype == '.csv':
-            self.export_csv()
-        elif ftype == '.mat':
-            self.export_mat()
+
+
+        ex = Exporter(self.project.chm, self.project.gm, self.project.rm,
+                      pts_export=self.include_region_points.isChecked(),
+                      contour_pts_export=self.include_region_contour.isChecked())
+
+        ex.export(self.get_out_path(), min_tracklet_length=1)
+        export_arena(self.get_out_path(), self.project)
+
+        # ftype = self.file_type.currentText()
+        # if ftype == '.txt':
+        #     self.export_txt()
+        # elif ftype == '.csv':
+        #     self.export_csv()
+        # elif ftype == '.mat':
+        #     self.export_mat()
 
         print "done"
 
@@ -211,7 +220,7 @@ class StatisticsWidget(QtGui.QWidget):
         file_num = 0
         chunNum  = 0
         for _, ch in self.project.chm.chunks_.iteritems():
-            chunNum += 1;
+            chunNum += 1
 
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
 
@@ -235,7 +244,7 @@ class StatisticsWidget(QtGui.QWidget):
                 with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
                     print "saving ", str(file_num)
                     print(str(chunNum)+"\n")
-                    sio.savemat(f, {'FERDA': obj_arr})
+                    sio.savemat(f, {'FERDA': obj_arr}, do_compression=True)
 
                 curr_size = 0
 
@@ -252,7 +261,7 @@ class StatisticsWidget(QtGui.QWidget):
 
         # save the rest
         with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
-            sio.savemat(f, {'FERDA': obj_arr})
+            sio.savemat(f, {'FERDA': obj_arr}, do_compression=True)
 
         print "chunks regions t:", time.time() - t2
 
@@ -279,7 +288,7 @@ class StatisticsWidget(QtGui.QWidget):
 
                 arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
 
-            sio.savemat(f, {'arena': arena})
+            sio.savemat(f, {'arena': arena}, do_compression=True)
 
         print "save t:", time.time()-t3
 

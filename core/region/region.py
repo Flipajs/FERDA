@@ -21,6 +21,7 @@ class Region():
         self.label_ = -1
         self.margin_ = -1
         self.min_intensity_ = -1
+        self.intensity_percentile = -1
         self.max_intensity_ = -1
         self.area_ = None
 
@@ -50,7 +51,6 @@ class Region():
         self.contour_ = None
         self.is_virtual = False
 
-        self.colormarks = []
 
     def __str__(self):
         s = repr(self)+" t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(round(self.centroid_[0], 2))+", "+\
@@ -101,6 +101,9 @@ class Region():
         self.label_ = data['label']
         self.margin_ = data['margin']
         self.min_intensity_ = data['minI']
+        if 'intensity_percentile' in data:
+            self.intensity_percentile = data['intensity_percentile']
+
         self.max_intensity_ = data['maxI']
 
         # image moments

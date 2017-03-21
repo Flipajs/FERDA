@@ -17,12 +17,12 @@ __author__ = 'Simon Mandlik'
 
 class Edge:
 
-    def __init__(self, from_x, from_y, to_x, to_y, graph_line, scene, vertical=False):
+    def __init__(self, from_x, from_y, to_x, to_y, graph_line, scene, vertical=False, partial=False):
         self.from_x = from_x
         self.from_y = from_y
         self.to_x = to_x
         self.to_y = to_y
-        if graph_line.type == LineType.PARTIAL:
+        if partial:
             if not vertical:
                 from_y += PARTIAL_LINE_OFFSET
                 to_y += PARTIAL_LINE_OFFSET
@@ -30,11 +30,11 @@ class Edge:
                 from_x += PARTIAL_LINE_OFFSET
                 to_x += PARTIAL_LINE_OFFSET
 
-        if graph_line.type == LineType.TRACKLET:
+        if graph_line.type == LineType.TRACKLET or (graph_line.type == LineType.PARTIAL_TRACKLET and not partial):
             self.graphical_object = ChunkGraphical(from_x, from_y, to_x, to_y, graph_line, scene, vertical)
         elif graph_line.type == LineType.LINE:
             self.graphical_object = LineGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), graph_line, scene)
-        elif graph_line.type == LineType.PARTIAL:
+        elif partial:
             self.graphical_object = PartialGraphical(QtCore.QLineF(from_x, from_y, to_x, to_y), graph_line, scene)
         self.core_obj = graph_line
 
@@ -49,7 +49,7 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
         self.selection_polygon = self.create_selection_polygon()
         self.pick_polygon = self.create_pick_polygon()
         self.scene = scene
-
+        self.core_obj = core_obj
         self.clipped = False
         self.shown = False
         self.info_item = None
@@ -65,7 +65,7 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
             self.info_item.set_color(self.color)
         if not self.shown:
             self.scene.addItem(self.info_item)
-            self.shown = True;
+            self.shown = True
         self.scene.update()
 
     def hide_info(self):

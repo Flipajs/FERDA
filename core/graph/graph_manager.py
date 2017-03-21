@@ -196,15 +196,16 @@ class GraphManager:
             regions_t1 = [self.region(v) for v in vertices_t1]
             regions_t2 = [self.region(v) for v in vertices_t2]
 
-            centroids_t1 = np.array([r.centroid() for r in regions_t1])
-            centroids_t2 = np.array([r.centroid() for r in regions_t2])
-
-            dists = cdist(centroids_t1, centroids_t2)
+            # centroids_t1 = np.array([r.centroid() for r in regions_t1])
+            # centroids_t2 = np.array([r.centroid() for r in regions_t2])
+            #
+            # dists = cdist(centroids_t1, centroids_t2)
             for i, v_t1, r_t1 in zip(range(len(vertices_t1)), vertices_t1, regions_t1):
                 for j, v_t2, r_t2 in zip(range(len(vertices_t2)), vertices_t2, regions_t2):
-                    d = dists[i, j]
+                    # d = dists[i, j]
 
-                    if d < self.max_distance:
+                    # if d < self.max_distance:
+                    if not r_t1.is_ignorable(r_t2, self.max_distance):
                         # prevent multiple edges going from tracklet (chunk) start or multiple edges incomming into chunk end. Only exception is chunk of length 1 (checked inside functions).
                         if self.ch_start_longer(v_t1) or self.ch_end_longer(v_t2):
                             continue

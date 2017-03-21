@@ -22,7 +22,7 @@ class VideoManager():
     this class encapsulates video capturing using OpenCV class VideoCapture
     """
 
-    def __init__(self, video_path, start_t=0, end_t=np.inf, buffer_length=51):
+    def __init__(self, video_path, start_t=0, end_t=np.inf, buffer_length=51, crop_model=None):
         """
         :type video_path: str,
         :type buffer_length: int, determines internal buffer length, which allows going back into history without
@@ -39,6 +39,7 @@ class VideoManager():
         self.view_position_ = self.buffer_length_ - 1  #
         self.buffer_ = [None] * self.buffer_length_
         self.position_ = -1
+        self.crop_model = crop_model
 
         if not self.capture.isOpened():
             raise Exception("Cannot open video! Path: " + video_path)
@@ -61,10 +62,16 @@ class VideoManager():
 
         return pos
 
+    def crop_(self, img):
+        cm = self.crop_model
+        return img[cm['y1']:cm['y2'], cm['x1']:cm['x2']].copy()
+
     def next_frame(self):
         # continue reading new frames
         if self.dec_pos_(self.buffer_position_) == self.view_position_:
             f, self.buffer_[self.buffer_position_] = self.capture.read()
+            if self.crop_model:
+                self.buffer_[self.buffer_position_] = self.crop_(self.buffer_[self.buffer_position_])
 
             if not f or self.position_ >= self.total_frame_count():
                 print "No more frames, end of video file. (video_manager.py)"
@@ -76,6 +83,8 @@ class VideoManager():
         self.position_ += 1
         return self.buffer_[self.view_position_]
 
+    def prev_frame(self):
+        return self.previous_frame()
 
     def previous_frame(self):
         if self.position_ > 0:
@@ -85,6 +94,10 @@ class VideoManager():
                 self.buffer_position_ = self.dec_pos_(self.buffer_position_)
                 self.view_position_ = self.dec_pos_(self.view_position_)
                 self.buffer_[self.view_position_] = self.seek_frame(self.position_)
+
+                # if self.crop_model:
+                #     self.buffer_[self.view_position_] = self.crop_(self.buffer_[self.view_position_])
+
                 return self.buffer_[self.view_position_]
             else:
                 self.view_position_ = view_dec
@@ -154,8 +167,11 @@ class VideoManager():
         self.buffer_position_ = 0
         self.buffer_length_ = 51
         self.view_position_ = self.buffer_length_ - 1
-        self.buffer_ = [None] * self.buffer_length_
+        self.reset_buffer()
         self.position_ = -1
+
+    def reset_buffer(self):
+        self.buffer_ = [None] * self.buffer_length_
 
     def get_manager_copy(self):
         """
@@ -204,12 +220,17 @@ def get_auto_video_manager(project):
     """
 
     file_paths = project.video_paths
+    crop_model = None
+    try:
+        crop_model = project.video_crop_model
+    except:
+        pass
 
     if isinstance(file_paths, list) and len(file_paths) == 1:
         file_paths = file_paths[0]
 
     if not isinstance(file_paths, list):
-        return VideoManager(file_paths, start_t=project.video_start_t, end_t=project.video_end_t)
+        return VideoManager(file_paths, start_t=project.video_start_t, end_t=project.video_end_t, crop_model=crop_model)
 
     # test which one is the lossless one
     compressed = file_paths[0]

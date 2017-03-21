@@ -3,13 +3,18 @@ __author__ = 'flipajs'
 
 class MSERParameters():
     def __init__(self, refresh=None):
-        self.max_area = 100000
-        self.min_area = 15
+        self.max_area = 50000
+        self.min_area = 50
         self.min_margin = 5
+        self.use_min_margin_filter = True
         self.gaussian_kernel_std = 0.0
         self.intensity_threshold = 256
         self.region_min_intensity = 256
         self.use_children_filter = True
+        self.intensity_percentile = 10
+        # if 0, ignore... we suggest 0.1 as it will ignore all thick regions on arena borders
+        self.area_roi_ratio_threshold = 0
+        self.use_intensity_percentile_threshold = False
 
         if refresh:
             self.__dict__.update(refresh.__dict__)

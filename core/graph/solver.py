@@ -42,7 +42,7 @@ class Solver:
             rules = self.rules
 
         # TODO: does it still make sense?
-        queue = sorted(queue, key=lambda x: self.project.gm.region(x).area()+self.project.gm.region(x).centroid()[0]+self.project.gm.region(x).frame()+self.project.gm.region(x).centroid()[1])
+        # queue = sorted(queue, key=lambda x: self.project.gm.region(x).area()+self.project.gm.region(x).centroid()[0]+self.project.gm.region(x).frame()+self.project.gm.region(x).centroid()[1])
 
         while queue:
             vertex = self.project.gm.g.vertex(queue.pop())

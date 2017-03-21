@@ -102,7 +102,7 @@ def warp_region(r, im, dst_h=16, dst_w=48):
     A = cv2.getAffineTransform(src_pts[0:3], dst_pts[0:3])
     # A = np.array([[1, 0, 30], [0, 1, 50]], dtype=np.float32)
 
-    # crop = np.asarray(crop*255, dtype=np.uint8)
+    # crop_ = np.asarray(crop_*255, dtype=np.uint8)
     # im2 = cv2.warpAffine(crop, A, (dst_w, dst_h))
     # A[0, 2] = dst_h
     # A[1, 2] = dst_w

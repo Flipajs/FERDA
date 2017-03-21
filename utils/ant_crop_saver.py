@@ -6,7 +6,7 @@ import math
 
 class CropSaver():
     def __init__(self):
-        self.out_path = '/home/flipajs/~dump/crop/'
+        self.out_path = '/home/flipajs/~dump/crop_/'
         self.crop_size = -1
         self.increase_factor = 1.8
 

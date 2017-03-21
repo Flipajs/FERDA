@@ -113,7 +113,7 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_widget = QtGui.QWidget()
         self.video_layout = QtGui.QVBoxLayout()
         self.vbox.addLayout(self.video_layout)
-        self.video_widget.setLayout(self.video_layout)
+        # self.video_widget.setLayout(self.video_layout)
 
         self.video_control_widget = QtGui.QWidget()
         self.video_control_layout = QtGui.QVBoxLayout()
@@ -225,9 +225,9 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_crop_buttons_layout.addWidget(self.start_frame_sign)
         self.video_crop_buttons_layout.addWidget(self.end_frame_sign)
 
-        self.connect_GUI()
-
         img = self.video.next_frame()
+
+        self.connect_GUI()
 
         if img is not None:
             self.pixMap = cvimg2qtpixmap(img)
@@ -238,6 +238,17 @@ class CropVideoWidget(QtGui.QWidget):
         self.chunks = []
         self.markers = []
         self.items = []
+
+    def sc_changed(self):
+        self.video.crop_model = {'y1': self.sc_y1.value(),
+                                 'y2': self.sc_y2.value(),
+                                 'x1': self.sc_x1.value(),
+                                 'x2': self.sc_x2.value()}
+        frame = self.video.frame_number()
+        self.video.reset()
+        self.change_frame(frame)
+        # self.load_next_frame()
+        # self.load_previous_frame()
 
     def marker_changed(self):
         pass
@@ -284,11 +295,13 @@ class CropVideoWidget(QtGui.QWidget):
 
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""
+        from functools import partial
+
         self.forward.clicked.connect(self.load_next_frame)
         self.backward.clicked.connect(self.load_previous_frame)
         self.playPause.clicked.connect(self.play_pause)
         self.speedSlider.valueChanged.connect(self.speed_slider_changed)
-        # self.showFrame.clicked.connect(self.show_frame)
+        self.showFrame.clicked.connect(partial(self.change_frame, None))
         self.videoSlider.valueChanged.connect(self.video_slider_changed)
         self.timer.timeout.connect(self.load_next_frame)
 
@@ -298,6 +311,12 @@ class CropVideoWidget(QtGui.QWidget):
         self.toggle_borders.clicked.connect(self.set_borders_action)
         self.to_start.clicked.connect(self.go_to_start)
         self.to_stop.clicked.connect(self.go_to_stop)
+
+        # self.sc_y1.valueChanged.connect(self.sc_changed)
+        # self.sc_x1.valueChanged.connect(self.sc_changed)
+        # self.sc_y2.valueChanged.connect(self.sc_changed)
+        # self.sc_x2.valueChanged.connect(self.sc_changed)
+
 
 
     def load_next_frame(self):
@@ -371,8 +390,14 @@ class CropVideoWidget(QtGui.QWidget):
             self.videoSlider.recentlyreleased = False
             self.change_frame(self.videoSlider.value())
 
-    def change_frame(self, position):
+    def change_frame(self, position=None):
         """Changes current frame to position given. If there is no such position, calls self.out_of_frames"""
+        if position is None:
+            try:
+                position = int(self.frameEdit.text())
+            except ValueError:
+                position = int(self.frameEdit.text().split('/')[0])
+
         if self.video is not None:
             img = self.video.seek_frame(position)
             if img is not None:
