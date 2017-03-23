@@ -4,7 +4,7 @@ import numpy as np
 from PIL import ImageQt
 from PyQt4 import QtGui
 import scipy
-
+from skimage.transform import rescale
 
 from utils.misc import get_settings
 from core.settings import Settings as S_
