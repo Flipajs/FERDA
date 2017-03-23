@@ -70,7 +70,8 @@ class HeadWidget(QtGui.QWidget):
     def _add_region(self, region):
         ant, avg_dist = get_feature_vector(region, len(region.contour_without_holes()) / 2, True)
         ax = self.figure.add_subplot(111)
-        ax.plot(np.append(ant[::2], ant[0]), np.append(ant[1::2], ant[1]))
+        # ax.plot(np.append(ant[::2], ant[0]), np.append(ant[1::2], ant[1]))
+        ax.plot(np.append(ant[:, 0], ant[0, 0]), np.append(ant[:, 1], ant[0, 1]))
         ax.grid(True)
         plt.gca().set_aspect('equal', adjustable='box')
         ax.hold(False)

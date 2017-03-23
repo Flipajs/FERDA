@@ -77,7 +77,7 @@ if __name__ == "__main__":
     chunks = project.gm.chunk_list()
 
     # data for clusters_gt/Cam1_
-    # f = open('/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_cluster_tracklets')
+    # f = open('/home/simon/FERDA/ferda/scripts/pca/data/Cam_1_cluster_tracklets_idxs')
     # f = open('/home/simon/FERDA/ferda/scripts/pca/data/clusters_zebrafish_cluster_tracklets')
     chunks_with_clusters = []
     # for line in f:

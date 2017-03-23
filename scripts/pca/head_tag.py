@@ -9,13 +9,12 @@ from core.project.project import Project
 from scripts.pca.widgets import head_widget
 
 PRIME = 2 ** 8 + 1
-FNAME = 'head_gt_results.p'
 
 
 class HeadGT:
-    def __init__(self, project):
+    def __init__(self, project, fname):
         self.project = project
-        self.fname = os.path.join(self.project.working_directory, FNAME)
+        self.fname = fname
         logging.info("Loading previous results from %s" % self.fname)
         if exists(self.fname):
             self.results = pickle.load(open(self.fname, 'rb'))

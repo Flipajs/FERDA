@@ -1,13 +1,17 @@
 import logging
 import cPickle as pickle
+import os
 from PyQt4 import QtGui
 
 import sys
 
+from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from scripts.pca.cluster_range.gt_manager import GTManager
+from scripts.pca.head_tag import HeadGT
 from scripts.pca.widgets.tracklet_viewer import TrackletViewer
 
+GT_LOC = '/home/simon/FERDA/ferda/scripts/pca/data'
 
 def transform_index_to_ids(project, index_fname, id_fname):
     f = open(index_fname)
@@ -27,7 +31,7 @@ def transform_index_to_ids(project, index_fname, id_fname):
     f.close()
 
 
-def tag_chunks(project):
+def chunks_gt(project):
     app = QtGui.QApplication(sys.argv)
     i = 0
     for ch in project.gm.chunk_list():
@@ -38,7 +42,8 @@ def tag_chunks(project):
         app.exec_()
 
 
-def get_chunk_with_clusters(fname):
+def get_cluster_tracklets(project):
+    fname = os.path.join(GT_LOC, "{0}_cluster_tracklets_ids".format(project.name))
     f = open(fname)
     chunks_with_clusters = []
     for line in f:
@@ -47,9 +52,48 @@ def get_chunk_with_clusters(fname):
     return chunks_with_clusters
 
 
+def get_non_cluster_tracklets(project):
+    # takes the name of file with ids of cluster tracklets and returns its complement (i.e. non-cluster-tracklets)
+    tracklets = project.gm.chunk_list()
+    cluster_tracklets = get_cluster_tracklets(project)
+    return sorted(list(set(tracklets) - set(cluster_tracklets)))
+
+
+def get_regions_from_tracklets(tracklets):
+    regions = []
+    for chunk in tracklets:
+        if chunk < 100:
+            ch = project.chm[chunk]
+            r_ch = RegionChunk(ch, project.gm, project.rm)
+            # first and last three
+            if len(r_ch) < 3:
+                regions += r_ch
+            else:
+                regions.append(r_ch[0])
+                regions.append(r_ch[-1])
+                regions.append(r_ch[len(r_ch) / 2])
+    return regions
+
+
+def get_head_gt(project):
+    fname = os.path.join(GT_LOC, "{0}_heads_GT.p".format(project.name))
+    viewer = HeadGT(project, fname)
+    return viewer.get_ground_truth()
+
+
+def head_gt(project):
+    app = QtGui.QApplication(sys.argv)
+    trainer = HeadGT(project, os.path.join(GT_LOC, "{0}_heads_GT.p".format(project.name)))
+    regions = get_regions_from_tracklets(get_non_cluster_tracklets(project))
+
+    trainer.improve_ground_truth(regions)
+    app.exec_()
+    return trainer
+
+
 def cluster_gt(project, index_fname, results_fname):
     app = QtGui.QApplication(sys.argv)
-    chunks_indexes = get_chunk_with_clusters(index_fname)
+    chunks_indexes = get_cluster_tracklets(index_fname)
     chunks = project.gm.chunk_list()
     chunks_ids = [chunks[x] for x in chunks_indexes]
 
@@ -62,23 +106,33 @@ def get_cluster_gt(pickle_fname):
     return pickle.load(open(pickle_fname, 'rb'))
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    GT_LOC = '/home/simon/FERDA/ferda/scripts/pca/data'
+    PROJECT = 'zebrafish'
     project = Project()
-    # project.load("/home/simon/FERDA/projects/clusters_gt/Cam1_/cam1.fproj")
-    project.load("/home/simon/FERDA/projects/clusters_gt/zebrafish/zebrafish.fproj")
+    project.load("/home/simon/FERDA/projects/clusters_gt/{0}/{1}.fproj".format(PROJECT, PROJECT))
 
-    print project.chm
+    ####################################
+    # view and label chunks with chunk viewer
+    chunks_gt(project)
 
-    # label chunks with chunk viewer
-    # tag_chunks(project)
+    ####################################
+    # label heads
 
+    # viewer = head_gt(project)
+    # print viewer.results
+    # print viewer.results[71308]
+    # viewer.correct_answer(71308, answer=False)
+    # viewer.delete_answer(71297)
+
+    ####################################
+    # create clusters GT
     # get gt in dictionary region_id : [list of region convex hulls]
     # gt = get_cluster_gt('/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_clusters.p')
 
     # create gt for clusters in file
     # results_fname = '/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_clusters.p'
     # cluster_gt(project, results_fname,
-               # '/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_cluster_tracklets')
+               # '/home/simon/FERDA/ferda/scripts/pca/data/Cam_1_cluster_tracklets_idxs')
 
     # load
     # manager = GTManager(project, results_fname)

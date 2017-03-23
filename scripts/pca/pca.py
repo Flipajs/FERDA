@@ -14,6 +14,7 @@ from scripts.pca.cluster_range.gt_widget import GTWidget
 from scripts.pca.range_computer import OptimalRange
 from scripts.pca.widgets.tracklet_viewer import TrackletViewer
 from utils.geometry import rotate
+import os
 
 def extract_heads(X, head_range):
     # if head_range % 2 is not 0:
@@ -105,62 +106,38 @@ def fit_point(blob, mean, pca_shifted_cut, pca_shifted_whole):
 
 
 if __name__ == '__main__':
+    PROJECT = 'zebrafish'
+    EIGEN_DIM = 10
+    FEATURES = 40
+
     logging.basicConfig(level=logging.INFO)
+
     project = Project()
-    project.load("/home/simon/FERDA/projects/clusters_gt/Cam1_/cam1.fproj")
-    chunks = project.gm.chunk_list()
+    project.load("/home/simon/FERDA/projects/clusters_gt/{0}/{1}.fproj".format(PROJECT, PROJECT))
 
+    ######################################
     # LABELING CHUNK WITH/WITHOUT ANT CLUSTERS
-    # data for Cam1_old
-    # chunks_without_clusters = [0, 1, 2, 3, 4, 5]
-    # chunks_with_clusters = [6, 10, 12, 13, 17, 18, 26, 28, 29, 32, 37, 39, 40, 41, 43, 47, 51, 54, 57, 58, 60, 61, 65,
-    #                         67, 69, 73, 75, 78, 81, 84, 87, 90, 93, 94, 96, 99, 102, 105]
 
-    # data for clusters_gt/Cam1_
-    f = open('/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_cluster_tracklets')
-    chunks_with_clusters = []
-    for line in f:
-        chunks_with_clusters += line.split()
-    chunks_with_clusters = map(lambda x: int(x), chunks_with_clusters)
-    f.close()
-    chunks_without_clusters = list(set(range(579)) - set(chunks_with_clusters))
+    from data import gt_scripts
+    # indexes!
+    cluster_tracklets = gt_scripts.get_cluster_tracklets(project)
+    non_cluster_tracklets = gt_scripts.get_non_cluster_tracklets(project)
 
-    chunks_with_clusters = map(lambda x: chunks[x], chunks_with_clusters)
-    chunks_without_clusters = map(lambda x: chunks[x], chunks_without_clusters)
-
-    # f = open('/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_cluster_tracklets_ids', 'w')
-    # for i in chunks_with_clusters:
-    #     f.write("{0}\n".format(i))
-    # f.close()
-
+    # VIEW TRACKLETS
     app = QtGui.QApplication(sys.argv)
-    i = 0
-    for ch in chunks_with_clusters:
-        print i
-        i += 1
-        chv = TrackletViewer(project.img_manager, ch, project.chm, project.gm, project.gm.rm)
-        chv.show()
+    for i in cluster_tracklets:
+        viewer = TrackletViewer(project.img_manager, i, project.chm, project.gm, project.rm)
+        viewer.show()
         app.exec_()
 
-    # number_of_eigen_v = 10
-    # number_of_data = 40
+    ######################################
+    # GET HEADS (for rotating of bodies)
 
-    # trainer = head_tag.HeadGT(project)
+    heads = gt_scripts.get_head_gt(project)
 
-    # TRAINING PART (HEAD LABELING AND ROTATING ANTS)
-    # app = QtGui.QApplication(sys.argv)
-    # training_regions = []
-    # for chunk in chunks_without_clusters:
-    #     ch = project.chm[chunk]
-    #     r_ch = RegionChunk(ch, project.gm, project.rm)
-    #     training_regions += r_ch
-    # trainer.improve_ground_truth(training_regions)
-    # app.exec_()
-    # trainer.correct_answer(1790, 1796, answer=True)
-    # trainer.delete_answer(597, 602)
-    # app.quit()
-
-    # results = trainer.get_ground_truth()
+    print cluster_tracklets
+    print non_cluster_tracklets
+    print heads
 
     # EXTRACTING DATA
     # X_ants, avg_dist, sizes = get_matrix(project, chunks_without_clusters, number_of_data, results)
@@ -244,4 +221,4 @@ if __name__ == '__main__':
     #     print range_comp.get_optimal_k(i)
 
     # optimal k for clusters
-    gt = GTWidget(project, chunks_with_clusters)
+    # gt = GTWidget(project, chunks_with_clusters)
