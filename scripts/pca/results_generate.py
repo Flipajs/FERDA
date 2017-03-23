@@ -72,7 +72,7 @@ def generate_ants_reconstructed_figure(project, X, X_R, X_C, rows, columns):
     generate_ants_image(X, X_R, X_C, rows, columns, i, fold)
 
 
-def view_ant(pca, eigen_ants, eigen_values, ant):
+def view_ant_composition(pca, eigen_ants, eigen_values, ant):
     app = QtGui.QApplication(sys.argv)
     w = EigenWidget(pca, eigen_ants, eigen_values, ant)
     w.showMaximized()

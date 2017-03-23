@@ -12,6 +12,7 @@ from core.project.project import Project
 from scripts.pca.ant_extract import get_matrix
 from scripts.pca.cluster_range.gt_widget import GTWidget
 from scripts.pca.range_computer import OptimalRange
+from scripts.pca.results_generate import view_ant_composition
 from scripts.pca.widgets.tracklet_viewer import TrackletViewer
 from utils.geometry import rotate
 import os
@@ -124,48 +125,47 @@ if __name__ == '__main__':
     non_cluster_tracklets = gt_scripts.get_non_cluster_tracklets(project)
 
     # VIEW TRACKLETS
-    app = QtGui.QApplication(sys.argv)
-    for i in cluster_tracklets:
-        viewer = TrackletViewer(project.img_manager, i, project.chm, project.gm, project.rm)
-        viewer.show()
-        app.exec_()
+    # app = QtGui.QApplication(sys.argv)
+    # for i in cluster_tracklets:
+    #     chunk = project.chm[i]
+    #     viewer = TrackletViewer(project.img_manager, chunk, project.chm, project.gm, project.rm)
+    #     viewer.show()
+    #     app.exec_()
 
     ######################################
     # GET HEADS (for rotating of bodies)
 
     heads = gt_scripts.get_head_gt(project)
 
-    print cluster_tracklets
-    print non_cluster_tracklets
-    print heads
+    ######################################
+    # EXTRACT DATA
 
-    # EXTRACTING DATA
-    # X_ants, avg_dist, sizes = get_matrix(project, chunks_without_clusters, number_of_data, results)
-    # X = get_pca_compatible_data(X_ants)
-    # head_range = 3
-    # bottom_range = 5
-    # H = extract_heads(X, head_range)
-    # B = extract_bottoms(X, bottom_range)
+    X_ants, avg_dist, sizes = get_matrix(project, non_cluster_tracklets, FEATURES, heads)
+    X = get_pca_compatible_data(X_ants)
+    head_range = 5
+    bottom_range = 5
+    H = extract_heads(X, head_range)
+    B = extract_bottoms(X, bottom_range)
     # VIEW RESULTS OF EXTRACTING
-    # for j in range(10):
-    #     plt.plot(np.append(X[j, :, 0], X[j, 0, 0]), np.append(X[j, :, 1], X[j, 0, 1]), c='b')
-    #     plt.plot(np.append(H[j, :, 0], H[j, 0, 0]), np.append(H[j, :, 1], H[j, 0, 1]), c='g')
-    #     plt.plot(np.append(B[j, :, 0], B[j, 0, 0]), np.append(B[j, :, 1], B[j, 0, 1]), c='r')
-    #     plt.show()
+    for j in range(10):
+        plt.plot(np.append(X[j, ::2], X[j, 0]), np.append(X[j, 1::2], X[j, 1]), c='b')
+        plt.plot(np.append(H[j, ::2], H[j, 0]), np.append(H[j, 1::2], H[j, 1]), c='g')
+        plt.plot(np.append(B[j, ::2], B[j, 0]), np.append(B[j, 1::2], B[j, 1]), c='r')
+        plt.show()
 
     # PCA ON WHOLE ANT
-    # pca_whole = PCA(number_of_eigen_v)
-    # X_C = pca_whole.fit_transform(X)
-    # eigen_ants_whole = pca_whole.components_
-    # eigen_values_whole = pca_whole.explained_variance_
-    # X_R = pca_whole.inverse_transform(pca_whole.transform(X))
+    pca_whole = PCA(EIGEN_DIM)
+    X_C = pca_whole.fit_transform(X)
+    eigen_ants_whole = pca_whole.components_
+    eigen_values_whole = pca_whole.explained_variance_
+    X_R = pca_whole.inverse_transform(pca_whole.transform(X))
 
     # PCA ON HEADS
-    # pca_head = PCA(number_of_eigen_v)
-    # H_C = pca_head.fit_transform(H)
-    # eigen_ants_head = pca_head.components_
-    # eigen_values_head = pca_head.explained_variance_
-    # H_R = np.dot(H_C, eigen_ants_whole) + pca_whole.mean_
+    pca_head = PCA(EIGEN_DIM)
+    H_C = pca_head.fit_transform(H)
+    eigen_ants_head = pca_head.components_
+    eigen_values_head = pca_head.explained_variance_
+    H_R = np.dot(H_C, eigen_ants_whole) + pca_whole.mean_
 
     # PCA ON BOTTOMS
     # pca_bottom = PCA(number_of_eigen_v)
@@ -190,9 +190,9 @@ if __name__ == '__main__':
     # columns = 11
     # generate_ants_reconstructed_figure(project, X, X_R, X_C, rows, columns)
 
-    # VIEW I-TH EIGEN ANT
-    # i = 1
-    # view_ant(pca_whole, eigen_ants_whole, eigen_values_whole, X_C[i])
+    # VIEW I-TH ANT AS COMPOSITION
+    i = 1
+    view_ant_composition(pca_whole, eigen_ants_whole, eigen_values_whole, X_C[i])
 
     # CLUSTER DECOMPOSITION
     # freq = 1

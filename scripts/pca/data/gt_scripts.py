@@ -13,7 +13,9 @@ from scripts.pca.widgets.tracklet_viewer import TrackletViewer
 
 GT_LOC = '/home/simon/FERDA/ferda/scripts/pca/data'
 
-def transform_index_to_ids(project, index_fname, id_fname):
+def transform_index_to_ids(project):
+    index_fname = os.path.join(GT_LOC, '{0}_cluster_tracklets_idxs'.format(project.name))
+    id_fname = os.path.join(GT_LOC, '{0}_cluster_tracklets_ids'.format(project.name))
     f = open(index_fname)
     chunks_with_clusters = []
     for line in f:
@@ -34,12 +36,16 @@ def transform_index_to_ids(project, index_fname, id_fname):
 def chunks_gt(project):
     app = QtGui.QApplication(sys.argv)
     i = 0
-    for ch in project.gm.chunk_list():
-        print i
-        i += 1
-        chv = TrackletViewer(project.img_manager, ch, project.chm, project.gm, project.gm.rm)
-        chv.show()
-        app.exec_()
+
+    c = set(get_cluster_tracklets(project))
+    for ch in project.chm.chunk_list():
+        if ch.id() in c:
+            print i
+            print ch
+            i += 1
+            chv = TrackletViewer(project.img_manager, ch, project.chm, project.gm, project.gm.rm)
+            chv.show()
+            app.exec_()
 
 
 def get_cluster_tracklets(project):
@@ -54,24 +60,26 @@ def get_cluster_tracklets(project):
 
 def get_non_cluster_tracklets(project):
     # takes the name of file with ids of cluster tracklets and returns its complement (i.e. non-cluster-tracklets)
-    tracklets = project.gm.chunk_list()
+    tracklets_ids = map(lambda x: x.id(), project.chm.chunk_list())
     cluster_tracklets = get_cluster_tracklets(project)
-    return sorted(list(set(tracklets) - set(cluster_tracklets)))
+    for i in cluster_tracklets:
+        if i not in set(tracklets_ids):
+            print "A probable mistake in GT! {0} id not present in project!".format(i)
+    return sorted(list(set(tracklets_ids) - set(cluster_tracklets)))
 
 
 def get_regions_from_tracklets(tracklets):
     regions = []
     for chunk in tracklets:
-        if chunk < 100:
-            ch = project.chm[chunk]
-            r_ch = RegionChunk(ch, project.gm, project.rm)
-            # first and last three
-            if len(r_ch) < 3:
-                regions += r_ch
-            else:
-                regions.append(r_ch[0])
-                regions.append(r_ch[-1])
-                regions.append(r_ch[len(r_ch) / 2])
+        ch = project.chm[chunk]
+        r_ch = RegionChunk(ch, project.gm, project.rm)
+        # first and last three
+        if len(r_ch) < 3:
+            regions += r_ch
+        else:
+            regions.append(r_ch[0])
+            regions.append(r_ch[-1])
+            regions.append(r_ch[len(r_ch) / 2])
     return regions
 
 
@@ -94,7 +102,7 @@ def head_gt(project):
 def cluster_gt(project, index_fname, results_fname):
     app = QtGui.QApplication(sys.argv)
     chunks_indexes = get_cluster_tracklets(index_fname)
-    chunks = project.gm.chunk_list()
+    chunks = project.chm.chunk_list()
     chunks_ids = [chunks[x] for x in chunks_indexes]
 
     manager = GTManager(project, results_fname)
@@ -113,12 +121,27 @@ if __name__ == "__main__":
 
     ####################################
     # view and label chunks with chunk viewer
-    chunks_gt(project)
+
+    # chunks_gt(project)
+
+    # check clusters / non-clusters
+    # app = QtGui.QApplication(sys.argv)
+    # c = set(get_cluster_tracklets(project))
+    # c = set(get_non_cluster_tracklets(project))
+    # for ch in project.chm.chunk_list():
+    #     if ch.id() in c:
+    #         print ch
+    #         chv = TrackletViewer(project.img_manager, ch, project.chm, project.gm, project.gm.rm)
+    #         chv.show()
+    #         app.exec_()
+
+    # transform idx file to id file
+    # transform_index_to_ids(project)
 
     ####################################
     # label heads
 
-    # viewer = head_gt(project)
+    viewer = head_gt(project)
     # print viewer.results
     # print viewer.results[71308]
     # viewer.correct_answer(71308, answer=False)

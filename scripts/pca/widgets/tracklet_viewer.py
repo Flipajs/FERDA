@@ -15,10 +15,10 @@ class TrackletViewer(QtGui.QWidget):
     """
     WIDTH = HEIGHT = 300
 
-    def __init__(self, im, ch_index, chm, gm, rm):
+    def __init__(self, im, ch, chm, gm, rm):
         super(TrackletViewer, self).__init__()
         self.im = im
-        self.regions = list(self.get_regions(ch_index, chm, gm, rm))
+        self.regions = list(self.get_regions(ch, chm, gm, rm))
         self.setLayout(QtGui.QVBoxLayout())
         self.buttons = QtGui.QHBoxLayout()
         self.next_b = QtGui.QPushButton('next (n)')
@@ -52,9 +52,7 @@ class TrackletViewer(QtGui.QWidget):
         # plt.scatter(region.centroid()[0], region.centroid()[1])
         # plt.show()
 
-    def get_regions(self, ch, chm, gm, rm):
-        chunk = chm[ch]
-        print chunk
+    def get_regions(self, chunk, chm, gm, rm):
         r_ch = RegionChunk(chunk, gm, rm)
         return r_ch
 

@@ -43,8 +43,7 @@ class HeadGT:
 
     def accept_results(self, results):
         self.results.update(results)
-        logging.info(
-            "Saving {0} results to database. It now contains {1} entries.".format(len(results), len(self.results)))
+        print "Saving {0} results to database. It now contains {1} entries.".format(len(results), len(self.results))
         self.save_results()
 
     def save_results(self):
