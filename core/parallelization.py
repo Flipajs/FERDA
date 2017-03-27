@@ -93,6 +93,8 @@ if __name__ == '__main__':
 
     try:
         use_roi_prediction_optimisation = proj.other_parameters.segmentation_use_roi_prediction_optimisation
+
+        # TODO: express based on major axis in body length
         prediction_optimisation_border = proj.other_parameters.segmentation_prediction_optimisation_border
         full_segmentation_refresh = proj.other_parameters.segmentation_full_segmentation_refresh_in
     except:

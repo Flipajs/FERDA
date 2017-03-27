@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import time
 from math import ceil
 # TODO: UNCOMMENT THIS AND PUBLISH...
-# import img_features
+import img_features
 from thesis.config import *
 from utils.img import img_saturation_coef
 
@@ -205,17 +205,28 @@ def get_colornames_hists(r, p, fliplr=False, saturated=False, lvls=3):
     crop = __get_crop(r, p)
 
     if saturated:
-        crop = img_saturation_coef(crop, 2.0, 1.05)
+        crop = img_saturation_coef(crop, 1.5, 0.95)
+
+    crop = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
+
+    # plt.figure()
+    # plt.imshow(crop, interpolation='nearest')
 
     f1 = img_features.colornames_descriptor(crop, pyramid_levels=lvls)
+    # print f1
     if fliplr:
         f2 = img_features.colornames_descriptor(np.fliplr(crop), pyramid_levels=lvls)
         return f1, f2
 
     return f1
 
+
 def get_colornames_hists_saturated(r, p):
     return get_colornames_hists(r, p, saturated=True, lvls=1)
+
+
+def get_colornames_hists_saturated_lvl3(r, p):
+    return get_colornames_hists(r, p, saturated=True, lvls=3)
 
 
 def evaluate_features_performance(
@@ -867,8 +878,8 @@ if __name__ == '__main__':
     from core.project.project import Project
     import cPickle as pickle
 
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
@@ -878,15 +889,24 @@ if __name__ == '__main__':
 
     # optimise_features(wd, 'fm_idtracker_c_d50')
 
-    t = time.time()
-    for j in range(1):
-        for i in range(1, 7):
-            r = p.rm[i]
-            get_idtracker_features(r, p, debug=True, sub=1, config='Cam1')
+    # for i in [1, 2, 3, 4, 5, 6, ]:
+    # for i in range(1, 13):
+    #     r = p.rm[i]
+    #     get_colornames_hists(r, p, saturated=True, lvls=1)
+    #     # r = p.rm[3]
+    #     # get_colornames_hists(r, p, lvls=1)
+    #
+    # plt.show()
 
-    print time.time() - t
-
-    plt.show()
+    # t = time.time()
+    # for j in range(1):
+    #     for i in range(1, 7):
+    #         r = p.rm[i]
+    #         get_idtracker_features(r, p, debug=True, sub=1, config='Cam1')
+    #
+    # print time.time() - t
+    #
+    # plt.show()
 
     gt = GT()
     gt.load(p.GT_file)
@@ -908,6 +928,8 @@ if __name__ == '__main__':
             fm_basic = FeatureManager(p.working_directory, db_name='fm_basic.sqlite3')
             fm_colornames = FeatureManager(p.working_directory, db_name='fm_colornames.sqlite3')
             fm_colornames_lvl1 = FeatureManager(p.working_directory, db_name='fm_colornames_lvl1.sqlite3')
+            fm_colornames_corr_lvl1 = FeatureManager(p.working_directory, db_name='fm_colornames_corr_lvl1.sqlite3')
+            fm_colornames_corr_lvl3 = FeatureManager(p.working_directory, db_name='fm_colornames_corr_lvl3.sqlite3')
             fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i.sqlite3')
             fm_idtracker_c = FeatureManager(p.working_directory, db_name='fm_idtracker_c.sqlite3')
             fm_hog = FeatureManager(p.working_directory, db_name='fm_hog.sqlite3')
@@ -915,8 +937,8 @@ if __name__ == '__main__':
 
             # fms = [fm_basic, fm_colornames, (fm_idtracker_i, fm_idtracker_c), fm_hog, fm_lbp]
             # methods = [get_basic_properties, get_colornames_hists, get_idtracker_features, get_hog_features, get_lbp]
-            fms = [fm_colornames_lvl1]
-            methods = [get_colornames_hists_saturated]
+            fms = [fm_colornames_corr_lvl3]
+            methods = [get_colornames_hists_saturated_lvl3]
 
             import time
             t1 = time.time()
@@ -974,14 +996,20 @@ if __name__ == '__main__':
         # fm_names = ['fm_basic.sqlite3', 'fm_colornames.sqlite3', 'fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3',
         #             'fm_hog.sqlite3', 'fm_lbp.sqlite3']
 
-        fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_colornames.sqlite3', 'fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_basic.sqlite3']
+        # fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_colornames.sqlite3', 'fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_basic.sqlite3']
+        fm_names = ['fm_colornames_corr_lvl1.sqlite3', 'fm_colornames_corr_lvl3.sqlite3']
 
         from thesis.config import RESULT_WD
 
         if True:
+            # results = evaluate_features_performance(p, fm_names, seed=42, test_split_method='random',
+            #                                         rf_class_weight='balanced_subsample', rf_criterion='entropy',
+            #                                         rf_max_features=0.5, test_split_ratio=0.95)
             results = evaluate_features_performance(p, fm_names, seed=42, test_split_method='random',
                                                     rf_class_weight='balanced_subsample', rf_criterion='entropy',
-                                                    rf_max_features=0.5)
+                                                    rf_max_features=0.5, test_split_ratio=0.95,
+                                                    rf_max_depth=10, rf_n_estimators=100,
+                                                    rf_min_samples_leaf=3)
 
 
             with open(RESULT_WD+'/results_Cam1_rfmax50_80.pkl', 'wb') as f:
