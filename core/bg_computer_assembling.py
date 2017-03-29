@@ -91,13 +91,68 @@ def assembly_after_parallelization(bgcomp):
         connect_graphs(bgcomp, t_v, t1_v, bgcomp.project.gm, bgcomp.project.rm)
         # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
-    if bgcomp.project.solver_parameters.use_emd_for_split_merge_detection():
-        bgcomp.project.solver.detect_split_merge_cases()
+    # if bgcomp.project.solver_parameters.use_emd_for_split_merge_detection():
+    #     bgcomp.project.solver.detect_split_merge_cases()
 
     print "#CHUNKS: ", len(bgcomp.project.chm)
-    bgcomp.solver.simplify(vs_todo, rules=[bgcomp.solver.adaptive_threshold])
-
     print "simplifying "
+
+    try:
+        # TODO:
+        if bgcomp.project.type == 'colony':
+            rules = [bgcomp.solver.adaptive_threshold]
+
+            while True:
+                if bgcomp.solver.simplify(rules=rules) == 0:
+                    break
+        else:
+            bgcomp.solver.simplify(rules=[bgcomp.solver.one2one])
+    except:
+        bgcomp.solver.one2one()
+
+    bgcomp.project.save_semistate('first_tracklets')
+    from scripts.regions_stats import learn_assignments, add_score_to_edges, tracklet_stats
+    learn_assignments(bgcomp.project)
+
+    p = bgcomp.project
+
+    p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
+    add_score_to_edges(p)
+
+    p.save_semistate('edge_cost_updated')
+    p.gm.update_nodes_in_t_refs()
+    p.chm.reset_itree(p.gm)
+
+    tracklet_stats(p)
+    if True:
+        score_type = 'appearance_motion_mix'
+        eps = 0.3
+
+        strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
+        print "strongly better: {}".format(len(strongly_better_e))
+        for e in strongly_better_e:
+            bgcomp.solver.confirm_edges([(e.source(), e.target())])
+
+        tracklet_stats(p)
+
+        strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
+        print "strongly better: {}".format(len(strongly_better_e))
+        for e in strongly_better_e:
+            bgcomp.solver.confirm_edges([(e.source(), e.target())])
+
+        bgcomp.solver.one2one()
+
+        tracklet_stats(p)
+        bgcomp.solver.one2one()
+
+        p.gm.update_nodes_in_t_refs()
+        p.chm.reset_itree(p.gm)
+
+        p.save_semistate('eps_edge_filter')
+        tracklet_stats(p)
+
+    # bgcomp.solver.simplify(vs_todo, rules=[bgcomp.solver.adaptive_threshold])
+
 
     if not bgcomp.project.is_cluster():
         from core.settings import Settings as S_
@@ -205,9 +260,9 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
             # this means there was some outdated edge, it is fine to ignore it...
             continue
 
-        # add edges only in one direction
-        if int(v1_new) > int(v2_new):
-            continue
+        # # add edges only in one direction
+        # if int(v1_new) > int(v2_new):
+        #     continue
 
         # ep['score'] is assigned in add_edge call
         new_e = new_gm.add_edge(v1_new, v2_new, old_score)

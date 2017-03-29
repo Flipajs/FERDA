@@ -185,7 +185,7 @@ class GraphWidgetLoader:
         best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
         best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
 
-        ch = self.project.gm.is_chunk(vertex)
+        ch, _ = self.project.gm.is_chunk(vertex)
         ch_info = str(ch)
 
         # TODO

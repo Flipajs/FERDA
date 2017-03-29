@@ -271,15 +271,19 @@ if __name__ == '__main__':
 
     s = time.time()
     print "#Edges BEFORE: ", proj.gm.g.num_edges()
-    while True:
-        num_changed1 = 0
-        # num_changed1 = solver.simplify(rules=[solver.update_costs])
-        # num_changed1 = solver.simplify(rules=[solver.update_costs, solver.adaptive_threshold])
-        num_changed2 = 0
-        num_changed2 = solver.simplify(rules=[solver.adaptive_threshold])
 
-        if num_changed1+num_changed2 == 0:
-            break
+    try:
+        # TODO:
+        if proj.type == 'colony':
+            rules = [solver.adaptive_threshold]
+
+            while True:
+                if solver.simplify(rules=rules) == 0:
+                    break
+        else:
+            solver.simplify(rules=[solver.one2one])
+    except:
+        solver.one2one()
 
     print "#Edges AFTER: ", proj.gm.g.num_edges()
 

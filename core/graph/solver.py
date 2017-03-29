@@ -75,6 +75,21 @@ class Solver:
 
         return self.project.stats.antlikeness_svm.get_prob(n)[1]
 
+    def one2one(self):
+        confirm_later = []
+
+        for v in self.project.gm.g.vertices():
+            if self.project.gm.one2one_check(v):
+                e = self.project.gm.out_e(v)
+                confirm_later.append((e.source(), e.target()))
+
+        print "one2one, ", len(confirm_later)
+        self.confirm_edges(confirm_later)
+
+        self.project.gm.update_nodes_in_t_refs()
+        self.project.chm.reset_itree(self.project.gm)
+
+
     def adaptive_threshold(self, vertex):
         if self.project.gm.ch_start_longer(vertex):
             return []

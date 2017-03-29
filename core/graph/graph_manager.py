@@ -614,8 +614,6 @@ class GraphManager:
         return strongly_better_e
 
     def strongly_better_eps(self, eps=0.2, score_type='appearance_motion_mix'):
-        from itertools import izip
-
         strongly_better_e = []
 
         for v in self.active_v_gen():
@@ -630,13 +628,11 @@ class GraphManager:
                 if val > 0.5:
                     strongly_better_e.append(e[0])
 
-
         return strongly_better_e
 
     def remove_edges(self, edges):
         for e in edges:
             self.remove_edge_(e)
-
 
     def z_case_detection(self, v):
         if v.out_degree() == 1:
