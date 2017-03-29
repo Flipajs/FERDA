@@ -205,9 +205,9 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
             # this means there was some outdated edge, it is fine to ignore it...
             continue
 
-        # add edges only in one direction
-        if int(v1_new) > int(v2_new):
-            continue
+        # # add edges only in one direction
+        # if int(v1_new) > int(v2_new):
+        #     continue
 
         # ep['score'] is assigned in add_edge call
         new_e = new_gm.add_edge(v1_new, v2_new, old_score)
