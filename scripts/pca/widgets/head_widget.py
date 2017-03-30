@@ -74,6 +74,7 @@ class HeadWidget(QtGui.QWidget):
         ax.plot(np.append(ant[:, 0], ant[0, 0]), np.append(ant[:, 1], ant[0, 1]))
         ax.grid(True)
         plt.gca().set_aspect('equal', adjustable='box')
+        plt.axis('equal')
         ax.hold(False)
         self.canvas.draw()
         self.label.setText('Last id: ' + str(self.last))

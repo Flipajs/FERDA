@@ -1,12 +1,10 @@
 import cPickle as pickle
 import logging
-import os
 import sys
 from PyQt4 import QtGui
 from os.path import exists
 
 from core.project.project import Project
-from scripts.pca.widgets import head_widget
 
 PRIME = 2 ** 8 + 1
 
@@ -26,6 +24,7 @@ class HeadGT:
         regions = filter(lambda x: x.id() not in self.results, regions)
         # regions = filter(lambda x: x.id() in self.results and not self.results[x.id()], regions)
         if len(regions) > 0:
+            from scripts.pca.widgets import head_widget
             widget = head_widget.HeadWidget(self.project, self)
             widget.set_data(regions)
             widget.show()

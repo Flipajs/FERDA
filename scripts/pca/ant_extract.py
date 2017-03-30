@@ -2,55 +2,49 @@ import logging
 
 import numpy as np
 
-from core.project.project import Project
+from scripts.pca.data.gt_scripts import get_regions_from_tracklets
 from utils.geometry import rotate
-from core.graph.region_chunk import RegionChunk
 
 
 # Methods below extract important data from ants
 
-def get_chunks_regions(ch, chm, gm):
-    chunk = chm[ch]
-    r_ch = RegionChunk(chunk, gm, gm.rm)
-    # TODO reverse
-    # for region in r_ch:
-    #     yield region
-
-    length = chunk.length()
-    for region in range(0, length, 4):
-        yield r_ch[region]
-
-
 def get_matrix(project, chunks, number_of_data, results):
-    matrix = []
-    sum = 0
-    i = 1
+    regions = get_regions_from_tracklets(project, chunks)
+    regions = filter(lambda x: x.id() in results, regions)
+    sum_dist = 0
+    matrix = np.zeros((len(regions), number_of_data, 2))
     sizes = []
-    for ch in chunks:
-        print "Chunk #{0}".format(i)
-        i += 1
-        vectors, s, size = get_feature_vectors(ch, number_of_data, project.chm, project.gm, results)
-        for vector in vectors:
-            matrix.append(vector)
-        sum += s
-        sizes += size
-    matrix = np.array(matrix)
-    sum /= len(matrix)
-    return matrix, sum, sizes
+
+    for i in range(len(regions)):
+        r = regions[i]
+        example, s = get_feature_vector(r, number_of_data, results[r.id()])
+        matrix[i] = example
+        sum_dist += s
+        sizes.append(r.area())
+
+    # for ch in chunks:
+    #     vectors, s, size = get_feature_vectors(ch, number_of_data, project.chm, project.gm, results)
+    #     for vector in vectors:
+    #         matrix.append(vector)
+    #     sum_dist += s
+    #     sizes += size
+    # matrix = np.array(matrix)
+    sum_dist /= len(regions)
+    return matrix, sum_dist, sizes
 
 
-def get_feature_vectors(chunk, number_of_data, chm, gm, results):
-    vectors = []
-    sizes = []
-    sum = 0
-    for region in get_chunks_regions(chunk, chm, gm):
-        if region.id() in results:
-            # if results.get(region.id(), False):
-            v, s = get_feature_vector(region, number_of_data, results[region.id()])
-            vectors.append(v)
-            sum += s
-            sizes.append(region.area())
-    return vectors, sum, sizes
+# def get_feature_vectors(chunk, number_of_data, chm, gm, results):
+#     vectors = []
+#     sizes = []
+#     sum = 0
+#     for region in get_regions_tr(chunk, chm, gm):
+#         if region.id() in results:
+#             if results.get(region.id(), False):
+            # v, s = get_feature_vector(region, number_of_data, results[region.id()])
+            # vectors.append(v)
+            # sum += s
+            # sizes.append(region.area())
+    # return vectors, sum, sizes
 
 
 def get_feature_vector(region, number_of_data, right_orientation):

@@ -7,7 +7,6 @@ from os.path import exists
 
 from core.project.project import Project
 from scripts.pca.cluster_range.gt_widget import GTWidget
-from scripts.pca.widgets import head_widget
 
 # FNAME = 'clusters_Cam_1_gt.p'
 from scripts.pca.widgets.tracklet_viewer import TrackletViewer

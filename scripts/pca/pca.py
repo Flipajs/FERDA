@@ -1,63 +1,14 @@
 import logging
 import math
-from PyQt4 import QtGui
 from matplotlib import pyplot as plt
 
 import numpy as np
-import sys
 from sklearn.decomposition import PCA
 
-import head_tag
 from core.project.project import Project
 from scripts.pca.ant_extract import get_matrix
-from scripts.pca.cluster_range.gt_widget import GTWidget
-from scripts.pca.range_computer import OptimalRange
 from scripts.pca.results_generate import view_ant_composition
-from scripts.pca.widgets.tracklet_viewer import TrackletViewer
 from utils.geometry import rotate
-import os
-
-def extract_heads(X, head_range):
-    # if head_range % 2 is not 0:
-    #     logging.warn("Using odd range, results may vary!")
-    return X[:, range(head_range * 2 + 2) + range(X.shape[1] - head_range * 2, X.shape[1])]
-
-
-def shift_heads_to_origin(X, head_range):
-    heads = extract_heads(X, head_range)
-    R = np.zeros_like(X)
-    means = np.zeros((X.shape[0], 2))
-    for i in range(X.shape[0]):
-        points = zip(heads[i, ::2], heads[i, 1::2])
-        means[i] = np.mean(points, axis=0)
-        R[i,] = (zip(X[i, ::2], X[i, 1::2]) - means[i]).flatten()
-    return R, means
-
-
-def extract_bottoms(X, bottom_range):
-    # if bottom_range % 2 is not 0:
-    #     logging.warn("Using odd range, results may vary!")
-    part = X.shape[1] - (bottom_range * 4 + 2)
-    part /= 2
-    return X[:, range(part - 1, X.shape[1] - part + 1)]
-
-
-def shift_bottoms_to_origin(X, bottom_range):
-    bottoms = extract_bottoms(X, bottom_range)
-    R = np.zeros_like(X)
-    means = np.zeros((X.shape[0], 2))
-    for i in range(X.shape[0]):
-        points = zip(bottoms[i, ::2], bottoms[i, 1::2])
-        means[i] = np.mean(points, axis=0)
-        R[i,] = (zip(X[i, ::2], X[i, 1::2]) - means[i]).flatten()
-    return R, means
-
-
-def get_pca_compatible_data(X):
-    X_comp = np.zeros((X.shape[0], X.shape[1] * 2))
-    for i in range(X.shape[0]):
-        X_comp[i] = X[i].flatten()
-    return X_comp
 
 
 def fit_cluster(number_of_data, cluster, freq, r_head, pca_shifted_cut_head, pca_shifted_whole_head,
@@ -106,11 +57,154 @@ def fit_point(blob, mean, pca_shifted_cut, pca_shifted_whole):
     return ant, pca_shifted_cut.score(blob)
 
 
+class AnimalFitting:
+    HEAD_RANGE = 9
+    BOTTOM_RANGE = 9
+    EIGEN_DIM = 10
+
+    def __init__(self, X):
+        self.X = AnimalFitting.get_pca_compatible_data(X)
+        self.H = AnimalFitting.extract_heads(self.X)
+        self.B = AnimalFitting.extract_bottoms(self.X)
+
+        # SPLIT TRAIN / TEST DATA 0.9 / 0.1
+        self.X_train, self.X_test = np.split(self.X, [self.X.shape[0] * 0.9])
+        self.H_train, self.H_test = np.split(self.H, [self.H.shape[0] * 0.9])
+        self.B_train, self.B_test = np.split(self.B, [self.B.shape[0] * 0.9])
+
+        # PCA ON WHOLE ANIMAL
+        self.pca_whole = PCA(AnimalFitting.EIGEN_DIM)
+        # self.X_C = self.pca_whole.fit(self.X_train)
+        self.pca_whole.fit(self.X_train)
+        self.eigen_ants_whole = self.pca_whole.components_
+        self.eigen_values_whole = self.pca_whole.explained_variance_
+        # X_R = self.pca_whole.inverse_transform(self.pca_whole.transform(self.X_train))
+
+        # PCA ON HEADS
+        self.pca_head = PCA(AnimalFitting.EIGEN_DIM)
+        # H_C = self.pca_head.fit_transform(self.H_train)
+        self.pca_head.fit(self.H_train)
+        self.eigen_ants_head = self.pca_head.components_
+        self.eigen_values_head = self.pca_head.explained_variance_
+        # H_R = np.dot(self.H_C, self.eigen_ants_whole) + self.pca_whole.mean_
+
+        # PCA ON BOTTOMS
+        self.pca_bottom = PCA(AnimalFitting.EIGEN_DIM)
+        # B_C = self.pca_bottom.fit_transform(self.B_train)
+        self.pca_bottom.fit(self.B_train)
+        self.eigen_ants_bottom = self.pca_bottom.components_
+        self.eigen_values_bottom = self.pca_bottom.explained_variance_
+        # B_R = np.dot(self.B_C, self.eigen_ants_whole) + self.pca_whole.mean_
+
+    def show_extracting_random_result(self, n=3):
+        import random
+        for j in [random.randint(0, self.X.shape[0] - 1) for x in range(n)]:
+            plt.plot(np.append(self.X[j, ::2], self.X[j, 0]), np.append(self.X[j, 1::2], self.X[j, 1]), c='b')
+            plt.plot(np.append(self.H[j, ::2], self.H[j, 0]), np.append(self.H[j, 1::2], self.H[j, 1]), c='g')
+            plt.plot(np.append(self.B[j, ::2], self.B[j, 0]), np.append(self.B[j, 1::2], self.B[j, 1]), c='r')
+            plt.axis('equal')
+            plt.show()
+
+    def get_fit(self, X):
+        head_example = np.squeeze(self.extract_heads(np.expand_dims(X, axis=0)))
+        bottom_example = np.squeeze(self.extract_bottoms(np.expand_dims(X, axis=0)))
+        head_fit = (np.dot(self.pca_head.transform(np.reshape(head_example, (1, -1))),
+                           self.eigen_ants_whole) + self.pca_whole.mean_)[0]
+        bottom_fit = (np.dot(self.pca_bottom.transform(np.reshape(bottom_example, (1, -1))),
+                             self.eigen_ants_whole) + self.pca_whole.mean_)[0]
+        return head_fit, bottom_fit
+
+    def show_fit(self, X):
+        head_example = np.squeeze(self.extract_heads(np.expand_dims(X, axis=0)))
+        bottom_example = np.squeeze(self.extract_bottoms(np.expand_dims(X, axis=0)))
+        head_fit, bottom_fit = self.get_fit(X)
+        self.plot_fits(X, bottom_example, bottom_fit, head_example, head_fit)
+
+    def show_random_fit_result(self, n=3):
+        import random
+        for j in [random.randint(0, self.X_test.shape[0] - 1) for x in range(n)]:
+            self.show_fit(self.X_test[j, :])
+
+    def plot_fits(self, example, bottom_example, bottom_fit, head_example, head_fit):
+        plt.plot(np.append(example[::2], example[0]), np.append(example[1::2], example[1]), c='g', label='Test example')
+        # plt.plot(np.append(head_example[::2], head_example[0]), np.append(head_example[1::2], head_example[1]), c='g',
+        #          alpha=0.75)
+        plt.plot(np.append(head_fit[::2], head_fit[0]), np.append(head_fit[1::2], head_fit[1]), c='r', label='Fit')
+        # plt.scatter(np.append(example[::2], example[0]), np.append(example[1::2], example[1]),
+        #             c='g')
+        plt.scatter(np.append(head_example[::2], head_example[0]), np.append(head_example[1::2], head_example[1]),
+                    label='Head part', c='b', alpha=0.75)
+        # plt.scatter(np.append(head_fit[::2], head_fit[0]), np.append(head_fit[1::2], head_fit[1]),
+        #             c='r')
+
+        example[::2] += 50
+        bottom_example[::2] += 50
+        bottom_fit[::2] += 50
+
+        plt.plot(np.append(example[::2], example[0]), np.append(example[1::2], example[1]), c='g')
+        # plt.plot(np.append(bottom_example[::2], bottom_example[0]), np.append(bottom_example[1::2], bottom_example[1]),
+        #          c='m')
+        plt.plot(np.append(bottom_fit[::2], bottom_fit[0]), np.append(bottom_fit[1::2], bottom_fit[1]), c='r',
+                 alpha=0.75)
+        # plt.scatter(np.append(example[::2], example[0]), np.append(example[1::2], example[1]),
+        #             c='g')
+        plt.scatter(np.append(bottom_example[::2], bottom_example[0]),
+                    np.append(bottom_example[1::2], bottom_example[1]),
+                    label='Bottom part', c='m', alpha=0.75)
+        # plt.scatter(np.append(bottom_fit[::2], bottom_fit[0]), np.append(bottom_fit[1::2], bottom_fit[1]),
+        #             c='r')
+        plt.title("Head and Bottom fits")
+        plt.legend(loc='best')
+        plt.axis('equal')
+        plt.show()
+
+    @staticmethod
+    def extract_heads(X):
+        # if AnimalFitting.HEAD_RANGE % 2 is not 0:
+        #     logging.warn("Using odd range, results may vary!")
+        return X[:,
+               range(AnimalFitting.HEAD_RANGE * 2 + 2) + range(X.shape[1] - AnimalFitting.HEAD_RANGE * 2, X.shape[1])]
+
+    @staticmethod
+    def extract_bottoms(X):
+        # if bottom_range % 2 is not 0:
+        #     logging.warn("Using odd range, results may vary!")
+        part = X.shape[1] - (AnimalFitting.BOTTOM_RANGE * 4 + 2)
+        part /= 2
+        return X[:, range(part - 1, X.shape[1] - part + 1)]
+
+    @staticmethod
+    def shift_heads_to_origin(X):
+        heads = AnimalFitting.extract_heads(X)
+        R = np.zeros_like(X)
+        means = np.zeros((X.shape[0], 2))
+        for i in range(X.shape[0]):
+            points = zip(heads[i, ::2], heads[i, 1::2])
+            means[i] = np.mean(points, axis=0)
+            R[i,] = (zip(X[i, ::2], X[i, 1::2]) - means[i]).flatten()
+        return R, means
+
+    @staticmethod
+    def shift_bottoms_to_origin(X):
+        bottoms = AnimalFitting.extract_bottoms(X)
+        R = np.zeros_like(X)
+        means = np.zeros((X.shape[0], 2))
+        for i in range(X.shape[0]):
+            points = zip(bottoms[i, ::2], bottoms[i, 1::2])
+            means[i] = np.mean(points, axis=0)
+            R[i,] = (zip(X[i, ::2], X[i, 1::2]) - means[i]).flatten()
+        return R, means
+
+    @staticmethod
+    def get_pca_compatible_data(X):
+        X_comp = np.zeros((X.shape[0], X.shape[1] * 2))
+        for i in range(X.shape[0]):
+            X_comp[i] = X[i].flatten()
+        return X_comp
+
+
 if __name__ == '__main__':
     PROJECT = 'zebrafish'
-    EIGEN_DIM = 10
-    FEATURES = 40
-
     logging.basicConfig(level=logging.INFO)
 
     project = Project()
@@ -120,7 +214,7 @@ if __name__ == '__main__':
     # LABELING CHUNK WITH/WITHOUT ANT CLUSTERS
 
     from data import gt_scripts
-    # indexes!
+
     cluster_tracklets = gt_scripts.get_cluster_tracklets(project)
     non_cluster_tracklets = gt_scripts.get_non_cluster_tracklets(project)
 
@@ -140,49 +234,15 @@ if __name__ == '__main__':
     ######################################
     # EXTRACT DATA
 
+    FEATURES = 40
     X_ants, avg_dist, sizes = get_matrix(project, non_cluster_tracklets, FEATURES, heads)
-    X = get_pca_compatible_data(X_ants)
-    head_range = 5
-    bottom_range = 5
-    H = extract_heads(X, head_range)
-    B = extract_bottoms(X, bottom_range)
+    pca = AnimalFitting(X_ants)
+
     # VIEW RESULTS OF EXTRACTING
-    for j in range(10):
-        plt.plot(np.append(X[j, ::2], X[j, 0]), np.append(X[j, 1::2], X[j, 1]), c='b')
-        plt.plot(np.append(H[j, ::2], H[j, 0]), np.append(H[j, 1::2], H[j, 1]), c='g')
-        plt.plot(np.append(B[j, ::2], B[j, 0]), np.append(B[j, 1::2], B[j, 1]), c='r')
-        plt.show()
-
-    # PCA ON WHOLE ANT
-    pca_whole = PCA(EIGEN_DIM)
-    X_C = pca_whole.fit_transform(X)
-    eigen_ants_whole = pca_whole.components_
-    eigen_values_whole = pca_whole.explained_variance_
-    X_R = pca_whole.inverse_transform(pca_whole.transform(X))
-
-    # PCA ON HEADS
-    pca_head = PCA(EIGEN_DIM)
-    H_C = pca_head.fit_transform(H)
-    eigen_ants_head = pca_head.components_
-    eigen_values_head = pca_head.explained_variance_
-    H_R = np.dot(H_C, eigen_ants_whole) + pca_whole.mean_
-
-    # PCA ON BOTTOMS
-    # pca_bottom = PCA(number_of_eigen_v)
-    # B_C = pca_bottom.fit_transform(B)
-    # eigen_ants_bottom = pca_bottom.components_
-    # eigen_values_bottom = pca_bottom.explained_variance_
-    # B_R = np.dot(B_C, eigen_ants_whole) + pca_whole.mean_
+    # pca.show_extracting_random_result(5)
 
     # VIEW PCA RECONSTRUCTING RESULTS
-    # for j in range(10):
-    #     plt.plot(np.append(H[j, ::2], H[j, 0]), np.append(H[j, 1::2], H[j, 1]), c='r')
-    #     plt.plot(np.append(H_R[j, ::2], H_R[j, 0]), np.append(H_R[j, 1::2], H_R[j, 1]), c='b')
-    #     plt.show()
-    #     plt.plot(np.append(B[j, ::2], B[j, 0]), np.append(B[j, 1::2], B[j, 1]), c='r')
-    #     plt.plot(np.append(B_R[j, ::2], B_R[j, 0]), np.append(B_R[j, 1::2], B_R[j, 1]), c='b')
-    #     plt.show()
-
+    pca.show_random_fit_result(25)
 
     # GENERATING RESULTS FIGURE
     # generate_eigen_ants_figure(project, eigen_ants_whole, number_of_eigen_v)
@@ -192,7 +252,7 @@ if __name__ == '__main__':
 
     # VIEW I-TH ANT AS COMPOSITION
     i = 1
-    view_ant_composition(pca_whole, eigen_ants_whole, eigen_values_whole, X_C[i])
+    # view_ant_composition(pca_whole, eigen_ants_whole, eigen_values_whole, X_C[i])
 
     # CLUSTER DECOMPOSITION
     # freq = 1

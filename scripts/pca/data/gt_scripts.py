@@ -1,9 +1,7 @@
-import logging
 import cPickle as pickle
 import os
-from PyQt4 import QtGui
-
 import sys
+from PyQt4 import QtGui
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
@@ -12,6 +10,7 @@ from scripts.pca.head_tag import HeadGT
 from scripts.pca.widgets.tracklet_viewer import TrackletViewer
 
 GT_LOC = '/home/simon/FERDA/ferda/scripts/pca/data'
+
 
 def transform_index_to_ids(project):
     index_fname = os.path.join(GT_LOC, '{0}_cluster_tracklets_idxs'.format(project.name))
@@ -33,7 +32,7 @@ def transform_index_to_ids(project):
     f.close()
 
 
-def chunks_gt(project, begin=0):
+def tracklet_gt(project, begin=0):
     app = QtGui.QApplication(sys.argv)
     i = begin
 
@@ -58,17 +57,28 @@ def get_cluster_tracklets(project):
     return chunks_with_clusters
 
 
+def get_segfault_tracklets(project):
+    fname = os.path.join(GT_LOC, "{0}_segfault_tracklets_ids".format(project.name))
+    f = open(fname)
+    segfaults = []
+    for line in f:
+        segfaults += line.split()
+    segfaults = map(lambda x: int(x), segfaults)
+    return segfaults
+
+
 def get_non_cluster_tracklets(project):
     # takes the name of file with ids of cluster tracklets and returns its complement (i.e. non-cluster-tracklets)
     tracklets_ids = map(lambda x: x.id(), project.chm.chunk_list())
     cluster_tracklets = get_cluster_tracklets(project)
-    for i in cluster_tracklets:
+    segfaults = get_segfault_tracklets(project)
+    for i in cluster_tracklets + segfaults:
         if i not in set(tracklets_ids):
             print "A probable mistake in GT! {0} id not present in project!".format(i)
-    return sorted(list(set(tracklets_ids) - set(cluster_tracklets)))
+    return sorted(list(set(tracklets_ids) - set(cluster_tracklets) - set(segfaults)))
 
 
-def get_regions_from_tracklets(tracklets):
+def get_regions_from_tracklets(project, tracklets):
     regions = []
     for chunk in tracklets:
         ch = project.chm[chunk]
@@ -92,26 +102,24 @@ def get_head_gt(project):
 def head_gt(project):
     app = QtGui.QApplication(sys.argv)
     trainer = HeadGT(project, os.path.join(GT_LOC, "{0}_heads_GT.p".format(project.name)))
-    regions = get_regions_from_tracklets(get_non_cluster_tracklets(project))
-
+    regions = get_regions_from_tracklets(project, get_non_cluster_tracklets(project))
     trainer.improve_ground_truth(regions)
     app.exec_()
     return trainer
 
 
-def cluster_gt(project, index_fname, results_fname):
+def cluster_gt(project):
     app = QtGui.QApplication(sys.argv)
-    chunks_indexes = get_cluster_tracklets(index_fname)
-    chunks = project.chm.chunk_list()
-    chunks_ids = [chunks[x] for x in chunks_indexes]
-
+    chunks_ids = get_cluster_tracklets(project)
+    results_fname = os.path.join(GT_LOC, "{0}_heads_GT.p".format(project.name))
     manager = GTManager(project, results_fname)
     manager.improve_ground_truth(chunks_ids)
     app.exec_()
 
 
-def get_cluster_gt(pickle_fname):
-    return pickle.load(open(pickle_fname, 'rb'))
+def get_cluster_gt(project):
+    return pickle.load(open(os.path.join(GT_LOC, "{0}_cluster_contours.p".format(project.name)), 'rb'))
+
 
 if __name__ == "__main__":
     PROJECT = 'zebrafish'
@@ -121,7 +129,7 @@ if __name__ == "__main__":
     ####################################
     # view and label chunks with chunk viewer
 
-    # chunks_gt(project, begin=341)
+    # tracklet_gt(project, begin=341)
 
     # check clusters / non-clusters
     # app = QtGui.QApplication(sys.argv)
@@ -140,39 +148,22 @@ if __name__ == "__main__":
     ####################################
     # label heads
 
-    viewer = head_gt(project)
+    # viewer = head_gt(project)
     # print viewer.results
     # print viewer.results[71308]
     # viewer.correct_answer(71308, answer=False)
     # viewer.delete_answer(71297)
 
-    """
-69785
-60922
-54044
-53278
-42447
-40570
-30411
-17861
-17834
-6478
-
-"""
-
     ####################################
     # create clusters GT
     # get gt in dictionary region_id : [list of region convex hulls]
-    # gt = get_cluster_gt('/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_clusters.p')
+    # gt = get_cluster_gt(project)
 
     # create gt for clusters in file
-    # results_fname = '/home/simon/FERDA/ferda/scripts/pca/data/clusters_Cam_1_clusters.p'
-    # cluster_gt(project, results_fname,
-               # '/home/simon/FERDA/ferda/scripts/pca/data/Cam_1_cluster_tracklets_idxs')
+    cluster_gt(project)
 
     # load
     # manager = GTManager(project, results_fname)
     # manager.view_results()
     # delete given REGION id's answer
     # manager.delete_answer(9)
-
