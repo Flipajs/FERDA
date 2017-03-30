@@ -56,7 +56,7 @@ class InfoManager():
             if item.clipped:
                 self.hide_info(item)
                 item.decolor_margins()
-                item.clipped = False;
+                item.clipped = False
 
 
 def random_hex_color_str():

@@ -205,7 +205,7 @@ class TextInfoItem(QtGui.QGraphicsItem):
         text_item.setPlainText(self.text)
         text_item.setParentItem(self.rect)
         r, g, b = self.color.red(), self.color.green(), self.color.blue()
-        if r+g+b < 250 and min(r, g, b) < 200:
+        if r*0.299 + g*0.587 + b * 0.114 < 186:
             text_item.setDefaultTextColor(QtGui.QColor(255, 255, 255))
         return text_item
 

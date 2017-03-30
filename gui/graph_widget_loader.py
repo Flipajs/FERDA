@@ -47,7 +47,7 @@ class GraphWidgetLoader:
         self.regions = set()
 
         self.chunks_region_chunks = {}
-        self.regions_vertices = {}
+        # self.regions_vertices = {}
 
         self.g = None
 
@@ -89,7 +89,7 @@ class GraphWidgetLoader:
     def prepare_nodes(self):
         for vertex in self.vertices:
             region = self.graph_manager.region(vertex)
-            self.regions_vertices[region] = vertex
+            # self.regions_vertices[region] = vertex
             self.regions.add(region)
 
     def prepare_lines(self, first_frame, last_frame):
@@ -160,7 +160,7 @@ class GraphWidgetLoader:
             r1 = self.project.gm.region(source)
             r2 = self.project.gm.region(target)
             if r1.frame_ == last_frame or r2.frame_ == first_frame:
-                continue # out of snaps
+                continue  # out of snaps
             source_start_id = self.graph_manager.g.vp["chunk_start_id"][source]
             target_end_id = self.graph_manager.g.vp["chunk_end_id"][target]
 
@@ -171,37 +171,50 @@ class GraphWidgetLoader:
                 movement_score = 0
 
             if source_start_id != target_end_id or source_start_id == 0:
-                line = GraphLine(0, r1, r2, LineType.LINE, appearance_score=appearance_score, movement_score=movement_score)
+                line = GraphLine(0, r1, r2, LineType.LINE, appearance_score=appearance_score,
+                                 movement_score=movement_score)
                 self.edges.add(line)
 
-            # self.chunks_region_chunks[line] = RegionChunk(self.project.chm[source_start_id], self.graph_manager,
-            #                                                    self.region_manager)
-
+                # self.chunks_region_chunks[line] = RegionChunk(self.project.chm[source_start_id], self.graph_manager,
+                #                                                    self.region_manager)
 
     def get_node_info(self, region):
-        n = self.regions_vertices[region]
+        return ("Id = {0}\n" +
+                "Label = {1}\n" +
+                "Centroid = {2}\n" +
+                "Area = {3}\n" +
+                "Margin = {4}").format(
+            region.id(),
+            region.label(),
+            region.centroid(),
+            region.area(),
+            region.margin())
 
-        vertex = self.project.gm.g.vertex(int(n))
-        best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
-        best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
-
-        ch, _ = self.project.gm.is_chunk(vertex)
-        ch_info = str(ch)
-
-        # TODO
-        # antlikeness = self.project.stats.antlikeness_svm.get_prob(region)[1]
-        antlikeness = 0
-
-        # TODO
-        # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
-        #         region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
-        return "Centroid = %s\nArea = %i\nAntlikeness = %.3f\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s\nVertex/region id = %s/%s" % \
-               (str(region.centroid()), region.area(), antlikeness, region.margin_,
-                str(best_in_score[0]) + ', ' + str(best_in_score[1]),
-                str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info, str(n), str(region.id()))
+        # new version
+        # n = self.regions_vertices[region]
+        #
+        # vertex = self.project.gm.g.vertex(int(n))
+        # best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
+        # best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
+        #
+        # ch, _ = self.project.gm.is_chunk(vertex)
+        # ch_info = str(ch)
+        #
+        # # TODO
+        # # antlikeness = self.project.stats.antlikeness_svm.get_prob(region)[1]
+        # antlikeness = 0
+        #
+        # # TODO
+        # # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
+        # #         region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
+        # return "Centroid = %s\nArea = %i\nAntlikeness = %.3f\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s\nVertex/region id = %s/%s" % \
+        #        (str(region.centroid()), region.area(), antlikeness, region.margin_,
+        #         str(best_in_score[0]) + ', ' + str(best_in_score[1]),
+        #         str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info, str(n), str(region.id()))
 
     def get_edge_info(self, edge):
-        return "Type = {}\nAppearance score = {}\nMovement score={}\nScore product={}\nTracklet id: {}".format(edge.type, edge.appearance_score, edge.movement_score, edge.appearance_score * edge.movement_score, edge.id)
+        return "Type = {}\nAppearance score = {}\nMovement score={}\nScore product={}\nTracklet id: {}".format(
+            edge.type, edge.appearance_score, edge.movement_score, edge.appearance_score * edge.movement_score, edge.id)
 
     def get_widget(self, frames=None, show_tracklet_callback=None):
         if frames is None:
