@@ -121,7 +121,7 @@ if __name__ == "__main__":
     ####################################
     # view and label chunks with chunk viewer
 
-    chunks_gt(project, begin=341)
+    # chunks_gt(project, begin=341)
 
     # check clusters / non-clusters
     # app = QtGui.QApplication(sys.argv)
@@ -145,6 +145,20 @@ if __name__ == "__main__":
     # print viewer.results[71308]
     # viewer.correct_answer(71308, answer=False)
     # viewer.delete_answer(71297)
+
+    """
+69785
+60922
+54044
+53278
+42447
+40570
+30411
+17861
+17834
+6478
+
+"""
 
     ####################################
     # create clusters GT
