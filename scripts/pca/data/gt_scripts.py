@@ -23,9 +23,9 @@ def transform_index_to_ids(project):
     chunks_with_clusters = map(lambda x: int(x), chunks_with_clusters)
     f.close()
 
-    chunks = project.gm.chunk_list()
-    ids = map(lambda x: chunks[x], chunks_with_clusters)
-    ids = sorted(ids)
+    chunks = project.chm.chunk_list()
+    ids = map(lambda x: chunks[x].id(), chunks_with_clusters)
+    # ids = sorted(ids)
 
     f = open(id_fname, 'w')
     for i in ids:
@@ -33,12 +33,12 @@ def transform_index_to_ids(project):
     f.close()
 
 
-def chunks_gt(project):
+def chunks_gt(project, begin=0):
     app = QtGui.QApplication(sys.argv)
-    i = 0
+    i = begin
 
     c = set(get_cluster_tracklets(project))
-    for ch in project.chm.chunk_list():
+    for ch in project.chm.chunk_list()[i:]:
         if ch.id() in c:
             print i
             print ch
@@ -114,7 +114,6 @@ def get_cluster_gt(pickle_fname):
     return pickle.load(open(pickle_fname, 'rb'))
 
 if __name__ == "__main__":
-    GT_LOC = '/home/simon/FERDA/ferda/scripts/pca/data'
     PROJECT = 'zebrafish'
     project = Project()
     project.load("/home/simon/FERDA/projects/clusters_gt/{0}/{1}.fproj".format(PROJECT, PROJECT))
@@ -122,7 +121,7 @@ if __name__ == "__main__":
     ####################################
     # view and label chunks with chunk viewer
 
-    # chunks_gt(project)
+    chunks_gt(project, begin=341)
 
     # check clusters / non-clusters
     # app = QtGui.QApplication(sys.argv)
