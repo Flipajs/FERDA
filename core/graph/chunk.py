@@ -53,6 +53,9 @@ class Chunk:
         s = "CHUNK --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
         return s
 
+    def __len__(self):
+        return len(self.nodes_)
+
     def __getitem__(self, key):
         if isinstance(key, int):
             if key < 0:  # Handle negative indices
@@ -331,7 +334,7 @@ class Chunk:
         return gm.region(self.end_node()).frame()
 
     def length(self):
-        return len(self.nodes_)
+        return len(self)
 
     def is_empty(self):
         return True if self.length() == 0 else False
@@ -344,6 +347,9 @@ class Chunk:
             gm.add_edge(self.start_node(), self.end_node(), 1.0)
 
         gm.g.vp['chunk_start_id'][gm.g.vertex(self.start_node())] = self.id()
+        gm.g.vp['chunk_end_id'][gm.g.vertex(self.start_node())] = 0
+
+        gm.g.vp['chunk_start_id'][gm.g.vertex(self.end_node())] = 0
         gm.g.vp['chunk_end_id'][gm.g.vertex(self.end_node())] = self.id()
 
     def is_only_one_id_assigned(self, num_animals):

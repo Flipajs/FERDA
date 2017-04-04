@@ -45,7 +45,7 @@ def assembly_after_parallelization(bgcomp):
     from utils.misc import is_flipajs_pc
     if is_flipajs_pc():
         # TODO: remove this line
-        # part_num = 3
+        # part_num = 10
         pass
 
     bgcomp.project.color_manager = None
@@ -72,9 +72,6 @@ def assembly_after_parallelization(bgcomp):
     if not bgcomp.project.is_cluster():
         bgcomp.update_callback(-1, 'joining parts...')
 
-    if bgcomp.project.solver_parameters.use_emd_for_split_merge_detection():
-        bgcomp.project.solver.detect_split_merge_cases()
-
     bgcomp.project.gm.rm = bgcomp.project.rm
 
     print "reconnecting graphs"
@@ -90,9 +87,6 @@ def assembly_after_parallelization(bgcomp):
 
         connect_graphs(bgcomp, t_v, t1_v, bgcomp.project.gm, bgcomp.project.rm)
         # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
-
-    # if bgcomp.project.solver_parameters.use_emd_for_split_merge_detection():
-    #     bgcomp.project.solver.detect_split_merge_cases()
 
     print "#CHUNKS: ", len(bgcomp.project.chm)
     print "simplifying "
@@ -124,6 +118,19 @@ def assembly_after_parallelization(bgcomp):
     p.chm.reset_itree(p.gm)
 
     tracklet_stats(p)
+
+    print "test1"
+    for ch in p.chm.chunk_gen():
+        if len(ch) > 1:
+            # test start
+            v = ch.start_node()
+            if not p.gm.g.vp['chunk_start_id'][v] or p.gm.g.vp['chunk_end_id'][v]:
+                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+
+            v = ch.end_node()
+            if p.gm.g.vp['chunk_start_id'][v] or not p.gm.g.vp['chunk_end_id'][v]:
+                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+
     if True:
         score_type = 'appearance_motion_mix'
         eps = 0.3
@@ -158,9 +165,9 @@ def assembly_after_parallelization(bgcomp):
         from core.settings import Settings as S_
         S_.general.log_graph_edits = True
 
-    bgcomp.project.solver = bgcomp.solver
+    p.solver = bgcomp.solver
 
-    bgcomp.project.gm.project = bgcomp.project
+    p.gm.project = bgcomp.project
 
     # from utils.color_manager import colorize_project
     # import time
@@ -171,8 +178,22 @@ def assembly_after_parallelization(bgcomp):
     if not bgcomp.project.is_cluster():
         bgcomp.update_callback(-1, 'saving...')
 
+    p.gm.update_nodes_in_t_refs()
+
     if not bgcomp.do_semi_merge:
-        bgcomp.project.save()
+        p.save()
+
+    print "test2"
+    for ch in p.chm.chunk_gen():
+        if len(ch) > 1:
+            # test start
+            v = ch.start_node()
+            if not p.gm.g.vp['chunk_start_id'][v] or p.gm.g.vp['chunk_end_id'][v]:
+                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+
+            v = ch.end_node()
+            if p.gm.g.vp['chunk_start_id'][v] or not p.gm.g.vp['chunk_end_id'][v]:
+                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
 
     print ("#CHUNKS: %d") % (len(bgcomp.project.chm.chunk_list()))
 
@@ -195,7 +216,7 @@ def connect_graphs(bgcomp, vertices1, vertices2, gm, rm):
     #
     #         if d < gm.max_distance:
     #             s, ds, multi, antlike = self.solver.assignment_score(r1, r2)
-    #             gm.add_edge_fast(v1, v2, 0)9
+    #             gm.add_edge_fast(v1, v2, 0)
 
 
 def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm):

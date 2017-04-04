@@ -128,6 +128,8 @@ def get_contour(pts):
 
     ret, thresh = cv2.threshold(img, 127, 255, 0)
 
+    # TODO: what happens when we switch from cv2.RETR_TREE to cv2.RETR_EXTERNAL
+
     # different versions of opencv... =/
     try:
         # TODO: CV_RETR_CCOMP and skip holes... http://docs.opencv.org/modules/imgproc/doc/structural_analysis_and_shape_descriptors.html

@@ -508,7 +508,7 @@ class GraphManager:
         if v.out_degree() != 1:
             return False
 
-        if self.g.vp['chunk_start_id'][v]:
+        if self.g.vp['chunk_start_id'][v] and len(self.project.chm[self.g.vp['chunk_start_id'][v]]) > 1:
             return False
 
         for v2 in v.out_neighbours():

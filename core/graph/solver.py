@@ -99,10 +99,6 @@ class Solver:
         if not best_out_vertices[0]:
             return []
 
-        r = self.project.gm.region(vertex)
-        if r.frame() == 2191 and (r.area() == 750 or r.area() == 2191):
-            print r
-
         best_in_scores, best_in_vertices = self.project.gm.get_2_best_in_vertices(best_out_vertices[0])
         if best_in_vertices[0] == vertex and best_in_scores[0] >= self.project.solver_parameters.certainty_threshold:
             cert = best_out_scores[0]
@@ -122,17 +118,8 @@ class Solver:
                 if best_in_vertices[1]:
                     s_in = best_in_scores[1]
 
-                # r1 = self.project.gm.region(best_in_vertices[0])
-                # r2 = self.project.gm.region(best_out_vertices[0])
-                #
-                # area_coef = abs(r1.area()-r2.area()) / min(r1.area(), r2.area())
-                # # hard area rule...
-                # if area_coef > 0.5:
-                #     return []
-
                 desc_correction = 0
 
-                # cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
                 cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
 
             self.project.gm.g.ep['movement_score'][self.project.gm.g.edge(v1, v2)] = cert
@@ -143,8 +130,6 @@ class Solver:
             return affected
 
         return []
-
-
 
     def match_if_reconstructed(self, n):
         if n not in self.g:

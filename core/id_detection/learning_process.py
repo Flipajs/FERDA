@@ -504,32 +504,6 @@ class LearningProcess:
         return features
 
     def get_candidate_chunks(self):
-        # TODO: do it better... What if first chunks are merged...
-
-        # from core.graph.region_chunk import RegionChunk
-        #
-        # avg_areas = []
-        # areas = []
-        # for ch in project.chm.chunk_gen():
-        #     rch = RegionChunk(ch, project.gm, project.rm)
-        #
-        #     areas_sum = 0
-        #     for r in rch.regions_gen():
-        #         areas.append(r.area())
-        #         areas_sum += r.area()
-        #
-        #     avg_areas.append(areas_sum / rch.chunk_.length())
-        #
-        # import numpy as np
-        # import matplotlib.mlab as mlab
-        # import matplotlib.pyplot as plt
-        #
-        # n, bins, patches = plt.hist(areas, 50, normed=1, facecolor='green', alpha=0.75)
-        # n, bins, patches = plt.hist(avg_areas, 50, normed=1, facecolor='red', alpha=0.75)
-        # # l = plt.plot(bins)
-        # plt.show()
-        #
-
         vertices = self.p.gm.get_vertices_in_t(self.separated_frame)
 
         areas = []

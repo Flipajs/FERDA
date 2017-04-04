@@ -6,6 +6,7 @@ from utils.img_manager import ImgManager
 from core.id_detection.learning_process import LearningProcess
 from core.settings import Settings as S_
 import numpy as np
+from gui.qt_flow_layout import FlowLayout
 
 
 class Filter(QtCore.QObject):
@@ -34,12 +35,10 @@ class LearningWidget(QtGui.QWidget):
         self.show_tracklet_callback = show_tracklet_callback
         self.vbox = QtGui.QVBoxLayout()
         self.hbox = QtGui.QHBoxLayout()
-        self.top_stripe_layout = QtGui.QHBoxLayout()
-        self.top_stripe2_layout = QtGui.QHBoxLayout()
+        self.top_stripe_layout = FlowLayout()
         self.setLayout(self.vbox)
 
         self.vbox.addLayout(self.top_stripe_layout)
-        self.vbox.addLayout(self.top_stripe2_layout)
         self.vbox.addLayout(self.hbox)
 
         self.lp = None
@@ -67,7 +66,7 @@ class LearningWidget(QtGui.QWidget):
         self.next_step_button.clicked.connect(lambda x: self.lp.next_step())
         self.top_stripe_layout.addWidget(self.next_step_button)
 
-        self.top_stripe_layout.addWidget(QtGui.QLabel('min examples to retrain'))
+        self.top_stripe_layout.addWidget(QtGui.QLabel('min examples to retrain:'))
 
         self.min_examples_to_retrain_i = QtGui.QLineEdit()
         if self.lp is not None:
@@ -139,7 +138,7 @@ class LearningWidget(QtGui.QWidget):
 
         self.auto_init_b = QtGui.QPushButton('auto_init')
         self.auto_init_b.clicked.connect(self.auto_init)
-        self.top_stripe2_layout.addWidget(self.auto_init_b)
+        self.top_stripe_layout.addWidget(self.auto_init_b)
 
         # self.add_tracklet_table()
         # self.update_callback()

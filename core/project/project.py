@@ -438,9 +438,6 @@ class Project:
 
         self.img_manager = ImgManager(self, max_num_of_instances=500)
 
-        self.gm.update_nodes_in_t_refs()
-        self.solver.one2one()
-
         self.active_snapshot = -1
 
     def load_snapshot(self, snapshot):
