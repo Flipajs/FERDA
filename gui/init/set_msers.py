@@ -11,7 +11,8 @@ from core.project.project import Project
 from core.region.mser import ferda_filtered_msers
 from gui.gui_utils import SelectableQLabel
 from gui.img_grid.img_grid_widget import ImgGridWidget
-from gui.segmentation.painter import Painter, array2qimage
+from gui.segmentation.painter import Painter
+from gui.segmentation.painter import array2qimage
 from utils.drawing.points import draw_points_crop, get_contour, draw_points_binary
 from utils.img import prepare_for_segmentation
 from utils.video_manager import get_auto_video_manager
@@ -674,7 +675,7 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     proj = Project()
 
-    proj.load('/Users/flipajs/Documents/wd/FERDA/Cam1_')
+    proj.load('/Users/flipajs/Documents/wd/FERDA/Cam1_rfs')
     # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
     proj.arena_model = None
     proj.bg_model = None
@@ -682,7 +683,7 @@ if __name__ == "__main__":
     # proj.video_crop_model = {'y1': 110, 'y2': 950, 'x1': 70, 'x2': 910}
 
     # proj.video_paths = '/Users/flipajs/Desktop/S9T95min.avi'
-    proj.video_paths = '/Volumes/Transcend/Dropbox/FERDA/F3C51min.avi'
+    # proj.video_paths = '/Volumes/Transcend/Dropbox/FERDA/F3C51min.avi'
 
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
@@ -691,6 +692,8 @@ if __name__ == "__main__":
     print "Done loading"
 
     ex = SetMSERs(proj)
+
+    import cv2
     ex.raise_()
     ex.showMaximized()
     ex.activateWindow()
@@ -698,6 +701,9 @@ if __name__ == "__main__":
     ex.mser_min_margin.setValue(proj.mser_parameters.min_margin)
     ex.mser_min_area.setValue(proj.mser_parameters.min_area)
     # ex.mser_max_area.setValue(proj.mser_parameters.max_area)
+
+    im = cv2.imread('/Users/flipajs/Downloads/IMG_6177.JPG')
+    ex.set_image(im)
 
     app.exec_()
     app.deleteLater()

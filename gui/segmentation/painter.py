@@ -1,12 +1,10 @@
 import sys
 from my_view import MyView
 from my_scene import MyScene
-from PyQt4 import QtGui, QtCore, Qt
+from PyQt4 import QtGui, QtCore
 import numpy as np
 import cv2
-import time
 from qimage2ndarray import array2qimage
-import matplotlib.pyplot as plt
 
 __author__ = 'dita'
 
