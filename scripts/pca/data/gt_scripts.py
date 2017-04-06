@@ -111,7 +111,7 @@ def head_gt(project):
 def cluster_gt(project):
     app = QtGui.QApplication(sys.argv)
     chunks_ids = get_cluster_tracklets(project)
-    results_fname = os.path.join(GT_LOC, "{0}_heads_GT.p".format(project.name))
+    results_fname = os.path.join(GT_LOC, "{0}_clusters_GT.p".format(project.name))
     manager = GTManager(project, results_fname)
     manager.improve_ground_truth(chunks_ids)
     app.exec_()

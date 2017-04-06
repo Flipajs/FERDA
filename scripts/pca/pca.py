@@ -1,13 +1,15 @@
 import logging
 import math
+from PyQt4 import QtGui
 from matplotlib import pyplot as plt
 
 import numpy as np
+import sys
 from sklearn.decomposition import PCA
 
 from core.project.project import Project
 from scripts.pca.ant_extract import get_matrix
-from scripts.pca.results_generate import view_ant_composition
+from scripts.pca.widgets.eigen_widget import EigenWidget
 from utils.geometry import rotate
 
 
@@ -58,14 +60,40 @@ def fit_point(blob, mean, pca_shifted_cut, pca_shifted_whole):
 
 
 class AnimalFitting:
-    HEAD_RANGE = 9
-    BOTTOM_RANGE = 9
-    EIGEN_DIM = 10
+    HEAD_RANGE = 10
+    BOTTOM_RANGE = 10
+    EIGEN_DIM = 3
 
     def __init__(self, X):
         self.X = AnimalFitting.get_pca_compatible_data(X)
         self.H = AnimalFitting.extract_heads(self.X)
         self.B = AnimalFitting.extract_bottoms(self.X)
+
+        # fig, ax = plt.subplots()
+        # i = 0
+        # for x,y in zip(self.X[0, 0::2], self.X[0, 1::2]):
+        #     ax.scatter(x, y)
+        #     ax.annotate(i, (x, y))
+        #     plt.axis('equal')
+        #     i += 1
+        # plt.show()
+        #
+        # fig, ax = plt.subplots()
+        # i = 0
+        # for x,y in zip(self.H[0, 0::2], self.H[0, 1::2]):
+        #     ax.scatter(x, y)
+        #     ax.annotate(i, (x, y))
+        #     plt.axis('equal')
+        #     i += 1
+        # plt.show()
+        # fig, ax = plt.subplots()
+        # i = 0
+        # for x,y in zip(self.B[0, 0::2], self.B[0, 1::2]):
+        #     ax.scatter(x, y)
+        #     ax.annotate(i, (x, y))
+        #     plt.axis('equal')
+        #     i += 1
+        # plt.show()
 
         # SPLIT TRAIN / TEST DATA 0.9 / 0.1
         self.X_train, self.X_test = np.split(self.X, [self.X.shape[0] * 0.9])
@@ -108,24 +136,60 @@ class AnimalFitting:
     def get_fit(self, X):
         head_example = np.squeeze(self.extract_heads(np.expand_dims(X, axis=0)))
         bottom_example = np.squeeze(self.extract_bottoms(np.expand_dims(X, axis=0)))
-        head_fit = (np.dot(self.pca_head.transform(np.reshape(head_example, (1, -1))),
-                           self.eigen_ants_whole) + self.pca_whole.mean_)[0]
-        bottom_fit = (np.dot(self.pca_bottom.transform(np.reshape(bottom_example, (1, -1))),
-                             self.eigen_ants_whole) + self.pca_whole.mean_)[0]
+        head_fit = self.pca_whole.inverse_transform(self.pca_head.transform(np.reshape(head_example, (1, -1))))[0]
+        bottom_fit = self.pca_whole.inverse_transform(self.pca_bottom.transform(np.reshape(bottom_example, (1, -1))))[0]
+
+        # fig, ax = plt.subplots()
+        # i = 0
+        # for x,y in zip(X[0::2], X[1::2]):
+        #     ax.scatter(x, y)
+        #     ax.annotate(i, (x, y))
+        #     plt.axis('equal')
+        #     i += 1
+        # # plt.show()
+        #
+        # fig, ax = plt.subplots()
+        # i = 0
+        # for x,y in zip(head_example[0::2], head_example[1::2]):
+        #     ax.scatter(x, y)
+        #     ax.annotate(i, (x, y))
+        #     plt.axis('equal')
+        #     i += 1
+        # plt.show()
+        eigen_values = self.pca_head.transform(np.reshape(head_example, (1, -1)))[0]
+        # fig, ax = plt.subplots()
+        # i = 0
+        # for x,y in zip(head_fit[0::2], head_fit[1::2]):
+        #     ax.scatter(x, y)
+        #     ax.annotate(i, (x, y))
+        #     plt.axis('equal')
+        #     i += 1
+        print sorted(eigen_values, reverse=True)
+        head_fit = np.dot(sorted(eigen_values, reverse=True), self.eigen_ants_whole) + self.pca_whole.mean_
+        print head_fit
+        fig, ax = plt.subplots()
+        i = 0
+        for x, y in zip(head_fit[0::2], head_fit[1::2]):
+            ax.scatter(x, y)
+            ax.annotate(i, (x, y))
+            plt.axis('equal')
+            i += 1
+        plt.show()
+
         return head_fit, bottom_fit
 
     def show_fit(self, X):
         head_example = np.squeeze(self.extract_heads(np.expand_dims(X, axis=0)))
         bottom_example = np.squeeze(self.extract_bottoms(np.expand_dims(X, axis=0)))
         head_fit, bottom_fit = self.get_fit(X)
-        self.plot_fits(X, bottom_example, bottom_fit, head_example, head_fit)
+        self.plot_fits(X, head_example, head_fit, bottom_example, bottom_fit)
 
     def show_random_fit_result(self, n=3):
         import random
         for j in [random.randint(0, self.X_test.shape[0] - 1) for x in range(n)]:
             self.show_fit(self.X_test[j, :])
 
-    def plot_fits(self, example, bottom_example, bottom_fit, head_example, head_fit):
+    def plot_fits(self, example, head_example, head_fit, bottom_example, bottom_fit):
         plt.plot(np.append(example[::2], example[0]), np.append(example[1::2], example[1]), c='g', label='Test example')
         # plt.plot(np.append(head_example[::2], head_example[0]), np.append(head_example[1::2], head_example[1]), c='g',
         #          alpha=0.75)
@@ -158,17 +222,47 @@ class AnimalFitting:
         plt.axis('equal')
         plt.show()
 
+    def view_ant_composition(self, X, type='whole'):
+        if type == 'whole':
+            pca = self.pca_whole
+            eigen_ants = self.eigen_ants_whole
+            eigen_values = self.eigen_values_whole
+            transformation = lambda x : x  # identity function
+        elif type == 'head':
+            pca = self.pca_head
+            eigen_ants = self.eigen_ants_head
+            eigen_values = self.eigen_values_head
+            transformation = self.extract_heads
+        elif type == 'bottom':
+            pca = self.pca_bottom
+            eigen_ants = self.eigen_ants_bottom
+            eigen_values = self.eigen_values_bottom
+            transformation = self.extract_bottoms
+        else:
+            raise AttributeError("Type should be either 'whole', 'head', or 'bottom'")
+
+
+        app = QtGui.QApplication(sys.argv)
+        X = AnimalFitting.get_pca_compatible_data(np.expand_dims(X, axis=0))
+        X = transformation(X)
+        X_t = pca.transform(X)[0]
+        w = EigenWidget(pca, eigen_ants, eigen_values, X_t)
+        w.showMaximized()
+        w.close_figures()
+        app.exec_()
+
     @staticmethod
     def extract_heads(X):
-        # if AnimalFitting.HEAD_RANGE % 2 is not 0:
-        #     logging.warn("Using odd range, results may vary!")
-        return X[:,
-               range(AnimalFitting.HEAD_RANGE * 2 + 2) + range(X.shape[1] - AnimalFitting.HEAD_RANGE * 2, X.shape[1])]
+        if AnimalFitting.HEAD_RANGE % 2 is not 0:
+            logging.warn("Using odd range, results may vary!")
+        # return X[:,
+        #        range(AnimalFitting.HEAD_RANGE * 2 + 2) + range(X.shape[1] - AnimalFitting.HEAD_RANGE * 2, X.shape[1])]
+        return (np.roll(X, AnimalFitting.HEAD_RANGE * 2 + 2, axis=1))[:, :(AnimalFitting.HEAD_RANGE * 2) * 2][::-1]
 
     @staticmethod
     def extract_bottoms(X):
-        # if bottom_range % 2 is not 0:
-        #     logging.warn("Using odd range, results may vary!")
+        if AnimalFitting.BOTTOM_RANGE % 2 is not 0:
+            logging.warn("Using odd range, results may vary!")
         part = X.shape[1] - (AnimalFitting.BOTTOM_RANGE * 4 + 2)
         part /= 2
         return X[:, range(part - 1, X.shape[1] - part + 1)]
@@ -242,7 +336,7 @@ if __name__ == '__main__':
     # pca.show_extracting_random_result(5)
 
     # VIEW PCA RECONSTRUCTING RESULTS
-    pca.show_random_fit_result(25)
+    # pca.show_random_fit_result(25)
 
     # GENERATING RESULTS FIGURE
     # generate_eigen_ants_figure(project, eigen_ants_whole, number_of_eigen_v)
@@ -251,8 +345,10 @@ if __name__ == '__main__':
     # generate_ants_reconstructed_figure(project, X, X_R, X_C, rows, columns)
 
     # VIEW I-TH ANT AS COMPOSITION
-    i = 1
-    # view_ant_composition(pca_whole, eigen_ants_whole, eigen_values_whole, X_C[i])
+    i = 2
+    pca.view_ant_composition(X_ants[i])
+    pca.view_ant_composition(X_ants[i], type='head')
+    pca.view_ant_composition(X_ants[i], type='bottom')
 
     # CLUSTER DECOMPOSITION
     # freq = 1

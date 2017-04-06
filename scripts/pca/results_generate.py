@@ -70,11 +70,3 @@ def generate_ants_reconstructed_figure(project, X, X_R, X_C, rows, columns):
         X_C = np.delete(X_C, range(number_in_pic), axis=0)
         i += 1
     generate_ants_image(X, X_R, X_C, rows, columns, i, fold)
-
-
-def view_ant_composition(pca, eigen_ants, eigen_values, ant):
-    app = QtGui.QApplication(sys.argv)
-    w = EigenWidget(pca, eigen_ants, eigen_values, ant)
-    w.showMaximized()
-    w.close_figures()
-    app.exec_()
