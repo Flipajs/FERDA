@@ -66,7 +66,8 @@ class Region():
         i = 0
 
         # do pts allocation if possible
-        if self.area_:
+        # for some reason, in rare circumstances area from MSER is wrong
+        try:
             pts = np.zeros((self.area(), 2), dtype=np.int)
 
             for row in data:
@@ -75,7 +76,7 @@ class Region():
                     pts[i, 1] = c
 
                     i += 1
-        else:
+        except (IndexError, AttributeError):
             pts = []
 
             for row in data:
