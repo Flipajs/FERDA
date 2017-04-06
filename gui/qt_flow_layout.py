@@ -1,3 +1,5 @@
+# source: https://gist.github.com/Cysu/7461066
+
 from PyQt4 import QtCore, QtGui
 
 

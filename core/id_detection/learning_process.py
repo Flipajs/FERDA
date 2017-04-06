@@ -241,6 +241,16 @@ class LearningProcess:
         #     self.collision_chunks = d['collision_chunks']
 
     def compute_features(self):
+        from core.id_detection.features import get_colornames_hists
+        from core.id_detection.feature_manager import FeatureManager
+
+        # TODO:
+        # fm = FeatureManager(p.working_directory, db_name='fm.sqlite3')
+        #
+        # for r in :
+        #     f = get_colornames_hists(r, self.p, saturated=True, lvls=1)
+        #     fm.add(r.id(), f)
+
         self.get_candidate_chunks()
 
         self.features = self.precompute_features_()

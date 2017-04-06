@@ -45,13 +45,14 @@ class MainTabWidget(QtGui.QWidget):
         self.results_tab = QtGui.QWidget()
         self.statistics_tab = StatisticsWidget(project)
         self.graph_tab = QtGui.QWidget()
+        self.region_classifier = QtGui.QWidget()
 
         self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet)
 
         self.finish_callback = finish_callback
 
-        self.tab_widgets = [self.tracker_tab, self.results_tab, self.id_detection_tab, self.statistics_tab, self.graph_tab]
-        self.tab_names = ["tracking", "results viewer", "id detection", "stats && results", "graph"]
+        self.tab_widgets = [self.tracker_tab, self.results_tab, self.id_detection_tab, self.statistics_tab, self.graph_tab, self.region_classifier]
+        self.tab_names = ["tracking", "results viewer", "id detection", "stats && results", "graph", "region classifier"]
         self.tab_docked = [False] * len(self.tab_widgets)
         for i in range(len(self.tab_widgets)):
             self.tabs.addTab(self.tab_widgets[i], self.tab_names[i])
@@ -208,6 +209,18 @@ class MainTabWidget(QtGui.QWidget):
 
                 self.graph_tab.redraw()
 
+        if i == 5:
+            from gui.clustering_tool import ClusteringTool
+
+            self.ignore_tab_change = True
+            self.tabs.removeTab(5)
+            self.region_classifier.setParent(None)
+            self.region_classifier = ClusteringTool(self.project)
+            self.tabs.insertTab(5, self.region_classifier, "id detection")
+            self.tabs.setCurrentIndex(5)
+            self.ignore_tab_change = False
+
+            self.region_classifier.human_iloop_classification(sort=True)
         pass
 
     def detach_tab(self):

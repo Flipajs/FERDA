@@ -20,8 +20,8 @@ project = Project()
 S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
-if is_flipajs_pc() and False:
-# if is_flipajs_pc():
+# if is_flipajs_pc() and False:
+if is_flipajs_pc():
     # wd = '/Users/iflipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
@@ -35,11 +35,11 @@ if is_flipajs_pc() and False:
     project.load(wd)
 
     # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
-    project.load_semistate(wd, 'first_tracklets')
+    # project.load_semistate(wd, 'first_tracklets')
     # project.load_semistate(wd, 'lp_id_SEG_IDCR_0')
     # project.load_semistate(wd, 'lp_HIL_INIT3_0')
 
-    project.gm.update_nodes_in_t_refs()
+    # project.gm.update_nodes_in_t_refs()
 
 
     # from core.region.region_manager import RegionManager
@@ -78,7 +78,7 @@ if is_flipajs_pc() and False:
     from utils.color_manager import colorize_project
     colorize_project(project)
     ex.widget_control('load_project', project)
-    ex.move(-500, -500)
+    # ex.move(-500, -500)
     ex.showMaximized()
 
 print "FERDA is READY, loaded in {:.3}s".format(time.time()-t_)

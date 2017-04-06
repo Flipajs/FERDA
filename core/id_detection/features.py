@@ -5,7 +5,7 @@ import numpy as np
 import math
 from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
 from skimage.feature import local_binary_pattern
-from core.id_detection.feature_manager import FeatureManager
+from core.id_detection.feature_manager import   FeatureManager
 from utils.gt.gt import GT
 from utils.misc import print_progress
 from itertools import izip

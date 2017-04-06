@@ -31,9 +31,6 @@ class ClusteringTool(QtGui.QWidget):
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
 
-        self.b = QtGui.QPushButton('test')
-        self.vbox.addWidget(self.b)
-
         self.singles = ImgGridWidget(cols=1, element_width=self.WW)
         self.multi = ImgGridWidget(cols=1, element_width=self.WW)
         self.noise = ImgGridWidget(cols=1, element_width=self.WW)
@@ -45,7 +42,7 @@ class ClusteringTool(QtGui.QWidget):
         self.hbox_buttons = QtGui.QHBoxLayout()
         self.vbox.addLayout(self.hbox_buttons)
 
-        self.to_single_b = QtGui.QPushButton('to singles')
+        self.to_single_b = QtGui.QPushButton('to singles (SHIFT + S)')
         self.to_single_b.clicked.connect(partial(self.move_selected_to, 'single'))
         self.hbox_buttons.addWidget(self.to_single_b)
 
@@ -54,7 +51,7 @@ class ClusteringTool(QtGui.QWidget):
         self.to_single_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_S))
         self.addAction(self.to_single_a)
         
-        self.to_multi_b = QtGui.QPushButton('to multis')
+        self.to_multi_b = QtGui.QPushButton('to multis (SHIFT + M)')
         self.to_multi_b.clicked.connect(partial(self.move_selected_to, 'multi'))
         self.hbox_buttons.addWidget(self.to_multi_b)
 
@@ -81,9 +78,13 @@ class ClusteringTool(QtGui.QWidget):
         self.to_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_U))
         self.addAction(self.to_undecided_a)
         
-        self.save_b = QtGui.QPushButton('save')
+        self.save_b = QtGui.QPushButton('save classification')
         self.save_b.clicked.connect(self.save)
         self.hbox_buttons.addWidget(self.save_b)
+
+        self.classify_tracklets_b = QtGui.QPushButton('classify tracklets')
+        self.classify_tracklets_b.clicked.connect(self.classify_tracklets)
+        self.hbox_buttons.addWidget(self.classify_tracklets_b)
 
         # SELECT ALL ACTIONS
         self.to_part_a = QtGui.QAction('to part', self)
@@ -232,7 +233,7 @@ class ClusteringTool(QtGui.QWidget):
 
     def compute_or_load(self, first_run=True):
         try:
-            with open(p.working_directory + '/temp/clustering.pkl') as f:
+            with open(self.p.working_directory + '/temp/clustering.pkl') as f:
                 up = pickle.Unpickler(f)
                 up.load()
                 self.vertices = up.load()
@@ -261,7 +262,7 @@ class ClusteringTool(QtGui.QWidget):
             return "exit"
 
     def load_data(self, compute):
-        with open(p.working_directory + '/temp/clustering.pkl') as f:
+        with open(self.p.working_directory + '/temp/clustering.pkl') as f:
             up = pickle.Unpickler(f)
             data = up.load()
             vertices = up.load()
@@ -275,14 +276,14 @@ class ClusteringTool(QtGui.QWidget):
         undecided = []
         if not compute:
             try:
-                with open(p.working_directory + '/temp/clustering_tool.pkl') as f:
+                with open(self.p.working_directory + '/temp/clustering_tool.pkl') as f:
                     images, undecided = pickle.load(f)
             except:
                 compute = True
                 print "clustering_tool.pkl NOT LOADED"
 
             try:
-                with open(p.working_directory + '/temp/clustering_tool_labels.pkl') as f:
+                with open(self.p.working_directory + '/temp/clustering_tool_labels.pkl') as f:
                     self.data = pickle.load(f)
             except:
                 self.data = {'single': [],
@@ -303,7 +304,7 @@ class ClusteringTool(QtGui.QWidget):
 
         return X, vertices, undecided, images, compute
 
-    def human_iloop_classification(self, compute=False, sort=False):
+    def human_iloop_classification(self, compute=False, sort=False, n=100):
         p = self.p
 
         X, vertices, undecided, images, compute = self.load_data(compute)
@@ -324,12 +325,11 @@ class ClusteringTool(QtGui.QWidget):
 
             d = None
             ask = True
-            n = 1000
             for i in range(n):
                 if self.redraw_:
                     im = draw_region(p, vm, vertices[id_])
                     if im.shape[0] == 0 or im.shape[1] == 0:
-                        print p.gm.region(vertices[id_]).area(), vertices[id_]
+                        print self.p.gm.region(vertices[id_]).area(), vertices[id_]
                         continue
 
                     cv2.imshow('im', im)
@@ -367,7 +367,7 @@ class ClusteringTool(QtGui.QWidget):
 
                 print_progress(i, n)
 
-            with open(p.working_directory+'/temp/clustering_tool.pkl', 'wb') as f:
+            with open(self.p.working_directory+'/temp/clustering_tool.pkl', 'wb') as f:
                 pickle.dump((images, undecided), f)
 
         # print "DISTANCES"
@@ -480,7 +480,7 @@ class ClusteringTool(QtGui.QWidget):
 
 
     def train(self, n, more_singles=False):
-        with open(p.working_directory + '/temp/clustering_tool.pkl') as f:
+        with open(self.p.working_directory + '/temp/clustering_tool.pkl') as f:
             _, undecided = pickle.load(f)
 
         gt = self.data
@@ -562,12 +562,12 @@ class ClusteringTool(QtGui.QWidget):
 
     def gt_classify_project(self, p):
         from utils.gt.gt import GT
-        gt = GT(num_ids=len(p.animals))
-        gt.load(p.GT_file)
+        gt = GT(num_ids=len(self.p.animals))
+        gt.load(self.p.GT_file)
 
         gt.get_single_region_ids(p)
 
-        for t in p.chm.chunk_gen():
+        for t in self.p.chm.chunk_gen():
             gt_id = gt.tracklet_id_set(t, p)
             gt_class = 2
             if len(gt_id) > 1:
@@ -583,10 +583,13 @@ class ClusteringTool(QtGui.QWidget):
 
     def classify_project(self, p, data=None, train_n=30, semistate='tracklets_s_classified', gt_classify=False):
         from utils.gt.gt import GT
-        gt = GT(num_ids = len(p.animals))
-        gt.load(p.GT_file)
 
-        gt.get_single_region_ids(p)
+        gt = None
+        if hasattr(self.p, 'GT_file'):
+            gt = GT(num_ids=len(self.p.animals))
+            gt.load(self.p.GT_file)
+
+            gt.get_single_region_ids(p)
 
         if data is None:
             self.train(train_n)
@@ -598,30 +601,33 @@ class ClusteringTool(QtGui.QWidget):
         type_map = {'single': 0, 'multi': 1, 'noise': 2, 'part': 3}
 
         t_classes = {}
-        for t in p.chm.chunk_gen():
+        for t in self.p.chm.chunk_gen():
             freq = [0, 0, 0, 0]
             for v in t.v_gen():
                 c, d_ = self.classify(v, active_f)
 
                 freq[type_map[c]] += 1
 
-            gt_id = gt.tracklet_id_set(t, p)
-            gt_class = 2
-            if len(gt_id) > 1:
-                gt_class = 1
-            elif len(gt_id) == 1:
-                gt_class = 0
-
             t_class = np.argmax(freq)
 
-            if len(gt_id) == 1 and t_class != 0:
-                print "ERROR, SINGLE not classified properly"
+            if gt:
+                gt_id = gt.tracklet_id_set(t, p)
+                gt_class = 2
+                if len(gt_id) > 1:
+                    gt_class = 1
+                elif len(gt_id) == 1:
+                    gt_class = 0
 
-            if len(gt_id) == 0 and t_class != 2:
-                print "ERROR, NOISE not classified properly"
+                if len(gt_id) == 1 and t_class != 0:
+                    print "ERROR, SINGLE not classified properly"
 
-            if len(gt_id) > 1 and t_class != 1:
-                print "ERROR, MULTI not classified properly"
+                if len(gt_id) == 0 and t_class != 2:
+                    print "ERROR, NOISE not classified properly"
+
+                if len(gt_id) > 1 and t_class != 1:
+                    print "ERROR, MULTI not classified properly"
+
+                print t.id(), t.length(), t_class, freq, "{:.2%}".format(freq[t_class] / float(np.sum(freq)))
 
             if gt_classify:
                 t.segmentation_class = gt_class
@@ -629,12 +635,12 @@ class ClusteringTool(QtGui.QWidget):
                 t.segmentation_class = t_class
 
             t_classes[t.id()] = t_class
-            print t.id(), t.length(), t_class, freq, "{:.2%}".format(freq[t_class] / float(np.sum(freq)))
 
         self.p.save_semistate(semistate)
         print "Classification DONE"
 
-
+    def classify_tracklets(self):
+        self.classify_project(self.p, self.data, train_n=50)
 
 
 if __name__ == '__main__':
