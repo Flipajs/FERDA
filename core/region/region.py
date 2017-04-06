@@ -77,14 +77,17 @@ class Region():
 
                     i += 1
         except (IndexError, AttributeError):
+            with open('debug.pkl', 'wb') as f:
+                pickle.dump(data, f)
+
             pts = []
-
-            for row in data:
-                for c in xrange(row['col1'], row['col2'] + 1):
-                    pts.append([row['line'], c])
-                    i += 1
-
-            pts = np.array(pts)
+            #
+            # for row in data:
+            #     for c in xrange(row['col1'], row['col2'] + 1):
+            #         pts.append([row['line'], c])
+            #         i += 1
+            #
+            # pts = np.array(pts)
 
         return pts
 
