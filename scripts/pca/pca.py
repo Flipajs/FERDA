@@ -9,6 +9,7 @@ from sklearn.decomposition import PCA
 
 from core.project.project import Project
 from scripts.pca.ant_extract import get_matrix
+from scripts.pca.results_generate import generate_eigen_ants_figure, generate_ants_reconstructed_figure
 from scripts.pca.widgets.eigen_widget import EigenWidget
 from utils.geometry import rotate
 
@@ -251,6 +252,20 @@ class AnimalFitting:
         w.close_figures()
         app.exec_()
 
+    def generate_eigen_ants_figure(self, type='whole'):
+        if type not in ['whole', 'head', 'bottom']:
+            raise AttributeError("Type should be either 'whole', 'head', or 'bottom'")
+
+        eigen_ants =    self.eigen_ants_whole if type == 'whole' else \
+                        self.eigen_ants_head if type == 'head' else \
+                        self.eigen_ants_bottom
+        generate_eigen_ants_figure(eigen_ants, AnimalFitting.EIGEN_DIM)
+
+    def generate_ants_reconstructed_figure(self, rows, columns):
+        X_C = self.pca_whole.transform(self.X_test)
+        X_R = self.pca_whole.inverse_transform(X_C)
+        generate_ants_reconstructed_figure(self.X_test, X_R, X_C, rows, columns)
+
     @staticmethod
     def extract_heads(X):
         if AnimalFitting.HEAD_RANGE % 2 is not 0:
@@ -296,7 +311,6 @@ class AnimalFitting:
             X_comp[i] = X[i].flatten()
         return X_comp
 
-
 if __name__ == '__main__':
     PROJECT = 'zebrafish'
     logging.basicConfig(level=logging.INFO)
@@ -339,10 +353,10 @@ if __name__ == '__main__':
     # pca.show_random_fit_result(25)
 
     # GENERATING RESULTS FIGURE
-    # generate_eigen_ants_figure(project, eigen_ants_whole, number_of_eigen_v)
-    # rows = 3
-    # columns = 11
-    # generate_ants_reconstructed_figure(project, X, X_R, X_C, rows, columns)
+    pca.generate_eigen_ants_figure()
+    rows = 3
+    columns = 11
+    pca.generate_ants_reconstructed_figure(rows, columns)
 
     # VIEW I-TH ANT AS COMPOSITION
     i = 2

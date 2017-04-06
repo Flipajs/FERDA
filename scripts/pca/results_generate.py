@@ -6,12 +6,13 @@ from matplotlib import gridspec
 
 import numpy as np
 
+from scripts.pca.data.gt_scripts import GT_LOC
 from scripts.pca.widgets.eigen_widget import EigenWidget
 
 
 # This module takes care of viewing results and saving important figures
 
-def generate_eigen_ants_figure(project, ants, number_of_eigen_v):
+def generate_eigen_ants_figure(ants, number_of_eigen_v):
     f = plt.figure(figsize=(number_of_eigen_v / 6 + 1, 6))
     gs1 = gridspec.GridSpec(number_of_eigen_v / 6 + 1, 6)
     gs1.update(wspace=0.3, hspace=0.1)
@@ -25,7 +26,7 @@ def generate_eigen_ants_figure(project, ants, number_of_eigen_v):
     fig.suptitle('Dim reduction: {0}'.format(number_of_eigen_v), fontsize=23)
     plt.axis('equal')
     f.set_size_inches(30, 20)
-    fold = os.path.join(project.working_directory, 'pca_results')
+    fold = os.path.join(GT_LOC, 'pca_results')
     if not os.path.exists(fold):
         os.mkdir(fold)
     f.savefig(os.path.join(fold, 'eigen_ants'), dpi=f.dpi)
@@ -56,9 +57,9 @@ def generate_ants_image(X, X_R, X_C, r, c, i, fold):
     plt.ioff()
 
 
-def generate_ants_reconstructed_figure(project, X, X_R, X_C, rows, columns):
+def generate_ants_reconstructed_figure(X, X_R, X_C, rows, columns):
     number_in_pic = rows * columns
-    fold = os.path.join(project.working_directory, 'pca_results')
+    fold = os.path.join(GT_LOC, 'pca_results')
     if not os.path.exists(fold):
         os.mkdir(fold)
     i = 0
