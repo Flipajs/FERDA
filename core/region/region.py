@@ -77,10 +77,12 @@ class Region():
                     pts[i, 1] = c
 
                     i += 1
-        except (IndexError, AttributeError):
-            with open('debug.pkl', 'wb') as f:
-                pickle.dump({'data': data, 'self': self}, f)
-
+        except (IndexError, AttributeError) as e:
+            import warnings
+            warnings.warn("")
+            # with open('debug.pkl', 'wb') as f:
+            #     pickle.dump({'data': data, 'self': self}, f)
+            #
             pts = []
 
             for row in data:
@@ -88,6 +90,8 @@ class Region():
                     pts.append([row['line'], c])
 
             pts = np.array(pts)
+
+            warnings.warn(str(e) + ", region area based on MSER: " + str(self.area()) + ", real area: " + str(len(pts)))
 
         return pts
 
