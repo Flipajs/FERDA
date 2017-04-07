@@ -13,12 +13,16 @@ from scipy.spatial.distance import cdist
 import cv2
 from PyQt4 import QtGui
 
-def get_data(r, scaler):
+def get_data(r, scaler=None):
     from utils.drawing.points import draw_points_crop_binary
     # bimg = draw_points_crop_binary(r.pts())
     # hu_m = get_hu_moments(np.asarray(bimg, dtype=np.uint8))
     d = [r.area(), r.a_, r.b_, r.min_intensity_, r.max_intensity_, r.margin_, len(r.contour())]
-    return scaler.transform(d)
+
+    if scaler is None:
+        return d
+    else:
+        return scaler.transform(np.array([d]))[0]
 
 def clustering(p, compute_data=True):
     print "___________________________________"

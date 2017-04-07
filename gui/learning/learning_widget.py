@@ -144,7 +144,7 @@ class LearningWidget(QtGui.QWidget):
         # self.update_callback()
 
     def load_features(self):
-        path = self.project.working_directory+'/temp/features.pkl'
+        path = 'fm.sqlite3'
         self.lp.load_features(path)
 
         self.add_tracklet_table()
@@ -374,7 +374,7 @@ class LearningWidget(QtGui.QWidget):
         self.lp.update_undecided_tracklets()
 
     def auto_init(self):
-        self.lp_auto_init()
+        self.lp.auto_init()
 
         self.update_callback()
 

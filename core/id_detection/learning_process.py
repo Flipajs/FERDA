@@ -177,7 +177,7 @@ class LearningProcess:
         # except IOError:
         #     pass
 
-    def load_features(self, db_names='fm_idtracker_i.sqlite3'):
+    def load_features(self, db_names='fm.sqlite3'):
         from core.id_detection.features import FeatureManager
 
         self.collision_chunks = set()
@@ -245,22 +245,27 @@ class LearningProcess:
         from core.id_detection.feature_manager import FeatureManager
 
         # TODO:
-        # fm = FeatureManager(p.working_directory, db_name='fm.sqlite3')
+        fm = FeatureManager(self.p.working_directory, db_name='fm.sqlite3')
+
+        for i, t in enumerate(self.p.chm.chunk_gen()):
+            print_progress(i, len(self.p.chm))
+            if not t.is_single():
+                continue
+
+            for r in RegionChunk(t, self.p.gm, self.p.rm).regions_gen():
+                f = get_colornames_hists(r, self.p, saturated=True, lvls=1)
+                fm.add(r.id(), f)
+
+        # self.get_candidate_chunks()
         #
-        # for r in :
-        #     f = get_colornames_hists(r, self.p, saturated=True, lvls=1)
-        #     fm.add(r.id(), f)
-
-        self.get_candidate_chunks()
-
-        self.features = self.precompute_features_()
-
-        with open(self.p.working_directory+'/temp/features.pkl', 'wb') as f:
-            d = {'features': self.features,
-                 'collision_chunks': self.collision_chunks}
-            # pickle.dump(d, f, -1)
-            # withou -1, compression, faster?
-            pickle.dump(d, f)
+        # self.features = self.precompute_features_()
+        #
+        # with open(self.p.working_directory+'/temp/features.pkl', 'wb') as f:
+        #     d = {'features': self.features,
+        #          'collision_chunks': self.collision_chunks}
+        #     # pickle.dump(d, f, -1)
+        #     # withou -1, compression, faster?
+        #     pickle.dump(d, f)
 
     def set_eps_certainty(self, eps):
         self._eps_certainty = eps

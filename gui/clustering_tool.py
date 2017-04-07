@@ -237,6 +237,7 @@ class ClusteringTool(QtGui.QWidget):
                 up = pickle.Unpickler(f)
                 up.load()
                 self.vertices = up.load()
+                up.load()
                 self.scaler = up.load()
         except:
             if first_run:
@@ -305,7 +306,7 @@ class ClusteringTool(QtGui.QWidget):
 
         return X, vertices, undecided, images, compute
 
-    def human_iloop_classification(self, compute=False, sort=False, n=1000):
+    def human_iloop_classification(self, compute=False, sort=False, n=100):
         p = self.p
 
         X, vertices, undecided, images, compute = self.load_data(compute)
@@ -614,11 +615,13 @@ class ClusteringTool(QtGui.QWidget):
 
         from core.graph.region_chunk import RegionChunk
 
-        for t in self.p.chm.chunk_gen():
+        print "Classifying tracklets (single/multi/part/no-ID)"
+        for i, t in enumerate(self.p.chm.chunk_gen()):
+            print_progress(i+1, len(p.chm))
             freq = [0, 0, 0, 0]
             rch = RegionChunk(t, p.gm, p.rm)
             for r in rch.regions_gen():
-                c, d_ = self.classify(None, active_f, data=(r))
+                c, d_ = self.classify(None, active_f, data=get_data(r, self.scaler))
 
                 freq[type_map[c]] += 1
 
@@ -650,7 +653,9 @@ class ClusteringTool(QtGui.QWidget):
 
             t_classes[t.id()] = t_class
 
+        # TODO: solve semistates
         self.p.save_semistate(semistate)
+        self.p.save()
         print "Classification DONE"
 
     def classify_tracklets(self):
