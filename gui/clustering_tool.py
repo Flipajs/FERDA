@@ -1,6 +1,6 @@
 from PyQt4 import QtGui, QtCore
 import sys
-from core.region.clustering import clustering, display_cluster_representants, draw_region
+from core.region.clustering import clustering, display_cluster_representants, draw_region, get_data
 import cPickle as pickle
 from sklearn.preprocessing import StandardScaler
 from utils.video_manager import get_auto_video_manager
@@ -304,7 +304,7 @@ class ClusteringTool(QtGui.QWidget):
 
         return X, vertices, undecided, images, compute
 
-    def human_iloop_classification(self, compute=False, sort=False, n=100):
+    def human_iloop_classification(self, compute=False, sort=False, n=1000):
         p = self.p
 
         X, vertices, undecided, images, compute = self.load_data(compute)
@@ -332,7 +332,7 @@ class ClusteringTool(QtGui.QWidget):
                         print self.p.gm.region(vertices[id_]).area(), vertices[id_]
                         continue
 
-                    cv2.imshow('im', im)
+                    # cv2.imshow('im', im)
 
                 if ask:
                     key = self.__controls()
@@ -435,17 +435,26 @@ class ClusteringTool(QtGui.QWidget):
             for it, _ in items:
                 self.grids[key].add_item(it)
 
-    def classify(self, id_, active_f):
+    def classify(self, id_, active_f, data=None):
         m = np.inf
         mk = 'single'
+
+        if data is None:
+            if self.X.shape[1] > len(active_f):
+                data = self.X[id_][active_f]
+            else:
+                data = self.X[id_][:]
+        else:
+            data = np.array(data)[active_f]
+
         for key, ids_ in self.data.iteritems():
             if len(ids_) == 0:
                 continue
 
             if self.X.shape[1] > len(active_f):
-                dists_ = cdist([self.X[id_][active_f]], self.X[ids_][:, active_f])
+                dists_ = cdist(np.array([data]), self.X[ids_][:, active_f])
             else:
-                dists_ = cdist([self.X[id_]], self.X[ids_][:])
+                dists_ = cdist(np.array([data]), self.X[ids_][:])
 
             m_ = dists_.min()
 
@@ -601,10 +610,14 @@ class ClusteringTool(QtGui.QWidget):
         type_map = {'single': 0, 'multi': 1, 'noise': 2, 'part': 3}
 
         t_classes = {}
+
+        from core.graph.region_chunk import RegionChunk
+
         for t in self.p.chm.chunk_gen():
             freq = [0, 0, 0, 0]
-            for v in t.v_gen():
-                c, d_ = self.classify(v, active_f)
+            rch = RegionChunk(t, p.gm, p.rm)
+            for r in rch.regions_gen():
+                c, d_ = self.classify(None, active_f, data=get_data(r))
 
                 freq[type_map[c]] += 1
 

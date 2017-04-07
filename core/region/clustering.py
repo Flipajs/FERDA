@@ -13,6 +13,12 @@ from scipy.spatial.distance import cdist
 import cv2
 from PyQt4 import QtGui
 
+def get_data(r):
+    from utils.drawing.points import draw_points_crop_binary
+    # bimg = draw_points_crop_binary(r.pts())
+    # hu_m = get_hu_moments(np.asarray(bimg, dtype=np.uint8))
+    return [r.area(), r.a_, r.b_, r.min_intensity_, r.max_intensity_, r.margin_, len(r.contour())]
+
 def clustering(p, compute_data=True):
     print "___________________________________"
     print "Preparing data for clustering..."
@@ -36,10 +42,7 @@ def clustering(p, compute_data=True):
         for v in p.gm.g.vertices():
             r = p.gm.region(v)
 
-            from utils.drawing.points import draw_points_crop_binary
-            bimg = draw_points_crop_binary(r.pts())
-            hu_m = get_hu_moments(np.asarray(bimg, dtype=np.uint8))
-            r_data.append([r.area(), r.a_, r.b_, r.min_intensity_, r.max_intensity_, r.margin_, len(r.contour())])
+            r_data.append(get_data(r))
             vertices.append(int(v))
 
             i += 1
