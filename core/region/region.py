@@ -4,6 +4,7 @@ from utils.video_manager import get_auto_video_manager
 import numpy as np
 import math
 from utils.roi import get_roi
+import pickle
 
 
 class Region():
