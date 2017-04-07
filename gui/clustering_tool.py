@@ -237,6 +237,7 @@ class ClusteringTool(QtGui.QWidget):
                 up = pickle.Unpickler(f)
                 up.load()
                 self.vertices = up.load()
+                self.scaler = up.load()
         except:
             if first_run:
                 clustering(self.p)
@@ -617,7 +618,7 @@ class ClusteringTool(QtGui.QWidget):
             freq = [0, 0, 0, 0]
             rch = RegionChunk(t, p.gm, p.rm)
             for r in rch.regions_gen():
-                c, d_ = self.classify(None, active_f, data=get_data(r))
+                c, d_ = self.classify(None, active_f, data=(r))
 
                 freq[type_map[c]] += 1
 

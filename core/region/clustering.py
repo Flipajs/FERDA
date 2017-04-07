@@ -13,11 +13,12 @@ from scipy.spatial.distance import cdist
 import cv2
 from PyQt4 import QtGui
 
-def get_data(r):
+def get_data(r, scaler):
     from utils.drawing.points import draw_points_crop_binary
     # bimg = draw_points_crop_binary(r.pts())
     # hu_m = get_hu_moments(np.asarray(bimg, dtype=np.uint8))
-    return [r.area(), r.a_, r.b_, r.min_intensity_, r.max_intensity_, r.margin_, len(r.contour())]
+    d = [r.area(), r.a_, r.b_, r.min_intensity_, r.max_intensity_, r.margin_, len(r.contour())]
+    return scaler.transform(d)
 
 def clustering(p, compute_data=True):
     print "___________________________________"
@@ -31,6 +32,7 @@ def clustering(p, compute_data=True):
                 up = pickle.Unpickler(f)
                 data = up.load()
                 vertices = up.load()
+                scaler = up.load()
         except:
             compute_data = True
 
@@ -61,7 +63,9 @@ def clustering(p, compute_data=True):
     eps = 0.1
 
     print "Normalising data..."
-    X = StandardScaler().fit_transform(data)
+    scaler = StandardScaler()
+    X = scaler.fit_transform(data)
+
     print "Clustering using DBSCAN... min samples: {}, eps: {}".format(min_samples, eps)
 
     db = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
@@ -87,6 +91,7 @@ def clustering(p, compute_data=True):
         pic.dump(data)
         pic.dump(vertices)
         pic.dump(labels)
+        pic.dump(scaler)
 
     print "clustering part finished"
     print "_________________________________"
