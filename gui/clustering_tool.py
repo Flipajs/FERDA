@@ -39,6 +39,30 @@ class ClusteringTool(QtGui.QWidget):
         self.hbox = QtGui.QHBoxLayout()
         self.vbox.addLayout(self.hbox)
 
+        self.hbox_load_controls = QtGui.QHBoxLayout()
+        self.vbox.addLayout(self.hbox_load_controls)
+
+        self.cluster_sample_size_sb = QtGui.QSpinBox()
+        self.cluster_sample_size_sb.setMinimum(10)
+        self.cluster_sample_size_sb.setMaximum(1000000)
+        self.cluster_sample_size_sb.setValue(1000)
+
+        self.display_n_most_sb = QtGui.QSpinBox()
+        self.display_n_most_sb.setMinimum(2)
+        self.display_n_most_sb.setMaximum(100000)
+        self.display_n_most_sb.setValue(100)
+
+
+        self.prepare_data_b = QtGui.QPushButton('prepare data')
+        self.prepare_data_b.clicked.connect(self.prepare_data)
+        self.start_hil_clustering_b = QtGui.QPushButton('start hil')
+        self.start_hil_clustering_b.clicked.connect(self.start_hil)
+
+        self.hbox_load_controls.addWidget(self.cluster_sample_size_sb)
+        self.hbox_load_controls.addWidget(self.prepare_data_b)
+        self.hbox_load_controls.addWidget(self.display_n_most_sb)
+        self.hbox_load_controls.addWidget(self.start_hil_clustering_b)
+
         self.hbox_buttons = QtGui.QHBoxLayout()
         self.vbox.addLayout(self.hbox_buttons)
 
@@ -186,7 +210,7 @@ class ClusteringTool(QtGui.QWidget):
 
         self.grids = {'single': self.singles, 'multi': self.multi, 'noise': self.noise, 'part': self.part}
 
-        self.compute_or_load()
+        # self.compute_or_load()
         self.update()
         self.show()
 
@@ -231,7 +255,7 @@ class ClusteringTool(QtGui.QWidget):
 
         self.redraw_grids()
 
-    def compute_or_load(self, first_run=True):
+    def compute_or_load(self, first_run=True, num_random=1000):
         try:
             with open(self.p.working_directory + '/temp/clustering.pkl') as f:
                 up = pickle.Unpickler(f)
@@ -241,7 +265,7 @@ class ClusteringTool(QtGui.QWidget):
                 self.scaler = up.load()
         except:
             if first_run:
-                clustering(self.p)
+                clustering(self.p, num_random=num_random)
                 self.compute_or_load(first_run=False)
             else:
                 raise Exception("loading failed...")
@@ -333,8 +357,6 @@ class ClusteringTool(QtGui.QWidget):
                     if im.shape[0] == 0 or im.shape[1] == 0:
                         print self.p.gm.region(vertices[id_]).area(), vertices[id_]
                         continue
-
-                    # cv2.imshow('im', im)
 
                 if ask:
                     key = self.__controls()
@@ -660,6 +682,14 @@ class ClusteringTool(QtGui.QWidget):
 
     def classify_tracklets(self):
         self.classify_project(self.p, self.data, train_n=50)
+
+    def prepare_data(self):
+        n = self.cluster_sample_size_sb.value()
+        print "preparing data... #samples: ", n
+        self.compute_or_load(num_random=n)
+
+    def start_hil(self):
+        self.human_iloop_classification(sort=True, n=self.display_n_most_sb.value())
 
 
 if __name__ == '__main__':

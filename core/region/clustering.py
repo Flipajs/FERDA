@@ -24,7 +24,7 @@ def get_data(r, scaler=None):
     else:
         return scaler.transform(np.array([d]))[0]
 
-def clustering(p, compute_data=True):
+def clustering(p, compute_data=True, num_random=1000):
     print "___________________________________"
     print "Preparing data for clustering..."
 
@@ -44,8 +44,15 @@ def clustering(p, compute_data=True):
         r_data = []
         vertices = []
 
-        num_v = p.gm.g.num_vertices()
-        for v in p.gm.g.vertices():
+        import random
+
+        tracklet_ids = p.chm.chunks_.keys()
+
+        for i in range(num_random):
+            t = p.chm[random.choice(tracklet_ids)]
+            b = random.randint(0, len(t)-1)
+
+            v = t[b]
             r = p.gm.region(v)
 
             r_data.append(get_data(r))
@@ -53,15 +60,12 @@ def clustering(p, compute_data=True):
 
             i += 1
             if i % 100 == 0:
-                print_progress(i, num_v)
+                print_progress(i, num_random)
 
         data = np.array(r_data)
         vertices=np.array(vertices)
 
-        print_progress(num_v, num_v)
-        print
-
-    # label_names = np.array(['area', 'major axis', 'minor axis', 'hu1', 'hu2'])
+        print_progress(num_random, num_random, "preparations for region clustering FINISHED\n")
 
     min_samples = max(5, int(len(data) * 0.001))
     eps = 0.1

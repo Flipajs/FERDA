@@ -23,7 +23,7 @@ class BackgroundComputer:
         self.results = []
         self.update_callback = update_callback
         self.finished_callback = finished_callback
-        self.start = 0
+        self.start = []
 
         # TODO: Settings
         self.frames_in_row = project.solver_parameters.frames_in_row
@@ -64,10 +64,11 @@ class BackgroundComputer:
 
             if not S_.general.log_in_bg_computation:
                 S_.general.log_graph_edits = False
-            self.start = time.time()
 
             # change this if parallelisation stopped working and you want to run it from given part
-            skip_n_first_parts = 0
+            skip_n_first_parts = 240
+
+            self.start = [0] * self.part_num
 
             for i in range(skip_n_first_parts):
                 self.processes.append(None)
@@ -103,6 +104,8 @@ class BackgroundComputer:
                             self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
                             f_num) + ' ' + str(last_n_frames))
 
+                self.start[i] = time.time()
+
                 limitsFile.write(str(i)+" "+str(f_num)+" "+str(last_n_frames)+"\n");
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
@@ -133,9 +136,10 @@ class BackgroundComputer:
     def OnProcessOutputReady(self, p_id):
         while True:
             try:
-                codec = QtCore.QTextCodec.codecForName("UTF-8")
-                str_ = str(codec.toUnicode(self.processes[p_id][0].readAllStandardOutput().data()))
                 if p_id == self.process_n - 1:
+                    codec = QtCore.QTextCodec.codecForName("UTF-8")
+                    str_ = str(codec.toUnicode(self.processes[p_id][0].readAllStandardOutput().data()))
+
                     try:
                         i = int(str_)
                         s = str((int(i) / float(self.frames_in_row_last) * 100))
@@ -164,9 +168,8 @@ class BackgroundComputer:
                 self.update_callback(num_finished / float(self.part_num))
 
                 print "PART " + str(p_id + 1) + "/" + str(self.part_num) + " FINISHED MSERS, takes ", round(
-                    end - self.start, 2), " seconds which is ", round((end - self.start) / (
-                    self.process_n * self.frames_in_row * int((p_id + self.process_n) / self.process_n)),
-                                                                      4), " seconds per frame"
+                    end - self.start[p_id], 2), " seconds which is ", round((end - self.start[p_id]) / (
+                    self.process_n * self.frames_in_row), 4), " seconds per frame"
 
                 self.processes[p_id][2] = self.FINISHED
 
@@ -174,6 +177,7 @@ class BackgroundComputer:
                 if new_id < len(self.processes):
                     it = self.processes[new_id]
                     it[0].start(it[1])
+                    self.start[new_id] = time.time()
                     self.processes[new_id][2] = self.RUNNING
 
                 break

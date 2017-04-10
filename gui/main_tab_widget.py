@@ -220,7 +220,7 @@ class MainTabWidget(QtGui.QWidget):
             self.tabs.setCurrentIndex(5)
             self.ignore_tab_change = False
 
-            self.region_classifier.human_iloop_classification(sort=True)
+            # self.region_classifier.human_iloop_classification(sort=True)
         pass
 
     def detach_tab(self):
