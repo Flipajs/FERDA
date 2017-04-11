@@ -45,7 +45,7 @@ def assembly_after_parallelization(bgcomp):
     from utils.misc import is_flipajs_pc
     if is_flipajs_pc():
         # TODO: remove this line
-        part_num = 100
+        part_num = 5
         pass
 
     bgcomp.project.color_manager = None
@@ -101,6 +101,7 @@ def assembly_after_parallelization(bgcomp):
     print "#CHUNKS: ", len(bgcomp.project.chm)
     print "simplifying "
 
+    p = bgcomp.project
     one2one_t = time.time()
     try:
         # TODO:
@@ -126,7 +127,6 @@ def assembly_after_parallelization(bgcomp):
 
     print "learn assignment t:", time.time() - learn_assignment_t
     learn_assignment_t = time.time()
-    p = bgcomp.project
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
     add_score_to_edges(p)
@@ -161,27 +161,31 @@ def assembly_after_parallelization(bgcomp):
         eps = 0.3
 
         strongly_better_t = time.time()
-        strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
+        strongly_better_e = p.gm.strongly_better_eps2(eps=eps, score_type=score_type)
+
+        strongly_better_e = sorted(strongly_better_e, key=lambda x: -x[0])
+
         print "strongly better: {}, t: {}".format(len(strongly_better_e), time.time()-strongly_better_t)
         print(process.memory_info().rss)
         confirm_t = time.time()
-        for e in strongly_better_e:
-            bgcomp.solver.confirm_edges([(e.source(), e.target())])
+        for _, e in strongly_better_e:
+            if p.gm.g.edge(e.source(), e.target()) is not None:
+                bgcomp.solver.confirm_edges([(e.source(), e.target())])
 
         print "confirm_t: ", time.time() - confirm_t
         print(process.memory_info().rss)
 
         tracklet_stats(p)
 
-        strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
-        print "strongly better: {}".format(len(strongly_better_e))
-        for e in strongly_better_e:
-            bgcomp.solver.confirm_edges([(e.source(), e.target())])
-
-        bgcomp.solver.one2one()
-
-        tracklet_stats(p)
-        bgcomp.solver.one2one()
+        # strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
+        # print "strongly better: {}".format(len(strongly_better_e))
+        # for e in strongly_better_e:
+        #     bgcomp.solver.confirm_edges([(e.source(), e.target())])
+        #
+        # bgcomp.solver.one2one()
+        #
+        # tracklet_stats(p)
+        # bgcomp.solver.one2one()
 
         p.gm.update_nodes_in_t_refs()
         p.chm.reset_itree(p.gm)
@@ -199,6 +203,7 @@ def assembly_after_parallelization(bgcomp):
     p.solver = bgcomp.solver
 
     p.gm.project = bgcomp.project
+    p.chm.add_single_vertices_chunks(p, frames=range(500))
 
     # from utils.color_manager import colorize_project
     # import time
@@ -349,8 +354,8 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
         new_gm.g.vp['chunk_start_id'][new_v] = chunks_map[old_g.vp['chunk_start_id'][old_v]]
         new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
 
-    # create chunk for each single vertex
-    for v_id in single_vertices:
-        ch, id = project.chm.new_chunk([int(v_id)], project.gm)
-        new_gm.g.vp['chunk_start_id'][v_id] = id
-        new_gm.g.vp['chunk_end_id'][v_id] = id
+    # # create chunk for each single vertex
+    # for v_id in single_vertices:
+    #     ch, id = project.chm.new_chunk([int(v_id)], project.gm)
+    #     new_gm.g.vp['chunk_start_id'][v_id] = id
+    #     new_gm.g.vp['chunk_end_id'][v_id] = id

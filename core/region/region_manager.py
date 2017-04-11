@@ -378,6 +378,10 @@ class RegionManager:
             return len(self)+1 > item.id() > 0
         return isinstance(item, (int, long)) and len(self)+1 > item > 0
 
+    def reset_cache(self, new_size):
+        self.cache_size_limit_ = new_size
+        self.recent_regions_ids = [None] * new_size
+
 if __name__ == "__main__":
     # rm = RegionManager()
     f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')

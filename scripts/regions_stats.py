@@ -1330,9 +1330,16 @@ def add_score_to_edges(p):
     # use_for_learning = 0.02
     use_for_learning = 0.1
 
+    # es = p.gm.g.get_edges()
+
+
+
     features_appearance = []
     features_movement = []
     edges = []
+
+    p.rm.cache_size_limit_ = 1000000
+    p.rm[:]
 
     num_edges = p.gm.g.num_edges()
     for e in p.gm.g.edges():

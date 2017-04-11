@@ -617,6 +617,9 @@ class GraphManager:
         strongly_better_e = []
 
         for v in self.active_v_gen():
+            if self.ch_start_longer(v):
+                continue
+
             if score_type == 'appearance_motion_mix':
                 e, s = self.get_2_best_out_edges_appearance_motion_mix(v)
             else:
@@ -629,6 +632,27 @@ class GraphManager:
                     strongly_better_e.append(e[0])
 
         return strongly_better_e
+
+    def strongly_better_eps2(self, eps=0.2, score_type='appearance_motion_mix'):
+        strongly_better_e = []
+
+        for v in self.active_v_gen():
+            if self.ch_start_longer(v):
+                continue
+
+            if score_type == 'appearance_motion_mix':
+                e, s = self.get_2_best_out_edges_appearance_motion_mix(v)
+            else:
+                e, s = self.get_2_best_out_edges(v)
+
+            if e[0] is not None:
+                val = s[0] / (s[0] + s[1] + eps)
+
+                if val > 0.5:
+                    strongly_better_e.append((val, e[0]))
+
+        return strongly_better_e
+
 
     def remove_edges(self, edges):
         for e in edges:
