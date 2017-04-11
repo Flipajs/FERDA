@@ -1261,7 +1261,7 @@ def get_pair_fetures_movement(r1, r2):
     return f
 
 
-def learn_assignments(p):
+def learn_assignments(p, max_examples=np.inf, display=False):
     X_appearance = []
     X_movement = []
 
@@ -1270,6 +1270,7 @@ def learn_assignments(p):
     # chgen.next()
 
     i = 0
+    j = 0
 
     pairs = []
     for t in chgen:
@@ -1284,10 +1285,15 @@ def learn_assignments(p):
         r1 = gen.next()
 
         for r2 in gen:
+            j += 1
+
             X_appearance.append(get_pair_fetures_appearance(r1, r2))
             X_movement.append(get_pair_fetures_movement(r1, r2))
             pairs.append((r1, r2))
             r1 = r2
+
+        if j > max_examples:
+            break
 
     # TODO: I think contamination doesn't matter...
     IF_appearance = IsolationForest(contamination=0.005)
@@ -1299,17 +1305,18 @@ def learn_assignments(p):
     with open(p.working_directory + '/temp/isolation_forests.pkl', 'wb') as f:
         pickle.dump({'movement': IF_movement, 'appearance': IF_appearance}, f)
 
-    y = IF_appearance.predict(X_appearance)
-    print len(y), np.sum(y == -1)
-    pairs = np.array(pairs)
+    if display:
+        y = IF_appearance.predict(X_appearance)
+        print len(y), np.sum(y == -1)
+        pairs = np.array(pairs)
 
-    display_pairs(p, pairs[y == -1], 'anomaly_parts_appearance', cols=3, item_height=250, item_width=500, border=70)
+        display_pairs(p, pairs[y == -1], 'anomaly_parts_appearance', cols=3, item_height=250, item_width=500, border=70)
 
-    y = IF_movement.predict(X_movement)
-    print len(y), np.sum(y == -1)
-    pairs = np.array(pairs)
+        y = IF_movement.predict(X_movement)
+        print len(y), np.sum(y == -1)
+        pairs = np.array(pairs)
 
-    display_pairs(p, pairs[y == -1], 'anomaly_parts_movement', cols=3, item_height=250, item_width=500, border=70)
+        display_pairs(p, pairs[y == -1], 'anomaly_parts_movement', cols=3, item_height=250, item_width=500, border=70)
 
 def add_score_to_edges(p):
     with open(p.working_directory + '/temp/isolation_forests.pkl', 'rb') as f:

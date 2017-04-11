@@ -45,10 +45,18 @@ def assembly_after_parallelization(bgcomp):
     from utils.misc import is_flipajs_pc
     if is_flipajs_pc():
         # TODO: remove this line
-        # part_num = 10
+        part_num = 100
         pass
 
     bgcomp.project.color_manager = None
+
+    import time
+    import os
+    import psutil
+
+    merging_t = time.time()
+    process = psutil.Process(os.getpid())
+    print(process.memory_info().rss)
 
     print "merging..."
     # for i in range(part_num):
@@ -88,9 +96,12 @@ def assembly_after_parallelization(bgcomp):
         connect_graphs(bgcomp, t_v, t1_v, bgcomp.project.gm, bgcomp.project.rm)
         # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
+    print "merge t: ", time.time() - merging_t
+    print(process.memory_info().rss)
     print "#CHUNKS: ", len(bgcomp.project.chm)
     print "simplifying "
 
+    one2one_t = time.time()
     try:
         # TODO:
         if bgcomp.project.type == 'colony':
@@ -104,41 +115,61 @@ def assembly_after_parallelization(bgcomp):
     except:
         bgcomp.solver.one2one()
 
+    print "first one2one t:", time.time() - one2one_t
+    print(process.memory_info().rss)
+
+    learn_assignment_t = time.time()
+
     bgcomp.project.save_semistate('first_tracklets')
     from scripts.regions_stats import learn_assignments, add_score_to_edges, tracklet_stats
-    learn_assignments(bgcomp.project)
+    learn_assignments(bgcomp.project, max_examples=50000, display=False)
 
+    print "learn assignment t:", time.time() - learn_assignment_t
+    learn_assignment_t = time.time()
     p = bgcomp.project
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
     add_score_to_edges(p)
 
+    print "score edges t:", time.time() - learn_assignment_t
+    print(process.memory_info().rss)
+
     p.save_semistate('edge_cost_updated')
+
+    update_t = time.time()
     p.gm.update_nodes_in_t_refs()
     p.chm.reset_itree(p.gm)
+    print "update t: ", time.time() - update_t
+    print(process.memory_info().rss)
 
     tracklet_stats(p)
 
-    print "test1"
-    for ch in p.chm.chunk_gen():
-        if len(ch) > 1:
-            # test start
-            v = ch.start_node()
-            if not p.gm.g.vp['chunk_start_id'][v] or p.gm.g.vp['chunk_end_id'][v]:
-                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
-
-            v = ch.end_node()
-            if p.gm.g.vp['chunk_start_id'][v] or not p.gm.g.vp['chunk_end_id'][v]:
-                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+    # print "test1"
+    # for ch in p.chm.chunk_gen():
+    #     if len(ch) > 1:
+    #         # test start
+    #         v = ch.start_node()
+    #         if not p.gm.g.vp['chunk_start_id'][v] or p.gm.g.vp['chunk_end_id'][v]:
+    #             print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+    #
+    #         v = ch.end_node()
+    #         if p.gm.g.vp['chunk_start_id'][v] or not p.gm.g.vp['chunk_end_id'][v]:
+    #             print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
 
     if True:
         score_type = 'appearance_motion_mix'
         eps = 0.3
 
+        strongly_better_t = time.time()
         strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
-        print "strongly better: {}".format(len(strongly_better_e))
+        print "strongly better: {}, t: {}".format(len(strongly_better_e), time.time()-strongly_better_t)
+        print(process.memory_info().rss)
+        confirm_t = time.time()
         for e in strongly_better_e:
             bgcomp.solver.confirm_edges([(e.source(), e.target())])
+
+        print "confirm_t: ", time.time() - confirm_t
+        print(process.memory_info().rss)
 
         tracklet_stats(p)
 
