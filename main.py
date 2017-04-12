@@ -7,6 +7,8 @@ from core.settings import Settings as S_
 from utils.misc import is_flipajs_pc
 import time
 from core.project.project import Project
+import timeit
+import numpy as np
 
 
 app = QtGui.QApplication(sys.argv)
@@ -18,6 +20,21 @@ t_ = time.time()
 project = Project()
 
 S_.general.print_log = False
+
+
+def test1():
+    for n in project.gm.g.vertices():
+        pass
+
+
+def test2():
+    for i, n in enumerate(project.gm.g.vertices()):
+        pass
+
+
+def test3():
+    for i, n in np.nditer(project.gm.g.get_vertices()):
+        pass
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 # if is_flipajs_pc() and False:
@@ -34,6 +51,21 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
     project.load(wd)
+
+    start_time = timeit.default_timer()
+    test1()
+    print(timeit.default_timer() - start_time)
+
+    start_time = timeit.default_timer()
+    test2()
+    print(timeit.default_timer() - start_time)
+
+    start_time = timeit.default_timer()
+    test3()
+    print(timeit.default_timer() - start_time)
+
+    # project.chm.add_single_vertices_chunks(project)
+    # project.save()
 
     # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
     # project.load_semistate(wd, 'first_tracklets')

@@ -45,7 +45,7 @@ def assembly_after_parallelization(bgcomp):
     from utils.misc import is_flipajs_pc
     if is_flipajs_pc():
         # TODO: remove this line
-        part_num = 5
+        # part_num = 50
         pass
 
     bgcomp.project.color_manager = None
@@ -203,7 +203,7 @@ def assembly_after_parallelization(bgcomp):
     p.solver = bgcomp.solver
 
     p.gm.project = bgcomp.project
-    p.chm.add_single_vertices_chunks(p, frames=range(500))
+    p.chm.add_single_vertices_chunks(p)
 
     # from utils.color_manager import colorize_project
     # import time

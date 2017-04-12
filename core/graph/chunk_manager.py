@@ -2,6 +2,8 @@ __author__ = 'flipajs'
 
 from chunk import Chunk
 from libs.intervaltree.intervaltree import IntervalTree
+from utils.misc import print_progress
+
 
 class ChunkManager:
     def __init__(self):
@@ -88,13 +90,21 @@ class ChunkManager:
     def reset_itree(self, gm):
         self.itree = IntervalTree()
 
-        for ch in self.chunk_gen():
+        chn = len(self)
+        for i, ch in enumerate(self.chunk_gen()):
             self._add_ch_itree(ch, gm)
+
+            if i % 100:
+                print_progress(i, chn, "reseting chunk interval tree")
+
+        print_progress(i, chn, "reseting chunk interval tree", "DONE\n")
 
     def add_single_vertices_chunks(self, p, frames=None):
         self.reset_itree(p.gm)
 
-        for n in p.gm.g.vertices():
+        nn = p.gm.g.num_vertices()
+
+        for i, n in enumerate(p.gm.g.vertices()):
             if frames is None:
                 if p.gm.get_chunk(n) is not None:
                     continue
@@ -107,5 +117,10 @@ class ChunkManager:
                 continue
 
             self.new_chunk([int(n)], p.gm)
+
+            if i % 100:
+                print_progress(i, nn,  prefix="single vertices 2 chunks")
+
+        print_progress(nn, nn, prefix="single vertices 2 chunks", suffix="DONE\n")
 
         self.reset_itree(p.gm)
