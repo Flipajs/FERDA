@@ -63,7 +63,8 @@ def fit_point(blob, mean, pca_shifted_cut, pca_shifted_whole):
 class AnimalFitting:
     HEAD_RANGE = 10
     BOTTOM_RANGE = 10
-    EIGEN_DIM = 3
+    EIGEN_DIM = 10
+    FEATURES = 40
 
     def __init__(self, X):
         self.X = AnimalFitting.get_pca_compatible_data(X)
@@ -97,9 +98,9 @@ class AnimalFitting:
         # plt.show()
 
         # SPLIT TRAIN / TEST DATA 0.9 / 0.1
-        self.X_train, self.X_test = np.split(self.X, [self.X.shape[0] * 0.9])
-        self.H_train, self.H_test = np.split(self.H, [self.H.shape[0] * 0.9])
-        self.B_train, self.B_test = np.split(self.B, [self.B.shape[0] * 0.9])
+        self.X_train, self.X_test = np.split(self.X, [int(self.X.shape[0] * 0.9)])
+        self.H_train, self.H_test = np.split(self.H, [int(self.H.shape[0] * 0.9)])
+        self.B_train, self.B_test = np.split(self.B, [int(self.B.shape[0] * 0.9)])
 
         # PCA ON WHOLE ANIMAL
         self.pca_whole = PCA(AnimalFitting.EIGEN_DIM)
@@ -242,7 +243,6 @@ class AnimalFitting:
         else:
             raise AttributeError("Type should be either 'whole', 'head', or 'bottom'")
 
-
         app = QtGui.QApplication(sys.argv)
         X = AnimalFitting.get_pca_compatible_data(np.expand_dims(X, axis=0))
         X = transformation(X)
@@ -262,17 +262,45 @@ class AnimalFitting:
         generate_eigen_ants_figure(eigen_ants, AnimalFitting.EIGEN_DIM)
 
     def generate_ants_reconstructed_figure(self, rows, columns):
-        X_C = self.pca_whole.transform(self.X_test)
-        X_R = self.pca_whole.inverse_transform(X_C)
-        generate_ants_reconstructed_figure(self.X_test, X_R, X_C, rows, columns)
+        H_C = self.pca_head.transform(self.H_test)
+        H_R = self.pca_whole.inverse_transform(H_C)
+        # H_R = self.pca_head.inverse_transform(H_C)
+        # generate_ants_reconstructed_figure(self.H_test, H_R, H_C, rows, columns, "heads_reconstructed_test_")
+        generate_ants_reconstructed_figure(self.X_test, H_R, H_C, rows, columns, "heads_reconstructed_")
+
+        # X_C = self.pca_whole.transform(self.X_test)
+        # X_R = self.pca_whole.inverse_transform(X_C)
+        # generate_ants_reconstructed_figure(self.X_test, X_R, X_C, rows, columns)
 
     @staticmethod
     def extract_heads(X):
         if AnimalFitting.HEAD_RANGE % 2 is not 0:
             logging.warn("Using odd range, results may vary!")
+        X_r = np.zeros(X.shape)
+        X_r[:,
+        range(AnimalFitting.HEAD_RANGE * 2 + 2) + range(X.shape[1] - AnimalFitting.HEAD_RANGE * 2, X.shape[1])] = \
+        X[:,
+        range(AnimalFitting.HEAD_RANGE * 2 + 2) + range(X.shape[1] - AnimalFitting.HEAD_RANGE * 2, X.shape[1])]
+        Ax = X_r[:, AnimalFitting.HEAD_RANGE * 2]
+        Ay = X_r[:, AnimalFitting.HEAD_RANGE * 2 + 1]
+        Bx = X_r[:, X.shape[1] - AnimalFitting.HEAD_RANGE * 2]
+        By = X_r[:, X.shape[1] - AnimalFitting.HEAD_RANGE * 2 + 1]
+        vec = (Bx - Ax, By - Ay)
+        # size = np.sqrt(vec[0] ** 2 + vec[1] ** 2)
+        vec = (vec[0] / (FEATURES - AnimalFitting.HEAD_RANGE * 2 + 1),
+               vec[1] / (FEATURES - AnimalFitting.HEAD_RANGE * 2 + 1))
+        k = 1
+
+        for i in range(AnimalFitting.HEAD_RANGE * 2 + 2, X.shape[1] - AnimalFitting.HEAD_RANGE * 2 + 1, 2):
+            X_r[:, i] = Ax + vec[0] * k
+            X_r[:, i+1] = Ay + vec[1] * k
+            k += 1
+        return X_r
+
         # return X[:,
         #        range(AnimalFitting.HEAD_RANGE * 2 + 2) + range(X.shape[1] - AnimalFitting.HEAD_RANGE * 2, X.shape[1])]
-        return (np.roll(X, AnimalFitting.HEAD_RANGE * 2 + 2, axis=1))[:, :(AnimalFitting.HEAD_RANGE * 2) * 2][::-1]
+        # return (np.roll(X, AnimalFitting.HEAD_RANGE * 2 + 2, axis=1))[:, :(AnimalFitting.HEAD_RANGE * 2) * 2][::-1]
+
 
     @staticmethod
     def extract_bottoms(X):
@@ -345,24 +373,25 @@ if __name__ == '__main__':
     FEATURES = 40
     X_ants, avg_dist, sizes = get_matrix(project, non_cluster_tracklets, FEATURES, heads)
     pca = AnimalFitting(X_ants)
+    pca.FEATURES = 40
 
     # VIEW RESULTS OF EXTRACTING
     # pca.show_extracting_random_result(5)
 
     # VIEW PCA RECONSTRUCTING RESULTS
-    # pca.show_random_fit_result(25)
+    # pca.show_random_fit_result(3)
 
     # GENERATING RESULTS FIGURE
-    pca.generate_eigen_ants_figure()
+    # pca.generate_eigen_ants_figure()
     rows = 3
     columns = 11
     pca.generate_ants_reconstructed_figure(rows, columns)
 
     # VIEW I-TH ANT AS COMPOSITION
     i = 2
-    pca.view_ant_composition(X_ants[i])
-    pca.view_ant_composition(X_ants[i], type='head')
-    pca.view_ant_composition(X_ants[i], type='bottom')
+    # pca.view_ant_composition(X_ants[i])
+    # pca.view_ant_composition(X_ants[i], type='head')
+    # pca.view_ant_composition(X_ants[i], type='bottom')
 
     # CLUSTER DECOMPOSITION
     # freq = 1

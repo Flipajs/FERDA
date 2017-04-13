@@ -33,7 +33,7 @@ def generate_eigen_ants_figure(ants, number_of_eigen_v):
     plt.ioff()
 
 
-def generate_ants_image(X, X_R, X_C, r, c, i, fold):
+def generate_ants_image(X, X_R, X_C, r, c, fname, fold):
     f = plt.figure(figsize=(r, c))
     gs1 = gridspec.GridSpec(r, c)
     gs1.update(wspace=0.025, hspace=0.05)
@@ -43,28 +43,36 @@ def generate_ants_image(X, X_R, X_C, r, c, i, fold):
         ax1.set_xticklabels([])
         ax1.set_yticklabels([])
         ax1.set_aspect('equal')
-        ax1.plot(np.append(X[j, ::2], X[j, 0]), np.append(X[j, 1::2], X[j, 1]), c='r')
-        ax1.scatter(np.append(X[j, ::2], X[j, 0]), np.append(X[j, 1::2], X[j, 1]), c='r')
-        ax1.plot(np.append(X_R[j, ::2], X_R[j, 0]), np.append(X_R[j, 1::2], X_R[j, 1]), c='b')
-        ax1.scatter(np.append(X_R[j, ::2], X_R[j, 0]), np.append(X_R[j, 1::2], X_R[j, 1]), c='b')
+        # TO SEE WHOLE CONTOUR AS PLOT
+        # ax1.plot(np.append(X[j, ::2], X[j, 0]), np.append(X[j, 1::2], X[j, 1]), c='r')
+        # ax1.scatter(np.append(X[j, ::2], X[j, 0]), np.append(X[j, 1::2], X[j, 1]), c='r')
+        # ax1.plot(np.append(X_R[j, ::2], X_R[j, 0]), np.append(X_R[j, 1::2], X_R[j, 1]), c='b')
+        # ax1.scatter(np.append(X_R[j, ::2], X_R[j, 0]), np.append(X_R[j, 1::2], X_R[j, 1]), c='b')
+
+        # TO SEE HEAD
+        ax1.plot(X[j, ::2], X[j, 1::2], c='r')
+        ax1.scatter(X[j, ::2], X[j, 1::2], c='r')
+        ax1.plot(X_R[j, ::2], X_R[j, 1::2], c='b')
+        ax1.scatter(X_R[j, ::2], X_R[j, 1::2], c='b')
+
         ax1.plot(np.arange(len(X_C[j, :])) + 1, X_C[j, :], c='g')
 
     # red_patch = mpatches.Patch(color='red', label='original')
     # blue_patch = mpatches.Patch(color='blue', label='reconstructed')
     # f.legend(handles=[red_patch], labels=[])
     f.set_size_inches(30, 20)
-    f.savefig(os.path.join(fold, str(i)), dpi=f.dpi)
+    f.savefig(os.path.join(fold, str(fname)), dpi=f.dpi)
     plt.ioff()
 
 
-def generate_ants_reconstructed_figure(X, X_R, X_C, rows, columns):
+def generate_ants_reconstructed_figure(X, X_R, X_C, rows, columns, fname=""):
     number_in_pic = rows * columns
     fold = os.path.join(GT_LOC, 'pca_results')
     if not os.path.exists(fold):
         os.mkdir(fold)
     i = 0
     while X.shape[0] != 0:
-        generate_ants_image(X[:number_in_pic, :], X_R[:number_in_pic, :], X_C[:number_in_pic, :], rows, columns, i,
+        generate_ants_image(X[:number_in_pic, :], X_R[:number_in_pic, :], X_C[:number_in_pic, :], rows, columns, fname + str(i),
                             fold)
         X = np.delete(X, range(number_in_pic), axis=0)
         X_R = np.delete(X_R, range(number_in_pic), axis=0)
