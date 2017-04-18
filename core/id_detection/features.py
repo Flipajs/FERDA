@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import time
 from math import ceil
 # TODO: UNCOMMENT THIS AND PUBLISH...
-import img_features
+from libs import img_features
 from thesis.config import *
 from utils.img import img_saturation_coef
 
