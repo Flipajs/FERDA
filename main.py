@@ -66,17 +66,17 @@ if is_flipajs_pc():
 
     project.load(wd)
 
-    start_time = timeit.default_timer()
-    test1()
-    print(timeit.default_timer() - start_time)
-
-    start_time = timeit.default_timer()
-    test2()
-    print(timeit.default_timer() - start_time)
-
-    start_time = timeit.default_timer()
-    test3()
-    print(timeit.default_timer() - start_time)
+    # start_time = timeit.default_timer()
+    # test1()
+    # print(timeit.default_timer() - start_time)
+    #
+    # start_time = timeit.default_timer()
+    # test2()
+    # print(timeit.default_timer() - start_time)
+    #
+    # start_time = timeit.default_timer()
+    # test3()
+    # print(timeit.default_timer() - start_time)
 
     # project.chm.add_single_vertices_chunks(project)
     # project.save()
