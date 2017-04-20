@@ -140,6 +140,11 @@ class LearningWidget(QtGui.QWidget):
         self.auto_init_b.clicked.connect(self.auto_init)
         self.top_stripe_layout.addWidget(self.auto_init_b)
 
+        self.auto_init_method_cb = QtGui.QComboBox()
+        self.auto_init_method_cb.addItem("max min")
+        self.auto_init_method_cb.addItem("max sum")
+        self.top_stripe_layout.addWidget(self.auto_init_method_cb)
+
         # self.add_tracklet_table()
         # self.update_callback()
 
@@ -374,7 +379,11 @@ class LearningWidget(QtGui.QWidget):
         self.lp.update_undecided_tracklets()
 
     def auto_init(self):
-        self.lp.auto_init()
+        method = 'maxmin'
+        if self.auto_init_method_cb.currentIndex == 0:
+            method = 'maxsum'
+
+        self.lp.auto_init(method=method)
 
         self.update_callback()
 

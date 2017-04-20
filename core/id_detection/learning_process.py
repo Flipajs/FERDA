@@ -13,7 +13,7 @@ from core.project.project import Project
 from features import get_basic_properties, get_colornames_hists
 from gui.learning.ids_names_widget import IdsNamesWidget
 from utils.img_manager import ImgManager
-
+from utils.video_manager import get_auto_video_manager
 import itertools
 import math
 from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
@@ -1306,11 +1306,16 @@ class LearningProcess:
 
 
     def auto_init(self, method='max_sum'):
+        from multiprocessing import cpu_count
+
         best_frame = None
         best_score = 0
 
         max_best_frame = None
         max_best_score = 0
+
+        vm = get_auto_video_manager(self.p)
+        total_frame_count = vm.total_frame_count()
 
         frame = 0
         while True:
@@ -1331,20 +1336,15 @@ class LearningProcess:
                     max_best_frame = frame
                     max_best_score = mm
 
-            frame = min([t.end_frame(self.p.gm) for t in group]) + 1
+            new_frame = min([t.end_frame(self.p.gm) for t in group]) + 1
+            # speedup "hack". In extreme cases might be slightly suboptimal
+            frame = max(new_frame, frame+30)
 
-        print "BEST min: "
-        print best_frame, best_score
-        for t in self.p.chm.chunks_in_frame(best_frame):
-            print "id: {}, len: {}".format(t.id(), t.length())
+            print_progress(frame, total_frame_count, "searching for best initialisation frame using "+method.upper()+" method")
 
-        print "BEST sum (USED)"
-        # TODO: add to user settings
-        print max_best_frame, max_best_score
-        self.user_decisions = []
-        self.separated_frame = max_best_frame
-
-        if method == 'max_sum':
+        if method == 'maxsum':
+            self.user_decisions = []
+            self.separated_frame = max_best_frame
             group = self.p.chm.chunks_in_frame(max_best_frame)
         else:
             group = self.p.chm.chunks_in_frame(best_frame)
