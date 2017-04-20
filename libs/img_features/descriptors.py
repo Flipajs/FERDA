@@ -1,5 +1,5 @@
 import numpy as np
-import color_naming
+from libs import color_naming
 from utils import feature_descriptor
 
 

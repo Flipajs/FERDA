@@ -22,34 +22,6 @@ project = Project()
 S_.general.print_log = False
 
 
-# def test1():
-#     for n in project.gm.g.vertices():
-#         pass
-#
-#
-# def test2():
-#     for i, n in enumerate(project.gm.g.vertices()):
-#         pass
-#
-#
-# def test3():
-#     a = project.gm.g.get_vertices()
-#     for i, n in enumerate(np.nditer(project.gm.g.get_vertices())):
-#         pass
-
-def test1():
-    for n in project.gm.g.edges():
-        pass
-
-def test2():
-    for i, n in enumerate(project.gm.g.edges()):
-        pass
-
-def test3():
-    a = project.gm.g.get_vertices()
-    for i, n in enumerate(np.nditer(project.gm.g.get_edges())):
-        pass
-
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 # if is_flipajs_pc() and False:
 if is_flipajs_pc():
