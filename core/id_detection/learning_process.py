@@ -5,6 +5,8 @@ import time
 import warnings
 
 import numpy as np
+import os
+import psutil
 from PyQt4 import QtGui
 from sklearn.ensemble import RandomForestClassifier
 
@@ -180,6 +182,7 @@ class LearningProcess:
     def load_features(self, db_names='fm.sqlite3'):
         from core.id_detection.features import FeatureManager
 
+        # TODO: speedup loading... What about loading 10% longest tracklets... When solved, load more?
         self.collision_chunks = set()
         self.features = {}
 
@@ -225,6 +228,13 @@ class LearningProcess:
             else:
                 self.collision_chunks.add(t.id())
 
+            # Debug info...
+            if i % 500 == 0:
+                process = psutil.Process(os.getpid())
+                print
+                print "Memory usage: {:.2f}Mb".format((process.memory_info().rss) / 1e6)
+                print
+
         print "LOADED", len(self.features), len(self.collision_chunks)
         # print self.features.keys()
         # print
@@ -240,32 +250,59 @@ class LearningProcess:
         #     self.features = d['features']
         #     self.collision_chunks = d['collision_chunks']
 
+    # def compute_features(self):
+    #     from core.id_detection.features import get_colornames_hists
+    #     from core.id_detection.feature_manager import FeatureManager
+    #
+    #     # TODO:
+    #     fm = FeatureManager(self.p.working_directory, db_name='fm.sqlite3')
+    #
+    #     len_sum = 0
+    #     expected_sum = len(self.p.animals) * self.p.img_manager.vid.total_frame_count()
+    #     for i, t in enumerate(self.p.chm.chunk_gen()):
+    #         len_sum += len(t)
+    #
+    #         print_progress(min(len_sum, expected_sum), expected_sum)
+    #         if not t.is_single():
+    #             continue
+    #
+    #         for r in RegionChunk(t, self.p.gm, self.p.rm).regions_gen():
+    #             if fm[r.id()][1] == [None]:
+    #                 f = get_colornames_hists(r, self.p, saturated=True, lvls=1)
+    #                 fm.add(r.id(), f)
+
     def compute_features(self):
         from core.id_detection.features import get_colornames_hists
         from core.id_detection.feature_manager import FeatureManager
 
-        # TODO:
         fm = FeatureManager(self.p.working_directory, db_name='fm.sqlite3')
 
-        for i, t in enumerate(self.p.chm.chunk_gen()):
-            print_progress(i, len(self.p.chm))
-            if not t.is_single():
-                continue
+        self.p.img_manager.max_num_of_instances = 500
 
-            for r in RegionChunk(t, self.p.gm, self.p.rm).regions_gen():
-                f = get_colornames_hists(r, self.p, saturated=True, lvls=1)
-                fm.add(r.id(), f)
+        for frame in range(self.p.img_manager.vid.total_frame_count()):
+            print_progress(frame, self.p.img_manager.vid.total_frame_count())
 
-        # self.get_candidate_chunks()
+            for t in self.p.chm.chunks_in_frame(frame):
+                rm = RegionChunk(t, self.p.gm, self.p.rm)
+                r = rm.region_in_t(frame)
+
+                if fm[r.id()][1] == [None]:
+                    f = get_colornames_hists(r, self.p, saturated=True, lvls=1)
+                    fm.add(r.id(), f)
         #
-        # self.features = self.precompute_features_()
+        # len_sum = 0
+        # expected_sum = len(self.p.animals) * self.p.img_manager.vid.total_frame_count()
+        # for i, t in enumerate(self.p.chm.chunk_gen()):
+        #     len_sum += len(t)
         #
-        # with open(self.p.working_directory+'/temp/features.pkl', 'wb') as f:
-        #     d = {'features': self.features,
-        #          'collision_chunks': self.collision_chunks}
-        #     # pickle.dump(d, f, -1)
-        #     # withou -1, compression, faster?
-        #     pickle.dump(d, f)
+        #     print_progress(min(len_sum, expected_sum), expected_sum)
+        #     if not t.is_single():
+        #         continue
+        #
+        #     for r in RegionChunk(t, self.p.gm, self.p.rm).regions_gen():
+        #         if fm[r.id()][1] == [None]:
+        #             f = get_colornames_hists(r, self.p, saturated=True, lvls=1)
+        #             fm.add(r.id(), f)
 
     def set_eps_certainty(self, eps):
         self._eps_certainty = eps
@@ -1303,7 +1340,6 @@ class LearningProcess:
             # TODO: check conflict?
             tracklet.N = new_N
             tracklet.P = new_P
-
 
     def auto_init(self, method='max_sum'):
         from multiprocessing import cpu_count

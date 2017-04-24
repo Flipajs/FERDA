@@ -17,7 +17,7 @@ from utils.misc import is_flipajs_pc
 from core.region.region import get_region_endpoints
 from utils.idtracker import load_idtracker_data
 import cv2
-
+import time
 
 MARKER_SIZE = 15
 

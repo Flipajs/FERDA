@@ -17,7 +17,7 @@ import math
 import scipy.ndimage
 from utils.roi import get_roi
 import matplotlib as mpl
-
+import time
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), return_offset=False):
     y = int(y)
@@ -39,12 +39,14 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), ret
 
     border = max(border, max(max(-h_, -w_), 0))
 
-    if border > 0:
+    # fast detection of case where selection is inside image
+    borders_needed = y < 0 or x < 0 or y + height >= img.shape[0] or x + width >= img.shape[1]
+    if border > 0 and borders_needed:
         img_ = np.zeros((img.shape[0] + 2 * border, img.shape[1] + 2 * border, channels), dtype=img.dtype)
         img_ += np.asarray(fill_color, dtype=img.dtype)
         img_[border:-border, border:-border] = img
-        crop = np.ones((height, width, channels), dtype=img.dtype)
-        crop *= np.asarray(fill_color, dtype=img.dtype)
+        # crop = np.ones((height, width, channels), dtype=img.dtype)
+        # crop *= np.asarray(fill_color, dtype=img.dtype)
 
         y += border
         x += border
@@ -52,7 +54,7 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), ret
     else:
         # TODO: why is height twice here?
         # crop_ = np.copy(img[y:y + height, x:x + height, :])
-        crop = np.copy(img[y:y + height, x:x + width, :])
+        crop = img[y:y + height, x:x + width, :].copy()
 
     if return_offset:
         return crop, np.array([y, x])
