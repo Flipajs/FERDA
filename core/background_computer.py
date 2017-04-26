@@ -73,7 +73,9 @@ class BackgroundComputer:
             for i in range(skip_n_first_parts):
                 self.processes.append(None)
 
-            limitsFile = open(str(self.project.working_directory)+"/limits.txt","w");
+            if self.postpone_parallelisation:
+                limitsFile = open(str(self.project.working_directory)+"/limits.txt","w")
+
             for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
 
@@ -106,7 +108,6 @@ class BackgroundComputer:
 
                 self.start[i] = time.time()
 
-                limitsFile.write(str(i)+" "+str(f_num)+" "+str(last_n_frames)+"\n");
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
@@ -117,12 +118,11 @@ class BackgroundComputer:
                 # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
 
             if self.postpone_parallelisation:
-                # f.close()
                 self.precomputed = True
 
             S_.general.log_graph_edits = True
-            limitsFile.close()
             if self.postpone_parallelisation:
+                limitsFile.close()
                 sys.exit() ## Comment for cluster usage
             
         else:
