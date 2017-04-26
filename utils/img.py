@@ -19,6 +19,7 @@ from utils.roi import get_roi
 import matplotlib as mpl
 import time
 
+
 def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), return_offset=False):
     y = int(y)
     x = int(x)
@@ -52,8 +53,6 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), ret
         x += border
         crop = np.copy(img_[y:y + height, x:x + width, :])
     else:
-        # TODO: why is height twice here?
-        # crop_ = np.copy(img[y:y + height, x:x + height, :])
         crop = img[y:y + height, x:x + width, :].copy()
 
     if return_offset:

@@ -271,7 +271,27 @@ class LearningProcess:
     #                 f = get_colornames_hists(r, self.p, saturated=True, lvls=1)
     #                 fm.add(r.id(), f)
 
+
     def compute_features(self):
+        # set num cores to 1, so parallelisation works
+        import cv2
+        from utils.mp_counter import Counter
+        from multiprocessing import Queue, cpu_count, Process
+        default_num_threads = cv2.getNumThreads()
+        cv2.setNumThreads(0)
+
+        q_tasks = Queue()
+        q_results = Queue()
+        counter = Counter(0)
+        num_cpus = cpu_count() * 2
+
+        children = []
+        for i in range(num_cpus):
+            # compute_features_process(counter, q_tasks, q_results, project, num_frames)
+            p = Process(target=compute_features_process, args=(counter, q_tasks, q_results, self.p, self.p.img_manager.vid.total_frame_count()))
+            p.start()
+            children.append(p)
+
         from core.id_detection.features import get_colornames_hists
         from core.id_detection.feature_manager import FeatureManager
 
@@ -280,15 +300,22 @@ class LearningProcess:
         self.p.img_manager.max_num_of_instances = 500
 
         for frame in range(self.p.img_manager.vid.total_frame_count()):
-            print_progress(frame, self.p.img_manager.vid.total_frame_count())
+            # print_progress(frame, self.p.img_manager.vid.total_frame_count())
+            img = self.p.img_manager.get_whole_img(frame)
+            h, w, c = img.shape
+            img.shape = (h*w*c)
+            q_tasks.put(frame, img, (h, w, c))
 
-            for t in self.p.chm.chunks_in_frame(frame):
-                rm = RegionChunk(t, self.p.gm, self.p.rm)
-                r = rm.region_in_t(frame)
+        q_tasks.put(None)
 
-                if fm[r.id()][1] == [None]:
-                    f = get_colornames_hists(r, self.p, saturated=True, lvls=1)
-                    fm.add(r.id(), f)
+        for p in children:
+            p.join()
+
+        print "all joined"
+
+        # set back to default
+        cv2.setNumThreads(default_num_threads)
+
         #
         # len_sum = 0
         # expected_sum = len(self.p.animals) * self.p.img_manager.vid.total_frame_count()
@@ -1504,6 +1531,35 @@ class LearningProcess:
         # print "HIL INIT, adding t_id: {}, len: {}".format(best_t_id_, len_)
 
         return best_t_id_
+
+
+def compute_features_process(counter, q_tasks, q_results, project, num_frames):
+    while True:
+        if q_tasks.empty():
+            time.sleep(0.1)
+            continue
+
+        task = q_tasks.get()
+        if task is None:
+            break
+
+        frame, img, (h, w, c) = task
+        img.shape = (h, w, c)
+
+        for t in project.chm.chunks_in_frame(frame):
+            rm = RegionChunk(t, project.gm, project.rm)
+            r = rm.region_in_t(frame)
+
+            # TODO:
+            # if fm[r.id()][1] == [None]:
+            f = get_colornames_hists(r, project, saturated=True, lvls=1)
+                # fm.add(r.id(), f)
+
+        q_results.put((r.id(), f))
+        counter.increment()
+        print_progress(counter.value(), num_frames, "translation in progress:")
+
+    q_tasks.put(None)
 
 if __name__ == '__main__':
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'

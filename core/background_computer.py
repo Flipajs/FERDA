@@ -59,14 +59,14 @@ class BackgroundComputer:
             os.mkdir(self.project.working_directory + '/temp')
             
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
-            if self.postpone_parallelisation:
-                f = open(self.project.working_directory+'/limits.txt', 'w')
+            # if self.postpone_parallelisation:
+                # f = open(self.project.working_directory+'/limits.txt', 'w')
 
             if not S_.general.log_in_bg_computation:
                 S_.general.log_graph_edits = False
 
             # change this if parallelisation stopped working and you want to run it from given part
-            skip_n_first_parts = 240
+            skip_n_first_parts = 0
 
             self.start = [0] * self.part_num
 
@@ -93,7 +93,7 @@ class BackgroundComputer:
                 print ex_str
 
                 if self.postpone_parallelisation:
-                    f.write(str(i)+'\t'+str(f_num)+'\t'+str(last_n_frames)+'\n')
+                    limitsFile.write(str(i)+'\t'+str(f_num)+'\t'+str(last_n_frames)+'\n')
 
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
@@ -117,12 +117,13 @@ class BackgroundComputer:
                 # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
 
             if self.postpone_parallelisation:
-                f.close()
+                # f.close()
                 self.precomputed = True
 
             S_.general.log_graph_edits = True
             limitsFile.close()
-            # sys.exit() ## Comment for cluster usage
+            if self.postpone_parallelisation:
+                sys.exit() ## Comment for cluster usage
             
         else:
             self.precomputed = True

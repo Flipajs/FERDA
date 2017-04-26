@@ -191,8 +191,9 @@ def get_lbp_vect(crop):
 def get_crop(r, p, margin=0):
     return __get_crop(r, p, margin=margin)
 
-def __get_crop(r, p, margin=3):
-    img = p.img_manager.get_whole_img(r.frame_)
+def __get_crop(r, p, margin=3, img=None):
+    if img is None:
+        img = p.img_manager.get_whole_img(r.frame_)
 
     crop, offset = get_img_around_pts(img, r.pts(), margin=2.0)
     crop = rotate_img(crop, r.theta_)
@@ -201,8 +202,8 @@ def __get_crop(r, p, margin=3):
 
     return crop
 
-def get_colornames_hists(r, p, fliplr=False, saturated=False, lvls=3):
-    crop = __get_crop(r, p)
+def get_colornames_hists(r, p, img=None, fliplr=False, saturated=False, lvls=3):
+    crop = __get_crop(r, p, img)
 
     if saturated:
         crop = img_saturation_coef(crop, 1.5, 0.95)

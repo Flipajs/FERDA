@@ -8,6 +8,7 @@ from PyQt4 import QtCore
 from gui.settings.default import get_default
 import sys
 
+
 def get_pickle_data(filepath):
     f = open(filepath, "rb")
     data = pickle.load(f)

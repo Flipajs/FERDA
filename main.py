@@ -30,8 +30,8 @@ if is_flipajs_pc() and False:
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs'
-    wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
     # wd = '/Users/flipajs/Documents/wd/FERDA/test'
