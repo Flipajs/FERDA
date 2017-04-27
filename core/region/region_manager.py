@@ -5,7 +5,7 @@ __author__ = 'flipajs'
 import sqlite3 as sql
 import cPickle as pickle
 from core.region.region import encode_RLE
-from cachetools import LRUCache
+from libs.cachetools import LRUCache
 import sys
 
 class Dummy():
