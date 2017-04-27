@@ -217,7 +217,20 @@ class SegmentationHelper:
         t = time.time()
         # get all feature data from image and create one large array
 
-        layers = self.get_features()
+        try:
+            layers = self.get_features()
+        except ValueError:
+            print "error occured, logging..."
+            print "pyramid size: ", len(self.pyramid)
+            for i in range(len(self.pyramid)):
+                print "i, shape: ", self.pyramid[0].shape
+
+            print ""
+            print "images size: ", len(self.images)
+            for i in range(len(self.images)):
+                print "i, shape: ", self.images[0].shape
+
+            cv2.imwrite(self.image, "img_dump.png")
 
         for id_ in sorted(self.unused[0], key=lambda x: -x):
             layers.pop(id_)

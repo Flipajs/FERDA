@@ -4,7 +4,6 @@ import module_one as one
 import module_two as two
 
 if __name__ == "__main__":
-	
     init_logging()
     logger = get_logger(__name__)
     # print logger.getEffectiveLevel()
