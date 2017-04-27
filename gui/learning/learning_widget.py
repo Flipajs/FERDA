@@ -47,7 +47,7 @@ class LearningWidget(QtGui.QWidget):
             self.load_project_button.clicked.connect(self.load_project)
             self.top_stripe_layout.addWidget(self.load_project_button)
         else:
-            self.lp = LearningProcess(self.project, ghost=True)
+            self.lp = LearningProcess(self.project, ghost=False)
 
         self.start_button = QtGui.QPushButton('start')
         self.start_button.clicked.connect(self.lp.run_learning)
@@ -77,12 +77,24 @@ class LearningWidget(QtGui.QWidget):
         self.min_examples_to_retrain_i.installEventFilter(self._filter)
         self.top_stripe_layout.addWidget(self.min_examples_to_retrain_i)
 
+        self.label_tracklet_min_length = QtGui.QLabel('tracklet min len: ')
+        self.top_stripe_layout.addWidget(self.label_tracklet_min_length)
+
+        self.tracklet_min_length_sb = QtGui.QSpinBox()
+        self.tracklet_min_length_sb.setValue(50)
+        self.tracklet_min_length_sb.setMinimum(0)
+        self.tracklet_min_length_sb.setMaximum(10000)
+        self.top_stripe_layout.addWidget(self.tracklet_min_length_sb)
+        self.update_tracklet_len_b = QtGui.QPushButton('update')
+        self.update_tracklet_len_b.clicked.connect(self.tracklet_min_length_changed)
+        self.top_stripe_layout.addWidget(self.update_tracklet_len_b)
+
         self.label_certainty_eps = QtGui.QLabel('certainty eps:')
         self.top_stripe_layout.addWidget(self.label_certainty_eps)
 
         self.certainty_eps_spinbox = QtGui.QDoubleSpinBox()
         self.certainty_eps_spinbox.setSingleStep(0.01)
-        self.certainty_eps_spinbox.setValue(0.3)
+        self.certainty_eps_spinbox.setValue(0.7)
         self.certainty_eps_spinbox.setMaximum(1)
         self.certainty_eps_spinbox.setMinimum(0)
 
@@ -184,7 +196,7 @@ class LearningWidget(QtGui.QWidget):
 
             self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
             num_animals = len(self.project.animals)
-            self.tracklets_table.setColumnCount(2 * num_animals + 5)
+            self.tracklets_table.setColumnCount(num_animals + 5)
             self.tracklets_table.setMinimumWidth(1000)
             self.tracklets_table.setMinimumHeight(1000)
 
@@ -192,7 +204,10 @@ class LearningWidget(QtGui.QWidget):
             self.hbox.addWidget(self.tracklets_table)
 
     def certainty_eps_changed(self):
-        self.lp.set_eps_certainty(self.certainty_eps_spinbox.value())
+        self.lp.set_eps_certainty(1-self.certainty_eps_spinbox.value())
+
+    def tracklet_min_length_changed(self):
+        self.lp.set_tracklet_length_k(self.tracklet_min_length_sb.value())
 
     def save(self):
         self.lp.save_learning()
@@ -262,8 +277,8 @@ class LearningWidget(QtGui.QWidget):
             for i in range(num_animals):
                 header_labels += ('m'+str(i), )
 
-            for i in range(num_animals):
-                header_labels += (str(i), )
+            # for i in range(num_animals):
+            #     header_labels += (str(i), )
 
             it = QtGui.QTableWidgetItem
 
@@ -294,14 +309,17 @@ class LearningWidget(QtGui.QWidget):
                     for j in range(num_animals):
                         self.tracklets_table.setItem(i, 5+j, QtGui.QTableWidgetItem(self.__f2str(d[j])))
 
-                    for j in range(num_animals):
-                        val = ''
-                        if j in t.P:
-                            val = 'N'
-                        elif j in t.N:
-                            val = 'P'
+                        if j in t.N:
+                            self.tracklets_table.item(i, 5+j).setBackgroundColor(QtGui.QColor(150, 150, 150))
 
-                        self.tracklets_table.setItem(i, 5+num_animals+j, QtGui.QTableWidgetItem(val))
+                    # for j in range(num_animals):
+                    #     val = ''
+                    #     if j in t.P:
+                    #         val = 'N'
+                    #     elif j in t.N:
+                    #         val = 'P'
+                    #
+                    #     self.tracklets_table.setItem(i, 5+num_animals+j, QtGui.QTableWidgetItem(val))
 
             self.tracklets_table.setSortingEnabled(True)
             self.tracklets_table.resizeColumnsToContents()
@@ -325,8 +343,8 @@ class LearningWidget(QtGui.QWidget):
 
         return coverage / float(max_*len(self.project.animals))
 
-    def __f2str(self, f, prec=3):
-        return ('{:.'+str(prec)+'}').format(f)
+    def __f2str(self, f, prec=1):
+        return ('{:.'+str(prec)+'%}').format(f)
 
     def load_project(self, default=''):
         path = ''

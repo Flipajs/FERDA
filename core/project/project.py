@@ -220,9 +220,9 @@ class Project:
 
     def save_qsettings(self,toFolder=""):
         if (toFolder == ""):
-            destinationFolder = self.working_directory;
+            destinationFolder = self.working_directory
         else:
-            destinationFolder = toFolder;
+            destinationFolder = toFolder
 
         s = QtCore.QSettings('FERDA')
         settings = {}

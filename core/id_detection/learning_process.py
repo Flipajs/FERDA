@@ -117,55 +117,15 @@ class LearningProcess:
 
         self.map_decisions = False
 
+        self.human_in_the_loop = False
 
         # when creating without feature data... e.g. in main_tab_widget
         if ghost:
             return
 
-        # if not use_feature_cache:
-        #     # TODO: do better... Idealy chunks should already have labels
-        #     self.get_candidate_chunks()
-        #
-        #     self.features = self.precompute_features_()
-        #
-        #     with open(p.working_directory+'/features.pkl', 'wb') as f:
-        #         d = {'features': self.features,
-        #              'collision_chunks': self.collision_chunks}
-        #         # pickle.dump(d, f, -1)
-        #         # withou -1, compression, faster?
-        #         pickle.dump(d, f)
-        # else:
-        #     print "LOADING features..."
-        #
-        #     with open(p.working_directory+'/features.pkl', 'rb') as f:
-        #         d = pickle.load(f)
-        #         self.features = d['features']
-        #         self.collision_chunks = d['collision_chunks']
-
-            print "LOADED"
-        #
-        # print "precompute avalability"
-        # self.__reset_chunk_PN_sets()
-        #
-        # # TODO: remove this
-        # self.class_frequences = []
-        #
-        # print "undecided tracklets..."
-        # self.fill_undecided_tracklets()
-        #
-        # print "Init data..."
-        # self.X = []
-        # self.y = []
-        #
-        # # TODO: wait for all necesarry examples, then finish init.
-        # # np.random.seed(13)
-        # self.__train_rfc()
-        # print "TRAINED"
-
-
         # False mean - don't ask
-        self.human_in_the_loop = False
-        self.GT_in_the_loop = True
+        self.human_in_the_loop = True
+        self.GT_in_the_loop = False
 
         if self.GT_in_the_loop:
             from utils.gt.gt import GT
@@ -193,12 +153,11 @@ class LearningProcess:
         for n in db_names:
             self.fms.append(FeatureManager(self.p.working_directory, db_name=n))
 
+        expected_sum = len(self.p.animals) * self.p.img_manager.vid.total_frame_count()
         t_len = len(self.p.chm)
         i = 0
-        for t in self.p.chm.chunk_gen():
-            i += 1
-            print_progress(i, t_len)
-
+        t_sum = 0
+        for i, t in enumerate(self.p.chm.chunk_gen()):
             r_ids = [id_ for id_ in t.rid_gen(self.p.gm)]
 
             ff = []
@@ -235,7 +194,11 @@ class LearningProcess:
                 print "Memory usage: {:.2f}Mb".format((process.memory_info().rss) / 1e6)
                 print
 
-        print "LOADED", len(self.features), len(self.collision_chunks)
+            t_sum += len(t)
+            print_progress(t_sum, expected_sum)
+
+        print_progress(expected_sum, expected_sum, "", "LOADED")
+        print len(self.features), len(self.collision_chunks)
         # print self.features.keys()
         # print
         # print
@@ -289,7 +252,7 @@ class LearningProcess:
 
         q_tasks = Queue()
         counter = Counter(0)
-        num_cpus = cpu_count()
+        num_cpus = max(1, cpu_count() - 1)
         lock = Lock()
 
         num_frames = self.p.img_manager.vid.total_frame_count()
@@ -321,6 +284,10 @@ class LearningProcess:
 
     def set_eps_certainty(self, eps):
         self._eps_certainty = eps
+
+    def set_tracklet_length_k(self, k):
+        self.k_
+        self.__precompute_measurements()
 
     def compute_distinguishability(self):
         num_a = len(self.p.animals)
@@ -1522,13 +1489,13 @@ class LearningProcess:
 
 
 def compute_features_process(counter, lock, q_tasks, project_wd, num_frames, first_time=True):
+    print "starting..."
     from core.project.project import Project
     from core.id_detection.feature_manager import FeatureManager
     project = Project()
     project.load(project_wd, lightweight=True)
 
     fm = FeatureManager(project_wd, db_name='fm.sqlite3')
-
     while True:
         if q_tasks.empty():
             time.sleep(0.1)
