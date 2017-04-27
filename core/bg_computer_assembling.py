@@ -24,7 +24,7 @@ def assembly_after_parallelization(bgcomp):
     if bgcomp.do_semi_merge:
         # multiply estimate by this value to add security margin
         q = 2.0
-        cache_size_limit = int(q * len(bgcomp.project.animals) * bgcomp.frames_in_row_last * bgcomp.part_num)
+        cache_size_limit = int(q * len(bgcomp.project.animals) * bgcomp.frames_in_row * bgcomp.part_num)
         db_wd = None
 
     bgcomp.project.rm = RegionManager(db_wd=db_wd, cache_size_limit=cache_size_limit)

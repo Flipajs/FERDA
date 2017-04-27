@@ -1413,6 +1413,9 @@ class ResultsWidget(QtGui.QWidget):
             try:
                 path = self.project.GT_file
                 self._gt.load(path)
+                self._gt.set_offset(y=-self.project.video_crop_model['y1'],
+                                    x=-self.project.video_crop_model['x1'],
+                                    frames=self.project.video_start_t)
             except:
                 pass
 
