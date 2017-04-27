@@ -22,8 +22,9 @@ def assembly_after_parallelization(bgcomp):
 
     db_wd = bgcomp.project.working_directory
     if bgcomp.do_semi_merge:
-        # means - do not use database, use memory only
-        cache_size_limit = -1
+        # multiply estimate by this value to add security margin
+        q = 2.0
+        cache_size_limit = int(q * len(bgcomp.project.animals) * bgcomp.frames_in_row_last * bgcomp.part_num)
         db_wd = None
 
     bgcomp.project.rm = RegionManager(db_wd=db_wd, cache_size_limit=cache_size_limit)

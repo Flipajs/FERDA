@@ -38,13 +38,13 @@ class RegionManager:
 
         if db_wd == None:
             # cache mode (no db set)
-            if cache_size_limit == -1:
-                self.use_db = False
-                # self.regions_cache_ = {}
-                # self.recent_regions_ids = []
-                self.id_ = 0
-            else:
-                raise SyntaxError("Cache limit can only be set when database is used!")
+            # if cache_size_limit == -1:
+            self.use_db = False
+            # self.regions_cache_ = {}
+            # self.recent_regions_ids = []
+            self.id_ = 0
+            # else:
+            #     raise SyntaxError("Cache limit can only be set when database is used!")
         else:
             self.use_db = True
             self.db_path = db_wd+"/"+db_name
