@@ -672,7 +672,7 @@ class LearningProcess:
                 except:
                     pass
 
-    def next_step(self):
+    def next_step(self, update_gui=True):
         if len(self.tracklet_certainty) == 0:
             print "ALL is done"
             return True
@@ -735,7 +735,7 @@ class LearningProcess:
                     self.last_id = best_tracklet_id
                     self.consistency_violated = True
 
-        if self.update_callback is not None:
+        if self.update_callback is not None and update_gui:
             self.update_callback()
 
         return True

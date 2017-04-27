@@ -231,16 +231,21 @@ class LearningWidget(QtGui.QWidget):
             self.show_tracklet_callback(tracklet)
 
     def do_n_steps(self):
+        from utils.misc import print_progress
         try:
             num = int(self.num_next_step.text())
         except:
             QtGui.QMessageBox('not a valid number!')
 
         for i in range(num):
-            if not self.lp.next_step():
+            print_progress(i, num, "deciding {} most certain tracklets".format(num))
+            if not self.lp.next_step(update_gui=False):
                 break
 
-        print self.num_next_step.text(), "steps finished"
+        print_progress(num, num, "deciding {} most certain tracklets".format(num), "DONE")
+
+        self.update_callback()
+        print i, "steps finished"
 
     def update_callback(self):
         self.info_table.setItem(0, 0, QtGui.QTableWidgetItem('#tracklets'))
