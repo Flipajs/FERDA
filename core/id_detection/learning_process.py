@@ -250,72 +250,16 @@ class LearningProcess:
         #     self.features = d['features']
         #     self.collision_chunks = d['collision_chunks']
 
-    # def compute_features(self):
-    #     from core.id_detection.features import get_colornames_hists
-    #     from core.id_detection.feature_manager import FeatureManager
-    #
-    #     # TODO:
-    #     fm = FeatureManager(self.p.working_directory, db_name='fm.sqlite3')
-    #
-    #     len_sum = 0
-    #     expected_sum = len(self.p.animals) * self.p.img_manager.vid.total_frame_count()
-    #     for i, t in enumerate(self.p.chm.chunk_gen()):
-    #         len_sum += len(t)
-    #
-    #         print_progress(min(len_sum, expected_sum), expected_sum)
-    #         if not t.is_single():
-    #             continue
-    #
-    #         for r in RegionChunk(t, self.p.gm, self.p.rm).regions_gen():
-    #             if fm[r.id()][1] == [None]:
-    #                 f = get_colornames_hists(r, self.p, saturated=True, lvls=1)
-    #                 fm.add(r.id(), f)
-
-
     def compute_features(self):
-        # set num cores to 1, so parallelisation works
-        import cv2
-        from utils.mp_counter import Counter
-        from multiprocessing import Queue, cpu_count, Process
-        default_num_threads = cv2.getNumThreads()
-        cv2.setNumThreads(0)
+        self.compute_features_mp()
 
-        q_tasks = Queue()
-        q_results = Queue()
-        counter = Counter(0)
-        num_cpus = cpu_count() * 2
-
-        children = []
-        for i in range(num_cpus):
-            # compute_features_process(counter, q_tasks, q_results, project, num_frames)
-            p = Process(target=compute_features_process, args=(counter, q_tasks, q_results, self.p, self.p.img_manager.vid.total_frame_count()))
-            p.start()
-            children.append(p)
-
-        from core.id_detection.features import get_colornames_hists
-        from core.id_detection.feature_manager import FeatureManager
-
-        fm = FeatureManager(self.p.working_directory, db_name='fm.sqlite3')
-
-        self.p.img_manager.max_num_of_instances = 500
-
-        for frame in range(self.p.img_manager.vid.total_frame_count()):
-            # print_progress(frame, self.p.img_manager.vid.total_frame_count())
-            img = self.p.img_manager.get_whole_img(frame)
-            h, w, c = img.shape
-            img.shape = (h*w*c)
-            q_tasks.put(frame, img, (h, w, c))
-
-        q_tasks.put(None)
-
-        for p in children:
-            p.join()
-
-        print "all joined"
-
-        # set back to default
-        cv2.setNumThreads(default_num_threads)
-
+        # print "computing features..."
+        # time_ = time.time()
+        # from core.id_detection.features import get_colornames_hists
+        # from core.id_detection.feature_manager import FeatureManager
+        #
+        # # TODO:
+        # fm = FeatureManager(self.p.working_directory, db_name='fm_sp.sqlite3')
         #
         # len_sum = 0
         # expected_sum = len(self.p.animals) * self.p.img_manager.vid.total_frame_count()
@@ -330,6 +274,50 @@ class LearningProcess:
         #         if fm[r.id()][1] == [None]:
         #             f = get_colornames_hists(r, self.p, saturated=True, lvls=1)
         #             fm.add(r.id(), f)
+        #
+        # print "total time: ", time.time() - time_
+
+    def compute_features_mp(self):
+        print "computing features... (MP)"
+        t = time.time()
+        # set num cores to 1, so parallelisation works
+        import cv2
+        from utils.mp_counter import Counter
+        from multiprocessing import Queue, cpu_count, Process, Lock
+        default_num_threads = cv2.getNumThreads()
+        cv2.setNumThreads(0)
+
+        q_tasks = Queue()
+        counter = Counter(0)
+        num_cpus = cpu_count()
+        lock = Lock()
+
+        num_frames = self.p.img_manager.vid.total_frame_count()
+        children = []
+        for i in range(num_cpus):
+            p = Process(target=compute_features_process, args=(counter, lock, q_tasks, self.p.working_directory, num_frames))
+            p.start()
+            children.append(p)
+
+        step = 100
+
+        for frame in range(0, num_frames, step):
+            img = self.p.img_manager.get_whole_img(frame)
+            h, w, c = img.shape
+            img.shape = (h*w*c)
+            q_tasks.put((frame, min(frame+step, num_frames)))
+
+        q_tasks.put(None)
+
+        for p in children:
+            p.join()
+
+        print_progress(num_frames, num_frames, "features computation in progress:", "FINIHSED")
+        print "all joined"
+
+        # set back to default
+        cv2.setNumThreads(default_num_threads)
+        print "total time: ", time.time() - t
 
     def set_eps_certainty(self, eps):
         self._eps_certainty = eps
@@ -1533,7 +1521,14 @@ class LearningProcess:
         return best_t_id_
 
 
-def compute_features_process(counter, q_tasks, q_results, project, num_frames):
+def compute_features_process(counter, lock, q_tasks, project_wd, num_frames, first_time=True):
+    from core.project.project import Project
+    from core.id_detection.feature_manager import FeatureManager
+    project = Project()
+    project.load(project_wd, lightweight=True)
+
+    fm = FeatureManager(project_wd, db_name='fm.sqlite3')
+
     while True:
         if q_tasks.empty():
             time.sleep(0.1)
@@ -1543,21 +1538,28 @@ def compute_features_process(counter, q_tasks, q_results, project, num_frames):
         if task is None:
             break
 
-        frame, img, (h, w, c) = task
-        img.shape = (h, w, c)
+        frame_start, frame_end = task
 
-        for t in project.chm.chunks_in_frame(frame):
-            rm = RegionChunk(t, project.gm, project.rm)
-            r = rm.region_in_t(frame)
+        for frame in range(frame_start, frame_end):
+            for t in project.chm.chunks_in_frame(frame):
+                if not t.is_single():
+                    continue
 
-            # TODO:
-            # if fm[r.id()][1] == [None]:
-            f = get_colornames_hists(r, project, saturated=True, lvls=1)
-                # fm.add(r.id(), f)
+                rm = RegionChunk(t, project.gm, project.rm)
+                r = rm.region_in_t(frame)
 
-        q_results.put((r.id(), f))
-        counter.increment()
-        print_progress(counter.value(), num_frames, "translation in progress:")
+                compute = True
+                if not first_time:
+                    compute = fm[r.id()][1] == [None]
+
+                if compute:
+                    f = get_colornames_hists(r, project, saturated=True, lvls=1)
+                    lock.acquire()
+                    fm.add(r.id(), f)
+                    lock.release()
+
+            counter.increment()
+            print_progress(counter.value(), num_frames, "features computation in progress:")
 
     q_tasks.put(None)
 

@@ -203,7 +203,7 @@ def __get_crop(r, p, margin=3, img=None):
     return crop
 
 def get_colornames_hists(r, p, img=None, fliplr=False, saturated=False, lvls=3):
-    crop = __get_crop(r, p, img)
+    crop = __get_crop(r, p, img=img)
 
     if saturated:
         crop = img_saturation_coef(crop, 1.5, 0.95)

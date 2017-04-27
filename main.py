@@ -23,8 +23,8 @@ S_.general.print_log = False
 
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
-if is_flipajs_pc() and False:
-# if is_flipajs_pc():
+# if is_flipajs_pc() and False:
+if is_flipajs_pc():
     # wd = '/Users/iflipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
@@ -95,8 +95,8 @@ if is_flipajs_pc() and False:
         pass
 
     from utils.color_manager import colorize_project
-    colorize_project(project)
     ex.widget_control('load_project', project)
+    # colorize_project(project)
     # ex.move(-500, -500)
     ex.showMaximized()
 

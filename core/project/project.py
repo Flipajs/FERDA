@@ -276,7 +276,7 @@ class Project:
             p.dump(self.chm)
 
 
-    def load(self, path, snapshot=None, parent=None):
+    def load(self, path, snapshot=None, parent=None, lightweight=False):
         if path[-6:] != '.fproj':
             for f in os.listdir(path):
                 if f[-6:] == '.fproj':
@@ -339,19 +339,22 @@ class Project:
         except:
             pass
 
-        # SETTINGS
-        try:
-            self.load_qsettings()
-        except:
-            pass
+        if not lightweight:
+            # SETTINGS
+            try:
+                self.load_qsettings()
+            except:
+                pass
 
-        # check if video exists
-        if parent:
-            self.video_paths, changed = check_video_path(self.video_paths, parent)
-            print "New path is %s" % self.video_paths
 
-            if changed:
-                self.save()
+        if not lightweight:
+            # check if video exists
+            if parent:
+                self.video_paths, changed = check_video_path(self.video_paths, parent)
+                print "New path is %s" % self.video_paths
+
+                if changed:
+                    self.save()
 
         # # Region Manager
         # try:
@@ -360,8 +363,10 @@ class Project:
         # except:
         #     pass
 
+
         self.load_snapshot(snapshot)
 
+        # if not lightweight:
         # SAVED CORRECTION PROGRESS
         try:
             with open(self.working_directory+'/progress_save.pkl', 'rb') as f:
@@ -404,37 +409,38 @@ class Project:
         self.gm.rm = self.rm
         # self.gm.update_nodes_in_t_refs()
 
-        # fix itree in chm...
-        if self.chm is not None and self.gm is not None and self.rm is not None:
-            if not hasattr(self.chm, 'itree'):
-                from libs.intervaltree.intervaltree import IntervalTree
-                self.chm.itree = IntervalTree()
-                self.chm.eps1 = 0.01
-                self.chm.eps2 = 0.1
+        if not lightweight:
+            # fix itree in chm...
+            if self.chm is not None and self.gm is not None and self.rm is not None:
+                if not hasattr(self.chm, 'itree'):
+                    from libs.intervaltree.intervaltree import IntervalTree
+                    self.chm.itree = IntervalTree()
+                    self.chm.eps1 = 0.01
+                    self.chm.eps2 = 0.1
+
+                    for ch in self.chm.chunk_gen():
+                        self.chm._add_ch_itree(ch, self.gm)
 
                 for ch in self.chm.chunk_gen():
-                    self.chm._add_ch_itree(ch, self.gm)
+                    if hasattr(ch, 'color') and ch.color is not None:
+                        break
 
-            for ch in self.chm.chunk_gen():
-                if hasattr(ch, 'color') and ch.color is not None:
-                    break
+                    import random
+                    from PyQt4 import QtGui
 
-                import random
-                from PyQt4 import QtGui
+                    r = random.randint(0, 255)
+                    g = random.randint(0, 255)
+                    b = random.randint(0, 255)
+                    ch.color = QtGui.QColor.fromRgb(r, g, b)
 
-                r = random.randint(0, 255)
-                g = random.randint(0, 255)
-                b = random.randint(0, 255)
-                ch.color = QtGui.QColor.fromRgb(r, g, b)
+                for ch in self.chm.chunk_gen():
+                    if hasattr(ch, 'N'):
+                        break
 
-            for ch in self.chm.chunk_gen():
-                if hasattr(ch, 'N'):
-                    break
-                
-                    ch.N = set()
-                    ch.P = set()
+                        ch.N = set()
+                        ch.P = set()
 
-            self.save()
+                self.save()
 
         self.img_manager = ImgManager(self, max_num_of_instances=500)
 
