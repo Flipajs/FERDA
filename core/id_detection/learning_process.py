@@ -286,7 +286,7 @@ class LearningProcess:
         self._eps_certainty = eps
 
     def set_tracklet_length_k(self, k):
-        self.k_
+        self.k_ = k
         self.__precompute_measurements()
 
     def compute_distinguishability(self):
@@ -497,7 +497,8 @@ class LearningProcess:
         for t_id in self.undecided_tracklets:
             tracklet = self.p.chm[t_id]
             try:
-                x, t_length = self.__get_tracklet_proba(tracklet)
+                # x, t_length = self.__get_tracklet_proba(tracklet)
+                x = self.__get_tracklet_proba_sum(tracklet)
             except KeyError:
                 warnings.warn("used random class probability distribution for tracklet it: {}".format(t_id))
                 # TODO: remove this, instead compute features...
@@ -749,13 +750,20 @@ class LearningProcess:
             print X
         probs = np.mean(probs, 0)
 
-        # probs = self.apply_consistency_rule(ch, probs)
-        #
-        # # normalise
-        # if np.sum(probs) > 0:
-        #     probs /= float(np.sum(probs))
-
         return probs, len(X)
+
+    def __get_tracklet_proba_sum(self, ch):
+        X = self.features[ch.id()]
+        if len(X) == 0:
+            return None, 0
+
+        try:
+            probs = self.rfc.predict_proba(np.array(X))
+        except:
+            print X
+        probs = np.sum(probs, 0)
+
+        return probs
 
     def apply_consistency_rule(self, ch, probs):
         mask = np.zeros(probs.shape)
@@ -907,12 +915,9 @@ class LearningProcess:
 
     def __update_certainty(self, tracklet):
         if len(self.tracklet_measurements) == 0:
-            # print "tracklet_measurements is empty"
             return
 
-        # ignore collision tracklets because there are no measurements etc...
         if not tracklet.is_single():
-        # if tracklet.id() in self.collision_chunks:
             return
 
         P = tracklet.P
@@ -939,30 +944,47 @@ class LearningProcess:
             x_ = np.copy(x)
             for id_ in N:
                 x_[id_] = 0
+            
+            sx = sum(x_)
+            if sx == 0:
+                warnings.warn("probability sum equals zero for tracklet id: {}. N: {}".format(tracklet.id(), N))
+            else:   
+                x_ = (x_ / sx) * len(tracklet)
+            
+            # i1 = np.argmax(x_)
+            # p1 = x_[i1]
+            # x_[i1] = 0
+            # p2 = np.max(x_)
+            #
+            # # take maximum probability from rest after removing definitely not present ids and the second max and compute certainty
+            # # for 0.6 and 0.4 it is 0.6 but for 0.6 and 0.01 it is ~ 0.98
+            # div = p1 + p2
+            #
+            # # if prob is too low...
+            # if div < 0.3 and tracklet.length() < 10:
+            #     div = 1.0
+            #
+            # if div == 0:
+            #     certainty = 0.0
+            # else:
+            #     certainty = p1 / div
+            #     certainty = (1-alpha) * 0.5 + alpha*certainty
+            #
+            # if math.isnan(certainty):
+            #     certainty = 0.0
+            #     # means conflict or noise tracklet
+            #     print 'is NaN', tracklet, p1, p2, x, P, N
 
             i1 = np.argmax(x_)
-            p1 = x_[i1]
-            x_[i1] = 0
-            p2 = np.max(x_)
 
-            # take maximum probability from rest after removing definitely not present ids and the second max and compute certainty
-            # for 0.6 and 0.4 it is 0.6 but for 0.6 and 0.01 it is ~ 0.98
-            div = p1 + p2
+            divisor = 0
+            for i in range(len(x_)):
+                divisor += 2**x_[i]
 
-            # if prob is too low...
-            if div < 0.3 and tracklet.length() < 10:
-                div = 1.0
-
-            if div == 0:
-                certainty = 0.0
-            else:
-                certainty = p1 / div
-                certainty = (1-alpha) * 0.5 + alpha*certainty
-
-            if math.isnan(certainty):
-                certainty = 0.0
-                # means conflict or noise tracklet
-                print 'is NaN', tracklet, p1, p2, x, P, N
+            certainty = 2**x_[i1] / divisor
+            if len(tracklet) < self.k_:
+                certainty = -1.0
+            # certainty = (1 - alpha) * 0.5 + alpha * certainty
 
             self.tracklet_certainty[tracklet.id()] = certainty
 
@@ -1365,7 +1387,7 @@ class LearningProcess:
             overlap_sum, overlap_sum/float(total_frame_count))
 
     def auto_init(self, method='max_sum'):
-        self.full_csosit_analysis()
+        # self.full_csosit_analysis()
 
         from multiprocessing import cpu_count
 

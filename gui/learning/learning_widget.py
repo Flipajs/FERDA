@@ -308,9 +308,10 @@ class LearningWidget(QtGui.QWidget):
                     item.setData(QtCore.Qt.EditRole, t.end_frame(self.project.gm))
                     self.tracklets_table.setItem(i, 3, item)
 
-                    self.tracklets_table.setItem(i, 4, QtGui.QTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
+                    self.tracklets_table.setItem(i, 4, QtGui.QTableWidgetItem("{:.3f}".format(self.lp.tracklet_certainty[t_id])))
 
                     d = self.lp.tracklet_measurements[t_id]
+                    d = d / sum(d)
                     for j in range(num_animals):
                         self.tracklets_table.setItem(i, 5+j, QtGui.QTableWidgetItem(self.__f2str(d[j])))
 
