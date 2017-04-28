@@ -1,39 +1,24 @@
-from core.project.project import Project
-from core.graph.region_chunk import RegionChunk
-import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-from skimage.segmentation import random_walker
-from skimage.data import binary_blobs
-import skimage
-import math
-from functools import partial
 import cPickle as pickle
-import json
-from core.id_detection.features import get_hu_moments
-import hickle
-from utils.video_manager import get_auto_video_manager
-import cv2
-from utils.drawing.points import draw_points
-from utils.drawing.collage import create_collage_rows
-from PyQt4.QtGui import QColor
-from utils.img import rotate_img, get_bounding_box, centered_crop
-from core.id_detection.features import get_hog_features, get_crop
-from sklearn.cluster import DBSCAN
-from sklearn import metrics
-from sklearn.datasets.samples_generator import make_blobs
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier, IsolationForest
-from sklearn import svm, preprocessing
 from itertools import izip
-from utils.misc import print_progress
 
-from core.graph.solver import Solver
+import cv2
+import hickle
+import matplotlib.pyplot as plt
+import numpy as np
+from PyQt4.QtGui import QColor
+from sklearn import svm, preprocessing
+from sklearn.ensemble import RandomForestClassifier, IsolationForest
+
 from core.graph.chunk_manager import ChunkManager
-
-from core.region.clustering import clustering, display_cluster_representants
-
+from core.graph.region_chunk import RegionChunk
+from core.graph.solver import Solver
+from core.id_detection.features import get_hog_features, get_crop
+from core.project.project import Project
+from core.region.clustering import clustering
+from utils.drawing.collage import create_collage_rows
+from utils.drawing.points import draw_points
+from utils.misc import print_progress
+from utils.video_manager import get_auto_video_manager
 
 EXP = 'exp1'
 DEFAULT_H_DENSITY = 1e-10
@@ -270,8 +255,6 @@ def head_features(r, swap=False):
     # normalize...
     from utils.geometry import rotate
     from utils.drawing.points import draw_points_crop_binary
-    import cv2
-    from skimage.measure import moments_central, moments_hu, moments_normalized, moments
 
     pts = np.array(rotate(r.pts(), -r.theta_, r.centroid(), method='back_projection'))
     img = draw_points_crop_binary(pts)
