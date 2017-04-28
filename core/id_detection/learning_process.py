@@ -499,16 +499,11 @@ class LearningProcess:
             try:
                 x, t_length = self.__get_tracklet_proba(tracklet)
             except KeyError:
+                warnings.warn("used random class probability distribution for tracklet it: {}".format(t_id))
                 # TODO: remove this, instead compute features...
                 x = np.random.rand(len(self.p.animals)) * 0
-                # x = x / np.sum(x)
-
-                # x =
                 if self.verbose > 2:
                     print "features missing for ", tracklet.id()
-
-            # c
-            # print x
 
             self.tracklet_measurements[tracklet.id()] = x
             self.__update_certainty(tracklet)
@@ -1323,7 +1318,55 @@ class LearningProcess:
             tracklet.N = new_N
             tracklet.P = new_P
 
+    def full_csosit_analysis(self):
+        groups = []
+        unique_tracklets = set()
+        frames = []
+
+        vm = get_auto_video_manager(self.p)
+        total_frame_count = vm.total_frame_count()
+        expected_t_len = len(self.p.animals) * total_frame_count
+        total_single_t_len = 0
+        for t in self.p.chm.chunk_gen():
+            if t.is_single():
+                total_single_t_len += t.length()
+
+        overlap_sum = 0
+        frame = 0
+        while True:
+            group = self.p.chm.chunks_in_frame(frame)
+            if len(group) == 0:
+                break
+
+            singles_group = filter(lambda x: x.is_single(), group)
+
+            if len(singles_group) == len(self.p.animals):
+                groups.append(singles_group)
+
+                overlap = min([t.end_frame(self.p.gm) for t in singles_group]) \
+                          - max([t.start_frame(self.p.gm) for t in singles_group])
+
+                overlap_sum += overlap
+
+                frames.append((frame, overlap, ))
+                for t in singles_group:
+                    unique_tracklets.add(t)
+
+            frame = min([t.end_frame(self.p.gm) for t in group]) + 1
+
+        total_len = 0
+        for t in unique_tracklets:
+            total_len += t.length()
+
+        print "STATS:"
+        print "\tnum groups: {}\n\ttotal length: {}/expected: {:.2%}/singles: {:.2%}\n\toverlap sum: {}/{:.2%}".format(
+            len(groups),
+            total_len, total_len/float(expected_t_len), total_len/float(total_single_t_len),
+            overlap_sum, overlap_sum/float(total_frame_count))
+
     def auto_init(self, method='max_sum'):
+        self.full_csosit_analysis()
+
         from multiprocessing import cpu_count
 
         best_frame = None
