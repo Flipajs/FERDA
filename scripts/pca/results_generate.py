@@ -50,10 +50,10 @@ def generate_ants_image(X, X_R, X_C, r, c, fname, fold):
         # ax1.scatter(np.append(X_R[j, ::2], X_R[j, 0]), np.append(X_R[j, 1::2], X_R[j, 1]), c='b')
 
         # TO SEE HEAD
-        ax1.plot(X[j, ::2], X[j, 1::2], c='r')
-        ax1.scatter(X[j, ::2], X[j, 1::2], c='r')
-        ax1.plot(X_R[j, ::2], X_R[j, 1::2], c='b')
-        ax1.scatter(X_R[j, ::2], X_R[j, 1::2], c='b')
+        ax1.plot(X[j, :, 0], X[j, :, 1], c='r')
+        ax1.scatter(X[j, :, 0], X[j, :, 1], c='r')
+        ax1.plot(X_R[j, :, 0], X_R[j, :, 1], c='b')
+        ax1.scatter(X_R[j, :, 0], X_R[j, :, 1], c='b')
 
         ax1.plot(np.arange(len(X_C[j, :])) + 1, X_C[j, :], c='g')
 

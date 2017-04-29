@@ -61,285 +61,265 @@ def fit_point(blob, mean, pca_shifted_cut, pca_shifted_whole):
 
 
 class AnimalFitting:
-    HEAD_RANGE = 10
-    BOTTOM_RANGE = 10
+    HEAD_RANGE = 19  # x on each side + head = 2x + 1 points
+    BOTTOM_RANGE = 19  # x on each side + bottom = 2x + 1 points
     EIGEN_DIM = 10
     FEATURES = 40
 
     def __init__(self, X):
-        self.X = AnimalFitting.get_pca_compatible_data(X)
-        self.H = AnimalFitting.extract_heads(self.X)
-        self.B = AnimalFitting.extract_bottoms(self.X)
-
-        # fig, ax = plt.subplots()
-        # i = 0
-        # for x,y in zip(self.X[0, 0::2], self.X[0, 1::2]):
-        #     ax.scatter(x, y)
-        #     ax.annotate(i, (x, y))
-        #     plt.axis('equal')
-        #     i += 1
-        # plt.show()
-        #
-        # fig, ax = plt.subplots()
-        # i = 0
-        # for x,y in zip(self.H[0, 0::2], self.H[0, 1::2]):
-        #     ax.scatter(x, y)
-        #     ax.annotate(i, (x, y))
-        #     plt.axis('equal')
-        #     i += 1
-        # plt.show()
-        # fig, ax = plt.subplots()
-        # i = 0
-        # for x,y in zip(self.B[0, 0::2], self.B[0, 1::2]):
-        #     ax.scatter(x, y)
-        #     ax.annotate(i, (x, y))
-        #     plt.axis('equal')
-        #     i += 1
-        # plt.show()
+        self.n = X.shape[0]
+        self.train_n = int(X.shape[0] * 0.9)
+        self.test_n = self.n - self.train_n
 
         # SPLIT TRAIN / TEST DATA 0.9 / 0.1
-        self.X_train, self.X_test = np.split(self.X, [int(self.X.shape[0] * 0.9)])
-        self.H_train, self.H_test = np.split(self.H, [int(self.H.shape[0] * 0.9)])
-        self.B_train, self.B_test = np.split(self.B, [int(self.B.shape[0] * 0.9)])
+        # indexing of X_train beginning at head ccw
+        self.X_train, self.X_test = np.split(X, [self.train_n])
+        # self.H_train, self.H_test = np.split(H, [self.train_n])
+        # self.B_train, self.B_test = np.split(B, [self.train_n])
 
-        # PCA ON WHOLE ANIMAL
-        self.pca_whole = PCA(AnimalFitting.EIGEN_DIM)
-        # self.X_C = self.pca_whole.fit(self.X_train)
-        self.pca_whole.fit(self.X_train)
-        self.eigen_ants_whole = self.pca_whole.components_
-        self.eigen_values_whole = self.pca_whole.explained_variance_
-        # X_R = self.pca_whole.inverse_transform(self.pca_whole.transform(self.X_train))
+        # AnimalFitting.show_contour_with_annotations(self.X_train[0])
+        # AnimalFitting.show_contour_with_annotations(self.H_train[0])
+        # AnimalFitting.show_contour_with_annotations(self.B_train[0])
 
-        # PCA ON HEADS
+        # TRAIN PCA TWICE FOR BOTH HEAD AND BOTTOM SITUATIONS
         self.pca_head = PCA(AnimalFitting.EIGEN_DIM)
-        # H_C = self.pca_head.fit_transform(self.H_train)
-        self.pca_head.fit(self.H_train)
-        self.eigen_ants_head = self.pca_head.components_
+        self.pca_head.fit(AnimalFitting.get_pca_compatible_data(self.roll_to_head(self.X_train)))
+        self.eigen_vectors_head = self.pca_head.components_.T
+        self.mean_head = np.expand_dims(self.pca_head.mean_, axis=0).T
         self.eigen_values_head = self.pca_head.explained_variance_
-        # H_R = np.dot(self.H_C, self.eigen_ants_whole) + self.pca_whole.mean_
 
-        # PCA ON BOTTOMS
         self.pca_bottom = PCA(AnimalFitting.EIGEN_DIM)
-        # B_C = self.pca_bottom.fit_transform(self.B_train)
-        self.pca_bottom.fit(self.B_train)
-        self.eigen_ants_bottom = self.pca_bottom.components_
+        self.pca_bottom.fit(AnimalFitting.get_pca_compatible_data(self.roll_to_bottom(self.X_train)))
+        self.eigen_vectors_bottom = self.pca_bottom.components_.T
+        self.mean_bottom = np.expand_dims(self.pca_bottom.mean_, axis=0).T
         self.eigen_values_bottom = self.pca_bottom.explained_variance_
-        # B_R = np.dot(self.B_C, self.eigen_ants_whole) + self.pca_whole.mean_
 
-    def show_extracting_random_result(self, n=3):
-        import random
-        for j in [random.randint(0, self.X.shape[0] - 1) for x in range(n)]:
-            plt.plot(np.append(self.X[j, ::2], self.X[j, 0]), np.append(self.X[j, 1::2], self.X[j, 1]), c='b')
-            plt.plot(np.append(self.H[j, ::2], self.H[j, 0]), np.append(self.H[j, 1::2], self.H[j, 1]), c='g')
-            plt.plot(np.append(self.B[j, ::2], self.B[j, 0]), np.append(self.B[j, 1::2], self.B[j, 1]), c='r')
+    def get_head_fits(self, X):
+        """
+            Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour
+        """
+        # transpose for column vectors
+        head_example = self.get_pca_compatible_data(self.extract_heads(X)).T
+
+        head_example = head_example - self.mean_head[:(AnimalFitting.HEAD_RANGE * 2 + 1) * 2, :]
+        head_coordinates = np.dot(self.eigen_vectors_head[:(AnimalFitting.HEAD_RANGE * 2 + 1) * 2, :].T, head_example)
+        head_fit = np.dot(self.eigen_vectors_head, head_coordinates) + self.mean_head
+
+        # transpose back and to original dataframe
+        head_fit = AnimalFitting.unroll_to_head(AnimalFitting.get_data_from_pca_data(head_fit.T))
+        return head_fit, head_coordinates.T
+
+    def get_bottom_fits(self, X):
+        """
+            Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour.
+            Returns [n * c * 2] ndarray of reconstructions and [n * EIGEN_DIM] of coordinates in orthogonal space of egienvectors
+        """
+        # transpose for column vectors
+        bottom_example = self.get_pca_compatible_data(self.extract_bottoms(X)).T
+
+        bottom_example = bottom_example - self.mean_bottom[:(AnimalFitting.BOTTOM_RANGE * 2 + 1) * 2, :]
+        bottom_coordinates = np.dot(self.eigen_vectors_bottom[:(AnimalFitting.BOTTOM_RANGE * 2 + 1) * 2, :].T, bottom_example)
+        bottom_fit = np.dot(self.eigen_vectors_bottom, bottom_coordinates) + self.mean_bottom
+
+        # transpose back and to original dataframe
+        bottom_fit = AnimalFitting.unroll_to_bottom(AnimalFitting.get_data_from_pca_data(bottom_fit.T))
+
+        return bottom_fit, bottom_coordinates.T
+
+    def show_fits(self, X):
+        """
+            Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour
+            Returns [n * c * 2] ndarray of reconstructions and [n * EIGEN_DIM] of coordinates in orthogonal space of egienvectors
+
+        """
+        head_examples = self.extract_heads(X)
+        bottom_examples = self.extract_bottoms(X)
+        head_fits, _ = self.get_head_fits(X)
+        bottom_fits, _ = self.get_bottom_fits(X)
+
+        print X
+        print head_fits
+        print bottom_fits
+
+        self.plot_fits(X, head_examples, head_fits, bottom_examples, bottom_fits)
+
+    def show_random_fit_result(self, n=3):
+        # import random
+        # for j in [random.randint(0, self.X_test.shape[0] - 1) for _ in range(n)]:
+        #     print j
+        #     self.show_fits(self.X_test[j:j + 1, :])
+        for j in [151,100,56,151,181,196,136,95]:
+            print j
+            self.show_fits(self.X_test[j:j + 1, :])
+
+    def plot_fits(self, examples, head_examples, head_fits, bottom_examples, bottom_fits):
+        for example, head_example, head_fit, bottom_example, bottom_fit in \
+                zip(examples, head_examples, head_fits, bottom_examples, bottom_fits):
+            plt.plot(np.append(example[:, 0], example[0, 0]), np.append(example[:, 1], example[0, 1]), c='g',
+                     label='Test example')
+            # plt.plot(np.append(head_example[:, 0], head_example[0]), np.append(head_example[1::2], head_example[1]), c='g',
+            #          alpha=0.75)
+            plt.plot(np.append(head_fit[:, 0], head_fit[0, 0]), np.append(head_fit[:, 1], head_fit[0, 1]), c='r',
+                     label='Fit')
+            # plt.scatter(np.append(example[:, 0], example[0, 0]), np.append(example[:, 1], example[0, 1]),
+            #             c='g')
+            plt.scatter(np.append(head_example[:, 0], head_example[0, 0]),
+                        np.append(head_example[:, 1], head_example[0, 1]),
+                        label='Head part', c='b', alpha=0.75)
+            # plt.scatter(np.append(head_fit[:, 0], head_fit[0, 0]), np.append(head_fit[:, 1], head_fit[0, 1]),
+            #             c='r')
+
+            example[:, 0] += 50
+            bottom_example[:, 0] += 50
+            bottom_fit[:, 0] += 50
+
+            plt.plot(np.append(example[:, 0], example[0, 0]), np.append(example[:, 1], example[0, 1]), c='g')
+            # plt.plot(np.append(bottom_example[:, 0], bottom_example[0, 0]), np.append(bottom_example[:, 1], bottom_example[0, 1]),
+            #          c='m')
+            plt.plot(np.append(bottom_fit[:, 0], bottom_fit[0, 0]), np.append(bottom_fit[:, 1], bottom_fit[0, 1]),
+                     c='r',
+                     alpha=0.75)
+            # plt.scatter(np.append(example[:, 0], example[0, 0]), np.append(example[:, 1], example[0, 1]),
+            #             c='g')
+            plt.scatter(np.append(bottom_example[:, 0], bottom_example[0, 0]),
+                        np.append(bottom_example[:, 1], bottom_example[0, 1]),
+                        label='Bottom part', c='m', alpha=0.75)
+            # plt.scatter(np.append(bottom_fit[:, 0], bottom_fit[0, 0]), np.append(bottom_fit[:, 1], bottom_fit[0, 1]),
+            #             c='r')
+            plt.title("Head and Bottom fits")
+            plt.legend(loc='best')
             plt.axis('equal')
             plt.show()
 
-    def get_fit(self, X):
-        head_example = np.squeeze(self.extract_heads(np.expand_dims(X, axis=0)))
-        bottom_example = np.squeeze(self.extract_bottoms(np.expand_dims(X, axis=0)))
-        head_fit = self.pca_whole.inverse_transform(self.pca_head.transform(np.reshape(head_example, (1, -1))))[0]
-        bottom_fit = self.pca_whole.inverse_transform(self.pca_bottom.transform(np.reshape(bottom_example, (1, -1))))[0]
+    def view_ant_composition(self, X, type='head'):
+        if type == 'head':
+            pca = self.pca_head
+            eigen_ants = self.eigen_ants_head
+            eigen_values = self.eigen_values_head
+            transformation = self.get_head_fits
+        elif type == 'bottom':
+            pca = self.pca_bottom
+            eigen_ants = self.eigen_ants_bottom
+            eigen_values = self.eigen_values_bottom
+            transformation = self.get_bottom_fits
+        else:
+            raise AttributeError("Type should be either 'whole', 'head', or 'bottom'")
 
-        # fig, ax = plt.subplots()
-        # i = 0
-        # for x,y in zip(X[0::2], X[1::2]):
-        #     ax.scatter(x, y)
-        #     ax.annotate(i, (x, y))
-        #     plt.axis('equal')
-        #     i += 1
-        # # plt.show()
-        #
-        # fig, ax = plt.subplots()
-        # i = 0
-        # for x,y in zip(head_example[0::2], head_example[1::2]):
-        #     ax.scatter(x, y)
-        #     ax.annotate(i, (x, y))
-        #     plt.axis('equal')
-        #     i += 1
-        # plt.show()
-        eigen_values = self.pca_head.transform(np.reshape(head_example, (1, -1)))[0]
-        # fig, ax = plt.subplots()
-        # i = 0
-        # for x,y in zip(head_fit[0::2], head_fit[1::2]):
-        #     ax.scatter(x, y)
-        #     ax.annotate(i, (x, y))
-        #     plt.axis('equal')
-        #     i += 1
-        print sorted(eigen_values, reverse=True)
-        head_fit = np.dot(sorted(eigen_values, reverse=True), self.eigen_ants_whole) + self.pca_whole.mean_
-        print head_fit
+        app = QtGui.QApplication(sys.argv)
+        X_t = transformation(X)
+        w = EigenWidget(pca, eigen_ants, eigen_values, X_t)
+        w.showMaximized()
+        w.close_figures()
+        app.exec_()
+
+    def generate_eigen_ants_figure(self, type='head'):
+        if type not in ['head', 'bottom']:
+            raise AttributeError("Type should be either 'head', or 'bottom'")
+
+        eigen_ants = self.eigen_vectors_head if type == 'head' else \
+            self.eigen_vectors_bottom
+        generate_eigen_ants_figure(eigen_ants, AnimalFitting.EIGEN_DIM)
+
+    def generate_ants_reconstructed_figure(self, rows, columns, fnames):
+        X_R, X_C = self.get_head_fits(self.X_test)
+        # X_R, X_C = self.get_bottom_fits(self.X_test)
+
+        generate_ants_reconstructed_figure(self.X_test, X_R, X_C, rows, columns, fnames)
+
+    @staticmethod
+    def show_contour_with_annotations(X):
         fig, ax = plt.subplots()
         i = 0
-        for x, y in zip(head_fit[0::2], head_fit[1::2]):
+        while i < X.shape[0]:
+            x, y = X[i]
             ax.scatter(x, y)
             ax.annotate(i, (x, y))
             plt.axis('equal')
             i += 1
         plt.show()
 
-        return head_fit, bottom_fit
+    @staticmethod
+    def roll_to_head(X):
+        """
+            Rolls examples so that they begin at the beginning of head part.
+            Can be used to shift training vectors of whole contour or extracting heads form original data.
+            Expects data in form [n, c, (x/y)] where n is nth example, c is cth point in contour and (x/y) are both coordinates
+        """
+        return np.roll(X, AnimalFitting.HEAD_RANGE, axis=1 if X.ndim == 3 else 0)
 
-    def show_fit(self, X):
-        head_example = np.squeeze(self.extract_heads(np.expand_dims(X, axis=0)))
-        bottom_example = np.squeeze(self.extract_bottoms(np.expand_dims(X, axis=0)))
-        head_fit, bottom_fit = self.get_fit(X)
-        self.plot_fits(X, head_example, head_fit, bottom_example, bottom_fit)
+    @staticmethod
+    def unroll_to_head(X):
+        """
+            Inverse operation to roll_to_head
+        """
+        return np.roll(X, -AnimalFitting.HEAD_RANGE, axis=1 if X.ndim == 3 else 0)
 
-    def show_random_fit_result(self, n=3):
-        import random
-        for j in [random.randint(0, self.X_test.shape[0] - 1) for x in range(n)]:
-            self.show_fit(self.X_test[j, :])
+    @staticmethod
+    def roll_to_bottom(X):
+        """
+            Rolls examples so that they begin at the beginning of bottom part.
+            Can be used to shift training vectors of whole contour or extracting bottoms form original data.
+            Expects data in form [n, c, (x/y)] where n is nth example, c is cth point in contour and (x/y) are both coordinates
+        """
+        beginning = FEATURES / 2 - AnimalFitting.BOTTOM_RANGE
+        return np.roll(X, -1 * beginning, axis=1 if X.ndim == 3 else 0)
 
-    def plot_fits(self, example, head_example, head_fit, bottom_example, bottom_fit):
-        plt.plot(np.append(example[::2], example[0]), np.append(example[1::2], example[1]), c='g', label='Test example')
-        # plt.plot(np.append(head_example[::2], head_example[0]), np.append(head_example[1::2], head_example[1]), c='g',
-        #          alpha=0.75)
-        plt.plot(np.append(head_fit[::2], head_fit[0]), np.append(head_fit[1::2], head_fit[1]), c='r', label='Fit')
-        # plt.scatter(np.append(example[::2], example[0]), np.append(example[1::2], example[1]),
-        #             c='g')
-        plt.scatter(np.append(head_example[::2], head_example[0]), np.append(head_example[1::2], head_example[1]),
-                    label='Head part', c='b', alpha=0.75)
-        # plt.scatter(np.append(head_fit[::2], head_fit[0]), np.append(head_fit[1::2], head_fit[1]),
-        #             c='r')
-
-        example[::2] += 50
-        bottom_example[::2] += 50
-        bottom_fit[::2] += 50
-
-        plt.plot(np.append(example[::2], example[0]), np.append(example[1::2], example[1]), c='g')
-        # plt.plot(np.append(bottom_example[::2], bottom_example[0]), np.append(bottom_example[1::2], bottom_example[1]),
-        #          c='m')
-        plt.plot(np.append(bottom_fit[::2], bottom_fit[0]), np.append(bottom_fit[1::2], bottom_fit[1]), c='r',
-                 alpha=0.75)
-        # plt.scatter(np.append(example[::2], example[0]), np.append(example[1::2], example[1]),
-        #             c='g')
-        plt.scatter(np.append(bottom_example[::2], bottom_example[0]),
-                    np.append(bottom_example[1::2], bottom_example[1]),
-                    label='Bottom part', c='m', alpha=0.75)
-        # plt.scatter(np.append(bottom_fit[::2], bottom_fit[0]), np.append(bottom_fit[1::2], bottom_fit[1]),
-        #             c='r')
-        plt.title("Head and Bottom fits")
-        plt.legend(loc='best')
-        plt.axis('equal')
-        plt.show()
-
-    def view_ant_composition(self, X, type='whole'):
-        if type == 'whole':
-            pca = self.pca_whole
-            eigen_ants = self.eigen_ants_whole
-            eigen_values = self.eigen_values_whole
-            transformation = lambda x : x  # identity function
-        elif type == 'head':
-            pca = self.pca_head
-            eigen_ants = self.eigen_ants_head
-            eigen_values = self.eigen_values_head
-            transformation = self.extract_heads
-        elif type == 'bottom':
-            pca = self.pca_bottom
-            eigen_ants = self.eigen_ants_bottom
-            eigen_values = self.eigen_values_bottom
-            transformation = self.extract_bottoms
-        else:
-            raise AttributeError("Type should be either 'whole', 'head', or 'bottom'")
-
-        app = QtGui.QApplication(sys.argv)
-        X = AnimalFitting.get_pca_compatible_data(np.expand_dims(X, axis=0))
-        X = transformation(X)
-        X_t = pca.transform(X)[0]
-        w = EigenWidget(pca, eigen_ants, eigen_values, X_t)
-        w.showMaximized()
-        w.close_figures()
-        app.exec_()
-
-    def generate_eigen_ants_figure(self, type='whole'):
-        if type not in ['whole', 'head', 'bottom']:
-            raise AttributeError("Type should be either 'whole', 'head', or 'bottom'")
-
-        eigen_ants =    self.eigen_ants_whole if type == 'whole' else \
-                        self.eigen_ants_head if type == 'head' else \
-                        self.eigen_ants_bottom
-        generate_eigen_ants_figure(eigen_ants, AnimalFitting.EIGEN_DIM)
-
-    def generate_ants_reconstructed_figure(self, rows, columns):
-        H_C = self.pca_head.transform(self.H_test)
-        H_R = self.pca_whole.inverse_transform(H_C)
-        # H_R = self.pca_head.inverse_transform(H_C)
-        # generate_ants_reconstructed_figure(self.H_test, H_R, H_C, rows, columns, "heads_reconstructed_test_")
-        generate_ants_reconstructed_figure(self.X_test, H_R, H_C, rows, columns, "heads_reconstructed_")
-
-        # X_C = self.pca_whole.transform(self.X_test)
-        # X_R = self.pca_whole.inverse_transform(X_C)
-        # generate_ants_reconstructed_figure(self.X_test, X_R, X_C, rows, columns)
+    @staticmethod
+    def unroll_to_bottom(X):
+        """
+            Inverse operation to roll_to_bottom
+        """
+        return np.roll(X, -AnimalFitting.BOTTOM_RANGE, axis=1 if X.ndim == 3 else 0)
 
     @staticmethod
     def extract_heads(X):
-        if AnimalFitting.HEAD_RANGE % 2 is not 0:
-            logging.warn("Using odd range, results may vary!")
-        X_r = np.zeros(X.shape)
-        X_r[:,
-        range(AnimalFitting.HEAD_RANGE * 2 + 2) + range(X.shape[1] - AnimalFitting.HEAD_RANGE * 2, X.shape[1])] = \
-        X[:,
-        range(AnimalFitting.HEAD_RANGE * 2 + 2) + range(X.shape[1] - AnimalFitting.HEAD_RANGE * 2, X.shape[1])]
-        Ax = X_r[:, AnimalFitting.HEAD_RANGE * 2]
-        Ay = X_r[:, AnimalFitting.HEAD_RANGE * 2 + 1]
-        Bx = X_r[:, X.shape[1] - AnimalFitting.HEAD_RANGE * 2]
-        By = X_r[:, X.shape[1] - AnimalFitting.HEAD_RANGE * 2 + 1]
-        vec = (Bx - Ax, By - Ay)
-        # size = np.sqrt(vec[0] ** 2 + vec[1] ** 2)
-        vec = (vec[0] / (FEATURES - AnimalFitting.HEAD_RANGE * 2 + 1),
-               vec[1] / (FEATURES - AnimalFitting.HEAD_RANGE * 2 + 1))
-        k = 1
-
-        for i in range(AnimalFitting.HEAD_RANGE * 2 + 2, X.shape[1] - AnimalFitting.HEAD_RANGE * 2 + 1, 2):
-            X_r[:, i] = Ax + vec[0] * k
-            X_r[:, i+1] = Ay + vec[1] * k
-            k += 1
-        return X_r
-
-        # return X[:,
-        #        range(AnimalFitting.HEAD_RANGE * 2 + 2) + range(X.shape[1] - AnimalFitting.HEAD_RANGE * 2, X.shape[1])]
-        # return (np.roll(X, AnimalFitting.HEAD_RANGE * 2 + 2, axis=1))[:, :(AnimalFitting.HEAD_RANGE * 2) * 2][::-1]
-
+        return (AnimalFitting.roll_to_head(X))[:, :(AnimalFitting.HEAD_RANGE * 2 + 1)][::-1]
 
     @staticmethod
     def extract_bottoms(X):
-        if AnimalFitting.BOTTOM_RANGE % 2 is not 0:
-            logging.warn("Using odd range, results may vary!")
-        part = X.shape[1] - (AnimalFitting.BOTTOM_RANGE * 4 + 2)
-        part /= 2
-        return X[:, range(part - 1, X.shape[1] - part + 1)]
+        return (AnimalFitting.roll_to_bottom(X))[:, :(AnimalFitting.BOTTOM_RANGE * 2 + 1)][::-1]
 
-    @staticmethod
-    def shift_heads_to_origin(X):
-        heads = AnimalFitting.extract_heads(X)
-        R = np.zeros_like(X)
-        means = np.zeros((X.shape[0], 2))
-        for i in range(X.shape[0]):
-            points = zip(heads[i, ::2], heads[i, 1::2])
-            means[i] = np.mean(points, axis=0)
-            R[i,] = (zip(X[i, ::2], X[i, 1::2]) - means[i]).flatten()
-        return R, means
+    # @staticmethod
+    # def shift_heads_to_origin(X):
+    #     heads = AnimalFitting.extract_heads(X)
+    #     R = np.zeros_like(X)
+    #     means = np.zeros((X.shape[0], 2))
+    #     for i in range(X.shape[0]):
+    #         points = zip(heads[i, ::2], heads[i, 1::2])
+    #         means[i] = np.mean(points, axis=0)
+    #         R[i,] = (zip(X[i, ::2], X[i, 1::2]) - means[i]).flatten()
+    #     return R, means
 
-    @staticmethod
-    def shift_bottoms_to_origin(X):
-        bottoms = AnimalFitting.extract_bottoms(X)
-        R = np.zeros_like(X)
-        means = np.zeros((X.shape[0], 2))
-        for i in range(X.shape[0]):
-            points = zip(bottoms[i, ::2], bottoms[i, 1::2])
-            means[i] = np.mean(points, axis=0)
-            R[i,] = (zip(X[i, ::2], X[i, 1::2]) - means[i]).flatten()
-        return R, means
+    # @staticmethod
+    # def shift_bottoms_to_origin(X):
+    #     bottoms = AnimalFitting.extract_bottoms(X)
+    #     R = np.zeros_like(X)
+    #     means = np.zeros((X.shape[0], 2))
+    #     for i in range(X.shape[0]):
+    #         points = zip(bottoms[i, ::2], bottoms[i, 1::2])
+    #         means[i] = np.mean(points, axis=0)
+    #         R[i,] = (zip(X[i, ::2], X[i, 1::2]) - means[i]).flatten()
+    #     return R, means
 
     @staticmethod
     def get_pca_compatible_data(X):
-        X_comp = np.zeros((X.shape[0], X.shape[1] * 2))
+        X_res = np.zeros((X.shape[0], reduce(lambda x, y: x * y, X.shape[1:])))
         for i in range(X.shape[0]):
-            X_comp[i] = X[i].flatten()
-        return X_comp
+            X_res[i] = X[i].flatten()
+        return X_res
+
+    @staticmethod
+    def get_data_from_pca_data(X):
+        X_res = np.zeros((X.shape[0], X.shape[1] / 2, 2))
+        for i in range(X.shape[0]):
+            X_res[i] = X[i].reshape((-1, 2))
+        return X_res
+
 
 if __name__ == '__main__':
+    import random
+    random.seed(0)
+
     PROJECT = 'zebrafish'
     logging.basicConfig(level=logging.INFO)
 
@@ -373,23 +353,22 @@ if __name__ == '__main__':
     FEATURES = 40
     X_ants, avg_dist, sizes = get_matrix(project, non_cluster_tracklets, FEATURES, heads)
     pca = AnimalFitting(X_ants)
-    pca.FEATURES = 40
+    pca.FEATURES = FEATURES
 
     # VIEW RESULTS OF EXTRACTING
     # pca.show_extracting_random_result(5)
 
     # VIEW PCA RECONSTRUCTING RESULTS
-    # pca.show_random_fit_result(3)
+    pca.show_random_fit_result(50)
 
     # GENERATING RESULTS FIGURE
     # pca.generate_eigen_ants_figure()
     rows = 3
     columns = 11
-    pca.generate_ants_reconstructed_figure(rows, columns)
+    # pca.generate_ants_reconstructed_figure(rows, columns, "heads")
 
     # VIEW I-TH ANT AS COMPOSITION
     i = 2
-    # pca.view_ant_composition(X_ants[i])
     # pca.view_ant_composition(X_ants[i], type='head')
     # pca.view_ant_composition(X_ants[i], type='bottom')
 
