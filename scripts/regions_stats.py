@@ -2,7 +2,8 @@ import cPickle as pickle
 from itertools import izip
 
 import cv2
-import hickle
+from libs.hickle import hickle
+# import hickle
 import matplotlib.pyplot as plt
 import numpy as np
 from PyQt4.QtGui import QColor
