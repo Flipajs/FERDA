@@ -2,6 +2,7 @@ import logging
 import math
 from PyQt4 import QtGui
 from matplotlib import pyplot as plt
+import random
 
 import numpy as np
 import sys
@@ -14,56 +15,56 @@ from scripts.pca.widgets.eigen_widget import EigenWidget
 from utils.geometry import rotate
 
 
-def fit_cluster(number_of_data, cluster, freq, r_head, pca_shifted_cut_head, pca_shifted_whole_head,
-                r_bottom, pca_shifted_cut_bottom, pca_shifted_whole_bottom):
-    n = len(cluster) / freq / 2
-    plt.hold(True)
-    cluster = np.expand_dims(cluster, axis=0)
-    results = np.zeros((n * 2, number_of_data * 2))
-    scores = []
-    for i in range(n):
-        blob = extract_heads(np.roll(cluster, - i * freq * 2, axis=1), r_head)
-        blob, mean = shift_heads_to_origin(blob, r_head)
-        ant, score = fit_point(blob, mean, pca_shifted_cut_head, pca_shifted_whole_head)
-        results[2 * i, :] = ant
-        scores.append(score)
-
-        blob = extract_bottoms(np.roll(cluster, - i * freq * 2, axis=1), r_bottom)
-        blob, mean = shift_bottoms_to_origin(blob, r_bottom)
-        ant, score = fit_point(blob, mean, pca_shifted_cut_bottom, pca_shifted_whole_bottom)
-        results[2 * i + 1, :] = ant
-        scores.append(score)
-
-    plt.axis('equal')
-    plt.hold(True)
-    plt.scatter(cluster[0, ::2], cluster[0, 1::2], c='grey')
-    plt.plot(cluster[0, ::2], cluster[0, 1::2], c='grey')
-    for i in sorted(range(n * 2), key=lambda n: scores[n], reverse=True)[:3]:
-        ant = results[i]
-        # plt.scatter(cluster[0, freq * i * 2], cluster[0, freq * i * 2 + 1])
-        plt.plot(ant[::2], ant[1::2], c='b')
-    plt.show()
-
-
-def fit_point(blob, mean, pca_shifted_cut, pca_shifted_whole):
-    # extract bottom, shift to origin and rotate
-    blob = blob.squeeze()
-    mean = mean.squeeze()
-    ang = math.atan2(blob[0], blob[1])
-    blob = np.array(rotate(zip(blob[::2], blob[1::2]), ang))
-    # carry out pca and project back
-    blob = blob.flatten().reshape(1, -1)
-    ant = np.dot(pca_shifted_cut.transform(blob), pca_shifted_whole.components_)
-    ant += pca_shifted_whole.mean_
-    ant = np.array(rotate(ant.reshape((ant.shape[1] / 2, 2)), -ang))
-    ant = (ant + mean).flatten()
-    return ant, pca_shifted_cut.score(blob)
+# def fit_cluster(number_of_data, cluster, freq, r_head, pca_shifted_cut_head, pca_shifted_whole_head,
+#                 r_bottom, pca_shifted_cut_bottom, pca_shifted_whole_bottom):
+#     n = len(cluster) / freq / 2
+#     plt.hold(True)
+#     cluster = np.expand_dims(cluster, axis=0)
+#     results = np.zeros((n * 2, number_of_data * 2))
+#     scores = []
+#     for i in range(n):
+#         blob = extract_heads(np.roll(cluster, - i * freq * 2, axis=1), r_head)
+#         blob, mean = shift_heads_to_origin(blob, r_head)
+#         ant, score = fit_point(blob, mean, pca_shifted_cut_head, pca_shifted_whole_head)
+#         results[2 * i, :] = ant
+#         scores.append(score)
+#
+#         blob = extract_bottoms(np.roll(cluster, - i * freq * 2, axis=1), r_bottom)
+#         blob, mean = shift_bottoms_to_origin(blob, r_bottom)
+#         ant, score = fit_point(blob, mean, pca_shifted_cut_bottom, pca_shifted_whole_bottom)
+#         results[2 * i + 1, :] = ant
+#         scores.append(score)
+#
+#     plt.axis('equal')
+#     plt.hold(True)
+#     plt.scatter(cluster[0, ::2], cluster[0, 1::2], c='grey')
+#     plt.plot(cluster[0, ::2], cluster[0, 1::2], c='grey')
+#     for i in sorted(range(n * 2), key=lambda n: scores[n], reverse=True)[:3]:
+#         ant = results[i]
+#         # plt.scatter(cluster[0, freq * i * 2], cluster[0, freq * i * 2 + 1])
+#         plt.plot(ant[::2], ant[1::2], c='b')
+#     plt.show()
+#
+#
+# def fit_point(blob, mean, pca_shifted_cut, pca_shifted_whole):
+#     # extract bottom, shift to origin and rotate
+#     blob = blob.squeeze()
+#     mean = mean.squeeze()
+#     ang = math.atan2(blob[0], blob[1])[]
+#     blob = np.array(rotate(zip(blob[::2], blob[1::2]), ang))
+#     # carry out pca and project back
+#     blob = blob.flatten().reshape(1, -1)
+#     ant = np.dot(pca_shifted_cut.transform(blob), pca_shifted_whole.components_)
+#     ant += pca_shifted_whole.mean_
+#     ant = np.array(rotate(ant.reshape((ant.shape[1] / 2, 2)), -ang))
+#     ant = (ant + mean).flatten()
+#     return ant, pca_shifted_cut.score(blob)
 
 
 class AnimalFitting:
-    HEAD_RANGE = 19  # x on each side + head = 2x + 1 points
-    BOTTOM_RANGE = 19  # x on each side + bottom = 2x + 1 points
-    EIGEN_DIM = 10
+    HEAD_RANGE = 3  # x on each side + head -> 2x + 1 points altogether
+    BOTTOM_RANGE = 3  # x on each side + bottom -> 2x + 1 points altogether
+    EIGEN_DIM = 20
     FEATURES = 40
 
     def __init__(self, X):
@@ -74,12 +75,6 @@ class AnimalFitting:
         # SPLIT TRAIN / TEST DATA 0.9 / 0.1
         # indexing of X_train beginning at head ccw
         self.X_train, self.X_test = np.split(X, [self.train_n])
-        # self.H_train, self.H_test = np.split(H, [self.train_n])
-        # self.B_train, self.B_test = np.split(B, [self.train_n])
-
-        # AnimalFitting.show_contour_with_annotations(self.X_train[0])
-        # AnimalFitting.show_contour_with_annotations(self.H_train[0])
-        # AnimalFitting.show_contour_with_annotations(self.B_train[0])
 
         # TRAIN PCA TWICE FOR BOTH HEAD AND BOTTOM SITUATIONS
         self.pca_head = PCA(AnimalFitting.EIGEN_DIM)
@@ -107,6 +102,7 @@ class AnimalFitting:
 
         # transpose back and to original dataframe
         head_fit = AnimalFitting.unroll_to_head(AnimalFitting.get_data_from_pca_data(head_fit.T))
+
         return head_fit, head_coordinates.T
 
     def get_bottom_fits(self, X):
@@ -130,27 +126,17 @@ class AnimalFitting:
         """
             Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour
             Returns [n * c * 2] ndarray of reconstructions and [n * EIGEN_DIM] of coordinates in orthogonal space of egienvectors
-
         """
         head_examples = self.extract_heads(X)
         bottom_examples = self.extract_bottoms(X)
         head_fits, _ = self.get_head_fits(X)
         bottom_fits, _ = self.get_bottom_fits(X)
 
-        print X
-        print head_fits
-        print bottom_fits
-
         self.plot_fits(X, head_examples, head_fits, bottom_examples, bottom_fits)
 
     def show_random_fit_result(self, n=3):
-        # import random
-        # for j in [random.randint(0, self.X_test.shape[0] - 1) for _ in range(n)]:
-        #     print j
-        #     self.show_fits(self.X_test[j:j + 1, :])
-        for j in [151,100,56,151,181,196,136,95]:
-            print j
-            self.show_fits(self.X_test[j:j + 1, :])
+        for j in [random.randint(0, self.X_test.shape[0] - 1) for _ in range(n)]:
+            self.show_fits(np.copy(self.X_test[j:j + 1, :]))
 
     def plot_fits(self, examples, head_examples, head_fits, bottom_examples, bottom_fits):
         for example, head_example, head_fit, bottom_example, bottom_fit in \
@@ -194,12 +180,12 @@ class AnimalFitting:
     def view_ant_composition(self, X, type='head'):
         if type == 'head':
             pca = self.pca_head
-            eigen_ants = self.eigen_ants_head
+            eigen_ants = self.eigen_vectors_head
             eigen_values = self.eigen_values_head
             transformation = self.get_head_fits
         elif type == 'bottom':
             pca = self.pca_bottom
-            eigen_ants = self.eigen_ants_bottom
+            eigen_ants = self.eigen_vectors_bottom
             eigen_values = self.eigen_values_bottom
             transformation = self.get_bottom_fits
         else:
@@ -221,22 +207,34 @@ class AnimalFitting:
         generate_eigen_ants_figure(eigen_ants, AnimalFitting.EIGEN_DIM)
 
     def generate_ants_reconstructed_figure(self, rows, columns, fnames):
-        X_R, X_C = self.get_head_fits(self.X_test)
-        # X_R, X_C = self.get_bottom_fits(self.X_test)
+        # X_R, X_C = self.get_head_fits(self.X_test)
+        X_R, X_C = self.get_bottom_fits(self.X_test)
 
         generate_ants_reconstructed_figure(self.X_test, X_R, X_C, rows, columns, fnames)
 
     @staticmethod
-    def show_contour_with_annotations(X):
-        fig, ax = plt.subplots()
-        i = 0
-        while i < X.shape[0]:
-            x, y = X[i]
-            ax.scatter(x, y)
-            ax.annotate(i, (x, y))
-            plt.axis('equal')
-            i += 1
-        plt.show()
+    def plot_contour_with_annotations(X):
+        if X.ndim == 3:  # multiple instance case
+            for i in range(X.shape[0]):
+                fig, ax = plt.subplots()
+                j = 0
+                while j < X.shape[1]:
+                    x, y = X[i, j]
+                    ax.scatter(x, y)
+                    ax.annotate(j, (x, y))
+                    plt.axis('equal')
+                    j += 1
+                plt.show()
+        else:
+            fig, ax = plt.subplots()
+            i = 0
+            while i < X.shape[0]:
+                x, y = X[i]
+                ax.scatter(x, y)
+                ax.annotate(i, (x, y))
+                plt.axis('equal')
+                i += 1
+            plt.show()
 
     @staticmethod
     def roll_to_head(X):
@@ -269,7 +267,7 @@ class AnimalFitting:
         """
             Inverse operation to roll_to_bottom
         """
-        return np.roll(X, -AnimalFitting.BOTTOM_RANGE, axis=1 if X.ndim == 3 else 0)
+        return np.roll(X, FEATURES / 2 - AnimalFitting.BOTTOM_RANGE, axis=1 if X.ndim == 3 else 0)
 
     @staticmethod
     def extract_heads(X):
@@ -317,8 +315,9 @@ class AnimalFitting:
 
 
 if __name__ == '__main__':
-    import random
+    # REPRODUCABILITY
     random.seed(0)
+    np.random.seed(0)
 
     PROJECT = 'zebrafish'
     logging.basicConfig(level=logging.INFO)
@@ -359,13 +358,13 @@ if __name__ == '__main__':
     # pca.show_extracting_random_result(5)
 
     # VIEW PCA RECONSTRUCTING RESULTS
-    pca.show_random_fit_result(50)
+    # pca.show_random_fit_result(50)
 
     # GENERATING RESULTS FIGURE
     # pca.generate_eigen_ants_figure()
     rows = 3
     columns = 11
-    # pca.generate_ants_reconstructed_figure(rows, columns, "heads")
+    pca.generate_ants_reconstructed_figure(rows, columns, "3_3_20_bottom")
 
     # VIEW I-TH ANT AS COMPOSITION
     i = 2

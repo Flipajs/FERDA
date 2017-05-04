@@ -85,23 +85,35 @@ def get_feature_vector(region, number_of_data, right_orientation):
     return result, step
 
 def find_head_index(contour, region):
-    a = list(enumerate(contour))
-    a = filter(lambda v: v[1][1] - 0 > region.a_ / 2, a)
+    # BEAM ALGORITHM
+
+    # a = list(enumerate(contour))
+    # a = filter(lambda v: v[1][1] - 0 > region.a_ / 2, a)
+    # index = 0
+    # ant_head = None
+    #
+    # i = 0
+    # while a[i][1][0] > 0:
+    #     i += 1
+    # for v in range(len(a)):
+    #     x1 = a[i][1][0]
+    #     x2 = a[i - 1][1][0]
+    #     if x1 <= 0 < x2:
+    #         y1 = a[i][1][1]
+    #         y2 = a[i - 1][1][1]
+    #         ant_head = [0, y1 + (y2 - y1) * ((0 - x1) / (x2 - x1))]
+    #         index = a[i - 1][0]
+    #         break
+    #     i = (i + 1) % len(a)
+
+    # SIMPLE MAX X
     index = 0
-    ant_head = None
-    i = 0
-    while a[i][1][0] > 0:
-        i += 1
-    for v in range(len(a)):
-        x1 = a[i][1][0]
-        x2 = a[i - 1][1][0]
-        if x1 <= 0 < x2:
-            y1 = a[i][1][1]
-            y2 = a[i - 1][1][1]
-            ant_head = [0, y1 + (y2 - y1) * ((0 - x1) / (x2 - x1))]
-            index = a[i - 1][0]
-            break
-        i = (i + 1) % len(a)
+    for i in range(contour.shape[0]):
+        if contour[i][1] > contour[index][1]:
+            index = i
+    ant_head = contour[index]
+
+    # import matplotlib.pyplot as plt
     # plt.axis('equal')
     # plt.plot(contour[:,0], contour[:,1], c='r')
     # plt.scatter(ant_head[0], ant_head[1], c ='g')
