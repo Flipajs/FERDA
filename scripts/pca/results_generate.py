@@ -40,6 +40,7 @@ def generate_ants_image(X, X_R, X_C, r, c, fname, fold):
     for j in range(len(X)):
         ax1 = plt.subplot(gs1[j])
         plt.axis('on')
+        plt.axis('equal')
         ax1.set_xticklabels([])
         ax1.set_yticklabels([])
         ax1.set_aspect('equal')

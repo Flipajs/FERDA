@@ -62,9 +62,9 @@ from utils.geometry import rotate
 
 
 class AnimalFitting:
-    HEAD_RANGE = 3  # x on each side + head -> 2x + 1 points altogether
-    BOTTOM_RANGE = 3  # x on each side + bottom -> 2x + 1 points altogether
-    EIGEN_DIM = 20
+    HEAD_RANGE = 19  # x on each side + head -> 2x + 1 points altogether
+    BOTTOM_RANGE = 19  # x on each side + bottom -> 2x + 1 points altogether
+    EIGEN_DIM = 10
     FEATURES = 40
 
     def __init__(self, X):
@@ -75,6 +75,13 @@ class AnimalFitting:
         # SPLIT TRAIN / TEST DATA 0.9 / 0.1
         # indexing of X_train beginning at head ccw
         self.X_train, self.X_test = np.split(X, [self.train_n])
+
+        # GENERAL PCA
+        self.pca = PCA(AnimalFitting.EIGEN_DIM)
+        self.pca.fit(AnimalFitting.get_pca_compatible_data(self.X_train))
+        self.eigen_vectors = self.pca.components_.T
+        self.mean = np.expand_dims(self.pca.mean_, axis=0).T
+        self.eigen_values = self.pca.explained_variance_
 
         # TRAIN PCA TWICE FOR BOTH HEAD AND BOTTOM SITUATIONS
         self.pca_head = PCA(AnimalFitting.EIGEN_DIM)
@@ -108,7 +115,7 @@ class AnimalFitting:
     def get_bottom_fits(self, X):
         """
             Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour.
-            Returns [n * c * 2] ndarray of reconstructions and [n * EIGEN_DIM] of coordinates in orthogonal space of egienvectors
+            Returns [n * c * 2] ndarray of reconstructions and [n * EIGEN_DIM] of coordinates in orthogonal space of eigenvectors
         """
         # transpose for column vectors
         bottom_example = self.get_pca_compatible_data(self.extract_bottoms(X)).T
@@ -122,10 +129,32 @@ class AnimalFitting:
 
         return bottom_fit, bottom_coordinates.T
 
+    def get_scatter_fits(self, X, idxs):
+        """
+            Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour
+            idxs are selected indexes of contour
+        """
+        # transpose for column vectors
+        scatters = self.get_pca_compatible_data(X[:, idxs]).T
+
+        # idxs to 2D idxs
+        idxs = np.vstack((2*idxs, 2*idxs + 1))
+        idxs = idxs.flatten(order='F')
+
+        # TODO use only one pca, not mean_head
+        scatters = scatters - self.mean[idxs, :]
+        coordinates = np.dot(self.eigen_vectors[idxs, :].T, scatters)
+        fit = np.dot(self.eigen_vectors, coordinates) + self.mean
+
+        # transpose back and to original dataframe
+        fit = AnimalFitting.get_data_from_pca_data(fit.T)
+
+        return fit, coordinates.T
+
     def show_fits(self, X):
         """
             Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour
-            Returns [n * c * 2] ndarray of reconstructions and [n * EIGEN_DIM] of coordinates in orthogonal space of egienvectors
+            Returns [n * c * 2] ndarray of reconstructions and [n * EIGEN_DIM] of coordinates in orthogonal space of eigenvectors
         """
         head_examples = self.extract_heads(X)
         bottom_examples = self.extract_bottoms(X)
@@ -134,9 +163,26 @@ class AnimalFitting:
 
         self.plot_fits(X, head_examples, head_fits, bottom_examples, bottom_fits)
 
+    def show_scatter_fits(self, X, idxs):
+        """
+            Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour
+            Returns [n * c * 2] ndarray of reconstructions and [n * EIGEN_DIM] of coordinates in orthogonal space of egienvectors
+        """
+        scatters = X[:, idxs]
+        fits, _ = self.get_scatter_fits(X, idxs)
+
+        self.plot_scatter_fits(X, scatters, fits)
+
     def show_random_fit_result(self, n=3):
         for j in [random.randint(0, self.X_test.shape[0] - 1) for _ in range(n)]:
             self.show_fits(np.copy(self.X_test[j:j + 1, :]))
+
+    def show_random_scatter_fit(self, n=3, k=10):
+        idxs = np.arange(AnimalFitting.FEATURES)
+        np.random.shuffle(idxs)
+        idxs = idxs[:k]
+        for j in [random.randint(0, self.X_test.shape[0] - 1) for _ in range(n)]:
+            self.show_scatter_fits(np.copy(self.X_test[j:j + 1, :]), idxs)
 
     def plot_fits(self, examples, head_examples, head_fits, bottom_examples, bottom_fits):
         for example, head_example, head_fit, bottom_example, bottom_fit in \
@@ -177,6 +223,20 @@ class AnimalFitting:
             plt.axis('equal')
             plt.show()
 
+    def plot_scatter_fits(self, examples, scatters, fits):
+        for example, scatter, fit in zip(examples, scatters, fits):
+            plt.plot(np.append(example[:, 0], example[0, 0]), np.append(example[:, 1], example[0, 1]), c='g',
+                     label='Test example')
+            plt.plot(np.append(fit[:, 0], fit[0, 0]), np.append(fit[:, 1], fit[0, 1]), c='r',
+                     label='Fit')
+            plt.scatter(np.append(scatter[:, 0], scatter[0, 0]),
+                        np.append(scatter[:, 1], scatter[0, 1]),
+                        label='Scatter', c='b', alpha=0.75)
+            plt.title("Scatter fits")
+            plt.legend(loc='best')
+            plt.axis('equal')
+            plt.show()
+
     def view_ant_composition(self, X, type='head'):
         if type == 'head':
             pca = self.pca_head
@@ -211,6 +271,9 @@ class AnimalFitting:
         X_R, X_C = self.get_bottom_fits(self.X_test)
 
         generate_ants_reconstructed_figure(self.X_test, X_R, X_C, rows, columns, fnames)
+
+    def generate_dataset_figure(self, rows, columns, fnames):
+        generate_ants_reconstructed_figure(self.X_train, np.zeros_like(self.X_train), np.zeros((self.X_train.shape[0], AnimalFitting.EIGEN_DIM)), rows, columns, fnames)
 
     @staticmethod
     def plot_contour_with_annotations(X):
@@ -316,8 +379,8 @@ class AnimalFitting:
 
 if __name__ == '__main__':
     # REPRODUCABILITY
-    random.seed(0)
-    np.random.seed(0)
+    # random.seed(0)
+    # np.random.seed(0)
 
     PROJECT = 'zebrafish'
     logging.basicConfig(level=logging.INFO)
@@ -359,12 +422,15 @@ if __name__ == '__main__':
 
     # VIEW PCA RECONSTRUCTING RESULTS
     # pca.show_random_fit_result(50)
+    pca.show_random_scatter_fit(10, 10)
+    pca.show_random_scatter_fit(10, 20)
 
     # GENERATING RESULTS FIGURE
     # pca.generate_eigen_ants_figure()
     rows = 3
     columns = 11
-    pca.generate_ants_reconstructed_figure(rows, columns, "3_3_20_bottom")
+    # pca.generate_dataset_figure(rows, columns, "train_set")
+    # pca.generate_ants_reconstructed_figure(rows, columns, "3_3_20_bottom")
 
     # VIEW I-TH ANT AS COMPOSITION
     i = 2

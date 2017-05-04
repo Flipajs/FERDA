@@ -77,6 +77,7 @@ def get_feature_vector(region, number_of_data, right_orientation):
             i += 1
         p = (p + 1) % con_length
 
+    # import matplotlib.pyplot as plt
     # plt.axis('equal')
     # plt.scatter(contour[:,0], contour[:,1], c='r')
     # plt.scatter(result[:,0], result[:,1], c='g')
