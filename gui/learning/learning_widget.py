@@ -81,7 +81,7 @@ class LearningWidget(QtGui.QWidget):
         self.top_stripe_layout.addWidget(self.label_tracklet_min_length)
 
         self.tracklet_min_length_sb = QtGui.QSpinBox()
-        self.tracklet_min_length_sb.setValue(50)
+        self.tracklet_min_length_sb.setValue(20)
         self.tracklet_min_length_sb.setMinimum(0)
         self.tracklet_min_length_sb.setMaximum(10000)
         self.top_stripe_layout.addWidget(self.tracklet_min_length_sb)
@@ -310,12 +310,30 @@ class LearningWidget(QtGui.QWidget):
 
                     self.tracklets_table.setItem(i, 4, QtGui.QTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
 
+                    id_ = None
+                    try:
+                        if len(self.project.chm[t_id]) > 10:
+                            ids = self.lp.GT.tracklet_id_set_without_checks(self.project.chm[t_id], self.project)
+
+                        if len(ids) == 1:
+                            id_ = ids[0]
+                    except:
+                        pass
+
                     d = self.lp.tracklet_measurements[t_id]
                     for j in range(num_animals):
                         self.tracklets_table.setItem(i, 5+j, QtGui.QTableWidgetItem(self.__f2str(d[j])))
 
+                        a = 0
+                        c = 0
                         if j in t.N:
+                            a = 150
+                            c = 150
                             self.tracklets_table.item(i, 5+j).setBackgroundColor(QtGui.QColor(150, 150, 150))
+
+                        if j == id_:
+                            self.tracklets_table.item(i, 5 + j).setBackgroundColor(QtGui.QColor(a, 255, c))
+
 
                     # for j in range(num_animals):
                     #     val = ''

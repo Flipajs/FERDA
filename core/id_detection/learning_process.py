@@ -4,6 +4,8 @@ import sys
 import time
 import warnings
 
+from itertools import izip
+
 import numpy as np
 import os
 import psutil
@@ -12,7 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
-from features import get_basic_properties, get_colornames_hists
+from features import get_basic_properties, get_colornames_hists, get_colornames_and_basic
 from gui.learning.ids_names_widget import IdsNamesWidget
 from utils.img_manager import ImgManager
 from utils.video_manager import get_auto_video_manager
@@ -132,12 +134,13 @@ class LearningProcess:
             self.GT = GT()
             self.GT.load(self.p.GT_file)
 
-        # try:
-        #     # with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
-        #     with open('/Users/flipajs/Dropbox/dev/ferda/data/GT/Cam1_sparse.pkl', 'rb') as f:
-        #         self.GT = pickle.load(f)
-        # except IOError:
-        #     pass
+        try:
+            # with open(self.p.working_directory+'/GT_sparse.pkl', 'rb') as f:
+            with open('/Users/flipajs/Dropbox/dev/ferda/data/GT/Cam1_.pkl', 'rb') as f:
+                self.GT = pickle.load(f)
+        except IOError:
+            pass
+
 
     def load_features(self, db_names='fm.sqlite3'):
         from core.id_detection.features import FeatureManager
@@ -286,7 +289,7 @@ class LearningProcess:
         self._eps_certainty = eps
 
     def set_tracklet_length_k(self, k):
-        self.k_
+        self.k_ = k
         self.__precompute_measurements()
 
     def compute_distinguishability(self):
@@ -332,7 +335,7 @@ class LearningProcess:
     def fill_undecided_tracklets(self):
         for t in self.p.chm.chunk_gen():
             # if t.id() in self.collision_chunks or t.is_multi():
-            if not t.is_single() or t.length() < self.min_tracklet_len:
+            if not t.is_single() or t.length() < self.k_:
                 continue
 
             self.undecided_tracklets.add(t.id())
@@ -747,24 +750,23 @@ class LearningProcess:
             probs = self.rfc.predict_proba(np.array(X))
         except:
             print X
-        probs = np.mean(probs, 0)
 
-        # probs = self.apply_consistency_rule(ch, probs)
-        #
-        # # normalise
-        # if np.sum(probs) > 0:
-        #     probs /= float(np.sum(probs))
+        probs = np.sum(probs, 0)
+
+        # normalise
+        if np.sum(probs) > 0:
+            probs /= float(np.sum(probs))
 
         return probs, len(X)
 
-    def apply_consistency_rule(self, ch, probs):
-        mask = np.zeros(probs.shape)
-        for id_ in self.chunk_available_ids[ch.id()]:
-            mask[id_] = 1
-
-        probs *= mask
-
-        return probs
+    # def apply_consistency_rule(self, ch, probs):
+    #     mask = np.zeros(probs.shape)
+    #     for id_ in self.chunk_available_ids[ch.id()]:
+    #         mask[id_] = 1
+    #
+    #     probs *= mask
+    #
+    #     return probs
 
     def get_data(self, ch):
         X = []
@@ -905,6 +907,26 @@ class LearningProcess:
     def __tracklet_is_decided(self, P, N):
         return P.union(N) == self.all_ids
 
+    def _get_p1(self, X, i):
+        div = np.sum(np.power(2, X))
+
+        return 2**X[i] / div
+
+    def _get_p2(self, X, i):
+        a = 1
+        for r in X:
+            a *= (1 - self._get_p1(r, i))
+
+        div = 0
+        for j in range(X.shape[1]):
+            b = 1
+            for r in X:
+                b *= (1 - self._get_p1(r, i))
+
+            div += self._get_p1(np.sum(X, 0), j) * b
+
+        return (self._get_p1(np.sum(X, 0), i) * a) / div
+
     def __update_certainty(self, tracklet):
         if len(self.tracklet_measurements) == 0:
             # print "tracklet_measurements is empty"
@@ -924,47 +946,52 @@ class LearningProcess:
         if len(P) == 0:
             x = self.tracklet_measurements[tracklet.id()]
 
-            uni_probs = np.ones((len(x),)) / float(len(x))
-            # TODO: why 0.99 and not 1.0? Maybe to give a small chance for each option independently on classifier
-            alpha = (min((tracklet.length()/self.k_)**2, 0.99))
-            # alpha = (min((tracklet.length()/self.k_)**1.1, 0.99))
-
-            # if it is not obvious e.g. (1.0, 0, 0, 0, 0)...
-            # if 0 < np.max(x) < 1.0:
-            # reduce the certainty by alpha factor depending on tracklet length
-            # print x, alpha, t_length
-            # x = (1-alpha) * uni_probs + alpha*x
-
-            # compute certainty
-            x_ = np.copy(x)
-            for id_ in N:
-                x_[id_] = 0
-
-            i1 = np.argmax(x_)
-            p1 = x_[i1]
-            x_[i1] = 0
-            p2 = np.max(x_)
-
-            # take maximum probability from rest after removing definitely not present ids and the second max and compute certainty
-            # for 0.6 and 0.4 it is 0.6 but for 0.6 and 0.01 it is ~ 0.98
-            div = p1 + p2
-
-            # if prob is too low...
-            if div < 0.3 and tracklet.length() < 10:
-                div = 1.0
-
-            if div == 0:
-                certainty = 0.0
-            else:
-                certainty = p1 / div
-                certainty = (1-alpha) * 0.5 + alpha*certainty
-
-            if math.isnan(certainty):
-                certainty = 0.0
-                # means conflict or noise tracklet
-                print 'is NaN', tracklet, p1, p2, x, P, N
-
-            self.tracklet_certainty[tracklet.id()] = certainty
+            id_ = np.argmax(x)
+            # c = self._get_p1(x, id_)
+            self.tracklet_certainty[tracklet.id()] = x[id_]
+            #
+            #
+            # uni_probs = np.ones((len(x),)) / float(len(x))
+            # # TODO: why 0.99 and not 1.0? Maybe to give a small chance for each option independently on classifier
+            # alpha = (min((tracklet.length()/self.k_)**2, 0.99))
+            # # alpha = (min((tracklet.length()/self.k_)**1.1, 0.99))
+            #
+            # # if it is not obvious e.g. (1.0, 0, 0, 0, 0)...
+            # # if 0 < np.max(x) < 1.0:
+            # # reduce the certainty by alpha factor depending on tracklet length
+            # # print x, alpha, t_length
+            # # x = (1-alpha) * uni_probs + alpha*x
+            #
+            # # compute certainty
+            # x_ = np.copy(x)
+            # for id_ in N:
+            #     x_[id_] = 0
+            #
+            # i1 = np.argmax(x_)
+            # p1 = x_[i1]
+            # x_[i1] = 0
+            # p2 = np.max(x_)
+            #
+            # # take maximum probability from rest after removing definitely not present ids and the second max and compute certainty
+            # # for 0.6 and 0.4 it is 0.6 but for 0.6 and 0.01 it is ~ 0.98
+            # div = p1 + p2
+            #
+            # # if prob is too low...
+            # if div < 0.3 and tracklet.length() < 10:
+            #     div = 1.0
+            #
+            # if div == 0:
+            #     certainty = 0.0
+            # else:
+            #     certainty = p1 / div
+            #     certainty = (1-alpha) * 0.5 + alpha*certainty
+            #
+            # if math.isnan(certainty):
+            #     certainty = 0.0
+            #     # means conflict or noise tracklet
+            #     print 'is NaN', tracklet, p1, p2, x, P, N
+            #
+            # self.tracklet_certainty[tracklet.id()] = certainty
 
     def __consistency_check_PN(self, P, N):
         if self.ignore_inconsistency:
@@ -979,7 +1006,7 @@ class LearningProcess:
 
         return True
 
-    def __find_conflict(self, tracklet, id_=None):
+    def __find_sconflict(self, tracklet, id_=None):
         if id_ is None:
             id_ = self.__DEBUG_get_answer_from_GT(tracklet)
 
@@ -1114,7 +1141,7 @@ class LearningProcess:
         if self.__only_one_P_possibility(tracklet):
             id_ = self.__get_one_possible_P(tracklet)
 
-            self.__if_possible_update_P(tracklet, id_, is_in_intersection_Ps=True)
+            self.__if_possible_update_P(tracklet, id_, is_in_intersection_Ps=False)
 
         return True
 
@@ -1318,6 +1345,36 @@ class LearningProcess:
             tracklet.N = new_N
             tracklet.P = new_P
 
+    def _get_and_train_rfc(self, g):
+        X = []
+        y = []
+        for i, t in enumerate(g):
+            x = self.features[t.id()]
+            y.extend([i] * len(x))
+            if len(X) == 0:
+                X = np.array(x)
+            else:
+                X = np.vstack([X, np.array(x)])
+
+        rfc = RandomForestClassifier()
+        rfc.fit(X, y)
+        return rfc
+
+    def predict_permutation(self, rfc, g):
+        from scipy import stats
+        results = []
+        for t in g:
+            results.append(int(stats.mode(rfc.predict(self.features[t.id()]))[0]))
+
+        return results
+
+    def _test_stable_marriage(self, p1, p2):
+        for i, val in enumerate(p1):
+            if p2[val] != i:
+                return False
+
+        return True
+
     def full_csosit_analysis(self):
         groups = []
         unique_tracklets = set()
@@ -1340,7 +1397,7 @@ class LearningProcess:
 
             singles_group = filter(lambda x: x.is_single(), group)
 
-            if len(singles_group) == len(self.p.animals):
+            if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 10:
                 groups.append(singles_group)
 
                 overlap = min([t.end_frame(self.p.gm) for t in singles_group]) \
@@ -1354,6 +1411,81 @@ class LearningProcess:
 
             frame = min([t.end_frame(self.p.gm) for t in group]) + 1
 
+        best_g_i = -1
+        best_g_val = 0
+        for i, g in enumerate(groups):
+            val = min(len(t) for t in g)
+            if val > best_g_val:
+                best_g_i = i
+                best_g_val = val
+
+        for id_, t in enumerate(groups[best_g_i]):
+            self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
+
+        max_best_frame = max(t.start_frame(self.p.gm) for t in groups[best_g_i])
+
+        try:
+            path = '/Users/flipajs/Documents/dev/ferda/data/GT/Cam1_.pkl'
+            from utils.gt.gt import GT
+            self.GT = GT()
+            self.GT.load(path)
+            self.GT.set_offset(y=-self.p.video_crop_model['y1'],
+                                x=-self.p.video_crop_model['x1'],
+                                frames=self.p.video_start_t)
+
+            permutation_data = []
+            for id_, t in enumerate(self.p.chm.chunks_in_frame(max_best_frame)):
+                if not t.is_single():
+                    continue
+
+                # id_ = list(t.P)[0]
+                y, x = RegionChunk(t, self.p.gm, self.p.rm).centroid_in_t(max_best_frame)
+                permutation_data.append((max_best_frame, id_, y, x))
+
+            self.GT.set_permutation_reversed(permutation_data)
+
+            print "GT permutation set"
+        except IOError:
+            pass
+
+        from math import floor
+        half = int(floor(len(groups)/2))
+
+        ok_min_sum = min(len(t) for t in groups[best_g_i])
+        ok_total_sum = sum(len(t) for t in groups[best_g_i])
+
+        for i in range(len(groups)):
+            if i == best_g_i:
+                continue
+
+            g1 = groups[best_g_i]
+            g2 = groups[i]
+
+            rfc1 = self._get_and_train_rfc(g1)
+            rfc2 = self._get_and_train_rfc(g2)
+
+            perm1 = self.predict_permutation(rfc1, g2)
+            perm2 = self.predict_permutation(rfc2, g1)
+
+            if self._test_stable_marriage(perm1, perm2):
+                for id_, t in izip(perm1, g2):
+                    self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
+
+                    ids = self.GT.tracklet_id_set_without_checks(t, self.p)
+                    if ids[0] != id_:
+                        print "GT differs ", id_, ids[0], t.id()
+
+                ok_min_sum += min(len(t) for t in g2)
+                ok_total_sum += sum(len(t) for t in g2)
+                print "OK", min([len(t) for t in g1]), min([len(t) for t in g2])
+            # else:
+                # print "fail", min([len(t) for t in g1]), min([len(t) for t in g2])
+                # for i, val in enumerate(perm1):
+                #     if i != perm2[val]:
+                #         print "\t", i, perm2[val]
+
+        print "OK min sum: {} total sum: {}".format(ok_min_sum, ok_total_sum)
+
         total_len = 0
         for t in unique_tracklets:
             total_len += t.length()
@@ -1366,6 +1498,7 @@ class LearningProcess:
 
     def auto_init(self, method='max_sum'):
         self.full_csosit_analysis()
+        return
 
         from multiprocessing import cpu_count
 
@@ -1416,6 +1549,30 @@ class LearningProcess:
         for id_, t in enumerate(group):
             print "id: {}, len: {}".format(t.id(), t.length())
             self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
+
+        try:
+            path = '/Users/flipajs/Documents/dev/ferda/data/GT/Cam1_.pkl'
+            from utils.gt.gt import GT
+            self.GT = GT()
+            self.GT.load(path)
+            self.GT.set_offset(y=-self.p.video_crop_model['y1'],
+                                x=-self.p.video_crop_model['x1'],
+                                frames=self.p.video_start_t)
+
+            permutation_data = []
+            for t in self.p.chm.chunks_in_frame(max_best_frame):
+                if not t.is_single():
+                    continue
+
+                id_ = list(t.P)[0]
+                y, x = RegionChunk(t, self.p.gm, self.p.rm).centroid_in_t(max_best_frame)
+                permutation_data.append((max_best_frame, id_, y, x))
+
+            self.GT.set_permutation_reversed(permutation_data)
+
+            print "GT permutation set"
+        except IOError:
+            pass
 
         return max_best_frame
 
@@ -1563,7 +1720,7 @@ def compute_features_process(counter, lock, q_tasks, project_wd, num_frames, fir
                     compute = fm[r.id()][1] == [None]
 
                 if compute:
-                    f = get_colornames_hists(r, project, saturated=True, lvls=1)
+                    f = get_colornames_and_basic(r, project, saturated=True, lvls=1)
                     lock.acquire()
                     fm.add(r.id(), f)
                     lock.release()

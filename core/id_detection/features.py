@@ -202,6 +202,12 @@ def __get_crop(r, p, margin=3, img=None):
 
     return crop
 
+def get_colornames_and_basic(r, p, img=None, fliplr=False, saturated=False, lvls=3):
+    f1 = get_colornames_hists(r, p, img, fliplr, saturated, lvls)
+    f2 = get_basic_properties(r, p)
+
+    return np.concatenate((f1, f2))
+
 def get_colornames_hists(r, p, img=None, fliplr=False, saturated=False, lvls=3):
     crop = __get_crop(r, p, img=img)
 

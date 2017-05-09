@@ -704,7 +704,7 @@ class ResultsWidget(QtGui.QWidget):
                     c_ = self.project.animals[id_].color_
                     c = QtGui.qRgba(c_[2], c_[1], c_[0], alpha)
                 else:
-                    step = 2
+                    step = 3
                     if use_ch_color:
                         c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
             elif use_ch_color:
@@ -1418,7 +1418,6 @@ class ResultsWidget(QtGui.QWidget):
                                     frames=self.project.video_start_t)
             except:
                 pass
-
 
     def assign_ids_from_gt(self):
         # for frame, data in self._gt.iteritems():
