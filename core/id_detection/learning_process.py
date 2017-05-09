@@ -305,8 +305,12 @@ class LearningProcess:
             total_len += l_
             m = self.tracklet_measurements[id_]
 
-            i = np.argmax(m)
-            difs = (m[i] - m) * l_
+
+            ids = self.GT.tracklet_id_set_without_checks(t, self.p)
+            # i = np.argmax(m)
+            i = ids[0]
+            # difs = (m[i] - m) * l_
+            difs = (m) * l_
             total_len[i] += l_
             min_weighted_difs[i, :] += difs
 
