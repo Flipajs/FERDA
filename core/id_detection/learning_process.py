@@ -477,11 +477,14 @@ class LearningProcess:
         return X
 
     def __train_rfc(self, init=False):
-        self.rfc = RandomForestClassifier(class_weight='balanced_subsample',
-                                          max_features=self.rf_max_features,
-                                          n_estimators=self.rf_n_estimators,
-                                          min_samples_leaf=self.rf_min_samples_leafs,
-                                          max_depth=self.rf_max_depth)
+        from xgboost import XGBClassifier
+        self.rfc = XGBClassifier()
+
+        # self.rfc = RandomForestClassifier(class_weight='balanced_subsample',
+        #                                   max_features=self.rf_max_features,
+        #                                   n_estimators=self.rf_n_estimators,
+        #                                   min_samples_leaf=self.rf_min_samples_leafs,
+        #                                   max_depth=self.rf_max_depth)
         if len(self.X):
             y = []
             for i in range(len(self.p.animals)):
@@ -755,7 +758,12 @@ class LearningProcess:
         except:
             print X
 
+        anomaly_probs = self.get_tracklet_anomaly_probs(ch)
+        for i in range(probs.shape[0]):
+            probs *= anomaly_probs[i]
+
         probs = np.sum(probs, 0)
+
 
         # normalise
         if np.sum(probs) > 0:
@@ -1201,6 +1209,30 @@ class LearningProcess:
 
         return not oversegmented
 
+    def get_appearance_features(self, r):
+        return [
+            r.area(),
+            r.a_,
+            r.b_,
+            (r.a_ / r.b_),
+            r.sxx_ ,
+            r.syy_,
+            r.sxy_ ,
+            r.min_intensity_
+        ]
+
+    def get_tracklet_anomaly_probs(self, t):
+        rch = RegionChunk(t, self.p.gm, self.p.rm)
+
+        X = []
+        for r in rch.regions_gen():
+            X.append(self.get_appearance_features(r))
+
+        vals = self.IF_region_anomaly.decision_function(X)
+        probs = self.LR_region_anomaly.predict_proba(vals.reshape((len(vals), 1)))[:, 0]
+
+        return probs
+
     def reset_learning(self):
         self.undecided_tracklets = set()
         self.tracklet_certainty = {}
@@ -1217,6 +1249,9 @@ class LearningProcess:
         self.consistency_violated = False
         self.last_id = -1
 
+        from sklearn.ensemble import IsolationForest
+        self.IF_region_anomaly = IsolationForest()
+        region_X = []
 
         for d in self.user_decisions:
             tracklet_id = d['tracklet_id_set']
@@ -1233,8 +1268,38 @@ class LearningProcess:
 
             if type == 'P':
                 self.assign_identity(id_, tracklet, learn=True, user=False, gt=True)
+
+                for r_id in tracklet.rid_gen(self.p.gm):
+                    region_X.append(self.get_appearance_features(self.p.rm[r_id]))
+
             elif type == 'N':
                 self.__update_N(set([id_]), tracklet)
+
+        self.IF_region_anomaly.fit(region_X)
+        vals = self.IF_region_anomaly.decision_function(region_X)
+        vals_sorted = sorted(vals)
+
+        from sklearn.linear_model import LogisticRegression
+        lr = LogisticRegression()
+        use_for_learning = 0.1
+
+        part_len = int(len(vals) * use_for_learning)
+        part1 = np.array(vals_sorted[:part_len])
+        part2 = np.array(vals_sorted[-part_len:])
+
+        X = np.hstack((part1, part2))
+        X.shape = ((X.shape[0], 1))
+
+        y = np.array([1 if i < len(part1) else 0 for i in range(X.shape[0])])
+        lr.fit(X, y)
+        self.LR_region_anomaly = lr
+
+        # for t in self.p.chm.chunk_gen():
+        #     if not t.is_single():
+        #         continue
+        #     probs = self.get_tracklet_anomaly_probs(t)
+        #
+        #     print t.id(), np.mean(probs), np.median(probs), len(t)
 
         ret = self.__train_rfc(init=True)
         print "TRAINING FINISHED"
@@ -1458,14 +1523,13 @@ class LearningProcess:
         ok_min_sum = min(len(t) for t in groups[best_g_i])
         ok_total_sum = sum(len(t) for t in groups[best_g_i])
 
+        g1 = groups[best_g_i]
+        rfc1 = self._get_and_train_rfc(g1)
         for i in range(len(groups)):
             if i == best_g_i:
                 continue
 
-            g1 = groups[best_g_i]
             g2 = groups[i]
-
-            rfc1 = self._get_and_train_rfc(g1)
             rfc2 = self._get_and_train_rfc(g2)
 
             perm1 = self.predict_permutation(rfc1, g2)

@@ -5,6 +5,7 @@ import time
 import numpy as np
 from PIL import ImageQt
 from PyQt4 import QtGui, QtCore
+import cv2
 
 from core.segmentation_helper import SegmentationHelper
 from core.project.project import Project
@@ -693,7 +694,6 @@ if __name__ == "__main__":
 
     ex = SetMSERs(proj)
 
-    import cv2
     ex.raise_()
     ex.showMaximized()
     ex.activateWindow()
@@ -702,7 +702,8 @@ if __name__ == "__main__":
     ex.mser_min_area.setValue(proj.mser_parameters.min_area)
     # ex.mser_max_area.setValue(proj.mser_parameters.max_area)
 
-    im = cv2.imread('/Users/flipajs/Downloads/IMG_6177.JPG')
+    # im = cv2.imread('/Users/flipajs/Downloads/trhliny/4/DSC_0327.JPG')
+    im = cv2.imread('/Users/flipajs/Downloads/trhliny/5/DSC_0348.JPG')
     ex.set_image(im)
 
     app.exec_()
