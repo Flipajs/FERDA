@@ -41,8 +41,10 @@ def feature_descriptor(data, block_division=(2, 2), pyramid_levels=3, histogram_
     # pointer
     fp_ = 0
     for lvl in range(pyramid_levels):
-        rs = np.linspace(0, h, current_block_num[0] + 1, dtype=np.int32)
-        cs = np.linspace(0, w, current_block_num[1] + 1, dtype=np.int32)
+        # rs = np.linspace(0, h, current_block_num[0] + 1, dtype=np.int32)
+        # cs = np.linspace(0, w, current_block_num[1] + 1, dtype=np.int32)
+        rs = np.asarray(np.linspace(0, h, current_block_num[0] + 1), dtype=np.int32)
+        cs = np.asarray(np.linspace(0, w, current_block_num[1] + 1), dtype=np.int32)
 
         for row in range(current_block_num[0]):
             for col in range(current_block_num[1]):
