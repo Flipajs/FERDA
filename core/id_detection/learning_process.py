@@ -101,6 +101,7 @@ class LearningProcess:
         self.undecided_tracklets = set()
         self.tracklet_certainty = {}
         self.tracklet_measurements = {}
+        self.tracklet_stds = {}
 
         self.user_decisions = []
 
@@ -476,15 +477,16 @@ class LearningProcess:
 
         return X
 
-    def __train_rfc(self, init=False):
-        from xgboost import XGBClassifier
-        self.rfc = XGBClassifier()
-
-        # self.rfc = RandomForestClassifier(class_weight='balanced_subsample',
-        #                                   max_features=self.rf_max_features,
-        #                                   n_estimators=self.rf_n_estimators,
-        #                                   min_samples_leaf=self.rf_min_samples_leafs,
-        #                                   max_depth=self.rf_max_depth)
+    def __train_rfc(self, init=False, use_xgboost=False):
+        if use_xgboost:
+            from xgboost import XGBClassifier
+            self.rfc = XGBClassifier()
+        else:
+            self.rfc = RandomForestClassifier(class_weight='balanced_subsample',
+                                              max_features=self.rf_max_features,
+                                              n_estimators=self.rf_n_estimators,
+                                              min_samples_leaf=self.rf_min_samples_leafs,
+                                              max_depth=self.rf_max_depth)
         if len(self.X):
             y = []
             for i in range(len(self.p.animals)):
@@ -495,8 +497,9 @@ class LearningProcess:
                 return False
 
             print "TRAINING RFC", y
-
+            t = time.time()
             self.rfc.fit(self.__tid2features(), self.y)
+            print "t: {:.2f}s".format(time.time() - t)
             self.__precompute_measurements()
 
             return y
@@ -507,15 +510,17 @@ class LearningProcess:
         for t_id in self.undecided_tracklets:
             tracklet = self.p.chm[t_id]
             try:
-                x, t_length = self.__get_tracklet_proba(tracklet)
+                x, t_length, stds = self._get_tracklet_proba(tracklet)
             except KeyError:
                 warnings.warn("used random class probability distribution for tracklet it: {}".format(t_id))
                 # TODO: remove this, instead compute features...
                 x = np.random.rand(len(self.p.animals)) * 0
+                stds = np.random.rand(len(self.p.animals))
                 if self.verbose > 2:
                     print "features missing for ", tracklet.id()
 
             self.tracklet_measurements[tracklet.id()] = x
+            self.tracklet_stds[tracklet.id()] = stds
             self.__update_certainty(tracklet)
 
     def precompute_features_(self):
@@ -748,28 +753,56 @@ class LearningProcess:
     def get_frequence_vector_(self):
         return float(np.sum(self.class_frequences)) / self.class_frequences
 
-    def __get_tracklet_proba(self, ch):
+    def _get_tracklet_proba(self, ch, debug=False):
         X = self.features[ch.id()]
         if len(X) == 0:
             return None, 0
 
+        anomaly_probs = self.get_tracklet_anomaly_probs(ch)
+
         try:
             probs = self.rfc.predict_proba(np.array(X))
+            if debug:
+                print "Probs:"
+                print probs
+
+                wprobs = np.copy(probs)
+                for i in range(probs.shape[0]):
+                    wprobs[i] *= anomaly_probs[i]
+
+                import matplotlib.pyplot as plt
+                fig, ax = plt.subplots()
+                ind = np.arange(probs.shape[1])
+                width = 0.35
+                ax.bar(ind, np.mean(probs, 0), width, yerr=np.std(probs, 0, ddof=1))
+                ax.bar(ind + width, np.mean(wprobs, 0), width, yerr=np.std(wprobs, 0, ddof=1))
+                plt.show()
+                plt.ion()
         except:
             print X
 
-        anomaly_probs = self.get_tracklet_anomaly_probs(ch)
-        for i in range(probs.shape[0]):
-            probs *= anomaly_probs[i]
+        if debug:
+            print "anomaly probs:"
+            print anomaly_probs
 
+        # todo: mat multiply
+        for i in range(probs.shape[0]):
+            probs[i] *= anomaly_probs[i]
+
+        stds = np.std(probs, 0, ddof=1)
         probs = np.sum(probs, 0)
 
+        probs /= float(len(X))
 
-        # normalise
-        if np.sum(probs) > 0:
-            probs /= float(np.sum(probs))
+        if debug:
+            print "Probs: ", probs
+            print "STDS: ", stds
 
-        return probs, len(X)
+        # # normalise
+        # if np.sum(probs) > 0:
+        #     probs /= float(np.sum(probs))
+
+        return probs, len(X), stds
 
     # def apply_consistency_rule(self, ch, probs):
     #     mask = np.zeros(probs.shape)
@@ -1233,7 +1266,7 @@ class LearningProcess:
 
         return probs
 
-    def reset_learning(self):
+    def reset_learning(self, use_xgboost=False):
         self.undecided_tracklets = set()
         self.tracklet_certainty = {}
         self.tracklet_measurements = {}
@@ -1301,7 +1334,7 @@ class LearningProcess:
         #
         #     print t.id(), np.mean(probs), np.median(probs), len(t)
 
-        ret = self.__train_rfc(init=True)
+        ret = self.__train_rfc(init=True, use_xgboost=use_xgboost)
         print "TRAINING FINISHED"
 
         return ret
@@ -1414,7 +1447,7 @@ class LearningProcess:
             tracklet.N = new_N
             tracklet.P = new_P
 
-    def _get_and_train_rfc(self, g):
+    def _get_and_train_rfc(self, g, use_xgboost=False):
         X = []
         y = []
         for i, t in enumerate(g):
@@ -1425,7 +1458,12 @@ class LearningProcess:
             else:
                 X = np.vstack([X, np.array(x)])
 
-        rfc = RandomForestClassifier()
+        if use_xgboost:
+            from xgboost import XGBClassifier
+            rfc = XGBClassifier()
+        else:
+            rfc = RandomForestClassifier()
+
         rfc.fit(X, y)
         return rfc
 
@@ -1444,7 +1482,7 @@ class LearningProcess:
 
         return True
 
-    def full_csosit_analysis(self):
+    def full_csosit_analysis(self, use_xgboost=False):
         groups = []
         unique_tracklets = set()
         frames = []
@@ -1488,7 +1526,9 @@ class LearningProcess:
                 best_g_i = i
                 best_g_val = val
 
+        tracklet_ids = {}
         for id_, t in enumerate(groups[best_g_i]):
+            tracklet_ids[t.id()] = id_
             self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
 
         max_best_frame = max(t.start_frame(self.p.gm) for t in groups[best_g_i])
@@ -1513,7 +1553,7 @@ class LearningProcess:
 
             self.GT.set_permutation_reversed(permutation_data)
 
-            print "GT permutation set"
+            print "GT permutation set in frame {}".format(max_best_frame)
         except IOError:
             pass
 
@@ -1524,19 +1564,25 @@ class LearningProcess:
         ok_total_sum = sum(len(t) for t in groups[best_g_i])
 
         g1 = groups[best_g_i]
-        rfc1 = self._get_and_train_rfc(g1)
+        rfc1 = self._get_and_train_rfc(g1, use_xgboost)
         for i in range(len(groups)):
             if i == best_g_i:
                 continue
 
             g2 = groups[i]
-            rfc2 = self._get_and_train_rfc(g2)
+            rfc2 = self._get_and_train_rfc(g2, use_xgboost)
 
             perm1 = self.predict_permutation(rfc1, g2)
             perm2 = self.predict_permutation(rfc2, g1)
 
             if self._test_stable_marriage(perm1, perm2):
                 for id_, t in izip(perm1, g2):
+                    if t.id() in tracklet_ids:
+                        if id_ != tracklet_ids[t.id()]:
+                            warnings.warn("auto init ids doesn't match. T_ID: {} firstly assigned with: {} now: {}".format(t.id(), tracklet_ids[t.id()], id_))
+                        else:
+                            print t.id(), "duplicate..."
+
                     self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
 
                     ids = self.GT.tracklet_id_set_without_checks(t, self.p)
@@ -1564,8 +1610,8 @@ class LearningProcess:
             total_len, total_len/float(expected_t_len), total_len/float(total_single_t_len),
             overlap_sum, overlap_sum/float(total_frame_count))
 
-    def auto_init(self, method='max_sum'):
-        self.full_csosit_analysis()
+    def auto_init(self, method='max_sum', use_xgboost=False):
+        self.full_csosit_analysis(use_xgboost=use_xgboost)
         return
 
         from multiprocessing import cpu_count

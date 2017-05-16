@@ -91,13 +91,14 @@ class ChunkManager:
         self.itree = IntervalTree()
 
         chn = len(self)
-        for i, ch in enumerate(self.chunk_gen()):
-            self._add_ch_itree(ch, gm)
+        if chn:
+            for i, ch in enumerate(self.chunk_gen()):
+                self._add_ch_itree(ch, gm)
 
-            if i % 100:
-                print_progress(i, chn, "reseting chunk interval tree")
+                if i % 100:
+                    print_progress(i, chn, "reseting chunk interval tree")
 
-        print_progress(i, chn, "reseting chunk interval tree", "DONE\n")
+            print_progress(i, chn, "reseting chunk interval tree", "DONE\n")
 
     def add_single_vertices_chunks(self, p, frames=None):
         self.reset_itree(p.gm)

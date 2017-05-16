@@ -9,6 +9,37 @@ import numpy as np
 from gui.qt_flow_layout import FlowLayout
 
 
+class QCustomTableWidgetItem (QtGui.QTableWidgetItem):
+    def __init__ (self, value=''):
+        super(QCustomTableWidgetItem, self).__init__(QtCore.QString('%s' % value))
+
+    def __lt__ (self, other):
+        if (isinstance(other, QCustomTableWidgetItem)):
+            try:
+                s1 = self.data(QtCore.Qt.EditRole).toString()
+                s1 = s1[:-1] if s1[-1] == '%' else s1
+
+                s2 = other.data(QtCore.Qt.EditRole).toString()
+                s2 = s2[:-1] if s2[-1] == '%' else s2
+                selfDataValue  = float(s1)
+                otherDataValue = float(s2)
+                return selfDataValue < otherDataValue
+            except:
+                return self.data(QtCore.Qt.EditRole).toString() < other.data(QtCore.Qt.EditRole).toString()
+        else:
+            return QtGui.QTableWidgetItem.__lt__(self, other)
+
+class QCustomTableWidget (QtGui.QTableWidget):
+    def __init__ (self, parent=None):
+        super(QCustomTableWidget, self).__init__(parent)
+        # self.setColumnCount(2)
+        # self.setRowCount(5)
+        # for row in range(self.rowCount()):
+        #     self.setItem(row, 0, QCustomTableWidgetItem(random.random() * 1e4))
+        #     self.setItem(row, 1, QtGui.QTableWidgetItem(QtCore.QString(65 + row)))
+        self.setSortingEnabled(True)
+
+
 class Filter(QtCore.QObject):
     def __init__(self, line_edit, callback):
         super(Filter, self).__init__()
@@ -53,7 +84,7 @@ class LearningWidget(QtGui.QWidget):
         self.start_button.clicked.connect(self.lp.run_learning)
         self.top_stripe_layout.addWidget(self.start_button)
 
-        self.info_table = QtGui.QTableWidget()
+        self.info_table = QCustomTableWidget()
         self.info_table.setColumnCount(2)
         self.info_table.setRowCount(12)
 
@@ -157,6 +188,14 @@ class LearningWidget(QtGui.QWidget):
         self.auto_init_method_cb.addItem("max sum")
         self.top_stripe_layout.addWidget(self.auto_init_method_cb)
 
+        self.tracklet_debug_info_b = QtGui.QPushButton("tracklet debug info")
+        self.tracklet_debug_info_b.clicked.connect(self.tracklet_debug_info)
+        self.top_stripe_layout.addWidget(self.tracklet_debug_info_b)
+
+        self.use_xgboost_ch = QtGui.QCheckBox("use XGBoost")
+        self.use_xgboost_ch.setChecked(True)
+        self.top_stripe_layout.addWidget(self.use_xgboost_ch)
+
         # self.add_tracklet_table()
         # self.update_callback()
 
@@ -216,7 +255,7 @@ class LearningWidget(QtGui.QWidget):
         print "SAVED"
 
     def reset_learning(self):
-        self.lp.reset_learning()
+        self.lp.reset_learning(use_xgboost=self.use_xgboost_ch.isChecked())
         self.update_callback()
 
     def show_tracklet(self):
@@ -229,6 +268,18 @@ class LearningWidget(QtGui.QWidget):
             id_ = int(self.tracklets_table.item(row, 0).text())
             tracklet = self.project.chm[id_]
             self.show_tracklet_callback(tracklet)
+
+    def tracklet_debug_info(self):
+        indexes = self.tracklets_table.selectionModel().selectedRows()
+        indexes = sorted(indexes)
+
+        if len(indexes):
+            # pick first
+            row = indexes[0].row()
+            id_ = int(self.tracklets_table.item(row, 0).text())
+            tracklet = self.project.chm[id_]
+
+            self.lp._get_tracklet_proba(tracklet, debug=True)
 
     def do_n_steps(self):
         from utils.misc import print_progress
@@ -248,28 +299,28 @@ class LearningWidget(QtGui.QWidget):
         print i, "steps finished"
 
     def update_callback(self):
-        self.info_table.setItem(0, 0, QtGui.QTableWidgetItem('#tracklets'))
-        self.info_table.setItem(0, 1, QtGui.QTableWidgetItem(str(len(self.project.chm))))
+        self.info_table.setItem(0, 0, QCustomTableWidgetItem('#tracklets'))
+        self.info_table.setItem(0, 1, QCustomTableWidgetItem(str(len(self.project.chm))))
 
-        self.info_table.setItem(1, 0, QtGui.QTableWidgetItem('#collision tracklets'))
-        self.info_table.setItem(1, 1, QtGui.QTableWidgetItem(str(len(self.lp.collision_chunks))))
+        self.info_table.setItem(1, 0, QCustomTableWidgetItem('#collision tracklets'))
+        self.info_table.setItem(1, 1, QCustomTableWidgetItem(str(len(self.lp.collision_chunks))))
 
-        self.info_table.setItem(2, 0, QtGui.QTableWidgetItem('#undecided'))
-        self.info_table.setItem(2, 1, QtGui.QTableWidgetItem(str(len(self.lp.undecided_tracklets))))
+        self.info_table.setItem(2, 0, QCustomTableWidgetItem('#undecided'))
+        self.info_table.setItem(2, 1, QCustomTableWidgetItem(str(len(self.lp.undecided_tracklets))))
 
-        self.info_table.setItem(3, 0, QtGui.QTableWidgetItem('#new T examples'))
-        self.info_table.setItem(3, 1, QtGui.QTableWidgetItem(str(len(self.lp.X) - self.lp.old_x_size)))
+        self.info_table.setItem(3, 0, QCustomTableWidgetItem('#new T examples'))
+        self.info_table.setItem(3, 1, QCustomTableWidgetItem(str(len(self.lp.X) - self.lp.old_x_size)))
 
         START = 4
         for i in range(len(self.project.animals)):
-            self.info_table.setItem(START+i, 0, QtGui.QTableWidgetItem('#examples, ID: '+str(i)))
-            self.info_table.setItem(START+i, 1, QtGui.QTableWidgetItem(str(np.count_nonzero(self.lp.y == i))))
+            self.info_table.setItem(START+i, 0, QCustomTableWidgetItem('#examples, ID: '+str(i)))
+            self.info_table.setItem(START+i, 1, QCustomTableWidgetItem(str(np.count_nonzero(self.lp.y == i))))
 
-        self.info_table.setItem(10, 0, QtGui.QTableWidgetItem('# user decisions: '))
-        self.info_table.setItem(10, 1, QtGui.QTableWidgetItem(str(len(self.lp.user_decisions))))
+        self.info_table.setItem(10, 0, QCustomTableWidgetItem('# user decisions: '))
+        self.info_table.setItem(10, 1, QCustomTableWidgetItem(str(len(self.lp.user_decisions))))
 
-        self.info_table.setItem(11, 0, QtGui.QTableWidgetItem('id coverage:'))
-        self.info_table.setItem(11, 1, QtGui.QTableWidgetItem(self.__f2str(self.get_id_coverage())))
+        self.info_table.setItem(11, 0, QCustomTableWidgetItem('id coverage:'))
+        self.info_table.setItem(11, 1, QCustomTableWidgetItem(self.__f2str(self.get_id_coverage())))
 
         if hasattr(self, 'tracklets_table'):
             # update tracklet info...
@@ -285,7 +336,7 @@ class LearningWidget(QtGui.QWidget):
             # for i in range(num_animals):
             #     header_labels += (str(i), )
 
-            it = QtGui.QTableWidgetItem
+            it = QCustomTableWidgetItem
 
             self.tracklets_table.setHorizontalHeaderLabels(header_labels)
             if len(self.lp.tracklet_certainty):
@@ -308,7 +359,7 @@ class LearningWidget(QtGui.QWidget):
                     item.setData(QtCore.Qt.EditRole, t.end_frame(self.project.gm))
                     self.tracklets_table.setItem(i, 3, item)
 
-                    self.tracklets_table.setItem(i, 4, QtGui.QTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
+                    self.tracklets_table.setItem(i, 4, QCustomTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
 
                     id_ = None
                     try:
@@ -321,28 +372,19 @@ class LearningWidget(QtGui.QWidget):
                         pass
 
                     d = self.lp.tracklet_measurements[t_id]
+                    stds = self.lp.tracklet_stds[t_id]
                     for j in range(num_animals):
-                        self.tracklets_table.setItem(i, 5+j, QtGui.QTableWidgetItem(self.__f2str(d[j])))
+                        self.tracklets_table.setItem(i, 5+j, QCustomTableWidgetItem(self.__f2str(d[j])+", {:.2f}".format(stds[j])))
 
-                        a = 0
-                        c = 0
-                        if j in t.N:
-                            a = 150
-                            c = 150
-                            self.tracklets_table.item(i, 5+j).setBackgroundColor(QtGui.QColor(150, 150, 150))
+                        b = 255 if j == np.argmax(d) else 0
+                        r = 255 if j in t.N else 0
+                        g = 255 if j == id_ else 0
 
-                        if j == id_:
-                            self.tracklets_table.item(i, 5 + j).setBackgroundColor(QtGui.QColor(a, 255, c))
+                        # use white...
+                        if r == g == b == 0:
+                            r, g, b = 255, 255, 255
 
-
-                    # for j in range(num_animals):
-                    #     val = ''
-                    #     if j in t.P:
-                    #         val = 'N'
-                    #     elif j in t.N:
-                    #         val = 'P'
-                    #
-                    #     self.tracklets_table.setItem(i, 5+num_animals+j, QtGui.QTableWidgetItem(val))
+                        self.tracklets_table.item(i, 5 + j).setBackgroundColor(QtGui.QColor(r, g, b))
 
             self.tracklets_table.setSortingEnabled(True)
             self.tracklets_table.resizeColumnsToContents()
@@ -424,7 +466,7 @@ class LearningWidget(QtGui.QWidget):
         if self.auto_init_method_cb.currentIndex == 0:
             method = 'maxsum'
 
-        self.lp.auto_init(method=method)
+        self.lp.auto_init(method=method, use_xgboost=self.use_xgboost_ch.isChecked())
 
         self.update_callback()
 

@@ -85,6 +85,15 @@ if __name__ == '__main__':
     frames_in_row = int(sys.argv[4])
     last_n_frames = int(sys.argv[5])
 
+    # check if part was computed before
+    if os.path.isfile(working_dir + '/temp/part' + str(id) + '_rm.sqlite3'):
+        if os.stat(working_dir + '/temp/part' + str(id) + '_rm.sqlite3') != 0:
+            if os.path.isfile(working_dir + '/temp/part' + str(id) + '.pkl'):
+                if os.stat(working_dir + '/temp/part' + str(id) + '.pkl') != 0:
+                    import sys
+
+                    sys.exit("Part already processed")
+
     proj = Project()
     proj.load(working_dir+'/'+proj_name+'.fproj')
 
@@ -130,14 +139,6 @@ if __name__ == '__main__':
 
         temp_local_path=temp_local_path+'/temp'
 
-    # check if part was computed before
-    if os.path.isfile(working_dir+'/temp/part'+str(id)+'_rm.sqlite3'):
-        if os.stat(working_dir+'/temp/part'+str(id)+'_rm.sqlite3')!=0:
-            if os.path.isfile(working_dir+'/temp/part'+str(id)+'.pkl'):
-                if os.stat(working_dir+'/temp/part'+str(id)+'.pkl')!=0:
-                    import sys
-                    sys.exit("Part already processed")
-            
     solver = Solver(proj)
     from core.graph.graph_manager import GraphManager
     proj.gm = GraphManager(proj, proj.solver.assignment_score)

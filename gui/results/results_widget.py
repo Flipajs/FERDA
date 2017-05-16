@@ -105,8 +105,8 @@ class ResultsWidget(QtGui.QWidget):
         self.load_gt_b.clicked.connect(self.load_gt_file_dialog)
         self.gt_box.layout().addWidget(self.load_gt_b)
 
-        self.evolve_gt_b = QtGui.QPushButton('evolve GT')
-        self.evolve_gt_b.clicked.connect(self._evolve_gt)
+        self.evolve_gt_b = QtGui.QPushButton('evaluate GT')
+        self.evolve_gt_b.clicked.connect(self._evaluate_gt)
         self.gt_box.layout().addWidget(self.evolve_gt_b)
 
         self.evolve_gt_id_b = QtGui.QPushButton('ID assignment STATS')
@@ -509,54 +509,58 @@ class ResultsWidget(QtGui.QWidget):
         self.video_player.play()
         self.video_player.setFocus()
 
-    def _evolve_gt(self):
-        from utils.gt.evaluator import Evaluator
-        if self._gt is not None:
-            ev = Evaluator(None, self._gt)
-            ev.evaluate_FERDA(self.project, step=20)
+    def _evaluate_gt(self):
+        # from utils.gt.evaluator import Evaluator
+        # if self._gt is not None:
+        #     ev = Evaluator(None, self._gt)
+        #     ev.evaluate_FERDA(self.project, step=20)
+        #
+        # return
+        # my_data = {}
+        #
+        # # TODO: clearmetrics bug workaround...
+        # max_frame = 0
+        # for frame in self._gt:
+        #     # if frame > 4000:
+        #     #     continue
+        #
+        #     my_data[frame] = np.array(([None] * len(self.project.animals)))
+        #     for ch in self.project.chm.chunks_in_frame(frame):
+        #         rch = RegionChunk(ch, self.project.gm, self.project.rm)
+        #
+        #         if ch.is_only_one_id_assigned(len(self.project.animals)):
+        #             id_ = list(ch.P)[0]
+        #             my_data[frame][id_] = rch.centroid_in_t(frame)
+        #
+        #     max_frame = max(max_frame, frame)
+        #
+        # for f in xrange(max_frame+100):
+        #     my_data.setdefault(f, np.array([None] * len(self.project.animals)))
 
-        return
-        my_data = {}
+        # from utils.clearmetrics import _clearmetrics
+        from utils.gt.evaluator import draw_id_t_img, compare_trackers
+        compare_trackers(self.project, skip_idtracker=True, gt_ferda_perm=self._gt.get_permutation_reversed(), gt=self._gt)
+        # draw_id_t_img(p, [match, match2], [perm, perm2], name=name, row_h=50, gt_h=10, gt_border=2, bg=[200, 200, 200],
+        #               impath=impath)
+        # threshold = 10
 
-        # TODO: clearmetrics bug workaround...
-        max_frame = 0
-        for frame in self._gt:
-            # if frame > 4000:
-            #     continue
+        # gt_ = self.__prepare_gt()
 
-            my_data[frame] = np.array(([None] * len(self.project.animals)))
-            for ch in self.project.chm.chunks_in_frame(frame):
-                rch = RegionChunk(ch, self.project.gm, self.project.rm)
+        # clear = _clearmetrics(gt_, my_data, threshold)
+        # clear.match_sequence()
+        # evaluation = [clear.get_mota(),
+        #               clear.get_motp(),
+        #               clear.get_fn_count(),
+        #               clear.get_fp_count(),
+        #               clear.get_mismatches_count(),
+        #               clear.get_object_count(),
+        #               clear.get_matches_count()]
+        #
+        # print ("MOTA: %.3f\nMOTP: %.3f\n#FN: %d\n#FP:%d\n#mismatches: %d\n#objects: %d\n#matches: %d") % (
+        #     tuple(evaluation)
+        # )
 
-                if ch.is_only_one_id_assigned(len(self.project.animals)):
-                    id_ = list(ch.P)[0]
-                    my_data[frame][id_] = rch.centroid_in_t(frame)
-
-            max_frame = max(max_frame, frame)
-
-        for f in xrange(max_frame+100):
-            my_data.setdefault(f, np.array([None] * len(self.project.animals)))
-
-        from utils.clearmetrics import _clearmetrics
-        threshold = 10
-
-        gt_ = self.__prepare_gt()
-
-        clear = _clearmetrics(gt_, my_data, threshold)
-        clear.match_sequence()
-        evaluation = [clear.get_mota(),
-                      clear.get_motp(),
-                      clear.get_fn_count(),
-                      clear.get_fp_count(),
-                      clear.get_mismatches_count(),
-                      clear.get_object_count(),
-                      clear.get_matches_count()]
-
-        print ("MOTA: %.3f\nMOTP: %.3f\n#FN: %d\n#FP:%d\n#mismatches: %d\n#objects: %d\n#matches: %d") % (
-            tuple(evaluation)
-        )
-
-        return evaluation
+        # return evaluation
 
     def _evolve_gt_id(self):
         from utils.gt.evaluator import Evaluator
