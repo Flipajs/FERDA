@@ -247,6 +247,7 @@ class LearningWidget(QtGui.QWidget):
 
     def tracklet_min_length_changed(self):
         self.lp.set_tracklet_length_k(self.tracklet_min_length_sb.value())
+        self.update_callback()
 
     def save(self):
         self.lp.save_learning()

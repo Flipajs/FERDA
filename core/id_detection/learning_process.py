@@ -79,7 +79,7 @@ class LearningProcess:
         self.features_fliplr_hack = True
 
         # TODO: global parameter!!!
-        self.k_ = 50.0
+        self.min_tracklet_len = 50.0
 
         self.X = []
         self.y = []
@@ -89,8 +89,6 @@ class LearningProcess:
         self.rf_n_estimators = 10
         self.rf_min_samples_leafs = 1
         self.rf_max_depth = None
-
-        self.min_tracklet_len = 1
 
         self.collision_chunks = {}
 
@@ -290,7 +288,8 @@ class LearningProcess:
         self._eps_certainty = eps
 
     def set_tracklet_length_k(self, k):
-        self.k_ = k
+        self.min_tracklet_len = k
+        self.update_undecided_tracklets()
         self.__precompute_measurements()
 
     def compute_distinguishability(self):
@@ -340,7 +339,7 @@ class LearningProcess:
     def fill_undecided_tracklets(self):
         for t in self.p.chm.chunk_gen():
             # if t.id() in self.collision_chunks or t.is_multi():
-            if not t.is_single() or t.length() < self.k_:
+            if not t.is_single() or t.length() < self.min_tracklet_len:
                 continue
 
             self.undecided_tracklets.add(t.id())
@@ -348,8 +347,9 @@ class LearningProcess:
     def update_undecided_tracklets(self):
         self.undecided_tracklets = set()
         for t in self.p.chm.chunk_gen():
-            # if t.id() in self.collision_chunks:
-            #     continue
+            if not t.is_single() or t.length() < self.min_tracklet_len:
+                continue
+
             if not self.__tracklet_is_decided(t.P, t.N):
                 self.undecided_tracklets.add(t.id())
 
@@ -1504,7 +1504,7 @@ class LearningProcess:
 
             singles_group = filter(lambda x: x.is_single(), group)
 
-            if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 10:
+            if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= self.min_tracklet_len:
                 groups.append(singles_group)
 
                 overlap = min([t.end_frame(self.p.gm) for t in singles_group]) \
@@ -1808,6 +1808,8 @@ def compute_features_process(counter, lock, q_tasks, project_wd, num_frames, fir
     from core.id_detection.feature_manager import FeatureManager
     project = Project()
     project.load(project_wd, lightweight=True)
+
+    project.img_manager.max_num_of_instances = 50
 
     fm = FeatureManager(project_wd, db_name='fm.sqlite3')
     while True:
