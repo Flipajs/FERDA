@@ -58,7 +58,7 @@ class LearningProcess:
         self.verbose = verbose
         self.show_key_error_warnings = False
 
-        self.min_new_samples_to_retrain = 10000
+        self.min_new_samples_to_retrain = 10000000
         self.rf_retrain_up_to_min = np.inf
 
         # TODO: add whole knowledge class...
@@ -1276,6 +1276,16 @@ class LearningProcess:
         self.IF_region_anomaly = IsolationForest()
         region_X = []
 
+        full_set = set(range(len(self.p.animals)))
+        test_set = set()
+        for d in self.user_decisions:
+            if d['type'] == 'P' and len(d['ids']) == 1:
+                test_set.add(d['ids'][0])
+
+        if len(full_set.intersection(test_set)) != len(full_set):
+            QtGui.QMessageBox("There are not examples for all classes. Did you use auto initialisation? Missing ids: "+str(full_set-test_set))
+            return
+
         for d in self.user_decisions:
             tracklet_id = d['tracklet_id_set']
             tracklet = self.p.chm[tracklet_id]
@@ -1513,6 +1523,7 @@ class LearningProcess:
                 print_progress(frame, total_frame_count, "searching for CSoSIT...")
 
             i += 1
+        print_progress(total_frame_count, total_frame_count, "searching for CSoSIT...")
 
         best_g_i = -1
         best_g_val = 0
@@ -1614,7 +1625,6 @@ class LearningProcess:
     def auto_init(self, method='max_sum', use_xgboost=False):
         self.full_csosit_analysis(use_xgboost=use_xgboost)
         return
-
         from multiprocessing import cpu_count
 
         best_frame = None

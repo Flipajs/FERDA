@@ -27,7 +27,6 @@ class ClusteringTool(QtGui.QWidget):
         self.HH = 150
         self.COLS = 3
 
-
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
 
@@ -42,24 +41,23 @@ class ClusteringTool(QtGui.QWidget):
         self.hbox_load_controls = QtGui.QHBoxLayout()
         self.vbox.addLayout(self.hbox_load_controls)
 
-        self.cluster_sample_size_sb = QtGui.QSpinBox()
-        self.cluster_sample_size_sb.setMinimum(10)
-        self.cluster_sample_size_sb.setMaximum(1000000)
-        self.cluster_sample_size_sb.setValue(1000)
+        # self.cluster_sample_size_sb = QtGui.QSpinBox()
+        # self.cluster_sample_size_sb.setMinimum(10)
+        # self.cluster_sample_size_sb.setMaximum(1000000)
+        # self.cluster_sample_size_sb.setValue(1000)
 
         self.display_n_most_sb = QtGui.QSpinBox()
         self.display_n_most_sb.setMinimum(2)
         self.display_n_most_sb.setMaximum(100000)
         self.display_n_most_sb.setValue(100)
 
-
-        self.prepare_data_b = QtGui.QPushButton('prepare data')
-        self.prepare_data_b.clicked.connect(self.prepare_data)
+        # self.prepare_data_b = QtGui.QPushButton('prepare data')
+        # self.prepare_data_b.clicked.connect(self.prepare_data)
         self.start_hil_clustering_b = QtGui.QPushButton('start hil')
         self.start_hil_clustering_b.clicked.connect(self.start_hil)
 
-        self.hbox_load_controls.addWidget(self.cluster_sample_size_sb)
-        self.hbox_load_controls.addWidget(self.prepare_data_b)
+        # self.hbox_load_controls.addWidget(self.cluster_sample_size_sb)
+        # self.hbox_load_controls.addWidget(self.prepare_data_b)
         self.hbox_load_controls.addWidget(self.display_n_most_sb)
         self.hbox_load_controls.addWidget(self.start_hil_clustering_b)
 
@@ -210,7 +208,6 @@ class ClusteringTool(QtGui.QWidget):
 
         self.grids = {'single': self.singles, 'multi': self.multi, 'noise': self.noise, 'part': self.part}
 
-        # self.compute_or_load()
         self.update()
         self.show()
 
@@ -684,11 +681,16 @@ class ClusteringTool(QtGui.QWidget):
         self.classify_project(self.p, self.data, train_n=50)
 
     def prepare_data(self):
-        n = self.cluster_sample_size_sb.value()
+        # n = self.cluster_sample_size_sb.value()
+
+        n = self.display_n_most_sb.value() * 10
         print "preparing data... #samples: ", n
         self.compute_or_load(num_random=n)
 
     def start_hil(self):
+        self.start_hil_clustering_b.hide()
+        self.display_n_most_sb.hide()
+        self.prepare_data()
         self.human_iloop_classification(sort=True, n=self.display_n_most_sb.value())
 
 

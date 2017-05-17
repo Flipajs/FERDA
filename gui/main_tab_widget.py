@@ -31,6 +31,7 @@ class MainTabWidget(QtGui.QWidget):
         self.tracker_tab = TrackerWidget(project, show_in_visualizer_callback=self.show_in_visualizer)
         self.tabs = QtGui.QTabWidget(self)
 
+        # TODO: takes too much space
         self.undock_button = QtGui.QPushButton("Undock")
         self.undock_button.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.undock_button.pressed.connect(self.detach_tab)
@@ -174,6 +175,16 @@ class MainTabWidget(QtGui.QWidget):
         if i == 2:
             # TODO: show loading or something...
             if not isinstance(self.id_detection_tab, LearningWidget):
+                ok = False
+                for ch in self.project.chm.chunks_in_frame(0):
+                    if not ch.is_undefined():
+                        ok = True
+                        break
+
+                if not ok:
+                    QtGui.QMessageBox(
+                        "there is 0 tracklets with proper class (single-ID, multi-ID, no-ID, part-of-ID) in frame 0, most likely you need to continue to region classifier tab and do tracklet classification first. Continue with id detection only if you are aware of what you are doing.")
+
                 self.ignore_tab_change = True
                 self.tabs.removeTab(2)
                 self.id_detection_tab.setParent(None)
@@ -182,6 +193,9 @@ class MainTabWidget(QtGui.QWidget):
                 self.tabs.insertTab(2, self.id_detection_tab, "id detection")
                 self.tabs.setCurrentIndex(2)
                 self.ignore_tab_change = False
+
+            if not len(self.id_detection_tab.lp.features):
+                self.id_detection_tab.disable_before_features()
 
         if i == 3:
             self.statistics_tab.update_data(self.project)

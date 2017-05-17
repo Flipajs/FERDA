@@ -82,7 +82,7 @@ class LearningWidget(QtGui.QWidget):
 
         self.start_button = QtGui.QPushButton('start')
         self.start_button.clicked.connect(self.lp.run_learning)
-        self.top_stripe_layout.addWidget(self.start_button)
+        # self.top_stripe_layout.addWidget(self.start_button)
 
         self.info_table = QCustomTableWidget()
         self.info_table.setColumnCount(2)
@@ -95,9 +95,9 @@ class LearningWidget(QtGui.QWidget):
         self.next_step_button = QtGui.QPushButton('next step')
         # self.lp will change...
         self.next_step_button.clicked.connect(lambda x: self.lp.next_step())
-        self.top_stripe_layout.addWidget(self.next_step_button)
+        # self.top_stripe_layout.addWidget(self.next_step_button)
 
-        self.top_stripe_layout.addWidget(QtGui.QLabel('min examples to retrain:'))
+        # self.top_stripe_layout.addWidget(QtGui.QLabel('min examples to retrain:'))
 
         self.min_examples_to_retrain_i = QtGui.QLineEdit()
         if self.lp is not None:
@@ -106,7 +106,28 @@ class LearningWidget(QtGui.QWidget):
 
         self._filter = Filter(self.min_examples_to_retrain_i, self.lp.set_min_new_samples_to_retrain)
         self.min_examples_to_retrain_i.installEventFilter(self._filter)
-        self.top_stripe_layout.addWidget(self.min_examples_to_retrain_i)
+        # self.top_stripe_layout.addWidget(self.min_examples_to_retrain_i)
+
+        self.load_features_b = QtGui.QPushButton('load features')
+        self.load_features_b.clicked.connect(self.load_features)
+        self.top_stripe_layout.addWidget(self.load_features_b)
+
+        self.compute_features_b = QtGui.QPushButton('compute features')
+        self.compute_features_b.clicked.connect(self.recompute_features)
+        self.top_stripe_layout.addWidget(self.compute_features_b)
+
+        self.auto_init_method_cb = QtGui.QComboBox()
+        self.auto_init_method_cb.addItem("max min")
+        self.auto_init_method_cb.addItem("max sum")
+        self.top_stripe_layout.addWidget(self.auto_init_method_cb)
+
+        self.auto_init_b = QtGui.QPushButton('auto_init')
+        self.auto_init_b.clicked.connect(self.auto_init)
+        self.top_stripe_layout.addWidget(self.auto_init_b)
+
+        self.reset_learning_button = QtGui.QPushButton('learn/restart classifier')
+        self.reset_learning_button.clicked.connect(self.reset_learning)
+        self.top_stripe_layout.addWidget(self.reset_learning_button)
 
         self.label_tracklet_min_length = QtGui.QLabel('tracklet min len: ')
         self.top_stripe_layout.addWidget(self.label_tracklet_min_length)
@@ -116,7 +137,7 @@ class LearningWidget(QtGui.QWidget):
         self.tracklet_min_length_sb.setMinimum(0)
         self.tracklet_min_length_sb.setMaximum(10000)
         self.top_stripe_layout.addWidget(self.tracklet_min_length_sb)
-        self.update_tracklet_len_b = QtGui.QPushButton('update')
+        self.update_tracklet_len_b = QtGui.QPushButton('apply')
         self.update_tracklet_len_b.clicked.connect(self.tracklet_min_length_changed)
         self.top_stripe_layout.addWidget(self.update_tracklet_len_b)
 
@@ -143,17 +164,6 @@ class LearningWidget(QtGui.QWidget):
         self.show_tracklet_button.clicked.connect(self.show_tracklet)
         self.top_stripe_layout.addWidget(self.show_tracklet_button)
 
-        self.reset_learning_button = QtGui.QPushButton('reset learning')
-        self.reset_learning_button.clicked.connect(self.reset_learning)
-        self.top_stripe_layout.addWidget(self.reset_learning_button)
-
-        self.load_features_b = QtGui.QPushButton('load features')
-        self.load_features_b.clicked.connect(self.load_features)
-        self.top_stripe_layout.addWidget(self.load_features_b)
-
-        self.compute_features_b = QtGui.QPushButton('compute features')
-        self.compute_features_b.clicked.connect(self.recompute_features)
-        self.top_stripe_layout.addWidget(self.compute_features_b)
 
         self.save_button = QtGui.QPushButton('save')
         self.save_button.clicked.connect(self.save)
@@ -162,7 +172,7 @@ class LearningWidget(QtGui.QWidget):
         # TODO: last info label
         # TODO: update callback... info about decisions...
 
-        self.update_b = QtGui.QPushButton('update')
+        self.update_b = QtGui.QPushButton('update table')
         self.update_b.clicked.connect(self.update_callback)
         self.top_stripe_layout.addWidget(self.update_b)
 
@@ -170,34 +180,79 @@ class LearningWidget(QtGui.QWidget):
         self.delete_user_decisions_b.clicked.connect(self.clear_user_decisions)
         self.top_stripe_layout.addWidget(self.delete_user_decisions_b)
 
-        self.update_undecided_tracklets_b = QtGui.QPushButton('debug: update undecided')
-        self.update_undecided_tracklets_b.clicked.connect(self.update_undecided_tracklets)
-        self.top_stripe_layout.addWidget(self.update_undecided_tracklets_b)
+        self.use_xgboost_ch = QtGui.QCheckBox("use XGBoost")
+        self.use_xgboost_ch.setChecked(False)
+        self.top_stripe_layout.addWidget(self.use_xgboost_ch)
 
-        self.compute_distinguishability_b = QtGui.QPushButton('comp. disting.')
+        self.compute_distinguishability_b = QtGui.QPushButton('debug: comp. disting.')
         # self.lp will change...
         self.compute_distinguishability_b.clicked.connect(lambda x: self.lp.compute_distinguishability())
         self.top_stripe_layout.addWidget(self.compute_distinguishability_b)
 
-        self.auto_init_b = QtGui.QPushButton('auto_init')
-        self.auto_init_b.clicked.connect(self.auto_init)
-        self.top_stripe_layout.addWidget(self.auto_init_b)
+        self.update_undecided_tracklets_b = QtGui.QPushButton('debug: update undecided')
+        self.update_undecided_tracklets_b.clicked.connect(self.update_undecided_tracklets)
+        self.top_stripe_layout.addWidget(self.update_undecided_tracklets_b)
 
-        self.auto_init_method_cb = QtGui.QComboBox()
-        self.auto_init_method_cb.addItem("max min")
-        self.auto_init_method_cb.addItem("max sum")
-        self.top_stripe_layout.addWidget(self.auto_init_method_cb)
-
-        self.tracklet_debug_info_b = QtGui.QPushButton("tracklet debug info")
+        self.tracklet_debug_info_b = QtGui.QPushButton("debug: tracklet info")
         self.tracklet_debug_info_b.clicked.connect(self.tracklet_debug_info)
         self.top_stripe_layout.addWidget(self.tracklet_debug_info_b)
 
-        self.use_xgboost_ch = QtGui.QCheckBox("use XGBoost")
-        self.use_xgboost_ch.setChecked(True)
-        self.top_stripe_layout.addWidget(self.use_xgboost_ch)
-
         # self.add_tracklet_table()
         # self.update_callback()
+
+    def enable_all(self):
+        self.auto_init_method_cb.setEnabled(True)
+        self.auto_init_b.setEnabled(True)
+        self.tracklet_min_length_sb.setEnabled(True)
+        self.update_tracklet_len_b.setEnabled(True)
+        self.certainty_eps_spinbox.setEnabled(True)
+        self.num_next_step.setEnabled(True)
+        self.n_next_steps_button.setEnabled(True)
+        self.show_tracklet_button.setEnabled(True)
+        self.reset_learning_button.setEnabled(True)
+        self.save_button.setEnabled(True)
+        self.update_b.setEnabled(True)
+        self.delete_user_decisions_b.setEnabled(True)
+        self.compute_distinguishability_b.setEnabled(True)
+        self.use_xgboost_ch.setEnabled(True)
+        self.update_undecided_tracklets_b.setEnabled(True)
+        self.tracklet_debug_info_b.setEnabled(True)
+
+    def disable_before_classifier(self):
+        self.auto_init_method_cb.setEnabled(True)
+        self.auto_init_b.setEnabled(True)
+        self.tracklet_min_length_sb.setEnabled(True)
+        self.update_tracklet_len_b.setEnabled(True)
+        self.certainty_eps_spinbox.setEnabled(True)
+        self.num_next_step.setEnabled(False)
+        self.n_next_steps_button.setEnabled(False)
+        self.show_tracklet_button.setEnabled(False)
+        self.reset_learning_button.setEnabled(True)
+        self.save_button.setEnabled(False)
+        self.update_b.setEnabled(False)
+        self.delete_user_decisions_b.setEnabled(False)
+        self.compute_distinguishability_b.setEnabled(False)
+        self.use_xgboost_ch.setEnabled(False)
+        self.update_undecided_tracklets_b.setEnabled(False)
+        self.tracklet_debug_info_b.setEnabled(False)
+
+    def disable_before_features(self):
+        self.auto_init_method_cb.setEnabled(False)
+        self.auto_init_b.setEnabled(False)
+        self.tracklet_min_length_sb.setEnabled(False)
+        self.update_tracklet_len_b.setEnabled(False)
+        self.certainty_eps_spinbox.setEnabled(False)
+        self.num_next_step.setEnabled(False)
+        self.n_next_steps_button.setEnabled(False)
+        self.show_tracklet_button.setEnabled(False)
+        self.reset_learning_button.setEnabled(False)
+        self.save_button.setEnabled(False)
+        self.update_b.setEnabled(False)
+        self.delete_user_decisions_b.setEnabled(False)
+        self.compute_distinguishability_b.setEnabled(False)
+        self.use_xgboost_ch.setEnabled(False)
+        self.update_undecided_tracklets_b.setEnabled(False)
+        self.tracklet_debug_info_b.setEnabled(False)
 
     def load_features(self):
         path = 'fm.sqlite3'
@@ -209,13 +264,7 @@ class LearningWidget(QtGui.QWidget):
         self.lp.update_callback = self.update_callback
         self.lp.question_callback = self.question_callback
 
-        # self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=True,
-        #                           question_callback=self.question_callback, update_callback=self.update_callback)
-        #
-        # self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
-        #
-        # self.add_tracklet_table()
-        # self.update_callback()
+        self.disable_before_classifier()
 
     def recompute_features(self):
         # self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
@@ -227,6 +276,7 @@ class LearningWidget(QtGui.QWidget):
         self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
 
         self.add_tracklet_table()
+        self.load_features()
         self.update_callback()
 
     def add_tracklet_table(self):
@@ -257,6 +307,7 @@ class LearningWidget(QtGui.QWidget):
 
     def reset_learning(self):
         self.lp.reset_learning(use_xgboost=self.use_xgboost_ch.isChecked())
+        self.enable_all()
         self.update_callback()
 
     def show_tracklet(self):
@@ -384,6 +435,9 @@ class LearningWidget(QtGui.QWidget):
                         # use white...
                         if r == g == b == 0:
                             r, g, b = 255, 255, 255
+
+                        if r == g == 0 and b == 255:
+                            g = 102
 
                         self.tracklets_table.item(i, 5 + j).setBackgroundColor(QtGui.QColor(r, g, b))
 

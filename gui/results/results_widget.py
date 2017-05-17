@@ -18,6 +18,7 @@ from core.region.region import get_region_endpoints
 from utils.idtracker import load_idtracker_data
 import cv2
 import time
+from gui.qt_flow_layout import FlowLayout
 
 MARKER_SIZE = 15
 
@@ -299,14 +300,20 @@ class ResultsWidget(QtGui.QWidget):
         self.hide_visualisation_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
         self.addAction(self.hide_visualisation_action)
 
-        self.visu_controls_layout = QtGui.QHBoxLayout()
+        self.visu_controls_layout = FlowLayout()
         self.video_layout.addLayout(self.visu_controls_layout)
 
-        self.show_filled_ch = QtGui.QCheckBox('show filled')
+        self.show_filled_ch = QtGui.QCheckBox('filled')
         self.show_filled_ch.setChecked(True)
         # lambda is used because if only self.update_position is given, it will give it parameters...
         self.show_filled_ch.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_filled_ch)
+
+        self.show_tracklets_without_id = QtGui.QCheckBox('tracklet w/o id')
+        self.show_tracklets_without_id.setChecked(True)
+        # lambda is used because if only self.update_position is given, it will give it parameters...
+        self.show_tracklets_without_id.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
+        self.visu_controls_layout.addWidget(self.show_tracklets_without_id)
 
         self.show_contour_ch = QtGui.QCheckBox('contours')
         self.show_contour_ch.setChecked(False)
@@ -338,6 +345,11 @@ class ResultsWidget(QtGui.QWidget):
         self.show_id_bar.setChecked(True)
         self.show_id_bar.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_id_bar)
+
+        self.show_tracklet_class = QtGui.QCheckBox('t-class')
+        self.show_tracklet_class.setChecked(False)
+        self.show_tracklet_class.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
+        self.visu_controls_layout.addWidget(self.show_tracklet_class)
 
         self.toggle_id_bar_action = QtGui.QAction('toggle id bar', self)
         self.toggle_id_bar_action.triggered.connect(lambda x: self.show_id_bar.setChecked(not self.show_id_bar.isChecked()))
@@ -669,13 +681,17 @@ class ResultsWidget(QtGui.QWidget):
         return pts, roi
 
     def draw_region(self, r, tracklet, use_ch_color=None, alpha=120, highlight_contour=False, force_color=None):
+        # hnus... prepsat
         from utils.img import get_cropped_pts
 
         alpha = S_.visualization.segmentation_alpha
-
+        is_id_tracklet = tracklet.is_only_one_id_assigned(len(self.project.animals))
         only_contour = False if self.show_filled_ch.isChecked() else True
         # we need region pts to dilate and substract previous pts to get result
         only_contour = only_contour and not highlight_contour
+
+        if not is_id_tracklet and self.show_contour_ch.isChecked() and not self.show_tracklets_without_id.isChecked():
+            only_contour = True
 
         if S_.visualization.no_single_id_filled and not tracklet.is_only_one_id_assigned(len(self.project.animals)):
             only_contour = True
@@ -692,9 +708,6 @@ class ResultsWidget(QtGui.QWidget):
         step = 1
 
         if force_color is None:
-            # c = QtGui.qRgba(102, 51, 0, 200)
-            # c = QtGui.qRgba(255, 255, 0, 200)
-            # c = QtGui.qRgba(102, 0, 204, 200)
             c = S_.visualization.default_region_color
 
             if tracklet.length() == 1:
@@ -703,11 +716,14 @@ class ResultsWidget(QtGui.QWidget):
                 c = QtGui.qRgba(c.red(), c.green(), c.blue(), c.alpha())
 
             if self.contour_without_colors.isChecked():
-                if tracklet.is_only_one_id_assigned(len(self.project.animals)):
+                if is_id_tracklet:
                     id_ = list(tracklet.P)[0]
                     c_ = self.project.animals[id_].color_
                     c = QtGui.qRgba(c_[2], c_[1], c_[0], alpha)
                 else:
+                    if not self.show_tracklets_without_id.isChecked() and not self.show_contour_ch.isChecked():
+                        return
+
                     step = 3
                     if use_ch_color:
                         c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
@@ -715,6 +731,19 @@ class ResultsWidget(QtGui.QWidget):
                 c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
         else:
             c = force_color
+
+        if self.show_tracklet_class.isChecked():
+            step = 1
+            if tracklet.is_single():
+                c = QtGui.qRgba(0, 255, 0, 255)
+            elif tracklet.is_multi():
+                c = QtGui.qRgba(0, 0, 255, 255)
+            elif tracklet.is_noise():
+                c = QtGui.qRgba(255, 0, 0, 255)
+            elif tracklet.is_part():
+                c = QtGui.qRgba(0, 190, 0, 255)
+            else:
+                c = QtGui.qRgba(128, 128, 128, 255)
 
         for i in range(0, pts_.shape[0], step):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
