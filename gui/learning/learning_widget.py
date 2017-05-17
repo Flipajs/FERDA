@@ -230,7 +230,7 @@ class LearningWidget(QtGui.QWidget):
         self.reset_learning_button.setEnabled(True)
         self.save_button.setEnabled(False)
         self.update_b.setEnabled(False)
-        self.delete_user_decisions_b.setEnabled(False)
+        self.delete_user_decisions_b.setEnabled(True)
         self.compute_distinguishability_b.setEnabled(False)
         self.use_xgboost_ch.setEnabled(False)
         self.update_undecided_tracklets_b.setEnabled(False)
@@ -475,7 +475,7 @@ class LearningWidget(QtGui.QWidget):
         # TODO: load project...
         # self.project = ...
         # TODO: use_feature_cache...
-        self.lp = LearningProcess(self.project, use_feature_cache=True, use_rf_cache=False)
+        self.lp = LearningProcess(self.project, question_callback=self.show_tracklet_callback, use_feature_cache=True, use_rf_cache=False)
 
     def question_callback(self, tracklet):
         self.show_tracklet_callback(tracklet)
