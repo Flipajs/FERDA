@@ -502,7 +502,7 @@ class ResultsWidget(QtGui.QWidget):
 
         # frame=-1 ... start from beginning
 
-         self.loop_begin = max(0, tracklet.start_frame(self.project.gm) - margin)
+        self.loop_begin = max(0, tracklet.start_frame(self.project.gm) - margin)
         self.loop_end = min(tracklet.end_frame(self.project.gm) + margin, self.video_player.total_frame_count()-1)
         self.loop_highlight_tracklets = [tracklet.id()]
 
