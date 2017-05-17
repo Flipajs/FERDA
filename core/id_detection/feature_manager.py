@@ -7,7 +7,7 @@ __author__ = 'dita'
 
 
 class FeatureManager:
-    def __init__(self, db_wd=None, db_name="fm.sqlite3", cache_size_limit=-1, data=None):
+    def __init__(self, db_wd=None, db_name="fm.sqlite3", cache_size_limit=-1, data=None, use_cache=True):
         """
         RegionManager is designed to store regions data. By default, all data is stored in memory cache (dictionary) and
         identified using unique ids. Optionally, database can be used, in which case the memory cache size can be
@@ -17,6 +17,8 @@ class FeatureManager:
         :param cache_size_limit: Number of instances to be held in cache
         :return: None
         """
+
+        self.use_cache = use_cache
 
         if db_wd is None:
             # cache mode (no db set)
@@ -99,6 +101,10 @@ class FeatureManager:
         :param feature:
         :return None
         """
+
+        if not self.use_cache:
+            return
+
         # print "Adding %s %s" % (id_, feature)
         # print "Cache: %s" % self.recent_features_ids
         if id_ in self.recent_feature_ids:

@@ -153,67 +153,57 @@ class LearningProcess:
             db_names = [db_names]
 
         for n in db_names:
-            self.fms.append(FeatureManager(self.p.working_directory, db_name=n))
+            self.fms.append(FeatureManager(self.p.working_directory, db_name=n, use_cache=False))
 
         expected_sum = len(self.p.animals) * self.p.img_manager.vid.total_frame_count()
-        t_len = len(self.p.chm)
-        i = 0
         t_sum = 0
         for i, t in enumerate(self.p.chm.chunk_gen()):
-            r_ids = [id_ for id_ in t.rid_gen(self.p.gm)]
+            # if t.is_single():
+            #     if len(t) < 10:
+            #         continue
 
-            ff = []
-            for fm in self.fms:
-                _, f = fm[r_ids]
+                r_ids = [id_ for id_ in t.rid_gen(self.p.gm)]
 
-                ff.append(f)
+                ff = []
+                for fm in self.fms:
+                    _, f = fm[r_ids]
 
-            F = []
-            #merge
-            for j in range(len(ff[0])):
-                X = []
-                for fi in range(len(self.fms)):
-                    f = ff[fi][j]
-                    if f is None:
-                        X = []
-                        break
+                    ff.append(f)
 
-                    X.extend(f)
-                if len(X) > 0:
-                    F.append(X)
-                # # skip None
-                # f = filter(lambda x: x is not None, f)
+                F = []
+                #merge
+                for j in range(len(ff[0])):
+                    X = []
+                    for fi in range(len(self.fms)):
+                        f = ff[fi][j]
+                        if f is None:
+                            X = []
+                            break
 
-            if len(F):
-                self.features[t.id()] = F
-            else:
-                self.collision_chunks.add(t.id())
+                        X.extend(f)
+                    if len(X) > 0:
+                        F.append(X)
 
-            # Debug info...
-            if i % 500 == 0:
-                process = psutil.Process(os.getpid())
-                print
-                print "Memory usage: {:.2f}Mb".format((process.memory_info().rss) / 1e6)
-                print
+                if len(F):
+                    self.features[t.id()] = F
+                else:
+                    self.collision_chunks.add(t.id())
 
-            t_sum += len(t)
-            print_progress(t_sum, expected_sum)
+                # Debug info...
+                if i % 500 == 0:
+                    process = psutil.Process(os.getpid())
+                    print
+                    print "Memory usage: {:.2f}Mb".format((process.memory_info().rss) / 1e6)
+                    print
+
+                t_sum += len(t)
+                print_progress(t_sum, expected_sum)
+            # elif t.is_multi():
+            #     self.collision_chunks.add(t.id())
 
         print_progress(expected_sum, expected_sum, "", "LOADED")
         print len(self.features), len(self.collision_chunks)
-        # print self.features.keys()
-        # print
-        # print
-        # print self.collision_chunks
         self.update_undecided_tracklets()
-
-
-        # with open(self.p.working_directory+'/temp/')
-
-        # with open(path, 'rb') as f:
-        #     d = pickle.load(f)
-        #     self.features = d['features']
-        #     self.collision_chunks = d['collision_chunks']
 
     def compute_features(self):
         self.compute_features_mp()
@@ -1497,6 +1487,7 @@ class LearningProcess:
 
         overlap_sum = 0
         frame = 0
+        i = 0
         while True:
             group = self.p.chm.chunks_in_frame(frame)
             if len(group) == 0:
@@ -1518,6 +1509,11 @@ class LearningProcess:
 
             frame = min([t.end_frame(self.p.gm) for t in group]) + 1
 
+            if i % 100:
+                print_progress(frame, total_frame_count, "searching for CSoSIT...")
+
+            i += 1
+
         best_g_i = -1
         best_g_val = 0
         for i, g in enumerate(groups):
@@ -1534,7 +1530,8 @@ class LearningProcess:
         max_best_frame = max(t.start_frame(self.p.gm) for t in groups[best_g_i])
 
         try:
-            path = '/Users/flipajs/Documents/dev/ferda/data/GT/Cam1_.pkl'
+            # path = '/Users/flipajs/Documents/dev/ferda/data/GT/Cam1_.pkl'
+            path = '/Users/flipajs/Documents/dev/ferda/data/GT/rep1-cam2.pkl'
             from utils.gt.gt import GT
             self.GT = GT()
             self.GT.load(path)
@@ -1565,7 +1562,8 @@ class LearningProcess:
 
         g1 = groups[best_g_i]
         rfc1 = self._get_and_train_rfc(g1, use_xgboost)
-        for i in range(len(groups)):
+        from tqdm import tgrange
+        for i in tgrange(len(groups)):
             if i == best_g_i:
                 continue
 
@@ -1585,9 +1583,12 @@ class LearningProcess:
 
                     self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
 
-                    ids = self.GT.tracklet_id_set_without_checks(t, self.p)
-                    if ids[0] != id_:
-                        print "GT differs ", id_, ids[0], t.id()
+                    try:
+                        ids = self.GT.tracklet_id_set_without_checks(t, self.p)
+                        if ids[0] != id_:
+                            print "GT differs ", id_, ids[0], t.id()
+                    except:
+                        pass
 
                 ok_min_sum += min(len(t) for t in g2)
                 ok_total_sum += sum(len(t) for t in g2)

@@ -195,6 +195,10 @@ class Project:
             self.gm.assignment_score = ac
 
     def save_chm_(self, file_path):
+        print "saving chm"
+        import os
+
+        os.rename(file_path, file_path+'__')
         # Chunk Manager
         if self.chm:
             for _, ch in self.chm.chunks_.iteritems():

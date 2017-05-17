@@ -882,6 +882,14 @@ def optimise_features(wd, fm_name):
 
 
 if __name__ == '__main__':
+    from skimage.measure import moments
+    import numpy as np
+
+    img = np.random.randint(255, size=(100, 100))
+    imp = np.asarray(img, dtype=np.uint8)
+    m = moments(img)
+
+
     from core.project.project import Project
     import cPickle as pickle
 

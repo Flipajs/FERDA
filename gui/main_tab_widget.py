@@ -216,7 +216,7 @@ class MainTabWidget(QtGui.QWidget):
             self.tabs.removeTab(5)
             self.region_classifier.setParent(None)
             self.region_classifier = ClusteringTool(self.project)
-            self.tabs.insertTab(5, self.region_classifier, "id detection")
+            self.tabs.insertTab(5, self.region_classifier, "region classifier")
             self.tabs.setCurrentIndex(5)
             self.ignore_tab_change = False
 
