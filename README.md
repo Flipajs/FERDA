@@ -18,7 +18,6 @@ FERDA is a multi object tracker developed mainly to meet the needs of biologists
 * [TkInter](https://wiki.python.org/moin/TkInter)
 * [Pympler](https://pypi.python.org/pypi/Pympler)
 * [qimage2ndarray](https://pypi.python.org/pypi/qimage2ndarray/0.2)
-* [Pympler](https://pypi.python.org/pypi/Pympler)
 
 ## Team ##
 * **author:** Filip Naiser (naisefil@cmp.felk.cvut.cz)
