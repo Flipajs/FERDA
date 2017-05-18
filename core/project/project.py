@@ -198,7 +198,11 @@ class Project:
         print "saving chm"
         import os
 
-        os.rename(file_path, file_path+'__')
+        try:
+            os.rename(file_path, file_path+'__')
+        except:
+            pass
+
         # Chunk Manager
         if self.chm:
             for _, ch in self.chm.chunks_.iteritems():

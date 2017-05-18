@@ -93,6 +93,13 @@ class SetMSERs(QtGui.QWidget):
         self.form_panel = QtGui.QFormLayout()
         self.left_panel.layout().addLayout(self.form_panel)
 
+        self.num_animals_sb = QtGui.QSpinBox()
+        self.num_animals_sb.setValue(6)
+        self.num_animals_sb.setMinimum(1)
+        self.num_animals_sb.setMaximum(1000)
+
+        self.form_panel.addRow('#Animals: ', self.num_animals_sb)
+
         # Right panel with image grid
         self.right_panel = QtGui.QWidget()
         self.right_panel.setLayout(QtGui.QVBoxLayout())

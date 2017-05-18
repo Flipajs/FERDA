@@ -246,9 +246,9 @@ class NewProjectWidget(QtGui.QWidget):
         w.layout().addWidget(button)
 
         self.left_vbox.addWidget(self.step5_w)
-        self.finish_initialisation()
+        self.finish_initialisation(self.step4_w.num_anmials_sb.value())
 
-    def finish_initialisation(self):
+    def finish_initialisation(self, num_animals):
         from core.region.region_manager import RegionManager
         from core.graph.graph_manager import GraphManager
         from core.graph.solver import Solver
@@ -261,9 +261,9 @@ class NewProjectWidget(QtGui.QWidget):
         self.project.chm = ChunkManager()
 
         # TODO: num animals
-        num_a = 6
+        num_animals = 6
         self.project.animals = []
-        for i in range(num_a):
+        for i in range(num_animals):
             self.project.animals.append(Animal(i))
 
         self.project.solver_parameters.certainty_threshold = .01

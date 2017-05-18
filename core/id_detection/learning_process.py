@@ -279,8 +279,11 @@ class LearningProcess:
 
     def set_tracklet_length_k(self, k):
         self.min_tracklet_len = k
-        self.update_undecided_tracklets()
-        self.__precompute_measurements()
+        try:
+            self.update_undecided_tracklets()
+            self.__precompute_measurements()
+        except AttributeError:
+            pass
 
     def compute_distinguishability(self):
         num_a = len(self.p.animals)
@@ -497,7 +500,9 @@ class LearningProcess:
         return False
 
     def __precompute_measurements(self):
-        for t_id in self.undecided_tracklets:
+        from tqdm import tqdm
+        print "Precomputing ID probability distributions..."
+        for t_id in tqdm(self.undecided_tracklets):
             tracklet = self.p.chm[t_id]
             try:
                 x, t_length, stds = self._get_tracklet_proba(tracklet)
@@ -1173,10 +1178,12 @@ class LearningProcess:
                         if not self.__update_N(new_N, t_):
                             return
 
-        if self.__only_one_P_possibility(tracklet):
+        if self.__only_one_P_possibility(tracklet) and tracklet.is_single():
             id_ = self.__get_one_possible_P(tracklet)
 
-            self.__if_possible_update_P(tracklet, id_, is_in_intersection_Ps=False)
+            self.assign_identity(id_, tracklet, learn=False)
+            # TODO: ...
+            # self.__if_possible_update_P(tracklet, id_, is_in_intersection_Ps=False)
 
         return True
 
@@ -1428,7 +1435,8 @@ class LearningProcess:
                                                      tracklet.end_frame(self.p.gm)))
 
         # ignore already decided chunks...
-        return filter(lambda x: x.id() in self.undecided_tracklets, affected)
+        return filter(lambda x: x.is_single() and not self.__tracklet_is_decided(x.P, x.N), affected)
+        # return filter(lambda x: x.id() in self.undecided_tracklets, affected)
 
     def set_min_new_samples_to_retrain(self, val):
         self.min_new_samples_to_retrain = val
@@ -1573,8 +1581,8 @@ class LearningProcess:
 
         g1 = groups[best_g_i]
         rfc1 = self._get_and_train_rfc(g1, use_xgboost)
-        from tqdm import tgrange
-        for i in tgrange(len(groups)):
+        from tqdm import trange
+        for i in trange(len(groups)):
             if i == best_g_i:
                 continue
 
@@ -1593,7 +1601,7 @@ class LearningProcess:
                             print t.id(), "duplicate..."
 
                     self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
-
+                    # self.assign_identity(id_, t)
                     try:
                         ids = self.GT.tracklet_id_set_without_checks(t, self.p)
                         if ids[0] != id_:

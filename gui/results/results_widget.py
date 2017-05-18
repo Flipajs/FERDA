@@ -326,12 +326,12 @@ class ResultsWidget(QtGui.QWidget):
         self.contour_without_colors.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.contour_without_colors)
 
-        self.show_markers = QtGui.QCheckBox('markers')
+        self.show_markers = QtGui.QCheckBox('GT markers')
         self.show_markers.setChecked(True)
         self.show_markers.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_markers)
 
-        self.show_saturated_ch = QtGui.QCheckBox('img sat')
+        self.show_saturated_ch = QtGui.QCheckBox('saturate img')
         self.show_saturated_ch.setChecked(False)
         self.show_saturated_ch.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_saturated_ch)

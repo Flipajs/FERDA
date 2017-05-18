@@ -232,7 +232,7 @@ class LearningWidget(QtGui.QWidget):
         self.update_b.setEnabled(False)
         self.delete_user_decisions_b.setEnabled(True)
         self.compute_distinguishability_b.setEnabled(False)
-        self.use_xgboost_ch.setEnabled(False)
+        self.use_xgboost_ch.setEnabled(True)
         self.update_undecided_tracklets_b.setEnabled(False)
         self.tracklet_debug_info_b.setEnabled(False)
 

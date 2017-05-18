@@ -65,7 +65,7 @@ class MainTabWidget(QtGui.QWidget):
         self.addAction(self.switch_to_tracking_window_action)
 
         self.vbox.addWidget(self.tabs)
-        self.layout().addWidget(self.buttons)
+        # self.layout().addWidget(self.m)
 
         self.ignore_tab_change = False
 
