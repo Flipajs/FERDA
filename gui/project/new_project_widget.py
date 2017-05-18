@@ -246,7 +246,7 @@ class NewProjectWidget(QtGui.QWidget):
         w.layout().addWidget(button)
 
         self.left_vbox.addWidget(self.step5_w)
-        self.finish_initialisation(self.step4_w.num_anmials_sb.value())
+        self.finish_initialisation(self.step4_w.num_animals_sb.value())
 
     def finish_initialisation(self, num_animals):
         from core.region.region_manager import RegionManager

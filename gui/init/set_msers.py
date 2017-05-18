@@ -560,10 +560,10 @@ class SetMSERs(QtGui.QWidget):
 
         self.form_panel.addRow('work on intensity only', self.use_full_image)
         self.button_group.addButton(self.use_full_image)
+        self.use_full_image.setChecked(True)
 
         self.form_panel.addRow('work on prob. map', self.use_segmentation)
         self.button_group.addButton(self.use_segmentation)
-        self.use_segmentation.setChecked(True)
 
         self.prediction_optimisation_border_spin.setMinimum(0)
         self.prediction_optimisation_border_spin.setMaximum(10000)
