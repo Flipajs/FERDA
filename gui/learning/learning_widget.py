@@ -184,6 +184,10 @@ class LearningWidget(QtGui.QWidget):
         self.use_xgboost_ch.setChecked(False)
         self.top_stripe_layout.addWidget(self.use_xgboost_ch)
 
+        self.show_init_summary_b = QtGui.QPushButton('show init summary')
+        self.show_init_summary_b.clicked.connect(self.show_init_summary)
+        self.top_stripe_layout.addWidget(self.show_init_summary_b)
+
         self.compute_distinguishability_b = QtGui.QPushButton('debug: comp. disting.')
         # self.lp will change...
         self.compute_distinguishability_b.clicked.connect(lambda x: self.lp.compute_distinguishability())
@@ -527,6 +531,99 @@ class LearningWidget(QtGui.QWidget):
 
     def get_separated_frame(self):
         return self.lp.separated_frame
+
+    def show_init_summary(self):
+        from tqdm import trange
+        import random
+        num_examples = 20
+        from utils.video_manager import get_auto_video_manager
+        vm = get_auto_video_manager(self.project)
+
+        id_representants = {}
+        for i in range(len(self.project.animals)):
+            id_representants[i] = []
+
+        for d in self.lp.user_decisions:
+            if d['type'] == 'P':
+                tid = d['tracklet_id_set']
+                id_representants[d['ids'][0]].append(tid)
+
+        # print id_representants
+
+        print "EXAMPLES: "
+        for i in range(len(self.project.animals)):
+            s = 0
+            for tid in id_representants[i]:
+                s += len(self.project.chm[tid])
+
+            print "\tA_ID: {}, len sum: {}, tids: {}".format(i, s, id_representants[i])
+
+        region_representants = {}
+        img_representants = {}
+        for aid in trange(len(self.project.animals)):
+            region_representants[aid] = []
+            img_representants[aid] = []
+            for i in range(num_examples):
+                tid = id_representants[aid][i%len(id_representants[aid])]
+
+                t = self.project.chm[tid]
+                id_ = t[random.randint(0, len(t)-1)]
+                region_representants[aid].append(self.project.gm.region(id_))
+
+                im = draw_region(self.project, vm, id_)
+                img_representants[aid].append(im)
+
+        from gui.img_grid.img_grid_widget import ImgGridWidget
+        w = ImgGridWidget(cols=len(self.project.animals), element_width=100)
+
+        HH = 100
+        WW = 100
+        for i in range(num_examples):
+            for aid in range(len(self.project.animals)):
+                item = make_item(img_representants[aid][i], region_representants[aid][i], HH, WW)
+                w.add_item(item)
+
+        win = QtGui.QMainWindow()
+        win.setCentralWidget(w)
+        win.show()
+        self.w = win
+
+        # w.show()
+        # w.raise_()
+        # w.showMaximized()
+        # w.activateWindow()
+
+def draw_region(p, vm, v):
+    from utils.drawing.points import draw_points
+    r1 = p.gm.region(v)
+    im1 = vm.get_frame(r1.frame()).copy()
+    # c1 = QtGui.QColor(255, 0, 0, 255)
+    # draw_points(im1, r1.contour(), color=c1)
+    roi = r1.roi().safe_expand(30, im1)
+    im = im1[roi.slices()].copy()
+
+    return im
+
+def make_item(im, id_, HH, WW):
+    from PyQt4 import QtGui
+    from gui.gui_utils import SelectableQLabel
+    from PIL import ImageQt
+    im_ = np.zeros((max(im.shape[0], HH), max(im.shape[1], WW), 3), dtype=np.uint8)
+    im_[:im.shape[0], :im.shape[1], :] = im
+    im = im_
+
+    img_q = ImageQt.QImage(im.data, im.shape[1], im.shape[0], im.shape[1] * 3, 13)
+    pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
+
+    item = SelectableQLabel(id=id_)
+
+    item.setScaledContents(True)
+    if im.shape[0] > HH or im.shape[1] > WW:
+        item.setFixedSize(HH, WW)
+
+    item.setPixmap(pix_map)
+
+    return item
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

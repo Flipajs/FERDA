@@ -5,7 +5,7 @@ import time
 import warnings
 
 from itertools import izip
-
+from tqdm import tqdm, trange
 import numpy as np
 import os
 import psutil
@@ -338,8 +338,9 @@ class LearningProcess:
             self.undecided_tracklets.add(t.id())
 
     def update_undecided_tracklets(self):
+        print "Updating undecided tracklets..."
         self.undecided_tracklets = set()
-        for t in self.p.chm.chunk_gen():
+        for t in tqdm(self.p.chm.chunk_gen()):
             if not t.is_single() or t.length() < self.min_tracklet_len:
                 continue
 
@@ -501,7 +502,7 @@ class LearningProcess:
 
     def __precompute_measurements(self):
         from tqdm import tqdm
-        print "Precomputing ID probability distributions..."
+        print "Computing ID probability distributions..."
         for t_id in tqdm(self.undecided_tracklets):
             tracklet = self.p.chm[t_id]
             try:
@@ -679,7 +680,7 @@ class LearningProcess:
 
     def next_step(self, update_gui=True):
         if len(self.tracklet_certainty) == 0:
-            print "ALL is done"
+            # print "ALL is done"
             return True
 
         eps_certainty_learning = self._eps_certainty / 2
@@ -986,10 +987,33 @@ class LearningProcess:
         if len(P) == 0:
             x = self.tracklet_measurements[tracklet.id()]
 
-            id_ = np.argmax(x)
+            uni_probs = np.ones((len(x),)) / float(len(x))
+            # TODO: why 0.99 and not 1.0? Maybe to give a small chance for each option independently on classifier
+            # alpha = (min((tracklet.length() / self.k_) ** 2, 0.99))
+            # x = (1 - alpha) * uni_probs + alpha * x
+
+
+            x_ = np.copy(x)
+            for id_ in N:
+                x_[id_] = 0
+
+            std = self.tracklet_stds[tracklet.id()]
+
+            id1 = np.argmax(x_)
+            m1 = max(0, x_[id1] - std[id1])
+            x_[id1] = 0
+
+            id2 = np.argmax(x_)
+            m2 = min(1, x_[id2] + std[id2])
+
+            certainty = m1 / (m1 + m2 + 1e-6)
+
+            self.tracklet_certainty[tracklet.id()] = certainty
+
+            # id_ = np.argmax(x)
             # c = self._get_p1(x, id_)
-            self.tracklet_certainty[tracklet.id()] = x[id_]
-            #
+            # self.tracklet_certainty[tracklet.id()] = x[id_]
+
             #
             # uni_probs = np.ones((len(x),)) / float(len(x))
             # # TODO: why 0.99 and not 1.0? Maybe to give a small chance for each option independently on classifier
@@ -1600,6 +1624,10 @@ class LearningProcess:
                         else:
                             print t.id(), "duplicate..."
 
+                        continue
+                    else:
+                        tracklet_ids[t.id()] = id_
+
                     self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
                     # self.assign_identity(id_, t)
                     try:
@@ -1749,8 +1777,7 @@ class LearningProcess:
         id2tid = [[] for i in range(len(self.p.animals))]
         for i in range(len(self.user_decisions)):
             d = self.user_decisions[i]
-            t_id = d['trackle' \
-                     't_id_set']
+            t_id = d['tracklet_id_set']
             id_ = d['ids'][0]
             # id_ = list(tracklet_gt[t_id])[0]
             y[id_] += self.p.chm[t_id].length()
@@ -1855,7 +1882,7 @@ def compute_features_process(counter, lock, q_tasks, project_wd, num_frames, fir
                     compute = fm[r.id()][1] == [None]
 
                 if compute:
-                    f = get_colornames_and_basic(r, project, saturated=True, lvls=1)
+                    f = get_colornames_hists(r, project, saturated=True, lvls=1)
                     lock.acquire()
                     fm.add(r.id(), f)
                     lock.release()
