@@ -365,12 +365,16 @@ class Chunk:
         for id_ in self.nodes_:
             yield gm.region_id(id_)
 
-    def r_id_in_t(self, t, gm):
-        t = t-self.start_frame(gm)
+    def v_id_in_t(self, t, gm):
+        t = t - self.start_frame(gm)
         if -1 < t < len(self.nodes_):
-            return gm.region_id(self.nodes_[t])
+            return self.nodes_[t]
         else:
             return None
+
+    def r_id_in_t(self, t, gm):
+        return gm.region_id(self.v_id_in_t(t, gm))
+
 
     def is_single(self):
         return self.segmentation_class == 0

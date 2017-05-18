@@ -242,6 +242,15 @@ class ResultsWidget(QtGui.QWidget):
 
         self.debug_box = QtGui.QGroupBox('debug box')
         self.debug_box.setLayout(QtGui.QVBoxLayout())
+
+        self.show_results_summary_steps_i = QtGui.QLineEdit()
+        self.show_results_summary_steps_i.setText('1000')
+        self.debug_box.layout().addWidget(self.show_results_summary_steps_i)
+
+        self.show_summary_b = QtGui.QPushButton('show results summary')
+        self.show_summary_b.clicked.connect(self.show_results_summary)
+        self.debug_box.layout().addWidget(self.show_summary_b)
+
         self.reset_chunk_ids_b = QtGui.QPushButton('Reset chunk IDs')
         self.reset_chunk_ids_b.clicked.connect(self.reset_chunk_ids)
         self.debug_box.layout().addWidget(self.reset_chunk_ids_b)
@@ -1805,3 +1814,54 @@ class ResultsWidget(QtGui.QWidget):
 
         self.idtracker_data_permutation = self._gt.set_permutation_reversed(permutation_data)
         self.video_player.redraw_visualisations()
+
+
+    def show_results_summary(self):
+        from gui.learning.learning_widget import draw_region, make_item
+        from tqdm import trange
+        from utils.video_manager import get_auto_video_manager
+
+        step = int(self.show_results_summary_steps_i.text())
+
+        vm = get_auto_video_manager(self.project)
+
+        total_frames = self.video_player.total_frame_count()
+
+        from gui.img_grid.img_grid_widget import ImgGridWidget
+        w = ImgGridWidget(cols=len(self.project.animals), element_width=100)
+
+        HH = 100
+        WW = 100
+
+        num_animals = len(self.project.animals)
+        for frame in trange(0, total_frames, step):
+            region_representants = []
+            img_representants = []
+
+            for i in range(num_animals):
+                region_representants.append(None)
+                img_representants.append(None)
+
+            for t in self.project.chm.chunks_in_frame(frame):
+                if t.is_only_one_id_assigned(num_animals):
+                    a_id = list(t.P)[0]
+
+                    r_id = t.v_id_in_t(frame, self.project.gm)
+                    im = draw_region(self.project, vm, r_id)
+
+                    img_representants[a_id] = im
+                    region_representants[a_id] = self.project.rm[r_id]
+
+            for aid in range(len(self.project.animals)):
+                if img_representants[aid] is None:
+                    im = np.zeros((100, 100, 3), dtype=np.uint8)
+                else:
+                    im = img_representants[aid]
+
+                item = make_item(im, region_representants[aid], HH, WW)
+                w.add_item(item)
+
+        win = QtGui.QMainWindow()
+        win.setCentralWidget(w)
+        win.show()
+        self.w = win

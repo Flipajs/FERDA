@@ -588,19 +588,17 @@ class LearningWidget(QtGui.QWidget):
         win.show()
         self.w = win
 
-        # w.show()
-        # w.raise_()
-        # w.showMaximized()
-        # w.activateWindow()
 
 def draw_region(p, vm, v):
-    from utils.drawing.points import draw_points
+    from utils.img import img_saturation_coef
+    # from utils.drawing.points import draw_points
     r1 = p.gm.region(v)
     im1 = vm.get_frame(r1.frame()).copy()
     # c1 = QtGui.QColor(255, 0, 0, 255)
     # draw_points(im1, r1.contour(), color=c1)
     roi = r1.roi().safe_expand(30, im1)
     im = im1[roi.slices()].copy()
+    img_saturation_coef(im, 2.0, 1.05)
 
     return im
 
