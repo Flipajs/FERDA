@@ -260,8 +260,6 @@ class NewProjectWidget(QtGui.QWidget):
         self.project.gm = GraphManager(self.project, self.project.solver)
         self.project.chm = ChunkManager()
 
-        # TODO: num animals
-        num_animals = 6
         self.project.animals = []
         for i in range(num_animals):
             self.project.animals.append(Animal(i))
