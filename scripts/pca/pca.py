@@ -62,8 +62,8 @@ from utils.geometry import rotate
 
 
 class AnimalFitting:
-    HEAD_RANGE = 19  # x on each side + head -> 2x + 1 points altogether
-    BOTTOM_RANGE = 19  # x on each side + bottom -> 2x + 1 points altogether
+    HEAD_RANGE = 6  # x on each side + head -> 2x + 1 points altogether
+    BOTTOM_RANGE = 6  # x on each side + bottom -> 2x + 1 points altogether
     EIGEN_DIM = 10
     FEATURES = 40
 
@@ -100,34 +100,44 @@ class AnimalFitting:
         """
             Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour
         """
-        # transpose for column vectors
-        head_example = self.get_pca_compatible_data(self.extract_heads(X)).T
 
-        head_example = head_example - self.mean_head[:(AnimalFitting.HEAD_RANGE * 2 + 1) * 2, :]
-        head_coordinates = np.dot(self.eigen_vectors_head[:(AnimalFitting.HEAD_RANGE * 2 + 1) * 2, :].T, head_example)
-        head_fit = np.dot(self.eigen_vectors_head, head_coordinates) + self.mean_head
+        # OLD VERSION
 
-        # transpose back and to original dataframe
-        head_fit = AnimalFitting.unroll_to_head(AnimalFitting.get_data_from_pca_data(head_fit.T))
+        # # transpose for column vectors
+        # head_example = self.get_pca_compatible_data(self.extract_heads(X)).T
+        #
+        # head_example = head_example - self.mean_head[:(AnimalFitting.HEAD_RANGE * 2 + 1) * 2, :]
+        # head_coordinates = np.dot(self.eigen_vectors_head[:(AnimalFitting.HEAD_RANGE * 2 + 1) * 2, :].T, head_example)
+        # head_fit = np.dot(self.eigen_vectors_head, head_coordinates) + self.mean_head
+        #
+        # # transpose back and to original dataframe
+        # head_fit = AnimalFitting.unroll_to_head(AnimalFitting.get_data_from_pca_data(head_fit.T))
+        #
+        # return head_fit, head_coordinates.T
 
-        return head_fit, head_coordinates.T
+        return self.get_scatter_fits(X, np.arange(-AnimalFitting.HEAD_RANGE, AnimalFitting.HEAD_RANGE + 1))
 
     def get_bottom_fits(self, X):
         """
             Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour.
             Returns [n * c * 2] ndarray of reconstructions and [n * EIGEN_DIM] of coordinates in orthogonal space of eigenvectors
         """
-        # transpose for column vectors
-        bottom_example = self.get_pca_compatible_data(self.extract_bottoms(X)).T
 
-        bottom_example = bottom_example - self.mean_bottom[:(AnimalFitting.BOTTOM_RANGE * 2 + 1) * 2, :]
-        bottom_coordinates = np.dot(self.eigen_vectors_bottom[:(AnimalFitting.BOTTOM_RANGE * 2 + 1) * 2, :].T, bottom_example)
-        bottom_fit = np.dot(self.eigen_vectors_bottom, bottom_coordinates) + self.mean_bottom
+        # OLD VERSION
 
-        # transpose back and to original dataframe
-        bottom_fit = AnimalFitting.unroll_to_bottom(AnimalFitting.get_data_from_pca_data(bottom_fit.T))
+        # # transpose for column vectors
+        # bottom_example = self.get_pca_compatible_data(self.extract_bottoms(X)).T
+        #
+        # bottom_example = bottom_example - self.mean_bottom[:(AnimalFitting.BOTTOM_RANGE * 2 + 1) * 2, :]
+        # bottom_coordinates = np.dot(self.eigen_vectors_bottom[:(AnimalFitting.BOTTOM_RANGE * 2 + 1) * 2, :].T, bottom_example)
+        # bottom_fit = np.dot(self.eigen_vectors_bottom, bottom_coordinates) + self.mean_bottom
+        #
+        # # transpose back and to original dataframe
+        # bottom_fit = AnimalFitting.unroll_to_bottom(AnimalFitting.get_data_from_pca_data(bottom_fit.T))
+        #
+        # return bottom_fit, bottom_coordinates.T
 
-        return bottom_fit, bottom_coordinates.T
+        return self.get_scatter_fits(X, np.arange(AnimalFitting.FEATURES / 2 - AnimalFitting.BOTTOM_RANGE, AnimalFitting.FEATURES / 2 + AnimalFitting.BOTTOM_RANGE))
 
     def get_scatter_fits(self, X, idxs):
         """
@@ -166,7 +176,7 @@ class AnimalFitting:
     def show_scatter_fits(self, X, idxs):
         """
             Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour
-            Returns [n * c * 2] ndarray of reconstructions and [n * EIGEN_DIM] of coordinates in orthogonal space of egienvectors
+            Returns [n * c * 2] ndarray of reconstructions and [n * EIGEN_DIM] of coordinates in orthogonal space of eigenvectors
         """
         scatters = X[:, idxs]
         fits, _ = self.get_scatter_fits(X, idxs)
@@ -322,7 +332,7 @@ class AnimalFitting:
             Can be used to shift training vectors of whole contour or extracting bottoms form original data.
             Expects data in form [n, c, (x/y)] where n is nth example, c is cth point in contour and (x/y) are both coordinates
         """
-        beginning = FEATURES / 2 - AnimalFitting.BOTTOM_RANGE
+        beginning = AnimalFitting.FEATURES / 2 - AnimalFitting.BOTTOM_RANGE
         return np.roll(X, -1 * beginning, axis=1 if X.ndim == 3 else 0)
 
     @staticmethod
@@ -379,8 +389,8 @@ class AnimalFitting:
 
 if __name__ == '__main__':
     # REPRODUCABILITY
-    # random.seed(0)
-    # np.random.seed(0)
+    random.seed(0)
+    np.random.seed(0)
 
     PROJECT = 'zebrafish'
     logging.basicConfig(level=logging.INFO)
@@ -421,9 +431,8 @@ if __name__ == '__main__':
     # pca.show_extracting_random_result(5)
 
     # VIEW PCA RECONSTRUCTING RESULTS
-    # pca.show_random_fit_result(50)
-    pca.show_random_scatter_fit(10, 10)
-    pca.show_random_scatter_fit(10, 20)
+    pca.show_random_fit_result(10)
+    pca.show_random_scatter_fit(3, 10)
 
     # GENERATING RESULTS FIGURE
     # pca.generate_eigen_ants_figure()
