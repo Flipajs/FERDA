@@ -710,7 +710,8 @@ if __name__ == "__main__":
     # ex.mser_max_area.setValue(proj.mser_parameters.max_area)
 
     # im = cv2.imread('/Users/flipajs/Downloads/trhliny/4/DSC_0327.JPG')
-    im = cv2.imread('/Users/flipajs/Downloads/trhliny/5/DSC_0348.JPG')
+    # im = cv2.imread('/Users/flipajs/Downloads/trhliny/5/DSC_0348.JPG')
+    im = cv2.imread('/Users/flipajs/Downloads/trhliny/1/DSC_0297.JPG')
     ex.set_image(im)
 
     app.exec_()

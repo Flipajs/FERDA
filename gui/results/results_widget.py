@@ -243,8 +243,11 @@ class ResultsWidget(QtGui.QWidget):
         self.debug_box = QtGui.QGroupBox('debug box')
         self.debug_box.setLayout(QtGui.QVBoxLayout())
 
+        self.video_player = VideoPlayer(self.project)
+        self.video_player.set_frame_change_callback(self.update_visualisations)
+
         self.show_results_summary_steps_i = QtGui.QLineEdit()
-        self.show_results_summary_steps_i.setText('1000')
+        self.show_results_summary_steps_i.setText(str(max(1, int(self.video_player.total_frame_count()/200))))
         self.debug_box.layout().addWidget(self.show_results_summary_steps_i)
 
         self.show_summary_b = QtGui.QPushButton('show results summary')
@@ -300,8 +303,6 @@ class ResultsWidget(QtGui.QWidget):
         self.video_layout = QtGui.QVBoxLayout()
         self.right_vbox.addLayout(self.video_layout)
 
-        self.video_player = VideoPlayer(self.project)
-        self.video_player.set_frame_change_callback(self.update_visualisations)
         self.video_layout.addWidget(self.video_player)
 
         self.hide_visualisation_action = QtGui.QAction('hide visualisation', self)
