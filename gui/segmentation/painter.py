@@ -25,6 +25,8 @@ class Painter(QtGui.QWidget):
         self.w = None
         self.h = None
 
+        self.disable_drawing = False
+
         # WIDGET SETUP
         self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
         self.scene = MyScene(update_callback_release=self.mouse_released)
@@ -191,14 +193,14 @@ class Painter(QtGui.QWidget):
 
     def mouse_press_event(self, event):
         point = self.view.mapToScene(event.pos())
-        if self.is_in_scene(point):
+        if self.is_in_scene(point) and not self.disable_drawing:
             self.save()
             self.draw(point)
 
     def mouse_moving(self, event):
         # while the mouse is moving, paint it's position
         point = self.view.mapToScene(event.pos())
-        if self.is_in_scene(point):
+        if self.is_in_scene(point) and not self.disable_drawing:
             # no save here!
             self.draw(point)
 

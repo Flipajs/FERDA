@@ -39,12 +39,13 @@ class InitWhereWidget(QtGui.QWidget):
         self.video = video_manager.get_auto_video_manager(project)
         self.first_frame = self.video.next_frame()
 
-        self.label_instructions = QtGui.QLabel('Please select arena or confirm the suggested one.')
+        self.label_instructions = QtGui.QLabel('<i>Please select region of interest by dragging red and blue dot or confirm the suggested one.</i>')
         self.label_instructions.setWordWrap(True)
         self.top_stripe_layout.addWidget(self.label_instructions)
 
-        self.use_advanced_arena_editor = QtGui.QPushButton('Use advanced arena editor')
+        self.use_advanced_arena_editor = QtGui.QPushButton('<i>Use advanced arena editor (TBD)</i>')
         self.use_advanced_arena_editor.clicked.connect(self.use_advanced_editor)
+        self.use_advanced_arena_editor.setDisabled(True)
         self.top_stripe_layout.addWidget(self.use_advanced_arena_editor)
 
         self.confirm_arena_selection = QtGui.QPushButton('Arena selection is ok, lets continue!')
