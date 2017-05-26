@@ -293,10 +293,6 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
     old_regions = old_rm[old_rids]
     new_rm.add(old_regions)
 
-    # for r_id, r in izip(old_rids, old_regions):
-    #     if r_id != r.id():
-    #         print "error!", r_id, r.id()
-
     for old_v, old_reg in izip(old_vs, old_regions):
         new_v = new_gm.add_vertex(old_reg)
         vertex_map[old_v] = new_v
@@ -306,30 +302,6 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
 
         if old_g.vp['chunk_start_id'][old_v] == 0 and old_g.vp['chunk_end_id'][old_v] == 0:
             single_vertices.append(new_v)
-
-    # old_vs = []
-    # old_rids = []
-    # # reindex vertices
-    # for v_id in old_g_relevant_vertices:
-    #     if not old_g.vp['active'][v_id]:
-    #         continue
-    #
-    #     old_v = old_g.vertex(v_id)
-    #     old_vs.append(old_v)
-    #     old_rids.append(old_g.vp['region_id'][old_v])
-    #
-    # old_regions = old_rm[old_rids]
-    # new_rm.add(old_regions)
-    #
-    # for old_v, old_reg in izip(old_vs, old_regions):
-    #     new_v = new_gm.add_vertex(old_reg)
-    #     vertex_map[old_v] = new_v
-    #
-    #     used_chunks_ids.add(old_g.vp['chunk_start_id'][old_v])
-    #     used_chunks_ids.add(old_g.vp['chunk_end_id'][old_v])
-    #
-    #     if old_g.vp['chunk_start_id'][old_v] == 0 and old_g.vp['chunk_end_id'][old_v] == 0:
-    #         single_vertices.append(new_v)
 
     # because 0 id means - no chunk assigned to this node!
     if 0 in used_chunks_ids:
