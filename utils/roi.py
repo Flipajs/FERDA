@@ -137,7 +137,7 @@ class ROI():
 
         return ROI(y_, x_, height, width)
 
-def get_roi(pts):
+def get_roi(pts=None):
     """
     Returns ROI class - Region Of Interest for given points
 
@@ -152,3 +152,19 @@ def get_roi(pts):
     roi = ROI(y, x, height, width)
 
     return roi
+
+
+def get_roi_rle(rle):
+    x = np.inf
+    y = np.inf
+    xx = 0
+    yy = 0
+
+    for row in rle:
+        x = min(x, row['col1'])
+        xx = max(xx, row['col2'])
+
+        y = min(y, row['line'])
+        yy = max(yy, row['line'])
+
+    return ROI(y, x, yy - y + 1, xx - x + 1)

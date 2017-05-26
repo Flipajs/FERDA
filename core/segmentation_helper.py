@@ -4,7 +4,6 @@ from sklearn.ensemble import RandomForestClassifier
 from skimage.transform import pyramid_gaussian
 from skimage.feature import local_binary_pattern
 from skimage.color import label2rgb
-import matplotlib.pyplot as plt
 import imutils
 import time
 
@@ -575,6 +574,7 @@ def get_lbp(image, method="uniform"):
 
     mask = np.logical_or.reduce([lbp == each for each in edge_labels])
 
+    # import matplotlib.pyplot as plt
     # plt.imshow(mask)
     # plt.show()
 
@@ -615,6 +615,7 @@ def pyramid(image, scale=1.5, minSize=(30, 30), num=-1):
 
 
 if __name__ == "__main__":
+    # import matplotlib.pyplot as plt
     # image = cv2.imread("/home/dita/img_67.png")
     image = cv2.imread("/home/dita/lbp_test.png")
     np.set_printoptions(threshold=np.inf)
