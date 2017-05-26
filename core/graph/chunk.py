@@ -21,24 +21,40 @@ class Chunk:
         self.color = color
         self.statistics = {}
         self.animal_id_ = -1
+        self.P = set()
+        self.N = set()
+        self.segmentation_class = -1
 
         if len(vertices_ids) > 1:
             if vertices_ids[0] > 0:
                 v1 = gm.g.vertex(vertices_ids[0])
-                for e in v1.out_edges():
+                out_edges = [e for e in v1.out_edges()]
+                for e in out_edges:
                     gm.remove_edge_(e)
 
-            if vertices_ids[1] > 0:
-                v2 = gm.g.vertex(vertices_ids[1])
+            if vertices_ids[-1] > 0:
+                v2 = gm.g.vertex(vertices_ids[-1])
 
-                for e in v2.in_edges():
+                in_edges = [e for e in v2.in_edges()]
+                for e in in_edges:
                     gm.remove_edge_(e)
+
+            if len(vertices_ids) > 2:
+                for v in vertices_ids[1:-1]:
+                    if v > 0:
+                        gm.remove_vertex(v)
+                        # v = gm.g.vertex(v)
+                        # for e in v.in_edges():
+                        #     gm.remove_edge_(e)
 
         self.chunk_reconnect_(gm)
 
     def __str__(self):
         s = "CHUNK --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
         return s
+
+    def __len__(self):
+        return len(self.nodes_)
 
     def __getitem__(self, key):
         if isinstance(key, int):
@@ -65,7 +81,9 @@ class Chunk:
             ids = key
 
         items = []
+
         for i in ids:
+
             items.append(self.nodes_[i])
 
         return items
@@ -77,8 +95,12 @@ class Chunk:
         print s
 
     def append_left(self, vertex, gm, undo_action=False):
+        if int(vertex) == 4:
+            print vertex
+
         # test: there cannot be any outgoing edge...
-        for e in vertex.out_edges():
+        out_edges = [e for e in vertex.out_edges()]
+        for e in out_edges:
             gm.remove_edge_(e)
 
 
@@ -104,7 +126,8 @@ class Chunk:
 
     def append_right(self, vertex, gm, undo_action=False):
         # test: there cannot be any incomming edge...
-        for e in vertex.in_edges():
+        in_edges = [e for e in vertex.in_edges()]
+        for e in in_edges:
             gm.remove_edge_(e)
 
         vertex_id = int(vertex)
@@ -198,8 +221,10 @@ class Chunk:
         gm.project.chm._try_ch_itree_delete(self, gm)
 
         if not undo_action:
-            gm.remove_vertex(ch1end, disassembly=False)
-            gm.remove_vertex(ch2start, disassembly=False)
+            if self.length() > 1:
+                gm.remove_vertex(ch1end, disassembly=False)
+            if ch2.length() > 1:
+                gm.remove_vertex(ch2start, disassembly=False)
 
         self.nodes_.extend(ch2.nodes_)
 
@@ -235,6 +260,52 @@ class Chunk:
 
         self.merge(ch2, gm, undo_action)
 
+    def split_at(self, frame, gm):
+        """
+        splits tracklet so the node in t=frame stays in the left tracklet
+
+        Args:
+            frame:
+            gm:
+
+        Returns:
+
+        """
+        start_frame = self.start_frame(gm)
+
+        key = frame - start_frame
+        left_nodes = []
+        right_nodes = []
+
+        if key >= 0 and key < self.length():
+            left_nodes = list(self.nodes_[:key+1])
+            right_nodes = self.nodes_[key+1:]
+
+            # TODO: undo action?
+            # TODO: what if chunk is of length 2?
+            new_end = left_nodes[-1]
+            new_end = gm.add_vertex(gm.region(new_end))
+            left_nodes[-1] = int(new_end)
+
+            # remove previous edge...
+            gm.remove_edge(gm.g.vertex(self.start_node()), gm.g.vertex(right_nodes[-1]))
+            next_nodes = gm.get_vertices_in_t(gm.region(new_end).frame() + 1)
+            gm.add_edges_([new_end], next_nodes)
+
+            gm.g.vp['chunk_start_id'][gm.g.vertex(right_nodes[-1])] = 0
+            gm.g.vp['chunk_end_id'][gm.g.vertex(right_nodes[-1])] = 0
+
+            # not last node of tracklet... because it is already in graph
+            if key < self.length() - 1:
+                new_start = right_nodes[0]
+                new_start = gm.add_vertex(gm.region(new_start))
+                right_nodes[0] = int(new_start)
+
+            # self.nodes_ = left_nodes
+            # self.chunk_reconnect_(gm)
+
+        return left_nodes, right_nodes
+
     def id(self):
         return self.id_
 
@@ -263,19 +334,59 @@ class Chunk:
         return gm.region(self.end_node()).frame()
 
     def length(self):
-        return len(self.nodes_)
+        return len(self)
 
     def is_empty(self):
         return True if self.length() == 0 else False
 
     def chunk_reconnect_(self, gm):
         if len(self.nodes_) > 1:
+            if self.start_vertex(gm).out_degree() > 0:
+                gm.remove_outgoing_edges(self.start_vertex(gm))
+
             gm.add_edge(self.start_node(), self.end_node(), 1.0)
 
         gm.g.vp['chunk_start_id'][gm.g.vertex(self.start_node())] = self.id()
+        gm.g.vp['chunk_end_id'][gm.g.vertex(self.start_node())] = 0
+
+        gm.g.vp['chunk_start_id'][gm.g.vertex(self.end_node())] = 0
         gm.g.vp['chunk_end_id'][gm.g.vertex(self.end_node())] = self.id()
 
     def is_only_one_id_assigned(self, num_animals):
         # if there is one and only one ID assigned to chunk
         return len(self.P) == 1 and \
                len(self.N) == num_animals - 1
+
+    def v_gen(self):
+        for v in self.nodes_:
+            yield v
+
+    def rid_gen(self, gm):
+        for id_ in self.nodes_:
+            yield gm.region_id(id_)
+
+    def v_id_in_t(self, t, gm):
+        t = t - self.start_frame(gm)
+        if -1 < t < len(self.nodes_):
+            return self.nodes_[t]
+        else:
+            return None
+
+    def r_id_in_t(self, t, gm):
+        return gm.region_id(self.v_id_in_t(t, gm))
+
+
+    def is_single(self):
+        return self.segmentation_class == 0
+
+    def is_multi(self):
+        return self.segmentation_class == 1
+
+    def is_noise(self):
+        return self.segmentation_class == 2
+
+    def is_part(self):
+        return self.segmentation_class == 3
+
+    def is_undefined(self):
+        return self.segmentation_class == -1

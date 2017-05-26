@@ -4,18 +4,19 @@ from PyQt4 import QtGui, QtCore
 import copy
 from gui.settings.parameters_tab import ParametersTab
 from gui.settings.general_tab import GeneralTab
+from gui.settings.visualisation_tab import VisualisationTab
 from core.settings import Settings as S_
 
 
 class SettingsDialog(QtGui.QDialog):
-    """A dialog used for settings of almost everything in the ants correction tool. Note that the QSettings name is
-    'Ants correction tool'. When you need to add a settings, add it onto tab you want or add a new tab. The method
+    """A dialog used for settings of almost everything in the ants results tool. Note that the QSettings name is
+    'Ants results tool'. When you need to add a settings, add it onto tab you want or add a new tab. The method
     populate of each tab is used to set initial values, the method restore_defaults populates the dialog with settings
     from default_settings file and the method harvest saves the values from dialog into settings. Should you add new
     settings, update all three methods accordingly. Also keep in mind that you need to add corresponding setting
     into default_settings.
     A propos: the construction for getting settings is:
-    settings = QSettings("Ants correction tool")
+    settings = QSettings("Ants results tool")
     settings.value(key, default_value, type)
     """
 
@@ -48,6 +49,9 @@ class SettingsDialog(QtGui.QDialog):
 
         self.parameters_tab = ParametersTab()
         self.tabWidget.addTab(self.parameters_tab, "Parameters")
+
+        self.visualisation_tab = VisualisationTab()
+        self.tabWidget.addTab(self.visualisation_tab, "Visualisation")
         # self.tabWidget.setCurrentWidget(self.parameters_tab)
 
         self.layout = QtGui.QVBoxLayout()
@@ -70,6 +74,7 @@ class SettingsDialog(QtGui.QDialog):
         self.general_tab.harvest()
         self.parameters_tab.harvest()
         #self.key_binding_tab.harvest()
+        self.visualisation_tab.harvest()
 
     def restore_defaults(self):
         self.tabWidget.currentWidget().restore_defaults()

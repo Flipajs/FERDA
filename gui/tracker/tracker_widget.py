@@ -2,20 +2,19 @@ __author__ = 'fnaiser'
 
 from PyQt4 import QtGui, QtCore
 
-from gui.correction.configurations_visualizer import ConfigurationsVisualizer
+from gui.results.configurations_visualizer import ConfigurationsVisualizer
 from utils.video_manager import get_auto_video_manager
-from scripts.region_graph2 import NodeGraphVisualizer, visualize_nodes
 from core.settings import Settings as S_
 import numpy as np
 from skimage.transform import rescale
 from core.graph.configuration import get_length_of_longest_chunk
 from utils.video_manager import optimize_frame_access
-from gui.correction.global_view import GlobalView
+from gui.results.global_view import GlobalView
 from gui.loading_widget import LoadingWidget
 from core.log import LogCategories, ActionNames
 import math
 from gui.img_grid.img_grid_widget import ImgGridWidget
-from gui.correction.noise_filter_widget import NoiseFilterWidget
+from gui.results.noise_filter_widget import NoiseFilterWidget
 
 
 class TrackerWidget(QtGui.QWidget):

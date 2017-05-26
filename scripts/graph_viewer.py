@@ -5,8 +5,8 @@ from core.log import ActionNames, LogCategories, Log
 from math import copysign
 from PyQt4 import QtGui, QtCore
 import sys
-from gui.correction.case_widget import CaseWidget
-from gui.correction.configurations_visualizer import ConfigurationsVisualizer
+from gui.results.case_widget import CaseWidget
+from gui.results.configurations_visualizer import ConfigurationsVisualizer
 from utils.video_manager import get_auto_video_manager
 import cPickle as pickle
 

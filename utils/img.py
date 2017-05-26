@@ -17,6 +17,7 @@ import math
 import scipy.ndimage
 from utils.roi import get_roi
 import matplotlib as mpl
+import time
 
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), return_offset=False):
@@ -39,20 +40,20 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), ret
 
     border = max(border, max(max(-h_, -w_), 0))
 
-    if border > 0:
+    # fast detection of case where selection is inside image
+    borders_needed = y < 0 or x < 0 or y + height >= img.shape[0] or x + width >= img.shape[1]
+    if border > 0 and borders_needed:
         img_ = np.zeros((img.shape[0] + 2 * border, img.shape[1] + 2 * border, channels), dtype=img.dtype)
         img_ += np.asarray(fill_color, dtype=img.dtype)
         img_[border:-border, border:-border] = img
-        crop = np.ones((height, width, channels), dtype=img.dtype)
-        crop *= np.asarray(fill_color, dtype=img.dtype)
+        # crop = np.ones((height, width, channels), dtype=img.dtype)
+        # crop *= np.asarray(fill_color, dtype=img.dtype)
 
         y += border
         x += border
         crop = np.copy(img_[y:y + height, x:x + width, :])
     else:
-        # TODO: why is height twice here?
-        # crop = np.copy(img[y:y + height, x:x + height, :])
-        crop = np.copy(img[y:y + height, x:x + width, :])
+        crop = img[y:y + height, x:x + width, :].copy()
 
     if return_offset:
         return crop, np.array([y, x])
@@ -140,7 +141,8 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
                 img = img[:,:,2].copy()
             else:
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        except:
+        except Exception as e:
+            print e
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     if project.arena_model is not None:
@@ -250,7 +252,7 @@ def get_cmap(N, step):
 
     return map_index_to_rgb_color
 
-def rotate_img(img, theta):
+def rotate_img(img, theta, center=None):
     s_ = max(img.shape[0], img.shape[1])
 
     im_ = np.zeros((s_, s_, img.shape[2]), dtype=img.dtype)
@@ -259,7 +261,10 @@ def rotate_img(img, theta):
 
     im_[h_:h_+img.shape[0], w_:w_+img.shape[1], :] = img
 
-    center = (im_.shape[0] / 2, im_.shape[1] / 2)
+    if isinstance(center, np.ndarray):
+        center = (center[0], center[1])
+    elif center is None:
+        center = (im_.shape[0] / 2, im_.shape[1] / 2)
 
     rot_mat = cv2.getRotationMatrix2D(center, -np.rad2deg(theta), 1.0)
     return cv2.warpAffine(im_, rot_mat, (s_, s_))
@@ -280,7 +285,7 @@ def centered_crop(img, new_h, new_w):
 
     return img[y_:y_+new_h, x_:x_+new_w, :].copy()
 
-def get_bounding_box(r, project, relative_border=1.3, img=None):
+def get_bounding_box(r, project, relative_border=1.3, absolute_border=-1, img=None):
     from math import ceil
 
     if img is None:
@@ -291,6 +296,11 @@ def get_bounding_box(r, project, relative_border=1.3, img=None):
 
     height2 = int(ceil((roi.height() * relative_border) / 2.0))
     width2 = int(ceil((roi.width() * relative_border) / 2.0))
+
+    if absolute_border > -1:
+        height2 = absolute_border
+        width2 = absolute_border
+
     x = r.centroid()[1] - width2
     y = r.centroid()[0] - height2
 
@@ -368,8 +378,9 @@ def img_saturation_coef(img, saturation_coef=2.0, intensity_coef=1.0):
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     img_hsv = np.asarray(img_hsv, dtype=float)
 
-    img_hsv[:,:,1] *= 2.0
-    img_hsv[:,:,2] *= 2.2
+    img_hsv[:,:,0] *= intensity_coef
+    img_hsv[:,:,1] *= saturation_coef
+    img_hsv[:,:,2] *= saturation_coef
 
     img = np.asarray(np.clip(img_hsv - img_hsv.min(), 0, 255), dtype=np.uint8)
     img = cv2.cvtColor(img, cv2.COLOR_HSV2BGR)

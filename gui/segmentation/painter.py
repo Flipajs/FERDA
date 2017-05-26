@@ -1,12 +1,10 @@
 import sys
 from my_view import MyView
 from my_scene import MyScene
-from PyQt4 import QtGui, QtCore, Qt
+from PyQt4 import QtGui, QtCore
 import numpy as np
 import cv2
-import time
 from qimage2ndarray import array2qimage
-import matplotlib.pyplot as plt
 
 __author__ = 'dita'
 
@@ -136,7 +134,7 @@ class Painter(QtGui.QWidget):
         for name, data in self.colors.iteritems():
 
             # reset mask
-            mask = np.zeros((self.w, self.h))
+            mask = np.zeros((self.h, self.w))
             color = data[1]
             # remove old pixmap
             self.scene.removeItem(data[2])
@@ -157,7 +155,7 @@ class Painter(QtGui.QWidget):
         """
         
         # prepare new mask
-        mask = np.zeros((self.w, self.h))
+        mask = np.zeros((self.h, self.w))
         # save color data
         color = (r, g, b, a)
         # fill the dictionary (pixmap will be set once the mask is not empty)

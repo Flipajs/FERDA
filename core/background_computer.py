@@ -23,7 +23,7 @@ class BackgroundComputer:
         self.results = []
         self.update_callback = update_callback
         self.finished_callback = finished_callback
-        self.start = 0
+        self.start = []
 
         # TODO: Settings
         self.frames_in_row = project.solver_parameters.frames_in_row
@@ -51,7 +51,7 @@ class BackgroundComputer:
         vid = get_auto_video_manager(self.project)
         frame_num = int(vid.total_frame_count())
 
-        self.part_num = int(frame_num / self.frames_in_row)
+        self.part_num = int(int(frame_num) / int(self.frames_in_row))
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
@@ -59,20 +59,23 @@ class BackgroundComputer:
             os.mkdir(self.project.working_directory + '/temp')
             
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
-            if self.postpone_parallelisation:
-                f = open(self.project.working_directory+'/limits.txt', 'w')
+            # if self.postpone_parallelisation:
+                # f = open(self.project.working_directory+'/limits.txt', 'w')
 
             if not S_.general.log_in_bg_computation:
                 S_.general.log_graph_edits = False
-            self.start = time.time()
 
             # change this if parallelisation stopped working and you want to run it from given part
             skip_n_first_parts = 0
 
+            self.start = [0] * self.part_num
+
             for i in range(skip_n_first_parts):
                 self.processes.append(None)
 
-            limitsFile = open(str(self.project.working_directory)+"/limits.txt","w");
+            if self.postpone_parallelisation:
+                limitsFile = open(str(self.project.working_directory)+"/limits.txt","w")
+
             for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
 
@@ -92,7 +95,7 @@ class BackgroundComputer:
                 print ex_str
 
                 if self.postpone_parallelisation:
-                    f.write(str(i)+'\t'+str(f_num)+'\t'+str(last_n_frames)+'\n')
+                    limitsFile.write(str(i)+'\t'+str(f_num)+'\t'+str(last_n_frames)+'\n')
 
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
@@ -103,7 +106,8 @@ class BackgroundComputer:
                             self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
                             f_num) + ' ' + str(last_n_frames))
 
-                limitsFile.write(str(i)+" "+str(f_num)+" "+str(last_n_frames)+"\n");
+                self.start[i] = time.time()
+
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
@@ -114,18 +118,18 @@ class BackgroundComputer:
                 # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
 
             if self.postpone_parallelisation:
-                f.close()
                 self.precomputed = True
 
             S_.general.log_graph_edits = True
-            limitsFile.close()
-            # sys.exit() ## Comment for cluster usage
+            if self.postpone_parallelisation:
+                limitsFile.close()
+                sys.exit() ## Comment for cluster usage
             
         else:
             self.precomputed = True
 
     def check_parallelization(self):
-        if self.finished.all() or self.precomputed:
+        if not self.postpone_parallelisation and (self.finished.all() or self.precomputed):
             self.check_parallelization_timer.stop()
             self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
             assembly_after_parallelization(self)
@@ -133,9 +137,10 @@ class BackgroundComputer:
     def OnProcessOutputReady(self, p_id):
         while True:
             try:
-                codec = QtCore.QTextCodec.codecForName("UTF-8")
-                str_ = str(codec.toUnicode(self.processes[p_id][0].readAllStandardOutput().data()))
                 if p_id == self.process_n - 1:
+                    codec = QtCore.QTextCodec.codecForName("UTF-8")
+                    str_ = str(codec.toUnicode(self.processes[p_id][0].readAllStandardOutput().data()))
+
                     try:
                         i = int(str_)
                         s = str((int(i) / float(self.frames_in_row_last) * 100))
@@ -164,9 +169,8 @@ class BackgroundComputer:
                 self.update_callback(num_finished / float(self.part_num))
 
                 print "PART " + str(p_id + 1) + "/" + str(self.part_num) + " FINISHED MSERS, takes ", round(
-                    end - self.start, 2), " seconds which is ", round((end - self.start) / (
-                    self.process_n * self.frames_in_row * int((p_id + self.process_n) / self.process_n)),
-                                                                      4), " seconds per frame"
+                    end - self.start[p_id], 2), " seconds which is ", round((end - self.start[p_id]) / (
+                    self.process_n * self.frames_in_row), 4), " seconds per frame"
 
                 self.processes[p_id][2] = self.FINISHED
 
@@ -174,6 +178,7 @@ class BackgroundComputer:
                 if new_id < len(self.processes):
                     it = self.processes[new_id]
                     it[0].start(it[1])
+                    self.start[new_id] = time.time()
                     self.processes[new_id][2] = self.RUNNING
 
                 break

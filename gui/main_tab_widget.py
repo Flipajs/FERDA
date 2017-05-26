@@ -8,7 +8,7 @@ import os
 
 from PyQt4 import QtGui, QtCore
 from gui.tracker.tracker_widget import TrackerWidget
-from gui.correction.correction_widget import ResultsWidget
+from gui.results.results_widget import ResultsWidget
 from gui.statistics.statistics_widget import StatisticsWidget
 
 from core.background_computer import BackgroundComputer
@@ -16,6 +16,7 @@ from functools import partial
 from gui.graph_widget.graph_visualizer import GraphVisualizer
 from core.graph.graph_manager import GraphManager
 import time
+from gui.learning.learning_widget import LearningWidget
 
 
 class MainTabWidget(QtGui.QWidget):
@@ -30,6 +31,7 @@ class MainTabWidget(QtGui.QWidget):
         self.tracker_tab = TrackerWidget(project, show_in_visualizer_callback=self.show_in_visualizer)
         self.tabs = QtGui.QTabWidget(self)
 
+        # TODO: takes too much space
         self.undock_button = QtGui.QPushButton("Undock")
         self.undock_button.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.undock_button.pressed.connect(self.detach_tab)
@@ -44,13 +46,14 @@ class MainTabWidget(QtGui.QWidget):
         self.results_tab = QtGui.QWidget()
         self.statistics_tab = StatisticsWidget(project)
         self.graph_tab = QtGui.QWidget()
+        self.region_classifier = QtGui.QWidget()
 
-        self.id_detection_tab = QtGui.QWidget()
+        self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet)
 
         self.finish_callback = finish_callback
 
-        self.tab_widgets = [self.tracker_tab, self.results_tab, self.id_detection_tab, self.statistics_tab, self.graph_tab]
-        self.tab_names = ["tracking", "results viewer", "id detection", "stats && results", "graph"]
+        self.tab_widgets = [self.tracker_tab, self.results_tab, self.id_detection_tab, self.statistics_tab, self.graph_tab, self.region_classifier]
+        self.tab_names = ["tracking", "results viewer", "id detection", "stats && results", "graph", "region classifier"]
         self.tab_docked = [False] * len(self.tab_widgets)
         for i in range(len(self.tab_widgets)):
             self.tabs.addTab(self.tab_widgets[i], self.tab_names[i])
@@ -62,7 +65,7 @@ class MainTabWidget(QtGui.QWidget):
         self.addAction(self.switch_to_tracking_window_action)
 
         self.vbox.addWidget(self.tabs)
-        self.layout().addWidget(self.buttons)
+        # self.layout().addWidget(self.m)
 
         self.ignore_tab_change = False
 
@@ -77,6 +80,11 @@ class MainTabWidget(QtGui.QWidget):
         self.reload_id_data.triggered.connect(self.reload_ids)
         self.reload_id_data.setShortcut(QtGui.QKeySequence(QtCore.Qt.ShiftModifier + QtCore.Qt.Key_R))
         self.addAction(self.reload_id_data)
+
+        self.update_undecided_a = QtGui.QAction('update undecided', self)
+        self.update_undecided_a.triggered.connect(self.learning_widget_update_undecided)
+        self.update_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_U))
+        self.addAction(self.update_undecided_a)
 
 
         print "LOADING GRAPH..."
@@ -131,12 +139,17 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.setCurrentIndex(1)
         self.results_tab.play_and_highlight_tracklet(tracklet, frame=frame, margin=margin)
 
-    def decide_tracklet(self, tracklet):
-        self.tab_changed(2)
-        # if not self.id_detection_tab:
-        #     self.tab_changed(2)
+    def decide_tracklet(self, tracklet, id_=None):
+        # self.tab_changed(2)
+        if not self.id_detection_tab:
+            self.tab_changed(2)
+        self.id_detection_tab.decide_tracklet_question(tracklet, id_=id_)
 
-        self.id_detection_tab.decide_tracklet_question(tracklet)
+    def get_separated_frame(self):
+        if not self.id_detection_tab:
+            self.tab_changed(2)
+
+        return self.id_detection_tab.get_separated_frame()
 
     def tab_changed(self, i):
         if self.ignore_tab_change or self.project.chm is None:
@@ -148,41 +161,80 @@ class MainTabWidget(QtGui.QWidget):
                     self.ignore_tab_change = True
                     self.tabs.removeTab(1)
                     self.results_tab.setParent(None)
-                    self.results_tab = ResultsWidget(self.project, decide_tracklet_callback=self.decide_tracklet)
-                    self.results_tab.update_positions()
+                    self.results_tab = ResultsWidget(self.project,
+                                                     callbacks={'decide_tracklet': self.decide_tracklet,
+                                                                'edit_tracklet': self.id_detection_tab.edit_tracklet,
+                                                                'get_separated_frame': self.get_separated_frame,})
+                    # self.results_tab.redraw_video_player_visualisations()
                     self.tabs.insertTab(1, self.results_tab, 'results viewer')
                     self.tabs.setCurrentIndex(1)
                     self.ignore_tab_change = False
 
-                self.results_tab.update_positions()
+                self.results_tab.update_visualisations()
 
         if i == 2:
             # TODO: show loading or something...
-            from gui.learning.learning_widget import LearningWidget
             if not isinstance(self.id_detection_tab, LearningWidget):
+                ok = False
+                for ch in self.project.chm.chunks_in_frame(0):
+                    if not ch.is_undefined():
+                        ok = True
+                        break
+
+                if not ok:
+                    QtGui.QMessageBox(
+                        "there is 0 tracklets with proper class (single-ID, multi-ID, no-ID, part-of-ID) in frame 0, most likely you need to continue to region classifier tab and do tracklet classification first. Continue with id detection only if you are aware of what you are doing.")
+
                 self.ignore_tab_change = True
                 self.tabs.removeTab(2)
                 self.id_detection_tab.setParent(None)
                 self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet)
+                self.id_detection_tab.update_callback()
                 self.tabs.insertTab(2, self.id_detection_tab, "id detection")
                 self.tabs.setCurrentIndex(2)
                 self.ignore_tab_change = False
 
+            if not len(self.id_detection_tab.lp.features):
+                self.id_detection_tab.disable_before_features()
+
         if i == 3:
             self.statistics_tab.update_data(self.project)
         if i == 4:
-            if not isinstance(self.graph_tab, GraphVisualizer):
+            from utils.video_manager import get_auto_video_manager
+            vm = get_auto_video_manager(self.project)
+            max_f = vm.total_frame_count()
+
+            from_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", 0, 0, max_f-1)
+            if ok or not isinstance(self.graph_tab, GraphVisualizer):
+                frames = None
+
+                to_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", from_frame+1, from_frame+1, max_f)
+                if ok:
+                    frames = range(from_frame, to_frame)
+
                 self.ignore_tab_change = True
                 # TODO: show loading...
                 self.tabs.removeTab(4)
                 self.graph_tab.setParent(None)
-                self.graph_tab = GraphWidgetLoader(self.project).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet)
+                self.graph_tab = GraphWidgetLoader(self.project, width=50, height=50).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet, frames=frames)
                 self.tabs.insertTab(4, self.graph_tab, "graph")
                 self.tabs.setCurrentIndex(4)
                 self.ignore_tab_change = False
 
                 self.graph_tab.redraw()
 
+        if i == 5:
+            from gui.clustering_tool import ClusteringTool
+
+            self.ignore_tab_change = True
+            self.tabs.removeTab(5)
+            self.region_classifier.setParent(None)
+            self.region_classifier = ClusteringTool(self.project)
+            self.tabs.insertTab(5, self.region_classifier, "region classifier")
+            self.tabs.setCurrentIndex(5)
+            self.ignore_tab_change = False
+
+            # self.region_classifier.human_iloop_classification(sort=True)
         pass
 
     def detach_tab(self):
@@ -195,6 +247,9 @@ class MainTabWidget(QtGui.QWidget):
     def attach_tab(self, number):
         self.tabs.insertTab(number, self.tab_widgets[number], self.tab_names[number])
 
+    def learning_widget_update_undecided(self):
+        if isinstance(self.id_detection_tab, LearningWidget):
+            self.id_detection_tab.update_undecided_tracklets()
 
 class DetachedWindow(QtGui.QMainWindow):
 

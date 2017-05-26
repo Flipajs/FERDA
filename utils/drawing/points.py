@@ -31,7 +31,9 @@ def draw_points(img, pts, color=None):
         return img
 
     if not color:
-        color = S_.visualization.default_region_color
+        # TODO:
+        color = QtGui.QColor(255, 0, 255, 70)
+        # color = S_.visualization.default_region_color
 
     color = process_color(color)
     alpha = color[3]
@@ -56,7 +58,7 @@ def draw_points_binary(img, pts):
     return img
 
 
-def draw_points_crop(img, pts, color=None, margin=0.1, square=False, fill_color=(255, 255, 255)):
+def draw_points_crop(img, pts, color=None, margin=0.1, square=False, fill_color=(255, 255, 255), fill_pts=None):
     """
     returns image with region visualization cropped around region with margin which is specified by percentage of max(height, width)
     :param img:
@@ -88,6 +90,9 @@ def draw_points_crop(img, pts, color=None, margin=0.1, square=False, fill_color=
 
     im_ = np.copy(img)
     im_ = draw_points(im_, pts, color)
+
+    if fill_pts is not None:
+        im_ = draw_points(im_, fill_pts, color)
 
     crop = get_safe_selection(im_, y_, x_, height_, width_, fill_color=fill_color)
 
@@ -122,6 +127,8 @@ def get_contour(pts):
     img[pts[:,0]-roi.y() + 1, pts[:,1]-roi.x() + 1] = 255
 
     ret, thresh = cv2.threshold(img, 127, 255, 0)
+
+    # TODO: what happens when we switch from cv2.RETR_TREE to cv2.RETR_EXTERNAL
 
     # different versions of opencv... =/
     try:

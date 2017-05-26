@@ -27,6 +27,8 @@ class SelectableQLabel(QtGui.QLabel):
         self.selected_callback = selected_callback
         self.selected = False
 
+        self.setMouseTracking(True)
+
     def mouseReleaseEvent(self, ev):
         if self.selected:
             self.set_selected(False)
@@ -35,13 +37,26 @@ class SelectableQLabel(QtGui.QLabel):
             if self.selected_callback:
                 self.selected_callback(self, self.id_)
 
+    def mouseMoveEvent(self, event):
+        modifiers = QtGui.QApplication.keyboardModifiers()
+        # mbutt = QtGui.QApplication.mouseButtons()
+        if modifiers == QtCore.Qt.ControlModifier:
+            self.set_selected(True)
+        # elif modifiers == QtCore.Qt.ControlModifier:
+        #     self.set_selected(False)
+
     def set_selected(self, selected):
         if selected:
-            self.setStyleSheet("border: 2px dashed black;")
+            self.setStyleSheet("border: 2px dashed red;")
             self.selected = True
         else:
             self.setStyleSheet("border: 0px;")
             self.selected = False
+
+
+def file_name_dialog(window, text='Select files', path='', filter_=''):
+    return file_names_dialog(window, text=text, path=path, filter_=filter_)[0]
+
 
 def file_names_dialog(window, text='Select files', path='', filter_=''):
     file_names = QtGui.QFileDialog.getOpenFileNames(window, text, path, filter=filter_)
@@ -134,3 +149,38 @@ def get_img_qlabel(pts, img, id, height=100, width=100, filled=False):
     item.setPixmap(pix_map)
 
     return item
+
+class ClickableQGraphicsPixmapItem(QtGui.QGraphicsPixmapItem):
+    def __init__(self, pixmap, id_, callback):
+        super(ClickableQGraphicsPixmapItem, self).__init__(pixmap)
+        self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+        self.id_ = id_
+        self.callback = callback
+
+    def mouseReleaseEvent(self, event):
+        super(ClickableQGraphicsPixmapItem, self).mouseReleaseEvent(event)
+        self.callback(self.id_)
+
+
+class SelectAllLineEdit(QtGui.QLineEdit):
+    def __init__(self, parent=None):
+        super(SelectAllLineEdit, self).__init__(parent)
+        self.readyToEdit = True
+        self.setFixedHeight(15)
+
+    def mousePressEvent(self, e, Parent=None):
+        super(SelectAllLineEdit, self).mousePressEvent(e) #required to deselect on 2e click
+        if self.readyToEdit:
+            self.selectAll()
+            self.readyToEdit = False
+
+    def focusInEvent(self, e):
+        super(SelectAllLineEdit, self).focusInEvent(e)
+        if self.readyToEdit:
+            self.selectAll()
+            self.readyToEdit = False
+
+    def focusOutEvent(self, e):
+        super(SelectAllLineEdit, self).focusOutEvent(e) #required to remove cursor on focusOut
+        self.deselect()
+        self.readyToEdit = True

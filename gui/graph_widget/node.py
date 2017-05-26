@@ -3,7 +3,7 @@ import numpy as np
 from PyQt4.QtCore import Qt
 
 from gui.graph_widget_loader import WIDTH, HEIGHT
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 
 SELECTION_LINE_WIDTH = 2
 DEFAULT_INFO_TEXT_OPACITY = 150
@@ -204,6 +204,9 @@ class TextInfoItem(QtGui.QGraphicsItem):
         text_item.setPos(self.x, self.y)
         text_item.setPlainText(self.text)
         text_item.setParentItem(self.rect)
+        r, g, b = self.color.red(), self.color.green(), self.color.blue()
+        if r+g+b < 250 and min(r, g, b) < 200:
+            text_item.setDefaultTextColor(QtGui.QColor(255, 255, 255))
         return text_item
 
     def boundingRect(self):

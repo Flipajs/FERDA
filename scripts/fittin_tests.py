@@ -16,7 +16,7 @@ from gui.img_controls.my_view import MyView
 from gui.img_controls.my_scene import MyScene
 import sys
 from PyQt4 import QtGui, QtCore
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 import numpy as np
 import pickle
 import cv2

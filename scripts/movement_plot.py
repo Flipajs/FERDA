@@ -66,7 +66,6 @@ if __name__ == '__main__':
 
     moves = np.array(moves)
 
-
     # for f in range(500):
     #     for id in range(8):
     #         i = f*8 + id

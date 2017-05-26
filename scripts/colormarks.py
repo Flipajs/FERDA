@@ -148,9 +148,9 @@ def on_mouse(event, x, y, flag, param):
         rescaled = rescale(crop, 2.0)
 
         scale_offset = (max(0, x - border), max(0, y - border))
-        cv2.cv.NamedWindow('crop', cv2.cv.CV_WINDOW_AUTOSIZE)
-        cv2.cv.SetMouseCallback('crop', on_mouse_scaled, param=5)
-        cv2.imshow('crop', rescaled)
+        cv2.cv.NamedWindow('crop_', cv2.cv.CV_WINDOW_AUTOSIZE)
+        cv2.cv.SetMouseCallback('crop_', on_mouse_scaled, param=5)
+        cv2.imshow('crop_', rescaled)
 
 
 def on_mouse_scaled(event, x, y, flag, param):
@@ -261,7 +261,7 @@ def init(path):
                 print 'moving backward in assignment, Ant id: ' + str(ant_id)
 
     cv2.destroyWindow('color')
-    cv2.destroyWindow('crop')
+    cv2.destroyWindow('crop_')
 
 
 def color2irg(color, i_max):
@@ -339,7 +339,7 @@ def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
     dist_im /= np.max(dist_im)
     dist_im = np.asarray(dist_im * 255, dtype=np.uint8)
 
-    mser.set_max_area(MSER_MAX_SIZE / float(im.shape[0] * im.shape[1]))
+    mser.set_max_area_relative(MSER_MAX_SIZE / float(im.shape[0] * im.shape[1]))
     regions = mser.process_image(dist_im)
     groups = mser_operations.get_region_groups(regions)
     ids = mser_operations.margin_filter(regions, groups)
@@ -412,12 +412,12 @@ def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
     #     img = np.copy(im)
     #     pts = r.pts()
     #     img[pts[:,0], pts[:,1], :] = (255, 255, 255)
-    #     crop = utils.img.get_safe_selection(img, c[0] - cell_half, c[1] - cell_half, collection_cell_size,
+    #     crop_ = utils.img.get_safe_selection(img, c[0] - cell_half, c[1] - cell_half, collection_cell_size,
     #                                         collection_cell_size)
     #     ds = np.sum(dist_im[r.pts()[:, 0], r.pts()[:, 1]]) / r.area()
     #     dn = darkest_neighbour_square(im, r.centroid(), NEIGH_SQUARE_SIZE)
     #     print ds, dn, ds+dn
-    #     cv2.imshow('crop', crop)
+    #     cv2.imshow('crop_', crop_)
     #     cv2.waitKey(0)
 
     # order = np.argsort(np.array(avg_intensity))
@@ -445,7 +445,7 @@ def visualize(img, frame_i, collection, colormark, fill_color=np.array([255, 0, 
 
     cv2.putText(crop, str(frame_i), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 0, 0), 1, cv2.CV_AA)
 
-    # crop[pts[:, 0] - int(c[0]) + cell_half, pts[:, 1] - int(c[1]) + cell_half, :] = fill_color
+    # crop_[pts[:, 0] - int(c[0]) + cell_half, pts[:, 1] - int(c[1]) + cell_half, :] = fill_color
 
     y = (id_in_collection / collection_cols) * collection_cell_size
     x = (id_in_collection % collection_cols) * collection_cell_size
@@ -480,7 +480,7 @@ def visualize2(img, frame_i, collection, colormark, collection_rows, a, va, i, v
     cv2.putText(crop, str(i)[0:5]+' '+str(vi)[0:5], (3, 10+2*vstep), cv2.FONT_HERSHEY_PLAIN, 0.65, (125, 255, 0), 1, cv2.CV_AA)
     cv2.putText(crop, str(n)[0:5]+' '+str(vn)[0:5], (3, 10+3*vstep), cv2.FONT_HERSHEY_PLAIN, 0.65, (125, 255, 0), 1, cv2.CV_AA)
     cv2.putText(crop, str(va*vi*vn)[0:5], (3, 10+4*vstep), cv2.FONT_HERSHEY_PLAIN, 0.65, (125, 255, 0), 1, cv2.CV_AA)
-    # crop[pts[:, 0] - int(c[0]) + cell_half, pts[:, 1] - int(c[1]) + cell_half, :] = fill_color
+    # crop_[pts[:, 0] - int(c[0]) + cell_half, pts[:, 1] - int(c[1]) + cell_half, :] = fill_color
 
     y = (id_in_collection / collection_cols) * collection_cell_size
     x = (id_in_collection % collection_cols) * collection_cell_size

@@ -51,6 +51,9 @@ class ActionNames:
     NEW_REGION = 'new_region'
     MERGED_SELECTED = 'merged_selected'
     JOIN_CHUNKS = 'join_chunks'
+    MARK_JOIN = 'mark_join'
+    MARK_SPLIT = 'mark_split'
+    MARK_JOIN_AND_SPLIT = 'mark_join_and_split'
 
 class LogEntry:
     def __init__(self, category, action_name, data=None):

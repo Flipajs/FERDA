@@ -5,6 +5,15 @@ __author__ = 'flipajs'
 import sqlite3 as sql
 import cPickle as pickle
 from core.region.region import encode_RLE
+from libs.cachetools import LRUCache
+import sys
+
+class Dummy():
+    def __getitem__(self, item):
+        return None
+
+    def __setitem__(self, key, value):
+        pass
 
 class RegionManager:
     def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=1000, data=None):
@@ -17,16 +26,25 @@ class RegionManager:
         :param cache_size_limit: Number of instances to be held in cache
         :return: None
         """
+        if cache_size_limit == -1:
+            import warnings
+            warnings.warn("cache size limit -1 - infinity is not supported right now!!!")
+
+        self.cache_size_limit_ = cache_size_limit
+
+        self.cache = Dummy()
+        if cache_size_limit != 0:
+            self.cache = LRUCache(maxsize=cache_size_limit, missing=lambda x: None, getsizeof=lambda x: 1)
+
         if db_wd == None:
             # cache mode (no db set)
-            if cache_size_limit == -1:
-                self.use_db = False
-                self.regions_cache_ = {}
-                self.recent_regions_ids = []
-                self.cache_size_limit_ = cache_size_limit
-                self.id_ = 0
-            else:
-                raise SyntaxError("Cache limit can only be set when database is used!")
+            # if cache_size_limit == -1:
+            self.use_db = False
+            # self.regions_cache_ = {}
+            # self.recent_regions_ids = []
+            self.id_ = 0
+            # else:
+            #     raise SyntaxError("Cache limit can only be set when database is used!")
         else:
             self.use_db = True
             self.db_path = db_wd+"/"+db_name
@@ -41,9 +59,8 @@ class RegionManager:
             self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
 
             self.use_db = True
-            self.regions_cache_ = {}
-            self.recent_regions_ids = []
-            self.cache_size_limit_ = cache_size_limit
+            # self.regions_cache_ = {}
+            # self.recent_regions_ids = []
             # if database has been used before, get last used ID and continue from it (IDs always have to stay unique)
             try:
                 self.cur.execute("SELECT id FROM regions ORDER BY id DESC LIMIT 1;")
@@ -105,8 +122,9 @@ class RegionManager:
         return self.tmp_ids
 
     def clear_cache(self):
-        self.regions_cache_     = {}
-        self.recent_regions_ids = []
+        self.cache.clear()
+        # self.regions_cache_     = {}
+        # self.recent_regions_ids = []
 
     def add_to_cache_(self, id, region):
         """
@@ -116,27 +134,30 @@ class RegionManager:
         :param region:
         :return None
         """
-        # print "Adding %s %s" % (id, region)
-        # print "Cache: %s" % self.recent_regions_ids
-        if id in self.recent_regions_ids:
-            # remove region from recent_regions_ids
-            self.recent_regions_ids.remove(id)
-            # print "Moving %s up" % id
-            # add region to fresh position in recent_regions_ids and add it to cache
-            self.recent_regions_ids.append(id)
-            self.regions_cache_[id] = region
-        else:
-            # add region to fresh position in recent_regions_ids and add it to cache
-            self.recent_regions_ids.append(id)
-            self.regions_cache_[id] = region
 
-            if self.cache_size_limit_ > 0 and len(self.regions_cache_) > self.cache_size_limit_:
-                pop_id = self.recent_regions_ids.pop(0)
-                # TODO: Dita why .id() ?
-                # self.regions_cache_.pop(pop_id, None).id()
-                self.regions_cache_.pop(pop_id, None)
-
-                # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
+        self.cache[id] = region
+        #
+        # # print "Adding %s %s" % (id, region)
+        # # print "Cache: %s" % self.recent_regions_ids
+        # if id in self.recent_regions_ids:
+        #     # remove region from recent_regions_ids
+        #     self.recent_regions_ids.remove(id)
+        #     # print "Moving %s up" % id
+        #     # add region to fresh position in recent_regions_ids and add it to cache
+        #     self.recent_regions_ids.append(id)
+        #     self.regions_cache_[id] = region
+        # else:
+        #     # add region to fresh position in recent_regions_ids and add it to cache
+        #     self.recent_regions_ids.append(id)
+        #     self.regions_cache_[id] = region
+        #
+        #     if self.cache_size_limit_ > 0 and len(self.regions_cache_) > self.cache_size_limit_:
+        #         pop_id = self.recent_regions_ids.pop(0)
+        #         # TODO: Dita why .id() ?
+        #         # self.regions_cache_.pop(pop_id, None).id()
+        #         self.regions_cache_.pop(pop_id, None)
+        #
+        #         # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
 
     def update(self, key, region):
         """
@@ -198,12 +219,14 @@ class RegionManager:
 
             # go through slice
             for i in range(start, stop, step):
-                if i in self.regions_cache_:
-                    # print "%s is in cache" % i
-                    # use cache if region is available
-                    r = self.regions_cache_[i]
+                r = self.cache[i]
+                if r:
+                # if i in self.regions_cache_:
+                #     # print "%s is in cache" % i
+                #     # use cache if region is available
+                #     r = self.regions_cache_[i]
                     result.append(r)
-                    self.update(i, r)
+                #     # self.update(i, r)
                 else:
                     # print "%s is not in cache" % i
                     # if not, add id to the list of ids to be fetched from db
@@ -216,11 +239,13 @@ class RegionManager:
                 if not isinstance(id, int):
                     print "TypeError: int expected, %s given! Skipping key '%s'." % (type(id), id)
                     continue
-                if id in self.regions_cache_:
-                    # print "%s was found in cache" % id
-                    r = self.regions_cache_[id]
+                r = self.cache[id]
+                if r:
+                # if id in self.regions_cache_:
+                #     # print "%s was found in cache" % id
+                #     r = self.regions_cache_[id]
                     result.append(r)
-                    self.update(id, r)
+                    # self.update(id, r)
                 else:
                     # print "%s was not found in cache" % id
                     sql_ids.append(id)
@@ -235,10 +260,12 @@ class RegionManager:
             if key not in self:
                 raise IndexError("Index %s is out of range (1 - %s)" % (key, len(self)))
 
-            if key in self.regions_cache_:
-                r = self.regions_cache_[key]
+            r = self.cache[key]
+            if r:
+            # if key in self.regions_cache_:
+            #     r = self.regions_cache_[key]
                 result.append(r)
-                self.update(key, r)
+                # self.update(key, r)
                 
                 return r
 

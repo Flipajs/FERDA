@@ -1,4 +1,4 @@
-import clearmetrics
+import _clearmetrics
 
 # 1d ground truth and measurements for 3 frames
 groundtruth = {0: [2, 3, 6],
@@ -32,7 +32,7 @@ print '\nMeasurements:'
 print measurements
 print ''
 
-clear = clearmetrics.ClearMetrics(groundtruth, measurements, 1.5)
+clear = _clearmetrics.ClearMetrics(groundtruth, measurements, 1.5)
 clear.match_sequence()
 for frame in groundtruth.keys():
     print 'Frame ' + str(frame) + ' matches:'

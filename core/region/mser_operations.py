@@ -115,22 +115,29 @@ def area_filter(regions, r_ids, min_area):
 
     return ids
 
-def min_intensity_filter_dict_(regions, r_ids, min_intensity):
+def min_intensity_filter_dict_(regions, r_ids, min_intensity, use_intensity_percentile=False):
+    key = 'minI'
+    if use_intensity_percentile:
+        key = 'intensity_percentile'
     ids = []
     for i in r_ids:
-        if regions[i]['minI'] < min_intensity:
+        if regions[i][key] < min_intensity:
             ids.append(i)
 
     return ids
 
 
-def is_child_of(child, parent):
+def is_child_of(child, parent, tolerance=0, tolerance_percents=0.1):
     if child.area() > parent.area():
         return False
 
+    num_miss = 0
+    # max_num_miss = tolerance_percents*parent.area()
+    max_num_miss = tolerance_percents*child.area()
+
     ch_r = child.roi()
     p_r = parent.roi()
-    if p_r.is_inside(ch_r.top_left_corner()) and p_r.is_inside(ch_r.bottom_right_corner(), strict=False):
+    if p_r.is_inside(ch_r.top_left_corner()) and p_r.is_inside(ch_r.bottom_right_corner(), tolerance=tolerance):
         img = np.zeros((p_r.height(), p_r.width()), dtype=np.bool)
         offset = np.array([p_r.y(), p_r.x()])
         p_pts = parent.pts() - offset
@@ -138,14 +145,17 @@ def is_child_of(child, parent):
 
         for p in child.pts() - offset:
             if not img[p[0], p[1]]:
-                return False
+                num_miss += 1
+
+                if num_miss > max_num_miss:
+                    return False
 
         return True
     else:
         return False
 
 
-def children_filter(regions, indexes):
+def children_filter(regions, indexes, tolerance=0):
     ids = []
     for r_id in indexes:
         is_child = False

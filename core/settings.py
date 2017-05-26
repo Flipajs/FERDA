@@ -35,7 +35,10 @@ class Item():
         self.key_ = key
         self.val_ = val
         self.tooltip_ = tooltip
+
         self.default_type = type(val)
+        if type(val) == QtGui.QColor:
+            self.val_ = str([val.red(), val.green(), val.blue(), val.alpha()])
 
     def get(self, type_=None):
         t = self.default_type
@@ -43,12 +46,20 @@ class Item():
             t = type_
 
         settings = QtCore.QSettings('ferda1')
-        # QtCore.QSettings()
+
+        if t == QtGui.QColor:
+            from ast import literal_eval
+            val = str(settings.value(self.key_, self.val_, str))
+            val = literal_eval(val)
+            return QtGui.QColor(val[0], val[1], val[2], val[3])
 
         return settings.value(self.key_, self.val_, t)
 
     def set(self, val):
         settings = QtCore.QSettings('ferda1')
+        if self.default_type == QtGui.QColor:
+            val = str([val.red(), val.green(), val.blue(), val.alpha()])
+
         settings.setValue(self.key_, val)
 
     def tooltip(self):
@@ -57,7 +68,7 @@ class Item():
 
 class Cache(object):
     __metaclass__ = SettingsType
-    use = Item('cache/use', True, 'There will be stored information in working directory to speed up mainly the correction tool.')
+    use = Item('cache/use', True, 'There will be stored information in working directory to speed up mainly the results tool.')
     mser = Item('cache/mser', True, 'Storing MSERs have huge impact on speed but it also needs huge space amount.')
     img_manager_size_MB = Item('cache/img_manager_size_MB', 500, '')
     region_manager_num_of_instances = Item('cache/region_manager_num_of_instances', 0, '')
@@ -78,6 +89,12 @@ class Visualization:
     __metaclass__ = SettingsType
     default_region_color = Item('visualization/default_region_color', QtGui.QColor(0, 255, 255, 50), '')
     basic_marker_opacity = Item('visualization/basic_marker_opacity', 0.8, '...')
+    segmentation_alpha = Item('visualization/segmentation_alpha', 230, '...')
+    no_single_id_filled = Item('visualization/no_single_id_filled', True, '...')
+    trajectory_history = Item('visualization/trajectory_history', True, '...')
+    history_depth = Item('visualization/history_depth', 10, '...')
+    history_depth_step = Item('visualization/history_depth_step', 1, '...')
+    history_alpha = Item('visualization/history_alpha', 2.0, '...')
 
 class Parallelization:
     __metaclass__ = SettingsType
@@ -96,6 +113,7 @@ class Temp:
     __metaclass__ = SettingsType
     last_vid_path = Item('temp/last_vid_path', '')
     last_wd_path = Item('temp/last_wd_path', '')
+    last_gt_path = Item('temp/last_gt_path', '')
 
 
 class General:
@@ -109,7 +127,7 @@ class Controls:
     # general
     show_settings = Item('controls/show_settings', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Comma), 'Show settings tab')
 
-    # step by step correction
+    # step by step results
     next_case = Item('controls/sbs/next_case', QtGui.QKeySequence(QtCore.Qt.Key_N))
     prev_case = Item('controls/sbs/prev_case', QtGui.QKeySequence(QtCore.Qt.Key_B))
     confirm = Item('controls/sbs/confirm', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Space))

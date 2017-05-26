@@ -12,6 +12,15 @@ class ROI():
         self.height_ = height
         self.width_ = width
 
+    def __str__(self):
+        s = ""
+        s += "y: {}".format(self.y_)
+        s += "\nx: {}".format(self.x_)
+        s += "\nheight: {}".format(self.height_)
+        s += "\nwidth: {}".format(self.width_)
+
+        return s
+
     def y(self):
         return self.y_
 
@@ -49,19 +58,19 @@ class ROI():
 
         return np.array([y_, x_])
 
-    def is_inside(self, pt, strict=True):
+    def is_inside(self, pt, tolerance=0):
         y = pt[0]
         x = pt[1]
-        if y < self.y_:
+        if y < self.y_ - tolerance:
             return False
 
-        if y > self.y_max_ or strict and y == self.y_max_:
+        if y > self.y_max_ + tolerance:
             return False
 
-        if x < self.x_:
+        if x < self.x_ - tolerance:
             return False
 
-        if x > self.x_max_ or strict and x == self.x_max_:
+        if x > self.x_max_ + tolerance:
             return False
 
         return True
@@ -74,6 +83,59 @@ class ROI():
             [self.y_max_, self.x_]
         ])
 
+    def slices(self):
+        return [slice(self.y_, self.y_max_), slice(self.x_, self.x_max_)]
+
+    def safe_roi(self, img, border=30):
+        y_ = max(0, self.y_-border)
+        y_max_ = min(img.shape[0], self.y_max_+border)
+
+        x_ = max(0, self.x_-border)
+        x_max_ = min(img.shape[1], self.x_max_+border)
+        return img[[slice(y_, y_max_), slice(x_, x_max_)]].copy()
+
+    def expand(self, border):
+        return ROI(self.y_ - border,
+                   self.x_ - border,
+                   self.height_ + 2*border,
+                   self.width_ + 2*border)
+
+    def safe_expand(self, border, image):
+        y = max(0, self.y_ - border)
+        x = max(0, self.x_ - border)
+        h = min(image.shape[0] - y - 1, self.height_ + 2 * border)
+        w = min(image.shape[1] - x - 1, self.width_ + 2 * border)
+        return ROI(y,
+                   x,
+                   h,
+                   w)
+
+    def is_intersecting(self, roi2):
+        """
+        returns True even when they intersects by edge
+        Args:
+            roi2:
+
+        Returns:
+
+        """
+        return not(self.x_ > roi2.x() + roi2.width() or
+                   self.x_max_ < roi2.x() or
+                   self.y_ > roi2.y() + roi2.height() or
+                   self.y_max_ < roi2.y()
+                   )
+
+
+    def is_intersecting_expanded(self, roi2, offset):
+        return self.expand(offset).is_intersecting(roi2)
+
+    def union(self, roi):
+        y_ = min(self.y_, roi.y_)
+        x_ = min(self.x_, roi.x_)
+        height = max(self.y_max_, roi.y_max_) - y_
+        width = max(self.x_max_, roi.x_max_) - x_
+
+        return ROI(y_, x_, height, width)
 
 def get_roi(pts):
     """

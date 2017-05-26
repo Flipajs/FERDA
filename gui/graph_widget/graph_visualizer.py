@@ -176,7 +176,7 @@ class GraphVisualizer(QtGui.QWidget):
         widget = self.chunk_detail_widget_vertical if self.show_vertically else self.chunk_detail_widget_horizontal
 
         region_chunk = self.loader.chunks_region_chunks[chunk]
-        frames = list(range(chunk[0].frame_, chunk[1].frame_ + 1))
+        frames = list(range(chunk.region_from.frame_, chunk.region_to.frame_ + 1))
         freq, none  = QtGui.QInputDialog.getInt(self, 'Chunk Detail',
             'Enter frequency:', value=1, min=1)
 
@@ -289,9 +289,14 @@ class GraphVisualizer(QtGui.QWidget):
     def update_lines(self):
         self.loader.update_colours(self.edges)
 
+    def show_node_images(self):
+        for it in self.scene.items():
+            if isinstance(it, Node):
+                it.create_pixmap()
+
     def compute_positions(self):
         for edge in self.edges:
-            if edge.type == LineType.TRACKLET:
+            if edge.type == LineType.TRACKLET or edge.type == LineType.PARTIAL_TRACKLET:
                 self.find_suitable_position_chunk(edge)
             elif edge.type == LineType.LINE:
                 self.find_suitable_position_line(edge)
@@ -550,7 +555,7 @@ class GraphVisualizer(QtGui.QWidget):
             if isinstance(column.frame, tuple):
                 frame_a, frame_b = column.frame[0], column.frame[1]
             if not (frame_a < first_frame or frame_b > last_frame):
-
+                column.delete_scene()
                 column.draw(self.compress_axis, self.show_vertically, self.frames_columns)
                 if frame_a > r:
                     self.load_indicator_wheel()
@@ -591,17 +596,17 @@ class GraphVisualizer(QtGui.QWidget):
         for edge in self.edges:
             region_from = edge.region_from
             region_to = edge.region_to
-            if edge.type == LineType.LINE or edge.type == LineType.TRACKLET:
-                if first_frame <= region_from.frame_ and region_to.frame_ <= last_frame:
-                    col = self.frames_columns[region_to.frame_]
-                    col.show_edge(edge, self.frames_columns, self.show_vertically)
-            elif edge.type == LineType.PARTIAL:
-                if (region_from or region_to) and (region_from in self.regions or region_to in self.regions):
-                    direction = "left" if (region_from is None or not (region_from in self.regions)) else "right"
-                    node = region_to if direction == "left" else region_from
-                    if first_frame <= node.frame_ <= last_frame:
-                        col = self.frames_columns[node.frame_]
-                        col.show_edge(edge, self.frames_columns, self.show_vertically, direction, node)
+            # if edge.type == LineType.LINE or edge.type == LineType.TRACKLET:
+            #     if first_frame <= region_from.frame_ and region_to.frame_ <= last_frame:
+            col = self.frames_columns[region_to.frame_]
+            col.show_edge(edge, self.frames_columns, self.show_vertically)
+            # elif edge.type == LineType.PARTIAL:
+            #     if (region_from or region_to) and (region_from in self.regions or region_to in self.regions):
+            #         direction = "left" if (region_from is None or not (region_from in self.regions)) else "right"
+            #         node = region_to if direction == "left" else region_from
+            #         if first_frame <= node.frame_ <= last_frame:
+            #             col = self.frames_columns[node.frame_]
+            #             col.show_edge(edge, self.frames_columns, self.show_vertically, direction, node)
 
     def toggle_show_vertically(self):
         self.show_vertically = False if self.show_vertically else True

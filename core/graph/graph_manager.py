@@ -32,7 +32,7 @@ class GraphManager:
         self.g.vp['chunk_end_id'] = self.g.new_vertex_property("int")
 
         self.g.ep['score'] = self.g.new_edge_property("float")
-        self.g.ep['certainty'] = self.g.new_edge_property("float")
+        self.g.ep['movement_score'] = self.g.new_edge_property("float")
 
     def add_vertex(self, region):
         self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
@@ -82,11 +82,13 @@ class GraphManager:
                 ch.pop_last(self) if chunk_end else ch.pop_first(self)
 
         # save all edges
-        for e in vertex.in_edges():
+        in_edges = [e for e in vertex.in_edges()]
+        for e in in_edges:
             affected.append(e.source())
             self.remove_edge_(e)
 
-        for e in vertex.out_edges():
+        out_edges = [e for e in vertex.out_edges()]
+        for e in out_edges:
             affected.append(e.target())
             self.remove_edge_(e)
 
@@ -145,19 +147,27 @@ class GraphManager:
 
         self.update_time_boundaries()
 
+    def update_time_boundaries(self):
+        keys = [self.vertices_in_t.keys()]
+        self.end_t = np.max(keys)
+        self.start_t = np.min(keys)
+
     def add_regions_in_t(self, regions, t, fast=False):
         self.add_vertices(regions)
 
         if t-1 in self.vertices_in_t and t in self.vertices_in_t:
             self.add_edges_(self.vertices_in_t[t-1], self.vertices_in_t[t], fast=fast)
 
-    def region(self, vertex):
+    def region_id(self, vertex):
         if int(vertex) < 0:
             id_ = -int(vertex)
         else:
             id_ = self.g.vp['region_id'][self.g.vertex(vertex)]
 
-        return self.project.rm[id_]
+        return id_
+
+    def region(self, vertex):
+        return self.project.rm[self.region_id(vertex)]
 
     def chunk_start(self, vertex_id):
         id_ = self.g.vp['chunk_start_id'][self.g.vertex(vertex_id)]
@@ -186,15 +196,16 @@ class GraphManager:
             regions_t1 = [self.region(v) for v in vertices_t1]
             regions_t2 = [self.region(v) for v in vertices_t2]
 
-            centroids_t1 = np.array([r.centroid() for r in regions_t1])
-            centroids_t2 = np.array([r.centroid() for r in regions_t2])
-
-            dists = cdist(centroids_t1, centroids_t2)
+            # centroids_t1 = np.array([r.centroid() for r in regions_t1])
+            # centroids_t2 = np.array([r.centroid() for r in regions_t2])
+            #
+            # dists = cdist(centroids_t1, centroids_t2)
             for i, v_t1, r_t1 in zip(range(len(vertices_t1)), vertices_t1, regions_t1):
                 for j, v_t2, r_t2 in zip(range(len(vertices_t2)), vertices_t2, regions_t2):
-                    d = dists[i, j]
+                    # d = dists[i, j]
 
-                    if d < self.max_distance:
+                    # if d < self.max_distance:
+                    if not r_t1.is_ignorable(r_t2, self.max_distance):
                         # prevent multiple edges going from tracklet (chunk) start or multiple edges incomming into chunk end. Only exception is chunk of length 1 (checked inside functions).
                         if self.ch_start_longer(v_t1) or self.ch_end_longer(v_t2):
                             continue
@@ -225,7 +236,8 @@ class GraphManager:
                 print "ERROR in (graph_manager.py) remove_edge target_vertex is None, source_vertex: ", source_vertex
             return
 
-        for e in source_vertex.out_edges():
+        out_edges = [e for e in source_vertex.out_edges()]
+        for e in out_edges:
             if e.target == target_vertex:
                 self.remove_edge_(e)
 
@@ -264,6 +276,8 @@ class GraphManager:
         return e
 
     def chunks_in_frame(self, frame):
+        import warnings
+        warnings.warn('DEPRECATED!')
         in_frame = []
         for ch_id in self.project.chm.chunk_list():
             ch = self.project.chm[ch_id]
@@ -477,3 +491,212 @@ class GraphManager:
                 return t
 
         return None
+
+    def out_v(self, v):
+        if v.out_degree() == 1:
+            for v2 in v.out_neighbours():
+                return v2
+
+        return None
+
+    def out_e(self, v):
+        if v.out_degree() == 1:
+            for e in v.out_edges():
+                return e
+
+    def one2one_check(self, v):
+        if v.out_degree() != 1:
+            return False
+
+        if self.g.vp['chunk_start_id'][v] and len(self.project.chm[self.g.vp['chunk_start_id'][v]]) > 1:
+            return False
+
+        for v2 in v.out_neighbours():
+            if v2.in_degree() != 1:
+                return False
+
+        # if self.get_chunk(v) is None:
+        #     return True
+
+        return True
+
+    def edge_is_chunk(self, e):
+        ch_s = self.g.vp['chunk_start_id'][e.source()]
+        return ch_s != 0 and ch_s == self.g.vp['chunk_end_id'][e.target()]
+        # return self.get_chunk(e.source()) is not None and self.get_chunk(e.target()) is not None
+
+    def remove_outgoing_edges(self, v):
+        out_edges = [e for e in v.out_edges()]
+
+        for e in out_edges:
+            self.remove_edge_(e)
+
+    def edges_with_score_in_range(self, lower_bound=-np.inf, upper_bound=np.inf):
+        filtered = []
+        for e in self.g.edges():
+            if self.edge_is_chunk(e):
+                continue
+
+            if lower_bound <= self.g.ep['score'][e] <= upper_bound:
+                filtered.append(e)
+
+        return filtered
+
+    def active_v_gen(self):
+        for v in self.g.vertices():
+            if self.g.vp['active']:
+                yield v
+
+    def get_2_best_out_edges(self, v):
+        best_e = [None, None]
+        best_s = [0, 0]
+        for e in v.out_edges():
+            s = self.g.ep['score'][e]
+
+            if self.edge_is_chunk(e):
+                continue
+
+            if s > best_s[0]:
+                best_s[1] = best_s[0]
+                best_e[1] = best_e[0]
+
+                best_s[0] = s
+                best_e[0] = e
+            elif s > best_s[1]:
+                best_s[1] = s
+                best_e[1] = e
+
+        return best_e, best_s
+
+    def get_2_best_out_edges_appearance_motion_mix(self, v, func=None):
+        best_e = [None, None]
+        best_s = [0, 0]
+
+        if func is None:
+            func = v.out_edges
+
+        for e in func():
+            s = self.g.ep['score'][e] * self.g.ep['movement_score'][e]
+
+            if self.edge_is_chunk(e):
+                continue
+
+            if s > best_s[0]:
+                best_s[1] = best_s[0]
+                best_e[1] = best_e[0]
+
+                best_s[0] = s
+                best_e[0] = e
+            elif s > best_s[1]:
+                best_s[1] = s
+                best_e[1] = e
+
+        return best_e, best_s
+
+    def get_2_best_in_edges_appearance_motion_mix(self, v):
+        return self.get_2_best_out_edges_appearance_motion_mix(v, func=v.in_edges)
+
+    def strongly_better(self, min_prob=0.9, better_n_times=10, score_type='appearance_motion_mix'):
+        from itertools import izip
+
+        strongly_better_e = []
+
+        for v in self.active_v_gen():
+            if score_type == 'appearance_motion_mix':
+                e, s = self.get_2_best_out_edges_appearance_motion_mix(v)
+            else:
+                e, s = self.get_2_best_out_edges(v)
+            if e[0] is not None:
+                if s[0] > min_prob:
+                    if e[1] is None or s[1] == 0 or s[0] / s[1] > better_n_times:
+                        strongly_better_e.append(e[0])
+
+        return strongly_better_e
+
+    def strongly_better_eps(self, eps=0.2, score_type='appearance_motion_mix'):
+        strongly_better_e = []
+
+        for v in self.active_v_gen():
+            if self.ch_start_longer(v):
+                continue
+
+            if score_type == 'appearance_motion_mix':
+                e, s = self.get_2_best_out_edges_appearance_motion_mix(v)
+            else:
+                e, s = self.get_2_best_out_edges(v)
+
+            if e[0] is not None:
+                val = s[0] / (s[0] + s[1] + eps)
+
+                if val > 0.5:
+                    strongly_better_e.append(e[0])
+
+        return strongly_better_e
+
+    def strongly_better_eps2(self, eps=0.2, score_type='appearance_motion_mix'):
+        strongly_better_e = []
+
+        for v in self.active_v_gen():
+            if self.ch_start_longer(v):
+                continue
+
+            if score_type == 'appearance_motion_mix':
+                e, s = self.get_2_best_out_edges_appearance_motion_mix(v)
+            else:
+                e, s = self.get_2_best_out_edges(v)
+
+            if e[0] is not None:
+                val = s[0] / (s[0] + s[1] + eps)
+
+                if val > 0.5:
+                    strongly_better_e.append((val, e[0]))
+
+        return strongly_better_e
+
+
+    def remove_edges(self, edges):
+        for e in edges:
+            self.remove_edge_(e)
+
+    def z_case_detection(self, v):
+        if v.out_degree() == 1:
+            v2 = self.out_v(v)
+
+            if v2.in_degree() == 2:
+                vv = None
+                for v_ in v2.in_neighbours():
+                    if v_ != v:
+                        vv = v_
+
+                if vv.out_degree() == 2:
+                    return True
+
+
+        return False
+
+    def regions_in_t(self, frame):
+        from core.graph.region_chunk import RegionChunk
+        regions = set()
+
+        for t in self.project.chm.chunks_in_frame(frame):
+            rch = RegionChunk(t, self, self.project.rm)
+            regions.add(rch.region_in_t(frame))
+
+        if frame in self.vertices_in_t:
+            for v in self.vertices_in_t[frame]:
+                regions.add(self.region(v))
+
+        return list(regions)
+
+    def regions_and_t_ids_in_t(self, frame):
+        regions = []
+        for t in self.project.chm.chunks_in_frame(frame):
+            r_id = t.r_id_in_t(frame, self.project.gm)
+            regions.append((r_id, t.id()))
+
+        return regions
+
+
+
+
+

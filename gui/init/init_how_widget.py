@@ -78,8 +78,14 @@ class InitHowWidget(QtGui.QWidget):
         r_id = 0
         for i in range(3):
             img = vid.next_frame()
-            img = prepare_for_segmentation(img, project, grayscale_speedup=False)
-            img_ = img.copy()
+            if hasattr(project, 'segmentation_model') and project.segmentation_model is not None:
+                project.segmentation_model.set_image(img)
+                seg = project.segmentation_model.predict()
+                img_ = np.asarray((-seg * 255) + 255, dtype=np.uint8)
+            else:
+                img_ = prepare_for_segmentation(img, project, grayscale_speedup=False)
+
+            img_ = img_.copy()
 
             msers = get_msers_(img_, self.project)
             groups = get_region_groups(msers)
@@ -107,8 +113,6 @@ class InitHowWidget(QtGui.QWidget):
             self.classes[i] = 1
 
         self.class_stats.compute_stats(self.regions, self.classes)
-        c = self.project.mser_parameters.min_area_relative
-        # self.project.mser_parameters.min_area = int(self.class_stats.area_median * c)
         self.project.stats = self.class_stats
 
         do_cluster_parall = self.do_cluster_parallelisation_ch.isChecked()

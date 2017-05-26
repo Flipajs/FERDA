@@ -10,7 +10,7 @@ from PyQt4 import QtCore
 from skimage.transform import resize
 from core.region.mser import get_msers_
 from core.project.project import Project
-from gui.img_controls.utils import cvimg2qtpixmap
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 from scripts.region_graph3 import visualize_nodes
 from utils.video_manager import get_auto_video_manager
 from core.region.mser import get_msers_

@@ -32,3 +32,4 @@ class ControlPanel(QtGui.QFrame):
         self.prepare_button('Stretch (N)', graph_w_callback.stretch, QtCore.Qt.Key_N)
         self.prepare_button('Shrink (M)', graph_w_callback.shrink, QtCore.Qt.Key_M)
         self.prepare_button('Update colors (C)', graph_w_callback.update_lines, QtCore.Qt.Key_C)
+        self.prepare_button('show images (I)', graph_w_callback.show_node_images, QtCore.Qt.Key_I)

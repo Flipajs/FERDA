@@ -8,13 +8,13 @@ import cv2
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from core.settings import Settings as S_
-from gui.graph_widget.graph_line import LineType, GraphLine
+from gui.graph_widget.graph_line import LineType, GraphLine, Overlap
 from utils.img_manager import ImgManager
 
 __author__ = 'Simon Mandlik'
 
 # the width of a node
-WIDTH = 25
+WIDTH = 35
 # the width of a node, should be same as width for the best result
 HEIGHT = WIDTH
 # relative margin of a node
@@ -46,7 +46,7 @@ class GraphWidgetLoader:
         self.edges = set()
         self.regions = set()
 
-        # self.chunks_region_chunks = {}
+        self.chunks_region_chunks = {}
         self.regions_vertices = {}
 
         self.g = None
@@ -92,11 +92,11 @@ class GraphWidgetLoader:
             self.regions_vertices[region] = vertex
             self.regions.add(region)
 
-    def prepare_edges(self):
+    def prepare_lines(self, first_frame, last_frame):
         for vertex in self.vertices:
             v = self.graph.vertex(vertex)
-            self.prepare_tuples(v.in_edges())
-            self.prepare_tuples(v.out_edges())
+            # self.prepare_tuples(v.in_edges()) # duplicates in output!
+            self.prepare_tuples(v.out_edges(), first_frame, last_frame)
 
     def update_colours(self, edges):
         for edge in edges:
@@ -120,34 +120,63 @@ class GraphWidgetLoader:
             # c = self.project.chm[source_start_id].color
         return c
 
-    def prepare_tuples(self, edges):
+    def prepare_tracklets(self, frames):
+        tracklets = self.project.chm.chunks_in_interval(frames[0], frames[-1])
+        for tracklet in tracklets:
+            region_chunk = RegionChunk(tracklet, self.graph_manager, self.region_manager)
+            # replace tracklet ends with their ends in range
+            # only tracklets can be partial
+            r1, r2 = region_chunk[0], region_chunk[-1]
+            left_overlap = tracklet.start_frame(self.graph_manager) < frames[0]
+            right_overlap = tracklet.end_frame(self.graph_manager) > frames[-1]
+            c = self.assign_color(tracklet)
+
+            if left_overlap or right_overlap:
+                type_of_line = LineType.PARTIAL_TRACKLET
+                overlap = Overlap(left=left_overlap, right=right_overlap)
+
+                if left_overlap:
+                    r1 = region_chunk.region_in_t(frames[0])
+                    self.regions.add(r1)
+                if right_overlap:
+                    r2 = region_chunk.region_in_t(frames[-1])
+                    self.regions.add(r2)
+
+                line = GraphLine(tracklet.id(), r1, r2, type_of_line, overlap=overlap, color=c)
+            else:
+                self.regions.add(r1)
+                self.regions.add(r2)
+                type_of_line = LineType.TRACKLET
+                line = GraphLine(tracklet.id(), r1, r2, type_of_line, color=c)
+            self.chunks_region_chunks[line] = RegionChunk(tracklet, self.graph_manager, self.region_manager)
+            # print tracklet.id(), type_of_line, left_overlap, right_overlap
+
+            self.edges.add(line)
+
+    def prepare_tuples(self, edges, first_frame, last_frame):
         for edge in edges:
             source = edge.source()
             target = edge.target()
             r1 = self.project.gm.region(source)
             r2 = self.project.gm.region(target)
+            if r1.frame_ == last_frame or r2.frame_ == first_frame:
+                continue # out of snaps
             source_start_id = self.graph_manager.g.vp["chunk_start_id"][source]
             target_end_id = self.graph_manager.g.vp["chunk_end_id"][target]
-            sureness = self.graph_manager.g.ep['score'][edge]
 
-            if source_start_id == target_end_id and source_start_id != 0:
-                type_of_line = LineType.TRACKLET
-            else:
-                type_of_line = LineType.LINE
-            if not (r1 in self.regions and r2 in self.regions):
-                type_of_line = LineType.PARTIAL
+            appearance_score = self.graph_manager.g.ep['score'][edge]
+            try:
+                movement_score = self.graph_manager.g.ep['movement_score'][edge]
+            except:
+                movement_score = 0
 
-            if type_of_line == LineType.TRACKLET:
-                tracklet = self.project.chm[source_start_id]
-                c = self.assign_color(tracklet)
-                line = GraphLine(tracklet.id(), r1, r2, type_of_line, sureness, c)
-            else:
-                line = GraphLine(0, r1, r2, type_of_line, sureness)
+            if source_start_id != target_end_id or source_start_id == 0:
+                line = GraphLine(0, r1, r2, LineType.LINE, appearance_score=appearance_score, movement_score=movement_score)
+                self.edges.add(line)
 
             # self.chunks_region_chunks[line] = RegionChunk(self.project.chm[source_start_id], self.graph_manager,
             #                                                    self.region_manager)
 
-            self.edges.add(line)
 
     def get_node_info(self, region):
         n = self.regions_vertices[region]
@@ -156,7 +185,7 @@ class GraphWidgetLoader:
         best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
         best_in_score, _ = self.project.gm.get_2_best_in_vertices(vertex)
 
-        ch = self.project.gm.is_chunk(vertex)
+        ch, _ = self.project.gm.is_chunk(vertex)
         ch_info = str(ch)
 
         # TODO
@@ -166,20 +195,23 @@ class GraphWidgetLoader:
         # TODO
         # return "Area = %i\nCentroid = %s\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % (region.area(), str(region.centroid()),
         #         region.margin_, str(best_in_score[0])+', '+str(best_in_score[1]), str(best_out_score[0])+', '+str(best_out_score[1]), ch_info)
-        return "Centroid = %s\nArea = %i\nAntlikeness = %.3f\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s" % \
+        return "Centroid = %s\nArea = %i\nAntlikeness = %.3f\nMargin = %i\nBest in = %s\nBest out = %s\nChunk info = %s\nVertex/region id = %s/%s" % \
                (str(region.centroid()), region.area(), antlikeness, region.margin_,
                 str(best_in_score[0]) + ', ' + str(best_in_score[1]),
-                str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info)
+                str(best_out_score[0]) + ', ' + str(best_out_score[1]), ch_info, str(n), str(region.id()))
 
     def get_edge_info(self, edge):
-        return "Type = {0}\nSureness = {1}\nTracklet id: {2}".format(edge.type, edge.sureness, edge.id)
+        return "Type = {}\nAppearance score = {}\nMovement score={}\nScore product={}\nTracklet id: {}".format(edge.type, edge.appearance_score, edge.movement_score, edge.appearance_score * edge.movement_score, edge.id)
 
     def get_widget(self, frames=None, show_tracklet_callback=None):
+        if frames is None:
+            frames = range(self.graph_manager.start_t, self.graph_manager.end_t)
         self.prepare_vertices(frames)
         # print("Preparing nodes...")
         self.prepare_nodes()
         # print("Preparing edges...")
-        self.prepare_edges()
+        self.prepare_lines(frames[0], frames[-1])
+        self.prepare_tracklets(frames)
         # print("Preparing visualizer...")
         img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
         from gui.graph_widget.graph_visualizer import GraphVisualizer
@@ -190,7 +222,6 @@ class GraphWidgetLoader:
         return self.project.chm[id]
 
 
-
 if __name__ == '__main__':
     project = Project()
 
@@ -199,7 +230,7 @@ if __name__ == '__main__':
     # snapshot = {'chm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
     # 'gm': '/home/sheemon/FERDA/projects/'+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
-    project.load('/home/simon/FERDA/projects/Cam1_/cam1.fproj')
+    project.load('/home/simon/FERDA/projects/clusters_gt/Cam1_/cam1.fproj')
 
     app = QtGui.QApplication(sys.argv)
     l1 = GraphWidgetLoader(project)
@@ -207,8 +238,8 @@ if __name__ == '__main__':
     # l1.set_width(60)
     # l1.set_height(60)
 
-    # g = l1.get_widget(range(300, 500))
-    g = l1.get_widget()
+    g = l1.get_widget(range(300, 400))
+    # g = l1.get_widget()
     g.redraw()
     g.show()
 

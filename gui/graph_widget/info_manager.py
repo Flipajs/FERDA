@@ -35,6 +35,10 @@ class InfoManager():
             else:
                 self.last_color = random_hex_color_str()
                 color = hex2rgb_opacity_tuple(self.last_color)
+
+            # if color.red() + color.green() + color.blue() < 150:
+            #     color = QtGui.QColor(color.red() + 50, color.green() + 50, color.blue() + 50, color.alpha())
+
             item.set_color(color)
         item.show_info(self.loader)
 

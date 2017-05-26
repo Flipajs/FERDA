@@ -2,6 +2,8 @@ __author__ = 'flipajs'
 
 from chunk import Chunk
 from libs.intervaltree.intervaltree import IntervalTree
+from utils.misc import print_progress
+
 
 class ChunkManager:
     def __init__(self):
@@ -25,8 +27,8 @@ class ChunkManager:
         self._add_ch_itree(ch, gm)
 
         # assign chunk color
-        r1 = gm.region(vertices_ids[0])
-        rend = gm.region(vertices_ids[-1])
+        # r1 = gm.region(vertices_ids[0])
+        # rend = gm.region(vertices_ids[-1])
         # if gm.project.color_manager:
         #     ch.color, _ = gm.project.color_manager.new_track(r1.frame_, rend.frame_)
 
@@ -84,3 +86,42 @@ class ChunkManager:
     def chunk_gen(self):
         for ch in self.chunks_.itervalues():
             yield ch
+
+    def reset_itree(self, gm):
+        self.itree = IntervalTree()
+
+        chn = len(self)
+        if chn:
+            for i, ch in enumerate(self.chunk_gen()):
+                self._add_ch_itree(ch, gm)
+
+                if i % 100:
+                    print_progress(i, chn, "reseting chunk interval tree")
+
+            print_progress(i, chn, "reseting chunk interval tree", "DONE\n")
+
+    def add_single_vertices_chunks(self, p, frames=None):
+        self.reset_itree(p.gm)
+
+        nn = p.gm.g.num_vertices()
+
+        for i, n in enumerate(p.gm.g.vertices()):
+            if frames is None:
+                if p.gm.get_chunk(n) is not None:
+                    continue
+            else:
+                r = p.gm.region(n)
+                if r.frame() not in frames or p.gm.get_chunk(n) is not None:
+                    continue
+
+            if not p.gm.g.vp['active'][n]:
+                continue
+
+            self.new_chunk([int(n)], p.gm)
+
+            if i % 100:
+                print_progress(i, nn,  prefix="single vertices 2 chunks")
+
+        print_progress(nn, nn, prefix="single vertices 2 chunks", suffix="DONE\n")
+
+        self.reset_itree(p.gm)

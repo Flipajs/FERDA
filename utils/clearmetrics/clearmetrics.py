@@ -127,7 +127,7 @@ class ClearMetrics(object):
             count += matches.count(-1)
         return count
 
-    def get_mismatches_count(self):
+    def get_mismatches_count(self, verbose=True):
         """
         Return number of identity mismatches.
 
@@ -145,8 +145,18 @@ class ClearMetrics(object):
                 break
             matches = np.array(self.gt_matches[frame])
             mask_match_in_both_frames = (matches != -1) & (last_matches != -1)
-            mismatches += np.count_nonzero(
+            new_mismatches_count = np.count_nonzero(
                 matches[mask_match_in_both_frames] != last_matches[mask_match_in_both_frames])
+
+            if new_mismatches_count and verbose:
+                print "mismatch in frame:{:}".format(frame)
+                print self.measurements[frame]
+                print self.groundtruth[frame]
+                print last_matches
+                print matches
+                print
+
+            mismatches += new_mismatches_count
             last_matches = matches
         return mismatches
 
@@ -162,7 +172,8 @@ class ClearMetrics(object):
             if frame >= len(self.measurements):
                 break
             targets = self.groundtruth[frame]
-            object_count += len(targets) - targets.count(None)  # TODO np.array([]) empty arrays?
+            none_empty_count = len(filter(lambda x: x is None or len(x) == 0, targets))
+            object_count += len(targets) - none_empty_count
         return object_count
 
     def get_matches_count(self):
@@ -198,7 +209,7 @@ class ClearMetrics(object):
         @return: MOTA score, <= 1
         @rtype: float
         """
-        return 1 - (self.get_fp_count() + self.get_fn_count() + self.get_mismatches_count()) / \
+        return 1 - (self.get_fp_count() + self.get_fn_count() + self.get_mismatches_count(verbose=False)) / \
                float(self.get_object_count())
 
     def _get_sq_distance_matrix(self, frame):
@@ -242,11 +253,14 @@ class ClearMetrics(object):
                                         -1 for FP
         @rtype: list, list, list
         """
-        if frame == 4000:
-            print "4000"
 
         sq_distance = self._get_sq_distance_matrix(frame)
+        # if all entries = NaN
         sq_distance_undefined = math.ceil(np.nanmax(sq_distance)) + 1
+        if np.isnan(sq_distance_undefined):
+            # TODO: it is just quick fix... Right now don't know how to solve it better
+            sq_distance_undefined = 100000000.0
+        # sq_distance_undefined = math.ceil(np.nanmax(sq_distance)) + 1
         sq_distance[np.isnan(sq_distance)] = sq_distance_undefined
         sq_distance[sq_distance > (self.thresh ** 2)] = sq_distance_undefined
 

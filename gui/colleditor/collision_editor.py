@@ -6,13 +6,13 @@ from PyQt4 import QtGui, QtCore
 from gui.colleditor.collision_view import CollisionView
 import cv2
 import os
-from gui.img_controls import utils
+from gui.img_controls import gui_utils
 import pickle
 from gui.colleditor import settings_dialog
 import ImageQt
 from utils import visualization_utils
 
-from viewer.gui.img_controls import markers
+from gui.img_controls import markers
 import default_settings
 from gui.colleditor.editable_pixmap import *
 from gui.colleditor.drawing_manager import *
@@ -20,7 +20,7 @@ from gui.colleditor.drawing_manager import *
 settings = QtCore.QSettings("FERDA")
 
 class CollisionEditor(QtGui.QMainWindow):
-    """A tool for correction of collision including MSER region editing and
+    """A tool for results of collision including MSER region editing and
         ant contour fitting."""
 
     def __init__(self):
@@ -320,8 +320,8 @@ class CollisionEditor(QtGui.QMainWindow):
         if self.pix_map_bg is not None:
             self.scene.removeItem(self.pix_map_bg)
             self.pix_map_bg = None
-        pix_map = utils.cvimg2qtpixmap(self.image)
-        utils.view_add_bg_image(self.graphics_view, pix_map)
+        pix_map = gui_utils.cvimg2qtpixmap(self.image)
+        gui_utils.view_add_bg_image(self.graphics_view, pix_map)
         self.pix_map_bg = self.scene.addPixmap(pix_map)
 
     def get_pixmap_from_pts(self, pts):

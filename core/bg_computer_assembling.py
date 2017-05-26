@@ -22,8 +22,9 @@ def assembly_after_parallelization(bgcomp):
 
     db_wd = bgcomp.project.working_directory
     if bgcomp.do_semi_merge:
-        # means - do not use database, use memory only
-        cache_size_limit = -1
+        # multiply estimate by this value to add security margin
+        q = 2.0
+        cache_size_limit = int(q * len(bgcomp.project.animals) * bgcomp.frames_in_row * bgcomp.part_num)
         db_wd = None
 
     bgcomp.project.rm = RegionManager(db_wd=db_wd, cache_size_limit=cache_size_limit)
@@ -45,10 +46,19 @@ def assembly_after_parallelization(bgcomp):
     from utils.misc import is_flipajs_pc
     if is_flipajs_pc():
         # TODO: remove this line
-        # part_num = 3
+        # part_num = 25
+        # bgcomp.first_part = 100
         pass
 
     bgcomp.project.color_manager = None
+
+    import time
+    import os
+    import psutil
+
+    merging_t = time.time()
+    process = psutil.Process(os.getpid())
+    print(process.memory_info().rss)
 
     print "merging..."
     # for i in range(part_num):
@@ -72,9 +82,6 @@ def assembly_after_parallelization(bgcomp):
     if not bgcomp.project.is_cluster():
         bgcomp.update_callback(-1, 'joining parts...')
 
-    if bgcomp.project.solver_parameters.use_emd_for_split_merge_detection():
-        bgcomp.project.solver.detect_split_merge_cases()
-
     bgcomp.project.gm.rm = bgcomp.project.rm
 
     print "reconnecting graphs"
@@ -91,21 +98,114 @@ def assembly_after_parallelization(bgcomp):
         connect_graphs(bgcomp, t_v, t1_v, bgcomp.project.gm, bgcomp.project.rm)
         # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
-    if bgcomp.project.solver_parameters.use_emd_for_split_merge_detection():
-        bgcomp.project.solver.detect_split_merge_cases()
-
+    print "merge t: ", time.time() - merging_t
+    print(process.memory_info().rss)
     print "#CHUNKS: ", len(bgcomp.project.chm)
-    bgcomp.solver.simplify(vs_todo, rules=[bgcomp.solver.adaptive_threshold])
-
     print "simplifying "
+
+    p = bgcomp.project
+    one2one_t = time.time()
+    try:
+        # TODO:
+        if bgcomp.project.type == 'colony':
+            rules = [bgcomp.solver.adaptive_threshold]
+
+            while True:
+                if bgcomp.solver.simplify(rules=rules) == 0:
+                    break
+        else:
+            bgcomp.solver.simplify(rules=[bgcomp.solver.one2one])
+    except:
+        bgcomp.solver.one2one()
+
+    print "first one2one t:", time.time() - one2one_t
+    print(process.memory_info().rss)
+
+    learn_assignment_t = time.time()
+
+    bgcomp.project.save_semistate('first_tracklets')
+    from scripts.regions_stats import learn_assignments, add_score_to_edges, tracklet_stats
+    learn_assignments(bgcomp.project, max_examples=50000, display=False)
+
+    print "learn assignment t:", time.time() - learn_assignment_t
+    learn_assignment_t = time.time()
+
+    p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
+    add_score_to_edges(p)
+
+    print "score edges t:", time.time() - learn_assignment_t
+    print(process.memory_info().rss)
+
+    p.save_semistate('edge_cost_updated')
+
+    update_t = time.time()
+    p.gm.update_nodes_in_t_refs()
+    p.chm.reset_itree(p.gm)
+    print "update t: ", time.time() - update_t
+    print(process.memory_info().rss)
+
+    tracklet_stats(p)
+
+    # print "test1"
+    # for ch in p.chm.chunk_gen():
+    #     if len(ch) > 1:
+    #         # test start
+    #         v = ch.start_node()
+    #         if not p.gm.g.vp['chunk_start_id'][v] or p.gm.g.vp['chunk_end_id'][v]:
+    #             print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+    #
+    #         v = ch.end_node()
+    #         if p.gm.g.vp['chunk_start_id'][v] or not p.gm.g.vp['chunk_end_id'][v]:
+    #             print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+
+    if True:
+        score_type = 'appearance_motion_mix'
+        eps = 0.3
+
+        strongly_better_t = time.time()
+        strongly_better_e = p.gm.strongly_better_eps2(eps=eps, score_type=score_type)
+
+        strongly_better_e = sorted(strongly_better_e, key=lambda x: -x[0])
+
+        print "strongly better: {}, t: {}".format(len(strongly_better_e), time.time()-strongly_better_t)
+        print(process.memory_info().rss)
+        confirm_t = time.time()
+        for _, e in strongly_better_e:
+            if p.gm.g.edge(e.source(), e.target()) is not None:
+                bgcomp.solver.confirm_edges([(e.source(), e.target())])
+
+        print "confirm_t: ", time.time() - confirm_t
+        print(process.memory_info().rss)
+
+        tracklet_stats(p)
+
+        # strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
+        # print "strongly better: {}".format(len(strongly_better_e))
+        # for e in strongly_better_e:
+        #     bgcomp.solver.confirm_edges([(e.source(), e.target())])
+        #
+        # bgcomp.solver.one2one()
+        #
+        # tracklet_stats(p)
+        # bgcomp.solver.one2one()
+
+        p.gm.update_nodes_in_t_refs()
+        p.chm.reset_itree(p.gm)
+
+        p.save_semistate('eps_edge_filter')
+        tracklet_stats(p)
+
+    # bgcomp.solver.simplify(vs_todo, rules=[bgcomp.solver.adaptive_threshold])
+
 
     if not bgcomp.project.is_cluster():
         from core.settings import Settings as S_
         S_.general.log_graph_edits = True
 
-    bgcomp.project.solver = bgcomp.solver
+    p.solver = bgcomp.solver
 
-    bgcomp.project.gm.project = bgcomp.project
+    p.gm.project = bgcomp.project
+    p.chm.add_single_vertices_chunks(p)
 
     # from utils.color_manager import colorize_project
     # import time
@@ -116,8 +216,22 @@ def assembly_after_parallelization(bgcomp):
     if not bgcomp.project.is_cluster():
         bgcomp.update_callback(-1, 'saving...')
 
+    p.gm.update_nodes_in_t_refs()
+
     if not bgcomp.do_semi_merge:
-        bgcomp.project.save()
+        p.save()
+
+    print "test2"
+    for ch in p.chm.chunk_gen():
+        if len(ch) > 1:
+            # test start
+            v = ch.start_node()
+            if not p.gm.g.vp['chunk_start_id'][v] or p.gm.g.vp['chunk_end_id'][v]:
+                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+
+            v = ch.end_node()
+            if p.gm.g.vp['chunk_start_id'][v] or not p.gm.g.vp['chunk_end_id'][v]:
+                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
 
     print ("#CHUNKS: %d") % (len(bgcomp.project.chm.chunk_list()))
 
@@ -140,7 +254,7 @@ def connect_graphs(bgcomp, vertices1, vertices2, gm, rm):
     #
     #         if d < gm.max_distance:
     #             s, ds, multi, antlike = self.solver.assignment_score(r1, r2)
-    #             gm.add_edge_fast(v1, v2, 0)9
+    #             gm.add_edge_fast(v1, v2, 0)
 
 
 def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm):
@@ -205,13 +319,13 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
             # this means there was some outdated edge, it is fine to ignore it...
             continue
 
-        # add edges only in one direction
-        if int(v1_new) > int(v2_new):
-            continue
+        # # add edges only in one direction
+        # if int(v1_new) > int(v2_new):
+        #     continue
 
         # ep['score'] is assigned in add_edge call
         new_e = new_gm.add_edge(v1_new, v2_new, old_score)
-        new_gm.g.ep['certainty'][new_e] = old_g.ep['certainty'][old_e]
+        new_gm.g.ep['movement_score'][new_e] = old_g.ep['movement_score'][old_e]
 
     # chunk id = 0 means no chunk assigned
     chunks_map = {0: 0}
@@ -242,8 +356,8 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
         new_gm.g.vp['chunk_start_id'][new_v] = chunks_map[old_g.vp['chunk_start_id'][old_v]]
         new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
 
-    # create chunk for each single vertex
-    for v_id in single_vertices:
-        ch, id = project.chm.new_chunk([int(v_id)], project.gm)
-        new_gm.g.vp['chunk_start_id'][v_id] = id
-        new_gm.g.vp['chunk_end_id'][v_id] = id
+    # # create chunk for each single vertex
+    # for v_id in single_vertices:
+    #     ch, id = project.chm.new_chunk([int(v_id)], project.gm)
+    #     new_gm.g.vp['chunk_start_id'][v_id] = id
+    #     new_gm.g.vp['chunk_end_id'][v_id] = id

@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 
 from utils import video_manager
-from gui.img_controls import my_view, utils
+from gui.img_controls import my_view, gui_utils
 from gui.init.arena.arena_circle import ArenaCircle
 from gui.init.arena.arena_mark import ArenaMark
 from gui.init.background.bg_fix_widget import BgFixWidget
@@ -61,7 +61,7 @@ class InitWhereWidget(QtGui.QWidget):
         self.scene = QtGui.QGraphicsScene()
         self.graphics_view = my_view.MyView()
         self.graphics_view.setScene(self.scene)
-        self.scene.addPixmap(utils.cvimg2qtpixmap(self.first_frame))
+        self.scene.addPixmap(gui_utils.cvimg2qtpixmap(self.first_frame))
         self.bg_model_pixmap = None
 
         self.add_circle_selection()
@@ -69,41 +69,44 @@ class InitWhereWidget(QtGui.QWidget):
         self.vbox.addWidget(self.graphics_view)
 
     def confirm_arena_selection_clicked(self):
-        if isinstance(self.project.bg_model, BGModel) or self.project.bg_model.is_computed():
-            if isinstance(self.project.bg_model, Model):
-                self.project.bg_model = self.project.bg_model.get_model()
+        self.finish_callback()
+        return
 
-            self.graphics_view.hide()
-            self.bg_fix_widget = BgFixWidget(self.project.bg_model.img(), self.finish)
-            self.graphics_view.hide()
-            self.vbox.addWidget(self.bg_fix_widget)
+        # if isinstance(self.project.bg_model, BGModel) or self.project.bg_model.is_computed():
+        #     if isinstance(self.project.bg_model, Model):
+        #         self.project.bg_model = self.project.bg_model.get_model()
 
-            h_, w_, _ = self.project.bg_model.img().shape
-            self.project.arena_model = Circle(h_, w_)
-            c = np.array([self.arena_ellipse.c.pos().y(), self.arena_ellipse.c.pos().x()])
-            r = np.array([self.arena_ellipse.a.pos().y(), self.arena_ellipse.a.pos().x()])
+        self.graphics_view.hide()
+        self.bg_fix_widget = BgFixWidget(self.project.bg_model.img(), self.finish)
+        self.graphics_view.hide()
+        self.vbox.addWidget(self.bg_fix_widget)
 
-            self.project.arena_model.set_circle(c, np.linalg.norm(c-r))
+        h_, w_, _ = self.project.bg_model.img().shape
+        self.project.arena_model = Circle(h_, w_)
+        c = np.array([self.arena_ellipse.c.pos().y(), self.arena_ellipse.c.pos().x()])
+        r = np.array([self.arena_ellipse.a.pos().y(), self.arena_ellipse.a.pos().x()])
 
-            if self.progress_dialog:
-                self.progress_dialog.cancel()
-                self.progress_dialog = None
-        else:
-            while True:
-                time.sleep(.100)
-                if not self.progress_dialog:
-                    self.progress_dialog = QtGui.QProgressDialog('Computing background model. Be patient please...', QtCore.QString("Cancel"), 0, 100)
-                    self.progress_dialog.setWindowTitle('Upload status')
-                else:
-                    self.progress_dialog.setLabelText('Computing '+str(self.project.bg_model.get_progress()))
-                    self.progress_dialog.setValue(self.project.bg_model.get_progress())
-                    QtGui.QApplication.processEvents()
+        self.project.arena_model.set_circle(c, np.linalg.norm(c-r))
 
-                if self.project.bg_model.is_computed():
-                    break
-
-            self.confirm_arena_selection_clicked()
-            return
+        if self.progress_dialog:
+            self.progress_dialog.cancel()
+            self.progress_dialog = None
+        # else:
+        #     while True:
+        #         time.sleep(.100)
+        #         if not self.progress_dialog:
+        #             self.progress_dialog = QtGui.QProgressDialog('Computing background model. Be patient please...', QtCore.QString("Cancel"), 0, 100)
+        #             self.progress_dialog.setWindowTitle('Upload status')
+        #         else:
+        #             self.progress_dialog.setLabelText('Computing '+str(self.project.bg_model.get_progress()))
+        #             self.progress_dialog.setValue(self.project.bg_model.get_progress())
+        #             QtGui.QApplication.processEvents()
+        #
+        #         if self.project.bg_model.is_computed():
+        #             break
+        #
+        #     self.confirm_arena_selection_clicked()
+        #     return
 
         self.label_instructions.setText('To support FERDA performance, we are using background model. Bellow you can see background model. There should be no tracked object visible. If they are, please fix them by selecting problematic area in image. Then click f and by draggin move the green selection to area with background only. Press ctrl+z if you don\'t like the result for new selection."')
         self.confirm_arena_selection.setHidden(True)

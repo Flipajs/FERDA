@@ -77,23 +77,29 @@ def _rotate_back_projection(pts, th, center, roi):
 
     x_range = roi_x_range(roi_img)
     y_range = roi_y_range(roi_img)
+
+    from utils.drawing.points import draw_points_crop_binary
+    im = draw_points_crop_binary(pts)
+
     for i in x_range:
         for j in y_range:
             pt = _rotate([[i, j]], -th, center, inv_rot_matrix)
-            if pt[0] in pts:
-                new_pts.append([i, j])
+            # TODO: old format roi [[min_x, min_y], [...]]
+            y = pt[0][0] - roi[0][0]
+            x = pt[0][1] - roi[0][1]
+            if 0 <= y < im.shape[0]:
+                if 0 <= x < im.shape[1]:
+                    if im[y, x]:
+                        new_pts.append([i, j])
 
-    print new_pts
     return new_pts
 
 
 def roi_x_range(roi):
-    print "x_range", roi[0][0], roi[1][0] + 1
     return range(roi[0][0], roi[1][0] + 1)
 
 
 def roi_y_range(roi):
-    print "y_range", roi[0][1], roi[1][1] + 1
     return range(roi[0][1], roi[1][1] + 1)
 
 
@@ -187,3 +193,29 @@ def roi_size(roi):
     rows = roi[1][1] - roi[0][1] + 1
 
     return cols, rows
+
+
+def get_region_group_overlaps(rt1, rt2):
+    import cv2
+    roi_union = rt1[0].roi()
+
+    for r in rt1 + rt2:
+        roi_union = roi_union.union(r.roi())
+
+    print roi_union
+
+    h = roi_union.y_ + roi_union.height_
+    w = roi_union.x_ + roi_union.width_
+
+    im = np.zeros((h, w, 3), dtype=np.uint8)
+
+    for i, r in enumerate(rt1):
+        pts = r.pts()
+        im[pts[:,0], pts[:, 1], 1] = 150
+
+    for i, r in enumerate(rt2):
+        pts = r.pts()
+        im[pts[:,0], pts[:, 1], 2] = 150
+
+    cv2.imshow('test', im)
+    cv2.waitKey(0)

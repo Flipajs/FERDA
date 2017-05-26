@@ -21,6 +21,7 @@ class Region():
         self.label_ = -1
         self.margin_ = -1
         self.min_intensity_ = -1
+        self.intensity_percentile = -1
         self.max_intensity_ = -1
         self.area_ = None
 
@@ -50,10 +51,9 @@ class Region():
         self.contour_ = None
         self.is_virtual = False
 
-        self.colormarks = []
 
     def __str__(self):
-        s = "t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(round(self.centroid_[0], 2))+", "+\
+        s = repr(self)+" t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(round(self.centroid_[0], 2))+", "+\
             str(round(self.centroid_[1], 2))+"] a: {:.3}".format(self.a_) + " b: {:.3}".format(self.b_)+" sxx: {:.4}".format(self.sxx_) +\
             " syy: {:.4} ".format(self.syy_) + " sxy: {:.4}".format(self.sxy_) + " margin: " + str(self.margin_)
 
@@ -66,7 +66,8 @@ class Region():
         i = 0
 
         # do pts allocation if possible
-        if self.area_:
+        # for some reason, in rare circumstances area from MSER is wrong
+        try:
             pts = np.zeros((self.area(), 2), dtype=np.int)
 
             for row in data:
@@ -75,8 +76,8 @@ class Region():
                     pts[i, 1] = c
 
                     i += 1
-
-        else:
+        except (IndexError, AttributeError) as e:
+            print e
             pts = []
 
             for row in data:
@@ -102,6 +103,9 @@ class Region():
         self.label_ = data['label']
         self.margin_ = data['margin']
         self.min_intensity_ = data['minI']
+        if 'intensity_percentile' in data:
+            self.intensity_percentile = data['intensity_percentile']
+
         self.max_intensity_ = data['maxI']
 
         # image moments
@@ -148,7 +152,6 @@ class Region():
         return np.copy(self.pts_)
 
     def centroid(self):
-
         return np.copy(self.centroid_)
 
     def set_centroid(self, centroid):
@@ -174,6 +177,100 @@ class Region():
 
     def frame(self):
         return self.frame_
+
+    def vector_on_major_axis_projection_head_unknown(self, region):
+        """
+        projection of movement vector onto main axis vector in range <0, pi/2> due to the head orientation uncertainty
+        Returns:
+
+        """
+
+        p1, _ = get_region_endpoints(self)
+
+        u = p1 - self.centroid()
+        v = self.centroid() - region.centroid()
+        u_d = np.linalg.norm(u)
+        if u_d == 0:
+            return 0
+
+        a = np.dot(v, u/u_d)
+
+        return abs(a)
+
+        # c = np.dot(u, v) / np.norm(u) / np.norm(v)  # -> cosine of the angle
+        # # <0, pi>
+        # angle = np.arccos(np.clip(c, -1, 1))  # if you really want the angle
+        #
+        # if angle > np.pi/2:
+        #     angle -= np.pi/2
+
+    def is_ignorable(self, r2, max_dist):
+        """
+
+
+        Args:
+            r2:
+            max_dist:
+
+        Returns:
+
+        """
+        # # term1 for speedup...
+        # term1 = np.linalg.norm(self.centroid() - r2.centroid()) < max_dist
+        # b = not term1 and not self.roi().is_intersecting_expanded(r2.roi(), max_dist)
+
+        # term1 = np.linalg.norm(self.centroid() - r2.centroid()) < max_dist
+        # b = not term1 and not self.roi().is_intersecting_expanded(r2.roi(), max_dist)
+        return not self.roi().is_intersecting_expanded(r2.roi(), max_dist)
+
+    def eccentricity(self):
+        return 1-(self.b_ / self.a_)**0.5
+
+
+    def get_phi(self, r2):
+        """
+        angle between movement vector and major axis <0, pi>
+        Args:
+            r2:
+
+        Returns:
+
+        """
+
+        u = self.centroid() - r2.centroid()
+        u_ = np.linalg.norm(u)
+        p1, _ = get_region_endpoints(self)
+        v = self.centroid() - p1
+        v_ = np.linalg.norm(v)
+
+        if u_ < 2.0 or v_ < 2.0:
+            return 0
+
+        c = np.dot(u, v) / np.linalg.norm(u) / np.linalg.norm(v)  # -> cosine of the angle
+        # <0, pi>
+        phi = np.arccos(np.clip(c, -1, 1))  # clip to prevent numerical imprecision
+
+        return phi
+
+    def is_inside(self, pt, tolerance=0):
+        tolerance = int(tolerance)
+        from utils.drawing.points import draw_points_crop_binary
+        if self.roi().is_inside(pt, tolerance=tolerance):
+            pt_ = np.asarray(np.round(pt - self.roi().top_left_corner()), dtype=np.uint)
+            # TODO + tolerance margin, and fix offset
+            im = draw_points_crop_binary(self.pts())
+
+            y1 = int(max(0, pt_[0] - tolerance))
+            y2 = int(min(pt_[0] + tolerance + 1, im.shape[0]))
+            x1 = int(max(0, pt_[1] - tolerance))
+            x2 = int(min(pt_[1] + tolerance + 1, im.shape[1]))
+            for y in range(y1, y2):
+                for x in range(x1, x2):
+                    if im[y, x]:
+                        return True
+
+        return False
+
 
 def encode_RLE(pts):
     """
@@ -220,8 +317,14 @@ def encode_RLE(pts):
     """
     return rle
 
+def get_region_endpoints(r):
+    # returns head, tail
 
+    p_ = np.array([r.a_ * math.sin(-r.theta_), r.a_ * math.cos(-r.theta_)])
+    endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
+    endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
 
+    return endpoint1, endpoint2
 
 def compute_region_axis_(sxx, syy, sxy):
     la = (sxx + syy) / 2

@@ -115,6 +115,11 @@ class Project:
         except AttributeError:
             pass
 
+        try:
+            p.video_crop_model = self.video_crop_model
+        except AttributeError:
+            pass
+
         with open(destinationFolder+'/'+self.name+'.fproj', 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 
@@ -190,6 +195,14 @@ class Project:
             self.gm.assignment_score = ac
 
     def save_chm_(self, file_path):
+        print "saving chm"
+        import os
+
+        try:
+            os.rename(file_path, file_path+'__')
+        except:
+            pass
+
         # Chunk Manager
         if self.chm:
             for _, ch in self.chm.chunks_.iteritems():
@@ -215,9 +228,9 @@ class Project:
 
     def save_qsettings(self,toFolder=""):
         if (toFolder == ""):
-            destinationFolder = self.working_directory;
+            destinationFolder = self.working_directory
         else:
-            destinationFolder = toFolder;
+            destinationFolder = toFolder
 
         s = QtCore.QSettings('FERDA')
         settings = {}
@@ -243,7 +256,35 @@ class Project:
                 except:
                     pass
 
-    def load(self, path, snapshot=None, parent=None):
+    def load_semistate(self, path, state='isolation_score', one_vertex_chunk=False, update_t_nodes=False):
+        self.load(path)
+
+        with open(self.working_directory + '/temp/'+state+'.pkl', 'rb') as f:
+            up = pickle.Unpickler(f)
+            self.gm.g = up.load()
+            up.load()
+            self.chm = up.load()
+
+        from core.region.region_manager import RegionManager
+        self.rm = RegionManager(self.working_directory + '/temp', db_name='part0_rm.sqlite3')
+        self.gm.rm = self.rm
+
+        if one_vertex_chunk:
+            self.chm.add_single_vertices_chunks(self)
+
+        if update_t_nodes:
+            self.gm.update_nodes_in_t_refs()
+
+
+    def save_semistate(self, state):
+        with open(self.working_directory + '/temp/'+state+'.pkl', 'wb') as f:
+            p = pickle.Pickler(f)
+            p.dump(self.gm.g)
+            p.dump(None)
+            p.dump(self.chm)
+
+
+    def load(self, path, snapshot=None, parent=None, lightweight=False):
         if path[-6:] != '.fproj':
             for f in os.listdir(path):
                 if f[-6:] == '.fproj':
@@ -306,19 +347,22 @@ class Project:
         except:
             pass
 
-        # SETTINGS
-        try:
-            self.load_qsettings()
-        except:
-            pass
+        if not lightweight:
+            # SETTINGS
+            try:
+                self.load_qsettings()
+            except:
+                pass
 
-        # check if video exists
-        if parent:
-            self.video_paths, changed = check_video_path(self.video_paths, parent)
-            print "New path is %s" % self.video_paths
 
-            if changed:
-                self.save()
+        if not lightweight:
+            # check if video exists
+            if parent:
+                self.video_paths, changed = check_video_path(self.video_paths, parent)
+                print "New path is %s" % self.video_paths
+
+                if changed:
+                    self.save()
 
         # # Region Manager
         # try:
@@ -327,8 +371,10 @@ class Project:
         # except:
         #     pass
 
+
         self.load_snapshot(snapshot)
 
+        # if not lightweight:
         # SAVED CORRECTION PROGRESS
         try:
             with open(self.working_directory+'/progress_save.pkl', 'rb') as f:
@@ -371,39 +417,40 @@ class Project:
         self.gm.rm = self.rm
         # self.gm.update_nodes_in_t_refs()
 
-        # fix itree in chm...
-        if self.chm is not None and self.gm is not None and self.rm is not None:
-            if not hasattr(self.chm, 'itree'):
-                from libs.intervaltree.intervaltree import IntervalTree
-                self.chm.itree = IntervalTree()
-                self.chm.eps1 = 0.01
-                self.chm.eps2 = 0.1
+        if not lightweight:
+            # fix itree in chm...
+            if self.chm is not None and self.gm is not None and self.rm is not None:
+                if not hasattr(self.chm, 'itree'):
+                    from libs.intervaltree.intervaltree import IntervalTree
+                    self.chm.itree = IntervalTree()
+                    self.chm.eps1 = 0.01
+                    self.chm.eps2 = 0.1
+
+                    for ch in self.chm.chunk_gen():
+                        self.chm._add_ch_itree(ch, self.gm)
 
                 for ch in self.chm.chunk_gen():
-                    self.chm._add_ch_itree(ch, self.gm)
+                    if hasattr(ch, 'color') and ch.color is not None:
+                        break
 
-            for ch in self.chm.chunk_gen():
-                if hasattr(ch, 'color') and ch.color is not None:
-                    break
+                    import random
+                    from PyQt4 import QtGui
 
-                import random
-                from PyQt4 import QtGui
+                    r = random.randint(0, 255)
+                    g = random.randint(0, 255)
+                    b = random.randint(0, 255)
+                    ch.color = QtGui.QColor.fromRgb(r, g, b)
 
-                r = random.randint(0, 255)
-                g = random.randint(0, 255)
-                b = random.randint(0, 255)
-                ch.color = QtGui.QColor.fromRgb(r, g, b)
+                for ch in self.chm.chunk_gen():
+                    if hasattr(ch, 'N'):
+                        break
 
-            for ch in self.chm.chunk_gen():
-                if hasattr(ch, 'N'):
-                    break
-                
-                    ch.N = set()
-                    ch.P = set()
+                        ch.N = set()
+                        ch.P = set()
 
-            self.save()
+                self.save()
 
-        self.img_manager = ImgManager(self, max_size_mb=S_.cache.img_manager_size_MB)
+        self.img_manager = ImgManager(self, max_num_of_instances=500)
 
         self.active_snapshot = -1
 
@@ -431,7 +478,7 @@ class Project:
         except:
             pass
 
-        self.img_manager = ImgManager(self, max_size_mb=S_.cache.img_manager_size_MB)
+        self.img_manager = ImgManager(self, max_num_of_instances=500)
 
     def snapshot_undo(self):
         if self.active_snapshot < 0:

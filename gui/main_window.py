@@ -65,9 +65,10 @@ class MainWindow(QtGui.QMainWindow):
             if isinstance(values, core.project.project.Project):
                 self.project = values
                 self.statusBar().showMessage("The project was successfully loaded.")
-                self.setWindowTitle('FERDA - '+self.project.name)
+                self.setWindowTitle('FERDA - '+self.project.working_directory+'/'+self.project.name)
 
                 self.main_tab_widget = MainTabWidget(self.widget_control, self.project)
+                # self.main_tab_widget.ignore_tab_change = True
                 self.central_widget.addWidget(self.main_tab_widget)
                 self.central_widget.setCurrentWidget(self.main_tab_widget)
             else:
@@ -94,9 +95,10 @@ class MainWindow(QtGui.QMainWindow):
             self.central_widget.setCurrentWidget(self.project_widget)
 
         if state == 'initialization_finished':
-            self.project.save()
+            self.project = values[0]
+            # self.project.save()
 
-            self.main_tab_widget = MainTabWidget(self.widget_control, self.project, values[0])
+            self.main_tab_widget = MainTabWidget(self.widget_control, self.project, values[1])
             self.central_widget.addWidget(self.main_tab_widget)
             self.central_widget.setCurrentWidget(self.main_tab_widget)
 

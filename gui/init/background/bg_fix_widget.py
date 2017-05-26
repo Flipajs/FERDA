@@ -2,7 +2,7 @@ from PyQt4 import QtGui, QtCore
 from gui.img_controls.my_view import MyView
 import cv2
 import os
-from gui.img_controls import utils
+from gui.img_controls import gui_utils
 from gui.init.background import settingsdialog
 import copy
 import math
@@ -273,7 +273,7 @@ class BgFixWidget(QtGui.QWidget):
         if self.pix_map_item is not None:
             self.scene.removeItem(self.pix_map_item)
             self.pix_map_item = None
-        self.pix_map = utils.cvimg2qtpixmap(self.image)
+        self.pix_map = gui_utils.cvimg2qtpixmap(self.image)
         self.pix_map_item = self.scene.addPixmap(self.pix_map)
         # utils.view_add_bg_image(self.graphics_view, self.pix_map)
 

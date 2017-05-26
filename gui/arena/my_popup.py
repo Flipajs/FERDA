@@ -1,5 +1,4 @@
 from PyQt4 import QtGui, QtCore
-from gui.img_controls import utils
 
 class MyPopup(QtGui.QWidget):
     def __init__(self, img1):

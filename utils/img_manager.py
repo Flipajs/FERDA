@@ -12,7 +12,7 @@ class ImgManager:
     def __init__(self, project, max_size_mb=-1, max_num_of_instances=-1):
         """
         This class can be used to load images from FERDA videos. It keeps used images in cache and is able to provide
-        them quickly. It also offers methods that crop images if necessary.
+        them quickly. It also offers methods that crop_ images if necessary.
 
         :param project: project to load images from
         :param max_size_mb: max volume of images kept in cache (unlimited by default)
@@ -62,9 +62,9 @@ class ImgManager:
                  max_width=-1, max_height=-1,  min_width=-1, min_height=-1, regions=[], colors={},
                  default_color=(255, 255, 255, 0.8), constant_propotions=True):
         """
-        Gets a crop around the given ROI. The crop can be modified with the following parameters.
+        Gets a crop_ around the given ROI. The crop_ can be modified with the following parameters.
         :param frame:                         int (<0, len(video)>)
-        Frame number to make the crop from
+        Frame number to make the crop_ from
         :param roi:                           list of ROI, or tuple with ROI parameters
         Regions of interest
         :param margin:                        int (<0, infinity>)           default=-1
@@ -112,11 +112,11 @@ class ImgManager:
         elif isinstance(roi, tuple):
             roi = ROI(roi[0], roi[1], roi[2], roi[3])
 
-        # create properties to describe the crop
+        # create properties to describe the crop_
         props = Properties(frame, True, roi, margin, relative_margin, width, height, 0, 0,
                            regions, colors, default_color, fill_color)
 
-        # check if this crop is already cached
+        # check if this crop_ is already cached
         for p in self.crop_properties:
             if props.__eq__(p):
                 self.crop_properties.remove(p)
@@ -151,10 +151,10 @@ class ImgManager:
         height_ = roi.height() + 2 * margin
         width_ = roi.width() + 2 * margin
 
-        # get image with the crop
+        # get image with the crop_
         crop = get_safe_selection(im, y_, x_, height_, width_, fill_color=fill_color)
 
-        # scale the crop
+        # scale the crop_
         scaled = self.scale_crop(crop, width, height, max_width, max_height, min_width, min_height, constant_propotions=constant_propotions)
 
         # check if cache isn't full (and maybe clean it)
@@ -168,9 +168,9 @@ class ImgManager:
     def scale_crop(self, crop, width=-1, height=-1, max_width=-1, max_height=-1, min_width=-1, min_height=-1,
                 constant_propotions=True, fill_color=(0, 0, 0)):
         """
-        Scales the crop according to the parameters.
+        Scales the crop_ according to the parameters.
         :param crop:                          numpy uint8 array
-        Image or crop to work with
+        Image or crop_ to work with
         :param constant_propotions:           boolean                       default=True
         Keep proportions when scaling image
         :param width, height:                 int (<0, infinity>)           default=-1
@@ -185,7 +185,7 @@ class ImgManager:
         :param min_width, min_height:         int (<0, infinity>)           default=-1
         The image will be scaled to be smaller than the given size. If constant proportions are set, it will be shrunk
         to be smaller than min_width, min_height. Otherwise it will be deformed and stretched to [min_width,min_height]
-        :return: scaled crop (numpy uint8 array)
+        :return: scaled crop_ (numpy uint8 array)
         """
 
         # convert BGR <-> RGB

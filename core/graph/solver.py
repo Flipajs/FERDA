@@ -8,6 +8,8 @@ from utils.constants import EDGE_CONFIRMED
 import cPickle as pickle
 
 class Solver:
+    SPLIT_JOIN_THRESHOLD = 0.5
+
     def __init__(self, project):
         """
         We are maximizing.
@@ -21,6 +23,7 @@ class Solver:
 
         self.major_axis_median = project.stats.major_axis_median
 
+        # TODO: add to config
         # TODO: add to config
         self.antlike_filter = True
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
@@ -39,7 +42,7 @@ class Solver:
             rules = self.rules
 
         # TODO: does it still make sense?
-        queue = sorted(queue, key=lambda x: self.project.gm.region(x).area()+self.project.gm.region(x).centroid()[0]+self.project.gm.region(x).frame()+self.project.gm.region(x).centroid()[1])
+        # queue = sorted(queue, key=lambda x: self.project.gm.region(x).area()+self.project.gm.region(x).centroid()[0]+self.project.gm.region(x).frame()+self.project.gm.region(x).centroid()[1])
 
         while queue:
             vertex = self.project.gm.g.vertex(queue.pop())
@@ -72,6 +75,21 @@ class Solver:
 
         return self.project.stats.antlikeness_svm.get_prob(n)[1]
 
+    def one2one(self):
+        confirm_later = []
+
+        for v in self.project.gm.g.vertices():
+            if self.project.gm.one2one_check(v):
+                e = self.project.gm.out_e(v)
+                confirm_later.append((e.source(), e.target()))
+
+        print "one2one, ", len(confirm_later)
+        self.confirm_edges(confirm_later)
+
+        self.project.gm.update_nodes_in_t_refs()
+        self.project.chm.reset_itree(self.project.gm)
+
+
     def adaptive_threshold(self, vertex):
         if self.project.gm.ch_start_longer(vertex):
             return []
@@ -80,10 +98,6 @@ class Solver:
 
         if not best_out_vertices[0]:
             return []
-
-        r = self.project.gm.region(vertex)
-        if r.frame() == 2191 and (r.area() == 750 or r.area() == 2191):
-            print r
 
         best_in_scores, best_in_vertices = self.project.gm.get_2_best_in_vertices(best_out_vertices[0])
         if best_in_vertices[0] == vertex and best_in_scores[0] >= self.project.solver_parameters.certainty_threshold:
@@ -104,20 +118,11 @@ class Solver:
                 if best_in_vertices[1]:
                     s_in = best_in_scores[1]
 
-                # r1 = self.project.gm.region(best_in_vertices[0])
-                # r2 = self.project.gm.region(best_out_vertices[0])
-                #
-                # area_coef = abs(r1.area()-r2.area()) / min(r1.area(), r2.area())
-                # # hard area rule...
-                # if area_coef > 0.5:
-                #     return []
-
                 desc_correction = 0
 
-                # cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
                 cert = abs(s) * abs(s - (min(s_out, s_in))) + desc_correction
 
-            self.project.gm.g.ep['certainty'][self.project.gm.g.edge(v1, v2)] = cert
+            self.project.gm.g.ep['movement_score'][self.project.gm.g.edge(v1, v2)] = cert
 
             if cert > self.project.solver_parameters.certainty_threshold:
                 affected = self.confirm_edges([(v1, v2)])
@@ -125,8 +130,6 @@ class Solver:
             return affected
 
         return []
-
-
 
     def match_if_reconstructed(self, n):
         if n not in self.g:
@@ -219,13 +222,13 @@ class Solver:
                         # affected.append(n2)
 
                         e = self.project.gm.g.edge(n1, n2)
-                        self.project.gm.g.ep['certainty'][e] = cert
+                        self.project.gm.g.ep['movement_score'][e] = cert
                         affected += self.confirm_edges([(n1, n2)])
             else:
                 for n1, n2 in matchings[0]:
                     if n1 and n2:
                         e = self.project.gm.g.edge(n1, n2)
-                        self.project.gm.g.ep['certainty'][e] = cert
+                        self.project.gm.g.ep['movement_score'][e] = cert
 
         return affected
 
@@ -453,7 +456,8 @@ class Solver:
             affected.add(v1)
             affected.add(v2)
 
-            for e in v1.out_edges():
+            out_edges = [e for e in v1.out_edges()]
+            for e in out_edges:
                 affected.add(e.target())
 
                 for aff_neigh in e.target().in_neighbours():
@@ -461,7 +465,8 @@ class Solver:
 
                 self.project.gm.remove_edge_(e)
 
-            for e in v2.in_edges():
+            in_edges = [e for e in v2.in_edges()]
+            for e in in_edges:
                 affected.add(e.source())
 
                 for aff_neigh in e.source().out_neighbours():
@@ -476,9 +481,11 @@ class Solver:
             # test chunk existence, if there is none, create new one.
             v1_ch = self.project.gm.chunk_end(v1)
             v2_ch = self.project.gm.chunk_start(v2)
-            if v1_ch:
+            if v1_ch and v2_ch:
+                v1_ch.merge(v2_ch, self.project.gm)
+            elif v1_ch and not v2_ch:
                 v1_ch.append_right(v2, self.project.gm)
-            elif v2_ch:
+            elif v2_ch and not v1_ch:
                 v2_ch.append_left(v1, self.project.gm)
             else:
                 self.project.chm.new_chunk(map(int, [v1, v2]), self.project.gm)
