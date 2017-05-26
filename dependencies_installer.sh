@@ -30,9 +30,9 @@ pip install --upgrade pip
 pip install --upgrade pip
 # to run in quiet mode, add -q to each command
 echo "Done"
-echo "Installing networkx via pip"
-pip install networkx
-echo "Done"
+# echo "Installing networkx via pip"
+# pip install networkx
+# echo "Done"
 echo "Installing scikit-image via pip. This may take a while"
 pip install scikit-image
 echo "Done"

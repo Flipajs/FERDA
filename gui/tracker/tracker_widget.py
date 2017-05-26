@@ -4,7 +4,6 @@ from PyQt4 import QtGui, QtCore
 
 from gui.results.configurations_visualizer import ConfigurationsVisualizer
 from utils.video_manager import get_auto_video_manager
-from scripts.region_graph2 import NodeGraphVisualizer, visualize_nodes
 from core.settings import Settings as S_
 import numpy as np
 from skimage.transform import rescale
