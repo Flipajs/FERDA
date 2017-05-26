@@ -224,7 +224,7 @@ class NewProjectWidget(QtGui.QWidget):
         from core.classes_stats import dummy_classes_stats
         print "segmentation_confirmed"
 
-        if self.step4_w.use_segmentation.isChecked():
+        if self.step4_w.gb_pixel_classifier.isChecked():
             with open(self.project.working_directory+'/segmentation_model.pkl', 'wb') as f:
                 pickle.dump(self.step4_w.helper, f, -1)
 
