@@ -435,7 +435,7 @@ class ResultsWidget(QtGui.QWidget):
 
         try:
             if len(self.project.animals) == len(self.project.chm.chunks_in_frame(self.video_player.current_frame())):
-                self._gt_find_permutation(True)
+                self._gt_(True)
         except:
             pass
 
@@ -1460,7 +1460,7 @@ class ResultsWidget(QtGui.QWidget):
                                     x=-self.project.video_crop_model['x1'],
                                     frames=self.project.video_start_t)
             except:
-                pass
+                self._gt = None
 
     def assign_ids_from_gt(self):
         # for frame, data in self._gt.iteritems():

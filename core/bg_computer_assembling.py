@@ -207,12 +207,6 @@ def assembly_after_parallelization(bgcomp):
     p.gm.project = bgcomp.project
     p.chm.add_single_vertices_chunks(p)
 
-    # from utils.color_manager import colorize_project
-    # import time
-    # s = time.time()
-    # # colorize_project(bgcomp.project)
-    # print "color manager takes %f seconds" % (time.time() - s)
-
     if not bgcomp.project.is_cluster():
         bgcomp.update_callback(-1, 'saving...')
 

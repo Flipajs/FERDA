@@ -4,8 +4,6 @@ from gui.graph_widget_loader import GraphWidgetLoader
 
 __author__ = 'fnaiser'
 
-import os
-
 from PyQt4 import QtGui, QtCore
 from gui.tracker.tracker_widget import TrackerWidget
 from gui.results.results_widget import ResultsWidget
@@ -252,7 +250,6 @@ class MainTabWidget(QtGui.QWidget):
             self.id_detection_tab.update_undecided_tracklets()
 
 class DetachedWindow(QtGui.QMainWindow):
-
     def __init__(self, parent, widget, widget_callback, number):
         super(DetachedWindow, self).__init__(parent)
         content = QtGui.QWidget()

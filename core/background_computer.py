@@ -134,6 +134,12 @@ class BackgroundComputer:
             self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
             assembly_after_parallelization(self)
 
+            from utils.color_manager import colorize_project
+            import time
+            s = time.time()
+            colorize_project(self.project)
+            print "color manager takes %f seconds" % (time.time() - s)
+
     def OnProcessOutputReady(self, p_id):
         while True:
             try:
