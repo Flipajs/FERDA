@@ -45,17 +45,19 @@ class NewProjectWidget(QtGui.QWidget):
         self.form_layout = QtGui.QFormLayout()
         self.step1_w.setLayout(self.form_layout)
 
-        label = QtGui.QLabel('Video files')
+        self.form_layout.addRow(QtGui.QLabel('Entries marked with * are obligatory. When in doubt, use tooltips displayed on hover over given entries.'))
+        label = QtGui.QLabel('Video files*: ')
         self.select_video_files = QtGui.QPushButton('Browse')
+        self.select_video_files.setToolTip('Select two video files only in case when FERDA\'s video compression is used (find more in documentation).')
         self.select_video_files.clicked.connect(self.select_video_files_clicked)
         self.form_layout.addRow(label, self.select_video_files)
 
-        label = QtGui.QLabel('Working directory')
+        label = QtGui.QLabel('Working directory*: ')
         self.select_working_directory = QtGui.QPushButton('Browse')
         self.select_working_directory.clicked.connect(self.select_working_directory_clicked)
         self.form_layout.addRow(label, self.select_working_directory)
 
-        label = QtGui.QLabel('Project name')
+        label = QtGui.QLabel('Project name*: ')
         self.project_name = QtGui.QLineEdit()
         self.form_layout.addRow(label, self.project_name)
 
@@ -66,7 +68,8 @@ class NewProjectWidget(QtGui.QWidget):
         self.postpone_parallelisation_ch = QtGui.QCheckBox('')
         self.postpone_parallelisation_ch.setChecked(False)
 
-        self.form_layout.addRow('postpone parallelisation', self.postpone_parallelisation_ch)
+        self.postpone_parallelisation_ch.setToolTip("Check in a case when the segmentation will be computed on a cluster")
+        self.form_layout.addRow('postpone segmentation parallelisation', self.postpone_parallelisation_ch)
 
         self.left_vbox = QtGui.QVBoxLayout()
 
