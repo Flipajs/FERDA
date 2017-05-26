@@ -295,11 +295,6 @@ class SetMSERs(QtGui.QWidget):
         ids = margin_filter(msers, groups)
 
         for r, r_id in zip(msers, range(len(msers))):
-            if self.project.stats:
-                prob = self.project.stats.antlikeness_svm.get_prob(r)
-                if prob[1] < self.project.solver_parameters.antlikeness_threshold:
-                    continue
-
             # get region contours
             cont = get_contour(r.pts())
 

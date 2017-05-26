@@ -15,7 +15,6 @@ from core.project.solver_parameters import SolverParameters
 from core.settings import Settings as S_
 from gui.video_loader import check_video_path
 from utils.img_manager import ImgManager
-from core import segmentation_helper
 import os
 
 class Project:

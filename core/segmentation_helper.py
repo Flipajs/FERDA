@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
 from skimage.transform import pyramid_gaussian
 from skimage.feature import local_binary_pattern
 from skimage.color import label2rgb
@@ -161,6 +160,8 @@ class SegmentationHelper:
         :param foreground: np mask for examples in foreground class
         :return: 0.0 - 1.0 probability mask
         """
+        from sklearn.ensemble import RandomForestClassifier
+
         # prepare learning data
         # X contains tuples of data for each evaluated unit-pixel (R, G, B, edge?)
         # y contains classifications for all pixels respectively
@@ -266,6 +267,7 @@ class SegmentationHelper:
     def train_raw_(self, X, y):
         """ Create the RFC classifier from raw X and y data
         """
+        from sklearn.ensemble import RandomForestClassifier
 
         # create the classifier
         self.rfc = RandomForestClassifier(n_estimators=self.rfc_n_estimators, n_jobs=self.rfc_n_jobs)
@@ -551,6 +553,9 @@ def get_filtered_rfc(zeros, X, y, n_estimators, n_jobs):
     for tup in X:
         newtup = np.delete(tup, zeros)
         newX.append(newtup)
+
+    from sklearn.ensemble import RandomForestClassifier
+
     rfc = RandomForestClassifier(n_estimators=n_estimators, n_jobs=n_jobs)
     return rfc.fit(newX, y)
 

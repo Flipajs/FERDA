@@ -69,12 +69,6 @@ class Solver:
 
         return num_changed
 
-    def get_antlikeness(self, n):
-        if n.is_virtual:
-            return 1.0
-
-        return self.project.stats.antlikeness_svm.get_prob(n)[1]
-
     def one2one(self):
         confirm_later = []
 
@@ -316,12 +310,7 @@ class Solver:
         max_d = self.project.solver_parameters.max_edge_distance_in_ant_length
         ds = max(0, (max_d-d) / max_d)
 
-        q1 = self.get_antlikeness(r1)
-        q2 = self.get_antlikeness(r2)
-
-        antlikeness_diff = 1 - abs(q1-q2)
-        # antlikeness_diff = 1
-        s = ds * antlikeness_diff
+        s = ds
 
         if self.project.solver_parameters.use_colony_split_merge_relaxation():
             a1 = r1.area()
@@ -341,7 +330,7 @@ class Solver:
                 else:
                     s = 0
 
-        return s, ds, 0, antlikeness_diff
+        return s, ds, 0, 0
 
     def assignment_score_pos_orient(self, r1, r2):
         """
