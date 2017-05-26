@@ -1,11 +1,10 @@
 
-import sys
 import cPickle as pickle
-from core.project.project import Project
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 from core.graph.solver import Solver
 import warnings
+from itertools import izip
 
 
 def assembly_after_parallelization(bgcomp):
@@ -276,15 +275,29 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
 
     vertex_map = {}
     used_chunks_ids = set()
+
+    old_vs = []
+    old_rids = []
     # reindex vertices
     for v_id in old_g_relevant_vertices:
         if not old_g.vp['active'][v_id]:
             continue
 
         old_v = old_g.vertex(v_id)
-        old_reg = old_rm[old_g.vp['region_id'][old_v]]
-        new_rm.add(old_reg)
+        old_vs.append(old_v)
+        old_rids.append(old_g.vp['region_id'][old_v])
 
+    # becaused old_regions will be sorted by region_id and v_id increments in the same time as region_id...
+    old_vs = sorted(old_vs)
+
+    old_regions = old_rm[old_rids]
+    new_rm.add(old_regions)
+
+    # for r_id, r in izip(old_rids, old_regions):
+    #     if r_id != r.id():
+    #         print "error!", r_id, r.id()
+
+    for old_v, old_reg in izip(old_vs, old_regions):
         new_v = new_gm.add_vertex(old_reg)
         vertex_map[old_v] = new_v
 
@@ -293,6 +306,30 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
 
         if old_g.vp['chunk_start_id'][old_v] == 0 and old_g.vp['chunk_end_id'][old_v] == 0:
             single_vertices.append(new_v)
+
+    # old_vs = []
+    # old_rids = []
+    # # reindex vertices
+    # for v_id in old_g_relevant_vertices:
+    #     if not old_g.vp['active'][v_id]:
+    #         continue
+    #
+    #     old_v = old_g.vertex(v_id)
+    #     old_vs.append(old_v)
+    #     old_rids.append(old_g.vp['region_id'][old_v])
+    #
+    # old_regions = old_rm[old_rids]
+    # new_rm.add(old_regions)
+    #
+    # for old_v, old_reg in izip(old_vs, old_regions):
+    #     new_v = new_gm.add_vertex(old_reg)
+    #     vertex_map[old_v] = new_v
+    #
+    #     used_chunks_ids.add(old_g.vp['chunk_start_id'][old_v])
+    #     used_chunks_ids.add(old_g.vp['chunk_end_id'][old_v])
+    #
+    #     if old_g.vp['chunk_start_id'][old_v] == 0 and old_g.vp['chunk_end_id'][old_v] == 0:
+    #         single_vertices.append(new_v)
 
     # because 0 id means - no chunk assigned to this node!
     if 0 in used_chunks_ids:
@@ -332,7 +369,7 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
             if old_v in vertex_map:
                 new_list.append(int(vertex_map[old_v]))
             else:
-                old_id__ = old_rm[old_g.vp['region_id'][old_g.vertex(old_v)]].id()
+                # old_id__ = old_rm[old_g.vp['region_id'][old_g.vertex(old_v)]].id()
 
                 id_ = new_rm.add(old_rm[old_g.vp['region_id'][old_g.vertex(old_v)]])
                 # list of ids is returned [id] ...
@@ -350,8 +387,8 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
         new_gm.g.vp['chunk_start_id'][new_v] = chunks_map[old_g.vp['chunk_start_id'][old_v]]
         new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
 
-    # # create chunk for each single vertex
-    # for v_id in single_vertices:
-    #     ch, id = project.chm.new_chunk([int(v_id)], project.gm)
-    #     new_gm.g.vp['chunk_start_id'][v_id] = id
-    #     new_gm.g.vp['chunk_end_id'][v_id] = id
+        # # create chunk for each single vertex
+        # for v_id in single_vertices:
+        #     ch, id = project.chm.new_chunk([int(v_id)], project.gm)
+        #     new_gm.g.vp['chunk_start_id'][v_id] = id
+        #     new_gm.g.vp['chunk_end_id'][v_id] = id

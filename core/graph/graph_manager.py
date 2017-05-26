@@ -3,7 +3,6 @@ __author__ = 'flipajs'
 import graph_tool
 from core.log import LogCategories, ActionNames
 import numpy as np
-from scipy.spatial.distance import cdist
 from core.region.fitting_logger import FittingLogger
 
 
@@ -35,7 +34,7 @@ class GraphManager:
         self.g.ep['movement_score'] = self.g.new_edge_property("float")
 
     def add_vertex(self, region):
-        self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
+        # self.project.log.add(LogCategories.GRAPH_EDIT, ActionNames.ADD_NODE, region)
         self.start_t = min(self.start_t, region.frame_)
         self.end_t = max(self.end_t, region.frame_)
 

@@ -23,8 +23,8 @@ S_.general.print_log = False
 
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
-if is_flipajs_pc() and False:
-# if is_flipajs_pc():
+# if is_flipajs_pc() and False:
+if is_flipajs_pc():
     # wd = '/Users/iflipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
@@ -33,10 +33,10 @@ if is_flipajs_pc() and False:
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
-    wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
-    # wd = '/Users/flipajs/Documents/wd/FERDA/test'
+    wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
     project.load(wd)
 

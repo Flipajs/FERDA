@@ -311,19 +311,19 @@ class Project:
         except:
             pass
 
-        # CLASSES
-        try:
-            with open(self.working_directory+'/classes.pkl', 'rb') as f:
-                self.classes = pickle.load(f)
-        except:
-            pass
+        # # CLASSES
+        # try:
+        #     with open(self.working_directory+'/classes.pkl', 'rb') as f:
+        #         self.classes = pickle.load(f)
+        # except:
+        #     pass
 
-        # GROUPS
-        try:
-            with open(self.working_directory+'/groups.pkl', 'rb') as f:
-                self.groups = pickle.load(f)
-        except:
-            pass
+        # # GROUPS
+        # try:
+        #     with open(self.working_directory+'/groups.pkl', 'rb') as f:
+        #         self.groups = pickle.load(f)
+        # except:
+        #     pass
 
         # ANIMALS
         try:
