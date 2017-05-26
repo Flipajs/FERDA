@@ -54,6 +54,7 @@ class NewProjectWidget(QtGui.QWidget):
 
         label = QtGui.QLabel('Working directory*: ')
         self.select_working_directory = QtGui.QPushButton('Browse')
+        self.select_working_directory.setToolTip('Select working directory for project. Best practice is to use empty directory.')
         self.select_working_directory.clicked.connect(self.select_working_directory_clicked)
         self.form_layout.addRow(label, self.select_working_directory)
 
