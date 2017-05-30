@@ -1,10 +1,8 @@
 import cv2
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
 from skimage.transform import pyramid_gaussian
 from skimage.feature import local_binary_pattern
 from skimage.color import label2rgb
-import matplotlib.pyplot as plt
 import imutils
 import time
 
@@ -162,6 +160,8 @@ class SegmentationHelper:
         :param foreground: np mask for examples in foreground class
         :return: 0.0 - 1.0 probability mask
         """
+        from sklearn.ensemble import RandomForestClassifier
+
         # prepare learning data
         # X contains tuples of data for each evaluated unit-pixel (R, G, B, edge?)
         # y contains classifications for all pixels respectively
@@ -267,6 +267,7 @@ class SegmentationHelper:
     def train_raw_(self, X, y):
         """ Create the RFC classifier from raw X and y data
         """
+        from sklearn.ensemble import RandomForestClassifier
 
         # create the classifier
         self.rfc = RandomForestClassifier(n_estimators=self.rfc_n_estimators, n_jobs=self.rfc_n_jobs)
@@ -552,6 +553,9 @@ def get_filtered_rfc(zeros, X, y, n_estimators, n_jobs):
     for tup in X:
         newtup = np.delete(tup, zeros)
         newX.append(newtup)
+
+    from sklearn.ensemble import RandomForestClassifier
+
     rfc = RandomForestClassifier(n_estimators=n_estimators, n_jobs=n_jobs)
     return rfc.fit(newX, y)
 
@@ -575,6 +579,7 @@ def get_lbp(image, method="uniform"):
 
     mask = np.logical_or.reduce([lbp == each for each in edge_labels])
 
+    # import matplotlib.pyplot as plt
     # plt.imshow(mask)
     # plt.show()
 
@@ -615,6 +620,7 @@ def pyramid(image, scale=1.5, minSize=(30, 30), num=-1):
 
 
 if __name__ == "__main__":
+    # import matplotlib.pyplot as plt
     # image = cv2.imread("/home/dita/img_67.png")
     image = cv2.imread("/home/dita/lbp_test.png")
     np.set_printoptions(threshold=np.inf)

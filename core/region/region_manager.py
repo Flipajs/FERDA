@@ -235,12 +235,14 @@ class RegionManager:
                 self.db_search_(result, sql_ids)
 
         elif isinstance(key, list):
+            # TODO: result might be in different order then keys!!!
             for id in key:
                 if not isinstance(id, int):
                     print "TypeError: int expected, %s given! Skipping key '%s'." % (type(id), id)
                     continue
                 r = self.cache[id]
                 if r:
+                    print r
                 # if id in self.regions_cache_:
                 #     # print "%s was found in cache" % id
                 #     r = self.regions_cache_[id]

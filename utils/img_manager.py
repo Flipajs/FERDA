@@ -4,7 +4,6 @@ from utils.drawing.points import draw_points
 from utils.roi import ROI, get_roi
 import numpy as np
 import cv2
-from cv2 import copyMakeBorder as make_border
 from core.region.region import Region
 
 

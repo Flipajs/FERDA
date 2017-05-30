@@ -1,24 +1,15 @@
 __author__ = 'fnaiser'
 
 import numpy as np
-from PIL import ImageQt
 from PyQt4 import QtGui
-import scipy
-from skimage.transform import rescale
 
 from utils.misc import get_settings
-from core.settings import Settings as S_
 import cv2
 
-import matplotlib.pyplot as plt
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 import math
-import scipy.ndimage
 from utils.roi import get_roi
-import matplotlib as mpl
-import time
-
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), return_offset=False):
     y = int(y)
@@ -80,6 +71,7 @@ def get_img_around_pts(img, pts, margin=0):
 
 
 def get_pixmap_from_np_bgr(np_image):
+    from PIL import ImageQt
     img_q = ImageQt.QImage(np_image.data, np_image.shape[1], np_image.shape[0], np_image.shape[1] * 3, 13)
     pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
 
@@ -125,6 +117,8 @@ def get_igbr_normalised(im):
 
 
 def prepare_for_visualisation(img, project):
+    from skimage.transform import rescale
+
     if project.other_parameters.img_subsample_factor > 1.0:
         img = np.asarray(rescale(img, 1/project.other_parameters.img_subsample_factor) * 255, dtype=np.uint8)
 
@@ -132,6 +126,8 @@ def prepare_for_visualisation(img, project):
 
 
 def prepare_for_segmentation(img, project, grayscale_speedup=True):
+    from scipy.ndimage import gaussian_filter
+    from skimage.transform import rescale
     if project.bg_model:
         img = project.bg_model.bg_subtraction(img)
 
@@ -149,7 +145,7 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
         img = project.arena_model.mask_image(img)
 
     if project.mser_parameters.gaussian_kernel_std > 0:
-        img = scipy.ndimage.gaussian_filter(img, sigma=project.mser_parameters.gaussian_kernel_std)
+        img = gaussian_filter(img, sigma=project.mser_parameters.gaussian_kernel_std)
 
     if project.other_parameters.img_subsample_factor > 1.0:
         img = np.asarray(rescale(img, 1/project.other_parameters.img_subsample_factor) * 255, dtype=np.uint8)
@@ -197,7 +193,7 @@ def get_normalised_img(region, norm_size, blur_sigma=0):
     # plt.imshow(im)
 
     if blur_sigma > 0:
-        im = np.asarray(np.round(scipy.ndimage.gaussian_filter(im, sigma=blur_sigma)), dtype=np.bool)
+        im = np.asarray(np.round(gaussian_filter(im, sigma=blur_sigma)), dtype=np.bool)
 
     # plt.figure()
     # plt.imshow(im)

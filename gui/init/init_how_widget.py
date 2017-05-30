@@ -102,9 +102,9 @@ class InitHowWidget(QtGui.QWidget):
 
         self.class_stats = ClassesStats()
 
-    def use_dummy_antlikeness(self):
-        from core.antlikeness import DummyAntlikeness
-        self.class_stats.antlikeness_svm = DummyAntlikeness()
+    # def use_dummy_antlikeness(self):
+        # from core.antlikeness import DummyAntlikeness
+        # self.class_stats.antlikeness_svm = DummyAntlikeness()
 
     def finish(self):
         selected = self.img_grid.get_selected()

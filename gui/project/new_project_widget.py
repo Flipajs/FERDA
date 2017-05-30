@@ -45,17 +45,20 @@ class NewProjectWidget(QtGui.QWidget):
         self.form_layout = QtGui.QFormLayout()
         self.step1_w.setLayout(self.form_layout)
 
-        label = QtGui.QLabel('Video files')
+        self.form_layout.addRow(QtGui.QLabel('<i>Entries in </i><b>bold</b><i> are obligatory. When in doubt, use tooltips displayed on hover over given entries.</i>'))
+        label = QtGui.QLabel('<b>Video files:</b> ')
         self.select_video_files = QtGui.QPushButton('Browse')
+        self.select_video_files.setToolTip('Select two video files only in case when FERDA\'s video compression is used (find more in documentation).')
         self.select_video_files.clicked.connect(self.select_video_files_clicked)
         self.form_layout.addRow(label, self.select_video_files)
 
-        label = QtGui.QLabel('Working directory')
+        label = QtGui.QLabel('<b>Working directory: </b>')
         self.select_working_directory = QtGui.QPushButton('Browse')
+        self.select_working_directory.setToolTip('Select working directory for project. Best practice is to use empty directory.')
         self.select_working_directory.clicked.connect(self.select_working_directory_clicked)
         self.form_layout.addRow(label, self.select_working_directory)
 
-        label = QtGui.QLabel('Project name')
+        label = QtGui.QLabel('<b>Project name:</b> ')
         self.project_name = QtGui.QLineEdit()
         self.form_layout.addRow(label, self.project_name)
 
@@ -66,7 +69,8 @@ class NewProjectWidget(QtGui.QWidget):
         self.postpone_parallelisation_ch = QtGui.QCheckBox('')
         self.postpone_parallelisation_ch.setChecked(False)
 
-        self.form_layout.addRow('postpone parallelisation', self.postpone_parallelisation_ch)
+        self.postpone_parallelisation_ch.setToolTip("Check in a case when the segmentation will be computed on a cluster")
+        self.form_layout.addRow('postpone segmentation parallelisation', self.postpone_parallelisation_ch)
 
         self.left_vbox = QtGui.QVBoxLayout()
 
@@ -220,7 +224,7 @@ class NewProjectWidget(QtGui.QWidget):
         from core.classes_stats import dummy_classes_stats
         print "segmentation_confirmed"
 
-        if self.step4_w.use_segmentation.isChecked():
+        if self.step4_w.gb_pixel_classifier.isChecked():
             with open(self.project.working_directory+'/segmentation_model.pkl', 'wb') as f:
                 pickle.dump(self.step4_w.helper, f, -1)
 
@@ -282,11 +286,6 @@ class NewProjectWidget(QtGui.QWidget):
         self.left_vbox.addWidget(self.step3_w)
 
     def roi_finished(self):
-        # self.project.video_crop_model = {'y1': w.sc_y1.value(),
-        #                                  'y2': w.sc_y2.value(),
-        #                                  'x1': w.sc_x1.value(),
-        #                                  'x2': w.sc_x2.value()}
-
         # TODO: deal with advanced arena editor
         c = np.array([self.step3_w.arena_ellipse.c.pos().y(), self.step3_w.arena_ellipse.c.pos().x()])
         r = np.array([self.step3_w.arena_ellipse.a.pos().y(), self.step3_w.arena_ellipse.a.pos().x()])

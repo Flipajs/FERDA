@@ -244,11 +244,9 @@ class CaseWidget(QtGui.QWidget):
 
         r = self.project.gm.region(n)
 
-        antlikeness = self.parent.solver.project.stats.antlikeness_svm.get_prob(r)[1]
         virtual = False
         try:
             if r.is_virtual:
-                antlikeness = 1.0
                 virtual = True
         except:
             pass
@@ -285,10 +283,10 @@ class CaseWidget(QtGui.QWidget):
                     is_merged = True
 
         QtGui.QMessageBox.about(self, "My message box",
-                                "ID = %i\nArea = %i\nframe=%i\nCentroid = %s\nMargin = %i\nAntlikeness = %f\n"
+                                "ID = %i\nArea = %i\nframe=%i\nCentroid = %s\nMargin = %i\n"
                                 "Is virtual: %s\nBest in = %s, (%d)\nBest out = %s (%d)\nChunk info = %s\n"
                                 "Chunk start: %d end: %d\ntest:%s\nnew_s:%f, %f, %f\ntheta: %f\n" %
-                                (int(n), r.area(), r.frame_, str(r.centroid()), r.margin_, antlikeness, str(virtual),
+                                (int(n), r.area(), r.frame_, str(r.centroid()), r.margin_, str(virtual),
                                  str(best_in_score[0]) + ', ' + str(best_in_score[1]), vertex.in_degree(),
                                  str(best_out_score[0]) + ', ' + str(best_out_score[1]), vertex.out_degree(), ch_info,
                                  ch_start, ch_end, str(is_merged), new_s, do, dt, r.theta_

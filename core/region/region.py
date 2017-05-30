@@ -3,10 +3,10 @@ __author__ = 'fnaiser'
 from utils.video_manager import get_auto_video_manager
 import numpy as np
 import math
-from utils.roi import get_roi
+from utils.roi import get_roi, get_roi_rle
 
 
-class Region():
+class Region(object):
     """ This class encapsulates set of points. It computes and stores statistics like moments, contour of region etc.
         It takes list of list in format [[y1, x1], [y2, x2]... ]
         Or dict as an output from mser algorithm where the point representation is saved as 'rle' in Run Lenght encoding.
@@ -71,11 +71,16 @@ class Region():
             pts = np.zeros((self.area(), 2), dtype=np.int)
 
             for row in data:
-                for c in xrange(row['col1'], row['col2'] + 1):
-                    pts[i, 0] = row['line']
-                    pts[i, 1] = c
+                d = row['col2'] + 1 - row['col1']
 
-                    i += 1
+                pts[i:i+d, 0] = row['line']
+                pts[i:i+d, 1] = range(row['col1'], row['col2'] + 1)
+                i += d
+
+                # for c in xrange(row['col1'], row['col2'] + 1):
+                    # pts[i, 0] = row['line']
+                    # pts[i, 1] = c
+                    # i += 1
         except (IndexError, AttributeError) as e:
             print e
             pts = []
@@ -93,7 +98,7 @@ class Region():
         self.area_ = data['area']
         if 'rle' in data:
             self.pts_rle_ = data['rle']
-            self.pts_ = self.pts_from_rle_(self.pts_rle_)
+            # self.pts_ = self.pts_from_rle_(self.pts_rle_)
         else:
             raise Exception('wrong data format',
                             'Wrong data format in from_dict_ in region.points.py. Expected dictionary with "rle" key.')
@@ -120,7 +125,7 @@ class Region():
         b = self.minor_axis_
 
         axis_ratio = a / float(b)
-        self.b_ = math.sqrt(len(self.pts_) / (axis_ratio * math.pi))
+        self.b_ = math.sqrt(self.area_ / (axis_ratio * math.pi))
         self.a_ = self.b_ * axis_ratio
         ########
 
@@ -149,7 +154,7 @@ class Region():
         return self.pts_
 
     def pts_copy(self):
-        return np.copy(self.pts_)
+        return np.copy(self.pts())
 
     def centroid(self):
         return np.copy(self.centroid_)
@@ -159,7 +164,10 @@ class Region():
 
     def roi(self):
         if not hasattr(self, 'roi_') or not self.roi_:
-            self.roi_ = get_roi(self.pts())
+            if self.pts_ is None:
+                self.roi_ = get_roi_rle(self.pts_rle_)
+            else:
+                self.roi_ = get_roi(self.pts())
 
         return self.roi_
 

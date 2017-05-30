@@ -15,7 +15,6 @@ from core.project.solver_parameters import SolverParameters
 from core.settings import Settings as S_
 from gui.video_loader import check_video_path
 from utils.img_manager import ImgManager
-from core import segmentation_helper
 import os
 
 class Project:
@@ -312,19 +311,19 @@ class Project:
         except:
             pass
 
-        # CLASSES
-        try:
-            with open(self.working_directory+'/classes.pkl', 'rb') as f:
-                self.classes = pickle.load(f)
-        except:
-            pass
+        # # CLASSES
+        # try:
+        #     with open(self.working_directory+'/classes.pkl', 'rb') as f:
+        #         self.classes = pickle.load(f)
+        # except:
+        #     pass
 
-        # GROUPS
-        try:
-            with open(self.working_directory+'/groups.pkl', 'rb') as f:
-                self.groups = pickle.load(f)
-        except:
-            pass
+        # # GROUPS
+        # try:
+        #     with open(self.working_directory+'/groups.pkl', 'rb') as f:
+        #         self.groups = pickle.load(f)
+        # except:
+        #     pass
 
         # ANIMALS
         try:
