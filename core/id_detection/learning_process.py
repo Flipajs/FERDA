@@ -1314,7 +1314,8 @@ class LearningProcess:
                 test_set.add(d['ids'][0])
 
         if len(full_set.intersection(test_set)) != len(full_set):
-            QtGui.QMessageBox(self, "There are not examples for all classes. Did you use auto initialisation? Missing ids: "+str(full_set-test_set))
+            QtGui.QMessageBox.information(None, '',
+                                          'There are not examples for all classes. Did you use auto initialisation? Missing ids: '+str(full_set-test_set))
             return
 
         for d in self.user_decisions:
