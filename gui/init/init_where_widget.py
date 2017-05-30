@@ -199,8 +199,12 @@ class InitWhereWidget(QtGui.QWidget):
         # 75% of min_radius points must vote
 
         param2_ = int(min_radius * 3.14 * 2 * 0.75)
-        circles = cv2.HoughCircles(gray, cv2.cv.CV_HOUGH_GRADIENT, 2, 20,
-                            param1=canny_,param2=param2_,minRadius=min_radius,maxRadius=max_radius)
+        if 'HOUGH_GRADIENT' in dir(cv2):
+            method = cv2.HOUGH_GRADIENT  # 3.x
+        else:
+            method = cv2.cv.CV_HOUGH_GRADIENT  # 2.x
+        circles = cv2.HoughCircles(gray, method, 2, 20,
+            param1=canny_,param2=param2_,minRadius=min_radius,maxRadius=max_radius)
 
         if circles is not None and len(circles) > 0:
             # as the circles are ordered by number of votes, choose the first one

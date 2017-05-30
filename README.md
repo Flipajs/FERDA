@@ -6,18 +6,11 @@ FERDA is a multi object tracker developed mainly to meet the needs of biologists
 ## How do I get set up? ##
 ### Dependencies:
 * python 2.7.\*
-* [numpy](http://www.numpy.org) 1.12.1.
 * [opencv](http://opencv.org) for python (pycv) builded with FFMPEG support (2.4.12)
-* [scipy](http://www.scipy.org) (0.19.0)
-* [sklearn](http://scikit-learn.org/stable/) (0.18) 
-* [skimage](http://scikit-image.org/docs/dev/api/skimage.html) (0.12.3) 
 * [PyQt4](https://www.riverbankcomputing.com/software/pyqt/download)
-* [PuLP](https://pypi.python.org/pypi/PuLP)
 * [graph-tool](https://pypi.python.org/pypi/graph-tool) (2.22)
-* [matplotlib](https://pypi.python.org/pypi/matplotlib)
-* ~~[TkInter](https://wiki.python.org/moin/TkInter)~~
-* [Pympler](https://pypi.python.org/pypi/Pympler)
-* [qimage2ndarray](https://pypi.python.org/pypi/qimage2ndarray/0.2)
+
+    $ pip install -r requirements.txt
 
 ## Team ##
 * **author:** Filip Naiser (naisefil@cmp.felk.cvut.cz)
