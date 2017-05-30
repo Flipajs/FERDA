@@ -1565,6 +1565,12 @@ class LearningProcess:
                 best_g_i = i
                 best_g_val = val
 
+        if best_g_i < 0:
+            # TODO: manual init, documentation...
+            print "No CSoSIT was found. This means, there is no frame satisfying that #single-ID tracklets = #animals and minimum of tracklet lengths > 'tracklet min len' parameter."
+            print "This usually happens when test video with short length is used... You can still initialise manually"
+            return
+
         tracklet_ids = {}
         for id_, t in enumerate(groups[best_g_i]):
             tracklet_ids[t.id()] = id_
