@@ -86,7 +86,7 @@ class LearningWidget(QtGui.QWidget):
 
         self.info_table = QCustomTableWidget()
         self.info_table.setColumnCount(2)
-        self.info_table.setRowCount(12)
+        self.info_table.setRowCount(13)
 
         self.info_table.setMinimumHeight(500)
         self.info_table.setFixedWidth(220)
@@ -390,8 +390,12 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setItem(10, 0, QCustomTableWidgetItem('# user decisions: '))
         self.info_table.setItem(10, 1, QCustomTableWidgetItem(str(len(self.lp.user_decisions))))
 
-        self.info_table.setItem(11, 0, QCustomTableWidgetItem('id coverage:'))
-        self.info_table.setItem(11, 1, QCustomTableWidgetItem(self.__f2str(self.get_id_coverage())))
+        full_coverage, single_id_coverage = self.get_id_coverage()
+        self.info_table.setItem(11, 0, QCustomTableWidgetItem('full coverage:'))
+        self.info_table.setItem(11, 1, QCustomTableWidgetItem(self.__f2str(full_coverage)))
+
+        self.info_table.setItem(12, 0, QCustomTableWidgetItem('single-ID coverage:'))
+        self.info_table.setItem(12, 1, QCustomTableWidgetItem(self.__f2str(single_id_coverage)))
 
         if hasattr(self, 'tracklets_table'):
             # update tracklet info...
@@ -473,14 +477,20 @@ class LearningWidget(QtGui.QWidget):
 
         coverage = 0
         max_ = 0
+        single_id_sum = 0
         for t in self.project.chm.chunk_gen():
+            if t.is_single():
+                single_id_sum += len(t)
+
             if self.test_one_id_in_tracklet(t):
                 coverage += t.length()
 
             end_f_ = t.end_frame(self.project.gm)
             max_ = max(max_, end_f_)
 
-        return coverage / float(max_*len(self.project.animals))
+        full_coverage = coverage / float(max_*len(self.project.animals))
+        single_id_coverage = coverage / float(single_id_sum)
+        return full_coverage, single_id_coverage
 
     def __f2str(self, f, prec=1):
         return ('{:.'+str(prec)+'%}').format(f)

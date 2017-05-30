@@ -222,7 +222,7 @@ class MainTabWidget(QtGui.QWidget):
                 self.graph_tab.redraw()
 
         if i == 5:
-            from gui.clustering_tool import RegionClassifierTool
+            from gui.region_classifier_tool import RegionClassifierTool
 
             self.ignore_tab_change = True
             self.tabs.removeTab(5)
