@@ -13,19 +13,15 @@ from functools import partial
 from utils.misc import print_progress
 
 
-# TODO: save labels + versioning
-# TODO: file for images, file for labels
-# TODO: select all until
-
-class ClusteringTool(QtGui.QWidget):
+class RegionClassifierTool(QtGui.QWidget):
     def __init__(self, p):
-        super(ClusteringTool, self).__init__()
+        super(RegionClassifierTool, self).__init__()
 
         self.p = p
 
-        self.WW = 150
-        self.HH = 150
-        self.COLS = 3
+        self.WW = 120
+        self.HH = 120
+        self.COLS = 2
 
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
@@ -39,7 +35,16 @@ class ClusteringTool(QtGui.QWidget):
         self.vbox.addLayout(self.hbox)
 
         self.hbox_load_controls = QtGui.QHBoxLayout()
+
+        self.hbox_check = QtGui.QHBoxLayout()
+        self.vbox.addLayout(self.hbox_check)
+
         self.vbox.addLayout(self.hbox_load_controls)
+
+        self.hbox_buttons = QtGui.QHBoxLayout()
+        self.vbox.addLayout(self.hbox_buttons)
+
+
 
         # self.cluster_sample_size_sb = QtGui.QSpinBox()
         # self.cluster_sample_size_sb.setMinimum(10)
@@ -53,7 +58,7 @@ class ClusteringTool(QtGui.QWidget):
 
         # self.prepare_data_b = QtGui.QPushButton('prepare data')
         # self.prepare_data_b.clicked.connect(self.prepare_data)
-        self.start_hil_clustering_b = QtGui.QPushButton('start hil')
+        self.start_hil_clustering_b = QtGui.QPushButton('find candidates and start region classification')
         self.start_hil_clustering_b.clicked.connect(self.start_hil)
 
         # self.hbox_load_controls.addWidget(self.cluster_sample_size_sb)
@@ -61,10 +66,7 @@ class ClusteringTool(QtGui.QWidget):
         self.hbox_load_controls.addWidget(self.display_n_most_sb)
         self.hbox_load_controls.addWidget(self.start_hil_clustering_b)
 
-        self.hbox_buttons = QtGui.QHBoxLayout()
-        self.vbox.addLayout(self.hbox_buttons)
-
-        self.to_single_b = QtGui.QPushButton('to singles (SHIFT + S)')
+        self.to_single_b = QtGui.QPushButton('mark single-ID (SHIFT + S)')
         self.to_single_b.clicked.connect(partial(self.move_selected_to, 'single'))
         self.hbox_buttons.addWidget(self.to_single_b)
 
@@ -73,7 +75,7 @@ class ClusteringTool(QtGui.QWidget):
         self.to_single_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_S))
         self.addAction(self.to_single_a)
         
-        self.to_multi_b = QtGui.QPushButton('to multis (SHIFT + M)')
+        self.to_multi_b = QtGui.QPushButton('mark multi-ID (SHIFT + M)')
         self.to_multi_b.clicked.connect(partial(self.move_selected_to, 'multi'))
         self.hbox_buttons.addWidget(self.to_multi_b)
 
@@ -82,7 +84,7 @@ class ClusteringTool(QtGui.QWidget):
         self.to_multi_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_M))
         self.addAction(self.to_multi_a)
 
-        self.to_noise_b = QtGui.QPushButton('to noises')
+        self.to_noise_b = QtGui.QPushButton('mark no-ID (SHIFT + N)')
         self.to_noise_b.clicked.connect(partial(self.move_selected_to, 'noise'))
         self.hbox_buttons.addWidget(self.to_noise_b)
 
@@ -91,7 +93,7 @@ class ClusteringTool(QtGui.QWidget):
         self.to_noise_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_N))
         self.addAction(self.to_noise_a)
 
-        self.to_part_b = QtGui.QPushButton('to parts')
+        self.to_part_b = QtGui.QPushButton('mark part (SHIFT + P)')
         self.to_part_b.clicked.connect(partial(self.move_selected_to, 'part'))
         self.hbox_buttons.addWidget(self.to_part_b)
 
@@ -100,16 +102,16 @@ class ClusteringTool(QtGui.QWidget):
         self.to_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_U))
         self.addAction(self.to_undecided_a)
         
-        self.save_b = QtGui.QPushButton('save classification')
-        self.save_b.clicked.connect(self.save)
-        self.hbox_buttons.addWidget(self.save_b)
+        # self.save_b = QtGui.QPushButton('save classification')
+        # self.save_b.clicked.connect(self.save)
+        # self.hbox_buttons.addWidget(self.save_b)
 
         self.classify_tracklets_b = QtGui.QPushButton('classify tracklets')
         self.classify_tracklets_b.clicked.connect(self.classify_tracklets)
         self.hbox_buttons.addWidget(self.classify_tracklets_b)
 
         # SELECT ALL ACTIONS
-        self.to_part_a = QtGui.QAction('to part', self)
+        self.to_part_a = QtGui.QAction('mark part (SHIFT + P)', self)
         self.to_part_a.triggered.connect(partial(self.move_selected_to, 'part'))
         self.to_part_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_P))
         self.addAction(self.to_part_a)
@@ -165,30 +167,28 @@ class ClusteringTool(QtGui.QWidget):
         self.show_undecided.stateChanged.connect(self.redraw_grids)
         self.hbox_buttons.addWidget(self.show_undecided)
 
-        self.hbox_check = QtGui.QHBoxLayout()
-        self.vbox.addLayout(self.hbox_check)
-
+        self.hbox_check.addWidget(QtGui.QLabel('feature space: '))
         self.ch_area = QtGui.QCheckBox('area')
         self.ch_area.setChecked(True)
         self.ch_area.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_area)
 
-        self.ch_a = QtGui.QCheckBox('a')
+        self.ch_a = QtGui.QCheckBox('major axis')
         self.ch_a.setChecked(True)
         self.ch_a.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_a)
 
-        self.ch_b = QtGui.QCheckBox('b')
+        self.ch_b = QtGui.QCheckBox('minor axis')
         self.ch_b.setChecked(True)
         self.ch_b.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_b)
 
-        self.ch_min_i = QtGui.QCheckBox('min_i')
+        self.ch_min_i = QtGui.QCheckBox('min intensity')
         self.ch_min_i.setChecked(False)
         self.ch_min_i.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_min_i)
 
-        self.ch_max_i = QtGui.QCheckBox('max_i')
+        self.ch_max_i = QtGui.QCheckBox('max intensity')
         self.ch_max_i.setChecked(False)
         self.ch_max_i.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_max_i)
@@ -198,7 +198,7 @@ class ClusteringTool(QtGui.QWidget):
         self.ch_margin.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_margin)
 
-        self.ch_c_len = QtGui.QCheckBox('c_len')
+        self.ch_c_len = QtGui.QCheckBox('contour len')
         self.ch_c_len.setChecked(True)
         self.ch_c_len.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_c_len)
@@ -419,14 +419,33 @@ class ClusteringTool(QtGui.QWidget):
             g.setParent(None)
 
         self.singles = ImgGridWidget(cols=self.COLS, element_width=self.WW)
-        self.multi = ImgGridWidget(cols=self.COLS, element_width=self.WW)
-        self.noise = ImgGridWidget(cols=self.COLS, element_width=self.WW)
-        self.part = ImgGridWidget(cols=self.COLS, element_width=self.WW)
+        self.singles_w = QtGui.QWidget()
+        self.singles_w.setLayout(QtGui.QVBoxLayout())
+        self.singles_w.layout().addWidget(QtGui.QLabel('single-ID'))
+        self.singles_w.layout().addWidget(self.singles)
 
-        self.hbox.addWidget(self.singles)
-        self.hbox.addWidget(self.multi)
-        self.hbox.addWidget(self.noise)
-        self.hbox.addWidget(self.part)
+        self.multi = ImgGridWidget(cols=self.COLS, element_width=self.WW)
+        self.multi_w = QtGui.QWidget()
+        self.multi_w.setLayout(QtGui.QVBoxLayout())
+        self.multi_w.layout().addWidget(QtGui.QLabel('multiple-ID'))
+        self.multi_w.layout().addWidget(self.multi)
+
+        self.noise = ImgGridWidget(cols=self.COLS, element_width=self.WW)
+        self.noise_w = QtGui.QWidget()
+        self.noise_w.setLayout(QtGui.QVBoxLayout())
+        self.noise_w.layout().addWidget(QtGui.QLabel('no-ID'))
+        self.noise_w.layout().addWidget(self.noise)
+
+        self.part = ImgGridWidget(cols=self.COLS, element_width=self.WW)
+        self.part_w = QtGui.QWidget()
+        self.part_w.setLayout(QtGui.QVBoxLayout())
+        self.part_w.layout().addWidget(QtGui.QLabel('ID-part'))
+        self.part_w.layout().addWidget(self.part)
+
+        self.hbox.addWidget(self.singles_w)
+        self.hbox.addWidget(self.multi_w)
+        self.hbox.addWidget(self.noise_w)
+        self.hbox.addWidget(self.part_w)
 
         self.grids = {'single': self.singles, 'multi': self.multi, 'noise': self.noise, 'part': self.part}
 
@@ -679,6 +698,7 @@ class ClusteringTool(QtGui.QWidget):
 
     def classify_tracklets(self):
         self.classify_project(self.p, self.data, train_n=50)
+        self.save()
 
     def prepare_data(self):
         # n = self.cluster_sample_size_sb.value()
@@ -717,7 +737,7 @@ if __name__ == '__main__':
     if True:
         # for pname in project_paths.iterkeys():
         #     p = ps[pname]
-            ex = ClusteringTool(p)
+            ex = RegionClassifierTool(p)
             ex.raise_()
             ex.activateWindow()
 
@@ -748,7 +768,7 @@ if __name__ == '__main__':
             results = {'Ns': Ns}
             for pname in project_paths.iterkeys():
                 p = ps[pname]
-                ex = ClusteringTool(p)
+                ex = RegionClassifierTool(p)
                 ex.raise_()
                 ex.activateWindow()
 

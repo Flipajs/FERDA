@@ -390,3 +390,15 @@ class Chunk:
 
     def is_undefined(self):
         return self.segmentation_class == -1
+
+    def segmentation_class_str(self):
+        if self.is_single():
+            return "single-ID"
+        elif self.is_multi():
+            return "multi-ID"
+        elif self.is_noise():
+            return "no-ID"
+        elif self.is_part():
+            return "part-of-ID"
+        else:
+            return "undefined"

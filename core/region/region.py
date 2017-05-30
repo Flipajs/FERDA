@@ -51,11 +51,13 @@ class Region(object):
         self.contour_ = None
         self.is_virtual = False
 
-
     def __str__(self):
-        s = repr(self)+" t: "+str(self.frame_)+" area: "+str(self.area())+" centroid: ["+str(round(self.centroid_[0], 2))+", "+\
-            str(round(self.centroid_[1], 2))+"] a: {:.3}".format(self.a_) + " b: {:.3}".format(self.b_)+" sxx: {:.4}".format(self.sxx_) +\
-            " syy: {:.4} ".format(self.syy_) + " sxy: {:.4}".format(self.sxy_) + " margin: " + str(self.margin_)
+        s = repr(self)+" start t: "+str(self.frame_)+"\n" \
+                       " area: "+str(self.area())+" \n" \
+                       " centroid: ["+str(round(self.centroid_[0], 2))+", "+str(round(self.centroid_[1], 2))+"]\n" \
+                       " major axis: {:.3}".format(self.a_) + "\n" \
+                       " minor axis: {:.3}".format(self.b_)+"\n" \
+                       " margin: " + str(self.margin_)
 
         return s
 

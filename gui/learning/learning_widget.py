@@ -222,6 +222,11 @@ class LearningWidget(QtGui.QWidget):
         self.update_undecided_tracklets_b.setEnabled(True)
         self.tracklet_debug_info_b.setEnabled(True)
 
+        if not os.path.isfile(self.project.working_directory+'/fm.sqlite3'):
+            self.load_features_b.setDisabled(True)
+        else:
+            self.compute_features_b.setDisabled(True)
+
     def disable_before_classifier(self):
         self.auto_init_method_cb.setEnabled(True)
         self.auto_init_b.setEnabled(True)
@@ -240,6 +245,11 @@ class LearningWidget(QtGui.QWidget):
         self.update_undecided_tracklets_b.setEnabled(False)
         self.tracklet_debug_info_b.setEnabled(False)
 
+        if not os.path.isfile(self.project.working_directory+'/fm.sqlite3'):
+            self.load_features_b.setDisabled(True)
+        else:
+            self.compute_features_b.setDisabled(True)
+
     def disable_before_features(self):
         self.auto_init_method_cb.setEnabled(False)
         self.auto_init_b.setEnabled(False)
@@ -257,6 +267,11 @@ class LearningWidget(QtGui.QWidget):
         self.use_xgboost_ch.setEnabled(False)
         self.update_undecided_tracklets_b.setEnabled(False)
         self.tracklet_debug_info_b.setEnabled(False)
+
+        if not os.path.isfile(self.project.working_directory+'/fm.sqlite3'):
+            self.load_features_b.setDisabled(True)
+        else:
+            self.compute_features_b.setDisabled(True)
 
     def load_features(self):
         path = 'fm.sqlite3'

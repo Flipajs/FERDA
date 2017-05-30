@@ -163,8 +163,6 @@ class ResultsWidget(QtGui.QWidget):
         self.create_gt_from_results_b.clicked.connect(self.__create_gt_from_results)
         self.gt_box.layout().addWidget(self.create_gt_from_results_b)
 
-        self.left_vbox.addWidget(self.gt_box)
-
         # TRACKLET BOX
         self.tracklet_box = QtGui.QGroupBox('Tracklet controls')
         self.tracklet_box.setLayout(QtGui.QVBoxLayout())
@@ -238,7 +236,7 @@ class ResultsWidget(QtGui.QWidget):
 
         self.left_vbox.addWidget(self.tracklet_box)
         self.info_l = QtGui.QLabel('info')
-        self.left_vbox.addWidget(self.info_l)
+        self.tracklet_box.layout().addWidget(self.info_l)
 
         self.debug_box = QtGui.QGroupBox('debug box')
         self.debug_box.setLayout(QtGui.QVBoxLayout())
@@ -289,6 +287,7 @@ class ResultsWidget(QtGui.QWidget):
         self.debug_box.layout().addWidget(self.export_video_b)
 
         self.left_vbox.addWidget(self.debug_box)
+        self.left_vbox.addWidget(self.gt_box)
 
         # TODO: show list of tracklets instead of QLine edit...
         # TODO: show range on frame time line
@@ -1008,6 +1007,9 @@ class ResultsWidget(QtGui.QWidget):
 
     def update_visualisations(self):
         self.draw_id_profiles()
+
+        self._update_tracklet_info(from_update_visu=True)
+
         # with open('/Users/flipajs/Desktop/temp/pairs/' + 'exp1' + '/head_rfc.pkl', 'rb') as f:
         #     rfc = pickle.load(f)
 
@@ -1178,7 +1180,8 @@ class ResultsWidget(QtGui.QWidget):
 
         return radius
 
-    def _update_tracklet_info(self):
+    def _update_tracklet_info(self, from_update_visu=False):
+        import textwrap
         id_ = self.active_tracklet_id
         if id_ < 0:
             self.info_l.setText(' ')
@@ -1187,27 +1190,22 @@ class ResultsWidget(QtGui.QWidget):
 
             return
 
-        s = 'id: ' + str(id_)
-
         ch = self.project.chm[id_]
         f = self.video_player.current_frame()
         rch = RegionChunk(ch, self.project.gm, self.project.rm)
         r = rch.region_in_t(f)
-        import textwrap
-        s += "\n" + str(r)
-        s = textwrap.fill(s, 40)
-        s += " radius: {:.3}".format(self.__compute_radius(r))
 
+        s = "tracklet (id: " + str(id_) + ")"
         if ch.start_frame(self.project.gm) == f:
-            s += "\nin_degree: " + str(ch.start_vertex(self.project.gm).in_degree())
+            s += "\n in_degree: " + str(ch.start_vertex(self.project.gm).in_degree())
 
         if ch.end_frame(self.project.gm) == f:
-            s += "\nout degree: " + str(ch.end_vertex(self.project.gm).out_degree())
+            s += "\n out degree: " + str(ch.end_vertex(self.project.gm).out_degree())
 
-        s += "\nlength: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(
+        s += "\n length: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(
             ch.end_frame(self.project.gm))
 
-        s += "\nseg_c: "+str(ch.segmentation_class)
+        s += "\n tracklet class: "+ch.segmentation_class_str()
 
         avg_area = 0
         for r_ in rch.regions_gen():
@@ -1215,9 +1213,12 @@ class ResultsWidget(QtGui.QWidget):
 
         avg_area /= rch.chunk_.length()
 
-        s += "\navg area: " + str(avg_area)
-        # from core.learning.learning_process import get_features_var1, features2str_var1
-        # s += "\nFeature vector: "+ features2str_var1(get_features_var1(r, self.project))
+        s += "\n avg area: " + str(avg_area)
+
+        if r:
+            s += "\n\nregion (id: "+str(r.id())+")"
+            s += "\n " + textwrap.fill(str(r), 40)
+            s += " radius: {:.3}\n".format(self.__compute_radius(r))
 
         self.info_l.setText(s)
 
@@ -1227,7 +1228,8 @@ class ResultsWidget(QtGui.QWidget):
         # TODO: solve better... something like set
         # self._highlight_tracklets = set()
         # self._highlight_tracklets.add(id_)
-        self.video_player.redraw_visualisations()
+        if not from_update_visu:
+            self.video_player.redraw_visualisations()
 
     def _gt_marker_clicked(self, id_):
         try:

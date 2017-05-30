@@ -266,7 +266,7 @@ class RegionManager:
             if r:
             # if key in self.regions_cache_:
             #     r = self.regions_cache_[key]
-                result.append(r)
+            #     result.append(r)
                 # self.update(key, r)
                 
                 return r
