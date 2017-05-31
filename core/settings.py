@@ -95,6 +95,7 @@ class Visualization:
     history_depth = Item('visualization/history_depth', 10, '...')
     history_depth_step = Item('visualization/history_depth_step', 1, '...')
     history_alpha = Item('visualization/history_alpha', 2.0, '...')
+    tracklet_len_per_px = Item('visualization/tracklet_len_per_px_sb', 1, '...')
 
 class Parallelization:
     __metaclass__ = SettingsType

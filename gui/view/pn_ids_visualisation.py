@@ -47,8 +47,8 @@ class PNIdsItem(QtGui.QGraphicsPixmapItem):
             self.callback(self.id_)
 
 
-def get_pixmap_item(ids, P, N, tracklet_id=None, callback=None, probs=None, params=None):
-    img = draw(ids, P, N, probs=probs, params=params)
+def get_pixmap_item(ids, P, N, tracklet_id=None, callback=None, probs=None, params=None, tracklet_len=0):
+    img = draw(ids, P, N, probs=probs, params=params, tracklet_len=tracklet_len)
     pix_map = cvimg2qtpixmap(img)
 
     p = PNIdsItem(pix_map, id_=tracklet_id, callback=callback)
@@ -56,14 +56,20 @@ def get_pixmap_item(ids, P, N, tracklet_id=None, callback=None, probs=None, para
     return p
 
 
-def draw(ids, P, N, probs=None, params=None):
+def draw(ids, P, N, probs=None, params=None, tracklet_len=0):
     if params is None:
         params = default_params
 
+    hh = 0
+    if tracklet_len > 0:
+        hh = 3
+
     max_w = params['P_width'] * len(ids) + 2
-    max_h = params['P_height']
+    max_h = params['P_height'] + hh
 
     img = np.zeros((max_h, max_w, 3), dtype=np.uint8) * 255
+    if tracklet_len > 0:
+        img[-hh:, :min(max_w, tracklet_len), :] = (255, 255, 0)
 
     w = 1
     for id_ in ids:

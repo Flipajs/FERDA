@@ -61,7 +61,7 @@ class SettingsDialog(QtGui.QDialog):
         self.setLayout(self.layout)
 
         self.populate()
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(3)
 
     def populate(self, ):
         # self.controls_tab.populate()
