@@ -88,16 +88,23 @@ class Column:
         return False
 
     def get_position_item(self, item_to_locate):
+        # # Filip's code...
+        if isinstance(item_to_locate, Region):
+            for i, item in enumerate(self.objects):
+                if isinstance(item, GraphLine):
+                    if item.region_from == item_to_locate or item.region_to == item_to_locate:
+                        return i
+
         if item_to_locate in self.objects:
             return self.objects.index(item_to_locate)
         else:
-            for item in self.objects:
+            for i, item in enumerate(self.objects):
                 if isinstance(item, GraphLine):
                     if item.region_from == item_to_locate or item.region_to == item_to_locate:
-                        return self.objects.index(item)
+                        return i
                 elif isinstance(item, Node):
                     if item_to_locate == item.region:
-                        return self.objects.index(item)
+                        return i
 
     def get_position_with_chunk_id(self, ch_id):
         position = 0

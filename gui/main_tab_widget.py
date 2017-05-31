@@ -203,7 +203,6 @@ class MainTabWidget(QtGui.QWidget):
             max_f = vm.total_frame_count()
 
             from_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", 0, 0, max_f-1)
-            # if ok or not isinstance(self.graph_tab, GraphVisualizer):
             if ok:
                 frames = None
 
