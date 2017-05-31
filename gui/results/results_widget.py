@@ -1208,8 +1208,12 @@ class ResultsWidget(QtGui.QWidget):
             params['colors'].append([a.color_[0], a.color_[1], a.color_[2]])
 
         tlen = 0
-        if S_.visualization.tracklet_len_per_px:
-            tlen = int(len(tracklet)/float(S_.visualization.tracklet_len_per_px))
+        ptr = 0
+        p_ = S_.visualization.tracklet_len_per_px
+        if p_:
+            tlen = int(len(tracklet)/float(p_))
+            ptr = int((frame - tracklet.start_frame(self.project.gm)) / float(p_))
+
 
         item = pn_ids_visualisation.get_pixmap_item(ids_, tracklet.P, tracklet.N,
                                                      tracklet_id=tracklet.id(),
@@ -1217,7 +1221,7 @@ class ResultsWidget(QtGui.QWidget):
                                                     # TODO: probs on Demand
                                                      probs=None,
                                                      # probs=tracklet.animal_id_['probabilities'],
-                                                     params=params, tracklet_len=tlen
+                                                     params=params, tracklet_len=tlen, tracklet_ptr=ptr
                                                      )
 
         reg = rch.region_in_t(frame)
