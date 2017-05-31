@@ -93,10 +93,10 @@ class Column:
         else:
             for item in self.objects:
                 if isinstance(item, GraphLine):
-                    if item.region_from.id() == item_to_locate.id() or item.region_to.id() == item_to_locate.id():
+                    if item.region_from == item_to_locate or item.region_to == item_to_locate:
                         return self.objects.index(item)
                 elif isinstance(item, Node):
-                    if item_to_locate.id() == item.region.id():
+                    if item_to_locate == item.region:
                         return self.objects.index(item)
 
     def get_position_with_chunk_id(self, ch_id):
@@ -119,17 +119,17 @@ class Column:
                         continue
                 else:
                     region = item
-                if region.id() in self.items_nodes.keys():
+                if region in self.items_nodes:
                     continue
 
                 if not isinstance(region, int):
                     img = self.def_img
                     # img = self.im_manager.get_crop(self.frame, region,  width=self.width, height=self.height, relative_margin=self.relative_margin)
-                    self.regions_images[region.id()] = img
+                    self.regions_images[region] = img
 
     def add_crop_to_col(self):
         for item in self.objects:
-            if item not in self.items_nodes.keys():
+            if item not in self.items_nodes:
                 if not item:
                     continue
                 if isinstance(item, GraphLine):
@@ -139,9 +139,9 @@ class Column:
                         item = item.region_to
                     else:
                         continue
-                    if item in self.items_nodes.keys():
+                    if item in self.items_nodes:
                         continue
-                if item not in self.regions_images.keys():
+                if item not in self.regions_images:
                     img = self.def_img
                     self.regions_images[item] = img
                     # img = self.im_manager.get_crop(self.frame, item,  width=self.width, height=self.height, relative_margin=self.relative_margin)
@@ -228,22 +228,22 @@ class Column:
 
         if vertically:
             x, y = y, x
-        if region.id() not in self.items_nodes:
-            if region.id() not in self.regions_images:
+        if region not in self.items_nodes:
+            if region not in self.regions_images:
                 if compressed:
                     img = self.def_img
                 else:
                     img = self.im_manager.get_crop(self.frame, region, width=self.width, height=self.height,
                                                    relative_margin=self.relative_margin)
-                self.regions_images[region.id()] = img
+                self.regions_images[region] = img
             else:
-                img = self.regions_images[region.id()]
+                img = self.regions_images[region]
             pixmap = cvimg2qtpixmap(img)
             node = Node(self.scene.addPixmap(pixmap), self.scene, region, self.im_manager, self.relative_margin,
                         self.width, self.height)
-            self.items_nodes[region.id()] = node
-            self.items_nodes[region.id()].setPos(x, y)
-            self.items_nodes[region.id()].parent_pixmap.show()
+            self.items_nodes[region] = node
+        self.items_nodes[region].setPos(x, y)
+        self.items_nodes[region].parent_pixmap.show()
 
     def show_compress_marker(self, compress_axis, vertically):
         if isinstance(self.frame, tuple):
