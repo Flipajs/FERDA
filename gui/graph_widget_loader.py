@@ -87,9 +87,10 @@ class GraphWidgetLoader:
             self.vertices = set(self.vertices)
 
     def prepare_nodes(self):
+        # TODO: asking region manager for regions in one single run will be much faster
         for vertex in self.vertices:
             region = self.graph_manager.region(vertex)
-            self.regions_vertices[region] = vertex
+            self.regions_vertices[region.id()] = vertex
             self.regions.add(region)
 
     def prepare_lines(self, first_frame, last_frame):
@@ -179,7 +180,7 @@ class GraphWidgetLoader:
 
 
     def get_node_info(self, region):
-        n = self.regions_vertices[region]
+        n = self.regions_vertices[region.id()]
 
         vertex = self.project.gm.g.vertex(int(n))
         best_out_score, _ = self.project.gm.get_2_best_out_vertices(vertex)
