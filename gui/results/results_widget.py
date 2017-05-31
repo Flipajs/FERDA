@@ -759,7 +759,7 @@ class ResultsWidget(QtGui.QWidget):
         if not is_id_tracklet and self.show_contour_ch.isChecked() and not self.show_tracklets_without_id.isChecked():
             only_contour = True
 
-        if S_.visualization.no_single_id_filled and not tracklet.is_only_one_id_assigned(len(self.project.animals)):
+        if not S_.visualization.no_single_id_filled and not tracklet.is_only_one_id_assigned(len(self.project.animals)):
             only_contour = True
 
         pts_, roi = get_cropped_pts(r, return_roi=True, only_contour=only_contour)
@@ -823,6 +823,7 @@ class ResultsWidget(QtGui.QWidget):
         Returns:
 
         """
+
         if tracklet.is_single():
             return (0, 255, 0)
         elif tracklet.is_multi():
@@ -1299,8 +1300,8 @@ class ResultsWidget(QtGui.QWidget):
 
         self.info_l.setText(s)
 
-        self.tracklet_p_label.setText(str(ch.P))
-        self.tracklet_n_label.setText(str(ch.N))
+        self.tracklet_p_label.setText('P: '+str(ch.P))
+        self.tracklet_n_label.setText('N: '+str(ch.N))
 
         # TODO: solve better... something like set
         # self._highlight_tracklets = set()
