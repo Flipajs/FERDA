@@ -800,16 +800,8 @@ class ResultsWidget(QtGui.QWidget):
 
         if self.show_tracklet_class.isChecked():
             step = 1
-            if tracklet.is_single():
-                c = QtGui.qRgba(0, 255, 0, 255)
-            elif tracklet.is_multi():
-                c = QtGui.qRgba(0, 0, 255, 255)
-            elif tracklet.is_noise():
-                c = QtGui.qRgba(255, 0, 0, 255)
-            elif tracklet.is_part():
-                c = QtGui.qRgba(0, 190, 0, 255)
-            else:
-                c = QtGui.qRgba(128, 128, 128, 255)
+            c = self.get_tracklet_class_color(tracklet)
+            c = QtGui.qRgba(c[0], c[1], c[2], 255)
 
         for i in range(0, pts_.shape[0], step):
             qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
@@ -821,6 +813,26 @@ class ResultsWidget(QtGui.QWidget):
         item.setZValue(0.6)
 
         return item
+
+    def get_tracklet_class_color(self, tracklet):
+        """
+        returns r, g, b color representation for tracklet class
+        Args:
+            tracklet: 
+
+        Returns:
+
+        """
+        if tracklet.is_single():
+            return (0, 255, 0)
+        elif tracklet.is_multi():
+            return (0, 0, 255)
+        elif tracklet.is_noise():
+            return (255, 0, 0)
+        elif tracklet.is_part():
+            return (0, 190, 0)
+        else:
+            return (128, 128, 128)
 
     def frame_jump(self):
         f = int(self.frameEdit.text())
@@ -1214,6 +1226,7 @@ class ResultsWidget(QtGui.QWidget):
             tlen = int(len(tracklet)/float(p_))
             ptr = int((frame - tracklet.start_frame(self.project.gm)) / float(p_))
 
+        c = self.get_tracklet_class_color(tracklet)
 
         item = pn_ids_visualisation.get_pixmap_item(ids_, tracklet.P, tracklet.N,
                                                      tracklet_id=tracklet.id(),
@@ -1221,15 +1234,14 @@ class ResultsWidget(QtGui.QWidget):
                                                     # TODO: probs on Demand
                                                      probs=None,
                                                      # probs=tracklet.animal_id_['probabilities'],
-                                                     params=params, tracklet_len=tlen, tracklet_ptr=ptr
+                                                     params=params, tracklet_len=tlen, tracklet_ptr=ptr,
+                                                     tracklet_class_color=c
                                                      )
 
         reg = rch.region_in_t(frame)
-        # self.scene.addItem(item)
         item.setPos(reg.centroid()[1], reg.centroid()[0])
         item.setZValue(0.9)
         item.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
-        # self.one_frame_items.append(item)
 
         return item
 

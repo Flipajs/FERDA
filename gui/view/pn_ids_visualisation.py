@@ -47,8 +47,10 @@ class PNIdsItem(QtGui.QGraphicsPixmapItem):
             self.callback(self.id_)
 
 
-def get_pixmap_item(ids, P, N, tracklet_id=None, callback=None, probs=None, params=None, tracklet_len=0, tracklet_ptr=0):
-    img = draw(ids, P, N, probs=probs, params=params, tracklet_len=tracklet_len, tracklet_ptr=tracklet_ptr)
+def get_pixmap_item(ids, P, N, tracklet_id=None, callback=None, probs=None, params=None, tracklet_len=0,
+                    tracklet_ptr=0, tracklet_class_color=None):
+    img = draw(ids, P, N, probs=probs, params=params, tracklet_len=tracklet_len, tracklet_ptr=tracklet_ptr,
+               tracklet_class_color=tracklet_class_color)
     pix_map = cvimg2qtpixmap(img)
 
     p = PNIdsItem(pix_map, id_=tracklet_id, callback=callback)
@@ -56,18 +58,23 @@ def get_pixmap_item(ids, P, N, tracklet_id=None, callback=None, probs=None, para
     return p
 
 
-def draw(ids, P, N, probs=None, params=None, tracklet_len=0, tracklet_ptr=0):
+def draw(ids, P, N, probs=None, params=None, tracklet_len=0, tracklet_ptr=0, tracklet_class_color=None):
     if params is None:
         params = default_params
+
+    h = 2
 
     hh = 0
     if tracklet_len > 0:
         hh = 3
 
     max_w = params['P_width'] * len(ids) + 2
-    max_h = params['P_height'] + hh
+    max_h = h + params['P_height'] + hh
 
     img = np.zeros((max_h, max_w, 3), dtype=np.uint8) * 255
+    if tracklet_class_color:
+        img[:h, :, :] = (tracklet_class_color[2], tracklet_class_color[1], tracklet_class_color[0])
+
     if tracklet_len > 0:
         img[-hh:, :min(max_w, tracklet_len), :] = (255, 255, 0)
         img[-hh:, max(0, tracklet_ptr-1):min(max_w, tracklet_ptr+1), :] = (0, 0, 255 )
