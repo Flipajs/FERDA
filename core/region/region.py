@@ -61,6 +61,12 @@ class Region(object):
 
         return s
 
+    def __hash__(self):
+        return hash(self.id_)
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
     def id(self):
         return self.id_
 
