@@ -1521,17 +1521,15 @@ class ResultsWidget(QtGui.QWidget):
     def _load_gt(self):
         from utils.gt.gt import GT
         self._gt = GT()
-        if is_flipajs_pc():
-            self._gt_corr_step = 50
 
-            try:
-                path = self.project.GT_file
-                self._gt.load(path)
-                self._gt.set_offset(y=self.project.video_crop_model['y1'],
-                                    x=self.project.video_crop_model['x1'],
-                                    frames=self.project.video_start_t)
-            except:
-                self._gt = None
+        try:
+            path = self.project.GT_file
+            self._gt.load(path)
+            self._gt.set_offset(y=self.project.video_crop_model['y1'],
+                                x=self.project.video_crop_model['x1'],
+                                frames=self.project.video_start_t)
+        except:
+            self._gt = None
 
     def assign_ids_from_gt(self):
         # for frame, data in self._gt.iteritems():
