@@ -1575,10 +1575,56 @@ class ResultsWidget(QtGui.QWidget):
                         # self.decide_tracklet_callback(tracklet, id_)
 
     def print_conflicts(self):
+        from tqdm import tqdm
         print "CONFLICTS: "
-        for t in self.project.chm.chunk_gen():
+        print " A) P N intersection"
+
+        problems = []
+        for t in tqdm(self.project.chm.chunk_gen()):
             if len(t.P.intersection(t.N)):
-                print t, t.P, t.N
+                problems.append(t)
+
+        for t in problems:
+            print "\t", t, t.P, t.N
+
+        problemsB = []
+        problemsC = []
+
+        frame = 0
+        full_set = set(range(len(self.project.animals)))
+        max_f = self.video_player.total_frame_count()
+        while True:
+            possible_ids = set()
+            used_ids = set()
+
+            next_frame = np.inf
+            for t in self.project.chm.chunks_in_frame(frame):
+                if len(t.P.intersection(used_ids)):
+                    problemsC.append((frame, t))
+
+                used_ids = used_ids.union(t.P)
+
+                possible_ids = possible_ids.union(full_set - t.N)
+                next_frame = min(next_frame, t.end_frame(self.project.gm))
+
+            if len(possible_ids) != len(self.project.animals):
+                problemsB.append((frame, full_set - possible_ids))
+
+            frame = next_frame + 1
+
+            if frame >= max_f:
+                break
+
+        print " B) ID missing"
+        for frame, x in problemsB:
+            print "frame: {}, missing IDs: {}".format(frame, x)
+
+        print " C) ID duplicate"
+        for frame, x in problemsC:
+            print "frame: {}, tracklet id: {} id: {}".format(frame, x.id(), x.P)
+
+
+
 
     def print_undecided(self):
         print "UNDECIDED: "
