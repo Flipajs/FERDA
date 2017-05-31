@@ -51,7 +51,7 @@ class MainTabWidget(QtGui.QWidget):
         self.finish_callback = finish_callback
 
         self.tab_widgets = [self.tracker_tab, self.results_tab, self.id_detection_tab, self.statistics_tab, self.graph_tab, self.region_classifier]
-        self.tab_names = ["tracking", "results viewer", "id detection", "stats && results", "graph", "region classifier"]
+        self.tab_names = ["-", "results viewer", "id detection", "stats && results", "graph", "region classifier"]
         self.tab_docked = [False] * len(self.tab_widgets)
         for i in range(len(self.tab_widgets)):
             self.tabs.addTab(self.tab_widgets[i], self.tab_names[i])

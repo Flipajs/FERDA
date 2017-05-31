@@ -375,7 +375,6 @@ class Chunk:
     def r_id_in_t(self, t, gm):
         return gm.region_id(self.v_id_in_t(t, gm))
 
-
     def is_single(self):
         return self.segmentation_class == 0
 

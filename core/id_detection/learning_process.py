@@ -873,7 +873,7 @@ class LearningProcess:
 
         """
 
-        for t in self.__get_affected_undecided_tracklets(tracklet):
+        for t in self._get_affected_undecided_tracklets(tracklet):
             if t == tracklet:
                 continue
 
@@ -934,12 +934,12 @@ class LearningProcess:
             self.undecided_tracklets.remove(tracklet.id())
 
         # update affected
-        affected_tracklets = self.__get_affected_undecided_tracklets(tracklet)
+        affected_tracklets = self._get_affected_undecided_tracklets(tracklet)
         for t in affected_tracklets:
             # there was self.__if_possible_update_N(t, tracklet, ids), but it was too slow..
 
             self.last_id = t.id()
-            if not self.__update_N(id_, t):
+            if not self._update_N(id_, t):
                 return
 
         # everything is OK
@@ -1130,7 +1130,7 @@ class LearningProcess:
 
         return N
 
-    def __update_N(self, ids, tracklet, skip_in=False, skip_out=False):
+    def _update_N(self, ids, tracklet, skip_in=False, skip_out=False):
         if not self.id_N_f:
             return
 
@@ -1179,10 +1179,11 @@ class LearningProcess:
 
                     new_N = self.__get_in_v_N_union(v_out, ignore_noise=True)
 
-                    if not new_N.issubset(t_.N):
-                        # print "UPDATING OUTCOMING", tracklet, t_, t_.N, new_N
-                        if not self.__update_N(new_N, t_):
-                            return
+                    if new_N is not None:
+                        if not new_N.issubset(t_.N):
+                            # print "UPDATING OUTCOMING", tracklet, t_, t_.N, new_N
+                            if not self._update_N(new_N, t_):
+                                return
 
             if not skip_in:
                 # update all incoming
@@ -1197,10 +1198,11 @@ class LearningProcess:
 
                     new_N = self.__get_out_v_N_union(v_in, ignore_noise=True)
 
-                    if not new_N.issubset(t_.N):
-                        # print "UPDATING INCOMING", tracklet, t_, t_.N, new_N
-                        if not self.__update_N(new_N, t_):
-                            return
+                    if new_N is not None:
+                        if not new_N.issubset(t_.N):
+                            # print "UPDATING INCOMING", tracklet, t_, t_.N, new_N
+                            if not self._update_N(new_N, t_):
+                                return
 
         if self.__only_one_P_possibility(tracklet) and tracklet.is_single():
             id_ = self.__get_one_possible_P(tracklet)
@@ -1258,7 +1260,7 @@ class LearningProcess:
         #             break
 
         if not oversegmented:
-            if not self.__update_N(ids, tracklet):
+            if not self._update_N(ids, tracklet):
                 return False
 
         return not oversegmented
@@ -1338,7 +1340,7 @@ class LearningProcess:
                     region_X.append(self.get_appearance_features(self.p.rm[r_id]))
 
             elif type == 'N':
-                self.__update_N(set([id_]), tracklet)
+                self._update_N(set([id_]), tracklet)
 
         self.IF_region_anomaly.fit(region_X)
         vals = self.IF_region_anomaly.decision_function(region_X)
@@ -1445,12 +1447,12 @@ class LearningProcess:
 
         # and the rest of ids goes to not_present
         # we want to call this function, so the information is propagated...
-        self.__update_N(self.all_ids.difference(id_set), tracklet)
+        self._update_N(self.all_ids.difference(id_set), tracklet)
 
-        for t in self.__get_affected_undecided_tracklets(tracklet):
-            self.__update_N(id_set, t)
+        for t in self._get_affected_undecided_tracklets(tracklet):
+            self._update_N(id_set, t)
 
-    def __get_affected_undecided_tracklets(self, tracklet):
+    def _get_affected_undecided_tracklets(self, tracklet):
         """
         Returns all tracklets overlapping range <tracklet.startFrame, tracklet.endFrame>
         which ids are in self.undecided_tracklets
@@ -1473,7 +1475,7 @@ class LearningProcess:
         print "edit tracklet old P", old_P, "old N", old_N, "new P", new_P, "new N", new_N, method, tracklet
 
         if method == 'fix_affected':
-            for t in self.__get_affected_undecided_tracklets(tracklet):
+            for t in self._get_affected_undecided_tracklets(tracklet):
                 print t
         elif method == 'fix_tracklet_only':
             # TODO: check conflict?

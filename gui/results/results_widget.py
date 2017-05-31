@@ -77,6 +77,10 @@ class ResultsWidget(QtGui.QWidget):
         self.left_vbox.setContentsMargins(0, 0, 0, 0)
         self.left_w.setLayout(self.left_vbox)
 
+        self.save_button = QtGui.QPushButton('save project')
+        self.save_button.clicked.connect(lambda x: self.project.save())
+        self.left_vbox.addWidget(self.save_button)
+
         if self.show_identities:
             self.scroll_ = QtGui.QScrollArea()
             self.scroll_.setWidgetResizable(True)
@@ -194,13 +198,21 @@ class ResultsWidget(QtGui.QWidget):
         self.addAction(self.edit_tracklet_action)
 
 
-        self.tracklet_end_button = QtGui.QPushButton('go to end')
+        self.tracklet_end_button = QtGui.QPushButton('go to tracklet end')
         self.tracklet_end_button.clicked.connect(self.tracklet_end)
+
+        self.id_end_button = QtGui.QPushButton('go to id end')
+        self.id_end_button.clicked.connect(lambda x: self.id_end())
 
         self.tracklet_end_action = QtGui.QAction('tracklet end', self)
         self.tracklet_end_action.triggered.connect(self.tracklet_end)
         self.tracklet_end_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_E))
         self.addAction(self.tracklet_end_action)
+
+        self.id_end_action = QtGui.QAction('id end', self)
+        self.id_end_action.triggered.connect(lambda x: self.id_end())
+        self.id_end_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.SHIFT + QtCore.Qt.Key_E))
+        self.addAction(self.id_end_action)
 
         self.tracklet_begin_button = QtGui.QPushButton('go to beginning')
         self.tracklet_begin_button.clicked.connect(self.tracklet_begin)
@@ -209,6 +221,15 @@ class ResultsWidget(QtGui.QWidget):
         self.tracklet_begin_action.triggered.connect(self.tracklet_begin)
         self.tracklet_begin_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
         self.addAction(self.tracklet_begin_action)
+
+        self.id_begin_button = QtGui.QPushButton('go to id beginning')
+        self.id_begin_button.clicked.connect(lambda x: self.id_end(False))
+
+        self.id_begin_action = QtGui.QAction('id begin', self)
+        self.id_begin_action.triggered.connect(lambda x: self.id_end(False))
+        self.id_begin_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.SHIFT + QtCore.Qt.Key_S))
+        self.addAction(self.id_begin_action)
+
 
         # goto next / prev node (something like go to next interesting point)
         self.next_graph_node_action = QtGui.QAction('next graph node', self)
@@ -230,8 +251,10 @@ class ResultsWidget(QtGui.QWidget):
         self.tracklet_box.layout().addWidget(self.highlight_tracklet_button)
         self.tracklet_box.layout().addWidget(self.stop_highlight_tracklet)
         self.tracklet_box.layout().addWidget(self.decide_tracklet_button)
-        self.tracklet_box.layout().addWidget(self.tracklet_end_button)
         self.tracklet_box.layout().addWidget(self.tracklet_begin_button)
+        self.tracklet_box.layout().addWidget(self.tracklet_end_button)
+        self.tracklet_box.layout().addWidget(self.id_begin_button)
+        self.tracklet_box.layout().addWidget(self.id_end_button)
         self.tracklet_box.layout().addWidget(self.split_tracklet_b)
 
         self.left_vbox.addWidget(self.tracklet_box)
@@ -481,6 +504,43 @@ class ResultsWidget(QtGui.QWidget):
 
             self.video_player.goto(frame)
 
+    def id_end(self, forward=True):
+        frame_step = 1 if forward else -1
+
+        if self.active_tracklet_id > -1:
+            tid = self.active_tracklet_id
+
+            t = self.project.chm[tid]
+            if t.is_only_one_id_assigned(len(self.project.animals)):
+                id_ = list(t.P)[0]
+            else:
+                return
+
+            while True:
+                if forward:
+                    frame = t.end_frame(self.project.gm)
+                else:
+                    frame = t.start_frame(self.project.gm)
+
+                new_t_found = False
+                for new_t in self.project.chm.chunks_in_frame(frame+frame_step):
+                    if new_t.is_only_one_id_assigned(len(self.project.animals)):
+                        new_id = list(new_t.P)[0]
+
+                        if id_ == new_id:
+                            self.active_tracklet_id = new_t.id()
+                            t = new_t
+                            if forward:
+                                frame = t.end_frame(self.project.gm)
+                            else:
+                                frame = t.start_frame(self.project.gm)
+                            new_t_found = True
+
+                if not new_t_found:
+                    break
+
+            self.video_player.goto(frame)
+
     def hide_visualisation(self):
         self.hide_visualisation_ = not self.hide_visualisation_
         self.redraw_video_player_visualisations()
@@ -588,9 +648,6 @@ class ResultsWidget(QtGui.QWidget):
         if self._gt is not None:
             ev = Evaluator(None, self._gt)
             ev.eval_ids(self.project)
-
-
-
 
     def __prepare_gt(self):
         new_ = {}
