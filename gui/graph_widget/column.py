@@ -116,7 +116,7 @@ class Column:
 
     def prepare_images(self):
         for item in self.objects:
-            if not (item in (self.items_nodes.keys() + self.regions_images.keys()) or item is None):
+            if not (item in self.items_nodes or item in self.regions_images or item is None):
                 if isinstance(item, GraphLine):
                     if item.region_from.frame_ == self.frame:
                         region = item.region_from

@@ -59,7 +59,7 @@ class ImgManager:
 
     def get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, fill_color=(0, 0, 0),
                  max_width=-1, max_height=-1,  min_width=-1, min_height=-1, regions=[], colors={},
-                 default_color=(255, 255, 255, 0.8), constant_propotions=True):
+                 default_color=(0, 0, 255, 0.8), constant_propotions=True):
         """
         Gets a crop_ around the given ROI. The crop_ can be modified with the following parameters.
         :param frame:                         int (<0, len(video)>)

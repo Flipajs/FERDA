@@ -448,7 +448,7 @@ class GraphVisualizer(QtGui.QWidget):
         # time1 = time.time()
         frame_offset = (1 if direction == "right" else -1)
         frame = frame_offset + frame_from
-        if frame in self.frames_columns.keys():
+        if frame in self.frames_columns:
             return self.frames_columns[frame]
         else:
             # frames = self.frames_columns.keys()
@@ -459,7 +459,7 @@ class GraphVisualizer(QtGui.QWidget):
             #         return self.frames_columns[tup]
             start = frame
             end = frame + frame_offset
-            while end not in self.frames_columns.keys():
+            while end not in self.frames_columns:
                 end += frame_offset
             return self.frames_columns[
                 ((start, end - frame_offset) if direction == "right" else (end - frame_offset, start))]
