@@ -38,6 +38,9 @@ class ResultsWidget(QtGui.QWidget):
         if 'get_separated_frame' in callbacks:
             self.get_separated_frame_callback = callbacks['get_separated_frame']
 
+        if 'update_N_sets' in callbacks:
+            self.update_N_sets_callback = callbacks['update_N_sets']
+
         self.show_identities = False
         self.loop_highlight_tracklets = []
         self.loop_end = -1
@@ -300,6 +303,9 @@ class ResultsWidget(QtGui.QWidget):
         self.export_video_b = QtGui.QPushButton('export visualisation')
         self.export_video_b.clicked.connect(self.export_visualisation)
 
+        self.update_N_sets_b = QtGui.QPushButton('update N sets')
+        self.update_N_sets_b.clicked.connect(self.update_N_sets)
+
         self.debug_box.layout().addWidget(self.print_conflic_tracklets_b)
         self.debug_box.layout().addWidget(self.print_undecided_tracklets_b)
         self.debug_box.layout().addWidget(self.assign_ids_from_gt_b)
@@ -308,6 +314,7 @@ class ResultsWidget(QtGui.QWidget):
         self.debug_box.layout().addWidget(self.head_fix_b)
         self.debug_box.layout().addWidget(self.show_movement_model_b)
         self.debug_box.layout().addWidget(self.export_video_b)
+        self.debug_box.layout().addWidget(self.update_N_sets_b)
 
         self.left_vbox.addWidget(self.debug_box)
         self.left_vbox.addWidget(self.gt_box)
@@ -667,6 +674,13 @@ class ResultsWidget(QtGui.QWidget):
                     new_[frame][i] = (y, x)
 
         return new_
+
+    def update_N_sets(self):
+        if self.update_N_sets_callback:
+            self.update_N_sets_callback()
+        else:
+            print "update N sets callback not present in results_widget"
+
 
     def __save_gt(self):
         self._gt.save(self.project.GT_file)
@@ -1577,7 +1591,7 @@ class ResultsWidget(QtGui.QWidget):
     def print_conflicts(self):
         from tqdm import tqdm
         print "CONFLICTS: "
-        print " A) P N intersection"
+        print " A) P N intersection (len(P.intersection(N)) > 0"
 
         problems = []
         for t in tqdm(self.project.chm.chunk_gen()):
@@ -1615,11 +1629,11 @@ class ResultsWidget(QtGui.QWidget):
             if frame >= max_f:
                 break
 
-        print " B) ID missing"
+        print " B) ID missing (frames where it is not possible to distribute all IDs)"
         for frame, x in problemsB:
             print "frame: {}, missing IDs: {}".format(frame, x)
 
-        print " C) ID duplicate"
+        print " C) ID duplicate (frames where one ID is assigned to multiple regions)"
         for frame, x in problemsC:
             print "frame: {}, tracklet id: {} id: {}".format(frame, x.id(), x.P)
 

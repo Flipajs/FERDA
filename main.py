@@ -32,14 +32,17 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
+    wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'
 
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
-    wd = '/Users/flipajs/Documents/wd/FERDA/test'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
     project.load(wd)
+
+    # from scripts.regions_stats import decide_one2one
+    # decide_one2one(project)
 
     # project.chm.add_single_vertices_chunks(project)
     # project.save()
@@ -52,7 +55,7 @@ if is_flipajs_pc():
     # project.gm.update_nodes_in_t_refs()
 
     try:
-        # WORKAROUND:
+        # old projects WORKAROUND:
         for t in project.chm.chunk_gen():
             if not hasattr(t, 'N'):
                 t.N = set()

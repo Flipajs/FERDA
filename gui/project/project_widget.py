@@ -28,11 +28,29 @@ class ProjectLoader(QtCore.QThread):
         CompatibilitySolver(self.project)
         self.proc_done.emit(self.project)
 
+class TestLoader(QtCore.QThread):
+    proc_done = QtCore.pyqtSignal(object)
+    part_done = QtCore.pyqtSignal(float)
+
+    def __init__(self, r):
+        super(TestLoader, self).__init__()
+
+        self.r = r
+
+    def run(self):
+        list = []
+        for i in range(self.r):
+            list.append(i)
+
+        self.proc_done.emit(self.project)
+
 class ProjectWidget(QtGui.QWidget):
-    def __init__(self, finish_callback=None):
+    def __init__(self, finish_callback=None, progress_callback=None):
         super(ProjectWidget, self).__init__()
         self.setLayout(QtGui.QVBoxLayout())
         self.finish_callback = finish_callback
+
+        self.progress_callback = progress_callback
 
         self.settings_button = QtGui.QPushButton('Settings')
         self.settings_button.clicked.connect(self.show_settings)
@@ -49,6 +67,11 @@ class ProjectWidget(QtGui.QWidget):
         self.new_project_button.setFixedHeight(100)
         self.load_project_button.setFixedHeight(100)
 
+        self.b = QtGui.QPushButton('test')
+        self.b.clicked.connect(self.test)
+        # self.layout().addWidget(self.b)
+
+
         # loading speed in bytes per second
         self.loading_speed = 20000000
         # current loading status (0 on the beginning)
@@ -57,6 +80,15 @@ class ProjectWidget(QtGui.QWidget):
 
         self.loading_thread = None
         self.update()
+
+    def test(self):
+        from functools import partial
+        partial(self.progress_callback, True)
+
+        self.tl = TestLoader(100000000)
+        self.tl.start()
+
+        partial(self.progress_callback, False)
 
     def show_settings(self):
         dialog = SettingsDialog(self)

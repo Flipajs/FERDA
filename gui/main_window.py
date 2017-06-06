@@ -11,6 +11,52 @@ import core.project.project
 from core.settings import Settings as S_
 from gui.settings.settings_dialog import SettingsDialog
 import time
+import math, sys
+from PyQt4.QtCore import Qt, QTimer
+from PyQt4.QtGui import QWidget, QPalette, QPainter, QBrush, QPen, QColor
+
+class Overlay(QWidget):
+    def __init__(self, parent=None):
+
+        QWidget.__init__(self, parent)
+        palette = QPalette(self.palette())
+        palette.setColor(palette.Background, Qt.transparent)
+        self.setPalette(palette)
+
+    def paintEvent(self, event):
+
+        painter = QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.fillRect(event.rect(), QBrush(QColor(255, 255, 255, 127)))
+        painter.setPen(QPen(Qt.NoPen))
+
+        for i in range(6):
+            if (self.counter / 5) % 6 == i:
+                painter.setBrush(QBrush(QColor(127 + (self.counter % 5) * 32, 127, 127)))
+            else:
+                painter.setBrush(QBrush(QColor(127, 127, 127)))
+            painter.drawEllipse(
+                self.width() / 2 + 30 * math.cos(2 * math.pi * i / 6.0) - 10,
+                self.height() / 2 + 30 * math.sin(2 * math.pi * i / 6.0) - 10,
+                20, 20)
+
+        painter.end()
+
+    def showEvent(self, event):
+        self.timer = QtCore.QTimer()
+        self.timer.setSingleShot(False)
+        self.timer.timeout.connect(self.update)
+        self.timer.start(50)
+        self.counter = 0
+
+    def timerEvent(self, event):
+
+        self.counter += 1
+        self.update()
+        if self.counter == 6000:
+            self.killTimer(self.timer)
+            self.hide()
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -30,7 +76,7 @@ class MainWindow(QtGui.QMainWindow):
         self.central_widget = QtGui.QStackedWidget()
         self.setCentralWidget(self.central_widget)
 
-        self.project_widget = project_widget.ProjectWidget(self.widget_control)
+        self.project_widget = project_widget.ProjectWidget(self.widget_control, progress_callback=self.progress_callback)
         self.central_widget.addWidget(self.project_widget)
 
         self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
@@ -42,6 +88,8 @@ class MainWindow(QtGui.QMainWindow):
         self.settings_action.setShortcut(S_.controls.show_settings)
         self.addAction(self.settings_action)
 
+        self.overlay = Overlay(self.centralWidget())
+        self.overlay.hide()
         self.update()
 
         self.show()
@@ -51,7 +99,17 @@ class MainWindow(QtGui.QMainWindow):
         # self.move(-500, -500)
         # self.showMaximized()
 
+    def progress_callback(self, show):
+        if show:
+            self.overlay.show()
+        else:
+            self.overlay.hide()
+
     def closeEvent(self, event):
+        event.accept()
+
+    def resizeEvent(self, event):
+        self.overlay.resize(event.size())
         event.accept()
 
     def widget_control(self, state, values=None):
@@ -67,7 +125,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.statusBar().showMessage("The project was successfully loaded.")
                 self.setWindowTitle('FERDA - '+self.project.working_directory+'/'+self.project.name)
 
-                self.main_tab_widget = MainTabWidget(self.widget_control, self.project)
+                self.main_tab_widget = MainTabWidget(self.widget_control, self.project, progress_callback=self.progress_callback)
                 # self.main_tab_widget.ignore_tab_change = True
                 self.central_widget.addWidget(self.main_tab_widget)
                 self.central_widget.setCurrentWidget(self.main_tab_widget)
@@ -98,7 +156,8 @@ class MainWindow(QtGui.QMainWindow):
             self.project = values[0]
             # self.project.save()
 
-            self.main_tab_widget = MainTabWidget(self.widget_control, self.project, values[1])
+            self.main_tab_widget = MainTabWidget(self.widget_control, self.project, values[1],
+                                                 progress_callback=self.progress_callback)
             self.central_widget.addWidget(self.main_tab_widget)
             self.central_widget.setCurrentWidget(self.main_tab_widget)
 

@@ -18,11 +18,13 @@ from gui.learning.learning_widget import LearningWidget
 
 
 class MainTabWidget(QtGui.QWidget):
-    def __init__(self, finish_callback, project, postpone_parallelisation=False):
+    def __init__(self, finish_callback, project, postpone_parallelisation=False, progress_callback=None):
         super(MainTabWidget, self).__init__()
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
         self.project = project
+
+        self.progress_callback = progress_callback
 
         self.solver = None
 
@@ -46,7 +48,8 @@ class MainTabWidget(QtGui.QWidget):
         self.graph_tab = QtGui.QWidget()
         self.region_classifier = QtGui.QWidget()
 
-        self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet)
+        self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet,
+                                               progressbar_callback=progress_callback)
 
         self.finish_callback = finish_callback
 
@@ -149,6 +152,12 @@ class MainTabWidget(QtGui.QWidget):
 
         return self.id_detection_tab.get_separated_frame()
 
+    def update_N_sets(self):
+        if not self.id_detection_tab:
+            self.tab_changed(2)
+
+        return self.id_detection_tab.update_N_sets()
+
     def tab_changed(self, i):
         if self.ignore_tab_change or self.project.chm is None:
             return
@@ -162,7 +171,8 @@ class MainTabWidget(QtGui.QWidget):
                     self.results_tab = ResultsWidget(self.project,
                                                      callbacks={'decide_tracklet': self.decide_tracklet,
                                                                 'edit_tracklet': self.id_detection_tab.edit_tracklet,
-                                                                'get_separated_frame': self.get_separated_frame,})
+                                                                'get_separated_frame': self.get_separated_frame,
+                                                                'update_N_sets': self.update_N_sets,})
                     # self.results_tab.redraw_video_player_visualisations()
                     self.tabs.insertTab(1, self.results_tab, 'results viewer')
                     self.tabs.setCurrentIndex(1)
@@ -186,7 +196,7 @@ class MainTabWidget(QtGui.QWidget):
                 self.ignore_tab_change = True
                 self.tabs.removeTab(2)
                 self.id_detection_tab.setParent(None)
-                self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet)
+                self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet, self.progress_callback)
                 self.id_detection_tab.update_callback()
                 self.tabs.insertTab(2, self.id_detection_tab, "id detection")
                 self.tabs.setCurrentIndex(2)

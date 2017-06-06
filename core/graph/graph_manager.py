@@ -18,7 +18,7 @@ class GraphManager:
         self.end_t = -1
         # multiply 2 times to get ant length
         self.major_axis_median = project.stats.major_axis_median
-        self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * self.major_axis_median
+        self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * 2 * self.major_axis_median
         self.assignment_score = assignment_score
         self.fitting_logger = FittingLogger()
 

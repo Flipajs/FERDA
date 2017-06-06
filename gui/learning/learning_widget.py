@@ -59,10 +59,11 @@ class Filter(QtCore.QObject):
             return False
 
 class LearningWidget(QtGui.QWidget):
-    def __init__(self, project=None, show_tracklet_callback=None):
+    def __init__(self, project=None, show_tracklet_callback=None, progressbar_callback=None):
         super(LearningWidget, self).__init__()
 
         self.project = project
+        self.progressbar_callback = progressbar_callback
         self.show_tracklet_callback = show_tracklet_callback
         self.vbox = QtGui.QVBoxLayout()
         self.hbox = QtGui.QHBoxLayout()
@@ -78,7 +79,7 @@ class LearningWidget(QtGui.QWidget):
             self.load_project_button.clicked.connect(self.load_project)
             self.top_stripe_layout.addWidget(self.load_project_button)
         else:
-            self.lp = LearningProcess(self.project, ghost=False)
+            self.lp = LearningProcess(self.project, ghost=False, progressbar_callback=progressbar_callback)
 
         self.start_button = QtGui.QPushButton('start')
         self.start_button.clicked.connect(self.lp.run_learning)
@@ -504,7 +505,8 @@ class LearningWidget(QtGui.QWidget):
         # TODO: load project...
         # self.project = ...
         # TODO: use_feature_cache...
-        self.lp = LearningProcess(self.project, question_callback=self.show_tracklet_callback, use_feature_cache=True, use_rf_cache=False)
+        self.lp = LearningProcess(self.project, question_callback=self.show_tracklet_callback, use_feature_cache=True,
+                                  use_rf_cache=False, progressbar_callback=self.progressbar_callback)
 
     def question_callback(self, tracklet):
         self.show_tracklet_callback(tracklet)
@@ -612,6 +614,18 @@ class LearningWidget(QtGui.QWidget):
         win.setCentralWidget(w)
         win.show()
         self.w = win
+
+    def update_N_sets(self):
+        affecting = []
+        for t in self.project.chm.chunk_gen():
+            if len(t.P):
+                affecting.append((t, list(t.P)[0]))
+
+        self.lp._reset_chunk_PN_sets()
+        # todo share callback
+
+        for t, id_ in affecting:
+            self.lp.assign_identity(id_, t)
 
 
 def draw_region(p, vm, v):

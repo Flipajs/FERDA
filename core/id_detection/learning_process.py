@@ -50,11 +50,13 @@ class LearningProcess:
         update_N
         before each basic operation check knowledge[t.id()]
     """
-    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None, ghost=False, verbose=0, id_N_propagate=True, id_N_f=True):
+    def __init__(self, p, use_feature_cache=False, use_rf_cache=False, question_callback=None, update_callback=None,
+                 ghost=False, verbose=0, id_N_propagate=True, id_N_f=True, progressbar_callback=None):
         if use_rf_cache:
             warnings.warn("use_rf_cache is Deprecated!", DeprecationWarning)
 
         self.p = p
+        self.progressbar_callback = progressbar_callback
         self.verbose = verbose
         self.show_key_error_warnings = False
 
@@ -144,6 +146,7 @@ class LearningProcess:
     def load_features(self, db_names='fm.sqlite3'):
         from core.id_detection.features import FeatureManager
 
+        self.progressbar_callback(True)
         # TODO: speedup loading... What about loading 10% longest tracklets... When solved, load more?
         self.collision_chunks = set()
         self.features = {}
@@ -204,6 +207,7 @@ class LearningProcess:
         print_progress(expected_sum, expected_sum, "", "LOADED")
         print len(self.features), len(self.collision_chunks)
         self.update_undecided_tracklets()
+        self.progressbar_callback(False)
 
     def compute_features(self):
         self.compute_features_mp()
@@ -656,13 +660,12 @@ class LearningProcess:
          2) there is an ant missing in frame 0
 
         Returns:
-
         """
 
         vertices = map(self.p.gm.g.vertex, self.p.gm.get_vertices_in_t(0))
         return set(range(len(vertices)))
 
-    def __reset_chunk_PN_sets(self):
+    def _reset_chunk_PN_sets(self):
         full_set = set(range(len(self.p.animals)))
         for ch in self.p.chm.chunk_gen():
             ch.P = set()
@@ -1134,7 +1137,6 @@ class LearningProcess:
         if not self.id_N_f:
             return
 
-        # return False
         # TODO: knowledge base check
 
         P = tracklet.P
@@ -1152,13 +1154,16 @@ class LearningProcess:
         # consistency check
         if not self.__consistency_check_PN(P, N):
             print "ID: ", tracklet.id()
-            # print "IN CONFLICT WITH: "
+            print "IN CONFLICT WITH: "
             # for tc in self.__find_conflict(tracklet, list(tracklet.P)[0]):
             #     print tc.id(), tc, tc.segmentation_class
             # TODO: CONFLICT
             return False
 
         # propagate changes
+        if tracklet.is_single() and len(N) == len(self.p.animals):
+            print "CONFLICT in update_N, tracklet-id: {}".format(tracklet.id())
+
         tracklet.N = N
 
         # TODO: gather all and update_certainty at the end, it is possible that it will be called multiple times
@@ -1174,9 +1179,6 @@ class LearningProcess:
                     if len(t_.P) > 0:
                         continue
 
-                    # if t_.is_single() and t_.id not in self.undecided_tracklets:
-                    #     continue
-
                     new_N = self.__get_in_v_N_union(v_out, ignore_noise=True)
 
                     if new_N is not None:
@@ -1189,9 +1191,6 @@ class LearningProcess:
                 # update all incoming
                 for v_in in tracklet.start_vertex(self.p.gm).in_neighbours():
                     t_ = self.p.gm.get_chunk(v_in)
-
-                    # if t_.is_single() and t_.id not in self.undecided_tracklets:
-                    #     continue
 
                     if len(t_.P) > 0:
                         continue
@@ -1295,7 +1294,7 @@ class LearningProcess:
         self.tracklet_measurements = {}
         self.fill_undecided_tracklets()
 
-        self.__reset_chunk_PN_sets()
+        self._reset_chunk_PN_sets()
 
         self.old_x_size = 0
 
