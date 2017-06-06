@@ -1153,12 +1153,13 @@ class LearningProcess:
         self.last_id = tracklet.id()
         # consistency check
         if not self.__consistency_check_PN(P, N):
-            print "ID: ", tracklet.id()
+            print "ID P, N CONFLICT: ", tracklet.id(), P, N
             print "IN CONFLICT WITH: "
             # for tc in self.__find_conflict(tracklet, list(tracklet.P)[0]):
             #     print tc.id(), tc, tc.segmentation_class
             # TODO: CONFLICT
-            return False
+            if not self.force:
+                return False
 
         # propagate changes
         if tracklet.is_single() and len(N) == len(self.p.animals):
@@ -1372,7 +1373,8 @@ class LearningProcess:
 
         return ret
 
-    def assign_identity(self, id_, tracklet, learn=True, not_affecting=False, oversegmented=False, user=False, gt=False):
+    def assign_identity(self, id_, tracklet, learn=True, not_affecting=False, oversegmented=False, user=False,
+                        gt=False):
         """
         Sets set definitelyPresent (P) = ids
         and set definitelyNotPresent (N) = complement of ids in all IDS

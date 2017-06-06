@@ -420,7 +420,7 @@ class RegionClassifierTool(QtGui.QWidget):
                 g.setParent(None)
         except:
             pass
-        
+
         self.singles = ImgGridWidget(cols=self.COLS, element_width=self.WW)
         self.singles_w = QtGui.QWidget()
         self.singles_w.setLayout(QtGui.QVBoxLayout())
