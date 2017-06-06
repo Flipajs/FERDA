@@ -413,38 +413,40 @@ class RegionClassifierTool(QtGui.QWidget):
         if not self.redraw_:
             return
 
-        for g in self.grids.itervalues():
-            self.vbox.removeWidget(g)
+        try:
+            for g in [self.singles_w, self.multi_w, self.noise_w, self.part_w]:
+                self.vbox.removeWidget(g)
 
-            g.setParent(None)
-
+                g.setParent(None)
+        except:
+            pass
+        
         self.singles = ImgGridWidget(cols=self.COLS, element_width=self.WW)
         self.singles_w = QtGui.QWidget()
         self.singles_w.setLayout(QtGui.QVBoxLayout())
         self.singles_w.layout().addWidget(QtGui.QLabel('single-ID'))
         self.singles_w.layout().addWidget(self.singles)
+        self.hbox.addWidget(self.singles_w)
 
         self.multi = ImgGridWidget(cols=self.COLS, element_width=self.WW)
         self.multi_w = QtGui.QWidget()
         self.multi_w.setLayout(QtGui.QVBoxLayout())
         self.multi_w.layout().addWidget(QtGui.QLabel('multiple-ID'))
         self.multi_w.layout().addWidget(self.multi)
+        self.hbox.addWidget(self.multi_w)
 
         self.noise = ImgGridWidget(cols=self.COLS, element_width=self.WW)
         self.noise_w = QtGui.QWidget()
         self.noise_w.setLayout(QtGui.QVBoxLayout())
         self.noise_w.layout().addWidget(QtGui.QLabel('no-ID'))
         self.noise_w.layout().addWidget(self.noise)
+        self.hbox.addWidget(self.noise_w)
 
         self.part = ImgGridWidget(cols=self.COLS, element_width=self.WW)
         self.part_w = QtGui.QWidget()
         self.part_w.setLayout(QtGui.QVBoxLayout())
         self.part_w.layout().addWidget(QtGui.QLabel('ID-part'))
         self.part_w.layout().addWidget(self.part)
-
-        self.hbox.addWidget(self.singles_w)
-        self.hbox.addWidget(self.multi_w)
-        self.hbox.addWidget(self.noise_w)
         self.hbox.addWidget(self.part_w)
 
         self.grids = {'single': self.singles, 'multi': self.multi, 'noise': self.noise, 'part': self.part}
