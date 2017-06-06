@@ -30,7 +30,7 @@ class RegionClassifierTool(QtGui.QWidget):
         self.multi = ImgGridWidget(cols=1, element_width=self.WW)
         self.noise = ImgGridWidget(cols=1, element_width=self.WW)
         self.part = ImgGridWidget(cols=1, element_width=self.WW)
-E
+
         self.hbox = QtGui.QHBoxLayout()
         self.vbox.addLayout(self.hbox)
 
