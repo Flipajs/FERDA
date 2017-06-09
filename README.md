@@ -14,13 +14,13 @@
 * [PyQt4](https://www.riverbankcomputing.com/software/pyqt/download)
 * [graph-tool](https://pypi.python.org/pypi/graph-tool) (2.22)
 
-    $ pip install -r requirements.txt
+`$ pip install -r requirements.txt`
 
 ## Quickstart
 
 - when nothing is happening check the progress bars in the terminal
 
-    $ python main.py
+`$ python main.py`
     
 ### Automatic Tracking    
 
