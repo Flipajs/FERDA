@@ -92,6 +92,9 @@ class LearningProcess:
         self.rf_min_samples_leafs = 1
         self.rf_max_depth = None
 
+        # TODO:
+        self.force = True
+
         self.collision_chunks = {}
 
         self.p.img_manager = ImgManager(self.p, max_num_of_instances=700)
@@ -195,9 +198,9 @@ class LearningProcess:
                 # Debug info...
                 if i % 500 == 0:
                     process = psutil.Process(os.getpid())
-                    print
-                    print "Memory usage: {:.2f}Mb".format((process.memory_info().rss) / 1e6)
-                    print
+                    # print
+                    # print "Memory usage: {:.2f}Mb".format((process.memory_info().rss) / 1e6)
+                    # print
 
                 t_sum += len(t)
                 print_progress(t_sum, expected_sum)
@@ -1463,7 +1466,7 @@ class LearningProcess:
                                                      tracklet.end_frame(self.p.gm)))
 
         # ignore already decided chunks...
-        return filter(lambda x: x.is_single() and not self.__tracklet_is_decided(x.P, x.N), affected)
+        return filter(lambda x: (x.is_single() or x.is_multi()) and not self.__tracklet_is_decided(x.P, x.N), affected)
         # return filter(lambda x: x.id() in self.undecided_tracklets, affected)
 
     def set_min_new_samples_to_retrain(self, val):

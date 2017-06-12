@@ -113,6 +113,9 @@ class ResultsWidget(QtGui.QWidget):
         self.load_gt_b.clicked.connect(self.load_gt_file_dialog)
         self.gt_box.layout().addWidget(self.load_gt_b)
 
+        self.eval_gt_draw_ch = QtGui.QCheckBox('draw coverage image')
+        self.gt_box.layout().addWidget(self.eval_gt_draw_ch)
+
         self.evolve_gt_b = QtGui.QPushButton('evaluate GT')
         self.evolve_gt_b.clicked.connect(self._evaluate_gt)
         self.gt_box.layout().addWidget(self.evolve_gt_b)
@@ -627,7 +630,8 @@ class ResultsWidget(QtGui.QWidget):
 
         # from utils.clearmetrics import _clearmetrics
         from utils.gt.evaluator import draw_id_t_img, compare_trackers
-        compare_trackers(self.project, skip_idtracker=True, gt_ferda_perm=self._gt.get_permutation_reversed(), gt=self._gt)
+        compare_trackers(self.project, skip_idtracker=True, gt_ferda_perm=self._gt.get_permutation_reversed(),
+                         gt=self._gt, draw=self.eval_gt_draw_ch.isChecked())
         # draw_id_t_img(p, [match, match2], [perm, perm2], name=name, row_h=50, gt_h=10, gt_border=2, bg=[200, 200, 200],
         #               impath=impath)
         # threshold = 10
