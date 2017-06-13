@@ -41,6 +41,9 @@ class ResultsWidget(QtGui.QWidget):
         if 'update_N_sets' in callbacks:
             self.update_N_sets_callback = callbacks['update_N_sets']
 
+        if 'tracklet_measurements' in callbacks:
+            self.tracklet_measurements = callbacks['tracklet_measurements']
+
         self.show_identities = False
         self.loop_highlight_tracklets = []
         self.loop_end = -1
@@ -1316,6 +1319,13 @@ class ResultsWidget(QtGui.QWidget):
             s += "\n " + textwrap.fill(str(r), 40)
             s += " radius: {:.3}\n".format(self.__compute_radius(r))
 
+        if self.tracklet_measurements is not None:
+            s += "\nTracklet ID probs: \n"
+            vals = self.tracklet_measurements(ch.id())
+            if vals is not None:
+                for i, a in enumerate(vals.flatten()):
+                    s += "\t{}: {:.2%}\n".format(i, a)
+
         self.info_l.setText(s)
 
         self.tracklet_p_label.setText('P: '+str(ch.P))
@@ -1961,7 +1971,6 @@ class ResultsWidget(QtGui.QWidget):
 
         self.idtracker_data_permutation = self._gt.set_permutation_reversed(permutation_data)
         self.video_player.redraw_visualisations()
-
 
     def show_results_summary(self):
         from gui.learning.learning_widget import draw_region, make_item

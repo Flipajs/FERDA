@@ -158,6 +158,12 @@ class MainTabWidget(QtGui.QWidget):
 
         return self.id_detection_tab.update_N_sets()
 
+    def tracklet_measurements(self, id_):
+        if not self.id_detection_tab:
+            self.tab_changed(2)
+
+        return self.id_detection_tab.tracklet_measurements(id_)
+
     def tab_changed(self, i):
         if self.ignore_tab_change or self.project.chm is None:
             return
@@ -172,7 +178,8 @@ class MainTabWidget(QtGui.QWidget):
                                                      callbacks={'decide_tracklet': self.decide_tracklet,
                                                                 'edit_tracklet': self.id_detection_tab.edit_tracklet,
                                                                 'get_separated_frame': self.get_separated_frame,
-                                                                'update_N_sets': self.update_N_sets,})
+                                                                'update_N_sets': self.update_N_sets,
+                                                                'tracklet_measurements': self.tracklet_measurements})
                     # self.results_tab.redraw_video_player_visualisations()
                     self.tabs.insertTab(1, self.results_tab, 'results viewer')
                     self.tabs.setCurrentIndex(1)

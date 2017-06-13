@@ -202,6 +202,7 @@ class LearningWidget(QtGui.QWidget):
         self.tracklet_debug_info_b.clicked.connect(self.tracklet_debug_info)
         self.top_stripe_layout.addWidget(self.tracklet_debug_info_b)
 
+        self.lp.set_tracklet_length_k(self.tracklet_min_length_sb.value())
         # self.add_tracklet_table()
         # self.update_callback()
 
@@ -636,6 +637,12 @@ class LearningWidget(QtGui.QWidget):
                 self.lp._update_N(id_set, t)
 
         self.lp.force=False
+
+    def tracklet_measurements(self, id_):
+        try:
+            return self.lp.tracklet_measurements[id_]
+        except:
+            return None
 
 
 def draw_region(p, vm, v):
