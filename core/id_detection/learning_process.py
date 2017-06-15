@@ -288,7 +288,7 @@ class LearningProcess:
         self.min_tracklet_len = k
         try:
             self.update_undecided_tracklets()
-            self.__precompute_measurements()
+            self.__precompute_measurements(only_unknown=True)
         except AttributeError:
             pass
 
@@ -325,15 +325,31 @@ class LearningProcess:
                 d = pickle.load(f)
                 self.user_decisions = d['user_decisions']
                 self.undecided_tracklets = d['undecided_tracklets']
+                self.tracklet_measurements = d['measurements']
+                self.tracklet_stds = d['stds']
+                self.tracklet_certainty = d['certainty']
+                self.rfc = d['rfc']
+                self.IF_region_anomaly = d['IF_region_anomaly']
+                self.LR_region_anomaly = d['LR_region_anomaly']
 
-                self.__train_rfc()
-        except IOError:
-            pass
+                self.load_features()
+
+        except Exception as e:
+            print e
 
     def save_learning(self):
         with open(self.p.working_directory+'/learning.pkl', 'wb') as f:
             print "SAVING learning.pkl"
-            d = {'user_decisions': self.user_decisions, 'undecided_tracklets': self.undecided_tracklets}
+            d = {'user_decisions': self.user_decisions,
+                 'undecided_tracklets': self.undecided_tracklets,
+                 'measurements': self.tracklet_measurements,
+                 'stds': self.tracklet_stds,
+                 'certainty': self.tracklet_certainty,
+                 'rfc': self.rfc,
+                 'IF_region_anomaly': self.IF_region_anomaly,
+                 'LR_region_anomaly': self.LR_region_anomaly
+                 }
+
             pickle.dump(d, f)
 
     def fill_undecided_tracklets(self):
@@ -507,11 +523,15 @@ class LearningProcess:
 
         return False
 
-    def __precompute_measurements(self):
+    def __precompute_measurements(self, only_unknown=False):
         from tqdm import tqdm
         print "Computing ID probability distributions..."
         for t_id in tqdm(self.undecided_tracklets):
             tracklet = self.p.chm[t_id]
+            if only_unknown:
+                if t_id in self.tracklet_certainty:
+                    continue
+
             try:
                 x, t_length, stds = self._get_tracklet_proba(tracklet)
             except KeyError:

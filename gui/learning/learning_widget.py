@@ -108,6 +108,10 @@ class LearningWidget(QtGui.QWidget):
         self._filter = Filter(self.min_examples_to_retrain_i, self.lp.set_min_new_samples_to_retrain)
         self.min_examples_to_retrain_i.installEventFilter(self._filter)
         # self.top_stripe_layout.addWidget(self.min_examples_to_retrain_i)
+        #
+        # self.load_classifier_b = QtGui.QPushButton('load classifier')
+        # self.load_classifier_b.clicked.connect(self.load_classifier)
+        # self.top_stripe_layout.addWidget(self.load_classifier_b)
 
         self.load_features_b = QtGui.QPushButton('load features')
         self.load_features_b.clicked.connect(self.load_features)
@@ -203,8 +207,8 @@ class LearningWidget(QtGui.QWidget):
         self.top_stripe_layout.addWidget(self.tracklet_debug_info_b)
 
         self.lp.set_tracklet_length_k(self.tracklet_min_length_sb.value())
-        # self.add_tracklet_table()
-        # self.update_callback()
+        self.add_tracklet_table()
+        self.update_callback()
 
     def enable_all(self):
         self.auto_init_method_cb.setEnabled(True)
@@ -328,6 +332,8 @@ class LearningWidget(QtGui.QWidget):
 
     def reset_learning(self):
         self.lp.reset_learning(use_xgboost=self.use_xgboost_ch.isChecked())
+        self.lp.save_learning()
+        self.project.save()
         self.enable_all()
         self.update_callback()
 
