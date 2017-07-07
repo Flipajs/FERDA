@@ -48,8 +48,9 @@ class MainTabWidget(QtGui.QWidget):
         self.graph_tab = QtGui.QWidget()
         self.region_classifier = QtGui.QWidget()
 
-        self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet,
-                                               progressbar_callback=progress_callback)
+        self.id_detection_tab = QtGui.QWidget()
+        # self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet,
+        #                                        progressbar_callback=progress_callback)
 
         self.finish_callback = finish_callback
 
@@ -146,6 +147,12 @@ class MainTabWidget(QtGui.QWidget):
             self.tab_changed(2)
         self.id_detection_tab.decide_tracklet_question(tracklet, id_=id_)
 
+    def edit_tracklet(self, tracklet):
+        if not self.id_detection_tab:
+            self.tab_changed(2)
+
+        self.id_detection_tab.edit_tracklet(tracklet)
+
     def get_separated_frame(self):
         if not self.id_detection_tab:
             self.tab_changed(2)
@@ -176,7 +183,7 @@ class MainTabWidget(QtGui.QWidget):
                     self.results_tab.setParent(None)
                     self.results_tab = ResultsWidget(self.project,
                                                      callbacks={'decide_tracklet': self.decide_tracklet,
-                                                                'edit_tracklet': self.id_detection_tab.edit_tracklet,
+                                                                'edit_tracklet': self.edit_tracklet,
                                                                 'get_separated_frame': self.get_separated_frame,
                                                                 'update_N_sets': self.update_N_sets,
                                                                 'tracklet_measurements': self.tracklet_measurements})
