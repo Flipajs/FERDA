@@ -1159,7 +1159,7 @@ class ResultsWidget(QtGui.QWidget):
             #                                  self._gt_marker_clicked)
             #
             # head_item.setZValue(0.95)
-
+            #
             # self.video_player.visualise_temp(head_item, category='head')
 
         if S_.visualization.history_depth > 0:
@@ -1195,7 +1195,7 @@ class ResultsWidget(QtGui.QWidget):
                 # self.__add_marker(x, y, c_, None, 0.75, type_=type_)
 
     def _img_saturation(self, img):
-        return img_saturation_coef(img, 2.0, 1.05)
+        return img_saturation_coef(img, 1.5, 0.95)
 
     def redraw_video_player_visualisations(self):
         callback = None

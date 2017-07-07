@@ -568,6 +568,7 @@ class LearningWidget(QtGui.QWidget):
 
     def show_init_summary(self):
         from tqdm import trange
+        from core.id_detection.features import get_colornames_hists_saturated
         import random
         num_examples = 20
         from utils.video_manager import get_auto_video_manager
@@ -594,18 +595,47 @@ class LearningWidget(QtGui.QWidget):
 
         region_representants = {}
         img_representants = {}
-        for aid in trange(len(self.project.animals)):
+
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots()
+
+        plt.ion()
+        major_ticks = np.arange(0, 11, 1)
+        num_animals = len(self.project.animals)
+        for aid in trange(num_animals):
             region_representants[aid] = []
             img_representants[aid] = []
+
+            probs = []
             for i in range(num_examples):
-                tid = id_representants[aid][i%len(id_representants[aid])]
+                tid = id_representants[aid][i % len(id_representants[aid])]
 
                 t = self.project.chm[tid]
                 id_ = t[random.randint(0, len(t)-1)]
-                region_representants[aid].append(self.project.gm.region(id_))
+                r = self.project.gm.region(id_)
+
+                f = get_colornames_hists_saturated(r, self.project)
+                probs.append(f)
+
+                region_representants[aid].append(r)
 
                 im = draw_region(self.project, vm, id_)
+
+                # h = 0.05
+                # for j, val in enumerate(f):
+                #     im[-min(im.shape[0]-1, int(h*val)):, j*3:(j+1)*3, :] = [0, 0, 255]
+
                 img_representants[aid].append(im)
+
+            probs = np.array(probs)
+            ind = np.arange(probs.shape[1])
+            width = 1.
+            ax.bar(ind + (width/num_animals)/2 + (aid * (width/num_animals)), np.mean(probs, 0), width/(num_animals+1), yerr=np.std(probs, 0, ddof=1))
+            # ax.bar(ind + width, np.mean(wprobs, 0), width, yerr=np.std(wprobs, 0, ddof=1))
+        # ax.set_xticks(major_ticks)
+        plt.xticks(major_ticks, ['black', 'blue', 'brown', 'gray', 'green', 'orange', 'pink', 'purple', 'red', 'white', 'yellow'])
+        plt.grid()
+        plt.show()
 
         from gui.img_grid.img_grid_widget import ImgGridWidget
         w = ImgGridWidget(cols=len(self.project.animals), element_width=100)
@@ -660,7 +690,8 @@ def draw_region(p, vm, v):
     # draw_points(im1, r1.contour(), color=c1)
     roi = r1.roi().safe_expand(30, im1)
     im = im1[roi.slices()].copy()
-    img_saturation_coef(im, 2.0, 1.05)
+    # im = img_saturation_coef(im, 2.0, 1.05)
+    im = img_saturation_coef(im, 1.5, 0.95)
 
     return im
 

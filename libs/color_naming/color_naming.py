@@ -30,8 +30,12 @@ class ColorNaming:
         :return:
         """
 
-        # color_values = {[0 0 0], [0 0 1], [.5 .4 .25], [.5 .5 .5], [0 1 0], [1 .8 0], [1 .5 1], [1 0 1], [1 0 0], [1 1 1],
-        #               q  [1 1 0]};
+        # black, blue, brown, gray,
+        # green, orange, pink, purple
+        # red, white, yellow
+        # color_values = {[0 0 0], [0 0 1], [.5 .4 .25], [.5 .5 .5],
+        #                 [0 1 0], [1 .8 0], [1 .5 1], [1 0 1],
+        #                 [1 0 0], [1 1 1], [1 1 0]};
 
         if ColorNaming.w2c is None:
             ColorNaming.w2c = ColorNaming.__load_w2c_pkl()

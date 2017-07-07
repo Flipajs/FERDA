@@ -885,10 +885,11 @@ if __name__ == '__main__':
     from skimage.measure import moments
     import numpy as np
 
+    # get_colornames_hists(r, p, img=None, fliplr=False, saturated=False, lvls=3):
+
     img = np.random.randint(255, size=(100, 100))
     imp = np.asarray(img, dtype=np.uint8)
     m = moments(img)
-
 
     from core.project.project import Project
     import cPickle as pickle
