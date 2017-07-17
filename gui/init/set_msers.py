@@ -483,7 +483,7 @@ class SetMSERs(QtGui.QWidget):
         self.area_roi_ratio_threshold.setValue(0)
 
         self.max_dist_object_length = QtGui.QDoubleSpinBox()
-        self.max_dist_object_length.setMinimum(0)
+        self.max_dist_object_length.setMinimum(0.01)
         self.max_dist_object_length.setMaximum(100)
         self.max_dist_object_length.setValue(2.0)
 

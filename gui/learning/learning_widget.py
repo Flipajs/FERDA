@@ -189,6 +189,11 @@ class LearningWidget(QtGui.QWidget):
         self.use_xgboost_ch.setChecked(False)
         self.top_stripe_layout.addWidget(self.use_xgboost_ch)
 
+        self.use_idcr_ch = QtGui.QCheckBox("use IDCR")
+        self.use_idcr_ch.setChecked(True)
+        self.use_idcr_ch.stateChanged.connect(self.use_idcr_update)
+        self.top_stripe_layout.addWidget(self.use_idcr_ch)
+
         self.show_init_summary_b = QtGui.QPushButton('show init summary')
         self.show_init_summary_b.clicked.connect(self.show_init_summary)
         self.top_stripe_layout.addWidget(self.show_init_summary_b)
@@ -414,7 +419,7 @@ class LearningWidget(QtGui.QWidget):
             self.tracklets_table.setSortingEnabled(False)
             header_labels = ("id", "len", "start", "end", "cert")
             for i in range(num_animals):
-                header_labels += ('m'+str(i), )
+                header_labels += ('ID'+str(i), )
 
             # for i in range(num_animals):
             #     header_labels += (str(i), )
@@ -680,6 +685,9 @@ class LearningWidget(QtGui.QWidget):
         except:
             return None
 
+    def use_idcr_update(self):
+        self.lp.id_N_propagate = self.use_idcr_ch.isChecked()
+        self.lp.id_N_f = self.use_idcr_ch.isChecked()
 
 def draw_region(p, vm, v):
     from utils.img import img_saturation_coef
