@@ -819,6 +819,9 @@ class ResultsWidget(QtGui.QWidget):
         else:
             c = force_color
 
+        if r.is_virtual:
+            step = 1
+
         if self.show_tracklet_class.isChecked():
             step = 1
             c = self.get_tracklet_class_color(tracklet)
@@ -1116,6 +1119,10 @@ class ResultsWidget(QtGui.QWidget):
         for ch in self.project.chm.chunks_in_frame(frame):
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
             r = rch.region_in_t(frame)
+
+            # print r.id_
+            # if r.id_ > 22612:
+            #     print r.id_
 
             if r is None:
                 print ch
@@ -2003,6 +2010,9 @@ class ResultsWidget(QtGui.QWidget):
                     a_id = list(t.P)[0]
 
                     r_id = t.v_id_in_t(frame, self.project.gm)
+                    if r_id == 0:
+                        continue
+
                     im = draw_region(self.project, vm, r_id)
 
                     img_representants[a_id] = im

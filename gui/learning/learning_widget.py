@@ -7,6 +7,7 @@ from core.id_detection.learning_process import LearningProcess
 from core.settings import Settings as S_
 import numpy as np
 from gui.qt_flow_layout import FlowLayout
+import warnings
 
 
 class QCustomTableWidgetItem (QtGui.QTableWidgetItem):
@@ -57,6 +58,7 @@ class Filter(QtCore.QObject):
         else:
             # we don't care about other events
             return False
+
 
 class LearningWidget(QtGui.QWidget):
     def __init__(self, project=None, show_tracklet_callback=None, progressbar_callback=None):
@@ -395,10 +397,17 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setItem(3, 0, QCustomTableWidgetItem('#new T examples'))
         self.info_table.setItem(3, 1, QCustomTableWidgetItem(str(len(self.lp.X) - self.lp.old_x_size)))
 
+        id_representants = self.get_id_representants()
+
         START = 4
         for i in range(len(self.project.animals)):
+            s = 0
+            for tid in id_representants[i]:
+                if tid is not None:
+                    s += len(self.project.chm[tid])
+
             self.info_table.setItem(START+i, 0, QCustomTableWidgetItem('#examples, ID: '+str(i)))
-            self.info_table.setItem(START+i, 1, QCustomTableWidgetItem(str(np.count_nonzero(self.lp.y == i))))
+            self.info_table.setItem(START+i, 1, QCustomTableWidgetItem(str(s)))
 
         self.info_table.setItem(10, 0, QCustomTableWidgetItem('# user decisions: '))
         self.info_table.setItem(10, 1, QCustomTableWidgetItem(str(len(self.lp.user_decisions))))
@@ -429,6 +438,11 @@ class LearningWidget(QtGui.QWidget):
             self.tracklets_table.setHorizontalHeaderLabels(header_labels)
             if len(self.lp.tracklet_certainty):
                 for i, t_id in enumerate(self.lp.undecided_tracklets):
+                    if t_id not in self.lp.tracklet_certainty:
+                        warnings.warn("tracklet id not in lp.tracklet_certainty")
+                        continue
+                        # self.lp._update_certainty(self.project.chm[t_id])
+
                     t = self.project.chm[t_id]
 
                     item = it()
@@ -571,14 +585,7 @@ class LearningWidget(QtGui.QWidget):
     def get_separated_frame(self):
         return self.lp.separated_frame
 
-    def show_init_summary(self):
-        from tqdm import trange
-        from core.id_detection.features import get_colornames_hists_saturated
-        import random
-        num_examples = 20
-        from utils.video_manager import get_auto_video_manager
-        vm = get_auto_video_manager(self.project)
-
+    def get_id_representants(self):
         id_representants = {}
         for i in range(len(self.project.animals)):
             id_representants[i] = []
@@ -588,7 +595,18 @@ class LearningWidget(QtGui.QWidget):
                 tid = d['tracklet_id_set']
                 id_representants[d['ids'][0]].append(tid)
 
+        return id_representants
+
+    def show_init_summary(self):
+        from tqdm import trange
+        from core.id_detection.features import get_colornames_hists_saturated
+        import random
+        num_examples = 20
+        from utils.video_manager import get_auto_video_manager
+        vm = get_auto_video_manager(self.project)
+
         # print id_representants
+        id_representants = self.get_id_representants()
 
         print "EXAMPLES: "
         for i in range(len(self.project.animals)):

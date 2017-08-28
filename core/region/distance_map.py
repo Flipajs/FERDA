@@ -68,10 +68,10 @@ class DistanceMap():
         return self.cont_pts_
 
     def is_inside_object(self, pt):
-        if self.roi.is_inside(pt):
+        if self.roi.is_inside_0(pt):
             return self.pt_img_[pt[0] - self.roi.y(), pt[1] - self.roi.x()]
-
-        return False
+        else:
+            return False
 
 
 if __name__ == '__main__':

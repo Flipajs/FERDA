@@ -544,7 +544,7 @@ class LearningProcess:
 
             self.tracklet_measurements[tracklet.id()] = x
             self.tracklet_stds[tracklet.id()] = stds
-            self.__update_certainty(tracklet)
+            self._update_certainty(tracklet)
 
     def precompute_features_(self):
         from utils.misc import print_progress
@@ -994,7 +994,7 @@ class LearningProcess:
 
         return (self._get_p1(np.sum(X, 0), i) * a) / div
 
-    def __update_certainty(self, tracklet):
+    def _update_certainty(self, tracklet):
         if len(self.tracklet_measurements) == 0:
             # print "tracklet_measurements is empty"
             return
@@ -1192,7 +1192,7 @@ class LearningProcess:
 
         # TODO: gather all and update_certainty at the end, it is possible that it will be called multiple times
         if tracklet.id() in self.tracklet_measurements:
-            self.__update_certainty(tracklet)
+            self._update_certainty(tracklet)
 
         if self.id_N_propagate:
             if not skip_out:

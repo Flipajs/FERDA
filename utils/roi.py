@@ -75,6 +75,23 @@ class ROI():
 
         return True
 
+    def is_inside_0(self, pt):
+        y = pt[0]
+        x = pt[1]
+        if y < self.y_:
+            return False
+
+        if y >= self.y_max_:
+            return False
+
+        if x < self.x_:
+            return False
+
+        if x >= self.x_max_:
+            return False
+
+        return True
+
     def corner_pts(self):
         return np.array([
             [self.y_, self.x_],

@@ -143,30 +143,30 @@ class MainTabWidget(QtGui.QWidget):
 
     def decide_tracklet(self, tracklet, id_=None):
         # self.tab_changed(2)
-        if not self.id_detection_tab:
+        if not isinstance(self.id_detection_tab, LearningWidget):
             self.tab_changed(2)
         self.id_detection_tab.decide_tracklet_question(tracklet, id_=id_)
 
     def edit_tracklet(self, tracklet):
-        if not self.id_detection_tab:
+        if not isinstance(self.id_detection_tab, LearningWidget):
             self.tab_changed(2)
 
         self.id_detection_tab.edit_tracklet(tracklet)
 
     def get_separated_frame(self):
-        if not self.id_detection_tab:
+        if not isinstance(self.id_detection_tab, LearningWidget):
             self.tab_changed(2)
 
         return self.id_detection_tab.get_separated_frame()
 
     def update_N_sets(self):
-        if not self.id_detection_tab:
+        if not isinstance(self.id_detection_tab, LearningWidget):
             self.tab_changed(2)
 
         return self.id_detection_tab.update_N_sets()
 
     def tracklet_measurements(self, id_):
-        if not self.id_detection_tab:
+        if not isinstance(self.id_detection_tab, LearningWidget):
             self.tab_changed(2)
 
         return self.id_detection_tab.tracklet_measurements(id_)
@@ -204,7 +204,7 @@ class MainTabWidget(QtGui.QWidget):
                         break
 
                 if not ok:
-                    QtGui.QMessageBox(
+                    QtGui.QMessageBox.information(None,
                         "there is 0 tracklets with proper class (single-ID, multi-ID, no-ID, part-of-ID) in frame 0, most likely you need to continue to region classifier tab and do tracklet classification first. Continue with id detection only if you are aware of what you are doing.")
 
                 self.ignore_tab_change = True

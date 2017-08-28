@@ -266,6 +266,8 @@ class Region(object):
         # <0, pi>
         phi = np.arccos(np.clip(c, -1, 1))  # clip to prevent numerical imprecision
 
+        # to deal with head orientation uncertainty
+        phi = min(phi, np.pi - phi)
         return phi
 
     def is_inside(self, pt, tolerance=0):
@@ -288,7 +290,7 @@ class Region(object):
         return False
 
 
-def encode_RLE(pts):
+def encode_RLE(pts, return_area=True):
     """
     returns list of dictionaries
     {'col1': , 'col2':, 'line':}
@@ -299,7 +301,7 @@ def encode_RLE(pts):
     result = np.zeros((roi.height(), roi.width()), dtype="uint8")
 
     pts2 = pts - roi.top_left_corner()
-    result[pts2[:,0], pts2[:,1]] = 1
+    result[pts2[:, 0], pts2[:, 1]] = 1
 
     offset_x = roi.top_left_corner()[1]
     offset_y = roi.top_left_corner()[0]
@@ -316,13 +318,14 @@ def encode_RLE(pts):
                 running = True
             if result[i][j] == 0 and running:
                 run['col2'] = j - 1 + offset_x
+                area += run['col2'] - run['col1'] + 1
                 rle.append(run)
                 run = {}
                 running = False
 
-            area += 1
         if running:
             run['col2'] = j - 1 + offset_x
+            area += run['col2'] - run['col1'] + 1
             rle.append(run)
 
     """
@@ -331,6 +334,10 @@ def encode_RLE(pts):
     for run in rle:
         print "line %s: [%s - %s]" % (run["line"], run["col1"], run["col2"])
     """
+
+    if return_area:
+        return rle, area
+
     return rle
 
 def get_region_endpoints(r):

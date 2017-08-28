@@ -99,8 +99,47 @@ class Fitting():
             if not changed:
                 break
 
-        return self.prepare_results()
+        return self.prepare_results(), self.prepare_stats()
         # self.plot_situation()
+
+    def prepare_stats(self):
+        roi = self.region.roi()
+
+        for a in self.animals:
+            roi = roi.union(a.roi())
+
+        stats = {}
+        r_im = np.zeros((roi.height(), roi.width()), dtype=np.bool)
+        r_im[self.region.pts()[:, 0] - roi.y(), self.region.pts()[:, 1] - roi.x()] = True
+        a_ims = []
+        for a in self.animals:
+            a_im = np.zeros((roi.height(), roi.width()), dtype=np.bool)
+            a_im[a.pts()[:, 0] - roi.y(), a.pts()[:, 1] - roi.x()] = True
+            a_ims.append(a_im)
+
+        int_sum = 0
+        for i in range(len(a_ims)):
+            for j in range(i+1, len(a_ims)):
+                int_sum += np.sum(np.logical_and(a_ims[i], a_ims[j]))
+
+        stats['results_intersection'] = int_sum
+
+        union_im = a_ims[0].copy()
+        for a in a_ims[1:]:
+            union_im = np.logical_or(union_im, a)
+
+        stats['form_results_intersection'] = np.sum(np.logical_and(union_im, r_im))
+
+        stats['xor_sum'] = np.sum(np.logical_xor(union_im, r_im))
+        stats['results_area_not_covered'] = np.sum(np.logical_and(union_im, np.logical_not(r_im)))
+        stats['form_area_not_covered'] = np.sum(np.logical_and(r_im, np.logical_not(union_im)))
+        stats['form_area'] = self.region.area()
+
+        stats['results_area'] = 0
+        for a in self.animals:
+            stats['results_area'] += a.area()
+
+        return stats
 
     def test_t_convergence(self, animal_history, frame):
         if frame > 0:
@@ -116,8 +155,8 @@ class Fitting():
         for a_id in range(len(self.animals)):
             # The transformation is done using back projection to supress holes inside objects due rounding to int...
             roi_t2 = self.d_map_animals[a_id].roi
-            m_ = 3
-            roi_t2 = ROI(roi_t2.y_-m_,roi_t2.x_-m_, roi_t2.height_+2*m_, roi_t2.width_+2*m_)
+            # m_ = 3
+            # roi_t2 = ROI(roi_t2.y_-m_,roi_t2.x_-m_, roi_t2.height_+2*m_, roi_t2.width_+2*m_)
 
             pts_t2 = []
             for y in range(int(roi_t2.y_), int(roi_t2.y_max_+1)):
@@ -138,13 +177,17 @@ class Fitting():
                     pts_.append(pts_t2[i, :])
 
             pts_ = np.array(pts_)
+            pts_ = np.asarray(np.round(pts_), dtype=np.uint32)
 
             animal = deepcopy(self.animals[a_id])
-            animal.pts_ = np.asarray(np.round(pts_), dtype=np.uint32)
+            animal.contour_ = None
+            animal.pts_ = None
             animal.centroid_ = self.trans_helpers[a_id].centroid
             animal.is_virtual = True
-            animal.area_ = None
-            animal.pts_rle_ = None
+            from core.region.region import encode_RLE
+            animal.pts_rle_, animal.area_ = encode_RLE(pts_, return_area=True)
+            animal.frame_ = self.region.frame_
+            animal.roi_ = None
 
             results.append(animal)
 
@@ -171,6 +214,7 @@ class Fitting():
 
             legends.append(leg)
 
+        plt.axis('equal')
         plt.ion()
         plt.show()
         plt.waitforbuttonpress(0)
@@ -200,6 +244,7 @@ class Fitting():
         rpts = pairs[:,1]
 
         use_weights = True
+        # use_weights = False
 
         if use_weights:
             weights = np.linalg.norm(apts-rpts, axis=1) * 2
@@ -227,6 +272,9 @@ class Fitting():
 
             p = np.mean(apts, axis=0)
             q = np.mean(rpts, axis=0)
+
+            apts = np.asarray(apts, dtype=np.float64)
+            rpts = np.asarray(rpts, dtype=np.float64)
 
             apts -= p
             rpts -= q
@@ -343,59 +391,104 @@ class Fitting():
 
 
 if __name__ == '__main__':
-    with open('/Volumes/Seagate Expansion Drive/regions-merged/74.pkl', 'rb') as f:
-        data = pickle.load(f)
+    from core.project.project import Project
 
-    # project = ...
-    # vid = get_auto_video_manager(project)
-    im = vid.seek_frame(74)
+    # with open('/Volumes/Seagate Expansion Drive/regions-merged/74.pkl', 'rb') as f:
+    #     data = pickle.load(f)
 
-    for r in data['ants'][0].state.region['rle']:
-        r['col1'] += 10
-        r['col2'] += 10
-        r['line'] += -3
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
+    p = Project()
+    p.load(wd)
 
-    # split_by_contours.solve(data['region'], None, [0, 1], data['ants'], p, im.shape, debug=True)
+    vid = get_auto_video_manager(p)
 
+    # for r in data['ants'][0].state.region['rle']:
+    #     r['col1'] += 10
+    #     r['col2'] += 10
+    #     r['line'] += -3
 
+    # split_by_contours.solve(data['region'], None, b[0, 1], data['ants'], p, im.shape, debug=True)
 
-    reg = Region(data['region'])
+    # reg = Region(data['region'])
+    # reg = p.rm[18674]
+    # reg = p.rm[18691]
+    # reg = p.rm[19009]
+    reg = p.rm[4228]
+    # reg = p.rm[3720]
+
+    # erosion?
+    if True:
+        from scipy.ndimage.morphology import binary_erosion
+        pts = reg.pts()
+        roi = reg.roi()
+
+        bim = np.zeros((roi.height(), roi.width()), dtype=np.bool)
+        bim[pts[:, 0] - roi.y(), pts[:, 1]-roi.x()] = True
+
+        bim2 = binary_erosion(bim, iterations=1)
+        new_pts = np.argwhere(bim2) + roi.top_left_corner()
+        reg.pts_ = new_pts
+        reg.roi_ = None
+
+    # plt.figure()
+    # plt.imshow(bim)
+    # plt.figure()
+    # plt.imshow(bim2)
+    # plt.show()
+
+    im = vid.get_frame(reg.frame())
+    im_copy = im.copy()
+
     draw_points(im, reg.pts())
+    draw_points(im_copy, reg.pts())
 
-
-    a1 = Region(data['ants'][0].state.region)
+    # a1 = Region(data['ants'][0].state.region)
+    # a1 = p.rm[18671]
+    # a1 = p.rm[225]
+    a1 = p.rm[4227]
     # a1.pts_ += np.array([-3., 10.])
 
     draw_points(im, a1.pts(), color=(0,0,255,0.4))
 
-    a2 = Region(data['ants'][1].state.region)
+    # a2 = Region(data['ants'][1].state.region)
+    # a2 = p.rm[18670]
+    # a2 = p.rm[226]
+    a2 = p.rm[4225]
     draw_points(im, a2.pts(), color=(0,255,0,0.4))
 
-    f = Fitting(reg, [a1, a2], num_of_iterations=200)
-    f.fit()
+    # a3 = p.rm[227]
+    # draw_points(im, a3.pts(), color=(255, 0, 0, 0.4))
 
-    test_pairs = []
-    test_pairs.append(np.array([np.array([1.,0.]), np.array([0., 0.])]))
-    test_pairs.append(np.array([np.array([1.,1.]), np.array([1., 0.])]))
-    test_pairs.append(np.array([np.array([0.,1.]), np.array([1., 1.])]))
-    test_pairs.append(np.array([np.array([0.,0.]), np.array([0., 1.])]))
+    f = Fitting(reg, [a1, a2, ], num_of_iterations=200)
+    results = f.fit()
 
-    test_pairs = np.array(test_pairs)
+    draw_points(im_copy, results[0].pts(), color=(0, 0, 255, 0.4))
+    draw_points(im_copy, results[1].pts(), color=(0, 255, 0, 0.4))
+    # draw_points(im_copy, results[2].pts(), color=(255, 0, 0, 0.4))
 
-    t, r = f.compute_transformation(np.copy(test_pairs))
-    print t
-    print r
-
-    new_pts = []
-    for pt in test_pairs[:, 0]:
-        # pt -= np.array([2/4., 2/4.])
-        pt = np.dot(r, pt.reshape(2,))
-        # pt += np.array([2/4., 2/4.])
-        pt = pt + t
-        new_pts.append(pt)
-
-    print new_pts
+    # test_pairs = []
+    # test_pairs.append(np.array([np.array([1.,0.]), np.array([0., 0.])]))
+    # test_pairs.append(np.array([np.array([1.,1.]), np.array([1., 0.])]))
+    # test_pairs.append(np.array([np.array([0.,1.]), np.array([1., 1.])]))
+    # test_pairs.append(np.array([np.array([0.,0.]), np.array([0., 1.])]))
+    #
+    # test_pairs = np.array(test_pairs)
+    #
+    # t, r = f.compute_transformation(np.copy(test_pairs))
+    # print t
+    # print r
+    #
+    # new_pts = []
+    # for pt in test_pairs[:, 0]:
+    #     # pt -= np.array([2/4., 2/4.])
+    #     pt = np.dot(r, pt.reshape(2,))
+    #     # pt += np.array([2/4., 2/4.])
+    #     pt = pt + t
+    #     new_pts.append(pt)
+    #
+    # print new_pts
 
     cv2.imshow('im', im)
+    cv2.imshow('im2', im_copy)
     cv2.moveWindow('im', 0, 0)
     cv2.waitKey(0)

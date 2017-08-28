@@ -1235,9 +1235,12 @@ def get_pair_fetures_appearance(r1, r2):
     return f
 
 def get_pair_fetures_movement(r1, r2):
+    theta_diff = abs(r1.theta_ - r2.theta_)
     f = [
         np.linalg.norm(r1.centroid() - r2.centroid()),
-        abs(r1.theta_ - r2.theta_), # modulo?
+        # A,
+        # to deal with head orientation uncertainty
+        min(theta_diff, np.pi - theta_diff),
         r1.get_phi(r2),
         # TODO: dist to prediction if present?
     ]
