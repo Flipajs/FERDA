@@ -473,7 +473,7 @@ class LearningWidget(QtGui.QWidget):
                     except:
                         pass
 
-                    d = self.lp.tracklet_measurements[t_id]
+                    d = np.mean(self.lp.tracklet_measurements[t_id], axis=0)
                     stds = self.lp.tracklet_stds[t_id]
                     for j in range(num_animals):
                         self.tracklets_table.setItem(i, 5+j, QCustomTableWidgetItem(self.__f2str(d[j])+", {:.2f}".format(stds[j])))

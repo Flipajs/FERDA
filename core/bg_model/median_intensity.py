@@ -69,9 +69,10 @@ if __name__ == '__main__':
     from core.project.project import Project
 
     p = Project()
-    p.video_paths = ['/Volumes/Seagate Expansion Drive/IST - videos/colonies/Camera 1.avi']
+    # p.video_paths = ['/Volumes/Seagate Expansion Drive/IST - videos/colonies/Camera 1.avi']
+    p.video_paths = ['/Users/flipajs/Downloads/crickets-out2/out2.mp4']
 
-    num_steps = 50
+    num_steps = 10
     bg = MedianIntensity(p, iterations=num_steps)
     bg.compute_model()
 
@@ -86,20 +87,33 @@ if __name__ == '__main__':
     vid = get_auto_video_manager(p)
     import scipy
     model = bg.bg_model
-    img = scipy.ndimage.gaussian_filter(model, sigma=5)
-    cv2.imshow('bg', model)
+    img = model
+    # img = scipy.ndimage.gaussian_filter(model, sigma=5)
+    import matplotlib.pyplot as plt
+    plt.figure(1)
+    plt.imshow(model)
 
     from PyQt4 import QtGui, QtCore
     import sys
     app = QtGui.QApplication(sys.argv)
     from gui.view.mser_tree import MSERTree
 
+    plt.figure(2)
     while True:
         im = vid.random_frame()
-        cv2.imshow('orig', im)
+        # cv2.imshow('orig', im)
         processed = np.subtract(0.8 * np.asarray(bg.bg_model, dtype=np.int32), np.asarray(im, dtype=np.int32))
+
+        processed = (processed - np.min(processed))
+        processed /= np.max(processed)
+
+        plt.imshow(processed)
+        plt.show()
+        # cv2.imshow('sub', processed)
+        cv2.waitKey(0)
+
         processed += -np.min(processed)
-        print np.min(processed), np.max(processed)
+        # print np.min(processed), np.max(processed)
 
         processed[processed < 0] = 0
         processed[processed > 255] = 255

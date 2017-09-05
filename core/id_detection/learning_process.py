@@ -291,6 +291,8 @@ class LearningProcess:
             self.__precompute_measurements(only_unknown=True)
         except AttributeError:
             pass
+        except IndexError:
+            pass
 
     def compute_distinguishability(self):
         num_a = len(self.p.animals)
@@ -544,7 +546,13 @@ class LearningProcess:
 
             self.tracklet_measurements[tracklet.id()] = x
             self.tracklet_stds[tracklet.id()] = stds
-            self._update_certainty(tracklet)
+
+        for t_id in tqdm(self.undecided_tracklets):
+            if only_unknown:
+                if t_id in self.tracklet_certainty:
+                    continue
+
+            self._update_certainty(self.p.chm[t_id])
 
     def precompute_features_(self):
         from utils.misc import print_progress
@@ -741,7 +749,7 @@ class LearningProcess:
             x = self.tracklet_measurements[best_tracklet_id]
 
             # compute certainty
-            x_ = np.copy(x)
+            x_ = np.sum(x, axis=0)
             for id_ in best_tracklet.N:
                 x_[id_] = 0
 
@@ -812,9 +820,9 @@ class LearningProcess:
             probs[i] *= anomaly_probs[i]
 
         stds = np.std(probs, 0, ddof=1)
-        probs = np.sum(probs, 0)
-
-        probs /= float(len(X))
+        # probs = np.sum(probs, 0)
+        #
+        # probs /= float(len(X))
 
         if debug:
             print "Probs: ", probs
@@ -994,6 +1002,14 @@ class LearningProcess:
 
         return (self._get_p1(np.sum(X, 0), i) * a) / div
 
+    def get_p1(self, x, i):
+        x__ = np.sum(x, axis=0)
+        sum1 = np.sum([2 ** a for a in x__])
+        p1 = 2 ** x__[i] / sum1
+
+        return p1
+
+
     def _update_certainty(self, tracklet):
         if len(self.tracklet_measurements) == 0:
             # print "tracklet_measurements is empty"
@@ -1021,7 +1037,47 @@ class LearningProcess:
 
             x_ = np.copy(x)
             for id_ in N:
-                x_[id_] = 0
+                x_[:, id_] = 0
+
+            # TODO: try P2 computation for all potential k values?
+            # k is best predicted ID
+            k = np.argmax(np.sum(x_, axis=0))
+            p1 = self.get_p1(x_, k)
+
+            # set of all other relevant regions (single regions in tracklet timespan overlap)
+            C = self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm))
+
+            term1 = 1
+            term2 = 0
+
+            for t in C:
+                if not t.is_single() or t == tracklet or len(t.P):
+                    continue
+
+                try:
+                    xx = self.tracklet_measurements[t.id()]
+                    term1 *= 1 - self.get_p1(xx, k)
+                except KeyError:
+                    pass
+
+            for i in range(len(self.p.animals)):
+                term3 = 1
+                for t in C:
+                    if not t.is_single() or t == tracklet or len(t.P):
+                        continue
+
+                    try:
+                        xx = self.tracklet_measurements[t.id()]
+                        term3 *= 1 - self.get_p1(xx, i)
+                    except KeyError:
+                        pass
+
+                term2 += self.get_p1(x_, i) * term3
+
+            p2 = (p1 * term1) / term2
+            self.tracklet_certainty[tracklet.id()] = p2
+
+            return
 
             std = self.tracklet_stds[tracklet.id()]
 

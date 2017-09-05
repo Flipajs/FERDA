@@ -1328,7 +1328,7 @@ class ResultsWidget(QtGui.QWidget):
 
         if self.tracklet_measurements is not None:
             s += "\nTracklet ID probs: \n"
-            vals = self.tracklet_measurements(ch.id())
+            vals = np.mean(self.tracklet_measurements(ch.id()))
             if vals is not None:
                 for i, a in enumerate(vals.flatten()):
                     s += "\t{}: {:.2%}\n".format(i, a)

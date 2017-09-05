@@ -31,10 +31,10 @@ if is_flipajs_pc() and False:
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Barbara_flu_bug/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-3cam3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'
 
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
 
@@ -69,8 +69,8 @@ if is_flipajs_pc() and False:
     ii = 0
     for t in cases:
         ii += 1
-        # if ii == 1:
-        #     break
+        if ii == 1:
+            break
 
         if t.length() > 5:
             continue
