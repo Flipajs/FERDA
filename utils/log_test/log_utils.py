@@ -24,7 +24,7 @@ handlers:
         class: logging.handlers.RotatingFileHandler
         level: DEBUG
         formatter: simple
-        filename: [project_path]/crawler.log
+        filename: [project_path]/ferda.log
         maxBytes: 10485760 # 10MB
         backupCount: 20
         encoding: utf8
