@@ -75,6 +75,7 @@ class SetMSERs(QtGui.QWidget):
         # Left panel with options and paint tools
         self.left_panel = QtGui.QWidget()
         self.left_panel.setLayout(QtGui.QVBoxLayout())
+        self.left_panel.setFixedWidth(400)
 
         # Left panel must be scrollable on smaller screens
         left_scroll = QtGui.QScrollArea()
@@ -95,8 +96,10 @@ class SetMSERs(QtGui.QWidget):
         self.configure_form_panel()
         self.configure_paint_panel()
 
+
         # Complete the gui
-        self.layout().addWidget(left_scroll)  # self.layout().addWidget(self.left_panel)
+        # self.layout().addWidget(left_scroll)
+        self.layout().addWidget(self.left_panel)
         self.layout().addWidget(self.painter)
         self.layout().addWidget(self.right_panel)
 
@@ -440,6 +443,9 @@ class SetMSERs(QtGui.QWidget):
     def configure_paint_panel(self):
 
         # PEN SIZE slider
+        slider_label = QtGui.QLabel("Pen size")
+        self.left_panel.layout().addWidget(slider_label)
+
         self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
         self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider.setGeometry(30, 40, 50, 30)
@@ -449,7 +455,40 @@ class SetMSERs(QtGui.QWidget):
         self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.painter.set_pen_size)
         self.slider.setVisible(True)
+        self.slider.setFixedWidth(300)
         self.left_panel.layout().addWidget(self.slider)
+
+        # RADIUS SLIDER
+        radius_slider_label = QtGui.QLabel("LBP radius slider")
+        self.left_panel.layout().addWidget(radius_slider_label)
+
+        self.radius_slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.radius_slider.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.radius_slider.setGeometry(30, 40, 50, 30)
+        self.radius_slider.setRange(1, 10)
+        self.radius_slider.setTickInterval(1)
+        self.radius_slider.setValue(self.pen_size)
+        self.radius_slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.radius_slider.valueChanged[int].connect(self.lbp_radius_changed)
+        self.radius_slider.setVisible(True)
+        self.radius_slider.setFixedWidth(300)
+        self.left_panel.layout().addWidget(self.radius_slider)
+
+        # N SLIDER
+        n_slider_label = QtGui.QLabel("LBP N slider")
+        self.left_panel.layout().addWidget(n_slider_label)
+
+        self.n_slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.n_slider.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.n_slider.setGeometry(30, 40, 50, 30)
+        self.n_slider.setRange(1, 15)
+        self.n_slider.setTickInterval(1)
+        self.n_slider.setValue(self.pen_size)
+        self.n_slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.n_slider.valueChanged[int].connect(self.lbp_n_changed)
+        self.n_slider.setVisible(True)
+        self.n_slider.setFixedWidth(300)
+        self.left_panel.layout().addWidget(self.n_slider)
 
         # color switcher widget
         color_widget = QtGui.QWidget()
@@ -473,6 +512,7 @@ class SetMSERs(QtGui.QWidget):
         eraser_button.setCheckable(True)
         eraser_button.clicked.connect(self.set_eraser)
         color_widget.layout().addWidget(eraser_button)
+        color_widget.setFixedWidth(400)
         self.left_panel.layout().addWidget(color_widget)
         self.color_buttons["eraser"] = eraser_button
 
@@ -493,13 +533,24 @@ class SetMSERs(QtGui.QWidget):
         self.left_panel.layout().addWidget(self.check_mser)
 
         self.button_next.clicked.connect(self.show_next_frame)
+        self.button_next.setFixedWidth(300)
         self.left_panel.layout().addWidget(self.button_next)
 
         self.button_rand.clicked.connect(self.show_random_frame)
+        self.button_rand.setFixedWidth(300)
         self.left_panel.layout().addWidget(self.button_rand)
 
         self.button_done.clicked.connect(self.done)
+        self.button_done.setFixedWidth(300)
         self.left_panel.layout().addWidget(self.button_done)
+
+    def lbp_n_changed(self, n):
+        self.helper.update_lbp(n=n)
+        self.update_img()
+
+    def lbp_radius_changed(self, radius):
+        self.helper.update_lbp(radius=radius)
+        self.update_img()
 
 
 if __name__ == "__main__":
@@ -508,7 +559,7 @@ if __name__ == "__main__":
 
     # proj.load("/home/dita/Programovani/FERDA Projects/cam1_test/cam1_test.fproj")
     # proj.load('/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj')
-    proj.load('/Users/flipajs/Documents/wd/GT/Cam1_/cam1.fproj')
+    proj.load("/home/dita/ownCloud/FERDA/Projects/Cam1_test/Cam1_test.fproj")
     # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
     proj.arena_model = None
     proj.bg_model = None
