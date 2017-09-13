@@ -30,8 +30,16 @@ class SegmentationHelper:
         self.rfc_n_jobs = 1
         self.rfc_n_estimators = 10
 
-        self.use_reduced_feature_set = True
-        self.num_features = 6
+        self.use_reduced_feature_set = False
+
+        if self.use_reduced_feature_set:
+            self.feature_names = ["Channel 2", "Shift X", "Shift Y", "Dif between min and max"]
+            self.num_features = 4
+        else:
+            self.feature_names = ["Channel 2", "Channel 1", "Channel 0", "Average", "Shift X", "Shift Y",
+                                  "Blue-green dif", "Green-red dif", "Red-blue dif", "Local Max", "Local Min",
+                                  "Dif between min and max"]
+            self.num_features = 12
 
         # these arrays contain learning data from previous frames
         # after confirming selection on a frame, temporary data is copied here
@@ -101,10 +109,9 @@ class SegmentationHelper:
 
             self.edges = self.get_edges()  # canny edge detector, rescaled to largest image
 
-            # self.maxs, self.mins, self.diff = self.get_dif()
 
         t = time.time()
-        self.diff = self.get_dif()
+        self.maxs, self.mins, self.diff = self.get_dif()
         if self.print_times:
             print "set_image diff time: {:.4f}".format(time.time() - t)
 
@@ -141,12 +148,6 @@ class SegmentationHelper:
                 b, g, r = self.images[k][i][j]
                 sx = self.shiftx[k][i][j]
                 sy = self.shifty[k][i][j]
-                # a = self.avg[k][i][j]
-                # c = self.bg[k][i][j]
-                # d = self.gr[k][i][j]
-                # e = self.rb[k][i][j]
-                # f = self.maxs[k][i][j]
-                # h = self.mins[k][i][j]
                 k = self.diff[k][i][j]
                 x.extend([r, sx, sy, k])
 
@@ -200,6 +201,19 @@ class SegmentationHelper:
         self.rfc.fit(X, y)
         if self.print_times:
             print "RFC fitting takes     %f" % (time.time() - start)
+
+        print "%25s | %s" % ("Feature name", "feature weight")
+        print " -------------------------+----------------"
+
+        size = len(self.feature_names)
+        for k in range(0, self.num):
+            print "%25s + %d" % ("Pyramid layer", k)
+            for i in range(0, size):
+                name = self.feature_names[i]
+                importance = self.rfc.feature_importances_[k*size + i]
+                if importance >= 0.1:
+                    print "%25s | %f" % (name, importance)
+        print ""
 
         # find unused features and remove them
         # create new classifier with less features, it will be faster
@@ -281,6 +295,10 @@ class SegmentationHelper:
         # find unused features and remove them
         # create new classifier with less features, it will be faster
         start = time.time()
+
+        for name, importance in zip(self.feature_names, self.rfc.feature_importances_):
+            print name, importance
+
         self.unused = find_unused_features(self.rfc)
         self.rfc = get_filtered_rfc(self.unused, X, y)
         if self.print_times:
@@ -310,19 +328,12 @@ class SegmentationHelper:
                 result.append(self.maxs[i].reshape((h * w, 1)))
                 result.append(self.mins[i].reshape((h * w, 1)))
                 result.append(self.diff[i].reshape((h * w, 1)))
+
         else:
             for i in range(0, self.num):
                 result.append(self.images[i][:, :, 2].reshape((h * w, 1)))
-                # result.append(self.images[i][:, :, 1].reshape((h * w, 1)))
-                # result.append(self.images[i][:, :, 0].reshape((h * w, 1)))
-                # result.append(self.avg[i].reshape((h * w, 1)))
                 result.append(self.shiftx[i].reshape((h * w, 1)))
                 result.append(self.shifty[i].reshape((h * w, 1)))
-                # result.append(self.bg[i].reshape((h * w, 1)))
-                # result.append(self.gr[i].reshape((h * w, 1)))
-                # result.append(self.rb[i].reshape((h * w, 1)))
-                # result.append(self.maxs[i].reshape((h * w, 1)))
-                # result.append(self.mins[i].reshape((h * w, 1)))
                 result.append(self.diff[i].reshape((h * w, 1)))
 
         return result
@@ -435,8 +446,8 @@ class SegmentationHelper:
         :return: 3 pyramids, each with one feature (max, min, diff)
         """
         result1 = []
-        # result2 = []
-        # result3 = []
+        result2 = []
+        result3 = []
         for i in range(0, len(self.pyramid)):
             t = time.time()
             image = cv2.cvtColor(self.pyramid[i], cv2.COLOR_BGR2GRAY)
@@ -465,12 +476,12 @@ class SegmentationHelper:
             mins = np.amin(difs, axis=2)
 
             diff = np.asarray(maxs, dtype=np.int32) - np.asarray(mins, dtype=np.int32)
-            # result1.append(self.get_scaled(maxs, i))
-            # result2.append(self.get_scaled(mins, i))
-            result1.append(self.get_scaled(diff, i))
+            result1.append(self.get_scaled(maxs, i))
+            result2.append(self.get_scaled(mins, i))
+            result3.append(self.get_scaled(diff, i))
 
-        # return result1, result2, result3
-        return result1
+        return result1, result2, result3
+        #return result1
 
     def get_cdiff(self, c1, c2):
         """
