@@ -30,7 +30,7 @@ class SegmentationHelper:
         self.rfc_n_jobs = 1
         self.rfc_n_estimators = 10
 
-        self.use_reduced_feature_set = False
+        self.use_reduced_feature_set = True
 
         if self.use_reduced_feature_set:
             self.feature_names = ["Channel 2", "Shift X", "Shift Y", "Dif between min and max"]
@@ -108,10 +108,13 @@ class SegmentationHelper:
             self.avg = self.get_avg()  # average value on each pixel, rescaled
 
             self.edges = self.get_edges()  # canny edge detector, rescaled to largest image
+            self.maxs, self.mins, self.diff = self.get_dif()
+
+        else:
+            self.diff = self.get_dif()
 
 
         t = time.time()
-        self.maxs, self.mins, self.diff = self.get_dif()
         if self.print_times:
             print "set_image diff time: {:.4f}".format(time.time() - t)
 
@@ -214,6 +217,8 @@ class SegmentationHelper:
                 if importance >= 0.1:
                     print "%25s | %f" % (name, importance)
         print ""
+        print "RFC filtering takes   %f. Using %d out of %d features." % \
+                  (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
 
         # find unused features and remove them
         # create new classifier with less features, it will be faster
@@ -442,8 +447,8 @@ class SegmentationHelper:
 
     def get_dif(self):
         """
-        Gets miscellaneous features for each image
-        :return: 3 pyramids, each with one feature (max, min, diff)
+        Gets miscellaneous features for each image, only dif when use_reduced_feature_set is True
+        :return: 3 pyramids, each with one feature (max, min, diff) and 1 pyramid if use_reduced_feature_set is True
         """
         result1 = []
         result2 = []
@@ -476,11 +481,15 @@ class SegmentationHelper:
             mins = np.amin(difs, axis=2)
 
             diff = np.asarray(maxs, dtype=np.int32) - np.asarray(mins, dtype=np.int32)
-            result1.append(self.get_scaled(maxs, i))
-            result2.append(self.get_scaled(mins, i))
+            if not self.use_reduced_feature_set:
+                result1.append(self.get_scaled(maxs, i))
+                result2.append(self.get_scaled(mins, i))
             result3.append(self.get_scaled(diff, i))
 
-        return result1, result2, result3
+        if self.use_reduced_feature_set:
+            return result3
+        else:
+            return result1, result2, result3
         #return result1
 
     def get_cdiff(self, c1, c2):
