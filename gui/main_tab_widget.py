@@ -88,11 +88,39 @@ class MainTabWidget(QtGui.QWidget):
         self.update_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_U))
         self.addAction(self.update_undecided_a)
 
+        self.progress = QtGui.QProgressBar(self)
+        self.progress.setGeometry(200, 80, 250, 20)
+        self.progress_part_counter = 0
+        self.progress_parts_total = None
+        self.progress_step = None
+
+        self.progress2 = QtGui.QProgressBar(self)
+        self.progress2.setGeometry(200, 80, 250, 20)
+        self.progress2_part_counter = 0
+        self.progress2_parts_total = None
+        self.progress2_step = None
+
+        # constants represent the approximate % time consumption of individual functions
+        self.functions_len = [5, 45, 20, 5, 10, 10, 5]
+        self.functions_names = ["Inicializace...", "MSER...", "Zpracování databází...", "Sestavuji interval tree...",
+                           "Ohodnocuji hrany...", "Počítám isolation score...", "Sestavuji interval tree..."]
+        self.progress_size_index = 0
+        self.detailed_progress_size = None
+
+        self.layout().addWidget(self.progress)
+        self.layout().addWidget(self.progress2)
+
+        self.progress_label = QtGui.QLabel()
+        self.progress_label.setText("-- No text yet --")
+        self.layout().addWidget(self.progress_label)
 
         print "LOADING GRAPH..."
         if project.gm is None or project.gm.g.num_vertices() == 0:
             # project.gm = GraphManager(project, project.solver.assignment_score)
-            self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished, postpone_parallelisation)
+            self.bc_msers = BackgroundComputer(project, self.update_progress, self.background_computer_finished, postpone_parallelisation)
+            self.progress_parts_total = self.bc_msers.part_num + 6
+            # progress bar is updated after each bc_msers part, also twice before starting the parts and 4 times after running them
+            self.progress_step = 100.0/self.progress_parts_total
             self.bc_msers.run()
         else:
             self.background_computer_finished(project.solver)
@@ -112,6 +140,7 @@ class MainTabWidget(QtGui.QWidget):
 
                 self.project.chm[ch_id].animal_id_ = animal_id
 
+
         except IOError:
             pass
 
@@ -119,8 +148,6 @@ class MainTabWidget(QtGui.QWidget):
             self.results_tab.update_positions()
         except AttributeError:
             pass
-
-
 
     def show_in_visualizer(self, data):
         self.show_results_only_around_frame = data['n1'].frame_
@@ -272,6 +299,40 @@ class MainTabWidget(QtGui.QWidget):
     def learning_widget_update_undecided(self):
         if isinstance(self.id_detection_tab, LearningWidget):
             self.id_detection_tab.update_undecided_tracklets()
+
+    def start_new_progress(self, num_parts, name):
+        self.detailed_progress_size = self.functions_len[self.progress_size_index]
+        self.progress_label.setText(self.functions_names[self.progress_size_index])
+        # TODO: move to next size in array
+        # TODO: compute new step for detailed progress_bar
+        # TODO: change progress bar label
+        pass
+
+    def update_progress(self, jump=1):
+        # these will be self variables
+        detailed_progress_value = 0
+        detailed_progress_step = 0
+        progress_value = 0
+        functions_len = 0
+
+        # detailed advancement is the difference in % for the detailed progress bar
+        detailed_advancement = detailed_progress_step * jump
+        advancement = functions_len / 100.0 * detailed_advancement
+
+        # compute new values by adding to previous ones
+        detailed_progress_value = detailed_progress_value + detailed_advancement
+        progress_value = progress_value + advancement
+
+        self.progress.setValue(progress_value)
+        self.progress2.setValue(detailed_progress_value)
+
+    def detailed_progress(self):
+        self.progress_part_counter += 1
+        val = self.progress_step * self.progress_part_counter
+        print "Updating progress bar: ", val
+        if val > 0:
+            self.progress.setValue(val)
+
 
 class DetachedWindow(QtGui.QMainWindow):
     def __init__(self, parent, widget, widget_callback, number):

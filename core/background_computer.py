@@ -17,6 +17,7 @@ class BackgroundComputer:
     RUNNING = 1
     FINISHED = 2
 
+
     def __init__(self, project, update_callback, finished_callback, postpone_parallelisation):
         self.project = project
         self.process_n = S_.parallelization.processes_num
@@ -47,6 +48,8 @@ class BackgroundComputer:
         # is True when semi merge is done on cluster... e.g. parts 0-9, 10-19 etc...
         self.do_semi_merge = False
 
+        # self.bg_computer_signal = QtCore.pyqtSignal(int, name="bg_computer_signal")
+
     def set_frames_in_row(self):
         vid = get_auto_video_manager(self.project)
         frame_num = int(vid.total_frame_count())
@@ -55,6 +58,7 @@ class BackgroundComputer:
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
+        self.update_callback()
         if not os.path.exists(self.project.working_directory + '/temp'):
             os.mkdir(self.project.working_directory + '/temp')
             
@@ -67,6 +71,7 @@ class BackgroundComputer:
 
             # change this if parallelisation stopped working and you want to run it from given part
             skip_n_first_parts = 0
+            # TODO: also update progress_bar
 
             self.start = [0] * self.part_num
 
@@ -75,6 +80,8 @@ class BackgroundComputer:
 
             if self.postpone_parallelisation:
                 limitsFile = open(str(self.project.working_directory)+"/limits.txt","w")
+
+            self.update_callback()
 
             for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
@@ -172,7 +179,10 @@ class BackgroundComputer:
                     if i:
                         num_finished += 1
 
-                self.update_callback(num_finished / float(self.part_num))
+                # self.update_callback(num_finished / float(self.part_num))
+                # self.bg_computer_signal.emit(p_id + 1)
+                # self.update_callback(p_id + 1, self.part_num)
+                self.update_callback()
 
                 print "PART " + str(p_id + 1) + "/" + str(self.part_num) + " FINISHED MSERS, takes ", round(
                     end - self.start[p_id], 2), " seconds which is ", round((end - self.start[p_id]) / (

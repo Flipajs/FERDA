@@ -49,6 +49,7 @@ class TrackerWidget(QtGui.QWidget):
 
         self.progress_w = LoadingWidget(text='Computing MSERs and constructing graph...')
         self.layout().addWidget(self.progress_w)
+
         self.noise_filter = None
 
         self.undo_action = QtGui.QAction('undo', self)
@@ -168,6 +169,7 @@ class TrackerWidget(QtGui.QWidget):
             self.progress_w.update_text(text)
 
         if val >= 0:
+            self.progress.setValue(val)
             self.progress_w.update_progress(val)
 
     def prepare_corrections(self, solver):

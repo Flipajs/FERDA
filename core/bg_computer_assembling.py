@@ -33,7 +33,10 @@ def assembly_after_parallelization(bgcomp):
     bgcomp.project.gm = GraphManager(bgcomp.project, bgcomp.solver.assignment_score)
 
     if not bgcomp.project.is_cluster():
-        bgcomp.update_callback(0, 're-indexing...')
+        # TODO: Why was this line here?
+        # bgcomp.update_callback(0, 're-indexing...')
+        bgcomp.update_callback()
+        pass
 
     if not bgcomp.project.is_cluster():
         from core.settings import Settings as S_
@@ -74,12 +77,14 @@ def assembly_after_parallelization(bgcomp):
             merge_parts(bgcomp.project.gm, g_, relevant_vertices, bgcomp.project, rm_old, chm_)
 
         if not bgcomp.project.is_cluster():
-            bgcomp.update_callback((i + 1) / float(part_num))
+            # bgcomp.update_callback((i + 1) / float(part_num))
+            bgcomp.update_callback()
 
     fir = bgcomp.project.solver_parameters.frames_in_row
 
     if not bgcomp.project.is_cluster():
-        bgcomp.update_callback(-1, 'joining parts...')
+        # bgcomp.update_callback(-1, 'joining parts...')
+        bgcomp.update_callback()
 
     bgcomp.project.gm.rm = bgcomp.project.rm
 
@@ -207,7 +212,8 @@ def assembly_after_parallelization(bgcomp):
     p.chm.add_single_vertices_chunks(p)
 
     if not bgcomp.project.is_cluster():
-        bgcomp.update_callback(-1, 'saving...')
+        # bgcomp.update_callback(-1, 'saving...')
+        bgcomp.update_callback()
 
     p.gm.update_nodes_in_t_refs()
 
