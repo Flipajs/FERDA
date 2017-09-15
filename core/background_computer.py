@@ -18,10 +18,11 @@ class BackgroundComputer:
     FINISHED = 2
 
 
-    def __init__(self, project, update_callback, finished_callback, postpone_parallelisation):
+    def __init__(self, project, new_step_callback, update_callback, finished_callback, postpone_parallelisation):
         self.project = project
         self.process_n = S_.parallelization.processes_num
         self.results = []
+        self.new_step_callback = new_step_callback
         self.update_callback = update_callback
         self.finished_callback = finished_callback
         self.start = []
@@ -58,10 +59,12 @@ class BackgroundComputer:
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
+        self.new_step_callback(3)
         self.update_callback()
         if not os.path.exists(self.project.working_directory + '/temp'):
             os.mkdir(self.project.working_directory + '/temp')
-            
+
+        self.update_callback()
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
             # if self.postpone_parallelisation:
                 # f = open(self.project.working_directory+'/limits.txt', 'w')
@@ -82,6 +85,7 @@ class BackgroundComputer:
                 limitsFile = open(str(self.project.working_directory)+"/limits.txt","w")
 
             self.update_callback()
+            self.new_step_callback(self.part_num)
 
             for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
@@ -118,7 +122,7 @@ class BackgroundComputer:
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
-                    #p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))   ## Uncomment for cluster usage
+                    #  p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))   ## Uncomment for cluster usage
 
                 self.processes.append([p, ex_str, status])
 
@@ -130,7 +134,7 @@ class BackgroundComputer:
             S_.general.log_graph_edits = True
             if self.postpone_parallelisation:
                 limitsFile.close()
-                sys.exit() ## Comment for cluster usage
+                sys.exit()  # Comment for cluster usage
             
         else:
             self.precomputed = True

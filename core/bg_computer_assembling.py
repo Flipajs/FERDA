@@ -9,6 +9,7 @@ from itertools import izip
 
 def assembly_after_parallelization(bgcomp):
     print "Starting assembly..."
+    bgcomp.new_step_callback(bgcomp.part_num)
     from core.graph.graph_manager import GraphManager
     # TODO: add to settings
 
