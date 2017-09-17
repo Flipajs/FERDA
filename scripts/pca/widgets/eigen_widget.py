@@ -106,7 +106,7 @@ class CustomSlider(QtGui.QSlider):
 
     def __init__(self, i, widget):
         super(CustomSlider, self).__init__(QtCore.Qt.Horizontal)
-        self.setRange(self.SLIDE_MIN, self.SLIDE_MAX)
+        self.setRange(min(np.min(widget.eigen_vals), self.SLIDE_MIN), max(np.max(widget.eigen_vals), self.SLIDE_MAX))
         self.setSingleStep(self.SLIDE_STEP)
         self.setTickInterval(self.SLIDE_MIN)
         self.i = i
@@ -114,9 +114,10 @@ class CustomSlider(QtGui.QSlider):
         widget.connect(self, QtCore.SIGNAL('valueChanged(int)'), self.valueChanged)
 
     def valueChanged(self, val):
-        self.widget.ant[self.i] = val
+        self.widget.coords[self.i] = val
         self.widget.labels[self.i].setText('{0:.2f}'.format(val))
         self.widget.plot()
+        pass
 
 
 class EigenViewer(FigureCanvas):
@@ -136,13 +137,16 @@ class EigenViewer(FigureCanvas):
 
 
 class EigenWidget(QtGui.QWidget):
-    def __init__(self, pca, eigens, eigen_vals, ant):
+    def __init__(self, fitting_obj, transformation, eigens, eigen_vals, ant):
         super(EigenWidget, self).__init__()
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, self)
+        self.fitting_obj = fitting_obj
         self.ant = ant
-        self.pca = pca
+        self.eigen_vals = eigen_vals # [EIGEN_DIM, FEATURES * 2]
+        _, self.coords = transformation(np.expand_dims(self.ant, axis=0))
+        self.coords = np.squeeze(self.coords)
         self.right = QtGui.QVBoxLayout()
         self.left = QtGui.QVBoxLayout()
         self.prepare_canvas()
@@ -150,7 +154,6 @@ class EigenWidget(QtGui.QWidget):
         self.labels = []
         self.eigens_layouts = []
         self.prepare_eigens(eigens, eigen_vals)
-
         l = QtGui.QHBoxLayout()
         for i in range(len(self.eigens_layouts)):
             if i % 5 == 0:
@@ -159,7 +162,6 @@ class EigenWidget(QtGui.QWidget):
             l.addLayout(self.eigens_layouts[i])
         else:
             self.right.addLayout(l)
-            l = QtGui.QHBoxLayout()
 
         layout = QtGui.QHBoxLayout()
         layout.addLayout(self.left)
@@ -183,15 +185,15 @@ class EigenWidget(QtGui.QWidget):
         i = 0
         for eigen, eigen_val in zip(eigens, eigen_vals):
             layout = QtGui.QVBoxLayout()
-            label = QtGui.QLabel('{0:.2f}'.format(float(self.ant[i])))
+            label = QtGui.QLabel('{0:.2f}'.format(float(self.coords[i])))
             label.setAlignment(QtCore.Qt.AlignCenter)
             self.labels.append(label)
             slider = CustomSlider(i, self)
-            slider.setSliderPosition(self.ant[i])
+            slider.setSliderPosition(self.coords[i])
             figure = plt.figure()
             ax = figure.add_subplot(111)
             a = random.randint(0, len(cnames) - 1)
-            eigen = map (lambda x: x * (eigen_val / max_val), eigen)
+            # eigen = map (lambda x: x * (eigen_val / max_val), eigen)
             ax.plot(np.append(eigen[::2], eigen[0]), np.append(eigen[1::2], eigen[1]), c=cnames.keys()[a])
             ax.axes.get_xaxis().set_visible(False)
             ax.axes.get_yaxis().set_visible(False)
@@ -209,10 +211,12 @@ class EigenWidget(QtGui.QWidget):
             i += 1
 
     def plot(self):
-        data = self.pca.inverse_transform(self.ant)
         ax = self.figure.add_subplot(111)
         ax.set_autoscale_on(False)
-        ax.plot(np.append(data[::2], data[0]), np.append(data[1::2], data[1]))
+        fit = self.fitting_obj.get_image(self.coords)
+        ax.plot(fit[:, 0], fit[:, 1], c='r')
+        ax.hold(True)
+        ax.plot(self.ant[:, 0], self.ant[:, 1], c='b')
         ax.grid(True)
         ax.set_xlim([-20, 20])
         ax.set_ylim([-40, 40])

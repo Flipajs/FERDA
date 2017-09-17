@@ -96,6 +96,16 @@ class AnimalFitting:
         self.mean_bottom = np.expand_dims(self.pca_bottom.mean_, axis=0).T
         self.eigen_values_bottom = self.pca_bottom.explained_variance_
 
+        self.means = np.mean(AnimalFitting.get_pca_compatible_data(X), axis=1)
+        self.vars = np.var(AnimalFitting.get_pca_compatible_data(X), axis=1)
+        self.stds = np.std(AnimalFitting.get_pca_compatible_data(X), axis=1)
+        self.sigma = np.cov(AnimalFitting.get_pca_compatible_data(X), rowvar=False)
+
+        print self.means
+        print self.vars
+        print self.stds
+        print self.sigma
+
     def get_head_fits(self, X):
         """
             Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour
@@ -139,6 +149,7 @@ class AnimalFitting:
 
         return self.get_scatter_fits(X, np.arange(AnimalFitting.FEATURES / 2 - AnimalFitting.BOTTOM_RANGE, AnimalFitting.FEATURES / 2 + AnimalFitting.BOTTOM_RANGE))
 
+
     def get_scatter_fits(self, X, idxs):
         """
             Accepts [n * c * 2] ndarrays where n is number of examples, c is number of points in contour
@@ -160,6 +171,14 @@ class AnimalFitting:
         fit = AnimalFitting.get_data_from_pca_data(fit.T)
 
         return fit, coordinates.T
+
+    def get_image(self, coords):
+        if coords.ndim == 1:
+            coords = np.expand_dims(coords, axis=1)
+        fit = np.dot(self.eigen_vectors, coords) + self.mean
+        # transpose back and to original dataframe
+        fit = AnimalFitting.get_data_from_pca_data(fit.T)
+        return fit[0, :]
 
     def show_fits(self, X):
         """
@@ -249,21 +268,17 @@ class AnimalFitting:
 
     def view_ant_composition(self, X, type='head'):
         if type == 'head':
-            pca = self.pca_head
-            eigen_ants = self.eigen_vectors_head
-            eigen_values = self.eigen_values_head
             transformation = self.get_head_fits
         elif type == 'bottom':
-            pca = self.pca_bottom
-            eigen_ants = self.eigen_vectors_bottom
-            eigen_values = self.eigen_values_bottom
             transformation = self.get_bottom_fits
         else:
             raise AttributeError("Type should be either 'whole', 'head', or 'bottom'")
 
+        eigen_ants = self.eigen_vectors
+        eigen_values = self.eigen_values
+
         app = QtGui.QApplication(sys.argv)
-        X_t = transformation(X)
-        w = EigenWidget(pca, eigen_ants, eigen_values, X_t)
+        w = EigenWidget(self, transformation, eigen_ants.T, eigen_values, X)
         w.showMaximized()
         w.close_figures()
         app.exec_()
@@ -431,8 +446,8 @@ if __name__ == '__main__':
     # pca.show_extracting_random_result(5)
 
     # VIEW PCA RECONSTRUCTING RESULTS
-    pca.show_random_fit_result(10)
-    pca.show_random_scatter_fit(3, 10)
+    # pca.show_random_fit_result(10)
+    # pca.show_random_scatter_fit(3, 10)
 
     # GENERATING RESULTS FIGURE
     # pca.generate_eigen_ants_figure()
@@ -443,8 +458,7 @@ if __name__ == '__main__':
 
     # VIEW I-TH ANT AS COMPOSITION
     i = 2
-    # pca.view_ant_composition(X_ants[i], type='head')
-    # pca.view_ant_composition(X_ants[i], type='bottom')
+    pca.view_ant_composition(X_ants[i], type='head')
 
     # CLUSTER DECOMPOSITION
     # freq = 1
