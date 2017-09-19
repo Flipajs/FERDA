@@ -59,7 +59,7 @@ class BackgroundComputer:
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
-        self.new_step_callback(3)
+        self.new_step_callback(5)
         self.update_callback()
         if not os.path.exists(self.project.working_directory + '/temp'):
             os.mkdir(self.project.working_directory + '/temp')
@@ -85,7 +85,6 @@ class BackgroundComputer:
                 limitsFile = open(str(self.project.working_directory)+"/limits.txt","w")
 
             self.update_callback()
-            self.new_step_callback(self.part_num)
 
             for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
@@ -103,7 +102,7 @@ class BackgroundComputer:
                 ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
                     self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
                     f_num) + ' ' + str(last_n_frames)
-                print ex_str
+                # print ex_str
 
                 if self.postpone_parallelisation:
                     limitsFile.write(str(i)+'\t'+str(f_num)+'\t'+str(last_n_frames)+'\n')
@@ -163,7 +162,9 @@ class BackgroundComputer:
                         s = str((int(i) / float(self.frames_in_row_last) * 100))
                         # self.update_callback(' '+s[0:4]+'%')
                     except:
-                        print str_
+                        # TODO: this causes unusual outputs
+                        # print str_
+                        pass
                 break
             except IOError, e:
                 if e.errno != errno.EINTR:
@@ -174,6 +175,7 @@ class BackgroundComputer:
         print p_id, codec.toUnicode(self.processes[p_id][0].readAllStandardError().data())
 
     def onFinished(self, p_id):
+        self.new_step_callback(self.part_num)
         while True:
             try:
                 end = time.time()
