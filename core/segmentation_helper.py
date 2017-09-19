@@ -18,7 +18,9 @@ class SegmentationHelper:
         self.maxs = None
         self.mins = None
         self.diff = None
-        self.lbp = None
+        self.lbp_edges = None
+        self.lbp_flat = None
+        self.lbp_corners = None
         self.bg = None
         self.gr = None
         self.rb = None
@@ -92,7 +94,7 @@ class SegmentationHelper:
         # shift_up[0:-1, :] = image[1:, :].copy()
 
         if self.test_lbp:
-            self.lbp = self.get_lbp()
+            self.lbp_edges, self.lbp_flat, self.lbp_corners = self.get_lbp()
 
         else:
             self.shiftx = self.get_shift(shift_x=2, shift_y=0)  # diff from shifted images, rescaled
@@ -110,7 +112,7 @@ class SegmentationHelper:
                 self.edges = self.get_edges()  # canny edge detector, rescaled to largest image
 
                 # self.maxs, self.mins, self.diff = self.get_dif()
-                self.lbp = self.get_lbp()
+                self.lbp_edges, self.lbp_flat, self.lbp_corners = self.get_lbp()
 
             t = time.time()
             self.diff = self.get_dif()
@@ -152,8 +154,10 @@ class SegmentationHelper:
                     # f = self.maxs[k][i][j]
                     # h = self.mins[k][i][j]
                     # k = self.diff[k][i][j]
-                    l = self.lbp[k][i][j]
-                    x.extend([b, g, r, a, sx, sy, c, d, e, l])
+                    l = self.lbp_edges[k][i][j]
+                    m = self.lbp_flat[k][i][j]
+                    n = self.lbp_corners[k][i][j]
+                    x.extend([b, g, r, a, sx, sy, c, d, e, l, m, n])
             else:
                 for k in range(0, self.num):
                     b, g, r = self.images[k][i][j]
@@ -223,8 +227,8 @@ class SegmentationHelper:
         # create new classifier with less features, it will be faster
         start = time.time()
         print len(self.rfc.feature_importances_)
-        print self.rfc.feature_importances_[9]
-        print self.rfc.feature_importances_[19]
+        print self.rfc.feature_importances_[9], self.rfc.feature_importances_[10], self.rfc.feature_importances_[11]
+        print self.rfc.feature_importances_[21], self.rfc.feature_importances_[22], self.rfc.feature_importances_[23]
         self.unused = find_unused_features(self.rfc)
         self.rfc = get_filtered_rfc(self.unused, X, y, self.rfc_n_estimators, self.rfc_n_jobs)
         if self.print_times:
@@ -336,7 +340,9 @@ class SegmentationHelper:
                     # result.append(self.maxs[i].reshape((h * w, 1)))
                     # result.append(self.mins[i].reshape((h * w, 1)))
                     # result.append(self.diff[i].reshape((h * w, 1)))
-                    result.append(self.lbp[i].reshape((h * w, 1)))
+                    result.append(self.lbp_edges[i].reshape((h * w, 1)))
+                    result.append(self.lbp_flat[i].reshape((h * w, 1)))
+                    result.append(self.lbp_corners[i].reshape((h * w, 1)))
             else:
                 for i in range(0, self.num):
                     result.append(self.images[i][:, :, 2].reshape((h * w, 1)))
@@ -533,13 +539,20 @@ class SegmentationHelper:
         Gets local binary patterns
         :return: pyramid of dif images, scaled to original shape
         """
-        t = time.time()
-        result = []
+
+        result_edges = []
+        result_flat = []
+        result_corners = []
+
+        blur = self.get_blur()
+
         for i in range(0, len(self.pyramid)):
-            im = compute_lbp(self.pyramid[i], radius=self.radius, n=self.n)
-            result.append(self.get_scaled(im, i))
-        print "LBP takes: ", time.time() - t
-        return result
+            edges, flat, corners = compute_lbp(blur[i], radius=self.radius, n=self.n)
+            result_edges.append(self.get_scaled(edges, i))
+            result_flat.append(self.get_scaled(flat, i))
+            result_corners.append(self.get_scaled(corners, i))
+
+        return result_edges, result_flat, result_corners
 
     def update_lbp(self, radius=None, n=None):
         if self.test_lbp:
@@ -550,7 +563,7 @@ class SegmentationHelper:
 
             self.n = n
             self.radius = radius
-            self.lbp = self.get_lbp()
+            self.lbp_edges, self.lbp_flat, self.lbp_corners = self.get_lbp()
 
 
 def get_shift_im(im, shift_x=2, shift_y=2):
@@ -613,21 +626,15 @@ def get_filtered_rfc(zeros, X, y, n_estimators, n_jobs):
 
 def compute_lbp(image, method="uniform", radius=6, n=8):
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    radius = 1
+    n = 8
+
     n_points = n * radius
     w = radius - 1
-
-    n_points = 8*1
-    w = 0
 
     # get lbg
     lbp = local_binary_pattern(gray_image, n_points, radius, method)
 
-    def overlay_labels(image, lbp, labels):
-        mask = np.logical_or.reduce([lbp == each for each in labels])
-        return label2rgb(mask, image=image, bg_label=0, alpha=0.5)
-
-    titles = ('edge', 'flat', 'corner')
-    w = width = radius - 1
     edge_labels = range(n_points // 2 - w, n_points // 2 + w + 1)
     flat_labels = list(range(0, w + 1)) + list(range(n_points - w, n_points + 2))
     i_14 = n_points // 4  # 1/4th of the histogram
@@ -635,14 +642,22 @@ def compute_lbp(image, method="uniform", radius=6, n=8):
     corner_labels = (list(range(i_14 - w, i_14 + w + 1)) +
                      list(range(i_34 - w, i_34 + w + 1)))
 
-    label_sets = (edge_labels, flat_labels, corner_labels)
+    edge_mask = np.logical_or.reduce([lbp == each for each in edge_labels])
+    flat_mask = np.logical_or.reduce([lbp == each for each in flat_labels])
+    corner_mask = np.logical_or.reduce([lbp == each for each in corner_labels])
 
     import matplotlib.pyplot as plt
-    for labels in label_sets:
-        plt.imshow(overlay_labels(image, lbp, labels), cmap="viridis")
-        plt.show()
+
+    plt.imshow(edge_mask, cmap="viridis")
+    plt.show()
+
+    plt.imshow(flat_mask, cmap="viridis")
+    plt.show()
+
+    plt.imshow(corner_mask, cmap="viridis")
+    plt.show()
     # return label2rgb(mask, image=image, bg_label=0, alpha=0.5)
-    return lbp
+    return edge_mask, flat_mask, corner_mask
 
 
 def pyramid(image, scale=1.5, minSize=(30, 30), num=-1):
