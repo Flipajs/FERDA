@@ -30,8 +30,8 @@ class SegmentationHelper:
         self.rfc_n_jobs = 1
         self.rfc_n_estimators = 10
 
-        self.use_reduced_feature_set = True
-        self.test_lbp = True
+        self.use_reduced_feature_set = False
+        self.test_lbp = False
         self.radius = 3
         self.n = 8
 
@@ -110,6 +110,7 @@ class SegmentationHelper:
                 self.edges = self.get_edges()  # canny edge detector, rescaled to largest image
 
                 # self.maxs, self.mins, self.diff = self.get_dif()
+                self.lbp = self.get_lbp()
 
             t = time.time()
             self.diff = self.get_dif()
@@ -148,10 +149,11 @@ class SegmentationHelper:
                     c = self.bg[k][i][j]
                     d = self.gr[k][i][j]
                     e = self.rb[k][i][j]
-                    f = self.maxs[k][i][j]
-                    h = self.mins[k][i][j]
-                    k = self.diff[k][i][j]
-                    x.extend([b, g, r, a, sx, sy, c, d, e, f, h, k])
+                    # f = self.maxs[k][i][j]
+                    # h = self.mins[k][i][j]
+                    # k = self.diff[k][i][j]
+                    l = self.lbp[k][i][j]
+                    x.extend([b, g, r, a, sx, sy, c, d, e, l])
             else:
                 for k in range(0, self.num):
                     b, g, r = self.images[k][i][j]
@@ -220,6 +222,9 @@ class SegmentationHelper:
         # find unused features and remove them
         # create new classifier with less features, it will be faster
         start = time.time()
+        print len(self.rfc.feature_importances_)
+        print self.rfc.feature_importances_[9]
+        print self.rfc.feature_importances_[19]
         self.unused = find_unused_features(self.rfc)
         self.rfc = get_filtered_rfc(self.unused, X, y, self.rfc_n_estimators, self.rfc_n_jobs)
         if self.print_times:
@@ -328,9 +333,10 @@ class SegmentationHelper:
                     result.append(self.bg[i].reshape((h * w, 1)))
                     result.append(self.gr[i].reshape((h * w, 1)))
                     result.append(self.rb[i].reshape((h * w, 1)))
-                    result.append(self.maxs[i].reshape((h * w, 1)))
-                    result.append(self.mins[i].reshape((h * w, 1)))
-                    result.append(self.diff[i].reshape((h * w, 1)))
+                    # result.append(self.maxs[i].reshape((h * w, 1)))
+                    # result.append(self.mins[i].reshape((h * w, 1)))
+                    # result.append(self.diff[i].reshape((h * w, 1)))
+                    result.append(self.lbp[i].reshape((h * w, 1)))
             else:
                 for i in range(0, self.num):
                     result.append(self.images[i][:, :, 2].reshape((h * w, 1)))
@@ -610,16 +616,24 @@ def compute_lbp(image, method="uniform", radius=6, n=8):
     n_points = n * radius
     w = radius - 1
 
+    n_points = 8*1
+    w = 0
+
     # get lbg
     lbp = local_binary_pattern(gray_image, n_points, radius, method)
 
     # get edge_labels
     edge_labels = range(n_points // 2 - w, n_points // 2 + w + 1)
-    # flat_labels = list(range(0, w + 1)) + list(range(n_points - w, n_points + 2))
-    # i_14 = n_points // 4            # 1/4th of the histogram
-    # i_34 = 3 * (n_points // 4)      # 3/4th of the histogram
-    # corner_labels = (list(range(i_14 - w, i_14 + w + 1)) + list(range(i_34 - w, i_34 + w + 1)))
-    # mask = np.logical_or.reduce([lbp == each for each in edge_labels])
+    flat_labels = list(range(0, w + 1)) + list(range(n_points - w, n_points + 2))
+    i_14 = n_points // 4            # 1/4th of the histogram
+    i_34 = 3 * (n_points // 4)      # 3/4th of the histogram
+    corner_labels = (list(range(i_14 - w, i_14 + w + 1)) + list(range(i_34 - w, i_34 + w + 1)))
+    mask = np.logical_or.reduce([lbp == each for each in edge_labels])
+    #cv2.imshow("bla", lbp)
+
+    import matplotlib.pyplot as plt
+    plt.imshow(lbp, cmap="viridis")
+    plt.show()
     # return label2rgb(mask, image=image, bg_label=0, alpha=0.5)
     return lbp
 
