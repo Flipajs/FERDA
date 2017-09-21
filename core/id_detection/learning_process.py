@@ -1597,7 +1597,106 @@ class LearningProcess:
 
         return True
 
+    def _presort_css(self, cs1, cs2):
+        # presort... so the same tracklets have the same indices..
+        inter = set(cs1).intersection(cs2)
+        l = list(inter)
+
+        cs1_ = []
+        cs2_ = []
+
+        for t in cs1:
+            if t in inter:
+                continue
+            cs1_.append(t)
+
+        for t in cs2:
+            if t in inter:
+                continue
+            cs2_.append(t)
+
+        return cs1_, cs2_, inter
+
+    def get_cs_pair_price(self, cs1, cs2, use_xgboost=False):
+        # returns only unknown... mutual tracklets are excluded and returned in intersection list
+        cs1, cs2, intersection = self._presort_css(cs1, cs2)
+
+        if len(cs1) == 0:
+            return [], np.inf
+
+        md = self.p.solver_parameters.max_edge_distance_in_ant_length * self.p.stats.major_axis_median
+        C = np.zeros((len(cs1), len(cs2)), dtype=np.float)
+
+        # TODO: if cs2 is bigger, then do it the opposite way
+        rfc1 = self._get_and_train_rfc(cs1, use_xgboost)
+        for i, t in enumerate(cs2):
+            # TODO: idTracker like probs
+            C[i, :] = np.mean(rfc1.predict_proba(self.features[t.id()]), axis=0)
+
+        for i in range(len(cs1)):
+            t1 = cs1[i]
+            for j in range(len(cs1)):
+                t2 = cs2[j]
+
+                # same tracklet, probability is 1
+                prob = 1
+                if t1 != t2:
+                    t1_end_f = t1.end_frame(self.p.gm)
+                    t2_start_f = t2.start_frame(self.p.gm)
+
+                    # not allowed, probability is zero
+                    if t1_end_f >= t2_start_f:
+                        prob = 0
+                    else:
+                        t1_end_r = self.p.gm.region(t1.end_node())
+                        t2_start_r = self.p.gm.region(t2.start_node())
+
+                        frame_d = t2_start_f - t1_end_f
+                        d = np.linalg.norm(t1_end_r.centroid() - t2_start_r.centroid()) / float(frame_d * md)
+                        prob = max(0, 1 - d)
+
+                        # TODO: raise uncertainty with frame_d
+
+                # probability complement... something like cost
+                # TODO: -log(P) ?
+                C[i, j] = 1 - C[i, j] * prob
+
+        # TODO: what to do with too short CS, this will stop aglomerattive clustering
+
+        from scipy.optimize import linear_sum_assignment
+
+        # use hungarian (nonnegative matrix)
+        row_ind, col_ind = linear_sum_assignment(C)
+        price = C[row_ind, col_ind].sum()
+        price_norm = price / float(len(cs1))
+
+        # TODO price - max
+        # print price, price_norm, C[row_ind, col_ind].max()
+        np.set_printoptions(precision=3)
+        # print C
+
+        matching = []
+        for rid, cid in izip(row_ind, col_ind):
+            matching.append([cs1[rid], cs2[cid]])
+
+        return matching, price_norm
+
+    def _find_update_link(self, t_id, links):
+        id_ = t_id
+
+        while id_ is not None:
+            if id_ not in links:
+                break
+
+            id_ = links[id_]
+
+        links[t_id] = id_
+
+        return id_
+
     def full_csosit_analysis(self, use_xgboost=False):
+        from tracklet_complete_set import TrackletCompleteSet
+
         groups = []
         unique_tracklets = set()
         frames = []
@@ -1620,7 +1719,8 @@ class LearningProcess:
 
             singles_group = filter(lambda x: x.is_single(), group)
 
-            if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= self.min_tracklet_len:
+            # if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= self.min_tracklet_len:
+            if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 1:
                 groups.append(singles_group)
 
                 overlap = min([t.end_frame(self.p.gm) for t in singles_group]) \
@@ -1639,6 +1739,186 @@ class LearningProcess:
 
             i += 1
         print_progress(total_frame_count, total_frame_count, "searching for CSoSIT...")
+
+        import matplotlib.pyplot as plt
+
+        used = {}
+        positions = {}
+
+        print "# groups: {}".format(len(groups))
+        g1 = groups[0]
+        g2 = groups[1]
+
+        print "G1"
+        for t in g1:
+            print t.start_frame(self.p.gm)
+            print t.end_frame(self.p.gm)
+
+        print "G2"
+        for t in g2:
+            print t.start_frame(self.p.gm)
+            print t.end_frame(self.p.gm)
+
+        # filter CS in the same frame:
+        print "Filtering suspicious CS (single-ID false positive)"
+        frames = {}
+        # suspicious = set()
+        for g in groups:
+            frame = max([t.start_frame(self.p.gm) for t in g])
+            if frame in frames:
+                print frame
+                # suspicious.add(frames[frame])
+                # suspicious.add(g)
+            else:
+                frames[frame] = g
+
+        print ""
+
+        results = []
+
+        TCS = {}
+        left_neighbour = None
+
+        tcs_id = 0
+
+        # key is most left CS
+        results = {}
+
+        for i in range(len(groups) - 1):
+            cs = TrackletCompleteSet(groups[i], id=tcs_id,left_neighbour=left_neighbour)
+
+            if left_neighbour:
+                left_neighbour.right_neighbour = cs
+
+            TCS[tcs_id] = cs
+
+            left_neighbour = cs
+
+            matching, price = self.get_cs_pair_price(groups[i], groups[i + 1])
+            results[tcs_id] = [price, matching, tcs_id+1]
+            # results.append([price, matching, (tcs_id, tcs_id + 1)])
+
+            # don't forget to increment, so we have unique numbers...
+            tcs_id += 1
+
+        # so the best result is on the last index, ready for .pop()
+        results = sorted(results, key=lambda x: -x[0])
+
+
+        # # test...
+        # cs = TCS[0]
+        #
+        # i = 0
+        # while True:
+        #     if cs.right_neighbour:
+        #         cs = cs.right_neighbour
+        #         i += 1
+        #     else:
+        #         break
+        #
+        # print "left test: ", i
+        #
+        # while cs:
+        #     cs = cs.left_neighbour
+        #     i -= 1
+        #
+        # print "right test: ", i
+
+        links = {}
+
+        s_pair = results.pop()
+
+        # new merged group of tracklets
+        i = s_pair[2]
+        tcs_left = TCS[s_pair[2][0]]
+        tcs_right = TCS[s_pair[2][1]]
+
+        new_group = [groups[i]]
+
+        for t_pair in s_pair[1]:
+            links[t_pair[1].id()] = t_pair[0].id()
+            t = self.p.chm[t_pair[1].id()]
+            new_group.append(t)
+
+
+        tcs = TrackletCompleteSet(new_group, tcs_id, tcs_left=tcs_left.left_neighbour, tcs_right=tcs_right.tcs_right_neighbour)
+        # update references
+        if tcs_left.left_neighbour:
+            tcs_left.left_neighbour.right_neighbour = tcs
+
+        if tcs_right.right_neighbour:
+            tcs_right.right_neighbour.left_neighbour = tcs
+
+        TCS[tcs_id] = tcs
+
+        tcs_id += 1
+
+        # self._find_update_link()
+
+
+
+
+
+
+        # pick best
+        # join CSi CSj
+        #   auxiliary "translation" table?
+        #
+        # update left-neigh(CSi) and right-neigh(CSj)
+        # update results
+
+        print "best 10"
+        for i in range(10):
+            print "norm_price: {:.3f}, degree: {}".format(results[i][0], len(results[i][1]))
+            for pair in results[i][1]:
+                print "\t{}->{}".format(pair[0].id(), pair[1].id())
+
+            print
+
+        print "worst 10"
+        for i in range(1, 21):
+            print "norm_price: {:.3f}, degree: {}".format(results[-i][0], len(results[-i][1]))
+            for pair in results[-i][1]:
+                print "\t{}->{}".format(pair[0].id(), pair[1].id())
+
+            print
+
+        ii = 0
+        for g in groups:
+            ii += 1
+            if ii > 5:
+                break
+
+            g = sorted(g, key=lambda x: x.id())
+            c = np.random.rand(3, 1)
+
+            frame = max([t.start_frame(self.p.gm) for t in g])
+            plt.plot([frame, frame], [0, len(self.p.animals)], c=c)
+            plt.hold(True)
+
+            free_pos = range(len(self.p.animals))
+            for i, t in enumerate(g):
+                if t in used:
+                    used[t] += 1
+                    i = positions[t]
+
+                    free_pos.remove(i)
+
+            for t in g:
+                if t not in used:
+                    positions[t] = free_pos[0]
+                    free_pos.pop(0)
+                    used[t] = 1
+
+                offset = (used[t]-1) / 10.
+                pos = positions[t]
+
+                # offset = 0
+                plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm)], [pos+offset, pos+offset], c=c)
+
+        plt.grid()
+        plt.show()
+
 
         best_g_i = -1
         best_g_val = 0
