@@ -1796,7 +1796,6 @@ class LearningProcess:
 
             matching, price = self.get_cs_pair_price(groups[i], groups[i + 1])
             results[tcs_id] = [price, matching, tcs_id+1]
-            # results.append([price, matching, (tcs_id, tcs_id + 1)])
 
             # don't forget to increment, so we have unique numbers...
             tcs_id += 1
@@ -1840,21 +1839,38 @@ class LearningProcess:
             t = self.p.chm[t_pair[1].id()]
             new_group.append(t)
 
-
+        ### Create new TCS
         tcs = TrackletCompleteSet(new_group, tcs_id, tcs_left=tcs_left.left_neighbour, tcs_right=tcs_right.tcs_right_neighbour)
-        # update references
-        if tcs_left.left_neighbour:
-            tcs_left.left_neighbour.right_neighbour = tcs
-
-        if tcs_right.right_neighbour:
-            tcs_right.right_neighbour.left_neighbour = tcs
-
         TCS[tcs_id] = tcs
-
+        # update global ID counter
         tcs_id += 1
 
-        # self._find_update_link()
+        # nomenclature A -- tcs_left - tcs_right -- B (tcs_left merges with tcs_right into tcs)
+        tcs_A = tcs_left.left_neighbour
+        tcs_B = tcs_right.right_neighbour
+        ################################################
+        # update references
+        if tcs_A:
+            # invalidate outdated results...
+            del results[tcs_A]
 
+            tcs_A.right_neighbour = tcs
+
+            # compute new results:
+            matching, price = self.get_cs_pair_price(tcs_A.tracklets, tcs.tracklets)
+            results[tcs.id] = [price, matching, tcs.id]
+
+        # invalidate outdated results...
+        del results[tcs_right]
+
+        if tcs_B:
+            tcs_B.left_neighbour = tcs
+
+            matching, price = self.get_cs_pair_price(tcs.tracklets, tcs_B.tracklets)
+            results[tcs.id] = [price, matching, tcs_B.id]
+
+        # self._find_update_link()
+        #######################################################
 
 
 
@@ -1867,21 +1883,21 @@ class LearningProcess:
         # update left-neigh(CSi) and right-neigh(CSj)
         # update results
 
-        print "best 10"
-        for i in range(10):
-            print "norm_price: {:.3f}, degree: {}".format(results[i][0], len(results[i][1]))
-            for pair in results[i][1]:
-                print "\t{}->{}".format(pair[0].id(), pair[1].id())
-
-            print
-
-        print "worst 10"
-        for i in range(1, 21):
-            print "norm_price: {:.3f}, degree: {}".format(results[-i][0], len(results[-i][1]))
-            for pair in results[-i][1]:
-                print "\t{}->{}".format(pair[0].id(), pair[1].id())
-
-            print
+        # print "best 10"
+        # for i in range(10):
+        #     print "norm_price: {:.3f}, degree: {}".format(results[i][0], len(results[i][1]))
+        #     for pair in results[i][1]:
+        #         print "\t{}->{}".format(pair[0].id(), pair[1].id())
+        #
+        #     print
+        #
+        # print "worst 10"
+        # for i in range(1, 21):
+        #     print "norm_price: {:.3f}, degree: {}".format(results[-i][0], len(results[-i][1]))
+        #     for pair in results[-i][1]:
+        #         print "\t{}->{}".format(pair[0].id(), pair[1].id())
+        #
+        #     print
 
         ii = 0
         for g in groups:
