@@ -147,9 +147,19 @@ class Region(object):
         return self.area_
 
     def ellipse_major_axis_length(self):
+        """
+
+        Returns: major axis length [px] for an ellipse approximation of the region
+
+        """
         return self.major_axis_
 
     def ellipse_minor_axis_length(self):
+        """
+
+        Returns: minor axis length [px] for an ellipse approximation of the region
+
+        """
         return self.minor_axis_
 
     def label(self):
