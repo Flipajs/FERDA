@@ -1600,7 +1600,6 @@ class LearningProcess:
     def _presort_css(self, cs1, cs2):
         # presort... so the same tracklets have the same indices..
         inter = set(cs1).intersection(cs2)
-        l = list(inter)
 
         cs1_ = []
         cs2_ = []
@@ -1617,9 +1616,19 @@ class LearningProcess:
 
         return cs1_, cs2_, inter
 
-    def get_cs_pair_price(self, cs1, cs2, use_xgboost=False):
+    def get_cs_pair_price(self, cs1, cs2, use_xgboost=False, links={}):
         # returns only unknown... mutual tracklets are excluded and returned in intersection list
+
+        # arrange tracklets into groups
+
+        cs1_groups = {}
+        for t in cs1:
+            self._find_update_link()
+
         cs1, cs2, intersection = self._presort_css(cs1, cs2)
+
+        # TODO: merge traclets features when attached together... (limit number of examples (performance reasons) / pick relevant representatives)
+        # TODO: nearest tracklet (position) based on min over all t_distances
 
         if len(cs1) == 0:
             return [], np.inf
@@ -1857,7 +1866,7 @@ class LearningProcess:
             tcs_A.right_neighbour = tcs
 
             # compute new results:
-            matching, price = self.get_cs_pair_price(tcs_A.tracklets, tcs.tracklets)
+            matching, price = self.get_cs_pair_price(tcs_A.tracklets, tcs.tracklets, links=links)
             results[tcs.id] = [price, matching, tcs.id]
 
         # invalidate outdated results...
@@ -1866,8 +1875,9 @@ class LearningProcess:
         if tcs_B:
             tcs_B.left_neighbour = tcs
 
-            matching, price = self.get_cs_pair_price(tcs.tracklets, tcs_B.tracklets)
+            matching, price = self.get_cs_pair_price(tcs.tracklets, tcs_B.tracklets, links=links)
             results[tcs.id] = [price, matching, tcs_B.id]
+
 
         # self._find_update_link()
         #######################################################
