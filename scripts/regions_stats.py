@@ -412,7 +412,7 @@ def head_detector_classify(p):
         crop = get_crop(r, p, margin=10)
         # bb, offset = get_bounding_box(r, p)
         # bb = rotate_img(bb, r.theta_)
-        # bb = centered_crop(bb, 8 * r.b_, 4 * r.ellipse_major_axis_length())
+        # bb = centered_crop(bb, 8 * r.ellipse_minor_axis_length(), 4 * r.ellipse_major_axis_length())
         # crop_ = bb
 
         cv2.putText(crop, str(probs[0]), (10, 10),
@@ -1211,7 +1211,7 @@ def get_pair_fetures_appearance(r1, r2):
     #     r1.area() / float(r2.area()),
     #     r1.ellipse_major_axis_length() - r2.ellipse_major_axis_length(),
     #     r1.ellipse_major_axis_length() / r2.ellipse_major_axis_length(),
-    #     (r1.ellipse_major_axis_length()/r1.b_) / (r2.ellipse_major_axis_length()/r2.b_),
+    #     (r1.ellipse_major_axis_length()/r1.ellipse_minor_axis_length()) / (r2.ellipse_major_axis_length()/r2.ellipse_minor_axis_length()),
     #     r1.eccentricity() - r2.eccentricity(),
     #     r1.sxx_ - r2.sxx_,
     #     r1.syy_ - r2.syy_,
@@ -1224,7 +1224,7 @@ def get_pair_fetures_appearance(r1, r2):
         r1.area() / float(r2.area()),
         r1.ellipse_major_axis_length() - r2.ellipse_major_axis_length(),
         r1.ellipse_major_axis_length() / r2.ellipse_major_axis_length(),
-        (r1.ellipse_major_axis_length() / r1.b_) / (r2.ellipse_major_axis_length() / r2.b_),
+        (r1.ellipse_major_axis_length() / r1.ellipse_minor_axis_length()) / (r2.ellipse_major_axis_length() / r2.ellipse_minor_axis_length()),
         # r1.eccentricity() - r2.eccentricity(),
         # r1.sxx_ - r2.sxx_,
         # r1.syy_ - r2.syy_,

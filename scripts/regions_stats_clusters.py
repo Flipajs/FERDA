@@ -335,7 +335,7 @@ def head_detector_classify(p):
         crop = get_crop(r, p, margin=10)
         # bb, offset = get_bounding_box(r, p)
         # bb = rotate_img(bb, r.theta_)
-        # bb = centered_crop(bb, 8 * r.b_, 4 * r.ellipse_major_axis_length())
+        # bb = centered_crop(bb, 8 * r.ellipse_minor_axis_length(), 4 * r.ellipse_major_axis_length())
         # crop_ = bb
 
         cv2.putText(crop, str(probs[0]), (10, 10),
@@ -742,7 +742,7 @@ if __name__ == '__main__':
 
                 bimg = draw_points_crop_binary(r.pts())
                 hu_m = get_hu_moments(np.asarray(bimg, dtype=np.uint8))
-                r_data.append([r.area(), r.ellipse_major_axis_length(), r.b_, hu_m[0], hu_m[1]])
+                r_data.append([r.area(), r.ellipse_major_axis_length(), r.ellipse_minor_axis_length(), hu_m[0], hu_m[1]])
                 r_ids.append(r.id())
 
                 i += 1

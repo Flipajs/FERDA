@@ -1292,8 +1292,8 @@ class LearningProcess:
         return [
             r.area(),
             r.ellipse_major_axis_length(),
-            r.b_,
-            (r.ellipse_major_axis_length() / r.b_),
+            r.ellipse_minor_axis_length(),
+            (r.ellipse_major_axis_length() / r.ellipse_minor_axis_length()),
             r.sxx_ ,
             r.syy_,
             r.sxy_ ,

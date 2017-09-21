@@ -33,7 +33,7 @@ if __name__ == '__main__':
             c.append(r.ellipse_major_axis_length())
             # areas.append(r.area())
             # major_axes.append(r.ellipse_major_axis_length())
-            # minor_axes.append(r.b_)
+            # minor_axes.append(r.ellipse_minor_axis_length())
 
         color = 'r'
         if len(t.P) == 1:

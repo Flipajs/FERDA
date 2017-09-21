@@ -58,7 +58,7 @@ def get_np_array(chunks, id, key):
         if key == 'min_intensity':
             l.append(chunks[id][i].min_intensity_)
         if key == 'axis_ratio':
-            l.append(chunks[id][i].ellipse_major_axis_length() / chunks[id][i].b_)
+            l.append(chunks[id][i].ellipse_major_axis_length() / chunks[id][i].ellipse_minor_axis_length())
         if key == 'avg_intensity':
             im = vid.seek_frame(i)
             p = chunks[id][i].pts()

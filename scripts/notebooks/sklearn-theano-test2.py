@@ -34,7 +34,7 @@ def process_tracklet(t, p, cnn):
             endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
 
             bb = rotate_img(bb, r.theta_)
-            bb = centered_crop(bb, 8 * r.b_, 4 * r.ellipse_major_axis_length())
+            bb = centered_crop(bb, 8 * r.ellipse_minor_axis_length(), 4 * r.ellipse_major_axis_length())
 
 
             bb = cv2.resize(bb, (0, 0), fx=2.5, fy=4)

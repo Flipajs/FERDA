@@ -78,7 +78,7 @@ def area_np(p):
 def get_x(r, AVG_AREA, AVG_MARGIN):
     x = []
     x.append(r.area() / float(AVG_AREA))
-    x.append(r.ellipse_major_axis_length() / r.b_)
+    x.append(r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())
 
     c1 = len(r.contour())
     roi_ = r.roi()

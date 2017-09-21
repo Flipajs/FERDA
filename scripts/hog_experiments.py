@@ -26,13 +26,13 @@ def get_mser(im, p):
 
     m = msers[0]
     ab = m.area() / np.pi
-    cd = m.ellipse_major_axis_length() * m.b_
+    cd = m.ellipse_major_axis_length() * m.ellipse_minor_axis_length()
     r = cd/ab
 
-    b = ((r*m.ellipse_major_axis_length()*(m.b_**2))/m.ellipse_major_axis_length())**0.5
+    b = ((r*m.ellipse_major_axis_length()*(m.ellipse_minor_axis_length()**2))/m.ellipse_major_axis_length())**0.5
     a = ab/b
 
-    print "PREV: ", m.ellipse_major_axis_length(), m.b_
+    print "PREV: ", m.ellipse_major_axis_length(), m.ellipse_minor_axis_length()
     print "NOW: ", a, b, np.rad2deg(m.theta_), m.theta_
 
     return msers[0]
@@ -77,7 +77,7 @@ def warp_region(r, im, dst_h=16, dst_w=48):
     if head[0] < back[0]:
         head, back = back, head
     
-    b_ = r.b_*2.5
+    b_ = r.ellipse_minor_axis_length()*2.5
     p_ = np.array([b_*math.sin(-r.theta_+np.pi+np.pi/2), b_*math.cos(-r.theta_+np.pi+np.pi/2)])
     tl_c = back + p_
     tr_c = head + p_
