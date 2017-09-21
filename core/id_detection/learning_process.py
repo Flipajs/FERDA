@@ -1582,6 +1582,31 @@ class LearningProcess:
         rfc.fit(X, y)
         return rfc
 
+    def _get_and_train_rfc_tracklets_groups(self, tracklets_groups, use_xgboost=False):
+        X = []
+        y = []
+        for i, g in enumerate(tracklets_groups.values()):
+            y_len = 0
+            for t_id in g:
+                x = self.features[t_id]
+                y_len += len(x)
+
+                if len(X) == 0:
+                    X = np.array(x)
+                else:
+                    X = np.vstack([X, np.array(x)])
+
+            y.extend([i] * y_len)
+
+        if use_xgboost:
+            from xgboost import XGBClassifier
+            rfc = XGBClassifier()
+        else:
+            rfc = RandomForestClassifier()
+
+        rfc.fit(X, y)
+        return rfc
+
     def predict_permutation(self, rfc, g):
         from scipy import stats
         results = []
@@ -1619,16 +1644,29 @@ class LearningProcess:
     def get_cs_pair_price(self, cs1, cs2, use_xgboost=False, links={}):
         # returns only unknown... mutual tracklets are excluded and returned in intersection list
 
-        # arrange tracklets into groups
-
+        ### arrange tracklets into groups
         cs1_groups = {}
         for t in cs1:
-            self._find_update_link()
+            id_ = self._find_update_link(t.id(), links)
 
-        cs1, cs2, intersection = self._presort_css(cs1, cs2)
+            if id_ in cs1_groups:
+                cs1_groups[id_].append(t.id())
+            else:
+                cs1_groups[id_] = [t.id()]
 
-        # TODO: merge traclets features when attached together... (limit number of examples (performance reasons) / pick relevant representatives)
-        # TODO: nearest tracklet (position) based on min over all t_distances
+        cs2_groups = {}
+        for t in cs2:
+            id_ = self._find_update_link(t.id(), links)
+
+            if id_ in cs2_groups:
+                cs2_groups[id_].append(t.id())
+            else:
+                cs2_groups[id_] = [t.id()]
+
+        cs1_representants = cs1_groups.keys()
+        cs2_representants = cs2_groups.keys()
+
+        cs1, cs2, intersection = self._presort_css(cs1_representants, cs2_representants)
 
         if len(cs1) == 0:
             return [], np.inf
@@ -1637,17 +1675,51 @@ class LearningProcess:
         C = np.zeros((len(cs1), len(cs2)), dtype=np.float)
 
         # TODO: if cs2 is bigger, then do it the opposite way
-        rfc1 = self._get_and_train_rfc(cs1, use_xgboost)
-        for i, t in enumerate(cs2):
+        rfc1 = self._get_and_train_rfc_tracklets_groups(cs1_groups, use_xgboost)
+        for i, g in enumerate(cs1_groups.values()):
+            for t_id in g:
+                x = self.features[t_id]
+
+                if len(X) == 0:
+                    X = np.array(x)
+                else:
+                    X = np.vstack([X, np.array(x)])
+
             # TODO: idTracker like probs
-            C[i, :] = np.mean(rfc1.predict_proba(self.features[t.id()]), axis=0)
+            C[i, :] = np.mean(rfc1.predict_proba(X), axis=0)
 
-        for i in range(len(cs1)):
-            t1 = cs1[i]
-            for j in range(len(cs1)):
-                t2 = cs2[j]
+        # TODO: nearest tracklet (position) based on min over all t_distances
+        for i, repr_id1 in enumerate(cs1_representants):
+            for j, repr_id2 in enumerate(cs2_representants):
+                # find best pair
+                # TODO: can be optimized...
+                best_ti = None
+                best_tj = None
+                best_d = np.inf
 
-                # same tracklet, probability is 1
+                for t_id_i in cs1_groups[repr_id1]:
+                    for t_id_j in cs2_groups[repr_id2]:
+                        ti = self.p.chm[t_id_i]
+                        tj = self.p.chm[t_id_j]
+
+                        ef = ti.end_frame(self.p.gm)
+                        sf = tj.start_frame(self.p.gm)
+
+                        # something smaller than np.inf to guarantee at least one best_ti, best_tj
+                        d = 10000000
+                        if ef < sf:
+                            d = sf - ef
+
+                        if d < best_d:
+                            best_d = d
+                            best_ti = ti
+                            best_tj = tj
+
+                t1 = best_ti
+                t2 = best_tj
+
+                # same track
+                # let, probability is 1
                 prob = 1
                 if t1 != t2:
                     t1_end_f = t1.end_frame(self.p.gm)
@@ -1811,26 +1883,6 @@ class LearningProcess:
 
         # so the best result is on the last index, ready for .pop()
         results = sorted(results, key=lambda x: -x[0])
-
-
-        # # test...
-        # cs = TCS[0]
-        #
-        # i = 0
-        # while True:
-        #     if cs.right_neighbour:
-        #         cs = cs.right_neighbour
-        #         i += 1
-        #     else:
-        #         break
-        #
-        # print "left test: ", i
-        #
-        # while cs:
-        #     cs = cs.left_neighbour
-        #     i -= 1
-        #
-        # print "right test: ", i
 
         links = {}
 
