@@ -22,7 +22,7 @@ class ClassesStats():
                 continue
 
             areas.append(r.area())
-            major_axes.append(r.a_ * 2)
+            major_axes.append(r.ellipse_major_axis_length() * 2)
             margins.append(r.margin_)
 
         areas = np.array(areas)

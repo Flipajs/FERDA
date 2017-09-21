@@ -30,9 +30,9 @@ if __name__ == '__main__':
 
             a.append(r.area())
             b.append(len(r.contour()))
-            c.append(r.a_)
+            c.append(r.ellipse_major_axis_length())
             # areas.append(r.area())
-            # major_axes.append(r.a_)
+            # major_axes.append(r.ellipse_major_axis_length())
             # minor_axes.append(r.b_)
 
         color = 'r'

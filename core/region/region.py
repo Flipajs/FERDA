@@ -32,9 +32,6 @@ class Region(object):
         self.major_axis_ = -1
         self.minor_axis_ = -1
 
-        self.a_ = -1
-        self.b_ = -1
-
         # in radians
         self.theta_ = -1
 
@@ -55,8 +52,8 @@ class Region(object):
         s = repr(self)+" start t: "+str(self.frame_)+"\n" \
                        " area: "+str(self.area())+" \n" \
                        " centroid: ["+str(round(self.centroid_[0], 2))+", "+str(round(self.centroid_[1], 2))+"]\n" \
-                       " major axis: {:.3}".format(self.a_) + "\n" \
-                       " minor axis: {:.3}".format(self.b_)+"\n" \
+                       " major axis: {:.3}".format(self.major_axis_) + "\n" \
+                       " minor axis: {:.3}".format(self.minor_axis_) + "\n" \
                        " margin: " + str(self.margin_)
 
         return s
@@ -133,8 +130,8 @@ class Region(object):
         b = self.minor_axis_
 
         axis_ratio = a / float(b)
-        self.b_ = math.sqrt(self.area_ / (axis_ratio * math.pi))
-        self.a_ = self.b_ * axis_ratio
+        self.minor_axis_ = math.sqrt(self.area_ / (axis_ratio * math.pi))
+        self.major_axis_ = self.minor_axis_ * axis_ratio
         ########
 
         self.theta_ = get_orientation(self.sxx_, self.syy_, self.sxy_)
@@ -148,6 +145,12 @@ class Region(object):
             self.area_ = len(self.pts())
 
         return self.area_
+
+    def ellipse_major_axis_length(self):
+        return self.major_axis_
+
+    def ellipse_minor_axis_length(self):
+        return self.minor_axis_
 
     def label(self):
         return self.label_
@@ -240,7 +243,7 @@ class Region(object):
         return not self.roi().is_intersecting_expanded(r2.roi(), max_dist)
 
     def eccentricity(self):
-        return 1-(self.b_ / self.a_)**0.5
+        return 1- (self.minor_axis_ / self.major_axis_) ** 0.5
 
 
     def get_phi(self, r2):
@@ -343,7 +346,7 @@ def encode_RLE(pts, return_area=True):
 def get_region_endpoints(r):
     # returns head, tail
 
-    p_ = np.array([r.a_ * math.sin(-r.theta_), r.a_ * math.cos(-r.theta_)])
+    p_ = np.array([r.major_axis_ * math.sin(-r.theta_), r.major_axis_ * math.cos(-r.theta_)])
     endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
     endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
 
