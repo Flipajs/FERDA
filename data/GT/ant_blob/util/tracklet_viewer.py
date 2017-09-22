@@ -6,7 +6,7 @@ import sys
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
-from data.GT.ant_blob.pca.tracklet_types import TrackletTypes
+from data.GT.ant_blob.tracklet_types import TrackletTypes
 from gui.gui_utils import cvimg2qtpixmap
 
 

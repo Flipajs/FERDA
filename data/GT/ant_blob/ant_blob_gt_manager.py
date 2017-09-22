@@ -7,10 +7,10 @@ from os.path import exists
 import pickle
 
 from core.project.project import Project
-from data.GT.ant_blob.ant_blobs import AntBlobs
-from data.GT.ant_blob.pca.tracklet_types import TrackletTypes
-from data.GT.ant_blob.util.blob_widget import BlobWidget
-from data.GT.ant_blob.util.tracklet_viewer import TrackletViewer
+from ant_blobs import AntBlobs
+from tracklet_types import TrackletTypes
+from util.blob_widget import BlobWidget
+from util.tracklet_viewer import TrackletViewer
 
 PickleGT = namedtuple("PickleGT", "project_name, video_file ant_blobs tracklet_types")
 
