@@ -199,7 +199,8 @@ class BlobWidget(QtGui.QWidget):
         self.show_selected_button.clicked.connect(self.show_current_selected_ants)
 
         self.quit = QtGui.QPushButton('save and quit', self)
-        self.quit.clicked.connect(self.save_callback)
+        self.connect(self.quit, QtCore.SIGNAL('clicked()'), self.exit_callback)
+
 
         self.buttons.layout().addWidget(self.mode_button)
         self.buttons.layout().addWidget(self.next_ant_button)

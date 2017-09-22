@@ -58,11 +58,11 @@ class AntBlobGtManager(object):
 
     def label(self):
         # label tracklets first
-        # app = QtGui.QApplication(sys.argv)
-        # tracklets = self.tracklet_types.get_unlabeled(self.project.chm.chunk_list())
-        # viewer = TrackletViewer(self.project, tracklets, self.set_label, self.save_and_exit)
-        # viewer.show()
-        # app.exec_()
+        app = QtGui.QApplication(sys.argv)
+        tracklets = self.tracklet_types.get_unlabeled(self.project.chm.chunk_list())
+        viewer = TrackletViewer(self.project, tracklets, self.set_label, self.save_and_exit)
+        viewer.show()
+        app.exec_()
 
         # then segment these tracklets
         app = QtGui.QApplication(sys.argv)
