@@ -68,7 +68,8 @@ class AntBlobGtManager(object):
         # then segment these tracklets
         app = QtGui.QApplication(sys.argv)
         tracklets = self.tracklet_types.get_labeled_blobs(self.project.chm.chunk_list())
-        widget = BlobWidget(self.project, tracklets, self.examples_from_tracklet,
+        filtered = self.ant_blobs.filter_labeled_tracklets(tracklets)
+        widget = BlobWidget(self.project, filtered, self.examples_from_tracklet,
                             self.set_blobs, self.save_and_exit, self.ant_blobs.contains)
         widget.show()
         app.exec_()

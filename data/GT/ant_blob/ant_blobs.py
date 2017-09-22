@@ -26,6 +26,12 @@ class AntBlobs:
     def insert(self, region_id, frame, tracklet_id, ants):
         self.blobs[BlobInfo(region_id, frame, tracklet_id)] = BlobData(ants, time.strftime("%d %b %Y %H:%M:%S"))
 
+    def filter_labeled_tracklets(self, tracklets):
+        labeled_tracklets = set()
+        for k in self.blobs.keys():
+            labeled_tracklets.add(k.tracklet_id)
+        return list(filter(lambda x: x.id() not in labeled_tracklets, tracklets))
+
 
 
 
