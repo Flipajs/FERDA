@@ -56,7 +56,7 @@ class AntBlobGtManager(object):
     def view_gt(self):
         pass
 
-    def label(self):
+    def label_tracklets(self):
         # label tracklets first
         app = QtGui.QApplication(sys.argv)
         tracklets = self.tracklet_types.get_unlabeled(self.project.chm.chunk_list())
@@ -64,6 +64,7 @@ class AntBlobGtManager(object):
         viewer.show()
         app.exec_()
 
+    def label_blobs(self):
         # then segment these tracklets
         app = QtGui.QApplication(sys.argv)
         tracklets = self.tracklet_types.get_labeled_blobs(self.project.chm.chunk_list())
@@ -101,7 +102,8 @@ if __name__ == "__main__":
     p = Project()
     p.load("/home/simon/FERDA/projects/clusters_gt/zebrafish/zebrafish.fproj")
     manager = AntBlobGtManager('./test.pkl', p)
-    manager.label()
+    manager.label_tracklets()
+    manager.label_blobs()
     manager.view_gt()
     blob_dic = manager.get_ant_blobs()
     blob_gen = manager.feed_ant_blobs()
