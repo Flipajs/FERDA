@@ -69,7 +69,7 @@ class Solver:
 
         return num_changed
 
-    def one2one(self):
+    def one2one(self, start_update_callback=None, update_callback=None):
         confirm_later = []
 
         for v in self.project.gm.g.vertices():
@@ -81,7 +81,7 @@ class Solver:
         self.confirm_edges(confirm_later)
 
         self.project.gm.update_nodes_in_t_refs()
-        self.project.chm.reset_itree(self.project.gm)
+        self.project.chm.reset_itree(self.project.gm, start_update_callback=start_update_callback, update_callback=update_callback)
 
 
     def adaptive_threshold(self, vertex):

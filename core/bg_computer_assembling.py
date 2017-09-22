@@ -34,7 +34,7 @@ def assembly_after_parallelization(bgcomp):
     bgcomp.project.gm = GraphManager(bgcomp.project, bgcomp.solver.assignment_score)
 
     if not bgcomp.project.is_cluster():
-        # TODO: Why was this line here?
+        print "Reindexing..."
         # bgcomp.update_callback(0, 're-indexing...')
         bgcomp.update_callback()
         pass
@@ -63,7 +63,7 @@ def assembly_after_parallelization(bgcomp):
     process = psutil.Process(os.getpid())
     print(process.memory_info().rss)
 
-    print "merging..."
+    print "Merging..."
     # for i in range(part_num):
     for i in range(bgcomp.first_part, bgcomp.first_part + part_num):
         rm_old = RegionManager(db_wd=bgcomp.project.working_directory + '/temp',
@@ -89,7 +89,7 @@ def assembly_after_parallelization(bgcomp):
 
     bgcomp.project.gm.rm = bgcomp.project.rm
 
-    print "reconnecting graphs"
+    print "Reconnecting graphs..."
 
     vs_todo = []
 
@@ -103,10 +103,10 @@ def assembly_after_parallelization(bgcomp):
         connect_graphs(bgcomp, t_v, t1_v, bgcomp.project.gm, bgcomp.project.rm)
         # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
-    print "merge t: ", time.time() - merging_t
-    print(process.memory_info().rss)
-    print "#CHUNKS: ", len(bgcomp.project.chm)
-    print "simplifying "
+    # print "merge t: ", time.time() - merging_t
+    # print(process.memory_info().rss)
+    # print "#CHUNKS: ", len(bgcomp.project.chm)
+    print "Simplifying..."
 
     p = bgcomp.project
     one2one_t = time.time()
@@ -121,10 +121,11 @@ def assembly_after_parallelization(bgcomp):
         else:
             bgcomp.solver.simplify(rules=[bgcomp.solver.one2one])
     except:
-        bgcomp.solver.one2one()
+        print "Except...."
+        bgcomp.solver.one2one(start_update_callback=bgcomp.new_step_callback, update_callback=bgcomp.update_callback)
 
-    print "first one2one t:", time.time() - one2one_t
-    print(process.memory_info().rss)
+    # print "first one2one t:", time.time() - one2one_t
+    # print(process.memory_info().rss)
 
     learn_assignment_t = time.time()
 
@@ -132,24 +133,24 @@ def assembly_after_parallelization(bgcomp):
     from scripts.regions_stats import learn_assignments, add_score_to_edges, tracklet_stats
     learn_assignments(bgcomp.project, max_examples=50000, display=False)
 
-    print "learn assignment t:", time.time() - learn_assignment_t
+    # print "learn assignment t:", time.time() - learn_assignment_t
     learn_assignment_t = time.time()
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
     add_score_to_edges(p)
 
-    print "score edges t:", time.time() - learn_assignment_t
+    # print "score edges t:", time.time() - learn_assignment_t
     print(process.memory_info().rss)
 
     p.save_semistate('edge_cost_updated')
 
     update_t = time.time()
     p.gm.update_nodes_in_t_refs()
-    p.chm.reset_itree(p.gm)
-    print "update t: ", time.time() - update_t
-    print(process.memory_info().rss)
+    p.chm.reset_itree(p.gm, start_update_callback=bgcomp.new_step_callback, update_callback=bgcomp.update_callback)
+    # print "update t: ", time.time() - update_t
+    # print(process.memory_info().rss)
 
-    tracklet_stats(p)
+    # tracklet_stats(p)
 
     # print "test1"
     # for ch in p.chm.chunk_gen():
@@ -172,17 +173,17 @@ def assembly_after_parallelization(bgcomp):
 
         strongly_better_e = sorted(strongly_better_e, key=lambda x: -x[0])
 
-        print "strongly better: {}, t: {}".format(len(strongly_better_e), time.time()-strongly_better_t)
-        print(process.memory_info().rss)
+        # print "strongly better: {}, t: {}".format(len(strongly_better_e), time.time()-strongly_better_t)
+        # print(process.memory_info().rss)
         confirm_t = time.time()
         for _, e in strongly_better_e:
             if p.gm.g.edge(e.source(), e.target()) is not None:
                 bgcomp.solver.confirm_edges([(e.source(), e.target())])
 
-        print "confirm_t: ", time.time() - confirm_t
-        print(process.memory_info().rss)
+        # print "confirm_t: ", time.time() - confirm_t
+        # print(process.memory_info().rss)
 
-        tracklet_stats(p)
+        # tracklet_stats(p)
 
         # strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
         # print "strongly better: {}".format(len(strongly_better_e))
@@ -221,19 +222,21 @@ def assembly_after_parallelization(bgcomp):
     if not bgcomp.do_semi_merge:
         p.save()
 
-    print "test2"
+    # print "test2"
     for ch in p.chm.chunk_gen():
         if len(ch) > 1:
             # test start
             v = ch.start_node()
             if not p.gm.g.vp['chunk_start_id'][v] or p.gm.g.vp['chunk_end_id'][v]:
-                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+                pass
+                # print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
 
             v = ch.end_node()
             if p.gm.g.vp['chunk_start_id'][v] or not p.gm.g.vp['chunk_end_id'][v]:
-                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+                pass
+                # print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
 
-    print ("#CHUNKS: %d") % (len(bgcomp.project.chm.chunk_list()))
+    # print ("#CHUNKS: %d") % (len(bgcomp.project.chm.chunk_list()))
 
     if not bgcomp.project.is_cluster():
         bgcomp.finished_callback(bgcomp.solver)

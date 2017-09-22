@@ -17,7 +17,6 @@ class BackgroundComputer:
     RUNNING = 1
     FINISHED = 2
 
-
     def __init__(self, project, new_step_callback, update_callback, finished_callback, postpone_parallelisation):
         self.project = project
         self.process_n = S_.parallelization.processes_num
@@ -85,6 +84,7 @@ class BackgroundComputer:
                 limitsFile = open(str(self.project.working_directory)+"/limits.txt","w")
 
             self.update_callback()
+            self.new_step_callback(self.part_num)
 
             for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
@@ -126,6 +126,7 @@ class BackgroundComputer:
                 self.processes.append([p, ex_str, status])
 
                 # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
+            print "FooooooooOoooO!"
 
             if self.postpone_parallelisation:
                 self.precomputed = True
@@ -175,7 +176,7 @@ class BackgroundComputer:
         print p_id, codec.toUnicode(self.processes[p_id][0].readAllStandardError().data())
 
     def onFinished(self, p_id):
-        self.new_step_callback(self.part_num)
+        # self.new_step_callback(self.part_num)
         while True:
             try:
                 end = time.time()

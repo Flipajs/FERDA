@@ -1162,7 +1162,7 @@ def assign_costs(p, frames):
     #     pickle.dump(p.gm.g, f)
 
 
-def decide_one2one(p):
+def decide_one2one(p, start_update_callback, update_callback):
     solver = Solver(p)
 
     confirm_later = []
@@ -1175,7 +1175,7 @@ def decide_one2one(p):
     solver.confirm_edges(confirm_later)
 
     p.gm.update_nodes_in_t_refs()
-    p.chm.reset_itree(p.gm)
+    p.chm.reset_itree(p.gm, start_update_callback=start_update_callback, update_callback=update_callback)
 
 def tracklet_stats(p):
     lengths = np.array([t.length() for t in p.chm.chunk_gen()])
@@ -1442,7 +1442,7 @@ def process_project(p):
             solver.confirm_edges([(e.source(), e.target())])
 
         tracklet_stats(p)
-        decide_one2one(p)
+        decide_one2one(p, )
 
         p.gm.update_nodes_in_t_refs()
         p.chm.reset_itree(p.gm)

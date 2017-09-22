@@ -123,6 +123,7 @@ class MainTabWidget(QtGui.QWidget):
             self.progress_parts_total = self.bc_msers.part_num + 6
             # progress bar is updated after each bc_msers part, also twice before starting the parts and 4 times after running them
             self.progress_step = 100.0/self.progress_parts_total
+            print "jaivaoioiva"
             self.bc_msers.run()
         else:
             self.background_computer_finished(project.solver)
@@ -303,6 +304,8 @@ class MainTabWidget(QtGui.QWidget):
             self.id_detection_tab.update_undecided_tracklets()
 
     def start_new_progress(self, num_parts, name=None):
+        print " % Start_new_progress called", num_parts
+        """
         # move to next size in array
         self.detailed_progress_size = self.functions_len[self.progress_size_index]
 
@@ -320,19 +323,36 @@ class MainTabWidget(QtGui.QWidget):
         self.detailed_progress_value = 0
         self.progress2.setValue(self.detailed_progress_value)
         # TODO: maybe also update main progress bar to avoid bugs
+        """
+        # move to next size in array
+        self.detailed_progress_size = self.functions_len[self.progress_size_index]
+
+        # update label
+        self.progress_label.setText(str(self.progress_size_index))
+
+        self.progress_size_index += 1
+
+        # compute new step for detailed progress_bar
+        self.detailed_progress_step = 100.0 / float(num_parts)
+
+        self.detailed_progress_value = 0
+        self.progress2.setValue(self.detailed_progress_value)
+
+        self.repaint()
 
     def update_progress(self, jump=1):
+        print " - Update_progress called"
         # these will be self variables
 
         # detailed advancement is the difference in % for the detailed progress bar
         detailed_advancement = self.detailed_progress_step * jump
-        advancement = self.detailed_progress_size / 100.0 * detailed_advancement
+        # advancement = self.detailed_progress_size / 100.0 * detailed_advancement
 
         # compute new values by adding to previous ones
         self.detailed_progress_value = self.detailed_progress_value + detailed_advancement
-        self.progress_value = self.progress_value + advancement
+        # self.progress_value = self.progress_value + advancement
 
-        self.progress.setValue(self.progress_value)
+        # self.progress.setValue(self.progress_value)
         self.progress2.setValue(self.detailed_progress_value)
 
         print "New progress values: ", self.progress_value, self.detailed_progress_value
