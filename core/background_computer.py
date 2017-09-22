@@ -1,3 +1,5 @@
+from PyQt4.QtCore import QObject, pyqtSignal
+
 __author__ = 'fnaiser'
 
 import numpy as np
@@ -12,17 +14,18 @@ from utils.video_manager import get_auto_video_manager
 from bg_computer_assembling import assembly_after_parallelization
 
 
-class BackgroundComputer:
+class BackgroundComputer(QObject):
     WAITING = 0
     RUNNING = 1
     FINISHED = 2
+    new_step_callback = pyqtSignal(int)
+    update_callback = pyqtSignal()
 
-    def __init__(self, project, new_step_callback, update_callback, finished_callback, postpone_parallelisation):
+    def __init__(self, project, finished_callback, postpone_parallelisation):
+        super(BackgroundComputer, self).__init__()
         self.project = project
         self.process_n = S_.parallelization.processes_num
         self.results = []
-        self.new_step_callback = new_step_callback
-        self.update_callback = update_callback
         self.finished_callback = finished_callback
         self.start = []
 
@@ -58,12 +61,12 @@ class BackgroundComputer:
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
-        self.new_step_callback(5)
-        self.update_callback()
+        self.new_step_callback.emit(5)
+        self.update_callback.emit()
         if not os.path.exists(self.project.working_directory + '/temp'):
             os.mkdir(self.project.working_directory + '/temp')
 
-        self.update_callback()
+        self.update_callback.emit()
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
             # if self.postpone_parallelisation:
                 # f = open(self.project.working_directory+'/limits.txt', 'w')
@@ -83,8 +86,8 @@ class BackgroundComputer:
             if self.postpone_parallelisation:
                 limitsFile = open(str(self.project.working_directory)+"/limits.txt","w")
 
-            self.update_callback()
-            self.new_step_callback(self.part_num)
+            self.update_callback.emit()
+            self.new_step_callback.emit(self.part_num)
 
             for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
@@ -189,7 +192,7 @@ class BackgroundComputer:
                 # self.update_callback(num_finished / float(self.part_num))
                 # self.bg_computer_signal.emit(p_id + 1)
                 # self.update_callback(p_id + 1, self.part_num)
-                self.update_callback()
+                self.update_callback.emit()
 
                 print "PART " + str(p_id + 1) + "/" + str(self.part_num) + " FINISHED MSERS, takes ", round(
                     end - self.start[p_id], 2), " seconds which is ", round((end - self.start[p_id]) / (

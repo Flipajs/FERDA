@@ -96,7 +96,7 @@ class ChunkManager:
         chn = len(self)
 
         if start_update_callback is not None:
-            start_update_callback(chn)
+            start_update_callback.emit(chn)
 
         if chn:
             for i, ch in enumerate(self.chunk_gen()):
@@ -105,7 +105,7 @@ class ChunkManager:
                 if i % 100:
                     print_progress(i, chn, "reseting chunk interval tree")
                     if update_callback is not None:
-                        update_callback()
+                        update_callback.emit()
 
             print_progress(i, chn, "reseting chunk interval tree", "DONE\n")
 

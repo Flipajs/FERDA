@@ -9,7 +9,7 @@ from itertools import izip
 
 def assembly_after_parallelization(bgcomp):
     print "Starting assembly..."
-    bgcomp.new_step_callback(bgcomp.part_num)
+    bgcomp.new_step_callback.emit(bgcomp.part_num)
     from core.graph.graph_manager import GraphManager
     # TODO: add to settings
 
@@ -36,7 +36,7 @@ def assembly_after_parallelization(bgcomp):
     if not bgcomp.project.is_cluster():
         print "Reindexing..."
         # bgcomp.update_callback(0, 're-indexing...')
-        bgcomp.update_callback()
+        bgcomp.update_callback.emit()
         pass
 
     if not bgcomp.project.is_cluster():
@@ -79,13 +79,13 @@ def assembly_after_parallelization(bgcomp):
 
         if not bgcomp.project.is_cluster():
             # bgcomp.update_callback((i + 1) / float(part_num))
-            bgcomp.update_callback()
+            bgcomp.update_callback.emit()
 
     fir = bgcomp.project.solver_parameters.frames_in_row
 
     if not bgcomp.project.is_cluster():
         # bgcomp.update_callback(-1, 'joining parts...')
-        bgcomp.update_callback()
+        bgcomp.update_callback.emit()
 
     bgcomp.project.gm.rm = bgcomp.project.rm
 
@@ -215,7 +215,7 @@ def assembly_after_parallelization(bgcomp):
 
     if not bgcomp.project.is_cluster():
         # bgcomp.update_callback(-1, 'saving...')
-        bgcomp.update_callback()
+        bgcomp.update_callback.emit()
 
     p.gm.update_nodes_in_t_refs()
 

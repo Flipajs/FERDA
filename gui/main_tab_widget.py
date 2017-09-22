@@ -119,7 +119,9 @@ class MainTabWidget(QtGui.QWidget):
         print "LOADING GRAPH..."
         if project.gm is None or project.gm.g.num_vertices() == 0:
             # project.gm = GraphManager(project, project.solver.assignment_score)
-            self.bc_msers = BackgroundComputer(project, self.start_new_progress, self.update_progress, self.background_computer_finished, postpone_parallelisation)
+            self.bc_msers = BackgroundComputer(project, self.background_computer_finished, postpone_parallelisation)
+            self.bc_msers.new_step_callback.connect(self.start_new_progress)
+            self.bc_msers.update_callback.connect(self.update_progress)
             self.progress_parts_total = self.bc_msers.part_num + 6
             # progress bar is updated after each bc_msers part, also twice before starting the parts and 4 times after running them
             self.progress_step = 100.0/self.progress_parts_total
@@ -341,6 +343,7 @@ class MainTabWidget(QtGui.QWidget):
         self.repaint()
 
     def update_progress(self, jump=1):
+        jump = 1
         print " - Update_progress called"
         # these will be self variables
 
