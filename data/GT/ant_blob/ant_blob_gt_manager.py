@@ -103,7 +103,8 @@ if __name__ == "__main__":
     manager = AntBlobGtManager('./test.pkl', p)
     manager.label()
     manager.view_gt()
-    manager.get_ant_blobs()
+    blob_dic = manager.get_ant_blobs()
+    blob_gen = manager.feed_ant_blobs()
 
 
 
