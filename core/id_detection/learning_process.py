@@ -1624,22 +1624,25 @@ class LearningProcess:
 
     def _presort_css(self, cs1, cs2):
         # presort... so the same tracklets have the same indices..
-        inter = set(cs1).intersection(cs2)
+        inter = set(cs1.keys()).intersection(cs2.keys())
+        intersection = {}
+        for root in inter:
+            intersection[root] = cs1[root]
 
-        cs1_ = []
-        cs2_ = []
+        cs1_ = {}
+        cs2_ = {}
 
-        for t in cs1:
-            if t in inter:
+        for root_id in cs1.keys():
+            if root_id in intersection:
                 continue
-            cs1_.append(t)
+            cs1_[root_id] = cs1[root_id]
 
-        for t in cs2:
-            if t in inter:
+        for root_id in cs2.keys():
+            if root_id in intersection:
                 continue
-            cs2_.append(t)
+            cs2_[root_id] = cs2[root_id]
 
-        return cs1_, cs2_, inter
+        return cs1_, cs2_, intersection
 
     def get_cs_pair_price(self, cs1, cs2, use_xgboost=False, links={}):
         # returns only unknown... mutual tracklets are excluded and returned in intersection list
@@ -1663,11 +1666,7 @@ class LearningProcess:
             else:
                 cs2_groups[id_] = [t.id()]
 
-        cs1_representants = cs1_groups.keys()
-        cs2_representants = cs2_groups.keys()
-
-        cs1, cs2, intersection = self._presort_css(cs1_representants, cs2_representants)
-
+        cs1, cs2, intersection = self._presort_css(cs1_groups, cs2_groups)
         if len(cs1) == 0:
             return [], np.inf
 
@@ -1675,8 +1674,9 @@ class LearningProcess:
         C = np.zeros((len(cs1), len(cs2)), dtype=np.float)
 
         # TODO: if cs2 is bigger, then do it the opposite way
-        rfc1 = self._get_and_train_rfc_tracklets_groups(cs1_groups, use_xgboost)
-        for i, g in enumerate(cs1_groups.values()):
+        rfc1 = self._get_and_train_rfc_tracklets_groups(cs1, use_xgboost)
+        for i, g in enumerate(cs1.values()):
+            X = []
             for t_id in g:
                 x = self.features[t_id]
 
@@ -1686,7 +1686,8 @@ class LearningProcess:
                     X = np.vstack([X, np.array(x)])
 
             # TODO: idTracker like probs
-            C[i, :] = np.mean(rfc1.predict_proba(X), axis=0)
+            res = rfc1.predict_proba(X)
+            C[i, :] = np.mean(res, axis=0)
 
         # TODO: nearest tracklet (position) based on min over all t_distances
         for i, repr_id1 in enumerate(cs1_representants):
@@ -1771,7 +1772,8 @@ class LearningProcess:
 
             id_ = links[id_]
 
-        links[t_id] = id_
+        if t_id != id_:
+            links[t_id] = id_
 
         return id_
 
