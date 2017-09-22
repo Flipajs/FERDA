@@ -18,7 +18,7 @@ class AntBlobs:
         return len(self.blobs)
 
     def all_blobs(self):
-        return self.blobs.values()
+        return self.blobs.items()
 
     def contains(self, region_id, frame, tracklet_id):
         return BlobInfo(region_id, frame, tracklet_id) in self.blobs
