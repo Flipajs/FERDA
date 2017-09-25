@@ -95,7 +95,7 @@ class MainTabWidget(QtGui.QWidget):
         #
         self.progress_bar_step_size = None
 
-        self.progress_bar_part_counter = 0
+        self.progress_bar_part_counter = 1
         self.detailed_progress_size = None
         self.progress_bar_current_value = 0
 

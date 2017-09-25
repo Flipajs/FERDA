@@ -83,7 +83,6 @@ class BackgroundComputer(QObject):
                 limitsFile = open(str(self.project.working_directory)+"/limits.txt","w")
 
             self.next_step_progress_signal.emit(self.part_num + 1, "Computing MSERs")
-            print "FoooBarrrr"
             self.update_progress_signal.emit()
 
             for i in range(skip_n_first_parts, self.part_num):

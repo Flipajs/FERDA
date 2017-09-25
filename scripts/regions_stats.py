@@ -1341,7 +1341,6 @@ def add_score_to_edges(p, next_step_progress_signal=None, update_progress_signal
     num_edges = p.gm.g.num_edges()
     if next_step_progress_signal is not None:
         next_step_progress_signal.emit(num_edges, "Calculating edge scores")
-        print "FoooBarrrr"
     for e in p.gm.g.edges():
         i += 1
         if p.gm.edge_is_chunk(e):

@@ -97,7 +97,6 @@ class ChunkManager:
 
         if next_step_progress_signal is not None:
             next_step_progress_signal.emit(chn, "Resetting chunk interval tree")
-            print "FoooBarrrr"
 
         if chn:
             for i, ch in enumerate(self.chunk_gen()):
@@ -120,7 +119,6 @@ class ChunkManager:
 
         if next_step_progress_signal is not None:
             next_step_progress_signal.emit(nn, "Single vertices two chunks")
-            print "FoooBarrrr"
 
         for i, n in enumerate(p.gm.g.vertices()):
             if frames is None:

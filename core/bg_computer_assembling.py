@@ -9,7 +9,6 @@ from itertools import izip
 def assembly_after_parallelization(bgcomp):
     print "Starting assembly..."
     bgcomp.next_step_progress_signal.emit(bgcomp.part_num, "Starting assembly")
-    print "FoooBarrrr"
     from core.graph.graph_manager import GraphManager
     # TODO: add to settings
 
