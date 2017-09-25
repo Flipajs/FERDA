@@ -90,32 +90,36 @@ class ChunkManager:
         for ch in self.chunks_.itervalues():
             yield ch
 
-    def reset_itree(self, gm, start_update_callback=None, update_callback=None):
+    def reset_itree(self, gm, next_step_progress_signal=None, update_progress_signal=None):
         self.itree = IntervalTree()
 
         chn = len(self)
 
-        if start_update_callback is not None:
-            start_update_callback.emit(chn, "Resetting chunk interval tree")
+        if next_step_progress_signal is not None:
+            next_step_progress_signal.emit(chn, "Resetting chunk interval tree")
 
         if chn:
             for i, ch in enumerate(self.chunk_gen()):
                 self._add_ch_itree(ch, gm)
 
                 if i % 100:
-                    if update_callback is not None:
-                        update_callback.emit()
+                    if update_progress_signal is not None:
+                        update_progress_signal.emit()
                     else:
                         print_progress(i, chn, "resetting chunk interval tree")
 
-            if update_callback is None:
+            if update_progress_signal is None:
                 print_progress(i, chn, "resetting chunk interval tree", "DONE\n")
 
-    def add_single_vertices_chunks(self, p, frames=None):
+    def add_single_vertices_chunks(self, p, frames=None, next_step_progress_signal=None, update_progress_signal=None):
         print "Running reset itree from chm"
-        self.reset_itree(p.gm)
+        self.reset_itree(p.gm, next_step_progress_signal=next_step_progress_signal,
+                         update_progress_signal=update_progress_signal)
 
         nn = p.gm.g.num_vertices()
+
+        if next_step_progress_signal is not None:
+            next_step_progress_signal.emit(nn, "Single vertices two chunks")
 
         for i, n in enumerate(p.gm.g.vertices()):
             if frames is None:
@@ -132,8 +136,13 @@ class ChunkManager:
             self.new_chunk([int(n)], p.gm)
 
             if i % 100:
-                print_progress(i, nn,  prefix="single vertices 2 chunks")
+                if update_progress_signal is not None:
+                    update_progress_signal.emit()
+                else:
+                    print_progress(i, nn,  prefix="single vertices 2 chunks")
 
-        print_progress(nn, nn, prefix="single vertices 2 chunks", suffix="DONE\n")
+        if update_progress_signal is None:
+            print_progress(nn, nn, prefix="single vertices 2 chunks", suffix="DONE\n")
 
-        self.reset_itree(p.gm)
+        self.reset_itree(p.gm, next_step_progress_signal=next_step_progress_signal,
+                         update_progress_signal=update_progress_signal)

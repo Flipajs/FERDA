@@ -47,11 +47,11 @@ def plotNdto3d(data, labels, core_samples_mask, indices=[0, 1, 2], ax_labels=[''
         ax.plot(xy[:, indices[0]], xy[:, indices[1]], xy[:, indices[2]], 'o', markerfacecolor=col,
                 markeredgecolor='k', markersize=6)
 
-
     ax.set_xlabel(ax_labels[0])
     ax.set_ylabel(ax_labels[1])
     ax.set_zlabel(ax_labels[2])
     plt.title(title)
+
 
 def display_pairs(p, pairs, file_name, cols=7, item_height=100, item_width=200, border=20):
     vm = get_auto_video_manager(p)
@@ -89,7 +89,6 @@ def display_pairs(p, pairs, file_name, cols=7, item_height=100, item_width=200, 
 
     collage = create_collage_rows(data, cols, item_height, item_width)
     cv2.imwrite(p.working_directory+'/temp/'+ file_name + str(part) + '.jpg', collage)
-
 
 
 def display_head_pairs(project):
@@ -191,6 +190,7 @@ def display_clustering_results(project, vertices=None, labels=None, cols=15, it_
         collage = create_collage_rows(data, cols, it_h, it_w)
         cv2.imwrite(project.working_directory+'/temp/clustering_' + str(class_) + '_' + str(part) + '.jpg', collage)
 
+
 def prepare_pairs(project):
     print "__________________________"
     print "preparing pairs..."
@@ -252,6 +252,7 @@ def __get_mu_moments_pick(img):
 
     return list(nu[np.logical_not(np.isnan(nu))])
 
+
 def head_features(r, swap=False):
     # normalize...
     from utils.geometry import rotate
@@ -276,6 +277,7 @@ def head_features(r, swap=False):
     # cv2.waitKey(0)
 
     return features
+
 
 def head_detector_features(p, display=False):
     from core.region.region import get_region_endpoints
@@ -331,9 +333,9 @@ def head_detector_features(p, display=False):
     collage = create_collage_rows(data, COLS, IT_H, IT_W)
     cv2.imwrite('/Users/flipajs/Desktop/temp/pairs/' + EXP + '/heads_train' + str(part) + '.jpg', collage)
 
-
     hickle.dump(data_heads, '/Users/flipajs/Desktop/temp/pairs/'+EXP+'/head_data.pkl')
     hickle.dump(data_swap, '/Users/flipajs/Desktop/temp/pairs/'+EXP+'/head_data_swap.pkl')
+
 
 def fix_head(p, r, rfc):
     f = head_features(r)
@@ -345,6 +347,7 @@ def fix_head(p, r, rfc):
         r.theta_ += np.pi
         if r.theta_ > 2 * np.pi:
             r.theta_ -= 2 * np.pi
+
 
 def fix_heads(p, frames):
     with open('/Users/flipajs/Desktop/temp/pairs/'+EXP+'/head_rfc.pkl', 'rb') as f:
@@ -365,7 +368,6 @@ def fix_heads(p, frames):
             r.theta_ += np.pi
             if r.theta_ > 2 * np.pi:
                 r.theta_ -= 2 * np.pi
-
 
 
 def head_detector_classify(p):
@@ -441,6 +443,7 @@ def get_movement_descriptor(p, v1, v2, v3):
     v2 = r3.centroid() - r2.centroid()
 
     return get_movement_descriptor_(v1, v2)
+
 
 def get_movement_descriptor_(v1, v2):
     from math import atan2
@@ -565,6 +568,7 @@ def get_max_dist(project):
     print "-----------------------------"
     return max_dist
 
+
 def get_max_dist2(project):
     print "____________________________"
     print "Estimating max distance"
@@ -600,7 +604,6 @@ def get_max_dist2(project):
     print print_progress(num_v, num_v)
     print
 
-
     id_ = np.argmax(safe_dists)
     max_dist = safe_dists[id_]
     max_v1, max_v2 = pairs[id_]
@@ -627,6 +630,7 @@ def get_max_dist2(project):
     print "-----------------------------"
     return max_dist
 
+
 def hist_query(h, edges, it):
     ids = []
     for i in range(3):
@@ -638,6 +642,7 @@ def hist_query(h, edges, it):
             return 0
 
     return h[ids[0], ids[1], ids[2]]
+
 
 def get_movement_histogram(p):
     # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_modified.pkl', 'rb') as f:
@@ -866,6 +871,7 @@ def expand_based_on_movement_model(p):
         pic.dump([])
         pic.dump(p.chm)
 
+
 def simple_tracklets(p):
     with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_modified.pkl', 'rb') as f:
         g = pickle.load(f)
@@ -879,7 +885,6 @@ def simple_tracklets(p):
 
     from core.graph.chunk_manager import ChunkManager
     p.chm = ChunkManager()
-
 
     singles_ids = list(vertices_ids[labels==0])
 
@@ -1002,6 +1007,7 @@ def display_classification(project, ids, labels):
         collage = create_collage_rows(data, COLS, IT_H, IT_W)
         cv2.imwrite('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/' + F_NAME + str(class_) + '_' + str(part) + '.jpg', collage)
 
+
 def singles_classifier(p):
     d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
     labels = d['labels']
@@ -1054,6 +1060,7 @@ def singles_classifier(p):
 
     display_classification(p, region_ids, labels)
 
+
 def solve_nearby_passings(p):
     with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/movement_data.pkl', 'rb') as f:
         data = pickle.load(f)
@@ -1089,6 +1096,7 @@ def solve_nearby_passings(p):
 
         ax.plot(it[:, 1], it[:, 2], it[:, 0], marker='v', c='m')
 
+
 def add_single_chunks(p, frames):
     p.chm.reset_itree(p.gm)
 
@@ -1109,6 +1117,7 @@ def add_single_chunks(p, frames):
         pic.dump(p.gm.g)
         pic.dump([])
         pic.dump(p.chm)
+
 
 def build_tracklets_from_others(p):
     # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/movement_data.pkl', 'rb') as f:
@@ -1137,7 +1146,6 @@ def assign_costs(p, frames):
 
     p.gm.g = g
 
-
     with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/movement_data.pkl', 'rb') as f:
         data = pickle.load(f)
 
@@ -1162,7 +1170,7 @@ def assign_costs(p, frames):
     #     pickle.dump(p.gm.g, f)
 
 
-def decide_one2one(p, start_update_callback, update_callback):
+def decide_one2one(p, next_step_progress_signal, update_progress_signal):
     solver = Solver(p)
 
     confirm_later = []
@@ -1175,16 +1183,18 @@ def decide_one2one(p, start_update_callback, update_callback):
     solver.confirm_edges(confirm_later)
 
     p.gm.update_nodes_in_t_refs()
-    p.chm.reset_itree(p.gm, start_update_callback=start_update_callback, update_callback=update_callback)
+    p.chm.reset_itree(p.gm, next_step_progress_signal=next_step_progress_signal,
+                      update_progress_signal=update_progress_signal)
+
 
 def tracklet_stats(p):
     lengths = np.array([t.length() for t in p.chm.chunk_gen()])
-
 
     print "#chunks: {}".format(len(p.chm))
     print "LENGTHS mean: {:.1f} median: {}, max: {}, sum: {} coverage: {:.2%}".format(np.mean(lengths), np.median(lengths),
                                                                                   lengths.max(), np.sum(lengths),
                                                                                   np.sum(lengths) / float((p.gm.end_t - p.gm.start_t) * len(p.animals)))
+
 
 def load_p_checkpoint(p, name=''):
     with open(p.working_directory+'/temp/'+name+'.pkl', 'rb') as f:
@@ -1197,6 +1207,7 @@ def load_p_checkpoint(p, name=''):
         except:
             print "vertices_in_t not loaded..."
 
+
 def save_p_checkpoint(p, name=''):
     with open(p.working_directory+'/temp/'+name+'.pkl', 'wb') as f:
         pic = pickle.Pickler(f)
@@ -1204,6 +1215,7 @@ def save_p_checkpoint(p, name=''):
         pic.dump(None)
         pic.dump(p.chm)
         pic.dump(p.gm.vertices_in_t)
+
 
 def get_pair_fetures_appearance(r1, r2):
     # f = [
@@ -1233,6 +1245,7 @@ def get_pair_fetures_appearance(r1, r2):
     ]
 
     return f
+
 
 def get_pair_fetures_movement(r1, r2):
     f = [
@@ -1303,7 +1316,7 @@ def learn_assignments(p, max_examples=np.inf, display=False):
         display_pairs(p, pairs[y == -1], 'anomaly_parts_movement', cols=3, item_height=250, item_width=500, border=70)
 
 
-def add_score_to_edges(p, start_update_callback=None, update_callback=None):
+def add_score_to_edges(p, next_step_progress_signal=None, update_progress_signal=None):
     with open(p.working_directory + '/temp/isolation_forests.pkl', 'rb') as f:
         d = pickle.load(f)
         IF_appearance = d['appearance']
@@ -1326,8 +1339,8 @@ def add_score_to_edges(p, start_update_callback=None, update_callback=None):
     # p.rm[:]
 
     num_edges = p.gm.g.num_edges()
-    if start_update_callback is not None:
-        start_update_callback.emit(num_edges, "Calculating edge scores")
+    if next_step_progress_signal is not None:
+        next_step_progress_signal.emit(num_edges, "Calculating edge scores")
     for e in p.gm.g.edges():
         i += 1
         if p.gm.edge_is_chunk(e):
@@ -1342,8 +1355,8 @@ def add_score_to_edges(p, start_update_callback=None, update_callback=None):
         edges.append(e)
 
         if i % 1000:
-            if update_callback is not None:
-                update_callback.emit()
+            if update_progress_signal is not None:
+                update_progress_signal.emit()
             else:
                 print_progress(i, num_edges)
 
@@ -1385,6 +1398,7 @@ def add_score_to_edges(p, start_update_callback=None, update_callback=None):
         print "saving..."
 
     save_p_checkpoint(p, 'isolation_score')
+
 
 def process_project(p):
     from core.graph.solver2 import Solver2

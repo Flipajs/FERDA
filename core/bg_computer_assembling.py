@@ -118,8 +118,8 @@ def assembly_after_parallelization(bgcomp):
             bgcomp.solver.simplify(rules=[bgcomp.solver.one2one])
     except:
         print "Except...."
-        bgcomp.solver.one2one(start_update_callback=bgcomp.next_step_progress_signal,
-                              update_callback=bgcomp.update_progress_signal)
+        bgcomp.solver.one2one(next_step_progress_signal=bgcomp.next_step_progress_signal,
+                              update_progress_signal=bgcomp.update_progress_signal)
 
     # print "first one2one t:", time.time() - one2one_t
     # print(process.memory_info().rss)
@@ -134,8 +134,8 @@ def assembly_after_parallelization(bgcomp):
     # learn_assignment_t = time.time()
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
-    add_score_to_edges(p, start_update_callback=bgcomp.next_step_progress_signal,
-                       update_callback=bgcomp.update_progress_signal)
+    add_score_to_edges(p, next_step_progress_signal=bgcomp.next_step_progress_signal,
+                       update_progress_signal=bgcomp.update_progress_signal)
 
     # print "score edges t:", time.time() - learn_assignment_t
     print(process.memory_info().rss)
@@ -144,8 +144,8 @@ def assembly_after_parallelization(bgcomp):
 
     # update_t = time.time()
     p.gm.update_nodes_in_t_refs()
-    p.chm.reset_itree(p.gm, start_update_callback=bgcomp.next_step_progress_signal,
-                      update_callback=bgcomp.update_progress_signal)
+    p.chm.reset_itree(p.gm, next_step_progress_signal=bgcomp.next_step_progress_signal,
+                      update_progress_signal=bgcomp.update_progress_signal)
     # print "update t: ", time.time() - update_t
     # print(process.memory_info().rss)
 
@@ -209,7 +209,8 @@ def assembly_after_parallelization(bgcomp):
     p.solver = bgcomp.solver
 
     p.gm.project = bgcomp.project
-    p.chm.add_single_vertices_chunks(p)
+    p.chm.add_single_vertices_chunks(p, next_step_progress_signal=bgcomp.next_step_progress_signal,
+                                     update_progress_signal=bgcomp.update_progress_signal)
 
     if not bgcomp.project.is_cluster():
         bgcomp.update_progress_signal.emit()

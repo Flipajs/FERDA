@@ -213,8 +213,13 @@ class MainTabWidget(QtGui.QWidget):
                         break
 
                 if not ok:
-                    QtGui.QMessageBox(
-                        "there is 0 tracklets with proper class (single-ID, multi-ID, no-ID, part-of-ID) in frame 0, most likely you need to continue to region classifier tab and do tracklet classification first. Continue with id detection only if you are aware of what you are doing.")
+                    box = QtGui.QMessageBox()
+                    box.setText("there is 0 tracklets with proper class (single-ID, multi-ID, no-ID, part-of-ID) in "
+                                "frame 0, most likely you need to continue to region classifier tab and do tracklet "
+                                "classification first. Continue with id detection only if you are aware of what you "
+                                "are doing.")
+                    box.setIcon(QtGui.QMessageBox.Warning)
+                    box.show()
 
                 self.ignore_tab_change = True
                 self.tabs.removeTab(2)
