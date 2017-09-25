@@ -97,16 +97,16 @@ class ChunkManager:
 
         if next_step_progress_signal is not None:
             next_step_progress_signal.emit(chn, "Resetting chunk interval tree")
+            print "FoooBarrrr"
 
         if chn:
             for i, ch in enumerate(self.chunk_gen()):
                 self._add_ch_itree(ch, gm)
 
-                if i % 100:
-                    if update_progress_signal is not None:
-                        update_progress_signal.emit()
-                    else:
-                        print_progress(i, chn, "resetting chunk interval tree")
+                if update_progress_signal is not None:
+                    update_progress_signal.emit()
+                elif not i % 10.0:
+                    print_progress(i, chn, "resetting chunk interval tree")
 
             if update_progress_signal is None:
                 print_progress(i, chn, "resetting chunk interval tree", "DONE\n")
@@ -120,6 +120,7 @@ class ChunkManager:
 
         if next_step_progress_signal is not None:
             next_step_progress_signal.emit(nn, "Single vertices two chunks")
+            print "FoooBarrrr"
 
         for i, n in enumerate(p.gm.g.vertices()):
             if frames is None:
@@ -134,12 +135,10 @@ class ChunkManager:
                 continue
 
             self.new_chunk([int(n)], p.gm)
-
-            if i % 100:
-                if update_progress_signal is not None:
-                    update_progress_signal.emit()
-                else:
-                    print_progress(i, nn,  prefix="single vertices 2 chunks")
+            if update_progress_signal is not None:
+                update_progress_signal.emit()
+            elif not i % 100.0:
+                print_progress(i, nn, prefix="single vertices 2 chunks")
 
         if update_progress_signal is None:
             print_progress(nn, nn, prefix="single vertices 2 chunks", suffix="DONE\n")

@@ -88,7 +88,7 @@ class MainTabWidget(QtGui.QWidget):
         self.progress_label = QtGui.QLabel()
         self.layout().addWidget(self.progress_label)
         # number N of processes called with progress bar
-        self.total_progress_bar_usages = 10
+        self.total_progress_bar_usages = 9
 
         self.progress_bar = QtGui.QProgressBar(self)
         self.progress_bar.setGeometry(200, 80, 250, 20)

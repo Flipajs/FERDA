@@ -9,6 +9,7 @@ from itertools import izip
 def assembly_after_parallelization(bgcomp):
     print "Starting assembly..."
     bgcomp.next_step_progress_signal.emit(bgcomp.part_num, "Starting assembly")
+    print "FoooBarrrr"
     from core.graph.graph_manager import GraphManager
     # TODO: add to settings
 
@@ -195,7 +196,8 @@ def assembly_after_parallelization(bgcomp):
         # bgcomp.solver.one2one()
 
         p.gm.update_nodes_in_t_refs()
-        p.chm.reset_itree(p.gm)
+        p.chm.reset_itree(p.gm, next_step_progress_signal=bgcomp.next_step_progress_signal,
+                                     update_progress_signal=bgcomp.update_progress_signal)
 
         p.save_semistate('eps_edge_filter')
         tracklet_stats(p)

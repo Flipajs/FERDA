@@ -1341,6 +1341,7 @@ def add_score_to_edges(p, next_step_progress_signal=None, update_progress_signal
     num_edges = p.gm.g.num_edges()
     if next_step_progress_signal is not None:
         next_step_progress_signal.emit(num_edges, "Calculating edge scores")
+        print "FoooBarrrr"
     for e in p.gm.g.edges():
         i += 1
         if p.gm.edge_is_chunk(e):
@@ -1354,13 +1355,13 @@ def add_score_to_edges(p, next_step_progress_signal=None, update_progress_signal
         
         edges.append(e)
 
-        if i % 1000:
-            if update_progress_signal is not None:
-                update_progress_signal.emit()
-            else:
-                print_progress(i, num_edges)
+        if update_progress_signal is not None:
+            update_progress_signal.emit()
+        elif not i % 1000.0:
+            print_progress(i, num_edges)
 
-    print_progress(num_edges, num_edges)
+    if update_progress_signal is None:
+        print_progress(num_edges, num_edges)
 
     print "computing isolation score..."
     vals_appearance = IF_appearance.decision_function(features_appearance)

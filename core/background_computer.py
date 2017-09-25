@@ -60,12 +60,9 @@ class BackgroundComputer(QObject):
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
-        self.next_step_progress_signal.emit(5, "Preparing project workspace")
-        self.update_progress_signal.emit()
         if not os.path.exists(self.project.working_directory + '/temp'):
             os.mkdir(self.project.working_directory + '/temp')
 
-        self.update_progress_signal.emit()
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
             # if self.postpone_parallelisation:
                 # f = open(self.project.working_directory+'/limits.txt', 'w')
@@ -85,8 +82,8 @@ class BackgroundComputer(QObject):
             if self.postpone_parallelisation:
                 limitsFile = open(str(self.project.working_directory)+"/limits.txt","w")
 
-            self.update_progress_signal.emit()
             self.next_step_progress_signal.emit(self.part_num + 1, "Computing MSERs")
+            print "FoooBarrrr"
             self.update_progress_signal.emit()
 
             for i in range(skip_n_first_parts, self.part_num):
