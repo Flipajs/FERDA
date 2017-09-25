@@ -340,7 +340,8 @@ class MainTabWidget(QtGui.QWidget):
         self.detailed_progress_value = 0
         self.progress2.setValue(self.detailed_progress_value)
 
-        self.repaint()
+        # self.repaint()
+        self.update()
 
     def update_progress(self, jump=1):
         jump = 1
@@ -358,7 +359,8 @@ class MainTabWidget(QtGui.QWidget):
         # self.progress.setValue(self.progress_value)
         self.progress2.setValue(self.detailed_progress_value)
         QtGui.qApp.processEvents()
-        self.repaint()
+        # self.repaint()
+        self.update()
 
         print "New progress values: ", self.progress_value, self.detailed_progress_value
 
