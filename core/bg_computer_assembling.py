@@ -137,7 +137,7 @@ def assembly_after_parallelization(bgcomp):
     learn_assignment_t = time.time()
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
-    add_score_to_edges(p)
+    add_score_to_edges(p, start_update_callback=bgcomp.new_step_callback, update_callback=bgcomp.update_callback)
 
     # print "score edges t:", time.time() - learn_assignment_t
     print(process.memory_info().rss)

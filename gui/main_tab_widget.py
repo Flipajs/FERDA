@@ -357,6 +357,8 @@ class MainTabWidget(QtGui.QWidget):
 
         # self.progress.setValue(self.progress_value)
         self.progress2.setValue(self.detailed_progress_value)
+        QtGui.qApp.processEvents()
+        self.repaint()
 
         print "New progress values: ", self.progress_value, self.detailed_progress_value
 

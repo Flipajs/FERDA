@@ -1302,7 +1302,8 @@ def learn_assignments(p, max_examples=np.inf, display=False):
 
         display_pairs(p, pairs[y == -1], 'anomaly_parts_movement', cols=3, item_height=250, item_width=500, border=70)
 
-def add_score_to_edges(p):
+
+def add_score_to_edges(p, start_update_callback=None, update_callback=None):
     with open(p.working_directory + '/temp/isolation_forests.pkl', 'rb') as f:
         d = pickle.load(f)
         IF_appearance = d['appearance']
@@ -1327,6 +1328,8 @@ def add_score_to_edges(p):
     # p.rm[:]
 
     num_edges = p.gm.g.num_edges()
+    if start_update_callback is not None:
+        start_update_callback.emit(num_edges)
     for e in p.gm.g.edges():
         i += 1
         if p.gm.edge_is_chunk(e):
@@ -1341,7 +1344,10 @@ def add_score_to_edges(p):
         edges.append(e)
 
         if i % 1000:
-            print_progress(i, num_edges)
+            if update_callback is not None:
+                update_callback.emit()
+            else:
+                print_progress(i, num_edges)
 
     print_progress(num_edges, num_edges)
 
