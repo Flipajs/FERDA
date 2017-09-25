@@ -1,7 +1,4 @@
 from PyQt4.QtCore import QObject, pyqtSignal
-
-__author__ = 'fnaiser'
-
 import numpy as np
 from PyQt4 import QtGui, QtCore
 import time
@@ -13,13 +10,15 @@ from core.settings import Settings as S_
 from utils.video_manager import get_auto_video_manager
 from bg_computer_assembling import assembly_after_parallelization
 
+__author__ = 'fnaiser'
+
 
 class BackgroundComputer(QObject):
     WAITING = 0
     RUNNING = 1
     FINISHED = 2
-    new_step_callback = pyqtSignal(int)
-    update_callback = pyqtSignal()
+    next_step_progress_signal = pyqtSignal(int, str)
+    update_progress_signal = pyqtSignal()
 
     def __init__(self, project, finished_callback, postpone_parallelisation):
         super(BackgroundComputer, self).__init__()
@@ -61,12 +60,12 @@ class BackgroundComputer(QObject):
         self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
 
     def run(self):
-        self.new_step_callback.emit(5)
-        self.update_callback.emit()
+        self.next_step_progress_signal.emit(5, "Preparing project workspace")
+        self.update_progress_signal.emit()
         if not os.path.exists(self.project.working_directory + '/temp'):
             os.mkdir(self.project.working_directory + '/temp')
 
-        self.update_callback.emit()
+        self.update_progress_signal.emit()
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
             # if self.postpone_parallelisation:
                 # f = open(self.project.working_directory+'/limits.txt', 'w')
@@ -86,8 +85,9 @@ class BackgroundComputer(QObject):
             if self.postpone_parallelisation:
                 limitsFile = open(str(self.project.working_directory)+"/limits.txt","w")
 
-            self.update_callback.emit()
-            self.new_step_callback.emit(self.part_num)
+            self.update_progress_signal.emit()
+            self.next_step_progress_signal.emit(self.part_num + 1, "Computing MSERs")
+            self.update_progress_signal.emit()
 
             for i in range(skip_n_first_parts, self.part_num):
                 p = QtCore.QProcess()
@@ -124,12 +124,8 @@ class BackgroundComputer(QObject):
                 status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
-                    #  p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))   ## Uncomment for cluster usage
 
                 self.processes.append([p, ex_str, status])
-
-                # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
-            print "FooooooooOoooO!"
 
             if self.postpone_parallelisation:
                 self.precomputed = True
@@ -153,6 +149,7 @@ class BackgroundComputer(QObject):
             s = time.time()
             colorize_project(self.project)
             print "color manager takes %f seconds" % (time.time() - s)
+            self.finished_callback(self.solver)
 
     def OnProcessOutputReady(self, p_id):
         while True:
@@ -164,7 +161,6 @@ class BackgroundComputer(QObject):
                     try:
                         i = int(str_)
                         s = str((int(i) / float(self.frames_in_row_last) * 100))
-                        # self.update_callback(' '+s[0:4]+'%')
                     except:
                         # TODO: this causes unusual outputs
                         # print str_
@@ -179,7 +175,6 @@ class BackgroundComputer(QObject):
         print p_id, codec.toUnicode(self.processes[p_id][0].readAllStandardError().data())
 
     def onFinished(self, p_id):
-        # self.new_step_callback(self.part_num)
         while True:
             try:
                 end = time.time()
@@ -189,14 +184,11 @@ class BackgroundComputer(QObject):
                     if i:
                         num_finished += 1
 
-                # self.update_callback(num_finished / float(self.part_num))
-                # self.bg_computer_signal.emit(p_id + 1)
-                # self.update_callback(p_id + 1, self.part_num)
-                self.update_callback.emit()
+                self.update_progress_signal.emit()
 
-                print "PART " + str(p_id + 1) + "/" + str(self.part_num) + " FINISHED MSERS, takes ", round(
-                    end - self.start[p_id], 2), " seconds which is ", round((end - self.start[p_id]) / (
-                    self.process_n * self.frames_in_row), 4), " seconds per frame"
+                print "PART " + str(p_id + 1) + "/" + str(self.part_num) + " FINISHED MSERS, takes ",\
+                    round(end - self.start[p_id], 2), " seconds which is ",\
+                    round((end - self.start[p_id]) / (self.process_n * self.frames_in_row), 4), " seconds per frame"
 
                 self.processes[p_id][2] = self.FINISHED
 

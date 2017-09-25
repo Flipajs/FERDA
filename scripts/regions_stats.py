@@ -1317,8 +1317,6 @@ def add_score_to_edges(p, start_update_callback=None, update_callback=None):
 
     # es = p.gm.g.get_edges()
 
-
-
     features_appearance = []
     features_movement = []
     edges = []
@@ -1329,7 +1327,7 @@ def add_score_to_edges(p, start_update_callback=None, update_callback=None):
 
     num_edges = p.gm.g.num_edges()
     if start_update_callback is not None:
-        start_update_callback.emit(num_edges)
+        start_update_callback.emit(num_edges, "Calculating edge scores")
     for e in p.gm.g.edges():
         i += 1
         if p.gm.edge_is_chunk(e):

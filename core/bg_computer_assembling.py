@@ -1,4 +1,3 @@
-
 import cPickle as pickle
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
@@ -9,7 +8,7 @@ from itertools import izip
 
 def assembly_after_parallelization(bgcomp):
     print "Starting assembly..."
-    bgcomp.new_step_callback.emit(bgcomp.part_num)
+    bgcomp.next_step_progress_signal.emit(bgcomp.part_num, "Starting assembly")
     from core.graph.graph_manager import GraphManager
     # TODO: add to settings
 
@@ -35,8 +34,7 @@ def assembly_after_parallelization(bgcomp):
 
     if not bgcomp.project.is_cluster():
         print "Reindexing..."
-        # bgcomp.update_callback(0, 're-indexing...')
-        bgcomp.update_callback.emit()
+        bgcomp.update_progress_signal.emit()
         pass
 
     if not bgcomp.project.is_cluster():
@@ -59,7 +57,7 @@ def assembly_after_parallelization(bgcomp):
     import os
     import psutil
 
-    merging_t = time.time()
+    # merging_t = time.time()
     process = psutil.Process(os.getpid())
     print(process.memory_info().rss)
 
@@ -78,14 +76,12 @@ def assembly_after_parallelization(bgcomp):
             merge_parts(bgcomp.project.gm, g_, relevant_vertices, bgcomp.project, rm_old, chm_)
 
         if not bgcomp.project.is_cluster():
-            # bgcomp.update_callback((i + 1) / float(part_num))
-            bgcomp.update_callback.emit()
+            bgcomp.update_progress_signal.emit()
 
     fir = bgcomp.project.solver_parameters.frames_in_row
 
     if not bgcomp.project.is_cluster():
-        # bgcomp.update_callback(-1, 'joining parts...')
-        bgcomp.update_callback.emit()
+        bgcomp.update_progress_signal.emit()
 
     bgcomp.project.gm.rm = bgcomp.project.rm
 
@@ -109,7 +105,7 @@ def assembly_after_parallelization(bgcomp):
     print "Simplifying..."
 
     p = bgcomp.project
-    one2one_t = time.time()
+    # one2one_t = time.time()
     try:
         # TODO:
         if bgcomp.project.type == 'colony':
@@ -122,31 +118,34 @@ def assembly_after_parallelization(bgcomp):
             bgcomp.solver.simplify(rules=[bgcomp.solver.one2one])
     except:
         print "Except...."
-        bgcomp.solver.one2one(start_update_callback=bgcomp.new_step_callback, update_callback=bgcomp.update_callback)
+        bgcomp.solver.one2one(start_update_callback=bgcomp.next_step_progress_signal,
+                              update_callback=bgcomp.update_progress_signal)
 
     # print "first one2one t:", time.time() - one2one_t
     # print(process.memory_info().rss)
 
-    learn_assignment_t = time.time()
+    # learn_assignment_t = time.time()
 
     bgcomp.project.save_semistate('first_tracklets')
     from scripts.regions_stats import learn_assignments, add_score_to_edges, tracklet_stats
     learn_assignments(bgcomp.project, max_examples=50000, display=False)
 
     # print "learn assignment t:", time.time() - learn_assignment_t
-    learn_assignment_t = time.time()
+    # learn_assignment_t = time.time()
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
-    add_score_to_edges(p, start_update_callback=bgcomp.new_step_callback, update_callback=bgcomp.update_callback)
+    add_score_to_edges(p, start_update_callback=bgcomp.next_step_progress_signal,
+                       update_callback=bgcomp.update_progress_signal)
 
     # print "score edges t:", time.time() - learn_assignment_t
     print(process.memory_info().rss)
 
     p.save_semistate('edge_cost_updated')
 
-    update_t = time.time()
+    # update_t = time.time()
     p.gm.update_nodes_in_t_refs()
-    p.chm.reset_itree(p.gm, start_update_callback=bgcomp.new_step_callback, update_callback=bgcomp.update_callback)
+    p.chm.reset_itree(p.gm, start_update_callback=bgcomp.next_step_progress_signal,
+                      update_callback=bgcomp.update_progress_signal)
     # print "update t: ", time.time() - update_t
     # print(process.memory_info().rss)
 
@@ -168,14 +167,14 @@ def assembly_after_parallelization(bgcomp):
         score_type = 'appearance_motion_mix'
         eps = 0.3
 
-        strongly_better_t = time.time()
+        # strongly_better_t = time.time()
         strongly_better_e = p.gm.strongly_better_eps2(eps=eps, score_type=score_type)
 
         strongly_better_e = sorted(strongly_better_e, key=lambda x: -x[0])
 
         # print "strongly better: {}, t: {}".format(len(strongly_better_e), time.time()-strongly_better_t)
         # print(process.memory_info().rss)
-        confirm_t = time.time()
+        # confirm_t = time.time()
         for _, e in strongly_better_e:
             if p.gm.g.edge(e.source(), e.target()) is not None:
                 bgcomp.solver.confirm_edges([(e.source(), e.target())])
@@ -203,7 +202,6 @@ def assembly_after_parallelization(bgcomp):
 
     # bgcomp.solver.simplify(vs_todo, rules=[bgcomp.solver.adaptive_threshold])
 
-
     if not bgcomp.project.is_cluster():
         from core.settings import Settings as S_
         S_.general.log_graph_edits = True
@@ -214,8 +212,7 @@ def assembly_after_parallelization(bgcomp):
     p.chm.add_single_vertices_chunks(p)
 
     if not bgcomp.project.is_cluster():
-        # bgcomp.update_callback(-1, 'saving...')
-        bgcomp.update_callback.emit()
+        bgcomp.update_progress_signal.emit()
 
     p.gm.update_nodes_in_t_refs()
 
@@ -244,7 +241,7 @@ def assembly_after_parallelization(bgcomp):
 
 def connect_graphs(bgcomp, vertices1, vertices2, gm, rm):
     if vertices1:
-        #r1 = gm.region(vertices1[0])
+        # r1 = gm.region(vertices1[0])
 
         bgcomp.project.gm.add_edges_(vertices1, vertices2)
 

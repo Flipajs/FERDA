@@ -1,20 +1,13 @@
-import sys
-
 from gui.graph_widget_loader import GraphWidgetLoader
-
-__author__ = 'fnaiser'
-
 from PyQt4 import QtGui, QtCore
 from gui.tracker.tracker_widget import TrackerWidget
 from gui.results.results_widget import ResultsWidget
 from gui.statistics.statistics_widget import StatisticsWidget
-
 from core.background_computer import BackgroundComputer
 from functools import partial
-from gui.graph_widget.graph_visualizer import GraphVisualizer
-from core.graph.graph_manager import GraphManager
-import time
 from gui.learning.learning_widget import LearningWidget
+
+__author__ = 'fnaiser'
 
 
 class MainTabWidget(QtGui.QWidget):
@@ -59,7 +52,8 @@ class MainTabWidget(QtGui.QWidget):
         self.tab_docked = [False] * len(self.tab_widgets)
         for i in range(len(self.tab_widgets)):
             self.tabs.addTab(self.tab_widgets[i], self.tab_names[i])
-            self.tabs.setEnabled(i)
+            self.tabs.setDisabled(i)
+            # self.tabs.setEnabled(i)
 
         self.switch_to_tracking_window_action = QtGui.QAction('switch tab to tracking', self)
         self.switch_to_tracking_window_action.triggered.connect(partial(self.tabs.setCurrentIndex, 0))
@@ -88,44 +82,36 @@ class MainTabWidget(QtGui.QWidget):
         self.update_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_U))
         self.addAction(self.update_undecided_a)
 
-        self.progress = QtGui.QProgressBar(self)
-        self.progress.setGeometry(200, 80, 250, 20)
-        self.progress_part_counter = 0
-        self.progress_parts_total = None
-        self.progress_step = None
+        # progress bar setup
 
-        self.progress2 = QtGui.QProgressBar(self)
-        self.progress2.setGeometry(200, 80, 250, 20)
-        self.progress2_part_counter = 0
-        self.progress2_parts_total = None
-        self.detailed_progress_step = None
-
-        # constants represent the approximate % time consumption of individual functions
-        self.functions_len = [5, 45, 20, 5, 10, 10, 5]
-        self.functions_names = ["Inicializace...", "MSER...", "Processing databases...", "Sestavuji interval tree...",
-                           "Ohodnocuji hrany...", "Evaluating isolation score...", "Sestavuji interval tree..."]
-        self.progress_size_index = 0
-        self.detailed_progress_size = None
-        self.progress_value = 0
-        self.detailed_progress_value = 0
-
-        self.layout().addWidget(self.progress)
-        self.layout().addWidget(self.progress2)
-
+        # label showing "Part I of N: -----"
         self.progress_label = QtGui.QLabel()
-        self.progress_label.setText("-- No text yet --")
         self.layout().addWidget(self.progress_label)
+        # number N of processes called with progress bar
+        self.total_progress_bar_usages = 10
+
+        self.progress_bar = QtGui.QProgressBar(self)
+        self.progress_bar.setGeometry(200, 80, 250, 20)
+        #
+        self.progress_bar_step_size = None
+
+        self.progress_bar_part_counter = 0
+        self.detailed_progress_size = None
+        self.progress_bar_current_value = 0
+
+        self.layout().addWidget(self.progress_bar)
 
         print "LOADING GRAPH..."
         if project.gm is None or project.gm.g.num_vertices() == 0:
-            # project.gm = GraphManager(project, project.solver.assignment_score)
+
+            # prepare background computer
             self.bc_msers = BackgroundComputer(project, self.background_computer_finished, postpone_parallelisation)
-            self.bc_msers.new_step_callback.connect(self.start_new_progress)
-            self.bc_msers.update_callback.connect(self.update_progress)
-            self.progress_parts_total = self.bc_msers.part_num + 6
-            # progress bar is updated after each bc_msers part, also twice before starting the parts and 4 times after running them
-            self.progress_step = 100.0/self.progress_parts_total
-            print "jaivaoioiva"
+
+            # connect signals (these are used instead of callbacks to work with threads/processes better)
+            # bg_comp is given only one callback (self.background_computer_finished)
+            self.bc_msers.next_step_progress_signal.connect(self.start_new_progress)
+            self.bc_msers.update_progress_signal.connect(self.update_progress)
+
             self.bc_msers.run()
         else:
             self.background_computer_finished(project.solver)
@@ -145,7 +131,6 @@ class MainTabWidget(QtGui.QWidget):
 
                 self.project.chm[ch_id].animal_id_ = animal_id
 
-
         except IOError:
             pass
 
@@ -160,14 +145,6 @@ class MainTabWidget(QtGui.QWidget):
         self.show_results_only_around_frame = -1
         self.results_tab.change_frame(data['n1'].frame_)
         self.results_tab.highlight_area(data, radius=100)
-
-    def background_computer_finished(self, solver):
-        print "GRAPH LOADED"
-        self.solver = solver
-        self.results_tab.solver = solver
-
-        for i in range(len(self.tab_widgets)):
-            self.tabs.setEnabled(i)
 
     def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
         self.tabs.setCurrentIndex(1)
@@ -305,64 +282,49 @@ class MainTabWidget(QtGui.QWidget):
         if isinstance(self.id_detection_tab, LearningWidget):
             self.id_detection_tab.update_undecided_tracklets()
 
-    def start_new_progress(self, num_parts, name=None):
-        print " % Start_new_progress called", num_parts
-        """
-        # move to next size in array
-        self.detailed_progress_size = self.functions_len[self.progress_size_index]
+    def background_computer_finished(self, solver):
+        print "GRAPH LOADED"
+        self.solver = solver
+        self.results_tab.solver = solver
 
-        # update label
-        if not name:
-            self.progress_label.setText(self.functions_names[self.progress_size_index])
-        else:
-            self.progress_label.setText(name)
+        for i in range(len(self.tab_widgets)):
+            self.tabs.setEnabled(i)
 
-        self.progress_size_index += 1
+        self.tabs.setCurrentIndex(1)
+        self.tab_changed(1)
 
-        # compute new step for detailed progress_bar
-        self.detailed_progress_step = 100.0 / float(num_parts)
+        self.progress_bar.setVisible(False)
+        self.progress_label.setVisible(False)
 
-        self.detailed_progress_value = 0
-        self.progress2.setValue(self.detailed_progress_value)
-        # TODO: maybe also update main progress bar to avoid bugs
-        """
-        # move to next size in array
-        self.detailed_progress_size = self.functions_len[self.progress_size_index]
+    def start_new_progress(self, num_parts, name=""):
 
-        # update label
-        self.progress_label.setText(str(self.progress_size_index))
+        # update label "Part 2 of 6: Computing MSERs"
+        self.progress_label.setText("Part {} of {}{}".format(self.progress_bar_part_counter,
+                                                             self.total_progress_bar_usages,
+                                                             "" if name == "" else ": {}".format(name)))
 
-        self.progress_size_index += 1
+        # update part counter
+        self.progress_bar_part_counter += 1
 
         # compute new step for detailed progress_bar
-        self.detailed_progress_step = 100.0 / float(num_parts)
+        self.progress_bar_step_size = 100.0 / float(num_parts)
 
-        self.detailed_progress_value = 0
-        self.progress2.setValue(self.detailed_progress_value)
+        # start progress bar from 0
+        self.progress_bar_current_value = 0
+        self.progress_bar.setValue(self.progress_bar_current_value)
 
-        # self.repaint()
+        # update current QWidget - this is necessary to show updates from other processes
         self.update()
 
     def update_progress(self, jump=1):
-        jump = 1
-        print " - Update_progress called"
-        # these will be self variables
+        # compute new progress bar value
+        self.progress_bar_current_value = self.progress_bar_current_value + self.progress_bar_step_size * jump
+        self.progress_bar.setValue(self.progress_bar_current_value)
 
-        # detailed advancement is the difference in % for the detailed progress bar
-        detailed_advancement = self.detailed_progress_step * jump
-        # advancement = self.detailed_progress_size / 100.0 * detailed_advancement
-
-        # compute new values by adding to previous ones
-        self.detailed_progress_value = self.detailed_progress_value + detailed_advancement
-        # self.progress_value = self.progress_value + advancement
-
-        # self.progress.setValue(self.progress_value)
-        self.progress2.setValue(self.detailed_progress_value)
+        # update current QWidget - this is necessary to show updates from other processes
         QtGui.qApp.processEvents()
-        # self.repaint()
         self.update()
 
-        print "New progress values: ", self.progress_value, self.detailed_progress_value
 
 class DetachedWindow(QtGui.QMainWindow):
     def __init__(self, parent, widget, widget_callback, number):

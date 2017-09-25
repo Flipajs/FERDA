@@ -96,21 +96,23 @@ class ChunkManager:
         chn = len(self)
 
         if start_update_callback is not None:
-            start_update_callback.emit(chn)
+            start_update_callback.emit(chn, "Resetting chunk interval tree")
 
         if chn:
             for i, ch in enumerate(self.chunk_gen()):
                 self._add_ch_itree(ch, gm)
 
                 if i % 100:
-                    print_progress(i, chn, "reseting chunk interval tree")
                     if update_callback is not None:
                         update_callback.emit()
+                    else:
+                        print_progress(i, chn, "resetting chunk interval tree")
 
-            print_progress(i, chn, "reseting chunk interval tree", "DONE\n")
+            if update_callback is None:
+                print_progress(i, chn, "resetting chunk interval tree", "DONE\n")
 
     def add_single_vertices_chunks(self, p, frames=None):
-        print "Runnin reset itree from chm"
+        print "Running reset itree from chm"
         self.reset_itree(p.gm)
 
         nn = p.gm.g.num_vertices()
