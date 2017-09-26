@@ -64,12 +64,16 @@ class MedianIntensity(Model):
     def update(self, img):
         self.bg_model = np.copy(img)
 
+    def get_fg_mask(self, img, threshold=40):
+        return np.logical_or.reduce((self.bg_model.astype(np.int) - img) > threshold, axis=2)
+
+
 
 if __name__ == '__main__':
     from core.project.project import Project
 
     p = Project()
-    p.video_paths = ['/Volumes/Seagate Expansion Drive/IST - videos/colonies/Camera 1.avi']
+    p.video_paths = ['/home/matej/prace/ferda/camera1_ss00-05-00_t00-05-00.mp4']
 
     num_steps = 50
     bg = MedianIntensity(p, iterations=num_steps)
@@ -86,17 +90,17 @@ if __name__ == '__main__':
     vid = get_auto_video_manager(p)
     import scipy
     model = bg.bg_model
-    img = scipy.ndimage.gaussian_filter(model, sigma=5)
-    cv2.imshow('bg', model)
+    img = model # scipy.ndimage.gaussian_filter(model, sigma=5)
+    # cv2.imshow('bg', model)
 
-    from PyQt4 import QtGui, QtCore
+    # from PyQt4 import QtGui, QtCore
     import sys
-    app = QtGui.QApplication(sys.argv)
+    # app = QtGui.QApplication(sys.argv)
     from gui.view.mser_tree import MSERTree
 
     while True:
         im = vid.random_frame()
-        cv2.imshow('orig', im)
+        # cv2.imshow('orig', im)
         processed = np.subtract(0.8 * np.asarray(bg.bg_model, dtype=np.int32), np.asarray(im, dtype=np.int32))
         processed += -np.min(processed)
         print np.min(processed), np.max(processed)
@@ -106,13 +110,19 @@ if __name__ == '__main__':
         processed = np.asarray(processed, dtype=np.uint8)
         processed = np.invert(processed)
 
-        ex = MSERTree(processed, p)
-        ex.show()
-        ex.move(-500, -500)
-        ex.showMaximized()
-        ex.setFocus()
+        fg_mask = np.logical_or.reduce((model.astype(np.int) - im) > 40, axis=2)
+        cv2.imshow('foreground mask', fg_mask.astype(np.uint8) * 255)
+        im_foreground = np.copy(im)
+        im_foreground[~fg_mask] = 0
+        cv2.imshow('foreground', im_foreground)
 
-        cv2.imshow('sub', processed)
+        # ex = MSERTree(processed, p)
+        # ex.show()
+        # ex.move(-500, -500)
+        # ex.showMaximized()
+        # ex.setFocus()
+
+        # cv2.imshow('sub', processed)
         cv2.waitKey(0)
 
     app.exec_()
