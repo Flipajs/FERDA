@@ -88,6 +88,16 @@ assign id to tracklet (advanced)
 show / hide all animals overlays
 : h
 
+## Architecture
+
+Key components:
+
+core/parallelization.py
+- extraction of animal containing regions using MSER algorithm
+- construction of region graph (nodes are regions in both space and time, edges are possible transitions)
+
+
+
 ## Team
 
 * **author:** Filip Naiser (naisefil@cmp.felk.cvut.cz)
