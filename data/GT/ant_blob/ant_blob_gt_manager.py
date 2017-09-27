@@ -11,6 +11,9 @@ from ant_blobs import AntBlobs
 from tracklet_types import TrackletTypes
 from util.blob_widget import BlobWidget
 from util.tracklet_viewer import TrackletViewer
+import matplotlib.pylab as plt
+import utils.roi
+import core.region.region
 
 PickleGT = namedtuple("PickleGT", "project_name, video_file ant_blobs tracklet_types")
 
@@ -91,6 +94,16 @@ class AntBlobGtManager(object):
         import sys
         sys.exit(0)
 
+    def show_gt(self, blob):
+        plt.imshow(self.project.img_manager.get_whole_img(blob[0].frame))
+        region = self.project.rm[blob[0].region_id]
+        assert region.frame() == blob[0].frame
+        roi = utils.roi.get_roi(region.pts())
+        for ant in blob[1].ants:
+            pts = ant + [roi.x(), roi.y()]
+            plt.plot(pts[:, 0], pts[:, 1])
+    # region_single = core.region.region.Region(pts)
+
     def __save(self):
         logging.info("Saving to {0}".format(self.pkl_file))
         logging.info("Currently, there are {0} labelled blob regions from {1} different tracklets".format(
@@ -98,16 +111,40 @@ class AntBlobGtManager(object):
         with open(self.pkl_file, 'w') as f:
             pickle.dump((self.project_name, self.video_file, self.ant_blobs, self.tracklet_types), f)
 
+
+def fix_video_filename(pkl_filename, video_filename):
+    with open(pkl_filename, 'r') as f:
+        project_name, video_file, ant_blobs, tracklet_types = pickle.load(f)
+    video_file[0] = video_filename
+    with open(pkl_filename, 'w') as f:
+        pickle.dump((project_name, video_file, ant_blobs, tracklet_types), f)
+
+
 if __name__ == "__main__":
+    # fix_video_filename('./test.pkl', '/run/media/matej/mybook_ntfs/ferda/Camera 1.avi')
     logging.basicConfig(level=logging.INFO)
     p = Project()
-    p.load("/home/simon/FERDA/projects/clusters_gt/zebrafish/zebrafish.fproj")
+    # p.load("/home/matej/prace/ferda/10-15 (copy)/10-15.fproj")
+    p.load("/home/matej/prace/ferda/projects/Camera 1/Camera 1.fproj")
     manager = AntBlobGtManager('./test.pkl', p)
     manager.label_tracklets()
     manager.label_blobs()
     manager.view_gt()
     blob_dic = manager.get_ant_blobs()
     blob_gen = manager.feed_ant_blobs()
+
+    # list( (BlobInfo, BlobData), (BlobInfo, BlobData), ...)
+    # BlobInfo(region_id=63729, frame=14431, tracklet_id=70922)
+    # BlobData(ants=[array([[23, 54], ...]),
+    #                array([[45, 88], ...]),
+    #                ...],
+    #          date='22 z\xc3\xa1\xc5\x99 2017 16:59:46')
+
+    for blob in blob_dic:
+        plt.figure()
+        manager.show_gt(blob)
+
+
 
 
 
