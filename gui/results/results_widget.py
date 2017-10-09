@@ -1043,7 +1043,6 @@ class ResultsWidget(QtGui.QWidget):
 
         idset = set(range(len(self.project.animals)))
         for ch in self.project.chm.chunks_in_frame(frame):
-            id_ = 0
             if len(ch.P) == 1:
                 id_ = list(ch.P)[0]
                 it_y = (2 * A) * id_

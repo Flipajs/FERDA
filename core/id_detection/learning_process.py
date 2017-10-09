@@ -1686,20 +1686,21 @@ class LearningProcess:
                     X = np.vstack([X, np.array(x)])
 
             # TODO: idTracker like probs
+            # for each ID, compute ID tracker probs
             res = rfc1.predict_proba(X)
             C[i, :] = np.mean(res, axis=0)
 
         # TODO: nearest tracklet (position) based on min over all t_distances
-        for i, repr_id1 in enumerate(cs1_representants):
-            for j, repr_id2 in enumerate(cs2_representants):
+        for i, repr_id1 in enumerate(cs1.keys()):
+            for j, repr_id2 in enumerate(cs2.keys()):
                 # find best pair
                 # TODO: can be optimized...
                 best_ti = None
                 best_tj = None
                 best_d = np.inf
 
-                for t_id_i in cs1_groups[repr_id1]:
-                    for t_id_j in cs2_groups[repr_id2]:
+                for t_id_i in cs1[repr_id1]:
+                    for t_id_j in cs2[repr_id2]:
                         ti = self.p.chm[t_id_i]
                         tj = self.p.chm[t_id_j]
 
@@ -1759,7 +1760,7 @@ class LearningProcess:
 
         matching = []
         for rid, cid in izip(row_ind, col_ind):
-            matching.append([cs1[rid], cs2[cid]])
+            matching.append([cs1[cs1.keys()[rid]], cs2[cs2.keys()[cid]]])
 
         return matching, price_norm
 
@@ -1857,15 +1858,13 @@ class LearningProcess:
 
         print ""
 
-        results = []
-
         TCS = {}
         left_neighbour = None
 
         tcs_id = 0
 
         # key is most left CS
-        results = {}
+        results = []
 
         for i in range(len(groups) - 1):
             cs = TrackletCompleteSet(groups[i], id=tcs_id,left_neighbour=left_neighbour)
@@ -1878,60 +1877,94 @@ class LearningProcess:
             left_neighbour = cs
 
             matching, price = self.get_cs_pair_price(groups[i], groups[i + 1])
-            results[tcs_id] = [price, matching, tcs_id+1]
+            results.append([price, matching, (tcs_id, tcs_id+1)])
 
             # don't forget to increment, so we have unique numbers...
             tcs_id += 1
 
         # so the best result is on the last index, ready for .pop()
-        results = sorted(results, key=lambda x: -x[0])
+        # results, idx = sorted((e, i) for i, e in enumerate(results))
+        sorted_results = sorted(results, key=lambda x: -x[0])
+        # results = sorted(results, key=lambda x: -x[0])
 
         links = {}
+        invalid_TCS = set()
 
-        s_pair = results.pop()
+        while len(sorted_results):
+            price, matching, (tcs1_id, tcs2_id) = sorted_results.pop()
 
-        # new merged group of tracklets
-        i = s_pair[2]
-        tcs_left = TCS[s_pair[2][0]]
-        tcs_right = TCS[s_pair[2][1]]
+            if TCS[tcs1_id] in invalid_TCS:
+                print "DROPING: ", tcs1_id
+                continue
 
-        new_group = [groups[i]]
+            if TCS[tcs2_id] in invalid_TCS:
+                print "DROPING: ", tcs2_id
+                continue
 
-        for t_pair in s_pair[1]:
-            links[t_pair[1].id()] = t_pair[0].id()
-            t = self.p.chm[t_pair[1].id()]
-            new_group.append(t)
+            if np.isinf(price):
+                print "INFINITE price... Ending with {} CS left".format(len(sorted_results))
+                break
 
-        ### Create new TCS
-        tcs = TrackletCompleteSet(new_group, tcs_id, tcs_left=tcs_left.left_neighbour, tcs_right=tcs_right.tcs_right_neighbour)
-        TCS[tcs_id] = tcs
-        # update global ID counter
-        tcs_id += 1
+            if price > 0.4:
+                print "Price is too big: {}, Ending with {} CS left".format(price, len(sorted_results))
+                break
 
-        # nomenclature A -- tcs_left - tcs_right -- B (tcs_left merges with tcs_right into tcs)
-        tcs_A = tcs_left.left_neighbour
-        tcs_B = tcs_right.right_neighbour
-        ################################################
-        # update references
-        if tcs_A:
+            print price, tcs1_id, tcs2_id
+
+            # s_pair = [0, 0, 0]
+            # new merged group of tracklets
+            tcs_left = TCS[tcs1_id]
+            tcs_right = TCS[tcs2_id]
+
+            new_group = list(TCS[tcs1_id].tracklets)
+
+            for t_pair in matching:
+                for t1_id in t_pair[1]:
+                    links[t1_id] = t_pair[0][0]
+
+                    t = self.p.chm[t1_id]
+                    new_group.append(t)
+
+            # nomenclature A -- tcs_left - tcs_right -- B (tcs_left merges with tcs_right into tcs)
+            tcs_A = tcs_left.left_neighbour
+            tcs_B = tcs_right.right_neighbour
+
+            ### Create new TCS
+            tcs = TrackletCompleteSet(new_group, tcs_id, left_neighbour=tcs_A, right_neighbour=tcs_B)
+            TCS[tcs_id] = tcs
+            # update global ID counter
+            tcs_id += 1
+
+            ################################################
+            # update references
+            if tcs_A:
+                # invalidate outdated results...
+                invalid_TCS.add(tcs_left)
+
+                tcs_A.right_neighbour = tcs
+
+                # compute new results:
+                new_matching, new_price = self.get_cs_pair_price(tcs_A.tracklets, tcs.tracklets, links=links)
+                for i, (price, _, _) in enumerate(sorted_results):
+                    if new_price > price:
+                        break
+
+                print "New price", new_price, i
+                sorted_results.insert(i, [new_price, new_matching, (tcs_A.id, tcs.id)])
+
             # invalidate outdated results...
-            del results[tcs_A]
+            invalid_TCS.add(tcs_right)
 
-            tcs_A.right_neighbour = tcs
+            if tcs_B:
+                tcs_B.left_neighbour = tcs
 
-            # compute new results:
-            matching, price = self.get_cs_pair_price(tcs_A.tracklets, tcs.tracklets, links=links)
-            results[tcs.id] = [price, matching, tcs.id]
+                new_matching, new_price = self.get_cs_pair_price(tcs.tracklets, tcs_B.tracklets, links=links)
+                for i, (price, _, _) in enumerate(sorted_results):
+                    if new_price > price:
+                        break
 
-        # invalidate outdated results...
-        del results[tcs_right]
-
-        if tcs_B:
-            tcs_B.left_neighbour = tcs
-
-            matching, price = self.get_cs_pair_price(tcs.tracklets, tcs_B.tracklets, links=links)
-            results[tcs.id] = [price, matching, tcs_B.id]
-
+                print "new price", new_price, i
+                sorted_results.insert(i, [new_price, new_matching, (tcs.id, tcs_B.id)])
 
         # self._find_update_link()
         #######################################################
@@ -1962,6 +1995,85 @@ class LearningProcess:
         #         print "\t{}->{}".format(pair[0].id(), pair[1].id())
         #
         #     print
+
+        for key in links.keys():
+            links[key] = self._find_update_link(key, links)
+
+        lk = links.values()
+        print "#links: {}, #UNIQUE keys: {}, keys: {}".format(len(lk), len(set(lk)), set(lk))
+
+        # TODO: add own support per root tracklets...
+
+        # find biggest support:
+        support = {}
+        for t_id, t_root_id in links.iteritems():
+            if t_root_id in support:
+                support[t_root_id] += len(self.p.chm[t_id])
+            else:
+                support[t_root_id] = 0
+
+        best_tcs = None
+        best_support = 0
+        for tcs in TCS.itervalues():
+            if tcs in invalid_TCS:
+                continue
+
+            tcs_supp = 0
+            for t in tcs.tracklets:
+                if t.id() in support:
+                    tcs_supp += support[t.id()]
+
+            if tcs_supp > best_support:
+                best_tcs = tcs
+                best_support = tcs_supp
+
+        tid_set = set()
+        for t in best_tcs.tracklets:
+            tid_set.add(self._find_update_link(t.id(), links))
+
+
+        print "#TCS: {}".format(len(TCS) - len(invalid_TCS))
+        print "final TID set: ", tid_set, best_support
+        IDs_mapping = {}
+        IDs = list(tid_set)
+
+        for id_, key in enumerate(IDs):
+            IDs_mapping[key] = id_
+
+        fullset = set(range(len(IDs)))
+
+        self.user_decisions = []
+
+        for t in self.p.chm.chunk_gen():
+            t.P = set()
+            t.N = set()
+
+            if t.id() in links:
+                root_id = links[t.id()]
+                if root_id in IDs_mapping:
+                    id_ = IDs_mapping[root_id]
+                    t.P = set([id_])
+                    t.N = fullset - t.P
+
+                    self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
+
+            if t.id() in IDs_mapping:
+                id_ = IDs_mapping[t.id()]
+                t.P = set([id_])
+                t.N = fullset - t.P
+
+                self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
+
+
+
+
+        # Train RFC on biggest CS
+        self.__train_rfc(init=True)
+
+        # continue classifying only using ID classification
+
+
+        return
 
         ii = 0
         for g in groups:
