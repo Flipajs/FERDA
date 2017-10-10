@@ -1735,10 +1735,15 @@ class LearningProcess:
                         t2_start_r = self.p.gm.region(t2.start_node())
 
                         frame_d = t2_start_f - t1_end_f
-                        d = np.linalg.norm(t1_end_r.centroid() - t2_start_r.centroid()) / float(frame_d * md)
+                        # d = np.linalg.norm(t1_end_r.centroid() - t2_start_r.centroid()) / float(frame_d * md)
+                        d = np.linalg.norm(t1_end_r.centroid() - t2_start_r.centroid()) / float(md)
                         prob = max(0, 1 - d)
 
                         # TODO: raise uncertainty with frame_d
+                        prob -= (frame_d - 1) * 0.05
+
+
+
 
                 # probability complement... something like cost
                 # TODO: -log(P) ?
@@ -1902,11 +1907,11 @@ class LearningProcess:
                 continue
 
             if np.isinf(price):
-                print "INFINITE price... Ending with {} CS left".format(len(sorted_results))
+                print "INFINITE price... Ending with {} CS left".format(len(tcs) - len(invalid_TCS))
                 break
 
             if price > 0.4:
-                print "Price is too big: {}, Ending with {} CS left".format(price, len(sorted_results))
+                print "Price is too big: {}, Ending with {} CS left".format(price, len(tcs) - len(invalid_TCS))
                 break
 
             print price, tcs1_id, tcs2_id
@@ -2018,10 +2023,16 @@ class LearningProcess:
             if tcs in invalid_TCS:
                 continue
 
+            # tcs_supp = 0
+            # for t in tcs.tracklets:
+            #     if t.id() in support:
+            #         tcs_supp += support[t.id()]
+
+            # max min
             tcs_supp = 0
             for t in tcs.tracklets:
                 if t.id() in support:
-                    tcs_supp += support[t.id()]
+                    tcs_supp = max(tcs_supp, support[t.id()])
 
             if tcs_supp > best_support:
                 best_tcs = tcs
