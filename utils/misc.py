@@ -53,6 +53,13 @@ def is_flipajs_pc():
     else:
         return False
 
+def is_matejs_pc():
+    """
+    This function tests whether FERDA runs under user matej.
+    """
+    import getpass
+    return getpass.getuser() == 'matej'
+
 def get_settings(key, type=str):
     settings = QtCore.QSettings('FERDA')
     return settings.value(key, get_default(key), type)
