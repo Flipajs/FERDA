@@ -1670,6 +1670,13 @@ class LearningProcess:
         if len(cs1) == 0:
             return [], np.inf
 
+        if len(cs1) == 1:
+            matching = [[cs1[cs1.keys()[0]], cs2[cs2.keys()[0]]]]
+
+            print "\t 1on1", cs1.keys(), cs2.keys()
+
+            return matching, 0
+
         md = self.p.solver_parameters.max_edge_distance_in_ant_length * self.p.stats.major_axis_median
         C = np.zeros((len(cs1), len(cs2)), dtype=np.float)
 
@@ -1895,31 +1902,50 @@ class LearningProcess:
         links = {}
         invalid_TCS = set()
 
+
+        # load gt...
+        path = '/Users/flipajs/Documents/dev/ferda/data/GT/Cam1_.pkl'
+        from utils.gt.gt import GT
+        self.GT = GT()
+        self.GT.load(path)
+        self.GT.set_offset(y=self.p.video_crop_model['y1'],
+                           x=self.p.video_crop_model['x1'],
+                           frames=self.p.video_start_t)
+
+
         while len(sorted_results):
             price, matching, (tcs1_id, tcs2_id) = sorted_results.pop()
 
-            if TCS[tcs1_id] in invalid_TCS:
+            tcs_left = TCS[tcs1_id]
+            tcs_right = TCS[tcs2_id]
+
+            if tcs_left in invalid_TCS:
                 print "DROPING: ", tcs1_id
                 continue
 
-            if TCS[tcs2_id] in invalid_TCS:
+            if tcs_right in invalid_TCS:
                 print "DROPING: ", tcs2_id
                 continue
 
             if np.isinf(price):
-                print "INFINITE price... Ending with {} CS left".format(len(tcs) - len(invalid_TCS))
+                print "INFINITE price... Ending with {} CS left".format(len(TCS) - len(invalid_TCS))
                 break
 
             if price > 0.4:
-                print "Price is too big: {}, Ending with {} CS left".format(price, len(tcs) - len(invalid_TCS))
+                print "Price is too big: {}, Ending with {} CS left".format(price, len(TCS) - len(invalid_TCS))
                 break
 
             print price, tcs1_id, tcs2_id
 
-            # s_pair = [0, 0, 0]
-            # new merged group of tracklets
-            tcs_left = TCS[tcs1_id]
-            tcs_right = TCS[tcs2_id]
+            # check...
+            for t_pair in matching:
+                t0_id = t_pair[0][0]
+                id0 = self.GT.tracklet_id_set_without_checks(self.p.chm[t0_id], self.p)
+                for t1_id in t_pair[1]:
+                    id1 = self.GT.tracklet_id_set_without_checks(self.p.chm[t1_id], self.p)
+
+                    if id0 != id1:
+                        print "GT doesn't agree", t0_id, t1_id
 
             new_group = list(TCS[tcs1_id].tracklets)
 
@@ -1941,10 +1967,12 @@ class LearningProcess:
             tcs_id += 1
 
             ################################################
+
+
+            invalid_TCS.add(tcs_left)
             # update references
             if tcs_A:
                 # invalidate outdated results...
-                invalid_TCS.add(tcs_left)
 
                 tcs_A.right_neighbour = tcs
 
@@ -2076,13 +2104,45 @@ class LearningProcess:
                 self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
 
 
+        vals = TCS.values()
+        for i, tcs in enumerate(vals):
+            if tcs in invalid_TCS:
+                continue
+
+            subset = True
+            for tcs2 in vals[i:]:
+                for t in tcs.tracklets:
+                    if t in tcs2.tracklets:
+                        subset = False
+                        break
+
+                if subset:
+                    print tcs.id, "is SUBSET"
+
+            sum_length = 0
+
+            min_frame = np.inf
+            max_frame = 0
+
+            for t in tcs.tracklets:
+                sf = t.start_frame(self.p.gm)
+                ef = t.end_frame(self.p.gm)
+
+                min_frame = min(sf, min_frame)
+                max_frame = max(ef, max_frame)
+
+                sum_length += len(t)
+
+            t_ids = [t.id() for t in tcs.tracklets]
+
+            print "id: {}, sum: {}, min frame: {} max frame: {}\n\t#{} {}\n\n".format(tcs.id, sum_length, min_frame, max_frame, len(t_ids), t_ids)
+
 
 
         # Train RFC on biggest CS
         self.__train_rfc(init=True)
 
         # continue classifying only using ID classification
-
 
         return
 

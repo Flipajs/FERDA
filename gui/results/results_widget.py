@@ -1583,6 +1583,9 @@ class ResultsWidget(QtGui.QWidget):
             self._gt = None
 
     def assign_ids_from_gt(self):
+        import warnings
+        warnings.warn("this method is outdated and assigns IDs also to multi-regions...")
+
         # for frame, data in self._gt.iteritems():
         for frame, data in self._gt.get_clear_positions_dict().iteritems():
             print frame
@@ -1609,7 +1612,7 @@ class ResultsWidget(QtGui.QWidget):
                     if len(tracklet.P) != 1:
                         tracklet.P = set([id_])
                         tracklet.N = set(range(len(self.project.animals))) - set([id_])
-                        # TODO: renew this...
+                        # TODO: update this...
                         # self.decide_tracklet_callback(tracklet, id_)
 
     def print_conflicts(self):
