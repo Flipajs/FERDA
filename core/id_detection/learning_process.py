@@ -1931,7 +1931,7 @@ class LearningProcess:
                 print "INFINITE price... Ending with {} CS left".format(len(TCS) - len(invalid_TCS))
                 break
 
-            if price > 0.4:
+            if price > 0.6:
                 print "Price is too big: {}, Ending with {} CS left".format(price, len(TCS) - len(invalid_TCS))
                 break
 
@@ -1999,35 +1999,7 @@ class LearningProcess:
                 print "new price", new_price, i
                 sorted_results.insert(i, [new_price, new_matching, (tcs.id, tcs_B.id)])
 
-        # self._find_update_link()
-        #######################################################
 
-
-
-
-
-        # pick best
-        # join CSi CSj
-        #   auxiliary "translation" table?
-        #
-        # update left-neigh(CSi) and right-neigh(CSj)
-        # update results
-
-        # print "best 10"
-        # for i in range(10):
-        #     print "norm_price: {:.3f}, degree: {}".format(results[i][0], len(results[i][1]))
-        #     for pair in results[i][1]:
-        #         print "\t{}->{}".format(pair[0].id(), pair[1].id())
-        #
-        #     print
-        #
-        # print "worst 10"
-        # for i in range(1, 21):
-        #     print "norm_price: {:.3f}, degree: {}".format(results[-i][0], len(results[-i][1]))
-        #     for pair in results[-i][1]:
-        #         print "\t{}->{}".format(pair[0].id(), pair[1].id())
-        #
-        #     print
 
         for key in links.keys():
             links[key] = self._find_update_link(key, links)
@@ -2043,7 +2015,7 @@ class LearningProcess:
             if t_root_id in support:
                 support[t_root_id] += len(self.p.chm[t_id])
             else:
-                support[t_root_id] = 0
+                support[t_root_id] = len(self.p.chm[t_root_id])
 
         best_tcs = None
         best_support = 0
@@ -2058,9 +2030,18 @@ class LearningProcess:
 
             # max min
             tcs_supp = 0
+            tcs_supports = {}
+
             for t in tcs.tracklets:
-                if t.id() in support:
-                    tcs_supp = max(tcs_supp, support[t.id()])
+                t_root_id = self._find_update_link(t.id(), links)
+                if t_root_id not in tcs_supports:
+                    tcs_supports[t_root_id] = len(t)
+                else:
+                    tcs_supports[t_root_id] += len(t)
+
+            tcs_supp = min(tcs_supports.values())
+            # if t.id() in support:
+            #     tcs_supp = max(tcs_supp, support[t.id()])
 
             if tcs_supp > best_support:
                 best_tcs = tcs
@@ -2137,12 +2118,19 @@ class LearningProcess:
 
             print "id: {}, sum: {}, min frame: {} max frame: {}\n\t#{} {}\n\n".format(tcs.id, sum_length, min_frame, max_frame, len(t_ids), t_ids)
 
-
-
         # Train RFC on biggest CS
         self.__train_rfc(init=True)
 
-        # continue classifying only using ID classification
+        self.tcs = tcs
+        self.links = links
+
+        # # continue classifying only using ID classification
+        #
+        # for tcs in TCS.itervalues():
+        #     if tcs in invalid_TCS or tcs == best_tcs:
+        #         continue
+        #
+        #     score = tcs x best_tcs
 
         return
 
