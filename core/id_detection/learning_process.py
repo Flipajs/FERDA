@@ -125,6 +125,9 @@ class LearningProcess:
 
         self.human_in_the_loop = False
 
+        # tracklet agglomeration links
+        self.links = None
+
         # when creating without feature data... e.g. in main_tab_widget
         if ghost:
             return
@@ -369,15 +372,13 @@ class LearningProcess:
             if not t.is_single() or t.length() < self.min_tracklet_len:
                 continue
 
+            # # skip all non root tracklets
+            # if self.links is not None:
+            #     if t.id() in self.links and t.id() != self.links[t.id()]:
+            #         continue
+
             if not self.__tracklet_is_decided(t.P, t.N):
                 self.undecided_tracklets.add(t.id())
-
-        # # TODO: remove in future, this is to fix already labeled data...
-        # for t in self.p.chm.chunk_gen():
-        #     if t.id() in self.undecided_tracklets:
-        #         if self.__only_one_P_possibility(t):
-        #             id_ = self.__get_one_possible_P(t)
-        #             self.__if_possible_update_P(t, id_)
 
     def run_learning(self):
         while len(self.undecided_tracklets):
@@ -533,6 +534,17 @@ class LearningProcess:
             if only_unknown:
                 if t_id in self.tracklet_certainty:
                     continue
+
+            # # find root tracklet and set of all connected tracklets
+            # t_set = []
+            # if t_id not in self.links:
+            #     t_set = [t_id]
+            # else:
+            #     if t_id
+            #
+            # root_t_id = self.links[t_id]
+            # t_set = [v for k, v in self.links.iteritems() if v == root_t_id]
+            # t_set.append(root_t_id)
 
             try:
                 x, t_length, stds = self._get_tracklet_proba(tracklet)
@@ -2119,10 +2131,48 @@ class LearningProcess:
             print "id: {}, sum: {}, min frame: {} max frame: {}\n\t#{} {}\n\n".format(tcs.id, sum_length, min_frame, max_frame, len(t_ids), t_ids)
 
         # Train RFC on biggest CS
-        self.__train_rfc(init=True)
+        # self.__train_rfc(init=True)
 
-        self.tcs = tcs
+        self.tcs = TCS
         self.links = links
+
+        print "num undecided before: ", len(self.undecided_tracklets)
+        self.update_undecided_tracklets()
+        print "num undecided after: ", len(self.undecided_tracklets)
+
+        for cs in TCS.itervalues():
+            # g = sorted(g, key=lambda x: x.id())
+            c = np.random.rand(3, 1)
+
+            frame = max([t.start_frame(self.p.gm) for t in cs.tracklets])
+            plt.plot([frame, frame], [0, len(self.p.animals)], c=c)
+            plt.hold(True)
+
+            free_pos = range(len(self.p.animals))
+            for i, t in enumerate(g):
+                if t in used:
+                    used[t] += 1
+                    i = positions[t]
+
+                    free_pos.remove(i)
+
+            for t in cs.tracklets:
+                if t not in used:
+                    positions[t] = free_pos[0]
+                    free_pos.pop(0)
+                    used[t] = 1
+
+                offset = (used[t]-1) / 10.
+                pos = positions[t]
+
+                # offset = 0
+                plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm)], [pos+offset, pos+offset], c=c)
+
+        plt.grid()
+        plt.show()
+
+
+
 
         # # continue classifying only using ID classification
         #
