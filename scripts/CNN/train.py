@@ -26,7 +26,6 @@ with h5py.File(DATA_DIR + '/labels_test.h5', 'r') as hf:
 print "train shape", X_train_a.shape
 print "test shape", X_test_a.shape
 
-#
 # y_train = np_utils.to_categorical(y_train, 2)
 # y_test = np_utils.to_categorical(y_test, 2)
 
@@ -39,11 +38,6 @@ X_train_a /= 255
 X_train_b /= 255
 X_test_a /= 255
 X_test_b /= 255
-
-#
-# from keras.datasets import mnist
-# (X_train, y_train), (X_test, y_test) = mnist.load_data()
-
 
 
 # 3. Import libraries and modules
@@ -61,14 +55,6 @@ im_dim = 3
 im_h = 90
 im_w = 90
 
-# 5. Preprocess input data
-# X_train = X_train.reshape(X_train.shape[0], im_dim, im_h, im_w)
-# X_test = X_test.reshape(X_test.shape[0], im_dim, im_h, im_w)
-# X_train = X_train.astype('float32')
-# X_test = X_test.astype('float32')
-# X_train /= 255
-# X_test /= 255
-
 #####
 # Shared vision model
 #
@@ -85,8 +71,10 @@ x = MaxPooling2D((2, 2))(x)
 x = Conv2D(16, (3, 3))(x)
 x = Conv2D(8, (3, 3))(x)
 x = MaxPooling2D((2, 2))(x)
-# x = Dropout(0.5)(x)
+
 x = Flatten()(x)
+# x = Dense(256, activation='relu')(x)
+# x = Dropout(0.75)(x)
 x = Dense(128, activation='relu')(x)
 out = Dense(64, activation='relu')(x)
 
@@ -118,4 +106,3 @@ classification_model.fit([X_train_a, X_train_b], y_train,
 # 10. Evaluate model on test data
 results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
 print results
-
