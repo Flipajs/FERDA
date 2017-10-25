@@ -285,30 +285,31 @@ class NewProjectWidget(QtGui.QWidget):
         self.step3_w = InitWhereWidget(self.roi_finished, self.project)
         self.left_vbox.addWidget(self.step3_w)
 
-    def roi_finished(self):
-        # TODO: deal with advanced arena editor
-        c = np.array([self.step3_w.arena_ellipse.c.pos().y(), self.step3_w.arena_ellipse.c.pos().x()])
-        r = np.array([self.step3_w.arena_ellipse.a.pos().y(), self.step3_w.arena_ellipse.a.pos().x()])
-        r = np.linalg.norm(c - r)
+    def roi_finished(self, mask_already_prepared=False):
+        if not mask_already_prepared:
+            # TODO: deal with advanced arena editor
+            c = np.array([self.step3_w.arena_ellipse.c.pos().y(), self.step3_w.arena_ellipse.c.pos().x()])
+            r = np.array([self.step3_w.arena_ellipse.a.pos().y(), self.step3_w.arena_ellipse.a.pos().x()])
+            r = np.linalg.norm(c - r)
 
-        from utils.video_manager import get_auto_video_manager
-        vm = get_auto_video_manager(self.project)
-        im = vm.next_frame()
+            from utils.video_manager import get_auto_video_manager
+            vm = get_auto_video_manager(self.project)
+            im = vm.next_frame()
 
-        from math import ceil, floor
-        from core.arena.circle import Circle
+            from math import ceil, floor
+            from core.arena.circle import Circle
 
-        video_crop_model = {}
-        video_crop_model['y1'] = int(max(0, floor(c[0]-r)))
-        video_crop_model['x1'] = int(max(0, floor(c[1]-r)))
-        video_crop_model['y2'] = int(min(im.shape[0], ceil(c[0]+r)))
-        video_crop_model['x2'] = int(min(im.shape[1], ceil(c[1]+r)))
-        self.project.video_crop_model = video_crop_model
+            video_crop_model = {}
+            video_crop_model['y1'] = int(max(0, floor(c[0]-r)))
+            video_crop_model['x1'] = int(max(0, floor(c[1]-r)))
+            video_crop_model['y2'] = int(min(im.shape[0], ceil(c[0]+r)))
+            video_crop_model['x2'] = int(min(im.shape[1], ceil(c[1]+r)))
+            self.project.video_crop_model = video_crop_model
 
-        c = np.array([c[0] - video_crop_model['y1'], c[1] - video_crop_model['x1']])
-        self.project.arena_model = Circle(video_crop_model['y2'] - video_crop_model['y1'],
-                                          video_crop_model['x2'] - video_crop_model['x1'])
-        self.project.arena_model.set_circle(c, r)
+            c = np.array([c[0] - video_crop_model['y1'], c[1] - video_crop_model['x1']])
+            self.project.arena_model = Circle(video_crop_model['y2'] - video_crop_model['y1'],
+                                              video_crop_model['x2'] - video_crop_model['x1'])
+            self.project.arena_model.set_circle(c, r)
 
         from gui.init.set_msers import SetMSERs
         self.step3_w.hide()

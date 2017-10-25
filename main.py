@@ -23,12 +23,13 @@ S_.general.print_log = False
 
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
-# if is_flipajs_pc() and False:
-if is_flipajs_pc():
+if is_flipajs_pc() and False:
+# if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish2'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
@@ -41,6 +42,7 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
     project.load(wd)
+
     # TODO !!
     project.solver.one2one()
 
@@ -132,18 +134,18 @@ if is_flipajs_pc():
 
             animals = new_animals
 
-    # from scripts.regions_stats import decide_one2one
-    # decide_one2one(project)
+        # from scripts.regions_stats import decide_one2one
+        # decide_one2one(project)
 
-    # project.chm.add_single_vertices_chunks(project)
-    # project.save()
+        # project.chm.add_single_vertices_chunks(project)
+        # project.save()
 
-    # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
-    # project.load_semistate(wd, 'first_tracklets')
-    # project.load_semistate(wd, 'lp_id_SEG_IDCR_0')
-    # project.load_semistate(wd, 'lp_HIL_INIT3_0')
+        # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
+        # project.load_semistate(wd, 'first_tracklets')
+        # project.load_semistate(wd, 'lp_id_SEG_IDCR_0')
+        # project.load_semistate(wd, 'lp_HIL_INIT3_0')
 
-    # project.gm.update_nodes_in_t_refs()
+        # project.gm.update_nodes_in_t_refs()
 
     try:
         # old projects WORKAROUND:
