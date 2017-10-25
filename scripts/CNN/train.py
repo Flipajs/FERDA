@@ -88,7 +88,7 @@ animal_b = Input(shape=X_train_a.shape[1:])
 out_a = vision_model(animal_a)
 out_b = vision_model(animal_b)
 
-merged = keras.layers.concatenate([out_a, out_b])
+merged = keras.layers.multiply([out_a, out_b])
 out = Dense(1, activation='sigmoid')(merged)
 
 classification_model = Model([animal_a, animal_b], out)
@@ -101,7 +101,7 @@ classification_model.compile(loss='binary_crossentropy',
 
 # 9. Fit model on training data
 classification_model.fit([X_train_a, X_train_b], y_train,
-          batch_size=32, epochs=20, verbose=1)
+          batch_size=32, epochs=3, verbose=1)
 
 # 10. Evaluate model on test data
 results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
