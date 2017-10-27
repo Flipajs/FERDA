@@ -316,8 +316,8 @@ class Region(object):
         line = createLineIterator(np.round(starting_point_yx).astype(int), point_theta_xy, mask)
         i = np.nonzero(line[:, 2] == 0)[0][0]
         index = np.clip(i + shift_px, 0, len(line) - 1)
-        if index != i + shift_px:
-            print('get_border_point shift_px clipped')
+        # if index != i + shift_px:
+        #     print('get_border_point shift_px clipped')
         border_point_xy = line[index, 0:2]
 
         # plt.plot(border_point_xy[0], border_point_xy[1], '+')

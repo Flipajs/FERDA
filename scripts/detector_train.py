@@ -20,7 +20,10 @@ import cv2
 import fire
 import tqdm
 import copy
-from joblib import Parallel, delayed
+# from joblib import Parallel, delayed
+import csv
+from matplotlib.patches import Ellipse
+import waitforbuttonpress
 
 
 def p2e(projective):
@@ -137,6 +140,7 @@ def head_fix(tracklet_regions):
             if r.theta_ >= 2 * np.pi:
                 r.theta_ -= 2 * np.pi
 
+
 class GenerateTrainingData(object):
     def __init__(self):
         self.video = None
@@ -144,6 +148,7 @@ class GenerateTrainingData(object):
         self.multi = None
         self.project = None
         self.bg = None
+        self.__i__ = 0
 
     def __load_project__(self):
         self.project = Project()
@@ -178,7 +183,7 @@ class GenerateTrainingData(object):
         self.video = get_auto_video_manager(self.project)
         print('regions start')
 
-        regions_filename = 'regions_long_tracklets.pkl'
+        regions_filename = './out/regions_long_tracklets.pkl'
         if os.path.exists(regions_filename):
             print('regions loading...')
             with open(regions_filename, 'rb') as fr:
@@ -421,7 +426,7 @@ class GenerateTrainingData(object):
                        round(bb_major_px + 2 * bb_fixed_border_xy[1]))
 
         fw = open(out_file, 'w')
-        # with open('regions.pkl', 'wb') as fw:
+        # with open('./out/regions.pkl', 'wb') as fw:
         #     frames = sorted(single.keys())
         #     i = 0
         #     r1 = single[frames[i]][0]
@@ -501,7 +506,7 @@ class GenerateTrainingData(object):
         fw.close()
 
     def test(self):
-        with open('regions.pkl', 'rb') as fr:
+        with open('./out/regions.pkl', 'rb') as fr:
             r1 = pickle.load(fr)
             img1 = pickle.load(fr)
             r2 = pickle.load(fr)
@@ -515,29 +520,74 @@ class GenerateTrainingData(object):
         plt.imshow(region1.compose(region2.rotate(-30).move((-15, -15))))
         # plt.imshow(region1.move((0, 100)).get_mask())
 
-    def synthetize_double_region(self):
+    def synthetize_double_regions(self, count=100, out_dir='./out', out_csv='./out/doubleregions.csv'):
         # angles: positive clockwise, zero direction to right
-
         self.__load_project__()
         from core.bg_model.median_intensity import MedianIntensity
         self.bg = MedianIntensity(self.project)
         self.bg.compute_model()
 
-        for i in tqdm.tqdm(range(100)):
-            region1 = np.random.choice(self.single[np.random.choice(self.single.keys())])
-            region2 = np.random.choice(self.single[np.random.choice(self.single.keys())])
+        single_regions = [item for sublist in self.single.values() for item in sublist]
+        BATCH_SIZE = 500
 
-            # border point angle with respect to object centroid, 0 rad is from the centroid rightwards, positive ccw
-            theta_rad = np.random.uniform(-math.pi, math.pi)
-            # approach angle, 0 rad is direction from the object centroid
-            phi_rad = np.clip(np.random.normal(scale=(math.pi / 2) / 2), math.radians(-80), math.radians(80))
-            overlap_px = int(round(np.random.gamma(1, 5)))
+        with open(out_csv, 'w') as csv_file:
+            fieldnames = ['filename', 'ant1_x', 'ant1_y', 'ant1_major', 'ant1_minor', 'ant1_angle_deg',
+                                      'ant2_x', 'ant2_y', 'ant2_major', 'ant2_minor', 'ant2_angle_deg',
+                                      'ant1_id', 'ant2_id', 'theta_rad', 'phi_rad', 'overlap_px', 'video_file']
+            csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            csv_writer.writeheader()
 
-            try:
-                img, ant1, ant2 = self.synthetise(region1, region2, theta_rad, phi_rad, overlap_px)
-            except IndexError:
-                pass
-            cv2.imwrite('out/%03d.jpg' % i, img)
+            i = 0
+            for i1 in tqdm.tqdm(np.arange(0, count, BATCH_SIZE), desc='batch'):
+                i2 = min(i1 + BATCH_SIZE, count)
+                n = i2 - i1
+                regions = np.random.choice(single_regions, 2 * n)
+                frames = [r.frame() for r in regions]
+                sort_idx = np.argsort(frames)
+                sort_idx_reverse = np.argsort(sort_idx)
+
+                images_sorted = [self.video.get_frame(r.frame()) for r in tqdm.tqdm(regions[sort_idx],
+                                                                                    desc='images reading')]
+                images = [images_sorted[idx] for idx in sort_idx_reverse]
+
+                with tqdm.tqdm(total=n, desc='synthetize') as progress_bar:
+                    for region1, region2, img1, img2 in zip(regions[:n], regions[n:], images[:n], images[n:]):
+                        # border point angle with respect to object centroid, 0 rad is from the centroid rightwards, positive ccw
+                        theta_rad = np.random.uniform(-math.pi, math.pi)
+                        # approach angle, 0 rad is direction from the object centroid
+                        phi_rad = np.clip(np.random.normal(scale=(math.pi / 2) / 2), math.radians(-80), math.radians(80))
+                        overlap_px = int(round(np.random.gamma(1, 5)))
+
+                        try:
+                            img, ant1, ant2 = self.synthetize(region1, region2,
+                                                              theta_rad, phi_rad, overlap_px,
+                                                              img1, img2)
+                        except IndexError:
+                            pass
+                        img_filename = '%06d.jpg' % i
+                        cv2.imwrite(os.path.join(out_dir, img_filename), img)
+                        csv_writer.writerow({
+                            'filename': img_filename,
+                            'ant1_x': ant1['xy'][0],
+                            'ant1_y': ant1['xy'][1],
+                            'ant1_major': ant1['major'],
+                            'ant1_minor': ant1['minor'], 
+                            'ant1_angle_deg': ant1['angle_deg'],
+                            'ant2_x': ant2['xy'][0],
+                            'ant2_y': ant2['xy'][1],
+                            'ant2_major': ant2['major'],
+                            'ant2_minor': ant2['minor'],
+                            'ant2_angle_deg': ant2['angle_deg'],
+                            'ant1_id': region1.id(),
+                            'ant2_id': region2.id(),
+                            'theta_rad': theta_rad,
+                            'phi_rad': phi_rad,
+                            'overlap_px': overlap_px,
+                            'video_file': os.path.basename(self.video.video_path),
+                        })
+                        i += 1
+                        progress_bar.update()
+                progress_bar.close()
 
         # # montage bounding box
         # plt.imshow(img_synthetic_upright)
@@ -549,10 +599,40 @@ class GenerateTrainingData(object):
         # from matplotlib.patches import Rectangle
         # ax.add_patch(Rectangle(bb_xywh[:2], bb_xywh[2], bb_xywh[3], linewidth=1, edgecolor='r', facecolor='none'))
 
-    def synthetise(self, region1, region2, theta_rad, phi_rad, overlap_px):
+    def show_double_regions_csv(self, csv_file, image_dir):
+        # waitforbuttonpress.figure()
+        with open(csv_file, 'r') as fr:
+            csv_reader = csv.DictReader(fr)
+            for i, row in enumerate(csv_reader):
+                img = plt.imread(os.path.join(image_dir, row['filename']))
+                fig = plt.figure()
+                plt.imshow(img)
+                ax = plt.gca()
+                ax.add_patch(Ellipse(xy=(float(row['ant1_x']), float(row['ant1_y'])),
+                                     width=float(row['ant1_major']),
+                                     height=float(row['ant1_minor']),
+                                     angle=-float(row['ant1_angle_deg']),
+                                     edgecolor='r',
+                                     facecolor='none'))
+                ax.add_patch(Ellipse(xy=(float(row['ant2_x']), float(row['ant2_y'])),
+                                     width=float(row['ant2_major']),
+                                     height=float(row['ant2_minor']),
+                                     angle=-float(row['ant2_angle_deg']),
+                                     edgecolor='r',
+                                     facecolor='none'))
+                # plt.draw()
+                fig.savefig('out/debug/%03d.png' % i, transparent=True, bbox_inches='tight', pad_inches=0)
+                plt.close(fig)
+                # waitforbuttonpress.wait()
+                # if waitforbuttonpress.is_closed():
+                #     break
+                plt.clf()
+
+    def synthetize(self, region1, region2, theta_rad, phi_rad, overlap_px, img1=None, img2=None):
         # angles: positive clockwise, zero direction to right
 
-        img1 = self.video.get_frame(region1.frame())
+        if img1 is None:
+            img1 = self.video.get_frame(region1.frame())
         tregion1 = TransformableRegion(img1)
         tregion1.set_region(region1)
 
@@ -566,7 +646,8 @@ class GenerateTrainingData(object):
         # mask = (mask_labels == mask_labels[center_xy_rounded[1], center_xy_rounded[0]]).astype(np.uint8)
         # region.set_mask(mask)
 
-        img2 = self.video.get_frame(region2.frame())
+        if img2 is None:
+            img2 = self.video.get_frame(region2.frame())
         head_yx, tail_yx = get_region_endpoints(region2)
 
         ##
@@ -676,10 +757,6 @@ class GenerateTrainingData(object):
         # mask_synthetic_upright = tregion_synthetic.get_mask()
 
         ##
-
-        # plt.figure()
-        # plt.imshow(img_synthetic_upright)
-
         ant1 = {'xy': tregion_synthetic.get_transformed_coords(synth_center_xy1),
                 'major': 4 * region1.major_axis_,
                 'minor': 4 * region1.minor_axis_,
@@ -690,6 +767,8 @@ class GenerateTrainingData(object):
                 'angle_deg': tregion_synthetic.get_transformed_angle(
                     math.degrees(region2.theta_ + region2_main_axis_angle_rad))}
 
+        # fig = plt.figure()
+        # plt.imshow(img_synthetic_upright)
         # ax = plt.gca()
         # ax.add_patch(Ellipse(xy=ant1['xy'],
         #                      width=ant1['major'],
@@ -703,26 +782,32 @@ class GenerateTrainingData(object):
         #                      angle=-ant2['angle_deg'],
         #                      edgecolor='r',
         #                      facecolor='none'))
+        # fig.savefig('out/debug/%03d.png' % self.__i__, transparent=True, bbox_inches='tight', pad_inches=0)
+        # plt.close(fig)
 
         ##
         img_size = 200
         img_crop = np.zeros((img_size, img_size, 3), dtype=np.uint8)
 
-        # centroid_xy = (10, 10)
-        # centroid_xy = (784, 784)
-
         dest_top_left = -np.clip(np.array(centroid_xy[::-1]) - img_size / 2, None, 0).round().astype(int)
         dest_bot_right = np.clip(
             img_size - (np.array(centroid_xy[::-1]) + img_size / 2 - img_synthetic_upright.shape[:2]),
             None, img_size).round().astype(int)
-
         x_range = np.clip((centroid_xy[0] - img_size / 2, centroid_xy[0] + img_size / 2),
                           0, img_synthetic_upright.shape[1]).round().astype(int)
         y_range = np.clip((centroid_xy[1] - img_size / 2, centroid_xy[1] + img_size / 2),
                           0, img_synthetic_upright.shape[0]).round().astype(int)
+
         img_crop[dest_top_left[0]:dest_bot_right[0], dest_top_left[1]:dest_bot_right[1]] = \
             img_synthetic_upright[slice(*y_range), slice(*x_range)]
 
+        delta_xy = np.array((x_range[0] - dest_top_left[1], y_range[0] - dest_top_left[0]))
+        ant1_crop = copy.deepcopy(ant1)
+        ant1_crop['xy'] -= delta_xy
+        ant2_crop = copy.deepcopy(ant2)
+        ant2_crop['xy'] -= delta_xy
+
+        # fig = plt.figure()
         # plt.imshow(img_crop)
         # ax = plt.gca()
         # ax.add_patch(Ellipse(xy=ant1_crop['xy'],
@@ -737,12 +822,11 @@ class GenerateTrainingData(object):
         #                      angle=-ant2_crop['angle_deg'],
         #                      edgecolor='r',
         #                      facecolor='none'))
+        # fig.savefig('out/debug/%03d_crop.png' % self.__i__, transparent=True, bbox_inches='tight', pad_inches=0)
+        # plt.close(fig)
 
-        delta_xy = np.array((x_range[0] + dest_top_left[1], y_range[0] + dest_top_left[0]))
-        ant1_crop = copy.deepcopy(ant1)
-        ant1_crop['xy'] -= delta_xy
-        ant2_crop = copy.deepcopy(ant2)
-        ant2_crop['xy'] -= delta_xy
+        self.__i__ += 1
+
         return img_crop, ant1_crop, ant2_crop
 
 
