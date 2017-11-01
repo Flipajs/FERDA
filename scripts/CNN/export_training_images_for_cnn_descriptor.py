@@ -9,7 +9,8 @@ import tqdm
 import h5py
 
 if __name__ == '__main__':
-    OUT_DIR = '/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_camera3'
+    # OUT_DIR = '/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_zebrafish'
+    OUT_DIR = '/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_sowbug'
     MARGIN = 1.25
 
     try:
@@ -19,7 +20,10 @@ if __name__ == '__main__':
 
     p = Project()
     # p.load('/Users/flipajs/Documents/wd/FERDA/Cam1')
-    p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_new')
+    # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_new')
+    # p.load('/Users/flipajs/Documents/wd/FERDA/zebrafish_new')
+    p.load('/Users/flipajs/Documents/wd/FERDA/Sowbug3_new')
+
 
     # p.video_crop_model = {}
     # p.video_crop_model['y1'] = 0
@@ -29,11 +33,15 @@ if __name__ == '__main__':
 
     GT = GT()
     # path = '/Users/flipajs/Documents/dev/ferda/data/GT/Cam1_.pkl'
-    path = '/Users/flipajs/Documents/dev/ferda/data/GT/Camera3.pkl'
+    # path = '/Users/flipajs/Documents/dev/ferda/data/GT/5Zebrafish_nocover_22min.pkl'
+    path = '/Users/flipajs/Documents/dev/ferda/data/GT/Sowbug.pkl'
     GT.load(path)
-    GT.set_offset(y=p.video_crop_model['y1'],
-                       x=p.video_crop_model['x1'],
-                       frames=p.video_start_t)
+    try:
+        GT.set_offset(y=p.video_crop_model['y1'],
+                           x=p.video_crop_model['x1'],
+                           frames=p.video_start_t)
+    except:
+        pass
 
     major_axis = p.stats.major_axis_median
     print major_axis

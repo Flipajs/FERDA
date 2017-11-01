@@ -1,148 +1,104 @@
-'''Train a Siamese MLP on pairs of digits from the MNIST dataset.
-It follows Hadsell-et-al.'06 [1] by computing the Euclidean distance on the
-output of the shared network and by optimizing the contrastive loss (see paper
-for mode details).
-[1] "Dimensionality Reduction by Learning an Invariant Mapping"
-    http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
-Gets to 97.2% test accuracy after 20 epochs.
-2 seconds per epoch on a Titan X Maxwell GPU
-'''
-from __future__ import absolute_import
-from __future__ import print_function
+import h5py
+import keras
+import sys
+import string
 import numpy as np
-
-import random
+from keras.utils import np_utils
+from keras.utils import plot_model
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.layers import Conv2D, MaxPooling2D
+from keras.utils import np_utils
 from keras.datasets import mnist
+from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
 from keras.models import Model
-from keras.layers import Input, Flatten, Dense, Dropout, Lambda
-from keras.optimizers import RMSprop
-from keras import backend as K
-
-num_classes = 2
-epochs = 20
+from keras.callbacks import ModelCheckpoint
+from keras.models import model_from_json
+from keras.utils import to_categorical
 
 
-def euclidean_distance(vects):
-    x, y = vects
-    return K.sqrt(K.maximum(K.sum(K.square(x - y), axis=1, keepdims=True), K.epsilon()))
+if __name__ == '__main__':
+    ROOT_DIR = '/home/threedoid/cnn_descriptor/'
+    DATA_DIR = ROOT_DIR + '/data'
+    NUM_EPOCHS = 5
+    BATCH_SIZE = 32
+    USE_PREVIOUS_AS_INIT = 0
+    K = 6
+
+    if len(sys.argv) > 1:
+        DATA_DIR = ROOT_DIR + '/' + sys.argv[1]
+    if len(sys.argv) > 2:
+        NUM_EPOCHS = string.atoi(sys.argv[2])
+    if len(sys.argv) > 3:
+        BATCH_SIZE = string.atoi(sys.argv[3])
+    if len(sys.argv) > 5:
+        K = string.atoi(sys.argv[5])
 
 
-def eucl_dist_output_shape(shapes):
-    shape1, shape2 = shapes
-    return (shape1[0], 1)
+    with h5py.File(DATA_DIR + '/imgs_multi_train.h5', 'r') as hf:
+        X_train_a = hf['data'][:]
+
+    with h5py.File(DATA_DIR + '/imgs_multi_test.h5', 'r') as hf:
+        X_test_a = hf['data'][:]
+
+    with h5py.File(DATA_DIR + '/labels_multi_train.h5', 'r') as hf:
+        y_train = hf['data'][:]
+
+    with h5py.File(DATA_DIR + '/labels_multi_test.h5', 'r') as hf:
+        y_test = hf['data'][:]
 
 
-def contrastive_loss(y_true, y_pred):
-    '''Contrastive loss from Hadsell-et-al.'06
-    http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
-    '''
-    margin = 1
-    return K.mean(y_true * K.square(y_pred) +
-                  (1 - y_true) * K.square(K.maximum(margin - y_pred, 0)))
+    print "train shape", X_train_a.shape
+    print "test shape", X_test_a.shape
+
+    y_train = np_utils.to_categorical(y_train, K)
+    y_test = np_utils.to_categorical(y_test, K)
+
+    # IMPORTANT!!
+    X_train_a = X_train_a.astype('float32')
+    X_test_a = X_test_a.astype('float32')
+    X_train_a /= 255
+    X_test_a /= 255
+
+    # 3. Import libraries and modules
+    np.random.seed(123)  # for reproducibility
+
+    im_dim = 3
+    im_h = 90
+    im_w = 90
+
+    # Then define the tell-digits-apart model
+    animal_a = Input(shape=X_train_a.shape[1:])
+
+    # LOAD...
+    from keras.models import model_from_json
+
+    json_file = open('vision_model.json', 'r')
+    vision_model_json = json_file.read()
+    json_file.close()
+    vision_model = model_from_json(vision_model_json)
+    # load weights into new model
+    vision_model.load_weights("vision_model.h5")
+
+    # The vision model will be shared, weights and all
+    out_a = vision_model(animal_a)
+
+    out = Dense(K, activation='softmax')(out_a)
+
+    classification_model = Model(animal_a, out)
 
 
-def create_pairs(x, digit_indices):
-    '''Positive and negative pair creation.
-    Alternates between positive and negative pairs.
-    '''
-    pairs = []
-    labels = []
-    n = min([len(digit_indices[d]) for d in range(num_classes)]) - 1
-    for d in range(num_classes):
-        for i in range(n):
-            z1, z2 = digit_indices[d][i], digit_indices[d][i + 1]
-            pairs += [[x[z1], x[z2]]]
-            inc = random.randrange(1, num_classes)
-            dn = (d + inc) % num_classes
-            z1, z2 = digit_indices[d][i], digit_indices[dn][i]
-            pairs += [[x[z1], x[z2]]]
-            labels += [1, 0]
-    return np.array(pairs), np.array(labels)
 
+    # 8. Compile model
+    classification_model.compile(loss='categorical_crossentropy',
+                  optimizer='adam',
+                  metrics=['accuracy'])
 
-def create_base_network(input_shape):
-    '''Base network to be shared (eq. to feature extraction).
-    '''
-    input = Input(shape=input_shape)
-    x = Flatten()(input)
-    x = Dense(128, activation='relu')(x)
-    x = Dropout(0.1)(x)
-    x = Dense(128, activation='relu')(x)
-    x = Dropout(0.1)(x)
-    x = Dense(128, activation='relu')(x)
-    return Model(input, x)
+    # 9. Fit model on training data
 
+    classification_model.fit(X_train_a, y_train, validation_split=0.05,
+              batch_size=BATCH_SIZE, epochs=NUM_EPOCHS, verbose=1)
 
-def compute_accuracy(y_true, y_pred):
-    '''Compute classification accuracy with a fixed threshold on distances.
-    '''
-    pred = y_pred.ravel() < 0.5
-    return np.mean(pred == y_true)
-
-
-def accuracy(y_true, y_pred):
-    '''Compute classification accuracy with a fixed threshold on distances.
-    '''
-    return K.mean(K.equal(y_true, K.cast(y_pred < 0.5, y_true.dtype)))
-
-
-# the data, shuffled and split between train and test sets
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-x_train = x_train.astype('float32')
-x_test = x_test.astype('float32')
-x_train /= 255
-x_test /= 255
-input_shape = x_train.shape[1:]
-
-# create training+test positive and negative pairs
-digit_indices = [np.where(y_train == i)[0] for i in range(num_classes)]
-tr_pairs, tr_y = create_pairs(x_train, digit_indices)
-
-digit_indices = [np.where(y_test == i)[0] for i in range(num_classes)]
-te_pairs, te_y = create_pairs(x_test, digit_indices)
-
-# network definition
-base_network = create_base_network(input_shape)
-
-input_a = Input(shape=input_shape)
-input_b = Input(shape=input_shape)
-
-# because we re-use the same instance `base_network`,
-# the weights of the network
-# will be shared across the two branches
-processed_a = base_network(input_a)
-processed_b = base_network(input_b)
-
-distance = Lambda(euclidean_distance,
-                  output_shape=eucl_dist_output_shape)([processed_a, processed_b])
-
-model = Model([input_a, input_b], distance)
-
-# train
-rms = RMSprop()
-model.compile(loss=contrastive_loss, optimizer=rms, metrics=[accuracy])
-model.fit([tr_pairs[:, 0], tr_pairs[:, 1]], tr_y,
-          batch_size=128,
-          epochs=epochs,
-          validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y))
-
-# compute final accuracy on training and test sets
-y_pred = model.predict([tr_pairs[:, 0], tr_pairs[:, 1]])
-tr_acc = compute_accuracy(tr_y, y_pred)
-y_pred = model.predict([te_pairs[:, 0], te_pairs[:, 1]])
-te_acc = compute_accuracy(te_y, y_pred)
-
-print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
-print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
-© 2017 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Help
-Contact GitHub
-API
-Training
-Shop
-Blog
-About
+    # 10. Evaluate model on test data
+    results = classification_model.evaluate(X_test_a, y_test, verbose=1)
+    print results

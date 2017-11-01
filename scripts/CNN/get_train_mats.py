@@ -7,7 +7,6 @@ import tqdm
 
 OUT_DIR = '/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1'
 NUM_ANIMALS = 6
-BALANCED = True
 
 # NUM_EXAMPLES x NUM_A
 NUM_EXAMPLES = 10
@@ -19,6 +18,7 @@ if __name__ == '__main__':
         OUT_DIR = sys.argv[1]
         NUM_ANIMALS = string.atoi(sys.argv[2])
         NUM_EXAMPLES = string.atoi(sys.argv[3])
+        NEGATIVE_EXA_RATIO = string.atoi(sys.argv[2])
 
     images_f = []
 
@@ -48,8 +48,18 @@ if __name__ == '__main__':
             imgs_b.append(im2)
             labels.append(1)
 
-            for j in range(NEGATIVE_EXA_RATIO):
-                neg_i = random.choice(list(ids_set - set([i])))
+            # for j in range(NEGATIVE_EXA_RATIO):
+            #     neg_i = random.choice(list(ids_set - set([i])))
+            #     neg_f = random.choice(images_f[neg_i])
+            #
+            #     im_negative = misc.imread(OUT_DIR+'/'+str(neg_i)+'/'+neg_f)
+            #
+            #     imgs_a.append(im1)
+            #     imgs_b.append(im_negative)
+            #     labels.append(0)
+
+            for neg_i in list(ids_set - set([i])):
+                # neg_i = random.choice(list(ids_set - set([i])))
                 neg_f = random.choice(images_f[neg_i])
 
                 im_negative = misc.imread(OUT_DIR+'/'+str(neg_i)+'/'+neg_f)

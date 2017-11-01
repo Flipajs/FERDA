@@ -23,116 +23,117 @@ S_.general.print_log = False
 
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
-if is_flipajs_pc() and False:
-# if is_flipajs_pc():
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
+# if is_flipajs_pc() and False:
+if is_flipajs_pc():
+    # wd = '/Usersss/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish2'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Barbara_flu_bug/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'
 
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug_new2'
 
     # wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
     project.load(wd)
 
     # TODO !!
-    project.solver.one2one()
+    # project.solver.one2one()
 
-    cases = []
-    for v in project.gm.g.vertices():
-        if v.in_degree() == 2:
-            t = project.gm.get_chunk(v)
-
-            if t.is_multi() and t.end_vertex(project.gm).out_degree() == 2:
-                new_one = True
-                for u in v.in_neighbours():
-                    if not project.gm.get_chunk(u).is_single():
-                        new_one = False
-                        break
-
-                if new_one:
-                    cases.append(t)
-
-    print "#CASES: {}".format(len(cases))
+    # cases = []
+    # for v in project.gm.g.vertices():
+    #     if v.in_degree() == 2:
+    #         t = project.gm.get_chunk(v)
+    #
+    #         if t.is_multi() and t.end_vertex(project.gm).out_degree() == 2:
+    #             new_one = True
+    #             for u in v.in_neighbours():
+    #                 if not project.gm.get_chunk(u).is_single():
+    #                     new_one = False
+    #                     break
+    #
+    #             if new_one:
+    #                 cases.append(t)
+    #
+    # print "#CASES: {}".format(len(cases))
     from core.region.fitting import Fitting
     from tqdm import tqdm
     from scipy.ndimage.morphology import binary_erosion, binary_dilation
 
-    erosion = True
-
-    ii = 0
-    for t in cases:
-        ii += 1
-        if ii == 1:
-            break
-
-        if t.length() > 5:
-            continue
-
-        print "#tID: {}, start: {}, end: {}".format(t.id(), t.start_frame(project.gm), t.end_frame(project.gm))
-
-        v1 = t.start_vertex(project.gm)
-        animals_r = []
-        for u in v1.in_neighbours():
-            reg = project.gm.region(u)
-
-            if erosion:
-                pts = reg.pts()
-                roi = reg.roi()
-
-                bim = np.zeros((roi.height(), roi.width()), dtype=np.bool)
-                bim[pts[:, 0] - roi.y(), pts[:, 1] - roi.x()] = True
-
-                bim2 = binary_erosion(bim, iterations=3)
-                bim2 = binary_dilation(bim2, iterations=2)
-                new_pts = np.argwhere(bim2) + roi.top_left_corner()
-                reg.pts_ = new_pts
-                reg.roi_ = None
-
-            animals_r.append(reg)
-
-        for i in range(len(t)):
-            # todo: invalidate original regions
-
-            # todo for each region in tracklet...
-            reg = project.gm.region(t[i])
-
-            if erosion:
-                pts = reg.pts()
-                roi = reg.roi()
-
-                bim = np.zeros((roi.height(), roi.width()), dtype=np.bool)
-                bim[pts[:, 0] - roi.y(), pts[:, 1] - roi.x()] = True
-
-                bim2 = binary_erosion(bim, iterations=3)
-                bim2 = binary_dilation(bim2, iterations=2)
-                new_pts = np.argwhere(bim2) + roi.top_left_corner()
-                reg.pts_ = new_pts
-                reg.roi_ = None
-
-            f = Fitting(reg, animals_r, num_of_iterations=10)
-            results, stats = f.fit()
-            print "\t", stats
-
-            new_animals = []
-            for r in results:
-                project.rm.add(r)
-
-                v = project.gm.add_vertex(r)
-                new_t, _ = project.chm.new_chunk([int(v)], project.gm)
-                new_t.color = QtGui.QColor.fromRgb(255, 0, 0)
-
-                new_animals.append(r)
-
-            animals = new_animals
+    # erosion = True
+    #
+    # ii = 0
+    # for t in cases:
+    #     ii += 1
+    #     if ii == 1:
+    #         break
+    #
+    #     if t.length() > 5:
+    #         continue
+    #
+    #     print "#tID: {}, start: {}, end: {}".format(t.id(), t.start_frame(project.gm), t.end_frame(project.gm))
+    #
+    #     v1 = t.start_vertex(project.gm)
+    #     animals_r = []
+    #     for u in v1.in_neighbours():
+    #         reg = project.gm.region(u)
+    #
+    #         if erosion:
+    #             pts = reg.pts()
+    #             roi = reg.roi()
+    #
+    #             bim = np.zeros((roi.height(), roi.width()), dtype=np.bool)
+    #             bim[pts[:, 0] - roi.y(), pts[:, 1] - roi.x()] = True
+    #
+    #             bim2 = binary_erosion(bim, iterations=3)
+    #             bim2 = binary_dilation(bim2, iterations=2)
+    #             new_pts = np.argwhere(bim2) + roi.top_left_corner()
+    #             reg.pts_ = new_pts
+    #             reg.roi_ = None
+    #
+    #         animals_r.append(reg)
+    #
+    #     for i in range(len(t)):
+    #         # todo: invalidate original regions
+    #
+    #         # todo for each region in tracklet...
+    #         reg = project.gm.region(t[i])
+    #
+    #         if erosion:
+    #             pts = reg.pts()
+    #             roi = reg.roi()
+    #
+    #             bim = np.zeros((roi.height(), roi.width()), dtype=np.bool)
+    #             bim[pts[:, 0] - roi.y(), pts[:, 1] - roi.x()] = True
+    #
+    #             bim2 = binary_erosion(bim, iterations=3)
+    #             bim2 = binary_dilation(bim2, iterations=2)
+    #             new_pts = np.argwhere(bim2) + roi.top_left_corner()
+    #             reg.pts_ = new_pts
+    #             reg.roi_ = None
+    #
+    #         f = Fitting(reg, animals_r, num_of_iterations=10)
+    #         results, stats = f.fit()
+    #         print "\t", stats
+    #
+    #         new_animals = []
+    #         for r in results:
+    #             project.rm.add(r)
+    #
+    #             v = project.gm.add_vertex(r)
+    #             new_t, _ = project.chm.new_chunk([int(v)], project.gm)
+    #             new_t.color = QtGui.QColor.fromRgb(255, 0, 0)
+    #
+    #             new_animals.append(r)
+    #
+    #         animals = new_animals
 
         # from scripts.regions_stats import decide_one2one
         # decide_one2one(project)

@@ -1,4 +1,3 @@
-#### todo - load data and prepare data...
 import h5py
 import keras
 import sys
@@ -13,17 +12,30 @@ from keras.utils import np_utils
 from keras.datasets import mnist
 from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
 from keras.models import Model
+from keras.callbacks import ModelCheckpoint
+from keras.models import model_from_json
 
 
 if __name__ == '__main__':
     ROOT_DIR = '/home/threedoid/cnn_descriptor/'
     DATA_DIR = ROOT_DIR + '/data'
     NUM_EPOCHS = 5
+    BATCH_SIZE = 32
+    USE_PREVIOUS_AS_INIT = 0
+    WEIGHTS_NAME = 'best_weights'
 
     if len(sys.argv) > 1:
         DATA_DIR = ROOT_DIR + '/' + sys.argv[1]
     if len(sys.argv) > 2:
         NUM_EPOCHS = string.atoi(sys.argv[2])
+    if len(sys.argv) > 3:
+        BATCH_SIZE = string.atoi(sys.argv[3])
+    if len(sys.argv) > 4:
+        USE_PREVIOUS_AS_INIT = bool(string.atoi(sys.argv[4]))
+    if len(sys.argv) > 5:
+        WEIGHTS_NAME = sys.argv[5]
+
+
 
     with h5py.File(DATA_DIR + '/imgs_a_train.h5', 'r') as hf:
         X_train_a = hf['data'][:]
@@ -80,7 +92,7 @@ if __name__ == '__main__':
 
     x = Flatten()(x)
     # x = Dense(256, activation='relu')(x)
-    # x = Dropout(0.75)(x)
+    x = Dropout(0.2)(x)
     x = Dense(256, activation='relu')(x)
     # x = Dense(64, activation='relu')(x)
     out = Dense(128, activation='relu')(x)
@@ -103,14 +115,36 @@ if __name__ == '__main__':
     plot_model(classification_model, show_shapes=True, to_file='complete_model.png')
 
 
+
+
+    ########### load weights... ugly way how to do it now...
+    if USE_PREVIOUS_AS_INIT:
+        print "Using last saved weights as initialisation"
+        from keras.models import model_from_json
+        json_file = open('model.json', 'r')
+        loaded_model_json = json_file.read()
+        json_file.close()
+        loaded_model = model_from_json(loaded_model_json)
+        # load weights into new model
+        loaded_model.load_weights("best_weights.h5")
+
+        classification_model = loaded_model
+
+
+
     # 8. Compile model
     classification_model.compile(loss='binary_crossentropy',
                   optimizer='adam',
                   metrics=['accuracy'])
 
     # 9. Fit model on training data
-    classification_model.fit([X_train_a, X_train_b], y_train,
-              batch_size=32, epochs=NUM_EPOCHS, verbose=1)
+
+    # checkpointer = ModelCheckpoint(filepath='weights.h5', verbose=1, save_best_only=True)
+    checkpoint = ModelCheckpoint(WEIGHTS_NAME+'.h5', monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+    callbacks_list = [checkpoint]
+    classification_model.fit([X_train_a, X_train_b], y_train, validation_split=0.05,
+              batch_size=BATCH_SIZE, epochs=NUM_EPOCHS, verbose=1, callbacks=callbacks_list)
+
 
     model_json = classification_model.to_json()
     with open("model.json", "w") as json_file:
@@ -118,12 +152,37 @@ if __name__ == '__main__':
 
     classification_model.save_weights("model.h5")
 
+    model_json = vision_model.to_json()
+    with open("vision_model.json", "w") as json_file:
+        json_file.write(model_json)
+
+    vision_model.save_weights("vision_"+WEIGHTS_NAME+".h5")
+
     # 10. Evaluate model on test data
     results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
     print results
 
     # and on cam1 sequence
     DATA_DIR = ROOT_DIR + '/data_cam1'
+    with h5py.File(DATA_DIR + '/imgs_a_test.h5', 'r') as hf:
+        X_test_a = hf['data'][:]
+
+    with h5py.File(DATA_DIR + '/imgs_b_test.h5', 'r') as hf:
+        X_test_b = hf['data'][:]
+
+    with h5py.File(DATA_DIR + '/labels_test.h5', 'r') as hf:
+        y_test = hf['data'][:]
+
+    X_test_a = X_test_a.astype('float32')
+    X_test_b = X_test_b.astype('float32')
+    X_test_a /= 255
+    X_test_b /= 255
+
+    results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
+    print results
+
+    # and on zebrafish sequence
+    DATA_DIR = ROOT_DIR + '/data_zebrafish'
     with h5py.File(DATA_DIR + '/imgs_a_test.h5', 'r') as hf:
         X_test_a = hf['data'][:]
 
