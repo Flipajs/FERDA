@@ -528,7 +528,7 @@ class GenerateTrainingData(object):
         self.bg.compute_model()
 
         single_regions = [item for sublist in self.single.values() for item in sublist]
-        BATCH_SIZE = 500
+        BATCH_SIZE = 250
 
         with open(out_csv, 'w') as csv_file:
             fieldnames = ['filename', 'ant1_x', 'ant1_y', 'ant1_major', 'ant1_minor', 'ant1_angle_deg',
@@ -545,33 +545,37 @@ class GenerateTrainingData(object):
                 frames = [r.frame() for r in regions]
                 sort_idx = np.argsort(frames)
                 sort_idx_reverse = np.argsort(sort_idx)
-
                 images_sorted = [self.video.get_frame(r.frame()) for r in tqdm.tqdm(regions[sort_idx],
                                                                                     desc='images reading')]
                 images = [images_sorted[idx] for idx in sort_idx_reverse]
 
                 with tqdm.tqdm(total=n, desc='synthetize') as progress_bar:
                     for region1, region2, img1, img2 in zip(regions[:n], regions[n:], images[:n], images[n:]):
-                        # border point angle with respect to object centroid, 0 rad is from the centroid rightwards, positive ccw
-                        theta_rad = np.random.uniform(-math.pi, math.pi)
-                        # approach angle, 0 rad is direction from the object centroid
-                        phi_rad = np.clip(np.random.normal(scale=(math.pi / 2) / 2), math.radians(-80), math.radians(80))
-                        overlap_px = int(round(np.random.gamma(1, 5)))
-
-                        try:
-                            img, ant1, ant2 = self.synthetize(region1, region2,
-                                                              theta_rad, phi_rad, overlap_px,
-                                                              img1, img2)
-                        except IndexError:
-                            pass
                         img_filename = '%06d.jpg' % i
+                        img = None
+                        while True:
+                            # border point angle with respect to object centroid, 0 rad is from the centroid rightwards, positive ccw
+                            theta_rad = np.random.uniform(-math.pi, math.pi)
+                            # approach angle, 0 rad is direction from the object centroid
+                            phi_rad = np.clip(np.random.normal(scale=(math.pi / 2) / 2), math.radians(-80), math.radians(80))
+                            overlap_px = int(round(np.random.gamma(1, 5)))
+
+                            try:
+                                img, ant1, ant2 = self.synthetize(region1, region2,
+                                                                  theta_rad, phi_rad, overlap_px,
+                                                                  img1, img2)
+                            except IndexError:
+                                print('%s: IndexError, repeating' % img_filename)
+                            if img is not None:
+                                break
+
                         cv2.imwrite(os.path.join(out_dir, img_filename), img)
                         csv_writer.writerow({
                             'filename': img_filename,
                             'ant1_x': ant1['xy'][0],
                             'ant1_y': ant1['xy'][1],
                             'ant1_major': ant1['major'],
-                            'ant1_minor': ant1['minor'], 
+                            'ant1_minor': ant1['minor'],
                             'ant1_angle_deg': ant1['angle_deg'],
                             'ant2_x': ant2['xy'][0],
                             'ant2_y': ant2['xy'][1],
@@ -588,6 +592,7 @@ class GenerateTrainingData(object):
                         i += 1
                         progress_bar.update()
                 progress_bar.close()
+
 
         # # montage bounding box
         # plt.imshow(img_synthetic_upright)
@@ -707,11 +712,11 @@ class GenerateTrainingData(object):
 
         synth_center_xy1 = region1.centroid()[::-1].astype(int)
 
-        plt.imshow(img_synthetic)
-        ax = plt.gca()
-        zoomed_size = 300
-        _ = plt.axis([synth_center_xy1[0] - zoomed_size / 2, synth_center_xy1[0] + zoomed_size / 2,
-                      synth_center_xy1[1] - zoomed_size / 2, synth_center_xy1[1] + zoomed_size / 2])
+        # plt.imshow(img_synthetic)
+        # ax = plt.gca()
+        # zoomed_size = 300
+        # _ = plt.axis([synth_center_xy1[0] - zoomed_size / 2, synth_center_xy1[0] + zoomed_size / 2,
+        #               synth_center_xy1[1] - zoomed_size / 2, synth_center_xy1[1] + zoomed_size / 2])
 
         ##
 
