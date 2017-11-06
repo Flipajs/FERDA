@@ -34,7 +34,7 @@ if __name__ == '__main__':
     GT = GT()
     # path = '/Users/flipajs/Documents/dev/ferda/data/GT/Cam1_.pkl'
     # path = '/Users/flipajs/Documents/dev/ferda/data/GT/5Zebrafish_nocover_22min.pkl'
-    path = '/Users/flipajs/Documents/dev/ferda/data/GT/Sowbug.pkl'
+    path = '/Users/flipajs/Documents/dev/ferda/data/GT/Sowbug3.pkl'
     GT.load(path)
     try:
         GT.set_offset(y=p.video_crop_model['y1'],

@@ -10,15 +10,15 @@ NUM_ANIMALS = 6
 
 # NUM_EXAMPLES x NUM_A
 NUM_EXAMPLES = 10
-NEGATIVE_EXA_RATIO = 1
 TRAIN_TEST_RATIO = 0.1
+RANDOM = False
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         OUT_DIR = sys.argv[1]
         NUM_ANIMALS = string.atoi(sys.argv[2])
         NUM_EXAMPLES = string.atoi(sys.argv[3])
-        NEGATIVE_EXA_RATIO = string.atoi(sys.argv[2])
+        RANDOM = bool(string.atoi(sys.argv[4]))
 
     images_f = []
 
@@ -34,18 +34,24 @@ if __name__ == '__main__':
 
         for fname in os.listdir(OUT_DIR+'/'+str(i)+''):
             if pattern.match(fname):
-                images_f[i].append(fname)
+                images_f[i].append(int(fname[:-4]))
+
+        # sort by ID
+        images_f[i] = sorted(images_f[i])
+
+    split_idx = int(TRAIN_TEST_RATIO * NUM_ANIMALS*NUM_EXAMPLES)
 
     for k in tqdm.tqdm(range(NUM_EXAMPLES)):
         for i in range(NUM_ANIMALS):
-            ai = random.randint(0, len(images_f[i])-1)
+            ai = k
+            if RANDOM or ai > split_idx:
+                ai = random.randint(0, len(images_f[i])-1)
 
-            im1 = misc.imread(OUT_DIR+'/'+str(i)+'/'+images_f[i][ai])
+            print str(images_f[i][ai])+'.jpg'
+            im1 = misc.imread(OUT_DIR+'/'+str(i)+'/'+str(images_f[i][ai])+'.jpg')
 
             imgs_a.append(im1)
             labels.append(i)
-
-    split_idx = int(TRAIN_TEST_RATIO * len(imgs_a))
 
     imgs_a_test = np.array(imgs_a[:split_idx])
     imgs_a_train = np.array(imgs_a[split_idx:])

@@ -87,16 +87,13 @@ if __name__ == '__main__':
 
     classification_model = Model(animal_a, out)
 
-
-
     # 8. Compile model
     classification_model.compile(loss='categorical_crossentropy',
                   optimizer='adam',
                   metrics=['accuracy'])
 
     # 9. Fit model on training data
-
-    classification_model.fit(X_train_a, y_train, validation_split=0.05,
+     classification_model.fit(X_train_a, y_train, validation_split=0.05,
               batch_size=BATCH_SIZE, epochs=NUM_EPOCHS, verbose=1)
 
     # 10. Evaluate model on test data
