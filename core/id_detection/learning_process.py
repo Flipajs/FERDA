@@ -24,6 +24,9 @@ from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
 
 from utils.misc import print_progress
 
+CNN_SOFTMAX = 1
+RFC = 2
+
 class LearningProcess:
     """
     each tracklet has 2 id sets.
@@ -59,6 +62,8 @@ class LearningProcess:
         self.progressbar_callback = progressbar_callback
         self.verbose = verbose
         self.show_key_error_warnings = False
+
+        self.classifier_name = CNN_SOFTMAX
 
         self.min_new_samples_to_retrain = 10000000
         self.rf_retrain_up_to_min = np.inf
@@ -291,7 +296,11 @@ class LearningProcess:
         self.min_tracklet_len = k
         try:
             self.update_undecided_tracklets()
-            self.__precompute_measurements(only_unknown=True)
+            try:
+                self.__precompute_measurements(only_unknown=True)
+            except Exception as e:
+                print e
+
         except AttributeError:
             pass
         except IndexError:
@@ -322,7 +331,7 @@ class LearningProcess:
         for i in range(num_a):
             print i, min_weighted_difs[i, :] / total_len[i]
 
-        print self.rfc.feature_importances_
+        print self.classifier.feature_importances_
 
     def load_learning(self):
         try:
@@ -333,7 +342,7 @@ class LearningProcess:
                 self.tracklet_measurements = d['measurements']
                 self.tracklet_stds = d['stds']
                 self.tracklet_certainty = d['certainty']
-                self.rfc = d['rfc']
+                self.classifier = d['rfc']
                 self.IF_region_anomaly = d['IF_region_anomaly']
                 self.LR_region_anomaly = d['LR_region_anomaly']
 
@@ -350,7 +359,7 @@ class LearningProcess:
                  'measurements': self.tracklet_measurements,
                  'stds': self.tracklet_stds,
                  'certainty': self.tracklet_certainty,
-                 'rfc': self.rfc,
+                 'rfc': self.classifier,
                  'IF_region_anomaly': self.IF_region_anomaly,
                  'LR_region_anomaly': self.LR_region_anomaly
                  }
@@ -497,16 +506,25 @@ class LearningProcess:
 
         return X
 
+    def train(self, init=False, use_xgboost=False):
+        if self.classifier_name == RFC:
+            self.__train_rfc(init=init, use_xgboost=False)
+        elif self.classifier_name == CNN_SOFTMAX:
+            with open(self.p.working_directory+'/softmax_results_map.pkl') as f:
+                self.cnn_results_map = pickle.load(f)
+
+            self.__precompute_measurements()
+
     def __train_rfc(self, init=False, use_xgboost=False):
         if use_xgboost:
             from xgboost import XGBClassifier
-            self.rfc = XGBClassifier()
+            self.classifier = XGBClassifier()
         else:
-            self.rfc = RandomForestClassifier(class_weight='balanced_subsample',
-                                              max_features=self.rf_max_features,
-                                              n_estimators=self.rf_n_estimators,
-                                              min_samples_leaf=self.rf_min_samples_leafs,
-                                              max_depth=self.rf_max_depth)
+            self.classifier = RandomForestClassifier(class_weight='balanced_subsample',
+                                                     max_features=self.rf_max_features,
+                                                     n_estimators=self.rf_n_estimators,
+                                                     min_samples_leaf=self.rf_min_samples_leafs,
+                                                     max_depth=self.rf_max_depth)
         if len(self.X):
             y = []
             for i in range(len(self.p.animals)):
@@ -518,7 +536,7 @@ class LearningProcess:
 
             print "TRAINING RFC", y
             t = time.time()
-            self.rfc.fit(self.__tid2features(), self.y)
+            self.classifier.fit(self.__tid2features(), self.y)
             print "t: {:.2f}s".format(time.time() - t)
             self.__precompute_measurements()
 
@@ -734,7 +752,7 @@ class LearningProcess:
         # if enough new data, retrain
         if len(self.X) - self.old_x_size > self.min_new_samples_to_retrain:
             t = time.time()
-            if self.__train_rfc():
+            if self.train():
                 print "RETRAIN t:", time.time() - t
                 self.old_x_size = len(self.X)
                 self.next_step()
@@ -774,7 +792,7 @@ class LearningProcess:
             # if new training data, retrain
             if len(self.X) - self.old_x_size > self.min_new_samples_to_retrain:
                 t = time.time()
-                self.__train_rfc()
+                self.train()
                 print "RETRAIN t:", time.time() - t
                 self.old_x_size = len(self.X)
                 self.next_step()
@@ -796,14 +814,22 @@ class LearningProcess:
         return float(np.sum(self.class_frequences)) / self.class_frequences
 
     def _get_tracklet_proba(self, ch, debug=False):
-        X = self.features[ch.id()]
-        if len(X) == 0:
-            return None, 0
+        if self.classifier_name == RFC:
+            X = self.features[ch.id()]
+            if len(X) == 0:
+                return None, 0
 
-        anomaly_probs = self.get_tracklet_anomaly_probs(ch)
+            anomaly_probs = self.get_tracklet_anomaly_probs(ch)
 
         try:
-            probs = self.rfc.predict_proba(np.array(X))
+            if self.classifier_name == CNN_SOFTMAX:
+                probs = []
+                for r_id in ch.rid_gen(self.p.gm):
+                    probs.append(self.cnn_results_map[r_id])
+
+                probs = np.array(probs)
+            else:
+                probs = self.classifier.predict_proba(np.array(X))
             if debug:
                 print "Probs:"
                 print probs
@@ -827,9 +853,11 @@ class LearningProcess:
             print "anomaly probs:"
             print anomaly_probs
 
-        # todo: mat multiply
-        for i in range(probs.shape[0]):
-            probs[i] *= anomaly_probs[i]
+        # TODO:
+        if self.classifier_name == RFC:
+            # todo: mat multiply
+            for i in range(probs.shape[0]):
+                probs[i] *= anomaly_probs[i]
 
         stds = np.std(probs, 0, ddof=1)
         # probs = np.sum(probs, 0)
@@ -844,7 +872,10 @@ class LearningProcess:
         # if np.sum(probs) > 0:
         #     probs /= float(np.sum(probs))
 
-        return probs, len(X), stds
+
+        # TODO: refactor
+        # second value on return is some old relict...
+        return probs, probs.shape[0], stds
 
     # def apply_consistency_rule(self, ch, probs):
     #     mask = np.zeros(probs.shape)
@@ -1406,7 +1437,7 @@ class LearningProcess:
             if d['type'] == 'P' and len(d['ids']) == 1:
                 test_set.add(d['ids'][0])
 
-        if len(full_set.intersection(test_set)) != len(full_set):
+        if len(full_set.intersection(test_set)) != len(full_set) and self.classifier_name == RFC:
             QtGui.QMessageBox.information(None, '',
                                           'There are not examples for all classes. Did you use auto initialisation? Missing ids: '+str(full_set-test_set))
             return
@@ -1432,25 +1463,27 @@ class LearningProcess:
 
             elif type == 'N':
                 self._update_N(set([id_]), tracklet)
+        try:
+            self.IF_region_anomaly.fit(region_X)
+            vals = self.IF_region_anomaly.decision_function(region_X)
+            vals_sorted = sorted(vals)
 
-        self.IF_region_anomaly.fit(region_X)
-        vals = self.IF_region_anomaly.decision_function(region_X)
-        vals_sorted = sorted(vals)
+            from sklearn.linear_model import LogisticRegression
+            lr = LogisticRegression()
+            use_for_learning = 0.1
 
-        from sklearn.linear_model import LogisticRegression
-        lr = LogisticRegression()
-        use_for_learning = 0.1
+            part_len = int(len(vals) * use_for_learning)
+            part1 = np.array(vals_sorted[:part_len])
+            part2 = np.array(vals_sorted[-part_len:])
 
-        part_len = int(len(vals) * use_for_learning)
-        part1 = np.array(vals_sorted[:part_len])
-        part2 = np.array(vals_sorted[-part_len:])
+            X = np.hstack((part1, part2))
+            X.shape = ((X.shape[0], 1))
 
-        X = np.hstack((part1, part2))
-        X.shape = ((X.shape[0], 1))
-
-        y = np.array([1 if i < len(part1) else 0 for i in range(X.shape[0])])
-        lr.fit(X, y)
-        self.LR_region_anomaly = lr
+            y = np.array([1 if i < len(part1) else 0 for i in range(X.shape[0])])
+            lr.fit(X, y)
+            self.LR_region_anomaly = lr
+        except Exception as e:
+            print e
 
         # for t in self.p.chm.chunk_gen():
         #     if not t.is_single():
@@ -1459,7 +1492,7 @@ class LearningProcess:
         #
         #     print t.id(), np.mean(probs), np.median(probs), len(t)
 
-        ret = self.__train_rfc(init=True, use_xgboost=use_xgboost)
+        ret = self.train(init=True, use_xgboost=use_xgboost)
         print "TRAINING FINISHED"
 
         return ret
@@ -2131,7 +2164,7 @@ class LearningProcess:
             print "id: {}, sum: {}, min frame: {} max frame: {}\n\t#{} {}\n\n".format(tcs.id, sum_length, min_frame, max_frame, len(t_ids), t_ids)
 
         # Train RFC on biggest CS
-        # self.__train_rfc(init=True)
+        # self.train(init=True)
 
         self.tcs = TCS
         self.links = links
@@ -2329,7 +2362,7 @@ class LearningProcess:
             overlap_sum, overlap_sum/float(total_frame_count))
 
     def auto_init(self, method='max_sum', use_xgboost=False):
-        self.full_csosit_analysis(use_xgboost=use_xgboost)
+        # self.full_csosit_analysis(use_xgboost=use_xgboost)
         return
         from multiprocessing import cpu_count
 

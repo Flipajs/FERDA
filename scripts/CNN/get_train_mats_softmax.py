@@ -44,7 +44,7 @@ if __name__ == '__main__':
     for k in tqdm.tqdm(range(NUM_EXAMPLES)):
         for i in range(NUM_ANIMALS):
             ai = k
-            if RANDOM or ai > split_idx:
+            if RANDOM:
                 ai = random.randint(0, len(images_f[i])-1)
 
             print str(images_f[i][ai])+'.jpg'
