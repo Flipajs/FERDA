@@ -2362,7 +2362,7 @@ class LearningProcess:
             overlap_sum, overlap_sum/float(total_frame_count))
 
     def auto_init(self, method='max_sum', use_xgboost=False):
-        # self.full_csosit_analysis(use_xgboost=use_xgboost)
+        self.full_csosit_analysis(use_xgboost=use_xgboost)
         return
         from multiprocessing import cpu_count
 

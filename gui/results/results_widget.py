@@ -284,6 +284,10 @@ class ResultsWidget(QtGui.QWidget):
         self.show_summary_b.clicked.connect(self.show_results_summary)
         self.debug_box.layout().addWidget(self.show_summary_b)
 
+        self.show_cs_analysis_b = QtGui.QPushButton('CS analysis')
+        self.show_cs_analysis_b.clicked.connect(self.cs_analysis)
+        self.debug_box.layout().addWidget(self.show_cs_analysis_b)
+
         self.reset_chunk_ids_b = QtGui.QPushButton('Reset chunk IDs')
         self.reset_chunk_ids_b.clicked.connect(self.reset_chunk_ids)
         self.debug_box.layout().addWidget(self.reset_chunk_ids_b)
@@ -2040,3 +2044,68 @@ class ResultsWidget(QtGui.QWidget):
         win.setCentralWidget(w)
         win.show()
         self.w = win
+
+    def cs_analysis(self):
+        groups = []
+        unique_tracklets = set()
+        frames = []
+
+        self.p = self.project
+
+        from utils.video_manager import get_auto_video_manager
+        vm = get_auto_video_manager(self.p)
+        total_frame_count = vm.total_frame_count()
+        expected_t_len = len(self.p.animals) * total_frame_count
+        total_single_t_len = 0
+        for t in self.p.chm.chunk_gen():
+            if t.is_single():
+                total_single_t_len += t.length()
+
+        overlap_sum = 0
+        frame = 0
+        i = 0
+        while True:
+            group = self.p.chm.chunks_in_frame(frame)
+            if len(group) == 0:
+                break
+
+            singles_group = filter(lambda x: x.is_single(), group)
+
+            # if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= self.min_tracklet_len:
+            if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 1:
+                groups.append(singles_group)
+
+                overlap = min([t.end_frame(self.p.gm) for t in singles_group]) \
+                          - max([t.start_frame(self.p.gm) for t in singles_group])
+
+                overlap_sum += overlap
+
+                frames.append((frame, overlap,))
+                for t in singles_group:
+                    unique_tracklets.add(t)
+
+            frame = min([t.end_frame(self.p.gm) for t in group]) + 1
+
+            # if i % 100:
+                # print_progress(frame, total_frame_count, "searching for CSoSIT...")
+
+            i += 1
+
+        print "analysis DONE"
+
+
+        min_lengths = []
+        val_ = 0
+        for g in groups:
+            min_lengths.append(-min([len(t) for t in g]))
+
+        # print sorted(min_lengths)[:10]
+        ids = np.argsort(min_lengths)
+
+        for i in range(10):
+            id_ = ids[i]
+            print "############### "
+            print -min_lengths[id_]
+
+            for t in groups[id_]:
+                print t.id(), t.length()

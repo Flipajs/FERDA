@@ -1,20 +1,14 @@
 import h5py
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import keras
 import sys
 import string
 import numpy as np
-from keras.utils import np_utils
 from keras.utils import plot_model
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Conv2D, MaxPooling2D
-from keras.utils import np_utils
-from keras.datasets import mnist
 from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
 from keras.models import Model
 from keras.callbacks import ModelCheckpoint
-from keras.models import model_from_json
-
 
 if __name__ == '__main__':
     ROOT_DIR = '/home/threedoid/cnn_descriptor/'
@@ -58,9 +52,6 @@ if __name__ == '__main__':
 
     print "train shape", X_train_a.shape
     print "test shape", X_test_a.shape
-
-    # y_train = np_utils.to_categorical(y_train, 2)
-    # y_test = np_utils.to_categorical(y_test, 2)
 
     # IMPORTANT!!
     X_train_a = X_train_a.astype('float32')
@@ -115,21 +106,16 @@ if __name__ == '__main__':
     plot_model(vision_model, show_shapes=True, to_file='vision_model.png')
     plot_model(classification_model, show_shapes=True, to_file='complete_model.png')
 
-    classification_model.count_params()
-    classification_model.summary()
-
-
-
     ########### load weights... ugly way how to do it now...
     if USE_PREVIOUS_AS_INIT:
         print "Using last saved weights as initialisation"
         from keras.models import model_from_json
-        json_file = open('model.json', 'r')
+        json_file = open('model_'+WEIGHTS_NAME+'.json', 'r')
         loaded_model_json = json_file.read()
         json_file.close()
         loaded_model = model_from_json(loaded_model_json)
         # load weights into new model
-        loaded_model.load_weights("best_weights.h5")
+        loaded_model.load_weights(WEIGHTS_NAME+".h5")
 
         classification_model = loaded_model
 
@@ -150,13 +136,13 @@ if __name__ == '__main__':
 
 
     model_json = classification_model.to_json()
-    with open("model.json", "w") as json_file:
+    with open("model_"+WEIGHTS_NAME+".json", "w") as json_file:
         json_file.write(model_json)
 
-    classification_model.save_weights("model.h5")
+    classification_model.save_weights(WEIGHTS_NAME+".h5")
 
     model_json = vision_model.to_json()
-    with open("vision_model.json", "w") as json_file:
+    with open("vision_model_"+WEIGHTS_NAME+".json", "w") as json_file:
         json_file.write(model_json)
 
     vision_model.save_weights("vision_"+WEIGHTS_NAME+".h5")
