@@ -319,7 +319,7 @@ class LearningWidget(QtGui.QWidget):
             num_animals = len(self.project.animals)
             self.tracklets_table.setColumnCount(num_animals + 5)
             self.tracklets_table.setMinimumWidth(1000)
-            self.tracklets_table.setMinimumHeight(1000)
+            self.tracklets_table.setMinimumHeight(900)
 
             self.tracklets_table.setSortingEnabled(True)
             self.hbox.addWidget(self.tracklets_table)
