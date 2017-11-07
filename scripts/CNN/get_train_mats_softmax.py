@@ -44,10 +44,17 @@ if __name__ == '__main__':
     for k in tqdm.tqdm(range(NUM_EXAMPLES)):
         for i in range(NUM_ANIMALS):
             ai = k
-            if RANDOM:
+
+            if ai >= split_idx:
+                im1 = misc.imread(OUT_DIR + '/' + str(i) + '/' + str(images_f[i][ai]) + '.jpg')
+                imgs_a.append(im1)
+                labels.append(i)
+
+            if RANDOM or ai >= split_idx:
                 ai = random.randint(0, len(images_f[i])-1)
 
-            print str(images_f[i][ai])+'.jpg'
+
+            # print str(images_f[i][ai])+'.jpg'
             im1 = misc.imread(OUT_DIR+'/'+str(i)+'/'+str(images_f[i][ai])+'.jpg')
 
             imgs_a.append(im1)

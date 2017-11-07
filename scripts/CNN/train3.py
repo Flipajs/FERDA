@@ -1,3 +1,6 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import h5py
 import sys
 import string
@@ -11,6 +14,7 @@ ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 DATA_DIR = ROOT_DIR + '/data'
 BATCH_SIZE = 32
+TWO_TESTS = True
 
 def myGenerator():
     global DATA_DIR, BATCH_SIZE
@@ -27,8 +31,9 @@ def myGenerator():
 
 
     datagen = ImageDataGenerator(rotation_range=360,
-                             # width_shift_range=0.02,
-                             # height_shift_range=0.02,
+                             width_shift_range=0.02,
+                             height_shift_range=0.02,
+                             shear_range=0.02
                              )
 
 
@@ -71,16 +76,29 @@ if __name__ == '__main__':
         y_test = hf['data'][:]
 
 
-    # print "train shape", X_train.shape
-    print "train size: ", 9*X_test.shape[0], "test shape", X_test.shape
-
     K = len(np.unique(y_test))
     print "K: ", K
+
     y_test = np_utils.to_categorical(y_test, K)
 
     # IMPORTANT!!
     X_test = X_test.astype('float32')
     X_test /= 255
+
+    even_ids = [i for i in range(X_test.shape[0]) if i % 2 == 0]
+    odd_ids = [i for i in range(X_test.shape[0]) if i % 2 == 1]
+    X_test_consecutive = X_test[even_ids, :, :, :]
+    y_test_consecutive = y_test[even_ids, :]
+    X_test_random = X_test[odd_ids, :, :, :]
+    y_test_random = y_test[odd_ids, :]
+
+    print X_test_consecutive.shape
+    print X_test_random.shape
+    print y_test_consecutive.shape
+    print y_test_random.shape
+
+    # print "train shape", X_train.shape
+    print "train size: ", 9*X_test_consecutive.shape[0], "test shape", X_test.shape, "y", y_test.shape
 
     # 3. Import libraries and modules
     np.random.seed(123)  # for reproducibility
@@ -88,8 +106,6 @@ if __name__ == '__main__':
     im_dim = 3
     im_h = 90
     im_w = 90
-
-
 
     # Then define the tell-digits-apart model
     animal_a = Input(shape=X_test.shape[1:])
@@ -137,17 +153,28 @@ if __name__ == '__main__':
     with open(DATA_DIR+"/"+OUT_NAME+".json", "w") as json_file:
         json_file.write(model_json)
 
-    best_eval = 0
+    best_eval_consecutive = 0
+    best_eval_random = 0
     for e in range(NUM_EPOCHS):
         print e
         classification_model.fit_generator(myGenerator(), SAMPLES, epochs=1, verbose=1)
 
 
         # 10. Evaluate model on test data
-        results = classification_model.evaluate(X_test, y_test, verbose=1)
-        print results
+        results = classification_model.evaluate(X_test_consecutive, y_test_consecutive, verbose=1)
+        print "CONSECUTIVE", results
 
-        if results[1] > best_eval:
-            best_eval = results[1]
+        if results[1] > best_eval_consecutive:
+            best_eval_consecutive = results[1]
             print "saving weights"
             classification_model.save_weights(DATA_DIR+"/"+OUT_NAME+".h5")
+
+        results = classification_model.evaluate(X_test_random, y_test_random, verbose=1)
+        print "RANDOM", results
+
+        if results[1] > best_eval_random:
+            best_eval_random = results[1]
+            print "saving weights"
+            classification_model.save_weights(DATA_DIR + "/" + OUT_NAME + "_rand.h5")
+
+
