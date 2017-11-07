@@ -50,10 +50,11 @@ class ChunkManager:
         try:
             self.itree.removei(ch.start_frame(gm)-self.eps1, ch.end_frame(gm)+self.eps1, ch)
         except ValueError:
-            print "delete failed"
+            # TODO: when is it happening?
+            # print "delete failed"
             pass
         except KeyError:
-            print "delete failed"
+            # print "delete failed"
             pass
 
     def remove_chunk(self, ch, gm):

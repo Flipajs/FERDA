@@ -31,9 +31,9 @@ def myGenerator():
 
 
     datagen = ImageDataGenerator(rotation_range=360,
-                             width_shift_range=0.02,
-                             height_shift_range=0.02,
-                             shear_range=0.02
+                             # width_shift_range=0.02,
+                             # height_shift_range=0.02,
+                             # shear_range=0.02
                              )
 
 

@@ -82,22 +82,60 @@ if __name__ == '__main__':
 
     # First, define the vision modules
     animal_input = Input(shape=X_train_a.shape[1:])
+
+    # Block 1
+    # x = Conv2D(32, (3, 3), activation='relu', padding='same', name='block1_conv1')(animal_input)
+    # x = Conv2D(32, (3, 3), activation='relu', padding='same', name='block1_conv2')(x)
+    # x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
+    #
+    # # Block 2
+    # x = Conv2D(32, (3, 3), activation='relu', padding='same', name='block2_conv1')(x)
+    # x = Conv2D(32, (3, 3), activation='relu', padding='same', name='block2_conv2')(x)
+    # x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
+
     x = Conv2D(32, (3, 3))(animal_input)
     x = Conv2D(32, (3, 3))(x)
     # x = Dropout(0.5)(x)
     x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3))(x)
+    x = Conv2D(32, (3, 3))(x)
+    x = Conv2D(32, (3, 3))(x)
+    x = MaxPooling2D((2, 2))(x)
+
+    x = Conv2D(64, (3, 3))(x)
+    x = Conv2D(64, (3, 3))(x)
+    x = Conv2D(32, (3, 3))(x)
+    x = MaxPooling2D((2, 2))(x)
     x = Conv2D(16, (3, 3))(x)
     x = Conv2D(8, (3, 3))(x)
-    x = MaxPooling2D((2, 2))(x)
+    # x = MaxPooling2D((2, 2))(x)
+
+    # # Block 3
+    # x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block3_conv1')(x)
+    # x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block3_conv2')(x)
+    # x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block3_conv3')(x)
+    # x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
+
+    # Block 4
+    # x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block4_conv1')(x)
+    # x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block4_conv2')(x)
+    # x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block4_conv3')(x)
+    # x = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
+
+    # Block 5
+    # x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block5_conv1')(x)
+    # x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block5_conv2')(x)
+    # x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block5_conv3')(x)
+    # x = MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x)
 
     x = Flatten()(x)
     # x = Dense(256, activation='relu')(x)
-    x = Dropout(0.2)(x)
-    x = Dense(256, activation='relu')(x)
+    # x = Dropout(0.2)(x)
+    # x = Dense(256, activation='relu')(x)
     # x = Dense(64, activation='relu')(x)
-    out = Dense(128, activation='relu')(x)
+    # out = Dense(64, activation='relu')(x)
 
-    vision_model = Model(animal_input, out)
+    vision_model = Model(animal_input, x)
 
     # Then define the tell-digits-apart model
     animal_a = Input(shape=X_train_a.shape[1:])
@@ -114,6 +152,8 @@ if __name__ == '__main__':
     plot_model(vision_model, show_shapes=True, to_file='vision_model.png')
     plot_model(classification_model, show_shapes=True, to_file='complete_model.png')
 
+    classification_model.count_params()
+    classification_model.summary()
 
 
 
