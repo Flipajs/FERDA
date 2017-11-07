@@ -89,6 +89,8 @@ if __name__ == '__main__':
     x = Conv2D(16, (3, 3))(x)
     x = Conv2D(8, (3, 3))(x)
 
+    x = Flatten()(x)
+
     vision_model = Model(animal_input, x)
 
     # Then define the tell-digits-apart model
