@@ -24,7 +24,7 @@ S_.general.print_log = False
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 # if is_flipajs_pc() and False:
 if is_flipajs_pc():
-    # wd = '/Usersss/flipajs/Documents/wd/FERDA/Cam1_rf'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'

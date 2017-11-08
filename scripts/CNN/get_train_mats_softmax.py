@@ -46,8 +46,10 @@ if __name__ == '__main__':
         for i in range(NUM_ANIMALS):
             ai = k
 
+            if len(images_f) <= ai:
+                ai = random.randint(0, len(images_f[i]) - 1)
+
             if ai >= split_idx:
-                # print ai
                 im1 = imread(OUT_DIR + '/' + str(i) + '/' + str(images_f[i][ai]) + '.jpg')
                 imgs_a.append(im1)
                 labels.append(i)
@@ -79,5 +81,3 @@ if __name__ == '__main__':
         hf.create_dataset("data", data=labels_train)
     with h5py.File(OUT_DIR+'/labels_multi_test.h5', 'w') as hf:
         hf.create_dataset("data", data=labels_test)
-
-

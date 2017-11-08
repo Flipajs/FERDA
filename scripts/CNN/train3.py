@@ -113,13 +113,14 @@ if __name__ == '__main__':
     # LOAD...
     from keras.models import model_from_json
 
-    json_file = open(ROOT_DIR+'/vision_model.json', 'r')
+    json_file = open(ROOT_DIR+'/vision_model_'+WEIGHTS+'.json', 'r')
     vision_model_json = json_file.read()
     json_file.close()
     vision_model = model_from_json(vision_model_json)
     # load weights into new model
     vision_model.load_weights(ROOT_DIR+"/vision_"+WEIGHTS+".h5")
 
+    vision_model.summary()
     # The vision model will be shared, weights and all
     out_a = vision_model(animal_a)
 
