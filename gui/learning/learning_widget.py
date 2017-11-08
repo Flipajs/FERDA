@@ -217,6 +217,8 @@ class LearningWidget(QtGui.QWidget):
         self.add_tracklet_table()
         self.update_callback()
 
+        # self.enable_all()
+
     def enable_all(self):
         self.auto_init_method_cb.setEnabled(True)
         self.auto_init_b.setEnabled(True)
@@ -296,7 +298,7 @@ class LearningWidget(QtGui.QWidget):
         self.lp.update_callback = self.update_callback
         self.lp.question_callback = self.question_callback
 
-        self.disable_before_classifier()
+        # self.disable_before_classifier()
 
     def recompute_features(self):
         # self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
