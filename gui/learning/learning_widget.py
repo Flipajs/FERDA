@@ -213,9 +213,11 @@ class LearningWidget(QtGui.QWidget):
         self.tracklet_debug_info_b.clicked.connect(self.tracklet_debug_info)
         self.top_stripe_layout.addWidget(self.tracklet_debug_info_b)
 
-        self.lp.set_tracklet_length_k(self.tracklet_min_length_sb.value())
+        self.lp.set_tracklet_length_k(self.tracklet_min_length_sb.value(), first_time=True)
         self.add_tracklet_table()
         self.update_callback()
+
+        # self.enable_all()
 
     def enable_all(self):
         self.auto_init_method_cb.setEnabled(True)
@@ -272,7 +274,7 @@ class LearningWidget(QtGui.QWidget):
         self.num_next_step.setEnabled(False)
         self.n_next_steps_button.setEnabled(False)
         self.show_tracklet_button.setEnabled(False)
-        self.reset_learning_button.setEnabled(False)
+        self.reset_learning_button.setEnabled(True)
         self.save_button.setEnabled(False)
         self.update_b.setEnabled(False)
         self.delete_user_decisions_b.setEnabled(False)
@@ -296,7 +298,7 @@ class LearningWidget(QtGui.QWidget):
         self.lp.update_callback = self.update_callback
         self.lp.question_callback = self.question_callback
 
-        self.disable_before_classifier()
+        # self.disable_before_classifier()
 
     def recompute_features(self):
         # self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
@@ -412,7 +414,9 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setItem(10, 0, QCustomTableWidgetItem('# user decisions: '))
         self.info_table.setItem(10, 1, QCustomTableWidgetItem(str(len(self.lp.user_decisions))))
 
-        full_coverage, single_id_coverage = self.get_id_coverage()
+        # full_coverage, single_id_coverage = self.get_id_coverage()
+        # TODO: speed up
+        full_coverage, single_id_coverage = 0, 0
         self.info_table.setItem(11, 0, QCustomTableWidgetItem('full coverage:'))
         self.info_table.setItem(11, 1, QCustomTableWidgetItem(self.__f2str(full_coverage)))
 

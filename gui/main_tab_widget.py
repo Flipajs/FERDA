@@ -211,13 +211,13 @@ class MainTabWidget(QtGui.QWidget):
                 self.tabs.removeTab(2)
                 self.id_detection_tab.setParent(None)
                 self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet, self.progress_callback)
-                self.id_detection_tab.update_callback()
                 self.tabs.insertTab(2, self.id_detection_tab, "id detection")
                 self.tabs.setCurrentIndex(2)
                 self.ignore_tab_change = False
 
             if not len(self.id_detection_tab.lp.features):
-                self.id_detection_tab.disable_before_features()
+                pass
+                # self.id_detection_tab.disable_before_features()
 
         if i == 3:
             self.statistics_tab.update_data(self.project)
