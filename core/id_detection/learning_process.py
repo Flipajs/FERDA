@@ -133,6 +133,9 @@ class LearningProcess:
         # tracklet agglomeration links
         self.links = None
 
+        self.LR_region_anomaly = None
+        self.classifier = None
+
         # when creating without feature data... e.g. in main_tab_widget
         if ghost:
             return
@@ -292,8 +295,12 @@ class LearningProcess:
     def set_eps_certainty(self, eps):
         self._eps_certainty = eps
 
-    def set_tracklet_length_k(self, k):
+    def set_tracklet_length_k(self, k, first_time=False):
         self.min_tracklet_len = k
+
+        if first_time:
+            return
+
         try:
             self.update_undecided_tracklets()
             try:
@@ -514,6 +521,8 @@ class LearningProcess:
                 self.cnn_results_map = pickle.load(f)
 
             self.__precompute_measurements()
+
+            self.classifier = None
 
     def __train_rfc(self, init=False, use_xgboost=False):
         if use_xgboost:

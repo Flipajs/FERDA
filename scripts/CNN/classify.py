@@ -69,6 +69,7 @@ if __name__ == '__main__':
             imgs.append(im1)
             names.append((i, fname))
 
+            # TODO: fix...
             if i == BATCH_SIZE:
                 classify_imgs(results_map)
                 imgs = []
