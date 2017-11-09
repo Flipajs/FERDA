@@ -50,7 +50,7 @@ class RegionChunk:
 
     def region_in_t(self, t):
         t = t-self.start_frame()
-        if -1 < t < len(self.chunk_.nodes_):
+        if -1 < t < len(self.chunk_):
             return self[t]
         else:
             return None

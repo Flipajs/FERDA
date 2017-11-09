@@ -20,6 +20,18 @@ class ChunkManager:
     def __len__(self):
         return len(self.chunks_)
 
+    def new_track(self, track, gm):
+        track.id_ = self.id_
+        self.chunks_[self.id_] = track
+        self._add_ch_itree(track, gm)
+
+        for t in track._data:
+            self.remove_tracklet_from_itree(t, gm)
+
+        self.id_ += 1
+
+        return track, self.id_ - 1
+
     def new_chunk(self, vertices_ids, gm, assign_color=True):
         ch = Chunk(vertices_ids, self.id_, gm)
         self.chunks_[self.id_] = ch
@@ -56,6 +68,9 @@ class ChunkManager:
         except KeyError:
             # print "delete failed"
             pass
+
+    def remove_tracklet_from_itree(self, ch, gm):
+        self._try_ch_itree_delete(ch, gm)
 
     def remove_chunk(self, ch, gm):
         if isinstance(ch, int):

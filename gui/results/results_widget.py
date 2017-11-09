@@ -20,6 +20,7 @@ import cv2
 import time
 from gui.qt_flow_layout import FlowLayout
 from tqdm import tqdm
+from pyqtgraph import makeQImage
 
 MARKER_SIZE = 15
 
@@ -831,8 +832,6 @@ class ResultsWidget(QtGui.QWidget):
         if r.is_virtual:
             step = 1
 
-        from pyqtgraph import makeQImage
-
         if self.show_tracklet_class.isChecked():
             step = 1
             c = self.get_tracklet_class_color(tracklet)
@@ -840,7 +839,12 @@ class ResultsWidget(QtGui.QWidget):
 
         rgba = np.zeros((roi.width(), roi.height(), 4), dtype=np.uint8)
         # 2 1 0 BGR vs RGB...
-        rgba[pts_[::step, 1], pts_[::step, 0], :] = c[2], c[1], c[0], c[3]
+        # this if might help a little bit with performance...
+        if step > 1:
+            rgba[pts_[::step, 1], pts_[::step, 0], :] = c[2], c[1], c[0], c[3]
+        else:
+            rgba[pts_[:, 1], pts_[:, 0], :] = c[2], c[1], c[0], c[3]
+
         qim_ = makeQImage(rgba)
 
         pixmap = QtGui.QPixmap.fromImage(qim_)
@@ -2138,6 +2142,17 @@ class ResultsWidget(QtGui.QWidget):
         for g2 in groups[1:]:
             if len(set(g1).intersection(g2)) == len(self.project.animals) - 1:
                 num_single += 1
+
+                print "single ID:"
+                t1 = list(set(g1).difference(set(g1).intersection(g2)))[0]
+                t2 = list(set(g2).difference(set(g1).intersection(g2)))[0]
+                print t1.id(), t1.length()
+                print t2.id(), t2.length()
+
+                from core.graph.track import Track
+                tt = Track([t1, t2], self.project.gm)
+                self.project.chm.new_track(tt, self.project.gm)
+                print "T", tt.id()
 
             g1 = g2
 
