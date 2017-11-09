@@ -6,6 +6,7 @@ import numpy as np
 from configuration import Configuration
 from utils.constants import EDGE_CONFIRMED
 import cPickle as pickle
+from tqdm import tqdm
 
 class Solver:
     SPLIT_JOIN_THRESHOLD = 0.5
@@ -71,8 +72,9 @@ class Solver:
 
     def one2one(self):
         confirm_later = []
+        from tqdm import tqdm
 
-        for v in self.project.gm.g.vertices():
+        for v in tqdm(self.project.gm.g.vertices()):
             if self.project.gm.one2one_check(v):
                 e = self.project.gm.out_e(v)
                 confirm_later.append((e.source(), e.target()))
@@ -441,7 +443,7 @@ class Solver:
         """
 
         affected = set()
-        for v1, v2 in edge_pairs:
+        for v1, v2 in tqdm(edge_pairs):
             affected.add(v1)
             affected.add(v2)
 

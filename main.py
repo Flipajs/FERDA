@@ -21,18 +21,18 @@ project = Project()
 
 S_.general.print_log = False
 
-
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 # if is_flipajs_pc() and False:
 if is_flipajs_pc():
-    # wd = '/Usersss/flipajs/Documents/wd/FERDA/Cam1_rf'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_new'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
+    wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr/HH1_PRE_upper_thr.fproj'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Barbara_flu_bug/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'

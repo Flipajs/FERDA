@@ -1,20 +1,14 @@
 import h5py
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import keras
 import sys
 import string
 import numpy as np
-from keras.utils import np_utils
 from keras.utils import plot_model
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Conv2D, MaxPooling2D
-from keras.utils import np_utils
-from keras.datasets import mnist
 from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
 from keras.models import Model
 from keras.callbacks import ModelCheckpoint
-from keras.models import model_from_json
-
 
 if __name__ == '__main__':
     ROOT_DIR = '/home/threedoid/cnn_descriptor/'
@@ -59,9 +53,6 @@ if __name__ == '__main__':
     print "train shape", X_train_a.shape
     print "test shape", X_test_a.shape
 
-    # y_train = np_utils.to_categorical(y_train, 2)
-    # y_test = np_utils.to_categorical(y_test, 2)
-
     # IMPORTANT!!
     X_train_a = X_train_a.astype('float32')
     X_train_b = X_train_b.astype('float32')
@@ -82,22 +73,25 @@ if __name__ == '__main__':
 
     # First, define the vision modules
     animal_input = Input(shape=X_train_a.shape[1:])
+
     x = Conv2D(32, (3, 3))(animal_input)
     x = Conv2D(32, (3, 3))(x)
-    # x = Dropout(0.5)(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3))(x)
+    x = Conv2D(32, (3, 3))(x)
+    x = Conv2D(32, (3, 3))(x)
+    x = MaxPooling2D((2, 2))(x)
+
+    x = Conv2D(64, (3, 3))(x)
+    x = Conv2D(64, (3, 3))(x)
+    x = Conv2D(32, (3, 3))(x)
     x = MaxPooling2D((2, 2))(x)
     x = Conv2D(16, (3, 3))(x)
     x = Conv2D(8, (3, 3))(x)
-    x = MaxPooling2D((2, 2))(x)
 
     x = Flatten()(x)
-    # x = Dense(256, activation='relu')(x)
-    x = Dropout(0.2)(x)
-    x = Dense(256, activation='relu')(x)
-    # x = Dense(64, activation='relu')(x)
-    out = Dense(128, activation='relu')(x)
 
-    vision_model = Model(animal_input, out)
+    vision_model = Model(animal_input, x)
 
     # Then define the tell-digits-apart model
     animal_a = Input(shape=X_train_a.shape[1:])
@@ -114,19 +108,16 @@ if __name__ == '__main__':
     plot_model(vision_model, show_shapes=True, to_file='vision_model.png')
     plot_model(classification_model, show_shapes=True, to_file='complete_model.png')
 
-
-
-
     ########### load weights... ugly way how to do it now...
     if USE_PREVIOUS_AS_INIT:
         print "Using last saved weights as initialisation"
         from keras.models import model_from_json
-        json_file = open('model.json', 'r')
+        json_file = open('model_'+WEIGHTS_NAME+'.json', 'r')
         loaded_model_json = json_file.read()
         json_file.close()
         loaded_model = model_from_json(loaded_model_json)
         # load weights into new model
-        loaded_model.load_weights("best_weights.h5")
+        loaded_model.load_weights(WEIGHTS_NAME+".h5")
 
         classification_model = loaded_model
 
@@ -147,13 +138,13 @@ if __name__ == '__main__':
 
 
     model_json = classification_model.to_json()
-    with open("model.json", "w") as json_file:
+    with open("model_"+WEIGHTS_NAME+".json", "w") as json_file:
         json_file.write(model_json)
 
-    classification_model.save_weights("model.h5")
+    classification_model.save_weights(WEIGHTS_NAME+".h5")
 
     model_json = vision_model.to_json()
-    with open("vision_model.json", "w") as json_file:
+    with open("vision_model_"+WEIGHTS_NAME+".json", "w") as json_file:
         json_file.write(model_json)
 
     vision_model.save_weights("vision_"+WEIGHTS_NAME+".h5")

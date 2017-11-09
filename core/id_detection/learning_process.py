@@ -133,6 +133,9 @@ class LearningProcess:
         # tracklet agglomeration links
         self.links = None
 
+        self.LR_region_anomaly = None
+        self.classifier = None
+
         # when creating without feature data... e.g. in main_tab_widget
         if ghost:
             return
@@ -155,6 +158,9 @@ class LearningProcess:
 
 
     def load_features(self, db_names='fm.sqlite3'):
+        # TODO: ...
+        return
+
         from core.id_detection.features import FeatureManager
 
         self.progressbar_callback(True)
@@ -292,8 +298,12 @@ class LearningProcess:
     def set_eps_certainty(self, eps):
         self._eps_certainty = eps
 
-    def set_tracklet_length_k(self, k):
+    def set_tracklet_length_k(self, k, first_time=False):
         self.min_tracklet_len = k
+
+        if first_time:
+            return
+
         try:
             self.update_undecided_tracklets()
             try:
@@ -345,7 +355,6 @@ class LearningProcess:
                 self.classifier = d['rfc']
                 self.IF_region_anomaly = d['IF_region_anomaly']
                 self.LR_region_anomaly = d['LR_region_anomaly']
-
                 self.load_features()
 
         except Exception as e:
@@ -514,6 +523,8 @@ class LearningProcess:
                 self.cnn_results_map = pickle.load(f)
 
             self.__precompute_measurements()
+
+            self.classifier = None
 
     def __train_rfc(self, init=False, use_xgboost=False):
         if use_xgboost:
@@ -1025,35 +1036,32 @@ class LearningProcess:
     def __tracklet_is_decided(self, P, N):
         return P.union(N) == self.all_ids
 
-    def _get_p1(self, X, i):
-        div = np.sum(np.power(2, X))
-
-        return 2**X[i] / div
-
-    def _get_p2(self, X, i):
-        a = 1
-        for r in X:
-            a *= (1 - self._get_p1(r, i))
-
-        div = 0
-        for j in range(X.shape[1]):
-            b = 1
-            for r in X:
-                b *= (1 - self._get_p1(r, i))
-
-            div += self._get_p1(np.sum(X, 0), j) * b
-
-        return (self._get_p1(np.sum(X, 0), i) * a) / div
-
     def get_p1(self, x, i):
-        x__ = np.sum(x, axis=0)
-        sum1 = np.sum([2 ** a for a in x__])
-        p1 = 2 ** x__[i] / sum1
+        # prevent overflow in power (max float32 ~ 2**127) by dividing it into parts and taking mean
+        # some reasonable margin from 127... computation will be more precise.
+        N = 120
+        p1s = []
+        k = int(math.ceil(x.shape[0] / float(N)))
+        for j in range(k):
+            x__ = np.sum(x[j*N:(min((j+1)*N, x.shape[0])), :], axis=0)
+
+            sum1 = np.sum([2 ** a for a in x__])
+            p1 = 2 ** x__[i] / sum1
+
+            p1s.append(p1)
+
+        p1 = np.mean(p1s)
+
+        if p1 >= 1.0:
+            p1 = 0.9999999999
 
         return p1
 
 
     def _update_certainty(self, tracklet):
+        if tracklet.id() == 16109:
+            print tracklet.id()
+
         if len(self.tracklet_measurements) == 0:
             # print "tracklet_measurements is empty"
             return
@@ -1068,6 +1076,8 @@ class LearningProcess:
 
         import math
 
+        np.seterr(all='raise')
+
         # skip the oversegmented regions
         if len(P) == 0:
             x = self.tracklet_measurements[tracklet.id()]
@@ -1077,14 +1087,14 @@ class LearningProcess:
             # alpha = (min((tracklet.length() / self.k_) ** 2, 0.99))
             # x = (1 - alpha) * uni_probs + alpha * x
 
-
             x_ = np.copy(x)
             for id_ in N:
                 x_[:, id_] = 0
 
-            # TODO: try P2 computation for all potential k values?
             # k is best predicted ID
             k = np.argmax(np.sum(x_, axis=0))
+
+            # TODO: seems like using only p1... why? If using also p2, be aware of overflow problems...
             p1 = self.get_p1(x_, k)
 
             # set of all other relevant regions (single regions in tracklet timespan overlap)
@@ -1093,13 +1103,18 @@ class LearningProcess:
             term1 = 1
             term2 = 0
 
+            # TODO: if term1 is too low, it might mean, that there is somebody else who wants this ID... report it!
             for t in C:
                 if not t.is_single() or t == tracklet or len(t.P):
                     continue
 
                 try:
                     xx = self.tracklet_measurements[t.id()]
-                    term1 *= 1 - self.get_p1(xx, k)
+                    p1_competitor = self.get_p1(xx, k)
+                    term1 *= 1 - p1_competitor
+
+                    if p1_competitor > 0.5:
+                        print "term1: p1_competitor is too high in certainty computation for ", tracklet.id() , "in comparison with ", t.id(), p1_competitor
                 except KeyError:
                     pass
 
@@ -2362,7 +2377,7 @@ class LearningProcess:
             overlap_sum, overlap_sum/float(total_frame_count))
 
     def auto_init(self, method='max_sum', use_xgboost=False):
-        # self.full_csosit_analysis(use_xgboost=use_xgboost)
+        self.full_csosit_analysis(use_xgboost=use_xgboost)
         return
         from multiprocessing import cpu_count
 
