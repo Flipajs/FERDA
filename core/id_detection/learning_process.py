@@ -831,6 +831,8 @@ class LearningProcess:
                 return None, 0
 
             anomaly_probs = self.get_tracklet_anomaly_probs(ch)
+        else:
+            X = np.array([])
 
         try:
             if self.classifier_name == CNN_SOFTMAX:
@@ -863,6 +865,9 @@ class LearningProcess:
         if debug:
             print "anomaly probs:"
             print anomaly_probs
+
+        if len(probs) == 0:
+            print "empty", ch.id(), probs
 
         # TODO:
         if self.classifier_name == RFC:
@@ -1073,10 +1078,6 @@ class LearningProcess:
 
         P = tracklet.P
         N = tracklet.N
-
-        import math
-
-        np.seterr(all='raise')
 
         # skip the oversegmented regions
         if len(P) == 0:

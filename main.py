@@ -32,7 +32,7 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
-    wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr/HH1_PRE_upper_thr.fproj'
+    wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Barbara_flu_bug/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'
@@ -45,7 +45,7 @@ if is_flipajs_pc():
     project.load(wd)
 
     # TODO !!
-    # project.solver.one2one()
+    project.solver.one2one(check_tclass=True)
 
     # cases = []
     # for v in project.gm.g.vertices():

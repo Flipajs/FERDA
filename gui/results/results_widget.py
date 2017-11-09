@@ -2105,7 +2105,7 @@ class ResultsWidget(QtGui.QWidget):
 
                 pbar.update(frame - df)
 
-        print "analysis DONE"
+        print "analysis 1) DONE"
         print "# CS: ", len(groups)
 
         min_lengths = []
@@ -2123,6 +2123,17 @@ class ResultsWidget(QtGui.QWidget):
 
             for t in groups[id_]:
                 print t.id(), t.length()
+
+        num_single = 0
+
+        g1 = groups[0]
+        for g2 in groups[1:]:
+            if len(set(g1).intersection(g2)) == len(self.project.animals) - 1:
+                num_single += 1
+
+            g1 = g2
+
+        print "# single", num_single
 
     def show_color_settings(self):
         from set_colors_gui import SetColorsGui

@@ -70,13 +70,22 @@ class Solver:
 
         return num_changed
 
-    def one2one(self):
+    def one2one(self, check_tclass=False):
         confirm_later = []
         from tqdm import tqdm
 
         for v in tqdm(self.project.gm.g.vertices()):
             if self.project.gm.one2one_check(v):
                 e = self.project.gm.out_e(v)
+
+                if check_tclass:
+                    t1 = self.project.gm.get_chunk(v)
+                    t2 = self.project.gm.get_chunk(self.project.gm.g.vertex(e.target()))
+
+                    if t1.segmentation_class != t2.segmentation_class:
+                        print "1on1", t1.id(), t2.id()
+                        continue
+
                 confirm_later.append((e.source(), e.target()))
 
         print "one2one, ", len(confirm_later)
