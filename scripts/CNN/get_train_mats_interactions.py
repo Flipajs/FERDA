@@ -38,19 +38,20 @@ def get_data(type):
             if (ant1_x**2 + ant1_y**2)**0.5 > (ant2_x**2 + ant2_y**2)**0.5:
                 ant1_x, ant2_x = ant2_x, ant1_x
                 ant1_y, ant2_y = ant2_y, ant1_y
+                ant1_angle, ant2_angle = ant2_angle, ant1_angle
 
 
 
             results.append([ant1_x,
                            ant1_y,
-                           # ant1_major,
-                           # ant1_minor,
-                           # ant1_angle,
+                           ant1_major,
+                           ant1_minor,
+                           ant1_angle,
                            ant2_x,
                            ant2_y,
-                           # ant2_major,
-                           # ant2_minor,
-                           # ant2_angle
+                           ant2_major,
+                           ant2_minor,
+                           ant2_angle
                             ])
 
     imgs = np.array(imgs)

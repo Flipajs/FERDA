@@ -45,7 +45,7 @@ if is_flipajs_pc():
     project.load(wd)
 
     # TODO !!
-    project.solver.one2one(check_tclass=True)
+    # project.solver.one2one(check_tclass=True)
 
     # cases = []
     # for v in project.gm.g.vertices():

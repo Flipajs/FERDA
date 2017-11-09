@@ -62,7 +62,7 @@ def draw(ids, P, N, probs=None, params=None, tracklet_len=0, tracklet_ptr=0, tra
     if params is None:
         params = default_params
 
-    h = 2
+    h = 4
 
     hh = 0
     if tracklet_len > 0:

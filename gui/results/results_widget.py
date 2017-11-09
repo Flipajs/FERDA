@@ -73,7 +73,7 @@ class ResultsWidget(QtGui.QWidget):
 
         self._highlight_regions = set()
         self._highlight_tracklets = set()
-        self.highlight_color = QtGui.qRgba(175, 255, 56, 200)  # green
+        self.highlight_color = (175, 255, 56, 200)  # green
 
         self.setLayout(self.hbox)
         self.splitter = QtGui.QSplitter()
@@ -798,8 +798,8 @@ class ResultsWidget(QtGui.QWidget):
 
         offset = roi.top_left_corner()
 
-        qim_ = QtGui.QImage(roi.width(), roi.height(), QtGui.QImage.Format_ARGB32)
-        qim_.fill(QtGui.qRgba(0, 0, 0, 0))
+        # qim_ = QtGui.QImage(roi.width(), roi.height(), QtGui.QImage.Format_ARGB32)
+        # qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
         step = 1
 
@@ -807,37 +807,41 @@ class ResultsWidget(QtGui.QWidget):
             c = S_.visualization.default_region_color
 
             if tracklet.length() == 1:
-                c = QtGui.qRgba(c.blue(), c.green(), c.red(), c.alpha())
+                c = c.blue(), c.green(), c.red(), c.alpha()
             else:
-                c = QtGui.qRgba(c.red(), c.green(), c.blue(), c.alpha())
+                c = c.red(), c.green(), c.blue(), c.alpha()
 
             if self.contour_without_colors.isChecked():
                 if is_id_tracklet:
                     id_ = list(tracklet.P)[0]
                     c_ = self.project.animals[id_].color_
-                    c = QtGui.qRgba(c_[2], c_[1], c_[0], alpha)
+                    c = c_[2], c_[1], c_[0], alpha
                 else:
                     if not self.show_tracklets_without_id.isChecked() and not self.show_contour_ch.isChecked():
                         return
 
                     step = 3
                     if use_ch_color:
-                        c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
+                        c = use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha
             elif use_ch_color:
-                c = QtGui.qRgba(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha)
+                c = use_ch_color.red(), use_ch_color.green(), use_ch_color.blue(), alpha
         else:
             c = force_color
 
         if r.is_virtual:
             step = 1
 
+        from pyqtgraph import makeQImage
+
         if self.show_tracklet_class.isChecked():
             step = 1
             c = self.get_tracklet_class_color(tracklet)
-            c = QtGui.qRgba(c[0], c[1], c[2], 255)
+            c = (c[0], c[1], c[2], 255)
 
-        for i in range(0, pts_.shape[0], step):
-            qim_.setPixel(pts_[i, 1], pts_[i, 0], c)
+        rgba = np.zeros((roi.width(), roi.height(), 4), dtype=np.uint8)
+        # 2 1 0 BGR vs RGB...
+        rgba[pts_[::step, 1], pts_[::step, 0], :] = c[2], c[1], c[0], c[3]
+        qim_ = makeQImage(rgba)
 
         pixmap = QtGui.QPixmap.fromImage(qim_)
 
@@ -858,9 +862,9 @@ class ResultsWidget(QtGui.QWidget):
         """
 
         if tracklet.is_single():
-            return (0, 255, 0)
+            return (4, 204, 14)
         elif tracklet.is_multi():
-            return (0, 0, 255)
+            return (28, 190, 255)
         elif tracklet.is_noise():
             return (255, 0, 0)
         elif tracklet.is_part():
@@ -1093,6 +1097,7 @@ class ResultsWidget(QtGui.QWidget):
             it_y = (2 * A) * id_
 
             crop = np.asarray(np.maximum(0, np.asarray(self.old_crops[id_], dtype=np.int) - DARKEN), dtype=np.uint8)
+            crop[A, :, :] = 20
             pixmap = cvimg2qtpixmap(crop)
             pixmap = QtGui.QGraphicsPixmapItem(pixmap)
             pixmap.setPos(it_x, it_y)
@@ -1101,7 +1106,10 @@ class ResultsWidget(QtGui.QWidget):
 
             s = np.zeros((2 * A, stripe_w, 3), dtype=np.uint8)
             for j in range(3):
-                s[:, :, j] = max(0, self.project.animals[id_].color_[j]-DARKEN-DARKEN_COLOR)
+                s[:, :, j] = self.project.animals[id_].color_[j]
+
+            val_ = int((2*A) / 9)
+            s[4*val_:5*val_, :, :] = 20
 
             pixmap = cvimg2qtpixmap(s)
             pixmap = QtGui.QGraphicsPixmapItem(pixmap)

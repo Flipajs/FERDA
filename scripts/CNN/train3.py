@@ -177,5 +177,3 @@ if __name__ == '__main__':
             best_eval_random = results[1]
             print "saving weights"
             classification_model.save_weights(DATA_DIR + "/" + OUT_NAME + "_rand.h5")
-
-

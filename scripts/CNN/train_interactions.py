@@ -22,7 +22,7 @@ BATCH_SIZE = 32
 TWO_TESTS = True
 
 WEIGHTS = 'cam3_zebr_weights_vgg'
-NUM_PARAMS = 4
+NUM_PARAMS = 6
 
 def model():
     input_shape = Input(shape=(200, 200, 3))
@@ -44,7 +44,7 @@ def model():
     # The vision model will be shared, weights and all
     out_a = vision_model(input_shape)
     # out_a = Flatten()(out_a)
-
+    #
     # out_a = Dense(256, activation='relu')(out_a)
     # out_a = Dense(128, activation='relu')(out_a)
     # out_a = Dense(32, activation='relu')(out_a)
@@ -104,6 +104,13 @@ if __name__ == '__main__':
     seed = 7
     np.random.seed(seed)
 
+    from sklearn.preprocessing import StandardScaler
+    scaler = StandardScaler()
+
+    scaler.fit(y_train)
+    y_train = scaler.transform(y_train)
+    y_test = scaler.transform(y_train)
+
     m = model()
     m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
 
@@ -128,6 +135,9 @@ if __name__ == '__main__':
     # pipeline.fit(X_train, y_train, mlp__validation_split=0.05)
 
     pred = m.predict(X_test)
+
+    pred = scaler.inverse_transform(pred)
+
     with h5py.File(DATA_DIR+'/predictions.h5', 'w') as hf:
         hf.create_dataset("data", data=pred)
 
