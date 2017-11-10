@@ -134,7 +134,7 @@ class GraphManager:
     def get_chunk(self, vertex):
         ch, _ = self.is_chunk(vertex)
 
-        if ch.id() in self.project.chm.track_refs:
+        if ch is not None and ch.id() in self.project.chm.track_refs:
             ch = self.project.chm.track_refs[ch.id()]
 
         return ch
