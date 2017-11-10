@@ -4,10 +4,20 @@ from chunk import Chunk
 from ghost_tracklet import GhostTracklet
 from warnings import warn
 
+def unfold(tracklets):
+    new_tracklets = []
+
+    for t in tracklets:
+        if t.is_tracklet():
+            new_tracklets.append(t)
+        elif t.is_track():
+            new_tracklets.extend(unfold(t._data))
+
+    return new_tracklets
+
 class Track(Chunk):
     def __init__(self, tracklets, gm, id_=-1):
         self.id_ = id_
-        self.gm = gm
 
         # tracklets and spaces...
         self._data=[]
@@ -17,6 +27,13 @@ class Track(Chunk):
         self.N = set()
 
         self._num_regions = 0
+
+        for t in tracklets:
+            if t.is_track():
+                new_track = Track(unfold(tracklets), gm, id_)
+                self.__dict__ = new_track.__dict__
+                return
+
         for t in tracklets:
             sf = t.start_frame(gm)
             if len(self._data):
@@ -24,8 +41,8 @@ class Track(Chunk):
                 if ef + 1 != sf:
                     self._data.append(GhostTracklet(ef, sf - 1))
 
-            self.P.union(t.P)
-            self.N.union(t.N)
+            self.P = self.P.union(t.P)
+            self.N = self.N.union(t.N)
 
             self._data.append(t)
 
@@ -46,8 +63,14 @@ class Track(Chunk):
             if key < 0:  # Handle negative indices
                 key += len(self)
 
-            t = self._tracklet(key+self.start, self.gm)
-            return t[key]
+            offset = 0
+            for t in self._data:
+                if key - offset < len(t):
+                    break
+                else:
+                    offset += len(t)
+
+            return t[key-offset]
         #
         # ids = []
         # if isinstance(key, slice):
@@ -95,7 +118,7 @@ class Track(Chunk):
         self.__dict__.update(Track(my_tracklets, gm, id_=self.id_).__dict__)
 
     def __len__(self):
-        return self.end - self.start
+        return self.end - self.start + 1
 
     def print_info(self, gm):
         s = "TRACKLET --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
@@ -170,10 +193,23 @@ class Track(Chunk):
     def _tracklet(self, frame, gm):
         # TODO: improve...
         for t in self._data:
-            if frame >= t.start_frame(gm) and frame < t.end_frame(gm):
+            if frame >= t.start_frame(gm) and frame <= t.end_frame(gm):
                 return t
 
     def r_id_in_t(self, frame, gm):
         tracklet = self._tracklet(frame, gm)
         # TODO: find proper chunk...
         return gm.region_id(tracklet.v_id_in_t(frame, gm))
+
+    def is_tracklet(self):
+        return False
+
+    def is_track(self):
+        return True
+
+    def is_inside(self, tracklet):
+        for t in self._data:
+            if t.id() == tracklet.id():
+                return True
+
+        return False

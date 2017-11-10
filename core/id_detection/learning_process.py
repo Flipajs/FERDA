@@ -1063,7 +1063,7 @@ class LearningProcess:
         return p1
 
 
-    def _update_certainty(self, tracklet):
+    def _update_certainty(self, tracklet, print_p1_competitor=False):
         if tracklet.id() == 16109:
             print tracklet.id()
 
@@ -1114,7 +1114,7 @@ class LearningProcess:
                     p1_competitor = self.get_p1(xx, k)
                     term1 *= 1 - p1_competitor
 
-                    if p1_competitor > 0.5:
+                    if p1_competitor > 0.5 and print_p1_competitor:
                         print "term1: p1_competitor is too high in certainty computation for ", tracklet.id() , "in comparison with ", t.id(), p1_competitor
                 except KeyError:
                     pass
@@ -1307,7 +1307,7 @@ class LearningProcess:
 
         # TODO: gather all and update_certainty at the end, it is possible that it will be called multiple times
         if tracklet.id() in self.tracklet_measurements:
-            self._update_certainty(tracklet)
+            self._update_certainty(tracklet, print_p1_competitor=False)
 
         if self.id_N_propagate:
             if not skip_out:
@@ -1529,6 +1529,9 @@ class LearningProcess:
         Returns:
 
         """
+
+        if tracklet.is_track():
+            print "Track"
 
         if not isinstance(id_, int):
             print "FAIL in learning_process.py assign_identity, id is not a number"

@@ -584,6 +584,9 @@ class ResultsWidget(QtGui.QWidget):
         except:
             return
 
+        if tracklet is None:
+            return
+
         frame = tracklet.start_frame(self.project.gm)
         self.video_player.goto(frame)
         print id_
@@ -1071,6 +1074,9 @@ class ResultsWidget(QtGui.QWidget):
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
             r = rch.region_in_t(frame)
 
+            if r is None:
+                continue
+
             cenY, cenX = r.centroid()
 
             crop = get_safe_selection(img, cenY-A, cenX-A, 2*A, 2*A, fill_color=(0, 0, 0))
@@ -1149,6 +1155,7 @@ class ResultsWidget(QtGui.QWidget):
 
             if r is None:
                 print ch
+                continue
 
             centroid = r.centroid().copy()
 
@@ -1336,29 +1343,30 @@ class ResultsWidget(QtGui.QWidget):
 
         s += "\n tracklet class: "+ch.segmentation_class_str()
 
-        avg_area = 0
-        for r_ in rch.regions_gen():
-            avg_area += r_.area()
+        # avg_area = 0
+        # for r_ in rch.regions_gen():
+        #     avg_area += r_.area()
+        #
+        # avg_area /= rch.chunk_.length()
 
-        avg_area /= rch.chunk_.length()
-
-        s += "\n avg area: " + str(avg_area)
+        # s += "\n avg area: " + str(avg_area)
+        # s += "\n avg area: " + str(avg_area)
 
         if r:
             s += "\n\nregion (id: "+str(r.id())+")"
             s += "\n " + textwrap.fill(str(r), 40)
             s += " radius: {:.3}\n".format(self.__compute_radius(r))
 
-        if self.tracklet_measurements is not None:
-            s += "\nTracklet ID probs: \n"
-            try:
-                vals = np.mean(self.tracklet_measurements(ch.id()))
-            except TypeError:
-                vals = self.tracklet_measurements(ch.id())
-
-            if vals is not None:
-                for i, a in enumerate(vals.flatten()):
-                    s += "\t{}: {:.2%}\n".format(i, a)
+        # if self.tracklet_measurements is not None:
+        #     s += "\nTracklet ID probs: \n"
+        #     try:
+        #         vals = np.mean(self.tracklet_measurements(ch.id()))
+        #     except TypeError:
+        #         vals = self.tracklet_measurements(ch.id())
+        #
+        #     if vals is not None:
+        #         for i, a in enumerate(vals.flatten()):
+        #             s += "\t{}: {:.2%}\n".format(i, a)
 
         self.info_l.setText(s)
 
@@ -2148,6 +2156,23 @@ class ResultsWidget(QtGui.QWidget):
                 t2 = list(set(g2).difference(set(g1).intersection(g2)))[0]
                 print t1.id(), t1.length()
                 print t2.id(), t2.length()
+
+                # was added to Track
+                if t1.id() not in self.project.chm.chunks_:
+                    for t in self.project.chm.chunks_in_frame(t1.end_frame(self.project.gm)):
+                        if t.is_track():
+                            if t.is_inside(t1):
+                                t1 = t
+                                break
+
+                # was added to Track, shouldn'd happen
+                if t2.id() not in self.project.chm.chunks_:
+                    print "T2 happened....."
+                    for t in self.project.chm.chunks_in_frame(t2.start_frame(self.project.gm)):
+                        if t.is_track():
+                            if t.is_inside(t1):
+                                t2 = t
+                                break
 
                 from core.graph.track import Track
                 tt = Track([t1, t2], self.project.gm)

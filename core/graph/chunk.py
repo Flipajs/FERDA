@@ -401,3 +401,12 @@ class Chunk:
             return "part-of-ID"
         else:
             return "undefined"
+
+    def is_ghost(self):
+        return False
+
+    def is_tracklet(self):
+        return True
+
+    def is_track(self):
+        return False

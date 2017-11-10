@@ -13,6 +13,7 @@ class ChunkManager:
         self.itree = IntervalTree()
         self.eps1 = 0.01
         self.eps2 = 0.1
+        self.track_refs = {}
 
     def __getitem__(self, index):
         return self.chunks_.get(index, None)
@@ -26,7 +27,14 @@ class ChunkManager:
         self._add_ch_itree(track, gm)
 
         for t in track._data:
-            self.remove_tracklet_from_itree(t, gm)
+            # self._try_ch_itree_delete()
+            if not t.is_ghost():
+                if t.id() in self.chunks_:
+                    self.remove_chunk(t, gm)
+
+                self.track_refs[t.id()] = track.id_
+
+            # self.remove_tracklet_from_itree(t, gm)
 
         self.id_ += 1
 
