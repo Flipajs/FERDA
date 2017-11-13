@@ -12,15 +12,16 @@ NUM_ANIMALS = 6
 # NUM_EXAMPLES x NUM_A
 NUM_EXAMPLES = 1000
 TRAIN_TEST_RATIO = 0.1
+BATCH_SIZE = 100
 
 def repre(project):
     repre = {}
-    repre['yellow'] = [28664, 38, 40]
-    repre['green'] = [1, 32, 18558, 17678, 14138, 6996, 20254, 27530, 32710, 7870, 53, 30187]
-    repre['orange'] = [20, 32, 43, 47, 2604, 18914, 25770, 60, 61, 32707]
-    repre['red'] = [20187, 22403, 5185, 5477, 26798, 23095, 28403, 23345, 13443, 28932]
-    repre['blue'] = [25021, 29489, 21416, 19292, 22633, 21292, 191, 32167, 2532, 11778, 27151]
-    repre['purple'] = [6001]
+    # repre['yellow'] = [28664, 38, 40]
+    # repre['green'] = [1, 32, 18558, 17678, 14138, 6996, 20254, 27530, 32710, 7870, 53, 30187]
+    # repre['orange'] = [20, 32, 43, 47, 2604, 18914, 25770, 60, 61, 32707]
+    # repre['red'] = [20187, 22403, 5185, 5477, 26798, 23095, 28403, 23345, 13443, 28932]
+    # repre['blue'] = [25021, 29489, 21416, 19292, 22633, 21292, 191, 32167, 2532, 11778, 27151]
+    # repre['purple'] = [6001]
 
     for key, vals in repre.iteritems():
         s = 0
@@ -34,8 +35,23 @@ def repre(project):
 
     return repre
 
+def save_batch(batch_i, imgs):
+    global OUT_DIR
+
+    imgs = np.array(imgs)
+    imgs = imgs.astype('float32')
+    imgs /= 255
+
+    batch_s = str(batch_i)
+    while len(batch_s):
+        batch_s = "0" + batch_s
+
+    with h5py.File(OUT_DIR + '/test/batch_' + batch_s + '.h5', 'w') as hf:
+        hf.create_dataset("data", data=imgs)
+
 
 if __name__ == '__main__':
+    # WD = sys.argv()
     wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr/HH1_PRE_upper_thr.fproj'
     from core.project.project import Project
 
@@ -105,6 +121,9 @@ if __name__ == '__main__':
     except:
         pass
 
+    batch_i = 0
+    i = 0
+    imgs = []
     for t in tqdm.tqdm(p.chm.chunk_gen(), len(p.chm)):
         if not t.is_single():
             continue
@@ -115,6 +134,14 @@ if __name__ == '__main__':
 
             y, x = r.centroid()
             crop = get_safe_selection(img, y - offset, x - offset, 2 * offset, 2 * offset)
-            cv2.imwrite(OUT_DIR + '/test/' + str(r.id()) + '.jpg', crop,
-                        [int(cv2.IMWRITE_JPEG_QUALITY), 95])
 
+            imgs.append(crop)
+            if len(imgs) == BATCH_SIZE:
+                save_batch(batch_i, imgs)
+
+                imgs = []
+                batch_i += 1
+
+    if len(imgs):
+        save_batch(batch_i, imgs)
+    # save rest..
