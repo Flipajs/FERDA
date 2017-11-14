@@ -61,6 +61,8 @@ if __name__ == '__main__':
     except:
         pass
 
+    p.img_manager.max_size_mb = 1000
+
     batch_i = 0
     imgs = []
     ids = []
