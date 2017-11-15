@@ -179,6 +179,7 @@ class Project:
         self.save_project_file_(to_folder)
 
     def save_gm_(self, file_path):
+        print "saving GM"
         # Graph Manager
         if self.gm:
             self.gm.project = None

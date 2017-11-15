@@ -44,11 +44,13 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
     project.load(wd)
+
     # workaround
-    project.chm.track_refs = {}
+    if not hasattr(project.chm, 'track_refs'):
+        project.chm.track_refs = {}
 
     # TODO !!
-    project.solver.one2one(check_tclass=True)
+    # project.solver.one2one(check_tclass=True)
 
     # cases = []
     # for v in project.gm.g.vertices():

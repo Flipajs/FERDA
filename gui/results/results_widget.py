@@ -2146,6 +2146,11 @@ class ResultsWidget(QtGui.QWidget):
 
         num_single = 0
 
+        pivot = groups[ids[0]]
+
+        print pivot
+
+
         g1 = groups[0]
         for g2 in groups[1:]:
             if len(set(g1).intersection(g2)) == len(self.project.animals) - 1:
@@ -2156,6 +2161,7 @@ class ResultsWidget(QtGui.QWidget):
                 t2 = list(set(g2).difference(set(g1).intersection(g2)))[0]
                 print t1.id(), t1.length()
                 print t2.id(), t2.length()
+
 
                 # was added to Track
                 if t1.id() not in self.project.chm.chunks_:

@@ -50,7 +50,7 @@ class Chunk:
         self.chunk_reconnect_(gm)
 
     def __str__(self):
-        s = "CHUNK --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
+        s = "CHUNK --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+" "+str(self.P)+"\n"
         return s
 
     def __len__(self):
