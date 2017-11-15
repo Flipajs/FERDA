@@ -7,6 +7,8 @@ from imageio import imread
 from core.project.project import Project
 from utils.img import get_safe_selection
 from utils.video_manager import get_auto_video_manager
+import time
+
 
 OUT_DIR = '/Volumes/Seagate Expansion Drive/CNN_HH1_pre'
 WD = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
@@ -66,19 +68,17 @@ if __name__ == '__main__':
     batch_i = 0
     imgs = []
     ids = []
-    for t in tqdm.tqdm(p.chm.chunk_gen(), total=len(p.chm)):
-        if not t.is_single():
-            continue
 
-        for r_id in t.rid_gen(p.gm):
-            r = p.rm[r_id]
+    t = time.time()
+    for frame in tqdm.tqdm(xrange(vm.total_frame_count())):
+        for r in p.gm.regions_in_t(frame):
             img = p.img_manager.get_whole_img(r.frame())
 
             y, x = r.centroid()
             crop = get_safe_selection(img, y - offset, x - offset, 2 * offset, 2 * offset)
 
             imgs.append(crop)
-            ids.append(r_id)
+            ids.append(r.id())
             if len(imgs) == BATCH_SIZE:
                 save_batch(batch_i, imgs, ids)
 
@@ -86,6 +86,8 @@ if __name__ == '__main__':
                 ids = []
 
                 batch_i += 1
+
+                print "TOTAL TIME: ", time.time() - t
 
     if len(imgs):
         save_batch(batch_i, imgs, ids)
