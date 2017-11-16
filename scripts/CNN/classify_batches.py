@@ -7,7 +7,7 @@ import numpy as np
 
 from keras.models import model_from_json
 
-def classify_imgs(imgs, results_map):
+def classify_imgs(imgs, ids, results_map):
     global DATA_DIR, MODEL_NAME
 
     json_file = open(DATA_DIR + "/" + MODEL_NAME + ".json", 'r')
@@ -20,7 +20,7 @@ def classify_imgs(imgs, results_map):
     y_pred = classification_model.predict(imgs, verbose=1)
 
     for i in range(len(imgs)):
-        id_ = int(names[i][1][:-4])
+        id_ = int(ids[i])
         results_map[id_] = y_pred[i, :]
 
 
@@ -31,15 +31,21 @@ if __name__ == '__main__':
     imgs = []
     names = []
 
-    pattern = re.compile(r"(.)*\.jpg")
+    pattern = re.compile(r"(.)*\imgs.h5")
 
     results_map = {}
 
     for fname in tqdm.tqdm(os.listdir(DATA_DIR+ '/test')):
         if pattern.match(fname):
+            n = fname[:10]
             with h5py.File(DATA_DIR + '/test/' + fname, 'r') as hf:
                 imgs = hf['data'][:]
-                classify_imgs(results_map)
+                print imgs.shape
+            with h5py.File(DATA_DIR + '/test/' + n + 'ids.h5', 'r') as hf:
+                ids = hf['data'][:]
+                print ids.shape
+                
+            classify_imgs(imgs, ids, results_map)
 
     import pickle
     with open(DATA_DIR+'/softmax_results_map.pkl', 'wb') as f:
