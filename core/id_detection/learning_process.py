@@ -1998,6 +1998,7 @@ class LearningProcess:
         i = 0
         old_frame = 0
         print "analysing project, searching Complete Sets"
+        print
         with tqdm(total=total_frame_count) as pbar:
             while True:
                 group = self.p.chm.chunks_in_frame(frame)
@@ -2024,6 +2025,7 @@ class LearningProcess:
 
                 i += 1
                 pbar.update(frame - old_frame)
+                old_frame = frame
 
         # print "# groups: {}".format(len(groups))
         # g1 = groups[0]
