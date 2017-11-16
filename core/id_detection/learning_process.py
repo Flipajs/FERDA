@@ -375,14 +375,6 @@ class LearningProcess:
 
             pickle.dump(d, f)
 
-    def fill_undecided_tracklets(self):
-        for t in self.p.chm.chunk_gen():
-            # if t.id() in self.collision_chunks or t.is_multi():
-            if not t.is_single() or t.length() < self.min_tracklet_len:
-                continue
-
-            self.undecided_tracklets.add(t.id())
-
     def update_undecided_tracklets(self):
         print "Updating undecided tracklets..."
         self.undecided_tracklets = set()
@@ -1066,10 +1058,6 @@ class LearningProcess:
         return p1
 
     def _get_certainty(self, tracklet):
-        if tracklet.id() == 4650:
-            pass
-
-
         P = tracklet.P
         N = tracklet.N
 
@@ -1083,7 +1071,8 @@ class LearningProcess:
             for id_ in N:
                 x_[:, id_] = 0
 
-            x_ /= np.sum(x_)
+            # TODO: normalize
+            # x_ /= np.sum(x_)
 
             # k is best predicted ID
             k = np.argmax(np.sum(x_, axis=0))
@@ -1495,11 +1484,19 @@ class LearningProcess:
 
         return probs
 
-    def reset_learning(self, use_xgboost=False):
+    def prepare_unassigned_cs(self):
         self.undecided_tracklets = set()
         self.tracklet_certainty = {}
         self.tracklet_measurements = {}
-        self.fill_undecided_tracklets()
+
+        self.update_undecided_tracklets()
+
+        self.train()
+
+    def reset_learning(self, use_xgboost=False):
+        self.tracklet_certainty = {}
+        self.tracklet_measurements = {}
+        self.update_undecided_tracklets()
 
         self._reset_chunk_PN_sets()
 
@@ -2010,12 +2007,12 @@ class LearningProcess:
                 if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 1:
                     groups.append(singles_group)
 
-                    overlap = min([t.end_frame(self.p.gm) for t in singles_group]) \
-                              - max([t.start_frame(self.p.gm) for t in singles_group])
+                    # overlap = min([t.end_frame(self.p.gm) for t in singles_group]) \
+                    #           - max([t.start_frame(self.p.gm) for t in singles_group])
+                    #
+                    # overlap_sum += overlap
 
-                    overlap_sum += overlap
-
-                    frames.append((frame, overlap, ))
+                    # frames.append((frame, overlap, ))
                     for t in singles_group:
                         unique_tracklets.add(t)
 
@@ -2026,20 +2023,6 @@ class LearningProcess:
                 i += 1
                 pbar.update(frame - old_frame)
                 old_frame = frame
-
-        # print "# groups: {}".format(len(groups))
-        # g1 = groups[0]
-        # g2 = groups[1]
-        #
-        # print "G1"
-        # for t in g1:
-        #     print t.start_frame(self.p.gm)
-        #     print t.end_frame(self.p.gm)
-        #
-        # print "G2"
-        # for t in g2:
-        #     print t.start_frame(self.p.gm)
-        #     print t.end_frame(self.p.gm)
 
         last_len = np.inf
         ii = 0
