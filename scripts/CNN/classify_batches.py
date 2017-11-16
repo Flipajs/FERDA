@@ -31,8 +31,10 @@ if __name__ == '__main__':
     MODEL_NAME = sys.argv[2]
 
     BGR_FORMAT = True
-    if len(sys.argv) == 3:
+    if len(sys.argv) > 3:
         BGR_FORMAT = bool(string.atoi(sys.argv[3]))
+
+    print "SWAP BGR?: ", BGR_FORMAT
 
     imgs = []
     names = []
