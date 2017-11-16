@@ -69,6 +69,8 @@ if __name__ == '__main__':
     imgs = []
     ids = []
 
+    # TODO: skip multi regions
+
     t = time.time()
     for frame in tqdm.tqdm(xrange(vm.total_frame_count())):
         for r in p.gm.regions_in_t(frame):

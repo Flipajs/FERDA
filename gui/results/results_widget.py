@@ -194,6 +194,9 @@ class ResultsWidget(QtGui.QWidget):
         self.highlight_tracklet_button = QtGui.QPushButton('show tracklet')
         self.highlight_tracklet_button.clicked.connect(self.highlight_tracklet_button_clicked)
 
+        self.highlight_region_button = QtGui.QPushButton('show region')
+        self.highlight_region_button.clicked.connect(self.highlight_region_button_clicked)
+
         self.stop_highlight_tracklet = QtGui.QPushButton('stop highlight tracklet')
         self.stop_highlight_tracklet.clicked.connect(self.stop_highlight_tracklet_clicked)
 
@@ -263,6 +266,7 @@ class ResultsWidget(QtGui.QWidget):
         self.tracklet_box.layout().addWidget(self.tracklet_p_label)
         self.tracklet_box.layout().addWidget(self.tracklet_n_label)
         self.tracklet_box.layout().addWidget(self.highlight_tracklet_button)
+        self.tracklet_box.layout().addWidget(self.highlight_region_button)
         self.tracklet_box.layout().addWidget(self.stop_highlight_tracklet)
         self.tracklet_box.layout().addWidget(self.decide_tracklet_button)
         self.tracklet_box.layout().addWidget(self.tracklet_begin_button)
@@ -574,6 +578,28 @@ class ResultsWidget(QtGui.QWidget):
         self._set_active_tracklet_id(-1)
         self._highlight_tracklets = set()
         self.redraw_video_player_visualisations()
+
+    def highlight_region_button_clicked(self):
+        try:
+            id_ = int(self.highlight_tracklet_input.text())
+            r = self.project.rm[id_]
+        except:
+            return
+
+        frame = r.frame()
+
+        t_id = None
+        for t in self.project.chm.chunks_in_frame(frame):
+            if id_ in t.rid_gen(self.project.gm):
+                t_id = t.id()
+                break
+
+
+        self.video_player.goto(frame)
+        print id_
+
+        if t_id:
+            self._set_active_tracklet_id(t_id)
 
     def highlight_tracklet_button_clicked(self):
         self._highlight_tracklets = set()
