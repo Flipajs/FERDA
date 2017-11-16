@@ -1987,15 +1987,17 @@ class LearningProcess:
         vm = get_auto_video_manager(self.p)
         total_frame_count = vm.total_frame_count()
         expected_t_len = len(self.p.animals) * total_frame_count
-        total_single_t_len = 0
-        for t in self.p.chm.chunk_gen():
-            if t.is_single():
-                total_single_t_len += t.length()
+
+        # total_single_t_len = 0
+        # for t in self.p.chm.chunk_gen():
+        #     if t.is_single():
+        #         total_single_t_len += t.length()
 
         overlap_sum = 0
         frame = 0
         i = 0
         old_frame = 0
+        print "analysing project, searching Complete Sets"
         with tqdm(total=total_frame_count) as pbar:
             while True:
                 group = self.p.chm.chunks_in_frame(frame)
@@ -2023,22 +2025,25 @@ class LearningProcess:
                 i += 1
                 pbar.update(frame - old_frame)
 
-        print "# groups: {}".format(len(groups))
-        g1 = groups[0]
-        g2 = groups[1]
-
-        print "G1"
-        for t in g1:
-            print t.start_frame(self.p.gm)
-            print t.end_frame(self.p.gm)
-
-        print "G2"
-        for t in g2:
-            print t.start_frame(self.p.gm)
-            print t.end_frame(self.p.gm)
+        # print "# groups: {}".format(len(groups))
+        # g1 = groups[0]
+        # g2 = groups[1]
+        #
+        # print "G1"
+        # for t in g1:
+        #     print t.start_frame(self.p.gm)
+        #     print t.end_frame(self.p.gm)
+        #
+        # print "G2"
+        # for t in g2:
+        #     print t.start_frame(self.p.gm)
+        #     print t.end_frame(self.p.gm)
 
         last_len = np.inf
         ii = 0
+
+        np.set_printoptions(precision=2)
+
         while(len(groups) != last_len):
             print "############## ", ii, len(groups)
 
@@ -2707,6 +2712,7 @@ class LearningProcess:
                 # min_certs.append(min(cert)*max(0.75, (min_lengths[i] / max_min_length)))
                 min_certs.append(min(cert))
 
+        print min_certs
         min_certs = np.array(min_certs)
         ids_ = np.argsort(-min_certs)
         groups = np.array(groups)[ids_]

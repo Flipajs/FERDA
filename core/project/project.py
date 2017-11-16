@@ -466,7 +466,8 @@ class Project:
         try:
             with open(chm_path, 'rb') as f:
                 self.chm = pickle.load(f)
-        except:
+        except Exception as e:
+            print "CHM not loaded", e
             pass
 
         # Graph Manager
