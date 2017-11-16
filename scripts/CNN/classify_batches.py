@@ -6,6 +6,8 @@ import h5py
 import numpy as np
 
 from keras.models import model_from_json
+import string
+
 
 def classify_imgs(imgs, ids, results_map):
     global DATA_DIR, MODEL_NAME
@@ -28,6 +30,10 @@ if __name__ == '__main__':
     DATA_DIR = sys.argv[1]
     MODEL_NAME = sys.argv[2]
 
+    BGR_FORMAT = True
+    if len(sys.argv) == 3:
+        BGR_FORMAT = bool(string.atoi(sys.argv[3]))
+
     imgs = []
     names = []
 
@@ -44,7 +50,11 @@ if __name__ == '__main__':
             with h5py.File(DATA_DIR + '/test/' + n + 'ids.h5', 'r') as hf:
                 ids = hf['data'][:]
                 print ids.shape
-                
+
+            # we need to reverse image channels
+            if BGR_FORMAT:
+                imgs = imgs[:, :, :, ::-1]
+
             classify_imgs(imgs, ids, results_map)
 
     import pickle
