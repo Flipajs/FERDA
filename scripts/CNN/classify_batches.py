@@ -7,9 +7,9 @@ import numpy as np
 
 from keras.models import model_from_json
 import string
+from keras.models import Model
 
-
-def classify_imgs(imgs, ids, results_map):
+def classify_imgs(imgs, ids, results_map, dist_map):
     global DATA_DIR, MODEL_NAME
 
     json_file = open(DATA_DIR + "/" + MODEL_NAME + ".json", 'r')
@@ -19,11 +19,16 @@ def classify_imgs(imgs, ids, results_map):
     loaded_model.load_weights(DATA_DIR + "/" + MODEL_NAME + ".h5")
     classification_model = loaded_model
 
+    classification_model = Model(input=[classification_model.inputs[0]],
+                  output=[classification_model.output, classification_model.layers[2].input])
+    # classification_model.summary()
+
     y_pred = classification_model.predict(imgs, verbose=1)
 
     for i in range(len(imgs)):
         id_ = int(ids[i])
-        results_map[id_] = y_pred[i, :]
+        results_map[id_] = y_pred[0][i, :]
+        dist_map[id_] = y_pred[1][i, :]
 
 
 if __name__ == '__main__':
@@ -42,6 +47,9 @@ if __name__ == '__main__':
     pattern = re.compile(r"(.)*\imgs.h5")
 
     results_map = {}
+    dist_map = {}
+
+    i = 0
 
     for fname in tqdm.tqdm(os.listdir(DATA_DIR+ '/test')):
         if pattern.match(fname):
@@ -57,8 +65,15 @@ if __name__ == '__main__':
             if BGR_FORMAT:
                 imgs = imgs[:, :, :, ::-1]
 
-            classify_imgs(imgs, ids, results_map)
+            i += 1
+            classify_imgs(imgs, ids, results_map, dist_map)
+
+            if i > 3:
+                break
 
     import pickle
     with open(DATA_DIR+'/softmax_results_map.pkl', 'wb') as f:
         pickle.dump(results_map, f)
+
+    with open(DATA_DIR+'/softmax_dist_map.pkl', 'wb') as f:
+        pickle.dump(dist_map, f)
