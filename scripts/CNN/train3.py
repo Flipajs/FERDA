@@ -120,6 +120,9 @@ if __name__ == '__main__':
     # load weights into new model
     vision_model.load_weights(ROOT_DIR+"/vision_"+WEIGHTS+".h5")
 
+    for layer in vision_model.layers:
+        vision_model.trainable = False
+
     vision_model.summary()
     # The vision model will be shared, weights and all
     out_a = vision_model(animal_a)
@@ -128,6 +131,7 @@ if __name__ == '__main__':
     out = Dense(K, activation='softmax')(out_a)
 
     classification_model = Model(animal_a, out)
+    classification_model.summary()
 
     if CONTINUE:
         print "Using last saved weights as initialisation"
