@@ -83,7 +83,7 @@ if __name__ == '__main__':
     # x = MaxPooling2D((2, 2))(x)
 
     # x = Conv2D(64, (3, 3))(x)
-    x = Conv2D(64, (3, 3), dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
     x = Conv2D(32, (3, 3))(x)
     x = MaxPooling2D((2, 2))(x)
     x = Conv2D(16, (3, 3))(x)
