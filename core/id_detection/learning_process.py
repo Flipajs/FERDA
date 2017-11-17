@@ -1077,6 +1077,9 @@ class LearningProcess:
             # k is best predicted ID
             k = np.argmax(np.sum(x_, axis=0))
 
+            if k == len(self.p.animals):
+                return 0, None
+
             # TODO: seems like using only p1... why? If using also p2, be aware of overflow problems...
             p1 = self.get_p1(x_, k)
 
@@ -1791,7 +1794,7 @@ class LearningProcess:
         used = set()
         for t in group:
             cert, k = self._get_certainty(t)
-            if k in used:
+            if k in used or k is None:
                 return None, None
 
             certainty[k] = cert
@@ -2036,13 +2039,17 @@ class LearningProcess:
             groups = self._process_groups(groups)
             ii += 1
 
+        already_computed = set()
         unassigned_l = 0
         for g in groups:
             for t in g:
                 if not len(t.P):
-                    unassigned_l += len(t)
+                    if t not in already_computed:
+                        unassigned_l += len(t)
 
-        print "#not solved CS: {}, sum lenght of unassigned: {}".format(len(groups), unassigned_l)
+                        already_computed.add(t)
+
+        print "#not solved CS: {}, sum length of unassigned: {}".format(len(groups), unassigned_l)
 
         return
 
@@ -2706,7 +2713,7 @@ class LearningProcess:
         # pivot_group_id = np.argmax(min_certs)
         # pivot = groups[pivot_group_id]
 
-        threshold = 0.0
+        threshold = 0.5
 
         rest_groups = []
         for i in tqdm(range(len(orderings))):
