@@ -47,7 +47,7 @@ if __name__ == '__main__':
             ai = k
 
             if len(images_f) <= ai:
-                ai = random.randint(0, len(images_f[i]) - 1)
+                ai = random.randint(0, len(images_f[i])     - 1)
 
             if ai >= split_idx:
                 im1 = imread(OUT_DIR + '/' + str(i) + '/' + str(images_f[i][ai]) + '.jpg')

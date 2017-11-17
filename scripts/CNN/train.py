@@ -75,15 +75,15 @@ if __name__ == '__main__':
     animal_input = Input(shape=X_train_a.shape[1:])
 
     x = Conv2D(32, (3, 3))(animal_input)
-    x = Conv2D(32, (3, 3))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
     x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3))(x)
-    x = Conv2D(32, (3, 3))(x)
-    x = Conv2D(32, (3, 3))(x)
-    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = MaxPooling2D((2, 2))(x)
 
-    x = Conv2D(64, (3, 3))(x)
-    x = Conv2D(64, (3, 3))(x)
+    # x = Conv2D(64, (3, 3))(x)
+    x = Conv2D(64, (3, 3), dilation_rate=(2, 2))(x)
     x = Conv2D(32, (3, 3))(x)
     x = MaxPooling2D((2, 2))(x)
     x = Conv2D(16, (3, 3))(x)
@@ -92,6 +92,7 @@ if __name__ == '__main__':
     x = Flatten()(x)
 
     vision_model = Model(animal_input, x)
+    vision_model.summary()
 
     # Then define the tell-digits-apart model
     animal_a = Input(shape=X_train_a.shape[1:])
