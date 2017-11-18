@@ -28,6 +28,7 @@ def make_web(DIR, data=''):
             f.write(fs)
 
 if __name__ == '__main__':
-    DIR = '/Volumes/Seagate Expansion Drive/CNN_HH1_train'
+    # DIR = '/Volumes/Seagate Expansion Drive/CNN_HH1_train'
+    DIR = '/Users/flipajs/Documents/dev/ferda/scripts/out9'
     make_web(DIR)
 
