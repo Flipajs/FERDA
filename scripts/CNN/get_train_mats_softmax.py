@@ -19,6 +19,7 @@ if __name__ == '__main__':
         NUM_ANIMALS = string.atoi(sys.argv[2])
         NUM_EXAMPLES = string.atoi(sys.argv[3])
         RANDOM = bool(string.atoi(sys.argv[4]))
+        TRAIN_TEST_RATIO = float(string.atof(sys.argv[5]))
 
     images_f = []
 

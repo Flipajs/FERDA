@@ -53,6 +53,12 @@ if __name__ == '__main__':
 
     for fname in tqdm.tqdm(os.listdir(DATA_DIR+ '/test')):
         if pattern.match(fname):
+            i += 1
+            # if i < 28:
+            #     continue
+            # if i > 35:
+            #     break
+
             n = fname[:10]
             with h5py.File(DATA_DIR + '/test/' + fname, 'r') as hf:
                 imgs = hf['data'][:]
@@ -65,11 +71,7 @@ if __name__ == '__main__':
             if BGR_FORMAT:
                 imgs = imgs[:, :, :, ::-1]
 
-            i += 1
             classify_imgs(imgs, ids, results_map, dist_map)
-
-            if i > 3:
-                break
 
     import pickle
     with open(DATA_DIR+'/softmax_results_map.pkl', 'wb') as f:

@@ -8,11 +8,15 @@ from core.project.project import Project
 from utils.img import get_safe_selection
 from utils.video_manager import get_auto_video_manager
 import time
+from utils.img import apply_ellipse_mask
+from core.graph.region_chunk import RegionChunk
 
+ELLIPSE_DILATION = 10
+MASK_SIGMA = 10
 
-OUT_DIR = '/Volumes/Seagate Expansion Drive/CNN_HH1_pre'
-WD = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
-BATCH_SIZE = 10000
+OUT_DIR = '/Volumes/Seagate Expansion Drive/CNN_HH1_POST'
+WD = '/Volumes/Seagate Expansion Drive/HH1_POST'
+BATCH_SIZE = 30000
 
 def save_batch(batch_i, imgs, ids):
     global OUT_DIR
@@ -34,10 +38,11 @@ def save_batch(batch_i, imgs, ids):
 
 
 if __name__ == '__main__':
-    WD = sys.argv[1]
-    OUT_DIR = sys.argv[2]
-    if len(sys.argv) > 3:
-        BATCH_SIZE = string.atoi(sys.argv[3])
+    if len(sys.argv) > 2:
+        WD = sys.argv[1]
+        OUT_DIR = sys.argv[2]
+        if len(sys.argv) > 3:
+            BATCH_SIZE = string.atoi(sys.argv[3])
 
     p = Project()
     p.load(WD)
@@ -63,7 +68,7 @@ if __name__ == '__main__':
     except:
         pass
 
-    p.img_manager.max_size_mb = 1000
+    p.img_manager.max_size_mb = 500
 
     batch_i = 0
     imgs = []
@@ -71,25 +76,32 @@ if __name__ == '__main__':
 
     # TODO: skip multi regions
 
-    t = time.time()
+    print p.chm
+
+    t_ = time.time()
     for frame in tqdm.tqdm(xrange(vm.total_frame_count())):
-        for r in p.gm.regions_in_t(frame):
-            img = p.img_manager.get_whole_img(r.frame())
+        for t in p.chm.chunks_in_frame(frame):
+            if t.is_single():
+                rch = RegionChunk(t, p.gm, p.rm)
+                r = rch.region_in_t(frame)
 
-            y, x = r.centroid()
-            crop = get_safe_selection(img, y - offset, x - offset, 2 * offset, 2 * offset)
+                img = p.img_manager.get_whole_img(r.frame())
 
-            imgs.append(crop)
-            ids.append(r.id())
-            if len(imgs) == BATCH_SIZE:
-                save_batch(batch_i, imgs, ids)
+                y, x = r.centroid()
+                crop = get_safe_selection(img, y - offset, x - offset, 2 * offset, 2 * offset)
+                crop = apply_ellipse_mask(r, crop, MASK_SIGMA, ELLIPSE_DILATION)
 
-                imgs = []
-                ids = []
+                imgs.append(crop)
+                ids.append(r.id())
+                if len(imgs) == BATCH_SIZE:
+                    save_batch(batch_i, imgs, ids)
 
-                batch_i += 1
+                    imgs = []
+                    ids = []
 
-                print "TOTAL TIME: ", time.time() - t
+                    batch_i += 1
+
+                    print "TOTAL TIME: ", time.time() - t_
 
     if len(imgs):
         save_batch(batch_i, imgs, ids)

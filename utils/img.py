@@ -382,3 +382,23 @@ def img_saturation_coef(img, saturation_coef=2.0, intensity_coef=1.0):
     img = cv2.cvtColor(img, cv2.COLOR_HSV2BGR)
 
     return img
+
+def apply_ellipse_mask(r, im, sigma=10, ellipse_dilation=10):
+    from scipy import ndimage
+    from math import ceil
+
+    x = np.zeros((im.shape[0], im.shape[1]))
+
+    deg = int(r.theta_ * 57.295)
+    # angle of rotation of ellipse in anti-clockwise direction
+    cv2.ellipse(x, (x.shape[0] / 2, x.shape[1] / 2),
+                (int(ceil(r.a_)) + ellipse_dilation, int(ceil(r.b_)) + ellipse_dilation),
+                -deg, 0, 360, 255, -1)
+
+    y = ndimage.filters.gaussian_filter(x, sigma=sigma)
+    y /= y.max()
+
+    for i in range(3):
+        im[:, :, i] = np.multiply(im[:, :, i].astype(np.float), y)
+
+    return im
