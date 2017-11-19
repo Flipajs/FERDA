@@ -514,9 +514,30 @@ class LearningProcess:
             with open(self.p.working_directory+'/softmax_results_map.pkl') as f:
                 self.cnn_results_map = pickle.load(f)
 
-            self.__precompute_measurements()
+            with open('/Users/flipajs/Documents/dev/ferda/scripts/out9/rids.pkl') as f:
+                self.not_reliable_rids = pickle.load(f)
+
+            from cachetools import LRUCache
+
+            self.probs_cache = LRUCache(maxsize=10000, missing=self.assembly_tracklet_probs)
+
+            # self.__precompute_measurements()
 
             self.classifier = None
+
+    def assembly_tracklet_probs(self, t):
+        probs = []
+        for r_id in t.rid_gen(self.p.gm):
+            if r_id in self.cnn_results_map:
+                if r_id not in self.not_reliable_rids:
+                    probs.append(self.cnn_results_map[r_id])
+            else:
+                print "ch id: {}, rid: {} missing in cnn_results_map".format(t.id(), r_id)
+
+        probs = np.array(probs)
+
+        return probs
+
 
     def __train_rfc(self, init=False, use_xgboost=False):
         if use_xgboost:
@@ -828,14 +849,7 @@ class LearningProcess:
 
         try:
             if self.classifier_name == CNN_SOFTMAX:
-                probs = []
-                for r_id in ch.rid_gen(self.p.gm):
-                    if r_id in self.cnn_results_map:
-                        probs.append(self.cnn_results_map[r_id])
-                    else:
-                        print "ch id: {}, rid: {} missing in cnn_results_map".format(ch.id(), r_id)
-
-                probs = np.array(probs)
+                return self.probs_cache[ch]
             else:
                 probs = self.classifier.predict_proba(np.array(X))
             if debug:
@@ -1061,9 +1075,12 @@ class LearningProcess:
         P = tracklet.P
         N = tracklet.N
 
+        if tracklet.id() == 17374:
+            pass
+
         # skip the oversegmented regions
         if len(P) == 0:
-            x, _, _ = self._get_tracklet_proba(tracklet)
+            x = self._get_tracklet_proba(tracklet)
             if len(x) == 0:
                 return 0, 0
 
@@ -1096,13 +1113,26 @@ class LearningProcess:
                     continue
 
                 try:
-                    xx = self.tracklet_measurements[t.id()]
+                    xx = self._get_tracklet_proba(t)
+                    # xx = self.tracklet_measurements[t.id()]
                     p1_competitor = self.get_p1(xx, k)
-                    term1 *= 1 - p1_competitor
 
+                    # TODO:
                     if p1_competitor > 0.5:
-                        print "term1: p1_competitor is too high in certainty computation for ", tracklet.id() , "in comparison with ", t.id(), p1_competitor
+                        term1 *= 1 - p1_competitor
+                        print "term1: p1_competitor is too high in certainty computation for ", tracklet.id(), "in comparison with ", t.id(), p1_competitor
+                    # elif p1_competitor > 0.4:
+                    #     print "term1: p1_competitor is too high in certainty computation for ", tracklet.id(), "in comparison with ", t.id(), p1_competitor
+                    # elif p1_competitor > 0.6:
+                    #     print "term1: p1_competitor is too high in certainty computation for ", tracklet.id(), "in comparison with ", t.id(), p1_competitor
+                    # elif p1_competitor > 0.8:
+                    #     print "term1: p1_competitor is too high in certainty computation for ", tracklet.id() , "in comparison with ", t.id(), p1_competitor
+
+                    if term1 < 0.01:
+                        break
+
                 except KeyError:
+                    print "KeyError", t.id()
                     pass
 
             for i in range(len(self.p.animals)):
@@ -1859,7 +1889,7 @@ class LearningProcess:
         for i, g in enumerate(cs1.values()):
             X = []
             for t_id in g:
-                x, _, _ = self._get_tracklet_proba(self.p.chm[t_id])
+                x = self._get_tracklet_proba(self.p.chm[t_id])
 
                 if len(X) == 0:
                     X = np.array(x)
@@ -1977,7 +2007,19 @@ class LearningProcess:
                     tt.N = tt.N.union(P)
 
     def full_csosit_analysis(self, use_xgboost=False):
-        self.train()
+        self.reset_learning()
+
+        print self._get_certainty(self.p.chm[37040])
+        print self._get_certainty(self.p.chm[87562])
+        print self._get_certainty(self.p.chm[70894])
+        print self._get_certainty(self.p.chm[45603])
+        print self._get_certainty(self.p.chm[87605])
+        print self._get_certainty(self.p.chm[29991])
+
+        print self._get_certainty(self.p.chm[17374])
+        print self._get_certainty(self.p.chm[72178])
+
+        # self.train()
         from tracklet_complete_set import TrackletCompleteSet
 
         groups = []
