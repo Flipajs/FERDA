@@ -45,8 +45,7 @@ if is_flipajs_pc():
 
     project.load(wd)
 
-
-    # TODO !!
+    # TODO !! add it to assembly process
     # project.solver.one2one(check_tclass=True)
 
     # cases = []

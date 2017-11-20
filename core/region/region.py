@@ -52,7 +52,7 @@ class Region(object):
         self.is_virtual = False
 
     def __str__(self):
-        s = repr(self)+" start t: "+str(self.frame_)+"\n" \
+        s = repr(self)+" frame: "+str(self.frame_)+"\n" \
                        " area: "+str(self.area())+" \n" \
                        " centroid: ["+str(round(self.centroid_[0], 2))+", "+str(round(self.centroid_[1], 2))+"]\n" \
                        " major axis: {:.3}".format(self.a_) + "\n" \

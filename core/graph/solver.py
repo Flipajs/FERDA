@@ -84,7 +84,7 @@ class Solver:
 
                     if t1.segmentation_class != t2.segmentation_class:
                         print "1on1", t1.id(), t2.id()
-                        continue
+                        # continue
 
                 confirm_later.append((e.source(), e.target()))
 

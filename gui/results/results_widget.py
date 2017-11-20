@@ -285,13 +285,25 @@ class ResultsWidget(QtGui.QWidget):
         self.video_player = VideoPlayer(self.project)
         self.video_player.set_frame_change_callback(self.update_visualisations)
 
+        self.show_results_flayout = QtGui.QFormLayout()
+
+        self.show_results_summary_start_i = QtGui.QLineEdit()
+        self.show_results_summary_start_i.setText(str(0))
+        self.show_results_flayout.addRow('start: ', self.show_results_summary_start_i)
+
         self.show_results_summary_steps_i = QtGui.QLineEdit()
-        self.show_results_summary_steps_i.setText(str(max(1, int(self.video_player.total_frame_count()/200))))
-        self.debug_box.layout().addWidget(self.show_results_summary_steps_i)
+        self.show_results_summary_steps_i.setText(str(max(1, int(self.video_player.total_frame_count() / 200))))
+        self.show_results_flayout.addRow('step: ', self.show_results_summary_steps_i)
+
+        self.show_results_summary_end_i = QtGui.QLineEdit()
+        self.show_results_summary_end_i.setText(str(int(self.video_player.total_frame_count())))
+        self.show_results_flayout.addRow('end: ', self.show_results_summary_end_i)
 
         self.show_summary_b = QtGui.QPushButton('show results summary')
         self.show_summary_b.clicked.connect(self.show_results_summary)
-        self.debug_box.layout().addWidget(self.show_summary_b)
+        self.show_results_flayout.addWidget(self.show_summary_b)
+
+        self.debug_box.layout().addLayout(self.show_results_flayout)
 
         self.show_cs_analysis_b = QtGui.QPushButton('CS analysis')
         self.show_cs_analysis_b.clicked.connect(self.cs_analysis)
@@ -2039,11 +2051,11 @@ class ResultsWidget(QtGui.QWidget):
         from tqdm import trange
         from utils.video_manager import get_auto_video_manager
 
+        start = int(self.show_results_summary_start_i.text())
         step = int(self.show_results_summary_steps_i.text())
+        end = int(self.show_results_summary_end_i.text())
 
         vm = get_auto_video_manager(self.project)
-
-        total_frames = self.video_player.total_frame_count()
 
         from gui.img_grid.img_grid_widget import ImgGridWidget
         w = ImgGridWidget(cols=len(self.project.animals), element_width=100)
@@ -2052,7 +2064,7 @@ class ResultsWidget(QtGui.QWidget):
         WW = 100
 
         num_animals = len(self.project.animals)
-        for frame in trange(0, total_frames, step):
+        for frame in trange(start, end, step):
             region_representants = []
             img_representants = []
 
@@ -2064,14 +2076,14 @@ class ResultsWidget(QtGui.QWidget):
                 if t.is_only_one_id_assigned(num_animals):
                     a_id = list(t.P)[0]
 
-                    r_id = t.v_id_in_t(frame, self.project.gm)
-                    if r_id == 0:
+                    v_id = t.v_id_in_t(frame, self.project.gm)
+                    if v_id == 0:
                         continue
 
-                    im = draw_region(self.project, vm, r_id)
+                    im = draw_region(self.project, vm, v_id)
 
                     img_representants[a_id] = im
-                    region_representants[a_id] = self.project.rm[r_id]
+                    region_representants[a_id] = self.project.gm.region(v_id)
 
             for aid in range(len(self.project.animals)):
                 if img_representants[aid] is None:
@@ -2082,10 +2094,28 @@ class ResultsWidget(QtGui.QWidget):
                 item = make_item(im, region_representants[aid], HH, WW)
                 w.add_item(item)
 
-        win = QtGui.QMainWindow()
-        win.setCentralWidget(w)
-        win.show()
-        self.w = win
+        self.show_results_view_w = QtGui.QWidget()
+        self.show_results_view_w.setLayout(QtGui.QHBoxLayout())
+        self.show_results_view_w.layout().addWidget(w)
+        self.show_results_view_b = QtGui.QPushButton('show info about selected')
+        self.show_results_view_b.clicked.connect(partial(self.results_view_show_info_selected, w.get_selected))
+        self.show_results_view_w.layout().addWidget(self.show_results_view_b)
+        self.show_results_view_w.show()
+
+
+        # win = QtGui.QMainWindow()
+        # win.setCentralWidget(w)
+        # win.show()
+        # self.w = win
+
+    def results_view_show_info_selected(self, get_selected):
+        # step = int(self.show_results_summary_steps_i.text())
+        regions = get_selected()
+        print "SELECTED IDS:"
+        for r in regions:
+            print str(r)
+            # frame = ((id + 1) / len(self.p.animals)) * step
+            # print "selected id: {} in frame: {}".format(id, frame)
 
     def cs_analysis(self):
         groups = []
