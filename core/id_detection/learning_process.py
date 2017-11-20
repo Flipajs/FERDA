@@ -576,7 +576,7 @@ class LearningProcess:
             # t_set.append(root_t_id)
 
             try:
-                x, t_length, stds = self._get_tracklet_proba(tracklet)
+                x, stds = self._get_tracklet_proba(tracklet)
             except KeyError:
                 warnings.warn("used random class probability distribution for tracklet it: {}".format(t_id))
                 # TODO: remove this, instead compute features...
@@ -836,9 +836,13 @@ class LearningProcess:
 
         try:
             if self.classifier_name == CNN_SOFTMAX:
+
                 probs = []
                 for r_id in ch.rid_gen(self.p.gm):
-                    probs.append(self.cnn_results_map[r_id])
+                    if r_id in self.cnn_results_map:
+                        probs.append(self.cnn_results_map[r_id])
+                    else:
+                        print "ch id: {}, rid: {} missing in cnn_results_map".format(ch.id(), r_id)
 
                 probs = np.array(probs)
             else:
@@ -891,7 +895,7 @@ class LearningProcess:
 
         # TODO: refactor
         # second value on return is some old relict...
-        return probs, probs.shape[0], stds
+        return probs, stds
 
     # def apply_consistency_rule(self, ch, probs):
     #     mask = np.zeros(probs.shape)
