@@ -117,7 +117,7 @@ class TransformableRegion:
         return p2e(self.transformation.dot(np.hstack((coords_xy, 1)).reshape(-1, 1))).flatten()
 
     def get_transformed_angle(self, angle_deg):
-        return angle_deg - math.degrees(math.atan(self.transformation[1, 0] / self.transformation[0, 0]))
+        return (angle_deg - math.degrees(math.atan(self.transformation[1, 0] / self.transformation[0, 0]))) % 360
 
     def get_img(self):
         assert np.all(self.transformation[2, :] == (0, 0, 1))
