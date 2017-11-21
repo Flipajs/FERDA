@@ -16,8 +16,8 @@ class ChunkManager:
         self.track_refs = {}
 
     def __getitem__(self, index):
-        if index in self.track_refs:
-            index = self.track_refs[index]
+        # if index in self.track_refs:
+        #     index = self.track_refs[index]
 
         return self.chunks_.get(index, None)
 

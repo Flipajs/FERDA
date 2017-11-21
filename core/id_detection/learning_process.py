@@ -1603,7 +1603,27 @@ class LearningProcess:
 
             elif type == 'N':
                 self._update_N(set([id_]), tracklet)
+
+        import random
+        random.seed(123)
+
+        num_examples = 500
+        if len(region_X) == 0:
+            ch_ids = list(self.p.chm.chunks_.keys())
+            with tqdm(total=num_examples) as pbar:
+                while len(region_X) < num_examples:
+                    t = self.p.chm[random.choice(ch_ids)]
+
+                    if not t.is_single():
+                        continue
+
+                    r = self.p.gm.region(t[random.randint(0, len(t) - 1)])
+                    region_X.append(self.get_appearance_features(r))
+
+                    pbar.update(1)
+
         try:
+            "building region anomaly IF"
             self.IF_region_anomaly.fit(region_X)
             vals = self.IF_region_anomaly.decision_function(region_X)
             vals_sorted = sorted(vals)

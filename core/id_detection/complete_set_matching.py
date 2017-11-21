@@ -13,13 +13,19 @@ class CompleteSetMatching:
         CSs = self.find_cs()
 
         for i in range(10):
+            print "CS {}, CS {}".format(i, i+1)
             perm, quality = self.cs2cs_matching_ids_unknown(CSs[i], CSs[i+1])
-            print perm
+            for (t1, t2) in perm:
+                print t1.id(), " -> ", t2.id()
+
             print quality
 
         for i in range(50, 60):
+            print "CS {}, CS {}".format(0, i)
             perm, quality = self.cs2cs_matching_ids_unknown(CSs[0], CSs[i])
-            print perm
+            for (t1, t2) in perm:
+                print t1.id(), " -> ", t2.id()
+
             print quality
 
     def find_cs(self):
@@ -109,6 +115,8 @@ class CompleteSetMatching:
 
                 # should be there any weight?
                 spatial_d = spatial_d / float(max_d)
+
+                # TODO: what if it just makes something strange out of luck? E.G. Two distant CS with one tracklet which has perfect distance thus p~1.0and all others have ~0.5
 
                 prob = max(0.0, (1 - spatial_d)**temporal_d)
 
