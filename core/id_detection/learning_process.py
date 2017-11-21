@@ -879,10 +879,11 @@ class LearningProcess:
             print "empty", ch.id(), probs
 
         # TODO:
-        if self.classifier_name == RFC:
+        # if self.classifier_name == RFC:
             # todo: mat multiply
-            for i in range(probs.shape[0]):
-                probs[i] *= anomaly_probs[i]
+
+        for i in range(probs.shape[0]):
+            probs[i, :] *= anomaly_probs[i]
 
         stds = np.std(probs, 0, ddof=1)
         # probs = np.sum(probs, 0)
@@ -2045,18 +2046,10 @@ class LearningProcess:
 
         groups = []
         unique_tracklets = set()
-        frames = []
 
         vm = get_auto_video_manager(self.p)
         total_frame_count = vm.total_frame_count()
-        expected_t_len = len(self.p.animals) * total_frame_count
 
-        # total_single_t_len = 0
-        # for t in self.p.chm.chunk_gen():
-        #     if t.is_single():
-        #         total_single_t_len += t.length()
-
-        overlap_sum = 0
         frame = 0
         i = 0
         old_frame = 0
@@ -2073,12 +2066,6 @@ class LearningProcess:
                 if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 1:
                     groups.append(singles_group)
 
-                    # overlap = min([t.end_frame(self.p.gm) for t in singles_group]) \
-                    #           - max([t.start_frame(self.p.gm) for t in singles_group])
-                    #
-                    # overlap_sum += overlap
-
-                    # frames.append((frame, overlap, ))
                     for t in singles_group:
                         unique_tracklets.add(t)
 
