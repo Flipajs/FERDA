@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
             id += 1
 
-    print "Training examplest exported..."
+    print "Training examples exported..."
 
     if False:
         print "Exporting test examples: "

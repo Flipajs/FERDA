@@ -54,7 +54,7 @@ if __name__ == '__main__':
     SAMPLES = 2000
 
     if len(sys.argv) > 1:
-        DATA_DIR = ROOT_DIR + '/' + sys.argv[1]
+        DATA_DIR = sys.argv[1]
     if len(sys.argv) > 2:
         NUM_EPOCHS = string.atoi(sys.argv[2])
     if len(sys.argv) > 3:
