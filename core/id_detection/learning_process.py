@@ -873,12 +873,7 @@ class LearningProcess:
         if len(probs) == 0:
             print "empty", ch.id(), probs
 
-        # TODO:
-        # if self.classifier_name == RFC:
-        # todo: mat multiply
-        for i in range(probs.shape[0]):
-            probs[i] *= anomaly_probs[i]
-
+        probs = probs * anomaly_probs[:, np.newaxis]
         stds = np.std(probs, 0, ddof=1)
         # probs = np.sum(probs, 0)
         #
