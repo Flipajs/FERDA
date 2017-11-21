@@ -91,8 +91,9 @@ class Solver:
         print "one2one, ", len(confirm_later)
         self.confirm_edges(confirm_later)
 
-        self.project.gm.update_nodes_in_t_refs()
-        self.project.chm.reset_itree(self.project.gm)
+        if len(confirm_later):
+            self.project.gm.update_nodes_in_t_refs()
+            self.project.chm.reset_itree(self.project.gm)
 
 
     def adaptive_threshold(self, vertex):
