@@ -148,6 +148,7 @@ class GraphManager:
 
     def update_time_boundaries(self):
         keys = [self.vertices_in_t.keys()]
+
         self.end_t = np.max(keys)
         self.start_t = np.min(keys)
 
