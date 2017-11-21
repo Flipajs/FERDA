@@ -12,13 +12,31 @@ class CompleteSetMatching:
     def process(self):
         CSs = self.find_cs()
 
-        for i in range(10):
+        full_set = set(range(len(self.p.animals)))
+        for i, t in enumerate(CSs[0]):
+            t.P = set([i])
+            t.N = full_set.difference(t.P)
+
+        qualities = []
+        for i in range(len(CSs)-1):
             print "CS {}, CS {}".format(i, i+1)
             perm, quality = self.cs2cs_matching_ids_unknown(CSs[i], CSs[i+1])
             for (t1, t2) in perm:
                 print t1.id(), " -> ", t2.id()
+                t2.P = set(t1.P)
+                t2.N = set(t2.N)
 
             print quality
+
+            qualities.append(quality)
+
+        p.save()
+        import matplotlib.pyplot as plt
+        qualities = np.array(qualities)
+        plt.plot(qualities[:, 0])
+        plt.figure()
+        plt.plot(qualities[:, 1])
+        plt.show()
 
         for i in range(50, 60):
             print "CS {}, CS {}".format(0, i)
@@ -90,7 +108,7 @@ class CompleteSetMatching:
         for rid, cid in zip(row_ind, col_ind):
             perm.append((cs1[rid], cs2[cid]))
 
-        x_ = P[row_ind, col_ind]
+        x_ = 1 - P[row_ind, col_ind]
         quality = (x_.min(), x_.sum() / float(len(x_)))
 
         return perm, quality

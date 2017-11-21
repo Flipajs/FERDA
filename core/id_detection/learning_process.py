@@ -534,6 +534,10 @@ class LearningProcess:
             else:
                 print "ch id: {}, rid: {} missing in cnn_results_map".format(t.id(), r_id)
 
+        if len(probs) == 0:
+            print "probs len == 0, setting probs to uniform"
+            probs.append([1/float(len(self.p.animals)) for i in range(len(self.p.animals))])
+
         probs = np.array(probs)
 
         return probs
