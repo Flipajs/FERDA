@@ -825,12 +825,12 @@ class LearningProcess:
         return float(np.sum(self.class_frequences)) / self.class_frequences
 
     def _get_tracklet_proba(self, ch, debug=False):
+        anomaly_probs = self.get_tracklet_anomaly_probs(ch)
+
         if self.classifier_name == RFC:
             X = self.features[ch.id()]
             if len(X) == 0:
                 return None, 0
-
-            anomaly_probs = self.get_tracklet_anomaly_probs(ch)
         else:
             X = np.array([])
 
@@ -874,10 +874,10 @@ class LearningProcess:
             print "empty", ch.id(), probs
 
         # TODO:
-        if self.classifier_name == RFC:
-            # todo: mat multiply
-            for i in range(probs.shape[0]):
-                probs[i] *= anomaly_probs[i]
+        # if self.classifier_name == RFC:
+        # todo: mat multiply
+        for i in range(probs.shape[0]):
+            probs[i] *= anomaly_probs[i]
 
         stds = np.std(probs, 0, ddof=1)
         # probs = np.sum(probs, 0)
@@ -1093,8 +1093,10 @@ class LearningProcess:
             # x = (1 - alpha) * uni_probs + alpha * x
 
             x_ = np.copy(x)
+
             for id_ in N:
-                x_[:, id_] = 0
+                # TODO: set proper threshold or solve differently...?
+                x_[:, id_] = x_[:, id_] * 0.2
 
             # k is best predicted ID
             k = np.argmax(np.sum(x_, axis=0))
@@ -1483,14 +1485,32 @@ class LearningProcess:
 
             elif type == 'N':
                 self._update_N(set([id_]), tracklet)
+
+        import random
+        random.seed(123)
+        num_examples = 5000
+        if len(region_X) == 0:
+            ch_ids = list(self.p.chm.chunks_.keys())
+            with tqdm(total=num_examples) as pbar:
+                while len(region_X) < num_examples:
+                    t = self.p.chm[random.choice(ch_ids)]
+
+                    if not t.is_single():
+                        continue
+
+                    r = self.p.gm.region(t[random.randint(0, len(t) - 1)])
+                    region_X.append(self.get_appearance_features(r))
+
+                    pbar.update(1)
         try:
+            print "Preparing isolation forest"
             self.IF_region_anomaly.fit(region_X)
             vals = self.IF_region_anomaly.decision_function(region_X)
             vals_sorted = sorted(vals)
 
             from sklearn.linear_model import LogisticRegression
             lr = LogisticRegression()
-            use_for_learning = 0.1
+            use_for_learning = 0.05
 
             part_len = int(len(vals) * use_for_learning)
             part1 = np.array(vals_sorted[:part_len])
@@ -2382,6 +2402,7 @@ class LearningProcess:
             overlap_sum, overlap_sum/float(total_frame_count))
 
     def auto_init(self, method='max_sum', use_xgboost=False):
+        print self._get_tracklet_proba(self.p.chm[54276])
         self.full_csosit_analysis(use_xgboost=use_xgboost)
         return
         from multiprocessing import cpu_count
