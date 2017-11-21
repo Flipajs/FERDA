@@ -85,7 +85,7 @@ class CompleteSetMatching:
 
         perm = []
         for rid, cid in zip(row_ind, col_ind):
-            perm.append((rid, cid))
+            perm.append((cs1[rid], cs2[cid]))
 
         x_ = P[row_ind, col_ind]
         quality = (x_.min(), x_.sum() / float(len(x_)))
