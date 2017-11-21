@@ -78,10 +78,7 @@ class CompleteSetMatching:
         # register matched tracklets to have the same virtual ID
 
         P_a = self.appearance_probabilities(cs1, cs2)
-        P_s = self.spatial_probabilities(cs1, cs2)
-
-        # minimize P_s impact when distance is too big
-        P_s[P_s<0.5] = 0.5
+        P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
 
         # 1 - ... it is minimum weight matching
         P = 1 - np.multiply(P_a, P_s)
@@ -98,32 +95,49 @@ class CompleteSetMatching:
 
         return perm, quality
 
-    def spatial_probabilities(self, cs1, cs2):
+    def spatial_probabilities(self, cs1, cs2, lower_bound=0.5):
         # should be neutral if temporal distance is too big
         # should be restrictive when spatial distance is big
         max_d = self.p.solver_parameters.max_edge_distance_in_ant_length * self.p.stats.major_axis_median
-        C = np.zeros((len(cs1), len(cs2)), dtype=np.float)
+        P = np.zeros((len(cs1), len(cs2)), dtype=np.float)
 
         for i, t1 in enumerate(cs1):
             t1_ef = t1.end_frame(self.p.gm)
             for j, t2 in enumerate(cs2):
-                temporal_d = t2.start_frame(self.p.gm) - t1_ef
+                if t1 == t2:
+                    prob = 1.0
+                else:
+                    temporal_d = t2.start_frame(self.p.gm) - t1_ef
 
-                t1_end_r = self.p.gm.region(t1.end_node())
-                t2_start_r = self.p.gm.region(t2.start_node())
-                spatial_d = np.linalg.norm(t1_end_r.centroid() - t2_start_r.centroid())
+                    if temporal_d < 0:
+                        prob = -np.inf
+                    else:
+                        t1_end_r = self.p.gm.region(t1.end_node())
+                        t2_start_r = self.p.gm.region(t2.start_node())
+                        spatial_d = np.linalg.norm(t1_end_r.centroid() - t2_start_r.centroid())
 
-                # should be there any weight?
-                spatial_d = spatial_d / float(max_d)
+                        # should be there any weight?
+                        spatial_d = spatial_d / float(max_d)
 
-                # TODO: what if it just makes something strange out of luck? E.G. Two distant CS with one tracklet which has perfect distance thus p~1.0and all others have ~0.5
+                        # TODO: what if it just makes something strange out of luck? E.G. Two distant CS with one tracklet which has perfect distance thus p~1.0and all others have ~0.5
+                        if (1 - spatial_d) < 0:
+                            val = 0
+                        else:
+                            val = (1 - spatial_d) ** temporal_d
 
-                prob = max(0.0, (1 - spatial_d)**temporal_d)
+                        prob = max(0.0, val)
 
-                C[i, j] = prob
-                C[j, i] = prob
+                P[i, j] = prob
 
-        return C
+
+        # it might occur when t1 ends after t2 starts
+        invalid = P < 0
+
+        # minimize P_s impact when distance is too big
+        P[P<lower_bound] = lower_bound
+        P[invalid] = 0
+
+        return P
 
     def appearance_probabilities(self, cs1, cs2):
         # ...thoughts...
@@ -150,7 +164,6 @@ class CompleteSetMatching:
                 cost = max(cost1, cost2)
 
                 C[i, j] = cost
-                C[j, i] = cost
 
         return C
 
