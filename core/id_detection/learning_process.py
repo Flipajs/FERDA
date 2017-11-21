@@ -1050,6 +1050,36 @@ class LearningProcess:
     def __tracklet_is_decided(self, P, N):
         return P.union(N) == self.all_ids
 
+    def get_tracklet_p1s(self, tracklet):
+        K = len(self.p.animals)
+        x = self._get_tracklet_proba(tracklet)
+
+        # prevent overflow in power (max float32 ~ 2**127) by dividing it into parts and taking mean
+        # some reasonable margin from 127... computation will be more precise.
+        N = 120
+        p1s = []
+        for _ in range(K):
+            p1s.append([])
+
+        k = int(math.ceil(x.shape[0] / float(N)))
+        for j in range(k):
+            x__ = np.sum(x[j * N:(min((j + 1) * N, x.shape[0])), :], axis=0)
+            sum1 = np.sum([2 ** a for a in x__])
+
+            for i in range(K):
+                p1 = 2 ** x__[i] / sum1
+                p1s[i].append(p1)
+
+        for i in range(K):
+            p1s[i] = np.mean(p1s[i])
+
+            # there was some numerical problem when probability was exact 1.0
+            if p1s[i] >= 1.0:
+                p1s[i] = 0.9999999999
+
+        return p1s
+
+
     def get_p1(self, x, i):
         # prevent overflow in power (max float32 ~ 2**127) by dividing it into parts and taking mean
         # some reasonable margin from 127... computation will be more precise.
@@ -1066,6 +1096,7 @@ class LearningProcess:
 
         p1 = np.mean(p1s)
 
+        # there was some numerical problem when probability was exact 1.0
         if p1 >= 1.0:
             p1 = 0.9999999999
 
@@ -2008,16 +2039,6 @@ class LearningProcess:
 
     def full_csosit_analysis(self, use_xgboost=False):
         self.reset_learning()
-
-        print self._get_certainty(self.p.chm[37040])
-        print self._get_certainty(self.p.chm[87562])
-        print self._get_certainty(self.p.chm[70894])
-        print self._get_certainty(self.p.chm[45603])
-        print self._get_certainty(self.p.chm[87605])
-        print self._get_certainty(self.p.chm[29991])
-
-        print self._get_certainty(self.p.chm[17374])
-        print self._get_certainty(self.p.chm[72178])
 
         # self.train()
         from tracklet_complete_set import TrackletCompleteSet
