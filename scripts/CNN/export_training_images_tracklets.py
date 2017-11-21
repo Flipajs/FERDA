@@ -8,11 +8,10 @@ from utils.img import apply_ellipse_mask
 
 # OUT_DIR = '/Users/flipajs/Documents/wd/FERDA/CNN_HH1_3'
 OUT_DIR = '/Volumes/Seagate Expansion Drive/CNN_HH1_train'
+WD = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
+
 NUM_ANIMALS = 6
 
-# NUM_EXAMPLES x NUM_A
-NUM_EXAMPLES = 1000
-TRAIN_TEST_RATIO = 0.1
 BATCH_SIZE = 100
 
 ELLIPSE_DILATION = 10
@@ -55,17 +54,12 @@ def save_batch(batch_i, imgs):
 
 
 if __name__ == '__main__':
-    # WD = sys.argv()
-    wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
     from core.project.project import Project
-
+    wd = WD
     p = Project()
     p.load(wd)
 
     repre = repre(p)
-
-    split_idx = int((1-TRAIN_TEST_RATIO) * NUM_EXAMPLES)
-    print "SPLIT: ", split_idx
     imgs = {}
 
     from utils.img import get_safe_selection
@@ -99,7 +93,6 @@ if __name__ == '__main__':
             for t in tracklets:
                 for r_id in p.chm[t].rid_gen(p.gm):
                     r = p.rm[r_id]
-                    # img = vm.seek_frame(r.frame())
                     img = p.img_manager.get_whole_img(r.frame())
 
                     y, x = r.centroid()
@@ -113,34 +106,36 @@ if __name__ == '__main__':
             id += 1
 
     print "Training examplest exported..."
-    print "Exporting test examples: "
 
-    try:
-        os.mkdir(OUT_DIR + '/test')
-    except:
-        pass
+    if False:
+        print "Exporting test examples: "
 
-    batch_i = 0
-    i = 0
-    imgs = []
-    for t in tqdm.tqdm(p.chm.chunk_gen(), total=len(p.chm)):
-        if not t.is_single():
-            continue
+        try:
+            os.mkdir(OUT_DIR + '/test')
+        except:
+            pass
 
-        for r_id in t.rid_gen(p.gm):
-            r = p.rm[r_id]
-            img = p.img_manager.get_whole_img(r.frame())
+        batch_i = 0
+        i = 0
+        imgs = []
+        for t in tqdm.tqdm(p.chm.chunk_gen(), total=len(p.chm)):
+            if not t.is_single():
+                continue
 
-            y, x = r.centroid()
-            crop = get_safe_selection(img, y - offset, x - offset, 2 * offset, 2 * offset)
+            for r_id in t.rid_gen(p.gm):
+                r = p.rm[r_id]
+                img = p.img_manager.get_whole_img(r.frame())
 
-            imgs.append(crop)
-            if len(imgs) == BATCH_SIZE:
-                save_batch(batch_i, imgs)
+                y, x = r.centroid()
+                crop = get_safe_selection(img, y - offset, x - offset, 2 * offset, 2 * offset)
 
-                imgs = []
-                batch_i += 1
+                imgs.append(crop)
+                if len(imgs) == BATCH_SIZE:
+                    save_batch(batch_i, imgs)
 
-    if len(imgs):
-        save_batch(batch_i, imgs)
-    # save rest..
+                    imgs = []
+                    batch_i += 1
+
+        if len(imgs):
+            save_batch(batch_i, imgs)
+        # save rest..
