@@ -120,11 +120,11 @@ if __name__ == '__main__':
     # load weights into new model
     vision_model.load_weights(ROOT_DIR+"/vision_"+WEIGHTS+".h5")
 
-    i = 0
-    for layer in vision_model.layers:
-        if i > 3:
-            layer.trainable = False
-        i += 1
+    # i = 0
+    # for layer in vision_model.layers:
+    #     if i > 3:
+    #         layer.trainable = False
+    #     i += 1
 
     vision_model.summary()
     # The vision model will be shared, weights and all
