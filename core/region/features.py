@@ -21,10 +21,10 @@ def shape_description(region, n):
     """
 
     dists = np.zeros(n)
-    # dists += ceil(region.a_)
+    # dists += ceil(region.ellipse_major_axis_length())
     angles = np.linspace(0, 2*np.pi, n)
 
-    e = ceil(region.a_ * 1.5)
+    e = ceil(region.ellipse_major_axis_length() * 1.5)
 
     offset = (int(region.centroid()[0] - e - 1), int(region.centroid()[1] - e - 1))
     offset = (0, 0)
@@ -39,7 +39,7 @@ def shape_description(region, n):
         th = (region.theta_ + np.pi/2 + a) % (2*np.pi)
 
         prev = im[middle[0], middle[1]]
-        for i in range(1, int(ceil(region.a_))):
+        for i in range(1, int(ceil(region.ellipse_major_axis_length()))):
             y = cos(th) * i
             x = sin(th) * i
 
@@ -126,7 +126,7 @@ if __name__ == '__main__':
     descs = []
     i = 0
     for r in regions:
-        # e_ = ceil(r.a_ * 1.5)
+        # e_ = ceil(r.ellipse_major_axis_length() * 1.5)
         # offset = (int(r.centroid()[0] - e_ - 1), int(r.centroid()[1] - e_ - 1))
         # im = np.zeros((e_ * 2 + 1, e_ * 2 + 1), dtype=np.bool)
         # try:

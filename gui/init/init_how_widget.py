@@ -136,7 +136,7 @@ class InitHowWidget(QtGui.QWidget):
         mean = norm(animal.init_pos_head_ - animal.init_pos_center_)
         std = mean * 0.25
 
-        major_axis = region.a_
+        major_axis = region.ellipse_major_axis_length()
 
         max_val = normpdf(mean, mean, std)
         s = normpdf(major_axis, mean, std) / max_val

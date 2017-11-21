@@ -26,13 +26,13 @@ def get_mser(im, p):
 
     m = msers[0]
     ab = m.area() / np.pi
-    cd = m.a_ * m.b_
+    cd = m.ellipse_major_axis_length() * m.ellipse_minor_axis_length()
     r = cd/ab
 
-    b = ((r*m.a_*(m.b_**2))/m.a_)**0.5
+    b = ((r*m.ellipse_major_axis_length()*(m.ellipse_minor_axis_length()**2))/m.ellipse_major_axis_length())**0.5
     a = ab/b
 
-    print "PREV: ", m.a_, m.b_
+    print "PREV: ", m.ellipse_major_axis_length(), m.ellipse_minor_axis_length()
     print "NOW: ", a, b, np.rad2deg(m.theta_), m.theta_
 
     return msers[0]
@@ -70,14 +70,14 @@ def warp_region(r, im, dst_h=16, dst_w=48):
 
     # crop = im[tl[0]:br[0], tl[1]:br[1]].copy()
 
-    p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
+    p_ = np.array([r.ellipse_major_axis_length()*math.sin(-r.theta_), r.ellipse_major_axis_length()*math.cos(-r.theta_)])
     head = np.ceil(r.centroid() + p_) + np.array([1, 1])
     back = np.ceil(r.centroid() - p_) - np.array([1, 1])
 
     if head[0] < back[0]:
         head, back = back, head
     
-    b_ = r.b_*2.5
+    b_ = r.ellipse_minor_axis_length()*2.5
     p_ = np.array([b_*math.sin(-r.theta_+np.pi+np.pi/2), b_*math.cos(-r.theta_+np.pi+np.pi/2)])
     tl_c = back + p_
     tr_c = head + p_

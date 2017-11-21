@@ -58,19 +58,19 @@ def get_basic_properties(r, p):
     f.append(len(r.contour()))
 
     # major axis
-    f.append(r.a_)
+    f.append(r.ellipse_major_axis_length())
 
     # minor axis
-    f.append(r.b_)
+    f.append(r.ellipse_minor_axis_length())
 
     # axis ratio
-    f.append(r.a_ / r.b_)
+    f.append(r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())
 
     # # axis ratio sqrt
-    # f.append((r.a_ / r.b_)**0.5)
+    # f.append((r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())**0.5)
     #
     # # axis ratio to power of 2
-    # f.append((r.a_ / r.b_)**2.0)
+    # f.append((r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())**2.0)
 
     img = p.img_manager.get_whole_img(r.frame_)
     crop, offset = get_img_around_pts(img, r.pts())
@@ -105,7 +105,7 @@ def get_hog_features(r, p, fliplr=False):
 
     margin = 3
 
-    crop = centered_crop(crop, 2 * (r.b_ + margin), 2 * (r.a_ + margin))
+    crop = centered_crop(crop, 2 * (r.ellipse_minor_axis_length() + margin), 2 * (r.ellipse_major_axis_length() + margin))
 
     crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
@@ -152,7 +152,7 @@ def get_lbp(r, p):
 
     margin = 3
 
-    crop = centered_crop(crop, 2 * (r.b_ + margin), 2 * (r.a_ + margin))
+    crop = centered_crop(crop, 2 * (r.ellipse_minor_axis_length() + margin), 2 * (r.ellipse_major_axis_length() + margin))
 
     crop_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
@@ -198,7 +198,7 @@ def __get_crop(r, p, margin=3, img=None):
     crop, offset = get_img_around_pts(img, r.pts(), margin=2.0)
     crop = rotate_img(crop, r.theta_)
 
-    crop = centered_crop(crop, 2 * (r.b_ + margin), 2 * (r.a_ + margin))
+    crop = centered_crop(crop, 2 * (r.ellipse_minor_axis_length() + margin), 2 * (r.ellipse_major_axis_length() + margin))
 
     return crop
 

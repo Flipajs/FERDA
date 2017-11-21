@@ -78,7 +78,7 @@ def area_np(p):
 def get_x(r, AVG_AREA, AVG_MARGIN):
     x = []
     x.append(r.area() / float(AVG_AREA))
-    x.append(r.a_ / r.b_)
+    x.append(r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())
 
     c1 = len(r.contour())
     roi_ = r.roi()
@@ -237,7 +237,7 @@ if __name__ == '__main__':
             if r not in used_ids:
                 used_ids[r] = True
                 areas.append(r.area())
-                major_axes.append(r.a_ * 2)
+                major_axes.append(r.ellipse_major_axis_length() * 2)
                 margins.append(r.margin_)
 
     areas = np.array(areas)
@@ -316,7 +316,7 @@ if __name__ == '__main__':
     #     for r in f_regions[f]:
     #         if classes[i]:
     #             areas.append(r.area())
-    #             major_axes.append(r.a_ * 2)
+    #             major_axes.append(r.ellipse_major_axis_length() * 2)
     #             margins.append(r.margin_)
     #         i += 1
     #

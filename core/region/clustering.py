@@ -17,7 +17,7 @@ def get_data(r, scaler=None):
     from utils.drawing.points import draw_points_crop_binary
     # bimg = draw_points_crop_binary(r.pts())
     # hu_m = get_hu_moments(np.asarray(bimg, dtype=np.uint8))
-    d = [r.area(), r.a_, r.b_, r.min_intensity_, r.max_intensity_, r.margin_, len(r.contour())]
+    d = [r.area(), r.ellipse_major_axis_length(), r.ellipse_minor_axis_length(), r.min_intensity_, r.max_intensity_, r.margin_, len(r.contour())]
 
     if scaler is None:
         return d

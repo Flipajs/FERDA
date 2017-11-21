@@ -62,9 +62,9 @@ def get_x(r1, r2, pred):
 
     # x.append(d*((2*np.pi - t) / (2*np.pi)))
 
-    # x.append(abs(r1.a_ - r2.a_))
-    # x.append(abs(r1.b_ - r2.b_))
-    # x.append(abs((r1.a_ / r1.b_) - (r2.a_ / r2.b_)))
+    # x.append(abs(r1.ellipse_major_axis_length() - r2.ellipse_major_axis_length()))
+    # x.append(abs(r1.ellipse_minor_axis_length() - r2.ellipse_minor_axis_length()))
+    # x.append(abs((r1.ellipse_major_axis_length() / r1.ellipse_minor_axis_length()) - (r2.ellipse_major_axis_length() / r2.ellipse_minor_axis_length())))
 
     # c1 = len(get_contour(r1.pts()))
     # c2 = len(get_contour(r2.pts()))
@@ -98,9 +98,9 @@ def get_x(r1, r2, pred):
 #     # x.append(np.linalg.norm(r1.centroid() + pred - r2.centroid()))
 #     x.append(get_t_diff(r1, r2))
 #
-#     x.append(abs(r1.a_ - r2.a_))
-#     x.append(abs(r1.b_ - r2.b_))
-#     x.append(abs((r1.a_ / r1.b_) - (r2.a_ / r2.b_)))
+#     x.append(abs(r1.ellipse_major_axis_length() - r2.ellipse_major_axis_length()))
+#     x.append(abs(r1.ellipse_minor_axis_length() - r2.ellipse_minor_axis_length()))
+#     x.append(abs((r1.ellipse_major_axis_length() / r1.ellipse_minor_axis_length()) - (r2.ellipse_major_axis_length() / r2.ellipse_minor_axis_length())))
 #
 #     c1 = len(get_contour(r1.pts()))
 #     c2 = len(get_contour(r2.pts()))

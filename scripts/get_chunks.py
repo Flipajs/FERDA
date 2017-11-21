@@ -32,7 +32,7 @@ def axis_length_score(region, mean=10, std=2.5):
     # mean = norm(animal.init_pos_head_ - animal.init_pos_center_)
     # std = mean * 0.25
 
-    major_axis = region.a_
+    major_axis = region.ellipse_major_axis_length()
 
     max_val = normpdf(mean, mean, std)
     s = normpdf(major_axis, mean, std) / max_val
@@ -54,11 +54,11 @@ def get_np_array(chunks, id, key):
         if key == 'area':
             l.append(chunks[id][i].area())
         if key == 'major_axis':
-            l.append(chunks[id][i].a_)
+            l.append(chunks[id][i].ellipse_major_axis_length())
         if key == 'min_intensity':
             l.append(chunks[id][i].min_intensity_)
         if key == 'axis_ratio':
-            l.append(chunks[id][i].a_ / chunks[id][i].b_)
+            l.append(chunks[id][i].ellipse_major_axis_length() / chunks[id][i].ellipse_minor_axis_length())
         if key == 'avg_intensity':
             im = vid.seek_frame(i)
             p = chunks[id][i].pts()

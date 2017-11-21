@@ -95,7 +95,7 @@ if __name__ == '__main__':
             similarities[id, i] = abs(r1.area() - r2.area()) / float(min(r1.area(), r2.area()))
             # similarities[id, i] = similarity_loss(r1, r2)
 
-            a_[id, i] = r1.a_
+            a_[id, i] = r1.ellipse_major_axis_length()
 
             if i == 0:
                 pred = np.array([0, 0])

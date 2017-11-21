@@ -1496,9 +1496,9 @@ class LearningProcess:
     def get_appearance_features(self, r):
         return [
             r.area(),
-            r.a_,
-            r.b_,
-            (r.a_ / r.b_),
+            r.ellipse_major_axis_length(),
+            r.ellipse_minor_axis_length(),
+            (r.ellipse_major_axis_length() / r.ellipse_minor_axis_length()),
             r.sxx_ ,
             r.syy_,
             r.sxy_ ,
