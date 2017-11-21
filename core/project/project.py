@@ -453,6 +453,8 @@ class Project:
 
         self.active_snapshot = -1
 
+        project.solver.one2one(check_tclass=True)
+
     def load_snapshot(self, snapshot):
         chm_path = self.working_directory+'/chunk_manager.pkl'
         gm_path = self.working_directory+'/graph_manager.pkl'
