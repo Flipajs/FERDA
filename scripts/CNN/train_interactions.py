@@ -26,6 +26,102 @@ TWO_TESTS = True
 WEIGHTS = 'cam3_zebr_weights_vgg'
 NUM_PARAMS = 6
 
+
+
+
+# https://github.com/nicolov/segmentation_keras/blob/master/model.py
+from keras.layers import Activation, Reshape, Dropout
+from keras.layers import AtrousConvolution2D, Convolution2D, MaxPooling2D, ZeroPadding2D
+from keras.models import Sequential
+
+
+#
+# The VGG16 keras model is taken from here:
+# https://gist.github.com/fchollet/f35fbc80e066a49d65f1688a7e99f069
+# The (caffe) structure of DilatedNet is here:
+# https://github.com/fyu/dilation/blob/master/models/dilation8_pascal_voc_deploy.prototxt
+
+def get_frontend(input_width, input_height):
+    model = Sequential()
+    # model.add(ZeroPadding2D((1, 1), input_shape=(input_width, input_height, 3)))
+    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_1', input_shape=(input_width, input_height, 3)))
+    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_2'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_1'))
+    model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_2'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_1'))
+    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_2'))
+    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_3'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_1'))
+    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_2'))
+    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_3'))
+
+    # Compared to the original VGG16, we skip the next 2 MaxPool layers,
+    # and go ahead with dilated convolutional layers instead
+
+    model.add(AtrousConvolution2D(512, 3, 3, atrous_rate=(2, 2), activation='relu', name='conv5_1'))
+    model.add(AtrousConvolution2D(512, 3, 3, atrous_rate=(2, 2), activation='relu', name='conv5_2'))
+    model.add(AtrousConvolution2D(512, 3, 3, atrous_rate=(2, 2), activation='relu', name='conv5_3'))
+
+    # Compared to the VGG16, we replace the FC layer with a convolution
+
+    model.add(AtrousConvolution2D(4096, 7, 7, atrous_rate=(4, 4), activation='relu', name='fc6'))
+    model.add(Dropout(0.5))
+    model.add(Convolution2D(4096, 1, 1, activation='relu', name='fc7'))
+    model.add(Dropout(0.5))
+    # Note: this layer has linear activations, not ReLU
+    model.add(Convolution2D(21, 1, 1, activation='linear', name='fc-final'))
+
+    # model.layers[-1].output_shape == (None, 16, 16, 21)
+    return model
+
+
+def add_softmax(model):
+    """ Append the softmax layers to the frontend or frontend + context net. """
+    # The softmax layer doesn't work on the (width, height, channel)
+    # shape, so we reshape to (width*height, channel) first.
+    # https://github.com/fchollet/keras/issues/1169
+    _, curr_width, curr_height, curr_channels = model.layers[-1].output_shape
+
+    model.add(Reshape((curr_width * curr_height, curr_channels)))
+    model.add(Activation('softmax'))
+    # Technically, we need another Reshape here to reshape to 2d, but TF
+    # the complains when batch_size > 1. We're just going to reshape in numpy.
+    # model.add(Reshape((curr_width, curr_height, curr_channels)))
+
+    return model
+
+
+def add_context(model):
+    """ Append the context layers to the frontend. """
+    model.add(ZeroPadding2D(padding=(33, 33)))
+    model.add(Convolution2D(42, 3, 3, activation='relu', name='ct_conv1_1'))
+    model.add(Convolution2D(42, 3, 3, activation='relu', name='ct_conv1_2'))
+    model.add(AtrousConvolution2D(84, 3, 3, atrous_rate=(2, 2), activation='relu', name='ct_conv2_1'))
+    model.add(AtrousConvolution2D(168, 3, 3, atrous_rate=(4, 4), activation='relu', name='ct_conv3_1'))
+    model.add(AtrousConvolution2D(336, 3, 3, atrous_rate=(8, 8), activation='relu', name='ct_conv4_1'))
+    model.add(AtrousConvolution2D(672, 3, 3, atrous_rate=(16, 16), activation='relu', name='ct_conv5_1'))
+    model.add(Convolution2D(672, 3, 3, activation='relu', name='ct_fc1'))
+    model.add(Convolution2D(21, 1, 1, name='ct_final'))
+
+
+    return model
+
+
+
+
+
+
+
+
+
+
+
 def identity_block(input_tensor, kernel_size, filters, stage, block):
     """The identity block is the block that has no conv layer at shortcut.
     # Arguments
@@ -110,36 +206,68 @@ def model():
 
     img_input = Input(shape=(200, 200, 3))
 
-    if K.image_data_format() == 'channels_last':
-        bn_axis = 3
-    else:
-        bn_axis = 1
+    # build the VGG16 network with our input_img as input
+    first_layer = Conv2D(64, (3, 3), input_shape=img_input, padding='same')
 
-    shortcut = Conv2D(64, (5, 5), strides=(2, 2), padding='same', name='conv1')(img_input)
-    x = BatchNormalization(axis=bn_axis, name='bn_conv1')(shortcut)
-    x = Activation('relu')(x)
-    x = MaxPooling2D((3, 3), strides=(2, 2))(x)
-    x = Conv2D(32, (3, 3))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
-    x = MaxPooling2D((3, 3))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
-    x = Conv2D(32, (3, 3))(x)
-    x = Conv2D(32, (9, 9))(x)
-    x = AveragePooling2D((7, 7), name='avg_pool')(x)
 
-    x = layers.concatenate([x, shortcut])
-    x = Activation('relu')(x)
-    x = Dense(256)(x)
+    x = Conv2D(64, (3, 3), padding='same', activation='relu')(img_input)
+    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(64 (3, 3), dilation_rate=(2, 2), activation='relu')(x)
+    x = ZeroPadding2D((1, 1))(x)
+    x = Conv2D(64, (3, 3), dilation_rate=(2, 2), activation='relu')(x)
+    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
 
     x = Flatten()(x)
-    out = Dense(NUM_PARAMS, activation='linear', name='fc1000')(x)
+    x = Dense(NUM_PARAMS, activation='linear')(x)
+    vision_model = Model(img_input, x)
+    vision_model.summary()
 
-    model = Model(img_input, out, name='resnet50')
-    # model = Model(input_shape, out)
-
-    if CONTINUE:
-        model.load_weights(DATA_DIR + "/interaction_weights_"+str(NUM_PARAMS)+".h5")
+    # model = Sequential()
+    # model.add(first_layer)
+    # model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_1'))
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_2'))
+    # model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    #
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_1'))
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_2'))
+    # model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    #
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_1'))
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_2'))
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_3'))
+    # model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    #
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_1'))
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_2'))
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_3'))
+    # model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    #
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_1'))
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_2'))
+    # model.add(ZeroPadding2D((1, 1)))
+    # model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_3'))
+    # model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    #
+    # model.add(Dense(NUM_PARAMS, activation='linear'))
 
     model.summary()
     model.compile(loss='mean_squared_error',
