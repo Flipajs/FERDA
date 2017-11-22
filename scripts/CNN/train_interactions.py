@@ -30,9 +30,10 @@ def model():
     input_shape = Input(shape=(200, 200, 3))
 
     x = Conv2D(32, (3, 3))(input_shape)
+    x = Conv2D(32, (3, 3))(x)
     x = Conv2D(32, (15, 15), dilation_rate=(2, 2))(x)
     x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (5, 5), dilation_rate=(2, 2))(x)
     # x = Conv2D(32, (3, 3))(x)
     # x = Conv2D(32, (3, 3))(x)
     # x = MaxPooling2D((2, 2))(x)
@@ -42,8 +43,8 @@ def model():
     x = Conv2D(32, (3, 3))(x)
     x = MaxPooling2D((2, 2))(x)
     x = Conv2D(16, (3, 3))(x)
-    # x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(8, (3, 3))(x)
+    x = Dense(256)(x)
+    x = Dense(128)(x)
 
     x = Flatten()(x)
 
