@@ -11,10 +11,13 @@ from ant_blobs import AntBlobs
 from tracklet_types import TrackletTypes
 from util.blob_widget import BlobWidget
 from util.tracklet_viewer import TrackletViewer
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pylab as plt
 import utils.roi
 import core.region.region
-
+import tqdm
+import os
 PickleGT = namedtuple("PickleGT", "project_name, video_file ant_blobs tracklet_types")
 
 
@@ -121,15 +124,16 @@ def fix_video_filename(pkl_filename, video_filename):
 
 
 if __name__ == "__main__":
-    # fix_video_filename('./test.pkl', '/run/media/matej/mybook_ntfs/ferda/Camera 1.avi')
+    out_dir = './out'
+    # fix_video_filename('./Camera1_blob_gt.pkl', '/run/media/matej/mybook_ntfs/ferda/Camera 1.avi')
     logging.basicConfig(level=logging.INFO)
     p = Project()
     # p.load("/home/matej/prace/ferda/10-15 (copy)/10-15.fproj")
     p.load("/home/matej/prace/ferda/projects/Camera 1/Camera 1.fproj")
-    manager = AntBlobGtManager('./test.pkl', p)
-    manager.label_tracklets()
-    manager.label_blobs()
-    manager.view_gt()
+    manager = AntBlobGtManager('./Camera1_blob_gt.pkl', p)
+    # manager.label_tracklets()
+    # manager.label_blobs()
+    # manager.view_gt()
     blob_dic = manager.get_ant_blobs()
     blob_gen = manager.feed_ant_blobs()
 
@@ -140,13 +144,10 @@ if __name__ == "__main__":
     #                ...],
     #          date='22 z\xc3\xa1\xc5\x99 2017 16:59:46')
 
-    for blob in blob_dic:
-        plt.figure()
+    for i, blob in enumerate(tqdm.tqdm(blob_dic)):
+        fig = plt.figure()
         manager.show_gt(blob)
-
-
-
-
-
-
+        plt.axis('off')
+        fig.savefig(os.path.join(out_dir, '%03d.png' % i), transparent=True, bbox_inches='tight', pad_inches=0)
+        plt.close(fig)
 

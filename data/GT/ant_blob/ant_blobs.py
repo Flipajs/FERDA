@@ -31,7 +31,3 @@ class AntBlobs:
         for k in self.blobs.keys():
             labeled_tracklets.add(k.tracklet_id)
         return list(filter(lambda x: x.id() not in labeled_tracklets, tracklets))
-
-
-
-
