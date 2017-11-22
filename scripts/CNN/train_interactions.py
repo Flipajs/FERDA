@@ -25,6 +25,7 @@ WEIGHTS = 'cam3_zebr_weights_vgg'
 NUM_PARAMS = 6
 
 def model():
+    global NUM_PARAMS, DATA_DIR, CONTINUE
     input_shape = Input(shape=(200, 200, 3))
 
     # LOAD...
@@ -36,8 +37,8 @@ def model():
     vision_model = model_from_json(vision_model_json)
     # load weights into new model
     vision_model.load_weights(ROOT_DIR+"/vision_"+WEIGHTS+".h5")
-    vision_model.layers.pop()
-    vision_model.layers.pop()
+    # vision_model.layers.pop()
+    # vision_model.layers.pop()
 
     vision_model.summary()
 
@@ -53,8 +54,22 @@ def model():
 
     # out = Dense(128, activation='relu')(out_a)
     # out = Dense(K, activation='softmax')(out_a)
+    previous = NUM_PARAMS - 2
+    if NUM_PARAMS == 4 or CONTINUE:
+        previous = NUM_PARAMS
+
+    out = Dense(previous, kernel_initializer='normal', activation='linear')(out_a)
+
+    model = Model(input_shape, out)
+
+    model.load_weights(DATA_DIR + "/interaction_weights_"+str(previous)+".h5")
+    # model.load_weights(DATA_DIR + "/interaction_weights.h5")
+
     out = Dense(NUM_PARAMS, kernel_initializer='normal', activation='linear')(out_a)
     model = Model(input_shape, out)
+    #
+    # model =
+
     model.summary()
     # 8. Compile model
     # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
@@ -71,7 +86,6 @@ if __name__ == '__main__':
     USE_PREVIOUS_AS_INIT = 0
     K = 6
     WEIGHTS = 'best_weights'
-    OUT_NAME = 'softmax'
     CONTINUE = False
     SAMPLES = 2000
 
@@ -84,7 +98,9 @@ if __name__ == '__main__':
     if len(sys.argv) > 4:
         WEIGHTS = sys.argv[4]
     if len(sys.argv) > 5:
-        OUT_NAME = sys.argv[5]
+        NUM_PARAMS = string.atoi(sys.argv[5])
+    if len(sys.argv) > 6:
+        CONTINUE = bool(string.atoi(sys.argv[6]))
 
     with h5py.File(DATA_DIR + '/imgs_inter_train.h5', 'r') as hf:
         X_train = hf['data'][:]
@@ -98,6 +114,18 @@ if __name__ == '__main__':
     with h5py.File(DATA_DIR + '/results_inter_test.h5', 'r') as hf:
         y_test = hf['data'][:]
 
+    if NUM_PARAMS == 4:
+        ids = np.array([0, 1, 5, 6])
+    if NUM_PARAMS == 6:
+        ids = np.array([0, 1, 2, 5, 6, 7])
+    if NUM_PARAMS == 8:
+        ids = np.array([0, 1, 2, 3, 5, 6, 7, 8])
+    if NUM_PARAMS == 10:
+        ids = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    y_test = y_test[:, ids]
+    y_train = y_train[:, ids]
+
     print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
     # fix random seed for reproducibility
@@ -108,48 +136,33 @@ if __name__ == '__main__':
     scaler = StandardScaler()
 
     scaler.fit(y_train)
+    # NUM_PARAMS = y_train.shape[1]
     y_train = scaler.transform(y_train)
-    y_test = scaler.transform(y_train)
+    y_test = scaler.transform(y_test)
 
+
+    print "NUM params: ", NUM_PARAMS
     m = model()
     m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
-
-    # evaluate model with standardized dataset
-    # estimator = KerasRegressor(build_fn=model, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
-    #
-    # kfold = KFold(n_splits=10, random_state=seed)
-    # results = cross_val_score(estimator, X_train, y_train, cv=kfold)
-    # print("Results: %.2f (%.2f) MSE" % (results.mean(), results.std()))
-
-    # estimator.fit(X_train, y_train, validation_split=0.05)
-
-    # from sklearn.pipeline import Pipeline
-    # from sklearn.preprocessing import StandardScaler
-    #
-    # estimators = []
-    # estimators.append(('standardize', StandardScaler()))
-    # estimators.append(('mlp', KerasRegressor(build_fn=model, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=2)))
-    # pipeline = Pipeline(estimators)
-    # # X_train, X_test, y_train, y_test = train_test_split(X, Y,
-    # #                                                     train_size=0.75, test_size=0.25)
-    # pipeline.fit(X_train, y_train, mlp__validation_split=0.05)
 
     pred = m.predict(X_test)
 
     pred = scaler.inverse_transform(pred)
+    y_test = scaler.inverse_transform(y_test)
+    # print pred2.shape
 
     with h5py.File(DATA_DIR+'/predictions.h5', 'w') as hf:
         hf.create_dataset("data", data=pred)
+
+    m.save_weights(DATA_DIR + "/interaction_weights_"+str(NUM_PARAMS)+".h5")
+
+    model_json = m.to_json()
+    with open(DATA_DIR + "/interaction_model_"+str(NUM_PARAMS)+".json", "w") as json_file:
+        json_file.write(model_json)
 
     from sklearn.metrics import mean_squared_error
     print "MSE", mean_squared_error(y_test, pred)
     from sklearn.metrics import mean_absolute_error
     print "MAE", mean_absolute_error(y_test, pred)
 
-    print m.score(X_test, y_test)
-
-    m.save_weights(DATA_DIR + "/weights.h5")
-
-    model_json = m.to_json()
-    with open(DATA_DIR + "/model.json", "w") as json_file:
-        json_file.write(model_json)
+    # print m.score(X_test, y_test)

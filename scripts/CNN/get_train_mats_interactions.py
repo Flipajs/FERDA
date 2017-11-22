@@ -7,6 +7,8 @@ from imageio import imread
 import csv
 
 OUT_DIR = '/Users/flipajs/Downloads/double_regions'
+NUM_PARAMS = 2
+
 
 def get_data(type):
     imgs = []
@@ -39,8 +41,6 @@ def get_data(type):
                 ant1_x, ant2_x = ant2_x, ant1_x
                 ant1_y, ant2_y = ant2_y, ant1_y
                 ant1_angle, ant2_angle = ant2_angle, ant1_angle
-
-
 
             results.append([ant1_x,
                            ant1_y,
