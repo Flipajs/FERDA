@@ -43,10 +43,11 @@ def model():
     x = Conv2D(32, (3, 3))(x)
     x = MaxPooling2D((2, 2))(x)
     x = Conv2D(16, (3, 3))(x)
+    x = Flatten()(x)
     x = Dense(256)(x)
     x = Dense(128)(x)
 
-    x = Flatten()(x)
+
 
     out = Dense(NUM_PARAMS, activation='linear')(x)
 
