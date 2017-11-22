@@ -10,7 +10,7 @@ import string
 from keras.models import Model
 
 def classify_imgs(imgs, ids, results_map, dist_map):
-    global DATA_DIR, MODEL_NAME
+    global DATA_DIR, MODEL_NAME, ADD_DIST_MAP
 
     json_file = open(DATA_DIR + "/" + MODEL_NAME + ".json", 'r')
     loaded_model_json = json_file.read()
@@ -19,25 +19,35 @@ def classify_imgs(imgs, ids, results_map, dist_map):
     loaded_model.load_weights(DATA_DIR + "/" + MODEL_NAME + ".h5")
     classification_model = loaded_model
 
-    classification_model = Model(input=[classification_model.inputs[0]],
+    if ADD_DIST_MAP:
+        classification_model = Model(input=[classification_model.inputs[0]],
                   output=[classification_model.output, classification_model.layers[2].input])
+
     # classification_model.summary()
 
     y_pred = classification_model.predict(imgs, verbose=1)
 
-    for i in range(len(imgs)):
-        id_ = int(ids[i])
-        results_map[id_] = y_pred[0][i, :]
-        dist_map[id_] = y_pred[1][i, :]
-
+    if ADD_DIST_MAP:
+        for i in range(len(imgs)):
+            id_ = int(ids[i])
+            results_map[id_] = y_pred[0][i, :]
+            dist_map[id_] = y_pred[1][i, :]
+    else:
+        for i in range(len(imgs)):
+            id_ = int(ids[i])
+            results_map[id_] = y_pred[i, :]
 
 if __name__ == '__main__':
     DATA_DIR = sys.argv[1]
     MODEL_NAME = sys.argv[2]
+    ADD_DIST_MAP = False
 
     BGR_FORMAT = True
     if len(sys.argv) > 3:
         BGR_FORMAT = bool(string.atoi(sys.argv[3]))
+
+    if len(sys.argv) > 4:
+        ADD_DIST_MAP = bool(string.atoi(sys.argv[4]))
 
     print "SWAP BGR?: ", BGR_FORMAT
 
@@ -77,5 +87,6 @@ if __name__ == '__main__':
     with open(DATA_DIR+'/softmax_results_map.pkl', 'wb') as f:
         pickle.dump(results_map, f)
 
-    with open(DATA_DIR+'/softmax_dist_map.pkl', 'wb') as f:
-        pickle.dump(dist_map, f)
+    if ADD_DIST_MAP:
+        with open(DATA_DIR+'/softmax_dist_map.pkl', 'wb') as f:
+            pickle.dump(dist_map, f)

@@ -74,8 +74,6 @@ if __name__ == '__main__':
     imgs = []
     ids = []
 
-    # TODO: skip multi regions
-
     print p.chm
 
     t_ = time.time()
