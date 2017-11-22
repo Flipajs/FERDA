@@ -26,59 +26,97 @@ NUM_PARAMS = 6
 
 def model():
     global NUM_PARAMS, DATA_DIR, CONTINUE
+
     input_shape = Input(shape=(200, 200, 3))
 
-    # LOAD...
-    from keras.models import model_from_json
+    x = Conv2D(32, (3, 3))(input_shape)
+    x = Conv2D(32, (15, 15), dilation_rate=(2, 2))(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = MaxPooling2D((2, 2))(x)
 
-    json_file = open(ROOT_DIR+'/vision_model_'+WEIGHTS+'.json', 'r')
-    vision_model_json = json_file.read()
-    json_file.close()
-    vision_model = model_from_json(vision_model_json)
-    # load weights into new model
-    vision_model.load_weights(ROOT_DIR+"/vision_"+WEIGHTS+".h5")
-    # vision_model.layers.pop()
-    # vision_model.layers.pop()
+    # x = Conv2D(64, (3, 3))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3))(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(16, (3, 3))(x)
+    # x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(8, (3, 3))(x)
 
-    vision_model.summary()
+    x = Flatten()(x)
 
-    # The vision model will be shared, weights and all
-    out_a = vision_model(input_shape)
-    # out_a = Flatten()(out_a)
-    #
-    # out_a = Dense(256, activation='relu')(out_a)
-    # out_a = Dense(128, activation='relu')(out_a)
-    # out_a = Dense(32, activation='relu')(out_a)
-    out_a = Dense(64, activation='relu')(out_a)
-    out_a = Dense(32, activation='relu')(out_a)
-
-    # out = Dense(128, activation='relu')(out_a)
-    # out = Dense(K, activation='softmax')(out_a)
-    previous = NUM_PARAMS - 2
-    if NUM_PARAMS == 4 or CONTINUE:
-        previous = NUM_PARAMS
-
-    out = Dense(previous, kernel_initializer='normal', activation='linear')(out_a)
+    out = Dense(NUM_PARAMS, activation='linear')(x)
 
     model = Model(input_shape, out)
 
-    model.load_weights(DATA_DIR + "/interaction_weights_"+str(previous)+".h5")
-    # model.load_weights(DATA_DIR + "/interaction_weights.h5")
-
-    out = Dense(NUM_PARAMS, kernel_initializer='normal', activation='linear')(out_a)
-    model = Model(input_shape, out)
-    #
-    # model =
+    if CONTINUE:
+        model.load_weights(DATA_DIR + "/interaction_weights_"+str(NUM_PARAMS)+".h5")
 
     model.summary()
-    # 8. Compile model
-    # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
     model.compile(loss='mean_squared_error',
                   optimizer='adam')
 
-    # model.lr.set_value(0.05)
-
     return model
+
+
+
+# def model():
+#     global NUM_PARAMS, DATA_DIR, CONTINUE
+#     input_shape = Input(shape=(200, 200, 3))
+#
+#     # LOAD...
+#     from keras.models import model_from_json
+#
+#     json_file = open(ROOT_DIR+'/vision_model_'+WEIGHTS+'.json', 'r')
+#     vision_model_json = json_file.read()
+#     json_file.close()
+#     vision_model = model_from_json(vision_model_json)
+#     # load weights into new model
+#     vision_model.load_weights(ROOT_DIR+"/vision_"+WEIGHTS+".h5")
+#     # vision_model.layers.pop()
+#     # vision_model.layers.pop()
+#
+#     vision_model.summary()
+#
+#     # The vision model will be shared, weights and all
+#     out_a = vision_model(input_shape)
+#     # out_a = Flatten()(out_a)
+#     #
+#     # out_a = Dense(256, activation='relu')(out_a)
+#     # out_a = Dense(128, activation='relu')(out_a)
+#     # out_a = Dense(32, activation='relu')(out_a)
+#     out_a = Dense(64, activation='relu')(out_a)
+#     out_a = Dense(32, activation='relu')(out_a)
+#
+#     # out = Dense(128, activation='relu')(out_a)
+#     # out = Dense(K, activation='softmax')(out_a)
+#     previous = NUM_PARAMS - 2
+#     if NUM_PARAMS == 4 or CONTINUE:
+#         previous = NUM_PARAMS
+#
+#     out = Dense(previous, kernel_initializer='normal', activation='linear')(out_a)
+#
+#     model = Model(input_shape, out)
+#
+#     model.load_weights(DATA_DIR + "/interaction_weights_"+str(previous)+".h5")
+#     # model.load_weights(DATA_DIR + "/interaction_weights.h5")
+#
+#     out = Dense(NUM_PARAMS, kernel_initializer='normal', activation='linear')(out_a)
+#     model = Model(input_shape, out)
+#     #
+#     # model =
+#
+#     model.summary()
+#     # 8. Compile model
+#     # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
+#     model.compile(loss='mean_squared_error',
+#                   optimizer='adam')
+#
+#     # model.lr.set_value(0.05)
+#
+#     return model
 
 
 if __name__ == '__main__':
