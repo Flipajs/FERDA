@@ -10,7 +10,8 @@ from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
 from keras.models import Model
 from keras.preprocessing.image import ImageDataGenerator
 
-ROOT_DIR = '/home/threedoid/cnn_descriptor/'
+ROOT_DIR = sys.argv[1]
+#ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 DATA_DIR = ROOT_DIR + '/data'
 BATCH_SIZE = 32
