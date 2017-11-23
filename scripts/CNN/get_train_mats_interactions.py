@@ -41,6 +41,8 @@ def get_data(type):
                 ant1_x, ant2_x = ant2_x, ant1_x
                 ant1_y, ant2_y = ant2_y, ant1_y
                 ant1_angle, ant2_angle = ant2_angle, ant1_angle
+                ant1_major, ant2_major = ant2_major, ant1_major
+                ant1_minor, ant2_minor = ant2_minor, ant1_minor
 
             results.append([ant1_x,
                            ant1_y,

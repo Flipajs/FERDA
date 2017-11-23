@@ -35,8 +35,8 @@ def rotate_pts(ox, oy, th_deg, x, y):
 
     return qx, qy
 
-def myGenerator():
-    global DATA_DIR, BATCH_SIZE, scaler
+def myGenerator(scaler):
+    global DATA_DIR, BATCH_SIZE
     with h5py.File(DATA_DIR + '/imgs_inter_train.h5', 'r') as hf:
         X_train = hf['data'][:]
 
@@ -73,6 +73,11 @@ def myGenerator():
 
             new_y[0], new_y[1] = rotate_pts(ox, oy, -th, x1, y1)
             new_y[5], new_y[6] = rotate_pts(ox, oy, -th, x2, y2)
+
+            # test ordering:
+            if (new_y[0]**2 + new_y[1]**2)**0.5 > (new_y[5]**2 + new_y[6]**2)**0.5:
+                a1, a2 = new_y[5:], new_y[:5]
+                new_y = np.concatenate([a2, a1])
 
             # print new_y
             y_batch.append(new_y)
@@ -243,12 +248,13 @@ if __name__ == '__main__':
     seed = 7
     np.random.seed(seed)
 
-    from sklearn.preprocessing import StandardScaler
-    scaler = StandardScaler()
+    from sklearn.preprocessing import StandardScaler, MinMaxScaler
+    # scaler = StandardScaler()
+    scaler = MinMaxScaler()
 
     scaler.fit(y_train)
     # NUM_PARAMS = y_train.shape[1]
-    # y_train = scaler.transform(y_train)
+    y_train = scaler.transform(y_train)
     # y_test = scaler.transform(y_test)
 
 
@@ -256,18 +262,18 @@ if __name__ == '__main__':
     m = model()
 
 
-    m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
+    # m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
 
-    # for e in range(NUM_EPOCHS):
-    for e in range(1):
+    for e in range(NUM_EPOCHS):
+    # for e in range(1):
         print e
-        # m.fit_generator(myGenerator(), 500, epochs=1, verbose=1)
+        m.fit_generator(myGenerator(scaler), 500, epochs=1, verbose=1)
         # m.fit_generator(myGenerator(), 500, epochs=1, verbose=1)
 
         # 10. Evaluate model on test data
         pred = m.predict(X_test)
 
-        # pred = scaler.inverse_transform(pred)
+        pred = scaler.inverse_transform(pred)
         # y_test = scaler.inverse_transform(y_test)
         # print pred2.shape
 

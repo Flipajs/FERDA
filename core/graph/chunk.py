@@ -134,7 +134,7 @@ class Chunk:
         region = gm.region(vertex_id)
         if region.frame() != self.end_frame(gm) + 1:
             # print "DISCONTINUITY in chunk.py/append_right", region.frame(), self.end_frame(gm), region, self.end_node()
-            raise Exception("DISCONTINUITY in chunk.py/append_right")
+            raise Exception("DISCONTINUITY in chunk.py/append_right, frame: {}, r_id: {}".format(region.frame(), region.id()))
 
         last = self.end_node()
 

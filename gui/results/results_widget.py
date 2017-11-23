@@ -2188,6 +2188,16 @@ class ResultsWidget(QtGui.QWidget):
             for t in groups[id_]:
                 print t.id(), t.length()
 
+
+        print "WORST ONES:"
+        for i in range(10):
+            id_ = ids[-i]
+            print "############### "
+            print -min_lengths[id_]
+
+            for t in groups[id_]:
+                print t.id(), t.length()
+
         num_single = 0
 
         g1 = groups[0]
