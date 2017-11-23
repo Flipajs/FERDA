@@ -2102,6 +2102,8 @@ class ResultsWidget(QtGui.QWidget):
 
                 singles_group = filter(lambda x: x.is_single(), group)
 
+                df = frame
+
                 # if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= self.min_tracklet_len:
                 if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 1:
                     groups.append(singles_group)
@@ -2115,11 +2117,9 @@ class ResultsWidget(QtGui.QWidget):
                     for t in singles_group:
                         unique_tracklets.add(t)
 
-                df = frame
-                frame = min([t.end_frame(self.p.gm) for t in group]) + 1
-
-                # if i % 100:
-                    # print_progress(frame, total_frame_count, "searching for CSoSIT...")
+                    frame = min([t.end_frame(self.p.gm) for t in singles_group]) + 1
+                else:
+                    frame = min([t.end_frame(self.p.gm) for t in group]) + 1
 
                 i += 1
 
