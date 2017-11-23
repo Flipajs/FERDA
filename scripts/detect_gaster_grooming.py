@@ -83,7 +83,6 @@ print "TEST set accuracy: ", rfc.score(X_test, y_test)
 p_post = Project()
 p_post.load(WD_POST)
 
-
 for t in tqdm(p_post.chm.chunk_gen()):
     pass
 
