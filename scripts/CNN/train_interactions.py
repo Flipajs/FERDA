@@ -15,7 +15,7 @@ from keras import layers
 from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
-
+import math
 
 ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
@@ -26,6 +26,59 @@ TWO_TESTS = True
 WEIGHTS = 'cam3_zebr_weights_vgg'
 NUM_PARAMS = 6
 
+from scipy.ndimage.interpolation import rotate
+
+def rotate_pts(ox, oy, th_deg, x, y):
+    th = np.deg2rad(th_deg)
+    qx = ox + math.cos(th) * (x - ox) - math.sin(th) * (y - oy)
+    qy = oy + math.sin(th) * (x - ox) + math.cos(th) * (y - oy)
+
+    return qx, qy
+
+def myGenerator():
+    global DATA_DIR, BATCH_SIZE, scaler
+    with h5py.File(DATA_DIR + '/imgs_inter_train.h5', 'r') as hf:
+        X_train = hf['data'][:]
+
+    with h5py.File(DATA_DIR + '/results_inter_train.h5', 'r') as hf:
+        y_train = hf['data'][:]
+
+    # X_train = X_train.astype('float32')
+    # X_train /= 255
+
+    # y_train = np_utils.to_categorical(y_train, K)
+    ii = 0
+    while 1:
+        x_batch = []
+        y_batch = []
+        # ii += 1
+
+        # thetas = np.linspace(1, 360, BATCH_SIZE, endpoint=False)
+        for i in range(BATCH_SIZE):
+            ii = np.random.randint(y_train.shape[0])
+            th = np.random.randint(1, 359)
+            X = X_train[ii, :, :, :]
+            y = y_train[ii, :]
+
+            # th = thetas[i]
+            new_y = np.copy(y)
+            # print new_y
+            x_batch.append(rotate(X, angle=th, reshape=False, mode='nearest'))
+            new_y[4] = (new_y[4] + th) % 360
+            new_y[9] = (new_y[9] + th) % 360
+
+            oy, ox = X.shape[0]/2.0, X.shape[1]/2.0
+            x1, y1 = new_y[0], new_y[1]
+            x2, y2 = new_y[5], new_y[6]
+
+            new_y[0], new_y[1] = rotate_pts(ox, oy, -th, x1, y1)
+            new_y[5], new_y[6] = rotate_pts(ox, oy, -th, x2, y2)
+
+            # print new_y
+            y_batch.append(new_y)
+
+        y_batch = scaler.transform(y_batch)
+        yield np.array(x_batch), y_batch
 
 
 def model():
@@ -39,27 +92,35 @@ def model():
         bn_axis = 1
 
     x = Conv2D(64, (3, 3), padding='same', activation='relu')(img_input)
-    x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
-    x = Activation('relu')(x)
+    # x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
+    # x = Activation('relu')(x)
 
     x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
     x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
     x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
-    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
-    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     # x = MaxPooling2D((2, 2))(x)
     x = Conv2D(32, (3, 3), dilation_rate=(2, 2), activation='relu')(x)
     x = ZeroPadding2D((1, 1))(x)
     x = Conv2D(32, (3, 3), dilation_rate=(4, 4), activation='relu')(x)
     x = ZeroPadding2D((1, 1))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(8, 8), activation='relu')(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(4, 4), activation='relu')(x)
     x = ZeroPadding2D((1, 1))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(8, 8), activation='relu')(x)
+    # x = ZeroPadding2D((1, 1))(x)
+    x = MaxPooling2D((2, 2), strides=(2, 2))(x)
+    # x = Conv2D(32, (3, 3), dilation_rate=(16, 16), padding='same', activation='relu')(x)
+    # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    # x = MaxPooling2D((2, 2))(x)
 
     x = Flatten()(x)
-    x = Dense(NUM_PARAMS, activation='linear')(x)
+    # x = Dense(64, activation='relu')(x)
+    x = Dense(NUM_PARAMS)(x)
     model = Model(img_input, x)
 
     if CONTINUE:
@@ -71,6 +132,7 @@ def model():
                   optimizer='adam')
 
     return model
+
 
 
 # def model():
@@ -175,7 +237,7 @@ if __name__ == '__main__':
     y_test = y_test[:, ids]
     y_train = y_train[:, ids]
 
-    print X_train.shape, X_test.shape, y_train.shape, y_test.shape
+    print X_test.shape, y_train.shape, y_test.shape
 
     # fix random seed for reproducibility
     seed = 7
@@ -186,32 +248,39 @@ if __name__ == '__main__':
 
     scaler.fit(y_train)
     # NUM_PARAMS = y_train.shape[1]
-    y_train = scaler.transform(y_train)
-    y_test = scaler.transform(y_test)
+    # y_train = scaler.transform(y_train)
+    # y_test = scaler.transform(y_test)
 
 
     print "NUM params: ", NUM_PARAMS
     m = model()
+
+
     m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
 
-    pred = m.predict(X_test)
+    # for e in range(NUM_EPOCHS):
+    for e in range(1):
+        print e
+        # m.fit_generator(myGenerator(), 500, epochs=1, verbose=1)
+        # m.fit_generator(myGenerator(), 500, epochs=1, verbose=1)
 
-    pred = scaler.inverse_transform(pred)
-    y_test = scaler.inverse_transform(y_test)
-    # print pred2.shape
+        # 10. Evaluate model on test data
+        pred = m.predict(X_test)
 
-    with h5py.File(DATA_DIR+'/predictions.h5', 'w') as hf:
-        hf.create_dataset("data", data=pred)
+        # pred = scaler.inverse_transform(pred)
+        # y_test = scaler.inverse_transform(y_test)
+        # print pred2.shape
 
-    m.save_weights(DATA_DIR + "/interaction_weights_"+str(NUM_PARAMS)+".h5")
+        with h5py.File(DATA_DIR+'/predictions_e'+str(e)+'.h5', 'w') as hf:
+            hf.create_dataset("data", data=pred)
 
-    model_json = m.to_json()
-    with open(DATA_DIR + "/interaction_model_"+str(NUM_PARAMS)+".json", "w") as json_file:
-        json_file.write(model_json)
+        m.save_weights(DATA_DIR + "/interaction_weights_"+str(NUM_PARAMS)+"_e"+str(e)+".h5")
 
-    from sklearn.metrics import mean_squared_error
-    print "MSE", mean_squared_error(y_test, pred)
-    from sklearn.metrics import mean_absolute_error
-    print "MAE", mean_absolute_error(y_test, pred)
+        model_json = m.to_json()
+        with open(DATA_DIR + "/interaction_model_"+str(NUM_PARAMS)+".json", "w") as json_file:
+            json_file.write(model_json)
 
-    # print m.score(X_test, y_test)
+        from sklearn.metrics import mean_squared_error
+        print "MSE", mean_squared_error(y_test, pred)
+        from sklearn.metrics import mean_absolute_error
+        print "MAE", mean_absolute_error(y_test, pred)

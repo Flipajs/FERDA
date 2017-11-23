@@ -14,6 +14,13 @@ def get_head_pt(theta, major_axis, x, y):
     p_ = np.array([a* math.sin(theta), a * math.cos(theta)])
     return np.ceil(np.array([x, y]) + p_)
 
+def rotate_pts(ox, oy, th_deg, x, y):
+    th = np.deg2rad(th_deg)
+    qx = ox + math.cos(th) * (x - ox) - math.sin(th) * (y - oy)
+    qy = oy + math.sin(th) * (x - ox) + math.cos(th) * (y - oy)
+
+    return qx, qy
+
 
 ROOT_DIR = '/Users/flipajs/Downloads/double_regions'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
@@ -25,7 +32,10 @@ DATA_DIR = ROOT_DIR
 with h5py.File(DATA_DIR + '/results_inter_test.h5', 'r') as hf:
     y_test = hf['data'][:]
 
-with h5py.File(DATA_DIR + '/predictions.h5', 'r') as hf:
+with h5py.File(DATA_DIR + '/results_inter_train.h5', 'r') as hf:
+    y_train = hf['data'][:]
+
+with h5py.File(DATA_DIR + '/predictions_e9.h5', 'r') as hf:
     pred = hf['data'][:]
 
 
@@ -37,8 +47,9 @@ ells = [Ellipse((1, 1), 4, 2, a) for a in angles]
 # plt.hist(pred[:, 4])
 # plt.hist(pred[:, 9])
 # plt.figure()
-# plt.hist(y_test[:, 2])
-# plt.hist(y_test[:, 7])
+# plt.hist(y_train[:, 4])
+# plt.figure()
+# plt.hist(y_train[:, 9])
 # plt.show()
 f, axs = plt.subplots(3, 5, tight_layout=True, squeeze=True)
 axs = axs.flatten()
@@ -53,6 +64,39 @@ for i in range(len(axs)):
 
     im = imread(DATA_DIR+'/images_test/'+s+'.jpg')
 
+    # x_batch = []
+    # y_batch = []
+    # X = im
+    # y = y_test[i, :]
+    #
+    # BATCH_SIZE = 8
+    # from scipy.ndimage.interpolation import rotate
+    #
+    # thetas = np.linspace(50, 360, BATCH_SIZE, endpoint=False)
+    # for i in range(BATCH_SIZE):
+    #     th = thetas[i]
+    #     new_y = np.copy(y)
+    #     # print new_y
+    #     X_new = rotate(X, angle=th, reshape=False, mode='nearest')
+    #     new_y[4] = (new_y[4] + th) % 360
+    #     new_y[9] = (new_y[9] + th) % 360
+    #
+    #     oy, ox = X.shape[0] / 2.0, X.shape[1] / 2.0
+    #     x1, y1 = new_y[0], new_y[1]
+    #     x2, y2 = new_y[5], new_y[6]
+    #
+    #     new_y[0], new_y[1] = rotate_pts(ox, oy, -th, x1, y1)
+    #     new_y[5], new_y[6] = rotate_pts(ox, oy, -th, x2, y2)
+    #
+    #     # print new_y
+    #     y_batch.append(new_y)
+    #
+    #     plt.imshow(X_new)
+    #     ax = plt.gca()
+    #     ax.add_patch(Ellipse((new_y[0], new_y[1]), new_y[2], new_y[3], angle=-new_y[4], edgecolor='red', facecolor='none'))
+    #     ax.add_patch(Ellipse((new_y[5], new_y[6]), new_y[7], new_y[8], angle=-new_y[9], edgecolor='blue', facecolor='none'))
+    #
+    #     plt.show()
     # im = X_test[i, :, :, :]
     # a = plt.subplot(111, aspect='equal')
     # a.imshow(im)
