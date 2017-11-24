@@ -1,3 +1,7 @@
+"""
+use: $ python interactions.py -- --help
+"""
+
 import sys
 import cPickle as pickle
 from core.settings import Settings as S_
@@ -141,65 +145,65 @@ def head_fix(tracklet_regions):
                 r.theta_ -= 2 * np.pi
 
 
-class GenerateTrainingData(object):
+class Interactions(object):
     def __init__(self):
-        self.video = None
-        self.single = None
-        self.multi = None
-        self.project = None
-        self.bg = None
-        self.__i__ = 0
+        self.__video = None
+        self.__single = None
+        self.__multi = None
+        self.__project = None
+        self.__bg = None
+        self.__i = 0
 
-    def __load_project__(self):
-        self.project = Project()
+    def __load_project(self, project_dir=None):
+        self.__project = Project()
         # This is development speed up process (kind of fast start). Runs only on developers machines...
         # if is_flipajs_pc() and False:
-        wd = None
-        if is_flipajs_pc():
-            # wd = '/Users/iflipajs/Documents/wd/FERDA/Cam1_rf'
-            # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-            # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
-            # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
-            # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-            # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
-            # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
-            wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
-            # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'
+        if project_dir is None:
+            if is_flipajs_pc():
+                # project_dir = '/Users/iflipajs/Documents/project_dir/FERDA/Cam1_rf'
+                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/Cam1_playground'
+                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/test6'
+                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/zebrafish_playground'
+                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/Camera3'
+                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/Cam1_rfs2'
+                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/Cam1'
+                project_dir = '/Users/flipajs/Documents/project_dir/FERDA/rep1-cam2'
+                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/rep1-cam3'
 
-            # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
+                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/Sowbug3'
 
-            # wd = '/Users/flipajs/Documents/wd/FERDA/test'
-        if is_matejs_pc():
-            # wd = '/home/matej/prace/ferda/10-15/'
-            wd = '/home/matej/prace/ferda/10-15 (copy)/'
-        if wd is not None:
-            self.project.load(wd)
+                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/test'
+            if is_matejs_pc():
+                # project_dir = '/home/matej/prace/ferda/10-15/'
+                project_dir = '/home/matej/prace/ferda/10-15 (copy)/'
+        assert project_dir is not None
+        self.__project.load(project_dir)
 
         # img = video.get_frame(region.frame())  # ndarray bgr
         # img_region = get_img_around_pts(img, region.pts(), margin=0)
         # cv2.imshow('test', img_region[0])
         # cv2.waitKey()
 
-        self.video = get_auto_video_manager(self.project)
+        self.__video = get_auto_video_manager(self.__project)
         print('regions start')
 
         regions_filename = './out/regions_long_tracklets.pkl'
         if os.path.exists(regions_filename):
             print('regions loading...')
             with open(regions_filename, 'rb') as fr:
-                self.single = pickle.load(fr)
-                self.multi = pickle.load(fr)
+                self.__single = pickle.load(fr)
+                self.__multi = pickle.load(fr)
             print('regions loaded')
         else:
             from collections import defaultdict
 
-            self.single = defaultdict(list)
-            self.multi = defaultdict(list)
+            self.__single = defaultdict(list)
+            self.__multi = defaultdict(list)
             # long_moving_tracklets = []
 
-            for tracklet in self.project.chm.chunk_gen():
+            for tracklet in self.__project.chm.chunk_gen():
                 if tracklet.is_single() or tracklet.is_multi():
-                    region_tracklet = RegionChunk(tracklet, self.project.gm, self.project.rm)
+                    region_tracklet = RegionChunk(tracklet, self.__project.gm, self.__project.rm)
                     if tracklet.is_single():
                         centroids = np.array([region_tracklet.centroid_in_t(frame) for frame
                                               in
@@ -225,7 +229,7 @@ class GenerateTrainingData(object):
                             # plt.imshow(montage_generator.montage(images[:50])[::-1])
                             # plt.waitforbuttonpress()
                             for region in regions:
-                                self.single[region.frame()].append(region)
+                                self.__single[region.frame()].append(region)
                         else:
                             # short single tracklets are ignored
                             pass
@@ -234,18 +238,18 @@ class GenerateTrainingData(object):
                             # if tracklet.is_single():
                             #     single[region.frame()].append(region)
                             # else:
-                            self.multi[region.frame()].append(region)
+                            self.__multi[region.frame()].append(region)
 
             with open(regions_filename, 'wb') as fw:
-                pickle.dump(self.single, fw)
-                pickle.dump(self.multi, fw)
+                pickle.dump(self.__single, fw)
+                pickle.dump(self.__multi, fw)
 
-    def __get_out_dir_rel__(self, out_dir, out_file):
+    def __get_out_dir_rel(self, out_dir, out_file):
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
         return os.path.relpath(os.path.abspath(out_dir), os.path.abspath(os.path.dirname(out_file)))
 
-    def composebackground(self, video_step=100, dilation_size=100, out_filename='bg.png'):
+    def write_background(self, video_step=100, dilation_size=100, out_filename='bg.png'):
         """
         Generates background without foreground objects.
 
@@ -254,9 +258,9 @@ class GenerateTrainingData(object):
         :param out_filename:
         :return:
         """
-        self.__load_project__()
+        self.__load_project()
         # background composition
-        img = self.video.get_frame(0)
+        img = self.__video.get_frame(0)
 
         multiple_imgs = []  # np.zeros((median_len,) + img.shape)
         bg_mask = np.zeros(img.shape[:2], dtype=np.bool)
@@ -265,9 +269,9 @@ class GenerateTrainingData(object):
         while not np.all(bg_mask):
             frame = i * video_step
             print frame, '\t', np.count_nonzero(~bg_mask)
-            img = self.video.get_frame(frame).astype(float)
+            img = self.__video.get_frame(frame).astype(float)
             img_bg_mask = np.zeros(img.shape[:2], dtype=np.bool)
-            for region in self.single[frame] + self.multi[frame]:
+            for region in self.__single[frame] + self.__multi[frame]:
                 transformable_region = TransformableRegion(img)
                 transformable_region.set_region(region)
                 mask = transformable_region.get_mask(dilation_size)
@@ -280,7 +284,7 @@ class GenerateTrainingData(object):
         median_img = np.nanmedian(np.stack(multiple_imgs), 0).astype(np.uint8)
         cv2.imwrite(out_filename, median_img)
 
-    def writeforeground(self, out_dir='fg', out_file='fg.txt'):
+    def write_foreground(self, out_dir='fg', out_file='fg.txt'):
         """
         Write all foreground objects as images and list them into a text file for training.
 
@@ -288,23 +292,23 @@ class GenerateTrainingData(object):
         :param out_file:
         :return:
         """
-        self.__load_project__()
+        self.__load_project()
         # write fg images and txt file
-        out_dir_rel = self.__get_out_dir_rel__(out_dir, out_file)
+        out_dir_rel = self.__get_out_dir_rel(out_dir, out_file)
 
         with open(out_file, 'w') as fw:
-            for frame in tqdm.tqdm(sorted(self.single.keys())):
-                img = self.video.get_frame(frame)
+            for frame in tqdm.tqdm(sorted(self.__single.keys())):
+                img = self.__video.get_frame(frame)
                 filename = '%05d.jpg' % frame
                 cv2.imwrite(os.path.join(out_dir, filename), img)
-                line = os.path.join(out_dir_rel, filename) + ' ' + str(len(self.single[frame])) + ' '
-                for region in self.single[frame]:
+                line = os.path.join(out_dir_rel, filename) + ' ' + str(len(self.__single[frame])) + ' '
+                for region in self.__single[frame]:
                     roi = region.roi()
                     line += '%d %d %d %d ' % (roi.x(), roi.y(), roi.width(), roi.height())
                 line += '\n'
                 fw.write(line)
 
-    def meanimage(self, out_filename='mean_foreground.png', width=70, height=100, num_regions=80):
+    def write_meanimage(self, out_filename='mean_foreground.png', width=70, height=100, num_regions=80):
         """
         Creates mean "single" foreground object.
 
@@ -314,10 +318,10 @@ class GenerateTrainingData(object):
         :param num_regions:
         :return:
         """
-        self.__load_project__()
+        self.__load_project()
         frames_regions = []
         for _ in range(num_regions):
-            region = np.random.choice(self.single[np.random.choice(self.single.keys())])
+            region = np.random.choice(self.__single[np.random.choice(self.__single.keys())])
             frames_regions.append((region.frame(), region))
         frames_regions = sorted(frames_regions, key=lambda fr: fr[0])
 
@@ -330,7 +334,7 @@ class GenerateTrainingData(object):
         mean_img = np.zeros((height, width, 3))
         for frame, region in tqdm.tqdm(frames_regions):
             # img = cv2.cvtColor(self.video.get_frame(region.frame()), cv2.COLOR_BGR2GRAY)
-            tregion = TransformableRegion(self.video.get_frame(frame))
+            tregion = TransformableRegion(self.__video.get_frame(frame))
             tregion.rotate(-math.degrees(region.theta_) + 90, rotation_center_yx=region.centroid())
             img_aligned = tregion.get_img()
             hw = np.array((height, width), dtype=float)
@@ -343,7 +347,7 @@ class GenerateTrainingData(object):
 
         cv2.imwrite(out_filename, (mean_img / float(num_regions)).astype(np.uint8))
 
-    def writebackgroundaligned(self, out_dir='bg', out_file='bg.txt', bg_angle_max_deviation_deg=20):
+    def write_background_aligned(self, out_dir='bg', out_file='bg.txt', bg_angle_max_deviation_deg=20):
         """
         Write backgrounds for training an aligned object detector: the
         backgrounds include non-vertical foreground objects.
@@ -353,18 +357,18 @@ class GenerateTrainingData(object):
         :param bg_angle_max_deviation_deg:
         :return:
         """
-        self.__load_project__()
-        out_dir_rel = self.__get_out_dir_rel__(out_dir, out_file)
+        self.__load_project()
+        out_dir_rel = self.__get_out_dir_rel(out_dir, out_file)
         images = []
         i = 0
         bb_fixed_border_xy = (20, 10)
 
         fw = open(out_file, 'w')
 
-        for frame in tqdm.tqdm(sorted(self.single.keys())):  # [::10]:
-            img = self.video.get_frame(frame)
+        for frame in tqdm.tqdm(sorted(self.__single.keys())):  # [::10]:
+            img = self.__video.get_frame(frame)
 
-            for region in self.single[frame]:  # [::10]:
+            for region in self.__single[frame]:  # [::10]:
 
                 if not (-bg_angle_max_deviation_deg < math.degrees(region.theta_) - 90 < bg_angle_max_deviation_deg):
                     filename = '%05d.png' % i
@@ -398,7 +402,7 @@ class GenerateTrainingData(object):
 
         fw.close()
 
-    def writeforegroundaligned(self, out_dir='fg', out_file='fg.txt', fixed_size=True):
+    def write_foreground_aligned(self, out_dir='fg', out_file='fg.txt', fixed_size=True):
         """
         Write foreground objects for training an aligned objects detector. The foregrounds include
         only vertical objects.
@@ -408,8 +412,8 @@ class GenerateTrainingData(object):
         :param fixed_size:
         :return:
         """
-        self.__load_project__()
-        out_dir_rel = self.__get_out_dir_rel__(out_dir, out_file)
+        self.__load_project()
+        out_dir_rel = self.__get_out_dir_rel(out_dir, out_file)
         images = []
         i = 0
         bb_fixed_border_xy = (20, 10)
@@ -417,7 +421,7 @@ class GenerateTrainingData(object):
         if fixed_size:
             import itertools
 
-            all_regions = list(itertools.chain(*self.single.values()))
+            all_regions = list(itertools.chain(*self.__single.values()))
             major_axes = np.array([r.a_ for r in all_regions]) * 2
             bb_major_px = np.median(major_axes)
             minor_axes = np.array([r.b_ for r in all_regions]) * 2
@@ -439,10 +443,10 @@ class GenerateTrainingData(object):
         #     pickle.dump(r2, fw)
         #     pickle.dump(img2, fw)
 
-        for frame in tqdm.tqdm(sorted(self.single.keys())):  # [::10]:
-            img = self.video.get_frame(frame)
+        for frame in tqdm.tqdm(sorted(self.__single.keys())):  # [::10]:
+            img = self.__video.get_frame(frame)
 
-            for region in self.single[frame]:  # [::10]:
+            for region in self.__single[frame]:  # [::10]:
 
                 centroid_crop = tuple(region.centroid()[::-1] - cropxy)
                 rot = cv2.getRotationMatrix2D(centroid_crop,
@@ -505,7 +509,7 @@ class GenerateTrainingData(object):
 
         fw.close()
 
-    def test(self):
+    def __test(self):
         with open('./out/regions.pkl', 'rb') as fr:
             r1 = pickle.load(fr)
             img1 = pickle.load(fr)
@@ -520,14 +524,14 @@ class GenerateTrainingData(object):
         plt.imshow(region1.compose(region2.rotate(-30).move((-15, -15))))
         # plt.imshow(region1.move((0, 100)).get_mask())
 
-    def synthetize_double_regions(self, count=100, out_dir='./out', out_csv='./out/doubleregions.csv'):
+    def write_synthetized_interactions(self, count=100, out_dir='./out', out_csv='./out/doubleregions.csv'):
         # angles: positive clockwise, zero direction to right
-        self.__load_project__()
+        self.__load_project()
         from core.bg_model.median_intensity import MedianIntensity
-        self.bg = MedianIntensity(self.project)
-        self.bg.compute_model()
+        self.__bg = MedianIntensity(self.__project)
+        self.__bg.compute_model()
 
-        single_regions = [item for sublist in self.single.values() for item in sublist]
+        single_regions = [item for sublist in self.__single.values() for item in sublist]
         BATCH_SIZE = 250
 
         with open(out_csv, 'w') as csv_file:
@@ -545,8 +549,8 @@ class GenerateTrainingData(object):
                 frames = [r.frame() for r in regions]
                 sort_idx = np.argsort(frames)
                 sort_idx_reverse = np.argsort(sort_idx)
-                images_sorted = [self.video.get_frame(r.frame()) for r in tqdm.tqdm(regions[sort_idx],
-                                                                                    desc='images reading')]
+                images_sorted = [self.__video.get_frame(r.frame()) for r in tqdm.tqdm(regions[sort_idx],
+                                                                                      desc='images reading')]
                 images = [images_sorted[idx] for idx in sort_idx_reverse]
 
                 with tqdm.tqdm(total=n, desc='synthetize') as progress_bar:
@@ -561,9 +565,9 @@ class GenerateTrainingData(object):
                             overlap_px = int(round(np.random.gamma(1, 5)))
 
                             try:
-                                img, ant1, ant2 = self.synthetize(region1, region2,
-                                                                  theta_rad, phi_rad, overlap_px,
-                                                                  img1, img2)
+                                img, ant1, ant2 = self.__synthetize(region1, region2,
+                                                                    theta_rad, phi_rad, overlap_px,
+                                                                    img1, img2)
                             except IndexError:
                                 print('%s: IndexError, repeating' % img_filename)
                             if img is not None:
@@ -587,7 +591,7 @@ class GenerateTrainingData(object):
                             'theta_rad': round(theta_rad, 1),
                             'phi_rad': round(phi_rad, 1),
                             'overlap_px': round(overlap_px, 1),
-                            'video_file': os.path.basename(self.video.video_path),
+                            'video_file': os.path.basename(self.__video.video_path),
                         })
                         i += 1
                         progress_bar.update()
@@ -604,7 +608,7 @@ class GenerateTrainingData(object):
         # from matplotlib.patches import Rectangle
         # ax.add_patch(Rectangle(bb_xywh[:2], bb_xywh[2], bb_xywh[3], linewidth=1, edgecolor='r', facecolor='none'))
 
-    def show_double_regions_csv(self, csv_file, image_dir):
+    def show_interactions_csv(self, csv_file, image_dir):
         # waitforbuttonpress.figure()
         with open(csv_file, 'r') as fr:
             csv_reader = csv.DictReader(fr)
@@ -633,11 +637,11 @@ class GenerateTrainingData(object):
                 #     break
                 plt.clf()
 
-    def synthetize(self, region1, region2, theta_rad, phi_rad, overlap_px, img1=None, img2=None):
+    def __synthetize(self, region1, region2, theta_rad, phi_rad, overlap_px, img1=None, img2=None):
         # angles: positive clockwise, zero direction to right
 
         if img1 is None:
-            img1 = self.video.get_frame(region1.frame())
+            img1 = self.__video.get_frame(region1.frame())
         tregion1 = TransformableRegion(img1)
         tregion1.set_region(region1)
 
@@ -652,13 +656,13 @@ class GenerateTrainingData(object):
         # region.set_mask(mask)
 
         if img2 is None:
-            img2 = self.video.get_frame(region2.frame())
+            img2 = self.__video.get_frame(region2.frame())
         head_yx, tail_yx = get_region_endpoints(region2)
 
         ##
 
         # constructing img2 alpha channel
-        bg_diff = (self.bg.bg_model.astype(np.float) - img2).mean(axis=2).clip(5, 100)
+        bg_diff = (self.__bg.bg_model.astype(np.float) - img2).mean(axis=2).clip(5, 100)
         alpha = ((bg_diff - bg_diff.min()) / np.ptp(bg_diff))
         # plt.imshow(alpha)
         # plt.jet()
@@ -830,10 +834,53 @@ class GenerateTrainingData(object):
         # fig.savefig('out/debug/%03d_crop.png' % self.__i__, transparent=True, bbox_inches='tight', pad_inches=0)
         # plt.close(fig)
 
-        self.__i__ += 1
+        self.__i += 1
 
         return img_crop, ant1_crop, ant2_crop
 
+    def detect_ants_opencv(self, cascade_detector_dir, project_dir):
+        """
+        Detect ants as rotated bounding boxes using OpenCV cascaded detector.
+
+        :param cascade_detector_dir: trained detector, directory containing cascade.xml
+        :param project_dir: FERDA project dir
+        """
+        self.__load_project(project_dir)
+
+        video = get_auto_video_manager(self.__project)
+        ant_cascade = cv2.CascadeClassifier(os.path.join(cascade_detector_dir, 'cascade.xml'))
+        frame = 0
+        waitforbuttonpress.figure()
+        while True:
+            img = video.get_frame(frame)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            img_center = np.round(np.array(gray.shape)[::-1] / 2).astype(int)  # x, y
+            # minSize=(56, 82), maxSize=(56, 82))
+            detections = {}
+            for angle in xrange(0, 180, 20):
+                rot = cv2.getRotationMatrix2D(tuple(img_center), angle, 1.)
+                img_rot = cv2.warpAffine(gray, rot, gray.shape[::-1])
+                ants = ant_cascade.detectMultiScale(img_rot, 1.05, 5, minSize=(56, 82), maxSize=(56, 82))
+                detections[angle] = []
+                for (x, y, w, h) in ants:
+                    # [tl, tr, br, bl]
+                    corners = np.array([
+                        [x, y],
+                        [x + w, y],
+                        [x + w, y + h],
+                        [x, y + h]])
+                    corners_rotated = cv2.invertAffineTransform(rot).dot(np.hstack((corners, np.ones((4, 1)))).T).T
+                    detections[angle].append(corners_rotated)
+
+            for angle, rotated_boxes in detections.iteritems():
+                cv2.polylines(img, [np.array(corners).astype(np.int32) for corners in rotated_boxes], True,
+                              (255, 0, 0))
+            plt.imshow(img[::-1])
+            waitforbuttonpress.wait()
+            if waitforbuttonpress.is_closed():
+                break
+            frame += 100
+
 
 if __name__ == '__main__':
-    fire.Fire(GenerateTrainingData)
+    fire.Fire(Interactions)
