@@ -6,7 +6,7 @@ import sys
 import string
 import numpy as np
 from keras.utils import np_utils
-from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
+from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, AveragePooling2D
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.layers import Dense, BatchNormalization, Activation, AveragePooling2D, ZeroPadding2D
@@ -48,20 +48,20 @@ def myGenerator(scaler):
     # X_train /= 255
 
     # y_train = np_utils.to_categorical(y_train, K)
-    ii = 0
+    ii = -1
     while 1:
         x_batch = []
         y_batch = []
-        # ii += 1
+        ii += 1
 
-        # thetas = np.linspace(1, 360, BATCH_SIZE, endpoint=False)
+        thetas = np.linspace(1, 360, BATCH_SIZE, endpoint=False)
         for i in range(BATCH_SIZE):
-            ii = np.random.randint(y_train.shape[0])
-            th = np.random.randint(1, 359)
+            # ii = np.random.randint(y_train.shape[0])
+            # th = np.random.randint(1, 359)
             X = X_train[ii, :, :, :]
             y = y_train[ii, :]
 
-            # th = thetas[i]
+            th = thetas[i]
             new_y = np.copy(y)
             # print new_y
             x_batch.append(rotate(X, angle=th, reshape=False, mode='nearest'))
@@ -83,7 +83,9 @@ def myGenerator(scaler):
             # print new_y
             y_batch.append(new_y)
 
-        y_batch = scaler.transform(y_batch)
+        y_batch = np.array(y_batch)
+        # y_batch = scaler.transform(y_batch)
+        # print x_batch.shape, y_batch.shape
         yield np.array(x_batch), y_batch
 
 # def mean_squared_error(y_true, y_pred):
@@ -107,20 +109,36 @@ def my_loss(y_true, y_pred):
 
 
     # val1 = K.mean(1 - K.abs(K.cos(y_pred[:, 4]/57.29 - y_true[:, 4]/57.29)), axis=-1)
-    val = np.mod(y_pred[:, 4] - y_true[:, 4], 360.0)
-    theta1 = K.mean(K.square(K.minimum(val, 360-val)), axis=-1)
+    val = K.abs(y_pred[:, 4] - y_true[:, 4])
+    # theta11 = val
+    theta11 = K.square(K.minimum(val, 360.0-val))
 
-    val = np.mod(y_pred[:, 4] - y_true[:, 9], 360.0)
-    theta2 = K.mean(K.square(K.minimum(val, 360 - val)), axis=-1)
+    # val = np.mod(y_pred[:, 4] - y_true[:, 9], 360.0)
+    val = K.abs(y_pred[:, 4] - y_true[:, 9])
+    # theta12 = val
+    theta12 = K.square(K.minimum(val, 360.0 - val))
+
+    val = K.abs(y_pred[:, 9] - y_true[:, 4])
+    # theta21 = val
+    theta21 = K.square(K.minimum(val, 360.0 - val))
+
+    val = K.abs(y_pred[:, 9] - y_true[:, 9])
+    # theta22 = val
+    theta22 = K.square(K.minimum(val, 360.0 - val))
     # val1 = K.mean(K.square(np.mod(y_pred[:, 4] - y_true[:, 4], 360.0)), axis=-1)
     # val1 = K.mean(K.square(y_pred[:, 4] - y_true[:, 4]), axis=-1)
     # val2 = K.mean(K.square(1 - K.abs(K.cos(3.14*y_pred[:, 9] - 3.14*y_true[:, 9]))), axis=-1)
     # val2 = K.mean(K.square((y_pred[:, 9]%1.0 - y_true[:, 9]%1.0) % 1.0), axis=-1)
     #
-    pos1 = K.square(y_pred[:, :2] - y_true[:, :2])
-    pos2 = K.square(y_pred[:, :2] - y_true[:, 5:7])
+    pos11 = K.sum(K.square(y_pred[:, :2] - y_true[:, :2]), axis=-1)
+    pos12 = K.sum(K.square(y_pred[:, :2] - y_true[:, 5:7]), axis=-1)
 
-    val = K.mean(K.minimum(theta1+pos1, theta2+pos2), axis=-1)
+    pos22 = K.sum(K.square(y_pred[:, 5:7] - y_true[:, 5:7]), axis=-1)
+    pos21 = K.sum(K.square(y_pred[:, 5:7] - y_true[:, :2]), axis=-1)
+
+    # val = K.mean(K.minimum(theta1+pos1, theta2+pos2), axis=-1)
+
+    val = K.minimum(theta11 + pos11 + theta22 + pos22, theta12 + pos12 + theta21 + pos21)
 
     # return val1 + val2 + 4*val3 + 4*val4
     return val
@@ -146,30 +164,32 @@ def model():
     else:
         bn_axis = 1
 
-    x = Conv2D(64, (3, 3), padding='same', activation='relu')(img_input)
+    x = Conv2D(128, (3, 3), padding='same', activation='relu')(img_input)
     # x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
     # x = Activation('relu')(x)
 
     x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
-    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
-    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = AveragePooling2D((2, 2))(x)
     x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
-    x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
-    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = AveragePooling2D((2, 2))(x)
+    # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     # x = MaxPooling2D((2, 2))(x)
     x = Conv2D(32, (3, 3), dilation_rate=(2, 2), activation='relu')(x)
-    x = ZeroPadding2D((1, 1))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(4, 4), activation='relu')(x)
-    x = ZeroPadding2D((1, 1))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(4, 4), activation='relu')(x)
-    x = ZeroPadding2D((1, 1))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(8, 8), activation='relu')(x)
+    x = AveragePooling2D((1, 1))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2), activation='relu')(x)
+    x = AveragePooling2D((1, 1))(x)
+    x = Conv2D(32, (9, 9), dilation_rate=(2, 2), activation='relu')(x)
+    x = Conv2D(32, (9, 9), dilation_rate=(2, 2), activation='relu')(x)
+
     # x = ZeroPadding2D((1, 1))(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2))(x)
-    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
-    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    # x = Conv2D(32, (3, 3), dilation_rate=(8, 8), activation='relu')(x)
+    # x = ZeroPadding2D((1, 1))(x)
+    # x = MaxPooling2D((2, 2), strides=(2, 2))(x)
+    # x = Conv2D(32, (3, 3), dilation_rate=(4, 4), padding='same', activation='relu')(x)
+    # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     # x = MaxPooling2D((2, 2))(x)
 
@@ -245,7 +265,7 @@ if __name__ == '__main__':
     # scaler = StandardScaler()
     scaler = MinMaxScaler()
 
-    scaler.fit(y_train)
+    # scaler.fit(y_train)
     # NUM_PARAMS = y_train.shape[1]
     # y_train = scaler.transform(y_train)
     # y_test = scaler.transform(y_test)
@@ -255,18 +275,19 @@ if __name__ == '__main__':
     m = model()
 
 
-    m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
+    # m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
 
-    # for e in range(NUM_EPOCHS):
-    for e in range(1):
+    for e in range(NUM_EPOCHS):
+    # for e in range(1):
         print e
-        # m.fit_generator(myGenerator(scaler), 500, epochs=1, verbose=1)
+        m.fit_generator(myGenerator(scaler), 500, epochs=1, verbose=1)
         # m.fit_generator(myGenerator(), 500, epochs=1, verbose=1)
 
+        m.evaluate(X_test, y_test)
         # 10. Evaluate model on test data
         pred = m.predict(X_test)
 
-        pred = scaler.inverse_transform(pred)
+        # pred = scaler.inverse_transform(pred)
         # y_test = scaler.inverse_transform(y_test)
         # print pred2.shape
 

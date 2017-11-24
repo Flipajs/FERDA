@@ -125,9 +125,9 @@ for i in range(len(axs)):
     theta2 = y_test[i, 9]
 
     axs[i].add_patch(Ellipse((x1, y1), major1, minor1, angle=-theta1, edgecolor='red', facecolor='none'))
-    axs[i].add_patch(Ellipse((y_test[i, 0], y_test[i, 1]), y_test[i, 2], y_test[i, 3], angle=-y_test[i, 4], edgecolor='red', lw=2, linestyle='dashed', facecolor='none'))
-    axs[i].add_patch(Ellipse((x2, y2), major2, minor2, angle=-theta2, edgecolor='blue', facecolor='none'))
-    axs[i].add_patch(Ellipse((y_test[i, 5], y_test[i, 6]), y_test[i, 7], y_test[i, 8], angle=-y_test[i, 9],  edgecolor='blue', lw=2, linestyle='dashed', facecolor='none'))
+    # axs[i].add_patch(Ellipse((y_test[i, 0], y_test[i, 1]), y_test[i, 2], y_test[i, 3], angle=-y_test[i, 4], edgecolor='red', lw=2, linestyle='dashed', facecolor='none'))
+    # axs[i].add_patch(Ellipse((x2, y2), major2, minor2, angle=-theta2, edgecolor='blue', facecolor='none'))
+    # axs[i].add_patch(Ellipse((y_test[i, 5], y_test[i, 6]), y_test[i, 7], y_test[i, 8], angle=-y_test[i, 9],  edgecolor='blue', lw=2, linestyle='dashed', facecolor='none'))
     # ells[i].set_clip_box(a.bbox)
     # ells[i].set_alpha(0.5)
     # a.add_artist(ells[i])
