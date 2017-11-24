@@ -138,7 +138,17 @@ def my_loss(y_true, y_pred):
 
     # val = K.mean(K.minimum(theta1+pos1, theta2+pos2), axis=-1)
 
-    val = K.minimum(theta11 + pos11 + theta22 + pos22, theta12 + pos12 + theta21 + pos21)
+
+
+    # matching1 = theta11 + pos11 + theta22 + pos22
+    # matching2 = theta12 + pos12 + theta21 + pos21
+
+    # regularization = 25 - K.clip(K.sum(K.square(y_pred[:, :2] - y_pred[:, 5:7]), axis=-1), 0, 25)
+
+    matching1 = pos11 + pos22
+    matching2 = pos12 + pos21
+    val = matching1
+    # val = K.minimum(matching1, matching2) + regularization
 
     # return val1 + val2 + 4*val3 + 4*val4
     return val
@@ -164,25 +174,26 @@ def model():
     else:
         bn_axis = 1
 
-    x = Conv2D(128, (3, 3), padding='same', activation='relu')(img_input)
+    x = Conv2D(128, (9, 9), padding='same', activation='relu')(img_input)
     # x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
     # x = Activation('relu')(x)
 
-    x = Conv2D(64, (3, 3), padding='same', activation='relu')(x)
-    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(64, (5, 5), padding='same', activation='relu')(x)
     x = AveragePooling2D((2, 2))(x)
     x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     x = AveragePooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', dilation_rate=(4, 4), activation='relu')(x)
     # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     # x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2), activation='relu')(x)
-    x = AveragePooling2D((1, 1))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2), activation='relu')(x)
-    x = AveragePooling2D((1, 1))(x)
-    x = Conv2D(32, (9, 9), dilation_rate=(2, 2), activation='relu')(x)
-    x = Conv2D(32, (9, 9), dilation_rate=(2, 2), activation='relu')(x)
+    # x = Conv2D(32, (3, 3), dilation_rate=(2, 2), activation='relu')(x)
+    # x = AveragePooling2D((2, 2))(x)
+    # x = AveragePooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(4, 4), activation='relu')(x)
+    # x = AveragePooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(4, 4), activation='relu')(x)
+    # x = Conv2D(32, (3, 3), dilation_rate=(8, 8), activation='relu')(x)
 
     # x = ZeroPadding2D((1, 1))(x)
     # x = Conv2D(32, (3, 3), dilation_rate=(8, 8), activation='relu')(x)
@@ -275,12 +286,12 @@ if __name__ == '__main__':
     m = model()
 
 
-    # m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
+    m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
 
-    for e in range(NUM_EPOCHS):
-    # for e in range(1):
+    # for e in range(NUM_EPOCHS):
+    for e in range(1):
         print e
-        m.fit_generator(myGenerator(scaler), 500, epochs=1, verbose=1)
+        # m.fit_generator(myGenerator(scaler), 500, epochs=1, verbose=1)
         # m.fit_generator(myGenerator(), 500, epochs=1, verbose=1)
 
         m.evaluate(X_test, y_test)
