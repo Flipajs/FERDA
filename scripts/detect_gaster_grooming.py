@@ -78,11 +78,30 @@ rfc.fit(X_train, y_train)
 
 print "TEST set accuracy: ", rfc.score(X_test, y_test)
 
-
 # do P_POST
 p_post = Project()
 p_post.load(WD_POST)
 
-for t in tqdm(p_post.chm.chunk_gen()):
-    pass
+X_post = []
+rids = []
+print "preparing HH1_POST data..."
+for t in tqdm(p_post.chm.chunk_gen(), total=len(p_post.chm)):
+    if t.is_single():
+        for r_id in t.rid_gen(p_post.gm):
+            r = p_post.rm[r_id]
+            X_post.append(lp.get_appearance_features(r))
+            rids.append(r.id())
 
+X_post = np.array(X_post)
+print X_post.shape
+
+print "Classifying..."
+predictions = rfc.predict(X_post)
+rids = np.array(rids)
+
+import pickle
+print "SAVING..."
+with open('/Users/flipajs/Documents/dev/ferda/scripts/gaster_grooming_out/HH1_post_predictions.pkl', 'wb') as f:
+    pickle.dump((predictions, rids), f)
+
+print "DONE"

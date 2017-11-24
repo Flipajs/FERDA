@@ -35,7 +35,7 @@ with h5py.File(DATA_DIR + '/results_inter_test.h5', 'r') as hf:
 with h5py.File(DATA_DIR + '/results_inter_train.h5', 'r') as hf:
     y_train = hf['data'][:]
 
-with h5py.File(DATA_DIR + '/predictions_e9.h5', 'r') as hf:
+with h5py.File(DATA_DIR + '/predictions_e0.h5', 'r') as hf:
     pred = hf['data'][:]
 
 
@@ -111,43 +111,53 @@ for i in range(len(axs)):
     y2 = pred[i, 6]
     major1 = pred[i, 2]
     major2=  pred[i, 7]
-    theta1 = pred[i, 4]
-    theta2 = pred[i, 9]
+    minor1 = pred[i, 3]
+    minor2 = pred[i, 8]
+    theta1 = pred[i, 4] % 360
+    theta2 = pred[i, 9] % 360
 
-    axs[i].add_patch(Ellipse((x1, y1), major1, pred[i, 3], angle=-theta1, edgecolor='red', facecolor='none'))
+    x2 = y_test[i, 5]
+    y2 = y_test[i, 6]
+    major1 = y_test[i, 2]
+    major2 = y_test[i, 7]
+    minor1 = y_test[i, 3]
+    minor2 = y_test[i, 8]
+    theta2 = y_test[i, 9]
+
+    axs[i].add_patch(Ellipse((x1, y1), major1, minor1, angle=-theta1, edgecolor='red', facecolor='none'))
     axs[i].add_patch(Ellipse((y_test[i, 0], y_test[i, 1]), y_test[i, 2], y_test[i, 3], angle=-y_test[i, 4], edgecolor='red', lw=2, linestyle='dashed', facecolor='none'))
-    axs[i].add_patch(Ellipse((x2, y2), major2, pred[i, 8], angle=-theta2, edgecolor='blue', facecolor='none'))
+    axs[i].add_patch(Ellipse((x2, y2), major2, minor2, angle=-theta2, edgecolor='blue', facecolor='none'))
     axs[i].add_patch(Ellipse((y_test[i, 5], y_test[i, 6]), y_test[i, 7], y_test[i, 8], angle=-y_test[i, 9],  edgecolor='blue', lw=2, linestyle='dashed', facecolor='none'))
     # ells[i].set_clip_box(a.bbox)
     # ells[i].set_alpha(0.5)
     # a.add_artist(ells[i])
     #
 
-    print pred[i, :]
-    print pred[i, 2], pred[i, 5]
-    axs[i].scatter(x1, y1, c='r', marker='x')
-    axs[i].scatter(x2, y2, c='b', marker='x')
-
-    head1 = get_head_pt(theta1, major1, x1, y1)
-    axs[i].scatter(head1[0], head1[1], c='r', marker='o')
-    head2 = get_head_pt(theta2, major2, x2, y2)
-    axs[i].scatter(head2[0], head2[1], c='b', marker='o')
-
-
-    # GT
-    x1 = y_test[i, 0]
-    y1 = y_test[i, 1]
-    x2 = y_test[i, 5]
-    y2 = y_test[i, 6]
-    major1 = y_test[i, 2]
-    major2 = y_test[i, 7]
-    theta1 = y_test[i, 4]
-    theta2 = y_test[i, 9]
-
-    head1 = get_head_pt(theta1, major1, x1, y1)
-    axs[i].scatter(head1[0], head1[1], c='r', marker='s')
-    head2 = get_head_pt(theta2, major2, x2, y2)
-    axs[i].scatter(head2[0], head2[1], c='b', marker='s')
+    # print pred[i, :]
+    # print pred[i, 2], pred[i, 5]
+    # axs[i].scatter(x1, y1, c='r', marker='x')
+    # axs[i].scatter(x2, y2, c='b', marker='x')
+    #
+    # head1 = get_head_pt(theta1, major1, x1, y1)
+    # axs[i].scatter(head1[0], head1[1], c='r', marker='o')
+    # head2 = get_head_pt(theta2, major2, x2, y2)
+    # axs[i].scatter(head2[0], head2[1], c='b', marker='o')
+    #
+    #
+    # # GT
+    # x1 = y_test[i, 0]
+    # y1 = y_test[i, 1]
+    # x2 = y_test[i, 5]
+    # y2 = y_test[i, 6]
+    # major1 = y_test[i, 2]
+    # major2 = y_test[i, 7]
+    # theta1 = y_test[i, 4]
+    # theta2 = y_test[i, 9]
+    #
+    # head1 = get_head_pt(theta1, major1, x1, y1)
+    # axs[i].scatter(head1[0], head1[1], c='r', marker='s')
+    # head2 = get_head_pt(theta2, major2, x2, y2)
+    # axs[i].scatter(head2[0], head2[1], c='b', marker='s')
 
     axs[i].axis('off')
 

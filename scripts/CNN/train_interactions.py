@@ -11,6 +11,7 @@ from keras.models import Model
 from keras.optimizers import Adam
 from keras.layers import Dense, BatchNormalization, Activation, AveragePooling2D, ZeroPadding2D
 from keras import backend as K
+from keras.losses import MSE
 from keras import layers
 from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.model_selection import cross_val_score
@@ -85,6 +86,55 @@ def myGenerator(scaler):
         y_batch = scaler.transform(y_batch)
         yield np.array(x_batch), y_batch
 
+# def mean_squared_error(y_true, y_pred):
+#     return K.mean(K.square(y_pred - y_true), axis=-1)
+#
+# def w_categorical_crossentropy(y_true, y_pred, weights):
+#     nb_cl = len(weights)
+#     final_mask = K.zeros_like(y_pred[:, 0])
+#     y_pred_max = K.max(y_pred, axis=1)
+#     y_pred_max = K.reshape(y_pred_max, (K.shape(y_pred)[0], 1))
+#     y_pred_max_mat = K.equal(y_pred, y_pred_max)
+#     for c_p, c_t in product(range(nb_cl), range(nb_cl)):
+#         final_mask += (weights[c_t, c_p] * y_pred_max_mat[:, c_p] * y_true[:, c_t])
+#     return K.categorical_crossentropy(y_pred, y_true) * final_mask
+
+def my_loss(y_true, y_pred):
+    # 2pi * y, because y is normed to <0, 1> range
+    # lower_0 = K.mean(K.less(y_pred[:, 4], 0.0), axis=-1)
+    # higher_360 = K.mean(K.greater(y_pred[:, 4], 360.0), axis=-1)
+
+
+
+    # val1 = K.mean(1 - K.abs(K.cos(y_pred[:, 4]/57.29 - y_true[:, 4]/57.29)), axis=-1)
+    val = np.mod(y_pred[:, 4] - y_true[:, 4], 360.0)
+    theta1 = K.mean(K.square(K.minimum(val, 360-val)), axis=-1)
+
+    val = np.mod(y_pred[:, 4] - y_true[:, 9], 360.0)
+    theta2 = K.mean(K.square(K.minimum(val, 360 - val)), axis=-1)
+    # val1 = K.mean(K.square(np.mod(y_pred[:, 4] - y_true[:, 4], 360.0)), axis=-1)
+    # val1 = K.mean(K.square(y_pred[:, 4] - y_true[:, 4]), axis=-1)
+    # val2 = K.mean(K.square(1 - K.abs(K.cos(3.14*y_pred[:, 9] - 3.14*y_true[:, 9]))), axis=-1)
+    # val2 = K.mean(K.square((y_pred[:, 9]%1.0 - y_true[:, 9]%1.0) % 1.0), axis=-1)
+    #
+    pos1 = K.square(y_pred[:, :2] - y_true[:, :2])
+    pos2 = K.square(y_pred[:, :2] - y_true[:, 5:7])
+
+    val = K.mean(K.minimum(theta1+pos1, theta2+pos2), axis=-1)
+
+    # return val1 + val2 + 4*val3 + 4*val4
+    return val
+    # return  4*val3 + 4*val4
+
+    # theta_diff1 = K.mean(K.square(K.min(y_true[:, 4] - y_pred[:, 4], y_true[:, 4] - (1.0 + y_pred[:, 4]))))
+    # return theta_diff1
+    # theta_diff2 = K.square(K.min(y_true[:, 9] - y_pred[:, 9], y_true[:, 9] - (1 + y_pred[:, 9])))
+    #
+    # return K.mean(K.square(y_pred[:, [0, 1, 2, 3, 5, 6, 7, 8]] - y_true[:, [0, 1, 2, 3, 5, 6, 7, 8]]) + theta_diff1 + theta_diff2, axis=-1)
+    #
+    # pos = K.sum(y_true * y_pred, axis=-1)
+    # neg = K.max((1. - y_true) * y_pred, axis=-1)
+    # return K.maximum(0., neg - pos + 1.)
 
 def model():
     global NUM_PARAMS, DATA_DIR, CONTINUE
@@ -118,83 +168,26 @@ def model():
     x = Conv2D(32, (3, 3), dilation_rate=(8, 8), activation='relu')(x)
     # x = ZeroPadding2D((1, 1))(x)
     x = MaxPooling2D((2, 2), strides=(2, 2))(x)
-    # x = Conv2D(32, (3, 3), dilation_rate=(16, 16), padding='same', activation='relu')(x)
-    # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     # x = MaxPooling2D((2, 2))(x)
 
     x = Flatten()(x)
-    # x = Dense(64, activation='relu')(x)
+    x = Dense(64, activation='relu')(x)
     x = Dense(NUM_PARAMS)(x)
     model = Model(img_input, x)
 
     if CONTINUE:
-        print "loading ", DATA_DIR + "/interaction_weights_"+str(NUM_PARAMS)+".h5"
-        model.load_weights(DATA_DIR + "/interaction_weights_"+str(NUM_PARAMS)+".h5")
+        print "loading ", DATA_DIR + "/interaction_weights_"+str(NUM_PARAMS)+"_e0.h5"
+        model.load_weights(DATA_DIR + "/interaction_weights_"+str(NUM_PARAMS)+"_e0.h5")
 
     model.summary()
-    model.compile(loss='mean_squared_error',
+
+    model.compile(loss=my_loss,
                   optimizer='adam')
 
     return model
-
-
-
-# def model():
-#     global NUM_PARAMS, DATA_DIR, CONTINUE
-#     input_shape = Input(shape=(200, 200, 3))
-#
-#     # LOAD...
-#     from keras.models import model_from_json
-#
-#     json_file = open(ROOT_DIR+'/vision_model_'+WEIGHTS+'.json', 'r')
-#     vision_model_json = json_file.read()
-#     json_file.close()
-#     vision_model = model_from_json(vision_model_json)
-#     # load weights into new model
-#     vision_model.load_weights(ROOT_DIR+"/vision_"+WEIGHTS+".h5")
-#     # vision_model.layers.pop()
-#     # vision_model.layers.pop()
-#
-#     vision_model.summary()
-#
-#     # The vision model will be shared, weights and all
-#     out_a = vision_model(input_shape)
-#     # out_a = Flatten()(out_a)
-#     #
-#     # out_a = Dense(256, activation='relu')(out_a)
-#     # out_a = Dense(128, activation='relu')(out_a)
-#     # out_a = Dense(32, activation='relu')(out_a)
-#     out_a = Dense(64, activation='relu')(out_a)
-#     out_a = Dense(32, activation='relu')(out_a)
-#
-#     # out = Dense(128, activation='relu')(out_a)
-#     # out = Dense(K, activation='softmax')(out_a)
-#     previous = NUM_PARAMS - 2
-#     if NUM_PARAMS == 4 or CONTINUE:
-#         previous = NUM_PARAMS
-#
-#     out = Dense(previous, kernel_initializer='normal', activation='linear')(out_a)
-#
-#     model = Model(input_shape, out)
-#
-#     model.load_weights(DATA_DIR + "/interaction_weights_"+str(previous)+".h5")
-#     # model.load_weights(DATA_DIR + "/interaction_weights.h5")
-#
-#     out = Dense(NUM_PARAMS, kernel_initializer='normal', activation='linear')(out_a)
-#     model = Model(input_shape, out)
-#     #
-#     # model =
-#
-#     model.summary()
-#     # 8. Compile model
-#     # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
-#     model.compile(loss='mean_squared_error',
-#                   optimizer='adam')
-#
-#     # model.lr.set_value(0.05)
-#
-#     return model
 
 
 if __name__ == '__main__':
@@ -254,7 +247,7 @@ if __name__ == '__main__':
 
     scaler.fit(y_train)
     # NUM_PARAMS = y_train.shape[1]
-    y_train = scaler.transform(y_train)
+    # y_train = scaler.transform(y_train)
     # y_test = scaler.transform(y_test)
 
 
@@ -262,12 +255,12 @@ if __name__ == '__main__':
     m = model()
 
 
-    # m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
+    m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
 
-    for e in range(NUM_EPOCHS):
-    # for e in range(1):
+    # for e in range(NUM_EPOCHS):
+    for e in range(1):
         print e
-        m.fit_generator(myGenerator(scaler), 500, epochs=1, verbose=1)
+        # m.fit_generator(myGenerator(scaler), 500, epochs=1, verbose=1)
         # m.fit_generator(myGenerator(), 500, epochs=1, verbose=1)
 
         # 10. Evaluate model on test data
