@@ -84,11 +84,11 @@ def model(angle_scaler=None):
     # vision_model.summary()
 
     # animal_input = Input(shape=X_train_a.shape[1:])
-    x = Conv2D(32, (3, 3))(input_shape)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same')(input_shape)
+    x = Conv2D(32, (3, 3), padding='same', dilation_rate=(2, 2))(x)
     x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', dilation_rate=(2, 2))(x)
     x = Conv2D(32, (3, 3))(x)
     x = MaxPooling2D((2, 2))(x)
     out_a = Conv2D(16, (3, 3))(x)
@@ -119,7 +119,7 @@ def model(angle_scaler=None):
 
 
 if __name__ == '__main__':
-    NUM_EPOCHS = 50
+    NUM_EPOCHS = 5
     # NUM_EPOCHS = 1
     USE_PREVIOUS_AS_INIT = 0
     # K = 6
@@ -180,6 +180,9 @@ if __name__ == '__main__':
     y_train[:, [4, 9]] = angle_scaler.transform(y_train[:, [4, 9]])
 
     m = model((angle_scaler.mean_, angle_scaler.scale_))
+
+    with open(os.path.join(EXPERIMENT_DIR, 'model.txt'), 'w') as fw:
+        m.summary(print_fn=lambda x: fw.write(x + '\n'))
     m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
 
     # evaluate model with standardized dataset
