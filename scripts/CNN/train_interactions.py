@@ -5,16 +5,18 @@ import h5py
 import sys
 import string
 import numpy as np
-from keras.utils import np_utils
-from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
-from keras.models import Model
-from keras.optimizers import Adam
-from keras.layers import Dense
-from keras.wrappers.scikit_learn import KerasRegressor
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import KFold
-from keras import backend as K
-
+try:
+    from keras.utils import np_utils
+    from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
+    from keras.models import Model
+    from keras.optimizers import Adam
+    from keras.layers import Dense
+    from keras.wrappers.scikit_learn import KerasRegressor
+    from sklearn.model_selection import cross_val_score
+    from sklearn.model_selection import KFold
+    from keras import backend as K
+except ImportError:
+    print('Warning, no keras installed.')
 
 # ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 ROOT_DIR = '../../data/CNN_models/interactions'
