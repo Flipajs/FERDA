@@ -30,10 +30,18 @@ WEIGHTS = 'cam3_zebr_weights_vgg'
 NUM_PARAMS = 10
 
 
-def angle_absolute_error(y_true, y_pred, backend):
-    val = backend.abs(y_pred[:, 4:5] - y_true[:, 4:5]) % 180
+def angle_absolute_error(y_true, y_pred, backend, scaler=None):
+    if scaler is not None:
+        # y_pred1 = scaler.inverse_transform(y_pred[:, 4:5])  # this doesn't work with Tensors
+        # y_pred2 = scaler.inverse_transform(y_pred[:, 9:])
+        y_pred1 = y_pred[:, 4:5] * scaler[1] + scaler[0]
+        y_pred2 = y_pred[:, 9:] * scaler[1] + scaler[0]
+    else:
+        y_pred1 = y_pred[:, 4:5]
+        y_pred2 = y_pred[:, 9:]
+    val = backend.abs(y_pred1 - y_true[:, 4:5]) % 180
     theta11 = backend.minimum(val, 180 - val)
-    val = backend.abs(y_pred[:, 9:] - y_true[:, 9:]) % 180
+    val = backend.abs(y_pred2 - y_true[:, 9:]) % 180
     theta22 = backend.minimum(val, 180 - val)
     return theta11, theta22
 
@@ -44,16 +52,16 @@ def xy_absolute_error(y_true, y_pred, backend):
     return pos11, pos22
 
 
-def interaction_loss(y_true, y_pred):
-    alpha = 0.5
+def interaction_loss(y_true, y_pred, angle_scaler=None):
+    alpha = 1.
 
-    theta11, theta22 = angle_absolute_error(y_true, y_pred, K)
+    theta11, theta22 = angle_absolute_error(y_true, y_pred, K, angle_scaler)
     pos11, pos22 = xy_absolute_error(y_true, y_pred, K)
     return K.mean(K.concatenate([K.square(pos11), K.square(pos22),
                                  K.square(theta11) * alpha, K.square(theta22) * alpha]), axis=-1)
 
 
-def model():
+def model(angle_scaler=None):
     input_shape = Input(shape=(200, 200, 3))
 
     # LOAD...
@@ -87,7 +95,7 @@ def model():
     model.summary()
     # 8. Compile model
     # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
-    model.compile(loss=interaction_loss,
+    model.compile(loss=lambda x, y: interaction_loss(x, y, angle_scaler),
                   optimizer='adam')
 
     # model.lr.set_value(0.05)
@@ -104,6 +112,10 @@ if __name__ == '__main__':
     OUT_NAME = 'softmax'
     CONTINUE = False
     SAMPLES = 2000
+
+    NAMES = 'ant1_x, ant1_y, ant1_major, ant1_minor, ant1_angle, ' \
+            'ant2_x, ant2_y, ant2_major, ant2_minor, ant2_angle'
+    FORMATS = 10 * 'f,'
 
     if len(sys.argv) > 1:
         DATA_DIR = ROOT_DIR + '/' + sys.argv[1]
@@ -124,9 +136,11 @@ if __name__ == '__main__':
 
     with h5py.File(DATA_DIR + '/results_inter_train.h5', 'r') as hf:
         y_train = hf['data'][:]
+        # y_train_np = np.core.records.fromarrays(hf['data'][:].transpose(), names=NAMES, formats=FORMATS)
 
     with h5py.File(DATA_DIR + '/results_inter_test.h5', 'r') as hf:
         y_test = hf['data'][:]
+        # y_test_np = np.core.records.fromarrays(hf['data'][:].transpose(), names=NAMES, formats=FORMATS)
 
     print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
@@ -134,13 +148,20 @@ if __name__ == '__main__':
     seed = 7
     np.random.seed(seed)
 
-    # from sklearn.preprocessing import StandardScaler
-    # scaler = StandardScaler()
-    # scaler.fit(y_train)
-    # y_train = scaler.transform(y_train)
-    # y_test = scaler.transform(y_test)
+    from sklearn.preprocessing import StandardScaler
+    xy_scaler = StandardScaler()
+    xy_scaler.mean_ = 0  # 100
+    xy_scaler.scale_ = 1  # 100
+    # y_train = xy_scaler.transform(y_train)
+    # y_test = xy_scaler.transform(y_test)
+    y_train[:, [0, 1, 5, 6]] = xy_scaler.transform(y_train[:, [0, 1, 5, 6]])
 
-    m = model()
+    angle_scaler = StandardScaler()
+    angle_scaler.mean_ = 0  # 180
+    angle_scaler.scale_ = 1  # 180
+    y_train[:, [4, 9]] = angle_scaler.transform(y_train[:, [4, 9]])
+
+    m = model((angle_scaler.mean_, angle_scaler.scale_))
     m.fit(X_train, y_train, validation_split=0.05, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
 
     # evaluate model with standardized dataset
@@ -164,15 +185,15 @@ if __name__ == '__main__':
     # pipeline.fit(X_train, y_train, mlp__validation_split=0.05)
 
     pred = m.predict(X_test)
-    # pred = scaler.inverse_transform(pred)
-    # y_test = scaler.inverse_transform(y_test)
+    pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
+    pred[:, [4, 9]] = angle_scaler.inverse_transform(pred[:, [4, 9]])
 
     with h5py.File(DATA_DIR+'/predictions.h5', 'w') as hf:
         hf.create_dataset("data", data=pred)
 
     print "xy MAE", np.linalg.norm(np.vstack(xy_absolute_error(y_test, pred, np)), 2, axis=1).mean()
     # K.mean(K.concatenate(xy_absolute_error(y_test, pred)), axis=-1)
-    print "angle MAE", np.vstack(xy_absolute_error(y_test, pred, np)).mean()
+    print "angle MAE", np.vstack(angle_absolute_error(y_test, pred, np)).mean()
     # K.mean(K.concatenate(angle_absolute_error(y_test, pred, np)), axis=-1)
     # print "xy MSE", K.mean(K.square(K.concatenate(xy_absolute_error(y_test, pred, np))), axis=-1)
     # print "angle MSE", K.mean(K.square(K.concatenate(angle_absolute_error(y_test, pred, np))), axis=-1)
