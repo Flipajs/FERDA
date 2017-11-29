@@ -5,6 +5,7 @@ import h5py
 import sys
 import string
 import numpy as np
+import time
 try:
     from keras.utils import np_utils
     from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
@@ -24,11 +25,14 @@ ROOT_DIR = '../../data/CNN_models/interactions'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 # DATA_DIR = ROOT_DIR + '/data'
 DATA_DIR = '/datagrid/personal/smidm1/ferda/iteractions/'
+
+EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/iteractions/experiments/' + time.strftime("%y%m%d_%H%M", time.localtime())
+
 BATCH_SIZE = 32
 TWO_TESTS = True
 
-WEIGHTS = 'cam3_zebr_weights_vgg'
-# NUM_PARAMS = 4
+# WEIGHTS = 'cam3_zebr_weights_vgg'
+WEIGHTS = 'cam3_zebr_weights_vgg_dilated'
 NUM_PARAMS = 10
 
 
@@ -67,26 +71,35 @@ def model(angle_scaler=None):
     input_shape = Input(shape=(200, 200, 3))
 
     # LOAD...
-    from keras.models import model_from_json
+    # from keras.models import model_from_json
+    #
+    # json_file = open(os.path.join(ROOT_DIR, 'vision_model_' + WEIGHTS + '.json'), 'r')
+    # vision_model_json = json_file.read()
+    # json_file.close()
+    # vision_model = model_from_json(vision_model_json)
+    # # load weights into new model
+    # vision_model.load_weights(os.path.join(ROOT_DIR, 'vision_' + WEIGHTS + '.h5'))
+    # vision_model.layers.pop()
+    # vision_model.layers.pop()
+    # vision_model.summary()
 
-    json_file = open(ROOT_DIR+'/vision_model_'+WEIGHTS+'.json', 'r')
-    vision_model_json = json_file.read()
-    json_file.close()
-    vision_model = model_from_json(vision_model_json)
-    # load weights into new model
-    vision_model.load_weights(ROOT_DIR+"/vision_"+WEIGHTS+".h5")
-    vision_model.layers.pop()
-    vision_model.layers.pop()
+    # animal_input = Input(shape=X_train_a.shape[1:])
+    x = Conv2D(32, (3, 3))(input_shape)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3))(x)
+    x = MaxPooling2D((2, 2))(x)
+    out_a = Conv2D(16, (3, 3))(x)
 
-    vision_model.summary()
 
     # The vision model will be shared, weights and all
-    out_a = vision_model(input_shape)
-    # out_a = Flatten()(out_a)
-    #
-    # out_a = Dense(256, activation='relu')(out_a)
-    # out_a = Dense(128, activation='relu')(out_a)
-    # out_a = Dense(32, activation='relu')(out_a)
+    # out_a = vision_model(input_shape)
+    out_a = Flatten()(out_a)
+    # # out_a = Dense(256, activation='relu')(out_a)
+    # # out_a = Dense(128, activation='relu')(out_a)
+    # # out_a = Dense(32, activation='relu')(out_a)
     out_a = Dense(64, activation='relu')(out_a)
     out_a = Dense(32, activation='relu')(out_a)
 
@@ -106,7 +119,7 @@ def model(angle_scaler=None):
 
 
 if __name__ == '__main__':
-    NUM_EPOCHS = 5
+    NUM_EPOCHS = 50
     # NUM_EPOCHS = 1
     USE_PREVIOUS_AS_INIT = 0
     # K = 6
@@ -150,6 +163,9 @@ if __name__ == '__main__':
     seed = 7
     np.random.seed(seed)
 
+    if not os.path.exists(EXPERIMENT_DIR):
+        os.mkdir(EXPERIMENT_DIR)
+
     from sklearn.preprocessing import StandardScaler
     xy_scaler = StandardScaler()
     xy_scaler.mean_ = 0  # 100
@@ -190,7 +206,8 @@ if __name__ == '__main__':
     pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
     pred[:, [4, 9]] = angle_scaler.inverse_transform(pred[:, [4, 9]])
 
-    with h5py.File(DATA_DIR+'/predictions.h5', 'w') as hf:
+
+    with h5py.File(os.path.join(EXPERIMENT_DIR, 'predictions.h5'), 'w') as hf:
         hf.create_dataset("data", data=pred)
 
     print "xy MAE", np.linalg.norm(np.vstack(xy_absolute_error(y_test, pred, np)), 2, axis=1).mean()
@@ -202,7 +219,7 @@ if __name__ == '__main__':
 
     # print m.score(X_test, y_test)
 
-    m.save_weights(DATA_DIR + "/weights.h5")
+    m.save_weights(os.path.join(EXPERIMENT_DIR, 'weights.h5'))
 
     # model_json = m.to_json()
     # with open(DATA_DIR + "/model.json", "w") as json_file:
