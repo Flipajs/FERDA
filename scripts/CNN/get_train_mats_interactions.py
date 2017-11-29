@@ -6,7 +6,8 @@ from tqdm import tqdm
 from imageio import imread
 import csv
 
-OUT_DIR = '/Users/flipajs/Downloads/double_regions'
+# OUT_DIR = '/home/matej/prace/ferda/data/interactions'
+OUT_DIR = '/datagrid/personal/smidm1/ferda/iteractions/'
 
 def get_data(type):
     imgs = []
@@ -35,23 +36,25 @@ def get_data(type):
 
             # test swap
 
-            if (ant1_x**2 + ant1_y**2)**0.5 > (ant2_x**2 + ant2_y**2)**0.5:
-                ant1_x, ant2_x = ant2_x, ant1_x
-                ant1_y, ant2_y = ant2_y, ant1_y
-                ant1_angle, ant2_angle = ant2_angle, ant1_angle
+            # if (ant1_x**2 + ant1_y**2)**0.5 > (ant2_x**2 + ant2_y**2)**0.5:
+            #     ant1_x, ant2_x = ant2_x, ant1_x
+            #     ant1_y, ant2_y = ant2_y, ant1_y
+            #     ant1_angle, ant2_angle = ant2_angle, ant1_angle
+            #     ant1_major, ant2_major = ant2_major, ant1_major
+            #     ant1_minor, ant2_minor = ant2_minor, ant1_minor
 
 
 
-            results.append([ant1_x,
-                           ant1_y,
-                           ant1_major,
-                           ant1_minor,
-                           ant1_angle,
-                           ant2_x,
-                           ant2_y,
-                           ant2_major,
-                           ant2_minor,
-                           ant2_angle
+            results.append([ant1_x,     # 0
+                           ant1_y,      # 1
+                           ant1_major,  # 2
+                           ant1_minor,  # 3
+                           ant1_angle,  # 4
+                           ant2_x,      # 5
+                           ant2_y,      # 6
+                           ant2_major,  # 7
+                           ant2_minor,  # 8
+                           ant2_angle   # 9
                             ])
 
     imgs = np.array(imgs)
