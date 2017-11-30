@@ -365,6 +365,10 @@ class Chunk:
         for id_ in self.nodes_:
             yield gm.region_id(id_)
 
+    def r_gen(self, gm, rm):
+        for rid in self.rid_gen(rm):
+            yield rm[rid]
+
     def v_id_in_t(self, t, gm):
         t = t - self.start_frame(gm)
         if -1 < t < len(self.nodes_):

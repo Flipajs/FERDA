@@ -46,6 +46,16 @@ if is_flipajs_pc():
 
     project.load(wd)
 
+    from tqdm import tqdm
+    thetas = []
+    for t in tqdm(project.chm.chunk_gen(), total=len(project.chm)):
+        thetas.extend([r.theta_ for r in t.r_gen(project.gm)])
+
+    import matplotlib.pyplot as plt
+
+    plt.hist(thetas)
+    plt.show()
+
     # TODO !! add it to assembly process
     # project.solver.one2one(check_tclass=True)
 

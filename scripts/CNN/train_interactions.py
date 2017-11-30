@@ -6,7 +6,7 @@ import sys
 import string
 import numpy as np
 from keras.utils import np_utils
-from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, AveragePooling2D
+from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, AveragePooling2D, Dropout, concatenate, merge, Conv2DTranspose, UpSampling2D
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.layers import Dense, BatchNormalization, Activation, AveragePooling2D, ZeroPadding2D
@@ -101,6 +101,18 @@ def myGenerator(scaler):
 #         final_mask += (weights[c_t, c_p] * y_pred_max_mat[:, c_p] * y_true[:, c_t])
 #     return K.categorical_crossentropy(y_pred, y_true) * final_mask
 
+def my_loss2(y_true, y_pred):
+    # val1 = K.mean(1 - K.abs(K.cos(y_pred[:, 4]/57.29 - y_true[:, 4]/57.29)), axis=-1)
+    val = K.abs(y_pred[:, 3:4] - y_true[:, 3:4]) % 180
+    theta11 = K.square(K.minimum(val, 180-val))
+    val = K.abs(y_pred[:, 8:9] - y_true[:, 8:9]) % 180
+    theta22 = K.square(K.minimum(val, 180-val))
+
+    pos11 = K.square(y_pred[:, :2] - y_true[:, :2])
+    pos22 = K.square(y_pred[:, 5:7] - y_true[:, 5:7])
+
+    return K.mean(K.concatenate([pos11, pos22, theta11, theta22]), axis=-1)
+
 def my_loss(y_true, y_pred):
     # 2pi * y, because y is normed to <0, 1> range
     # lower_0 = K.mean(K.less(y_pred[:, 4], 0.0), axis=-1)
@@ -108,23 +120,23 @@ def my_loss(y_true, y_pred):
 
 
 
-    # val1 = K.mean(1 - K.abs(K.cos(y_pred[:, 4]/57.29 - y_true[:, 4]/57.29)), axis=-1)
-    val = K.abs(y_pred[:, 4] - y_true[:, 4])
-    # theta11 = val
-    theta11 = K.square(K.minimum(val, 360.0-val))
-
-    # val = np.mod(y_pred[:, 4] - y_true[:, 9], 360.0)
-    val = K.abs(y_pred[:, 4] - y_true[:, 9])
-    # theta12 = val
-    theta12 = K.square(K.minimum(val, 360.0 - val))
-
-    val = K.abs(y_pred[:, 9] - y_true[:, 4])
-    # theta21 = val
-    theta21 = K.square(K.minimum(val, 360.0 - val))
-
-    val = K.abs(y_pred[:, 9] - y_true[:, 9])
-    # theta22 = val
-    theta22 = K.square(K.minimum(val, 360.0 - val))
+    # # val1 = K.mean(1 - K.abs(K.cos(y_pred[:, 4]/57.29 - y_true[:, 4]/57.29)), axis=-1)
+    # val = K.abs(y_pred[:, 4] - y_true[:, 4])
+    # # theta11 = val
+    # theta11 = K.square(K.minimum(val, 360.0-val))
+    #
+    # # val = np.mod(y_pred[:, 4] - y_true[:, 9], 360.0)
+    # val = K.abs(y_pred[:, 4] - y_true[:, 9])
+    # # theta12 = val
+    # theta12 = K.square(K.minimum(val, 360.0 - val))
+    #
+    # val = K.abs(y_pred[:, 9] - y_true[:, 4])
+    # # theta21 = val
+    # theta21 = K.square(K.minimum(val, 360.0 - val))
+    #
+    # val = K.abs(y_pred[:, 9] - y_true[:, 9])
+    # # theta22 = val
+    # theta22 = K.square(K.minimum(val, 360.0 - val))
     # val1 = K.mean(K.square(np.mod(y_pred[:, 4] - y_true[:, 4], 360.0)), axis=-1)
     # val1 = K.mean(K.square(y_pred[:, 4] - y_true[:, 4]), axis=-1)
     # val2 = K.mean(K.square(1 - K.abs(K.cos(3.14*y_pred[:, 9] - 3.14*y_true[:, 9]))), axis=-1)
@@ -164,7 +176,57 @@ def my_loss(y_true, y_pred):
     # neg = K.max((1. - y_true) * y_pred, axis=-1)
     # return K.maximum(0., neg - pos + 1.)
 
+
 def model():
+    global NUM_PARAMS, DATA_DIR, CONTINUE
+
+    img_input = Input(shape=(200, 200, 1))
+
+    if K.image_data_format() == 'channels_last':
+        bn_axis = 3
+    else:
+        bn_axis = 1
+
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(img_input)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    conv4 = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(conv4)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    # x = MaxPooling2D((2, 2))(x)
+    # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    # x = MaxPooling2D((2, 2))(x)
+
+    x = Flatten()(x)
+    x = concatenate([x, Flatten()(conv4)])
+    x = Dense(16, activation='relu')(x)
+    x = Dense(32, activation='relu')(x)
+    x = Dense(NUM_PARAMS)(x)
+    model = Model(img_input, x)
+
+    if CONTINUE:
+        print "loading ", DATA_DIR + "/interaction_weights_"+str(NUM_PARAMS)+"_e0.h5"
+        model.load_weights(DATA_DIR + "/interaction_weights_"+str(NUM_PARAMS)+"_e0.h5")
+
+    model.summary()
+
+    model.compile(loss=my_loss2,
+                  optimizer='adam')
+
+    return model
+
+def model_not_working():
     global NUM_PARAMS, DATA_DIR, CONTINUE
 
     img_input = Input(shape=(200, 200, 3))
@@ -174,28 +236,29 @@ def model():
     else:
         bn_axis = 1
 
-    x = Conv2D(32, (3, 3), padding='same', activation='relu')(img_input)
-    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
-    x = AveragePooling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
-    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(32, (15, 15), padding='same', activation='relu')(img_input)
+    x = Conv2D(32, (15, 15), dilation_rate=(2, 2), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (9, 9), dilation_rate=(2, 2), padding='same', activation='relu')(x)
+    x = Conv2D(32, (7, 7), padding='same', activation='relu')(x)
     x = AveragePooling2D((2, 2))(x)
     x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     x = Conv2D(32, (3, 3), dilation_rate=(4, 4), padding='same', activation='relu')(x)
     x = AveragePooling2D((2, 2))(x)
     x = Conv2D(32, (3, 3), dilation_rate=(2, 2), padding='same', activation='relu')(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2), padding='same', activation='relu')(x)
-    x = AveragePooling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    # x = Conv2D(32, (3, 3), dilation_rate=(2, 2), padding='same', activation='relu')(x)
+    # x = AveragePooling2D((2, 2))(x)
+    # x = Conv2D(64, (3, 3), activation='relu')(x)
     # x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
     # x = Activation('relu')(x)
 
     # x = Conv2D(64, (5, 5), padding='same', activation='relu')(x)
     # x = AveragePooling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), activation='relu')(x)
-    x = Conv2D(32, (3, 3), activation='relu')(x)
-    x = AveragePooling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), activation='relu')(x)
+    # x = Conv2D(64, (3, 3), activation='relu')(x)
+    # x = Conv2D(128, (3, 3), activation='relu')(x)
+    # x = Conv2D(256, (3, 3), activation='relu')(x)
+    # x = AveragePooling2D((2, 2))(x)
+    # x = Conv2D(32, (3, 3), dilation_rate=(2, 2), activation='relu')(x)
     # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     # x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     # x = MaxPooling2D((2, 2))(x)
@@ -217,7 +280,7 @@ def model():
     # x = MaxPooling2D((2, 2))(x)
 
     x = Flatten()(x)
-    x = Dense(64, activation='relu')(x)
+    x = Dense(16, activation='relu')(x)
     x = Dense(NUM_PARAMS)(x)
     model = Model(img_input, x)
 
@@ -275,10 +338,13 @@ if __name__ == '__main__':
     if NUM_PARAMS == 10:
         ids = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
+    X_train = X_train[:, :, :, :1]
+    X_test = X_test[:, :, :, :1]
+
     y_test = y_test[:, ids]
     y_train = y_train[:, ids]
 
-    print X_test.shape, y_train.shape, y_test.shape
+    print X_train.shape, y_train.shape, y_test.shape
 
     # fix random seed for reproducibility
     seed = 7

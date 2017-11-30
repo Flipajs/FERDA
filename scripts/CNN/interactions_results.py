@@ -109,12 +109,12 @@ for i in range(len(axs)):
     y1 = pred[i, 1]
     x2 = pred[i, 5]
     y2 = pred[i, 6]
-    major1 = pred[i, 2]
-    major2=  pred[i, 7]
-    minor1 = pred[i, 3]
-    minor2 = pred[i, 8]
-    theta1 = pred[i, 4] % 360
-    theta2 = pred[i, 9] % 360
+    # major1 = pred[i, 2]
+    # major2=  pred[i, 7]
+    # minor1 = pred[i, 3]
+    # minor2 = pred[i, 8]
+    theta1 = pred[i, 4]
+    theta2 = pred[i, 9]
 
     # x2 = y_test[i, 5]
     # y2 = y_test[i, 6]
@@ -122,6 +122,7 @@ for i in range(len(axs)):
     major2 = y_test[i, 7]
     minor1 = y_test[i, 3]
     minor2 = y_test[i, 8]
+    # theta1 = y_test[i, 4]
     # theta2 = y_test[i, 9]
 
     axs[i].add_patch(Ellipse((x1, y1), major1, minor1, angle=-theta1, edgecolor='red', facecolor='none'))
