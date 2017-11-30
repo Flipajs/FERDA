@@ -366,7 +366,7 @@ class Chunk:
             yield gm.region_id(id_)
 
     def r_gen(self, gm, rm):
-        for rid in self.rid_gen(rm):
+        for rid in self.rid_gen(gm):
             yield rm[rid]
 
     def v_id_in_t(self, t, gm):

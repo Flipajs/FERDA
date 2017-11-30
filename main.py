@@ -31,10 +31,10 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_new'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
     # wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
-    wd = '/Volumes/Seagate Expansion Drive/HH1_PRE'
-    wd = '/Volumes/Seagate Expansion Drive/HH1_POST'
+    # wd = '/Volumes/Seagate Expansion Drive/HH1_PRE'
+    # wd = '/Volumes/Seagate Expansion Drive/HH1_POST'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Barbara_flu_bug/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'
@@ -46,15 +46,15 @@ if is_flipajs_pc():
 
     project.load(wd)
 
-    from tqdm import tqdm
-    thetas = []
-    for t in tqdm(project.chm.chunk_gen(), total=len(project.chm)):
-        thetas.extend([r.theta_ for r in t.r_gen(project.gm)])
-
-    import matplotlib.pyplot as plt
-
-    plt.hist(thetas)
-    plt.show()
+    # from tqdm import tqdm
+    # thetas = []
+    # for t in tqdm(project.chm.chunk_gen(), total=len(project.chm)):
+    #     thetas.extend([r.theta_ for r in t.r_gen(project.gm, project.rm)])
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # plt.hist(thetas)
+    # plt.show()
 
     # TODO !! add it to assembly process
     # project.solver.one2one(check_tclass=True)
