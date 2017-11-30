@@ -60,10 +60,11 @@ def xy_absolute_error(y_true, y_pred, backend):
     return pos11, pos22
 
 
-def interaction_loss(y_true, y_pred, angle_scaler=None, alpha=1.):
+def interaction_loss(y_true, y_pred, angle_scaler=None, alpha=0.5):
+    assert 0 <= alpha <= 1
     theta11, theta22 = angle_absolute_error(y_true, y_pred, K, angle_scaler)
     pos11, pos22 = xy_absolute_error(y_true, y_pred, K)
-    return K.mean(K.concatenate([K.square(pos11), K.square(pos22),
+    return K.mean(K.concatenate([K.square(pos11) * (1 - alpha), K.square(pos22) * (1 - alpha),
                                  K.square(theta11) * alpha, K.square(theta22) * alpha]), axis=-1)
 
 
@@ -160,7 +161,7 @@ def train_and_evaluate(model, params):
 
 
 if __name__ == '__main__':
-    NUM_EPOCHS = 10
+    NUM_EPOCHS = 8
     # NUM_EPOCHS = 1
     # USE_PREVIOUS_AS_INIT = 0
     # K = 6
