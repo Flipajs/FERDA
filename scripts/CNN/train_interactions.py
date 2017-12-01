@@ -118,9 +118,11 @@ def my_loss2(y_true, y_pred):
     pos22 = K.square(y_pred[:, 5:7] - y_true[:, 5:7])
     pos21 = K.square(y_pred[:, 5:7] - y_true[:, :2])
 
-    matching_variant1 = K.mean(K.concatenate([pos11, theta11, pos22, theta22]), axis=1)
-    matching_variant2 = K.mean(K.concatenate([pos12, theta12, pos21, theta21]), axis=1)
-    return min(matching_variant1, matching_variant2)
+    vals = K.min(K.mean(K.concatenate(theta11 + theta22 + pos11 + pos22)),
+                 K.mean(K.concatenate(theta12 + theta21 + pos12 + pos21)))
+
+    return vals
+
 
 def my_loss(y_true, y_pred):
     # 2pi * y, because y is normed to <0, 1> range
