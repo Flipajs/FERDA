@@ -1,6 +1,5 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 import h5py
 import sys
 import string
@@ -8,6 +7,7 @@ import numpy as np
 import time
 from os.path import join
 from sklearn.preprocessing import StandardScaler
+import numbers
 import pandas as pd
 try:
     from keras.utils import np_utils
@@ -19,7 +19,7 @@ try:
     from sklearn.model_selection import cross_val_score
     from sklearn.model_selection import KFold
     from keras import backend as K
-    from keras.callbacks import CSVLogger
+    from keras.callbacks import CSVLogger, TensorBoard
 except ImportError:
     print('Warning, no keras installed.')
 
@@ -29,6 +29,8 @@ ROOT_DIR = '../../data/CNN_models/interactions'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 # DATA_DIR = ROOT_DIR + '/data'
 DATA_DIR = '/datagrid/personal/smidm1/ferda/iteractions/'
+
+TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/iteractions/tb_logs'
 
 BATCH_SIZE = 32
 TWO_TESTS = True
@@ -118,8 +120,11 @@ def train_and_evaluate(model, params):
     with open(join(EXPERIMENT_DIR, 'model.txt'), 'w') as fw:
         model.summary(print_fn=lambda x: fw.write(x + '\n'))
     csv_logger = CSVLogger(join(EXPERIMENT_DIR, 'log.csv'), append=True, separator=';')
+    tb = TensorBoard(log_dir=ALPHA_TENSOR_BOARD_DIR, histogram_freq=0, batch_size=32, write_graph=True, write_grads=False,
+                     write_images=False, embeddings_freq=0, embeddings_layer_names=None,
+                     embeddings_metadata=None)
     m.fit(X_train, y_train, validation_split=0.05, epochs=params['epochs'], batch_size=BATCH_SIZE, verbose=1,
-          callbacks=[csv_logger])
+          callbacks=[csv_logger, tb])
 
     # evaluate model with standardized dataset
     # estimator = KerasRegressor(build_fn=model, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
@@ -161,7 +166,7 @@ def train_and_evaluate(model, params):
 
 
 if __name__ == '__main__':
-    NUM_EPOCHS = 8
+    NUM_EPOCHS = 10
     # NUM_EPOCHS = 1
     # USE_PREVIOUS_AS_INIT = 0
     # K = 6
@@ -196,7 +201,10 @@ if __name__ == '__main__':
         # y_test_np = np.core.records.fromarrays(hf['data'][:].transpose(), names=NAMES, formats=FORMATS)
     print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
-    parameters = {'epochs': NUM_EPOCHS}
+    parameters = {'epochs': NUM_EPOCHS,
+                  'loss_alpha': np.linspace(0, 1, 30),
+                  # 'loss_alpha': 0.5,
+                  }
 
     # fix random seed for reproducibility
     seed = 7
@@ -214,24 +222,35 @@ if __name__ == '__main__':
     angle_scaler.scale_ = 1  # 180
     y_train[:, [4, 9]] = angle_scaler.transform(y_train[:, [4, 9]])
 
-    m = model()
+    base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
+    BASE_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/iteractions/experiments/' + base_experiment_name
+    BASE_TENSOR_BOARD_DIR = join(TENSOR_BOARD_DIR, base_experiment_name)
+
+    if not os.path.exists(BASE_EXPERIMENT_DIR):
+        os.mkdir(BASE_EXPERIMENT_DIR)
+    # if not os.path.exists(join(BASE_EXPERIMENT_DIR, 'logs')):
+    #     os.mkdir(join(BASE_EXPERIMENT_DIR, 'logs'))
 
     results = pd.DataFrame()
 
-    BASE_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/iteractions/experiments/' + \
-                          time.strftime("%y%m%d_%H%M_batch", time.localtime())
-    if not os.path.exists(BASE_EXPERIMENT_DIR):
-        os.mkdir(BASE_EXPERIMENT_DIR)
+    if not isinstance(parameters['loss_alpha'], numbers.Number):
+        for alpha in parameters['loss_alpha']:
+            m = model()
+            print('loss_alpha %f' % alpha)
+            EXPERIMENT_DIR = join(BASE_EXPERIMENT_DIR, str(alpha))
+            if not os.path.exists(EXPERIMENT_DIR):
+                os.mkdir(EXPERIMENT_DIR)
+            ALPHA_TENSOR_BOARD_DIR = join(BASE_TENSOR_BOARD_DIR, str(alpha))
 
-    for alpha in np.linspace(0, 1, 30):
-        EXPERIMENT_DIR = join(BASE_EXPERIMENT_DIR, str(alpha))
-        if not os.path.exists(EXPERIMENT_DIR):
-            os.mkdir(EXPERIMENT_DIR)
+            parameters['loss_alpha'] = alpha
+            results_ = train_and_evaluate(m, parameters)
+            results_['loss_alpha'] = alpha
+            results = results.append(results_, ignore_index=True)
 
-        parameters['loss_alpha'] = alpha
-        results_ = train_and_evaluate(m, parameters)
-        results_['loss_alpha'] = alpha
-        results = results.append(results_, ignore_index=True)
+    else:
+        m = model()
+        EXPERIMENT_DIR = BASE_EXPERIMENT_DIR
+        results = train_and_evaluate(m, parameters)
 
     print(results.to_string(index=False))
-    results.to_csv(join(BASE_EXPERIMENT_DIR, 'batch_results.csv'))
+    results.to_csv(join(BASE_EXPERIMENT_DIR, 'results.csv'))
