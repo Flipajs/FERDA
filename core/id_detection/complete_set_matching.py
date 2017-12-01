@@ -21,12 +21,28 @@ class CompleteSetMatching:
         for i in range(len(CSs)-1):
             print "CS {}, CS {}".format(i, i+1)
             perm, quality = self.cs2cs_matching_ids_unknown(CSs[i], CSs[i+1])
+
+            cs1_max_frame = 0
+            cs2_min_frame = np.inf
             for (t1, t2) in perm:
-                print t1.id(), " -> ", t2.id()
-                t2.P = set(t1.P)
-                t2.N = set(t2.N)
+                if t1 == t2:
+                    break
+
+                cs1_max_frame = max(cs1_max_frame, t1.start_frame(self.p.gm))
+                cs2_min_frame = min(cs2_min_frame, t2.end_frame(self.p.gm))
+
+            print "cs1 max frame: {}, cs2 min frame: {}".format(cs1_max_frame, cs2_min_frame)
+
+            # propagate IDS if quality is good enough:
+            if quality[1] > 0.5:
+                # TODO: if t1.P is empty... do virtual ID init
+                for (t1, t2) in perm:
+                    print t1.id(), " -> ", t2.id()
+                    t2.P = set(t1.P)
+                    t2.N = set(t2.N)
 
             print quality
+            print
 
             qualities.append(quality)
 
@@ -95,6 +111,8 @@ class CompleteSetMatching:
         # solve matching
         # register matched tracklets to have the same virtual ID
 
+        cs1, cs2, cs_shared = self.remove_straightforward_tracklets(cs1, cs2)
+
         P_a = self.appearance_probabilities(cs1, cs2)
         P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
 
@@ -110,6 +128,9 @@ class CompleteSetMatching:
 
         x_ = 1 - P[row_ind, col_ind]
         quality = (x_.min(), x_.sum() / float(len(x_)))
+
+        for t in cs_shared:
+            perm.append((t, t))
 
         return perm, quality
 
@@ -157,6 +178,13 @@ class CompleteSetMatching:
 
         return P
 
+    def remove_straightforward_tracklets(self, cs1, cs2):
+        cs1 = set(cs1)
+        cs2 = set(cs2)
+        shared = cs1.intersection(cs2)
+
+        return list(cs1.difference(shared)), list(cs2.difference(shared)), list(shared)
+
     def appearance_probabilities(self, cs1, cs2):
         # ...thoughts...
         # get probabilities for each tracklet
@@ -179,9 +207,9 @@ class CompleteSetMatching:
                 cost1 = val1 * p2[k1]
                 cost2 = p1[k2] * val2
 
-                cost = max(cost1, cost2)
+                likelihood = max(cost1, cost2)
 
-                C[i, j] = cost
+                C[i, j] = likelihood
 
         return C
 
