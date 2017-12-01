@@ -1,4 +1,5 @@
 import os
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import h5py
 import sys
@@ -29,8 +30,8 @@ ROOT_DIR = '../../data/CNN_models/interactions'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 # DATA_DIR = ROOT_DIR + '/data'
 DATA_DIR = '/datagrid/personal/smidm1/ferda/iteractions/'
-
-TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/iteractions/tb_logs'
+ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/iteractions/experiments/'
+ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/iteractions/tb_logs'
 
 BATCH_SIZE = 32
 TWO_TESTS = True
@@ -42,32 +43,36 @@ NUM_PARAMS = 10
 
 def angle_absolute_error(y_true, y_pred, backend, scaler=None):
     if scaler is not None:
-        # y_pred1 = scaler.inverse_transform(y_pred[:, 4:5])  # this doesn't work with Tensors
-        # y_pred2 = scaler.inverse_transform(y_pred[:, 9:])
-        y_pred1 = y_pred[:, 4:5] * scaler[1] + scaler[0]
-        y_pred2 = y_pred[:, 9:] * scaler[1] + scaler[0]
+        # y_pred_ = scaler.inverse_transform(y_pred[:, 4:5])  # this doesn't work with Tensors
+        y_pred_ = y_pred[:, 4:5] * scaler[1] + scaler[0]
     else:
-        y_pred1 = y_pred[:, 4:5]
-        y_pred2 = y_pred[:, 9:]
-    val = backend.abs(y_pred1 - y_true[:, 4:5]) % 180
-    theta11 = backend.minimum(val, 180 - val)
-    val = backend.abs(y_pred2 - y_true[:, 9:]) % 180
-    theta22 = backend.minimum(val, 180 - val)
-    return theta11, theta22
+        y_pred_ = y_pred[:, 4:5]
+    val = backend.abs(y_pred_ - y_true[:, 4:5]) % 180
+    return backend.minimum(val, 180 - val)
 
 
 def xy_absolute_error(y_true, y_pred, backend):
-    pos11 = backend.abs(y_pred[:, :2] - y_true[:, :2])
-    pos22 = backend.abs(y_pred[:, 5:7] - y_true[:, 5:7])
-    return pos11, pos22
+    return backend.abs(y_pred[:, :2] - y_true[:, :2])
+
+
+def absolute_errors(y_true, y_pred, angle_scaler):
+    theta = angle_absolute_error(y_true, y_pred, K, angle_scaler)
+    pos = xy_absolute_error(y_true, y_pred, K)
+    return pos, theta
 
 
 def interaction_loss(y_true, y_pred, angle_scaler=None, alpha=0.5):
     assert 0 <= alpha <= 1
-    theta11, theta22 = angle_absolute_error(y_true, y_pred, K, angle_scaler)
-    pos11, pos22 = xy_absolute_error(y_true, y_pred, K)
-    return K.mean(K.concatenate([K.square(pos11) * (1 - alpha), K.square(pos22) * (1 - alpha),
-                                 K.square(theta11) * alpha, K.square(theta22) * alpha]), axis=-1)
+    pos11, theta11 = absolute_errors(y_true[:, :5], y_pred[:, :5], angle_scaler)
+    pos22, theta22 = absolute_errors(y_true[:, 5:], y_pred[:, 5:], angle_scaler)
+
+    pos12, theta12 = absolute_errors(y_true[:, :5], y_pred[:, 5:], angle_scaler)
+    pos21, theta21 = absolute_errors(y_true[:, 5:], y_pred[:, :5], angle_scaler)
+
+    return K.mean(K.minimum(K.sum(K.concatenate([K.square(pos11) * (1 - alpha), K.square(pos22) * (1 - alpha),
+                                                 K.square(theta11) * alpha, K.square(theta22) * alpha]), axis=-1),
+                            K.sum(K.concatenate([K.square(pos12) * (1 - alpha), K.square(pos21) * (1 - alpha),
+                                                 K.square(theta12) * alpha, K.square(theta21) * alpha]), axis=-1)))
 
 
 def model():
@@ -120,7 +125,7 @@ def train_and_evaluate(model, params):
     with open(join(EXPERIMENT_DIR, 'model.txt'), 'w') as fw:
         model.summary(print_fn=lambda x: fw.write(x + '\n'))
     csv_logger = CSVLogger(join(EXPERIMENT_DIR, 'log.csv'), append=True, separator=';')
-    tb = TensorBoard(log_dir=ALPHA_TENSOR_BOARD_DIR, histogram_freq=0, batch_size=32, write_graph=True, write_grads=False,
+    tb = TensorBoard(log_dir=TENSOR_BOARD_DIR, histogram_freq=0, batch_size=32, write_graph=True, write_grads=False,
                      write_images=False, embeddings_freq=0, embeddings_layer_names=None,
                      embeddings_metadata=None)
     m.fit(X_train, y_train, validation_split=0.05, epochs=params['epochs'], batch_size=BATCH_SIZE, verbose=1,
@@ -203,7 +208,7 @@ if __name__ == '__main__':
 
     parameters = {'epochs': NUM_EPOCHS,
                   'loss_alpha': np.linspace(0, 1, 30),
-                  # 'loss_alpha': 0.5,
+                  # 'loss_alpha': 0.17,
                   }
 
     # fix random seed for reproducibility
@@ -223,8 +228,8 @@ if __name__ == '__main__':
     y_train[:, [4, 9]] = angle_scaler.transform(y_train[:, [4, 9]])
 
     base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
-    BASE_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/iteractions/experiments/' + base_experiment_name
-    BASE_TENSOR_BOARD_DIR = join(TENSOR_BOARD_DIR, base_experiment_name)
+    BASE_EXPERIMENT_DIR = ROOT_EXPERIMENT_DIR + base_experiment_name
+    BASE_TENSOR_BOARD_DIR = join(ROOT_TENSOR_BOARD_DIR, base_experiment_name)
 
     if not os.path.exists(BASE_EXPERIMENT_DIR):
         os.mkdir(BASE_EXPERIMENT_DIR)
@@ -240,7 +245,7 @@ if __name__ == '__main__':
             EXPERIMENT_DIR = join(BASE_EXPERIMENT_DIR, str(alpha))
             if not os.path.exists(EXPERIMENT_DIR):
                 os.mkdir(EXPERIMENT_DIR)
-            ALPHA_TENSOR_BOARD_DIR = join(BASE_TENSOR_BOARD_DIR, str(alpha))
+            TENSOR_BOARD_DIR = join(BASE_TENSOR_BOARD_DIR, str(alpha))
 
             parameters['loss_alpha'] = alpha
             results_ = train_and_evaluate(m, parameters)
@@ -250,6 +255,7 @@ if __name__ == '__main__':
     else:
         m = model()
         EXPERIMENT_DIR = BASE_EXPERIMENT_DIR
+        TENSOR_BOARD_DIR = BASE_TENSOR_BOARD_DIR
         results = train_and_evaluate(m, parameters)
 
     print(results.to_string(index=False))
