@@ -1,6 +1,7 @@
 import numpy as np
 from utils.video_manager import get_auto_video_manager
 from tqdm import tqdm
+from lazyme.string import color_print
 
 
 class CompleteSetMatching:
@@ -12,10 +13,7 @@ class CompleteSetMatching:
     def process(self):
         CSs = self.find_cs()
 
-        full_set = set(range(len(self.p.animals)))
-        for i, t in enumerate(CSs[0]):
-            t.P = set([i])
-            t.N = full_set.difference(t.P)
+        isolated_cs_groups = []
 
         qualities = []
         for i in range(len(CSs)-1):
@@ -33,25 +31,60 @@ class CompleteSetMatching:
 
             print "cs1 max frame: {}, cs2 min frame: {}".format(cs1_max_frame, cs2_min_frame)
 
+            # TODO: threshold 1
+            QUALITY_THRESHOLD = 0.4
+
             # propagate IDS if quality is good enough:
-            if quality[1] > 0.5:
+            if quality[1] > QUALITY_THRESHOLD:
                 # TODO: if t1.P is empty... do virtual ID init
-                for (t1, t2) in perm:
-                    print t1.id(), " -> ", t2.id()
-                    t2.P = set(t1.P)
-                    t2.N = set(t2.N)
+                if len(perm[0][0].P) == 0:
+                    isolated_cs_groups.append(set())
+
+                    ics_g_i = len(isolated_cs_groups) - 1
+
+                    num_animals = len(self.p.animals)
+                    full_set = set(range(ics_g_i * num_animals, (ics_g_i + 1)*num_animals))
+                    for i, t in enumerate(perm[0]):
+                        t.P = set([i + ics_g_i*num_animals])
+                        t.N = full_set.difference(t.P)
+            else:
+                color_print('QUALITY BELOW', color='red')
+
+            # TODO: transitivity? when t1 -> t2 assignment uncertain, look on ID probs for t2->t3 and validate wtih t1->t3
+            
+            for (t1, t2) in perm:
+                print "[{} |{}| (te: {})] -> {} |{}| (ts: {})".format(t1.id(), len(t1), t1.end_frame(self.p.gm), t2.id(), len(t2), t2.start_frame(self.p.gm))
+                t2.P = set(t1.P)
+                t2.N = set(t2.N)
+                isolated_cs_groups[-1].add(t1)
+                isolated_cs_groups[-1].add(t2)
 
             print quality
             print
 
             qualities.append(quality)
 
+        print
+
+        print "ISOLATED CS GROUPS: {}".format(len(isolated_cs_groups))
+        for cs in isolated_cs_groups:
+            total_len = 0
+            s = ""
+            for t in cs:
+                s += ", "+str(t.id())
+                total_len += len(t)
+
+            print "total len: {}, IDs: {}".format(total_len, s)
+            print
+
         p.save()
         import matplotlib.pyplot as plt
         qualities = np.array(qualities)
         plt.plot(qualities[:, 0])
+        plt.grid()
         plt.figure()
         plt.plot(qualities[:, 1])
+        plt.grid()
         plt.show()
 
         for i in range(50, 60):
@@ -110,24 +143,27 @@ class CompleteSetMatching:
         # get ID assignments costs
         # solve matching
         # register matched tracklets to have the same virtual ID
+        perm = []
 
         cs1, cs2, cs_shared = self.remove_straightforward_tracklets(cs1, cs2)
+        if len(cs1) == 1:
+            perm.append((cs1[0], cs2[0]))
+            quality = [1.0, 1.0]
+        else:
+            P_a = self.appearance_probabilities(cs1, cs2)
+            P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
 
-        P_a = self.appearance_probabilities(cs1, cs2)
-        P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
+            # 1 - ... it is minimum weight matching
+            P = 1 - np.multiply(P_a, P_s)
 
-        # 1 - ... it is minimum weight matching
-        P = 1 - np.multiply(P_a, P_s)
+            from scipy.optimize import linear_sum_assignment
+            row_ind, col_ind = linear_sum_assignment(P)
 
-        from scipy.optimize import linear_sum_assignment
-        row_ind, col_ind = linear_sum_assignment(P)
+            for rid, cid in zip(row_ind, col_ind):
+                perm.append((cs1[rid], cs2[cid]))
 
-        perm = []
-        for rid, cid in zip(row_ind, col_ind):
-            perm.append((cs1[rid], cs2[cid]))
-
-        x_ = 1 - P[row_ind, col_ind]
-        quality = (x_.min(), x_.sum() / float(len(x_)))
+            x_ = 1 - P[row_ind, col_ind]
+            quality = (x_.min(), x_.sum() / float(len(x_)))
 
         for t in cs_shared:
             perm.append((t, t))

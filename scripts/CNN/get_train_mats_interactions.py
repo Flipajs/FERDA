@@ -41,7 +41,6 @@ def get_data(type):
                 ant1_angle, ant2_angle = ant2_angle, ant1_angle
 
 
-
             results.append([ant1_x,
                            ant1_y,
                            ant1_major,
