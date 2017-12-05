@@ -21,6 +21,7 @@ try:
     from sklearn.model_selection import KFold
     from keras import backend as K
     from keras.callbacks import CSVLogger, TensorBoard
+    import tensorflow as tf
 except ImportError:
     print('Warning, no keras installed.')
 
@@ -55,24 +56,41 @@ def xy_absolute_error(y_true, y_pred, backend):
     return backend.abs(y_pred[:, :2] - y_true[:, :2])
 
 
-def absolute_errors(y_true, y_pred, angle_scaler):
-    theta = angle_absolute_error(y_true, y_pred, K, angle_scaler)
-    pos = xy_absolute_error(y_true, y_pred, K)
+def absolute_errors(y_true, y_pred, backend, angle_scaler):
+    theta = angle_absolute_error(y_true, y_pred, backend, angle_scaler)
+    pos = xy_absolute_error(y_true, y_pred, backend)
     return pos, theta
 
 
 def interaction_loss(y_true, y_pred, angle_scaler=None, alpha=0.5):
     assert 0 <= alpha <= 1
-    pos11, theta11 = absolute_errors(y_true[:, :5], y_pred[:, :5], angle_scaler)
-    pos22, theta22 = absolute_errors(y_true[:, 5:], y_pred[:, 5:], angle_scaler)
+    sum_errors_xy, sum_errors_angle, indices = match_pred_to_gt(y_true, y_pred, K, angle_scaler)
 
-    pos12, theta12 = absolute_errors(y_true[:, :5], y_pred[:, 5:], angle_scaler)
-    pos21, theta21 = absolute_errors(y_true[:, 5:], y_pred[:, :5], angle_scaler)
+    return K.mean(tf.gather_nd(sum_errors_xy, indices) * (1 - alpha) +
+                  tf.gather_nd(sum_errors_angle, indices) * alpha)
 
-    return K.mean(K.minimum(K.sum(K.concatenate([K.square(pos11) * (1 - alpha), K.square(pos22) * (1 - alpha),
-                                                 K.square(theta11) * alpha, K.square(theta22) * alpha]), axis=-1),
-                            K.sum(K.concatenate([K.square(pos12) * (1 - alpha), K.square(pos21) * (1 - alpha),
-                                                 K.square(theta12) * alpha, K.square(theta21) * alpha]), axis=-1)))
+
+def match_pred_to_gt(y_true, y_pred, backend, angle_scaler=None):
+    xy11, theta11 = absolute_errors(y_true[:, :5], y_pred[:, :5], backend, angle_scaler)
+    xy22, theta22 = absolute_errors(y_true[:, 5:], y_pred[:, 5:], backend, angle_scaler)
+    xy12, theta12 = absolute_errors(y_true[:, :5], y_pred[:, 5:], backend, angle_scaler)
+    xy21, theta21 = absolute_errors(y_true[:, 5:], y_pred[:, :5], backend, angle_scaler)
+    if backend == np:
+        norm = np.linalg.norm
+        int64 = np.int64
+        shape = lambda x, n: x.shape[n]
+    else:
+        norm = tf.linalg.norm
+        int64 = tf.int64
+        shape = lambda x, n: backend.cast(backend.shape(x)[n], int64)
+    sum_errors_xy = backend.stack((backend.sum(backend.stack((norm(xy11, axis=1), norm(xy22, axis=1))), axis=0),
+                             backend.sum(backend.stack((norm(xy12, axis=1), norm(xy21, axis=1))), axis=0)))  # shape=(2, n)
+    sum_errors_angle = backend.stack((backend.sum(backend.concatenate((theta11, theta22)), axis=1),
+                                backend.sum(backend.concatenate((theta12, theta21)), axis=1)))  # shape=(2, n)
+    swap_idx = backend.argmin(sum_errors_xy, axis=0)  # shape = (n,)
+    indices = backend.transpose(
+        backend.stack((swap_idx, backend.arange(0, shape(sum_errors_xy, 1)))))  # shape=(n, 2)
+    return sum_errors_xy, sum_errors_angle, indices
 
 
 def model():
@@ -156,8 +174,10 @@ def train_and_evaluate(model, params):
     with h5py.File(join(EXPERIMENT_DIR, 'predictions.h5'), 'w') as hf:
         hf.create_dataset("data", data=pred)
 
-    xy_mae = np.linalg.norm(np.vstack(xy_absolute_error(y_test, pred, np)), 2, axis=1).mean()
-    angle_mae = np.vstack(angle_absolute_error(y_test, pred, np)).mean()
+    xy, angle, indices = match_pred_to_gt(pred, y_test, np)
+    xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
+    angle_mae = (angle[indices[:, 0], indices[:, 1]]).mean()
+
     results = pd.DataFrame.from_items([('xy MAE', [xy_mae]), ('angle MAE', angle_mae)])
     print(results.to_string(index=False))
     results.to_csv(join(EXPERIMENT_DIR, 'results.csv'))

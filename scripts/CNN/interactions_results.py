@@ -15,6 +15,12 @@ def toarray(struct_array):
     all(x == types[0] for x in types)
     return struct_array.view(types[0]).reshape(struct_array.shape + (-1,))
 
+def tostruct(ndarray):
+    NAMES = 'ant1_x, ant1_y, ant1_major, ant1_minor, ant1_angle, ' \
+            'ant2_x, ant2_y, ant2_major, ant2_minor, ant2_angle'
+    FORMATS = 10 * 'f,'
+    return np.core.records.fromarrays(ndarray.transpose(), names=NAMES, formats=FORMATS)
+
 
 def save_prediction_img(i, pred, out_filename, gt=None):
     fig = plt.figure()
@@ -24,22 +30,30 @@ def save_prediction_img(i, pred, out_filename, gt=None):
     # a.imshow(im)
     plt.imshow(im)
     # plt.hold(True)
-    ax = plt.gca()
     plt.axis('off')
-    # ax.add_patch(Ellipse((pred[i, 0], pred[i, 1]), pred[i, 2], pred[i, 3], angle=pred[i, 4], edgecolor='red', facecolor='none'))
-    ax.add_patch(Ellipse(pred[['ant1_x', 'ant1_y']][i], mean_major, mean_minor,
-                         angle=-pred[i]['ant1_angle'], edgecolor='red', facecolor='none', label='ant1 prediction'))
-    ax.add_patch(Ellipse(pred[['ant2_x', 'ant2_y']][i], mean_major, mean_minor,
-                         angle=-pred[i]['ant2_angle'], edgecolor='blue', facecolor='none', label='ant2 prediction'))
-    plt.scatter(pred[i]['ant1_x'], pred[i]['ant1_y'], c='red')
-    plt.scatter(pred[i]['ant2_x'], pred[i]['ant2_y'], c='blue')
+    plot_interaction(pred[[i]], gt[[i]])
+    fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0)
+    plt.close(fig)
+    plt.clf()
 
+
+def plot_interaction(pred, gt=None):
+    ax = plt.gca()
+    # ax.add_patch(Ellipse((pred[i, 0], pred[i, 1]), pred[i, 2], pred[i, 3], angle=pred[i, 4], edgecolor='red', facecolor='none'))
+    ax.add_patch(Ellipse(toarray(pred[['ant1_x', 'ant1_y']]).flatten(), pred['ant1_major'], pred['ant1_minor'],
+                         angle=-pred['ant1_angle'], edgecolor='red', facecolor='none', label='ant1 prediction'))
+    ax.add_patch(Ellipse(toarray(pred[['ant2_x', 'ant2_y']]).flatten(), pred['ant2_major'], pred['ant2_minor'],
+                         angle=-pred['ant2_angle'], edgecolor='blue', facecolor='none', label='ant2 prediction'))
+    plt.scatter(pred['ant1_x'], pred['ant1_y'], c='red')
+    plt.scatter(pred['ant2_x'], pred['ant2_y'], c='blue')
     if gt is not None:
-        ax.add_patch(Ellipse(gt[['ant1_x', 'ant1_y']][i], gt[i]['ant1_major'], gt[i]['ant1_minor'],
-                             angle=-gt[i]['ant1_angle'], edgecolor='red', linestyle='dotted', facecolor='none', label='ant1 gt'))
+        ax.add_patch(Ellipse(toarray(gt[['ant1_x', 'ant1_y']]).flatten(), gt['ant1_major'], gt['ant1_minor'],
+                             angle=-gt['ant1_angle'], edgecolor='red', linestyle='dotted', facecolor='none',
+                             label='ant1 gt'))
         # ax.add_patch(Ellipse((pred[i, 5], pred[i, 6]), pred[i, 7], pred[i, 8], angle=pred[i, 9], edgecolor='blue', facecolor='none'))
-        ax.add_patch(Ellipse(gt[['ant2_x', 'ant2_y']][i], gt[i]['ant2_major'], gt[i]['ant2_minor'],
-                             angle=-gt[i]['ant2_angle'], edgecolor='blue', linestyle='dotted', facecolor='none', label='ant2 gt'))
+        ax.add_patch(Ellipse(toarray(gt[['ant2_x', 'ant2_y']]).flatten(), gt['ant2_major'], gt['ant2_minor'],
+                             angle=-gt['ant2_angle'], edgecolor='blue', linestyle='dotted', facecolor='none',
+                             label='ant2 gt'))
 
     # ells[i].set_clip_box(a.bbox)
     # ells[i].set_alpha(0.5)
@@ -47,9 +61,6 @@ def save_prediction_img(i, pred, out_filename, gt=None):
     #
     # print pred[i]
     plt.legend()
-    fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0)
-    plt.close(fig)
-    plt.clf()
 
 
 if __name__ == '__main__':
@@ -58,18 +69,16 @@ if __name__ == '__main__':
     EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/iteractions/experiments/171129_2121'
     DATA_DIR = '/datagrid/personal/smidm1/ferda/iteractions/'
 
-    NAMES = 'ant1_x, ant1_y, ant1_major, ant1_minor, ant1_angle, ' \
-            'ant2_x, ant2_y, ant2_major, ant2_minor, ant2_angle'
-    FORMATS = 10 * 'f,'
+
 
     # with h5py.File(DATA_DIR + '/imgs_inter_test.h5', 'r') as hf:
     #     X_test = hf['data'][:]
     #
     with h5py.File(join(DATA_DIR, 'results_inter_test.h5'), 'r') as hf:
-        y_test = np.core.records.fromarrays(hf['data'][:].transpose(), names=NAMES, formats=FORMATS)
+        y_test = tostruct(hf['data'][:])
 
     with h5py.File(join(EXPERIMENT_DIR, 'predictions.h5'), 'r') as hf:
-        pred = np.core.records.fromarrays(hf['data'][:].transpose(), names=NAMES, formats=FORMATS)
+        pred = tostruct(hf['data'][:])
         import pandas as pd
         df = pd.DataFrame(pred)
         # df.to_csv(join(DATA_DIR, 'pred.csv'))
@@ -80,8 +89,8 @@ if __name__ == '__main__':
     # angles = np.arange(0, 360 + delta, delta)
     # ells = [Ellipse((1, 1), 4, 2, a) for a in angles]
 
-    mean_major = toarray(y_test[['ant1_major', 'ant2_major']]).mean()
-    mean_minor = toarray(y_test[['ant1_minor', 'ant2_minor']]).mean()
+    pred[['ant1_major', 'ant2_major']] = toarray(y_test[['ant1_major', 'ant2_major']]).mean()
+    pred[['ant1_minor', 'ant2_minor']] = toarray(y_test[['ant1_minor', 'ant2_minor']]).mean()
 
     xy1_error = np.linalg.norm(toarray(y_test[['ant1_x', 'ant1_y']]) - toarray(pred[['ant1_x', 'ant1_y']]), 2, axis=1)
     xy2_error = np.linalg.norm(toarray(y_test[['ant2_x', 'ant2_y']]) - toarray(pred[['ant2_x', 'ant2_y']]), 2, axis=1)
