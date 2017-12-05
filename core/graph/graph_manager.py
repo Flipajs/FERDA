@@ -376,10 +376,10 @@ class GraphManager:
             s_test.add(n_)
 
             if t_ == 1:
-                for n2 in n_.out_neighbours():
+                for n2 in n_.out_neighbors():
                     process.append((n2, 2))
             else:
-                for n2 in n_.in_neighbours():
+                for n2 in n_.in_neighbors():
                     process.append((n2, 1))
 
         return list(s_t1), list(s_t2)
@@ -451,14 +451,14 @@ class GraphManager:
 
         node_groups.setdefault(r.frame_, []).append(vertex)
 
-        for v_ in vertex.in_neighbours():
+        for v_ in vertex.in_neighbors():
             ch, ch_end = self.is_chunk(v_)
             if ch and not ch_end:
                 continue
 
             self.get_cc_rec(v_, depth-1, node_groups)
 
-        for v_ in vertex.out_neighbours():
+        for v_ in vertex.out_neighbors():
             ch, ch_end = self.is_chunk(v_)
             if ch and ch_end:
                 continue
@@ -494,7 +494,7 @@ class GraphManager:
 
     def out_v(self, v):
         if v.out_degree() == 1:
-            for v2 in v.out_neighbours():
+            for v2 in v.out_neighbors():
                 return v2
 
         return None
@@ -511,7 +511,7 @@ class GraphManager:
         if self.g.vp['chunk_start_id'][v] and len(self.project.chm[self.g.vp['chunk_start_id'][v]]) > 1:
             return False
 
-        for v2 in v.out_neighbours():
+        for v2 in v.out_neighbors():
             if v2.in_degree() != 1:
                 return False
 
@@ -664,7 +664,7 @@ class GraphManager:
 
             if v2.in_degree() == 2:
                 vv = None
-                for v_ in v2.in_neighbours():
+                for v_ in v2.in_neighbors():
                     if v_ != v:
                         vv = v_
 

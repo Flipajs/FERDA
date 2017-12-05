@@ -66,7 +66,7 @@ if is_flipajs_pc():
     #
     #         if t.is_multi() and t.end_vertex(project.gm).out_degree() == 2:
     #             new_one = True
-    #             for u in v.in_neighbours():
+    #             for u in v.in_neighbors():
     #                 if not project.gm.get_chunk(u).is_single():
     #                     new_one = False
     #                     break
@@ -94,7 +94,7 @@ if is_flipajs_pc():
     #
     #     v1 = t.start_vertex(project.gm)
     #     animals_r = []
-    #     for u in v1.in_neighbours():
+    #     for u in v1.in_neighbors():
     #         reg = project.gm.region(u)
     #
     #         if erosion:
