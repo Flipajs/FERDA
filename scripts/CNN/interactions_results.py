@@ -66,35 +66,36 @@ def plot_interaction(pred, gt=None):
 if __name__ == '__main__':
     # ROOT_DIR = '/Users/flipajs/Downloads/double_regions'
     # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
-    EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/iteractions/experiments/171129_2121'
-    DATA_DIR = '/datagrid/personal/smidm1/ferda/iteractions/'
 
+    EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/171205_0315/0.310344827586/'
+    DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/'
+
+    EXPERIMENT_DIR = '/home/matej/prace/ferda/experiments/171205_0315/0.310344827586/'
+    DATA_DIR = '/home/matej/prace/ferda/data/interactions/'
 
 
     # with h5py.File(DATA_DIR + '/imgs_inter_test.h5', 'r') as hf:
     #     X_test = hf['data'][:]
     #
     with h5py.File(join(DATA_DIR, 'results_inter_test.h5'), 'r') as hf:
-        y_test = tostruct(hf['data'][:])
+        y_test = hf['data'][:]
 
     with h5py.File(join(EXPERIMENT_DIR, 'predictions.h5'), 'r') as hf:
-        pred = tostruct(hf['data'][:])
-        import pandas as pd
-        df = pd.DataFrame(pred)
-        # df.to_csv(join(DATA_DIR, 'pred.csv'))
-        df.describe()
+        pred = hf['data'][:]
 
-    # delta = 45.0  # degrees
-    #
-    # angles = np.arange(0, 360 + delta, delta)
-    # ells = [Ellipse((1, 1), 4, 2, a) for a in angles]
+    xy, angle, indices = train_interactions.match_pred_to_gt(pred, y_test, np)
+    xy_errors = (xy[indices[:, 0], indices[:, 1]])
+    angle_errors = (angle[indices[:, 0], indices[:, 1]])
 
-    pred[['ant1_major', 'ant2_major']] = toarray(y_test[['ant1_major', 'ant2_major']]).mean()
-    pred[['ant1_minor', 'ant2_minor']] = toarray(y_test[['ant1_minor', 'ant2_minor']]).mean()
+    swap = indices[:, 0] == 1
+    pred[swap, :5], pred[swap, 5:] = pred[swap, 5:], pred[swap, :5]
 
-    xy1_error = np.linalg.norm(toarray(y_test[['ant1_x', 'ant1_y']]) - toarray(pred[['ant1_x', 'ant1_y']]), 2, axis=1)
-    xy2_error = np.linalg.norm(toarray(y_test[['ant2_x', 'ant2_y']]) - toarray(pred[['ant2_x', 'ant2_y']]), 2, axis=1)
-    angle1_error, angle2_error = train_interactions.angle_absolute_error(toarray(y_test), toarray(pred), np)
+    pred = tostruct(pred)
+    y_test = tostruct(y_test)
+    mean_major = toarray(y_test[['ant1_major', 'ant2_major']]).mean()
+    mean_minor = toarray(y_test[['ant1_minor', 'ant2_minor']]).mean()
+    pred['ant1_major'] = pred['ant2_major'] = mean_major
+    pred['ant1_minor'] = pred['ant2_minor'] = mean_minor
 
     if not os.path.exists(EXPERIMENT_DIR):
         os.mkdir(EXPERIMENT_DIR)
@@ -104,14 +105,10 @@ if __name__ == '__main__':
         for fn in glob.glob(join(EXPERIMENT_DIR, 'test_predictions', '*.png')):
             os.remove(fn)
 
-    for i in tqdm.tqdm(angle1_error.flatten().argsort()[::-1][:20]):
-        save_prediction_img(i, pred, join(EXPERIMENT_DIR, 'test_predictions', 'bad_angle1_%03d.png' % i), y_test)
-    for i in tqdm.tqdm(angle2_error.flatten().argsort()[::-1][:20]):
-        save_prediction_img(i, pred, join(EXPERIMENT_DIR, 'test_predictions', 'bad_angle2_%03d.png' % i), y_test)
-    for i in tqdm.tqdm(xy1_error.flatten().argsort()[::-1][:20]):
-        save_prediction_img(i, pred, join(EXPERIMENT_DIR, 'test_predictions', 'bad_xy1_%03d.png' % i), y_test)
-    for i in tqdm.tqdm(xy2_error.flatten().argsort()[::-1][:20]):
-        save_prediction_img(i, pred, join(EXPERIMENT_DIR, 'test_predictions', 'bad_xy2_%03d.png' % i), y_test)
+    for i in tqdm.tqdm(angle_errors.flatten().argsort()[::-1][:20]):
+        save_prediction_img(i, pred, join(EXPERIMENT_DIR, 'test_predictions', 'bad_angle_%03d.png' % i), y_test)
+    for i in tqdm.tqdm(xy_errors.flatten().argsort()[::-1][:20]):
+        save_prediction_img(i, pred, join(EXPERIMENT_DIR, 'test_predictions', 'bad_xy_%03d.png' % i), y_test)
 
 
     for i in tqdm.tqdm(np.random.randint(0, len(pred), 50)):

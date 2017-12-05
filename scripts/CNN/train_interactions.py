@@ -30,9 +30,9 @@ ROOT_DIR = '../../data/CNN_models/interactions'
 # ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 # DATA_DIR = ROOT_DIR + '/data'
-DATA_DIR = '/datagrid/personal/smidm1/ferda/iteractions/'
-ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/iteractions/experiments/'
-ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/iteractions/tb_logs'
+DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/'
+ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/'
+ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
 
 BATCH_SIZE = 32
 TWO_TESTS = True
@@ -84,9 +84,9 @@ def match_pred_to_gt(y_true, y_pred, backend, angle_scaler=None):
         int64 = tf.int64
         shape = lambda x, n: backend.cast(backend.shape(x)[n], int64)
     sum_errors_xy = backend.stack((backend.sum(backend.stack((norm(xy11, axis=1), norm(xy22, axis=1))), axis=0),
-                             backend.sum(backend.stack((norm(xy12, axis=1), norm(xy21, axis=1))), axis=0)))  # shape=(2, n)
+                                   backend.sum(backend.stack((norm(xy12, axis=1), norm(xy21, axis=1))), axis=0)))  # shape=(2, n)
     sum_errors_angle = backend.stack((backend.sum(backend.concatenate((theta11, theta22)), axis=1),
-                                backend.sum(backend.concatenate((theta12, theta21)), axis=1)))  # shape=(2, n)
+                                      backend.sum(backend.concatenate((theta12, theta21)), axis=1)))  # shape=(2, n)
     swap_idx = backend.argmin(sum_errors_xy, axis=0)  # shape = (n,)
     indices = backend.transpose(
         backend.stack((swap_idx, backend.arange(0, shape(sum_errors_xy, 1)))))  # shape=(n, 2)
