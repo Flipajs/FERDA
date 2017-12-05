@@ -104,6 +104,7 @@ def myGenerator(scaler):
 def my_loss2(y_true, y_pred):
     val = K.abs(y_pred[:, 3:4] - y_true[:, 3:4]) % 180
     theta11 = K.square(K.minimum(val, 180-val))
+
     val = K.abs(y_pred[:, 3:4] - y_true[:, 8:9]) % 180
     theta12 = K.square(K.minimum(val, 180 - val))
 
@@ -118,7 +119,7 @@ def my_loss2(y_true, y_pred):
     pos22 = K.square(y_pred[:, 5:7] - y_true[:, 5:7])
     pos21 = K.square(y_pred[:, 5:7] - y_true[:, :2])
 
-    vals = K.min(K.mean(K.concatenate(theta11 + theta22 + pos11 + pos22)),
+    vals = K.minimum(K.mean(K.concatenate(theta11 + theta22 + pos11 + pos22)),
                  K.mean(K.concatenate(theta12 + theta21 + pos12 + pos21)))
 
     return vals
