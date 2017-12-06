@@ -110,7 +110,6 @@ if __name__ == '__main__':
     for i in tqdm.tqdm(xy_errors.flatten().argsort()[::-1][:20]):
         save_prediction_img(i, pred, join(EXPERIMENT_DIR, 'test_predictions', 'bad_xy_%03d.png' % i), y_test)
 
-
     for i in tqdm.tqdm(np.random.randint(0, len(pred), 50)):
         save_prediction_img(i, pred, join(EXPERIMENT_DIR, 'test_predictions', 'random_%04d.png' % i), y_test)
         # plt.show()

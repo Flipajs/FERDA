@@ -71,6 +71,10 @@ def interaction_loss(y_true, y_pred, angle_scaler=None, alpha=0.5):
 
 
 def match_pred_to_gt(y_true, y_pred, backend, angle_scaler=None):
+    """
+    Return mean absolute errors for individual samples for xy and theta
+    in two possible combinations of prediction and ground truth.
+    """
     xy11, theta11 = absolute_errors(y_true[:, :5], y_pred[:, :5], backend, angle_scaler)
     xy22, theta22 = absolute_errors(y_true[:, 5:], y_pred[:, 5:], backend, angle_scaler)
     xy12, theta12 = absolute_errors(y_true[:, :5], y_pred[:, 5:], backend, angle_scaler)
@@ -83,14 +87,14 @@ def match_pred_to_gt(y_true, y_pred, backend, angle_scaler=None):
         norm = tf.linalg.norm
         int64 = tf.int64
         shape = lambda x, n: backend.cast(backend.shape(x)[n], int64)
-    sum_errors_xy = backend.stack((backend.sum(backend.stack((norm(xy11, axis=1), norm(xy22, axis=1))), axis=0),
-                                   backend.sum(backend.stack((norm(xy12, axis=1), norm(xy21, axis=1))), axis=0)))  # shape=(2, n)
-    sum_errors_angle = backend.stack((backend.sum(backend.concatenate((theta11, theta22)), axis=1),
-                                      backend.sum(backend.concatenate((theta12, theta21)), axis=1)))  # shape=(2, n)
-    swap_idx = backend.argmin(sum_errors_xy, axis=0)  # shape = (n,)
+    mean_errors_xy = backend.stack((backend.mean(backend.stack((norm(xy11, axis=1), norm(xy22, axis=1))), axis=0),
+                                   backend.mean(backend.stack((norm(xy12, axis=1), norm(xy21, axis=1))), axis=0)))  # shape=(2, n)
+    mean_errors_angle = backend.stack((backend.mean(backend.concatenate((theta11, theta22), axis=1), axis=1),
+                                      backend.mean(backend.concatenate((theta12, theta21), axis=1), axis=1)))  # shape=(2, n)
+    swap_idx = backend.argmin(mean_errors_xy, axis=0)  # shape = (n,)
     indices = backend.transpose(
-        backend.stack((swap_idx, backend.arange(0, shape(sum_errors_xy, 1)))))  # shape=(n, 2)
-    return sum_errors_xy, sum_errors_angle, indices
+        backend.stack((swap_idx, backend.arange(0, shape(mean_errors_xy, 1)))))  # shape=(n, 2)
+    return mean_errors_xy, mean_errors_angle, indices
 
 
 def model():
