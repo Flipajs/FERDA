@@ -4,7 +4,7 @@ from PyQt4 import QtGui
 
 from gui import main_window
 from core.settings import Settings as S_
-from utils.misc import is_flipajs_pc
+from utils.misc import is_flipajs_pc, is_matejs_pc
 import time
 from core.project.project import Project
 import timeit
@@ -23,6 +23,7 @@ S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 # if is_flipajs_pc() and False:
+wd = None
 if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
@@ -43,6 +44,12 @@ if is_flipajs_pc():
 
     # wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
+if is_matejs_pc():
+    # wd = '/home/matej/prace/ferda/10-15/'
+    # wd = '/home/matej/prace/ferda/10-15 (copy)/'
+    pass
+
+if wd is not None:
     project.load(wd)
 
     # TODO !! add it to assembly process

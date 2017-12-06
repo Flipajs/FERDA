@@ -4,6 +4,7 @@ from utils.video_manager import get_auto_video_manager
 import numpy as np
 import math
 from utils.roi import get_roi, get_roi_rle
+from utils.img import createLineIterator
 
 
 class Region(object):
@@ -35,7 +36,7 @@ class Region(object):
         self.a_ = -1
         self.b_ = -1
 
-        # in radians
+        # in radians, 0 to the right, positive direction counterclockwise
         self.theta_ = -1
 
         self.parent_label_ = -1
@@ -288,6 +289,42 @@ class Region(object):
                         return True
 
         return False
+
+    def get_border_point(self, angle_rad, starting_point_yx=None, shift_px=0):
+        '''
+
+        :param angle_rad:
+        :param starting_point_yx:
+        :param shift_px: move border point along the line from the starting point, positive means outside of region
+        :return:
+        '''
+        if starting_point_yx is None:
+            starting_point_yx = self.centroid_[::-1]
+        point_theta_xy = starting_point_yx[::-1] + 4 * self.major_axis_ * np.array([np.cos(angle_rad), np.sin(angle_rad)])
+        point_theta_xy = np.round(point_theta_xy).astype(int)
+
+        mask = np.zeros(self.pts().max(axis=0) + 2, dtype=np.uint8)  # we need at least 1 background pixel around
+                                                                     # actual shape
+        # mask[self.pts()[:, 0] + 1, self.pts()[:, 1] + 1] = 1  # why was there + 1 ?
+        mask[self.pts()[:, 0], self.pts()[:, 1]] = 1
+
+        # import matplotlib.pylab as plt
+        # plt.imshow(mask)
+        # plt.plot(point_theta_xy[0], point_theta_xy[1], '+')
+        # plt.annotate('center', starting_point_yx, (10, 0), textcoords='offset pixels')
+        # plt.plot(starting_point_yx[0], starting_point_yx[1], '+')
+
+        # find touch point on the ant border
+        line = createLineIterator(np.round(starting_point_yx).astype(int), point_theta_xy, mask)
+        i = np.nonzero(line[:, 2] == 0)[0][0]
+        index = np.clip(i + shift_px, 0, len(line) - 1)
+        # if index != i + shift_px:
+        #     print('get_border_point shift_px clipped')
+        border_point_xy = line[index, 0:2]
+
+        # plt.plot(border_point_xy[0], border_point_xy[1], '+')
+
+        return border_point_xy
 
 
 def encode_RLE(pts, return_area=True):

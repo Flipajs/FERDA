@@ -64,6 +64,10 @@ class MedianIntensity(Model):
     def update(self, img):
         self.bg_model = np.copy(img)
 
+    def get_fg_mask(self, img, threshold=40):
+        return np.logical_or.reduce((self.bg_model.astype(np.int) - img) > threshold, axis=2)
+
+
 
 if __name__ == '__main__':
     from core.project.project import Project
@@ -71,6 +75,8 @@ if __name__ == '__main__':
     p = Project()
     # p.video_paths = ['/Volumes/Seagate Expansion Drive/IST - videos/colonies/Camera 1.avi']
     p.video_paths = ['/Users/flipajs/Downloads/crickets-out2/out2.mp4']
+    # p.video_paths = ['/home/matej/prace/ferda/camera1_ss00-05-00_t00-05-00.mp4']
+
 
     num_steps = 10
     bg = MedianIntensity(p, iterations=num_steps)
@@ -93,9 +99,9 @@ if __name__ == '__main__':
     plt.figure(1)
     plt.imshow(model)
 
-    from PyQt4 import QtGui, QtCore
+    # from PyQt4 import QtGui, QtCore
     import sys
-    app = QtGui.QApplication(sys.argv)
+    # app = QtGui.QApplication(sys.argv)
     from gui.view.mser_tree import MSERTree
 
     plt.figure(2)
@@ -120,13 +126,19 @@ if __name__ == '__main__':
         processed = np.asarray(processed, dtype=np.uint8)
         processed = np.invert(processed)
 
-        ex = MSERTree(processed, p)
-        ex.show()
-        ex.move(-500, -500)
-        ex.showMaximized()
-        ex.setFocus()
+        fg_mask = np.logical_or.reduce((model.astype(np.int) - im) > 40, axis=2)
+        cv2.imshow('foreground mask', fg_mask.astype(np.uint8) * 255)
+        im_foreground = np.copy(im)
+        im_foreground[~fg_mask] = 0
+        cv2.imshow('foreground', im_foreground)
 
-        cv2.imshow('sub', processed)
+        # ex = MSERTree(processed, p)
+        # ex.show()
+        # ex.move(-500, -500)
+        # ex.showMaximized()
+        # ex.setFocus()
+
+        # cv2.imshow('sub', processed)
         cv2.waitKey(0)
 
     app.exec_()
