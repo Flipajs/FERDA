@@ -707,7 +707,7 @@ class CaseWidget(QtGui.QWidget):
 
         for i in range(len(self.vertices_groups) - 1):
             for n in self.vertices_groups[i]:
-                for n2 in n.out_neighbours():
+                for n2 in n.out_neighbors():
                     ch, ch_end = self.project.gm.is_chunk(n2)
                     if ch_end:
                         continue

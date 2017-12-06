@@ -1007,7 +1007,7 @@ class LearningProcess:
     def __get_in_v_N_union(self, v, ignore_noise=False):
         N = None
 
-        for v_in in v.in_neighbours():
+        for v_in in v.in_neighbors():
             t_ = self.p.gm.get_chunk(v_in)
 
             if ignore_noise and t_.is_noise():
@@ -1023,7 +1023,7 @@ class LearningProcess:
     def __get_out_v_N_union(self, v, ignore_noise=False):
         N = None
 
-        for v_out in v.out_neighbours():
+        for v_out in v.out_neighbors():
             t_ = self.p.gm.get_chunk(v_out)
 
             if ignore_noise and t_.is_noise():
@@ -1074,7 +1074,7 @@ class LearningProcess:
         if self.id_N_propagate:
             if not skip_out:
                 # update all outcoming
-                for v_out in tracklet.end_vertex(self.p.gm).out_neighbours():
+                for v_out in tracklet.end_vertex(self.p.gm).out_neighbors():
                     t_ = self.p.gm.get_chunk(v_out)
 
                     if len(t_.P) > 0:
@@ -1092,7 +1092,7 @@ class LearningProcess:
 
             if not skip_in:
                 # update all incoming
-                for v_in in tracklet.start_vertex(self.p.gm).in_neighbours():
+                for v_in in tracklet.start_vertex(self.p.gm).in_neighbors():
                     t_ = self.p.gm.get_chunk(v_in)
 
                     # if t_.is_single() and t_.id not in self.undecided_tracklets:

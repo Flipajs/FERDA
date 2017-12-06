@@ -226,7 +226,7 @@ def prepare_pairs(project):
         best_d = np.inf
         second_best_d = np.inf
 
-        for v_out in project.gm.g.vertex(v).out_neighbours():
+        for v_out in project.gm.g.vertex(v).out_neighbors():
             r2 = p.gm.region(v_out)
 
             if r1.frame() + 1 != r2.frame():
@@ -485,7 +485,7 @@ def get_movement_descriptor_(v1, v2):
 #         best_d = np.inf
 #         second_best_d = np.inf
 #
-#         for v_out in project.gm.g.vertex(v).out_neighbours():
+#         for v_out in project.gm.g.vertex(v).out_neighbors():
 #             r2 = p.gm.region(v_out)
 #
 #             if r1.frame() + 1 != r2.frame():
@@ -675,15 +675,15 @@ def get_movement_histogram(p):
     #     v = p.gm.g.vertex(v)
     #
     #     if v.out_degree() == 1:
-    #         for w in v.out_neighbours():
+    #         for w in v.out_neighbors():
     #             if w.in_degree() == 1 and w.out_degree() == 1:
-    #                 for x in w.out_neighbours():
+    #                 for x in w.out_neighbors():
     #                     if x.in_degree() == 1:
     #                         data.append(get_movement_descriptor(p, v, w, x))
     #             elif w.in_degree() == 1 and w.out_degree() > 1:
     #                 data2.append([])
     #                 cases.append([])
-    #                 for x in w.out_neighbours():
+    #                 for x in w.out_neighbors():
     #                     data2[-1].append(get_movement_descriptor(p, v, w, x))
     #                     cases[-1].append(map(int, (v, w, x)))
 
@@ -833,7 +833,7 @@ def expand_based_on_movement_model(p):
                 if v.in_degree() > 0:
                     options = []
 
-                    for v2 in v.in_neighbours():
+                    for v2 in v.in_neighbors():
                         val = hist_query(H, edges, get_movement_descriptor(p, v2, t[0], t[1]))
                         options.append((val + 1, v2))
 
@@ -857,7 +857,7 @@ def expand_based_on_movement_model(p):
                 if v.out_degree() > 0:
                     options = []
 
-                    for v2 in v.out_neighbours():
+                    for v2 in v.out_neighbors():
                         val = hist_query(H, edges, get_movement_descriptor(p, t[-2], t[-1], v2))
                         options.append((val + 1, v2))
 
@@ -918,7 +918,7 @@ def simple_tracklets(p):
         do_break = False
         while not do_break:
             if v_.in_degree() == 1:
-                for v2 in v_.in_neighbours():
+                for v2 in v_.in_neighbors():
                     if v2.out_degree() > 1:
                         do_break = True
                         break
@@ -937,7 +937,7 @@ def simple_tracklets(p):
         do_break = False
         while not do_break:
             if v_.out_degree() == 1:
-                for v2 in v_.out_neighbours():
+                for v2 in v_.out_neighbors():
                     if v2.in_degree() > 1:
                         do_break = True
                         break
@@ -1166,7 +1166,7 @@ def assign_costs(p, frames):
         if r.frame() not in frames:
             continue
 
-        for v2 in v.out_neighbours():
+        for v2 in v.out_neighbors():
             for e in v.out_edges():
                 v3 = e.target()
                 val = hist_query(H, edges, get_movement_descriptor(p, v, v2, v3))
