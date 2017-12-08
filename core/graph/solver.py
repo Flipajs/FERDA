@@ -1,7 +1,6 @@
 __author__ = 'fnaiser'
 
 from core.graph.graph_utils import *
-from core.settings import Settings as S_
 import numpy as np
 from configuration import Configuration
 from utils.constants import EDGE_CONFIRMED
@@ -655,7 +654,7 @@ class Solver:
                 to_remove.append(n)
 
         print "NODES", len(self.g)
-        S_.general.log_graph_edits = False
+        # S_.general.log_graph_edits = False
         for n in to_remove:
             if n not in self.g:
                 continue
@@ -666,7 +665,7 @@ class Solver:
                 pass
 
         print "NODES", len(self.g)
-        S_.general.log_graph_edits = True
+        # S_.general.log_graph_edits = True
 
         with open(wd+name, 'wb') as f:
             pc = pickle.Pickler(f, -1)
