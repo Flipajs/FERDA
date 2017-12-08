@@ -715,6 +715,28 @@ class RegionClassifierTool(QtGui.QWidget):
         self.prepare_data()
         self.human_iloop_classification(sort=True, n=self.display_n_most_sb.value())
 
+def classify_project(p, data=None, train_n=30):
+    active_f = self.active_features_vect()
+
+    type_map = {'single': 0, 'multi': 1, 'noise': 2, 'part': 3}
+
+    from core.graph.region_chunk import RegionChunk
+
+    print "Classifying tracklets (single/multi/part/no-ID)"
+    for i, t in enumerate(p.chm.chunk_gen()):
+        print_progress(i+1, len(p.chm))
+        freq = [0, 0, 0, 0]
+        rch = RegionChunk(t, p.gm, p.rm)
+        for r in rch.regions_gen():
+            c, d_ = self.classify(None, active_f, data=get_data(r, self.scaler))
+
+            freq[type_map[c]] += 1
+
+        t_class = np.argmax(freq)
+        t.segmentation_class = t_class
+
+    p.save()
+    print "TRACKLET CARDINALITY CLASSIFICATION - DONE"
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

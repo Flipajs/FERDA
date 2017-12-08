@@ -6,7 +6,6 @@ from libs.hickle import hickle
 # import hickle
 import matplotlib.pyplot as plt
 import numpy as np
-from PyQt4.QtGui import QColor
 from sklearn import svm, preprocessing
 from sklearn.ensemble import RandomForestClassifier, IsolationForest
 
@@ -18,7 +17,7 @@ from core.project.project import Project
 from core.region.clustering import clustering
 from utils.drawing.collage import create_collage_rows
 from utils.drawing.points import draw_points
-from utils.misc import print_progress
+from tqdm import tqdm
 from utils.video_manager import get_auto_video_manager
 
 EXP = 'exp1'
@@ -54,6 +53,8 @@ def plotNdto3d(data, labels, core_samples_mask, indices=[0, 1, 2], ax_labels=[''
     plt.title(title)
 
 def display_pairs(p, pairs, file_name, cols=7, item_height=100, item_width=200, border=20):
+    from PyQt4.QtGui import QColor
+
     vm = get_auto_video_manager(p)
 
     part = 0
@@ -206,7 +207,7 @@ def prepare_pairs(project):
     filtered_v = vertices[labels == 0]
     v_num = len(filtered_v)
     i = 0
-    for v in filtered_v:
+    for v in tqdm(filtered_v):
         r1 = project.gm.region(v)
         best_v = None
         best_d = np.inf
@@ -231,12 +232,8 @@ def prepare_pairs(project):
         if best_v is not None and int(best_v) in vs:
             pairs.append(((int(v), int(best_v)), best_d, second_best_d))
 
-        if i % 100 == 0:
-            print_progress(i, v_num)
-
         i += 1
 
-    print_progress(v_num, v_num)
     print
 
     print "saving..."
@@ -531,16 +528,12 @@ def get_max_dist(project):
 
     num_pairs = len(pairs)
     i = 0
-    for (v1, v2), d1, _ in pairs:
+    for (v1, v2), d1, _ in tqdm(pairs):
         if d1 > max_dist:
             max_dist = d1
             max_v1 = v1
             max_v2 = v2
 
-        if i % 1000 == 0:
-            print_progress(i, num_pairs)
-
-    print print_progress(num_pairs, num_pairs)
     print
 
     r1 = project.gm.region(max_v1)
@@ -569,15 +562,13 @@ def get_max_dist2(project):
     print "____________________________"
     print "Estimating max distance"
 
-    i = 0
-
     reg = project.gm.region
 
     safe_dists = []
     pairs = []
 
     num_v = project.gm.g.num_vertices()
-    for v in project.gm.g.vertices():
+    for v in tqdm(project.gm.g.vertices(), total=project.gm.g.num_vertices()):
         if v.out_degree() < 2:
             continue
 
@@ -592,12 +583,6 @@ def get_max_dist2(project):
             safe_dists.append(distances[0])
             pairs.append((best_e[0].source(), best_e[0].target()))
 
-        if i % 1000 == 0:
-            print_progress(i, num_v)
-
-        i += 1
-
-    print print_progress(num_v, num_v)
     print
 
 
@@ -1314,23 +1299,13 @@ def add_score_to_edges(p):
     print "#edges: {}".format(p.gm.g.num_edges())
     i = 0
 
-    # use_for_learning = 0.02
     use_for_learning = 0.1
-
-    # es = p.gm.g.get_edges()
-
-
 
     features_appearance = []
     features_movement = []
     edges = []
 
-    # todo: reset cache...
-    # p.rm.cache_size_limit_ = 1000000
-    # p.rm[:]
-
-    num_edges = p.gm.g.num_edges()
-    for e in p.gm.g.edges():
+    for e in tqdm(p.gm.g.edges(), total=p.gm.g.num_edges()):
         i += 1
         if p.gm.edge_is_chunk(e):
             continue
@@ -1342,11 +1317,6 @@ def add_score_to_edges(p):
         features_movement.append(f)
         
         edges.append(e)
-
-        if i % 1000:
-            print_progress(i, num_edges)
-
-    print_progress(num_edges, num_edges)
 
     print "computing isolation score..."
     vals_appearance = IF_appearance.decision_function(features_appearance)

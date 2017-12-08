@@ -453,8 +453,8 @@ class Project:
 
         self.active_snapshot = -1
 
-        if self.chm is not None:
-            self.solver.one2one(check_tclass=True)
+        # if self.chm is not None:
+        #     self.solver.one2one(check_tclass=True)
 
     def load_snapshot(self, snapshot):
         chm_path = self.working_directory+'/chunk_manager.pkl'
