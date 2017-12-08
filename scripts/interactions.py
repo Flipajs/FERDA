@@ -28,6 +28,8 @@ import copy
 import csv
 from matplotlib.patches import Ellipse
 import waitforbuttonpress
+import h5py
+import warnings
 
 
 def p2e(projective):
@@ -175,7 +177,7 @@ class Interactions(object):
                 # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/test'
             if is_matejs_pc():
                 # project_dir = '/home/matej/prace/ferda/10-15/'
-                project_dir = '/home/matej/prace/ferda/projects/10-15 (copy)/'
+                project_dir = '/home/matej/prace/ferda/projects/camera1_10-15/'
         assert project_dir is not None
         self.__project.load(project_dir)
 
@@ -524,144 +526,172 @@ class Interactions(object):
         plt.imshow(region1.compose(region2.rotate(-30).move((-15, -15))))
         # plt.imshow(region1.move((0, 100)).get_mask())
 
-    def write_synthetized_interactions(self, count=100, out_dir='./out', out_csv='./out/doubleregions.csv'):
+    def write_synthetized_interactions(self, count=100, out_dir='./out', out_csv='./out/doubleregions.csv',
+                                       project_dir=None, out_hdf5=None, hdf5_dataset_name=None):
+        if out_dir is False:
+            out_dir = None
+        if out_csv is False:
+            out_csv = None
+        if out_hdf5 is False:
+            out_hdf5 = None
+
         # angles: positive clockwise, zero direction to right
-        self.__load_project()
+        self.__load_project(project_dir)
         from core.bg_model.median_intensity import MedianIntensity
         self.__bg = MedianIntensity(self.__project)
         self.__bg.compute_model()
 
         single_regions = [item for sublist in self.__single.values() for item in sublist]
         BATCH_SIZE = 250
+        ANGLES = np.arange(0, 360, 10)
+        # ANGLES = [-major_deg]
+        IMAGE_SIZE_PX = 200
+        n = count * len(ANGLES)
 
-        with open(out_csv, 'w') as csv_file:
-            fieldnames = ['filename',
-                'ant1_x', 'ant1_y', 'ant1_major', 'ant1_minor', 'ant1_angle_deg',
-                'ant2_x', 'ant2_y', 'ant2_major', 'ant2_minor', 'ant2_angle_deg',
-                'ant1_id', 'ant2_id', 'theta_rad', 'phi_rad', 'overlap_px',
-                'video_file', 'augmentation_angle_deg']
+        fieldnames = ['filename',
+                      'ant1_x', 'ant1_y', 'ant1_major', 'ant1_minor', 'ant1_angle_deg',
+                      'ant2_x', 'ant2_y', 'ant2_major', 'ant2_minor', 'ant2_angle_deg',
+                      'ant1_id', 'ant2_id', 'theta_rad', 'phi_rad', 'overlap_px',
+                      'video_file', 'augmentation_angle_deg']
+
+        if out_hdf5 is not None:
+            assert hdf5_dataset_name is not None
+            if os.path.exists(out_hdf5):
+                warnings.warn('HDF5 file %s already exists, adding dataset %s.' % (out_hdf5, hdf5_dataset_name))
+            hdf5_file = h5py.File(out_hdf5, mode='a')
+            hdf5_file.create_dataset(hdf5_dataset_name, (n, IMAGE_SIZE_PX, IMAGE_SIZE_PX, 3), np.uint8)  # , compression='szip')
+            # hdf5_file.create_dataset('results', (n, len(fieldnames)))
+
+        if out_csv is not None:
+            csv_file = open(out_csv, 'w')
             csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             csv_writer.writeheader()
 
-            i = 0
-            for i1 in tqdm.tqdm(np.arange(0, count, BATCH_SIZE), desc='batch'):
-                i2 = min(i1 + BATCH_SIZE, count)
-                n = i2 - i1
-                regions = np.random.choice(single_regions, 2 * n)
-                frames = [r.frame() for r in regions]
-                sort_idx = np.argsort(frames)
-                sort_idx_reverse = np.argsort(sort_idx)
-                images_sorted = [self.__video.get_frame(r.frame()) for r in tqdm.tqdm(regions[sort_idx],
-                                                                                      desc='images reading')]
-                images = [images_sorted[idx] for idx in sort_idx_reverse]
+        i = 0
+        for i1 in tqdm.tqdm(np.arange(0, count, BATCH_SIZE), desc='batch'):
+            i2 = min(i1 + BATCH_SIZE, count)
+            n = i2 - i1
+            regions = np.random.choice(single_regions, 2 * n)
+            frames = [r.frame() for r in regions]
+            sort_idx = np.argsort(frames)
+            sort_idx_reverse = np.argsort(sort_idx)
+            images_sorted = [self.__video.get_frame(r.frame()) for r in tqdm.tqdm(regions[sort_idx],
+                                                                                  desc='reading images')]
+            images = [images_sorted[idx] for idx in sort_idx_reverse]
 
-                with tqdm.tqdm(total=n, desc='synthetize') as progress_bar:
-                    for region1, region2, img1, img2 in zip(regions[:n], regions[n:], images[:n], images[n:]):
-                        img_synthetic = None
-                        while True:
-                            # border point angle with respect to object centroid, 0 rad is from the centroid rightwards, positive ccw
-                            theta_rad = np.random.uniform(-math.pi, math.pi)
-                            # approach angle, 0 rad is direction from the object centroid
-                            phi_rad = np.clip(np.random.normal(scale=(math.pi / 2) / 2), math.radians(-80), math.radians(80))
-                            overlap_px = int(round(np.random.gamma(1, 5)))
+            with tqdm.tqdm(total=n, desc='synthetize') as progress_bar:
+                for region1, region2, img1, img2 in zip(regions[:n], regions[n:], images[:n], images[n:]):
+                    img_synthetic = None
+                    while True:
+                        # border point angle with respect to object centroid, 0 rad is from the centroid rightwards, positive ccw
+                        theta_rad = np.random.uniform(-math.pi, math.pi)
+                        # approach angle, 0 rad is direction from the object centroid
+                        phi_rad = np.clip(np.random.normal(scale=(math.pi / 2) / 2), math.radians(-80), math.radians(80))
+                        overlap_px = int(round(np.random.gamma(1, 5)))
 
-                            try:
-                                tregion1, tregion2, img_synthetic, \
-                                synth_centers_xy, region2_main_axis_angle_rad = self.__synthetize(
-                                                                    region1, region2,
-                                                                    theta_rad, phi_rad, overlap_px,
-                                                                    img1, img2)
-                            except IndexError:
-                                print('%s: IndexError, repeating' % img_filename)
-                            if img_synthetic is not None:
-                                break
+                        try:
+                            img_synthetic, mask, synth_centers_xy, region2_main_axis_angle_rad = \
+                                self.__synthetize(region1, region2,theta_rad, phi_rad, overlap_px, img1, img2)
+                        except IndexError:
+                            print('%s: IndexError, repeating' % ('%06d.jpg' % (i + 1)))
+                        if img_synthetic is not None:
+                            break
 
-                        mask = np.logical_or(tregion1.get_mask().astype(bool),
-                                             tregion2.get_mask().astype(np.bool))
-                        centroid_xy, major_deg = self.__get_moments(mask)
-                        angles = np.arange(0, 360, 10)
-                        # angles = [-major_deg]
-                        for angle_deg in angles:
-                            tregion_synthetic = TransformableRegion(img_synthetic)
-                            # tregion_synthetic.set_mask(mask.astype(np.uint8))
-                            tregion_synthetic.rotate(angle_deg, centroid_xy[::-1])
-                            img_rotated = tregion_synthetic.get_img()
-                            img_crop, delta_xy = self.__crop(img_rotated, centroid_xy)
+                    centroid_xy, major_deg = self.__get_moments(mask)
+                    for angle_deg in ANGLES:
+                        tregion_synthetic = TransformableRegion(img_synthetic)
+                        # tregion_synthetic.set_mask(mask.astype(np.uint8))
+                        tregion_synthetic.rotate(angle_deg, centroid_xy[::-1])
+                        img_rotated = tregion_synthetic.get_img()
+                        img_crop, delta_xy = self.__crop(img_rotated, centroid_xy, IMAGE_SIZE_PX)
 
-                            ant1 = {'xy': tregion_synthetic.get_transformed_coords(synth_centers_xy[0]) - delta_xy,
-                                    'major': 4 * region1.major_axis_,
-                                    'minor': 4 * region1.minor_axis_,
-                                    'angle_deg': tregion_synthetic.get_transformed_angle(math.degrees(region1.theta_))}
-                            ant2 = {'xy': tregion_synthetic.get_transformed_coords(synth_centers_xy[1]) - delta_xy,
-                                    'major': 4 * region2.major_axis_,
-                                    'minor': 4 * region2.minor_axis_,
-                                    'angle_deg': tregion_synthetic.get_transformed_angle(
-                                        math.degrees(region2.theta_ + region2_main_axis_angle_rad))}
+                        ant1 = {'xy': tregion_synthetic.get_transformed_coords(synth_centers_xy[0]) - delta_xy,
+                                'major': 4 * region1.major_axis_,
+                                'minor': 4 * region1.minor_axis_,
+                                'angle_deg': tregion_synthetic.get_transformed_angle(math.degrees(region1.theta_))}
+                        ant2 = {'xy': tregion_synthetic.get_transformed_coords(synth_centers_xy[1]) - delta_xy,
+                                'major': 4 * region2.major_axis_,
+                                'minor': 4 * region2.minor_axis_,
+                                'angle_deg': tregion_synthetic.get_transformed_angle(
+                                    math.degrees(region2.theta_ + region2_main_axis_angle_rad))}
 
-                            img_filename = '%06d.jpg' % i
+                        img_filename = '%06d.jpg' % i
+                        results_row = [
+                            ('filename', img_filename),
+                            ('ant1_x', round(ant1['xy'][0], 1)),
+                            ('ant1_y', round(ant1['xy'][1], 1)),
+                            ('ant1_major', round(ant1['major'], 1)),
+                            ('ant1_minor', round(ant1['minor'], 1)),
+                            ('ant1_angle_deg', round(ant1['angle_deg'], 1)),
+                            ('ant2_x', round(ant2['xy'][0], 1)),
+                            ('ant2_y', round(ant2['xy'][1], 1)),
+                            ('ant2_major', round(ant2['major'], 1)),
+                            ('ant2_minor', round(ant2['minor'], 1)),
+                            ('ant2_angle_deg', round(ant2['angle_deg'], 1)),
+                            ('ant1_id', region1.id()),
+                            ('ant2_id', region2.id()),
+                            ('theta_rad', round(theta_rad, 1)),
+                            ('phi_rad', round(phi_rad, 1)),
+                            ('overlap_px', round(overlap_px, 1)),
+                            ('augmentation_angle_deg', angle_deg),
+                            ('video_file', os.path.basename(self.__video.video_path)),
+                        ]
+
+                        if out_dir is not None:
                             cv2.imwrite(os.path.join(out_dir, img_filename), img_crop)
-                            csv_writer.writerow({
-                                'filename': img_filename,
-                                'ant1_x': round(ant1['xy'][0], 1),
-                                'ant1_y': round(ant1['xy'][1], 1),
-                                'ant1_major': round(ant1['major'], 1),
-                                'ant1_minor': round(ant1['minor'], 1),
-                                'ant1_angle_deg': round(ant1['angle_deg'], 1),
-                                'ant2_x': round(ant2['xy'][0], 1),
-                                'ant2_y': round(ant2['xy'][1], 1),
-                                'ant2_major': round(ant2['major'], 1),
-                                'ant2_minor': round(ant2['minor'], 1),
-                                'ant2_angle_deg': round(ant2['angle_deg'], 1),
-                                'ant1_id': region1.id(),
-                                'ant2_id': region2.id(),
-                                'theta_rad': round(theta_rad, 1),
-                                'phi_rad': round(phi_rad, 1),
-                                'overlap_px': round(overlap_px, 1),
-                                'augmentation_angle_deg': angle_deg,
-                                'video_file': os.path.basename(self.__video.video_path),
-                            })
-                            i += 1
+                        if out_csv is not None:
+                            csv_writer.writerow(dict(results_row))
+                        if out_hdf5 is not None:
+                            hdf5_file[hdf5_dataset_name][i] = img_crop
+                            # hdf5_file['results'][i] = [value for key, value in results_row]
 
-                            # fig = plt.figure()
-                            # plt.imshow(img_synthetic_upright)
-                            # ax = plt.gca()
-                            # ax.add_patch(Ellipse(xy=ant1['xy'],
-                            #                      width=ant1['major'],
-                            #                      height=ant1['minor'],
-                            #                      angle=-ant1['angle_deg'],
-                            #                      edgecolor='r',
-                            #                      facecolor='none'))
-                            # ax.add_patch(Ellipse(xy=ant2['xy'],
-                            #                      width=ant2['major'],
-                            #                      height=ant2['minor'],
-                            #                      angle=-ant2['angle_deg'],
-                            #                      edgecolor='r',
-                            #                      facecolor='none'))
-                            # fig.savefig('out/debug/%03d.png' % self.__i__, transparent=True, bbox_inches='tight', pad_inches=0)
-                            # plt.close(fig)
-                            #
-                            # fig = plt.figure()
-                            # plt.imshow(img_crop)
-                            # ax = plt.gca()
-                            # ax.add_patch(Ellipse(xy=ant1_crop['xy'],
-                            #                      width=ant1_crop['major'],
-                            #                      height=ant1_crop['minor'],
-                            #                      angle=-ant1_crop['angle_deg'],
-                            #                      edgecolor='r',
-                            #                      facecolor='none'))
-                            # ax.add_patch(Ellipse(xy=ant2_crop['xy'],
-                            #                      width=ant2_crop['major'],
-                            #                      height=ant2_crop['minor'],
-                            #                      angle=-ant2_crop['angle_deg'],
-                            #                      edgecolor='r',
-                            #                      facecolor='none'))
-                            # fig.savefig('out/debug/%03d_crop.png' % self.__i__, transparent=True, bbox_inches='tight', pad_inches=0)
-                            # plt.close(fig)
+                        i += 1
 
-                            # self.__i += 1
-                        progress_bar.update()
-                progress_bar.close()
+                        # fig = plt.figure()
+                        # plt.imshow(img_synthetic_upright)
+                        # ax = plt.gca()
+                        # ax.add_patch(Ellipse(xy=ant1['xy'],
+                        #                      width=ant1['major'],
+                        #                      height=ant1['minor'],
+                        #                      angle=-ant1['angle_deg'],
+                        #                      edgecolor='r',
+                        #                      facecolor='none'))
+                        # ax.add_patch(Ellipse(xy=ant2['xy'],
+                        #                      width=ant2['major'],
+                        #                      height=ant2['minor'],
+                        #                      angle=-ant2['angle_deg'],
+                        #                      edgecolor='r',
+                        #                      facecolor='none'))
+                        # fig.savefig('out/debug/%03d.png' % self.__i__, transparent=True, bbox_inches='tight', pad_inches=0)
+                        # plt.close(fig)
+                        #
+                        # fig = plt.figure()
+                        # plt.imshow(img_crop)
+                        # ax = plt.gca()
+                        # ax.add_patch(Ellipse(xy=ant1_crop['xy'],
+                        #                      width=ant1_crop['major'],
+                        #                      height=ant1_crop['minor'],
+                        #                      angle=-ant1_crop['angle_deg'],
+                        #                      edgecolor='r',
+                        #                      facecolor='none'))
+                        # ax.add_patch(Ellipse(xy=ant2_crop['xy'],
+                        #                      width=ant2_crop['major'],
+                        #                      height=ant2_crop['minor'],
+                        #                      angle=-ant2_crop['angle_deg'],
+                        #                      edgecolor='r',
+                        #                      facecolor='none'))
+                        # fig.savefig('out/debug/%03d_crop.png' % self.__i__, transparent=True, bbox_inches='tight', pad_inches=0)
+                        # plt.close(fig)
 
+                        # self.__i += 1
+                    progress_bar.update()
+            progress_bar.close()
+
+        if out_hdf5 is not None:
+            hdf5_file.close()
+
+        if out_csv is not None:
+            csv_file.close()
 
         # # montage bounding box
         # plt.imshow(img_synthetic_upright)
@@ -801,8 +831,9 @@ class Interactions(object):
         #                      angle=-math.degrees(single2.theta_ + region2_main_axis_angle_rad),
         #                      edgecolor='r',
         #                      facecolor='none'))
-        return tregion1, tregion2, img_synthetic, \
-               (synth_center_xy1, synth_center_xy2), region2_main_axis_angle_rad
+        mask = np.logical_or(tregion1.get_mask().astype(bool),
+                             tregion2.get_mask().astype(np.bool))
+        return img_synthetic, mask, (synth_center_xy1, synth_center_xy2), region2_main_axis_angle_rad
 
     def __get_moments(self, mask):
         # plt.figure()
@@ -819,8 +850,7 @@ class Interactions(object):
                                  (moments['muprime20'] - moments['muprime02'])))
         return centroid_xy, major_deg
 
-    def __crop(self, img_synthetic, centroid_xy):
-        img_size = 200
+    def __crop(self, img_synthetic, centroid_xy, img_size):
         img_crop = np.zeros((img_size, img_size, 3), dtype=np.uint8)
         dest_top_left = -np.clip(np.array(centroid_xy[::-1]) - img_size / 2, None, 0).round().astype(int)
         dest_bot_right = np.clip(
