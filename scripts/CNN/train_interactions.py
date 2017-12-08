@@ -8,6 +8,7 @@ import numpy as np
 import time
 from os.path import join
 from sklearn.preprocessing import StandardScaler
+from keras.preprocessing.image import ImageDataGenerator
 import numbers
 import pandas as pd
 try:
@@ -30,7 +31,7 @@ ROOT_DIR = '../../data/CNN_models/interactions'
 # ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 # DATA_DIR = ROOT_DIR + '/data'
-DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/'
+DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1712_1k_36rot'
 ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/'
 ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
 
@@ -139,7 +140,7 @@ def model():
     return Model(input_shape, out)
 
 
-def train_and_evaluate(model, params):
+def train_and_evaluate(model, train_generator, test_generator, y_test, params):
     # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
     model.compile(loss=lambda x, y: interaction_loss(x, y, (angle_scaler.mean_, angle_scaler.scale_), params['loss_alpha']),
                   optimizer='adam')
@@ -150,8 +151,8 @@ def train_and_evaluate(model, params):
     tb = TensorBoard(log_dir=TENSOR_BOARD_DIR, histogram_freq=0, batch_size=32, write_graph=True, write_grads=False,
                      write_images=False, embeddings_freq=0, embeddings_layer_names=None,
                      embeddings_metadata=None)
-    m.fit(X_train, y_train, validation_split=0.05, epochs=params['epochs'], batch_size=BATCH_SIZE, verbose=1,
-          callbacks=[csv_logger, tb])
+    m.fit_generator(train_generator, steps_per_epoch=params['steps_per_epoch'], epochs=params['epochs'],
+                    verbose=1, callbacks=[csv_logger, tb])  # , validation_data=
 
     # evaluate model with standardized dataset
     # estimator = KerasRegressor(build_fn=model, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
@@ -171,23 +172,23 @@ def train_and_evaluate(model, params):
     # #                                                     train_size=0.75, test_size=0.25)
     # pipeline.fit(X_train, y_train, mlp__validation_split=0.05)
 
-    pred = m.predict(X_test)
-    pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
-    pred[:, [4, 9]] = angle_scaler.inverse_transform(pred[:, [4, 9]])
+    pred = m.predict_generator(test_generator, int(len(X_test) / BATCH_SIZE))
+    # pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
+    # pred[:, [4, 9]] = angle_scaler.inverse_transform(pred[:, [4, 9]])
 
     with h5py.File(join(EXPERIMENT_DIR, 'predictions.h5'), 'w') as hf:
         hf.create_dataset("data", data=pred)
 
-    xy, angle, indices = match_pred_to_gt(pred, y_test, np)
+    m.save_weights(join(EXPERIMENT_DIR, 'weights.h5'))
+
+    xy, angle, indices = match_pred_to_gt(pred, y_test.values, np)
     xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
     angle_mae = (angle[indices[:, 0], indices[:, 1]]).mean()
-
     results = pd.DataFrame.from_items([('xy MAE', [xy_mae]), ('angle MAE', angle_mae)])
     print(results.to_string(index=False))
     results.to_csv(join(EXPERIMENT_DIR, 'results.csv'))
 
     # print m.score(X_test, y_test)
-    m.save_weights(join(EXPERIMENT_DIR, 'weights.h5'))
     # model_json = m.to_json()
     # with open(DATA_DIR + "/model.json", "w") as json_file:
     #     json_file.write(model_json)
@@ -203,8 +204,8 @@ if __name__ == '__main__':
     # OUT_NAME = 'softmax'
     # CONTINUE = False
     # SAMPLES = 2000
-    NAMES = 'ant1_x, ant1_y, ant1_major, ant1_minor, ant1_angle, ' \
-            'ant2_x, ant2_y, ant2_major, ant2_minor, ant2_angle'
+    NAMES = ['ant1_x', 'ant1_y', 'ant1_major', 'ant1_minor', 'ant1_angle_deg',
+             'ant2_x', 'ant2_y', 'ant2_major', 'ant2_minor', 'ant2_angle_deg']
     FORMATS = 10 * 'f,'
 
     if len(sys.argv) > 1:
@@ -218,38 +219,41 @@ if __name__ == '__main__':
     # if len(sys.argv) > 5:
     #     OUT_NAME = sys.argv[5]
 
-    with h5py.File(DATA_DIR + '/imgs_inter_train.h5', 'r') as hf:
-        X_train = hf['data'][:]
-    with h5py.File(DATA_DIR + '/imgs_inter_test.h5', 'r') as hf:
-        X_test = hf['data'][:]
-    with h5py.File(DATA_DIR + '/results_inter_train.h5', 'r') as hf:
-        y_train = hf['data'][:]
-        # y_train_np = np.core.records.fromarrays(hf['data'][:].transpose(), names=NAMES, formats=FORMATS)
-    with h5py.File(DATA_DIR + '/results_inter_test.h5', 'r') as hf:
-        y_test = hf['data'][:]
-        # y_test_np = np.core.records.fromarrays(hf['data'][:].transpose(), names=NAMES, formats=FORMATS)
+    hf = h5py.File(join(DATA_DIR, '1712_1k_36rot.h5'), 'r')
+    X_train = hf['train']
+    X_test = hf['test']
+    y_train_df = pd.read_csv(join(DATA_DIR, '1712_1k_36rot_train.csv'))
+    y_train = y_train_df[NAMES]
+    y_test_df = pd.read_csv(join(DATA_DIR, '1712_1k_36rot_test.csv'))
+    y_test = y_test_df[NAMES]
     print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
     parameters = {'epochs': NUM_EPOCHS,
                   'loss_alpha': np.linspace(0, 1, 30),
-                  # 'loss_alpha': 0.17,
+                  # 'loss_alpha': 0.34,
+                  'steps_per_epoch': int(len(X_train) / BATCH_SIZE)
                   }
 
     # fix random seed for reproducibility
     seed = 7
     np.random.seed(seed)
 
-    # rescale data
+    # # rescale data
     xy_scaler = StandardScaler()
     xy_scaler.mean_ = 0  # 100
     xy_scaler.scale_ = 1  # 100
-    # y_train = xy_scaler.transform(y_train)
-    # y_test = xy_scaler.transform(y_test)
-    y_train[:, [0, 1, 5, 6]] = xy_scaler.transform(y_train[:, [0, 1, 5, 6]])
+    # # y_train = xy_scaler.transform(y_train)
+    # # y_test = xy_scaler.transform(y_test)
+    # y_train[:, [0, 1, 5, 6]] = xy_scaler.transform(y_train[:, [0, 1, 5, 6]])
     angle_scaler = StandardScaler()
     angle_scaler.mean_ = 0  # 180
     angle_scaler.scale_ = 1  # 180
-    y_train[:, [4, 9]] = angle_scaler.transform(y_train[:, [4, 9]])
+    # y_train[:, [4, 9]] = angle_scaler.transform(y_train[:, [4, 9]])
+
+    train_datagen = ImageDataGenerator(rescale=1./255)
+    train_generator = train_datagen.flow(X_train, y_train)
+    test_datagen = ImageDataGenerator(rescale=1./255)
+    test_generator = test_datagen.flow(X_test, shuffle=False)
 
     base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
     BASE_EXPERIMENT_DIR = ROOT_EXPERIMENT_DIR + base_experiment_name
@@ -272,15 +276,16 @@ if __name__ == '__main__':
             TENSOR_BOARD_DIR = join(BASE_TENSOR_BOARD_DIR, str(alpha))
 
             parameters['loss_alpha'] = alpha
-            results_ = train_and_evaluate(m, parameters)
+            results_ = train_and_evaluate(m, train_generator, test_generator, y_test, parameters)
             results_['loss_alpha'] = alpha
             results = results.append(results_, ignore_index=True)
 
+        print(results.to_string(index=False))
+        results.to_csv(join(BASE_EXPERIMENT_DIR, 'results.csv'))
     else:
         m = model()
         EXPERIMENT_DIR = BASE_EXPERIMENT_DIR
         TENSOR_BOARD_DIR = BASE_TENSOR_BOARD_DIR
-        results = train_and_evaluate(m, parameters)
+        results = train_and_evaluate(m, train_generator, test_generator, y_test, parameters)
 
-    print(results.to_string(index=False))
-    results.to_csv(join(BASE_EXPERIMENT_DIR, 'results.csv'))
+    hf.close()
