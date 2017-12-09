@@ -542,11 +542,16 @@ class Interactions(object):
         self.__bg.compute_model()
 
         single_regions = [item for sublist in self.__single.values() for item in sublist]
-        BATCH_SIZE = 250
-        ANGLES = np.arange(0, 360, 10)
-        # ANGLES = [-major_deg]
+        BATCH_SIZE = 250  # 2* BATCH_SIZE images must fit into memory
         IMAGE_SIZE_PX = 200
-        n = count * len(ANGLES)
+        # ANGLES = np.arange(0, 360, 10)
+        # ANGLES = 'normalize'
+        ANGLES = 'random'
+        if ANGLES == 'random' or ANGLES == 'normalize':
+            n_angles = 1
+        else:
+            n_angles = len(ANGLES)
+        assert count % n_angles == 0
 
         fieldnames = ['filename',
                       'ant1_x', 'ant1_y', 'ant1_major', 'ant1_minor', 'ant1_angle_deg',
@@ -559,7 +564,7 @@ class Interactions(object):
             if os.path.exists(out_hdf5):
                 warnings.warn('HDF5 file %s already exists, adding dataset %s.' % (out_hdf5, hdf5_dataset_name))
             hdf5_file = h5py.File(out_hdf5, mode='a')
-            hdf5_file.create_dataset(hdf5_dataset_name, (n, IMAGE_SIZE_PX, IMAGE_SIZE_PX, 3), np.uint8)  # , compression='szip')
+            hdf5_file.create_dataset(hdf5_dataset_name, (count, IMAGE_SIZE_PX, IMAGE_SIZE_PX, 3), np.uint8)  # , compression='szip')
             # hdf5_file.create_dataset('results', (n, len(fieldnames)))
 
         if out_csv is not None:
@@ -568,7 +573,7 @@ class Interactions(object):
             csv_writer.writeheader()
 
         i = 0
-        for i1 in tqdm.tqdm(np.arange(0, count, BATCH_SIZE), desc='batch'):
+        for i1 in tqdm.tqdm(np.arange(0, int(count / n_angles), BATCH_SIZE), desc='batch'):
             i2 = min(i1 + BATCH_SIZE, count)
             n = i2 - i1
             regions = np.random.choice(single_regions, 2 * n)
@@ -579,7 +584,7 @@ class Interactions(object):
                                                                                   desc='reading images')]
             images = [images_sorted[idx] for idx in sort_idx_reverse]
 
-            with tqdm.tqdm(total=n, desc='synthetize') as progress_bar:
+            with tqdm.tqdm(total=n * n_angles, desc='synthetize') as progress_bar:
                 for region1, region2, img1, img2 in zip(regions[:n], regions[n:], images[:n], images[n:]):
                     img_synthetic = None
                     while True:
@@ -598,7 +603,13 @@ class Interactions(object):
                             break
 
                     centroid_xy, major_deg = self.__get_moments(mask)
-                    for angle_deg in ANGLES:
+                    if ANGLES == 'random':
+                        angles = [np.random.randint(0, 359)]
+                    elif ANGLES == 'normalize':
+                        angles = [-major_deg]
+                    else:
+                        angles = ANGLES
+                    for angle_deg in angles:
                         tregion_synthetic = TransformableRegion(img_synthetic)
                         # tregion_synthetic.set_mask(mask.astype(np.uint8))
                         tregion_synthetic.rotate(angle_deg, centroid_xy[::-1])
@@ -642,7 +653,7 @@ class Interactions(object):
                         if out_csv is not None:
                             csv_writer.writerow(dict(results_row))
                         if out_hdf5 is not None:
-                            hdf5_file[hdf5_dataset_name][i] = img_crop
+                            hdf5_file[hdf5_dataset_name][i, ...] = img_crop
                             # hdf5_file['results'][i] = [value for key, value in results_row]
 
                         i += 1
@@ -684,7 +695,7 @@ class Interactions(object):
                         # plt.close(fig)
 
                         # self.__i += 1
-                    progress_bar.update()
+                        progress_bar.update()
             progress_bar.close()
 
         if out_hdf5 is not None:
