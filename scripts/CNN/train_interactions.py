@@ -31,7 +31,7 @@ ROOT_DIR = '../../data/CNN_models/interactions'
 # ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 # DATA_DIR = ROOT_DIR + '/data'
-DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1712_1k_36rot'
+DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1712_10k_36rot'
 ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/'
 ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
 
@@ -209,8 +209,8 @@ if __name__ == '__main__':
     print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
     parameters = {'epochs': NUM_EPOCHS,
-                  'loss_alpha': np.linspace(0, 1, 30),
-                  # 'loss_alpha': 0.34,
+                  # 'loss_alpha': np.linspace(0, 1, 30),
+                  'loss_alpha': 0.62,
                   'steps_per_epoch': int(len(X_train) / BATCH_SIZE)
                   }
 
@@ -255,7 +255,7 @@ if __name__ == '__main__':
             TENSOR_BOARD_DIR = join(BASE_TENSOR_BOARD_DIR, str(alpha))
 
             parameters['loss_alpha'] = alpha
-            m = train(m, train_generator, test_generator, parameters)
+            m = train(m, train_generator, parameters)
             # m.load_weights(join(EXPERIMENT_DIR, 'weights.h5'))
             results_ = evaluate(m, test_generator, y_test)
             results_['loss_alpha'] = alpha
@@ -267,7 +267,7 @@ if __name__ == '__main__':
         m = model()
         EXPERIMENT_DIR = BASE_EXPERIMENT_DIR
         TENSOR_BOARD_DIR = BASE_TENSOR_BOARD_DIR
-        m = train(m, train_generator, test_generator, parameters)
+        m = train(m, train_generator, parameters)
         # m.load_weights(join(EXPERIMENT_DIR, 'weights.h5'))
         results = evaluate(m, test_generator, y_test)
 
