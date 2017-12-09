@@ -42,6 +42,9 @@ TWO_TESTS = True
 WEIGHTS = 'cam3_zebr_weights_vgg_dilated'
 NUM_PARAMS = 10
 
+NAMES = ['ant1_x', 'ant1_y', 'ant1_major', 'ant1_minor', 'ant1_angle_deg',
+         'ant2_x', 'ant2_y', 'ant2_major', 'ant2_minor', 'ant2_angle_deg']
+
 
 def angle_absolute_error(y_true, y_pred, backend, scaler=None):
     if scaler is not None:
@@ -140,7 +143,7 @@ def model():
     return Model(input_shape, out)
 
 
-def train_and_evaluate(model, train_generator, test_generator, y_test, params):
+def train(model, train_generator, params):
     # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
     model.compile(loss=lambda x, y: interaction_loss(x, y, (angle_scaler.mean_, angle_scaler.scale_), params['loss_alpha']),
                   optimizer='adam')
@@ -151,47 +154,26 @@ def train_and_evaluate(model, train_generator, test_generator, y_test, params):
     tb = TensorBoard(log_dir=TENSOR_BOARD_DIR, histogram_freq=0, batch_size=32, write_graph=True, write_grads=False,
                      write_images=False, embeddings_freq=0, embeddings_layer_names=None,
                      embeddings_metadata=None)
-    m.fit_generator(train_generator, steps_per_epoch=params['steps_per_epoch'], epochs=params['epochs'],
+    model.fit_generator(train_generator, steps_per_epoch=params['steps_per_epoch'], epochs=params['epochs'],
                     verbose=1, callbacks=[csv_logger, tb])  # , validation_data=
 
-    # evaluate model with standardized dataset
-    # estimator = KerasRegressor(build_fn=model, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=1)
-    #
-    # kfold = KFold(n_splits=10, random_state=seed)
-    # results = cross_val_score(estimator, X_train, y_train, cv=kfold)
-    # print("Results: %.2f (%.2f) MSE" % (results.mean(), results.std()))
-    # estimator.fit(X_train, y_train, validation_split=0.05)
-    # from sklearn.pipeline import Pipeline
-    # from sklearn.preprocessing import StandardScaler
-    #
-    # estimators = []
-    # estimators.append(('standardize', StandardScaler()))
-    # estimators.append(('mlp', KerasRegressor(build_fn=model, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, verbose=2)))
-    # pipeline = Pipeline(estimators)
-    # # X_train, X_test, y_train, y_test = train_test_split(X, Y,
-    # #                                                     train_size=0.75, test_size=0.25)
-    # pipeline.fit(X_train, y_train, mlp__validation_split=0.05)
+    model.save_weights(join(EXPERIMENT_DIR, 'weights.h5'))
+    return model
 
-    pred = m.predict_generator(test_generator, int(len(X_test) / BATCH_SIZE))
+
+def evaluate(model, test_generator, y_test):
+    pred = model.predict_generator(test_generator, int(len(y_test) / BATCH_SIZE))
     # pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
     # pred[:, [4, 9]] = angle_scaler.inverse_transform(pred[:, [4, 9]])
 
     with h5py.File(join(EXPERIMENT_DIR, 'predictions.h5'), 'w') as hf:
         hf.create_dataset("data", data=pred)
-
-    m.save_weights(join(EXPERIMENT_DIR, 'weights.h5'))
-
     xy, angle, indices = match_pred_to_gt(pred, y_test.values, np)
     xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
     angle_mae = (angle[indices[:, 0], indices[:, 1]]).mean()
     results = pd.DataFrame.from_items([('xy MAE', [xy_mae]), ('angle MAE', angle_mae)])
     print(results.to_string(index=False))
     results.to_csv(join(EXPERIMENT_DIR, 'results.csv'))
-
-    # print m.score(X_test, y_test)
-    # model_json = m.to_json()
-    # with open(DATA_DIR + "/model.json", "w") as json_file:
-    #     json_file.write(model_json)
     return results
 
 
@@ -204,8 +186,6 @@ if __name__ == '__main__':
     # OUT_NAME = 'softmax'
     # CONTINUE = False
     # SAMPLES = 2000
-    NAMES = ['ant1_x', 'ant1_y', 'ant1_major', 'ant1_minor', 'ant1_angle_deg',
-             'ant2_x', 'ant2_y', 'ant2_major', 'ant2_minor', 'ant2_angle_deg']
     FORMATS = 10 * 'f,'
 
     if len(sys.argv) > 1:
@@ -219,12 +199,12 @@ if __name__ == '__main__':
     # if len(sys.argv) > 5:
     #     OUT_NAME = sys.argv[5]
 
-    hf = h5py.File(join(DATA_DIR, '1712_1k_36rot.h5'), 'r')
+    hf = h5py.File(join(DATA_DIR, 'images.h5'), 'r')
     X_train = hf['train']
     X_test = hf['test']
-    y_train_df = pd.read_csv(join(DATA_DIR, '1712_1k_36rot_train.csv'))
+    y_train_df = pd.read_csv(join(DATA_DIR, 'train.csv'))
     y_train = y_train_df[NAMES]
-    y_test_df = pd.read_csv(join(DATA_DIR, '1712_1k_36rot_test.csv'))
+    y_test_df = pd.read_csv(join(DATA_DIR, 'test.csv'))
     y_test = y_test_df[NAMES]
     print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
@@ -256,13 +236,12 @@ if __name__ == '__main__':
     test_generator = test_datagen.flow(X_test, shuffle=False)
 
     base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
+    # base_experiment_name = '171208_2152_batch_augmented_1k'
     BASE_EXPERIMENT_DIR = ROOT_EXPERIMENT_DIR + base_experiment_name
     BASE_TENSOR_BOARD_DIR = join(ROOT_TENSOR_BOARD_DIR, base_experiment_name)
 
     if not os.path.exists(BASE_EXPERIMENT_DIR):
         os.mkdir(BASE_EXPERIMENT_DIR)
-    # if not os.path.exists(join(BASE_EXPERIMENT_DIR, 'logs')):
-    #     os.mkdir(join(BASE_EXPERIMENT_DIR, 'logs'))
 
     results = pd.DataFrame()
 
@@ -276,7 +255,9 @@ if __name__ == '__main__':
             TENSOR_BOARD_DIR = join(BASE_TENSOR_BOARD_DIR, str(alpha))
 
             parameters['loss_alpha'] = alpha
-            results_ = train_and_evaluate(m, train_generator, test_generator, y_test, parameters)
+            m = train(m, train_generator, test_generator, parameters)
+            # m.load_weights(join(EXPERIMENT_DIR, 'weights.h5'))
+            results_ = evaluate(m, test_generator, y_test)
             results_['loss_alpha'] = alpha
             results = results.append(results_, ignore_index=True)
 
@@ -286,6 +267,8 @@ if __name__ == '__main__':
         m = model()
         EXPERIMENT_DIR = BASE_EXPERIMENT_DIR
         TENSOR_BOARD_DIR = BASE_TENSOR_BOARD_DIR
-        results = train_and_evaluate(m, train_generator, test_generator, y_test, parameters)
+        m = train(m, train_generator, test_generator, parameters)
+        # m.load_weights(join(EXPERIMENT_DIR, 'weights.h5'))
+        results = evaluate(m, test_generator, y_test)
 
     hf.close()
