@@ -178,7 +178,7 @@ def evaluate(model, test_generator, y_test):
 
 
 if __name__ == '__main__':
-    NUM_EPOCHS = 10
+    NUM_EPOCHS = 6
     # NUM_EPOCHS = 1
     # USE_PREVIOUS_AS_INIT = 0
     # K = 6
@@ -209,8 +209,8 @@ if __name__ == '__main__':
     print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
     parameters = {'epochs': NUM_EPOCHS,
-                  # 'loss_alpha': np.linspace(0, 1, 30),
-                  'loss_alpha': 0.62,
+                  'loss_alpha': np.linspace(0, 1, 10),
+                  # 'loss_alpha': 0.62,
                   'steps_per_epoch': int(len(X_train) / BATCH_SIZE)
                   }
 
