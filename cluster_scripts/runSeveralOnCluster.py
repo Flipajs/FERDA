@@ -3,7 +3,7 @@ import os
 import datetime
 import shutil
 import auxForRunSeveral as ars
-import prepare_for_cluster as pfc
+import prepare_for_cluster_slurm as pfc #modified for slurm
 import subprocess
 
 # Usage:
@@ -39,16 +39,20 @@ import subprocess
 ## ---------------------------------
 # ---- CONFIG BEGIN  -----
 remoteUser = "casillas"
-remoteHost = "bjoern22.ista.local";
+#remoteHost = "bjoern22.ista.local";
+remoteHost = 'gpu62.ista.local'
 # Ferda files will be copied inside this directory in the cluster and retrieved from there
-remoteWorkingPath = ars.fixPath("/nfs/scistore12/cremegrp/casillas/FNWD/");  #!!!!
+#remoteWorkingPath = ars.fixPath("/nfs/scistore12/cremegrp/casillas/FINCOLWD/");  #!!!!COLONIES
+remoteWorkingPath = ars.fixPath("/nfs/scistore12/cremegrp/casillas/FNWD/");
 remoteFerdaPath = "/nfs/scistore12/cremegrp/casillas/ferda/FERDA/"
+#remoteFerdaPath = "/nfs/scistore12/cremegrp/casillas/new_ferda/"#!!!COLONIES
 
 # Where to save THIS SCRIPT'S logs
 localLogPath = ars.fixPath("/home/casillas/Documents/FNWD/logs/");
 
 # normally qsub  use cat for testing purposes only
-clusterRunCommand = "qsub"  # qsub after testing
+#clusterRunCommand = "qsub"  # qsub after testing
+clusterRunCommand= "sbatch"
 
 separatorInFile = ',';
 numPartsPerMat = 10;
@@ -149,10 +153,13 @@ for l in lines:
     # enqueue the command that will submit the job for execution in the cluster
     submitCommand = "ssh " + remoteUser + "@" + remoteHost + " " + clusterRunCommand + " " + remoteProjectPath + "copy_for_cluster/run_ferda_parallel.sh"
     remoteCommandQueue = [(submitCommand,numFiles)] + remoteCommandQueue
-    submitCommand = "ssh " + remoteUser + "@" + remoteHost + " " + clusterRunCommand + " " + remoteProjectPath + "copy_for_cluster/run_ferda_export.sh"
+    submitCommand = "ssh " + remoteUser + "@" + remoteHost + " " + clusterRunCommand + " " + remoteProjectPath + "copy_for_cluster/run_ferda_assemble.sh"
     remoteCommandQueue = [(submitCommand,numFiles)] + remoteCommandQueue
-    submitCommand = "ssh " + remoteUser + "@" + remoteHost + " " + clusterRunCommand + " " + remoteProjectPath + "copy_for_cluster/run_matlab_convert.sh"
-    remoteCommandQueue = [(submitCommand,numFiles)] + remoteCommandQueue
+	#uncomment below for colonies
+    ##submitCommand = "ssh " + remoteUser + "@" + remoteHost + " " + clusterRunCommand + " " + remoteProjectPath + "copy_for_cluster/run_ferda_export.sh"
+    ##remoteCommandQueue = [(submitCommand,numFiles)] + remoteCommandQueue
+    ##submitCommand = "ssh " + remoteUser + "@" + remoteHost + " " + clusterRunCommand + " " + remoteProjectPath + "copy_for_cluster/run_matlab_convert.sh"
+    ##remoteCommandQueue = [(submitCommand,numFiles)] + remoteCommandQueue
 
 
     numFiles += 1
@@ -160,7 +167,7 @@ for l in lines:
     localVideoPath = ars.get_videopath(localProjectFile)
 
     # and add the command to the afterfinish script to retrieve all that this produces
-    localAfterFinishScript += "scp -r " + remoteUser + "@" + remoteHost + ":" + remoteProjectPath + "copy_for_cluster/*" + " " + localProjectPath + "copy_for_cluster/"+"\n";
+    localAfterFinishScript += "scp -r " + remoteUser + "@" + remoteHost + ":" + remoteProjectPath + "copy_for_cluster/*" + " " + localProjectPath +"\n";
     #localAfterFinishScript += "scp  " + remoteUser + "@" + remoteHost + ":" + remoteProjectPath + "copy_for_cluster/*.fproj" + " " + localProjectPath + "\n";
     #localAfterFinishScript += "scp  " + remoteUser + "@" + remoteHost + ":" + remoteProjectPath + "copy_for_cluster/*.mat" + " " + localProjectPath + "copy_for_cluster/"+"\n";
     #localAfterFinishScript += "scp  " + remoteUser + "@" + remoteHost + ":" + remoteProjectPath + "copy_for_cluster/*.pkl" + " " + localProjectPath + "\n";
@@ -198,7 +205,8 @@ if ((answer == 'y') or (answer == 'Y')):
         #Include hook-job number, if this is a job submission
         if (jobNumber != 0) and (clusterRunCommand in comSplit):
             comPos = comSplit.index(clusterRunCommand)+1;
-            newCom = comSplit[:comPos]+["-hold_jid",str(jobNumber)]+comSplit[comPos:];
+            #newCom = comSplit[:comPos]+["-hold_jid",str(jobNumber)]+comSplit[comPos:];
+            newCom = comSplit[:comPos]+["--dependency=afterok:"+str(jobNumber)]+comSplit[comPos:];
             comSplit = newCom;
             print("N");
 
@@ -206,11 +214,13 @@ if ((answer == 'y') or (answer == 'Y')):
         print(comSplit)
         r = subprocess.check_output(comSplit);
 
-        pos = r.find("Your job-array ");
+        #pos = r.find("Your job-array ");
+        pos = r.find("Submitted batch job");
         if pos != -1:  #This was a job submission
             print("FOUND "+str(pos)+" .. \t"),
-            r2 = r[pos+15:];
-            jobNumber = int(r2[:r2.find('.')]);
+            #r2 = r[pos+15:];
+            #jobNumber = int(r2[:r2.find('.')]);
+            jobNumber = int(r.strip().split(" ")[3])
             firstJobSubmitted = True;
             print("Job number = "+str(jobNumber)+"\n")
 

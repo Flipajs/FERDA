@@ -8,3 +8,6 @@ ferda_output.avi
 mat_name.mat
 name.arr
 *.DS_Store
+*.txt
+*.sh
+my_project_ve/
