@@ -56,7 +56,7 @@ print "graph data"
 # Force the solver to be arpack, since amg is numerically
 # unstable on this example
 labels = spectral_clustering(graph, n_clusters=10)
-print "clustering"
+print "prepare_region_cardinality_samples"
 label_im = -np.ones(mask.shape)
 label_im[mask] = labels
 

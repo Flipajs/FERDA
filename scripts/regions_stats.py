@@ -14,7 +14,7 @@ from core.graph.region_chunk import RegionChunk
 from core.graph.solver import Solver
 from core.id_detection.features import get_hog_features, get_crop
 from core.project.project import Project
-from core.region.clustering import clustering
+from core.region.clustering import prepare_region_cardinality_samples
 from utils.drawing.collage import create_collage_rows
 from utils.drawing.points import draw_points
 from tqdm import tqdm
@@ -156,7 +156,7 @@ def display_clustering_results(project, vertices=None, labels=None, cols=15, it_
     vm = get_auto_video_manager(project)
 
     if vertices is None:
-        with open(project.working_directory+'/temp/clustering.pkl') as f:
+        with open(project.working_directory+'/temp/region_cardinality_samples.pkl') as f:
             up = pickle.Unpickler(f)
             _ = up.load()
             vertices = up.load()
@@ -195,7 +195,7 @@ def display_clustering_results(project, vertices=None, labels=None, cols=15, it_
 def prepare_pairs(project):
     print "__________________________"
     print "preparing pairs..."
-    with open(project.working_directory+'/temp/clustering.pkl') as f:
+    with open(project.working_directory+'/temp/region_cardinality_samples.pkl') as f:
         up = pickle.Unpickler(f)
         _ = up.load()
         vertices = up.load()
@@ -381,7 +381,7 @@ def head_detector_classify(p):
 
     print rfc.feature_importances_
 
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = d['arr']
 
@@ -453,7 +453,7 @@ def get_movement_descriptor_(v1, v2):
 
 # def prepare_triplets(p):
 #     print "preparing pairs..."
-#     d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+#     d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
 #     labels = d['labels']
 #     arr = d['arr']
 #
@@ -632,7 +632,7 @@ def get_movement_histogram(p):
 
     # p.gm.g = g
 
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = d['arr']
 
@@ -858,7 +858,7 @@ def simple_tracklets(p):
     p.gm.g = g
     p.gm.update_nodes_in_t_refs()
 
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     vertices_ids = np.array(d['arr'])
 
@@ -988,7 +988,7 @@ def display_classification(project, ids, labels):
         cv2.imwrite('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/' + F_NAME + str(class_) + '_' + str(part) + '.jpg', collage)
 
 def singles_classifier(p):
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = np.array(d['arr'])
     data = d['data']
@@ -1359,7 +1359,7 @@ def process_project(p):
     from core.graph.solver2 import Solver2
     solver2 = Solver2(p)
 
-    # clustering(p, compute_data=False)
+    # prepare_region_cardinality_samples(p, compute_data=False)
     # display_clustering_results(p)
     # display_cluster_representants(p)
 
@@ -1521,7 +1521,7 @@ if __name__ == '__main__':
             p.chm.reset_itree(p.gm)
 
             # TODO: deal with noise...
-            d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+            d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
             labels = d['labels']
             vertices = d['arr']
 
@@ -1677,6 +1677,6 @@ if __name__ == '__main__':
             # plt.show()
 
             if False:
-                clustering()
+                prepare_region_cardinality_samples()
             # display_clustering_results(p, arr, labels)
             # plt.show()

@@ -1836,7 +1836,7 @@ class LearningProcess:
                 # TODO: -log(P) ?
                 C[i, j] = 1 - C[i, j] * prob
 
-        # TODO: what to do with too short CS, this will stop aglomerattive clustering
+        # TODO: what to do with too short CS, this will stop aglomerattive prepare_region_cardinality_samples
 
         from scipy.optimize import linear_sum_assignment
 

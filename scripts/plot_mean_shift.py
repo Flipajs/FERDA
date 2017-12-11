@@ -24,7 +24,7 @@ for i in range(h):
 
 print X.shape
 ###############################################################################
-# Compute clustering with MeanShift
+# Compute prepare_region_cardinality_samples with MeanShift
 
 # The following bandwidth can be automatically detected using
 bandwidth = estimate_bandwidth(X, quantile=0.2, n_samples=5000)

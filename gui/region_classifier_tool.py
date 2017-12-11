@@ -1,6 +1,6 @@
 from PyQt4 import QtGui, QtCore
 import sys
-from core.region.clustering import clustering, display_cluster_representants, draw_region, get_data
+from core.region.clustering import prepare_region_cardinality_samples, display_cluster_representants, draw_region, get_data
 import cPickle as pickle
 from sklearn.preprocessing import StandardScaler
 from utils.video_manager import get_auto_video_manager
@@ -254,7 +254,7 @@ class RegionClassifierTool(QtGui.QWidget):
 
     def compute_or_load(self, first_run=True, num_random=1000):
         try:
-            with open(self.p.working_directory + '/temp/clustering.pkl') as f:
+            with open(self.p.working_directory + '/temp/region_cardinality_samples.pkl') as f:
                 up = pickle.Unpickler(f)
                 up.load()
                 self.vertices = up.load()
@@ -262,7 +262,7 @@ class RegionClassifierTool(QtGui.QWidget):
                 self.scaler = up.load()
         except:
             if first_run:
-                clustering(self.p, num_random=num_random)
+                prepare_region_cardinality_samples(self.p, num_random=num_random)
                 self.compute_or_load(first_run=False)
             else:
                 raise Exception("loading failed...")
@@ -285,7 +285,7 @@ class RegionClassifierTool(QtGui.QWidget):
             return "exit"
 
     def load_data(self, compute):
-        with open(self.p.working_directory + '/temp/clustering.pkl') as f:
+        with open(self.p.working_directory + '/temp/region_cardinality_samples.pkl') as f:
             up = pickle.Unpickler(f)
             data = up.load()
             vertices = up.load()

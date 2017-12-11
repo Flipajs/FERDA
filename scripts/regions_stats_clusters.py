@@ -166,7 +166,7 @@ def display_head_pairs(project):
 
 def prepare_pairs(project):
     print "preparing pairs..."
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = d['arr']
 
@@ -307,7 +307,7 @@ def head_detector_classify(p):
 
     print rfc.feature_importances_
 
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = d['arr']
 
@@ -404,7 +404,7 @@ def filter_edges(project, max_dist):
 
 # def prepare_triplets(p):
 #     print "preparing pairs..."
-#     d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+#     d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
 #     labels = d['labels']
 #     arr = d['arr']
 #
@@ -493,7 +493,7 @@ def get_movement_histogram(p):
 
     p.gm.g = g
 
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = d['arr']
 
@@ -643,8 +643,8 @@ def display_regions(project, arr=None, labels=None):
     vm = get_auto_video_manager(project)
 
     if arr is None:
-        # with open('/Users/flipajs/Desktop/temp/clustering/data1.pkl', 'rb') as f:
-        d = hickle.load('/Users/flipajs/Desktop/temp/clustering/data1.pkl')
+        # with open('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/data1.pkl', 'rb') as f:
+        d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/data1.pkl')
 
         labels = d['labels']
         arr = np.array(d['arr'])
@@ -772,8 +772,8 @@ if __name__ == '__main__':
         # plotNdto3d(data, labels, core_samples_mask, [0, 2, 3], label_names[[0, 2, 3]])
         # plotNdto3d(data, labels, core_samples_mask, [0, 2, 4], label_names[[0, 2, 4]])
 
-        # with open('/Users/flipajs/Desktop/temp/clustering/data1.pkl', 'wb') as f:
-        # hickle.dump({'arr': arr, 'labels': labels}, '/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+        # with open('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/data1.pkl', 'wb') as f:
+        # hickle.dump({'arr': arr, 'labels': labels}, '/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
         # pickle.dump({'data': data, 'arr': arr, 'labels': labels, 'core_samples_mask': core_samples_mask}, f)
 
         display_regions(p, arr, labels)
