@@ -12,6 +12,8 @@ from utils.drawing.collage import create_collage_rows
 from scipy.spatial.distance import cdist
 import cv2
 from PyQt4 import QtGui
+from tqdm import tqdm
+
 
 def get_data(r, scaler=None):
     from utils.drawing.points import draw_points_crop_binary
@@ -48,7 +50,7 @@ def prepare_region_cardinality_samples(p, compute_data=True, num_random=1000):
 
         tracklet_ids = p.chm.chunks_.keys()
 
-        for i in range(num_random):
+        for _ in tqdm(range(num_random), leave=False):
             t = p.chm[random.choice(tracklet_ids)]
             b = random.randint(0, len(t)-1)
 
@@ -58,14 +60,10 @@ def prepare_region_cardinality_samples(p, compute_data=True, num_random=1000):
             r_data.append(get_data(r))
             vertices.append(int(v))
 
-            i += 1
-            if i % 100 == 0:
-                print_progress(i, num_random)
-
         data = np.array(r_data)
         vertices=np.array(vertices)
 
-        print_progress(num_random, num_random, "preparations for region prepare_region_cardinality_samples FINISHED\n")
+        print "preparations for region prepare_region_cardinality_samples FINISHED\n"
 
     min_samples = max(5, int(len(data) * 0.001))
     eps = 0.1
