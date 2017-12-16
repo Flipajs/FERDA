@@ -32,6 +32,7 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam3_new'
     # wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
     # wd = '/Volumes/Seagate Expansion Drive/HH1_POST'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Barbara_flu_bug/test6'

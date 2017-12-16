@@ -2,7 +2,7 @@ import numpy as np
 from utils.video_manager import get_auto_video_manager
 from tqdm import tqdm
 from lazyme.string import color_print
-
+import matplotlib.pyplot as plt
 
 class CompleteSetMatching:
     def __init__(self, project, get_tracklet_probs_callback, get_tracklet_p1s_callback):
@@ -13,7 +13,17 @@ class CompleteSetMatching:
     def process(self):
         CSs = self.find_cs()
 
+        id_ = 0
         isolated_cs_groups = []
+
+        import matplotlib.pyplot as plt
+        import matplotlib.patheffects as pe
+        from matplotlib.widgets import Cursor
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        cur = Cursor(ax, horizOn=False)
+        plt.hold(True)
 
         qualities = []
         for i in range(len(CSs)-1):
@@ -22,6 +32,7 @@ class CompleteSetMatching:
 
             cs1_max_frame = 0
             cs2_min_frame = np.inf
+            dividing_frame = 0
             for (t1, t2) in perm:
                 if t1 == t2:
                     break
@@ -29,35 +40,42 @@ class CompleteSetMatching:
                 cs1_max_frame = max(cs1_max_frame, t1.start_frame(self.p.gm))
                 cs2_min_frame = min(cs2_min_frame, t2.end_frame(self.p.gm))
 
+                dividing_frame = max(dividing_frame, t2.start_frame(self.p.gm))
+
             print "cs1 max frame: {}, cs2 min frame: {}".format(cs1_max_frame, cs2_min_frame)
 
             # TODO: threshold 1
             QUALITY_THRESHOLD = 0.4
 
+            for pair in perm:
+                t = pair[0]
+                if len(t.P) == 0:
+                    t.P = set([id_])
+                    # TODO: what should we do with P set when virtual IDs are introduced?
+                    # t.N = full_set.difference(t.P)
+                    id_ += 1
+
+            not_same = 0
+            c = [0. + 1-quality[1], quality[1],0., 0.2]
             # propagate IDS if quality is good enough:
             if quality[1] > QUALITY_THRESHOLD:
-                # TODO: if t1.P is empty... do virtual ID init
-                if len(perm[0][0].P) == 0:
-                    isolated_cs_groups.append(set())
+                # TODO: transitivity? when t1 -> t2 assignment uncertain, look on ID probs for t2->t3 and validate wtih t1->t3
 
-                    ics_g_i = len(isolated_cs_groups) - 1
-
-                    num_animals = len(self.p.animals)
-                    full_set = set(range(ics_g_i * num_animals, (ics_g_i + 1)*num_animals))
-                    for i, t in enumerate(perm[0]):
-                        t.P = set([i + ics_g_i*num_animals])
-                        t.N = full_set.difference(t.P)
+                for (t1, t2) in perm:
+                    print "[{} |{}| (te: {})] -> {} |{}| (ts: {})".format(t1.id(), len(t1), t1.end_frame(self.p.gm),
+                                                                          t2.id(), len(t2), t2.start_frame(self.p.gm))
+                    t2.P = set(t1.P)
+                    t2.N = set(t2.N)
             else:
                 color_print('QUALITY BELOW', color='red')
+                # c = [1., 0.,0.,0.7]
 
-            # TODO: transitivity? when t1 -> t2 assignment uncertain, look on ID probs for t2->t3 and validate wtih t1->t3
-            
-            for (t1, t2) in perm:
-                print "[{} |{}| (te: {})] -> {} |{}| (ts: {})".format(t1.id(), len(t1), t1.end_frame(self.p.gm), t2.id(), len(t2), t2.start_frame(self.p.gm))
-                t2.P = set(t1.P)
-                t2.N = set(t2.N)
-                isolated_cs_groups[-1].add(t1)
-                isolated_cs_groups[-1].add(t2)
+                for pair in perm:
+                    if pair[0] != pair[1]:
+                        not_same += 1
+
+            plt.plot([dividing_frame, dividing_frame], [-5, -5 + 4.7*quality[1]], c=c)
+            plt.plot([dividing_frame, dividing_frame], [0, id_-1 + not_same], c=c)
 
             print quality
             print
@@ -66,20 +84,57 @@ class CompleteSetMatching:
 
         print
 
-        print "ISOLATED CS GROUPS: {}".format(len(isolated_cs_groups))
-        for cs in isolated_cs_groups:
-            total_len = 0
-            s = ""
-            for t in cs:
-                s += ", "+str(t.id())
-                total_len += len(t)
+        #### visualize and stats
+        from utils.rand_cmap import rand_cmap
 
-            print "total len: {}, IDs: {}".format(total_len, s)
-            print
+        new_cmap = rand_cmap(id_+1, type='bright', first_color_black=True, last_color_black=False)
+        print "#IDs: {}".format(id_+1)
+        support = {}
+        for t in self.p.chm.chunk_gen():
+            if len(t.P):
+                t_identity = list(t.P)[0]
+                support[t_identity] = support.get(t_identity, 0) + len(t)
+
+                plt.scatter(t.start_frame(self.p.gm), t_identity, c=new_cmap[t_identity], edgecolor=[0.,0.,0.,.3])
+                plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm)+0.1], [t_identity, t_identity],
+                         c=new_cmap[t_identity],
+                         path_effects=[pe.Stroke(linewidth=3, foreground='k'), pe.Normal()])
+            else:
+                if t.is_noise() or len(t) < 5:
+                    continue
+                if t.is_single():
+                    c = [0, 1, 0, .3]
+                else:
+                    c = [0, 0, 1, .3]
+
+                y = t.id() % id_
+                plt.scatter(t.start_frame(self.p.gm), y, c=c, marker='s', edgecolor=[0., 0., 0., .1])
+                plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm) + 0.1], [y, y],
+                         c=c,
+                         linestyle='-')
+
+
+        plt.grid()
+
+        print "SUPPORT"
+        for id in sorted(support.keys()):
+            print "{}: {}".format(id, support[id])
+
+
+        # print "ISOLATED CS GROUPS: {}".format(len(isolated_cs_groups))
+        # for cs in isolated_cs_groups:
+        #     total_len = 0
+        #     s = ""
+        #     for t in cs:
+        #         s += ", "+str(t.id())
+        #         total_len += len(t)
+        #
+        #     print "total len: {}, IDs: {}".format(total_len, s)
+        #     print
 
         p.save()
-        import matplotlib.pyplot as plt
         qualities = np.array(qualities)
+        plt.figure()
         plt.plot(qualities[:, 0])
         plt.grid()
         plt.figure()
@@ -255,6 +310,7 @@ if __name__ == '__main__':
 
     p = Project()
     p.load('/Users/flipajs/Documents/wd/FERDA/Cam1')
+    # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_new')
 
     lp = LearningProcess(p)
     lp.reset_learning()
