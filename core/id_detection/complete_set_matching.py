@@ -4,6 +4,7 @@ from tqdm import tqdm
 from lazyme.string import color_print
 import matplotlib.pyplot as plt
 
+
 class CompleteSetMatching:
     def __init__(self, project, get_tracklet_probs_callback, get_tracklet_p1s_callback):
         self.p = project
