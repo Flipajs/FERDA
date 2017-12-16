@@ -48,7 +48,7 @@ if __name__ == '__main__':
             ai, aj = random.sample(xrange(0, len(images_f[i])), 2)
 
             im1 = misc.imread(args.datadir+'/'+str(i)+'/'+images_f[i][ai])
-            im2 = misc.imread(args.datadir+'/'+str(i)+'/'+images_f[i][ai])
+            im2 = misc.imread(args.datadir+'/'+str(i)+'/'+images_f[i][aj])
 
             imgs.append(im1)
             imgs.append(im2)

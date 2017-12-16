@@ -12,45 +12,52 @@ from keras.models import Model
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
 from scipy import misc
+from keras import backend as K
+from keras.losses import mse
+from keras.callbacks import Callback
 
-#
-#
-# def myGenerator():
-#     global DATA_DIR, BATCH_SIZE
-#     with h5py.File(DATA_DIR + '/imgs_multi_train.h5', 'r') as hf:
-#         X_train = hf['data'][:]
-#
-#     with h5py.File(DATA_DIR + '/labels_multi_train.h5', 'r') as hf:
-#         y_train = hf['data'][:]
-#
-#     X_train = X_train.astype('float32')
-#     X_train /= 255
-#
-#     N_NEGATIVE = 1
-#
-#     positive = np.argwhere(y_train == 1)
-#     positive.shape = (positive.shape[0], )
-#     negative = np.argwhere(y_train == 0)
-#     negative.shape = (negative.shape[0], )
-#
-#     while 1:
-#         pos = np.random.choice(positive, 2)
-#         neg = np.random.choice(negative, N_NEGATIVE)
-#
-#         ids = np.hstack([pos, neg])
-#         yield X_train[ids, :], y_train[pos, :]
+class NBatchLogger(Callback):
+    def __init__(self,display=100):
+        '''
+        display: Number of batches to wait before outputting loss
+        '''
+        self.seen = 0
+        self.display = display
+
+    def on_batch_end(self,batch,logs={}):
+        self.seen += logs.get('size', 0)
+        if self.seen % self.display == 0:
+            print '\n{0}/{1} - Batch Loss: {2}'.format(self.seen,self.params['samples'],
+                                                logs.get('loss'))
+
+def my_loss(y_true, y_pred):
+    margin = 1.
+
+    # we want to have vectors having norm
+    norm = K.abs(K.sqrt(K.sum(K.square(y_pred), -1)) - 3)
+
+    p1 = y_pred[0::3, :]
+    p2 = y_pred[1::3, :]
+    n = y_pred[2::3, :]
+
+    pos_val = K.sqrt(K.sum(K.square(p1 - p2)))
+    neg_val1 = K.sqrt(K.sum(K.square(p1 - n)))
+    neg_val2 = K.sqrt(K.sum(K.square(p2 - n)))
+    neg_val = K.minimum(neg_val1, neg_val2)
+
+    # return margin + pos_val - neg_val
+    val = K.mean(K.maximum(0., margin + pos_val - neg_val + norm))
+    return val
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='train siamese CNN with HARD loss (https://github.com/DagnyT/hardnet/)')
 
     parser.add_argument('--datadir', type=str,
-                        default='/home/threedoid/cnn_descriptor/data',
+                        default='/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_zebrafish',
                         help='path to dataset')
     parser.add_argument('--epochs', type=int,
-                        default=5,
+                        default=1,
                         help='number of epochs')
-    parser.add_argument('--batch_size', type=int, default=32,
-                        help='batch size')
     parser.add_argument('--weights_name', type=str, default='best_weights',
                         help='name used for saving intermediate results')
     parser.add_argument('--num_negative', type=int, default=1,
@@ -102,25 +109,25 @@ if __name__ == '__main__':
     x = Conv2D(8, (3, 3))(x)
 
     x = Flatten()(x)
+    x = Dense(32, activation='relu')(x)
 
     classification_model = Model(animal_input, x)
+    classification_model.summary()
+    # plot_model(classification_model, show_shapes=True, to_file='complete_model.png')
 
-    plot_model(classification_model, show_shapes=True, to_file='complete_model.png')
+    y_train = np.zeros((y_train.shape[0], 32))
 
-    ########### load weights... ugly way how to do it now...
-    if args.continue_training:
-        print "Using last saved weights as initialisation"
-        from keras.models import model_from_json
-        json_file = open('model_'+args.weights_name+'.json', 'r')
-        loaded_model_json = json_file.read()
-        json_file.close()
-        loaded_model = model_from_json(loaded_model_json)
-        # load weights into new model
-        loaded_model.load_weights(args.weights_name+".h5")
-
-        classification_model = loaded_model
+    out_batch = NBatchLogger(display=1)
 
     # 8. Compile model
-    classification_model.compile(loss=my_loss,
-                  optimizer='adam')
+    # classification_model.compile(loss=my_loss, optimizer='adam')
+    classification_model.compile(loss=my_loss, optimizer='adam')
+    classification_model.fit(X_train, y_train, batch_size=(2+args.num_negative)*32, epochs=args.epochs, callbacks=[out_batch])
 
+    pred = classification_model.predict(X_test)
+
+    np.set_printoptions(precision=2)
+    print pred
+
+    with h5py.File(args.datadir+'/pred.h5', 'w') as hf:
+        hf.create_dataset("data", data=pred)
