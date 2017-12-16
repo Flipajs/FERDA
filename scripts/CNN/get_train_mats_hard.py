@@ -5,6 +5,7 @@ import string
 from scipy import misc
 import tqdm
 import argparse
+import matplotlib.pyplot as plt
 
 # creates dataset of size args.num_examples * (2+args.num_negative), data will
 # be ordered positive1_1, positive2_1, negative1_1, .... negative_num_negative, positive1_2, positive2_2, negative1_2....
@@ -13,7 +14,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='prepare mats for hard')
 
     parser.add_argument('--datadir', type=str,
-                        default='/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_zebrafish',
+                        default='/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_cam1',
                         help='path to dataset')
     parser.add_argument('--num_animals', type=int,
                         default=6,
@@ -64,6 +65,14 @@ if __name__ == '__main__':
 
                 imgs.append(im_negative)
                 labels.append(0)
+
+                # plt.figure()
+                # plt.imshow(im1)
+                # plt.figure()
+                # plt.imshow(im2)
+                # plt.figure()
+                # plt.imshow(im_negative)
+                # plt.show()
 
     imgs = np.array(imgs)
     # normalize..

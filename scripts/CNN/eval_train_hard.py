@@ -20,11 +20,11 @@ if __name__ == '__main__':
     with h5py.File(args.datadir + '/pred.h5', 'r') as hf:
         pred = hf['data'][:]
 
-    # with h5py.File(args.datadir + '/imgs_test_hard_'+str(args.num_negative)+'.h5', 'r') as hf:
-    #     X_test = hf['data'][:]
-    #
-    # with h5py.File(args.datadir + '/labels_test_hard_'+str(args.num_negative)+'.h5', 'r') as hf:
-    #     y_test = hf['data'][:]
+    with h5py.File(args.datadir + '/imgs_test_hard_'+str(args.num_negative)+'.h5', 'r') as hf:
+        X_test = hf['data'][:]
+
+    with h5py.File(args.datadir + '/labels_test_hard_'+str(args.num_negative)+'.h5', 'r') as hf:
+        y_test = hf['data'][:]
 
 
     pos_d = []
@@ -36,11 +36,12 @@ if __name__ == '__main__':
 
         pos_d.append(np.linalg.norm(p1-p2))
         neg_d.append(min(np.linalg.norm(n-p1), np.linalg.norm(n-p2)))
+
     from scipy import stats
 
     print stats.describe(pos_d)
     print stats.describe(neg_d)
 
     corr = np.sum(np.array(pos_d) < np.array(neg_d))
-    print "{}, {:.2%}".format(corr, corr/len(pos_d))
+    print "{}, {:.2%}".format(corr, corr/float(len(pos_d)))
 
