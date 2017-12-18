@@ -7,7 +7,8 @@ import sys
 import string
 import numpy as np
 from keras.utils import plot_model
-from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
+from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, BatchNormalization, Activation
+from keras.activations import sigmoid
 from keras.models import Model
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
@@ -16,6 +17,11 @@ from keras import backend as K
 from keras.losses import mse
 from keras.callbacks import Callback
 from keras.models import save_model
+from keras.regularizers import l2
+
+
+def Conv2DReluBatchNorm(n_filter, w_filter, h_filter, inputs):
+    return BatchNormalization()(Activation(activation='relu')(Conv2D(n_filter, (w_filter, h_filter))(inputs)))
 
 class NBatchLogger(Callback):
     def __init__(self,display=100):
@@ -32,33 +38,54 @@ class NBatchLogger(Callback):
                                                 logs.get('loss'))
 
 def my_loss(y_true, y_pred):
-    margin = 1.
+    margin = 5.
 
     # we want to have vectors having norm
-    # norm = K.sum(K.abs(K.sqrt(K.sum(K.square(y_pred), -1)) - 1))
-    # y_pred = K.clip(y_pred, 0.01, 1.)
-    regul = K.maximum(0., 1 - K.sum(y_pred, -1))
-    p1 = y_pred[0::5, :]
-    p2 = y_pred[1::5, :]
-    n1 = y_pred[2::5, :]
-    n2 = y_pred[3::5, :]
-    n3 = y_pred[4::5, :]
 
-    test = 0
-    if y_true[0] != 1.0 or y_true[1] != 1.0 or y_true[2] != 0.0 or y_true[3] != 0.0 or y_true[4] != 0.0:
-        test = 10000
+    # penalize_zero = K.mean(K.switch(K.less_equal(norm, 0.2), K.ones_like(norm) * 100000.0, K.zeros_like(norm)))
+    # y_pred = K.clip(y_pred, 1e-14, 10.0)
+    # y_pred = K.l2_normalize(y_pred, axis=-1)
+    # norm = K.mean(K.abs(K.sqrt(K.sum(K.square(y_pred), -1))))
+    # regul = K.maximum(0., 1 - K.sum(y_pred, -1))
+    # return K.sum(y_pred, -1)
+    # regul = K.mean(K.maximum(0., 1 - K.sum(y_pred, -1)))
+    p1 = y_pred[0::3, :]
+    p2 = y_pred[1::3, :]
+    n1 = y_pred[2::3, :]
+    # n2 = y_pred[3::5, :]
+    # n3 = y_pred[4::5, :]
 
-    pos_val = K.sqrt(K.sum(K.square(p1 - p2), -1))
-    neg_val1 = K.sqrt(K.sum(K.square(p1 - n1), -1))
-    neg_val2 = K.sqrt(K.sum(K.square(p1 - n2), -1))
-    neg_val3 = K.sqrt(K.sum(K.square(p1 - n3), -1))
+    eps = 1e-16
+    pos_val = K.sqrt(K.sum(K.square(p1 - p2) + eps, -1))
+    neg_val = K.sqrt(K.sum(K.square(p1 - n1) + eps, -1))
+    # neg_val2 = K.sqrt(K.sum(K.square(p1 - n2), -1))
+    # neg_val3 = K.sqrt(K.sum(K.square(p1 - n3), -1))
     # neg_val2 = K.sqrt(K.sum(K.square(p2 - n)))
-    neg_val = K.minimum(K.minimum(neg_val1, neg_val2), neg_val3)
-
+    # neg_val = K.minimum(K.minimum(neg_val1, neg_val2), neg_val3)
     # reg = K.maximum(0., 1 - neg_val)
-    # return margin + pos_val - neg_val
-    val = K.mean(K.maximum(0., margin + pos_val - neg_val)) + regul + test
-    return val
+    # results = K.mean(K.maximum(0., margin + pos_val - neg_val)) + norm
+    # results = K.repeat_elements(results, 3, -1)
+    # results = K.switch(K.less_equal(test, 0.), K.zeros_like(test), results)
+    # results = K.mean(K.maximum(0., margin + pos_val - neg_val))+norm
+    # results = K.mean(K.maximum(0., pos_val))
+
+    # exp_pos = K.exp(2.0 - pos_val)
+    # exp_den = exp_pos + K.exp(2.0 - neg_val) + 1e-16
+    # results = - K.log(exp_pos / exp_den)
+
+
+    # loss = K.clip(margin - neg_val, 0.0, margin) + K.clip(pos_val, 0, margin)
+    loss = K.clip(margin - neg_val, 0.0, margin) + K.clip(pos_val, 0, margin)
+    return K.mean(loss)
+
+    # return K.mean(mar-neg_val)+penalize_zero
+    # results = K.repeat_elements(results), 5, -1)
+    # results = K.switch(K.less_equal(y_true[:, 0], 0.), K.zeros_like(y_true[:, 0]), results)
+
+
+    results = results
+
+    return results
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='train siamese CNN with HARD loss (https://github.com/DagnyT/hardnet/)')
@@ -97,6 +124,7 @@ if __name__ == '__main__':
 
     print "train shape", X_train.shape
     print "test shape", X_test.shape
+    print "y_train shape", y_train.shape
 
     np.random.seed(123)  # for reproducibility
 
@@ -107,44 +135,29 @@ if __name__ == '__main__':
     # First, define the vision modules
     animal_input = Input(shape=X_train.shape[1:])
 
-    # x = Conv2D(32, (3, 3))(animal_input)
-    # x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
-    # x = MaxPooling2D((2, 2))(x)
-    # x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
-    # x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
-    # x = Conv2D(32, (3, 3))(x)
-    # x = MaxPooling2D((2, 2))(x)
-    # x = Conv2D(32, (3, 3))(x)
-    # x = Conv2D(16, (3, 3))(x)
-    # x = Conv2D(8, (3, 3))(x)
-
-    x = Conv2D(32, (3, 3))(animal_input)
+    x = Conv2DReluBatchNorm(32, 3, 3, animal_input)
     x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
     x = MaxPooling2D((2, 2))(x)
     x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
-    # x = Conv2D(32, (3, 3))(x)
-    # x = Conv2D(32, (3, 3))(x)
-    # x = MaxPooling2D((2, 2))(x)
-
-    # x = Conv2D(64, (3, 3))(x)
     x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
-    x = Conv2D(32, (3, 3))(x)
+    x = Conv2DReluBatchNorm(32, 3, 3, x)
     x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(16, (3, 3))(x)
-    # x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(8, (3, 3))(x)
-    # out_a = vision_model(animal_a)
+    x = Conv2DReluBatchNorm(16, 3, 3, x)
+    x = Conv2DReluBatchNorm(8, 3, 3, x)
     x = Flatten()(x)
-    # out = Dense(128, activation='relu')(out_a)
+
     out = Dense(6, activation='softmax')(x)
-    classification_model = Model(animal_input, out)
-    classification_model.load_weights('../data_cam1/cam1_softmax2.h5')
+    # classification_model = Model(animal_input, out)
+    # classification_model.load_weights('../data_cam1/cam1_softmax2.h5')
     # classification_model.load_weights('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/cam1_softmax2.h5')
     print "weights loaded"
 
     # x = Flatten()(x)
-    x = Dense(32, activation='relu')(x)
-    x = Dense(16, activation='relu', kernel_initializer='normal')(x)
+    # x = Dense(32, activation='sigmoid')(x)
+    x = Dense(8, activity_regularizer=l2(0.01))(x)
+    x = BatchNormalization()(x)
+    out = Activation('sigmoid')(x)
+    # x = Dense(8, activation='sigmoid', kernel_initializer='uniform')(x)
 
     model = Model(animal_input, x)
     model.summary()
@@ -156,7 +169,9 @@ if __name__ == '__main__':
 
     # 8. Compile model
     # classification_model.compile(loss=my_loss, optimizer='adam')
-    model.compile(loss=my_loss, optimizer='adam')
+    from keras.optimizers import Adam
+    optimizer = Adam(lr=0.01)
+    model.compile(loss=my_loss, optimizer=optimizer)
 
 
     from scipy import stats
@@ -168,7 +183,24 @@ if __name__ == '__main__':
 
         np.set_printoptions(precision=2)
         print pred
-        print stats.describe(pred)
+
+        pos_d = []
+        neg_d = []
+        for i in range(pred.shape[0] / (2 + args.num_negative)):
+            p1 = pred[i * (2 + args.num_negative)]
+            p2 = pred[i * (2 + args.num_negative) + 1]
+            n = pred[i * (2 + args.num_negative) + 2]
+
+            pos_d.append(np.linalg.norm(p1 - p2))
+            neg_d.append(min(np.linalg.norm(n - p1), np.linalg.norm(n - p2)))
+
+        from scipy import stats
+
+        # print stats.describe(pos_d)
+        # print stats.describe(neg_d)
+
+        corr = np.sum(np.array(pos_d) < np.array(neg_d))
+        print "{}, {:.2%}".format(corr, corr / float(len(pos_d)))
 
 
     model.save('my_model.h5')

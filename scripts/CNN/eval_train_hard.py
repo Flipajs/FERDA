@@ -30,9 +30,9 @@ if __name__ == '__main__':
     pos_d = []
     neg_d = []
     for i in range(pred.shape[0]/(2+args.num_negative)):
-        p1 = pred[i*args.num_negative]
-        p2 = pred[i*args.num_negative + 1]
-        n = pred[i*args.num_negative + 2]
+        p1 = pred[i*(2 + args.num_negative)]
+        p2 = pred[i*(2 + args.num_negative) + 1]
+        n = pred[i*(2 + args.num_negative) + 2]
 
         pos_d.append(np.linalg.norm(p1-p2))
         neg_d.append(min(np.linalg.norm(n-p1), np.linalg.norm(n-p2)))
