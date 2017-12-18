@@ -75,7 +75,7 @@ def my_loss(y_true, y_pred):
 
 
     # loss = K.clip(margin - neg_val, 0.0, margin) + K.clip(pos_val, 0, margin)
-    loss = K.clip(margin - neg_val, 0.0, margin) + K.clip(pos_val, 0, margin)
+    loss = K.clip(margin - neg_val, 0.0, margin) + pos_val
     return K.mean(loss)
 
     # return K.mean(mar-neg_val)+penalize_zero
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='train siamese CNN with HARD loss (https://github.com/DagnyT/hardnet/)')
 
     parser.add_argument('--datadir', type=str,
-                        default='/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_zebrafish',
+                        default='/Users/flipajs/Documents/wd/FERDA/CNN_hard_datagen',
                         help='path to dataset')
     parser.add_argument('--epochs', type=int,
                         default=1,
@@ -129,8 +129,8 @@ if __name__ == '__main__':
     np.random.seed(123)  # for reproducibility
 
     im_dim = 3
-    im_h = 90
-    im_w = 90
+    im_h = 32
+    im_w = 32
 
     # First, define the vision modules
     animal_input = Input(shape=X_train.shape[1:])
@@ -138,10 +138,10 @@ if __name__ == '__main__':
     x = Conv2DReluBatchNorm(32, 3, 3, animal_input)
     x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
     x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
-    x = Conv2DReluBatchNorm(32, 3, 3, x)
-    x = MaxPooling2D((2, 2))(x)
+    # x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    # x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    # x = Conv2DReluBatchNorm(32, 3, 3, x)
+    # x = MaxPooling2D((2, 2))(x)
     x = Conv2DReluBatchNorm(16, 3, 3, x)
     x = Conv2DReluBatchNorm(8, 3, 3, x)
     x = Flatten()(x)
@@ -176,7 +176,6 @@ if __name__ == '__main__':
 
     from scipy import stats
     for e in range(args.epochs):
-        print y_train
         model.fit(X_train, y_train, batch_size=(2 + args.num_negative) * args.batch_size, epochs=1, callbacks=[out_batch])
 
         pred = model.predict(X_test)
