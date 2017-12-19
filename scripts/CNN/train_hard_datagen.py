@@ -12,7 +12,7 @@ if __name__ == '__main__':
     parser.add_argument('--datadir', type=str,
                         default='/Users/flipajs/Documents/wd/FERDA/CNN_hard_datagen',
                         help='path to dataset')
-    parser.add_argument('--num_examples', type=int, default=200,
+    parser.add_argument('--num_examples', type=int, default=10000,
                         help='num examples')
     parser.add_argument('--im_size', type=int, default=32,
                         help='im size')
@@ -25,7 +25,6 @@ if __name__ == '__main__':
 
     imgs = []
     labels = []
-    num_swap = 0
     for i in range(args.num_examples):
         r, g, b = ri(0, 255), ri(0, 255), ri(0, 255)
 
@@ -57,31 +56,12 @@ if __name__ == '__main__':
         rectangle1 = np.clip(rectangle1 + np.asarray(np.random.rand(args.im_size, args.im_size, 3) * noise_amount, dtype=np.uint8), 0, 255)
         rectangle2 = np.clip(rectangle2 + np.asarray(np.random.rand(args.im_size, args.im_size, 3) * noise_amount, dtype=np.uint8), 0, 255)
 
-        # plt.imshow(circle1)
-        # plt.figure()
-        # plt.imshow(circle2)
-        # plt.figure()
-        # plt.imshow(rectangle1)
-        # plt.figure()
-        # plt.imshow(rectangle2)
-        # plt.show()
+        imgs += [[circle1, circle2]]
+        imgs += [[circle1, rectangle1]]
+        imgs += [[rectangle1, rectangle2]]
+        imgs += [[rectangle2, circle1]]
 
-        # random swap...
-        if random.random() <= 0.5:
-            num_swap += 1
-            imgs.append(rectangle1)
-            imgs.append(rectangle2)
-            imgs.append(circle1)
-        else:
-            imgs.append(circle1)
-            imgs.append(circle2)
-            imgs.append(rectangle1)
-
-        labels.append(1)
-        labels.append(1)
-        labels.append(0)
-
-    print "#swap: {:.2%}".format(num_swap / float(args.num_examples))
+        labels += [1, 0, 1, 0]
 
     imgs = np.array(imgs)
     # normalize..
