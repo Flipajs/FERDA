@@ -18,7 +18,7 @@ if __name__ == '__main__':
                         help='im size')
     parser.add_argument('--num_negative', type=int, default=1,
                         help='im size')
-    parser.add_argument('--test_ratio', type=float, default=0.5,
+    parser.add_argument('--test_ratio', type=float, default=0.1,
                         help='number of negative examples')
 
     args = parser.parse_args()
@@ -30,27 +30,26 @@ if __name__ == '__main__':
 
         radius = 3
         circle1 = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
-        # cv2.circle(circle1, (ri(5, 27), ri(5, 27)), ri(2, 13), (r, g, b), -1)
-        cv2.circle(circle1, (ri(5, 27), ri(5, 27)), radius, (r, g, b), -1)
+        cv2.circle(circle1, (ri(5, 27), ri(5, 27)), ri(2, 13), (r, g, b), -1)
+        # cv2.circle(circle1, (ri(5, 27), ri(5, 27)), radius, (r, g, b), -1)
 
         circle2 = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
-        cv2.circle(circle2, (ri(5, 27), ri(5, 27)), radius, (r, g, b), -1)
+        cv2.circle(circle2, (ri(5, 27), ri(5, 27)), ri(2, 13), (r, g, b), -1)
 
         r, g, b = ri(0, 255), ri(0, 255), ri(0, 255)
-        size = 5
         rectangle1 = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
-        # size = ri(2, 30)
+        size = ri(2, 30)
         x = ri(0, 31-size)
         y = ri(0, 31-size)
         rectangle1[x:x+size, y:y+size, :] = [r, g, b]
 
         rectangle2 = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
-        # size = ri(2, 30)
+        size = ri(2, 30)
         x = ri(0, 31 - size)
         y = ri(0, 31 - size)
         rectangle2[x:x + size, y:y + size, :] = [r, g, b]
 
-        noise_amount = 0
+        noise_amount = 50
         circle1 = np.clip(circle1 + np.asarray(np.random.rand(args.im_size, args.im_size, 3) * noise_amount, dtype=np.uint8), 0, 255)
         circle2 = np.clip(circle2 + np.asarray(np.random.rand(args.im_size, args.im_size, 3) * noise_amount, dtype=np.uint8), 0, 255)
         rectangle1 = np.clip(rectangle1 + np.asarray(np.random.rand(args.im_size, args.im_size, 3) * noise_amount, dtype=np.uint8), 0, 255)
@@ -60,6 +59,16 @@ if __name__ == '__main__':
         imgs += [[circle1, rectangle1]]
         imgs += [[rectangle1, rectangle2]]
         imgs += [[rectangle2, circle1]]
+
+        # plt.figure()
+        # plt.imshow(circle1)
+        # plt.figure()
+        # plt.imshow(circle2)
+        # plt.figure()
+        # plt.imshow(rectangle1)
+        # plt.figure()
+        # plt.imshow(rectangle2)
+        # plt.show()
 
         labels += [1, 0, 1, 0]
 

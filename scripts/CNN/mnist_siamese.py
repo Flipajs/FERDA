@@ -22,9 +22,7 @@ from keras.models import Model
 from keras.layers import Input, Flatten, Dense, Dropout, Lambda
 from keras.optimizers import RMSprop
 from keras import backend as K
-
-num_classes = 10
-epochs = 20
+from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, BatchNormalization, Activation
 
 
 def euclidean_distance(vects):
@@ -45,37 +43,36 @@ def contrastive_loss(y_true, y_pred):
     return K.mean(y_true * K.square(y_pred) +
                   (1 - y_true) * K.square(K.maximum(margin - y_pred, 0)))
 
-
-def create_pairs(x, digit_indices):
-    '''Positive and negative pair creation.
-    Alternates between positive and negative pairs.
-    '''
-    pairs = []
-    labels = []
-    n = min([len(digit_indices[d]) for d in range(num_classes)]) - 1
-    for d in range(num_classes):
-        for i in range(n):
-            z1, z2 = digit_indices[d][i], digit_indices[d][i + 1]
-            pairs += [[x[z1], x[z2]]]
-            inc = random.randrange(1, num_classes)
-            dn = (d + inc) % num_classes
-            z1, z2 = digit_indices[d][i], digit_indices[dn][i]
-            pairs += [[x[z1], x[z2]]]
-            labels += [1, 0]
-    return np.array(pairs), np.array(labels)
-
-
 def create_base_network(input_shape):
     '''Base network to be shared (eq. to feature extraction).
     '''
     input = Input(shape=input_shape)
-    x = Flatten()(input)
-    x = Dense(128, activation='relu')(x)
+
+    # x = Conv2DReluBatchNorm(32, 3, 3, animal_input)
+    x = Conv2D(32, (3, 3), activation='relu')(input)
+    x = Conv2D(16, (3, 3), activation='relu', dilation_rate=(2, 2))(x)
+    x = MaxPooling2D((2, 2))(x)
+    # x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    # x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    # x = Conv2DReluBatchNorm(32, 3, 3, x)
+    # x = MaxPooling2D((2, 2))(x)
+    # x = Conv2DReluBatchNorm(16, 3, 3, x)
+    x = Conv2D(8, (3, 3), activation='relu')(x)
+    # x = Conv2DReluBatchNorm(8, 3, 3, x)
+    x = Conv2D(8, (3, 3), activation='relu')(x)
+    x = Conv2D(8, (3, 3), activation='relu')(x)
+    x = Flatten()(x)
+
+
+    # x = Flatten()(input)
+    # x = Dense(128, activation='relu')(x)
+    # x = Dropout(0.1)(x)
+    # x = Dense(128, activation='relu')(x)
     x = Dropout(0.1)(x)
     x = Dense(128, activation='relu')(x)
-    x = Dropout(0.1)(x)
-    x = Dense(128, activation='relu')(x)
-    return Model(input, x)
+    m = Model(input, x)
+    m.summary()
+    return m
 
 
 def compute_accuracy(y_true, y_pred):
@@ -102,7 +99,7 @@ if __name__ == '__main__':
                         default='/Users/flipajs/Documents/wd/FERDA/CNN_hard_datagen',
                         help='path to dataset')
     parser.add_argument('--epochs', type=int,
-                        default=20,
+                        default=5,
                         help='number of epochs')
     parser.add_argument('--batch_size', type=int,
                         default=32,
@@ -128,7 +125,12 @@ if __name__ == '__main__':
     with h5py.File(args.datadir + '/labels_test_hard_' + str(args.num_negative) + '.h5', 'r') as hf:
         te_y = hf['data'][:]
 
+    print("train shape {}, min: {} max: {}".format(tr_pairs.shape, tr_pairs.min(), tr_pairs.max()))
+    print("test shape {}, min: {} max: {}".format(te_pairs.shape, te_pairs.min(), te_pairs.max()))
+    print("y_train shape {}, min: {} max: {}".format(tr_y.shape, tr_y.min(), tr_y.max()))
+
     input_shape = tr_pairs.shape[2:]
+    print(input_shape)
 
     # network definition
     base_network = create_base_network(input_shape)
@@ -142,17 +144,16 @@ if __name__ == '__main__':
     processed_a = base_network(input_a)
     processed_b = base_network(input_b)
 
-    distance = Lambda(euclidean_distance,
-                      output_shape=eucl_dist_output_shape)([processed_a, processed_b])
+    distance = Lambda(euclidean_distance, output_shape=eucl_dist_output_shape)([processed_a, processed_b])
 
     model = Model([input_a, input_b], distance)
-
+    model.summary()
     # train
     # rms = RMSprop()
     model.compile(loss=contrastive_loss, optimizer='adam', metrics=[accuracy])
     model.fit([tr_pairs[:, 0], tr_pairs[:, 1]], tr_y,
               batch_size=128,
-              epochs=epochs,
+              epochs=args.epochs,
               validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y))
 
     # compute final accuracy on training and test sets

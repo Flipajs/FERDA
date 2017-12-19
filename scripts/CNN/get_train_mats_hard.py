@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_animals', type=int,
                         default=6,
                         help='number of IDs')
-    parser.add_argument('--num_examples', type=int, default=100,
+    parser.add_argument('--num_examples', type=int, default=1000,
                         help='num examples')
     parser.add_argument('--num_negative', type=int, default=1,
                         help='number of negative examples')
@@ -63,28 +63,23 @@ if __name__ == '__main__':
             cc = M[0, 1] / M[0, 0]
             measure.moments_central(im1[:, :, 0], cr, cc)
 
-            imgs.append(im1)
-            imgs.append(im2)
-            labels.append(1)
-            labels.append(1)
+            neg_ids = list(ids_set - set([i]))
+            neg_id = random.choice(neg_ids)
+            neg_f = random.choice(images_f[neg_id])
 
-            for l in range(args.num_negative):
-                neg_ids = list(ids_set - set([i]))
-                neg_id = random.choice(neg_ids)
-                neg_f = random.choice(images_f[neg_id])
+            im_negative = misc.imread(args.datadir+'/'+str(neg_id)+'/'+neg_f)
 
-                im_negative = misc.imread(args.datadir+'/'+str(neg_id)+'/'+neg_f)
+            imgs += [[im1, im2]]
+            imgs += [[im1, im_negative]]
+            labels += [1, 0]
 
-                imgs.append(im_negative)
-                labels.append(0)
-
-                # plt.figure()
-                # plt.imshow(im1)
-                # plt.figure()
-                # plt.imshow(im2)
-                # plt.figure()
-                # plt.imshow(im_negative)
-                # plt.show()
+            # plt.figure()
+            # plt.imshow(im1)
+            # plt.figure()
+            # plt.imshow(im2)
+            # plt.figure()
+            # plt.imshow(im_negative)
+            # plt.show()
 
     imgs = np.array(imgs)
     # normalize..
