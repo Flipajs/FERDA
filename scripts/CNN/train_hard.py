@@ -19,6 +19,7 @@ from keras.callbacks import Callback
 from keras.models import save_model
 from keras.regularizers import l2
 
+OUT_DIM = 32
 
 def Conv2DReluBatchNorm(n_filter, w_filter, h_filter, inputs):
     return BatchNormalization()(Activation(activation='relu')(Conv2D(n_filter, (w_filter, h_filter))(inputs)))
@@ -37,8 +38,17 @@ class NBatchLogger(Callback):
             print '\n{0}/{1} - Batch Loss: {2}'.format(self.seen,self.params['samples'],
                                                 logs.get('loss'))
 
+def my_loss2(y_true, y_pred):
+    y_pred = K.l2_normalize(y_pred, axis=-1)
+    margin = 1.0
+    embeddings = K.reshape(y_pred, (-1, 3, OUT_DIM))
+
+    positive_distance = K.mean(K.square(embeddings[:,0] - embeddings[:,1]),axis=-1)
+    negative_distance = K.mean(K.square(embeddings[:,0] - embeddings[:,2]),axis=-1)
+    return K.mean(K.maximum(0.0, positive_distance - negative_distance + margin))
+
 def my_loss(y_true, y_pred):
-    margin = 5.
+    margin = 0.1
 
     # we want to have vectors having norm
 
@@ -75,8 +85,19 @@ def my_loss(y_true, y_pred):
 
 
     # loss = K.clip(margin - neg_val, 0.0, margin) + K.clip(pos_val, 0, margin)
-    loss = K.clip(margin - neg_val, 0.0, margin) + pos_val
-    return K.mean(loss)
+    # loss = K.clip(margin - neg_val, 0.0, np.inf) + pos_val
+    # loss = K.clip(pos_val - neg_val, 0.0, np.inf)
+
+    # loss = K.switch(K.less(pos_val, neg_val), K.zeros_like(pos_val), K.ones_like(pos_val))
+    # return K.less(neg_val, pos_val)
+    return pos_val-neg_val
+    # loss = K.cast(K.less(neg_val, pos_val), dtype=np.float32)
+    # loss = neg_val
+    # return loss
+    # return K.mean(neg_val)
+    return K.repeat_elements(loss, 3, -1)
+
+    # return K.mean(loss)
 
     # return K.mean(mar-neg_val)+penalize_zero
     # results = K.repeat_elements(results), 5, -1)
@@ -94,7 +115,7 @@ if __name__ == '__main__':
                         default='/Users/flipajs/Documents/wd/FERDA/CNN_hard_datagen',
                         help='path to dataset')
     parser.add_argument('--epochs', type=int,
-                        default=1,
+                        default=20,
                         help='number of epochs')
     parser.add_argument('--batch_size', type=int,
                         default=32,
@@ -122,9 +143,9 @@ if __name__ == '__main__':
         y_test = hf['data'][:]
 
 
-    print "train shape", X_train.shape
-    print "test shape", X_test.shape
-    print "y_train shape", y_train.shape
+    print "train shape {}, min: {} max: {}".format(X_train.shape, X_train.min(), X_train.max())
+    print "test shape {}, min: {} max: {}".format(X_test.shape, X_test.min(), X_test.max())
+    print "y_train shape {}, min: {} max: {}".format(y_train.shape, y_train.min(), y_train.max())
 
     np.random.seed(123)  # for reproducibility
 
@@ -135,18 +156,22 @@ if __name__ == '__main__':
     # First, define the vision modules
     animal_input = Input(shape=X_train.shape[1:])
 
-    x = Conv2DReluBatchNorm(32, 3, 3, animal_input)
-    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    # x = Conv2DReluBatchNorm(32, 3, 3, animal_input)
+    x = Conv2D(8, (3, 3), activation='relu')(animal_input)
+    x = Conv2D(8, (3, 3), activation='relu', dilation_rate=(2, 2))(x)
     x = MaxPooling2D((2, 2))(x)
     # x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
     # x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
     # x = Conv2DReluBatchNorm(32, 3, 3, x)
     # x = MaxPooling2D((2, 2))(x)
-    x = Conv2DReluBatchNorm(16, 3, 3, x)
-    x = Conv2DReluBatchNorm(8, 3, 3, x)
+    # x = Conv2DReluBatchNorm(16, 3, 3, x)
+    x = Conv2D(8, (3, 3), activation='relu')(x)
+    # x = Conv2DReluBatchNorm(8, 3, 3, x)
+    x = Conv2D(8, (3, 3), activation='relu')(x)
+    x = Conv2D(8, (3, 3), activation='relu')(x)
     x = Flatten()(x)
 
-    out = Dense(6, activation='softmax')(x)
+    # out = Dense(6, activation='softmax')(x)
     # classification_model = Model(animal_input, out)
     # classification_model.load_weights('../data_cam1/cam1_softmax2.h5')
     # classification_model.load_weights('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/cam1_softmax2.h5')
@@ -154,9 +179,13 @@ if __name__ == '__main__':
 
     # x = Flatten()(x)
     # x = Dense(32, activation='sigmoid')(x)
-    x = Dense(8, activity_regularizer=l2(0.01))(x)
-    x = BatchNormalization()(x)
-    out = Activation('sigmoid')(x)
+    x = Dense(32, activation='relu')(x)
+    x = Dense(32, activation='relu')(x)
+    x = Dense(32, activation='relu')(x)
+    x = Dense(32, activation='relu')(x)
+    x = Dense(OUT_DIM, activation='sigmoid')(x)
+    # x = BatchNormalization()(x)
+    # out = Activation('sigmoid')(x)
     # x = Dense(8, activation='sigmoid', kernel_initializer='uniform')(x)
 
     model = Model(animal_input, x)
@@ -170,8 +199,8 @@ if __name__ == '__main__':
     # 8. Compile model
     # classification_model.compile(loss=my_loss, optimizer='adam')
     from keras.optimizers import Adam
-    optimizer = Adam(lr=0.01)
-    model.compile(loss=my_loss, optimizer=optimizer)
+    # optimizer = Adam(lr=0.01)
+    model.compile(loss=my_loss2, optimizer='adam')
 
 
     from scipy import stats

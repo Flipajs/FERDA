@@ -12,13 +12,13 @@ if __name__ == '__main__':
     parser.add_argument('--datadir', type=str,
                         default='/Users/flipajs/Documents/wd/FERDA/CNN_hard_datagen',
                         help='path to dataset')
-    parser.add_argument('--num_examples', type=int, default=100,
+    parser.add_argument('--num_examples', type=int, default=200,
                         help='num examples')
     parser.add_argument('--im_size', type=int, default=32,
                         help='im size')
     parser.add_argument('--num_negative', type=int, default=1,
                         help='im size')
-    parser.add_argument('--test_ratio', type=float, default=0.1,
+    parser.add_argument('--test_ratio', type=float, default=0.5,
                         help='number of negative examples')
 
     args = parser.parse_args()
@@ -27,27 +27,52 @@ if __name__ == '__main__':
     labels = []
     num_swap = 0
     for i in range(args.num_examples):
-        circle = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
-        cv2.circle(circle, (ri(5, 27), ri(5, 27)), 10, (ri(0, 255), ri(0, 255), ri(0, 255)), -1)
+        r, g, b = ri(0, 255), ri(0, 255), ri(0, 255)
 
-        rectangle = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
-        x = ri(0, 21)
-        y = ri(0, 21)
-        rectangle[x:x+10, y:y+10, :] = [ri(0, 255), ri(0, 255), ri(0, 255)]
+        radius = 10
+        circle1 = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
+        # cv2.circle(circle1, (ri(5, 27), ri(5, 27)), ri(2, 13), (r, g, b), -1)
+        cv2.circle(circle1, (ri(5, 27), ri(5, 27)), radius, (r, g, b), -1)
 
-        plt.imshow(circle)
-        plt.figure()
-        plt.imshow(rectangle)
-        plt.show()
+        circle2 = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
+        cv2.circle(circle2, (ri(5, 27), ri(5, 27)), radius, (r, g, b), -1)
+
+        r, g, b = ri(0, 255), ri(0, 255), ri(0, 255)
+        size = 15
+        rectangle1 = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
+        # size = ri(2, 30)
+        x = ri(0, 31-size)
+        y = ri(0, 31-size)
+        rectangle1[x:x+size, y:y+size, :] = [r, g, b]
+
+        rectangle2 = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
+        # size = ri(2, 30)
+        x = ri(0, 31 - size)
+        y = ri(0, 31 - size)
+        rectangle2[x:x + size, y:y + size, :] = [r, g, b]
+
+        noise_amount = 0
+        circle1 = np.clip(circle1 + np.asarray(np.random.rand(args.im_size, args.im_size, 3) * noise_amount, dtype=np.uint8), 0, 255)
+        circle2 = np.clip(circle2 + np.asarray(np.random.rand(args.im_size, args.im_size, 3) * noise_amount, dtype=np.uint8), 0, 255)
+        rectangle1 = np.clip(rectangle1 + np.asarray(np.random.rand(args.im_size, args.im_size, 3) * noise_amount, dtype=np.uint8), 0, 255)
+        rectangle2 = np.clip(rectangle2 + np.asarray(np.random.rand(args.im_size, args.im_size, 3) * noise_amount, dtype=np.uint8), 0, 255)
+
+        # plt.imshow(circle)
+        # plt.figure()
+        # plt.imshow(rectangle)
+        # plt.show()
 
         # random swap...
         if random.random() <= 0.5:
             num_swap += 1
-            circle, rectangle = rectangle, circle
+            imgs.append(rectangle1)
+            imgs.append(rectangle2)
+            imgs.append(circle1)
+        else:
+            imgs.append(circle1)
+            imgs.append(circle2)
+            imgs.append(rectangle1)
 
-        imgs.append(circle)
-        imgs.append(circle)
-        imgs.append(rectangle)
         labels.append(1)
         labels.append(1)
         labels.append(0)

@@ -6,7 +6,7 @@ from scipy import misc
 import tqdm
 import argparse
 import matplotlib.pyplot as plt
-
+import matplotlib.pyplot as plt
 # creates dataset of size args.num_examples * (2+args.num_negative), data will
 # be ordered positive1_1, positive2_1, negative1_1, .... negative_num_negative, positive1_2, positive2_2, negative1_2....
 
@@ -50,6 +50,18 @@ if __name__ == '__main__':
 
             im1 = misc.imread(args.datadir+'/'+str(i)+'/'+images_f[i][ai])
             im2 = misc.imread(args.datadir+'/'+str(i)+'/'+images_f[i][aj])
+
+            from skimage import measure
+
+            image = np.zeros((20, 20), dtype=np.double)
+            image[14:16, 13:17] = 1
+            m = measure.moments(image)
+            
+            im1 = np.asarray(im1, dtype=np.double)
+            M = measure.moments(im1[:, :, 0])
+            cr = M[1, 0] / M[0, 0]
+            cc = M[0, 1] / M[0, 0]
+            measure.moments_central(im1[:, :, 0], cr, cc)
 
             imgs.append(im1)
             imgs.append(im2)
