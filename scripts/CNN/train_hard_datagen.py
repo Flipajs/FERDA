@@ -29,7 +29,7 @@ if __name__ == '__main__':
     for i in range(args.num_examples):
         r, g, b = ri(0, 255), ri(0, 255), ri(0, 255)
 
-        radius = 10
+        radius = 3
         circle1 = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
         # cv2.circle(circle1, (ri(5, 27), ri(5, 27)), ri(2, 13), (r, g, b), -1)
         cv2.circle(circle1, (ri(5, 27), ri(5, 27)), radius, (r, g, b), -1)
@@ -38,7 +38,7 @@ if __name__ == '__main__':
         cv2.circle(circle2, (ri(5, 27), ri(5, 27)), radius, (r, g, b), -1)
 
         r, g, b = ri(0, 255), ri(0, 255), ri(0, 255)
-        size = 15
+        size = 5
         rectangle1 = np.zeros((args.im_size, args.im_size, 3), dtype=np.uint8)
         # size = ri(2, 30)
         x = ri(0, 31-size)
@@ -57,9 +57,13 @@ if __name__ == '__main__':
         rectangle1 = np.clip(rectangle1 + np.asarray(np.random.rand(args.im_size, args.im_size, 3) * noise_amount, dtype=np.uint8), 0, 255)
         rectangle2 = np.clip(rectangle2 + np.asarray(np.random.rand(args.im_size, args.im_size, 3) * noise_amount, dtype=np.uint8), 0, 255)
 
-        # plt.imshow(circle)
+        # plt.imshow(circle1)
         # plt.figure()
-        # plt.imshow(rectangle)
+        # plt.imshow(circle2)
+        # plt.figure()
+        # plt.imshow(rectangle1)
+        # plt.figure()
+        # plt.imshow(rectangle2)
         # plt.show()
 
         # random swap...

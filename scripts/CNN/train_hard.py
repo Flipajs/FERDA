@@ -39,8 +39,8 @@ class NBatchLogger(Callback):
                                                 logs.get('loss'))
 
 def my_loss2(y_true, y_pred):
-    y_pred = K.l2_normalize(y_pred, axis=-1)
-    margin = 1.0
+    # y_pred = K.l2_normalize(y_pred, axis=-1)
+    margin = 1.
     embeddings = K.reshape(y_pred, (-1, 3, OUT_DIM))
 
     positive_distance = K.mean(K.square(embeddings[:,0] - embeddings[:,1]),axis=-1)
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     x = Dense(32, activation='relu')(x)
     x = Dense(32, activation='relu')(x)
     x = Dense(32, activation='relu')(x)
-    x = Dense(OUT_DIM, activation='sigmoid')(x)
+    x = Dense(OUT_DIM, activation='sigmoid', kernel_initializer='random_uniform')(x)
     # x = BatchNormalization()(x)
     # out = Activation('sigmoid')(x)
     # x = Dense(8, activation='sigmoid', kernel_initializer='uniform')(x)
