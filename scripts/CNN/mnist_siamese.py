@@ -25,6 +25,7 @@ from keras.layers import Input, Flatten, Dense, Dropout, Lambda
 from keras.optimizers import RMSprop
 from keras import backend as K
 from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, BatchNormalization, Activation
+from keras.preprocessing.image import ImageDataGenerator
 
 
 def euclidean_distance(vects):
@@ -252,7 +253,6 @@ def create_base_network7(input_shape):
     m.summary()
     return m
 
-
 def create_base_network8(input_shape):
     ''' Basiacly network 5 + padding added...
     '''
@@ -280,6 +280,34 @@ def create_base_network8(input_shape):
     m.summary()
     return m
 
+def create_base_network9(input_shape):
+    ''' Basiacly network 5 + padding added...
+    '''
+    input = Input(shape=input_shape)
+
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(input)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = MaxPooling2D((2, 2))(x)
+
+    # x = Conv2D(64, (3, 3))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Flatten()(x)
+
+    x = Dense(128, activation='linear')(x)
+    m = Model(input, x)
+    m.summary()
+    return m
 
 
 def compute_accuracy(y_true, y_pred):
@@ -300,7 +328,7 @@ import argparse
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='train siamese CNN with HARD loss (https://github.com/DagnyT/hardnet/)')
+        description='train siamese CNN with contrastive loss')
 
     parser.add_argument('--datadir', type=str,
                         default='/Users/flipajs/Documents/wd/FERDA/CNN_hard_datagen',
@@ -347,8 +375,14 @@ if __name__ == '__main__':
                      # create_base_network5,
                      # create_base_network6,
                      # create_base_network7,
-                     create_base_network8,
+                     # create_base_network8,
+                     create_base_network9,
                      ]
+
+    datagen = ImageDataGenerator(
+        rotation_range=360,
+        width_shift_range=0.02,
+        height_shift_range=0.02)
 
     for architecture in architectures:
         print("")
@@ -374,10 +408,20 @@ if __name__ == '__main__':
         # train
         # rms = RMSprop()
         model.compile(loss=contrastive_loss, optimizer='adam', metrics=[accuracy])
-        model.fit([tr_pairs[:, 0], tr_pairs[:, 1]], tr_y,
-                  batch_size=args.batch_size,
-                  epochs=args.epochs,
-                  validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y))
+
+        model.fit_generator(generator=datagen.next_train(), samples_per_epoch=datagen.samples_per_train,
+                            nb_epoch=nb_epoch, validation_data=datagen.next_val(),
+                            nb_val_samples=datagen.samples_per_val)
+        
+        model.fit_generator(datagen.flow(te_pairs, tr_y, batch_size=args.batch_size),
+                            steps_per_epoch=,
+                            epochs=args.epochs,
+                            validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y))
+
+        # model.fit([tr_pairs[:, 0], tr_pairs[:, 1]], tr_y,
+        #           batch_size=args.batch_size,
+        #           epochs=args.epochs,
+        #           validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y))
 
         # compute final accuracy on training and test sets
         y_pred = model.predict([tr_pairs[:, 0], tr_pairs[:, 1]])
