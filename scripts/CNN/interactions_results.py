@@ -71,7 +71,7 @@ if __name__ == '__main__':
     # ROOT_DIR = '/Users/flipajs/Downloads/double_regions'
     # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 
-    EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/171208_2152/0.620689655172/'
+    EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/171221_0137_batch_relu/0.666666666667/'
     DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1712_1k_36rot'
 
     # EXPERIMENT_DIR = '/home/matej/prace/ferda/experiments/171206_1209_batch/0.344827586207/'
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     if not os.path.exists(EXPERIMENT_DIR):
         os.mkdir(EXPERIMENT_DIR)
     if not os.path.exists(join(EXPERIMENT_DIR, 'visualization')):
-        os.mkdir(join(EXPERIMENT_DIR, 'test_predictions'))
+        os.mkdir(join(EXPERIMENT_DIR, 'visualization'))
     else:
         for fn in glob.glob(join(EXPERIMENT_DIR, 'visualization', '*.png')):
             os.remove(fn)

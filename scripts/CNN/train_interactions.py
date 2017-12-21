@@ -31,7 +31,7 @@ ROOT_DIR = '../../data/CNN_models/interactions'
 # ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 # DATA_DIR = ROOT_DIR + '/data'
-DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1712_10k_36rot'
+DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1712_1k_36rot'
 ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/'
 ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
 
@@ -118,11 +118,11 @@ def model():
     # vision_model.summary()
 
     # animal_input = Input(shape=X_train_a.shape[1:])
-    x = Conv2D(32, (3, 3), padding='same')(input_shape)
-    x = Conv2D(32, (3, 3), padding='same', dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
     x = MaxPooling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), padding='same', dilation_rate=(2, 2))(x)
-    x = Conv2D(32, (3, 3), padding='same', dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
     x = Conv2D(32, (3, 3))(x)
     x = MaxPooling2D((2, 2))(x)
     out_a = Conv2D(16, (3, 3))(x)
@@ -178,7 +178,7 @@ def evaluate(model, test_generator, y_test):
 
 
 if __name__ == '__main__':
-    NUM_EPOCHS = 6
+    NUM_EPOCHS = 10
     # NUM_EPOCHS = 1
     # USE_PREVIOUS_AS_INIT = 0
     # K = 6
@@ -211,6 +211,7 @@ if __name__ == '__main__':
     parameters = {'epochs': NUM_EPOCHS,
                   'loss_alpha': np.linspace(0, 1, 10),
                   # 'loss_alpha': 0.62,
+                  # 'loss_alpha': 0.344827586207,
                   'steps_per_epoch': int(len(X_train) / BATCH_SIZE)
                   }
 
