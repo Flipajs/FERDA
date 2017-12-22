@@ -7,7 +7,7 @@ import os
 from os.path import join
 import tqdm
 import glob
-import train_interactions
+import scripts.CNN.train_interactions as train_interactions
 import pandas as pd
 
 
@@ -71,8 +71,8 @@ if __name__ == '__main__':
     # ROOT_DIR = '/Users/flipajs/Downloads/double_regions'
     # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 
-    EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/171221_0137_batch_relu/0.666666666667/'
-    DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1712_1k_36rot'
+    EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/171221_2353/'
+    DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1712_1k_36rot_fixed'
 
     # EXPERIMENT_DIR = '/home/matej/prace/ferda/experiments/171206_1209_batch/0.344827586207/'
     # DATA_DIR = '/home/matej/prace/ferda/data/interactions/'

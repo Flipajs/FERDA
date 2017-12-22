@@ -31,7 +31,7 @@ ROOT_DIR = '../../data/CNN_models/interactions'
 # ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 # DATA_DIR = ROOT_DIR + '/data'
-DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1712_1k_36rot'
+DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1712_36k_random'
 ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/'
 ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
 
@@ -209,9 +209,10 @@ if __name__ == '__main__':
     print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
     parameters = {'epochs': NUM_EPOCHS,
-                  'loss_alpha': np.linspace(0, 1, 10),
+                  'loss_alpha': np.linspace(0, 1, 15),
                   # 'loss_alpha': 0.62,
                   # 'loss_alpha': 0.344827586207,
+                  # 'loss_alpha': 0.66,
                   'steps_per_epoch': int(len(X_train) / BATCH_SIZE)
                   }
 

@@ -527,13 +527,21 @@ class Interactions(object):
         # plt.imshow(region1.move((0, 100)).get_mask())
 
     def write_synthetized_interactions(self, count=100, out_dir='./out', out_csv='./out/doubleregions.csv',
-                                       project_dir=None, out_hdf5=None, hdf5_dataset_name=None):
+                                       rotation='random', project_dir=None, out_hdf5=None, hdf5_dataset_name=None):
         if out_dir is False:
             out_dir = None
         if out_csv is False:
             out_csv = None
         if out_hdf5 is False:
             out_hdf5 = None
+        if rotation == 'random' or rotation == 'normalize':
+            n_angles = 1
+        elif isinstance(rotation, int):
+            rotations = np.arange(0, 360, rotation)
+            n_angles = len(rotations)
+        else:
+            assert False, 'wrong rotation parameter'
+        assert count % n_angles == 0
 
         # angles: positive clockwise, zero direction to right
         self.__load_project(project_dir)
@@ -544,14 +552,6 @@ class Interactions(object):
         single_regions = [item for sublist in self.__single.values() for item in sublist]
         BATCH_SIZE = 250  # 2* BATCH_SIZE images must fit into memory
         IMAGE_SIZE_PX = 200
-        # ANGLES = np.arange(0, 360, 10)
-        # ANGLES = 'normalize'
-        ANGLES = 'random'
-        if ANGLES == 'random' or ANGLES == 'normalize':
-            n_angles = 1
-        else:
-            n_angles = len(ANGLES)
-        assert count % n_angles == 0
 
         fieldnames = ['filename',
                       'ant1_x', 'ant1_y', 'ant1_major', 'ant1_minor', 'ant1_angle_deg',
@@ -596,19 +596,19 @@ class Interactions(object):
 
                         try:
                             img_synthetic, mask, synth_centers_xy, region2_main_axis_angle_rad = \
-                                self.__synthetize(region1, region2,theta_rad, phi_rad, overlap_px, img1, img2)
+                                self.__synthetize(region1, region2, theta_rad, phi_rad, overlap_px, img1, img2)
                         except IndexError:
                             print('%s: IndexError, repeating' % ('%06d.jpg' % (i + 1)))
                         if img_synthetic is not None:
                             break
 
                     centroid_xy, major_deg = self.__get_moments(mask)
-                    if ANGLES == 'random':
+                    if rotation == 'random':
                         angles = [np.random.randint(0, 359)]
-                    elif ANGLES == 'normalize':
+                    elif rotation == 'normalize':
                         angles = [-major_deg]
                     else:
-                        angles = ANGLES
+                        angles = rotations
                     for angle_deg in angles:
                         tregion_synthetic = TransformableRegion(img_synthetic)
                         # tregion_synthetic.set_mask(mask.astype(np.uint8))
@@ -802,6 +802,20 @@ class Interactions(object):
         region2_main_axis_angle_rad = -region2.theta_ + math.pi - (phi_rad + theta_rad)
         tregion2.move(-head_yx).rotate(math.degrees(region2_main_axis_angle_rad)).move(border_point_xy[::-1])
 
+        synth_center_xy1 = region1.centroid()[::-1].astype(int)
+        synth_center_xy2 = tregion2.get_transformed_coords(region2.centroid()[::-1])
+        # test if region2 object is within image bounds
+        alpha = (region2.theta_ + region2_main_axis_angle_rad)
+        dxdy = 2 * region2.major_axis_ * np.array([np.cos(-alpha), np.sin(-alpha)])
+        if not (np.all((synth_center_xy2 + dxdy) >= [0, 0]) and
+                np.all((synth_center_xy2 + dxdy) < img1.shape[:2]) and
+                np.all((synth_center_xy2 - dxdy) >= [0, 0]) and
+                np.all((synth_center_xy2 - dxdy) < img1.shape[:2])):
+            # plt.imshow(img_synthetic)
+            # plt.plot((synth_center_xy2 + dxdy)[0], (synth_center_xy2 + dxdy)[1], 'r+')
+            # plt.plot((synth_center_xy2 - dxdy)[0], (synth_center_xy2 - dxdy)[1], 'r+')
+            raise IndexError
+
         img2_rgba_trans = tregion2.get_img()
         alpha_trans = img2_rgba_trans[:, :, 3]
         mask_trans = tregion2.get_mask()
@@ -819,9 +833,6 @@ class Interactions(object):
 
         img_synthetic = (img1.astype(float) * (1 - np.expand_dims(alpha_trans, 2)) +
                          img2_rgba_trans[:, :, :3].astype(float) * np.expand_dims(alpha_trans, 2)).astype(np.uint8)
-
-        synth_center_xy1 = region1.centroid()[::-1].astype(int)
-        synth_center_xy2 = tregion2.get_transformed_coords(region2.centroid()[::-1])
 
         tregion1.set_elliptic_mask()
         # plt.imshow(img_synthetic)
@@ -844,6 +855,7 @@ class Interactions(object):
         #                      facecolor='none'))
         mask = np.logical_or(tregion1.get_mask().astype(bool),
                              tregion2.get_mask().astype(np.bool))
+
         return img_synthetic, mask, (synth_center_xy1, synth_center_xy2), region2_main_axis_angle_rad
 
     def __get_moments(self, mask):
