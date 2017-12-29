@@ -30,6 +30,7 @@ from matplotlib.patches import Ellipse
 import waitforbuttonpress
 import h5py
 import warnings
+from itertools import product
 
 
 def p2e(projective):
@@ -189,7 +190,7 @@ class Interactions(object):
         self.__video = get_auto_video_manager(self.__project)
         print('regions start')
 
-        regions_filename = './out/regions_long_tracklets.pkl'
+        regions_filename = './scripts/out/regions_long_tracklets.pkl'
         if os.path.exists(regions_filename):
             print('regions loading...')
             with open(regions_filename, 'rb') as fr:
@@ -526,7 +527,7 @@ class Interactions(object):
         plt.imshow(region1.compose(region2.rotate(-30).move((-15, -15))))
         # plt.imshow(region1.move((0, 100)).get_mask())
 
-    def write_synthetized_interactions(self, count=100, out_dir='./out', out_csv='./out/doubleregions.csv',
+    def write_synthetized_interactions(self, count=100, n_objects=2, out_dir='./out', out_csv='./out/doubleregions.csv',
                                        rotation='random', project_dir=None, out_hdf5=None, hdf5_dataset_name=None):
         if out_dir is False:
             out_dir = None
@@ -543,6 +544,9 @@ class Interactions(object):
             assert False, 'wrong rotation parameter'
         assert count % n_angles == 0
 
+        COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg',
+                   'region_id', 'theta_rad', 'phi_rad', 'overlap_px']
+
         # angles: positive clockwise, zero direction to right
         self.__load_project(project_dir)
         from core.bg_model.median_intensity import MedianIntensity
@@ -553,11 +557,8 @@ class Interactions(object):
         BATCH_SIZE = 250  # 2* BATCH_SIZE images must fit into memory
         IMAGE_SIZE_PX = 200
 
-        fieldnames = ['filename',
-                      'ant1_x', 'ant1_y', 'ant1_major', 'ant1_minor', 'ant1_angle_deg',
-                      'ant2_x', 'ant2_y', 'ant2_major', 'ant2_minor', 'ant2_angle_deg',
-                      'ant1_id', 'ant2_id', 'theta_rad', 'phi_rad', 'overlap_px',
-                      'video_file', 'augmentation_angle_deg']
+        objects_fieldnames = [str(obj_id) + '_' + col for obj_id, col in product(range(n_objects), COLUMNS)]
+        fieldnames = objects_fieldnames + ['video_file', 'augmentation_angle_deg']
 
         if out_hdf5 is not None:
             assert hdf5_dataset_name is not None
@@ -576,7 +577,7 @@ class Interactions(object):
         for i1 in tqdm.tqdm(np.arange(0, int(count / n_angles), BATCH_SIZE), desc='batch'):
             i2 = min(i1 + BATCH_SIZE, count)
             n = i2 - i1
-            regions = np.random.choice(single_regions, 2 * n)
+            regions = np.random.choice(single_regions, n_objects * n)
             frames = [r.frame() for r in regions]
             sort_idx = np.argsort(frames)
             sort_idx_reverse = np.argsort(sort_idx)
@@ -585,18 +586,21 @@ class Interactions(object):
             images = [images_sorted[idx] for idx in sort_idx_reverse]
 
             with tqdm.tqdm(total=n * n_angles, desc='synthetize') as progress_bar:
-                for region1, region2, img1, img2 in zip(regions[:n], regions[n:], images[:n], images[n:]):
+                for j in range(n):
+                    use_regions = [regions[k * n + j] for k in range(n_objects)]
+                    use_images = [images[k * n + j] for k in range(n_objects)]
                     img_synthetic = None
                     while True:
                         # border point angle with respect to object centroid, 0 rad is from the centroid rightwards, positive ccw
-                        theta_rad = np.random.uniform(-math.pi, math.pi)
+                        theta_rad = np.random.uniform(-np.pi, np.pi, n_objects - 1)
                         # approach angle, 0 rad is direction from the object centroid
-                        phi_rad = np.clip(np.random.normal(scale=(math.pi / 2) / 2), math.radians(-80), math.radians(80))
-                        overlap_px = int(round(np.random.gamma(1, 5)))
+                        phi_rad = np.clip(np.random.normal(scale=(np.pi / 2) / 2, size=n_objects - 1),
+                                          np.radians(-80), np.radians(80))
+                        overlap_px = np.random.gamma(1, 5, size=n_objects - 1).round().astype(int)
 
                         try:
-                            img_synthetic, mask, synth_centers_xy, region2_main_axis_angle_rad = \
-                                self.__synthetize(region1, region2, theta_rad, phi_rad, overlap_px, img1, img2)
+                            img_synthetic, mask, centers_xy, main_axis_angles_rad = \
+                                self.__synthetize(use_regions, theta_rad, phi_rad, overlap_px, use_images)
                         except IndexError:
                             print('%s: IndexError, repeating' % ('%06d.jpg' % (i + 1)))
                         if img_synthetic is not None:
@@ -616,40 +620,38 @@ class Interactions(object):
                         img_rotated = tregion_synthetic.get_img()
                         img_crop, delta_xy = self.__crop(img_rotated, centroid_xy, IMAGE_SIZE_PX)
 
-                        ant1 = {'xy': tregion_synthetic.get_transformed_coords(synth_centers_xy[0]) - delta_xy,
-                                'major': 4 * region1.major_axis_,
-                                'minor': 4 * region1.minor_axis_,
-                                'angle_deg': tregion_synthetic.get_transformed_angle(math.degrees(region1.theta_))}
-                        ant2 = {'xy': tregion_synthetic.get_transformed_coords(synth_centers_xy[1]) - delta_xy,
-                                'major': 4 * region2.major_axis_,
-                                'minor': 4 * region2.minor_axis_,
-                                'angle_deg': tregion_synthetic.get_transformed_angle(
-                                    math.degrees(region2.theta_ + region2_main_axis_angle_rad))}
+                        results_row = []
+                        for k in range(n_objects):
+                            xy = tregion_synthetic.get_transformed_coords(centers_xy[k]) - delta_xy
+                            results_row.extend([
+                                (str(k) + '_x', round(xy[0], 1)),
+                                (str(k) + '_y', round(xy[1], 1)),
+                                (str(k) + '_major', round(4 * use_regions[k].major_axis_, 1)),
+                                (str(k) + '_minor', round(4 * use_regions[k].minor_axis_, 1)),
+                                (str(k) + '_angle_deg', round(tregion_synthetic.get_transformed_angle(
+                                    math.degrees(use_regions[k].theta_ + main_axis_angles_rad[k])), 1)),
+                                (str(k) + '_region_id', use_regions[k].id()),
+                            ])
+                            if k == 0:
+                                results_row.extend([
+                                    (str(k) + '_theta_rad', -1),
+                                    (str(k) + '_phi_rad', -1),
+                                    (str(k) + '_overlap_px', -1),
+                                ])
+                            else:
+                                results_row.extend([
+                                    (str(k) + '_theta_rad', round(theta_rad[k - 1], 1)),
+                                    (str(k) + '_phi_rad', round(phi_rad[k - 1], 1)),
+                                    (str(k) + '_overlap_px', round(overlap_px[k - 1], 1)),
+                                ])
 
-                        img_filename = '%06d.jpg' % i
-                        results_row = [
-                            ('filename', img_filename),
-                            ('ant1_x', round(ant1['xy'][0], 1)),
-                            ('ant1_y', round(ant1['xy'][1], 1)),
-                            ('ant1_major', round(ant1['major'], 1)),
-                            ('ant1_minor', round(ant1['minor'], 1)),
-                            ('ant1_angle_deg', round(ant1['angle_deg'], 1)),
-                            ('ant2_x', round(ant2['xy'][0], 1)),
-                            ('ant2_y', round(ant2['xy'][1], 1)),
-                            ('ant2_major', round(ant2['major'], 1)),
-                            ('ant2_minor', round(ant2['minor'], 1)),
-                            ('ant2_angle_deg', round(ant2['angle_deg'], 1)),
-                            ('ant1_id', region1.id()),
-                            ('ant2_id', region2.id()),
-                            ('theta_rad', round(theta_rad, 1)),
-                            ('phi_rad', round(phi_rad, 1)),
-                            ('overlap_px', round(overlap_px, 1)),
-                            ('augmentation_angle_deg', angle_deg),
+                        results_row.extend([
+                            ('augmentation_angle_deg', round(angle_deg, 1)),
                             ('video_file', os.path.basename(self.__video.video_path)),
-                        ]
+                        ])
 
                         if out_dir is not None:
-                            cv2.imwrite(os.path.join(out_dir, img_filename), img_crop)
+                            cv2.imwrite(os.path.join(out_dir, '%06d.jpg' % i), img_crop)
                         if out_csv is not None:
                             csv_writer.writerow(dict(results_row))
                         if out_hdf5 is not None:
@@ -714,127 +716,137 @@ class Interactions(object):
         # from matplotlib.patches import Rectangle
         # ax.add_patch(Rectangle(bb_xywh[:2], bb_xywh[2], bb_xywh[3], linewidth=1, edgecolor='r', facecolor='none'))
 
-    def show_interactions_csv(self, csv_file, image_dir):
+    def show_interactions_csv(self, csv_file, image_dir=None, image_hdf5=None, hdf5_dataset_name=None, n_objects=2):
+        assert image_dir is not None or image_hdf5 is not None
+        if image_hdf5 is not None:
+            assert hdf5_dataset_name is not None
+            hf = h5py.File(image_hdf5, 'r')
+            images = hf[hdf5_dataset_name]
         # waitforbuttonpress.figure()
         with open(csv_file, 'r') as fr:
             csv_reader = csv.DictReader(fr)
-            for i, row in enumerate(csv_reader):
-                img = plt.imread(os.path.join(image_dir, row['filename']))
+            for i, row in enumerate(tqdm.tqdm(csv_reader)):
+                if image_hdf5 is not None:
+                    img = images[i]
+                else:
+                    img = plt.imread(os.path.join(image_dir, row['filename']))
                 fig = plt.figure()
                 plt.imshow(img)
                 ax = plt.gca()
-                ax.add_patch(Ellipse(xy=(float(row['ant1_x']), float(row['ant1_y'])),
-                                     width=float(row['ant1_major']),
-                                     height=float(row['ant1_minor']),
-                                     angle=-float(row['ant1_angle_deg']),
-                                     edgecolor='r',
-                                     facecolor='none'))
-                ax.add_patch(Ellipse(xy=(float(row['ant2_x']), float(row['ant2_y'])),
-                                     width=float(row['ant2_major']),
-                                     height=float(row['ant2_minor']),
-                                     angle=-float(row['ant2_angle_deg']),
-                                     edgecolor='r',
-                                     facecolor='none'))
+                for j in range(n_objects):
+                    ax.add_patch(Ellipse(xy=(float(row[str(j) + '_x']),
+                                             float(row[str(j) + '_y'])),
+                                         width=float(row[str(j) + '_major']),
+                                         height=float(row[str(j) + '_minor']),
+                                         angle=-float(row[str(j) + '_angle_deg']),
+                                         edgecolor='r',
+                                         facecolor='none'))
                 # plt.draw()
-                fig.savefig('out/debug/%03d.png' % i, transparent=True, bbox_inches='tight', pad_inches=0)
+                fig.savefig('scripts/out/debug/%03d.png' % i, transparent=True, bbox_inches='tight', pad_inches=0)
                 plt.close(fig)
                 # waitforbuttonpress.wait()
                 # if waitforbuttonpress.is_closed():
                 #     break
                 plt.clf()
 
-    def __synthetize(self, region1, region2, theta_rad, phi_rad, overlap_px, img1=None, img2=None):
+    def __synthetize(self, regions, theta_rad, phi_rad, overlap_px, images=None):
         # angles: positive clockwise, zero direction to right
+        n_objects = len(regions)
+        if images is None:
+            images = [self.__video.get_frame(r.frame()) for r in regions]
+        base_tregion = TransformableRegion(images[0])
+        base_tregion.set_region(regions[0])
+        base_tregion.set_elliptic_mask()
+        centers_xy = [regions[0].centroid()[::-1].astype(int)]
+        main_axis_angles_rad = [0]
 
-        if img1 is None:
-            img1 = self.__video.get_frame(region1.frame())
-        tregion1 = TransformableRegion(img1)
-        tregion1.set_region(region1)
+        alphas = []
+        tregions = []
+        for i in range(1, n_objects):
+            border_point_xy = regions[0].get_border_point(theta_rad[i - 1], shift_px=-overlap_px[i - 1])
 
-        border_point_xy = region1.get_border_point(theta_rad, shift_px=-overlap_px)
+            # # mask based on background subtraction
+            # fg_mask = bg.get_fg_mask(img)
+            # fg_mask = cv2.dilate(fg_mask.astype(np.uint8), kernel=np.ones((3, 3), np.uint8), iterations=1)
+            # mask_labels = cv2.connectedComponents(fg_mask)[1]  # .astype(np.uint8)
+            # center_xy_rounded = center_xy.round().astype(int)
+            # mask = (mask_labels == mask_labels[center_xy_rounded[1], center_xy_rounded[0]]).astype(np.uint8)
+            # region.set_mask(mask)
 
-        # # mask based on background subtraction
-        # fg_mask = bg.get_fg_mask(img)
-        # fg_mask = cv2.dilate(fg_mask.astype(np.uint8), kernel=np.ones((3, 3), np.uint8), iterations=1)
-        # mask_labels = cv2.connectedComponents(fg_mask)[1]  # .astype(np.uint8)
-        # center_xy_rounded = center_xy.round().astype(int)
-        # mask = (mask_labels == mask_labels[center_xy_rounded[1], center_xy_rounded[0]]).astype(np.uint8)
-        # region.set_mask(mask)
+            head_yx, tail_yx = get_region_endpoints(regions[i])
 
-        if img2 is None:
-            img2 = self.__video.get_frame(region2.frame())
-        head_yx, tail_yx = get_region_endpoints(region2)
+            ##
 
-        ##
+            # constructing img2 alpha channel
+            bg_diff = (self.__bg.bg_model.astype(np.float) - images[i]).mean(axis=2).clip(5, 100)
+            alpha = ((bg_diff - bg_diff.min()) / np.ptp(bg_diff))
+            # plt.imshow(alpha)
+            # plt.jet()
+            # plt.colorbar()
 
-        # constructing img2 alpha channel
-        bg_diff = (self.__bg.bg_model.astype(np.float) - img2).mean(axis=2).clip(5, 100)
-        alpha = ((bg_diff - bg_diff.min()) / np.ptp(bg_diff))
-        # plt.imshow(alpha)
-        # plt.jet()
-        # plt.colorbar()
+            ##
 
-        ##
+            img_rgba = np.concatenate((images[i], np.expand_dims(alpha * 255, 2).astype(np.uint8)), 2)
+            tregion = TransformableRegion(img_rgba)
+            tregion.set_region(regions[i])
 
-        img2_rgba = np.concatenate((img2, np.expand_dims(alpha * 255, 2).astype(np.uint8)), 2)
-        tregion2 = TransformableRegion(img2_rgba)
-        tregion2.set_region(region2)
+            # # background subtraction: component analysis
+            # fg_mask2 = bg.get_fg_mask(img2)
+            # # fg_mask2 = cv2.dilate(fg_mask2.astype(np.uint8), kernel=np.ones((3, 3), np.uint8), iterations=1)
+            # fg_mask2 = fg_mask2.astype(np.uint8)
+            # _, labels, stats, centroids = cv2.connectedComponentsWithStats(fg_mask2)  # .astype(np.uint8)
+            # center_xy2 = single2.centroid()[::-1]
+            # center_xy_rounded2 = center_xy2.round().astype(int)
+            # component_id = labels[center_xy_rounded2[1], center_xy_rounded2[0]]
+            # bb_xywh = stats[component_id][:4]
+            # from matplotlib.patches import Rectangle
+            # # fig, ax = plt.subplots()
+            # # ax = plt.gca()
+            # mask2 = (labels == component_id).astype(np.uint8)
+            # ax.imshow(mask2)
+            # ax.add_patch(Rectangle(bb_xywh[:2], bb_xywh[2], bb_xywh[3], linewidth=1, edgecolor='r', facecolor='none'))
 
-        # # background subtraction: component analysis
-        # fg_mask2 = bg.get_fg_mask(img2)
-        # # fg_mask2 = cv2.dilate(fg_mask2.astype(np.uint8), kernel=np.ones((3, 3), np.uint8), iterations=1)
-        # fg_mask2 = fg_mask2.astype(np.uint8)
-        # _, labels, stats, centroids = cv2.connectedComponentsWithStats(fg_mask2)  # .astype(np.uint8)
-        # center_xy2 = single2.centroid()[::-1]
-        # center_xy_rounded2 = center_xy2.round().astype(int)
-        # component_id = labels[center_xy_rounded2[1], center_xy_rounded2[0]]
-        # bb_xywh = stats[component_id][:4]
-        # from matplotlib.patches import Rectangle
-        # # fig, ax = plt.subplots()
-        # # ax = plt.gca()
-        # mask2 = (labels == component_id).astype(np.uint8)
-        # ax.imshow(mask2)
-        # ax.add_patch(Rectangle(bb_xywh[:2], bb_xywh[2], bb_xywh[3], linewidth=1, edgecolor='r', facecolor='none'))
+            tregion.set_elliptic_mask()
 
-        tregion2.set_elliptic_mask()
+            tregion.use_background = False
+            main_axis_angle_rad = -regions[i].theta_ + math.pi - (phi_rad[i - 1] + theta_rad[i - 1])
+            tregion.move(-head_yx).rotate(math.degrees(main_axis_angle_rad)).move(border_point_xy[::-1])
 
-        tregion2.use_background = False
-        region2_main_axis_angle_rad = -region2.theta_ + math.pi - (phi_rad + theta_rad)
-        tregion2.move(-head_yx).rotate(math.degrees(region2_main_axis_angle_rad)).move(border_point_xy[::-1])
+            centers_xy.append(tregion.get_transformed_coords(regions[i].centroid()[::-1]))
+            # test if region2 object is within image bounds
+            alpha = (regions[i].theta_ + main_axis_angle_rad)
+            dxdy = 2 * regions[i].major_axis_ * np.array([np.cos(-alpha), np.sin(-alpha)])
+            if not (np.all((centers_xy[i] + dxdy) >= [0, 0]) and
+                    np.all((centers_xy[i] + dxdy) < images[0].shape[:2]) and
+                    np.all((centers_xy[i] - dxdy) >= [0, 0]) and
+                    np.all((centers_xy[i] - dxdy) < images[0].shape[:2])):
+                # plt.imshow(img_synthetic)
+                # plt.plot((synth_center_xy2 + dxdy)[0], (synth_center_xy2 + dxdy)[1], 'r+')
+                # plt.plot((synth_center_xy2 - dxdy)[0], (synth_center_xy2 - dxdy)[1], 'r+')
+                raise IndexError
 
-        synth_center_xy1 = region1.centroid()[::-1].astype(int)
-        synth_center_xy2 = tregion2.get_transformed_coords(region2.centroid()[::-1])
-        # test if region2 object is within image bounds
-        alpha = (region2.theta_ + region2_main_axis_angle_rad)
-        dxdy = 2 * region2.major_axis_ * np.array([np.cos(-alpha), np.sin(-alpha)])
-        if not (np.all((synth_center_xy2 + dxdy) >= [0, 0]) and
-                np.all((synth_center_xy2 + dxdy) < img1.shape[:2]) and
-                np.all((synth_center_xy2 - dxdy) >= [0, 0]) and
-                np.all((synth_center_xy2 - dxdy) < img1.shape[:2])):
-            # plt.imshow(img_synthetic)
-            # plt.plot((synth_center_xy2 + dxdy)[0], (synth_center_xy2 + dxdy)[1], 'r+')
-            # plt.plot((synth_center_xy2 - dxdy)[0], (synth_center_xy2 - dxdy)[1], 'r+')
-            raise IndexError
+            alpha_trans = tregion.get_img()[:, :, 3]
+            alpha_trans[tregion.get_mask() == 0] = 0  # apply mask
+            alpha_trans = alpha_trans.astype(float) / 255
 
-        img2_rgba_trans = tregion2.get_img()
-        alpha_trans = img2_rgba_trans[:, :, 3]
-        mask_trans = tregion2.get_mask()
-        alpha_trans[mask_trans == 0] = 0  # apply mask
-        alpha_trans = alpha_trans.astype(float) / 255
+            # plt.figure()
+            # plt.imshow(img2)
+            # plt.plot(*single2.centroid()[::-1], marker='+')
 
-        # plt.figure()
-        # plt.imshow(img2)
-        # plt.plot(*single2.centroid()[::-1], marker='+')
+            # plt.figure()
+            # plt.imshow(img2_rgba_trans[:,:, :3])
+            # plt.plot(*xy, marker='+')
+            # from matplotlib.patches import Ellipse
 
-        # plt.figure()
-        # plt.imshow(img2_rgba_trans[:,:, :3])
-        # plt.plot(*xy, marker='+')
-        from matplotlib.patches import Ellipse
+            alphas.append(np.expand_dims(alpha_trans, 2))
+            tregions.append(tregion)
+            main_axis_angles_rad.append(main_axis_angle_rad)
 
-        img_synthetic = (img1.astype(float) * (1 - np.expand_dims(alpha_trans, 2)) +
-                         img2_rgba_trans[:, :, :3].astype(float) * np.expand_dims(alpha_trans, 2)).astype(np.uint8)
-
-        tregion1.set_elliptic_mask()
+        # base_img_alpha = sum([1 - alpha for alpha in alphas])
+        base_img_alpha = 1 - sum(alphas)
+        masked_images = sum([tregion.get_img()[:, :, :3] * alpha for tregion, alpha in zip(tregions, alphas)])
+        img_synthetic = (images[0].astype(float) * base_img_alpha + masked_images).astype(np.uint8)
+        mask = np.any(np.stack([region.get_mask().astype(bool) for region in [base_tregion] + tregions], axis=2), axis=2)
         # plt.imshow(img_synthetic)
         # ax = plt.gca()
         # zoomed_size = 300
@@ -850,13 +862,11 @@ class Interactions(object):
         # ax.add_patch(Ellipse(xy=synth_center_xy2,
         #                      width=4 * single2.major_axis_,
         #                      height=4 * single2.minor_axis_,
-        #                      angle=-math.degrees(single2.theta_ + region2_main_axis_angle_rad),
+        #                      angle=-math.degrees(single2.theta_ + main_axis_angle_rad),
         #                      edgecolor='r',
         #                      facecolor='none'))
-        mask = np.logical_or(tregion1.get_mask().astype(bool),
-                             tregion2.get_mask().astype(np.bool))
 
-        return img_synthetic, mask, (synth_center_xy1, synth_center_xy2), region2_main_axis_angle_rad
+        return img_synthetic, mask, centers_xy, main_axis_angles_rad
 
     def __get_moments(self, mask):
         # plt.figure()
