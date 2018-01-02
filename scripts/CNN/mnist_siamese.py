@@ -26,6 +26,7 @@ from keras.optimizers import RMSprop
 from keras import backend as K
 from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, BatchNormalization, Activation
 from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import ModelCheckpoint
 
 
 def euclidean_distance(vects):
@@ -44,6 +45,14 @@ def contrastive_loss(y_true, y_pred):
     '''
     margin = 1
     return K.mean(y_true * K.square(y_pred) +
+                  (1 - y_true) * K.square(K.maximum(margin - y_pred, 0)))
+
+def contrastive_loss2(y_true, y_pred):
+    '''Contrastive loss from Hadsell-et-al.'06
+    http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
+    '''
+    margin = 1
+    return K.mean(y_true * K.square(K.maximum(y_pred, 0)) +
                   (1 - y_true) * K.square(K.maximum(margin - y_pred, 0)))
 
 def create_base_network1(input_shape):
@@ -309,6 +318,35 @@ def create_base_network9(input_shape):
     m.summary()
     return m
 
+def create_base_network10(input_shape):
+    ''' Basiacly network 5 + padding added...
+    '''
+    input = Input(shape=input_shape)
+
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(input)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = MaxPooling2D((2, 2))(x)
+
+    # x = Conv2D(64, (3, 3))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Flatten()(x)
+
+    x = Dense(32, activation='linear')(x)
+    m = Model(input, x)
+    m.summary()
+    return m
+
 
 def compute_accuracy(y_true, y_pred):
     '''Compute classification accuracy with a fixed threshold on distances.
@@ -325,6 +363,47 @@ def accuracy(y_true, y_pred):
 
 import h5py
 import argparse
+
+class DataGenerator(object):
+    """docstring for DataGenerator"""
+    def __init__(self, batch_sz, tr_pairs, tr_y):
+        self.tr_pairs = tr_pairs
+        self.tr_pairs_0 = tr_pairs[:, 0]
+        self.tr_pairs_1 = tr_pairs[:, 1]
+        self.tr_y = tr_y
+
+        self.datagen_0 = ImageDataGenerator(rotation_range=360,
+                                            # width_shift_range=0.02,
+                                            # height_shift_range=0.02
+                                            ).flow(self.tr_pairs_0, self.tr_y, batch_size=batch_sz, shuffle=False)
+
+        self.datagen_1 = ImageDataGenerator(rotation_range=360,
+                                            # width_shift_range=0.02,
+                                            # height_shift_range=0.02
+                                            ).flow(self.tr_pairs_1, self.tr_y, batch_size=batch_sz, shuffle=False)
+
+        self.batch_sz = batch_sz
+        self.samples_per_train  = (self.tr_pairs.shape[0]/self.batch_sz)
+
+        self.cur_train_index=0
+        self.cur_val_index=0
+
+    def next_train(self):
+        while 1:
+            self.cur_train_index += self.batch_sz
+            if self.cur_train_index >= self.samples_per_train:
+                self.cur_train_index=0
+
+            p0, y = self.datagen_0.next()
+            p1, _ = self.datagen_1.next()
+
+            yield([p0, p1], y)
+            # yield ([
+            #             self.tr_pairs_0[self.cur_train_index:self.cur_train_index+self.batch_sz],
+            #             self.tr_pairs_1[self.cur_train_index:self.cur_train_index+self.batch_sz]
+            #         ],
+            #         self.tr_y[self.cur_train_index:self.cur_train_index+self.batch_sz]
+            #     )
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -376,13 +455,10 @@ if __name__ == '__main__':
                      # create_base_network6,
                      # create_base_network7,
                      # create_base_network8,
-                     create_base_network9,
+                     # create_base_network9,
+                     create_base_network10,
                      ]
-
-    datagen = ImageDataGenerator(
-        rotation_range=360,
-        width_shift_range=0.02,
-        height_shift_range=0.02)
+    datagen = DataGenerator(args.batch_size, tr_pairs, tr_y)
 
     for architecture in architectures:
         print("")
@@ -407,16 +483,19 @@ if __name__ == '__main__':
         model.summary()
         # train
         # rms = RMSprop()
-        model.compile(loss=contrastive_loss, optimizer='adam', metrics=[accuracy])
+        model.compile(loss=contrastive_loss2, optimizer='adam', metrics=[accuracy])
+
+        checkpoint = ModelCheckpoint(args.datadir+'/best_model.h5', monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+        callbacks_list = [checkpoint]
 
         model.fit_generator(generator=datagen.next_train(), samples_per_epoch=datagen.samples_per_train,
-                            nb_epoch=nb_epoch, validation_data=datagen.next_val(),
-                            nb_val_samples=datagen.samples_per_val)
-        
-        model.fit_generator(datagen.flow(te_pairs, tr_y, batch_size=args.batch_size),
-                            steps_per_epoch=,
-                            epochs=args.epochs,
-                            validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y))
+                            nb_epoch=args.epochs, validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y),
+                            callbacks=callbacks_list)
+
+        # model.fit_generator(datagen.flow(te_pairs, tr_y, batch_size=args.batch_size),
+        #                     steps_per_epoch=,
+        #                     epochs=args.epochs,
+        #                     validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y))
 
         # model.fit([tr_pairs[:, 0], tr_pairs[:, 1]], tr_y,
         #           batch_size=args.batch_size,

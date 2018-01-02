@@ -12,7 +12,7 @@ if __name__ == '__main__':
     parser.add_argument('--datadir', type=str,
                         default='/Users/flipajs/Documents/wd/FERDA/CNN_hard_datagen',
                         help='path to dataset')
-    parser.add_argument('--num_examples', type=int, default=10000,
+    parser.add_argument('--num_examples', type=int, default=100,
                         help='num examples')
     parser.add_argument('--im_size', type=int, default=32,
                         help='im size')

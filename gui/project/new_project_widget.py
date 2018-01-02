@@ -118,7 +118,7 @@ class NewProjectWidget(QtGui.QWidget):
         path = ''
         if os.path.isdir(S_.temp.last_vid_path):
             path = S_.temp.last_vid_path
-        self.project.video_paths = gui.gui_utils.file_names_dialog(self, 'Select video files', filter_="Videos (*.avi *.mkv *.mp4 *.m4v)", path=path)
+        self.project.video_paths = gui.gui_utils.file_names_dialog(self, 'Select video files', filter_="Videos (*.avi *.mkv *.mp4 *.m4v *.dav)", path=path)
         if self.project.video_paths:
             S_.temp.last_vid_path = os.path.dirname(self.project.video_paths[0])
 

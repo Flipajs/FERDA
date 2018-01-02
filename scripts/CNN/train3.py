@@ -10,6 +10,8 @@ from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
 from keras.models import Model
 from keras.preprocessing.image import ImageDataGenerator
 
+
+
 ROOT_DIR = sys.argv[1]
 ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
@@ -182,7 +184,6 @@ if __name__ == '__main__':
     for e in range(NUM_EPOCHS):
         print e
         classification_model.fit_generator(myGenerator(), SAMPLES, epochs=1, verbose=1)
-
 
         # 10. Evaluate model on test data
         results = classification_model.evaluate(X_test_consecutive, y_test_consecutive, verbose=1)
