@@ -31,58 +31,107 @@ ROOT_DIR = '../../data/CNN_models/interactions'
 # ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 # DATA_DIR = ROOT_DIR + '/data'
-DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1712_36k_random'
+DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1801_1k_36rot_single'
+NUM_OBJECTS = 1
 ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/'
 ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
 
+NUM_EPOCHS = 10
 BATCH_SIZE = 32
 TWO_TESTS = True
 
 # WEIGHTS = 'cam3_zebr_weights_vgg'
 WEIGHTS = 'cam3_zebr_weights_vgg_dilated'
-NUM_PARAMS = 10
+OBJ_IDS = range(NUM_OBJECTS)
+OBJ_IDS_STR = [str(i) for i in OBJ_IDS]
 
-NAMES = ['ant1_x', 'ant1_y', 'ant1_major', 'ant1_minor', 'ant1_angle_deg',
-         'ant2_x', 'ant2_y', 'ant2_major', 'ant2_minor', 'ant2_angle_deg']
+# COLUMNS_MAP = [('x', 'ant%s_x'),
+#        ('y', 'ant%s_y'),
+#        ('major', 'ant%s_major'),
+#        ('minor', 'ant%s_minor'),
+#        ('angle_deg', 'ant%s_angle_deg'),
+#        ('dx', 'ant%s_dx'),
+#        ('dy', 'ant%s_dy'),
+#        ]
+
+COLUMNS_MAP = [('x', '%s_x'),
+       ('y', '%s_y'),
+       ('major', '%s_major'),
+       ('minor', '%s_minor'),
+       ('angle_deg', '%s_angle_deg'),
+       ('dx', '%s_dx'),
+       ('dy', '%s_dy'),
+       ]
+
+COL = dict(COLUMNS_MAP)
+NAMES = reduce(list.__add__, [[value % i for key, value in COLUMNS_MAP] for i in OBJ_IDS_STR])
+COL2ID = {key: i for i, (key, value) in enumerate(COLUMNS_MAP)}
+NAME2COL = {num: {key: i + (j * len(COLUMNS_MAP)) for i, (key, value) in enumerate(COLUMNS_MAP)}
+            for j, num in enumerate(OBJ_IDS)}
+NAME2COL_ = {num: {key: slice(i + (j * len(COLUMNS_MAP)),
+                              i + (j * len(COLUMNS_MAP)) + 1)
+                   for i, (key, value) in enumerate(COLUMNS_MAP)}
+             for j, num in enumerate(OBJ_IDS)}
+
+NUM_PARAMS = len(COLUMNS_MAP) * len(OBJ_IDS)
 
 
-def angle_absolute_error(y_true, y_pred, backend, scaler=None):
+# def angle_absolute_error(y_true, y_pred, i, j, backend, scaler=None):
+#     if scaler is not None:
+#         # y_pred_ = scaler.inverse_transform(y_pred[:, 4:5])  # this doesn't work with Tensors
+#         y_pred_ = y_pred[:, NAME2COL[i]['angle_deg']] * scaler[1] + scaler[0]
+#     else:
+#         y_pred_ = y_pred[:, NAME2COL[i]['angle_deg']]
+#     val = backend.abs(y_pred_ - y_true[:, NAME2COL[j]['angle_deg']]) % 180
+#     return backend.minimum(val, 180 - val)
+
+
+def angle_absolute_error(angles_pred, angles_true, backend, scaler=None):
     if scaler is not None:
         # y_pred_ = scaler.inverse_transform(y_pred[:, 4:5])  # this doesn't work with Tensors
-        y_pred_ = y_pred[:, 4:5] * scaler[1] + scaler[0]
+        angles_pred_ = angles_pred * scaler[1] + scaler[0]
     else:
-        y_pred_ = y_pred[:, 4:5]
-    val = backend.abs(y_pred_ - y_true[:, 4:5]) % 180
+        angles_pred_ = angles_pred
+    val = backend.abs(angles_pred_ - angles_true) % 180
     return backend.minimum(val, 180 - val)
 
 
-def xy_absolute_error(y_true, y_pred, backend):
-    return backend.abs(y_pred[:, :2] - y_true[:, :2])
+def xy_absolute_error(y_true, y_pred, i, j, backend):
+    return backend.concatenate(
+        (backend.abs(y_pred[:, NAME2COL_[i]['x']] - y_true[:, NAME2COL_[j]['x']]),
+         backend.abs(y_pred[:, NAME2COL_[i]['y']] - y_true[:, NAME2COL_[j]['y']])),
+        axis=1)
 
 
-def absolute_errors(y_true, y_pred, backend, angle_scaler):
-    theta = angle_absolute_error(y_true, y_pred, backend, angle_scaler)
-    pos = xy_absolute_error(y_true, y_pred, backend)
-    return pos, theta
+def delta_error(y_true, y_pred, i, j, backend):
+    """
+    absolute difference between dx and dy in y_pred and y_true
+
+    :param y_true:
+    :param y_pred:
+    :param i: y_true object index
+    :param j: y_pred object index
+    :param backend:
+    :return: shape=(n, 2)
+    """
+    dx = y_true[:, NAME2COL_[i]['dx']] - y_pred[:, NAME2COL_[j]['dx']]
+    dy = y_true[:, NAME2COL_[i]['dy']] - y_pred[:, NAME2COL_[j]['dy']]
+    return backend.concatenate((backend.abs(dx), backend.abs(dy)), axis=1)
 
 
-def interaction_loss(y_true, y_pred, angle_scaler=None, alpha=0.5):
-    assert 0 <= alpha <= 1
-    sum_errors_xy, sum_errors_angle, indices = match_pred_to_gt(y_true, y_pred, K, angle_scaler)
-
-    return K.mean(tf.gather_nd(sum_errors_xy, indices) * (1 - alpha) +
-                  tf.gather_nd(sum_errors_angle, indices) * alpha)
-
-
-def match_pred_to_gt(y_true, y_pred, backend, angle_scaler=None):
+def match_pred_to_gt_dxdy(y_true, y_pred, backend, angle_scaler=None):
     """
     Return mean absolute errors for individual samples for xy and theta
     in two possible combinations of prediction and ground truth.
     """
-    xy11, theta11 = absolute_errors(y_true[:, :5], y_pred[:, :5], backend, angle_scaler)
-    xy22, theta22 = absolute_errors(y_true[:, 5:], y_pred[:, 5:], backend, angle_scaler)
-    xy12, theta12 = absolute_errors(y_true[:, :5], y_pred[:, 5:], backend, angle_scaler)
-    xy21, theta21 = absolute_errors(y_true[:, 5:], y_pred[:, :5], backend, angle_scaler)
+    bk = backend
+    xy = {}
+    delta = {}
+    for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
+        xy[(i, j)] = xy_absolute_error(y_true, y_pred, i, j,
+                                       bk)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
+        delta[(i, j)] = delta_error(y_true, y_pred, i, j, bk)
+
     if backend == np:
         norm = np.linalg.norm
         int64 = np.int64
@@ -90,15 +139,98 @@ def match_pred_to_gt(y_true, y_pred, backend, angle_scaler=None):
     else:
         norm = tf.linalg.norm
         int64 = tf.int64
-        shape = lambda x, n: backend.cast(backend.shape(x)[n], int64)
-    mean_errors_xy = backend.stack((backend.mean(backend.stack((norm(xy11, axis=1), norm(xy22, axis=1))), axis=0),
-                                   backend.mean(backend.stack((norm(xy12, axis=1), norm(xy21, axis=1))), axis=0)))  # shape=(2, n)
-    mean_errors_angle = backend.stack((backend.mean(backend.concatenate((theta11, theta22), axis=1), axis=1),
-                                      backend.mean(backend.concatenate((theta12, theta21), axis=1), axis=1)))  # shape=(2, n)
-    swap_idx = backend.argmin(mean_errors_xy, axis=0)  # shape = (n,)
+        shape = lambda x, n: bk.cast(bk.shape(x)[n], int64)
+
+    mean_errors_xy = bk.stack((
+        bk.mean(bk.stack((norm(xy[0, 0], axis=1),
+                          norm(xy[1, 1], axis=1))), axis=0),
+        bk.mean(bk.stack((norm(xy[0, 1], axis=1),
+                          norm(xy[1, 0], axis=1))), axis=0)))  # shape=(2, n)
+    mean_errors_delta = bk.stack((
+        bk.mean(bk.stack((bk.sum(delta[0, 0], axis=1),
+                          bk.sum(delta[1, 1], axis=1))), axis=0),
+        bk.mean(bk.stack((bk.sum(delta[0, 1], axis=1),
+                          bk.sum(delta[1, 0], axis=1))), axis=0)))  # shape=(2, n)
+
+    swap_idx = bk.argmin(mean_errors_xy, axis=0)  # shape = (n,)
+
     indices = backend.transpose(
         backend.stack((swap_idx, backend.arange(0, shape(mean_errors_xy, 1)))))  # shape=(n, 2)
+    return mean_errors_xy, mean_errors_delta, indices
+
+
+def match_pred_to_gt(y_true, y_pred, backend, angle_scaler=None):
+    """
+    Return mean absolute errors for individual samples for xy and theta
+    in two possible combinations of prediction and ground truth.
+    """
+    bk = backend
+    if backend == np:
+        norm = np.linalg.norm
+        int64 = np.int64
+        shape = lambda x, n: x.shape[n]
+    else:
+        norm = tf.linalg.norm
+        int64 = tf.int64
+        shape = lambda x, n: bk.cast(bk.shape(x)[n], int64)
+
+    if NUM_OBJECTS == 1:
+        xy = xy_absolute_error(y_true, y_pred, 0, 0, backend)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
+        angle = angle_absolute_error(y_pred[:, NAME2COL[0]['angle_deg']],
+                                     y_true[:, NAME2COL[0]['angle_deg']],
+                                     backend, angle_scaler)  # shape=(n, 1)
+        mean_errors_xy = norm(xy, axis=1)  # shape=(n,)
+        mean_errors_angle = angle  # shape=(n,)
+        indices = backend.arange(0, shape(mean_errors_xy, 0))
+    elif NUM_OBJECTS == 2:
+        xy = {}
+        angle = {}
+        for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
+            xy[(i, j)] = xy_absolute_error(y_true, y_pred, i, j,
+                                           bk)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
+            angle[(i, j)] = angle_absolute_error(y_pred[:, NAME2COL[i]['angle_deg']],
+                                                 y_true[:, NAME2COL[j]['angle_deg']],
+                                                 bk, angle_scaler)  # shape=(n, 1)
+        mean_errors_xy = bk.stack((
+            bk.mean(bk.stack((norm(xy[0, 0], axis=1),
+                              norm(xy[1, 1], axis=1))), axis=0),
+            bk.mean(bk.stack((norm(xy[0, 1], axis=1),
+                              norm(xy[1, 0], axis=1))), axis=0)))  # shape=(2, n)
+        mean_errors_angle = bk.stack((
+            bk.mean(bk.stack((angle[0, 0], angle[1, 1]), axis=0), axis=0),
+            bk.mean(bk.stack((angle[0, 1], angle[1, 0]), axis=0), axis=0)
+        ), axis=0)  # shape=(2, n)
+
+        swap_idx = bk.argmin(mean_errors_xy, axis=0)  # shape = (n,)
+
+        indices = backend.transpose(
+            backend.stack((swap_idx, backend.arange(0, shape(mean_errors_xy, 1)))))  # shape=(n, 2)
+    else:
+        assert False, 'not implemented'
+
     return mean_errors_xy, mean_errors_angle, indices
+
+
+def interaction_loss_dxdy(y_true, y_pred, angle_scaler=None, alpha=0.5):
+    assert 0 <= alpha <= 1
+    mean_errors_xy, mean_errors_delta, indices = match_pred_to_gt_dxdy(y_true, y_pred, K, angle_scaler)
+
+    return K.mean(tf.gather_nd(mean_errors_xy, indices) * (1 - alpha) +
+                  tf.gather_nd(mean_errors_delta, indices) * alpha)
+
+
+def interaction_loss_angle(y_true, y_pred, angle_scaler=None, alpha=0.5):
+    assert 0 <= alpha <= 1
+    mean_errors_xy, mean_errors_angle, indices = match_pred_to_gt(y_true, y_pred, K, angle_scaler)
+    if NUM_OBJECTS == 2:
+        errors_xy = tf.gather_nd(mean_errors_xy, indices)
+        errors_angle = tf.gather_nd(mean_errors_angle, indices)
+    elif NUM_OBJECTS == 1:
+        errors_xy = mean_errors_xy
+        errors_angle = mean_errors_angle
+    else:
+        assert False, 'not implemented'
+    return K.mean(errors_xy * (1 - alpha) + errors_angle * alpha)
 
 
 def model():
@@ -145,7 +277,7 @@ def model():
 
 def train(model, train_generator, params):
     # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
-    model.compile(loss=lambda x, y: interaction_loss(x, y, (angle_scaler.mean_, angle_scaler.scale_), params['loss_alpha']),
+    model.compile(loss=lambda x, y: interaction_loss_angle(x, y, (angle_scaler.mean_, angle_scaler.scale_), params['loss_alpha']),
                   optimizer='adam')
     # model.lr.set_value(0.05)
     with open(join(EXPERIMENT_DIR, 'model.txt'), 'w') as fw:
@@ -168,9 +300,26 @@ def evaluate(model, test_generator, y_test):
 
     with h5py.File(join(EXPERIMENT_DIR, 'predictions.h5'), 'w') as hf:
         hf.create_dataset("data", data=pred)
+    # xy, _, indices = match_pred_to_gt_dxdy(pred, y_test.values, np)
     xy, angle, indices = match_pred_to_gt(pred, y_test.values, np)
-    xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
-    angle_mae = (angle[indices[:, 0], indices[:, 1]]).mean()
+
+    # xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
+    # angle_mae = (angle[indices[:, 0], indices[:, 1]]).mean()
+    xy_mae = np.take(xy, indices).mean()
+    angle_mae = np.take(angle, indices).mean()
+
+    # # compute angle errors
+    # angle = {}
+    # for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
+    #     angle[(i, j)] = angle_absolute_error(
+    #         y_test.values[:, NAME2COL[i]['angle_deg']],
+    #         np.degrees(np.arctan((pred[:, NAME2COL[j]['dy']] / pred[:, NAME2COL[j]['dx']]))),
+    #         np)
+    # mean_errors_angle = np.stack((
+    #     np.mean(np.stack((angle[0, 0], angle[1, 1]), axis=1), axis=1),
+    #     np.mean(np.stack((angle[0, 1], angle[1, 0]), axis=1), axis=1)))  # shape=(2, n)
+    # angle_mae = (mean_errors_angle[indices[:, 0], indices[:, 1]]).mean()
+
     results = pd.DataFrame.from_items([('xy MAE', [xy_mae]), ('angle MAE', angle_mae)])
     print(results.to_string(index=False))
     results.to_csv(join(EXPERIMENT_DIR, 'results.csv'))
@@ -178,16 +327,6 @@ def evaluate(model, test_generator, y_test):
 
 
 if __name__ == '__main__':
-    NUM_EPOCHS = 10
-    # NUM_EPOCHS = 1
-    # USE_PREVIOUS_AS_INIT = 0
-    # K = 6
-    # WEIGHTS = 'best_weights'
-    # OUT_NAME = 'softmax'
-    # CONTINUE = False
-    # SAMPLES = 2000
-    FORMATS = 10 * 'f,'
-
     if len(sys.argv) > 1:
         DATA_DIR = ROOT_DIR + '/' + sys.argv[1]
     if len(sys.argv) > 2:
@@ -203,9 +342,23 @@ if __name__ == '__main__':
     X_train = hf['train']
     X_test = hf['test']
     y_train_df = pd.read_csv(join(DATA_DIR, 'train.csv'))
-    y_train = y_train_df[NAMES]
     y_test_df = pd.read_csv(join(DATA_DIR, 'test.csv'))
+
+    # dx and dy columns
+    for i in OBJ_IDS_STR:
+        y_train_df[COL['angle_deg'] % i] *= -1  # convert to anti-clockwise
+        angle_rad = np.radians(y_train_df[COL['angle_deg'] % i])
+        y_train_df[COL['dx'] % i] = y_train_df[COL['major'] % i] * np.cos(angle_rad)
+        y_train_df[COL['dy'] % i] = y_train_df[COL['major'] % i] * np.sin(angle_rad)
+
+        y_test_df[COL['angle_deg'] % i] *= -1  # convert to anti-clockwise
+        angle_rad = np.radians(y_test_df[COL['angle_deg'] % i])
+        y_test_df[COL['dx'] % i] = y_test_df[COL['major'] % i] * np.cos(angle_rad)
+        y_test_df[COL['dy'] % i] = y_test_df[COL['major'] % i] * np.sin(angle_rad)
+
+    y_train = y_train_df[NAMES]
     y_test = y_test_df[NAMES]
+
     print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
     parameters = {'epochs': NUM_EPOCHS,
