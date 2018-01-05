@@ -528,7 +528,7 @@ class Interactions(object):
         # plt.imshow(region1.move((0, 100)).get_mask())
 
     def write_synthetized_interactions(self, count=100, n_objects=2, out_dir='./out', out_csv='./out/doubleregions.csv',
-                                       rotation='random', project_dir=None, out_hdf5=None, hdf5_dataset_name=None):
+                                       rotation='random', xy_jitter_width=0, project_dir=None, out_hdf5=None, hdf5_dataset_name=None):
         if out_dir is False:
             out_dir = None
         if out_csv is False:
@@ -575,7 +575,7 @@ class Interactions(object):
 
         i = 0
         for i1 in tqdm.tqdm(np.arange(0, int(count / n_angles), BATCH_SIZE), desc='batch'):
-            i2 = min(i1 + BATCH_SIZE, count)
+            i2 = min(i1 + BATCH_SIZE, int(count / n_angles))
             n = i2 - i1
             regions = np.random.choice(single_regions, n_objects * n)
             frames = [r.frame() for r in regions]
@@ -618,7 +618,13 @@ class Interactions(object):
                         # tregion_synthetic.set_mask(mask.astype(np.uint8))
                         tregion_synthetic.rotate(angle_deg, centroid_xy[::-1])
                         img_rotated = tregion_synthetic.get_img()
-                        img_crop, delta_xy = self.__crop(img_rotated, centroid_xy, IMAGE_SIZE_PX)
+                        if xy_jitter_width != 0:
+                            # jitter_xy = np.clip(np.random.normal(scale=xy_jitter_std, size=2),
+                            #                     a_min=-2 * xy_jitter_std, a_max=2 * xy_jitter_std)
+                            jitter_xy = np.random.uniform(-xy_jitter_width / 2, xy_jitter_width / 2, size=2)
+                        else:
+                            jitter_xy = (0., 0.)
+                        img_crop, delta_xy = self.__crop(img_rotated, centroid_xy + jitter_xy, IMAGE_SIZE_PX)
 
                         results_row = []
                         for k in range(n_objects):
