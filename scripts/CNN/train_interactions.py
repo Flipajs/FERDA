@@ -38,42 +38,27 @@ ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
 
 NUM_EPOCHS = 10
 BATCH_SIZE = 32
-TWO_TESTS = True
 
-# WEIGHTS = 'cam3_zebr_weights_vgg'
-WEIGHTS = 'cam3_zebr_weights_vgg_dilated'
-OBJ_IDS = range(NUM_OBJECTS)
-OBJ_IDS_STR = [str(i) for i in OBJ_IDS]
+COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg', 'dx', 'dy']
 
-# COLUMNS_MAP = [('x', 'ant%s_x'),
-#        ('y', 'ant%s_y'),
-#        ('major', 'ant%s_major'),
-#        ('minor', 'ant%s_minor'),
-#        ('angle_deg', 'ant%s_angle_deg'),
-#        ('dx', 'ant%s_dx'),
-#        ('dy', 'ant%s_dy'),
-#        ]
 
-COLUMNS_MAP = [('x', '%s_x'),
-       ('y', '%s_y'),
-       ('major', '%s_major'),
-       ('minor', '%s_minor'),
-       ('angle_deg', '%s_angle_deg'),
-       ('dx', '%s_dx'),
-       ('dy', '%s_dy'),
-       ]
+def columns(n):
+    names = []
+    for i in range(n):
+        names.extend(['%d_%s' % (i, c) for c in COLUMNS])
+        # names.extend(['ant%d_%s' % (i + 1, c) for c in COLUMNS])
+    return names
 
-COL = dict(COLUMNS_MAP)
-NAMES = reduce(list.__add__, [[value % i for key, value in COLUMNS_MAP] for i in OBJ_IDS_STR])
-COL2ID = {key: i for i, (key, value) in enumerate(COLUMNS_MAP)}
-NAME2COL = {num: {key: i + (j * len(COLUMNS_MAP)) for i, (key, value) in enumerate(COLUMNS_MAP)}
-            for j, num in enumerate(OBJ_IDS)}
-NAME2COL_ = {num: {key: slice(i + (j * len(COLUMNS_MAP)),
-                              i + (j * len(COLUMNS_MAP)) + 1)
-                   for i, (key, value) in enumerate(COLUMNS_MAP)}
-             for j, num in enumerate(OBJ_IDS)}
 
-NUM_PARAMS = len(COLUMNS_MAP) * len(OBJ_IDS)
+COL2IDX = {j: {key: i + (j * len(COLUMNS)) for i, key in enumerate(COLUMNS)}
+           for j in range(NUM_OBJECTS)}
+
+COL2IDX_ = {j: {key: slice(i + (j * len(COLUMNS)),
+                           i + (j * len(COLUMNS)) + 1)
+                for i, key in enumerate(COLUMNS)}
+            for j in range(NUM_OBJECTS)}
+
+NUM_PARAMS = len(COLUMNS) * NUM_OBJECTS
 
 
 # def angle_absolute_error(y_true, y_pred, i, j, backend, scaler=None):
@@ -98,8 +83,8 @@ def angle_absolute_error(angles_pred, angles_true, backend, scaler=None):
 
 def xy_absolute_error(y_true, y_pred, i, j, backend):
     return backend.concatenate(
-        (backend.abs(y_pred[:, NAME2COL_[i]['x']] - y_true[:, NAME2COL_[j]['x']]),
-         backend.abs(y_pred[:, NAME2COL_[i]['y']] - y_true[:, NAME2COL_[j]['y']])),
+        (backend.abs(y_pred[:, COL2IDX_[i]['x']] - y_true[:, COL2IDX_[j]['x']]),
+         backend.abs(y_pred[:, COL2IDX_[i]['y']] - y_true[:, COL2IDX_[j]['y']])),
         axis=1)
 
 
@@ -114,8 +99,8 @@ def delta_error(y_true, y_pred, i, j, backend):
     :param backend:
     :return: shape=(n, 2)
     """
-    dx = y_true[:, NAME2COL_[i]['dx']] - y_pred[:, NAME2COL_[j]['dx']]
-    dy = y_true[:, NAME2COL_[i]['dy']] - y_pred[:, NAME2COL_[j]['dy']]
+    dx = y_true[:, COL2IDX_[i]['dx']] - y_pred[:, COL2IDX_[j]['dx']]
+    dy = y_true[:, COL2IDX_[i]['dy']] - y_pred[:, COL2IDX_[j]['dy']]
     return backend.concatenate((backend.abs(dx), backend.abs(dy)), axis=1)
 
 
@@ -176,8 +161,8 @@ def match_pred_to_gt(y_true, y_pred, backend, angle_scaler=None):
 
     if NUM_OBJECTS == 1:
         xy = xy_absolute_error(y_true, y_pred, 0, 0, backend)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
-        angle = angle_absolute_error(y_pred[:, NAME2COL[0]['angle_deg']],
-                                     y_true[:, NAME2COL[0]['angle_deg']],
+        angle = angle_absolute_error(y_pred[:, COL2IDX[0]['angle_deg']],
+                                     y_true[:, COL2IDX[0]['angle_deg']],
                                      backend, angle_scaler)  # shape=(n, 1)
         mean_errors_xy = norm(xy, axis=1)  # shape=(n,)
         mean_errors_angle = angle  # shape=(n,)
@@ -188,8 +173,8 @@ def match_pred_to_gt(y_true, y_pred, backend, angle_scaler=None):
         for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
             xy[(i, j)] = xy_absolute_error(y_true, y_pred, i, j,
                                            bk)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
-            angle[(i, j)] = angle_absolute_error(y_pred[:, NAME2COL[i]['angle_deg']],
-                                                 y_true[:, NAME2COL[j]['angle_deg']],
+            angle[(i, j)] = angle_absolute_error(y_pred[:, COL2IDX[i]['angle_deg']],
+                                                 y_true[:, COL2IDX[j]['angle_deg']],
                                                  bk, angle_scaler)  # shape=(n, 1)
         mean_errors_xy = bk.stack((
             bk.mean(bk.stack((norm(xy[0, 0], axis=1),
@@ -345,19 +330,19 @@ if __name__ == '__main__':
     y_test_df = pd.read_csv(join(DATA_DIR, 'test.csv'))
 
     # dx and dy columns
-    for i in OBJ_IDS_STR:
-        y_train_df[COL['angle_deg'] % i] *= -1  # convert to anti-clockwise
-        angle_rad = np.radians(y_train_df[COL['angle_deg'] % i])
-        y_train_df[COL['dx'] % i] = y_train_df[COL['major'] % i] * np.cos(angle_rad)
-        y_train_df[COL['dy'] % i] = y_train_df[COL['major'] % i] * np.sin(angle_rad)
+    for i in range(NUM_OBJECTS):
+        y_train_df['%d_angle_deg' % i] *= -1  # convert to anti-clockwise
+        angle_rad = np.radians(y_train_df['%d_angle_deg' % i])
+        y_train_df['%d_dx' % i] = y_train_df['%d_major' % i] * np.cos(angle_rad)
+        y_train_df['%d_dy' % i] = y_train_df['%d_major' % i] * np.sin(angle_rad)
 
-        y_test_df[COL['angle_deg'] % i] *= -1  # convert to anti-clockwise
-        angle_rad = np.radians(y_test_df[COL['angle_deg'] % i])
-        y_test_df[COL['dx'] % i] = y_test_df[COL['major'] % i] * np.cos(angle_rad)
-        y_test_df[COL['dy'] % i] = y_test_df[COL['major'] % i] * np.sin(angle_rad)
+        y_test_df['%d_angle_deg' % i] *= -1  # convert to anti-clockwise
+        angle_rad = np.radians(y_test_df['%d_angle_deg' % i])
+        y_test_df['%d_dx' % i] = y_test_df['%d_major' % i] * np.cos(angle_rad)
+        y_test_df['%d_dy' % i] = y_test_df['%d_major' % i] * np.sin(angle_rad)
 
-    y_train = y_train_df[NAMES]
-    y_test = y_test_df[NAMES]
+    y_train = y_train_df[columns(NUM_OBJECTS)]
+    y_test = y_test_df[columns(NUM_OBJECTS)]
 
     print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
