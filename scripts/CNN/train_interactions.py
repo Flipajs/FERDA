@@ -70,8 +70,7 @@ NUM_PARAMS = len(COLUMNS) * NUM_OBJECTS
 #     val = backend.abs(y_pred_ - y_true[:, NAME2COL[j]['angle_deg']]) % 180
 #     return backend.minimum(val, 180 - val)
 
-
-def angle_absolute_error(angles_pred, angles_true, backend, scaler=None):
+def angle_absolute_error_old(angles_pred, angles_true, backend, scaler=None):
     if scaler is not None:
         # y_pred_ = scaler.inverse_transform(y_pred[:, 4:5])  # this doesn't work with Tensors
         angles_pred_ = angles_pred * scaler[1] + scaler[0]
@@ -79,6 +78,20 @@ def angle_absolute_error(angles_pred, angles_true, backend, scaler=None):
         angles_pred_ = angles_pred
     val = backend.abs(angles_pred_ - angles_true) % 180
     return backend.minimum(val, 180 - val)
+
+
+def angle_absolute_error(angles_pred, angles_true, backend, scaler=None):
+    if scaler is not None:
+        # y_pred_ = scaler.inverse_transform(y_pred[:, 4:5])  # this doesn't work with Tensors
+        angles_pred_ = angles_pred * scaler[1] + scaler[0]
+    else:
+        angles_pred_ = angles_pred
+    angles_pred_ %= 360
+    angles_true %= 360
+    return backend.minimum(
+        backend.abs(angles_pred_ - angles_true),
+        180 - backend.abs(angles_pred_ % 180 - angles_true % 180)
+    )
 
 
 def xy_absolute_error(y_true, y_pred, i, j, backend):
@@ -351,6 +364,7 @@ if __name__ == '__main__':
                   # 'loss_alpha': 0.62,
                   # 'loss_alpha': 0.344827586207,
                   # 'loss_alpha': 0.66,
+                  # 'loss_alpha': 0.857142857143,
                   'steps_per_epoch': int(len(X_train) / BATCH_SIZE)
                   }
 
@@ -382,6 +396,9 @@ if __name__ == '__main__':
 
     if not os.path.exists(BASE_EXPERIMENT_DIR):
         os.mkdir(BASE_EXPERIMENT_DIR)
+
+    with file(join(BASE_EXPERIMENT_DIR, 'parameters.txt'), 'w') as fw:
+        fw.writelines(sys.argv)
 
     results = pd.DataFrame()
 
