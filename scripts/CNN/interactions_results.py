@@ -2,15 +2,17 @@ import matplotlib.pyplot as plt
 import h5py
 from imageio import imread
 import numpy as np
-from matplotlib.patches import Ellipse
+from matplotlib.patches import Ellipse, Arc
 import os
 from os.path import join
+import os
 import tqdm
 import glob
 import scripts.CNN.train_interactions as train_interactions
 import pandas as pd
 from subprocess import call
 import glob
+import shlex
 
 
 def toarray(struct_array):
@@ -52,12 +54,21 @@ def plot_interaction(num_objects, pred, gt=None):
                              pred['%d_major' % i], pred['%d_minor' % i],
                              angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
                              label='object %d prediction' % i))
+        ax.add_patch(Arc(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
+                             float(pred['%d_major' % i] * 1.2), float(pred['%d_minor' % i] * 1.2),
+                             angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
+                             theta1=-10, theta2=10))
         plt.scatter(pred['%d_x' % i], pred['%d_y' % i], c=colors[i])
+
         if gt is not None:
             ax.add_patch(Ellipse(toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
                                  gt['%d_major' % i], gt['%d_minor' % i],
                                  angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
                                  linestyle='dotted', label='object %d gt' % i))
+            ax.add_patch(Arc(toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
+                                 float(gt['%d_major' % i] * 1.2), float(gt['%d_minor' % i] * 1.2),
+                                 angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
+                                 theta1=-10, theta2=10, linestyle='dotted'))
 
     plt.legend()
 
@@ -66,7 +77,7 @@ if __name__ == '__main__':
     # ROOT_DIR = '/Users/flipajs/Downloads/double_regions'
     # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
 
-    EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/180104_0142_single/0.857142857143/'
+    EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/180110_1209_single_directional/0.642857142857/'
     DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1801_1k_36rot_single'
     n_objects = 1
 
@@ -89,8 +100,6 @@ if __name__ == '__main__':
         y_test['%d_angle_deg' % i] *= -1  # convert to anti-clockwise
     with h5py.File(join(EXPERIMENT_DIR, 'predictions.h5'), 'r') as hf_pred:
         pred = hf_pred['data'][:]
-
-
 
     # xy, angle, indices = train_interactions.match_pred_to_gt_dxdy(pred, y_test.values, np)
     xy, angle, indices = train_interactions.match_pred_to_gt(pred, y_test.values, np)
@@ -128,15 +137,23 @@ if __name__ == '__main__':
         save_prediction_img(i, pred, join(out_dir, 'bad_angle_%03d.png' % i), n_objects, y_test, X_test)
     for i in tqdm.tqdm(xy_errors.flatten().argsort()[::-1][:20]):
         save_prediction_img(i, pred, join(out_dir, 'bad_xy_%03d.png' % i), n_objects, y_test, X_test)
-
     for i in tqdm.tqdm(np.random.randint(0, len(pred), 50)):
         save_prediction_img(i, pred, join(out_dir, 'random_%04d.png' % i), n_objects, y_test, X_test)
-        # plt.show()
 
     hf_img.close()
 
-    for part in ['bad_angle' , 'bad_xy', 'random']:
-        cmd = 'montage -verbose -tile 5x5 -geometry +5+5 {input_files} {path}/montage_{part}.jpg'.format(
-            input_files=' '.join(glob.glob(join(out_dir, part + '*.png'))),
+    results_df = pd.read_csv(join(EXPERIMENT_DIR, 'results.csv'))
+
+    experiment_str = '...' + os.sep + os.sep.join(EXPERIMENT_DIR.strip(os.sep).split(os.sep)[-3:]) + \
+        ' | xy MEA {xy} (px), angle MEA {angle} (deg)'.format(xy=round(float(results_df['xy MAE']), 1),
+                                                                angle=round(float(results_df['angle MAE']), 1))
+    for part in ['bad_angle', 'bad_xy', 'random']:
+        input_files = glob.glob(join(out_dir, part + '*.png'))
+        cmd = 'montage -verbose -tile 5x5 -geometry +5+5 -title {experiment_str} {input_files} {path}/montage_{part}.jpg'.format(
+            experiment_str='\"' + part + ' ' + experiment_str + '\"',
+            input_files=' '.join(input_files),
             path=out_dir, part=part)
-        print call(cmd.split(' '))
+        print call(shlex.split(cmd))
+        for fn in input_files:
+            os.remove(fn)
+
