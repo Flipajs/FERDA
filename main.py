@@ -4,7 +4,7 @@ from PyQt4 import QtGui
 
 from gui import main_window
 from core.settings import Settings as S_
-from utils.misc import is_flipajs_pc
+from utils.misc import is_flipajs_pc, is_matejs_pc
 import time
 from core.project.project import Project
 import timeit
@@ -44,6 +44,11 @@ if is_flipajs_pc():
 
     # wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
+if is_matejs_pc():
+    # wd = '/home/matej/prace/ferda/10-15/'
+    wd = '/home/matej/prace/ferda/10-15 (copy)/'
+
+if wd is not None:
     project.load(wd)
 
     # workaround
