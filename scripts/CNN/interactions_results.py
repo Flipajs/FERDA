@@ -13,6 +13,8 @@ import pandas as pd
 from subprocess import call
 import glob
 import shlex
+import fire
+import skimage.transform
 
 
 def toarray(struct_array):
@@ -31,6 +33,7 @@ def tostruct(ndarray):
 def save_prediction_img(i, pred, out_filename, num_objects, gt=None, img_data=None):
     fig = plt.figure()
     if img_data is not None:
+        # im = skimage.transform.rotate(img_data[i], 90)
         im = img_data[i]
     else:
         im = imread(join(DATA_DIR, 'images_test', '%06d.jpg' % i))
@@ -55,9 +58,10 @@ def plot_interaction(num_objects, pred, gt=None):
                              angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
                              label='object %d prediction' % i))
         ax.add_patch(Arc(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
-                             float(pred['%d_major' % i] * 1.2), float(pred['%d_minor' % i] * 1.2),
-                             angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
-                             theta1=-10, theta2=10))
+                         pred['%d_major' % i], pred['%d_minor' % i],
+                         angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
+                         linewidth=4,
+                         theta1=-30, theta2=30))
         plt.scatter(pred['%d_x' % i], pred['%d_y' % i], c=colors[i])
 
         if gt is not None:
@@ -66,44 +70,34 @@ def plot_interaction(num_objects, pred, gt=None):
                                  angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
                                  linestyle='dotted', label='object %d gt' % i))
             ax.add_patch(Arc(toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
-                                 float(gt['%d_major' % i] * 1.2), float(gt['%d_minor' % i] * 1.2),
-                                 angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
-                                 theta1=-10, theta2=10, linestyle='dotted'))
+                             gt['%d_major' % i], gt['%d_minor' % i],
+                             angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
+                             linewidth=4,
+                             theta1=-30, theta2=30, linestyle='dotted'))
 
     plt.legend()
 
 
-if __name__ == '__main__':
-    # ROOT_DIR = '/Users/flipajs/Downloads/double_regions'
-    # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
-
-    EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/180110_1209_single_directional/0.642857142857/'
-    DATA_DIR = '/datagrid/personal/smidm1/ferda/interactions/1801_1k_36rot_single'
-    n_objects = 1
-
-    # EXPERIMENT_DIR = '/home/matej/prace/ferda/experiments/171206_1209_batch/0.344827586207/'
-    # DATA_DIR = '/home/matej/prace/ferda/data/interactions/'
-
+def visualize_results(experiment_dir, data_dir, n_objects=2):
     # NAMES = ['0_x', '0_y', '0_major', '0_minor', '0_angle_deg',
     #          ]
-
     columns = train_interactions.columns(n_objects)
     for i in range(n_objects):
         columns.remove('%d_dx' % i)
         columns.remove('%d_dy' % i)
-
-    hf_img = h5py.File(join(DATA_DIR, 'images.h5'), 'r')
+    hf_img = h5py.File(join(data_dir, 'images.h5'), 'r')
     X_test = hf_img['test']
-    y_test_df = pd.read_csv(join(DATA_DIR, 'test.csv'))
+    y_test_df = pd.read_csv(join(data_dir, 'test.csv'))
     y_test = y_test_df[columns]
     for i in range(n_objects):
-        y_test['%d_angle_deg' % i] *= -1  # convert to anti-clockwise
-    with h5py.File(join(EXPERIMENT_DIR, 'predictions.h5'), 'r') as hf_pred:
+        y_test.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
+        # y_test.loc[:, '%d_angle_deg' % i] += 90
+        # y_test.loc[:, '%d_angle_deg' % i] %= 360
+    with h5py.File(join(experiment_dir, 'predictions.h5'), 'r') as hf_pred:
         pred = hf_pred['data'][:]
 
     # xy, angle, indices = train_interactions.match_pred_to_gt_dxdy(pred, y_test.values, np)
     xy, angle, indices = train_interactions.match_pred_to_gt(pred, y_test.values, np)
-
     if n_objects == 1:
         xy_errors = xy
         angle_errors = angle
@@ -123,30 +117,26 @@ if __name__ == '__main__':
     for i in range(n_objects):
         pred['%d_major' % i] = mean_major
         pred['%d_minor' % i] = mean_minor
-
-    if not os.path.exists(EXPERIMENT_DIR):
-        os.mkdir(EXPERIMENT_DIR)
-    out_dir = join(EXPERIMENT_DIR, 'visualization')
+    if not os.path.exists(experiment_dir):
+        os.mkdir(experiment_dir)
+    out_dir = join(experiment_dir, 'visualization')
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
     else:
-        for fn in glob.glob(join(EXPERIMENT_DIR, 'visualization', '*.png')):
+        for fn in glob.glob(join(experiment_dir, 'visualization', '*.png')):
             os.remove(fn)
-
     for i in tqdm.tqdm(angle_errors.flatten().argsort()[::-1][:20]):
         save_prediction_img(i, pred, join(out_dir, 'bad_angle_%03d.png' % i), n_objects, y_test, X_test)
     for i in tqdm.tqdm(xy_errors.flatten().argsort()[::-1][:20]):
         save_prediction_img(i, pred, join(out_dir, 'bad_xy_%03d.png' % i), n_objects, y_test, X_test)
     for i in tqdm.tqdm(np.random.randint(0, len(pred), 50)):
         save_prediction_img(i, pred, join(out_dir, 'random_%04d.png' % i), n_objects, y_test, X_test)
-
     hf_img.close()
-
-    results_df = pd.read_csv(join(EXPERIMENT_DIR, 'results.csv'))
-
-    experiment_str = '...' + os.sep + os.sep.join(EXPERIMENT_DIR.strip(os.sep).split(os.sep)[-3:]) + \
-        ' | xy MEA {xy} (px), angle MEA {angle} (deg)'.format(xy=round(float(results_df['xy MAE']), 1),
-                                                                angle=round(float(results_df['angle MAE']), 1))
+    results_df = pd.read_csv(join(experiment_dir, 'results.csv'))
+    experiment_str = '...' + os.sep + os.sep.join(experiment_dir.strip(os.sep).split(os.sep)[-3:]) + \
+                     ' | xy MEA {xy} (px), angle MEA {angle} (deg)'.format(xy=round(float(results_df['xy MAE']), 1),
+                                                                           angle=round(float(results_df['angle MAE']),
+                                                                                       1))
     for part in ['bad_angle', 'bad_xy', 'random']:
         input_files = glob.glob(join(out_dir, part + '*.png'))
         cmd = 'montage -verbose -tile 5x5 -geometry +5+5 -title {experiment_str} {input_files} {path}/montage_{part}.jpg'.format(
@@ -157,3 +147,6 @@ if __name__ == '__main__':
         for fn in input_files:
             os.remove(fn)
 
+
+if __name__ == '__main__':
+    fire.Fire(visualize_results)
