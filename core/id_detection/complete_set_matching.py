@@ -443,8 +443,10 @@ class CompleteSetMatching:
                         pass
 
                 axes[j].imshow(img)
-                # axes[j].title = str(k)
+                axes[j].set_title(str(k))
+                axes[j].set_y_axis(None)
 
+            plt.suptitle(str(i))
             plt.show()
 
 
