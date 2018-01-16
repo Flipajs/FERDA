@@ -1012,7 +1012,8 @@ class ResultsWidget(QtGui.QWidget):
 
         it_x += stripe_w + 1
 
-        idset = set(range(len(self.project.animals)))
+        num_animals = len(self.project.animals)
+        idset = set(range(num_animals))
         for ch in self.project.chm.chunks_in_frame(frame):
             if len(ch.P) == 1:
                 id_ = list(ch.P)[0]
@@ -1080,7 +1081,10 @@ class ResultsWidget(QtGui.QWidget):
 
 
     def update_visualisations(self):
-        self.draw_id_profiles()
+        try:
+            self.draw_id_profiles()
+        except:
+            pass
 
         self._update_tracklet_info(from_update_visu=True)
 
@@ -1097,58 +1101,62 @@ class ResultsWidget(QtGui.QWidget):
         animal_ids2centroids = {}
 
         for ch in self.project.chm.chunks_in_frame(frame):
-            rch = RegionChunk(ch, self.project.gm, self.project.rm)
-            r = rch.region_in_t(frame)
+            # try:
+                rch = RegionChunk(ch, self.project.gm, self.project.rm)
+                r = rch.region_in_t(frame)
 
-            # print r.id_
-            # if r.id_ > 22612:
-            #     print r.id_
+                # print r.id_
+                # if r.id_ > 22612:
+                #     print r.id_
 
-            if r is None:
-                print ch
-                continue
+                if r is None:
+                    print ch
+                    continue
 
-            centroid = r.centroid().copy()
+                centroid = r.centroid().copy()
 
-            if self.show_id_bar.isChecked() and len(ch.N) < len(self.project.animals)-1:
+                if self.show_id_bar.isChecked() and len(ch.N) < len(self.project.animals)-1:
+                    try:
+                        item = self.show_pn_ids_visualisation(ch, frame)
+
+                        self.video_player.visualise_temp(item, category='id_bar')
+                    except AttributeError:
+                        pass
+
+                if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
+                    alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
+
+                    c_ = ch.color
+                    item = self.draw_region(r, ch, use_ch_color=c_, alpha=alpha)
+
+                    self.video_player.visualise_temp(item, category='region')
+
+                # # TODO: fix for option when only P set is displayed using circles
                 try:
-                    item = self.show_pn_ids_visualisation(ch, frame)
-
-                    self.video_player.visualise_temp(item, category='id_bar')
-                except AttributeError:
+                    if len(ch.P) == 1:
+                        id_ = list(ch.P)[0]
+                        animal_ids2centroids.setdefault(id_, [])
+                        animal_ids2centroids[id_].append((centroid, ch.is_only_one_id_assigned(len(self.project.animals)), ch))
+                except:
                     pass
 
-            if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
-                alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
+                if ch.id() == self.active_tracklet_id: # in self._highlight_regions or ch in self._highlight_tracklets:
+                    item = self.draw_region(r, ch, highlight_contour=True, force_color=self.highlight_color)
+                    self.video_player.visualise_temp(item, category='region_highlight')
 
-                c_ = ch.color
-                item = self.draw_region(r, ch, use_ch_color=c_, alpha=alpha)
+            # except:
+            #     pass
 
-                self.video_player.visualise_temp(item, category='region')
+                # from scripts.regions_stats import fix_head
+                # fix_head(self.project, r, rfc)
 
-            # # TODO: fix for option when only P set is displayed using circles
-            try:
-                if len(ch.P) == 1:
-                    id_ = list(ch.P)[0]
-                    animal_ids2centroids.setdefault(id_, [])
-                    animal_ids2centroids[id_].append((centroid, ch.is_only_one_id_assigned(len(self.project.animals)), ch))
-            except:
-                pass
-
-            if ch.id() == self.active_tracklet_id: # in self._highlight_regions or ch in self._highlight_tracklets:
-                item = self.draw_region(r, ch, highlight_contour=True, force_color=self.highlight_color)
-                self.video_player.visualise_temp(item, category='region_highlight')
-
-            # from scripts.regions_stats import fix_head
-            # fix_head(self.project, r, rfc)
-
-            # head, _ = get_region_endpoints(r)
-            # head_item = markers.CenterMarker(head[1], head[0], 5, QtGui.QColor(0, 0, 0), ch.id(),
-            #                                  self._gt_marker_clicked)
-            #
-            # head_item.setZValue(0.95)
-            #
-            # self.video_player.visualise_temp(head_item, category='head')
+                # head, _ = get_region_endpoints(r)
+                # head_item = markers.CenterMarker(head[1], head[0], 5, QtGui.QColor(0, 0, 0), ch.id(),
+                #                                  self._gt_marker_clicked)
+                #
+                # head_item.setZValue(0.95)
+                #
+                # self.video_player.visualise_temp(head_item, category='head')
 
         if S_.visualization.history_depth > 0:
             self.draw_history()
@@ -1238,6 +1246,10 @@ class ResultsWidget(QtGui.QWidget):
 
         c = self.get_tracklet_class_color(tracklet)
 
+        id_ = list(tracklet.P)
+        virtual_id = False
+        if len(tracklet.P) and id_ >= len(self.project.animals):
+            virtual_id = True
         item = pn_ids_visualisation.get_pixmap_item(ids_, tracklet.P, tracklet.N,
                                                      tracklet_id=tracklet.id(),
                                                      callback=self.pn_pixmap_clicked,
@@ -1245,7 +1257,8 @@ class ResultsWidget(QtGui.QWidget):
                                                      probs=None,
                                                      # probs=tracklet.animal_id_['probabilities'],
                                                      params=params, tracklet_len=tlen, tracklet_ptr=ptr,
-                                                     tracklet_class_color=c
+                                                     tracklet_class_color=c,
+                                                     virtual_id=virtual_id
                                                      )
 
         reg = rch.region_in_t(frame)

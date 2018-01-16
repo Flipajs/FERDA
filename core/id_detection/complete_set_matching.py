@@ -6,10 +6,11 @@ import matplotlib.pyplot as plt
 
 
 class CompleteSetMatching:
-    def __init__(self, project, get_tracklet_probs_callback, get_tracklet_p1s_callback):
+    def __init__(self, project, get_tracklet_probs_callback, get_tracklet_p1s_callback, descriptors):
         self.p = project
         self.get_probs = get_tracklet_probs_callback
         self.get_p1s = get_tracklet_p1s_callback
+        self.descriptors = descriptors
 
     def process(self):
         CSs = self.find_cs()
@@ -29,7 +30,7 @@ class CompleteSetMatching:
         qualities = []
         for i in range(len(CSs)-1):
             print "CS {}, CS {}".format(i, i+1)
-            perm, quality = self.cs2cs_matching_ids_unknown(CSs[i], CSs[i+1])
+            perm, quality = self.cs2cs_matching_descriptors_and_spatial(CSs[i], CSs[i+1])
 
             cs1_max_frame = 0
             cs2_min_frame = np.inf
@@ -91,10 +92,22 @@ class CompleteSetMatching:
         new_cmap = rand_cmap(id_+1, type='bright', first_color_black=True, last_color_black=False)
         print "#IDs: {}".format(id_+1)
         support = {}
+        tracks = {}
+        tracks_mean_desc = {}
         for t in self.p.chm.chunk_gen():
             if len(t.P):
                 t_identity = list(t.P)[0]
                 support[t_identity] = support.get(t_identity, 0) + len(t)
+                if t_identity not in tracks:
+                    tracks[t_identity] = []
+
+                tracks[t_identity].append(t.id())
+
+                t_desc_w = self.get_mean_descriptor(t) * len(t)
+                if t_identity not in tracks_mean_desc:
+                    tracks_mean_desc[t_identity] = t_desc_w
+                else:
+                    tracks_mean_desc[t_identity] += t_desc_w
 
                 plt.scatter(t.start_frame(self.p.gm), t_identity, c=new_cmap[t_identity], edgecolor=[0.,0.,0.,.3])
                 plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm)+0.1], [t_identity, t_identity],
@@ -119,7 +132,7 @@ class CompleteSetMatching:
 
         print "SUPPORT"
         for id in sorted(support.keys()):
-            print "{}: {}".format(id, support[id])
+            print "{}: {}, #{} ({})".format(id, support[id], len(tracks[id]), tracks[id])
 
 
         # print "ISOLATED CS GROUPS: {}".format(len(isolated_cs_groups))
@@ -141,6 +154,16 @@ class CompleteSetMatching:
         plt.figure()
         plt.plot(qualities[:, 1])
         plt.grid()
+
+        plt.figure()
+
+        mean_ds = []
+        for id_, mean in tracks_mean_desc.iteritems():
+            mean_ds.append(mean/float(support[id]))
+
+        print("track ids order: {}".format(list(tracks_mean_desc.iterkeys())))
+        from scipy.spatial.distance import pdist, squareform
+        plt.imshow(squareform(pdist(mean_ds)), interpolation='nearest')
         plt.show()
 
         for i in range(50, 60):
@@ -207,6 +230,39 @@ class CompleteSetMatching:
             quality = [1.0, 1.0]
         else:
             P_a = self.appearance_probabilities(cs1, cs2)
+            P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
+
+            # 1 - ... it is minimum weight matching
+            P = 1 - np.multiply(P_a, P_s)
+
+            from scipy.optimize import linear_sum_assignment
+            row_ind, col_ind = linear_sum_assignment(P)
+
+            for rid, cid in zip(row_ind, col_ind):
+                perm.append((cs1[rid], cs2[cid]))
+
+            x_ = 1 - P[row_ind, col_ind]
+            quality = (x_.min(), x_.sum() / float(len(x_)))
+
+        for t in cs_shared:
+            perm.append((t, t))
+
+        return perm, quality
+
+    def cs2cs_matching_descriptors_and_spatial(self, cs1, cs2):
+        # TODO: probability is better than cost, easier to interpret
+        # get distance costs
+        # get ID assignments costs
+        # solve matching
+        # register matched tracklets to have the same virtual ID
+        perm = []
+
+        cs1, cs2, cs_shared = self.remove_straightforward_tracklets(cs1, cs2)
+        if len(cs1) == 1:
+            perm.append((cs1[0], cs2[0]))
+            quality = [1.0, 1.0]
+        else:
+            P_a = self.appearance_distance_probabilities(cs1, cs2)
             P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
 
             # 1 - ... it is minimum weight matching
@@ -305,6 +361,96 @@ class CompleteSetMatching:
 
         return C
 
+    def get_mean_descriptor(self, tracklet):
+        descriptors = []
+        for r_id in tracklet.rid_gen(self.p.gm):
+            if r_id in self.descriptors:
+                descriptors.append(self.descriptors[r_id])
+
+        if len(descriptors) == 0:
+            import warnings
+            warnings.warn("descriptors missing for t_id: {}, creating zero vector".format(tracklet.id()))
+
+            descriptors.append(np.zeros(32, ))
+
+
+        descriptors = np.array(descriptors)
+
+        res = np.mean(descriptors, axis=0)
+
+        assert len(res) == 32
+
+        return res
+
+    def appearance_distance_probabilities(self, cs1, cs2):
+        # returns distances to mean descriptors
+        from scipy.spatial.distance import cdist
+
+        cs1_descriptors = []
+        for i, t1 in enumerate(cs1):
+            cs1_descriptors.append(self.get_mean_descriptor(t1))
+
+        cs2_descriptors = []
+        for i, t2 in enumerate(cs2):
+            cs2_descriptors.append(self.get_mean_descriptor(t2))
+
+        C = cdist(cs1_descriptors, cs2_descriptors)
+
+        max_d = 3.0
+        C = C / max_d
+        C = 1 - C
+
+        return C
+
+    def desc_clustering_analysis(self):
+        from sklearn.cluster import KMeans
+        import numpy as np
+
+        Y = []
+        X = []
+        for y, x in tqdm(self.descriptors.iteritems()):
+            Y.append(y)
+            X.append(x)
+
+        Y = np.array(Y)
+
+        nbins = 10
+        kmeans = KMeans(n_clusters=nbins, random_state=0).fit(X)
+
+        labels = kmeans.labels_
+
+
+        plt.figure()
+        plt.hist(labels, bins=nbins)
+
+        from scipy.spatial.distance import pdist, squareform
+        plt.figure()
+        plt.imshow(squareform(pdist(kmeans.cluster_centers_)), interpolation='nearest')
+
+        from scipy.misc import imread
+        for i in range(nbins):
+            xx, yy = 5, 5
+            fig, axes = plt.subplots(xx, yy)
+            axes = axes.flatten()
+
+            for j, r_id in enumerate(np.random.choice(Y[labels == i], xx*yy)):
+                for k in range(6):
+                    img = np.random.rand(50, 50, 3)
+                    try:
+                        img = imread('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/'+str(k)+'/'+str(r_id)+'.jpg')
+                        break
+                    except:
+                        pass
+
+                axes[j].imshow(img)
+                # axes[j].title = str(k)
+
+            plt.show()
+
+
+        kmeans.cluster_centers_
+
+
 if __name__ == '__main__':
     from core.project.project import Project
     from core.id_detection.learning_process import LearningProcess
@@ -316,7 +462,12 @@ if __name__ == '__main__':
     lp = LearningProcess(p)
     lp.reset_learning()
 
-    csm = CompleteSetMatching(p, lp._get_tracklet_proba, lp.get_tracklet_p1s)
+    import pickle
+    with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:
+        descriptors = pickle.load(f)
+
+    csm = CompleteSetMatching(p, lp._get_tracklet_proba, lp.get_tracklet_p1s, descriptors)
+    csm.desc_clustering_analysis()
     csm.process()
 
 
