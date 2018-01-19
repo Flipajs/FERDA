@@ -17,19 +17,6 @@ import fire
 import skimage.transform
 
 
-def toarray(struct_array):
-    types = [x[1] for x in struct_array.dtype.descr]
-    all(x == types[0] for x in types)
-    return struct_array.view(types[0]).reshape(struct_array.shape + (-1,))
-
-
-def tostruct(ndarray):
-    n = ndarray.shape[1] / len(train_interactions.COLUMNS)
-    names = train_interactions.columns(n)
-    formats = len(names) * 'f,'
-    return np.core.records.fromarrays(ndarray.transpose(), names=', '.join(names), formats=formats)
-
-
 def save_prediction_img(i, pred, out_filename, num_objects, gt=None, img_data=None):
     fig = plt.figure()
     if img_data is not None:
@@ -53,42 +40,40 @@ def plot_interaction(num_objects, pred, gt=None):
     ax = plt.gca()
     colors = ['red', 'blue']
     for i in range(num_objects):
-        ax.add_patch(Ellipse(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
+        ax.add_patch(Ellipse(train_interactions.TrainInteractions.toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
                              pred['%d_major' % i], pred['%d_minor' % i],
                              angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
                              label='object %d prediction' % i))
-        ax.add_patch(Arc(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
-                         pred['%d_major' % i], pred['%d_minor' % i],
-                         angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
-                         linewidth=4,
-                         theta1=-30, theta2=30))
+        # ax.add_patch(Arc(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
+        #                  pred['%d_major' % i], pred['%d_minor' % i],
+        #                  angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
+        #                  linewidth=4,
+        #                  theta1=-30, theta2=30))
         plt.scatter(pred['%d_x' % i], pred['%d_y' % i], c=colors[i])
 
         if gt is not None:
-            ax.add_patch(Ellipse(toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
+            ax.add_patch(Ellipse(train_interactions.TrainInteractions.toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
                                  gt['%d_major' % i], gt['%d_minor' % i],
                                  angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
                                  linestyle='dotted', label='object %d gt' % i))
-            ax.add_patch(Arc(toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
-                             gt['%d_major' % i], gt['%d_minor' % i],
-                             angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
-                             linewidth=4,
-                             theta1=-30, theta2=30, linestyle='dotted'))
+            # ax.add_patch(Arc(toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
+            #                  gt['%d_major' % i], gt['%d_minor' % i],
+            #                  angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
+            #                  linewidth=4,
+            #                  theta1=-30, theta2=30, linestyle='dotted'))
 
     plt.legend()
 
 
 def visualize_results(experiment_dir, data_dir, n_objects=2):
-    # NAMES = ['0_x', '0_y', '0_major', '0_minor', '0_angle_deg',
-    #          ]
-    columns = train_interactions.columns(n_objects)
-    for i in range(n_objects):
-        columns.remove('%d_dx' % i)
-        columns.remove('%d_dy' % i)
+    ti = train_interactions.TrainInteractions(n_objects)
+    # for i in range(n_objects):
+    #     columns.remove('%d_dx' % i)
+    #     columns.remove('%d_dy' % i)
     hf_img = h5py.File(join(data_dir, 'images.h5'), 'r')
     X_test = hf_img['test']
     y_test_df = pd.read_csv(join(data_dir, 'test.csv'))
-    y_test = y_test_df[columns]
+    y_test = y_test_df[ti.columns()]
     for i in range(n_objects):
         y_test.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
         # y_test.loc[:, '%d_angle_deg' % i] += 90
@@ -97,7 +82,7 @@ def visualize_results(experiment_dir, data_dir, n_objects=2):
         pred = hf_pred['data'][:]
 
     # xy, angle, indices = train_interactions.match_pred_to_gt_dxdy(pred, y_test.values, np)
-    xy, angle, indices = train_interactions.match_pred_to_gt(pred, y_test.values, np)
+    xy, angle, indices = ti.match_pred_to_gt(pred, y_test.values, np)
     if n_objects == 1:
         xy_errors = xy
         angle_errors = angle
@@ -111,7 +96,7 @@ def visualize_results(experiment_dir, data_dir, n_objects=2):
         assert False, 'not implemented'
 
     # estimate major and minor axis length
-    pred = tostruct(pred)
+    pred = ti.tostruct(pred)
     mean_major = y_test[['%d_major' % i for i in range(n_objects)]].stack().mean()
     mean_minor = y_test[['%d_minor' % i for i in range(n_objects)]].stack().mean()
     for i in range(n_objects):

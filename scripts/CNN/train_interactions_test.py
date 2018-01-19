@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from scripts.CNN.train_interactions import angle_absolute_error, angle_absolute_error_direction_agnostic
+from scripts.CNN.train_interactions import TrainInteractions
 import scripts.CNN.train_interactions as train_interactions
 import matplotlib.pylab as plt
 import numpy as np
@@ -19,15 +19,17 @@ class LossFunctionsTestCase(unittest.TestCase):
         self.y_b = np.array([[20., 20, 25, 5, 30, -1, -1, 150, 170, 25, 5, 0, -1, -1],
                              [30., 30, 25, 5, 30, -1, -1, 170, 150, 25, 5, 5, -1, -1],
                              [30., 60, 25, 5, 30, -1, -1, 170, 120, 25, 5, 5, -1, -1]])
+        self.ti = TrainInteractions()
 
     def run_interaction_loss_angle(self):
         data_dir = '/home/matej/prace/ferda/data/interactions/1712_36k_random'
+        self.ti.num_objects = 2
         y_test_df = pd.read_csv(join(data_dir, 'test.csv'))
-        y_test = y_test_df[train_interactions.columns(train_interactions.NUM_OBJECTS)]
+        y_test = y_test_df[self.ti.columns()]
         pred = y_test.copy()
         # pred += 1
         pred.iloc[:] = 1
-        xy, angle, indices = train_interactions.match_pred_to_gt(pred.values[:5], y_test.values[:5], np)
+        xy, angle, indices = self.ti.match_pred_to_gt(pred.values[:5], y_test.values[:5], np)
 
         # xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
         # angle_mae = (angle[indices[:, 0], indices[:, 1]]).mean()
@@ -36,45 +38,45 @@ class LossFunctionsTestCase(unittest.TestCase):
         print(xy_mae)
         print(angle_mae)
 
-        print train_interactions.K.eval(train_interactions.interaction_loss_angle(y_test.values[:5], pred.values[:5]))
+        print train_interactions.K.eval(self.ti.interaction_loss_angle(y_test.values[:5], pred.values[:5]))
 
     def run_match_pred_to_gt(self):
-        assert train_interactions.NUM_OBJECTS == 2
-        with patch.object(train_interactions, 'xy_absolute_error',
+        self.ti.num_objects = 2
+        with patch.object(self.ti, 'xy_absolute_error',
                           return_value=np.array([[10, 10], [20, 20], [30, 30]])) as mock_method1:
-            with patch.object(train_interactions, 'angle_absolute_error_direction_agnostic',
+            with patch.object(self.ti, 'angle_absolute_error_direction_agnostic',
                               return_value=np.array([10, 20, 30])) as mock_method2:
-                mean_errors_xy, mean_errors_angle, indices = train_interactions.match_pred_to_gt(self.y_a, self.y_b, np)
+                mean_errors_xy, mean_errors_angle, indices = self.ti.match_pred_to_gt(self.y_a, self.y_b, np)
         print(mean_errors_xy)
         print(mean_errors_angle)
         print(indices)
 
     def test_angle_absolute_error(self):
-        self.assertEqual(angle_absolute_error(10, 20, np), 10)
-        self.assertEqual(angle_absolute_error(10, 180, np), 170)
-        self.assertEqual(angle_absolute_error(0, 180, np), 180)
-        self.assertEqual(angle_absolute_error(0, 190, np), 170)
-        self.assertEqual(angle_absolute_error(0, 270, np), 90)
-        self.assertEqual(angle_absolute_error(90, 270, np), 180)
-        self.assertEqual(angle_absolute_error(-10, 10, np), 20)
-        self.assertEqual(angle_absolute_error(80, 280, np), 160)
-        self.assertEqual(angle_absolute_error(0, -10, np), 10)
-        self.assertEqual(angle_absolute_error(0, 360, np), 0)
-        self.assertEqual(angle_absolute_error(10, 300, np), 70)
+        self.assertEqual(self.ti.angle_absolute_error(10, 20, np), 10)
+        self.assertEqual(self.ti.angle_absolute_error(10, 180, np), 170)
+        self.assertEqual(self.ti.angle_absolute_error(0, 180, np), 180)
+        self.assertEqual(self.ti.angle_absolute_error(0, 190, np), 170)
+        self.assertEqual(self.ti.angle_absolute_error(0, 270, np), 90)
+        self.assertEqual(self.ti.angle_absolute_error(90, 270, np), 180)
+        self.assertEqual(self.ti.angle_absolute_error(-10, 10, np), 20)
+        self.assertEqual(self.ti.angle_absolute_error(80, 280, np), 160)
+        self.assertEqual(self.ti.angle_absolute_error(0, -10, np), 10)
+        self.assertEqual(self.ti.angle_absolute_error(0, 360, np), 0)
+        self.assertEqual(self.ti.angle_absolute_error(10, 300, np), 70)
 
     def test_angle_absolute_error_direction_agnostic(self):
-        self.assertEqual(angle_absolute_error_direction_agnostic(10, 20, np), 10)
-        self.assertEqual(angle_absolute_error_direction_agnostic(10, 180, np), 10)
-        self.assertEqual(angle_absolute_error_direction_agnostic(0, 180, np), 0)
-        self.assertEqual(angle_absolute_error_direction_agnostic(0, 190, np), 10)
-        self.assertEqual(angle_absolute_error_direction_agnostic(0, 270, np), 90)
-        self.assertEqual(angle_absolute_error_direction_agnostic(90, 270, np), 0)
-        self.assertEqual(angle_absolute_error_direction_agnostic(-10, 10, np), 20)
-        self.assertEqual(angle_absolute_error_direction_agnostic(80, 280, np), 20)
-        self.assertEqual(angle_absolute_error_direction_agnostic(0, -10, np), 10)
-        self.assertEqual(angle_absolute_error_direction_agnostic(0, 360, np), 0)
-        self.assertEqual(angle_absolute_error_direction_agnostic(10, 300, np), 70)
-        assert_array_equal(angle_absolute_error_direction_agnostic(np.array([10, 0, 0]),
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(10, 20, np), 10)
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(10, 180, np), 10)
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(0, 180, np), 0)
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(0, 190, np), 10)
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(0, 270, np), 90)
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(90, 270, np), 0)
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(-10, 10, np), 20)
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(80, 280, np), 20)
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(0, -10, np), 10)
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(0, 360, np), 0)
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(10, 300, np), 70)
+        assert_array_equal(self.ti.angle_absolute_error_direction_agnostic(np.array([10, 0, 0]),
                                                                    np.array([300, 360, -10]), np),
                            np.array([70, 0, 10]))
 
