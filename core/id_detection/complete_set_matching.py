@@ -3,6 +3,7 @@ from utils.video_manager import get_auto_video_manager
 from tqdm import tqdm
 from lazyme.string import color_print
 import matplotlib.pyplot as plt
+from scipy.misc import imread
 
 
 class CompleteSetMatching:
@@ -15,8 +16,11 @@ class CompleteSetMatching:
     def process(self):
         CSs = self.find_cs()
 
+        #####
+        for t in CSs[0]:
+            self.get_representants(t, n=10)
+
         id_ = 0
-        isolated_cs_groups = []
 
         import matplotlib.pyplot as plt
         import matplotlib.patheffects as pe
@@ -427,11 +431,10 @@ class CompleteSetMatching:
         plt.figure()
         plt.imshow(squareform(pdist(kmeans.cluster_centers_)), interpolation='nearest')
 
-        from scipy.misc import imread
         for i in range(nbins):
             xx, yy = 5, 5
-            fig, axes = plt.subplots(xx, yy)
-            axes = axes.flatten()
+            fig, axarr = plt.subplots(xx, yy)
+            axarr = axarr.flatten()
 
             for j, r_id in enumerate(np.random.choice(Y[labels == i], xx*yy)):
                 for k in range(6):
@@ -442,9 +445,9 @@ class CompleteSetMatching:
                     except:
                         pass
 
-                axes[j].imshow(img)
-                axes[j].set_title(str(k))
-                axes[j].set_y_axis(None)
+                axarr[j].imshow(img)
+                axarr[j].set_title(str(k))
+                axarr[j].axis('off')
 
             plt.suptitle(str(i))
             plt.show()
@@ -452,6 +455,65 @@ class CompleteSetMatching:
 
         kmeans.cluster_centers_
 
+    def get_representants(self, tracklet, n=5):
+        linkages = ['average', 'complete', 'ward']
+        linkage = linkages[0]
+        connectivity = None
+
+        from sklearn.cluster import AgglomerativeClustering
+        model = AgglomerativeClustering(linkage=linkage,
+                                        connectivity=connectivity,
+                                        n_clusters=n)
+
+        # for given GT ID
+        for id_ in range(6):
+            X = []
+            r_ids = []
+
+            r_ids_arr = tracklet.rid_gen(self.p.gm)
+
+            r_ids_arr = []
+            import os
+            for r_id in os.listdir('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/'+str(id_)+'/'):
+                r_id = int(r_id[:-4])
+                r_ids_arr.append(r_id)
+
+            for r_id in r_ids_arr:
+                if r_id in self.descriptors:
+                    X.append(self.descriptors[r_id])
+                    r_ids.append(r_id)
+                else:
+                    print r_id
+
+            r_ids = np.array(r_ids)
+            y = model.fit_predict(X)
+
+            print np.histogram(y, bins=n)
+
+            num_examples = 5
+            fig, axarr = plt.subplots(num_examples, n)
+            axarr = axarr.flatten()
+
+            for i in range(n):
+                for j, r_id in enumerate(np.random.choice(r_ids[y == i], min(num_examples, np.sum(y == i)))):
+                    for k in range(6):
+                        img = np.random.rand(50, 50, 3)
+                        try:
+                            img = imread('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/' + str(k) + '/' + str(
+                                r_id) + '.jpg')
+                            break
+                        except:
+                            pass
+
+                    axarr[j * n + i].imshow(img)
+                    if j == 0:
+                        axarr[j * n + i].set_title(str(np.sum(y == i)))
+
+            for i in range(n*num_examples):
+                axarr[i].axis('off')
+
+            plt.suptitle(len(y))
+            plt.show()
 
 if __name__ == '__main__':
     from core.project.project import Project
@@ -469,7 +531,7 @@ if __name__ == '__main__':
         descriptors = pickle.load(f)
 
     csm = CompleteSetMatching(p, lp._get_tracklet_proba, lp.get_tracklet_p1s, descriptors)
-    csm.desc_clustering_analysis()
+    # csm.desc_clustering_analysis()
     csm.process()
 
 
