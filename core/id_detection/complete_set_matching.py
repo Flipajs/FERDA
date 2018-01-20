@@ -4,6 +4,7 @@ from tqdm import tqdm
 from lazyme.string import color_print
 import matplotlib.pyplot as plt
 from scipy.misc import imread
+import os, random
 
 
 class CompleteSetMatching:
@@ -799,6 +800,70 @@ class CompleteSetMatching:
 
         return prototypes
 
+def _get_ids_from_folder(wd, n):
+    rids = random.sample(os.listdir(wd), n)
+
+    rids = map(lambda x: x[:-4], rids)
+    return np.array(map(int, rids))
+
+def _get_distances(ids1, ids2, descriptors):
+    x = []
+    for i, j in zip(ids1, ids2):
+        if i not in descriptors or j not in descriptors:
+            continue
+
+        x.append(np.linalg.norm(np.array(descriptors[i]) - np.array(descriptors[j])))
+
+    return x
+
+def test_descriptors_distance(descriptors, n=2000):
+    WD = '/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/'
+    pos_distances = []
+    neg_distances = []
+
+    NUM_ANIMALS = 6
+
+    for id_ in range(NUM_ANIMALS):
+        rids1 = _get_ids_from_folder(WD+str(id_), n)
+        rids2 = _get_ids_from_folder(WD+str(id_), n)
+
+        pos_distances.extend(_get_distances(rids1, rids2, descriptors))
+        for opponent_id in range(NUM_ANIMALS):
+            if id_ == opponent_id:
+                continue
+
+            rids3 = _get_ids_from_folder(WD+str(opponent_id), n/NUM_ANIMALS)
+            neg_distances.extend(_get_distances(rids1, rids3, descriptors))
+
+    bins = 200
+    print len(pos_distances)
+    print len(neg_distances)
+    plt.figure()
+    print np.histogram(pos_distances, bins=bins, density=True)
+    plt.hist(pos_distances, bins=bins, alpha=0.6, color='g', density=True)
+    plt.hold(True)
+    plt.hist(neg_distances, bins=bins, alpha=0.6, color='r', density=True)
+
+    x = np.linspace(0., 3., 100)
+    for lam in [1./np.mean(pos_distances)]:
+        y = lam * np.exp(-lam * x)
+        plt.plot(x, y)
+        y = np.exp(-lam * x)
+        plt.plot(x, y)
+
+
+    plt.figure()
+    for lam in [1./np.mean(pos_distances)]:
+        y = lam * np.exp(-lam * x)
+        plt.plot(x, y)
+
+    plt.show()
+
+
+
+
+
+
 if __name__ == '__main__':
     from core.project.project import Project
     from core.id_detection.learning_process import LearningProcess
@@ -813,6 +878,8 @@ if __name__ == '__main__':
     import pickle
     with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:
         descriptors = pickle.load(f)
+
+    test_descriptors_distance(descriptors)
 
     csm = CompleteSetMatching(p, lp._get_tracklet_proba, lp.get_tracklet_p1s, descriptors)
     # csm.desc_clustering_analysis()
