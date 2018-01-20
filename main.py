@@ -24,8 +24,8 @@ S_.general.print_log = False
 wd = None
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
-# if is_flipajs_pc() and False:
-if is_flipajs_pc():
+if is_flipajs_pc() and False:
+# if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
@@ -36,6 +36,7 @@ if is_flipajs_pc():
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam3_new'
     # wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
+
     # wd = '/Volumes/Seagate Expansion Drive/HH1_POST'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Barbara_flu_bug/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
@@ -53,11 +54,17 @@ if is_matejs_pc():
 if wd is not None:
     project.load(wd)
 
-    # workaround
-    if not hasattr(project.chm, 'track_refs'):
-        project.chm.track_refs = {}
+    # from tqdm import tqdm
+    # thetas = []
+    # for t in tqdm(project.chm.chunk_gen(), total=len(project.chm)):
+    #     thetas.extend([r.theta_ for r in t.r_gen(project.gm, project.rm)])
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # plt.hist(thetas)
+    # plt.show()
 
-    # TODO !!
+    # TODO !! add it to assembly process
     # project.solver.one2one(check_tclass=True)
 
     # cases = []
@@ -67,7 +74,7 @@ if wd is not None:
     #
     #         if t.is_multi() and t.end_vertex(project.gm).out_degree() == 2:
     #             new_one = True
-    #             for u in v.in_neighbours():
+    #             for u in v.in_neighbors():
     #                 if not project.gm.get_chunk(u).is_single():
     #                     new_one = False
     #                     break
@@ -95,7 +102,7 @@ if wd is not None:
     #
     #     v1 = t.start_vertex(project.gm)
     #     animals_r = []
-    #     for u in v1.in_neighbours():
+    #     for u in v1.in_neighbors():
     #         reg = project.gm.region(u)
     #
     #         if erosion:

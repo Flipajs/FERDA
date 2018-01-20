@@ -195,6 +195,9 @@ class ResultsWidget(QtGui.QWidget):
         self.highlight_tracklet_button = QtGui.QPushButton('show tracklet')
         self.highlight_tracklet_button.clicked.connect(self.highlight_tracklet_button_clicked)
 
+        self.highlight_region_button = QtGui.QPushButton('show region')
+        self.highlight_region_button.clicked.connect(self.highlight_region_button_clicked)
+
         self.stop_highlight_tracklet = QtGui.QPushButton('stop highlight tracklet')
         self.stop_highlight_tracklet.clicked.connect(self.stop_highlight_tracklet_clicked)
 
@@ -264,6 +267,7 @@ class ResultsWidget(QtGui.QWidget):
         self.tracklet_box.layout().addWidget(self.tracklet_p_label)
         self.tracklet_box.layout().addWidget(self.tracklet_n_label)
         self.tracklet_box.layout().addWidget(self.highlight_tracklet_button)
+        self.tracklet_box.layout().addWidget(self.highlight_region_button)
         self.tracklet_box.layout().addWidget(self.stop_highlight_tracklet)
         self.tracklet_box.layout().addWidget(self.decide_tracklet_button)
         self.tracklet_box.layout().addWidget(self.tracklet_begin_button)
@@ -282,13 +286,25 @@ class ResultsWidget(QtGui.QWidget):
         self.video_player = VideoPlayer(self.project)
         self.video_player.set_frame_change_callback(self.update_visualisations)
 
+        self.show_results_flayout = QtGui.QFormLayout()
+
+        self.show_results_summary_start_i = QtGui.QLineEdit()
+        self.show_results_summary_start_i.setText(str(0))
+        self.show_results_flayout.addRow('start: ', self.show_results_summary_start_i)
+
         self.show_results_summary_steps_i = QtGui.QLineEdit()
-        self.show_results_summary_steps_i.setText(str(max(1, int(self.video_player.total_frame_count()/200))))
-        self.debug_box.layout().addWidget(self.show_results_summary_steps_i)
+        self.show_results_summary_steps_i.setText(str(max(1, int(self.video_player.total_frame_count() / 200))))
+        self.show_results_flayout.addRow('step: ', self.show_results_summary_steps_i)
+
+        self.show_results_summary_end_i = QtGui.QLineEdit()
+        self.show_results_summary_end_i.setText(str(int(self.video_player.total_frame_count())))
+        self.show_results_flayout.addRow('end: ', self.show_results_summary_end_i)
 
         self.show_summary_b = QtGui.QPushButton('show results summary')
         self.show_summary_b.clicked.connect(self.show_results_summary)
-        self.debug_box.layout().addWidget(self.show_summary_b)
+        self.show_results_flayout.addWidget(self.show_summary_b)
+
+        self.debug_box.layout().addLayout(self.show_results_flayout)
 
         self.show_cs_analysis_b = QtGui.QPushButton('CS analysis')
         self.show_cs_analysis_b.clicked.connect(self.cs_analysis)
@@ -575,6 +591,28 @@ class ResultsWidget(QtGui.QWidget):
         self._set_active_tracklet_id(-1)
         self._highlight_tracklets = set()
         self.redraw_video_player_visualisations()
+
+    def highlight_region_button_clicked(self):
+        try:
+            id_ = int(self.highlight_tracklet_input.text())
+            r = self.project.rm[id_]
+        except:
+            return
+
+        frame = r.frame()
+
+        t_id = None
+        for t in self.project.chm.chunks_in_frame(frame):
+            if id_ in t.rid_gen(self.project.gm):
+                t_id = t.id()
+                break
+
+
+        self.video_player.goto(frame)
+        print id_
+
+        if t_id:
+            self._set_active_tracklet_id(t_id)
 
     def highlight_tracklet_button_clicked(self):
         self._highlight_tracklets = set()
@@ -1989,11 +2027,11 @@ class ResultsWidget(QtGui.QWidget):
         from tqdm import trange
         from utils.video_manager import get_auto_video_manager
 
+        start = int(self.show_results_summary_start_i.text())
         step = int(self.show_results_summary_steps_i.text())
+        end = int(self.show_results_summary_end_i.text())
 
         vm = get_auto_video_manager(self.project)
-
-        total_frames = self.video_player.total_frame_count()
 
         from gui.img_grid.img_grid_widget import ImgGridWidget
         w = ImgGridWidget(cols=len(self.project.animals), element_width=100)
@@ -2002,7 +2040,7 @@ class ResultsWidget(QtGui.QWidget):
         WW = 100
 
         num_animals = len(self.project.animals)
-        for frame in trange(0, total_frames, step):
+        for frame in trange(start, end, step):
             region_representants = []
             img_representants = []
 
@@ -2014,14 +2052,14 @@ class ResultsWidget(QtGui.QWidget):
                 if t.is_only_one_id_assigned(num_animals):
                     a_id = list(t.P)[0]
 
-                    r_id = t.v_id_in_t(frame, self.project.gm)
-                    if r_id == 0:
+                    v_id = t.v_id_in_t(frame, self.project.gm)
+                    if v_id == 0:
                         continue
 
-                    im = draw_region(self.project, vm, r_id)
+                    im = draw_region(self.project, vm, v_id)
 
                     img_representants[a_id] = im
-                    region_representants[a_id] = self.project.rm[r_id]
+                    region_representants[a_id] = self.project.gm.region(v_id)
 
             for aid in range(len(self.project.animals)):
                 if img_representants[aid] is None:
@@ -2032,10 +2070,28 @@ class ResultsWidget(QtGui.QWidget):
                 item = make_item(im, region_representants[aid], HH, WW)
                 w.add_item(item)
 
-        win = QtGui.QMainWindow()
-        win.setCentralWidget(w)
-        win.show()
-        self.w = win
+        self.show_results_view_w = QtGui.QWidget()
+        self.show_results_view_w.setLayout(QtGui.QHBoxLayout())
+        self.show_results_view_w.layout().addWidget(w)
+        self.show_results_view_b = QtGui.QPushButton('show info about selected')
+        self.show_results_view_b.clicked.connect(partial(self.results_view_show_info_selected, w.get_selected))
+        self.show_results_view_w.layout().addWidget(self.show_results_view_b)
+        self.show_results_view_w.show()
+
+
+        # win = QtGui.QMainWindow()
+        # win.setCentralWidget(w)
+        # win.show()
+        # self.w = win
+
+    def results_view_show_info_selected(self, get_selected):
+        # step = int(self.show_results_summary_steps_i.text())
+        regions = get_selected()
+        print "SELECTED IDS:"
+        for r in regions:
+            print str(r)
+            # frame = ((id + 1) / len(self.p.animals)) * step
+            # print "selected id: {} in frame: {}".format(id, frame)
 
     def cs_analysis(self):
         groups = []
@@ -2065,7 +2121,6 @@ class ResultsWidget(QtGui.QWidget):
                     break
 
                 singles_group = filter(lambda x: x.is_single(), group)
-
                 df = frame
 
                 # if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= self.min_tracklet_len:
@@ -2092,6 +2147,22 @@ class ResultsWidget(QtGui.QWidget):
         print "analysis 1) DONE"
         print "# CS: ", len(groups)
 
+        total_len = 0
+        for t in unique_tracklets:
+            total_len += len(t)
+
+        single_len = 0
+        for t in self.p.chm.chunk_gen():
+            if t.is_single():
+                single_len += len(t)
+
+
+        print "Total tracklet length {}, coverage {:.2%}, single-ID coverage {:.2%}".format(
+            total_len,
+            (total_len/float(len(self.p.animals)))/total_frame_count,
+            (single_len / float(len(self.p.animals))) / total_frame_count,
+        )
+
         min_lengths = []
         val_ = 0
         for g in groups:
@@ -2100,8 +2171,19 @@ class ResultsWidget(QtGui.QWidget):
         # print sorted(min_lengths)[:10]
         ids = np.argsort(min_lengths)
 
-        for i in range(10):
+        for i in range(1, 11):
             id_ = ids[i]
+            print "############### "
+            print -min_lengths[id_]
+
+            for t in groups[id_]:
+                print t.id(), t.length()
+
+        print
+        print
+        print "WORST ONES:"
+        for i in range(10):
+            id_ = ids[-i]
             print "############### "
             print -min_lengths[id_]
 

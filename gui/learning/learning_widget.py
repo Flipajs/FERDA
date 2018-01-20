@@ -423,9 +423,9 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setItem(10, 0, QCustomTableWidgetItem('# user decisions: '))
         self.info_table.setItem(10, 1, QCustomTableWidgetItem(str(len(self.lp.user_decisions))))
 
-        # full_coverage, single_id_coverage = self.get_id_coverage()
-        # TODO: speed up
         full_coverage, single_id_coverage = 0, 0
+        # TODO: speed up
+        # full_coverage, single_id_coverage = self.get_id_coverage()
         self.info_table.setItem(11, 0, QCustomTableWidgetItem('full coverage:'))
         self.info_table.setItem(11, 1, QCustomTableWidgetItem(self.__f2str(full_coverage)))
 
@@ -513,9 +513,6 @@ class LearningWidget(QtGui.QWidget):
                len(t.N) == len(self.project.animals) - 1
 
     def get_id_coverage(self):
-        from utils.video_manager import get_auto_video_manager
-        vm = get_auto_video_manager(self.project)
-
         coverage = 0
         max_ = 0
         single_id_sum = 0

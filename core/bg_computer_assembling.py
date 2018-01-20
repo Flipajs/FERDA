@@ -4,28 +4,41 @@ from core.graph.chunk_manager import ChunkManager
 from core.graph.solver import Solver
 import warnings
 from itertools import izip
+from tqdm import tqdm
+import os
+import datetime
 
+
+def check_if_already_assembled(project):
+    wd = project.working_directory
+    rm_path = wd+'/rm.sqlite3'
+    if os.path.exists(rm_path) and len(project.rm):
+        warnings.warn("Region Manager already exists. It was renamed to rm_CURRENT_DATETIME.sqlite3")
+
+        dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        os.rename(rm_path, rm_path[:-8] + '_' + dt + '.sqlite3')
+        project.rm = RegionManager(wd)
+
+    chm_path = wd + '/chunk_manager.pkl'
+    if os.path.exists(chm_path):
+        warnings.warn("Chunk Manager already exists. It was renamed to chm_CURRENT_DATETIME.sqlite")
+
+        dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        os.rename(chm_path, chm_path[:-4] + '_' + dt + '.pkl')
+
+    gm_path = wd + '/graph_manager.pkl'
+    if os.path.exists(gm_path):
+        warnings.warn("Graph Manager already exists. It was renamed to gm_CURRENT_DATETIME.sqlite")
+
+        dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        os.rename(gm_path, gm_path[:-4] + '_' + dt + '.pkl')
 
 def assembly_after_parallelization(bgcomp):
+    check_if_already_assembled(bgcomp.project)
+
     print "Starting assembly..."
     from core.graph.graph_manager import GraphManager
     # TODO: add to settings
-
-    cache_size_limit = 5
-
-    # Settings won't work on cluster, need PyQt libraries...
-    if not bgcomp.project.is_cluster():
-        from core.settings import Settings as S_
-        cache_size_limit = S_.cache.region_manager_num_of_instances
-
-    db_wd = bgcomp.project.working_directory
-    if bgcomp.do_semi_merge:
-        # multiply estimate by this value to add security margin
-        q = 2.0
-        cache_size_limit = int(q * len(bgcomp.project.animals) * bgcomp.frames_in_row * bgcomp.part_num)
-        db_wd = None
-
-    bgcomp.project.rm = RegionManager(db_wd=db_wd, cache_size_limit=cache_size_limit)
 
     bgcomp.project.chm = ChunkManager()
     bgcomp.solver = Solver(bgcomp.project)
@@ -34,35 +47,33 @@ def assembly_after_parallelization(bgcomp):
     if not bgcomp.project.is_cluster():
         bgcomp.update_callback(0, 're-indexing...')
 
-    if not bgcomp.project.is_cluster():
-        from core.settings import Settings as S_
-        # switching off... We don't want to log following...
-        S_.general.log_graph_edits = False
+    # if not bgcomp.project.is_cluster():
+    #     from core.settings import Settings as S_
+    #     # switching off... We don't want to log following...
+    #     S_.general.log_graph_edits = False
 
     part_num = bgcomp.part_num
 
     from utils.misc import is_flipajs_pc
     if is_flipajs_pc():
         # TODO: remove this line
-        # part_num = 25
+        part_num = 5
         # bgcomp.first_part = 100
         pass
 
     bgcomp.project.color_manager = None
 
     import time
-    import os
-    import psutil
 
     merging_t = time.time()
-    process = psutil.Process(os.getpid())
-    print(process.memory_info().rss)
 
-    print "merging..."
+
+    print
+    print "LOADING PARTS AND MERGIND..."
     # for i in range(part_num):
-    for i in range(bgcomp.first_part, bgcomp.first_part + part_num):
+    for i in tqdm(range(bgcomp.first_part, bgcomp.first_part + part_num), leave=False):
         rm_old = RegionManager(db_wd=bgcomp.project.working_directory + '/temp',
-                               db_name='part' + str(i) + '_rm.sqlite3', cache_size_limit=1)
+                               db_name='part' + str(i) + '_rm.sqlite3', cache_size_limit=1, supress_init_print=True)
 
         with open(bgcomp.project.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
             up = pickle.Unpickler(f)
@@ -82,8 +93,9 @@ def assembly_after_parallelization(bgcomp):
 
     bgcomp.project.gm.rm = bgcomp.project.rm
 
-    print "reconnecting graphs"
-
+    print
+    print "RECONNECTING GRAPHS"
+    print
     vs_todo = []
 
     start_ = (bgcomp.first_part + 1) * fir
@@ -96,8 +108,7 @@ def assembly_after_parallelization(bgcomp):
         connect_graphs(bgcomp, t_v, t1_v, bgcomp.project.gm, bgcomp.project.rm)
         # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
-    print "merge t: ", time.time() - merging_t
-    print(process.memory_info().rss)
+    print "merge t: {:.2f}".format(time.time() - merging_t)
     print "#CHUNKS: ", len(bgcomp.project.chm)
     print "simplifying "
 
@@ -116,8 +127,8 @@ def assembly_after_parallelization(bgcomp):
     except:
         bgcomp.solver.one2one()
 
-    print "first one2one t:", time.time() - one2one_t
-    print(process.memory_info().rss)
+    print
+    print "\tfirst one2one t: {:.2f}s".format(time.time() - one2one_t)
 
     learn_assignment_t = time.time()
 
@@ -125,80 +136,57 @@ def assembly_after_parallelization(bgcomp):
     from scripts.regions_stats import learn_assignments, add_score_to_edges, tracklet_stats
     learn_assignments(bgcomp.project, max_examples=50000, display=False)
 
-    print "learn assignment t:", time.time() - learn_assignment_t
+    print
+    print "\tlearn assignment t: {:.2f}s".format(time.time() - learn_assignment_t)
     learn_assignment_t = time.time()
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
     add_score_to_edges(p)
 
-    print "score edges t:", time.time() - learn_assignment_t
-    print(process.memory_info().rss)
+    print "\tscore edges t: {:.2f}s".format(time.time() - learn_assignment_t)
 
     p.save_semistate('edge_cost_updated')
 
     update_t = time.time()
     p.gm.update_nodes_in_t_refs()
     p.chm.reset_itree(p.gm)
-    print "update t: ", time.time() - update_t
-    print(process.memory_info().rss)
+    print "\tupdate t: {:.2f}s".format(time.time() - update_t)
 
     tracklet_stats(p)
 
-    # print "test1"
-    # for ch in p.chm.chunk_gen():
-    #     if len(ch) > 1:
-    #         # test start
-    #         v = ch.start_node()
-    #         if not p.gm.g.vp['chunk_start_id'][v] or p.gm.g.vp['chunk_end_id'][v]:
-    #             print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
-    #
-    #         v = ch.end_node()
-    #         if p.gm.g.vp['chunk_start_id'][v] or not p.gm.g.vp['chunk_end_id'][v]:
-    #             print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
-
-    if True:
+    # TODO: max num of iterations...
+    for i in range(10):
         score_type = 'appearance_motion_mix'
         eps = 0.3
 
         strongly_better_t = time.time()
         strongly_better_e = p.gm.strongly_better_eps2(eps=eps, score_type=score_type)
+        if len(strongly_better_e) == 0:
+            print
+            print "BREAK"
+            break
 
         strongly_better_e = sorted(strongly_better_e, key=lambda x: -x[0])
 
-        print "strongly better: {}, t: {}".format(len(strongly_better_e), time.time()-strongly_better_t)
-        print(process.memory_info().rss)
+        print
+        print "ITERATION: {}, #decisions: {}, t: {:.2f}s".format(i, len(strongly_better_e), time.time()-strongly_better_t)
         confirm_t = time.time()
-        for _, e in strongly_better_e:
+        for _, e in tqdm(strongly_better_e, leave=False):
             if p.gm.g.edge(e.source(), e.target()) is not None:
                 bgcomp.solver.confirm_edges([(e.source(), e.target())])
 
-        print "confirm_t: ", time.time() - confirm_t
-        print(process.memory_info().rss)
+        print "\tconfirm_t: {:.2f}".format(time.time() - confirm_t)
 
-        tracklet_stats(p)
-
-        # strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
-        # print "strongly better: {}".format(len(strongly_better_e))
-        # for e in strongly_better_e:
-        #     bgcomp.solver.confirm_edges([(e.source(), e.target())])
-        #
-        # bgcomp.solver.one2one()
-        #
         # tracklet_stats(p)
-        # bgcomp.solver.one2one()
 
         p.gm.update_nodes_in_t_refs()
         p.chm.reset_itree(p.gm)
 
-        p.save_semistate('eps_edge_filter')
-        tracklet_stats(p)
+    p.save_semistate('eps_edge_filter')
 
-    # bgcomp.solver.simplify(vs_todo, rules=[bgcomp.solver.adaptive_threshold])
-
-
-    if not bgcomp.project.is_cluster():
-        from core.settings import Settings as S_
-        S_.general.log_graph_edits = True
+    # if not bgcomp.project.is_cluster():
+    #     from core.settings import Settings as S_
+    #     S_.general.log_graph_edits = True
 
     p.solver = bgcomp.solver
 
@@ -213,19 +201,30 @@ def assembly_after_parallelization(bgcomp):
     if not bgcomp.do_semi_merge:
         p.save()
 
-    print "test2"
-    for ch in p.chm.chunk_gen():
+    print "SANITY CHECK..."
+    sanity_check = True
+    for ch in tqdm(p.chm.chunk_gen(), total=len(p.chm), leave=False):
         if len(ch) > 1:
             # test start
             v = ch.start_node()
             if not p.gm.g.vp['chunk_start_id'][v] or p.gm.g.vp['chunk_end_id'][v]:
                 print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+                sanity_check = False
 
             v = ch.end_node()
             if p.gm.g.vp['chunk_start_id'][v] or not p.gm.g.vp['chunk_end_id'][v]:
                 print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+                sanity_check = False
 
-    print ("#CHUNKS: %d") % (len(bgcomp.project.chm.chunk_list()))
+    print
+    print "SANITY CHECK SUCCEEDED: {}".format(sanity_check)
+
+    print
+    print "ONE 2 ONE optimization"
+    bgcomp.project.solver.one2one(check_tclass=True)
+    print "DONE"
+    print
+    tracklet_stats(bgcomp.project)
 
     if not bgcomp.project.is_cluster():
         bgcomp.finished_callback(bgcomp.solver)

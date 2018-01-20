@@ -4,9 +4,6 @@ import cPickle as pickle
 import string
 import time
 
-from PyQt4 import QtCore
-
-from core.bg_model.model import Model
 from core.graph.solver import Solver
 from core.log import Log
 from core.project.mser_parameters import MSERParameters
@@ -129,16 +126,20 @@ class Project:
             destinationFolder = to_folder
 
         # BG MODEL
-        if self.bg_model:
-            if isinstance(self.bg_model, Model):
-                if self.bg_model.is_computed():
-                    self.bg_model = self.bg_model.get_model()
+        try:
+            from core.bg_model.model import Model
+            if self.bg_model:
+                if isinstance(self.bg_model, Model):
+                    if self.bg_model.is_computed():
+                        self.bg_model = self.bg_model.get_model()
 
+                        with open(destinationFolder+'/bg_model.pkl', 'wb') as f:
+                            pickle.dump(self.bg_model, f)
+                else:
                     with open(destinationFolder+'/bg_model.pkl', 'wb') as f:
                         pickle.dump(self.bg_model, f)
-            else:
-                with open(destinationFolder+'/bg_model.pkl', 'wb') as f:
-                    pickle.dump(self.bg_model, f)
+        except:
+            pass
 
         # ARENA MODEL
         if self.arena_model:
@@ -231,7 +232,7 @@ class Project:
             destinationFolder = self.working_directory
         else:
             destinationFolder = toFolder
-
+        from PyQt4 import QtCore
         s = QtCore.QSettings('FERDA')
         settings = {}
 
@@ -247,6 +248,7 @@ class Project:
     def load_qsettings(self):
         with open(self.working_directory+'/settings.pkl', 'rb') as f:
             settings = pickle.load(f)
+            from PyQt4 import QtCore
             qs = QtCore.QSettings('FERDA')
             qs.clear()
 
@@ -453,6 +455,9 @@ class Project:
         self.img_manager = ImgManager(self, max_num_of_instances=500)
 
         self.active_snapshot = -1
+
+        # if self.chm is not None:
+        #     self.solver.one2one(check_tclass=True)
 
     def load_snapshot(self, snapshot):
         chm_path = self.working_directory+'/chunk_manager.pkl'

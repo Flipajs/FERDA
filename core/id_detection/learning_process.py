@@ -593,7 +593,7 @@ class LearningProcess:
             # t_set.append(root_t_id)
 
             try:
-                x, t_length, stds = self._get_tracklet_proba(tracklet)
+                x, stds = self._get_tracklet_proba(tracklet)
             except KeyError:
                 warnings.warn("used random class probability distribution for tracklet it: {}".format(t_id))
                 # TODO: remove this, instead compute features...
@@ -842,18 +842,25 @@ class LearningProcess:
         return float(np.sum(self.class_frequences)) / self.class_frequences
 
     def _get_tracklet_proba(self, ch, debug=False):
+        anomaly_probs = self.get_tracklet_anomaly_probs(ch)
+
         if self.classifier_name == RFC:
             X = self.features[ch.id()]
             if len(X) == 0:
                 return None, 0
-
-            anomaly_probs = self.get_tracklet_anomaly_probs(ch)
         else:
             X = np.array([])
 
         try:
             if self.classifier_name == CNN_SOFTMAX:
-                return self.probs_cache[ch]
+                probs = []
+                for r_id in ch.rid_gen(self.p.gm):
+                    if r_id in self.cnn_results_map:
+                        probs.append(self.cnn_results_map[r_id])
+                    else:
+                        print "ch id: {}, rid: {} missing in cnn_results_map".format(ch.id(), r_id)
+
+                probs = np.array(probs)
             else:
                 probs = self.classifier.predict_proba(np.array(X))
             if debug:
@@ -899,7 +906,7 @@ class LearningProcess:
 
         # TODO: refactor
         # second value on return is some old relict...
-        return probs, probs.shape[0], stds
+        return probs, stds
 
     # def apply_consistency_rule(self, ch, probs):
     #     mask = np.zeros(probs.shape)
@@ -1209,8 +1216,10 @@ class LearningProcess:
             # x = (1 - alpha) * uni_probs + alpha * x
 
             x_ = np.copy(x)
+
             for id_ in N:
-                x_[:, id_] = 0
+                # TODO: set proper threshold or solve differently...?
+                x_[:, id_] = x_[:, id_] * 0.2
 
             # k is best predicted ID
             k = np.argmax(np.sum(x_, axis=0))
@@ -1362,7 +1371,7 @@ class LearningProcess:
     def __get_in_v_N_union(self, v, ignore_noise=False):
         N = None
 
-        for v_in in v.in_neighbours():
+        for v_in in v.in_neighbors():
             t_ = self.p.gm.get_chunk(v_in)
 
             if ignore_noise and t_.is_noise():
@@ -1378,7 +1387,7 @@ class LearningProcess:
     def __get_out_v_N_union(self, v, ignore_noise=False):
         N = None
 
-        for v_out in v.out_neighbours():
+        for v_out in v.out_neighbors():
             t_ = self.p.gm.get_chunk(v_out)
 
             if ignore_noise and t_.is_noise():
@@ -1432,7 +1441,7 @@ class LearningProcess:
         if self.id_N_propagate:
             if not skip_out:
                 # update all outcoming
-                for v_out in tracklet.end_vertex(self.p.gm).out_neighbours():
+                for v_out in tracklet.end_vertex(self.p.gm).out_neighbors():
                     t_ = self.p.gm.get_chunk(v_out)
 
                     if len(t_.P) > 0:
@@ -1448,7 +1457,7 @@ class LearningProcess:
 
             if not skip_in:
                 # update all incoming
-                for v_in in tracklet.start_vertex(self.p.gm).in_neighbours():
+                for v_in in tracklet.start_vertex(self.p.gm).in_neighbors():
                     t_ = self.p.gm.get_chunk(v_in)
 
                     if len(t_.P) > 0:
@@ -1610,8 +1619,8 @@ class LearningProcess:
 
         import random
         random.seed(123)
+        num_examples = 5000
 
-        num_examples = 500
         if len(region_X) == 0:
             ch_ids = list(self.p.chm.chunks_.keys())
             with tqdm(total=num_examples) as pbar:
@@ -1628,13 +1637,14 @@ class LearningProcess:
 
         try:
             "building region anomaly IF"
+
             self.IF_region_anomaly.fit(region_X)
             vals = self.IF_region_anomaly.decision_function(region_X)
             vals_sorted = sorted(vals)
 
             from sklearn.linear_model import LogisticRegression
             lr = LogisticRegression()
-            use_for_learning = 0.1
+            use_for_learning = 0.05
 
             part_len = int(len(vals) * use_for_learning)
             part1 = np.array(vals_sorted[:part_len])
@@ -2009,7 +2019,7 @@ class LearningProcess:
                 # TODO: -log(P) ?
                 C[i, j] = 1 - C[i, j] * prob
 
-        # TODO: what to do with too short CS, this will stop aglomerattive clustering
+        # TODO: what to do with too short CS, this will stop aglomerattive prepare_region_cardinality_samples
 
         from scipy.optimize import linear_sum_assignment
 
@@ -2568,6 +2578,7 @@ class LearningProcess:
             overlap_sum, overlap_sum/float(total_frame_count))
 
     def auto_init(self, method='max_sum', use_xgboost=False):
+        print self._get_tracklet_proba(self.p.chm[54276])
         self.full_csosit_analysis(use_xgboost=use_xgboost)
         return
         from multiprocessing import cpu_count

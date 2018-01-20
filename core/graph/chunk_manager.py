@@ -121,7 +121,8 @@ class ChunkManager:
         self.itree = IntervalTree()
 
         chn = len(self)
-        for i, ch in tqdm(enumerate(self.chunk_gen()), total=chn):
+
+        for i, ch in tqdm(enumerate(self.chunk_gen()), total=chn, leave=False):
             self._add_ch_itree(ch, gm)
 
     def add_single_vertices_chunks(self, p, frames=None):
@@ -129,7 +130,7 @@ class ChunkManager:
 
         nn = p.gm.g.num_vertices()
 
-        for i, n in enumerate(p.gm.g.vertices()):
+        for n in tqdm(p.gm.g.vertices(), total=p.gm.g.num_vertices()):
             if frames is None:
                 if p.gm.get_chunk(n) is not None:
                     continue
@@ -142,10 +143,5 @@ class ChunkManager:
                 continue
 
             self.new_chunk([int(n)], p.gm)
-
-            if i % 100:
-                print_progress(i, nn,  prefix="single vertices 2 chunks")
-
-        print_progress(nn, nn, prefix="single vertices 2 chunks", suffix="DONE\n")
 
         self.reset_itree(p.gm)

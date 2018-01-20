@@ -19,6 +19,7 @@ if __name__ == '__main__':
         NUM_ANIMALS = string.atoi(sys.argv[2])
         NUM_EXAMPLES = string.atoi(sys.argv[3])
         RANDOM = bool(string.atoi(sys.argv[4]))
+        TRAIN_TEST_RATIO = float(string.atof(sys.argv[5]))
 
     images_f = []
 
@@ -47,7 +48,7 @@ if __name__ == '__main__':
             ai = k
 
             if len(images_f) <= ai:
-                ai = random.randint(0, len(images_f[i]) - 1)
+                ai = random.randint(0, len(images_f[i])     - 1)
 
             if ai >= split_idx:
                 im1 = imread(OUT_DIR + '/' + str(i) + '/' + str(images_f[i][ai]) + '.jpg')
