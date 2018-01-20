@@ -7,11 +7,16 @@ from scipy.misc import imread
 
 
 class CompleteSetMatching:
-    def __init__(self, project, get_tracklet_probs_callback, get_tracklet_p1s_callback, descriptors):
+    def __init__(self, project, get_tracklet_probs_callback, get_tracklet_p1s_callback, descriptors, quality_threshold=0.6):
+        self.prototype_distance_threshold = 0.5
+        self.QUALITY_THRESHOLD = quality_threshold
         self.p = project
         self.get_probs = get_tracklet_probs_callback
         self.get_p1s = get_tracklet_p1s_callback
         self.descriptors = descriptors
+
+        self.update_distances = []
+        self.update_weights = []
 
     def process(self):
         CSs = self.find_cs()
@@ -33,12 +38,16 @@ class CompleteSetMatching:
 
         tracks = {}
         tracklets_2_tracks = {}
+        track_CSs = [[]]
         prototypes = {}
 
         for i, t in enumerate(CSs[0]):
             tracks[i] = [t]
             tracklets_2_tracks[t] = i
             prototypes[i] = self.get_track_prototypes(t)
+            t.P = set([id_])
+            track_CSs[-1].append(id_)
+            id_ += 1
 
         qualities = []
         for i in range(len(CSs)-1):
@@ -71,21 +80,12 @@ class CompleteSetMatching:
 
             print "cs1 max frame: {}, cs2 min frame: {}".format(cs1_max_frame, cs2_min_frame)
 
-            # TODO: threshold 1
-            QUALITY_THRESHOLD = 0.4
-
-            for pair in perm:
-                t = pair[0]
-                if len(t.P) == 0:
-                    t.P = set([id_])
-                    # TODO: what should we do with P set when virtual IDs are introduced?
-                    # t.N = full_set.difference(t.P)
-                    id_ += 1
+            # TODO: threshold 1-
 
             not_same = 0
             c = [0. + 1-quality[1], quality[1],0., 0.2]
             # propagate IDS if quality is good enough:
-            if quality[1] > QUALITY_THRESHOLD:
+            if quality[1] > self.QUALITY_THRESHOLD:
                 # TODO: transitivity? when t1 -> t2 assignment uncertain, look on ID probs for t2->t3 and validate wtih t1->t3
 
                 for (t1, t2) in perm:
@@ -100,7 +100,6 @@ class CompleteSetMatching:
                         del tracks[track2]
                         del prototypes[track2]
 
-                        track1 = list(t1.P)[0]
                         tracklets_2_tracks[t2] = track1
                         tracks[track1].append(t2)
 
@@ -109,6 +108,15 @@ class CompleteSetMatching:
             else:
                 color_print('QUALITY BELOW', color='red')
                 # c = [1., 0.,0.,0.7]
+
+                track_CSs.append([])
+                for pair in perm:
+                    t = pair[1]
+                    if len(t.P) == 0:
+                        t.P = set([id_])
+                        id_ += 1
+
+                    track_CSs[-1].append(list(t.P)[0])
 
                 for pair in perm:
                     if pair[0] != pair[1]:
@@ -124,13 +132,29 @@ class CompleteSetMatching:
 
         print
 
+        tracks_unassigned_len = 0
+        tracks_unassigned_num = 0
+        for t in self.p.chm.chunk_gen():
+            if t.is_single() and t not in tracklets_2_tracks:
+                tracks_unassigned_len += len(t)
+                tracks_unassigned_num += 1
+
+        num_prototypes = 0
+        for prots in prototypes.itervalues():
+            num_prototypes += len(prots)
 
         print("seqeuntial CS matching done...")
-        print("#tracks: {}, #prototypes: {} #tracklets2tracks: {}".format(len(tracks), len(prototypes), len(tracklets_2_tracks)))
+        print("#tracks: {}, #prototypes: {} #tracklets2tracks: {}, unassigned #{} len: {}, #prototypes: {}".format(
+            len(tracks), len(prototypes), len(tracklets_2_tracks), tracks_unassigned_num, tracks_unassigned_len, num_prototypes))
 
+        print("track CSs")
+        for CS in track_CSs:
+            print(sorted(CS))
+
+        print
 
         ##### now do CS of tracks to tracks matching
-        self.tracks_CS_matching()
+        # self.tracks_CS_matching(track_CSs, prototypes, tracklets_2_tracks, tracks)
 
         ##### then do the rest
         # 1. for each tracklet, try to find best track...
@@ -225,17 +249,93 @@ class CompleteSetMatching:
 
             print quality
 
-    def tracks_CS_matching(self):
-        pass
-        # 1. get CS of tracks
-        # 2. sort by biggest ? sum length?, take the biggest
+    def tracks_CS_matching(self, track_CSs, prototypes, tracklets2tracks, tracks):
+        # 1. get CS of tracks (we already have them in track_CSs from sequential process.
+        # 2. sort CS by sum of track lengths
         # 3. try to match all others to this one (spatio-temporal term might be switched on for close tracks?)
         # 4. if any match accepted update and goto 2.
         # 5. else take second biggest and goto 3.
         # 6. end if only one CS, or # of CS didn't changed...
 
-        # 1. get CS of tracks
+        print "trying matching on track CS"
+        updated = True
+        while len(track_CSs) > 1 and updated:
+            updated = False
 
+            # 2. sort CS by sum of track lengths
+            ordered_CSs = self.sort_track_CSs(track_CSs, tracks)
+
+            # 3.
+            for i in range(len(ordered_CSs)-1):
+                pivot = ordered_CSs[i]
+
+                best_quality = 0
+                best_perm = None
+                best_CS = None
+
+                for CS in ordered_CSs[i+1:]:
+                    perm, quality = self.cs2cs_matching_prototypes_and_spatial(pivot, CS, prototypes, tracklets2tracks,
+                                                                               use_spatial_probabilities=False)
+
+                    print CS, quality
+
+                    if quality[1] > best_quality:
+                        best_quality = quality[1]
+                        best_perm = perm
+                        best_CS = CS
+
+                if best_quality > 1 - (1-self.QUALITY_THRESHOLD) / 2.0:
+                    print("Best track CS match accepted. {}, {}".format(best_perm, best_quality))
+                    self.merge_track_CSs(best_perm, prototypes, tracklets2tracks, tracks)
+                    self.update_all_track_CSs(best_perm, track_CSs)
+                    track_CSs.remove(best_CS)
+                    updated = True
+                    break
+                else:
+                    print("Best track CS match rejected. {}, {}".format(perm, quality))
+
+
+    def update_all_track_CSs(self, perm, track_CSs):
+        # update all CS
+        for CS_for_update in track_CSs:
+            for track_id1, track_id2 in perm:
+                for i, track_id in enumerate(CS_for_update):
+                    if track_id == track_id2:
+                        CS_for_update[i] = track_id1
+
+    def merge_track_CSs(self, perm, prototypes, tracklets2tracks, tracks):
+        # keep attention, here we have tracks, not tracklets...
+        for (track1_id, track2_id) in perm:
+            print "{} -> {}".format(track1_id, track2_id)
+
+            # if merge...
+            if track1_id != track2_id:
+                self.update_prototypes(prototypes[track1_id], prototypes[track2_id])
+                for tracklet in tracks[track2_id]:
+                    tracklets2tracks[tracklet] = track1_id
+                    tracks[track1_id].append(tracklet)
+                    tracklet.P = set([track1_id])
+
+                del tracks[track2_id]
+                del prototypes[track2_id]
+
+    def sort_track_CSs(self, track_CSs, tracks):
+        values = []
+        for CS in track_CSs:
+            val = 0
+            for track_id in CS:
+                for tracklet in tracks[track_id]:
+                    val += len(tracklet)
+
+            values.append(val)
+
+        values_i = reversed(sorted(range(len(values)), key=values.__getitem__))
+        CS_sorted = []
+        for i in values_i:
+            print track_CSs[i], values[i]
+            CS_sorted.append(track_CSs[i])
+
+        return CS_sorted
 
     def find_cs(self):
         unique_tracklets = set()
@@ -345,7 +445,7 @@ class CompleteSetMatching:
 
         return perm, quality
 
-    def cs2cs_matching_prototypes_and_spatial(self, cs1, cs2, prototypes, tracklets_2_tracks):
+    def cs2cs_matching_prototypes_and_spatial(self, cs1, cs2, prototypes, tracklets_2_tracks, use_spatial_probabilities=True):
         perm = []
         cs1, cs2, cs_shared = self.remove_straightforward_tracklets(cs1, cs2)
         if len(cs1) == 1:
@@ -353,12 +453,19 @@ class CompleteSetMatching:
             quality = [1.0, 1.0]
         else:
             P_a = self.prototypes_distance_probabilities(cs1, cs2, prototypes, tracklets_2_tracks)
-            P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
 
-            # 1 - ... it is minimum weight matching
-            P = 1 - np.multiply(P_a, P_s)
+            if use_spatial_probabilities:
+                P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
+
+                # 1 - ... it is minimum weight matching
+                P = 1 - np.multiply(P_a, P_s)
+            else:
+                P = 1 - P_a
 
             from scipy.optimize import linear_sum_assignment
+
+            assert np.sum(P < 0) == 0
+
             row_ind, col_ind = linear_sum_assignment(P)
 
             for rid, cid in zip(row_ind, col_ind):
@@ -524,18 +631,27 @@ class CompleteSetMatching:
 
     def update_prototypes(self, ps1, ps2):
         for i, p2 in enumerate(ps2):
-            _, _, j = self.best_prototype(ps1, p2)
+            d, w, j = self.best_prototype(ps1, p2)
 
-            ps1[j].update(p2)
+            # self.update_distances.extend([d] * p2.weight)
+            # self.update_weights.append(p2.weight)
 
-
+            if d > self.prototype_distance_threshold:
+                # add instead of merging prototypes
+                ps1.append(p2)
+            else:
+                ps1[j].update(p2)
 
     def prototypes_distance_probabilities(self, cs1, cs2, prototypes, tracklets2tracks):
         C = np.zeros((len(cs1), len(cs2)))
         for j, t2 in enumerate(cs2):
             for i, t1 in enumerate(cs1):
-                track1 = tracklets2tracks[t1]
-                track2 = tracklets2tracks[t2]
+                # it is already track...
+                if isinstance(t1, int) and isinstance(t2, int):
+                    track1, track2 = t1, t2
+                else:
+                    track1 = tracklets2tracks[t1]
+                    track2 = tracklets2tracks[t2]
 
                 d = self.prototypes_distance(prototypes[track1], prototypes[track2])
 
