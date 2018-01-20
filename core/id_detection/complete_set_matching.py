@@ -32,7 +32,6 @@ class CompleteSetMatching:
         # plt.hold(True)
 
         tracks = {}
-        track_CSs = [[]]
         tracklets_2_tracks = {}
         prototypes = {}
 
@@ -40,17 +39,10 @@ class CompleteSetMatching:
             tracks[i] = [t]
             tracklets_2_tracks[t] = i
             prototypes[i] = self.get_track_prototypes(t)
-            track_CSs[-1].append(i)
-
-            t.P = set([id_])
-            id_ += 1
 
         qualities = []
         for i in range(len(CSs)-1):
             print "CS {}, CS {}".format(i, i+1)
-
-            if i == 48:
-                pass
 
             # first create new virtual tracks and their prototypes for CSs[i+1] which are not already in tracks
             for t in CSs[i+1]:
@@ -82,6 +74,14 @@ class CompleteSetMatching:
             # TODO: threshold 1
             QUALITY_THRESHOLD = 0.4
 
+            for pair in perm:
+                t = pair[0]
+                if len(t.P) == 0:
+                    t.P = set([id_])
+                    # TODO: what should we do with P set when virtual IDs are introduced?
+                    # t.N = full_set.difference(t.P)
+                    id_ += 1
+
             not_same = 0
             c = [0. + 1-quality[1], quality[1],0., 0.2]
             # propagate IDS if quality is good enough:
@@ -107,18 +107,6 @@ class CompleteSetMatching:
                         t2.P = set(t1.P)
                         t2.N = set(t2.N)
             else:
-                track_CSs.append([])
-
-                for pair in perm:
-                    t = pair[1]
-                    if len(t.P) == 0:
-                        t.P = set([id_])
-                        # TODO: what should we do with P set when virtual IDs are introduced?
-                        # t.N = full_set.difference(t.P)
-                        id_ += 1
-
-                    track_CSs[-1].append(list(t.P)[0])
-
                 color_print('QUALITY BELOW', color='red')
                 # c = [1., 0.,0.,0.7]
 
@@ -136,14 +124,9 @@ class CompleteSetMatching:
 
         print
 
+
         print("seqeuntial CS matching done...")
         print("#tracks: {}, #prototypes: {} #tracklets2tracks: {}".format(len(tracks), len(prototypes), len(tracklets_2_tracks)))
-
-        print("Track CS")
-        for CS in track_CSs:
-            print CS
-
-        print
 
 
         ##### now do CS of tracks to tracks matching
