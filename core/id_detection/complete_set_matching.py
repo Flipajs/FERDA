@@ -840,22 +840,30 @@ def test_descriptors_distance(descriptors, n=2000):
     print len(neg_distances)
     plt.figure()
     print np.histogram(pos_distances, bins=bins, density=True)
-    plt.hist(pos_distances, bins=bins, alpha=0.6, color='g', density=True)
+    positive = plt.hist(pos_distances, bins=bins, alpha=0.6, color='g', density=True, label='positive')
     plt.hold(True)
-    plt.hist(neg_distances, bins=bins, alpha=0.6, color='r', density=True)
+    negative = plt.hist(neg_distances, bins=bins, alpha=0.6, color='r', density=True, label='negative')
 
     x = np.linspace(0., 3., 100)
+    print("lambda: {:.3f}".format(1./np.mean(pos_distances)))
     for lam in [1./np.mean(pos_distances)]:
         y = lam * np.exp(-lam * x)
-        plt.plot(x, y)
+        pdf, = plt.plot(x, y)
         y = np.exp(-lam * x)
-        plt.plot(x, y)
+        prob, = plt.plot(x, y)
 
+    import matplotlib.patches as mpatches
+    red_patch = mpatches.Patch(color='red', label='negative ')
+    green_patch = mpatches.Patch(color='green', label='positive')
+    # plt.legend([positive, negative, pdf, cdf], ['same', 'different', 'PDF: lambda*e**(-lambda * x), lambda={:.2f}'.format(lam), 'CDF'])
+    plt.legend([green_patch, red_patch, pdf, prob], ['same', 'different', 'PDF: \lambda * e^(-\lambda * x), \lambda={:.2f}'.format(lam), 'Probability'])
+    # plt.legend([positive, negative], ['same', 'different'])
+    plt.xlabel('distance')
 
-    plt.figure()
-    for lam in [1./np.mean(pos_distances)]:
-        y = lam * np.exp(-lam * x)
-        plt.plot(x, y)
+    # plt.figure()
+    # for lam in [1./np.mean(pos_distances)]:
+    #     y = lam * np.exp(-lam * x)
+    #     plt.plot(x, y)
 
     plt.show()
 
@@ -879,7 +887,7 @@ if __name__ == '__main__':
     with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:
         descriptors = pickle.load(f)
 
-    test_descriptors_distance(descriptors)
+    # test_descriptors_distance(descriptors)
 
     csm = CompleteSetMatching(p, lp._get_tracklet_proba, lp.get_tracklet_p1s, descriptors)
     # csm.desc_clustering_analysis()
