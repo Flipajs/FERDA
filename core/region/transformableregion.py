@@ -2,6 +2,7 @@ import numpy as np
 import math
 import cv2
 
+
 def p2e(projective):
     """
     Convert 2d or 3d projective to euclidean coordinates.
@@ -12,9 +13,12 @@ def p2e(projective):
     :return: euclidean coordinate(s)
     :rtype: numpy.ndarray, shape=(2 or 3, n)
     """
-    assert(type(projective) == np.ndarray)
-    assert((projective.shape[0] == 4) | (projective.shape[0] == 3))
-    return (projective / projective[-1, :])[0:-1, :]
+    assert type(projective) == np.ndarray
+    assert projective.ndim == 1 or (projective.ndim == 2 and (projective.shape[0] == 4) or (projective.shape[0] == 3))
+    if projective.ndim == 1:
+        return (projective / projective[-1])[0:-1]
+    else:
+        return (projective / projective[-1, :])[0:-1, :]
 
 
 def e2p(euclidean):
@@ -27,9 +31,12 @@ def e2p(euclidean):
     :return: projective coordinate(s)
     :rtype: numpy.ndarray, shape=(3 or 4, n)
     """
-    assert(type(euclidean) == np.ndarray)
-    assert((euclidean.shape[0] == 3) | (euclidean.shape[0] == 2))
-    return np.vstack((euclidean, np.ones((1, euclidean.shape[1]))))
+    assert type(euclidean) == np.ndarray
+    assert euclidean.ndim == 1 or (euclidean.ndim == 2 and (euclidean.shape[0] == 3 or euclidean.shape[0] == 2))
+    if euclidean.ndim == 1:
+        return np.append(euclidean, 1)
+    else:
+        return np.vstack((euclidean, np.ones((1, euclidean.shape[1]))))
 
 
 class TransformableRegion:
@@ -62,6 +69,9 @@ class TransformableRegion:
     def set_mask(self, mask):
         self.mask = mask
 
+    def set_img(self, img):
+        self.img = img
+
     def get_mask(self):
         assert np.all(self.transformation[2, :] == (0, 0, 1))
         assert self.mask is not None
@@ -90,12 +100,12 @@ class TransformableRegion:
         self.border_px = border_px
         return self
 
-    def rotate(self, angle_deg, rotation_center_yx=None):
+    def rotate(self, ccw_angle_deg, rotation_center_yx=None):
         if rotation_center_yx is None:
             rotation_center_yx = np.array((0, 0))
 
         rot = cv2.getRotationMatrix2D(tuple(rotation_center_yx[::-1]),
-                                      angle_deg, 1.)
+                                      ccw_angle_deg, 1.)
         self.transformation = np.vstack((rot, (0, 0, 1))).dot(self.transformation)
         return self
 
@@ -114,7 +124,8 @@ class TransformableRegion:
         return self
 
     def get_transformed_coords(self, coords_xy):
-        return p2e(self.transformation.dot(np.hstack((coords_xy, 1)).reshape(-1, 1))).flatten()
+        assert coords_xy.shape == (2, ) or (coords_xy.ndim == 2 and coords_xy.shape[0] == 2)  # (2, ) or (2, n)
+        return p2e(self.transformation.dot(e2p(coords_xy)))
 
     def get_transformed_angle(self, angle_deg):
         return (angle_deg - math.degrees(math.atan(self.transformation[1, 0] / self.transformation[0, 0]))) % 360
