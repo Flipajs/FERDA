@@ -15,22 +15,20 @@ import glob
 import shlex
 import fire
 import skimage.transform
+from core.region.transformableregion import TransformableRegion
 
 
-def save_prediction_img(i, pred, out_filename, num_objects, gt=None, img_data=None):
+def save_prediction_img(pred, out_filename, num_objects, img, gt=None):
     fig = plt.figure()
-    if img_data is not None:
-        # im = skimage.transform.rotate(img_data[i], 90)
-        im = img_data[i]
-    else:
-        im = imread(join(DATA_DIR, 'images_test', '%06d.jpg' % i))
-    # im = X_test[i, :, :, :]
+    if isinstance(img, str):
+        img = imread(img)
+    # img = X_test[i, :, :, :]
     # a = plt.subplot(111, aspect='equal')
-    # a.imshow(im)
-    plt.imshow(im)
+    # a.imshow(img)
+    plt.imshow(img)
     # plt.hold(True)
     plt.axis('off')
-    plot_interaction(num_objects, pred[[i]], gt.iloc[i])
+    plot_interaction(num_objects, pred, gt)
     fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0)
     plt.close(fig)
     plt.clf()
@@ -78,6 +76,15 @@ def visualize_results(experiment_dir, data_dir, n_objects=2):
         y_test.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
         # y_test.loc[:, '%d_angle_deg' % i] += 90
         # y_test.loc[:, '%d_angle_deg' % i] %= 360
+
+    # input image and gt rotation
+    tregion = TransformableRegion(X_test[0])
+    tregion.rotate(90, np.array(tregion.img.shape[:2]) / 2)
+    for i in range(ti.num_objects):
+        y_test.loc[:, ['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
+            y_test.loc[:, ['%d_x' % i, '%d_y' % i]].values.T).T
+        y_test.loc[:, '%d_angle_deg' % i] = tregion.get_transformed_angle(y_test.loc[:, '%d_angle_deg' % i])
+
     with h5py.File(join(experiment_dir, 'predictions.h5'), 'r') as hf_pred:
         pred = hf_pred['data'][:]
 
@@ -111,11 +118,17 @@ def visualize_results(experiment_dir, data_dir, n_objects=2):
         for fn in glob.glob(join(experiment_dir, 'visualization', '*.png')):
             os.remove(fn)
     for i in tqdm.tqdm(angle_errors.flatten().argsort()[::-1][:20]):
-        save_prediction_img(i, pred, join(out_dir, 'bad_angle_%03d.png' % i), n_objects, y_test, X_test)
+        tregion.set_img(X_test[i])
+        img = tregion.get_img()
+        save_prediction_img(pred[[i]], join(out_dir, 'bad_angle_%03d.png' % i), n_objects, img, y_test.iloc[i])
     for i in tqdm.tqdm(xy_errors.flatten().argsort()[::-1][:20]):
-        save_prediction_img(i, pred, join(out_dir, 'bad_xy_%03d.png' % i), n_objects, y_test, X_test)
+        tregion.set_img(X_test[i])
+        img = tregion.get_img()
+        save_prediction_img(pred[[i]], join(out_dir, 'bad_xy_%03d.png' % i), n_objects, img, y_test.iloc[i])
     for i in tqdm.tqdm(np.random.randint(0, len(pred), 50)):
-        save_prediction_img(i, pred, join(out_dir, 'random_%04d.png' % i), n_objects, y_test, X_test)
+        tregion.set_img(X_test[i])
+        img = tregion.get_img()
+        save_prediction_img(pred[[i]], join(out_dir, 'random_%04d.png' % i), n_objects, img, y_test.iloc[i])
     hf_img.close()
     results_df = pd.read_csv(join(experiment_dir, 'results.csv'))
     experiment_str = '...' + os.sep + os.sep.join(experiment_dir.strip(os.sep).split(os.sep)[-3:]) + \

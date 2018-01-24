@@ -8,6 +8,7 @@ from mock import patch
 from numpy.testing import assert_array_equal
 import pandas as pd
 from os.path import join
+import core.region.transformableregion as tr
 
 
 class LossFunctionsTestCase(unittest.TestCase):
@@ -88,22 +89,26 @@ class LossFunctionsTestCase(unittest.TestCase):
     @staticmethod
     def run_generator_with_preprocessing():
         import skimage.io as io
-        from skimage.transform import rotate
         size = 200
         x, y = np.mgrid[0:size, 0:size]
         mask = np.exp(- 0.0002 * ((x - size / 2) ** 2 + (y - size / 2) ** 2))
         io.imshow(np.uint8(mask * 255))
 
-        def image_dim(img):
-            return img * np.expand_dims(mask, 2)
-
-        def rotate90(img):
-            return rotate(img, 90, preserve_range=True)
 
         X_train = LossFunctionsTestCase.load_images()
 
+        tregion = tr.TransformableRegion(X_train[0])
+        tregion.rotate(20, np.array(tregion.img.shape[:2]) / 2)
+
+        def rotate(img):
+            tregion.set_img(img)
+            return tregion.get_img()
+
+        def image_dim(img):
+            return img * np.expand_dims(mask, 2)
+
         from keras.preprocessing.image import ImageDataGenerator
-        train_datagen = ImageDataGenerator(preprocessing_function=image_dim, rescale=1./255)
+        train_datagen = ImageDataGenerator(preprocessing_function=rotate, rescale=1./255)
         train_generator = train_datagen.flow(X_train[:10], shuffle=False, batch_size=1)
 
         io.imshow(X_train[0])

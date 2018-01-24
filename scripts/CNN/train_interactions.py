@@ -27,6 +27,7 @@ except ImportError:
     print('Warning, no keras installed.')
 import skimage.transform
 import fire
+from core.region.transformableregion import TransformableRegion
 
 ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/'
 ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
@@ -338,6 +339,18 @@ class TrainInteractions:
             y_train_df.loc[:, '%d_angle_deg' % i] *= -1
             y_test_df.loc[:, '%d_angle_deg' % i] *= -1
 
+        # input image and gt rotation
+        tregion = TransformableRegion(X_test[0])
+        tregion.rotate(90, np.array(tregion.img.shape[:2]) / 2)
+        for i in range(ti.num_objects):
+            y_train_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
+                y_train_df[['%d_x' % i, '%d_y' % i]].values.T).T
+            y_train_df['%d_angle_deg' % i] = tregion.get_transformed_angle(y_train_df['%d_angle_deg' % i])
+
+            y_test_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
+                y_test_df[['%d_x' % i, '%d_y' % i]].values.T).T
+            y_test_df['%d_angle_deg' % i] = tregion.get_transformed_angle(y_test_df['%d_angle_deg' % i])
+
         # dx and dy columns
         # for i in range(self.num_objects):
         #     # y_train_df.loc[:, '%d_angle_deg' % i] += 90
@@ -384,8 +397,10 @@ class TrainInteractions:
         # # y_train[:, [4, 9]] = angle_scaler.transform(y_train[:, [4, 9]])
 
         def rotate90(img):
-            out_img = skimage.transform.rotate(img, 90, preserve_range=True)
-            return out_img
+            tregion.set_img(img)
+            return tregion.get_img()
+            # out_img = skimage.transform.rotate(img, 90, preserve_range=True)
+            # return out_img
 
         size = 200
         x, y = np.mgrid[0:size, 0:size]
@@ -394,13 +409,12 @@ class TrainInteractions:
         def image_dim(img):
             return img * mask
 
-        train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=image_dim)
+        train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=rotate90)
         train_generator = train_datagen.flow(X_train, y_train)
-        test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=image_dim)
+        test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=rotate90)
         test_generator = test_datagen.flow(X_test, shuffle=False)
 
         base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
-        # base_experiment_name = '171208_2152_batch_augmented_1k'
         base_experiment_dir = ROOT_EXPERIMENT_DIR + base_experiment_name
         base_tensor_board_dir = join(ROOT_TENSOR_BOARD_DIR, base_experiment_name)
 
