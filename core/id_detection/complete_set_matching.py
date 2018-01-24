@@ -180,6 +180,7 @@ class CompleteSetMatching:
         # moreless a cache...
         tracklets_prototypes = {}
         probs = []
+        probs2 = []
         lengths = []
         tracklets = []
         best_track_ids = []
@@ -210,7 +211,8 @@ class CompleteSetMatching:
                     best_p = prob
                     best_track = track_id
 
-            np.linalg.norm(prob_vec)
+            prob_vec = np.array(prob_vec) / np.sum(prob_vec)
+            probs2.append(max(prob_vec))
 
             probabilities[t] = best_p
             decisioins[t] = best_track
@@ -240,7 +242,7 @@ class CompleteSetMatching:
 
                 # TODO: propagate...
 
-        # plt.figure()
+        plt.figure()
         # import matplotlib
         # import matplotlib.cm as cm
         #
@@ -250,11 +252,12 @@ class CompleteSetMatching:
         # norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
         # mapper = cm.ScalarMappable(norm=norm, cmap=cm.Greys_r)
         #
-        # plt.scatter(np.arange(len(probs)), probs, c=mapper.to_rgba(lengths))
+        plt.scatter(np.arange(len(probs)), probs, c='r')
+        plt.scatter(np.arange(len(probs)), probs2, c='g')
         #
         # plt.figure()
         # plt.scatter(lengths, probs, alpha=0.15)
-        # plt.show()
+        plt.show()
 
 
         #### visualize and stats
