@@ -33,47 +33,6 @@ import warnings
 from itertools import product
 
 
-def p2e(projective):
-    """
-    Convert 2d or 3d projective to euclidean coordinates.
-
-    :param projective: projective coordinate(s)
-    :type projective: numpy.ndarray, shape=(3 or 4, n)
-
-    :return: euclidean coordinate(s)
-    :rtype: numpy.ndarray, shape=(2 or 3, n)
-    """
-    assert(type(projective) == np.ndarray)
-    assert((projective.shape[0] == 4) | (projective.shape[0] == 3))
-    return (projective / projective[-1, :])[0:-1, :]
-
-
-def e2p(euclidean):
-    """
-    Convert 2d or 3d euclidean to projective coordinates.
-
-    :param euclidean: projective coordinate(s)
-    :type euclidean: numpy.ndarray, shape=(2 or 3, n)
-
-    :return: projective coordinate(s)
-    :rtype: numpy.ndarray, shape=(3 or 4, n)
-    """
-    assert(type(euclidean) == np.ndarray)
-    assert((euclidean.shape[0] == 3) | (euclidean.shape[0] == 2))
-    return np.vstack((euclidean, np.ones((1, euclidean.shape[1]))))
-
-
-def column(vector):
-    """
-    Return column vector.
-
-    :param vector: np.ndarray
-    :return: column vector
-    :rtype: np.ndarray, shape=(n, 1)
-    """
-    return vector.reshape((-1, 1))
-
-
 def head_fix(tracklet_regions):
     import heapq
     q = []
