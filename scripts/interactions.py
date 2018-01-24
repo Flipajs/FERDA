@@ -10,7 +10,6 @@ import time
 from core.project.project import Project
 import numpy as np
 import matplotlib.pylab as plt
-import montage
 import math
 import os.path
 from core.graph.region_chunk import RegionChunk
@@ -31,6 +30,9 @@ import waitforbuttonpress
 import h5py
 import warnings
 from itertools import product
+from scripts.CNN.interactions_results import save_prediction_img
+from os.path import join
+import pandas as pd
 
 
 def head_fix(tracklet_regions):
@@ -681,38 +683,21 @@ class Interactions(object):
         # from matplotlib.patches import Rectangle
         # ax.add_patch(Rectangle(bb_xywh[:2], bb_xywh[2], bb_xywh[3], linewidth=1, edgecolor='r', facecolor='none'))
 
-    def show_interactions_csv(self, csv_file, image_dir=None, image_hdf5=None, hdf5_dataset_name=None, n_objects=2):
+    def show_ground_truth(self, csv_file, out_dir, image_dir=None, image_hdf5=None, hdf5_dataset_name=None, n_objects=2):
         assert image_dir is not None or image_hdf5 is not None
         if image_hdf5 is not None:
             assert hdf5_dataset_name is not None
             hf = h5py.File(image_hdf5, 'r')
             images = hf[hdf5_dataset_name]
-        # waitforbuttonpress.figure()
-        with open(csv_file, 'r') as fr:
-            csv_reader = csv.DictReader(fr)
-            for i, row in enumerate(tqdm.tqdm(csv_reader)):
-                if image_hdf5 is not None:
-                    img = images[i]
-                else:
-                    img = plt.imread(os.path.join(image_dir, row['filename']))
-                fig = plt.figure()
-                plt.imshow(img)
-                ax = plt.gca()
-                for j in range(n_objects):
-                    ax.add_patch(Ellipse(xy=(float(row[str(j) + '_x']),
-                                             float(row[str(j) + '_y'])),
-                                         width=float(row[str(j) + '_major']),
-                                         height=float(row[str(j) + '_minor']),
-                                         angle=-float(row[str(j) + '_angle_deg']),
-                                         edgecolor='r',
-                                         facecolor='none'))
-                # plt.draw()
-                fig.savefig('scripts/out/debug/%03d.png' % i, transparent=True, bbox_inches='tight', pad_inches=0)
-                plt.close(fig)
-                # waitforbuttonpress.wait()
-                # if waitforbuttonpress.is_closed():
-                #     break
-                plt.clf()
+        csv = pd.read_csv(csv_file)
+        for i in range(n_objects):
+            csv.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
+        for i, row in tqdm.tqdm(csv.iterrows()):
+            if image_hdf5 is not None:
+                img = images[i]
+            else:
+                img = plt.imread(os.path.join(image_dir, row['filename']))
+            save_prediction_img(join(out_dir, '%05d.png' % i), n_objects, img, pred=None, gt=row)
 
     def __synthetize(self, regions, theta_rad, phi_rad, overlap_px, images=None):
         # angles: positive clockwise, zero direction to right

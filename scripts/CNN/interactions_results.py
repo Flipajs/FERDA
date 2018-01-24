@@ -16,17 +16,14 @@ import shlex
 import fire
 import skimage.transform
 from core.region.transformableregion import TransformableRegion
+import itertools
 
 
-def save_prediction_img(pred, out_filename, num_objects, img, gt=None):
-    fig = plt.figure()
+def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None):
     if isinstance(img, str):
         img = imread(img)
-    # img = X_test[i, :, :, :]
-    # a = plt.subplot(111, aspect='equal')
-    # a.imshow(img)
+    fig = plt.figure()
     plt.imshow(img)
-    # plt.hold(True)
     plt.axis('off')
     plot_interaction(num_objects, pred, gt)
     fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0)
@@ -34,26 +31,26 @@ def save_prediction_img(pred, out_filename, num_objects, img, gt=None):
     plt.clf()
 
 
-def plot_interaction(num_objects, pred, gt=None):
+def plot_interaction(num_objects, pred=None, gt=None):
     ax = plt.gca()
-    colors = ['red', 'blue']
-    for i in range(num_objects):
-        ax.add_patch(Ellipse(train_interactions.TrainInteractions.toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
-                             pred['%d_major' % i], pred['%d_minor' % i],
-                             angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
-                             label='object %d prediction' % i))
-        # ax.add_patch(Arc(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
-        #                  pred['%d_major' % i], pred['%d_minor' % i],
-        #                  angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
-        #                  linewidth=4,
-        #                  theta1=-30, theta2=30))
-        plt.scatter(pred['%d_x' % i], pred['%d_y' % i], c=colors[i])
-
+    colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
+    for i, c in zip(range(num_objects), colors):
+        if pred is not None:
+            ax.add_patch(Ellipse((pred['%d_x' % i], pred['%d_y' % i]),
+                                 pred['%d_major' % i], pred['%d_minor' % i],
+                                 angle=pred['%d_angle_deg' % i], edgecolor=c, facecolor='none',
+                                 label='object %d prediction' % i, linewidth=2))
+            # ax.add_patch(Arc(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
+            #                  pred['%d_major' % i], pred['%d_minor' % i],
+            #                  angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
+            #                  linewidth=4,
+            #                  theta1=-30, theta2=30))
+            plt.scatter(pred['%d_x' % i], pred['%d_y' % i], c=colors[i])
         if gt is not None:
-            ax.add_patch(Ellipse(train_interactions.TrainInteractions.toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
+            ax.add_patch(Ellipse((gt['%d_x' % i], gt['%d_y' % i]),
                                  gt['%d_major' % i], gt['%d_minor' % i],
-                                 angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
-                                 linestyle='dotted', label='object %d gt' % i))
+                                 angle=gt['%d_angle_deg' % i], edgecolor=c, facecolor='none',
+                                 linestyle='dotted', label='object %d gt' % i, linewidth=2))
             # ax.add_patch(Arc(toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
             #                  gt['%d_major' % i], gt['%d_minor' % i],
             #                  angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
@@ -120,15 +117,15 @@ def visualize_results(experiment_dir, data_dir, n_objects=2):
     for i in tqdm.tqdm(angle_errors.flatten().argsort()[::-1][:20]):
         tregion.set_img(X_test[i])
         img = tregion.get_img()
-        save_prediction_img(pred[[i]], join(out_dir, 'bad_angle_%03d.png' % i), n_objects, img, y_test.iloc[i])
+        save_prediction_img(join(out_dir, 'bad_angle_%03d.png' % i), n_objects, img, pred[[i]], y_test.iloc[i])
     for i in tqdm.tqdm(xy_errors.flatten().argsort()[::-1][:20]):
         tregion.set_img(X_test[i])
         img = tregion.get_img()
-        save_prediction_img(pred[[i]], join(out_dir, 'bad_xy_%03d.png' % i), n_objects, img, y_test.iloc[i])
+        save_prediction_img(join(out_dir, 'bad_xy_%03d.png' % i), n_objects, img, pred[[i]], y_test.iloc[i])
     for i in tqdm.tqdm(np.random.randint(0, len(pred), 50)):
         tregion.set_img(X_test[i])
         img = tregion.get_img()
-        save_prediction_img(pred[[i]], join(out_dir, 'random_%04d.png' % i), n_objects, img, y_test.iloc[i])
+        save_prediction_img(join(out_dir, 'random_%04d.png' % i), n_objects, img, pred[[i]], y_test.iloc[i])
     hf_img.close()
     results_df = pd.read_csv(join(experiment_dir, 'results.csv'))
     experiment_str = '...' + os.sep + os.sep.join(experiment_dir.strip(os.sep).split(os.sep)[-3:]) + \
