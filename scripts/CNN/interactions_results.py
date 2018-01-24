@@ -45,7 +45,7 @@ def plot_interaction(num_objects, pred=None, gt=None):
             #                  angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
             #                  linewidth=4,
             #                  theta1=-30, theta2=30))
-            plt.scatter(pred['%d_x' % i], pred['%d_y' % i], c=colors[i])
+            plt.scatter(pred['%d_x' % i], pred['%d_y' % i], c=c)
         if gt is not None:
             ax.add_patch(Ellipse((gt['%d_x' % i], gt['%d_y' % i]),
                                  gt['%d_major' % i], gt['%d_minor' % i],
