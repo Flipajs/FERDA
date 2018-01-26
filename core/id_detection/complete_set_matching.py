@@ -8,7 +8,7 @@ import os, random
 
 
 class CompleteSetMatching:
-    def __init__(self, project, get_tracklet_probs_callback, get_tracklet_p1s_callback, descriptors, quality_threshold=0.2):
+    def __init__(self, project, get_tracklet_probs_callback, get_tracklet_p1s_callback, descriptors, quality_threshold=0.02):
         self.prototype_distance_threshold = np.inf # ignore
         self.QUALITY_THRESHOLD = quality_threshold
         self.p = project
@@ -65,8 +65,6 @@ class CompleteSetMatching:
                 prototypes[new_track_id] = self.get_track_prototypes(t)
 
             # perm, quality = self.cs2cs_matching_descriptors_and_spatial(CSs[i], CSs[i+1])
-            if i == 14:
-                pass
             perm, quality = self.cs2cs_matching_prototypes_and_spatial(CSs[i], CSs[i+1], prototypes, tracklets_2_tracks)
 
             cs1_max_frame = 0
@@ -222,7 +220,11 @@ class CompleteSetMatching:
             lengths.append(len(t))
             tracklets.append(t)
 
+        probs2 = np.array(probs2)
         probs = np.array(probs)
+
+        probs = probs2
+
         tracklets = np.array(tracklets)
         ids = np.argsort(-probs)
         best_track_ids = np.array(best_track_ids)
@@ -257,7 +259,7 @@ class CompleteSetMatching:
         #
         # plt.figure()
         # plt.scatter(lengths, probs, alpha=0.15)
-        plt.show()
+        # plt.show()
 
 
         #### visualize and stats
@@ -349,7 +351,7 @@ class CompleteSetMatching:
         for id_, mean in tracks_mean_desc.iteritems():
             mean_ds.append(mean/float(support[id]))
 
-        print("track ids order: {}".format(list(tracks_mean_desc.iterkeys())))
+        print("track ids order: {}\n{}".format(list(tracks_mean_desc.iterkeys()), len(tracks)))
         from scipy.spatial.distance import pdist, squareform
         plt.imshow(squareform(pdist(mean_ds)), interpolation='nearest')
         plt.show()
@@ -779,7 +781,7 @@ class CompleteSetMatching:
 
         return probability
 
-    def prototypes_distance(self, ps1, ps2):
+    def prototypes_distance__deprecated(self, ps1, ps2):
         final_d = 0
         final_w = 0
 
@@ -1098,21 +1100,28 @@ if __name__ == '__main__':
     from numpy.linalg import norm
 
     # test_descriptors_distance(descriptors)
-    np.random.seed(13)
+    # np.random.seed(13)
+    np.random.seed(42)
 
     csm = CompleteSetMatching(p, lp._get_tracklet_proba, lp.get_tracklet_p1s, descriptors)
 
-    proto3599 = csm.get_track_prototypes(p.chm[3599])
-    proto2670 = csm.get_track_prototypes(p.chm[2670])
-    proto1710 = csm.get_track_prototypes(p.chm[1710])
-    proto1951 = csm.get_track_prototypes(p.chm[1951])
-
-    print norm(np.mean(desc_3599) - np.mean(desc_2670)), csm.prototypes_match_probability(proto3599, proto2670)
-    print norm(np.mean(desc_3599) - np.mean(desc_1710)), csm.prototypes_match_probability(proto3599, proto1710)
-    print norm(np.mean(desc_1951) - np.mean(desc_2670)), csm.prototypes_match_probability(proto1951, proto2670)
-    print norm(np.mean(desc_1951) - np.mean(desc_1710)), csm.prototypes_match_probability(proto1951, proto1710)
+    # protos = []
+    # for i in range(10):
+    #     protos.append(csm.get_track_prototypes(p.chm[3599], n=2))
+    #
+    # for i in range(10):
+    #     print csm.prototypes_match_probability(protos[0], protos[i])
+    #
+    # csm.prototypes_match_probability(protos[0], protos[1])
+    # proto3599 = csm.get_track_prototypes(p.chm[3599])
+    # proto2670 = csm.get_track_prototypes(p.chm[2670])
+    # proto1710 = csm.get_track_prototypes(p.chm[1710])
+    # proto1951 = csm.get_track_prototypes(p.chm[1951])
+    #
+    # print norm(np.mean(desc_3599) - np.mean(desc_2670)), csm.prototypes_match_probability(proto3599, proto2670)
+    # print norm(np.mean(desc_3599) - np.mean(desc_1710)), csm.prototypes_match_probability(proto3599, proto1710)
+    # print norm(np.mean(desc_1951) - np.mean(desc_2670)), csm.prototypes_match_probability(proto1951, proto2670)
+    # print norm(np.mean(desc_1951) - np.mean(desc_1710)), csm.prototypes_match_probability(proto1951, proto1710)
 
     # csm.desc_clustering_analysis()
     csm.process()
-
-
