@@ -4,7 +4,10 @@ from my_scene import MyScene
 from PyQt4 import QtGui, QtCore
 import numpy as np
 import cv2
+# warning: qimage2ndarray could get confused with multiple Qt versions installed (PyQt, PySide, ...) and end with
+# AttributeError: 'module' object has no attribute 'QImage'
 from qimage2ndarray import array2qimage
+
 
 __author__ = 'dita'
 
