@@ -3,8 +3,8 @@ import logging
 from PyQt4 import QtGui
 from collections import namedtuple
 from os.path import exists
-import matplotlib
-matplotlib.use('Agg')
+# import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pylab as plt
 
 import pickle
@@ -19,6 +19,9 @@ from core.region.region import Region
 import core.region.region
 import tqdm
 import os
+import numpy as np
+from skimage.measure import regionprops
+
 PickleGT = namedtuple("PickleGT", "project_name, video_file ant_blobs tracklet_types")
 
 
@@ -32,9 +35,11 @@ class AntBlobGtManager(object):
             logging.info("There is no file named {}, creating a new one".format(self.pkl_file))
             self.pickle_gt = project.name, project.video_paths, AntBlobs(), TrackletTypes()
         else:
+            sys.path.append('data/GT/ant_blob')  # hack to load old pkl file
             with open(self.pkl_file, 'r') as f:
                 self.pickle_gt = pickle.load(f)
             logging.info("Successfuly loaded pkl file")
+            sys.path.remove('data/GT/ant_blob')
         self.project_name, self.video_file, self.ant_blobs, self.tracklet_types = self.pickle_gt
 
         self.check_valid_setting(project)
@@ -171,7 +176,7 @@ def blobs_to_dict(blobs, img_shape, region_manager):
             item['%d_y' % i] = properties[0].centroid[0]
             item['%d_major' % i] = properties[0].major_axis_length
             item['%d_minor' % i] = properties[0].minor_axis_length
-            item['%d_angle_deg' % i] = 180 - np.degrees(properties[0].orientation)
+            item['%d_angle_deg' % i] = np.degrees(properties[0].orientation) # 180 -
         gt.append(item)
     return gt
 

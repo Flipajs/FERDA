@@ -2,6 +2,8 @@
 use: $ python interactions.py -- --help
 """
 
+#TODO change self.__video.get_frame() for cached self._project.img_manager.get_whole_img()
+
 import sys
 import cPickle as pickle
 from core.settings import Settings as S_
@@ -33,6 +35,9 @@ from itertools import product
 from scripts.CNN.interactions_results import save_prediction_img
 from os.path import join
 import pandas as pd
+import errno
+
+IMAGE_SIZE_PX = 200
 
 
 def head_fix(tracklet_regions):
@@ -111,15 +116,15 @@ def head_fix(tracklet_regions):
 
 class Interactions(object):
     def __init__(self):
-        self.__video = None
-        self.__single = None
-        self.__multi = None
-        self.__project = None
-        self.__bg = None
+        self._video = None
+        self._single = None
+        self._multi = None
+        self._project = None
+        self._bg = None
         # self.__i = 0  # used for visualizations commented out
 
-    def __load_project(self, project_dir=None):
-        self.__project = Project()
+    def _load_project(self, project_dir=None):
+        self._project = Project()
         # This is development speed up process (kind of fast start). Runs only on developers machines...
         # if is_flipajs_pc() and False:
         if project_dir is None:
@@ -141,77 +146,120 @@ class Interactions(object):
                 # project_dir = '/home/matej/prace/ferda/10-15/'
                 project_dir = '/home/matej/prace/ferda/projects/camera1_10-15/'
         assert project_dir is not None
-        self.__project.load(project_dir)
+        self._project.load(project_dir)
 
         # img = video.get_frame(region.frame())  # ndarray bgr
         # img_region = get_img_around_pts(img, region.pts(), margin=0)
         # cv2.imshow('test', img_region[0])
         # cv2.waitKey()
 
-        self.__video = get_auto_video_manager(self.__project)
-        print('regions start')
+        self._video = get_auto_video_manager(self._project)
 
+    def _init_regions(self):
+        print('regions start')
         regions_filename = './scripts/out/regions_long_tracklets.pkl'
         if os.path.exists(regions_filename):
             print('regions loading...')
             with open(regions_filename, 'rb') as fr:
-                self.__single = pickle.load(fr)
-                self.__multi = pickle.load(fr)
+                self._single = pickle.load(fr)
+                self._multi = pickle.load(fr)
             print('regions loaded')
         else:
-            from collections import defaultdict
-
-            self.__single = defaultdict(list)
-            self.__multi = defaultdict(list)
-            # long_moving_tracklets = []
-
-            for tracklet in self.__project.chm.chunk_gen():
-                if tracklet.is_single() or tracklet.is_multi():
-                    region_tracklet = RegionChunk(tracklet, self.__project.gm, self.__project.rm)
-                    if tracklet.is_single():
-                        centroids = np.array([region_tracklet.centroid_in_t(frame) for frame
-                                              in
-                                              range(region_tracklet.start_frame(),
-                                                    region_tracklet.end_frame())])  # shape=(n,2)
-
-                        if len(tracklet) > 20 and np.linalg.norm(np.diff(centroids, axis=0), axis=1).mean() > 1.5:
-                            # long_moving_tracklets.append(tracklet)
-
-                            regions = list(region_tracklet)
-                            head_fix(regions)
-                            # images = []
-                            # for region in regions:
-                            #     img = video.get_frame(region.frame())
-                            #     head, tail = get_region_endpoints(region)
-                            #     img = cv2.drawMarker(img, tuple(head[::-1].astype(int)), (0, 0, 255))
-                            #     img = cv2.drawMarker(img, tuple(tail[::-1].astype(int)), (0, 255, 0))
-                            #     border = 10
-                            #     roi = region.roi()
-                            #     images.append(img[roi.y() - border:roi.y() + roi.height() + border,
-                            #                   roi.x() - border:roi.x() + roi.width() + border])
-                            # montage_generator = montage.Montage((1000, 500), (10, 5))
-                            # plt.imshow(montage_generator.montage(images[:50])[::-1])
-                            # plt.waitforbuttonpress()
-                            for region in regions:
-                                self.__single[region.frame()].append(region)
-                        else:
-                            # short single tracklets are ignored
-                            pass
-                    else:  # multi
-                        for region in region_tracklet.regions_gen():
-                            # if tracklet.is_single():
-                            #     single[region.frame()].append(region)
-                            # else:
-                            self.__multi[region.frame()].append(region)
+            self._single, self._multi = self._collect_regions()
 
             with open(regions_filename, 'wb') as fw:
-                pickle.dump(self.__single, fw)
-                pickle.dump(self.__multi, fw)
+                pickle.dump(self._single, fw)
+                pickle.dump(self._multi, fw)
 
-    def __get_out_dir_rel(self, out_dir, out_file):
+    def _collect_regions(self):
+        from collections import defaultdict
+        single = defaultdict(list)
+        multi = defaultdict(list)
+        # long_moving_tracklets = []
+        for tracklet in self._project.chm.chunk_gen():
+            if tracklet.is_single() or tracklet.is_multi():
+                region_tracklet = RegionChunk(tracklet, self._project.gm, self._project.rm)
+                if tracklet.is_single():
+                    centroids = np.array([region_tracklet.centroid_in_t(frame) for frame
+                                          in
+                                          range(region_tracklet.start_frame(),
+                                                region_tracklet.end_frame())])  # shape=(n,2)
+
+                    if len(tracklet) > 20 and np.linalg.norm(np.diff(centroids, axis=0), axis=1).mean() > 1.5:
+                        # long_moving_tracklets.append(tracklet)
+
+                        regions = list(region_tracklet)
+                        head_fix(regions)
+                        # images = []
+                        # for region in regions:
+                        #     img = video.get_frame(region.frame())
+                        #     head, tail = get_region_endpoints(region)
+                        #     img = cv2.drawMarker(img, tuple(head[::-1].astype(int)), (0, 0, 255))
+                        #     img = cv2.drawMarker(img, tuple(tail[::-1].astype(int)), (0, 255, 0))
+                        #     border = 10
+                        #     roi = region.roi()
+                        #     images.append(img[roi.y() - border:roi.y() + roi.height() + border,
+                        #                   roi.x() - border:roi.x() + roi.width() + border])
+                        # montage_generator = montage.Montage((1000, 500), (10, 5))
+                        # plt.imshow(montage_generator.montage(images[:50])[::-1])
+                        # plt.waitforbuttonpress()
+                        for region in regions:
+                            single[region.frame()].append(region)
+                    else:
+                        # short single tracklets are ignored
+                        pass
+                else:  # multi
+                    for region in region_tracklet.regions_gen():
+                        # if tracklet.is_single():
+                        #     single[region.frame()].append(region)
+                        # else:
+                        multi[region.frame()].append(region)
+
+        return single, multi
+
+    def _get_out_dir_rel(self, out_dir, out_file):
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
         return os.path.relpath(os.path.abspath(out_dir), os.path.abspath(os.path.dirname(out_file)))
+
+    def write_annotated_blobs_groundtruth(self, project_dir, blobs_filename, n_objects, out_dir):
+        # write_annotated_blobs_groundtruth '/home/matej/prace/ferda/projects/camera1/Camera 1.fproj' ../data/annotated_blobs/Camera1_blob_gt.pkl 2 ../data/interactions/180126_test_real_2_ants
+        import data.GT.ant_blob.ant_blob_gt_manager as ant_blob_gt_manager
+        self._load_project(project_dir)
+        img_shape = self._project.img_manager.get_whole_img(0).shape[:2]
+        blob_manager = ant_blob_gt_manager.AntBlobGtManager(blobs_filename, self._project)
+        blobs = blob_manager.get_ant_blobs()  # see AntBlobs() docs
+        gt = pd.DataFrame(ant_blob_gt_manager.blobs_to_dict(blobs, img_shape, self._project.rm))
+        gt_n = gt[gt.n_objects == n_objects].copy()
+
+        out_hdf5 = join(out_dir, 'images.h5')
+        dataset = 'test'
+        # if os.path.exists(out_hdf5):
+        #     raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % out_hdf5)
+        hdf5_file = h5py.File(out_hdf5, mode='w')
+        hdf5_file.create_dataset(dataset, (len(gt_n), IMAGE_SIZE_PX, IMAGE_SIZE_PX, 3), np.uint8)  # , compression='szip')
+        for i, (_, item) in enumerate(tqdm.tqdm(gt_n.iterrows(), desc='writing images')):
+            img = self._project.img_manager.get_whole_img(item['frame'])
+            region = self._project.rm[item['region_id']]
+            img_crop, delta_xy = self._crop(img, region.centroid()[::-1], IMAGE_SIZE_PX)
+            for j in range(n_objects):
+                gt_n.loc[gt_n.index[i], '%d_x' % j] -= delta_xy[0]
+                gt_n.loc[gt_n.index[i], '%d_y' % j] -= delta_xy[1]
+            hdf5_file[dataset][i, ...] = img_crop
+        hdf5_file.close()
+
+        out_csv = join(out_dir, 'test.csv')
+        columns = []
+        for i in range(n_objects):
+            gt_n.loc[:, '%d_region_id' % i] = gt_n['region_id']
+            columns.extend([
+                '%d_x' % i, '%d_y' % i, '%d_major' % i, '%d_minor' % i,
+                '%d_angle_deg' % i, '%d_region_id' % i
+            ])
+        gt_out = gt_n.loc[:, columns]
+        gt_out['video_file'] = os.path.basename(self._video.video_path)
+        gt_out.to_csv(out_csv, index=False, float_format='%.2f')
+        # gt.to_hdf(join(out_dir, 'test.h5'), )
 
     def write_background(self, video_step=100, dilation_size=100, out_filename='bg.png'):
         """
@@ -222,9 +270,10 @@ class Interactions(object):
         :param out_filename:
         :return:
         """
-        self.__load_project()
+        self._load_project()
+        self._init_regions()
         # background composition
-        img = self.__video.get_frame(0)
+        img = self._video.get_frame(0)
 
         multiple_imgs = []  # np.zeros((median_len,) + img.shape)
         bg_mask = np.zeros(img.shape[:2], dtype=np.bool)
@@ -233,9 +282,9 @@ class Interactions(object):
         while not np.all(bg_mask):
             frame = i * video_step
             print frame, '\t', np.count_nonzero(~bg_mask)
-            img = self.__video.get_frame(frame).astype(float)
+            img = self._video.get_frame(frame).astype(float)
             img_bg_mask = np.zeros(img.shape[:2], dtype=np.bool)
-            for region in self.__single[frame] + self.__multi[frame]:
+            for region in self._single[frame] + self._multi[frame]:
                 transformable_region = TransformableRegion(img)
                 transformable_region.set_region(region)
                 mask = transformable_region.get_mask(dilation_size)
@@ -256,17 +305,18 @@ class Interactions(object):
         :param out_file:
         :return:
         """
-        self.__load_project()
+        self._load_project()
+        self._init_regions()
         # write fg images and txt file
-        out_dir_rel = self.__get_out_dir_rel(out_dir, out_file)
+        out_dir_rel = self._get_out_dir_rel(out_dir, out_file)
 
         with open(out_file, 'w') as fw:
-            for frame in tqdm.tqdm(sorted(self.__single.keys())):
-                img = self.__video.get_frame(frame)
+            for frame in tqdm.tqdm(sorted(self._single.keys())):
+                img = self._video.get_frame(frame)
                 filename = '%05d.jpg' % frame
                 cv2.imwrite(os.path.join(out_dir, filename), img)
-                line = os.path.join(out_dir_rel, filename) + ' ' + str(len(self.__single[frame])) + ' '
-                for region in self.__single[frame]:
+                line = os.path.join(out_dir_rel, filename) + ' ' + str(len(self._single[frame])) + ' '
+                for region in self._single[frame]:
                     roi = region.roi()
                     line += '%d %d %d %d ' % (roi.x(), roi.y(), roi.width(), roi.height())
                 line += '\n'
@@ -282,10 +332,11 @@ class Interactions(object):
         :param num_regions:
         :return:
         """
-        self.__load_project()
+        self._load_project()
+        self._init_regions()
         frames_regions = []
         for _ in range(num_regions):
-            region = np.random.choice(self.__single[np.random.choice(self.__single.keys())])
+            region = np.random.choice(self._single[np.random.choice(self._single.keys())])
             frames_regions.append((region.frame(), region))
         frames_regions = sorted(frames_regions, key=lambda fr: fr[0])
 
@@ -298,7 +349,7 @@ class Interactions(object):
         mean_img = np.zeros((height, width, 3))
         for frame, region in tqdm.tqdm(frames_regions):
             # img = cv2.cvtColor(self.video.get_frame(region.frame()), cv2.COLOR_BGR2GRAY)
-            tregion = TransformableRegion(self.__video.get_frame(frame))
+            tregion = TransformableRegion(self._video.get_frame(frame))
             tregion.rotate(-math.degrees(region.theta_) + 90, rotation_center_yx=region.centroid())
             img_aligned = tregion.get_img()
             hw = np.array((height, width), dtype=float)
@@ -321,18 +372,19 @@ class Interactions(object):
         :param bg_angle_max_deviation_deg:
         :return:
         """
-        self.__load_project()
-        out_dir_rel = self.__get_out_dir_rel(out_dir, out_file)
+        self._load_project()
+        self._init_regions()
+        out_dir_rel = self._get_out_dir_rel(out_dir, out_file)
         images = []
         i = 0
         bb_fixed_border_xy = (20, 10)
 
         fw = open(out_file, 'w')
 
-        for frame in tqdm.tqdm(sorted(self.__single.keys())):  # [::10]:
-            img = self.__video.get_frame(frame)
+        for frame in tqdm.tqdm(sorted(self._single.keys())):  # [::10]:
+            img = self._video.get_frame(frame)
 
-            for region in self.__single[frame]:  # [::10]:
+            for region in self._single[frame]:  # [::10]:
 
                 if not (-bg_angle_max_deviation_deg < math.degrees(region.theta_) - 90 < bg_angle_max_deviation_deg):
                     filename = '%05d.png' % i
@@ -376,8 +428,9 @@ class Interactions(object):
         :param fixed_size:
         :return:
         """
-        self.__load_project()
-        out_dir_rel = self.__get_out_dir_rel(out_dir, out_file)
+        self._load_project()
+        self._init_regions()
+        out_dir_rel = self._get_out_dir_rel(out_dir, out_file)
         images = []
         i = 0
         bb_fixed_border_xy = (20, 10)
@@ -385,7 +438,7 @@ class Interactions(object):
         if fixed_size:
             import itertools
 
-            all_regions = list(itertools.chain(*self.__single.values()))
+            all_regions = list(itertools.chain(*self._single.values()))
             major_axes = np.array([r.a_ for r in all_regions]) * 2
             bb_major_px = np.median(major_axes)
             minor_axes = np.array([r.b_ for r in all_regions]) * 2
@@ -407,10 +460,10 @@ class Interactions(object):
         #     pickle.dump(r2, fw)
         #     pickle.dump(img2, fw)
 
-        for frame in tqdm.tqdm(sorted(self.__single.keys())):  # [::10]:
-            img = self.__video.get_frame(frame)
+        for frame in tqdm.tqdm(sorted(self._single.keys())):  # [::10]:
+            img = self._video.get_frame(frame)
 
-            for region in self.__single[frame]:  # [::10]:
+            for region in self._single[frame]:  # [::10]:
 
                 centroid_crop = tuple(region.centroid()[::-1] - cropxy)
                 rot = cv2.getRotationMatrix2D(centroid_crop,
@@ -509,14 +562,14 @@ class Interactions(object):
                    'region_id', 'theta_rad', 'phi_rad', 'overlap_px']
 
         # angles: positive clockwise, zero direction to right
-        self.__load_project(project_dir)
+        self._load_project(project_dir)
+        self._init_regions()
         from core.bg_model.median_intensity import MedianIntensity
-        self.__bg = MedianIntensity(self.__project)
-        self.__bg.compute_model()
+        self._bg = MedianIntensity(self._project)
+        self._bg.compute_model()
 
-        single_regions = [item for sublist in self.__single.values() for item in sublist]
+        single_regions = [item for sublist in self._single.values() for item in sublist]
         BATCH_SIZE = 250  # 2* BATCH_SIZE images must fit into memory
-        IMAGE_SIZE_PX = 200
 
         objects_fieldnames = [str(obj_id) + '_' + col for obj_id, col in product(range(n_objects), COLUMNS)]
         fieldnames = objects_fieldnames + ['video_file', 'augmentation_angle_deg']
@@ -542,8 +595,8 @@ class Interactions(object):
             frames = [r.frame() for r in regions]
             sort_idx = np.argsort(frames)
             sort_idx_reverse = np.argsort(sort_idx)
-            images_sorted = [self.__video.get_frame(r.frame()) for r in tqdm.tqdm(regions[sort_idx],
-                                                                                  desc='reading images')]
+            images_sorted = [self._video.get_frame(r.frame()) for r in tqdm.tqdm(regions[sort_idx],
+                                                                                 desc='reading images')]
             images = [images_sorted[idx] for idx in sort_idx_reverse]
 
             with tqdm.tqdm(total=n * n_angles, desc='synthetize') as progress_bar:
@@ -585,7 +638,7 @@ class Interactions(object):
                             jitter_xy = np.random.uniform(-xy_jitter_width / 2, xy_jitter_width / 2, size=2)
                         else:
                             jitter_xy = (0., 0.)
-                        img_crop, delta_xy = self.__crop(img_rotated, centroid_xy + jitter_xy, IMAGE_SIZE_PX)
+                        img_crop, delta_xy = self._crop(img_rotated, centroid_xy + jitter_xy, IMAGE_SIZE_PX)
 
                         results_row = []
                         for k in range(n_objects):
@@ -614,7 +667,7 @@ class Interactions(object):
 
                         results_row.extend([
                             ('augmentation_angle_deg', round(angle_deg, 1)),
-                            ('video_file', os.path.basename(self.__video.video_path)),
+                            ('video_file', os.path.basename(self._video.video_path)),
                         ])
 
                         if out_dir is not None:
@@ -703,7 +756,7 @@ class Interactions(object):
         # angles: positive clockwise, zero direction to right
         n_objects = len(regions)
         if images is None:
-            images = [self.__video.get_frame(r.frame()) for r in regions]
+            images = [self._video.get_frame(r.frame()) for r in regions]
         base_tregion = TransformableRegion(images[0])
         base_tregion.set_region(regions[0])
         base_tregion.set_elliptic_mask()
@@ -728,7 +781,7 @@ class Interactions(object):
             ##
 
             # constructing img2 alpha channel
-            bg_diff = (self.__bg.bg_model.astype(np.float) - images[i]).mean(axis=2).clip(5, 100)
+            bg_diff = (self._bg.bg_model.astype(np.float) - images[i]).mean(axis=2).clip(5, 100)
             alpha = ((bg_diff - bg_diff.min()) / np.ptp(bg_diff))
             # plt.imshow(alpha)
             # plt.jet()
@@ -833,18 +886,18 @@ class Interactions(object):
                                  (moments['muprime20'] - moments['muprime02'])))
         return centroid_xy, major_deg
 
-    def __crop(self, img_synthetic, centroid_xy, img_size):
+    def _crop(self, img, centroid_xy, img_size):
         img_crop = np.zeros((img_size, img_size, 3), dtype=np.uint8)
         dest_top_left = -np.clip(np.array(centroid_xy[::-1]) - img_size / 2, None, 0).round().astype(int)
         dest_bot_right = np.clip(
-            img_size - (np.array(centroid_xy[::-1]) + img_size / 2 - img_synthetic.shape[:2]),
+            img_size - (np.array(centroid_xy[::-1]) + img_size / 2 - img.shape[:2]),
             None, img_size).round().astype(int)
         x_range = np.clip((centroid_xy[0] - img_size / 2, centroid_xy[0] + img_size / 2),
-                          0, img_synthetic.shape[1]).round().astype(int)
+                          0, img.shape[1]).round().astype(int)
         y_range = np.clip((centroid_xy[1] - img_size / 2, centroid_xy[1] + img_size / 2),
-                          0, img_synthetic.shape[0]).round().astype(int)
+                          0, img.shape[0]).round().astype(int)
         img_crop[dest_top_left[0]:dest_bot_right[0], dest_top_left[1]:dest_bot_right[1]] = \
-            img_synthetic[slice(*y_range), slice(*x_range)]
+            img[slice(*y_range), slice(*x_range)]
         delta_xy = np.array((x_range[0] - dest_top_left[1], y_range[0] - dest_top_left[0]))
         return img_crop, delta_xy
 
@@ -855,9 +908,9 @@ class Interactions(object):
         :param cascade_detector_dir: trained detector, directory containing cascade.xml
         :param project_dir: FERDA project dir
         """
-        self.__load_project(project_dir)
+        self._load_project(project_dir)
 
-        video = get_auto_video_manager(self.__project)
+        video = get_auto_video_manager(self._project)
         ant_cascade = cv2.CascadeClassifier(os.path.join(cascade_detector_dir, 'cascade.xml'))
         frame = 0
         waitforbuttonpress.figure()
