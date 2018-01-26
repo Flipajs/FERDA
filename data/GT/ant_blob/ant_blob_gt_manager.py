@@ -3,6 +3,9 @@ import logging
 from PyQt4 import QtGui
 from collections import namedtuple
 from os.path import exists
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pylab as plt
 
 import pickle
 
@@ -11,10 +14,8 @@ from ant_blobs import AntBlobs
 from tracklet_types import TrackletTypes
 from util.blob_widget import BlobWidget
 from util.tracklet_viewer import TrackletViewer
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pylab as plt
 import utils.roi
+from core.region.region import Region
 import core.region.region
 import tqdm
 import os
@@ -53,7 +54,11 @@ class AntBlobGtManager(object):
             raise AttributeError("Different video file names")
 
     def get_ant_blobs(self):
-        # retrieve GT
+        """
+        Returns list of annotated blobs.
+
+        :return: list of AntBlobs()
+        """
         return self.ant_blobs.all_blobs()
 
     def feed_ant_blobs(self):
@@ -123,31 +128,148 @@ def fix_video_filename(pkl_filename, video_filename):
         pickle.dump((project_name, video_file, ant_blobs, tracklet_types), f)
 
 
+def blobs_to_dict(blobs, img_shape, region_manager):
+    """
+
+    outputs ground truth in a list of dicts like:
+
+    {'0_angle_deg': 196.81771700655054,
+     '0_major': 63.263008639602724,
+     '0_minor': 14.99769235802676,
+     '0_x': 637.36877076411963,
+     '0_y': 616.56478405315613,
+     '1_angle_deg': 242.37572022616285,
+     ...
+     'data': '16 \xc5\x99\xc3\xadj 2017 20:46:44',
+     'frame': 53970,
+     'n_objects': 2,
+     'region_id': 251801,
+     'tracklet_id': 28633}
+
+    :param blobs: list( (BlobInfo, BlobData), (BlobInfo, BlobData), ...)
+    :param img_shape: tuple (height, width)
+    :return: list of groundtruth dicts, see above
+    """
+    gt = []
+    for val in tqdm.tqdm(blobs):
+        item = dict(val[0]._asdict())
+        item['data'] = val[1].date
+        region = region_manager[item['region_id']]
+        assert region.frame() == item['frame']
+        roi = utils.roi.get_roi(region.pts())
+        item['n_objects'] = len(val[1].ants)
+        for i, obj in enumerate(val[1].ants):
+            pts = obj + [roi.x(), roi.y()]
+
+            # sub-optimal but working
+            img_bw = np.zeros(img_shape, dtype=np.uint8)
+            from skimage.draw import polygon
+            rr, cc = polygon(pts[:, 1], pts[:, 0])
+            img_bw[rr, cc] = 1
+            properties = regionprops(img_bw)
+            item['%d_x' % i] = properties[0].centroid[1]
+            item['%d_y' % i] = properties[0].centroid[0]
+            item['%d_major' % i] = properties[0].major_axis_length
+            item['%d_minor' % i] = properties[0].minor_axis_length
+            item['%d_angle_deg' % i] = 180 - np.degrees(properties[0].orientation)
+        gt.append(item)
+    return gt
+
+
 if __name__ == "__main__":
+    from skimage.measure import label, regionprops
+    import numpy as np
+
     out_dir = './out'
     # fix_video_filename('./Camera1_blob_gt.pkl', '/run/media/matej/mybook_ntfs/ferda/Camera 1.avi')
     logging.basicConfig(level=logging.INFO)
     p = Project()
     # p.load("/home/matej/prace/ferda/10-15 (copy)/10-15.fproj")
-    p.load("/home/matej/prace/ferda/projects/Camera 1/Camera 1.fproj")
+    p.load('/home/matej/prace/ferda/projects/camera1/Camera 1.fproj')
     manager = AntBlobGtManager('./Camera1_blob_gt.pkl', p)
+    img_shape = manager.project.img_manager.get_whole_img(0).shape[:2]
+
+    # # interactive ground truth annotation
     # manager.label_tracklets()
     # manager.label_blobs()
     # manager.view_gt()
-    blob_dic = manager.get_ant_blobs()
-    blob_gen = manager.feed_ant_blobs()
 
-    # list( (BlobInfo, BlobData), (BlobInfo, BlobData), ...)
-    # BlobInfo(region_id=63729, frame=14431, tracklet_id=70922)
-    # BlobData(ants=[array([[23, 54], ...]),
-    #                array([[45, 88], ...]),
-    #                ...],
-    #          date='22 z\xc3\xa1\xc5\x99 2017 16:59:46')
+    blobs = manager.get_ant_blobs()  # see AntBlobs() docs
+    # blob_gen = manager.feed_ant_blobs()
 
-    for i, blob in enumerate(tqdm.tqdm(blob_dic)):
-        fig = plt.figure()
-        manager.show_gt(blob)
-        plt.axis('off')
-        fig.savefig(os.path.join(out_dir, '%03d.png' % i), transparent=True, bbox_inches='tight', pad_inches=0)
-        plt.close(fig)
+    # # visualize annotated blobs
+    # for i, blob in enumerate(tqdm.tqdm(blobs)):
+    #     fig = plt.figure()
+    #     manager.show_gt(blob)
+    #     plt.axis('off')
+    #     fig.savefig(os.path.join(out_dir, '%03d.png' % i), transparent=True, bbox_inches='tight', pad_inches=0)
+    #     plt.close(fig)
+
+    gt = blobs_to_dict(blobs, img_shape, manager.project.rm)
+
+    # # ellipses ground truth visualization
+    # from scripts.CNN.interactions_results import plot_interaction
+    # for i, item in tqdm.tqdm(enumerate(gt)):
+    #     img = manager.project.img_manager.get_whole_img(item['frame'])
+    #     fig = plt.figure()
+    #     plt.imshow(img)
+    #     plt.axis('off')
+    #     plot_interaction(item['n_objects'], gt=item)
+    #     fig.savefig('out2/%05d.png' % i, transparent=True, bbox_inches='tight', pad_inches=0)
+    #     plt.close(fig)
+    #     plt.clf()
+
+    import pandas as pd
+    gtdf = pd.DataFrame(gt)
+
+    # # compute ellipses gt from moments using Region() - NOT WORKING
+    # import cv2
+    # moments = cv2.moments(pts)
+    #
+    # data = {'area': moments['m00'],
+    #         'cx': moments['m10'] / moments['m00'],
+    #         'cy': moments['m01'] / moments['m00'],
+    #         'label': None,
+    #         'margin': None,
+    #         'minI': None,
+    #         'maxI': None,
+    #         'sxx': moments['nu20'],
+    #         'syy': moments['nu02'],
+    #         'sxy': moments['nu11'],
+    #         'parent_label': None,
+    #         'rle': core.region.region.encode_RLE(pts[:, ::-1])
+    #         }
+    # gt_region = Region(data)
+    #
+    # obj = {'0_x': gt_region.centroid()[1],
+    #        '0_y': gt_region.centroid()[0],
+    #        '0_major': 4 * gt_region.major_axis_,
+    #        '0_minor': 4 * gt_region.minor_axis_,
+    #        '0_angle_deg': gt_region.theta_,
+    # }
+    # img = manager.project.img_manager.get_whole_img(item['frame'])
+    # plt.imshow(img)
+    # plot_interaction(1, obj)
+    #
+    # plot_interaction(num_objects, pred, gt)
+    # fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0)
+    # plt.close(fig)
+    # plt.clf()
+
+    # # write test dataset
+    # import h5py
+    # import warnings
+    #
+    # out_hdf5 = 'images.h5'
+    # hdf5_dataset_name = 'test'
+    #
+    # if out_hdf5 is not None:
+    #     assert hdf5_dataset_name is not None
+    #     if os.path.exists(out_hdf5):
+    #         warnings.warn('HDF5 file %s already exists, adding dataset %s.' % (out_hdf5, hdf5_dataset_name))
+    #     hdf5_file = h5py.File(out_hdf5, mode='a')
+    #     hdf5_file.create_dataset(hdf5_dataset_name, (count, IMAGE_SIZE_PX, IMAGE_SIZE_PX, 3),
+    #                              np.uint8)  # , compression='szip')
+    #
+
 

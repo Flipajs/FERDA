@@ -6,6 +6,15 @@ BlobData = namedtuple("BlobData", "ants date")
 
 
 class AntBlobs:
+    """
+    {key: ( (BlobInfo, BlobData), key: (BlobInfo, BlobData), ...}
+
+    BlobInfo(region_id=63729, frame=14431, tracklet_id=70922)
+    BlobData(ants=[array([[23, 54], ...]),
+                   array([[45, 88], ...]),
+                   ...],
+             date='22 z\xc3\xa1\xc5\x99 2017 16:59:46')
+    """
 
     def __init__(self):
         self.blobs = {}
@@ -18,6 +27,11 @@ class AntBlobs:
         return len(self.blobs)
 
     def all_blobs(self):
+        """
+        Returns list of annotated blobs.
+
+        :return: list of AntBlobs()
+        """
         return self.blobs.items()
 
     def contains(self, region_id, frame, tracklet_id):
