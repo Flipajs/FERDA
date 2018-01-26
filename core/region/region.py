@@ -107,9 +107,11 @@ class Region(object):
         if 'rle' in data:
             self.pts_rle_ = data['rle']
             # self.pts_ = self.pts_from_rle_(self.pts_rle_)
+        elif 'pts' in data:
+            self.pts_ = data['pts']
         else:
             raise Exception('wrong data format',
-                            'Wrong data format in from_dict_ in region.points.py. Expected dictionary with "rle" key.')
+                            'Wrong data format in from_dict_ in region.points.py. Expected dictionary with "rle" or "pts" keys.')
 
         self.centroid_ = np.array([data['cy'], data['cx']])
         # self.pts_ = np.array(pts)
