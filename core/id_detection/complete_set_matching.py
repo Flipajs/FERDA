@@ -245,22 +245,9 @@ class CompleteSetMatching:
                 # TODO: propagate...
 
         plt.figure()
-        # import matplotlib
-        # import matplotlib.cm as cm
-        #
-        # minima = min(lengths)
-        # maxima = max(lengths)
-        #
-        # norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
-        # mapper = cm.ScalarMappable(norm=norm, cmap=cm.Greys_r)
-        #
+
         plt.scatter(np.arange(len(probs)), probs, c='r')
         plt.scatter(np.arange(len(probs)), probs2, c='g')
-        #
-        # plt.figure()
-        # plt.scatter(lengths, probs, alpha=0.15)
-        # plt.show()
-
 
         #### visualize and stats
         from utils.rand_cmap import rand_cmap
