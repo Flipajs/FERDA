@@ -7,7 +7,7 @@ import string
 import numpy as np
 import time
 from os.path import join
-from sklearn.preprocessing import StandardScaler
+# from sklearn.preprocessing import StandardScaler
 from keras.preprocessing.image import ImageDataGenerator
 import numbers
 import pandas as pd
@@ -28,6 +28,9 @@ except ImportError:
 import skimage.transform
 import fire
 from core.region.transformableregion import TransformableRegion
+from keras.models import model_from_yaml, model_from_json
+import warnings
+
 
 ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/'
 ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
@@ -326,6 +329,54 @@ class TrainInteractions:
         results.to_csv(join(params['experiment_dir'], 'results.csv'))
         return results
 
+    def evaluate_model(self, data_dir, model_dir, n_objects=2):
+        self.num_objects = n_objects
+        hf = h5py.File(join(data_dir, 'images.h5'), 'r')
+        X_test = hf['test']
+
+        y_test_df = pd.read_csv(join(data_dir, 'test.csv'))
+        # convert to counter-clockwise
+        # for i in range(self.num_objects):
+        #     y_test_df.loc[:, '%d_angle_deg' % i] *= -1
+        y_test = y_test_df[self.columns()]
+
+        # size = 200
+        # x, y = np.mgrid[0:size, 0:size]
+        # mask = np.expand_dims(np.exp(- 0.0002 * ((x - size / 2) ** 2 + (y - size / 2) ** 2)), 2)
+        #
+        # def image_dim(img):
+        #     return img * mask
+
+        test_datagen = ImageDataGenerator(rescale=1./255) # , preprocessing_function=rotate90)
+        test_generator = test_datagen.flow(X_test, shuffle=False)
+
+        base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
+        base_experiment_dir = ROOT_EXPERIMENT_DIR + base_experiment_name
+        base_tensor_board_dir = join(ROOT_TENSOR_BOARD_DIR, base_experiment_name)
+
+        if not os.path.exists(base_experiment_dir):
+            os.mkdir(base_experiment_dir)
+
+        with file(join(base_experiment_dir, 'parameters.txt'), 'w') as fw:
+            fw.writelines('\n'.join(sys.argv))
+
+        if os.path.exists(join(model_dir, 'model.yaml')):
+            with open(join(model_dir, 'model.yaml'), 'r') as fr:
+                m = model_from_yaml(fr.read())
+        elif os.path.exists(join(model_dir, 'model.json')):
+            with open(join(model_dir, 'model.json'), 'r') as fr:
+                m = model_from_json(fr.read())
+        else:
+            m = self.model()
+            warnings.warn('Stored model not found, initializing model using model().')
+        m.load_weights(join(model_dir, 'weights.h5'))
+
+        parameters = {}
+        parameters['experiment_dir'] = base_experiment_dir
+        parameters['tensorboard_dir'] = base_tensor_board_dir
+        self.evaluate(m, test_generator, y_test, parameters)
+        hf.close()
+
     def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, n_objects=2):
         self.num_objects = n_objects
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
@@ -438,7 +489,8 @@ class TrainInteractions:
                 parameters['experiment_dir'] = experiment_dir
                 parameters['tensorboard_dir'] = join(base_tensor_board_dir, str(alpha))
                 m = self.train(m, train_generator, parameters)
-                # m.load_weights(join(experiment_dir, 'weights.h5'))
+                with open(join(experiment_dir, 'model.yaml'), 'w') as fw:
+                    fw.write(m.to_yaml())
                 results_ = self.evaluate(m, test_generator, y_test, parameters)
                 results_['loss_alpha'] = alpha
                 results = results.append(results_, ignore_index=True)
@@ -458,4 +510,7 @@ class TrainInteractions:
 
 if __name__ == '__main__':
     ti = TrainInteractions()
-    fire.Fire(ti.train_and_evaluate)
+    fire.Fire({
+      'train': ti.train_and_evaluate,
+      'evaluate': ti.evaluate_model,
+    })

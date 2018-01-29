@@ -68,19 +68,19 @@ def visualize_results(experiment_dir, data_dir, n_objects=2):
     hf_img = h5py.File(join(data_dir, 'images.h5'), 'r')
     X_test = hf_img['test']
     y_test_df = pd.read_csv(join(data_dir, 'test.csv'))
-    y_test = y_test_df[ti.columns()]
     for i in range(n_objects):
-        y_test.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
+        y_test_df.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
         # y_test.loc[:, '%d_angle_deg' % i] += 90
         # y_test.loc[:, '%d_angle_deg' % i] %= 360
+    y_test = y_test_df[ti.columns()]
 
-    # input image and gt rotation
-    tregion = TransformableRegion(X_test[0])
-    tregion.rotate(90, np.array(tregion.img.shape[:2]) / 2)
-    for i in range(ti.num_objects):
-        y_test.loc[:, ['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
-            y_test.loc[:, ['%d_x' % i, '%d_y' % i]].values.T).T
-        y_test.loc[:, '%d_angle_deg' % i] = tregion.get_transformed_angle(y_test.loc[:, '%d_angle_deg' % i])
+    # # input image and gt rotation
+    # tregion = TransformableRegion(X_test[0])
+    # tregion.rotate(90, np.array(tregion.img.shape[:2]) / 2)
+    # for i in range(ti.num_objects):
+    #     y_test.loc[:, ['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
+    #         y_test.loc[:, ['%d_x' % i, '%d_y' % i]].values.T).T
+    #     y_test.loc[:, '%d_angle_deg' % i] = tregion.get_transformed_angle(y_test.loc[:, '%d_angle_deg' % i])
 
     with h5py.File(join(experiment_dir, 'predictions.h5'), 'r') as hf_pred:
         pred = hf_pred['data'][:]
@@ -101,6 +101,9 @@ def visualize_results(experiment_dir, data_dir, n_objects=2):
 
     # estimate major and minor axis length
     pred = ti.tostruct(pred)
+    for i in range(n_objects):
+        pred['%d_angle_deg' % i] *= -1  # convert to counter-clockwise
+
     mean_major = y_test[['%d_major' % i for i in range(n_objects)]].stack().mean()
     mean_minor = y_test[['%d_minor' % i for i in range(n_objects)]].stack().mean()
     for i in range(n_objects):
@@ -114,17 +117,20 @@ def visualize_results(experiment_dir, data_dir, n_objects=2):
     else:
         for fn in glob.glob(join(experiment_dir, 'visualization', '*.png')):
             os.remove(fn)
-    for i in tqdm.tqdm(angle_errors.flatten().argsort()[::-1][:20]):
-        tregion.set_img(X_test[i])
-        img = tregion.get_img()
+    for i in tqdm.tqdm(angle_errors.flatten().argsort()[::-1][:20], desc='worst angle errors'):
+        img = X_test[i]
+        # tregion.set_img(X_test[i])
+        # img = tregion.get_img()
         save_prediction_img(join(out_dir, 'bad_angle_%03d.png' % i), n_objects, img, pred[[i]], y_test.iloc[i])
-    for i in tqdm.tqdm(xy_errors.flatten().argsort()[::-1][:20]):
-        tregion.set_img(X_test[i])
-        img = tregion.get_img()
+    for i in tqdm.tqdm(xy_errors.flatten().argsort()[::-1][:20], desc='worst xy errors'):
+        img = X_test[i]
+        # tregion.set_img(X_test[i])
+        # img = tregion.get_img()
         save_prediction_img(join(out_dir, 'bad_xy_%03d.png' % i), n_objects, img, pred[[i]], y_test.iloc[i])
-    for i in tqdm.tqdm(np.random.randint(0, len(pred), 50)):
-        tregion.set_img(X_test[i])
-        img = tregion.get_img()
+    for i in tqdm.tqdm(np.random.randint(0, len(pred), 50), desc='random predictions'):
+        img = X_test[i]
+        # tregion.set_img(X_test[i])
+        # img = tregion.get_img()
         save_prediction_img(join(out_dir, 'random_%04d.png' % i), n_objects, img, pred[[i]], y_test.iloc[i])
     hf_img.close()
     results_df = pd.read_csv(join(experiment_dir, 'results.csv'))
