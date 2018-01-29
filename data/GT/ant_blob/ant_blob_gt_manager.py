@@ -156,7 +156,7 @@ def blobs_to_dict(blobs, img_shape, region_manager):
     :return: list of groundtruth dicts, see above
     """
     gt = []
-    for val in tqdm.tqdm(blobs):
+    for val in tqdm.tqdm(blobs, desc='annotated blobs to ground truth'):
         item = dict(val[0]._asdict())
         item['data'] = val[1].date
         region = region_manager[item['region_id']]

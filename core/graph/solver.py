@@ -74,7 +74,7 @@ class Solver:
         confirm_later = []
         from tqdm import tqdm
 
-        for v in tqdm(self.project.gm.g.vertices()):
+        for v in tqdm(self.project.gm.g.vertices(), desc='solver.one2one'):
             if self.project.gm.one2one_check(v):
                 e = self.project.gm.out_e(v)
 
@@ -453,7 +453,7 @@ class Solver:
         """
 
         affected = set()
-        for v1, v2 in tqdm(edge_pairs):
+        for v1, v2 in tqdm(edge_pairs, desc='solver.confirm_edges'):
             affected.add(v1)
             affected.add(v2)
 
