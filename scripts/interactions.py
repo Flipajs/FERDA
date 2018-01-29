@@ -39,7 +39,7 @@ import errno
 
 IMAGE_SIZE_PX = 200
 
-
+#TODO: check for possible bug
 def head_fix(tracklet_regions):
     import heapq
     q = []
@@ -525,21 +525,6 @@ class Interactions(object):
                 #     images = []
 
         fw.close()
-
-    def __test(self):
-        with open('./out/regions.pkl', 'rb') as fr:
-            r1 = pickle.load(fr)
-            img1 = pickle.load(fr)
-            r2 = pickle.load(fr)
-            img2 = pickle.load(fr)
-
-        region1 = TransformableRegion(img1)
-        region1.set_region(r1)
-        region2 = TransformableRegion(img2)
-        region2.set_region(r2)
-        region2.use_background = False
-        plt.imshow(region1.compose(region2.rotate(-30).move((-15, -15))))
-        # plt.imshow(region1.move((0, 100)).get_mask())
 
     def write_synthetized_interactions(self, count=100, n_objects=2, out_dir='./out', out_csv='./out/doubleregions.csv',
                                        rotation='random', xy_jitter_width=0, project_dir=None, out_hdf5=None, hdf5_dataset_name=None):
