@@ -222,10 +222,46 @@ class Interactions(object):
             os.mkdir(out_dir)
         return os.path.relpath(os.path.abspath(out_dir), os.path.abspath(os.path.dirname(out_file)))
 
-    def write_annotated_blobs_groundtruth(self, project_dir, blobs_filename, n_objects, out_dir):
+    def write_regions_for_testing(self, project_file, out_dir, n, multi=True, single=False):
+        # write-regions-for-testing /home/matej/prace/ferda/projects/camera1_10-15/10-15.fproj /home/matej/prace/ferda/data/interactions/180129_camera1_10-15_multi_test 100
+        self._load_project(project_file)
+        self._write_argv(out_dir)
+        # load regions
+        self._init_regions()
+        regions = []
+        if multi:
+            regions.extend([item for sublist in self._multi.values() for item in sublist])
+        if single:
+            regions.extend([item for sublist in self._single.values() for item in sublist])
+        n_regions = np.random.choice(regions, n)
+        frames = np.array([r.frame() for r in n_regions])
+        sort_idx = np.argsort(frames)
+        # sort_idx_reverse = np.argsort(sort_idx)
+
+        # initialize hdf5 output file
+        out_hdf5 = join(out_dir, 'images.h5')
+        dataset = 'test'
+        if os.path.exists(out_hdf5):
+            raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % out_hdf5)
+        hdf5_file = h5py.File(out_hdf5, mode='w')
+        hdf5_file.create_dataset(dataset, (n, IMAGE_SIZE_PX, IMAGE_SIZE_PX, 3), np.uint8)
+
+        # load images, crop regions and save to hdf5
+        for i, (frame, region) in tqdm.tqdm(enumerate(zip(frames[sort_idx], n_regions[sort_idx])), total=n):
+            img = self._project.img_manager.get_whole_img(frame)
+            img_crop, delta_xy = self._crop(img, region.centroid()[::-1], IMAGE_SIZE_PX)
+            hdf5_file[dataset][i, ...] = img_crop
+        hdf5_file.close()
+
+    def _write_argv(self, out_dir):
+        with file(join(out_dir, 'parameters.txt'), 'w') as fw:
+            fw.writelines('\n'.join(sys.argv))
+
+    def write_annotated_blobs_groundtruth(self, project_file, blobs_filename, n_objects, out_dir):
         # write_annotated_blobs_groundtruth '/home/matej/prace/ferda/projects/camera1/Camera 1.fproj' ../data/annotated_blobs/Camera1_blob_gt.pkl 2 ../data/interactions/180126_test_real_2_ants
+        self._write_argv(out_dir)
         import data.GT.ant_blob.ant_blob_gt_manager as ant_blob_gt_manager
-        self._load_project(project_dir)
+        self._load_project(project_file)
         img_shape = self._project.img_manager.get_whole_img(0).shape[:2]
         blob_manager = ant_blob_gt_manager.AntBlobGtManager(blobs_filename, self._project)
         blobs = blob_manager.get_ant_blobs()  # see AntBlobs() docs
@@ -234,8 +270,8 @@ class Interactions(object):
 
         out_hdf5 = join(out_dir, 'images.h5')
         dataset = 'test'
-        # if os.path.exists(out_hdf5):
-        #     raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % out_hdf5)
+        if os.path.exists(out_hdf5):
+            raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % out_hdf5)
         hdf5_file = h5py.File(out_hdf5, mode='w')
         hdf5_file.create_dataset(dataset, (len(gt_n), IMAGE_SIZE_PX, IMAGE_SIZE_PX, 3), np.uint8)  # , compression='szip')
         for i, (_, item) in enumerate(tqdm.tqdm(gt_n.iterrows(), desc='writing images')):
@@ -528,6 +564,7 @@ class Interactions(object):
 
     def write_synthetized_interactions(self, count=100, n_objects=2, out_dir='./out', out_csv='./out/doubleregions.csv',
                                        rotation='random', xy_jitter_width=0, project_dir=None, out_hdf5=None, hdf5_dataset_name=None):
+        # --project_dir /home/matej/prace/ferda/projects/camera1_10-15/
         if out_dir is False:
             out_dir = None
         if out_csv is False:

@@ -295,50 +295,57 @@ class TrainInteractions:
         model.save_weights(join(params['experiment_dir'], 'weights.h5'))
         return model
 
-    def evaluate(self, model, test_generator, y_test, params):
-        pred = model.predict_generator(test_generator, int(len(y_test) / BATCH_SIZE))
+    def evaluate(self, model, test_generator, params, y_test=None):
+        pred = model.predict_generator(test_generator, int(params['n_test'] / BATCH_SIZE))
         # pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
         # pred[:, [4, 9]] = angle_scaler.inverse_transform(pred[:, [4, 9]])
 
         with h5py.File(join(params['experiment_dir'], 'predictions.h5'), 'w') as hf:
             hf.create_dataset("data", data=pred)
-        # xy, _, indices = match_pred_to_gt_dxdy(pred, y_test.values, np)
-        xy, angle, indices = self.match_pred_to_gt(pred, y_test.values, np)
 
-        if self.num_objects == 1:
-            xy_mae = np.take(xy, indices).mean()
-            angle_mae = np.take(angle, indices).mean()
-        else:
-            xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
-            angle_mae = (angle[indices[:, 0], indices[:, 1]]).mean()
+        if y_test is not None:
+            # xy, _, indices = match_pred_to_gt_dxdy(pred, y_test.values, np)
+            xy, angle, indices = self.match_pred_to_gt(pred, y_test.values, np)
 
-        # # compute angle errors
-        # angle = {}
-        # for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
-        #     angle[(i, j)] = angle_absolute_error(
-        #         y_test.values[:, NAME2COL[i]['angle_deg']],
-        #         np.degrees(np.arctan((pred[:, NAME2COL[j]['dy']] / pred[:, NAME2COL[j]['dx']]))),
-        #         np)
-        # mean_errors_angle = np.stack((
-        #     np.mean(np.stack((angle[0, 0], angle[1, 1]), axis=1), axis=1),
-        #     np.mean(np.stack((angle[0, 1], angle[1, 0]), axis=1), axis=1)))  # shape=(2, n)
-        # angle_mae = (mean_errors_angle[indices[:, 0], indices[:, 1]]).mean()
+            if self.num_objects == 1:
+                xy_mae = np.take(xy, indices).mean()
+                angle_mae = np.take(angle, indices).mean()
+            else:
+                xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
+                angle_mae = (angle[indices[:, 0], indices[:, 1]]).mean()
 
-        results = pd.DataFrame.from_items([('xy MAE', [xy_mae]), ('angle MAE', angle_mae)])
-        print(results.to_string(index=False))
-        results.to_csv(join(params['experiment_dir'], 'results.csv'))
-        return results
+            # # compute angle errors
+            # angle = {}
+            # for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
+            #     angle[(i, j)] = angle_absolute_error(
+            #         y_test.values[:, NAME2COL[i]['angle_deg']],
+            #         np.degrees(np.arctan((pred[:, NAME2COL[j]['dy']] / pred[:, NAME2COL[j]['dx']]))),
+            #         np)
+            # mean_errors_angle = np.stack((
+            #     np.mean(np.stack((angle[0, 0], angle[1, 1]), axis=1), axis=1),
+            #     np.mean(np.stack((angle[0, 1], angle[1, 0]), axis=1), axis=1)))  # shape=(2, n)
+            # angle_mae = (mean_errors_angle[indices[:, 0], indices[:, 1]]).mean()
+
+            results = pd.DataFrame.from_items([('xy MAE', [xy_mae]), ('angle MAE', angle_mae)])
+            print(results.to_string(index=False))
+            results.to_csv(join(params['experiment_dir'], 'results.csv'))
+            return results
 
     def evaluate_model(self, data_dir, model_dir, n_objects=2):
         self.num_objects = n_objects
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
         X_test = hf['test']
 
-        y_test_df = pd.read_csv(join(data_dir, 'test.csv'))
-        # convert to counter-clockwise
-        # for i in range(self.num_objects):
-        #     y_test_df.loc[:, '%d_angle_deg' % i] *= -1
-        y_test = y_test_df[self.columns()]
+        gt_filename = join(data_dir, 'test.csv')
+        if os.path.exists(gt_filename):
+            y_test_df = pd.read_csv(gt_filename)
+            # convert to counter-clockwise
+            # for i in range(self.num_objects):
+            #     y_test_df.loc[:, '%d_angle_deg' % i] *= -1
+            y_test = y_test_df[self.columns()]
+        else:
+            warnings.warn('Ground truth file test.csv not found. Generating predictions without evaluation.')
+            y_test = None
 
         # size = 200
         # x, y = np.mgrid[0:size, 0:size]
@@ -356,9 +363,7 @@ class TrainInteractions:
 
         if not os.path.exists(base_experiment_dir):
             os.mkdir(base_experiment_dir)
-
-        with file(join(base_experiment_dir, 'parameters.txt'), 'w') as fw:
-            fw.writelines('\n'.join(sys.argv))
+        self._write_argv(base_experiment_dir)
 
         if os.path.exists(join(model_dir, 'model.yaml')):
             with open(join(model_dir, 'model.yaml'), 'r') as fr:
@@ -371,10 +376,11 @@ class TrainInteractions:
             warnings.warn('Stored model not found, initializing model using model().')
         m.load_weights(join(model_dir, 'weights.h5'))
 
-        parameters = {}
-        parameters['experiment_dir'] = base_experiment_dir
-        parameters['tensorboard_dir'] = base_tensor_board_dir
-        self.evaluate(m, test_generator, y_test, parameters)
+        parameters = {'experiment_dir': base_experiment_dir,
+                      'tensorboard_dir': base_tensor_board_dir,
+                      'n_test': len(X_test)
+                      }
+        self.evaluate(m, test_generator, parameters, y_test)
         hf.close()
 
     def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, n_objects=2):
@@ -424,8 +430,9 @@ class TrainInteractions:
         print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
         parameters = {'epochs': n_epochs,
-                      'steps_per_epoch': int(len(X_train) / BATCH_SIZE)
-                      }
+                      'steps_per_epoch': int(len(X_train) / BATCH_SIZE),
+                      'n_test': len(X_test)
+        }
         if isinstance(loss_alpha, str) and loss_alpha == 'batch':
             parameters['loss_alpha'] = np.linspace(0, 1, 15)
         else:
@@ -472,8 +479,7 @@ class TrainInteractions:
         if not os.path.exists(base_experiment_dir):
             os.mkdir(base_experiment_dir)
 
-        with file(join(base_experiment_dir, 'parameters.txt'), 'w') as fw:
-            fw.writelines('\n'.join(sys.argv))
+        self._write_argv(base_experiment_dir)
 
         results = pd.DataFrame()
 
@@ -491,7 +497,7 @@ class TrainInteractions:
                 m = self.train(m, train_generator, parameters)
                 with open(join(experiment_dir, 'model.yaml'), 'w') as fw:
                     fw.write(m.to_yaml())
-                results_ = self.evaluate(m, test_generator, y_test, parameters)
+                results_ = self.evaluate(m, test_generator, parameters, y_test)
                 results_['loss_alpha'] = alpha
                 results = results.append(results_, ignore_index=True)
 
@@ -503,9 +509,13 @@ class TrainInteractions:
             parameters['tensorboard_dir'] = base_tensor_board_dir
             m = self.train(m, train_generator, parameters)
             # m.load_weights(join(experiment_dir, 'weights.h5'))
-            results = self.evaluate(m, test_generator, y_test, parameters)
+            results = self.evaluate(m, test_generator, parameters, y_test)
 
         hf.close()
+
+    def _write_argv(self, out_dir):
+        with file(join(out_dir, 'parameters.txt'), 'w') as fw:
+            fw.writelines('\n'.join(sys.argv))
 
 
 if __name__ == '__main__':
