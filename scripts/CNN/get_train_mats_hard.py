@@ -26,6 +26,8 @@ if __name__ == '__main__':
     parser.add_argument('--test_ratio', type=float, default=0.1,
                         help='number of negative examples')
 
+    parser.add_argument('--consecutive', type=bool, default=False, help='data will be generated from consecutive subsample of whole dataset')
+
     args = parser.parse_args()
 
     images_f = []
@@ -44,9 +46,12 @@ if __name__ == '__main__':
             if pattern.match(fname):
                 images_f[i].append(fname)
 
+        images_f[i] = sorted(images_f[i], key=lambda x: int(x[:-4]))
+
     for k in tqdm.tqdm(range(args.num_examples)):
         for i in range(args.num_animals):
-            ai, aj = random.sample(xrange(0, len(images_f[i])), 2)
+            limit = args.num_examples if args.consecutive else sys.maxint
+            ai, aj = random.sample(xrange(0, min(limit, len(images_f[i]))), 2)
 
             im1 = misc.imread(args.datadir+'/'+str(i)+'/'+images_f[i][ai])
             im2 = misc.imread(args.datadir+'/'+str(i)+'/'+images_f[i][aj])
@@ -65,7 +70,7 @@ if __name__ == '__main__':
 
             neg_ids = list(ids_set - set([i]))
             neg_id = random.choice(neg_ids)
-            neg_f = random.choice(images_f[neg_id])
+            neg_f = random.choice(images_f[neg_id][:limit])
 
             im_negative = misc.imread(args.datadir+'/'+str(neg_id)+'/'+neg_f)
 

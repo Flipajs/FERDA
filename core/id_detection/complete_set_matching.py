@@ -864,7 +864,6 @@ class CompleteSetMatching:
             plt.suptitle(str(i))
             plt.show()
 
-
         kmeans.cluster_centers_
 
     def get_track_prototypes(self, tracklet, n=5, debug=False):
@@ -976,17 +975,29 @@ def test_descriptors_distance(descriptors, n=2000):
 
     NUM_ANIMALS = 6
 
+    dist_m = np.zeros((NUM_ANIMALS, NUM_ANIMALS))
+
     for id_ in range(NUM_ANIMALS):
         rids1 = _get_ids_from_folder(WD+str(id_), n)
         rids2 = _get_ids_from_folder(WD+str(id_), n)
 
-        pos_distances.extend(_get_distances(rids1, rids2, descriptors))
+        ds = _get_distances(rids1, rids2, descriptors)
+        dist_m[id_, id_] = np.mean(ds)
+        pos_distances.extend(ds)
         for opponent_id in range(NUM_ANIMALS):
             if id_ == opponent_id:
                 continue
 
             rids3 = _get_ids_from_folder(WD+str(opponent_id), n/NUM_ANIMALS)
-            neg_distances.extend(_get_distances(rids1, rids3, descriptors))
+            ds = _get_distances(rids1, rids3, descriptors)
+            neg_distances.extend(ds)
+
+            dist_m[id_, opponent_id] = np.mean(ds)
+
+    plt.figure()
+    np.set_printoptions(precision=2)
+    print dist_m
+    plt.imshow(dist_m, interpolation='nearest')
 
     bins = 200
     print len(pos_distances)
@@ -1041,74 +1052,13 @@ if __name__ == '__main__':
         descriptors = pickle.load(f)
 
 
-    desc_3599 = []
-    for r_id in p.chm[3599].rid_gen(p.gm):
-        try:
-            desc_3599.append(descriptors[r_id])
-        except:
-            print r_id
-
-    desc_2670 = []
-    for r_id in p.chm[2670].rid_gen(p.gm):
-        try:
-            desc_2670.append(descriptors[r_id])
-        except:
-            print r_id
-
-    desc_1710 = []
-    for r_id in p.chm[1710].rid_gen(p.gm):
-        try:
-            desc_1710.append(descriptors[r_id])
-        except:
-            print r_id
-
-    desc_1951 = []
-    for r_id in p.chm[1951].rid_gen(p.gm):
-        try:
-            desc_1951.append(descriptors[r_id])
-        except:
-            print r_id
-
-    desc_4035 = []
-    for r_id in p.chm[4035].rid_gen(p.gm):
-        try:
-            desc_4035.append(descriptors[r_id])
-        except:
-            print r_id
-
-    desc_1727 = []
-    for r_id in p.chm[1727].rid_gen(p.gm):
-        try:
-            desc_1727.append(descriptors[r_id])
-        except:
-            print r_id
-
-
     from numpy.linalg import norm
 
-    # test_descriptors_distance(descriptors)
+    test_descriptors_distance(descriptors)
     # np.random.seed(13)
     np.random.seed(42)
 
     csm = CompleteSetMatching(p, lp._get_tracklet_proba, lp.get_tracklet_p1s, descriptors)
 
-    # protos = []
-    # for i in range(10):
-    #     protos.append(csm.get_track_prototypes(p.chm[3599], n=2))
-    #
-    # for i in range(10):
-    #     print csm.prototypes_match_probability(protos[0], protos[i])
-    #
-    # csm.prototypes_match_probability(protos[0], protos[1])
-    # proto3599 = csm.get_track_prototypes(p.chm[3599])
-    # proto2670 = csm.get_track_prototypes(p.chm[2670])
-    # proto1710 = csm.get_track_prototypes(p.chm[1710])
-    # proto1951 = csm.get_track_prototypes(p.chm[1951])
-    #
-    # print norm(np.mean(desc_3599) - np.mean(desc_2670)), csm.prototypes_match_probability(proto3599, proto2670)
-    # print norm(np.mean(desc_3599) - np.mean(desc_1710)), csm.prototypes_match_probability(proto3599, proto1710)
-    # print norm(np.mean(desc_1951) - np.mean(desc_2670)), csm.prototypes_match_probability(proto1951, proto2670)
-    # print norm(np.mean(desc_1951) - np.mean(desc_1710)), csm.prototypes_match_probability(proto1951, proto1710)
-
-    # csm.desc_clustering_analysis()
+    csm.desc_clustering_analysis()
     csm.process()
