@@ -74,7 +74,7 @@ class Solver:
         confirm_later = []
         from tqdm import tqdm
 
-        for v in tqdm(self.project.gm.g.vertices(), desc='solver.one2one'):
+        for v in tqdm(self.project.gm.g.vertices(), desc='solver.one2one', total=self.project.gm.g.num_vertices()):
             if self.project.gm.one2one_check(v):
                 e = self.project.gm.out_e(v)
 
