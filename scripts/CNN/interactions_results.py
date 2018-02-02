@@ -18,21 +18,33 @@ import skimage.transform
 from core.region.transformableregion import TransformableRegion
 import itertools
 import warnings
+import yaml
 
 
-def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None):
+def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, title=None):
     if isinstance(img, str):
         img = imread(img)
-    fig = plt.figure()
-    plt.imshow(img)
-    plt.axis('off')
+    dpi = 80
+    height, width, nbands = img.shape
+    figsize = width / float(dpi), height / float(dpi)
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.axis('off')
+    ax.imshow(img, interpolation='nearest')
+
     plot_interaction(num_objects, pred, gt)
-    fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0)
+    if title is not None:
+        plt.title(title)
+    ax.set(xlim=[0, width], ylim=[height, 0], aspect=1)
+    fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0, dpi=dpi)
     plt.close(fig)
     plt.clf()
 
 
 def plot_interaction(num_objects, pred=None, gt=None):
+    """
+    Angles are in degrees counter-clockwise.
+    """
     ax = plt.gca()
     colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
     for i, c in zip(range(num_objects), colors):
