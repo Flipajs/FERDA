@@ -397,16 +397,17 @@ class TrainInteractions:
             y_test_df.loc[:, '%d_angle_deg' % i] *= -1
 
         # input image and gt rotation
-        tregion = TransformableRegion(X_test[0])
-        tregion.rotate(90, np.array(tregion.img.shape[:2]) / 2)
-        for i in range(ti.num_objects):
-            y_train_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
-                y_train_df[['%d_x' % i, '%d_y' % i]].values.T).T
-            y_train_df['%d_angle_deg' % i] = tregion.get_transformed_angle(y_train_df['%d_angle_deg' % i])
+        if rotate:
+            tregion = TransformableRegion(X_test[0])
+            tregion.rotate(90, np.array(tregion.img.shape[:2]) / 2)
+            for i in range(ti.num_objects):
+                y_train_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
+                    y_train_df[['%d_x' % i, '%d_y' % i]].values.T).T
+                y_train_df['%d_angle_deg' % i] = tregion.get_transformed_angle(y_train_df['%d_angle_deg' % i])
 
-            y_test_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
-                y_test_df[['%d_x' % i, '%d_y' % i]].values.T).T
-            y_test_df['%d_angle_deg' % i] = tregion.get_transformed_angle(y_test_df['%d_angle_deg' % i])
+                y_test_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
+                    y_test_df[['%d_x' % i, '%d_y' % i]].values.T).T
+                y_test_df['%d_angle_deg' % i] = tregion.get_transformed_angle(y_test_df['%d_angle_deg' % i])
 
         # dx and dy columns
         # for i in range(self.num_objects):
@@ -467,9 +468,13 @@ class TrainInteractions:
         def image_dim(img):
             return img * mask
 
-        train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=rotate90)
+        if rotate:
+            preprocessing = rotate90
+        else:
+            preprocessing = None
+        train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
         train_generator = train_datagen.flow(X_train, y_train)
-        test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=rotate90)
+        test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
         test_generator = test_datagen.flow(X_test, shuffle=False)
 
         base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
