@@ -30,22 +30,25 @@ import fire
 from core.region.transformableregion import TransformableRegion
 from keras.models import model_from_yaml, model_from_json
 import warnings
+import yaml
 
 
 ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/'
 ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
 BATCH_SIZE = 32
-COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg']  # , 'dx', 'dy']
+COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg'] # , 'dx', 'dy']
 
 
 class TrainInteractions:
     def __init__(self, num_objects=None):
         self.num_objects = num_objects
 
-    def columns(self):
+    def columns(self, column_names=None):
+        if column_names is None:
+            column_names = COLUMNS
         names = []
         for i in range(self.num_objects):
-            names.extend(['%d_%s' % (i, c) for c in COLUMNS])
+            names.extend(['%d_%s' % (i, c) for c in column_names])
             # names.extend(['ant%d_%s' % (i + 1, c) for c in COLUMNS])
         return names
 
@@ -300,8 +303,14 @@ class TrainInteractions:
         # pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
         # pred[:, [4, 9]] = angle_scaler.inverse_transform(pred[:, [4, 9]])
 
-        with h5py.File(join(params['experiment_dir'], 'predictions.h5'), 'w') as hf:
-            hf.create_dataset("data", data=pred)
+        # with h5py.File(join(params['experiment_dir'], 'predictions.h5'), 'w') as hf:
+        #     hf.create_dataset("data", data=pred)
+        pred_df = pd.DataFrame(pred, columns=self.columns())
+        pred_df.to_csv(join(params['experiment_dir'], 'predictions.csv'), index=False)
+        with open(join(params['experiment_dir'], 'predictions.yaml'), 'w') as fw:
+            yaml.dump({
+                'num_objects': self.num_objects,
+            }, fw)
 
         if y_test is not None:
             # xy, _, indices = match_pred_to_gt_dxdy(pred, y_test.values, np)
@@ -340,8 +349,8 @@ class TrainInteractions:
         if os.path.exists(gt_filename):
             y_test_df = pd.read_csv(gt_filename)
             # convert to counter-clockwise
-            # for i in range(self.num_objects):
-            #     y_test_df.loc[:, '%d_angle_deg' % i] *= -1
+            for i in range(self.num_objects):
+                y_test_df.loc[:, '%d_angle_deg' % i] *= -1
             y_test = y_test_df[self.columns()]
         else:
             warnings.warn('Ground truth file test.csv not found. Generating predictions without evaluation.')
@@ -383,7 +392,7 @@ class TrainInteractions:
         self.evaluate(m, test_generator, parameters, y_test)
         hf.close()
 
-    def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, n_objects=2):
+    def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, n_objects=2, rotate=False):
         self.num_objects = n_objects
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
         X_train = hf['train']
@@ -513,7 +522,8 @@ class TrainInteractions:
             parameters['experiment_dir'] = base_experiment_dir
             parameters['tensorboard_dir'] = base_tensor_board_dir
             m = self.train(m, train_generator, parameters)
-            # m.load_weights(join(experiment_dir, 'weights.h5'))
+            with open(join(parameters['experiment_dir'], 'model.yaml'), 'w') as fw:
+                fw.write(m.to_yaml())
             results = self.evaluate(m, test_generator, parameters, y_test)
 
         hf.close()
@@ -527,5 +537,5 @@ if __name__ == '__main__':
     ti = TrainInteractions()
     fire.Fire({
       'train': ti.train_and_evaluate,
-      'evaluate': ti.evaluate_model,
+      'predict': ti.evaluate_model,
     })
