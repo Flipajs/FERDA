@@ -37,116 +37,7 @@ class CompleteSetMatching:
         # cur = Cursor(ax, horizOn=False)
         # plt.hold(True)
 
-        tracks = {}
-        tracklets_2_tracks = {}
-        track_CSs = [[]]
-        prototypes = {}
-
-        for i, t in enumerate(CSs[0]):
-            tracks[i] = [t]
-            tracklets_2_tracks[t] = i
-            prototypes[i] = self.get_track_prototypes(t)
-            t.P = set([id_])
-            track_CSs[-1].append(id_)
-            id_ += 1
-
-        qualities = []
-        for i in range(len(CSs)-1):
-            print "CS {}, CS {}".format(i, i+1)
-
-            # first create new virtual tracks and their prototypes for CSs[i+1] which are not already in tracks
-            for t in CSs[i+1]:
-                if t in tracklets_2_tracks:
-                    continue
-
-                new_track_id = max(tracks.keys()) + 1
-                tracks[new_track_id] = [t]
-                tracklets_2_tracks[t] = new_track_id
-                prototypes[new_track_id] = self.get_track_prototypes(t)
-
-            # perm, quality = self.cs2cs_matching_descriptors_and_spatial(CSs[i], CSs[i+1])
-            perm, quality = self.cs2cs_matching_prototypes_and_spatial(CSs[i], CSs[i+1], prototypes, tracklets_2_tracks)
-
-            cs1_max_frame = 0
-            cs2_min_frame = np.inf
-            dividing_frame = 0
-            for (t1, t2) in perm:
-                if t1 == t2:
-                    break
-
-                cs1_max_frame = max(cs1_max_frame, t1.start_frame(self.p.gm))
-                cs2_min_frame = min(cs2_min_frame, t2.end_frame(self.p.gm))
-
-                dividing_frame = max(dividing_frame, t2.start_frame(self.p.gm))
-
-            print "cs1 max frame: {}, cs2 min frame: {}".format(cs1_max_frame, cs2_min_frame)
-
-            # TODO: threshold 1-
-
-            not_same = 0
-            c = [0. + 1-quality[1], quality[1],0., 0.2]
-            # propagate IDS if quality is good enough:
-            if quality[1] > self.QUALITY_THRESHOLD:
-                # TODO: transitivity? when t1 -> t2 assignment uncertain, look on ID probs for t2->t3 and validate wtih t1->t3
-
-                for (t1, t2) in perm:
-                    print "[{} |{}| (te: {})] -> {} |{}| (ts: {})".format(t1.id(), len(t1), t1.end_frame(self.p.gm),
-                                                                          t2.id(), len(t2), t2.start_frame(self.p.gm))
-
-                    # if merge...
-                    if t1 != t2:
-                        track1 = list(t1.P)[0]
-                        track2 = tracklets_2_tracks[t2]
-                        self.update_prototypes(prototypes[track1], prototypes[track2])
-                        del tracks[track2]
-                        del prototypes[track2]
-
-                        tracklets_2_tracks[t2] = track1
-                        tracks[track1].append(t2)
-
-                        t2.P = set(t1.P)
-                        t2.N = set(t2.N)
-            else:
-                color_print('QUALITY BELOW', color='red')
-                # c = [1., 0.,0.,0.7]
-
-                track_CSs.append([])
-                for pair in perm:
-                    t = pair[1]
-                    if len(t.P) == 0:
-                        t.P = set([id_])
-                        id_ += 1
-
-                    track_CSs[-1].append(list(t.P)[0])
-
-                for pair in perm:
-                    if pair[0] != pair[1]:
-                        not_same += 1
-
-            plt.plot([dividing_frame, dividing_frame], [-5, -5 + 4.7*quality[1]], c=c)
-            plt.plot([dividing_frame, dividing_frame], [0, id_-1 + not_same], c=c)
-
-            print quality
-            print
-
-            qualities.append(quality)
-
-        print
-
-        tracks_unassigned_len = 0
-        tracks_unassigned_num = 0
-        for t in self.p.chm.chunk_gen():
-            if t.is_single() and t not in tracklets_2_tracks:
-                tracks_unassigned_len += len(t)
-                tracks_unassigned_num += 1
-
-        num_prototypes = 0
-        for prots in prototypes.itervalues():
-            num_prototypes += len(prots)
-
-        print("seqeuntial CS matching done...")
-        print("#tracks: {}, #tracklets2tracks: {}, unassigned #{} len: {}, #prototypes: {}".format(
-            len(tracks), len(tracklets_2_tracks), tracks_unassigned_num, tracks_unassigned_len, num_prototypes))
+        id_, prototypes, qualities, track_CSs, tracklets_2_tracks, tracks = self.sequential_matching(CSs, id_)
 
         print("track CSs")
         for CS in track_CSs:
@@ -350,6 +241,114 @@ class CompleteSetMatching:
                 print t1.id(), " -> ", t2.id()
 
             print quality
+
+    def sequential_matching(self, CSs, id_):
+        tracks = {}
+        tracklets_2_tracks = {}
+        track_CSs = [[]]
+        prototypes = {}
+        for i, t in enumerate(CSs[0]):
+            tracks[i] = [t]
+            tracklets_2_tracks[t] = i
+            prototypes[i] = self.get_track_prototypes(t)
+            t.P = set([id_])
+            track_CSs[-1].append(id_)
+            id_ += 1
+        qualities = []
+        for i in range(len(CSs) - 1):
+            print "CS {}, CS {}".format(i, i + 1)
+
+            # first create new virtual tracks and their prototypes for CSs[i+1] which are not already in tracks
+            for t in CSs[i + 1]:
+                if t in tracklets_2_tracks:
+                    continue
+
+                new_track_id = max(tracks.keys()) + 1
+                tracks[new_track_id] = [t]
+                tracklets_2_tracks[t] = new_track_id
+                prototypes[new_track_id] = self.get_track_prototypes(t)
+
+            # perm, quality = self.cs2cs_matching_descriptors_and_spatial(CSs[i], CSs[i+1])
+            perm, quality = self.cs2cs_matching_prototypes_and_spatial(CSs[i], CSs[i + 1], prototypes,
+                                                                       tracklets_2_tracks)
+
+            cs1_max_frame = 0
+            cs2_min_frame = np.inf
+            dividing_frame = 0
+            for (t1, t2) in perm:
+                if t1 == t2:
+                    break
+
+                cs1_max_frame = max(cs1_max_frame, t1.start_frame(self.p.gm))
+                cs2_min_frame = min(cs2_min_frame, t2.end_frame(self.p.gm))
+
+                dividing_frame = max(dividing_frame, t2.start_frame(self.p.gm))
+
+            print "cs1 max frame: {}, cs2 min frame: {}".format(cs1_max_frame, cs2_min_frame)
+
+            # TODO: threshold 1-
+
+            not_same = 0
+            c = [0. + 1 - quality[1], quality[1], 0., 0.2]
+            # propagate IDS if quality is good enough:
+            if quality[1] > self.QUALITY_THRESHOLD:
+                # TODO: transitivity? when t1 -> t2 assignment uncertain, look on ID probs for t2->t3 and validate wtih t1->t3
+
+                for (t1, t2) in perm:
+                    print "[{} |{}| (te: {})] -> {} |{}| (ts: {})".format(t1.id(), len(t1), t1.end_frame(self.p.gm),
+                                                                          t2.id(), len(t2), t2.start_frame(self.p.gm))
+
+                    # if merge...
+                    if t1 != t2:
+                        track1 = list(t1.P)[0]
+                        track2 = tracklets_2_tracks[t2]
+                        self.update_prototypes(prototypes[track1], prototypes[track2])
+                        del tracks[track2]
+                        del prototypes[track2]
+
+                        tracklets_2_tracks[t2] = track1
+                        tracks[track1].append(t2)
+
+                        t2.P = set(t1.P)
+                        t2.N = set(t2.N)
+            else:
+                color_print('QUALITY BELOW', color='red')
+                # c = [1., 0.,0.,0.7]
+
+                track_CSs.append([])
+                for pair in perm:
+                    t = pair[1]
+                    if len(t.P) == 0:
+                        t.P = set([id_])
+                        id_ += 1
+
+                    track_CSs[-1].append(list(t.P)[0])
+
+                for pair in perm:
+                    if pair[0] != pair[1]:
+                        not_same += 1
+
+            plt.plot([dividing_frame, dividing_frame], [-5, -5 + 4.7 * quality[1]], c=c)
+            plt.plot([dividing_frame, dividing_frame], [0, id_ - 1 + not_same], c=c)
+
+            print quality
+            print
+
+            qualities.append(quality)
+        print
+        tracks_unassigned_len = 0
+        tracks_unassigned_num = 0
+        for t in self.p.chm.chunk_gen():
+            if t.is_single() and t not in tracklets_2_tracks:
+                tracks_unassigned_len += len(t)
+                tracks_unassigned_num += 1
+        num_prototypes = 0
+        for prots in prototypes.itervalues():
+            num_prototypes += len(prots)
+        print("seqeuntial CS matching done...")
+        print("#tracks: {}, #tracklets2tracks: {}, unassigned #{} len: {}, #prototypes: {}".format(
+            len(tracks), len(tracklets_2_tracks), tracks_unassigned_num, tracks_unassigned_len, num_prototypes))
+        return id_, prototypes, qualities, track_CSs, tracklets_2_tracks, tracks
 
     def add_to_N_set(self, track_id, tracklet):
         for t in self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)):
@@ -1054,11 +1053,11 @@ if __name__ == '__main__':
 
     from numpy.linalg import norm
 
-    test_descriptors_distance(descriptors)
+    # test_descriptors_distance(descriptors)
     # np.random.seed(13)
     np.random.seed(42)
 
     csm = CompleteSetMatching(p, lp._get_tracklet_proba, lp.get_tracklet_p1s, descriptors)
 
-    csm.desc_clustering_analysis()
+    # csm.desc_clustering_analysis()
     csm.process()
