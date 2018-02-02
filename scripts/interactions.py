@@ -27,7 +27,6 @@ import tqdm
 import copy
 # from joblib import Parallel, delayed
 import csv
-from matplotlib.patches import Ellipse
 import waitforbuttonpress
 import h5py
 import warnings
@@ -36,6 +35,7 @@ from scripts.CNN.interactions_results import save_prediction_img
 from os.path import join
 import pandas as pd
 import errno
+import hashlib
 
 IMAGE_SIZE_PX = 200
 
@@ -121,6 +121,9 @@ class Interactions(object):
         self._multi = None
         self._project = None
         self._bg = None
+        self.collect_regions_params = {'single_min_frames': 20,
+                                       'single_min_average_speed_px': 1.5
+                                       }
         # self.__i = 0  # used for visualizations commented out
 
     def _load_project(self, project_dir=None):
@@ -155,9 +158,15 @@ class Interactions(object):
 
         self._video = get_auto_video_manager(self._project)
 
-    def _init_regions(self):
-        print('regions start')
-        regions_filename = './scripts/out/regions_long_tracklets.pkl'
+    def _get_hash(self, *args):
+        m = hashlib.md5()
+        for arg in args:
+            m.update(str(arg))
+        return m.hexdigest()
+
+    def _init_regions(self, cache_dir='../data/cache'):
+        hash = self._get_hash(self._project.video_paths, self.collect_regions_params)
+        regions_filename = join(cache_dir, hash + '.pkl')
         if os.path.exists(regions_filename):
             print('regions loading...')
             with open(regions_filename, 'rb') as fr:
@@ -166,17 +175,17 @@ class Interactions(object):
             print('regions loaded')
         else:
             self._single, self._multi = self._collect_regions()
-
             with open(regions_filename, 'wb') as fw:
                 pickle.dump(self._single, fw)
                 pickle.dump(self._multi, fw)
 
     def _collect_regions(self):
+        p = self.collect_regions_params
         from collections import defaultdict
         single = defaultdict(list)
         multi = defaultdict(list)
         # long_moving_tracklets = []
-        for tracklet in self._project.chm.chunk_gen():
+        for tracklet in tqdm.tqdm(self._project.chm.chunk_gen(), desc='collecting regions', total=len(self._project.chm)):
             if tracklet.is_single() or tracklet.is_multi():
                 region_tracklet = RegionChunk(tracklet, self._project.gm, self._project.rm)
                 if tracklet.is_single():
@@ -185,7 +194,8 @@ class Interactions(object):
                                           range(region_tracklet.start_frame(),
                                                 region_tracklet.end_frame())])  # shape=(n,2)
 
-                    if len(tracklet) > 20 and np.linalg.norm(np.diff(centroids, axis=0), axis=1).mean() > 1.5:
+                    if len(tracklet) > p['single_min_frames'] and \
+                            np.linalg.norm(np.diff(centroids, axis=0), axis=1).mean() > p['single_min_average_speed_px']:
                         # long_moving_tracklets.append(tracklet)
 
                         regions = list(region_tracklet)
@@ -767,7 +777,7 @@ class Interactions(object):
         csv = pd.read_csv(csv_file)
         for i in range(n_objects):
             csv.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
-        for i, row in tqdm.tqdm(csv.iterrows()):
+        for i, row in tqdm.tqdm(csv.iterrows(), total=len(csv)):
             if image_hdf5 is not None:
                 img = images[i]
             else:
