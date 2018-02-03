@@ -22,8 +22,8 @@ project = Project()
 S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
-if is_flipajs_pc() and False:
-# if is_flipajs_pc():
+# if is_flipajs_pc() and False:
+if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
@@ -31,7 +31,8 @@ if is_flipajs_pc() and False:
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_new'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_assembly'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_assembly'
+    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
     # wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
     # wd = '/Volumes/Seagate Expansion Drive/HH1_PRE'
     # wd = '/Volumes/Seagate Expansion Drive/HH1_POST'
@@ -45,6 +46,10 @@ if is_flipajs_pc() and False:
     # wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
     project.load(wd)
+
+
+    for t in project.chm.chunk_gen():
+        print "Cardinality: {}, t_id: {}".format(t.get_cardinality(project.gm), t.id())
 
     # from tqdm import tqdm
     # thetas = []
