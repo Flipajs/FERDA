@@ -914,17 +914,26 @@ class CompleteSetMatching:
 
         prototypes = []
         from track_prototype import TrackPrototype
+
+        # TODO: set this properly!
+        std_eps = 1e-6
         for i in range(n):
             ids = y == i
             weight = np.sum(ids)
             if weight:
                 desc = np.mean(X[ids, :], axis=0)
-                from sklearn.covariance import LedoitWolf
-                lw = LedoitWolf()
-                lw.fit(X[ids, :])
-                cov = lw.covariance_
-                cov_ = np.cov(X[ids, :].T)
-                prototypes.append(TrackPrototype(desc, cov, weight))
+                # from sklearn.covariance import LedoitWolf
+                # lw = LedoitWolf()
+                # lw.fit(X[ids, :])
+                # cov = lw.covariance_
+                # cov_ = np.cov(X[ids, :].T)
+
+                # this is for case when weight = 1, thus std = 0
+                import scipy
+                from scipy.spatial.distance import cdist, pdist, squareform
+                d_std = np.mean(cdist([desc], X))
+                # std = max(np.mean(np.std(X[ids, :], axis=0)), std_eps)
+                prototypes.append(TrackPrototype(desc, d_std, weight))
 
         if debug:
             print np.histogram(y, bins=n)
@@ -1040,13 +1049,24 @@ def test_descriptors_distance(descriptors, n=2000):
 def prob(prot1, prot2):
     print ""
     print "%%%%%%%%%%%"
-    from scipy.stats import multivariate_normal
+    from scipy.stats import multivariate_normal, norm
+    W1 = float(sum([p1.weight for p1 in prot1]))
+    W2 = float(sum([p2.weight for p2 in prot2]))
+    ss = 0
     for p1 in prot1:
+        s = 0
         for p2 in prot2:
-            n = multivariate_normal(p1.descriptor, p1.cov, allow_singular=True)
-            p = n.pdf(p2.descriptor) / n.pdf(p1.descriptor)
+            n = norm(0, p1.std)
+            # n = multivariate_normal(p1.descriptor, p1.cov, allow_singular=True)
+            # p = (p1.weight/W1) * n.pdf(np.linalg.norm(p2.descriptor-p1.descriptor)) / n.pdf(0)
+            p = (p1.weight/W1) * 2*n.cdf(-np.linalg.norm(p2.descriptor-p1.descriptor))
             print p
 
+            s += p
+
+        ss += s
+        print "SUM: ", s
+    print "SSUM: ", ss
 
 if __name__ == '__main__':
     from core.project.project import Project

@@ -2,10 +2,10 @@ import numpy as np
 from numpy.linalg import norm
 
 class TrackPrototype:
-    def __init__(self, descriptor, cov, weight=1):
+    def __init__(self, descriptor, std, weight=1):
         self.descriptor = descriptor
         self.weight = weight
-        self.cov = cov
+        self.std = std
 
     def update(self, new_prototype):
         alpha = self.weight / float(self.weight + new_prototype.weight)
