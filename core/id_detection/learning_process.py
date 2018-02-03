@@ -1310,7 +1310,7 @@ class LearningProcess:
             # # for 0.6 and 0.4 it is 0.6 but for 0.6 and 0.01 it is ~ 0.98
             # div = p1 + p2
             #
-            # # if prob is too low...
+            # # if prob_prototype_represantion_being_same_id_set is too low...
             # if div < 0.3 and tracklet.length() < 10:
             #     div = 1.0
             #

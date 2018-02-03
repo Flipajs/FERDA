@@ -809,7 +809,8 @@ class CompleteSetMatching:
                     track1 = tracklets2tracks[t1]
                     track2 = tracklets2tracks[t2]
 
-                prob = self.prototypes_match_probability(prototypes[track1], prototypes[track2])
+                prob = prob_prototype_represantion_being_same_id_set(prototypes[track1], prototypes[track2])
+                # prob = self.prototypes_match_probability(prototypes[track1], prototypes[track2])
 
                 P[i, j] = prob
                 # P2[i, j] = p
@@ -1046,27 +1047,36 @@ def test_descriptors_distance(descriptors, n=2000):
 
 
 
-def prob(prot1, prot2):
-    print ""
-    print "%%%%%%%%%%%"
-    from scipy.stats import multivariate_normal, norm
+def prob_prototype_represantion_being_same_id_set(prot1, prot2):
+    p1 = prototypes_distribution_probability(prot1, prot2)
+    p2 = prototypes_distribution_probability(prot2, prot1)
+
+    p = (p1 + p2) / 2.
+    return p
+
+
+def prototypes_distribution_probability(prot1, prot2):
+    from scipy.stats import norm
+
     W1 = float(sum([p1.weight for p1 in prot1]))
-    W2 = float(sum([p2.weight for p2 in prot2]))
-    ss = 0
+    # with sum over mixtures, there is problem, that sum might be > 1...
+    # with matching - there should be problem when # prototypes differs len(prot1) != len(prot2)
+    p_to_prot2 = 0
     for p1 in prot1:
-        s = 0
+        best_p = 0
         for p2 in prot2:
             n = norm(0, p1.std)
             # n = multivariate_normal(p1.descriptor, p1.cov, allow_singular=True)
             # p = (p1.weight/W1) * n.pdf(np.linalg.norm(p2.descriptor-p1.descriptor)) / n.pdf(0)
-            p = (p1.weight/W1) * 2*n.cdf(-np.linalg.norm(p2.descriptor-p1.descriptor))
-            print p
+            p = (p1.weight / W1) * 2 * n.cdf(-np.linalg.norm(p2.descriptor - p1.descriptor))
 
-            s += p
+            if p > best_p:
+                best_p = p
 
-        ss += s
-        print "SUM: ", s
-    print "SSUM: ", ss
+        p_to_prot2 += best_p
+
+    return p_to_prot2
+
 
 if __name__ == '__main__':
     from core.project.project import Project
@@ -1090,19 +1100,19 @@ if __name__ == '__main__':
     np.random.seed(42)
 
     csm = CompleteSetMatching(p, lp._get_tracklet_proba, lp.get_tracklet_p1s, descriptors)
-    r1 = csm.get_track_prototypes(p.chm[4188])
-    r2 = csm.get_track_prototypes(p.chm[2475])
-    r3 = csm.get_track_prototypes(p.chm[3856])
-    b1 = csm.get_track_prototypes(p.chm[2715])
-    b2 = csm.get_track_prototypes(p.chm[2137])
-
-    prob(r1, r1)
-    prob(r1, r2)
-    prob(r1, r3)
-    prob(r2, r3)
-    prob(r1, b1)
-    prob(r1, b2)
-    prob(b1, b2)
+    # r1 = csm.get_track_prototypes(p.chm[4188])
+    # r2 = csm.get_track_prototypes(p.chm[2475])
+    # r3 = csm.get_track_prototypes(p.chm[3856])
+    # b1 = csm.get_track_prototypes(p.chm[2715])
+    # b2 = csm.get_track_prototypes(p.chm[2137])
+    #
+    # prob_prototype_represantion_being_same_id_set(r1, r1)
+    # prob_prototype_represantion_being_same_id_set(r1, r2)
+    # prob_prototype_represantion_being_same_id_set(r1, r3)
+    # prob_prototype_represantion_being_same_id_set(r2, r3)
+    # prob_prototype_represantion_being_same_id_set(r1, b1)
+    # prob_prototype_represantion_being_same_id_set(r1, b2)
+    # prob_prototype_represantion_being_same_id_set(b1, b2)
 
     # csm.desc_clustering_analysis()
     csm.process()
