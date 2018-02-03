@@ -919,7 +919,12 @@ class CompleteSetMatching:
             weight = np.sum(ids)
             if weight:
                 desc = np.mean(X[ids, :], axis=0)
-                prototypes.append(TrackPrototype(desc, weight))
+                from sklearn.covariance import LedoitWolf
+                lw = LedoitWolf()
+                lw.fit(X[ids, :])
+                cov = lw.covariance_
+                cov_ = np.cov(X[ids, :].T)
+                prototypes.append(TrackPrototype(desc, cov, weight))
 
         if debug:
             print np.histogram(y, bins=n)
@@ -1032,7 +1037,15 @@ def test_descriptors_distance(descriptors, n=2000):
 
 
 
-
+def prob(prot1, prot2):
+    print ""
+    print "%%%%%%%%%%%"
+    from scipy.stats import multivariate_normal
+    for p1 in prot1:
+        for p2 in prot2:
+            n = multivariate_normal(p1.descriptor, p1.cov, allow_singular=True)
+            p = n.pdf(p2.descriptor) / n.pdf(p1.descriptor)
+            print p
 
 
 if __name__ == '__main__':
@@ -1050,7 +1063,6 @@ if __name__ == '__main__':
     with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:
         descriptors = pickle.load(f)
 
-
     from numpy.linalg import norm
 
     # test_descriptors_distance(descriptors)
@@ -1058,6 +1070,19 @@ if __name__ == '__main__':
     np.random.seed(42)
 
     csm = CompleteSetMatching(p, lp._get_tracklet_proba, lp.get_tracklet_p1s, descriptors)
+    r1 = csm.get_track_prototypes(p.chm[4188])
+    r2 = csm.get_track_prototypes(p.chm[2475])
+    r3 = csm.get_track_prototypes(p.chm[3856])
+    b1 = csm.get_track_prototypes(p.chm[2715])
+    b2 = csm.get_track_prototypes(p.chm[2137])
+
+    prob(r1, r1)
+    prob(r1, r2)
+    prob(r1, r3)
+    prob(r2, r3)
+    prob(r1, b1)
+    prob(r1, b2)
+    prob(b1, b2)
 
     # csm.desc_clustering_analysis()
     csm.process()
