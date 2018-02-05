@@ -12,6 +12,8 @@ from utils.drawing.collage import create_collage_rows
 from scipy.spatial.distance import cdist
 import cv2
 from PyQt4 import QtGui
+from tqdm import tqdm
+
 
 def get_data(r, scaler=None):
     from utils.drawing.points import draw_points_crop_binary
@@ -24,15 +26,15 @@ def get_data(r, scaler=None):
     else:
         return scaler.transform(np.array([d]))[0]
 
-def clustering(p, compute_data=True, num_random=1000):
+def prepare_region_cardinality_samples(p, compute_data=True, num_random=1000):
     print "___________________________________"
-    print "Preparing data for clustering..."
+    print "Preparing data for prepare_region_cardinality_samples..."
 
     i = 0
 
     if not compute_data:
         try:
-            with open(p.working_directory + '/temp/clustering.pkl') as f:
+            with open(p.working_directory + '/temp/region_cardinality_samples.pkl') as f:
                 up = pickle.Unpickler(f)
                 data = up.load()
                 vertices = up.load()
@@ -48,7 +50,7 @@ def clustering(p, compute_data=True, num_random=1000):
 
         tracklet_ids = p.chm.chunks_.keys()
 
-        for i in range(num_random):
+        for _ in tqdm(range(num_random), leave=False):
             t = p.chm[random.choice(tracklet_ids)]
             b = random.randint(0, len(t)-1)
 
@@ -58,14 +60,10 @@ def clustering(p, compute_data=True, num_random=1000):
             r_data.append(get_data(r))
             vertices.append(int(v))
 
-            i += 1
-            if i % 100 == 0:
-                print_progress(i, num_random)
-
         data = np.array(r_data)
         vertices=np.array(vertices)
 
-        print_progress(num_random, num_random, "preparations for region clustering FINISHED\n")
+        print "preparations for region prepare_region_cardinality_samples FINISHED\n"
 
     min_samples = max(5, int(len(data) * 0.001))
     eps = 0.1
@@ -94,19 +92,19 @@ def clustering(p, compute_data=True, num_random=1000):
     # plotNdto3d(data, labels, core_samples_mask, [0, 2, 4], label_names[[0, 2, 4]])
 
     print "saving results"
-    with open(p.working_directory+'/temp/clustering.pkl', 'wb') as f:
+    with open(p.working_directory+'/temp/region_cardinality_samples.pkl', 'wb') as f:
         pic = pickle.Pickler(f)
         pic.dump(data)
         pic.dump(vertices)
         pic.dump(labels)
         pic.dump(scaler)
 
-    print "clustering part finished"
+    print "prepare_region_cardinality_samples part finished"
     print "_________________________________"
 
 
 def display_cluster_representants(p, N=30):
-    with open(p.working_directory+'/temp/clustering.pkl') as f:
+    with open(p.working_directory+'/temp/region_cardinality_samples.pkl') as f:
         up = pickle.Unpickler(f)
         data = up.load()
         vertices = up.load()
@@ -174,4 +172,4 @@ if __name__ == '__main__':
     p = Project()
     p.load_semistate('/Users/flipajs/Documents/wd/FERDA/zebrafish_playground')
 
-    clustering(p, compute_data=True)
+    prepare_region_cardinality_samples(p, compute_data=True)

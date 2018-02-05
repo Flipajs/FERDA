@@ -6,7 +6,6 @@ from libs.hickle import hickle
 # import hickle
 import matplotlib.pyplot as plt
 import numpy as np
-from PyQt4.QtGui import QColor
 from sklearn import svm, preprocessing
 from sklearn.ensemble import RandomForestClassifier, IsolationForest
 
@@ -15,10 +14,10 @@ from core.graph.region_chunk import RegionChunk
 from core.graph.solver import Solver
 from core.id_detection.features import get_hog_features, get_crop
 from core.project.project import Project
-from core.region.clustering import clustering
+from core.region.clustering import prepare_region_cardinality_samples
 from utils.drawing.collage import create_collage_rows
 from utils.drawing.points import draw_points
-from utils.misc import print_progress
+from tqdm import tqdm
 from utils.video_manager import get_auto_video_manager
 
 EXP = 'exp1'
@@ -54,6 +53,8 @@ def plotNdto3d(data, labels, core_samples_mask, indices=[0, 1, 2], ax_labels=[''
     plt.title(title)
 
 def display_pairs(p, pairs, file_name, cols=7, item_height=100, item_width=200, border=20):
+    from PyQt4.QtGui import QColor
+
     vm = get_auto_video_manager(p)
 
     part = 0
@@ -155,7 +156,7 @@ def display_clustering_results(project, vertices=None, labels=None, cols=15, it_
     vm = get_auto_video_manager(project)
 
     if vertices is None:
-        with open(project.working_directory+'/temp/clustering.pkl') as f:
+        with open(project.working_directory+'/temp/region_cardinality_samples.pkl') as f:
             up = pickle.Unpickler(f)
             _ = up.load()
             vertices = up.load()
@@ -194,7 +195,7 @@ def display_clustering_results(project, vertices=None, labels=None, cols=15, it_
 def prepare_pairs(project):
     print "__________________________"
     print "preparing pairs..."
-    with open(project.working_directory+'/temp/clustering.pkl') as f:
+    with open(project.working_directory+'/temp/region_cardinality_samples.pkl') as f:
         up = pickle.Unpickler(f)
         _ = up.load()
         vertices = up.load()
@@ -206,13 +207,13 @@ def prepare_pairs(project):
     filtered_v = vertices[labels == 0]
     v_num = len(filtered_v)
     i = 0
-    for v in filtered_v:
+    for v in tqdm(filtered_v):
         r1 = project.gm.region(v)
         best_v = None
         best_d = np.inf
         second_best_d = np.inf
 
-        for v_out in project.gm.g.vertex(v).out_neighbours():
+        for v_out in project.gm.g.vertex(v).out_neighbors():
             r2 = p.gm.region(v_out)
 
             if r1.frame() + 1 != r2.frame():
@@ -231,12 +232,8 @@ def prepare_pairs(project):
         if best_v is not None and int(best_v) in vs:
             pairs.append(((int(v), int(best_v)), best_d, second_best_d))
 
-        if i % 100 == 0:
-            print_progress(i, v_num)
-
         i += 1
 
-    print_progress(v_num, v_num)
     print
 
     print "saving..."
@@ -384,7 +381,7 @@ def head_detector_classify(p):
 
     print rfc.feature_importances_
 
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = d['arr']
 
@@ -456,7 +453,7 @@ def get_movement_descriptor_(v1, v2):
 
 # def prepare_triplets(p):
 #     print "preparing pairs..."
-#     d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+#     d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
 #     labels = d['labels']
 #     arr = d['arr']
 #
@@ -469,7 +466,7 @@ def get_movement_descriptor_(v1, v2):
 #         best_d = np.inf
 #         second_best_d = np.inf
 #
-#         for v_out in project.gm.g.vertex(v).out_neighbours():
+#         for v_out in project.gm.g.vertex(v).out_neighbors():
 #             r2 = p.gm.region(v_out)
 #
 #             if r1.frame() + 1 != r2.frame():
@@ -531,16 +528,12 @@ def get_max_dist(project):
 
     num_pairs = len(pairs)
     i = 0
-    for (v1, v2), d1, _ in pairs:
+    for (v1, v2), d1, _ in tqdm(pairs):
         if d1 > max_dist:
             max_dist = d1
             max_v1 = v1
             max_v2 = v2
 
-        if i % 1000 == 0:
-            print_progress(i, num_pairs)
-
-    print print_progress(num_pairs, num_pairs)
     print
 
     r1 = project.gm.region(max_v1)
@@ -569,15 +562,13 @@ def get_max_dist2(project):
     print "____________________________"
     print "Estimating max distance"
 
-    i = 0
-
     reg = project.gm.region
 
     safe_dists = []
     pairs = []
 
     num_v = project.gm.g.num_vertices()
-    for v in project.gm.g.vertices():
+    for v in tqdm(project.gm.g.vertices(), total=project.gm.g.num_vertices()):
         if v.out_degree() < 2:
             continue
 
@@ -592,12 +583,6 @@ def get_max_dist2(project):
             safe_dists.append(distances[0])
             pairs.append((best_e[0].source(), best_e[0].target()))
 
-        if i % 1000 == 0:
-            print_progress(i, num_v)
-
-        i += 1
-
-    print print_progress(num_v, num_v)
     print
 
 
@@ -647,7 +632,7 @@ def get_movement_histogram(p):
 
     # p.gm.g = g
 
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = d['arr']
 
@@ -659,15 +644,15 @@ def get_movement_histogram(p):
     #     v = p.gm.g.vertex(v)
     #
     #     if v.out_degree() == 1:
-    #         for w in v.out_neighbours():
+    #         for w in v.out_neighbors():
     #             if w.in_degree() == 1 and w.out_degree() == 1:
-    #                 for x in w.out_neighbours():
+    #                 for x in w.out_neighbors():
     #                     if x.in_degree() == 1:
     #                         data.append(get_movement_descriptor(p, v, w, x))
     #             elif w.in_degree() == 1 and w.out_degree() > 1:
     #                 data2.append([])
     #                 cases.append([])
-    #                 for x in w.out_neighbours():
+    #                 for x in w.out_neighbors():
     #                     data2[-1].append(get_movement_descriptor(p, v, w, x))
     #                     cases[-1].append(map(int, (v, w, x)))
 
@@ -817,7 +802,7 @@ def expand_based_on_movement_model(p):
                 if v.in_degree() > 0:
                     options = []
 
-                    for v2 in v.in_neighbours():
+                    for v2 in v.in_neighbors():
                         val = hist_query(H, edges, get_movement_descriptor(p, v2, t[0], t[1]))
                         options.append((val + 1, v2))
 
@@ -841,7 +826,7 @@ def expand_based_on_movement_model(p):
                 if v.out_degree() > 0:
                     options = []
 
-                    for v2 in v.out_neighbours():
+                    for v2 in v.out_neighbors():
                         val = hist_query(H, edges, get_movement_descriptor(p, t[-2], t[-1], v2))
                         options.append((val + 1, v2))
 
@@ -873,7 +858,7 @@ def simple_tracklets(p):
     p.gm.g = g
     p.gm.update_nodes_in_t_refs()
 
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     vertices_ids = np.array(d['arr'])
 
@@ -902,7 +887,7 @@ def simple_tracklets(p):
         do_break = False
         while not do_break:
             if v_.in_degree() == 1:
-                for v2 in v_.in_neighbours():
+                for v2 in v_.in_neighbors():
                     if v2.out_degree() > 1:
                         do_break = True
                         break
@@ -921,7 +906,7 @@ def simple_tracklets(p):
         do_break = False
         while not do_break:
             if v_.out_degree() == 1:
-                for v2 in v_.out_neighbours():
+                for v2 in v_.out_neighbors():
                     if v2.in_degree() > 1:
                         do_break = True
                         break
@@ -1003,7 +988,7 @@ def display_classification(project, ids, labels):
         cv2.imwrite('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/' + F_NAME + str(class_) + '_' + str(part) + '.jpg', collage)
 
 def singles_classifier(p):
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = np.array(d['arr'])
     data = d['data']
@@ -1150,7 +1135,7 @@ def assign_costs(p, frames):
         if r.frame() not in frames:
             continue
 
-        for v2 in v.out_neighbours():
+        for v2 in v.out_neighbors():
             for e in v.out_edges():
                 v3 = e.target()
                 val = hist_query(H, edges, get_movement_descriptor(p, v, v2, v3))
@@ -1314,23 +1299,13 @@ def add_score_to_edges(p):
     print "#edges: {}".format(p.gm.g.num_edges())
     i = 0
 
-    # use_for_learning = 0.02
     use_for_learning = 0.1
-
-    # es = p.gm.g.get_edges()
-
-
 
     features_appearance = []
     features_movement = []
     edges = []
 
-    # todo: reset cache...
-    # p.rm.cache_size_limit_ = 1000000
-    # p.rm[:]
-
-    num_edges = p.gm.g.num_edges()
-    for e in p.gm.g.edges():
+    for e in tqdm(p.gm.g.edges(), total=p.gm.g.num_edges()):
         i += 1
         if p.gm.edge_is_chunk(e):
             continue
@@ -1342,11 +1317,6 @@ def add_score_to_edges(p):
         features_movement.append(f)
         
         edges.append(e)
-
-        if i % 1000:
-            print_progress(i, num_edges)
-
-    print_progress(num_edges, num_edges)
 
     print "computing isolation score..."
     vals_appearance = IF_appearance.decision_function(features_appearance)
@@ -1389,7 +1359,7 @@ def process_project(p):
     from core.graph.solver2 import Solver2
     solver2 = Solver2(p)
 
-    # clustering(p, compute_data=False)
+    # prepare_region_cardinality_samples(p, compute_data=False)
     # display_clustering_results(p)
     # display_cluster_representants(p)
 
@@ -1551,7 +1521,7 @@ if __name__ == '__main__':
             p.chm.reset_itree(p.gm)
 
             # TODO: deal with noise...
-            d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+            d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
             labels = d['labels']
             vertices = d['arr']
 
@@ -1707,6 +1677,6 @@ if __name__ == '__main__':
             # plt.show()
 
             if False:
-                clustering()
+                prepare_region_cardinality_samples()
             # display_clustering_results(p, arr, labels)
             # plt.show()

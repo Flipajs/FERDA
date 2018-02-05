@@ -16,7 +16,7 @@ class Dummy():
         pass
 
 class RegionManager:
-    def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=1000, data=None):
+    def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=1000, data=None, supress_init_print=False):
         """
         RegionManager is designed to store regions data. By default, all data is stored in memory cache (dictionary) and
         identified using unique ids. Optionally, database can be used, in which case the memory cache size can be
@@ -48,7 +48,8 @@ class RegionManager:
         else:
             self.use_db = True
             self.db_path = db_wd+"/"+db_name
-            print "Initializing db at %s " % self.db_path
+            if not supress_init_print:
+                print "Initializing db at %s " % self.db_path
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
             # DEBUG, do not use! self.cur.execute("DROP TABLE IF EXISTS regions;")

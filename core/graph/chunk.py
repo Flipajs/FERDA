@@ -134,7 +134,7 @@ class Chunk:
         region = gm.region(vertex_id)
         if region.frame() != self.end_frame(gm) + 1:
             # print "DISCONTINUITY in chunk.py/append_right", region.frame(), self.end_frame(gm), region, self.end_node()
-            raise Exception("DISCONTINUITY in chunk.py/append_right")
+            raise Exception("DISCONTINUITY in chunk.py/append_right, frame: {}, r_id: {}".format(region.frame(), region.id()))
 
         last = self.end_node()
 
@@ -365,6 +365,10 @@ class Chunk:
         for id_ in self.nodes_:
             yield gm.region_id(id_)
 
+    def r_gen(self, gm, rm):
+        for rid in self.rid_gen(gm):
+            yield rm[rid]
+
     def v_id_in_t(self, t, gm):
         t = t - self.start_frame(gm)
         if -1 < t < len(self.nodes_):
@@ -401,3 +405,47 @@ class Chunk:
             return "part-of-ID"
         else:
             return "undefined"
+
+    def num_outcoming_edges(self, gm):
+        return self.end_vertex(gm).out_degree()
+
+    def num_incoming_edges(self, gm):
+        return self.start_vertex(gm).in_degree()
+
+    def get_cardinality(self, gm):
+        """
+        cardinality = #IDS in given tracklet
+        
+        Returns: 1 if single, 2, 3, ... when cardinality is known, 0 when cardinality is known and tracklet is noise, 
+        -1 when cardinality is not defined
+
+        """
+
+        if self.is_noise():
+            return 0
+
+        if self.is_single():
+            return 1
+
+        if self.is_multi():
+
+            # first try INcoming...
+            cardinality = 0
+            for ch in gm.get_incoming_tracklets(self.start_vertex(gm)):
+                if ch.is_single() and ch.num_outcoming_edges(gm) == 1:
+                    cardinality += 1
+                else:
+                    cardinality = 0
+                    break
+
+            if not cardinality:
+                # lets try OUTcoming...
+                for ch in gm.get_outcoming_tracklets(self.end_vertex(gm)):
+                    if ch.is_single() and ch.num_incoming_edges(gm) == 1:
+                        cardinality += 1
+                    else:
+                        return -1
+
+            return cardinality
+
+        return -1

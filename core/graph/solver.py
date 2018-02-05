@@ -1,7 +1,6 @@
 __author__ = 'fnaiser'
 
 from core.graph.graph_utils import *
-from core.settings import Settings as S_
 import numpy as np
 from configuration import Configuration
 from utils.constants import EDGE_CONFIRMED
@@ -72,9 +71,8 @@ class Solver:
 
     def one2one(self, check_tclass=False):
         confirm_later = []
-        from tqdm import tqdm
 
-        for v in tqdm(self.project.gm.g.vertices(), desc='solver.one2one', total=self.project.gm.g.num_vertices()):
+        for v in tqdm(self.project.gm.g.vertices(), desc='solver.one2one', total=self.project.gm.g.num_vertices(), leave=False):
             if self.project.gm.one2one_check(v):
                 e = self.project.gm.out_e(v)
 
@@ -214,12 +212,12 @@ class Solver:
             if cert >= self.project.solver_parameters.certainty_threshold:
                 for n1, n2 in matchings[0]:
                     if n1 and n2:
-                        # for n2_ in n1.out_neighbours():
+                        # for n2_ in n1.out_neighbors():
                         #     if n2_ != n2:
                         #         self.project.gm.remove_edge(n1, n2_)
                         #         affected.append(n2_)
                         #
-                        # for n1_ in n2.in_neighbours():
+                        # for n1_ in n2.in_neighbors():
                         #     if n1_ != n1:
                         #         self.remove_edge(n1_, n2)
                         #         affected.append(n1_)
@@ -461,7 +459,7 @@ class Solver:
             for e in out_edges:
                 affected.add(e.target())
 
-                for aff_neigh in e.target().in_neighbours():
+                for aff_neigh in e.target().in_neighbors():
                     affected.add(aff_neigh)
 
                 self.project.gm.remove_edge_(e)
@@ -470,7 +468,7 @@ class Solver:
             for e in in_edges:
                 affected.add(e.source())
 
-                for aff_neigh in e.source().out_neighbours():
+                for aff_neigh in e.source().out_neighbors():
                     affected.add(aff_neigh)
 
                 self.project.gm.remove_edge_(e)
@@ -512,8 +510,8 @@ class Solver:
 
         for r in replace:
             r = self.project.gm.g.vertex(r)
-            r_t_minus.extend([v for v in r.in_neighbours()])
-            r_t_plus.extend([v for v in r.out_neighbours()])
+            r_t_minus.extend([v for v in r.in_neighbors()])
+            r_t_plus.extend([v for v in r.out_neighbors()])
 
             self.project.gm.remove_vertex(r)
 
@@ -549,13 +547,13 @@ class Solver:
             r_t_minus = []
             if chunk.length() == 0:
                 end_vertex = self.project.gm.g.vertex(replace)
-                for v in end_vertex.in_neighbours():
+                for v in end_vertex.in_neighbors():
                     r_t_minus.apend(v)
         else:
             r_t_plus = []
             if chunk.length() == 0:
                 start_vertex = self.project.gm.g.vertex(replace)
-                for v in start_vertex.out_neighbours():
+                for v in start_vertex.out_neighbors():
                     r_t_plus.append(v)
 
         self.project.gm.remove_vertex(replace)
@@ -656,7 +654,7 @@ class Solver:
                 to_remove.append(n)
 
         print "NODES", len(self.g)
-        S_.general.log_graph_edits = False
+        # S_.general.log_graph_edits = False
         for n in to_remove:
             if n not in self.g:
                 continue
@@ -667,7 +665,7 @@ class Solver:
                 pass
 
         print "NODES", len(self.g)
-        S_.general.log_graph_edits = True
+        # S_.general.log_graph_edits = True
 
         with open(wd+name, 'wb') as f:
             pc = pickle.Pickler(f, -1)

@@ -32,8 +32,10 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_new'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_assembly'
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
     # wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
+    # wd = '/Volumes/Seagate Expansion Drive/HH1_PRE'
     # wd = '/Volumes/Seagate Expansion Drive/HH1_POST'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Barbara_flu_bug/test6'
     # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
@@ -52,6 +54,20 @@ if is_matejs_pc():
 if wd is not None:
     project.load(wd)
 
+
+    for t in project.chm.chunk_gen():
+        print "Cardinality: {}, t_id: {}".format(t.get_cardinality(project.gm), t.id())
+
+    # from tqdm import tqdm
+    # thetas = []
+    # for t in tqdm(project.chm.chunk_gen(), total=len(project.chm)):
+    #     thetas.extend([r.theta_ for r in t.r_gen(project.gm, project.rm)])
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # plt.hist(thetas)
+    # plt.show()
+
     # TODO !! add it to assembly process
     # project.solver.one2one(check_tclass=True)
 
@@ -62,7 +78,7 @@ if wd is not None:
     #
     #         if t.is_multi() and t.end_vertex(project.gm).out_degree() == 2:
     #             new_one = True
-    #             for u in v.in_neighbours():
+    #             for u in v.in_neighbors():
     #                 if not project.gm.get_chunk(u).is_single():
     #                     new_one = False
     #                     break
@@ -90,7 +106,7 @@ if wd is not None:
     #
     #     v1 = t.start_vertex(project.gm)
     #     animals_r = []
-    #     for u in v1.in_neighbours():
+    #     for u in v1.in_neighbors():
     #         reg = project.gm.region(u)
     #
     #         if erosion:

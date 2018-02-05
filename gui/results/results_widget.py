@@ -2145,8 +2145,8 @@ class ResultsWidget(QtGui.QWidget):
                     break
 
                 singles_group = filter(lambda x: x.is_single(), group)
+                df = frame
 
-                # if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= self.min_tracklet_len:
                 if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 1:
                     groups.append(singles_group)
 
@@ -2159,11 +2159,9 @@ class ResultsWidget(QtGui.QWidget):
                     for t in singles_group:
                         unique_tracklets.add(t)
 
-                df = frame
-                frame = min([t.end_frame(self.p.gm) for t in group]) + 1
-
-                # if i % 100:
-                    # print_progress(frame, total_frame_count, "searching for CSoSIT...")
+                    frame = min([t.end_frame(self.p.gm) for t in singles_group]) + 1
+                else:
+                    frame = min([t.end_frame(self.p.gm) for t in group]) + 1
 
                 i += 1
 
@@ -2171,6 +2169,22 @@ class ResultsWidget(QtGui.QWidget):
 
         print "analysis 1) DONE"
         print "# CS: ", len(groups)
+
+        total_len = 0
+        for t in unique_tracklets:
+            total_len += len(t)
+
+        single_len = 0
+        for t in self.p.chm.chunk_gen():
+            if t.is_single():
+                single_len += len(t)
+
+
+        print "Total tracklet length {}, coverage {:.2%}, single-ID coverage {:.2%}".format(
+            total_len,
+            (total_len/float(len(self.p.animals)))/total_frame_count,
+            (single_len / float(len(self.p.animals))) / total_frame_count,
+        )
 
         min_lengths = []
         val_ = 0
@@ -2180,8 +2194,19 @@ class ResultsWidget(QtGui.QWidget):
         # print sorted(min_lengths)[:10]
         ids = np.argsort(min_lengths)
 
-        for i in range(10):
+        for i in range(1, 11):
             id_ = ids[i]
+            print "############### "
+            print -min_lengths[id_]
+
+            for t in groups[id_]:
+                print t.id(), t.length()
+
+        print
+        print
+        print "WORST ONES:"
+        for i in range(10):
+            id_ = ids[-i]
             print "############### "
             print -min_lengths[id_]
 

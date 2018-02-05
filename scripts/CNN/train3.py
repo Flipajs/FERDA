@@ -10,10 +10,12 @@ from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
 from keras.models import Model
 from keras.preprocessing.image import ImageDataGenerator
 
+
+
 ROOT_DIR = sys.argv[1]
-#ROOT_DIR = '/home/threedoid/cnn_descriptor/'
+ROOT_DIR = '/home/threedoid/cnn_descriptor/'
 # ROOT_DIR = '/Users/flipajs/Documents/wd/FERDA/cnn_exp'
-DATA_DIR = ROOT_DIR + '/data'
+# DATA_DIR = ROOT_DIR + '/data'
 BATCH_SIZE = 32
 TWO_TESTS = True
 
@@ -127,13 +129,28 @@ if __name__ == '__main__':
     #         layer.trainable = False
     #     i += 1
 
-    vision_model.summary()
+    # vision_model.summary()
     # The vision model will be shared, weights and all
-    out_a = vision_model(animal_a)
 
+    x = Conv2D(32, (3, 3))(animal_a)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = MaxPooling2D((2, 2))(x)
+
+    # x = Conv2D(64, (3, 3))(x)
+    x = Conv2D(32, (3, 3), dilation_rate=(2, 2))(x)
+    x = Conv2D(32, (3, 3))(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(16, (3, 3))(x)
+    # x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(8, (3, 3))(x)
+    # out_a = vision_model(animal_a)
+    x = Flatten()(x)
     # out = Dense(128, activation='relu')(out_a)
-    out = Dense(K, activation='softmax')(out_a)
-
+    out = Dense(K, activation='softmax')(x)
     classification_model = Model(animal_a, out)
     classification_model.summary()
 
@@ -167,7 +184,6 @@ if __name__ == '__main__':
     for e in range(NUM_EPOCHS):
         print e
         classification_model.fit_generator(myGenerator(), SAMPLES, epochs=1, verbose=1)
-
 
         # 10. Evaluate model on test data
         results = classification_model.evaluate(X_test_consecutive, y_test_consecutive, verbose=1)

@@ -1,6 +1,6 @@
 import sys
 from core.project.project import Project
-from bg_computer_assembling import assembly_after_parallelization
+from core.bg_computer_assembling import assembly_after_parallelization
 from core.fake_background_computer import FakeBGComp
 
 

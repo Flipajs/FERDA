@@ -131,10 +131,25 @@ class GraphManager:
 
         return None, False
 
-    def get_chunk(self, vertex):
+    def get_tracklet(self, vertex):
         ch, _ = self.is_chunk(vertex)
 
         return ch
+
+    def get_chunk(self, vertex):
+        """
+        deprecated...
+        Args:
+            vertex: 
+
+        Returns:
+
+        """
+        # TODO: uncomment deprecated warning
+        # import warnings
+        # warnings.warn("get_chunk is deprecated, use get_tracklet instead... Chunk is old naming")
+
+        return self.get_tracklet(vertex)
 
     def update_nodes_in_t_refs(self):
         self.vertices_in_t = {}
@@ -376,10 +391,10 @@ class GraphManager:
             s_test.add(n_)
 
             if t_ == 1:
-                for n2 in n_.out_neighbours():
+                for n2 in n_.out_neighbors():
                     process.append((n2, 2))
             else:
-                for n2 in n_.in_neighbours():
+                for n2 in n_.in_neighbors():
                     process.append((n2, 1))
 
         return list(s_t1), list(s_t2)
@@ -451,14 +466,14 @@ class GraphManager:
 
         node_groups.setdefault(r.frame_, []).append(vertex)
 
-        for v_ in vertex.in_neighbours():
+        for v_ in vertex.in_neighbors():
             ch, ch_end = self.is_chunk(v_)
             if ch and not ch_end:
                 continue
 
             self.get_cc_rec(v_, depth-1, node_groups)
 
-        for v_ in vertex.out_neighbours():
+        for v_ in vertex.out_neighbors():
             ch, ch_end = self.is_chunk(v_)
             if ch and ch_end:
                 continue
@@ -494,7 +509,7 @@ class GraphManager:
 
     def out_v(self, v):
         if v.out_degree() == 1:
-            for v2 in v.out_neighbours():
+            for v2 in v.out_neighbors():
                 return v2
 
         return None
@@ -511,7 +526,7 @@ class GraphManager:
         if self.g.vp['chunk_start_id'][v] and len(self.project.chm[self.g.vp['chunk_start_id'][v]]) > 1:
             return False
 
-        for v2 in v.out_neighbours():
+        for v2 in v.out_neighbors():
             if v2.in_degree() != 1:
                 return False
 
@@ -664,7 +679,7 @@ class GraphManager:
 
             if v2.in_degree() == 2:
                 vv = None
-                for v_ in v2.in_neighbours():
+                for v_ in v2.in_neighbors():
                     if v_ != v:
                         vv = v_
 
@@ -696,6 +711,21 @@ class GraphManager:
 
         return regions
 
+    def _get_tracklets_from_gen(self, vertex_gen):
+        tracklets = []
+
+        for v in vertex_gen:
+            t = self.get_tracklet(v)
+            if t is not None:
+                tracklets.append(t)
+
+        return tracklets
+
+    def get_incoming_tracklets(self, vertex):
+        return self._get_tracklets_from_gen(vertex.in_neighbors())
+
+    def get_outcoming_tracklets(self, vertex):
+        return self._get_tracklets_from_gen(vertex.out_neighbors())
 
 
 

@@ -166,7 +166,7 @@ def display_head_pairs(project):
 
 def prepare_pairs(project):
     print "preparing pairs..."
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = d['arr']
 
@@ -179,7 +179,7 @@ def prepare_pairs(project):
         best_d = np.inf
         second_best_d = np.inf
 
-        for v_out in project.gm.g.vertex(v).out_neighbours():
+        for v_out in project.gm.g.vertex(v).out_neighbors():
             r2 = p.gm.region(v_out)
 
             if r1.frame() + 1 != r2.frame():
@@ -307,7 +307,7 @@ def head_detector_classify(p):
 
     print rfc.feature_importances_
 
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = d['arr']
 
@@ -404,7 +404,7 @@ def filter_edges(project, max_dist):
 
 # def prepare_triplets(p):
 #     print "preparing pairs..."
-#     d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+#     d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
 #     labels = d['labels']
 #     arr = d['arr']
 #
@@ -417,7 +417,7 @@ def filter_edges(project, max_dist):
 #         best_d = np.inf
 #         second_best_d = np.inf
 #
-#         for v_out in project.gm.g.vertex(v).out_neighbours():
+#         for v_out in project.gm.g.vertex(v).out_neighbors():
 #             r2 = p.gm.region(v_out)
 #
 #             if r1.frame() + 1 != r2.frame():
@@ -493,7 +493,7 @@ def get_movement_histogram(p):
 
     p.gm.g = g
 
-    d = hickle.load('/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+    d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = d['arr']
 
@@ -505,15 +505,15 @@ def get_movement_histogram(p):
         v = p.gm.g.vertex(v)
 
         if v.out_degree() == 1:
-            for w in v.out_neighbours():
+            for w in v.out_neighbors():
                 if w.in_degree() == 1 and w.out_degree() == 1:
-                    for x in w.out_neighbours():
+                    for x in w.out_neighbors():
                         if x.in_degree() == 1:
                             data.append(get_movement_descriptor(p, v, w, x))
                 elif w.in_degree() == 1 and w.out_degree() > 1:
                     data2.append([])
                     cases.append([])
-                    for x in w.out_neighbours():
+                    for x in w.out_neighbors():
                         data2[-1].append(get_movement_descriptor(p, v, w, x))
                         cases[-1].append(map(int, (v, w, x)))
 
@@ -643,8 +643,8 @@ def display_regions(project, arr=None, labels=None):
     vm = get_auto_video_manager(project)
 
     if arr is None:
-        # with open('/Users/flipajs/Desktop/temp/clustering/data1.pkl', 'rb') as f:
-        d = hickle.load('/Users/flipajs/Desktop/temp/clustering/data1.pkl')
+        # with open('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/data1.pkl', 'rb') as f:
+        d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/data1.pkl')
 
         labels = d['labels']
         arr = np.array(d['arr'])
@@ -772,8 +772,8 @@ if __name__ == '__main__':
         # plotNdto3d(data, labels, core_samples_mask, [0, 2, 3], label_names[[0, 2, 3]])
         # plotNdto3d(data, labels, core_samples_mask, [0, 2, 4], label_names[[0, 2, 4]])
 
-        # with open('/Users/flipajs/Desktop/temp/clustering/data1.pkl', 'wb') as f:
-        # hickle.dump({'arr': arr, 'labels': labels}, '/Users/flipajs/Desktop/temp/clustering/labels.pkl')
+        # with open('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/data1.pkl', 'wb') as f:
+        # hickle.dump({'arr': arr, 'labels': labels}, '/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
         # pickle.dump({'data': data, 'arr': arr, 'labels': labels, 'core_samples_mask': core_samples_mask}, f)
 
         display_regions(p, arr, labels)
