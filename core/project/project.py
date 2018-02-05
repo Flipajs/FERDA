@@ -372,8 +372,10 @@ class Project:
         # except:
         #     pass
 
-
-        self.load_snapshot(snapshot)
+        try:
+            self.load_snapshot(snapshot)
+        except Exception as e:
+            print('xxxxxx ' + str(e))
 
         # if not lightweight:
         # SAVED CORRECTION PROGRESS
@@ -404,18 +406,18 @@ class Project:
             pass
 
         # reconnect...
-        if not self.gm:
-            from core.graph.graph_manager import GraphManager
-            self.gm = GraphManager(self, None)
+        # if not self.gm:
+        #     from core.graph.graph_manager import GraphManager
+        #     self.gm = GraphManager(self, None)
 
         from core.region.region_manager import RegionManager
         self.solver = Solver(self)
-        self.gm.assignment_score = self.solver.assignment_score
+        # self.gm.assignment_score = self.solver.assignment_score
 
         self.rm = RegionManager(db_wd=self.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
 
-        self.gm.project = self
-        self.gm.rm = self.rm
+        # self.gm.project = self
+        # self.gm.rm = self.rm
         # self.gm.update_nodes_in_t_refs()
 
         if not lightweight:
@@ -451,7 +453,10 @@ class Project:
 
                 self.save()
 
-        self.img_manager = ImgManager(self, max_num_of_instances=500)
+        try:
+            self.img_manager = ImgManager(self, max_num_of_instances=500)
+        except Exception as e:
+            print('yyyyy ' + str(e))
 
         self.active_snapshot = -1
 
