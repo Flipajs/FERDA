@@ -224,23 +224,24 @@ class CompleteSetMatching:
         plt.grid()
 
         plt.figure()
-
-        mean_ds = []
-        for id_, mean in tracks_mean_desc.iteritems():
-            mean_ds.append(mean/float(support[id]))
-
-        print("track ids order: {}\n{}".format(list(tracks_mean_desc.iterkeys()), len(tracks)))
-        from scipy.spatial.distance import pdist, squareform
-        plt.imshow(squareform(pdist(mean_ds)), interpolation='nearest')
         plt.show()
 
-        for i in range(50, 60):
-            print "CS {}, CS {}".format(0, i)
-            perm, quality = self.cs2cs_matching_ids_unknown(CSs[0], CSs[i])
-            for (t1, t2) in perm:
-                print t1.id(), " -> ", t2.id()
+        # mean_ds = []
+        # for id_, mean in tracks_mean_desc.iteritems():
+        #     mean_ds.append(mean/float(support[id]))
 
-            print quality
+        print("track ids order: {}\n{}".format(list(tracks_mean_desc.iterkeys()), len(tracks)))
+        # from scipy.spatial.distance import pdist, squareform
+        # plt.imshow(squareform(pdist(mean_ds)), interpolation='nearest')
+        # plt.show()
+
+        # for i in range(50, 60):
+        #     print "CS {}, CS {}".format(0, i)
+        #     perm, quality = self.cs2cs_matching_ids_unknown(CSs[0], CSs[i])
+        #     for (t1, t2) in perm:
+        #         print t1.id(), " -> ", t2.id()
+        #
+        #     print quality
 
     def sequential_matching(self, CSs, id_):
         tracks = {}
