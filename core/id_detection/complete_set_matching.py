@@ -60,85 +60,7 @@ class CompleteSetMatching:
                 best_CS = CS
                 best_support = val
 
-        # update N sets for unassigned tracklets in relations to best_CS track ids
-        for tracklet, track_id in tracklets_2_tracks.iteritems():
-            self.add_to_N_set(track_id, tracklet)
-
-        probabilities = {}
-        decisioins = {}
-        # moreless a cache...
-        tracklets_prototypes = {}
-        probs = []
-        probs2 = []
-        lengths = []
-        tracklets = []
-        best_track_ids = []
-
-        for t in self.p.chm.chunk_gen():
-            if t in tracklets_2_tracks or not t.is_single():
-                continue
-
-            if t not in tracklets_prototypes:
-                tracklets_prototypes[t.id()] = self.get_track_prototypes(t)
-
-
-            best_p = 0
-            best_track = None
-
-            prob_vec = [0] * len(self.p.animals)
-
-            for i, track_id in enumerate(best_CS):
-                # skip restricted
-                if track_id in t.N:
-                    continue
-
-                # TODO: certainty?
-                prob = self.prototypes_match_probability(prototypes[track_id], tracklets_prototypes[t.id()])
-                prob_vec[i] = prob
-
-                if prob > best_p:
-                    best_p = prob
-                    best_track = track_id
-
-            prob_vec = np.array(prob_vec) / np.sum(prob_vec)
-            probs2.append(max(prob_vec))
-
-            probabilities[t] = best_p
-            decisioins[t] = best_track
-
-            probs.append(best_p)
-            best_track_ids.append(best_track)
-            lengths.append(len(t))
-            tracklets.append(t)
-
-        probs2 = np.array(probs2)
-        probs = np.array(probs)
-
-        probs = probs2
-
-        tracklets = np.array(tracklets)
-        ids = np.argsort(-probs)
-        best_track_ids = np.array(best_track_ids)
-
-        import warnings
-        for i in ids:
-            if probs[i] > 0.5:
-                t = tracklets[i]
-                track_id = best_track_ids[i]
-                if track_id in t.N:
-                    warnings.warn("IN N ... warning {}".format(t.id()))
-
-                print probs[i], tracklets[i]
-                t.P = set([track_id])
-
-                self.add_to_N_set(track_id, t)
-
-                # TODO: propagate...
-
-        plt.figure()
-
-        plt.scatter(np.arange(len(probs)), probs, c='r')
-        plt.scatter(np.arange(len(probs)), probs2, c='g')
+        self.single_track_assignment(best_CS, prototypes, tracklets_2_tracks)
 
         #### visualize and stats
         from utils.rand_cmap import rand_cmap
@@ -243,7 +165,84 @@ class CompleteSetMatching:
         #
         #     print quality
 
+    def single_track_assignment(self, best_CS, prototypes, tracklets_2_tracks):
+        # update N sets for unassigned tracklets in relations to best_CS track ids
+        for tracklet, track_id in tracklets_2_tracks.iteritems():
+            self.add_to_N_set(track_id, tracklet)
+        probabilities = {}
+        decisioins = {}
+        # moreless a cache...
+        tracklets_prototypes = {}
+        probs = []
+        probs2 = []
+        lengths = []
+        tracklets = []
+        best_track_ids = []
+        for t in self.p.chm.chunk_gen():
+            if t in tracklets_2_tracks or not t.is_single():
+                continue
+
+            if t not in tracklets_prototypes:
+                tracklets_prototypes[t.id()] = self.get_track_prototypes(t)
+
+            best_p = 0
+            best_track = None
+
+            prob_vec = [0] * len(self.p.animals)
+
+            for i, track_id in enumerate(best_CS):
+                # skip restricted
+                if track_id in t.N:
+                    continue
+
+                # TODO: certainty?
+                prob = self.prototypes_match_probability(prototypes[track_id], tracklets_prototypes[t.id()])
+                prob_vec[i] = prob
+
+                if prob > best_p:
+                    best_p = prob
+                    best_track = track_id
+
+            prob_vec = np.array(prob_vec) / np.sum(prob_vec)
+            probs2.append(max(prob_vec))
+
+            probabilities[t] = best_p
+            decisioins[t] = best_track
+
+            # probs.append(best_p)
+            best_track_ids.append(best_track)
+            lengths.append(len(t))
+            tracklets.append(t)
+
+        probs2 = np.array(probs2)
+        # probs = np.array(probs)
+        probs = probs2
+        tracklets = np.array(tracklets)
+        ids = np.argsort(-probs)
+        best_track_ids = np.array(best_track_ids)
+        import warnings
+        for i in ids:
+            if probs[i] > 0.5:
+                t = tracklets[i]
+                track_id = best_track_ids[i]
+                if track_id in t.N:
+                    warnings.warn("IN N ... warning {}".format(t.id()))
+
+                print probs[i], tracklets[i]
+                t.P = set([track_id])
+                t.id_decision_info = 'single_decision'
+
+                self.add_to_N_set(track_id, t)
+
+                # TODO: propagate...
+
+        plt.figure()
+
+        plt.scatter(np.arange(len(probs)), probs, c='r')
+        plt.scatter(np.arange(len(probs)), probs2, c='g')
+
     def sequential_matching(self, CSs, id_):
+        print "BEGINNING of SEQUENTIAL MATCHING"
         tracks = {}
         tracklets_2_tracks = {}
         track_CSs = [[]]
@@ -253,6 +252,7 @@ class CompleteSetMatching:
             tracklets_2_tracks[t] = i
             prototypes[i] = self.get_track_prototypes(t)
             t.P = set([id_])
+            t.id_decision_info = 'sequential_matching'
             track_CSs[-1].append(id_)
             id_ += 1
         qualities = []
@@ -364,7 +364,7 @@ class CompleteSetMatching:
         # 5. else take second biggest and goto 3.
         # 6. end if only one CS, or # of CS didn't changed...
 
-        print "trying matching on track CS"
+        print "BEGINNING of GLOBAL MATCHING"
         updated = True
         while len(track_CSs) > 1 and updated:
             updated = False
@@ -394,13 +394,12 @@ class CompleteSetMatching:
                 if best_quality > self.QUALITY_THRESHOLD:
                     print("Best track CS match accepted. {}, {}".format(best_perm, best_quality))
                     self.merge_track_CSs(best_perm, prototypes, tracklets2tracks, tracks)
-                    self.update_all_track_CSs(best_perm, track_CSs)
                     track_CSs.remove(best_CS)
+                    self.update_all_track_CSs(best_perm, track_CSs)
                     updated = True
                     break
                 else:
                     print("Best track CS match rejected. {}, {}".format(perm, quality))
-
 
     def update_all_track_CSs(self, perm, track_CSs):
         # update all CS
@@ -428,6 +427,7 @@ class CompleteSetMatching:
                     tracklets2tracks[tracklet] = track1_id
                     tracks[track1_id].append(tracklet)
                     tracklet.P = set([track1_id])
+                    tracklet.id_decision_info = 'global_matching'
 
                 del tracks[track2_id]
                 del prototypes[track2_id]
@@ -574,7 +574,6 @@ class CompleteSetMatching:
             quality = [1.0, 1.0]
         else:
             assert len(cs2) > 1
-
             P_a = self.prototypes_distance_probabilities(cs1, cs2, prototypes, tracklets_2_tracks)
 
             if use_spatial_probabilities:

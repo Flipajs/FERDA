@@ -1345,6 +1345,9 @@ class ResultsWidget(QtGui.QWidget):
 
         s += "\n tracklet class: "+ch.segmentation_class_str()
 
+        if hasattr(ch, 'id_decision_info'):
+            s += "\n idDecision: {}".format(ch.id_decision_info)
+
         # avg_area = 0
         # for r_ in rch.regions_gen():
         #     avg_area += r_.area()
