@@ -12,7 +12,7 @@
 * python 2.7.\*
 * [opencv](http://opencv.org) for python (pycv) builded with FFMPEG support (2.4.12)
 * [PyQt4](https://www.riverbankcomputing.com/software/pyqt/download)
-* [graph-tool](https://pypi.python.org/pypi/graph-tool) (2.22)
+* [graph-tool](https://pypi.python.org/pypi/graph-tool) (2.26)
 
 `$ pip install -r requirements.txt`
 
@@ -95,6 +95,12 @@ Key components:
 core/parallelization.py
 - extraction of animal containing regions using MSER algorithm
 - construction of region graph (nodes are regions in both space and time, edges are possible transitions)
+
+## Known Issues
+
+`AttributeError: 'Vertex' object has no attribute 'in_neighbors'`
+
+- upgrade Graph-tool to version > 2.26
 
 
 
