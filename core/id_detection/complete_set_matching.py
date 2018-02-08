@@ -8,12 +8,13 @@ import os, random
 
 
 class CompleteSetMatching:
-    def __init__(self, project, get_tracklet_probs_callback, get_tracklet_p1s_callback, descriptors, quality_threshold=0.02):
+    def __init__(self, project, lp, descriptors, quality_threshold=0.02):
         self.prototype_distance_threshold = np.inf # ignore
         self.QUALITY_THRESHOLD = quality_threshold
         self.p = project
-        self.get_probs = get_tracklet_probs_callback
-        self.get_p1s = get_tracklet_p1s_callback
+        self.lp = lp
+        self.get_probs = self.lp._get_tracklet_proba
+        self.get_p1s = self.lp.get_tracklet_p1s
         self.descriptors = descriptors
 
         self.update_distances = []
@@ -60,7 +61,81 @@ class CompleteSetMatching:
                 best_CS = CS
                 best_support = val
 
-        self.single_track_assignment(best_CS, prototypes, tracklets_2_tracks)
+        print "BEGINNING of best_set matching"
+
+        # update N sets for unassigned tracklets in relations to best_CS track ids
+        for tracklet, track_id in tracklets_2_tracks.iteritems():
+            self.add_to_N_set(track_id, tracklet)
+
+        # go through tracklets, find biggest set and do matching..
+        # 1) choose tracklet
+        #       longest?
+        #       for now, process as it is in chunk_generator
+
+        num_undecided = 0
+        for t in self.p.chm.tracklet_gen():
+            # TODO: what about matching unmatched Tracks as well?
+            if t in tracklets_2_tracks or not t.is_single():
+                continue
+
+            # 2) find biggest set
+            best_set = self.find_biggest_undecided_tracklet_set(t)
+
+            for t_ in best_set:
+                if t_ not in prototypes:
+                    prototypes[id_] = self.get_track_prototypes(t_)
+                    tracklets_2_tracks[t_] = id_
+                    id_ += 1
+
+            # 3) compute matching
+            P_a = self.prototypes_distance_probabilities(best_set, best_CS, prototypes, tracklets_2_tracks)
+            # TODO: add spatial cost as well
+            # invert...
+            P = 1 - P_a
+            from scipy.optimize import linear_sum_assignment
+            assert np.sum(P < 0) == 0
+            row_ind, col_ind = linear_sum_assignment(P)
+
+            perm = []
+            for rid, cid in zip(row_ind, col_ind):
+                perm.append((best_set[rid], best_CS[cid]))
+
+            x_ = 1 - P[row_ind, col_ind]
+            quality = (x_.min(), x_.sum() / float(len(x_)))
+
+            np.set_printoptions(precision=3)
+            print P
+            # print best_set, best_CS
+            print perm, quality
+
+            # 4) accept?
+            if quality[1] > self.QUALITY_THRESHOLD:
+                for (tracklet, track_id) in perm:
+                    print "[{} |{}| (te: {})] -> {}".format(tracklet.id(), len(tracklet), tracklet.end_frame(self.p.gm), track_id)
+                    tracklets_track = tracklets_2_tracks[tracklet]
+                    self.update_prototypes(prototypes[track_id], prototypes[tracklets_track])
+                    del prototypes[tracklets_track]
+
+                    tracklets_2_tracks[tracklet] = track_id
+                    tracks[track_id].append(tracklet)
+
+                    tracklet.P = set([track_id])
+                    tracklet.N = set(range(len(self.p.animals))) - tracklet.P
+                    tracklet.id_decision_info = 'best_set_matching'
+
+                    # propagate
+                    # TODO: add sanity checks?
+                    for t_ in self.p.chm.singleid_tracklets_intersecting_t_gen(tracklet, self.p.gm):
+                        if t_ != tracklet:
+                            self.add_to_N_set(track_id, t_)
+
+            else:
+                color_print('QUALITY BELOW', color='red')
+                num_undecided += 1
+
+        print "#UNDECIDED: {}".format(num_undecided)
+        print
+        # self.single_track_assignment(best_CS, prototypes, tracklets_2_tracks)
 
         #### visualize and stats
         from utils.rand_cmap import rand_cmap
@@ -165,6 +240,41 @@ class CompleteSetMatching:
         #
         #     print quality
 
+    def find_biggest_undecided_tracklet_set(self, t):
+        all_intersecting_t = list(self.p.chm.singleid_tracklets_intersecting_t_gen(t, self.p.gm))
+        # skip already decided...
+        all_intersecting_t = filter(lambda x: len(x.P) == 0, all_intersecting_t)
+        t_start = t.start_frame(self.p.gm)
+        t_end = t.end_frame(self.p.gm)
+        #       for simplicity - find frame with biggest # of intersecting undecided tracklets
+        important_frames = {t_start: 1, t_end: 1}
+        important_frames_score = {t_start: len(t), t_end: len(t)}
+        for t_ in all_intersecting_t:
+            ts = t_.start_frame(self.p.gm)
+            te = t_.end_frame(self.p.gm)
+            if ts >= t_start:
+                important_frames.setdefault(ts, 0)
+                important_frames_score.setdefault(ts, 0)
+                important_frames_score[ts] += len(t_)
+                important_frames[ts] += 1
+
+            if te <= t_end:
+                important_frames.setdefault(te, 0)
+                important_frames_score.setdefault(te, 0)
+                important_frames_score[te] += len(t_)
+                important_frames[te] += 1
+        best_frame = -1
+        best_val = 0
+        best_score = 0
+        for frame, val in important_frames.iteritems():
+            if val >= best_val:
+                if important_frames_score[frame] > best_score:
+                    best_frame = frame
+                    best_val = val
+                    best_score = important_frames_score[frame]
+
+        return self.p.chm.undecided_singleid_tracklets_in_frame(best_frame)
+
     def single_track_assignment(self, best_CS, prototypes, tracklets_2_tracks):
         # update N sets for unassigned tracklets in relations to best_CS track ids
         for tracklet, track_id in tracklets_2_tracks.iteritems():
@@ -204,21 +314,27 @@ class CompleteSetMatching:
         best_track_ids = np.array(best_track_ids)
         import warnings
 
-        
-        for i in ids:
-            if probs[i] > 0.5:
-                t = tracklets[i]
-                track_id = best_track_ids[i]
+        while len(probs):
+            id_ = np.argmax(probs)
+            if probs[id_] > 0.5:
+                probs.remove(id_)
+                best_track_ids
+
+                t = tracklets[id_]
+                track_id = best_track_ids[id_]
                 if track_id in t.N:
                     warnings.warn("IN N ... warning tid: {}, prob: {}".format(t.id()), probs[i])
 
-                print probs[i], tracklets[i]
+                print probs[id_], tracklets[id_]
+
                 t.P = set([track_id])
                 t.id_decision_info = 'single_decision'
 
                 self.add_to_N_set(track_id, t)
-
-                # TODO: propagate...
+                for t_ in self.lp._get_affected_undecided_tracklets(t):
+                    pass
+                    # TODO: propagate...
+                    # update probabilities...
 
         plt.figure()
 
@@ -569,7 +685,7 @@ class CompleteSetMatching:
     def cs2cs_matching_prototypes_and_spatial(self, cs1, cs2, prototypes, tracklets_2_tracks, use_spatial_probabilities=True):
         perm = []
         cs1, cs2, cs_shared = self.remove_straightforward_tracklets(cs1, cs2)
-        assert len(cs1) == len(cs2)
+        # assert len(cs1) == len(cs2)
 
         if len(cs1) == 1:
             perm.append((cs1[0], cs2[0]))
@@ -800,17 +916,21 @@ class CompleteSetMatching:
 
     def prototypes_distance_probabilities(self, cs1, cs2, prototypes, tracklets2tracks):
         P = np.zeros((len(cs1), len(cs2)))
-        P2 = np.zeros((len(cs1), len(cs2)))
+        # P2 = np.zeros((len(cs1), len(cs2)))
 
-        assert len(cs1) == len(cs2)
+        # assert len(cs1) == len(cs2)
 
         for j, t2 in enumerate(cs2):
             for i, t1 in enumerate(cs1):
                 # it is already track...
-                if isinstance(t1, int) and isinstance(t2, int):
-                    track1, track2 = t1, t2
+                if isinstance(t1, int):
+                    track1 = t1
                 else:
                     track1 = tracklets2tracks[t1]
+
+                if isinstance(t2, int):
+                    track2 = t2
+                else:
                     track2 = tracklets2tracks[t2]
 
                 prob = prob_prototype_represantion_being_same_id_set(prototypes[track1], prototypes[track2])
@@ -1095,17 +1215,24 @@ if __name__ == '__main__':
     lp = LearningProcess(p)
     lp.reset_learning()
 
+    # reset id_decision_info
+    for t in p.chm.tracklet_gen():
+        try:
+            t.id_decision_info = ''
+        except:
+            pass
+
     import pickle
     with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:
         descriptors = pickle.load(f)
 
     from numpy.linalg import norm
 
-    test_descriptors_distance(descriptors)
+    # test_descriptors_distance(descriptors)
     # np.random.seed(13)
     np.random.seed(42)
 
-    csm = CompleteSetMatching(p, lp._get_tracklet_proba, lp.get_tracklet_p1s, descriptors)
+    csm = CompleteSetMatching(p, lp, descriptors)
     # r1 = csm.get_track_prototypes(p.chm[4188])
     # r2 = csm.get_track_prototypes(p.chm[2475])
     # r3 = csm.get_track_prototypes(p.chm[3856])

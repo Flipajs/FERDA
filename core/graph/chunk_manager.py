@@ -108,14 +108,30 @@ class ChunkManager:
 
         return self.get_chunks_from_intervals_(intervals)
 
+    def undecided_singleid_tracklets_in_frame(self, frame):
+        return filter(lambda x: len(x.P) == 0 and x.is_single(), self.chunks_in_frame(frame))
+
     def chunks_in_interval(self, start_frame, end_frame):
         intervals = self.itree[start_frame-self.eps2:end_frame+self.eps2]
 
         return self.get_chunks_from_intervals_(intervals)
 
+    def tracklets_intersecting_t_gen(self, t, gm):
+        for t_ in self.chunks_in_interval(t.start_frame(gm), t.end_frame(gm)):
+            if t_ != t:
+                yield t_
+
+    def singleid_tracklets_intersecting_t_gen(self, t, gm):
+        for t_ in self.tracklets_intersecting_t_gen(t, gm):
+            if t_.is_single():
+                yield t_
+
     def chunk_gen(self):
-        for ch in self.chunks_.itervalues():
-            yield ch
+        return self.tracklet_gen()
+
+    def tracklet_gen(self):
+        for t in self.chunks_.itervalues():
+            yield t
 
     def reset_itree(self, gm):
         self.itree = IntervalTree()
