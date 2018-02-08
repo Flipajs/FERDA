@@ -10,15 +10,23 @@ import matplotlib.pyplot as plt
 # creates dataset of size args.num_examples * (2+args.num_negative), data will
 # be ordered positive1_1, positive2_1, negative1_1, .... negative_num_negative, positive1_2, positive2_2, negative1_2....
 
+def get_num_animals(datadir):
+    for i in range(100):
+        if not os.path.exists(datadir+'/'+str(i)):
+            return i
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='prepare mats for hard')
 
-    parser.add_argument('--datadir', type=str,
-                        default='/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_cam1',
+    parser.add_argument('--datadir', nargs='+', type=str,
+                        default='/Users/flipajs/Documents/wd/FERDA/CNN_hard_datagen',
                         help='path to dataset')
-    parser.add_argument('--num_animals', type=int,
-                        default=6,
-                        help='number of IDs')
+    parser.add_argument('--outdir', type=str, help='Output path, if not set, use first datadir')
+    # parser.add_argument('--num_animals', type=int,
+    #                     default=6,
+    #                     help='number of IDs')
     parser.add_argument('--num_examples', type=int, default=1000,
                         help='num examples')
     parser.add_argument('--num_negative', type=int, default=1,
@@ -35,56 +43,58 @@ if __name__ == '__main__':
     imgs = []
     labels = []
 
-    ids_set = set(range(args.num_animals))
+    for datadir in args.datadir:
+        num_animals = get_num_animals(datadir)
 
-    for i in range(args.num_animals):
-        images_f.append([])
+        ids_set = set(range(num_animals))
+        for i in range(num_animals):
+            images_f.append([])
 
-        pattern = re.compile(r"(.)*\.jpg")
+            pattern = re.compile(r"(.)*\.jpg")
 
-        for fname in os.listdir(args.datadir+'/'+str(i)+''):
-            if pattern.match(fname):
-                images_f[i].append(fname)
+            for fname in os.listdir(datadir+'/'+str(i)+''):
+                if pattern.match(fname):
+                    images_f[i].append(fname)
 
-        images_f[i] = sorted(images_f[i], key=lambda x: int(x[:-4]))
+            images_f[i] = sorted(images_f[i], key=lambda x: int(x[:-4]))
 
-    for k in tqdm.tqdm(range(args.num_examples)):
-        for i in range(args.num_animals):
-            limit = args.num_examples if args.consecutive else sys.maxint
-            ai, aj = random.sample(xrange(0, min(limit, len(images_f[i]))), 2)
+        for k in tqdm.tqdm(range(args.num_examples)):
+            for i in range(num_animals):
+                limit = args.num_examples if args.consecutive else sys.maxint
+                ai, aj = random.sample(xrange(0, min(limit, len(images_f[i]))), 2)
 
-            im1 = misc.imread(args.datadir+'/'+str(i)+'/'+images_f[i][ai])
-            im2 = misc.imread(args.datadir+'/'+str(i)+'/'+images_f[i][aj])
+                im1 = misc.imread(datadir+'/'+str(i)+'/'+images_f[i][ai])
+                im2 = misc.imread(datadir+'/'+str(i)+'/'+images_f[i][aj])
 
-            from skimage import measure
+                from skimage import measure
 
-            image = np.zeros((20, 20), dtype=np.double)
-            image[14:16, 13:17] = 1
-            m = measure.moments(image)
-            
-            im1 = np.asarray(im1, dtype=np.double)
-            M = measure.moments(im1[:, :, 0])
-            cr = M[1, 0] / M[0, 0]
-            cc = M[0, 1] / M[0, 0]
-            measure.moments_central(im1[:, :, 0], cr, cc)
+                image = np.zeros((20, 20), dtype=np.double)
+                image[14:16, 13:17] = 1
+                m = measure.moments(image)
 
-            neg_ids = list(ids_set - set([i]))
-            neg_id = random.choice(neg_ids)
-            neg_f = random.choice(images_f[neg_id][:limit])
+                im1 = np.asarray(im1, dtype=np.double)
+                M = measure.moments(im1[:, :, 0])
+                cr = M[1, 0] / M[0, 0]
+                cc = M[0, 1] / M[0, 0]
+                measure.moments_central(im1[:, :, 0], cr, cc)
 
-            im_negative = misc.imread(args.datadir+'/'+str(neg_id)+'/'+neg_f)
+                neg_ids = list(ids_set - set([i]))
+                neg_id = random.choice(neg_ids)
+                neg_f = random.choice(images_f[neg_id][:limit])
 
-            imgs += [[im1, im2]]
-            imgs += [[im1, im_negative]]
-            labels += [1, 0]
+                im_negative = misc.imread(datadir+'/'+str(neg_id)+'/'+neg_f)
 
-            # plt.figure()
-            # plt.imshow(im1)
-            # plt.figure()
-            # plt.imshow(im2)
-            # plt.figure()
-            # plt.imshow(im_negative)
-            # plt.show()
+                imgs += [[im1, im2]]
+                imgs += [[im1, im_negative]]
+                labels += [1, 0]
+
+                # plt.figure()
+                # plt.imshow(im1)
+                # plt.figure()
+                # plt.imshow(im2)
+                # plt.figure()
+                # plt.imshow(im_negative)
+                # plt.show()
 
     imgs = np.array(imgs)
     # normalize..
@@ -101,12 +111,21 @@ if __name__ == '__main__':
     print "imgs TEST: {}, TRAIN: {}".format(imgs_test.shape, imgs_train.shape)
     print "labels TEST: {}, TRAIN: {}".format(labels_test.shape, labels_train.shape)
 
-    with h5py.File(args.datadir+'/imgs_train_hard_'+str(args.num_negative)+'.h5', 'w') as hf:
+    outdir = args.datadir[0]
+    try:
+        outdir = args.outdir
+    except:
+        pass
+
+    with h5py.File(outdir+'/imgs_train_hard_'+str(args.num_negative)+'.h5', 'w') as hf:
         hf.create_dataset("data", data=imgs_train)
-    with h5py.File(args.datadir+'/imgs_test_hard_'+str(args.num_negative)+'.h5', 'w') as hf:
+    with h5py.File(outdir+'/imgs_test_hard_'+str(args.num_negative)+'.h5', 'w') as hf:
         hf.create_dataset("data", data=imgs_test)
-    with h5py.File(args.datadir+'/labels_train_hard_'+str(args.num_negative)+'.h5', 'w') as hf:
+    with h5py.File(outdir+'/labels_train_hard_'+str(args.num_negative)+'.h5', 'w') as hf:
         hf.create_dataset("data", data=labels_train)
-    with h5py.File(args.datadir+'/labels_test_hard_'+str(args.num_negative)+'.h5', 'w') as hf:
+    with h5py.File(outdir+'/labels_test_hard_'+str(args.num_negative)+'.h5', 'w') as hf:
         hf.create_dataset("data", data=labels_test)
 
+
+
+# python get_train_mats_hard.py --datadir /home/threedoid/cnn_descriptor/data_cam3 /threedoid/cnn_descriptor/data_zebrafish /threedoid/cnn_descriptor/data_sowbug --outdir data_mix  --num_examples 2000

@@ -427,7 +427,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    m = load_model(args.datadir+"/best_model_on6_20co.h5", compile=False)
+    m = load_model(args.datadir+"/best_model_on6_300_ft.h5", compile=False)
 
     # with h5py.File(args.datadir + '/imgs_a_train.h5', 'r') as hf:
     #     test = hf['data'][:]

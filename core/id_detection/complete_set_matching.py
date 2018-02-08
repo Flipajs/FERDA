@@ -179,32 +179,14 @@ class CompleteSetMatching:
         tracklets = []
         best_track_ids = []
         for t in self.p.chm.chunk_gen():
+            # TODO: what about matching unmatched Tracks as well?
             if t in tracklets_2_tracks or not t.is_single():
                 continue
 
             if t not in tracklets_prototypes:
                 tracklets_prototypes[t.id()] = self.get_track_prototypes(t)
 
-            best_p = 0
-            best_track = None
-
-            prob_vec = [0] * len(self.p.animals)
-
-            for i, track_id in enumerate(best_CS):
-                # skip restricted
-                if track_id in t.N:
-                    continue
-
-                # TODO: certainty?
-                prob = self.prototypes_match_probability(prototypes[track_id], tracklets_prototypes[t.id()])
-                prob_vec[i] = prob
-
-                if prob > best_p:
-                    best_p = prob
-                    best_track = track_id
-
-            prob_vec = np.array(prob_vec) / np.sum(prob_vec)
-            probs2.append(max(prob_vec))
+            best_p, best_track = self.find_best_track_for_tracklet(best_CS, probs2, prototypes, t, tracklets_prototypes)
 
             probabilities[t] = best_p
             decisioins[t] = best_track
@@ -221,12 +203,14 @@ class CompleteSetMatching:
         ids = np.argsort(-probs)
         best_track_ids = np.array(best_track_ids)
         import warnings
+
+        
         for i in ids:
             if probs[i] > 0.5:
                 t = tracklets[i]
                 track_id = best_track_ids[i]
                 if track_id in t.N:
-                    warnings.warn("IN N ... warning {}".format(t.id()))
+                    warnings.warn("IN N ... warning tid: {}, prob: {}".format(t.id()), probs[i])
 
                 print probs[i], tracklets[i]
                 t.P = set([track_id])
@@ -240,6 +224,26 @@ class CompleteSetMatching:
 
         plt.scatter(np.arange(len(probs)), probs, c='r')
         plt.scatter(np.arange(len(probs)), probs2, c='g')
+
+    def find_best_track_for_tracklet(self, best_CS, probs2, prototypes, t, tracklets_prototypes):
+        best_p = 0
+        best_track = None
+        prob_vec = [0] * len(self.p.animals)
+        for i, track_id in enumerate(best_CS):
+            # skip restricted
+            if track_id in t.N:
+                continue
+
+            # TODO: certainty?
+            prob = self.prototypes_match_probability(prototypes[track_id], tracklets_prototypes[t.id()])
+            prob_vec[i] = prob
+
+            if prob > best_p:
+                best_p = prob
+                best_track = track_id
+        prob_vec = np.array(prob_vec) / np.sum(prob_vec)
+        probs2.append(max(prob_vec))
+        return best_p, best_track
 
     def sequential_matching(self, CSs, id_):
         print "BEGINNING of SEQUENTIAL MATCHING"
@@ -967,7 +971,9 @@ class CompleteSetMatching:
         return prototypes
 
 def _get_ids_from_folder(wd, n):
-    rids = random.sample(os.listdir(wd), n)
+    # .DS_Store...
+    files = list(filter(lambda x: x[0] != '.', os.listdir(wd)))
+    rids = random.sample(files, n)
 
     rids = map(lambda x: x[:-4], rids)
     return np.array(map(int, rids))
@@ -1095,7 +1101,7 @@ if __name__ == '__main__':
 
     from numpy.linalg import norm
 
-    # test_descriptors_distance(descriptors)
+    test_descriptors_distance(descriptors)
     # np.random.seed(13)
     np.random.seed(42)
 

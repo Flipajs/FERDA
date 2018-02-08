@@ -422,10 +422,11 @@ if __name__ == '__main__':
                         help='name used for saving intermediate results')
     parser.add_argument('--num_negative', type=int, default=1,
                         help='name used for saving intermediate results')
-    parser.add_argument('--continue_training', type=bool, default=False,
+    parser.add_argument('--continue_training', default=False, action='store_true',
                         help='if True, use --weights as initialisation')
 
     args = parser.parse_args()
+    print(args)
 
     with h5py.File(args.datadir + '/imgs_train_hard_' + str(args.num_negative) + '.h5', 'r') as hf:
         tr_pairs = hf['data'][:]

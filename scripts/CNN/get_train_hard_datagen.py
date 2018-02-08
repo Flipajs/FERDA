@@ -9,9 +9,10 @@ from random import randint as ri
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='prepare mats for hard')
 
-    parser.add_argument('--datadir', type=str,
+    parser.add_argument('--datadir', nargs='+', type=str,
                         default='/Users/flipajs/Documents/wd/FERDA/CNN_hard_datagen',
                         help='path to dataset')
+    parser.add_argument('--outdir', type=str, help='Output path, if not set, use first datadir')
     parser.add_argument('--num_examples', type=int, default=100,
                         help='num examples')
     parser.add_argument('--im_size', type=int, default=32,
@@ -87,11 +88,18 @@ if __name__ == '__main__':
     print "imgs TEST: {}, TRAIN: {}".format(imgs_test.shape, imgs_train.shape)
     print "labels TEST: {}, TRAIN: {}".format(labels_test.shape, labels_train.shape)
 
-    with h5py.File(args.datadir + '/imgs_train_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
+
+    outdir = args.datadir[0]
+    try:
+        outdir = args.outdir
+    except:
+        pass
+
+    with h5py.File(outdir + '/imgs_train_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
         hf.create_dataset("data", data=imgs_train)
-    with h5py.File(args.datadir + '/imgs_test_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
+    with h5py.File(outdir + '/imgs_test_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
         hf.create_dataset("data", data=imgs_test)
-    with h5py.File(args.datadir + '/labels_train_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
+    with h5py.File(outdir + '/labels_train_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
         hf.create_dataset("data", data=labels_train)
-    with h5py.File(args.datadir + '/labels_test_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
+    with h5py.File(outdir + '/labels_test_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
         hf.create_dataset("data", data=labels_test)
