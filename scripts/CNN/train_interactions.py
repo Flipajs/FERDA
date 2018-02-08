@@ -130,6 +130,15 @@ class TrainInteractions:
 
     def interaction_loss_angle(self, y_true, y_pred, angle_scaler=None, alpha=0.5):
         assert 0 <= alpha <= 1
+        tensor_columns = []
+        for i in range(self.num_objects):
+            for col in COLUMNS:
+                if col != 'angle_deg':
+                    tensor_columns.append(y_pred[:, self.col2idx(i, col)])
+                else:
+                    tensor_columns.append(K.tf.atan(y_pred[:, self.col2idx(i, 'angle_deg')]) / np.pi * 180)
+        y_pred = K.stack(tensor_columns, axis=1)
+
         mean_errors_xy, mean_errors_angle, indices = self.match_pred_to_gt(y_true, y_pred, K, angle_scaler)
         if self.num_objects == 2:
             errors_xy = tf.gather_nd(mean_errors_xy, indices)
@@ -305,6 +314,9 @@ class TrainInteractions:
 
         # with h5py.File(join(params['experiment_dir'], 'predictions.h5'), 'w') as hf:
         #     hf.create_dataset("data", data=pred)
+        for i in range(self.num_objects):
+            pred[:, self.col2idx(i, 'angle_deg')] = np.degrees(np.arctan(pred[:, self.col2idx(i, 'angle_deg')])),
+
         pred_df = pd.DataFrame(pred, columns=self.columns())
         pred_df.to_csv(join(params['experiment_dir'], 'predictions.csv'), index=False)
         with open(join(params['experiment_dir'], 'predictions.yaml'), 'w') as fw:
@@ -392,7 +404,7 @@ class TrainInteractions:
         self.evaluate(m, test_generator, parameters, y_test)
         hf.close()
 
-    def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, n_objects=2, rotate=False):
+    def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, n_objects=2, rotate=False, exp_name=''):
         self.num_objects = n_objects
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
         X_train = hf['train']
@@ -486,8 +498,8 @@ class TrainInteractions:
         test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
         test_generator = test_datagen.flow(X_test, shuffle=False)
 
-        base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
-        base_experiment_dir = ROOT_EXPERIMENT_DIR + base_experiment_name
+        base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime()) + '_' + exp_name
+        base_experiment_dir = join(ROOT_EXPERIMENT_DIR, base_experiment_name)
         base_tensor_board_dir = join(ROOT_TENSOR_BOARD_DIR, base_experiment_name)
 
         if not os.path.exists(base_experiment_dir):
