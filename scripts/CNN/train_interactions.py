@@ -93,7 +93,6 @@ class TrainInteractions:
         val = backend.abs(angles_pred_ - angles_true) % 180
         return backend.minimum(val, 180 - val)
 
-
     def angle_absolute_error(self, angles_pred, angles_true, backend, scaler=None):
         if scaler is not None:
             # y_pred_ = scaler.inverse_transform(y_pred[:, 4:5])  # this doesn't work with Tensors
@@ -128,15 +127,15 @@ class TrainInteractions:
         dy = y_true[:, self.col2idx_(i, 'dy')] - y_pred[:, self.col2idx_(j, 'dy')]
         return backend.concatenate((backend.abs(dx), backend.abs(dy)), axis=1)
 
-    def interaction_loss_angle(self, y_true, y_pred, angle_scaler=None, alpha=0.5):
+    def interaction_loss_angle(self, y_true, y_pred, angle_scaler=None, alpha=0.5, size_px=200):
         assert 0 <= alpha <= 1
         tensor_columns = []
         for i in range(self.num_objects):
             for col in COLUMNS:
                 if col != 'angle_deg':
-                    tensor_columns.append(y_pred[:, self.col2idx(i, col)])
+                    tensor_columns.append((y_pred[:, self.col2idx(i, col)] + 1) * size_px / 2)
                 else:
-                    tensor_columns.append(K.tf.atan(y_pred[:, self.col2idx(i, 'angle_deg')]) / np.pi * 180)
+                    tensor_columns.append((y_pred[:, self.col2idx(i, 'angle_deg')] * np.pi / 2) / np.pi * 180)
         y_pred = K.stack(tensor_columns, axis=1)
 
         mean_errors_xy, mean_errors_angle, indices = self.match_pred_to_gt(y_true, y_pred, K, angle_scaler)
@@ -287,7 +286,7 @@ class TrainInteractions:
 
         # out = Dense(128, activation='relu')(out_a)
         # out = Dense(K, activation='softmax')(out_a)
-        out = Dense(len(COLUMNS) * self.num_objects, kernel_initializer='normal', activation='linear')(out_a)
+        out = Dense(len(COLUMNS) * self.num_objects, kernel_initializer='normal', activation='tanh')(out_a)
         return Model(input_shape, out)
 
     def train(self, model, train_generator, params):
@@ -307,7 +306,7 @@ class TrainInteractions:
         model.save_weights(join(params['experiment_dir'], 'weights.h5'))
         return model
 
-    def evaluate(self, model, test_generator, params, y_test=None):
+    def evaluate(self, model, test_generator, params, y_test=None, size_px=200):
         pred = model.predict_generator(test_generator, int(params['n_test'] / BATCH_SIZE))
         # pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
         # pred[:, [4, 9]] = angle_scaler.inverse_transform(pred[:, [4, 9]])
@@ -315,7 +314,9 @@ class TrainInteractions:
         # with h5py.File(join(params['experiment_dir'], 'predictions.h5'), 'w') as hf:
         #     hf.create_dataset("data", data=pred)
         for i in range(self.num_objects):
-            pred[:, self.col2idx(i, 'angle_deg')] = np.degrees(np.arctan(pred[:, self.col2idx(i, 'angle_deg')])),
+            pred[:, self.col2idx(i, 'angle_deg')] = np.degrees(pred[:, self.col2idx(i, 'angle_deg')] * np.pi / 2)
+            pred[:, self.col2idx(i, 'x')] = (pred[:, self.col2idx(i, 'x')] + 1) * size_px / 2
+            pred[:, self.col2idx(i, 'y')] = (pred[:, self.col2idx(i, 'y')] + 1) * size_px / 2
 
         pred_df = pd.DataFrame(pred, columns=self.columns())
         pred_df.to_csv(join(params['experiment_dir'], 'predictions.csv'), index=False)

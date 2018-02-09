@@ -2,7 +2,6 @@ import unittest
 import numpy as np
 from scripts.CNN.train_interactions import TrainInteractions
 import scripts.CNN.train_interactions as train_interactions
-import matplotlib.pylab as plt
 import numpy as np
 from mock import patch
 from numpy.testing import assert_array_equal
@@ -29,7 +28,7 @@ class LossFunctionsTestCase(unittest.TestCase):
         y_test = y_test_df[self.ti.columns()]
         pred = y_test.copy()
         # pred += 1
-        pred.iloc[:] = 1
+        pred.iloc[:] = 10
         xy, angle, indices = self.ti.match_pred_to_gt(pred.values[:5], y_test.values[:5], np)
 
         # xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
@@ -39,6 +38,8 @@ class LossFunctionsTestCase(unittest.TestCase):
         print(xy_mae)
         print(angle_mae)
 
+        # pred['0_angle_deg'] = 1. / np.tan(np.radians(5.))
+        # pred['1_angle_deg'] = 1. / np.tan(np.radians(45.))
         print train_interactions.K.eval(self.ti.interaction_loss_angle(y_test.values[:5], pred.values[:5]))
 
     def run_match_pred_to_gt(self):
@@ -77,6 +78,7 @@ class LossFunctionsTestCase(unittest.TestCase):
         self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(0, -10, np), 10)
         self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(0, 360, np), 0)
         self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(10, 300, np), 70)
+        self.assertEqual(self.ti.angle_absolute_error_direction_agnostic(-30, 300, np), 30)
         assert_array_equal(self.ti.angle_absolute_error_direction_agnostic(np.array([10, 0, 0]),
                                                                    np.array([300, 360, -10]), np),
                            np.array([70, 0, 10]))
@@ -127,5 +129,4 @@ class LossFunctionsTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # LossFunctionsTestCase.run_generator_with_preprocessing()
     unittest.main()
