@@ -21,7 +21,7 @@ try:
     from sklearn.model_selection import cross_val_score
     from sklearn.model_selection import KFold
     from keras import backend as K
-    from keras.callbacks import CSVLogger, TensorBoard
+    from keras.callbacks import CSVLogger, TensorBoard, Callback, ModelCheckpoint
     import tensorflow as tf
 except ImportError:
     print('Warning, no keras installed.')
@@ -37,6 +37,15 @@ ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/
 ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
 BATCH_SIZE = 32
 COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg'] # , 'dx', 'dy']
+
+
+class ValidationCallback(Callback):
+    def __init__(self, test_generator, evaluate_fun):
+        self.test_generator = test_generator
+        self.evaluate_fun = evaluate_fun
+
+    def on_epoch_end(self, epoch, logs={}):
+        self.evaluate_fun(self.model, self.test_generator)
 
 
 class TrainInteractions:
@@ -289,7 +298,7 @@ class TrainInteractions:
         out = Dense(len(COLUMNS) * self.num_objects, kernel_initializer='normal', activation='tanh')(out_a)
         return Model(input_shape, out)
 
-    def train(self, model, train_generator, params):
+    def train(self, model, train_generator, test_generator, params, callbacks=[]):
         # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
         model.compile(loss=lambda x, y: self.interaction_loss_angle(x, y, alpha=params['loss_alpha']), # , (angle_scaler.mean_, angle_scaler.scale_)
                       optimizer='adam')
@@ -300,13 +309,14 @@ class TrainInteractions:
         tb = TensorBoard(log_dir=params['tensorboard_dir'], histogram_freq=0, batch_size=32, write_graph=True, write_grads=False,
                          write_images=False, embeddings_freq=0, embeddings_layer_names=None,
                          embeddings_metadata=None)
+        checkpoint = ModelCheckpoint(join(params['experiment_dir'], 'weights.h5'), save_best_only=True)
         model.fit_generator(train_generator, steps_per_epoch=params['steps_per_epoch'], epochs=params['epochs'],
-                            verbose=1, callbacks=[csv_logger, tb])  # , validation_data=
-
-        model.save_weights(join(params['experiment_dir'], 'weights.h5'))
+                            verbose=1, callbacks=[csv_logger, tb, checkpoint] + callbacks,
+                            validation_data=test_generator, validation_steps=params['n_test'])
+        # model.save_weights(join(params['experiment_dir'], 'weights.h5'))
         return model
 
-    def evaluate(self, model, test_generator, params, y_test=None, size_px=200):
+    def evaluate(self, model, test_generator, params, y_test=None, size_px=200, csv_filename=None):
         pred = model.predict_generator(test_generator, int(params['n_test'] / BATCH_SIZE))
         # pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
         # pred[:, [4, 9]] = angle_scaler.inverse_transform(pred[:, [4, 9]])
@@ -350,7 +360,8 @@ class TrainInteractions:
 
             results = pd.DataFrame.from_items([('xy MAE', [xy_mae]), ('angle MAE', angle_mae)])
             print(results.to_string(index=False))
-            results.to_csv(join(params['experiment_dir'], 'results.csv'))
+            if csv_filename is not None:
+                results.to_csv(csv_filename)
             return results
 
     def evaluate_model(self, data_dir, model_dir, n_objects=2):
@@ -454,7 +465,7 @@ class TrainInteractions:
 
         parameters = {'epochs': n_epochs,
                       'steps_per_epoch': int(len(X_train) / BATCH_SIZE),
-                      'n_test': len(X_test)
+                      'n_test': len(X_test),
         }
         if isinstance(loss_alpha, str) and loss_alpha == 'batch':
             parameters['loss_alpha'] = np.linspace(0, 1, 15)
@@ -497,7 +508,9 @@ class TrainInteractions:
         train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
         train_generator = train_datagen.flow(X_train, y_train)
         test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        test_generator = test_datagen.flow(X_test, shuffle=False)
+        test_generator = test_datagen.flow(X_test, y_test, shuffle=False)
+
+        val_callback = ValidationCallback(test_generator, lambda _m, _t: self.evaluate(_m, _t, parameters, y_test))
 
         base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime()) + '_' + exp_name
         base_experiment_dir = join(ROOT_EXPERIMENT_DIR, base_experiment_name)
@@ -521,10 +534,11 @@ class TrainInteractions:
                 parameters['loss_alpha'] = alpha
                 parameters['experiment_dir'] = experiment_dir
                 parameters['tensorboard_dir'] = join(base_tensor_board_dir, str(alpha))
-                m = self.train(m, train_generator, parameters)
+                m = self.train(m, train_generator, test_generator, parameters, callbacks=[val_callback])
                 with open(join(experiment_dir, 'model.yaml'), 'w') as fw:
                     fw.write(m.to_yaml())
-                results_ = self.evaluate(m, test_generator, parameters, y_test)
+                results_ = self.evaluate(m, test_generator, parameters, y_test,
+                                         csv_filename=join(parameters['experiment_dir'], 'results.csv'))
                 results_['loss_alpha'] = alpha
                 results = results.append(results_, ignore_index=True)
 
@@ -534,10 +548,11 @@ class TrainInteractions:
             m = self.model()
             parameters['experiment_dir'] = base_experiment_dir
             parameters['tensorboard_dir'] = base_tensor_board_dir
-            m = self.train(m, train_generator, parameters)
+            m = self.train(m, train_generator, test_generator, parameters, callbacks=[val_callback])
             with open(join(parameters['experiment_dir'], 'model.yaml'), 'w') as fw:
                 fw.write(m.to_yaml())
-            results = self.evaluate(m, test_generator, parameters, y_test)
+            self.evaluate(m, test_generator, parameters, y_test,
+                          csv_filename=join(parameters['experiment_dir'], 'results.csv'))
 
         hf.close()
 
