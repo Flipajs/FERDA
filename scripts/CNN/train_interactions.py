@@ -13,7 +13,7 @@ import numbers
 import pandas as pd
 try:
     from keras.utils import np_utils
-    from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten
+    from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, GlobalAveragePooling2D
     from keras.models import Model
     from keras.optimizers import Adam
     from keras.layers import Dense
@@ -23,6 +23,7 @@ try:
     from keras import backend as K
     from keras.callbacks import CSVLogger, TensorBoard, Callback, ModelCheckpoint
     import tensorflow as tf
+    import keras
 except ImportError:
     print('Warning, no keras installed.')
 import skimage.transform
@@ -51,6 +52,11 @@ class ValidationCallback(Callback):
 class TrainInteractions:
     def __init__(self, num_objects=None):
         self.num_objects = num_objects
+        self.models = {
+            '6conv_3dense': self.model_6conv_3dense,
+            '6conv_2dense': self.model_6conv_2dense,
+            'mobilenet': self.model_mobilenet,
+        }
 
     def columns(self, column_names=None):
         if column_names is None:
@@ -139,6 +145,8 @@ class TrainInteractions:
     def interaction_loss_angle(self, y_true, y_pred, angle_scaler=None, alpha=0.5, size_px=200):
         assert 0 <= alpha <= 1
         tensor_columns = []
+        # y_pred = (y_pred - 0.5) * 2  # softmax -> tanh range
+        # following expects tanh output (-1; 1)
         for i in range(self.num_objects):
             for col in COLUMNS:
                 if col != 'angle_deg':
@@ -146,6 +154,7 @@ class TrainInteractions:
                 else:
                     tensor_columns.append((y_pred[:, self.col2idx(i, 'angle_deg')] * np.pi / 2) / np.pi * 180)
         y_pred = K.stack(tensor_columns, axis=1)
+        # print(K.eval(y_pred))
 
         mean_errors_xy, mean_errors_angle, indices = self.match_pred_to_gt(y_true, y_pred, K, angle_scaler)
         if self.num_objects == 2:
@@ -257,23 +266,8 @@ class TrainInteractions:
 
         return mean_errors_xy, mean_errors_angle, indices
 
-    def model(self):
+    def model_6conv_3dense(self):
         input_shape = Input(shape=(200, 200, 3))
-
-        # LOAD...
-        # from keras.models import model_from_json
-        #
-        # json_file = open(join(ROOT_DIR, 'vision_model_' + WEIGHTS + '.json'), 'r')
-        # vision_model_json = json_file.read()
-        # json_file.close()
-        # vision_model = model_from_json(vision_model_json)
-        # # load weights into new model
-        # vision_model.load_weights(join(ROOT_DIR, 'vision_' + WEIGHTS + '.h5'))
-        # vision_model.layers.pop()
-        # vision_model.layers.pop()
-        # vision_model.summary()
-
-        # animal_input = Input(shape=X_train_a.shape[1:])
         x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
         x = MaxPooling2D((2, 2))(x)
@@ -281,26 +275,49 @@ class TrainInteractions:
         x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
         x = Conv2D(32, (3, 3))(x)
         x = MaxPooling2D((2, 2))(x)
-        out_a = Conv2D(16, (3, 3))(x)
-
-
-        # The vision model will be shared, weights and all
-        # out_a = vision_model(input_shape)
-        out_a = Flatten()(out_a)
-        # # out_a = Dense(256, activation='relu')(out_a)
-        # # out_a = Dense(128, activation='relu')(out_a)
-        # # out_a = Dense(32, activation='relu')(out_a)
-        out_a = Dense(64, activation='relu')(out_a)
-        out_a = Dense(32, activation='relu')(out_a)
-
-        # out = Dense(128, activation='relu')(out_a)
-        # out = Dense(K, activation='softmax')(out_a)
-        out = Dense(len(COLUMNS) * self.num_objects, kernel_initializer='normal', activation='tanh')(out_a)
+        x = Conv2D(16, (3, 3))(x)
+        x = Flatten()(x)
+        x = Dense(64, activation='relu')(x)
+        x = Dense(32, activation='relu')(x)
+        out = Dense(len(COLUMNS) * self.num_objects, kernel_initializer='normal', activation='tanh')(x)
         return Model(input_shape, out)
+
+    def model_6conv_2dense(self):
+        input_shape = Input(shape=(200, 200, 3))
+        x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
+        x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+        x = MaxPooling2D((2, 2))(x)
+        x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+        x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+        x = Conv2D(32, (3, 3))(x)
+        x = MaxPooling2D((2, 2))(x)
+        x = Conv2D(16, (3, 3))(x)
+        x = GlobalAveragePooling2D()(x)
+        x = Dense(1024, activation='relu')(x)
+        out = Dense(len(COLUMNS) * self.num_objects, kernel_initializer='normal', activation='tanh')(x)
+        return Model(input_shape, out)
+
+    def model_mobilenet(self):
+        base_model = keras.applications.mobilenet.MobileNet((224, 224, 3), weights='imagenet', include_top=False)
+        # add a global spatial average pooling layer
+        x = base_model.output
+        x = GlobalAveragePooling2D()(x)
+        # let's add a fully-connected layer
+        x = Dense(1024, activation='relu')(x)
+        # and a logistic layer -- let's say we have 200 classes
+        predictions = Dense(len(COLUMNS) * self.num_objects, activation='tanh')(x)  # softmax
+        # this is the model we will train
+        model = Model(inputs=base_model.input, outputs=predictions)
+
+        # first: train only the top layers (which were randomly initialized)
+        # i.e. freeze all convolutional InceptionV3 layers
+        # for layer in base_model.layers:
+        #     layer.trainable = False
+        return model
 
     def train(self, model, train_generator, test_generator, params, callbacks=[]):
         # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
-        model.compile(loss=lambda x, y: self.interaction_loss_angle(x, y, alpha=params['loss_alpha']), # , (angle_scaler.mean_, angle_scaler.scale_)
+        model.compile(loss=lambda x, y: self.interaction_loss_angle(x, y, alpha=params['loss_alpha']),  # , (angle_scaler.mean_, angle_scaler.scale_)
                       optimizer='adam')
         # model.lr.set_value(0.05)
         with open(join(params['experiment_dir'], 'model.txt'), 'w') as fw:
@@ -323,6 +340,9 @@ class TrainInteractions:
 
         # with h5py.File(join(params['experiment_dir'], 'predictions.h5'), 'w') as hf:
         #     hf.create_dataset("data", data=pred)
+
+        # pred = (pred - 0.5) * 2  # softmax -> tanh range
+        # following expects tanh output (-1; 1)
         for i in range(self.num_objects):
             pred[:, self.col2idx(i, 'angle_deg')] = np.degrees(pred[:, self.col2idx(i, 'angle_deg')] * np.pi / 2)
             pred[:, self.col2idx(i, 'x')] = (pred[:, self.col2idx(i, 'x')] + 1) * size_px / 2
@@ -405,8 +425,8 @@ class TrainInteractions:
             with open(join(model_dir, 'model.json'), 'r') as fr:
                 m = model_from_json(fr.read())
         else:
-            m = self.model()
-            warnings.warn('Stored model not found, initializing model using model().')
+            m = self.model_6conv_3dense()
+            warnings.warn('Stored model not found, initializing model using model_6conv_3dense().')
         m.load_weights(join(model_dir, 'weights.h5'))
 
         parameters = {'experiment_dir': base_experiment_dir,
@@ -416,12 +436,27 @@ class TrainInteractions:
         self.evaluate(m, test_generator, parameters, y_test)
         hf.close()
 
-    def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, n_objects=2, rotate=False, exp_name=''):
+    def resize_images(self, img_batch, shape):
+        img_shape = img_batch[0].shape
+        assert img_shape[0] <= shape[0] and img_shape[1] <= shape[1]
+        out = np.zeros(shape=((len(img_batch), ) + shape), dtype=img_batch[0].dtype)
+        for i, img in enumerate(img_batch):
+            out[i, :img_shape[0], :img_shape[1]] = img
+        return out
+
+    def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, n_objects=2, rotate=False, exp_name='',
+                           model='6conv_3dense'):
+        # example:
+        # local: train /home/matej/prace/ferda/data/interactions/1712_1k_36rot/ 0.5 100 2 --exp-name=two_mobilenet_scratch
+        # remote: train /mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/ 0.5 100 2 --exp-name=two_mobilenet_scratch
         self.num_objects = n_objects
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
-        X_train = hf['train']
+        X_train = hf['train']  # [:20]
         X_test = hf['test']
-        y_train_df = pd.read_csv(join(data_dir, 'train.csv'))
+        # X_train = self.resize_images(hf['train'][:20], (224, 224, 3))
+        # X_test = self.resize_images(hf['test'], (224, 224, 3))
+
+        y_train_df = pd.read_csv(join(data_dir, 'train.csv')) # .iloc[:20]
         y_test_df = pd.read_csv(join(data_dir, 'test.csv'))
 
         # convert to counter-clockwise
@@ -463,8 +498,11 @@ class TrainInteractions:
 
         print X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
+        assert model in self.models, 'model {} doesn\'t exist'.format(model)
+        model = self.models[model]()
+
         parameters = {'epochs': n_epochs,
-                      'steps_per_epoch': int(len(X_train) / BATCH_SIZE),
+                      'steps_per_epoch': int(len(X_train) / BATCH_SIZE),  # 1
                       'n_test': len(X_test),
         }
         if isinstance(loss_alpha, str) and loss_alpha == 'batch':
@@ -525,7 +563,7 @@ class TrainInteractions:
 
         if not isinstance(parameters['loss_alpha'], numbers.Number):
             for alpha in parameters['loss_alpha']:
-                m = self.model()
+                m = keras.models.clone_model(model)
                 print('loss_alpha %f' % alpha)
                 experiment_dir = join(base_experiment_dir, str(alpha))
                 if not os.path.exists(experiment_dir):
@@ -545,7 +583,7 @@ class TrainInteractions:
             print(results.to_string(index=False))
             results.to_csv(join(base_experiment_dir, 'results.csv'))
         else:
-            m = self.model()
+            m = keras.models.clone_model(model)
             parameters['experiment_dir'] = base_experiment_dir
             parameters['tensorboard_dir'] = base_tensor_board_dir
             m = self.train(m, train_generator, test_generator, parameters, callbacks=[val_callback])
