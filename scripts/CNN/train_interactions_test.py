@@ -8,6 +8,9 @@ from numpy.testing import assert_array_equal
 import pandas as pd
 from os.path import join
 import core.region.transformableregion as tr
+import h5py
+from keras.preprocessing.image import ImageDataGenerator
+from keras import backend as K
 
 
 class LossFunctionsTestCase(unittest.TestCase):
@@ -126,6 +129,71 @@ class LossFunctionsTestCase(unittest.TestCase):
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
         images = hf['train']
         return images
+
+
+DATA_DIR = '/home/matej/prace/ferda/data/interactions/1712_1k_36rot/'
+
+
+class TrainInteractionsTestCase(unittest.TestCase):
+    def setUp(self):
+        self.ti = train_interactions.TrainInteractions(2)
+        self.hf = h5py.File(join(DATA_DIR, 'images.h5'), 'r')
+        self.X_train = self.hf['train']
+        self.X_test = self.hf['test']
+        self.y_test_df = pd.read_csv(join(DATA_DIR, 'test.csv'))
+        self.y_test = self.y_test_df[self.ti.columns()]
+        self.y_train_df = pd.read_csv(join(DATA_DIR, 'test.csv'))
+        self.y_train = self.y_train_df[self.ti.columns()]
+
+    def tearDown(self):
+        self.hf.close()
+
+    def test_init_model_mobilenet(self):
+        n_images = 3
+        m = self.ti.model_mobilenet()
+        X_train = self.ti.resize_images(self.X_train[:n_images], (224, 224, 3))
+        out = m.predict(X_train)
+        self.assertEqual(out.shape[0], n_images)
+        self.assertEqual(out.shape[1], self.ti.num_objects * len(train_interactions.COLUMNS))
+        self.assertTrue(np.all((out > -1) & (out < 1)))
+        # pd.DataFrame(out).to_csv('model_out.csv')
+        # print out
+
+    def test_init_model_6conv_3dense(self):
+        n_images = 3
+        m = self.ti.model_6conv_3dense()
+        out = m.predict(self.X_train[:n_images])
+        self.assertEqual(out.shape[0], n_images)
+        self.assertEqual(out.shape[1], self.ti.num_objects * len(train_interactions.COLUMNS))
+        self.assertTrue(np.all((out > -1) & (out < 1)))
+        # pd.DataFrame(out).to_csv('model_out.csv')
+        # print out
+
+    def test_loss(self):
+        n_images = 3
+        m = self.ti.model_mobilenet()
+        X_train = self.ti.resize_images(self.X_train[:n_images], (224, 224, 3))
+        pred = m.predict(X_train)
+        # print pred
+        loss = K.eval(self.ti.interaction_loss_angle(self.y_train[:n_images].values, pred))
+        self.assertTrue(np.isscalar(loss))
+        self.assertTrue(loss > 0)
+
+    def test_train(self):
+        n_images = 3
+        m = self.ti.model_mobilenet()
+        X_train = self.ti.resize_images(self.X_train[:n_images], (224, 224, 3))
+        m.compile(loss=lambda x, y: self.ti.interaction_loss_angle(x, y, alpha=0.5), optimizer='adam')
+        train_datagen = ImageDataGenerator(rescale=1./255)
+        train_generator = train_datagen.flow(X_train, self.y_train[:n_images], batch_size=n_images)
+
+        w1 = m.get_weights()
+        m.fit_generator(train_generator, steps_per_epoch=1, epochs=1, verbose=1)
+        w2 = m.get_weights()
+
+        # # output differences
+        # for i, (w_pre, w_post) in enumerate(zip(w1, w2)):
+        #     assert_array_equal(w_pre, w_post, 'layer {}'.format(i))
 
 
 if __name__ == '__main__':

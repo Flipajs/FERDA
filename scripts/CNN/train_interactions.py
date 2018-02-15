@@ -407,7 +407,7 @@ class TrainInteractions:
         # def image_dim(img):
         #     return img * mask
 
-        test_datagen = ImageDataGenerator(rescale=1./255) # , preprocessing_function=rotate90)
+        test_datagen = ImageDataGenerator(rescale=1./255)  # , preprocessing_function=rotate90)
         test_generator = test_datagen.flow(X_test, shuffle=False)
 
         base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
@@ -451,10 +451,11 @@ class TrainInteractions:
         # remote: train /mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/ 0.5 100 2 --exp-name=two_mobilenet_scratch
         self.num_objects = n_objects
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
-        X_train = hf['train']  # [:20]
+        X_train = hf['train']
         X_test = hf['test']
-        # X_train = self.resize_images(hf['train'][:20], (224, 224, 3))
-        # X_test = self.resize_images(hf['test'], (224, 224, 3))
+        if model == 'mobilenet':
+            X_train = self.resize_images(hf['train'], (224, 224, 3))
+            X_test = self.resize_images(hf['test'], (224, 224, 3))
 
         y_train_df = pd.read_csv(join(data_dir, 'train.csv')) # .iloc[:20]
         y_test_df = pd.read_csv(join(data_dir, 'test.csv'))
@@ -583,7 +584,7 @@ class TrainInteractions:
             print(results.to_string(index=False))
             results.to_csv(join(base_experiment_dir, 'results.csv'))
         else:
-            m = keras.models.clone_model(model)
+            m = keras.models.clone_model(model)  # BUG?
             parameters['experiment_dir'] = base_experiment_dir
             parameters['tensorboard_dir'] = base_tensor_board_dir
             m = self.train(m, train_generator, test_generator, parameters, callbacks=[val_callback])
