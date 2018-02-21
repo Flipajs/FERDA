@@ -26,9 +26,10 @@ class LossFunctionsTestCase(unittest.TestCase):
 
     def run_interaction_loss_angle(self):
         data_dir = '/home/matej/prace/ferda/data/interactions/1712_36k_random'
-        self.ti.num_objects = 2
-        y_test_df = pd.read_csv(join(data_dir, 'test.csv'))
-        y_test = y_test_df[self.ti.columns()]
+        n, columns, y_test_df = self.ti.read_gt(join(data_dir, 'test.csv'))
+        self.ti.gt = train_interactions.ObjectsArray(columns, n)
+        self.ti.set_num_objects(n)
+        y_test = y_test_df[self.ti.gt.columns()]
         pred = y_test.copy()
         # pred += 1
         pred.iloc[:] = 10
@@ -43,10 +44,10 @@ class LossFunctionsTestCase(unittest.TestCase):
 
         # pred['0_angle_deg'] = 1. / np.tan(np.radians(5.))
         # pred['1_angle_deg'] = 1. / np.tan(np.radians(45.))
-        print train_interactions.K.eval(self.ti.interaction_loss_angle(y_test.values[:5], pred.values[:5]))
+        print(train_interactions.K.eval(self.ti.interaction_loss_angle(y_test.values[:5], pred.values[:5])))
 
     def run_match_pred_to_gt(self):
-        self.ti.num_objects = 2
+        self.ti.set_num_objects(2)
         with patch.object(self.ti, 'xy_absolute_error',
                           return_value=np.array([[10, 10], [20, 20], [30, 30]])) as mock_method1:
             with patch.object(self.ti, 'angle_absolute_error_direction_agnostic',
@@ -140,10 +141,11 @@ class TrainInteractionsTestCase(unittest.TestCase):
         self.hf = h5py.File(join(DATA_DIR, 'images.h5'), 'r')
         self.X_train = self.hf['train']
         self.X_test = self.hf['test']
-        self.y_test_df = pd.read_csv(join(DATA_DIR, 'test.csv'))
-        self.y_test = self.y_test_df[self.ti.columns()]
-        self.y_train_df = pd.read_csv(join(DATA_DIR, 'test.csv'))
-        self.y_train = self.y_train_df[self.ti.columns()]
+        n, columns, self.y_test_df = self.ti.read_gt(join(DATA_DIR, 'test.csv'))
+        n, columns, self.y_train_df = self.ti.read_gt(join(DATA_DIR, 'test.csv'))
+        self.ti.gt = self.ti.pred
+        self.y_test = self.y_test_df[self.ti.pred.columns()]
+        self.y_train = self.y_train_df[self.ti.pred.columns()]
 
     def tearDown(self):
         self.hf.close()
@@ -154,7 +156,7 @@ class TrainInteractionsTestCase(unittest.TestCase):
         X_train = self.ti.resize_images(self.X_train[:n_images], (224, 224, 3))
         out = m.predict(X_train)
         self.assertEqual(out.shape[0], n_images)
-        self.assertEqual(out.shape[1], self.ti.num_objects * len(train_interactions.COLUMNS))
+        self.assertEqual(out.shape[1], self.ti.pred.num_columns())
         self.assertTrue(np.all((out > -1) & (out < 1)))
         # pd.DataFrame(out).to_csv('model_out.csv')
         # print out
@@ -164,7 +166,7 @@ class TrainInteractionsTestCase(unittest.TestCase):
         m = self.ti.model_6conv_3dense()
         out = m.predict(self.X_train[:n_images])
         self.assertEqual(out.shape[0], n_images)
-        self.assertEqual(out.shape[1], self.ti.num_objects * len(train_interactions.COLUMNS))
+        self.assertEqual(out.shape[1], self.ti.pred.num_columns())
         self.assertTrue(np.all((out > -1) & (out < 1)))
         # pd.DataFrame(out).to_csv('model_out.csv')
         # print out
