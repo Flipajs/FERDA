@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 """
 use: $ python interactions.py -- --help
 """
@@ -36,6 +38,7 @@ from os.path import join
 import pandas as pd
 import errno
 import hashlib
+from __future__ import print_function
 
 IMAGE_SIZE_PX = 200
 
@@ -264,7 +267,7 @@ class Interactions(object):
         hdf5_file.close()
 
     def _write_argv(self, out_dir):
-        with file(join(out_dir, 'parameters.txt'), 'w') as fw:
+        with open(join(out_dir, 'parameters.txt'), 'w') as fw:
             fw.writelines('\n'.join(sys.argv))
 
     def write_annotated_blobs_groundtruth(self, project_file, blobs_filename, n_objects, out_dir):
@@ -324,10 +327,10 @@ class Interactions(object):
         multiple_imgs = []  # np.zeros((median_len,) + img.shape)
         bg_mask = np.zeros(img.shape[:2], dtype=np.bool)
         i = 0
-        print 'frame number\tmissing bg pixels'
+        print('frame number\tmissing bg pixels')
         while not np.all(bg_mask):
             frame = i * video_step
-            print frame, '\t', np.count_nonzero(~bg_mask)
+            print(frame, '\t', np.count_nonzero(~bg_mask))
             img = self._video.get_frame(frame).astype(float)
             img_bg_mask = np.zeros(img.shape[:2], dtype=np.bool)
             for region in self._single[frame] + self._multi[frame]:
@@ -574,7 +577,7 @@ class Interactions(object):
 
     def write_synthetized_interactions(self, count=100, n_objects=2, out_dir='./out', out_csv='./out/doubleregions.csv',
                                        rotation='random', xy_jitter_width=0, project_dir=None, out_hdf5=None, hdf5_dataset_name=None):
-        # --project_dir /home/matej/prace/ferda/projects/camera1_10-15/
+        # write_synthetized_interactions --count=360 --n-objects=1 --out-csv=../data/interactions/180208_1k_36rot_single_mask/train.csv --rotation 10 --project_dir /home/matej/prace/ferda/projects/camera1_10-15/ --xy_jitter_width=40 --out_hdf5=../data/interactions/180208_1k_36rot_single_mask/images.h5 --hdf5_dataset_name=train
         if out_dir is False:
             out_dir = None
         if out_csv is False:
@@ -952,7 +955,7 @@ class Interactions(object):
             img_center = np.round(np.array(gray.shape)[::-1] / 2).astype(int)  # x, y
             # minSize=(56, 82), maxSize=(56, 82))
             detections = {}
-            for angle in xrange(0, 180, 20):
+            for angle in range(0, 180, 20):
                 rot = cv2.getRotationMatrix2D(tuple(img_center), angle, 1.)
                 img_rot = cv2.warpAffine(gray, rot, gray.shape[::-1])
                 ants = ant_cascade.detectMultiScale(img_rot, 1.05, 5, minSize=(56, 82), maxSize=(56, 82))
@@ -967,7 +970,7 @@ class Interactions(object):
                     corners_rotated = cv2.invertAffineTransform(rot).dot(np.hstack((corners, np.ones((4, 1)))).T).T
                     detections[angle].append(corners_rotated)
 
-            for angle, rotated_boxes in detections.iteritems():
+            for angle, rotated_boxes in detections.items():
                 cv2.polylines(img, [np.array(corners).astype(np.int32) for corners in rotated_boxes], True,
                               (255, 0, 0))
             plt.imshow(img[::-1])

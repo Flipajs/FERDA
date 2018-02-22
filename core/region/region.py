@@ -159,6 +159,11 @@ class Region(object):
         return self.margin_
 
     def pts(self):
+        """
+        Return region points (contour + area).
+
+        :return: yx coordinates; array, shape=(n, 2)
+        """
         if self.pts_ is None:
             self.pts_ = self.pts_from_rle_(self.pts_rle_)
 

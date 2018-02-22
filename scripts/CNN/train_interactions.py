@@ -22,8 +22,8 @@ try:
     import keras
     from keras.models import model_from_yaml, model_from_json
     from keras.preprocessing.image import ImageDataGenerator
-except ImportError:
-    print('Warning, no keras installed.')
+except ImportError as e:
+    print('Warning, no keras installed: {}'.format(e))
 import fire
 from core.region.transformableregion import TransformableRegion
 import warnings
@@ -73,12 +73,15 @@ class ObjectsArray(object):
     def num_columns(self):
         return len(self.properties) * self.n
 
-    def to_struct(self, array):
+    def array_to_struct(self, array):
         formats = self.num_columns() * 'f,'
         return np.core.records.fromarrays(array.transpose(), names=', '.join(self.columns()), formats=formats)
 
-    def to_dataframe(self, array):
+    def array_to_dataframe(self, array):
         return pd.DataFrame(array, columns=self.columns())
+
+    def dataframe_to_array(self, df):
+        return df[self.columns()].values
 
 
 class ValidationCallback(Callback):
@@ -97,27 +100,15 @@ class TrainInteractions:
             '6conv_2dense': self.model_6conv_2dense,
             'mobilenet': self.model_mobilenet,
         }
-        self.COLUMNS_PRED = ['x', 'y', 'angle_deg']
+        self.PREDICTED_PROPS = ['x', 'y', 'angle_deg']
         self.num_objects = None
-        self.pred = None  # provide column name to index translation using ObjectsArray
-        self.gt = None  # provide column name to index translation using ObjectsArray
-        self.set_num_objects(num_objects)
-
-    # def col2idx(self, obj, col):
-    #     return obj * len(COLUMNS) + COLUMNS.index(col)
-    #
-    # def col2idx_pred(self, obj, col):
-    #     return obj * len(COLUMNS_PRED) + COLUMNS.index(col)
-    #
-    # def col2idx_(self, obj, col):
-    #     return slice(self.col2idx(obj, col), self.col2idx(obj, col) + 1)
-    #
-    # def col2idx_pred_(self, obj, col):
-    #     return slice(self.col2idx_pred(obj, col), self.col2idx_pred(obj, col) + 1)
+        self.array = None  # provide column name to index mapping using ObjectsArray
+        if num_objects is not None:
+            self.set_num_objects(num_objects)  # init num_objects and map
 
     def set_num_objects(self, n):
         self.num_objects = n
-        self.pred = ObjectsArray(self.COLUMNS_PRED, n)
+        self.array = ObjectsArray(self.PREDICTED_PROPS, n)
 
     @staticmethod
     def toarray(struct_array):
@@ -148,7 +139,6 @@ class TrainInteractions:
         assert min(ids) == 0 and max(ids) == n - 1, 'object describing columns have to be prefixed with numbers starting with 0'
         assert len(properties) % n == 0
         properties = properties[:(len(properties) / n) - 1]  # only properties for object 0
-        self.gt = ObjectsArray(properties, n)
         return n, properties, df
 
     @staticmethod
@@ -185,8 +175,8 @@ class TrainInteractions:
 
     def xy_absolute_error(self, y_true, y_pred, i, j, backend):
         return backend.abs(backend.concatenate(
-            (y_pred[:, self.pred.prop2idx_(i, 'x')] - y_true[:, self.gt.prop2idx_(j, 'x')],
-             y_pred[:, self.pred.prop2idx_(i, 'y')] - y_true[:, self.gt.prop2idx_(j, 'y')]),
+            (y_pred[:, self.array.prop2idx_(i, 'x')] - y_true[:, self.array.prop2idx_(j, 'x')],
+             y_pred[:, self.array.prop2idx_(i, 'y')] - y_true[:, self.array.prop2idx_(j, 'y')]),
             axis=1))
 
     def delta_error(self, y_true, y_pred, i, j, backend):
@@ -200,8 +190,8 @@ class TrainInteractions:
         :param backend:
         :return: shape=(n, 2)
         """
-        dx = y_true[:, self.gt.prop2idx_(i, 'dx')] - y_pred[:, self.pred.prop2idx_(j, 'dx')]
-        dy = y_true[:, self.gt.prop2idx_(i, 'dy')] - y_pred[:, self.pred.prop2idx_(j, 'dy')]
+        dx = y_true[:, self.array.prop2idx_(i, 'dx')] - y_pred[:, self.array.prop2idx_(j, 'dx')]
+        dy = y_true[:, self.array.prop2idx_(i, 'dy')] - y_pred[:, self.array.prop2idx_(j, 'dy')]
         return backend.concatenate((backend.abs(dx), backend.abs(dy)), axis=1)
 
     def interaction_loss_angle(self, y_true, y_pred, angle_scaler=None, alpha=0.5, size_px=200):
@@ -210,11 +200,11 @@ class TrainInteractions:
         # following expects tanh output (-1; 1)
         tensor_columns = []
         for i in range(self.num_objects):
-            for col in self.pred.properties:
+            for col in self.array.properties:
                 if col != 'angle_deg':
-                    tensor_columns.append((y_pred[:, self.pred.prop2idx(i, col)] + 1) * size_px / 2)
+                    tensor_columns.append((y_pred[:, self.array.prop2idx(i, col)] + 1) * size_px / 2)
                 else:
-                    tensor_columns.append((y_pred[:, self.pred.prop2idx(i, 'angle_deg')] * np.pi / 2) / np.pi * 180)
+                    tensor_columns.append((y_pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2) / np.pi * 180)
         y_pred = K.stack(tensor_columns, axis=1)
         # print(K.eval(y_pred))
 
@@ -294,8 +284,8 @@ class TrainInteractions:
         if self.num_objects == 1:
             xy = self.xy_absolute_error(y_true, y_pred, 0, 0, backend)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
             angle = self.angle_absolute_error_direction_agnostic(
-                y_pred[:, self.pred.prop2idx(0, 'angle_deg')],
-                y_true[:, self.gt.prop2idx(0, 'angle_deg')],
+                y_pred[:, self.array.prop2idx(0, 'angle_deg')],
+                y_true[:, self.array.prop2idx(0, 'angle_deg')],
                 backend, angle_scaler)  # shape=(n, 1)
             mean_errors_xy = norm(xy, axis=1)  # shape=(n,)
             mean_errors_angle = angle  # shape=(n,)
@@ -307,8 +297,8 @@ class TrainInteractions:
                 xy[(i, j)] = self.xy_absolute_error(y_true, y_pred, i, j,
                                                bk)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
                 angle[(i, j)] = self.angle_absolute_error_direction_agnostic(
-                    y_pred[:, self.pred.prop2idx(i, 'angle_deg')],  # shape=(n,)
-                    y_true[:, self.gt.prop2idx(j, 'angle_deg')],  # shape=(n,)
+                    y_pred[:, self.array.prop2idx(i, 'angle_deg')],  # shape=(n,)
+                    y_true[:, self.array.prop2idx(j, 'angle_deg')],  # shape=(n,)
                     bk, angle_scaler)  # shape=(n,)
             mean_errors_xy = bk.stack((
                 bk.mean(bk.stack((norm(xy[0, 0], axis=1),
@@ -342,7 +332,7 @@ class TrainInteractions:
         x = Flatten()(x)
         x = Dense(64, activation='relu')(x)
         x = Dense(32, activation='relu')(x)
-        out = Dense(self.pred.num_columns(), kernel_initializer='normal', activation='tanh')(x)
+        out = Dense(self.array.num_columns(), kernel_initializer='normal', activation='tanh')(x)
         return Model(input_shape, out)
 
     def model_6conv_2dense(self):
@@ -357,7 +347,7 @@ class TrainInteractions:
         x = Conv2D(16, (3, 3))(x)
         x = GlobalAveragePooling2D()(x)
         x = Dense(1024, activation='relu')(x)
-        out = Dense(self.pred.num_columns(), kernel_initializer='normal', activation='tanh')(x)
+        out = Dense(self.array.num_columns(), kernel_initializer='normal', activation='tanh')(x)
         return Model(input_shape, out)
 
     def model_mobilenet(self):
@@ -368,7 +358,7 @@ class TrainInteractions:
         # let's add a fully-connected layer
         x = Dense(1024, activation='relu')(x)
         # and a logistic layer -- let's say we have 200 classes
-        predictions = Dense(self.pred.num_columns(), activation='tanh')(x)  # softmax
+        predictions = Dense(self.array.num_columns(), activation='tanh')(x)  # softmax
         # this is the model we will train
         model = Model(inputs=base_model.input, outputs=predictions)
 
@@ -407,21 +397,21 @@ class TrainInteractions:
         # pred = (pred - 0.5) * 2  # softmax -> tanh range
         # following expects tanh output (-1; 1)
         for i in range(self.num_objects):
-            pred[:, self.pred.prop2idx(i, 'angle_deg')] = np.degrees(pred[:, self.pred.prop2idx(i, 'angle_deg')] * np.pi / 2)
-            pred[:, self.pred.prop2idx(i, 'x')] = (pred[:, self.pred.prop2idx(i, 'x')] + 1) * size_px / 2
-            pred[:, self.pred.prop2idx(i, 'y')] = (pred[:, self.pred.prop2idx(i, 'y')] + 1) * size_px / 2
+            pred[:, self.array.prop2idx(i, 'angle_deg')] = np.degrees(pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2)
+            pred[:, self.array.prop2idx(i, 'x')] = (pred[:, self.array.prop2idx(i, 'x')] + 1) * size_px / 2
+            pred[:, self.array.prop2idx(i, 'y')] = (pred[:, self.array.prop2idx(i, 'y')] + 1) * size_px / 2
 
-        pred_df = self.pred.to_dataframe(pred)
+        pred_df = self.array.array_to_dataframe(pred)
         pred_df.to_csv(join(params['experiment_dir'], 'predictions.csv'), index=False)
         with open(join(params['experiment_dir'], 'predictions.yaml'), 'w') as fw:
             yaml.dump({
                 'num_objects': self.num_objects,
-                'properties': self.pred.properties
+                'properties': self.array.properties
             }, fw)
 
         if y_test is not None:
             # xy, _, indices = match_pred_to_gt_dxdy(y_test.values, pred, np)
-            xy, angle, indices = self.match_pred_to_gt(y_test.values, pred, np)
+            xy, angle, indices = self.match_pred_to_gt(y_test, pred, np)
 
             if self.num_objects == 1:
                 xy_mae = np.take(xy, indices).mean()
@@ -462,7 +452,7 @@ class TrainInteractions:
         m.load_weights(join(model_dir, 'weights.h5'))
         with open(join(model_dir, 'predictions.yaml'), 'r') as fr:
             model_metadata = yaml.load(fr)
-        self.pred = ObjectsArray(self.COLUMNS_PRED, model_metadata['num_objects'])
+        self.array = ObjectsArray(self.PREDICTED_PROPS, model_metadata['num_objects'])
 
         # load images
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
@@ -476,12 +466,12 @@ class TrainInteractions:
             for i in range(gt_n):
                 y_test_df.loc[:, '%d_angle_deg' % i] *= -1
             assert model_metadata['num_objects'] == gt_n, 'number of predicted objects and number of objects in gt has to agree'
-            y_test = y_test_df[self.gt.columns()]
+            y_test = self.array.dataframe_to_array(y_test_df)
         else:
             warnings.warn('Ground truth file test.csv not found. Generating predictions without evaluation.')
             y_test = None
 
-        self.set_num_objects(self.pred.n)
+        self.set_num_objects(self.array.n)
         # size = 200
         # x, y = np.mgrid[0:size, 0:size]
         # mask = np.expand_dims(np.exp(- 0.0002 * ((x - size / 2) ** 2 + (y - size / 2) ** 2)), 2)
@@ -520,6 +510,8 @@ class TrainInteractions:
         # example:
         # local: train /home/matej/prace/ferda/data/interactions/1712_1k_36rot/ 0.5 100 --exp-name=two_mobilenet_scratch
         # remote: train /mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/ 0.5 100 --exp-name=two_mobilenet_scratch
+
+        # load images
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
         X_train = hf['train']
         X_test = hf['test']
@@ -527,10 +519,12 @@ class TrainInteractions:
             X_train = self.resize_images(hf['train'], (224, 224, 3))
             X_test = self.resize_images(hf['test'], (224, 224, 3))
 
+        # load gt
         n_train, columns_train, y_train_df = self.read_gt(join(data_dir, 'train.csv'))
         n_test, columns_test, y_test_df = self.read_gt(join(data_dir, 'test.csv'))
         assert n_train == n_test
         assert columns_train == columns_test
+        self.set_num_objects(n_train)
 
         # convert to counter-clockwise
         for i in range(self.num_objects):
@@ -566,13 +560,12 @@ class TrainInteractions:
         #     y_test_df.loc[:, '%d_dx' % i] = y_test_df['%d_major' % i] * np.cos(angle_rad)
         #     y_test_df.loc[:, '%d_dy' % i] = y_test_df['%d_major' % i] * np.sin(angle_rad)
 
-        y_train = y_train_df[self.gt.columns()].values()
-        y_test = y_test_df[self.gt.columns()].values()
+        y_train = self.array.dataframe_to_array(y_train_df)
+        y_test = self.array.dataframe_to_array(y_test_df)
 
         print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
         assert model in self.models, 'model {} doesn\'t exist'.format(model)
-        model = self.models[model]()
 
         parameters = {'epochs': n_epochs,
                       'steps_per_epoch': int(len(X_train) / BATCH_SIZE),  # 1
@@ -636,7 +629,7 @@ class TrainInteractions:
 
         if not isinstance(parameters['loss_alpha'], numbers.Number):
             for alpha in parameters['loss_alpha']:
-                m = keras.models.clone_model(model)
+                m = self.models[model]()
                 print('loss_alpha %f' % alpha)
                 experiment_dir = join(base_experiment_dir, str(alpha))
                 if not os.path.exists(experiment_dir):
@@ -656,7 +649,7 @@ class TrainInteractions:
             print(results.to_string(index=False))
             results.to_csv(join(base_experiment_dir, 'results.csv'))
         else:
-            m = keras.models.clone_model(model)  # BUG?
+            m = self.models[model]()
             parameters['experiment_dir'] = base_experiment_dir
             parameters['tensorboard_dir'] = base_tensor_board_dir
             m = self.train(m, train_generator, test_generator, parameters, callbacks=[val_callback])
