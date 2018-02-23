@@ -8,7 +8,6 @@ use: $ python interactions.py -- --help
 
 import sys
 import cPickle as pickle
-from core.settings import Settings as S_
 from utils.misc import is_flipajs_pc, is_matejs_pc
 import time
 from core.project.project import Project
@@ -38,7 +37,6 @@ from os.path import join
 import pandas as pd
 import errno
 import hashlib
-from __future__ import print_function
 
 IMAGE_SIZE_PX = 200
 
@@ -575,15 +573,11 @@ class Interactions(object):
 
         fw.close()
 
-    def write_synthetized_interactions(self, count=100, n_objects=2, out_dir='./out', out_csv='./out/doubleregions.csv',
-                                       rotation='random', xy_jitter_width=0, project_dir=None, out_hdf5=None, hdf5_dataset_name=None):
-        # write_synthetized_interactions --count=360 --n-objects=1 --out-csv=../data/interactions/180208_1k_36rot_single_mask/train.csv --rotation 10 --project_dir /home/matej/prace/ferda/projects/camera1_10-15/ --xy_jitter_width=40 --out_hdf5=../data/interactions/180208_1k_36rot_single_mask/images.h5 --hdf5_dataset_name=train
-        if out_dir is False:
-            out_dir = None
-        if out_csv is False:
-            out_csv = None
-        if out_hdf5 is False:
-            out_hdf5 = None
+    def write_synthetized_interactions(self, project_dir, count=100, n_objects=2, out_csv='./out/doubleregions.csv',
+                                       rotation='random', xy_jitter_width=0, out_hdf5=None,
+                                       hdf5_dataset_name=None, write_masks=False, out_image_dir=None):
+        # write_synthetized_interactions --project_dir /home/matej/prace/ferda/projects/camera1_10-15/ --count=360
+        # --n-objects=1 --out-csv=../data/interactions/180208_1k_36rot_single_mask/train.csv --rotation 10  --xy_jitter_width=40 --out_hdf5=../data/interactions/180208_1k_36rot_single_mask/images.h5 --hdf5_dataset_name=train
         if rotation == 'random' or rotation == 'normalize':
             n_angles = 1
         elif isinstance(rotation, int):
@@ -615,7 +609,9 @@ class Interactions(object):
                 warnings.warn('HDF5 file %s already exists, adding dataset %s.' % (out_hdf5, hdf5_dataset_name))
             hdf5_file = h5py.File(out_hdf5, mode='a')
             hdf5_file.create_dataset(hdf5_dataset_name, (count, IMAGE_SIZE_PX, IMAGE_SIZE_PX, 3), np.uint8)  # , compression='szip')
-            # hdf5_file.create_dataset('results', (n, len(fieldnames)))
+            if write_masks:
+                masks_dataset_name = hdf5_dataset_name + '_mask'
+                hdf5_file.create_dataset(masks_dataset_name, (count, IMAGE_SIZE_PX, IMAGE_SIZE_PX), np.uint8)
 
         if out_csv is not None:
             csv_file = open(out_csv, 'w')
@@ -638,6 +634,12 @@ class Interactions(object):
                 for j in range(n):
                     use_regions = [regions[k * n + j] for k in range(n_objects)]
                     use_images = [images[k * n + j] for k in range(n_objects)]
+                    if write_masks:
+                        masks = []
+                        for r in use_regions:
+                            img = np.zeros(shape=use_images[0].shape[:2], dtype=np.uint8)
+                            r.draw_mask(img)
+                            masks.append(img)
                     img_synthetic = None
                     while True:
                         # border point angle with respect to object centroid, 0 rad is from the centroid rightwards, positive ccw
@@ -649,7 +651,11 @@ class Interactions(object):
 
                         try:
                             img_synthetic, mask, centers_xy, main_axis_angles_rad = \
-                                self.__synthetize(use_regions, theta_rad, phi_rad, overlap_px, use_images)
+                                self.__synthetize(use_regions, theta_rad, phi_rad, overlap_px, use_images,
+                                                  self._bg.bg_model)
+                            if write_masks:
+                                _, mask_synthetic, _, _ = self.__synthetize(use_regions, theta_rad, phi_rad, overlap_px,
+                                                                            masks)
                         except IndexError:
                             print('%s: IndexError, repeating' % ('%06d.jpg' % (i + 1)))
                         if img_synthetic is not None:
@@ -663,17 +669,22 @@ class Interactions(object):
                     else:
                         angles = rotations
                     for angle_deg in angles:
-                        tregion_synthetic = TransformableRegion(img_synthetic)
-                        # tregion_synthetic.set_mask(mask.astype(np.uint8))
-                        tregion_synthetic.rotate(angle_deg, centroid_xy[::-1])
-                        img_rotated = tregion_synthetic.get_img()
                         if xy_jitter_width != 0:
                             # jitter_xy = np.clip(np.random.normal(scale=xy_jitter_std, size=2),
                             #                     a_min=-2 * xy_jitter_std, a_max=2 * xy_jitter_std)
                             jitter_xy = np.random.uniform(-xy_jitter_width / 2, xy_jitter_width / 2, size=2)
                         else:
-                            jitter_xy = (0., 0.)
+                            jitter_xy = np.array((0., 0.))
+                        tregion_synthetic = TransformableRegion(img_synthetic)
+                        # tregion_synthetic.set_mask(mask.astype(np.uint8))
+                        tregion_synthetic.rotate(angle_deg, centroid_xy[::-1])
+                        img_rotated = tregion_synthetic.get_img()
                         img_crop, delta_xy = self._crop(img_rotated, centroid_xy + jitter_xy, IMAGE_SIZE_PX)
+                        if write_masks:
+                            tregion_synthetic.set_img(mask_synthetic.astype(np.uint8))
+                            mask_rotated = tregion_synthetic.get_img()
+                            mask_crop, _ = self._crop(mask_rotated, centroid_xy + jitter_xy, IMAGE_SIZE_PX)
+                            mask_crop = mask_crop.astype(np.uint8) * 255
 
                         results_row = []
                         for k in range(n_objects):
@@ -705,14 +716,16 @@ class Interactions(object):
                             ('video_file', os.path.basename(self._video.video_path)),
                         ])
 
-                        if out_dir is not None:
-                            cv2.imwrite(os.path.join(out_dir, '%06d.jpg' % i), img_crop)
+                        if out_image_dir is not None:
+                            cv2.imwrite(os.path.join(out_image_dir, '%06d.jpg' % i), img_crop)
+                            if write_masks:
+                                cv2.imwrite(os.path.join(out_image_dir, '%06d_mask.jpg' % i), mask_crop)
                         if out_csv is not None:
                             csv_writer.writerow(dict(results_row))
                         if out_hdf5 is not None:
                             hdf5_file[hdf5_dataset_name][i, ...] = img_crop
-                            # hdf5_file['results'][i] = [value for key, value in results_row]
-
+                            if write_masks:
+                                hdf5_file[masks_dataset_name][i, ...] = mask_crop
                         i += 1
 
                         # fig = plt.figure()
@@ -787,7 +800,7 @@ class Interactions(object):
                 img = plt.imread(os.path.join(image_dir, row['filename']))
             save_prediction_img(join(out_dir, '%05d.png' % i), n_objects, img, pred=None, gt=row)
 
-    def __synthetize(self, regions, theta_rad, phi_rad, overlap_px, images=None):
+    def __synthetize(self, regions, theta_rad, phi_rad, overlap_px, images=None, background=None):
         # angles: positive clockwise, zero direction to right
         n_objects = len(regions)
         if images is None:
@@ -813,19 +826,15 @@ class Interactions(object):
 
             head_yx, tail_yx = get_region_endpoints(regions[i])
 
-            ##
+            if background is not None:
+                # constructing alpha channel
+                bg_diff = (background.astype(np.float) - images[i]).mean(axis=2).clip(5, 100)
+                alpha = ((bg_diff - bg_diff.min()) / np.ptp(bg_diff))
+                img_rgba = np.concatenate((images[i], np.expand_dims(alpha * 255, 2).astype(np.uint8)), 2)
+                tregion = TransformableRegion(img_rgba)
+            else:
+                tregion = TransformableRegion(images[i])
 
-            # constructing img2 alpha channel
-            bg_diff = (self._bg.bg_model.astype(np.float) - images[i]).mean(axis=2).clip(5, 100)
-            alpha = ((bg_diff - bg_diff.min()) / np.ptp(bg_diff))
-            # plt.imshow(alpha)
-            # plt.jet()
-            # plt.colorbar()
-
-            ##
-
-            img_rgba = np.concatenate((images[i], np.expand_dims(alpha * 255, 2).astype(np.uint8)), 2)
-            tregion = TransformableRegion(img_rgba)
             tregion.set_region(regions[i])
 
             # # background subtraction: component analysis
@@ -844,7 +853,8 @@ class Interactions(object):
             # ax.imshow(mask2)
             # ax.add_patch(Rectangle(bb_xywh[:2], bb_xywh[2], bb_xywh[3], linewidth=1, edgecolor='r', facecolor='none'))
 
-            tregion.set_elliptic_mask()
+            if background is not None:
+                tregion.set_elliptic_mask()
 
             tregion.use_background = False
             main_axis_angle_rad = -regions[i].theta_ + math.pi - (phi_rad[i - 1] + theta_rad[i - 1])
@@ -852,8 +862,8 @@ class Interactions(object):
 
             centers_xy.append(tregion.get_transformed_coords(regions[i].centroid()[::-1]))
             # test if region2 object is within image bounds
-            alpha = (regions[i].theta_ + main_axis_angle_rad)
-            dxdy = 2 * regions[i].major_axis_ * np.array([np.cos(-alpha), np.sin(-alpha)])
+            angle = (regions[i].theta_ + main_axis_angle_rad)
+            dxdy = 2 * regions[i].major_axis_ * np.array([np.cos(-angle), np.sin(-angle)])
             if not (np.all((centers_xy[i] + dxdy) >= [0, 0]) and
                     np.all((centers_xy[i] + dxdy) < images[0].shape[:2]) and
                     np.all((centers_xy[i] - dxdy) >= [0, 0]) and
@@ -863,28 +873,34 @@ class Interactions(object):
                 # plt.plot((synth_center_xy2 - dxdy)[0], (synth_center_xy2 - dxdy)[1], 'r+')
                 raise IndexError
 
-            alpha_trans = tregion.get_img()[:, :, 3]
-            alpha_trans[tregion.get_mask() == 0] = 0  # apply mask
-            alpha_trans = alpha_trans.astype(float) / 255
+            if background is not None:
+                alpha_trans = tregion.get_img()[:, :, -1]
+                alpha_trans[tregion.get_mask() == 0] = 0  # apply mask
+                alpha_trans = alpha_trans.astype(float) / 255
+                # plt.figure()
+                # plt.imshow(img2)
+                # plt.plot(*single2.centroid()[::-1], marker='+')
 
-            # plt.figure()
-            # plt.imshow(img2)
-            # plt.plot(*single2.centroid()[::-1], marker='+')
+                # plt.figure()
+                # plt.imshow(img2_rgba_trans[:,:, :3])
+                # plt.plot(*xy, marker='+')
+                # from matplotlib.patches import Ellipse
+                alphas.append(np.expand_dims(alpha_trans, 2))
 
-            # plt.figure()
-            # plt.imshow(img2_rgba_trans[:,:, :3])
-            # plt.plot(*xy, marker='+')
-            # from matplotlib.patches import Ellipse
-
-            alphas.append(np.expand_dims(alpha_trans, 2))
             tregions.append(tregion)
             main_axis_angles_rad.append(main_axis_angle_rad)
 
-        # base_img_alpha = sum([1 - alpha for alpha in alphas])
-        base_img_alpha = 1 - sum(alphas)
-        masked_images = sum([tregion.get_img()[:, :, :3] * alpha for tregion, alpha in zip(tregions, alphas)])
-        img_synthetic = (images[0].astype(float) * base_img_alpha + masked_images).astype(np.uint8)
-        mask = np.any(np.stack([region.get_mask().astype(bool) for region in [base_tregion] + tregions], axis=2), axis=2)
+        if background is not None:
+            # base_img_alpha = sum([1 - alpha for alpha in alphas])
+            base_img_alpha = 1 - sum(alphas)
+            masked_images = sum([tregion.get_img()[:, :, :-1] * angle for tregion, angle in zip(tregions, alphas)])
+            img_synthetic = (images[0].astype(float) * base_img_alpha + masked_images).astype(np.uint8)
+            mask = np.any(np.stack([region.get_mask().astype(bool) for region in [base_tregion] + tregions], axis=2),
+                          axis=2)
+        else:
+            img_synthetic = sum([images[0]] + [tregion.get_img() for tregion in tregions])
+            mask = img_synthetic.astype(bool)
+
         # plt.imshow(img_synthetic)
         # ax = plt.gca()
         # zoomed_size = 300
@@ -922,7 +938,7 @@ class Interactions(object):
         return centroid_xy, major_deg
 
     def _crop(self, img, centroid_xy, img_size):
-        img_crop = np.zeros((img_size, img_size, 3), dtype=np.uint8)
+        img_crop = np.zeros(((img_size, img_size) + img.shape[2:]), dtype=np.uint8)
         dest_top_left = -np.clip(np.array(centroid_xy[::-1]) - img_size / 2, None, 0).round().astype(int)
         dest_bot_right = np.clip(
             img_size - (np.array(centroid_xy[::-1]) + img_size / 2 - img.shape[:2]),
