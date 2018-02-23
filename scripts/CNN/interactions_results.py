@@ -1,3 +1,4 @@
+from __future__ import print_function
 import matplotlib.pyplot as plt
 import h5py
 from imageio import imread
@@ -21,12 +22,23 @@ import warnings
 import yaml
 
 
-def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, title=None):
+def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, title=None, scale=1.5):
+    """
+
+    :param out_filename:
+    :param num_objects:
+    :param img:
+    :param pred:
+    :param gt:
+    :param title:
+    :param scale: image scaling, 1.0 is original image size
+    :return:
+    """
     if isinstance(img, str):
         img = imread(img)
     dpi = 80
     height, width, nbands = img.shape
-    figsize = width / float(dpi), height / float(dpi)
+    figsize = scale * width / float(dpi), scale * height / float(dpi)
     fig = plt.figure(figsize=figsize)
     ax = fig.add_axes([0, 0, 1, 1])
     ax.axis('off')
@@ -91,7 +103,8 @@ def visualize_results(experiment_dir, data_dir, n_objects=None):
             COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg']
             if data.shape[1] % 7 == 0:
                 COLUMNS += ['dx', 'dy']
-            pred = pd.DataFrame(data, columns=ti.columns(COLUMNS))
+            pred_table = train_interactions.ObjectsArray(COLUMNS, n_objects)
+            pred = pred_table.array_to_dataframe(data)
 
     # for i in range(n_objects):
     #     pred['%d_angle_deg' % i] *= -1  # convert to counter-clockwise
@@ -103,7 +116,6 @@ def visualize_results(experiment_dir, data_dir, n_objects=None):
             y_test_df.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
             # y_test.loc[:, '%d_angle_deg' % i] += 90
             # y_test.loc[:, '%d_angle_deg' % i] %= 360
-        y_test = y_test_df[ti.columns()]
 
         # # input image and gt rotation
         # tregion = TransformableRegion(X_test[0])
@@ -115,7 +127,7 @@ def visualize_results(experiment_dir, data_dir, n_objects=None):
 
 
         # xy, angle, indices = train_interactions.match_pred_to_gt_dxdy(pred, y_test.values, np)
-        xy, angle, indices = ti.match_pred_to_gt(y_test.values, pred.values, np)
+        xy, angle, indices = ti.match_pred_to_gt(ti.array.dataframe_to_array(y_test_df), pred.values, np)
         if n_objects == 1:
             xy_errors = xy
             angle_errors = angle
@@ -123,17 +135,17 @@ def visualize_results(experiment_dir, data_dir, n_objects=None):
             xy_errors = (xy[indices[:, 0], indices[:, 1]])
             angle_errors = (angle[indices[:, 0], indices[:, 1]])
             swap = indices[:, 0] == 1
-            for col in train_interactions.COLUMNS:
-                pred.loc[swap, ['0_%s' % col, '1_%s' % col]] = pred.loc[swap, ['1_%s' % col, '0_%s' % col]].values
+            for prop in ti.array.properties:
+                pred.loc[swap, ['0_%s' % prop, '1_%s' % prop]] = pred.loc[swap, ['1_%s' % prop, '0_%s' % prop]].values
         else:
             assert False, 'not implemented'
 
         # estimate major and minor axis length
-        mean_major = y_test[['%d_major' % i for i in range(n_objects)]].stack().mean()
-        mean_minor = y_test[['%d_minor' % i for i in range(n_objects)]].stack().mean()
+        mean_major = y_test_df[['%d_major' % i for i in range(n_objects)]].stack().mean()
+        mean_minor = y_test_df[['%d_minor' % i for i in range(n_objects)]].stack().mean()
     else:
         warnings.warn('Ground truth file test.csv not found. No ground truth in visualizations.')
-        y_test = None
+        y_test_df = None
         mean_major = 64
         mean_minor = 15
         angle_errors = None
@@ -158,7 +170,7 @@ def visualize_results(experiment_dir, data_dir, n_objects=None):
         # tregion.set_img(X_test[i])
         # img = tregion.get_img()
         save_prediction_img(join(out_dir, 'random_%04d.png' % i), n_objects, img, pred.iloc[i],
-                            y_test.iloc[i] if y_test is not None else None)
+                            y_test_df.iloc[i] if y_test_df is not None else None)
 
     if angle_errors is not None:
         for i, idx in enumerate(tqdm.tqdm(angle_errors.flatten().argsort()[::-1][:20], desc='worst angle errors')):
@@ -166,7 +178,7 @@ def visualize_results(experiment_dir, data_dir, n_objects=None):
             # tregion.set_img(X_test[i])
             # img = tregion.get_img()
             save_prediction_img(join(out_dir, 'bad_angle_%03d.png' % i), n_objects, img, pred.iloc[idx],
-                                y_test.iloc[idx] if y_test is not None else None,
+                                y_test_df.iloc[idx] if y_test_df is not None else None,
                                 title='mean absolute error {:.1f} deg'.format(angle_errors.flatten()[idx]))
         visualizations.append('bad_angle')
 
@@ -176,7 +188,7 @@ def visualize_results(experiment_dir, data_dir, n_objects=None):
             # tregion.set_img(X_test[i])
             # img = tregion.get_img()
             save_prediction_img(join(out_dir, 'bad_xy_%03d.png' % i), n_objects, img, pred.iloc[idx],
-                                y_test.iloc[idx] if y_test is not None else None,
+                                y_test_df.iloc[idx] if y_test_df is not None else None,
                                 title='mean absolute error {:.1f} px'.format(xy_errors.flatten()[idx]))
         visualizations.append('bad_xy')
 
@@ -193,7 +205,7 @@ def visualize_results(experiment_dir, data_dir, n_objects=None):
             experiment_str='\"' + part + ' ' + experiment_str + '\"',
             input_files=' '.join(sorted(input_files)),
             path=out_dir, part=part)
-        print call(shlex.split(cmd))
+        print(call(shlex.split(cmd)))
         for fn in input_files:
             os.remove(fn)
 
