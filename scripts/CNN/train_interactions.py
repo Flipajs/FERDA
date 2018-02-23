@@ -96,7 +96,7 @@ class ValidationCallback(Callback):
 class TrainInteractions:
     def __init__(self, num_objects=None):
         self.models = {
-            '6conv_3dense': self.model_6conv_3dense,
+            '6conv_3dense': self.model_6conv_3dense,  # former default
             '6conv_2dense': self.model_6conv_2dense,
             'mobilenet': self.model_mobilenet,
         }
@@ -388,6 +388,7 @@ class TrainInteractions:
 
     def evaluate(self, model, test_generator, params, y_test=None, size_px=200, csv_filename=None):
         pred = model.predict_generator(test_generator, int(params['n_test'] / BATCH_SIZE))
+        assert pred is not None and pred is not []
         # pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
         # pred[:, [4, 9]] = angle_scaler.inverse_transform(pred[:, [4, 9]])
 
@@ -411,7 +412,7 @@ class TrainInteractions:
 
         if y_test is not None:
             # xy, _, indices = match_pred_to_gt_dxdy(y_test.values, pred, np)
-            xy, angle, indices = self.match_pred_to_gt(y_test, pred, np)
+            xy, angle, indices = self.match_pred_to_gt(y_test[:len(pred)], pred, np)  # trim y_test to be modulo BATCH_SIZE
 
             if self.num_objects == 1:
                 xy_mae = np.take(xy, indices).mean()
@@ -506,18 +507,19 @@ class TrainInteractions:
         return out
 
     def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, rotate=False, exp_name='',
-                           model='6conv_3dense'):
+                           model='6conv_3dense', dataset_names=None):
         # example:
         # local: train /home/matej/prace/ferda/data/interactions/1712_1k_36rot/ 0.5 100 --exp-name=two_mobilenet_scratch
         # remote: train /mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/ 0.5 100 --exp-name=two_mobilenet_scratch
-
+        if dataset_names is None:
+            dataset_names = {'train': 'train', 'test': 'test'}
         # load images
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
-        X_train = hf['train']
-        X_test = hf['test']
+        X_train = hf[dataset_names['train']]
+        X_test = hf[dataset_names['test']]
         if model == 'mobilenet':
-            X_train = self.resize_images(hf['train'], (224, 224, 3))
-            X_test = self.resize_images(hf['test'], (224, 224, 3))
+            X_train = self.resize_images(hf[dataset_names['train']], (224, 224, 3))
+            X_test = self.resize_images(hf[dataset_names['test']], (224, 224, 3))
 
         # load gt
         n_train, columns_train, y_train_df = self.read_gt(join(data_dir, 'train.csv'))
