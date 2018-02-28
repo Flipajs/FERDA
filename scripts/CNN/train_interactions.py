@@ -351,7 +351,7 @@ class TrainInteractions:
         return Model(input_shape, out)
 
     def model_mobilenet(self):
-        base_model = keras.applications.mobilenet.MobileNet((224, 224, 3), weights='imagenet', include_top=False)
+        base_model = keras.applications.mobilenet.MobileNet((200, 200, 1), include_top=False, weights=None)  # weights='imagenet'
         # add a global spatial average pooling layer
         x = base_model.output
         x = GlobalAveragePooling2D()(x)
@@ -503,7 +503,7 @@ class TrainInteractions:
         assert img_shape[0] <= shape[0] and img_shape[1] <= shape[1]
         out = np.zeros(shape=((len(img_batch), ) + shape), dtype=img_batch[0].dtype)
         for i, img in enumerate(img_batch):
-            out[i, :img_shape[0], :img_shape[1]] = img
+            out[i, :img_shape[0], :img_shape[1]] = np.expand_dims(img, 2)
         return out
 
     def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, rotate=False, exp_name='',
@@ -517,9 +517,9 @@ class TrainInteractions:
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
         X_train = hf[dataset_names['train']]
         X_test = hf[dataset_names['test']]
-        if model == 'mobilenet':
-            X_train = self.resize_images(hf[dataset_names['train']], (224, 224, 3))
-            X_test = self.resize_images(hf[dataset_names['test']], (224, 224, 3))
+        # if model == 'mobilenet':
+        #     X_train = self.resize_images(hf[dataset_names['train']], (224, 224, 1))
+        #     X_test = self.resize_images(hf[dataset_names['test']], (224, 224, 1))
 
         # load gt
         n_train, columns_train, y_train_df = self.read_gt(join(data_dir, 'train.csv'))
@@ -612,9 +612,9 @@ class TrainInteractions:
         else:
             preprocessing = None
         train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        train_generator = train_datagen.flow(X_train, y_train)
+        train_generator = train_datagen.flow(np.expand_dims(X_train, 3), y_train)
         test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        test_generator = test_datagen.flow(X_test, y_test, shuffle=False)
+        test_generator = test_datagen.flow(np.expand_dims(X_test, 3), y_test, shuffle=False)
 
         val_callback = ValidationCallback(test_generator, lambda _m, _t: self.evaluate(_m, _t, parameters, y_test))
 
