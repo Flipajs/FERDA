@@ -50,7 +50,16 @@ def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, titl
     ax.set(xlim=[0, width], ylim=[height, 0], aspect=1)
     fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0, dpi=dpi)
     plt.close(fig)
-    plt.clf()
+
+
+def show_prediction(img, num_objects, prediction=None, gt=None, title=None):
+    ax = plt.gca()
+    ax.axis('off')
+    ax.imshow(img, animated=True)
+    plot_interaction(num_objects, prediction, gt)
+    if title is not None:
+        plt.title(title)
+    return ax
 
 
 def plot_interaction(num_objects, pred=None, gt=None):

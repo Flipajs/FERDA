@@ -1,5 +1,4 @@
 __author__ = 'fnaiser'
-
 import numpy as np
 from PyQt4 import QtGui
 
@@ -10,6 +9,7 @@ import matplotlib.cm as cmx
 import matplotlib.colors as colors
 import math
 from utils.roi import get_roi
+
 
 def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), return_offset=False):
     y = int(y)
@@ -50,6 +50,33 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), ret
         return crop, np.array([y, x])
 
     return crop
+
+
+def safe_crop(img, xy, crop_size_px):
+    """
+    Crop image safely around a position, even if the output lays outside the input image.
+
+    (TODO: similar to get_safe_selection)
+
+    :param img: input image
+    :param xy: center of the output image
+    :param crop_size_px: output image size (rectangle side length)
+    :return: img_crop: output image
+             delta_xy: correction delta for coordinates in the output image; e.g. img_crop_pos = img_pos + delta_xy
+    """
+    img_crop = np.zeros(((crop_size_px, crop_size_px) + img.shape[2:]), dtype=np.uint8)
+    dest_top_left = -np.clip(np.array(xy[::-1]) - crop_size_px / 2, None, 0).round().astype(int)
+    dest_bot_right = np.clip(
+        crop_size_px - (np.array(xy[::-1]) + crop_size_px / 2 - img.shape[:2]),
+        None, crop_size_px).round().astype(int)
+    x_range = np.clip((xy[0] - crop_size_px / 2, xy[0] + crop_size_px / 2),
+                      0, img.shape[1]).round().astype(int)
+    y_range = np.clip((xy[1] - crop_size_px / 2, xy[1] + crop_size_px / 2),
+                      0, img.shape[0]).round().astype(int)
+    img_crop[dest_top_left[0]:dest_bot_right[0], dest_top_left[1]:dest_bot_right[1]] = \
+        img[slice(*y_range), slice(*x_range)]
+    delta_xy = np.array((x_range[0] - dest_top_left[1], y_range[0] - dest_top_left[0]))
+    return img_crop, delta_xy
 
 
 def get_img_around_pts(img, pts, margin=0):

@@ -37,6 +37,7 @@ from os.path import join
 import pandas as pd
 import errno
 import hashlib
+from utils.img import safe_crop
 
 IMAGE_SIZE_PX = 200
 
@@ -260,7 +261,7 @@ class Interactions(object):
         # load images, crop regions and save to hdf5
         for i, (frame, region) in tqdm.tqdm(enumerate(zip(frames[sort_idx], n_regions[sort_idx])), total=n):
             img = self._project.img_manager.get_whole_img(frame)
-            img_crop, delta_xy = self._crop(img, region.centroid()[::-1], IMAGE_SIZE_PX)
+            img_crop, delta_xy = safe_crop(img, region.centroid()[::-1], IMAGE_SIZE_PX)
             hdf5_file[dataset][i, ...] = img_crop
         hdf5_file.close()
 
@@ -288,7 +289,7 @@ class Interactions(object):
         for i, (_, item) in enumerate(tqdm.tqdm(gt_n.iterrows(), desc='writing images')):
             img = self._project.img_manager.get_whole_img(item['frame'])
             region = self._project.rm[item['region_id']]
-            img_crop, delta_xy = self._crop(img, region.centroid()[::-1], IMAGE_SIZE_PX)
+            img_crop, delta_xy = safe_crop(img, region.centroid()[::-1], IMAGE_SIZE_PX)
             for j in range(n_objects):
                 gt_n.loc[gt_n.index[i], '%d_x' % j] -= delta_xy[0]
                 gt_n.loc[gt_n.index[i], '%d_y' % j] -= delta_xy[1]
@@ -679,11 +680,11 @@ class Interactions(object):
                         # tregion_synthetic.set_mask(mask.astype(np.uint8))
                         tregion_synthetic.rotate(angle_deg, centroid_xy[::-1])
                         img_rotated = tregion_synthetic.get_img()
-                        img_crop, delta_xy = self._crop(img_rotated, centroid_xy + jitter_xy, IMAGE_SIZE_PX)
+                        img_crop, delta_xy = safe_crop(img_rotated, centroid_xy + jitter_xy, IMAGE_SIZE_PX)
                         if write_masks:
                             tregion_synthetic.set_img(mask_synthetic.astype(np.uint8))
                             mask_rotated = tregion_synthetic.get_img()
-                            mask_crop, _ = self._crop(mask_rotated, centroid_xy + jitter_xy, IMAGE_SIZE_PX)
+                            mask_crop, _ = safe_crop(mask_rotated, centroid_xy + jitter_xy, IMAGE_SIZE_PX)
                             mask_crop = mask_crop.astype(np.uint8) * 255
 
                         results_row = []
@@ -936,21 +937,6 @@ class Interactions(object):
         major_deg = math.degrees(0.5 * math.atan2(2 * moments['muprime11'],
                                  (moments['muprime20'] - moments['muprime02'])))
         return centroid_xy, major_deg
-
-    def _crop(self, img, centroid_xy, img_size):
-        img_crop = np.zeros(((img_size, img_size) + img.shape[2:]), dtype=np.uint8)
-        dest_top_left = -np.clip(np.array(centroid_xy[::-1]) - img_size / 2, None, 0).round().astype(int)
-        dest_bot_right = np.clip(
-            img_size - (np.array(centroid_xy[::-1]) + img_size / 2 - img.shape[:2]),
-            None, img_size).round().astype(int)
-        x_range = np.clip((centroid_xy[0] - img_size / 2, centroid_xy[0] + img_size / 2),
-                          0, img.shape[1]).round().astype(int)
-        y_range = np.clip((centroid_xy[1] - img_size / 2, centroid_xy[1] + img_size / 2),
-                          0, img.shape[0]).round().astype(int)
-        img_crop[dest_top_left[0]:dest_bot_right[0], dest_top_left[1]:dest_bot_right[1]] = \
-            img[slice(*y_range), slice(*x_range)]
-        delta_xy = np.array((x_range[0] - dest_top_left[1], y_range[0] - dest_top_left[0]))
-        return img_crop, delta_xy
 
     def detect_ants_opencv(self, cascade_detector_dir, project_dir):
         """

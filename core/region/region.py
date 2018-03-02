@@ -3,6 +3,7 @@ __author__ = 'fnaiser'
 from utils.video_manager import get_auto_video_manager
 import numpy as np
 import math
+import numbers
 from utils.roi import get_roi, get_roi_rle
 from utils.img import createLineIterator
 
@@ -168,6 +169,18 @@ class Region(object):
             self.pts_ = self.pts_from_rle_(self.pts_rle_)
 
         return self.pts_
+
+    def draw_mask(self, img):
+        yx = self.pts()
+        if issubclass(img.dtype.type, bool) or issubclass(img.dtype.type, np.bool_):
+            img[yx[:, 0], yx[:, 1]] = True
+        elif issubclass(img.dtype.type, numbers.Integral):
+            img[yx[:, 0], yx[:, 1]] = 255
+        elif issubclass(img.dtype.type, numbers.Real):
+            img[yx[:, 0], yx[:, 1]] = 1.
+        else:
+            assert False, 'Not supported dtype.'
+        return img
 
     def pts_copy(self):
         return np.copy(self.pts())

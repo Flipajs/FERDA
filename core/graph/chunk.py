@@ -365,6 +365,9 @@ class Chunk:
         for id_ in self.nodes_:
             yield gm.region_id(id_)
 
+    def get_region(self, gm, i):
+        return gm.region_id[self.nodes_[i]]
+
     def r_gen(self, gm, rm):
         for rid in self.rid_gen(gm):
             yield rm[rid]
@@ -446,6 +449,12 @@ class Chunk:
                     else:
                         return -1
 
-            return cardinality
+            return cardinality if cardinality > 0 else -1
 
         return -1
+
+    def entering_tracklets(self, gm):
+        return gm.get_incoming_tracklets(self.start_vertex(gm))
+
+    def exiting_tracklets(self, gm):
+        return gm.get_outcoming_tracklets(self.end_vertex(gm))
