@@ -29,6 +29,7 @@ from core.region.transformableregion import TransformableRegion
 import warnings
 import yaml
 import re
+from utils.objectsarray import ObjectsArray
 # import skimage.transform
 # from sklearn.preprocessing import StandardScaler
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -37,51 +38,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/'
 ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
 BATCH_SIZE = 32
-
-
-class ObjectsArray(object):
-    """
-    Companion object for ndarrays containing properties of multiple objects.
-
-    ObjectsArray cares for column indexing using object index and property name.
-
-    Example: predictions.col2idx(1, 'x') returns column index of 1st object and property 'x'.
-
-    """
-    def __init__(self, properties, n):
-        if isinstance(properties, set):
-            self.properties = sorted(list(properties))
-        elif isinstance(properties, (list, tuple)):
-            self.properties = properties
-        else:
-            assert False, 'properties argument has to be set, list or tuple'
-        self.n = n
-
-    def prop2idx(self, obj, prop):
-        assert prop in self.properties, 'invalid property name'
-        return obj * len(self.properties) + self.properties.index(prop)
-
-    def prop2idx_(self, obj, prop):
-        return slice(self.prop2idx(obj, prop), self.prop2idx(obj, prop) + 1)
-
-    def columns(self):
-        names = []
-        for i in range(self.n):
-            names.extend(['%d_%s' % (i, c) for c in self.properties])
-        return names
-
-    def num_columns(self):
-        return len(self.properties) * self.n
-
-    def array_to_struct(self, array):
-        formats = self.num_columns() * 'f,'
-        return np.core.records.fromarrays(array.transpose(), names=', '.join(self.columns()), formats=formats)
-
-    def array_to_dataframe(self, array):
-        return pd.DataFrame(array, columns=self.columns())
-
-    def dataframe_to_array(self, df):
-        return df[self.columns()].values
 
 
 class ValidationCallback(Callback):
@@ -100,7 +56,9 @@ class TrainInteractions:
             '6conv_2dense': self.model_6conv_2dense,
             'mobilenet': self.model_mobilenet,
         }
-        self.PREDICTED_PROPS = ['x', 'y', 'angle_deg']
+        self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg']
+        self.DETECTOR_INPUT_SIZE_PX = 200
+        self.IMAGE_LAYERS = 3
         self.num_objects = None
         self.array = None  # provide column name to index mapping using ObjectsArray
         if num_objects is not None:
@@ -108,7 +66,7 @@ class TrainInteractions:
 
     def set_num_objects(self, n):
         self.num_objects = n
-        self.array = ObjectsArray(self.PREDICTED_PROPS, n)
+        self.array = ObjectsArray(self.PREDICTED_PROPERTIES, n)
 
     @staticmethod
     def toarray(struct_array):
@@ -142,7 +100,7 @@ class TrainInteractions:
         return n, properties, df
 
     @staticmethod
-    def angle_absolute_error_direction_agnostic(angles_pred, angles_true, backend, scaler=None):
+    def angle_absolute_error_direction_agnostic(angles_pred, angles_true, backend=np, scaler=None):
         """
         Compute direction agnostic error between predicted and true angle(s).
 
@@ -194,7 +152,7 @@ class TrainInteractions:
         dy = y_true[:, self.array.prop2idx_(i, 'dy')] - y_pred[:, self.array.prop2idx_(j, 'dy')]
         return backend.concatenate((backend.abs(dx), backend.abs(dy)), axis=1)
 
-    def interaction_loss_angle(self, y_true, y_pred, angle_scaler=None, alpha=0.5, size_px=200):
+    def interaction_loss_angle(self, y_true, y_pred, angle_scaler=None, alpha=0.5):
         assert 0 <= alpha <= 1
         # y_pred = (y_pred - 0.5) * 2  # softmax -> tanh range
         # following expects tanh output (-1; 1)
@@ -202,7 +160,7 @@ class TrainInteractions:
         for i in range(self.num_objects):
             for col in self.array.properties:
                 if col != 'angle_deg':
-                    tensor_columns.append((y_pred[:, self.array.prop2idx(i, col)] + 1) * size_px / 2)
+                    tensor_columns.append((y_pred[:, self.array.prop2idx(i, col)] + 1) * self.DETECTOR_INPUT_SIZE_PX / 2)
                 else:
                     tensor_columns.append((y_pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2) / np.pi * 180)
         y_pred = K.stack(tensor_columns, axis=1)
@@ -320,7 +278,7 @@ class TrainInteractions:
         return mean_errors_xy, mean_errors_angle, indices
 
     def model_6conv_3dense(self):
-        input_shape = Input(shape=(200, 200, 3))
+        input_shape = Input(shape=(self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.IMAGE_LAYERS))
         x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
         x = MaxPooling2D((2, 2))(x)
@@ -335,8 +293,24 @@ class TrainInteractions:
         out = Dense(self.array.num_columns(), kernel_initializer='normal', activation='tanh')(x)
         return Model(input_shape, out)
 
-    def model_6conv_2dense(self):
+    def model_6conv_3dense_legacy(self):
         input_shape = Input(shape=(200, 200, 3))
+        x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
+        x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+        x = MaxPooling2D((2, 2))(x)
+        x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+        x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+        x = Conv2D(32, (3, 3))(x)
+        x = MaxPooling2D((2, 2))(x)
+        x = Conv2D(16, (3, 3))(x)
+        x = Flatten()(x)
+        x = Dense(64, activation='relu')(x)
+        x = Dense(32, activation='relu')(x)
+        out = Dense(10, kernel_initializer='normal', activation='tanh')(x)
+        return Model(input_shape, out)
+
+    def model_6conv_2dense(self):
+        input_shape = Input(shape=(self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.IMAGE_LAYERS))
         x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
         x = MaxPooling2D((2, 2))(x)
@@ -351,7 +325,9 @@ class TrainInteractions:
         return Model(input_shape, out)
 
     def model_mobilenet(self):
-        base_model = keras.applications.mobilenet.MobileNet((200, 200, 1), include_top=False, weights=None)  # weights='imagenet'
+        base_model = keras.applications.mobilenet.MobileNet(
+            (self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.IMAGE_LAYERS),
+            include_top=False, weights=None)  # weights='imagenet'
         # add a global spatial average pooling layer
         x = base_model.output
         x = GlobalAveragePooling2D()(x)
@@ -386,7 +362,7 @@ class TrainInteractions:
         # model.save_weights(join(params['experiment_dir'], 'weights.h5'))
         return model
 
-    def evaluate(self, model, test_generator, params, y_test=None, size_px=200, csv_filename=None):
+    def evaluate(self, model, test_generator, params, y_test=None, csv_filename=None):
         pred = model.predict_generator(test_generator, int(params['n_test'] / BATCH_SIZE))
         assert pred is not None and pred is not []
         # pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
@@ -397,18 +373,11 @@ class TrainInteractions:
 
         # pred = (pred - 0.5) * 2  # softmax -> tanh range
         # following expects tanh output (-1; 1)
-        for i in range(self.num_objects):
-            pred[:, self.array.prop2idx(i, 'angle_deg')] = np.degrees(pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2)
-            pred[:, self.array.prop2idx(i, 'x')] = (pred[:, self.array.prop2idx(i, 'x')] + 1) * size_px / 2
-            pred[:, self.array.prop2idx(i, 'y')] = (pred[:, self.array.prop2idx(i, 'y')] + 1) * size_px / 2
+        pred = self.postprocess_predictions(pred)
 
         pred_df = self.array.array_to_dataframe(pred)
         pred_df.to_csv(join(params['experiment_dir'], 'predictions.csv'), index=False)
-        with open(join(params['experiment_dir'], 'predictions.yaml'), 'w') as fw:
-            yaml.dump({
-                'num_objects': self.num_objects,
-                'properties': self.array.properties
-            }, fw)
+        self.save_model_properties(join(params['experiment_dir'], 'config.yaml'))
 
         if y_test is not None:
             # xy, _, indices = match_pred_to_gt_dxdy(y_test.values, pred, np)
@@ -434,10 +403,27 @@ class TrainInteractions:
             # angle_mae = (mean_errors_angle[indices[:, 0], indices[:, 1]]).mean()
 
             results = pd.DataFrame.from_items([('xy MAE', [xy_mae]), ('angle MAE', angle_mae)])
-            print(results.to_string(index=False))
             if csv_filename is not None:
                 results.to_csv(csv_filename)
             return results
+
+    def postprocess_predictions(self, pred):
+        for i in range(self.num_objects):
+            pred[:, self.array.prop2idx(i, 'angle_deg')] = \
+                np.degrees(pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2)
+            pred[:, self.array.prop2idx(i, 'x')] = \
+                (pred[:, self.array.prop2idx(i, 'x')] + 1) * self.DETECTOR_INPUT_SIZE_PX / 2
+            pred[:, self.array.prop2idx(i, 'y')] = \
+                (pred[:, self.array.prop2idx(i, 'y')] + 1) * self.DETECTOR_INPUT_SIZE_PX / 2
+        return pred
+
+    def save_model_properties(self, out_yaml):
+        with open(out_yaml, 'w') as fw:
+            yaml.dump({
+                'num_objects': self.num_objects,
+                'properties': self.PREDICTED_PROPERTIES,
+                'input_size_px': self.DETECTOR_INPUT_SIZE_PX,
+            }, fw)
 
     def evaluate_model(self, data_dir, model_dir):
         # load model
@@ -451,9 +437,11 @@ class TrainInteractions:
             m = self.model_6conv_3dense()
             warnings.warn('Stored model not found, initializing model using model_6conv_3dense().')
         m.load_weights(join(model_dir, 'weights.h5'))
-        with open(join(model_dir, 'predictions.yaml'), 'r') as fr:
+        with open(join(model_dir, 'config.yaml'), 'r') as fr:
             model_metadata = yaml.load(fr)
-        self.array = ObjectsArray(self.PREDICTED_PROPS, model_metadata['num_objects'])
+        self.PREDICTED_PROPERTIES = model_metadata['properties']
+        self.DETECTOR_INPUT_SIZE_PX = model_metadata['input_size_px']
+        self.array = ObjectsArray(self.PREDICTED_PROPERTIES, model_metadata['num_objects'])
 
         # load images
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
@@ -495,7 +483,8 @@ class TrainInteractions:
                       'tensorboard_dir': base_tensor_board_dir,
                       'n_test': len(X_test)
                       }
-        self.evaluate(m, test_generator, parameters, y_test)
+        results = self.evaluate(m, test_generator, parameters, y_test)
+        print(results.to_string(index=False))
         hf.close()
 
     def resize_images(self, img_batch, shape):
@@ -503,7 +492,7 @@ class TrainInteractions:
         assert img_shape[0] <= shape[0] and img_shape[1] <= shape[1]
         out = np.zeros(shape=((len(img_batch), ) + shape), dtype=img_batch[0].dtype)
         for i, img in enumerate(img_batch):
-            out[i, :img_shape[0], :img_shape[1]] = np.expand_dims(img, 2)
+            out[i, :img_shape[0], :img_shape[1]] = img  # np.expand_dims(img, 2)
         return out
 
     def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, rotate=False, exp_name='',
@@ -600,7 +589,7 @@ class TrainInteractions:
             # out_img = skimage.transform.rotate(img, 90, preserve_range=True)
             # return out_img
 
-        size = 200
+        size = self.DETECTOR_INPUT_SIZE_PX
         x, y = np.mgrid[0:size, 0:size]
         mask = np.expand_dims(np.exp(- 0.0002 * ((x - size / 2) ** 2 + (y - size / 2) ** 2)), 2)
 
@@ -611,12 +600,19 @@ class TrainInteractions:
             preprocessing = rotate90
         else:
             preprocessing = None
+        if self.IMAGE_LAYERS == 1:
+            X_train = np.expand_dims(X_train, 3)
+            X_test = np.expand_dims(X_test, 3)
         train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        train_generator = train_datagen.flow(np.expand_dims(X_train, 3), y_train)
+        train_generator = train_datagen.flow(X_train, y_train)
         test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        test_generator = test_datagen.flow(np.expand_dims(X_test, 3), y_test, shuffle=False)
+        test_generator = test_datagen.flow(X_test, y_test, shuffle=False)
 
-        val_callback = ValidationCallback(test_generator, lambda _m, _t: self.evaluate(_m, _t, parameters, y_test))
+        def eval_and_print(_m, _t):
+            results = self.evaluate(_m, _t, parameters, y_test)
+            print('\n' + results.to_string(index=False) + '\n')
+
+        val_callback = ValidationCallback(test_generator, eval_and_print)
 
         base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime()) + '_' + exp_name
         base_experiment_dir = join(ROOT_EXPERIMENT_DIR, base_experiment_name)
@@ -657,7 +653,7 @@ class TrainInteractions:
             m = self.train(m, train_generator, test_generator, parameters, callbacks=[val_callback])
             with open(join(parameters['experiment_dir'], 'model.yaml'), 'w') as fw:
                 fw.write(m.to_yaml())
-            self.evaluate(m, test_generator, parameters, y_test,
+            results = self.evaluate(m, test_generator, parameters, y_test,
                           csv_filename=join(parameters['experiment_dir'], 'results.csv'))
 
         hf.close()

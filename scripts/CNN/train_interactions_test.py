@@ -27,7 +27,7 @@ class LossFunctionsTestCase(unittest.TestCase):
     def run_interaction_loss_angle(self):
         data_dir = '/home/matej/prace/ferda/data/interactions/1712_36k_random'
         n, properties, y_test_df = self.ti.read_gt(join(data_dir, 'test.csv'))
-        self.ti.array = train_interactions.ObjectsArray(self.ti.PREDICTED_PROPS, n)
+        self.ti.array = train_interactions.ObjectsArray(self.ti.PREDICTED_PROPERTIES, n)
         self.ti.set_num_objects(n)
         y_test = self.ti.array.dataframe_to_array(y_test_df)
         pred = y_test.copy()
@@ -137,9 +137,17 @@ DATA_DIR = '/home/matej/prace/ferda/data/interactions/1712_1k_36rot/'
 
 class TrainInteractionsTestCase(unittest.TestCase):
     def setUp(self):
+        self.n_images = 3
         self.ti = train_interactions.TrainInteractions(2)
+        self.input_shape = (self.ti.DETECTOR_INPUT_SIZE_PX, self.ti.DETECTOR_INPUT_SIZE_PX, self.ti.IMAGE_LAYERS)
         self.hf = h5py.File(join(DATA_DIR, 'images.h5'), 'r')
         self.X_train = self.hf['train']
+        if self.input_shape[2] == 1:
+            self.X_train_ = np.mean(self.X_train[:self.n_images], axis=3, keepdims=True)
+        else:
+            self.X_train_ = self.X_train[:self.n_images]
+        self.X_train_ = self.ti.resize_images(self.X_train_, self.input_shape)
+
         self.X_test = self.hf['test']
         n, properties, self.y_test_df = self.ti.read_gt(join(DATA_DIR, 'test.csv'))
         n, properties, self.y_train_df = self.ti.read_gt(join(DATA_DIR, 'test.csv'))
@@ -150,43 +158,36 @@ class TrainInteractionsTestCase(unittest.TestCase):
         self.hf.close()
 
     def test_init_model_mobilenet(self):
-        n_images = 3
         m = self.ti.model_mobilenet()
-        X_train = self.ti.resize_images(self.X_train[:n_images], (224, 224, 3))
-        out = m.predict(X_train)
-        self.assertEqual(out.shape[0], n_images)
+        out = m.predict(self.X_train_)
+        self.assertEqual(out.shape[0], self.n_images)
         self.assertEqual(out.shape[1], self.ti.array.num_columns())
         self.assertTrue(np.all((out > -1) & (out < 1)))
         # pd.DataFrame(out).to_csv('model_out.csv')
         # print out
 
     def test_init_model_6conv_3dense(self):
-        n_images = 3
         m = self.ti.model_6conv_3dense()
-        out = m.predict(self.X_train[:n_images])
-        self.assertEqual(out.shape[0], n_images)
+        out = m.predict(self.X_train_)
+        self.assertEqual(out.shape[0], self.n_images)
         self.assertEqual(out.shape[1], self.ti.array.num_columns())
         self.assertTrue(np.all((out > -1) & (out < 1)))
         # pd.DataFrame(out).to_csv('model_out.csv')
         # print out
 
     def test_loss(self):
-        n_images = 3
         m = self.ti.model_mobilenet()
-        X_train = self.ti.resize_images(self.X_train[:n_images], (224, 224, 3))
-        pred = m.predict(X_train)
-        # print pred
-        loss = K.eval(self.ti.interaction_loss_angle(self.y_train[:n_images], pred))
+        pred = m.predict(self.X_train_)
+        loss = K.eval(self.ti.interaction_loss_angle(self.y_train[:self.n_images], pred))
         self.assertTrue(np.isscalar(loss))
         self.assertTrue(loss > 0)
 
     def test_train(self):
         n_images = 3
         m = self.ti.model_mobilenet()
-        X_train = self.ti.resize_images(self.X_train[:n_images], (224, 224, 3))
         m.compile(loss=lambda x, y: self.ti.interaction_loss_angle(x, y, alpha=0.5), optimizer='adam')
         train_datagen = ImageDataGenerator(rescale=1./255)
-        train_generator = train_datagen.flow(X_train, self.y_train[:n_images], batch_size=n_images)
+        train_generator = train_datagen.flow(self.X_train_, self.y_train[:self.n_images], batch_size=self.n_images)
 
         w1 = m.get_weights()
         m.fit_generator(train_generator, steps_per_epoch=1, epochs=1, verbose=1)
