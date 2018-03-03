@@ -81,17 +81,34 @@ class CompleteSetMatching:
             # 2) find biggest set
             best_set = self.find_biggest_undecided_tracklet_set(t)
 
+            prohibited_ids = {}
             for t_ in best_set:
                 if t_ not in prototypes:
                     prototypes[id_] = self.get_track_prototypes(t_)
                     tracklets_2_tracks[t_] = id_
                     id_ += 1
 
+                    prohibited_ids[t_] = []
+                    for test_t in self.p.chm.tracklets_intersecting_t_gen(t_, self.p.gm):
+                        if test_t == t_:
+                            continue
+
+                        if len(test_t.P):
+                            prohibited_ids[t_].append(list(test_t.P)[0])
+
             # 3) compute matching
             P_a = self.prototypes_distance_probabilities(best_set, best_CS, prototypes, tracklets_2_tracks)
+
             # TODO: add spatial cost as well
             # invert...
             P = 1 - P_a
+            # prohibit already used IDs
+            for i, t_ in enumerate(best_set):
+                for j, track_id in enumerate(best_CS):
+                    if track_id in prohibited_ids[t_]:
+                        # ValueError: matrix contains invalid numeric entries was thrown in case of np.inf... so trying huge number instead..
+                        P[i, j] = 1000000.0
+
             from scipy.optimize import linear_sum_assignment
             assert np.sum(P < 0) == 0
             row_ind, col_ind = linear_sum_assignment(P)
