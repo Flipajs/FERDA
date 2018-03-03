@@ -458,3 +458,23 @@ class Chunk:
 
     def exiting_tracklets(self, gm):
         return gm.get_outcoming_tracklets(self.end_vertex(gm))
+
+    def solve_interaction(self, detector, gm, rm, im):
+        """
+        Find tracks in chunks containing two objects.
+
+        :param detector: InteractionDetector() object
+        :param gm:
+        :param rm:
+        :param im:
+        :return: pandas.DataFrame - two tracks
+        """
+        assert self.get_cardinality(gm) == 2
+        detections = []
+        for r in self.r_gen(gm, rm):
+            img = im.get_whole_img(r.frame())
+            pred = detector.detect(img, r.centroid()[::-1])
+            detections.append(pred)
+        tracks, confidence, costs = detector.track(detections)
+        return tracks, confidence
+
