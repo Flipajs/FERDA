@@ -131,13 +131,28 @@ class GraphManager:
 
         return None, False
 
-    def get_chunk(self, vertex):
+    def get_tracklet(self, vertex):
         ch, _ = self.is_chunk(vertex)
 
         if ch is not None and ch.id() in self.project.chm.track_refs:
             ch = self.project.chm.track_refs[ch.id()]
 
         return ch
+
+    def get_chunk(self, vertex):
+        """
+        deprecated...
+        Args:
+            vertex: 
+
+        Returns:
+
+        """
+        # TODO: uncomment deprecated warning
+        # import warnings
+        # warnings.warn("get_chunk is deprecated, use get_tracklet instead... Chunk is old naming")
+
+        return self.get_tracklet(vertex)
 
     def update_nodes_in_t_refs(self):
         self.vertices_in_t = {}
@@ -699,6 +714,21 @@ class GraphManager:
 
         return regions
 
+    def _get_tracklets_from_gen(self, vertex_gen):
+        tracklets = []
+
+        for v in vertex_gen:
+            t = self.get_tracklet(v)
+            if t is not None:
+                tracklets.append(t)
+
+        return tracklets
+
+    def get_incoming_tracklets(self, vertex):
+        return self._get_tracklets_from_gen(vertex.in_neighbors())
+
+    def get_outcoming_tracklets(self, vertex):
+        return self._get_tracklets_from_gen(vertex.out_neighbors())
 
 
 

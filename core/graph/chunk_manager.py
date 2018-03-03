@@ -137,8 +137,7 @@ class ChunkManager:
         self.itree = IntervalTree()
 
         chn = len(self)
-
-        for i, ch in tqdm(enumerate(self.chunk_gen()), total=chn, leave=False):
+        for i, ch in tqdm(enumerate(self.chunk_gen()), total=chn, desc='chunk_manager.reset_itree', leave=False):
             self._add_ch_itree(ch, gm)
 
     def add_single_vertices_chunks(self, p, frames=None):

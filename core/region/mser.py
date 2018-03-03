@@ -137,7 +137,7 @@ def get_all_msers(frame_number, project):
 
 def get_msers_(img, project, frame=-1, prefiltered=False):
     """
-    Returns msers using MSER algorithm with default settings.
+    Returns msers as list of Region objects using MSER algorithm with default settings.
 
     """
     max_area = project.mser_parameters.max_area

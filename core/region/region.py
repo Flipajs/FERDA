@@ -3,7 +3,9 @@ __author__ = 'fnaiser'
 from utils.video_manager import get_auto_video_manager
 import numpy as np
 import math
+import numbers
 from utils.roi import get_roi, get_roi_rle
+from utils.img import createLineIterator
 
 
 class Region(object):
@@ -32,7 +34,11 @@ class Region(object):
         self.major_axis_ = -1
         self.minor_axis_ = -1
 
-        # in radians
+        # TODO: a_, b_ should be deprecated and reduced by major/minor_axis
+        self.a_ = -1
+        self.b_ = -1
+
+        # in radians, 0 to the right, positive direction counterclockwise
         self.theta_ = -1
 
         self.parent_label_ = -1
@@ -104,9 +110,11 @@ class Region(object):
         if 'rle' in data:
             self.pts_rle_ = data['rle']
             # self.pts_ = self.pts_from_rle_(self.pts_rle_)
+        elif 'pts' in data:
+            self.pts_ = data['pts']
         else:
             raise Exception('wrong data format',
-                            'Wrong data format in from_dict_ in region.points.py. Expected dictionary with "rle" key.')
+                            'Wrong data format in from_dict_ in region.points.py. Expected dictionary with "rle" or "pts" keys.')
 
         self.centroid_ = np.array([data['cy'], data['cx']])
         # self.pts_ = np.array(pts)
@@ -169,10 +177,27 @@ class Region(object):
         return self.margin_
 
     def pts(self):
+        """
+        Return region points (contour + area).
+
+        :return: yx coordinates; array, shape=(n, 2)
+        """
         if self.pts_ is None:
             self.pts_ = self.pts_from_rle_(self.pts_rle_)
 
         return self.pts_
+
+    def draw_mask(self, img):
+        yx = self.pts()
+        if issubclass(img.dtype.type, bool) or issubclass(img.dtype.type, np.bool_):
+            img[yx[:, 0], yx[:, 1]] = True
+        elif issubclass(img.dtype.type, numbers.Integral):
+            img[yx[:, 0], yx[:, 1]] = 255
+        elif issubclass(img.dtype.type, numbers.Real):
+            img[yx[:, 0], yx[:, 1]] = 1.
+        else:
+            assert False, 'Not supported dtype.'
+        return img
 
     def pts_copy(self):
         return np.copy(self.pts())
@@ -301,6 +326,42 @@ class Region(object):
                         return True
 
         return False
+
+    def get_border_point(self, angle_rad, starting_point_yx=None, shift_px=0):
+        '''
+
+        :param angle_rad:
+        :param starting_point_yx:
+        :param shift_px: move border point along the line from the starting point, positive means outside of region
+        :return:
+        '''
+        if starting_point_yx is None:
+            starting_point_yx = self.centroid_[::-1]
+        point_theta_xy = starting_point_yx[::-1] + 4 * self.major_axis_ * np.array([np.cos(angle_rad), np.sin(angle_rad)])
+        point_theta_xy = np.round(point_theta_xy).astype(int)
+
+        mask = np.zeros(self.pts().max(axis=0) + 2, dtype=np.uint8)  # we need at least 1 background pixel around
+                                                                     # actual shape
+        # mask[self.pts()[:, 0] + 1, self.pts()[:, 1] + 1] = 1  # why was there + 1 ?
+        mask[self.pts()[:, 0], self.pts()[:, 1]] = 1
+
+        # import matplotlib.pylab as plt
+        # plt.imshow(mask)
+        # plt.plot(point_theta_xy[0], point_theta_xy[1], '+')
+        # plt.annotate('center', starting_point_yx, (10, 0), textcoords='offset pixels')
+        # plt.plot(starting_point_yx[0], starting_point_yx[1], '+')
+
+        # find touch point on the ant border
+        line = createLineIterator(np.round(starting_point_yx).astype(int), point_theta_xy, mask)
+        i = np.nonzero(line[:, 2] == 0)[0][0]
+        index = np.clip(i + shift_px, 0, len(line) - 1)
+        # if index != i + shift_px:
+        #     print('get_border_point shift_px clipped')
+        border_point_xy = line[index, 0:2]
+
+        # plt.plot(border_point_xy[0], border_point_xy[1], '+')
+
+        return border_point_xy
 
 
 def encode_RLE(pts, return_area=True):

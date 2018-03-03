@@ -35,6 +35,7 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam3_new'
+
     # wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
 
     # wd = '/Volumes/Seagate Expansion Drive/HH1_POST'
@@ -53,6 +54,10 @@ if is_matejs_pc():
 
 if wd is not None:
     project.load(wd)
+
+
+    for t in project.chm.chunk_gen():
+        print "Cardinality: {}, t_id: {}".format(t.get_cardinality(project.gm), t.id())
 
     # from tqdm import tqdm
     # thetas = []
