@@ -770,6 +770,7 @@ class ResultsWidget(QtGui.QWidget):
         return pts, roi
 
     def draw_region(self, r, tracklet, use_ch_color=None, alpha=120, highlight_contour=False, force_color=None):
+        if r.is_origin_interaction():
         # hnus... prepsat
         from utils.img import get_cropped_pts
 
@@ -821,7 +822,7 @@ class ResultsWidget(QtGui.QWidget):
         else:
             c = force_color
 
-        if r.is_virtual:
+        if r.is_origin_interaction():
             step = 1
 
         if self.show_tracklet_class.isChecked():

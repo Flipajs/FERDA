@@ -32,7 +32,7 @@ def get_training_data(p, get_features, first_n=-1, offset=0):
                 break
 
             r = r_ch.region_in_t(t)
-            if not r.is_virtual:
+            if not r.is_origin_interaction():
                 f_ = get_features(r, p)
                 X.append(f_)
                 y.append(id_)

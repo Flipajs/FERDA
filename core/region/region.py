@@ -15,7 +15,7 @@ class Region(object):
 
     """
 
-    def __init__(self, data=None, frame=-1, id=-1):
+    def __init__(self, data=None, frame=-1, id=-1, is_origin_interaction=False):
         self.id_ = id
         self.pts_ = None
         self.pts_rle_ = None
@@ -52,7 +52,10 @@ class Region(object):
         self.frame_ = frame
         self.id_ = id
         self.contour_ = None
-        self.is_virtual = False
+
+        # TODO: refactor + method...
+        # TODO: deprecated
+        self.is_origin_interaction_ = is_origin_interaction
 
     def __str__(self):
         s = repr(self)+" frame: "+str(self.frame_)+"\n" \
@@ -69,6 +72,9 @@ class Region(object):
 
     def __eq__(self, other):
         return hash(self) == hash(other)
+
+    def is_origin_interaction(self):
+        return self.is_origin_interaction_
 
     def id(self):
         return self.id_

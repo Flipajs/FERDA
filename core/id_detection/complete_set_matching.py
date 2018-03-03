@@ -1220,6 +1220,49 @@ def prototypes_distribution_probability(prot1, prot2):
 
     return p_to_prot2
 
+def solve_interactions(p):
+    from scripts.CNN.interactions import InteractionDetector
+    from core.region.region import Region
+
+    # detector = InteractionDetector('/home/matej/prace/ferda/experiments/171222_0126_batch_36k_random/0.928571428571')
+    detector_model_dir = 'data/CNN_models/180222_2253_mobilenet_two_100'
+    detector = InteractionDetector(detector_model_dir)
+
+    # extract multi tracklets
+    multi = [t for t in p.chm.tracklet_gen() if t.is_multi()]
+    tracklets2 = [t for t in multi if t.get_cardinality(p.gm) == 2]
+
+    for t in tqdm(tracklets2, desc='processing 2-interactions'):
+        tracks, confidence = t.solve_interaction(detector, p.gm, p.rm, p.img_manager)
+
+        cardinality = 2
+        start_frame = t.start_frame(p.gm)
+
+        rs = {}
+        for id_ in range(cardinality):
+            rs[id_] = []
+
+        for i, results in tracks.iterrows():
+            for id_ in range(cardinality):
+                r = Region(is_origin_interaction=True, frame=start_frame+i)
+                r.centroid_ = np.array([results["{}_x".format(id_)],
+                                        results["{}_y".format(id_)]])
+                r.theta_ = np.deg2rad(results["{}_angle_deg".format(id_)])
+
+
+                rs[id_].append(r)
+
+        # TODO: another threshold...
+        if confidence > 0.75:
+            for id_ in range(cardinality):
+                p.rm.add(rs[id_])
+
+                # for graph manager, when id < 0 means there is no node in graph but it is a direct link to region id*-1
+                rids = [-r.id_ for r in rs[id_]]
+                tracklet, t_id = p.chm.new_chunk(rids, p.gm, origin_interaction=True)
+
+    p.save()
+
 
 if __name__ == '__main__':
     from core.project.project import Project
@@ -1238,6 +1281,10 @@ if __name__ == '__main__':
             t.id_decision_info = ''
         except:
             pass
+
+    solve_interactions(p)
+    import sys
+    sys.exit()
 
     import pickle
     with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:

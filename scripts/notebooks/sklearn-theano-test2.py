@@ -23,7 +23,7 @@ def process_tracklet(t, p, cnn):
             i += 1
             continue
 
-        if not r.is_virtual:
+        if not r.is_origin_interaction():
             import math
             from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot, get_safe_selection
             relative_border = 3.0

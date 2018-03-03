@@ -44,8 +44,8 @@ class ChunkManager:
 
         return track, self.id_ - 1
 
-    def new_chunk(self, vertices_ids, gm, assign_color=True):
-        ch = Chunk(vertices_ids, self.id_, gm)
+    def new_chunk(self, vertices_ids, gm, assign_color=True, origin_interaction=False):
+        ch = Chunk(vertices_ids, self.id_, gm, origin_interaction=origin_interaction)
         self.chunks_[self.id_] = ch
 
         self._add_ch_itree(ch, gm)

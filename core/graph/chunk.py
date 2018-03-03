@@ -9,7 +9,7 @@ from core.region.region import Region
 
 
 class Chunk:
-    def __init__(self, vertices_ids, id_, gm, color=None):
+    def __init__(self, vertices_ids, id_, gm, color=None, origin_interaction=False):
         # if not isinstance(vertices_ids, list):
         #     raise Exception('vertices_ids must be a list! (in chunk.py)')
         # if len(vertices_ids) < 2:
@@ -25,29 +25,32 @@ class Chunk:
         self.N = set()
         self.segmentation_class = -1
 
-        if len(vertices_ids) > 1:
-            if vertices_ids[0] > 0:
-                v1 = gm.g.vertex(vertices_ids[0])
-                out_edges = [e for e in v1.out_edges()]
-                for e in out_edges:
-                    gm.remove_edge_(e)
+        self.origin_interaction = origin_interaction
 
-            if vertices_ids[-1] > 0:
-                v2 = gm.g.vertex(vertices_ids[-1])
+        if not self.origin_interaction:
+            if len(vertices_ids) > 1:
+                if vertices_ids[0] > 0:
+                    v1 = gm.g.vertex(vertices_ids[0])
+                    out_edges = [e for e in v1.out_edges()]
+                    for e in out_edges:
+                        gm.remove_edge_(e)
 
-                in_edges = [e for e in v2.in_edges()]
-                for e in in_edges:
-                    gm.remove_edge_(e)
+                if vertices_ids[-1] > 0:
+                    v2 = gm.g.vertex(vertices_ids[-1])
 
-            if len(vertices_ids) > 2:
-                for v in vertices_ids[1:-1]:
-                    if v > 0:
-                        gm.remove_vertex(v)
-                        # v = gm.g.vertex(v)
-                        # for e in v.in_edges():
-                        #     gm.remove_edge_(e)
+                    in_edges = [e for e in v2.in_edges()]
+                    for e in in_edges:
+                        gm.remove_edge_(e)
 
-        self.chunk_reconnect_(gm)
+                if len(vertices_ids) > 2:
+                    for v in vertices_ids[1:-1]:
+                        if v > 0:
+                            gm.remove_vertex(v)
+                            # v = gm.g.vertex(v)
+                            # for e in v.in_edges():
+                            #     gm.remove_edge_(e)
+
+            self.chunk_reconnect_(gm)
 
     def __str__(self):
         s = "CHUNK --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+" "+str(self.P)+"\n"
@@ -248,7 +251,7 @@ class Chunk:
             i = 1
             for f in range(self.end_frame(gm)+1, ch2.start_frame(gm)):
                 r = Region(frame=f)
-                r.is_virtual = True
+                r.is_origin_interaction_ = True
                 c = ch1end_region.centroid() + np.array(c_diff_part * i)
                 r.centroid_ = c.copy()
 
@@ -378,6 +381,12 @@ class Chunk:
             return self.nodes_[t]
         else:
             return None
+
+    def is_origin_interaction(self):
+        try:
+            return self.origin_interaction
+        except:
+            return False
 
     def r_id_in_t(self, t, gm):
         return gm.region_id(self.v_id_in_t(t, gm))

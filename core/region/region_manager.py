@@ -377,7 +377,8 @@ class RegionManager:
 
     def prepare_region(self, region):
         if region.pts_rle_ == None:
-            region.pts_rle_ = encode_RLE(region.pts_)
+            if not region.is_origin_interaction():
+                region.pts_rle_ = encode_RLE(region.pts_)
 
         tmp_pts = region.pts_
         region.pts_ = None

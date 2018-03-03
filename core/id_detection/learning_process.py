@@ -922,7 +922,7 @@ class LearningProcess:
         r_ch = RegionChunk(ch, self.p.gm, self.p.rm)
         i = 0
         for r in r_ch.regions_gen():
-            if not r.is_virtual:
+            if not r.is_origin_interaction():
                 if self.features_fliplr_hack:
                     f1_, f2_ = self.get_features(r, self.p, fliplr=True)
                     X.append(f2_)

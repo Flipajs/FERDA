@@ -183,7 +183,7 @@ class Fitting():
             animal.contour_ = None
             animal.pts_ = None
             animal.centroid_ = self.trans_helpers[a_id].centroid
-            animal.is_virtual = True
+            animal.is_origin_interaction_ = True
             from core.region.region import encode_RLE
             animal.pts_rle_, animal.area_ = encode_RLE(pts_, return_area=True)
             animal.frame_ = self.region.frame_
