@@ -111,14 +111,14 @@ class ChunkManager:
                 print_progress(i, chn, "resetting chunk interval tree", "DONE\n")
 
     def add_single_vertices_chunks(self, p, frames=None, next_step_progress_signal=None, update_progress_signal=None):
-        print "Running reset itree from chm"
-        self.reset_itree(p.gm, next_step_progress_signal=next_step_progress_signal,
-                         update_progress_signal=update_progress_signal)
+
+        next_step_progress_signal.emit(2*len(self), "Single vertices two chunks")
+
+        # passing only update signal will not trigger a new progress but move the current one, so both reset_itree in
+        # this method can use one progress bar, that will stop in the middle. Also, no text progress bar will be shown
+        self.reset_itree(p.gm, update_progress_signal=update_progress_signal)
 
         nn = p.gm.g.num_vertices()
-
-        if next_step_progress_signal is not None:
-            next_step_progress_signal.emit(nn, "Single vertices two chunks")
 
         for i, n in enumerate(p.gm.g.vertices()):
             if frames is None:
@@ -133,13 +133,10 @@ class ChunkManager:
                 continue
 
             self.new_chunk([int(n)], p.gm)
-            if update_progress_signal is not None:
-                update_progress_signal.emit()
-            elif not i % 100.0:
+            if update_progress_signal is None and not i % 100.0:
                 print_progress(i, nn, prefix="single vertices 2 chunks")
 
         if update_progress_signal is None:
             print_progress(nn, nn, prefix="single vertices 2 chunks", suffix="DONE\n")
 
-        self.reset_itree(p.gm, next_step_progress_signal=next_step_progress_signal,
-                         update_progress_signal=update_progress_signal)
+        self.reset_itree(p.gm, update_progress_signal=update_progress_signal)

@@ -207,7 +207,7 @@ class Solver:
                         #         self.project.gm.remove_edge(n1, n2_)
                         #         affected.append(n2_)
                         #
-                        # for n1_ in n2.in_neighbours():
+                        # for n1_ in n2.in_neighbors():
                         #     if n1_ != n1:
                         #         self.remove_edge(n1_, n2)
                         #         affected.append(n1_)
@@ -449,7 +449,7 @@ class Solver:
             for e in out_edges:
                 affected.add(e.target())
 
-                for aff_neigh in e.target().in_neighbours():
+                for aff_neigh in e.target().in_neighbors():
                     affected.add(aff_neigh)
 
                 self.project.gm.remove_edge_(e)
@@ -500,7 +500,7 @@ class Solver:
 
         for r in replace:
             r = self.project.gm.g.vertex(r)
-            r_t_minus.extend([v for v in r.in_neighbours()])
+            r_t_minus.extend([v for v in r.in_neighbors()])
             r_t_plus.extend([v for v in r.out_neighbours()])
 
             self.project.gm.remove_vertex(r)
@@ -537,7 +537,7 @@ class Solver:
             r_t_minus = []
             if chunk.length() == 0:
                 end_vertex = self.project.gm.g.vertex(replace)
-                for v in end_vertex.in_neighbours():
+                for v in end_vertex.in_neighbors():
                     r_t_minus.apend(v)
         else:
             r_t_plus = []

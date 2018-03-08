@@ -88,7 +88,7 @@ class MainTabWidget(QtGui.QWidget):
         self.progress_label = QtGui.QLabel()
         self.layout().addWidget(self.progress_label)
         # number N of processes called with progress bar
-        self.total_progress_bar_usages = 9
+        self.total_progress_bar_usages = 8
 
         self.progress_bar = QtGui.QProgressBar(self)
         self.progress_bar.setGeometry(200, 80, 250, 20)
@@ -302,6 +302,35 @@ class MainTabWidget(QtGui.QWidget):
         self.progress_label.setVisible(False)
 
     def start_new_progress(self, num_parts, name=""):
+        """
+        Creates a new (empty) progress bar with specified size and name.
+        
+        Usage:
+        The progress bar is designed to be used multiple times. The number of usages is hardcoded in this class (in
+        self.total_progress_bar_usages) and is currently 8. The start_new_progress and update_progress methods are 
+        called with pyqt signal.
+        
+        Use this method to initialize a new progress bar. Use update_progress to add one part (eg. once in every loop)
+        to increase the progress bar.
+        
+        There are now 8 progress bars used when FERDA is creating a new project, you can find them here:
+         - background_computer.py, line 85 (computing MSERs, updates are called from line 183)
+         - bg_computer_assembling.py, line 11 (updates on lines 37, 79, 83)
+         - bg_computer_assembling.py, line 121
+           -> solver.one2one, line 84 (resetting itree)
+         - bg_computer_assembling.py, line 137
+           -> region_stats.add_score_to_edges, line 1343 (Calculating edge score,updates on 1358)
+         - bg_computer_assembling.py, line 147 (resetting itree)
+         - bg_computer_assembling.py, line 198 (resetting itree)
+         - bg_computer_assembling.py, line 213
+           -> chunk_manager.add_single_vertices_chunks, line 115 (resetting itree)
+         - bg_computer_assembling.py, line 213
+           -> chunk_manager.add_single_vertices_chunks, line 144 (resetting itree)
+        
+        :param num_parts: Number of updates that will fill the bar (eg. number of iterations in a loop)
+        :param name: Optional name that will show above the progress bar: "Part x of y: name"
+        """
+        print "New progress bar: " + name
 
         # update label "Part 2 of 6: Computing MSERs"
         self.progress_label.setText("Part {} of {}{}".format(self.progress_bar_part_counter,
@@ -322,6 +351,10 @@ class MainTabWidget(QtGui.QWidget):
         self.update()
 
     def update_progress(self, jump=1):
+        """
+        Increase the progress bar by one chunk (they have different sizes depending on num_parts in start_new_progress)
+        :param jump: optional argument to increase the bar by multiple chunks at once
+        """
         # compute new progress bar value
         self.progress_bar_current_value = self.progress_bar_current_value + self.progress_bar_step_size * jump
         self.progress_bar.setValue(self.progress_bar_current_value)

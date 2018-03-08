@@ -175,9 +175,11 @@ def assembly_after_parallelization(bgcomp):
         # print "strongly better: {}, t: {}".format(len(strongly_better_e), time.time()-strongly_better_t)
         # print(process.memory_info().rss)
         # confirm_t = time.time()
+        bgcomp.next_step_progress_signal.emit(len(strongly_better_e), "Confirming edges")
         for _, e in strongly_better_e:
             if p.gm.g.edge(e.source(), e.target()) is not None:
                 bgcomp.solver.confirm_edges([(e.source(), e.target())])
+                bgcomp.update_progress_signal.emit()
 
         # print "confirm_t: ", time.time() - confirm_t
         # print(process.memory_info().rss)
@@ -196,7 +198,7 @@ def assembly_after_parallelization(bgcomp):
 
         p.gm.update_nodes_in_t_refs()
         p.chm.reset_itree(p.gm, next_step_progress_signal=bgcomp.next_step_progress_signal,
-                                     update_progress_signal=bgcomp.update_progress_signal)
+                          update_progress_signal=bgcomp.update_progress_signal)
 
         p.save_semistate('eps_edge_filter')
         tracklet_stats(p)
