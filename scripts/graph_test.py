@@ -102,7 +102,7 @@ def create_graph_tool(nodes, lenght):
 
 def search_graph_tool(graph):
     for vertex in graph.vertices():
-        k = vertex.out_neighbors()
+        k = vertex.out_neighbours()
 
 
 def delete_edges_graph_tool(graph, edges, ids):

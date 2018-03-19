@@ -212,12 +212,12 @@ class Solver:
             if cert >= self.project.solver_parameters.certainty_threshold:
                 for n1, n2 in matchings[0]:
                     if n1 and n2:
-                        # for n2_ in n1.out_neighbors():
+                        # for n2_ in n1.out_neighbours():
                         #     if n2_ != n2:
                         #         self.project.gm.remove_edge(n1, n2_)
                         #         affected.append(n2_)
                         #
-                        # for n1_ in n2.in_neighbors():
+                        # for n1_ in n2.in_neighbours():
                         #     if n1_ != n1:
                         #         self.remove_edge(n1_, n2)
                         #         affected.append(n1_)
@@ -459,7 +459,7 @@ class Solver:
             for e in out_edges:
                 affected.add(e.target())
 
-                for aff_neigh in e.target().in_neighbors():
+                for aff_neigh in e.target().in_neighbours():
                     affected.add(aff_neigh)
 
                 self.project.gm.remove_edge_(e)
@@ -468,7 +468,7 @@ class Solver:
             for e in in_edges:
                 affected.add(e.source())
 
-                for aff_neigh in e.source().out_neighbors():
+                for aff_neigh in e.source().out_neighbours():
                     affected.add(aff_neigh)
 
                 self.project.gm.remove_edge_(e)
@@ -510,8 +510,8 @@ class Solver:
 
         for r in replace:
             r = self.project.gm.g.vertex(r)
-            r_t_minus.extend([v for v in r.in_neighbors()])
-            r_t_plus.extend([v for v in r.out_neighbors()])
+            r_t_minus.extend([v for v in r.in_neighbours()])
+            r_t_plus.extend([v for v in r.out_neighbours()])
 
             self.project.gm.remove_vertex(r)
 
@@ -547,13 +547,13 @@ class Solver:
             r_t_minus = []
             if chunk.length() == 0:
                 end_vertex = self.project.gm.g.vertex(replace)
-                for v in end_vertex.in_neighbors():
+                for v in end_vertex.in_neighbours():
                     r_t_minus.apend(v)
         else:
             r_t_plus = []
             if chunk.length() == 0:
                 start_vertex = self.project.gm.g.vertex(replace)
-                for v in start_vertex.out_neighbors():
+                for v in start_vertex.out_neighbours():
                     r_t_plus.append(v)
 
         self.project.gm.remove_vertex(replace)

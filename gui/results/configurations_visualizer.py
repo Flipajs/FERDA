@@ -489,7 +489,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 self.fitting_tm.add_chunk_session(self.project, self.fitting_thread_finished, chunk)
             else:
                 pivot = self.project.gm.g.vertex(self.active_cw.active_node)
-                model = map(self.project.gm.region, pivot.in_neighbors())
+                model = map(self.project.gm.region, pivot.in_neighbours())
                 model = map(deepcopy, model)
                 for m in model: m.frame_ += 1
 
@@ -800,8 +800,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         vertex = self.active_cw.active_node
         chunk, _ = self.project.gm.is_chunk(vertex)
 
-        in_vertices = [v for v in self.project.gm.g.vertex(chunk.start_vertex_id()).in_neighbors()]
-        out_vertices = [v for v in self.project.gm.g.vertex(chunk.end_vertex_id()).out_neighbors()]
+        in_vertices = [v for v in self.project.gm.g.vertex(chunk.start_vertex_id()).in_neighbours()]
+        out_vertices = [v for v in self.project.gm.g.vertex(chunk.end_vertex_id()).out_neighbours()]
 
         if len(in_vertices) != len(out_vertices):
             Warning("UNBALANCED CONFIGURATION! ENDING CHUNK INTERPOLATION FITTING")
@@ -932,8 +932,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         for v in undo_recipe['new_vertices']:
             v = self.project.gm.g.vertex(v)
-            vertices_t_minus.extend([v_ for v_ in v.in_neighbors()])
-            vertices_t_plus.extend([v_ for v_ in v.out_neighbors()])
+            vertices_t_minus.extend([v_ for v_ in v.in_neighbours()])
+            vertices_t_plus.extend([v_ for v_ in v.out_neighbours()])
 
             self.project.gm.remove_vertex(v)
 
@@ -970,8 +970,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
                 for v in undo_recipe['new_vertices']:
                     v = self.project.gm.g.vertex(v)
-                    vertices_t_minus.extend([v_ for v_ in v.in_neighbors()])
-                    vertices_t_plus.extend([v_ for v_ in v.out_neighbors()])
+                    vertices_t_minus.extend([v_ for v_ in v.in_neighbours()])
+                    vertices_t_plus.extend([v_ for v_ in v.out_neighbours()])
 
                     self.project.gm.remove_vertex(v)
 

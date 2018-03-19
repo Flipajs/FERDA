@@ -17,7 +17,7 @@ if __name__ == '__main__':
     start_vertex = ch.start_vertex(p.gm)
 
     in_regions = []
-    for n in start_vertex.in_neighbors():
+    for n in start_vertex.in_neighbours():
         r = p.gm.region(n)
         in_regions.append(r)
 

@@ -144,9 +144,9 @@ class FittingThreadingManager:
         ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/region/fitting_script.py" '+str(s_id)+' "'+file_name+'"'
 
         fs = FittingSession(s_id, fp, pivot, done_callback)
-        fs.locked_vertices.extend(list(set(pivot.in_neighbors())))
+        fs.locked_vertices.extend(list(set(pivot.in_neighbours())))
         fs.locked_vertices.append(pivot)
-        fs.locked_vertices.extend(list(set(pivot.out_neighbors())))
+        fs.locked_vertices.extend(list(set(pivot.out_neighbours())))
 
         self.fitting_sessions[s_id] = fs
         for v in fs.locked_vertices:
@@ -182,8 +182,8 @@ class FittingThreadingManager:
         ch_s = project.gm.g.vertex(chunk.start_vertex_id())
         ch_e = project.gm.g.vertex(chunk.end_vertex_id())
 
-        vertices_before_chunk = list(set([v for v in ch_s.in_neighbors()]))
-        vertices_after_chunk = list(set([v for v in ch_e.out_neighbors()]))
+        vertices_before_chunk = list(set([v for v in ch_s.in_neighbours()]))
+        vertices_after_chunk = list(set([v for v in ch_e.out_neighbours()]))
 
         chunk_vertices = []
 

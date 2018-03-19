@@ -179,7 +179,7 @@ def prepare_pairs(project):
         best_d = np.inf
         second_best_d = np.inf
 
-        for v_out in project.gm.g.vertex(v).out_neighbors():
+        for v_out in project.gm.g.vertex(v).out_neighbours():
             r2 = p.gm.region(v_out)
 
             if r1.frame() + 1 != r2.frame():
@@ -417,7 +417,7 @@ def filter_edges(project, max_dist):
 #         best_d = np.inf
 #         second_best_d = np.inf
 #
-#         for v_out in project.gm.g.vertex(v).out_neighbors():
+#         for v_out in project.gm.g.vertex(v).out_neighbours():
 #             r2 = p.gm.region(v_out)
 #
 #             if r1.frame() + 1 != r2.frame():
@@ -505,15 +505,15 @@ def get_movement_histogram(p):
         v = p.gm.g.vertex(v)
 
         if v.out_degree() == 1:
-            for w in v.out_neighbors():
+            for w in v.out_neighbours():
                 if w.in_degree() == 1 and w.out_degree() == 1:
-                    for x in w.out_neighbors():
+                    for x in w.out_neighbours():
                         if x.in_degree() == 1:
                             data.append(get_movement_descriptor(p, v, w, x))
                 elif w.in_degree() == 1 and w.out_degree() > 1:
                     data2.append([])
                     cases.append([])
-                    for x in w.out_neighbors():
+                    for x in w.out_neighbours():
                         data2[-1].append(get_movement_descriptor(p, v, w, x))
                         cases[-1].append(map(int, (v, w, x)))
 
