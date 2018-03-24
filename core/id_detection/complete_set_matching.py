@@ -418,19 +418,7 @@ class CompleteSetMatching:
                     print "[{} |{}| (te: {})] -> {} |{}| (ts: {})".format(t1.id(), len(t1), t1.end_frame(self.p.gm),
                                                                           t2.id(), len(t2), t2.start_frame(self.p.gm))
 
-                    # if merge...
-                    if t1 != t2:
-                        track1 = list(t1.P)[0]
-                        track2 = self.tracklets_2_tracks[t2]
-                        self.update_prototypes(self.prototypes[track1], self.prototypes[track2])
-                        del self.tracks[track2]
-                        del self.prototypes[track2]
-
-                        self.tracklets_2_tracks[t2] = track1
-                        self.tracks[track1].append(t2)
-
-                        t2.P = set(t1.P)
-                        t2.N = set(t2.N)
+                    self.merge_tracks(t1, t2)
             else:
                 color_print('QUALITY BELOW', color='red')
                 # c = [1., 0.,0.,0.7]
@@ -470,6 +458,21 @@ class CompleteSetMatching:
             len(self.tracks), len(self.tracklets_2_tracks), tracks_unassigned_num, tracks_unassigned_len, num_prototypes))
 
         return qualities, track_CSs
+
+    def merge_tracks(self, t1, t2):
+        if t1 != t2:
+            track1 = list(t1.P)[0]
+            track2 = self.tracklets_2_tracks[t2]
+            self.update_prototypes(self.prototypes[track1], self.prototypes[track2])
+
+            for t in self.tracks[track2]:
+                self.tracks[track1].append(t)
+                self.tracklets_2_tracks[t2] = track1
+
+                t.P = set(t1.P)
+
+            del self.tracks[track2]
+            del self.prototypes[track2]
 
     def add_to_N_set(self, track_id, tracklet):
         for t in self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)):
@@ -1091,6 +1094,92 @@ class CompleteSetMatching:
 
         return prototypes
 
+    def solve_interactions(self):
+        from scripts.CNN.interactions import InteractionDetector
+        from core.region.region import Region
+
+        # detector = InteractionDetector('/home/matej/prace/ferda/experiments/171222_0126_batch_36k_random/0.928571428571')
+        detector_model_dir = 'data/CNN_models/180222_2253_mobilenet_two_100'
+        detector = InteractionDetector(detector_model_dir)
+
+        # extract multi tracklets
+        multi = [t for t in self.p.chm.tracklet_gen() if t.is_multi()]
+        tracklets2 = [t for t in multi if t.get_cardinality(self.p.gm) == 2]
+
+        tracks_id = 0
+
+        for t in tqdm(tracklets2, desc='processing 2-interactions'):
+            tracks, confidence = t.solve_interaction(detector, self.p.gm, self.p.rm, self.p.img_manager)
+
+            cardinality = 2
+            start_frame = t.start_frame(self.p.gm)
+
+            rs = {}
+            for id_ in range(cardinality):
+                rs[id_] = []
+
+            for i, results in tracks.iterrows():
+                for id_ in range(cardinality):
+                    r = Region(is_origin_interaction=True, frame=start_frame + i)
+                    r.centroid_ = np.array([results["{}_x".format(id_)],
+                                            results["{}_y".format(id_)]])
+                    r.theta_ = np.deg2rad(results["{}_angle_deg".format(id_)])
+
+                    r.major_axis_ = self.p.statr.major_axis_median
+                    r.minor_axis_ = r.major_axis_ / 3
+
+                    rs[id_].append(r)
+
+            # TODO: another threshold...
+            conf_threshold = 0.5
+            if confidence > conf_threshold:
+                already_used_id = []
+                for id_ in range(cardinality):
+                    self.p.rm.add(rs[id_])
+
+                    # for graph manager, when id < 0 means there is no node in graph but it is a direct link to region id*-1
+                    rids = [-r.id_ for r in rs[id_]]
+                    self.p.chm.new_chunk(rids, self.p.gm, origin_interaction=True)
+
+                    # Connect...
+                    start_r, end_r = rs[0], rs[-1]
+                    start_frame = start_r.frame()
+                    end_frame = end_r.frame()
+
+                    # PRE tracklets
+                    pre_tracklets = self.p.chm.chunks_in_frame(start_frame)
+                    # only tracklets which end before interaction are possible options
+                    pre_tracklets = filter(lambda x: x.end_frame(self.p.gm) == start_frame - 1, pre_tracklets)
+
+                    # TODO: do optimization instead of greedy approach
+                    best_start_t = None
+                    best_d = np.inf
+                    for t in pre_tracklets:
+                        t_r = self.p.gm.region(t.end_vertex_id())
+                        d = np.linalg.norm(t_r.centroid() - start_r.centroid())
+
+                        if d < best_d:
+                            best_d = d
+                            best_start_t = t
+
+                    # POST tracklets
+                    post_tracklets = self.p.chm.chunks_in_frame(end_frame)
+                    post_tracklets = filter(lambda x: x.start_frame(self.p.gm) == end_frame + 1, post_tracklets)
+
+                    bets_end_t = None
+                    best_d = np.inf
+                    for t in post_tracklets:
+                        t_r = self.p.gm.region(t.start_vertex_id())
+                        d = np.linalg.norm(t_r.centroid() - start_r.centroid())
+
+                        if d < best_d:
+                            best_d = d
+                            best_end_t = t
+
+
+
+        p.save()
+
 def _get_ids_from_folder(wd, n):
     # .DS_Store...
     files = list(filter(lambda x: x[0] != '.', os.listdir(wd)))
@@ -1204,91 +1293,7 @@ def prototypes_distribution_probability(prot1, prot2):
 
     return p_to_prot2
 
-def solve_interactions(p):
-    from scripts.CNN.interactions import InteractionDetector
-    from core.region.region import Region
 
-    # detector = InteractionDetector('/home/matej/prace/ferda/experiments/171222_0126_batch_36k_random/0.928571428571')
-    detector_model_dir = 'data/CNN_models/180222_2253_mobilenet_two_100'
-    detector = InteractionDetector(detector_model_dir)
-
-    # extract multi tracklets
-    multi = [t for t in p.chm.tracklet_gen() if t.is_multi()]
-    tracklets2 = [t for t in multi if t.get_cardinality(p.gm) == 2]
-
-    tracks_id = 0
-
-    for t in tqdm(tracklets2, desc='processing 2-interactions'):
-        tracks, confidence = t.solve_interaction(detector, p.gm, p.rm, p.img_manager)
-
-        cardinality = 2
-        start_frame = t.start_frame(p.gm)
-
-        rs = {}
-        for id_ in range(cardinality):
-            rs[id_] = []
-
-        for i, results in tracks.iterrows():
-            for id_ in range(cardinality):
-                r = Region(is_origin_interaction=True, frame=start_fbest_start_trame+i)
-                r.centroid_ = np.array([results["{}_x".format(id_)],
-                                        results["{}_y".format(id_)]])
-                r.theta_ = np.deg2rad(results["{}_angle_deg".format(id_)])
-
-                r.major_axis_ = p.statr.major_axis_median
-                r.minor_axis_ = r.major_axis_ / 3
-
-                rs[id_].append(r)
-
-        # TODO: another threshold...
-        conf_threshold = 0.5
-        if confidence > conf_threshold:
-            already_used_id = []
-            for id_ in range(cardinality):
-                p.rm.add(rs[id_])
-
-                # for graph manager, when id < 0 means there is no node in graph but it is a direct link to region id*-1
-                rids = [-r.id_ for r in rs[id_]]
-                p.chm.new_chunk(rids, p.gm, origin_interaction=True)
-
-                # Connect...
-                start_r, end_r = rs[0], rs[-1]
-                start_frame = start_r.frame()
-                end_frame = end_r.frame()
-
-                # PRE tracklets
-                pre_tracklets = p.chm.chunks_in_frame(start_frame)
-                # only tracklets which end before interaction are possible options
-                pre_tracklets = filter(lambda x: x.end_frame(p.gm) == start_frame - 1, pre_tracklets)
-
-                # TODO: do optimization instead of greedy approach
-                best_start_t = None
-                best_d = np.inf
-                for t in pre_tracklets:
-                    t_r = p.gm.region(t.end_vertex_id())
-                    d = np.linalg.norm(t_r.centroid() - start_r.centroid())
-
-                    if d < best_d:
-                        best_d = d
-                        best_start_t = t
-
-                # POST tracklets
-                post_tracklets = p.chm.chunks_in_frame(end_frame)
-                post_tracklets = filter(lambda x: x.start_frame(p.gm) == end_frame + 1, post_tracklets)
-
-                bets_end_t = None
-                best_d = np.inf
-                for t in post_tracklets:
-                    t_r = p.gm.region(t.start_vertex_id())
-                    d = np.linalg.norm(t_r.centroid() - start_r.centroid())
-
-                    if d < best_d:
-                        best_d = d
-                        best_end_t = t
-
-
-
-    p.save()
 
 
 if __name__ == '__main__':
@@ -1309,9 +1314,6 @@ if __name__ == '__main__':
         except:
             pass
 
-    # solve_interactions(p)
-    # import sys
-    # sys.exit()
 
     import pickle
     with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:
@@ -1321,22 +1323,13 @@ if __name__ == '__main__':
 
     # test_descriptors_distance(descriptors)
     # np.random.seed(13)
+    # Probably not necessary, just to make sure...
     np.random.seed(42)
 
     csm = CompleteSetMatching(p, lp, descriptors)
-    # r1 = csm.get_track_prototypes(p.chm[4188])
-    # r2 = csm.get_track_prototypes(p.chm[2475])
-    # r3 = csm.get_track_prototypes(p.chm[3856])
-    # b1 = csm.get_track_prototypes(p.chm[2715])
-    # b2 = csm.get_track_prototypes(p.chm[2137])
-    #
-    # prob_prototype_represantion_being_same_id_set(r1, r1)
-    # prob_prototype_represantion_being_same_id_set(r1, r2)
-    # prob_prototype_represantion_being_same_id_set(r1, r3)
-    # prob_prototype_represantion_being_same_id_set(r2, r3)
-    # prob_prototype_represantion_being_same_id_set(r1, b1)
-    # prob_prototype_represantion_being_same_id_set(r1, b2)
-    # prob_prototype_represantion_being_same_id_set(b1, b2)
 
-    # csm.desc_clustering_analysis()
+    # csm.solve_interactions()
+    # import sys
+    # sys.exit()
+
     csm.start_matching_process()
