@@ -655,7 +655,7 @@ class ResultsWidget(QtGui.QWidget):
         self.video_player.setFocus()
 
     def _evaluate_gt(self):
-        from utils.gt.evaluator import draw_id_t_img, compare_trackers
+        from utils.gt.evaluator import compare_trackers
         compare_trackers(self.project, skip_idtracker=True, gt_ferda_perm=self._gt.get_permutation_reversed(),
                          gt=self._gt, draw=self.eval_gt_draw_ch.isChecked())
 

@@ -687,24 +687,7 @@ class LearningWidget(QtGui.QWidget):
         self.w = win
 
     def update_N_sets(self):
-        affecting = []
-        for t in self.project.chm.chunk_gen():
-            if len(t.P):
-                affecting.append((t, set(t.P)))
-
-        self.lp._reset_chunk_PN_sets()
-        # todo share callback
-
-        all_ids = set(range(len(self.project.animals)))
-        self.lp.force=True
-        for t, id_set in affecting:
-            t.P = id_set
-            t.N = all_ids.difference(id_set)
-            # self.lp.assign_identity(id_, t)
-
-        for tracklet, id_set in affecting:
-            for t in self.lp._get_affected_undecided_tracklets(tracklet):
-                self.lp._update_N(id_set, t)
+        self.project.chm.update_N_sets(self.project)
 
         self.lp.force=False
 

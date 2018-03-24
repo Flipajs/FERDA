@@ -367,13 +367,10 @@ class CompleteSetMatching:
         track_CSs = [[]]
 
         for i, t in enumerate(CSs[0]):
-            self.tracks[i] = [t]
-            self.tracklets_2_tracks[t] = i
-            self.prototypes[i] = self.get_track_prototypes(t)
-            t.P = set([self.new_track_id])
+            new_track_id = self.register_tracklet_as_track(t)
+            t.P = set([new_track_id])
             t.id_decision_info = 'sequential_matching'
-            track_CSs[-1].append(self.new_track_id)
-            self.new_track_id += 1
+            track_CSs[-1].append(new_track_id)
 
         qualities = []
         for i in range(len(CSs) - 1):
@@ -384,10 +381,7 @@ class CompleteSetMatching:
                 if t in self.tracklets_2_tracks:
                     continue
 
-                new_track_id = max(self.tracks.keys()) + 1
-                self.tracks[new_track_id] = [t]
-                self.tracklets_2_tracks[t] = new_track_id
-                self.prototypes[new_track_id] = self.get_track_prototypes(t)
+                self.register_tracklet_as_track(t)
 
             # perm, quality = self.cs2cs_matching_descriptors_and_spatial(CSs[i], CSs[i+1])
             perm, quality = self.cs2cs_matching_prototypes_and_spatial(CSs[i], CSs[i + 1])
@@ -458,6 +452,16 @@ class CompleteSetMatching:
             len(self.tracks), len(self.tracklets_2_tracks), tracks_unassigned_num, tracks_unassigned_len, num_prototypes))
 
         return qualities, track_CSs
+
+    def register_tracklet_as_track(self, t):
+        if t not in self.tracklets_2_tracks:
+            self.tracks[self.new_track_id] = [t]
+            self.tracklets_2_tracks[t] = self.new_track_id
+            self.prototypes[self.new_track_id] = self.get_track_prototypes(t)
+
+            self.new_track_id += 1
+
+        return self.tracklets_2_tracks[t]
 
     def merge_tracks(self, t1, t2):
         if t1 != t2:
@@ -1106,8 +1110,6 @@ class CompleteSetMatching:
         multi = [t for t in self.p.chm.tracklet_gen() if t.is_multi()]
         tracklets2 = [t for t in multi if t.get_cardinality(self.p.gm) == 2]
 
-        tracks_id = 0
-
         for t in tqdm(tracklets2, desc='processing 2-interactions'):
             tracks, confidence = t.solve_interaction(detector, self.p.gm, self.p.rm, self.p.img_manager)
 
@@ -1133,7 +1135,6 @@ class CompleteSetMatching:
             # TODO: another threshold...
             conf_threshold = 0.5
             if confidence > conf_threshold:
-                already_used_id = []
                 for id_ in range(cardinality):
                     self.p.rm.add(rs[id_])
 
@@ -1177,6 +1178,7 @@ class CompleteSetMatching:
                             best_end_t = t
 
 
+                    self.merge_tracks()
 
         p.save()
 

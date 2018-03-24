@@ -166,3 +166,38 @@ class ChunkManager:
             self.new_chunk([int(n)], p.gm)
 
         self.reset_itree(p.gm)
+
+    def reset_PN_sets(self, project):
+        full_set = set(range(len(project.animals)))
+        for t in self.chunk_gen():
+            t.P = set()
+            t.N = set()
+
+            if t.is_noise() or t.is_part() or t.is_undefined():
+                t.N = set(full_set)
+
+    def update_N_sets(self, project, update_N_callback=None):
+        affecting = []
+        for t in self.chunk_gen():
+            if len(t.P):
+                affecting.append((t, set(t.P)))
+
+        self.reset_PN_sets(project)
+
+        all_ids = set(range(len(project.animals)))
+        for t, id_set in affecting:
+            t.P = id_set
+            t.N = all_ids.difference(id_set)
+            # self.lp.assign_identity(id_, t)
+
+        if update_N_callback is not None:
+            for tracklet, id_set in affecting:
+                for t in self.get_affected_undecided_tracklets(tracklet, project):
+                        update_N_callback(id_set, t)
+
+    def get_affected_undecided_tracklets(self, tracklet, project):
+        num_animals = len(project.animals)
+        affected = set(self.chunks_in_interval(tracklet.start_frame(project.gm),
+                                                     tracklet.end_frame(project.gm)))
+
+        return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(num_animals), affected)

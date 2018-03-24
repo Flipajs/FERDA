@@ -387,7 +387,7 @@ class LearningProcess:
             #     if t.id() in self.links and t.id() != self.links[t.id()]:
             #         continue
 
-            if not self.__tracklet_is_decided(t.P, t.N):
+            if not t.is_id_decided(len(self.p.animals)):
                 self.undecided_tracklets.add(t.id())
 
     def run_learning(self):
@@ -755,18 +755,13 @@ class LearningProcess:
         return set(range(len(vertices)))
 
     def _reset_chunk_PN_sets(self):
-        full_set = set(range(len(self.p.animals)))
-        for ch in self.p.chm.chunk_gen():
-            ch.P = set()
-            ch.N = set()
+        self.p.chm.reset_PN_sets(self.p)
 
-            if ch.is_noise() or ch.is_part() or ch.is_undefined():
-                ch.N = set(full_set)
-
+        for t in self.p.chm.chunk_gen():
             if self.map_decisions:
                 try:
-                    del ch.decision_certainty
-                    del ch.measurements
+                    del t.decision_certainty
+                    del t.measurements
                 except:
                     pass
 
@@ -1038,7 +1033,7 @@ class LearningProcess:
         tracklet.P = P
 
         # if the tracklet labelling is fully decided
-        if self.__tracklet_is_decided(P, N):
+        if tracklet.is_id_decided(len(self.p.animals)):
             self.undecided_tracklets.remove(tracklet.id())
 
         # update affected
@@ -1054,6 +1049,9 @@ class LearningProcess:
         return True
 
     def __tracklet_is_decided(self, P, N):
+        import warnings
+        warnings.warn("Deprecated, use t.is_id_decided(num_animals) instead")
+
         return P.union(N) == self.all_ids
 
     def get_tracklet_p1s(self, tracklet):
@@ -1760,12 +1758,7 @@ class LearningProcess:
         which ids are in self.undecided_tracklets
         """
 
-        affected = set(self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm),
-                                                     tracklet.end_frame(self.p.gm)))
-
-        # ignore already decided chunks...
-        return filter(lambda x: (x.is_single() or x.is_multi()) and not self.__tracklet_is_decided(x.P, x.N), affected)
-        # return filter(lambda x: x.id() in self.undecided_tracklets, affected)
+        return self.p.chm.get_affected_undecided_tracklets(tracklet, self.p)
 
     def set_min_new_samples_to_retrain(self, val):
         self.min_new_samples_to_retrain = val
