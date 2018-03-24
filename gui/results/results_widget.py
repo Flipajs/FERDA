@@ -20,7 +20,6 @@ import cv2
 import time
 from gui.qt_flow_layout import FlowLayout
 from tqdm import tqdm
-from pyqtgraph import makeQImage
 
 MARKER_SIZE = 15
 
@@ -854,7 +853,9 @@ class ResultsWidget(QtGui.QWidget):
         else:
             rgba[pts_[:, 1], pts_[:, 0], :] = c[2], c[1], c[0], c[3]
 
-        qim_ = makeQImage(rgba)
+        # changed recently to support pyqtgraph removal from dependencies
+        from qimage2ndarray import array2qimage
+        qim_ = array2qimage(rgba)
 
         pixmap = QtGui.QPixmap.fromImage(qim_)
 
