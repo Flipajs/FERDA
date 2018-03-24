@@ -368,7 +368,6 @@ class CompleteSetMatching:
 
         for i, t in enumerate(CSs[0]):
             new_track_id = self.register_tracklet_as_track(t)
-            t.P = set([new_track_id])
             t.id_decision_info = 'sequential_matching'
             track_CSs[-1].append(new_track_id)
 
@@ -412,7 +411,7 @@ class CompleteSetMatching:
                     print "[{} |{}| (te: {})] -> {} |{}| (ts: {})".format(t1.id(), len(t1), t1.end_frame(self.p.gm),
                                                                           t2.id(), len(t2), t2.start_frame(self.p.gm))
 
-                    self.merge_tracks(t1, t2)
+                    self.merge_tracklets(t1, t2)
             else:
                 color_print('QUALITY BELOW', color='red')
                 # c = [1., 0.,0.,0.7]
@@ -420,9 +419,9 @@ class CompleteSetMatching:
                 track_CSs.append([])
                 for pair in perm:
                     t = pair[1]
-                    if len(t.P) == 0:
-                        t.P = set([self.new_track_id])
-                        self.new_track_id += 1
+                    # if len(t.P) == 0:
+                    #     t.P = set([self.new_track_id])
+                    #     self.new_track_id += 1
 
                     track_CSs[-1].append(list(t.P)[0])
 
@@ -458,12 +457,13 @@ class CompleteSetMatching:
             self.tracks[self.new_track_id] = [t]
             self.tracklets_2_tracks[t] = self.new_track_id
             self.prototypes[self.new_track_id] = self.get_track_prototypes(t)
+            t.P = set([self.new_track_id])
 
             self.new_track_id += 1
 
         return self.tracklets_2_tracks[t]
 
-    def merge_tracks(self, t1, t2):
+    def merge_tracklets(self, t1, t2):
         if t1 != t2:
             track1 = list(t1.P)[0]
             track2 = self.tracklets_2_tracks[t2]
@@ -1177,8 +1177,11 @@ class CompleteSetMatching:
                             best_d = d
                             best_end_t = t
 
-
-                    self.merge_tracks()
+                    self.register_tracklet_as_track(best_start_t)
+                    self.register_tracklet_as_track(t)
+                    self.register_tracklet_as_track(best_end_t)
+                    self.merge_tracklets(best_start_t, t)
+                    self.merge_tracklets(t, best_end_t)
 
         p.save()
 
@@ -1330,7 +1333,7 @@ if __name__ == '__main__':
 
     csm = CompleteSetMatching(p, lp, descriptors)
 
-    # csm.solve_interactions()
+    csm.solve_interactions()
     # import sys
     # sys.exit()
 
