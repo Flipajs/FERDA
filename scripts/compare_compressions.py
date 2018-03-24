@@ -15,6 +15,9 @@ for vid in videos:
     frames.append(frame)
 
 
+print("CRF:  | mean diff:  | std_diff:  | mean abs diff:  | std abs diff:  | max diff:  | total: ")
+print(" ---  | --- | --- | --- | --- | --- | --- ")
+
 for frame, crf in zip(frames[1:], [15, 17, 18, 22]):
     frame_orig = np.asarray(frames[0], dtype=np.integer)
     fraem = np.asarray(frame, dtype=np.integer)
@@ -26,7 +29,27 @@ for frame, crf in zip(frames[1:], [15, 17, 18, 22]):
     max_diff = np.max(np.abs(frame - frame_orig))
     total_diff = np.sum(np.abs(frame - frame_orig))
 
-    print("CRF: {}, mean diff: {:.5f}, std_diff: {:.3f}, mean abs diff: {:.3}, std abs diff: {:.3f} max diff: {}, total: {}".format(
+    print("{} | {:.5f} | {:.3f} | {:.3} | {:.3f} | {} | {}".format(
+        crf, mean_diff, std_diff, mean_abs_diff, std_abs_diff, max_diff, total_diff
+    ))
+    # print mean_diff, std_diff, mean_abs_diff, max_diff
+
+
+print("CRF:  | mean diff:  | std_diff:  | mean abs diff:  | std abs diff:  | max diff:  | total: ")
+print(" ---  | --- | --- | --- | --- | --- | --- ")
+
+for frame, crf in zip(frames[2:], [17, 18, 22]):
+    frame_orig = np.asarray(frames[1], dtype=np.integer)
+    fraem = np.asarray(frame, dtype=np.integer)
+
+    mean_diff = np.mean(frame-frame_orig)
+    std_diff = np.std(frame-frame_orig)
+    mean_abs_diff = np.mean(np.abs(frame-frame_orig))
+    std_abs_diff = np.std(np.abs(frame-frame_orig))
+    max_diff = np.max(np.abs(frame - frame_orig))
+    total_diff = np.sum(np.abs(frame - frame_orig))
+
+    print("{} | {:.5f} | {:.3f} | {:.3} | {:.3f} | {} | {}".format(
         crf, mean_diff, std_diff, mean_abs_diff, std_abs_diff, max_diff, total_diff
     ))
     # print mean_diff, std_diff, mean_abs_diff, max_diff
