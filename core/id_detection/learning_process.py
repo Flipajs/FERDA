@@ -8,7 +8,7 @@ from itertools import izip
 from tqdm import tqdm, trange
 import numpy as np
 import os
-import psutil
+# import psutil
 from PyQt4 import QtGui
 from sklearn.ensemble import RandomForestClassifier
 
@@ -210,8 +210,8 @@ class LearningProcess:
                     self.collision_chunks.add(t.id())
 
                 # Debug info...
-                if i % 500 == 0:
-                    process = psutil.Process(os.getpid())
+                # if i % 500 == 0:
+                    # process = psutil.Process(os.getpid())
                     # print
                     # print "Memory usage: {:.2f}Mb".format((process.memory_info().rss) / 1e6)
                     # print
