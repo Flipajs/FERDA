@@ -771,7 +771,7 @@ class ResultsWidget(QtGui.QWidget):
 
     def draw_region(self, r, tracklet, use_ch_color=None, alpha=120, highlight_contour=False, force_color=None):
         if r.is_origin_interaction():
-            x, y = r.centroid()
+            y, x = r.centroid()
             # TODO:
             a = 50
             b = 17

@@ -470,6 +470,11 @@ class CompleteSetMatching:
             self.update_prototypes(self.prototypes[track1], self.prototypes[track2])
 
             for t in self.tracks[track2]:
+                if t == track2:
+                    import sys
+                    import warnings
+                    warnings.warn("Infinite cycle in Merge tracklets =/")
+                    sys.exit()
                 self.tracks[track1].append(t)
                 self.tracklets_2_tracks[t2] = track1
 
@@ -1123,11 +1128,11 @@ class CompleteSetMatching:
             for i, results in tracks.iterrows():
                 for id_ in range(cardinality):
                     r = Region(is_origin_interaction=True, frame=start_frame + i)
-                    r.centroid_ = np.array([results["{}_x".format(id_)],
-                                            results["{}_y".format(id_)]])
+                    r.centroid_ = np.array([results["{}_y".format(id_)],
+                                            results["{}_x".format(id_)]])
                     r.theta_ = np.deg2rad(results["{}_angle_deg".format(id_)])
 
-                    r.major_axis_ = self.p.statr.major_axis_median
+                    r.major_axis_ = self.p.stats.major_axis_median
                     r.minor_axis_ = r.major_axis_ / 3
 
                     rs[id_].append(r)
@@ -1135,22 +1140,23 @@ class CompleteSetMatching:
             # TODO: another threshold...
             conf_threshold = 0.5
             if confidence > conf_threshold:
+                used_tracklets = set()
                 for id_ in range(cardinality):
                     self.p.rm.add(rs[id_])
 
                     # for graph manager, when id < 0 means there is no node in graph but it is a direct link to region id*-1
                     rids = [-r.id_ for r in rs[id_]]
-                    self.p.chm.new_chunk(rids, self.p.gm, origin_interaction=True)
+                    new_t, _ = self.p.chm.new_chunk(rids, self.p.gm, origin_interaction=True)
 
                     # Connect...
-                    start_r, end_r = rs[0], rs[-1]
+                    start_r, end_r = self.p.gm.region(new_t.start_vertex_id()), self.p.gm.region(new_t.end_vertex_id())
                     start_frame = start_r.frame()
                     end_frame = end_r.frame()
 
                     # PRE tracklets
-                    pre_tracklets = self.p.chm.chunks_in_frame(start_frame)
+                    pre_tracklets = self.p.chm.chunks_in_frame(start_frame - 1)
                     # only tracklets which end before interaction are possible options
-                    pre_tracklets = filter(lambda x: x.end_frame(self.p.gm) == start_frame - 1, pre_tracklets)
+                    pre_tracklets = filter(lambda x: x.end_frame(self.p.gm) == start_frame - 1 and x.is_single(), pre_tracklets)
 
                     # TODO: do optimization instead of greedy approach
                     best_start_t = None
@@ -1164,10 +1170,10 @@ class CompleteSetMatching:
                             best_start_t = t
 
                     # POST tracklets
-                    post_tracklets = self.p.chm.chunks_in_frame(end_frame)
-                    post_tracklets = filter(lambda x: x.start_frame(self.p.gm) == end_frame + 1, post_tracklets)
+                    post_tracklets = self.p.chm.chunks_in_frame(end_frame + 1)
+                    post_tracklets = filter(lambda x: x.start_frame(self.p.gm) == end_frame + 1 and x.is_single(), post_tracklets)
 
-                    bets_end_t = None
+                    best_end_t = None
                     best_d = np.inf
                     for t in post_tracklets:
                         t_r = self.p.gm.region(t.start_vertex_id())
@@ -1177,11 +1183,31 @@ class CompleteSetMatching:
                             best_d = d
                             best_end_t = t
 
-                    self.register_tracklet_as_track(best_start_t)
-                    self.register_tracklet_as_track(t)
-                    self.register_tracklet_as_track(best_end_t)
-                    self.merge_tracklets(best_start_t, t)
-                    self.merge_tracklets(t, best_end_t)
+                    if best_start_t is not None:
+                        if best_start_t not in used_tracklets:
+                            self.register_tracklet_as_track(best_start_t)
+                            self.register_tracklet_as_track(new_t)
+
+                            self.merge_tracklets(best_start_t, new_t)
+                            used_tracklets.add(best_start_t)
+                        else:
+                            message = "\nCONFLICT! Race condition during interaction solver best_start"
+                            color_print(message, 'red')
+                            print("\t\tbest_start_t: {}, t_interaction_origined: {}, best_end_t: {}".format(
+                                best_start_t, new_t, best_end_t))
+
+                    if best_end_t is not None:
+                        if best_end_t not in used_tracklets:
+                            self.register_tracklet_as_track(new_t)
+                            self.register_tracklet_as_track(best_end_t)
+                            self.merge_tracklets(new_t, best_end_t)
+                            used_tracklets.add(best_end_t)
+                        else:
+                            message = "\nCONFLICT! Race condition during interaction solver best_end"
+                            color_print(message, 'red')
+                            print("\t\tbest_start_t: {}, t_interaction_origined: {}, best_end_t: {}".format(
+                                best_start_t, new_t, best_end_t))
+
 
         p.save()
 

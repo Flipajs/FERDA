@@ -209,6 +209,7 @@ class Region(object):
         return np.copy(self.pts())
 
     def centroid(self):
+        "in order y, x"
         return np.copy(self.centroid_)
 
     def set_centroid(self, centroid):
