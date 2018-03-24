@@ -1141,6 +1141,10 @@ class CompleteSetMatching:
             conf_threshold = 0.5
             if confidence > conf_threshold:
                 used_tracklets = set()
+
+                to_merge = []
+                conflict = False
+
                 for id_ in range(cardinality):
                     self.p.rm.add(rs[id_])
 
@@ -1188,7 +1192,7 @@ class CompleteSetMatching:
                             self.register_tracklet_as_track(best_start_t)
                             self.register_tracklet_as_track(new_t)
 
-                            self.merge_tracklets(best_start_t, new_t)
+                            to_merge.append((best_start_t, new_t))
                             used_tracklets.add(best_start_t)
                         else:
                             message = "\nCONFLICT! Race condition during interaction solver best_start"
@@ -1196,11 +1200,13 @@ class CompleteSetMatching:
                             print("\t\tbest_start_t: {}, t_interaction_origined: {}, best_end_t: {}".format(
                                 best_start_t, new_t, best_end_t))
 
+                            conflict = True
+
                     if best_end_t is not None:
                         if best_end_t not in used_tracklets:
                             self.register_tracklet_as_track(new_t)
                             self.register_tracklet_as_track(best_end_t)
-                            self.merge_tracklets(new_t, best_end_t)
+                            to_merge.append((new_t, best_end_t))
                             used_tracklets.add(best_end_t)
                         else:
                             message = "\nCONFLICT! Race condition during interaction solver best_end"
@@ -1208,6 +1214,11 @@ class CompleteSetMatching:
                             print("\t\tbest_start_t: {}, t_interaction_origined: {}, best_end_t: {}".format(
                                 best_start_t, new_t, best_end_t))
 
+                            conflict = True
+
+                if not conflict:
+                    for t1, t2 in to_merge:
+                        self.merge_tracklets(t1, t2)
 
         p.save()
 
@@ -1359,7 +1370,7 @@ if __name__ == '__main__':
 
     csm = CompleteSetMatching(p, lp, descriptors)
 
-    csm.solve_interactions()
+    # csm.solve_interactions()
     # import sys
     # sys.exit()
 
