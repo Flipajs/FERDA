@@ -1,7 +1,6 @@
 h5py==2.7.0
 matplotlib==2.0.2
 numpy==1.12.1
-psutil==5.2.2
 PuLP==1.6.5
 Pympler==0.5
 qimage2ndarray==1.6

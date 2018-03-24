@@ -211,7 +211,7 @@ class LearningProcess:
 
                 # Debug info...
                 # if i % 500 == 0:
-                    # process = psutil.Process(os.getpid())
+                    # process = s.Process(os.getpid())
                     # print
                     # print "Memory usage: {:.2f}Mb".format((process.memory_info().rss) / 1e6)
                     # print
