@@ -14,6 +14,7 @@ import tempfile
 from tqdm import tqdm
 from scripts.CNN.interactions_results import save_prediction_img
 from scipy.special import expit
+import fire
 
 
 class InteractionDetector:
@@ -149,3 +150,21 @@ class InteractionDetector:
 
         imageio.mimwrite(out_filename, out_images)
         os.unlink(tmp_file)
+
+
+def detect_and_visualize(model_dir, in_img, x, y, out_img=None):
+    img = imageio.imread(in_img)
+    detector = InteractionDetector(model_dir)
+    detections = detector.detect(img, (x, y))
+    for obj_i in range(2):
+        detections['{}_major'.format(obj_i)] = 60
+        detections['{}_minor'.format(obj_i)] = 15
+    detector.draw_detections(img, detections)
+    if out_img is None:
+        root, ext = os.path.splitext(in_img)
+        out_img = root + '_detections' + ext
+    save_prediction_img(out_img, 2, img, detections)
+
+
+if __name__ == '__main__':
+    fire.Fire(detect_and_visualize)
