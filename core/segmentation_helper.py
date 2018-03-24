@@ -3,7 +3,6 @@ import numpy as np
 from skimage.transform import pyramid_gaussian
 from skimage.feature import local_binary_pattern
 from skimage.color import label2rgb
-import imutils
 import time
 
 
@@ -607,7 +606,8 @@ def pyramid(image, scale=1.5, minSize=(30, 30), num=-1):
         i += 1
         # compute the new dimensions of the image and resize it
         w = int(image.shape[1] / scale)
-        image = imutils.resize(image, width=w)
+        h = int(image.shape[0] / scale)
+        image = cv2.resize(image, (w, h))
 
         # if the resized image does not meet the supplied minimum
         # size, then stop constructing the pyramid

@@ -1249,17 +1249,20 @@ def solve_interactions(p):
                                         results["{}_y".format(id_)]])
                 r.theta_ = np.deg2rad(results["{}_angle_deg".format(id_)])
 
+                r.major_axis_ = p.statr.major_axis_median
+                r.minor_axis_ = r.major_axis_ / 3
 
                 rs[id_].append(r)
 
         # TODO: another threshold...
-        if confidence > 0.75:
+        conf_threshold = 0
+        if confidence > conf_threshold:
             for id_ in range(cardinality):
                 p.rm.add(rs[id_])
 
                 # for graph manager, when id < 0 means there is no node in graph but it is a direct link to region id*-1
                 rids = [-r.id_ for r in rs[id_]]
-                tracklet, t_id = p.chm.new_chunk(rids, p.gm, origin_interaction=True)
+                p.chm.new_chunk(rids, p.gm, origin_interaction=True)
 
     p.save()
 

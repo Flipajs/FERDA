@@ -771,6 +771,22 @@ class ResultsWidget(QtGui.QWidget):
 
     def draw_region(self, r, tracklet, use_ch_color=None, alpha=120, highlight_contour=False, force_color=None):
         if r.is_origin_interaction():
+            x, y = r.centroid()
+            # TODO:
+            a = 50
+            b = 17
+
+            item = QtGui.QGraphicsEllipseItem(-a/2, -b/2, a, b)
+            brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+            c_ = QtGui.QColor(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue())
+            brush.setColor(c_)
+            item.setBrush(brush)
+            item.setOpacity(0.5)
+            item.setZValue(0.65)
+            item.rotate(np.rad2deg(r.theta_))
+            item.setPos(x, y)
+            return item
+
         # hnus... prepsat
         from utils.img import get_cropped_pts
 
@@ -1166,6 +1182,14 @@ class ResultsWidget(QtGui.QWidget):
                     alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
 
                     c_ = ch.color
+                    if c_ is None:
+                        import random
+                        c = QtGui.QColor.fromRgb(random.randint(0, 255),
+                                                 random.randint(0, 255),
+                                                 random.randint(0, 255))
+                        ch.color = c
+                        c_ = ch.color
+
                     item = self.draw_region(r, ch, use_ch_color=c_, alpha=alpha)
 
                     self.video_player.visualise_temp(item, category='region')
