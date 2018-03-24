@@ -8,7 +8,8 @@ import os, random
 
 
 class CompleteSetMatching:
-    def __init__(self, project, lp, descriptors, quality_threshold=0.02):
+    def __init__(self, project, lp, descriptors, quality_threshold=0.02, tracks={},
+                 tracklets_2_tracks={}, prototypes={}):
         self.prototype_distance_threshold = np.inf # ignore
         self.QUALITY_THRESHOLD = quality_threshold
         self.p = project
@@ -17,28 +18,21 @@ class CompleteSetMatching:
         self.get_p1s = self.lp.get_tracklet_p1s
         self.descriptors = descriptors
 
+        self.new_track_id = 0
+        self.tracks = tracks
+        self.tracklets_2_tracks = tracklets_2_tracks
+        self.prototypes = prototypes
+
         self.update_distances = []
         self.update_weights = []
 
-    def process(self):
+    def start_matching_process(self):
         CSs = self.find_cs()
-
-        #####
-        # for t in CSs[0]:
-        #     self.get_track_prototypes(t, n=10)
-
-        id_ = 0
 
         import matplotlib.pyplot as plt
         import matplotlib.patheffects as pe
-        from matplotlib.widgets import Cursor
 
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111)
-        # cur = Cursor(ax, horizOn=False)
-        # plt.hold(True)
-
-        id_, prototypes, qualities, track_CSs, tracklets_2_tracks, tracks = self.sequential_matching(CSs, id_)
+        qualities, track_CSs = self.sequential_matching(CSs)
 
         print("track CSs")
         for CS in track_CSs:
@@ -47,7 +41,7 @@ class CompleteSetMatching:
         print
 
         ##### now do CS of tracks to tracks matching
-        self.tracks_CS_matching(track_CSs, prototypes, tracklets_2_tracks, tracks)
+        self.tracks_CS_matching(track_CSs)
 
         ##### then do the rest... bruteforce approach
         # 1. find best Track CS
@@ -56,7 +50,7 @@ class CompleteSetMatching:
         best_CS = None
         best_support = 0
         for CS in track_CSs:
-            val = self.track_support(CS, tracks)
+            val = self.track_support(CS)
             if val > best_support:
                 best_CS = CS
                 best_support = val
@@ -64,7 +58,7 @@ class CompleteSetMatching:
         print "BEGINNING of best_set matching"
 
         # update N sets for unassigned tracklets in relations to best_CS track ids
-        for tracklet, track_id in tracklets_2_tracks.iteritems():
+        for tracklet, track_id in self.tracklets_2_tracks.iteritems():
             self.add_to_N_set(track_id, tracklet)
 
         # go through tracklets, find biggest set and do matching..
@@ -75,7 +69,7 @@ class CompleteSetMatching:
         num_undecided = 0
         for t in self.p.chm.tracklet_gen():
             # TODO: what about matching unmatched Tracks as well?
-            if t in tracklets_2_tracks or not t.is_single():
+            if t in self.tracklets_2_tracks or not t.is_single():
                 continue
 
             # 2) find biggest set
@@ -83,10 +77,10 @@ class CompleteSetMatching:
 
             prohibited_ids = {}
             for t_ in best_set:
-                if t_ not in prototypes:
-                    prototypes[id_] = self.get_track_prototypes(t_)
-                    tracklets_2_tracks[t_] = id_
-                    id_ += 1
+                if t_ not in self.prototypes:
+                    self.prototypes[self.new_track_id] = self.get_track_prototypes(t_)
+                    self.tracklets_2_tracks[t_] = self.new_track_id
+                    self.new_track_id += 1
 
                     prohibited_ids[t_] = []
                     for test_t in self.p.chm.tracklets_intersecting_t_gen(t_, self.p.gm):
@@ -97,7 +91,7 @@ class CompleteSetMatching:
                             prohibited_ids[t_].append(list(test_t.P)[0])
 
             # 3) compute matching
-            P_a = self.prototypes_distance_probabilities(best_set, best_CS, prototypes, tracklets_2_tracks)
+            P_a = self.prototypes_distance_probabilities(best_set, best_CS)
 
             # TODO: add spatial cost as well
             # invert...
@@ -129,12 +123,12 @@ class CompleteSetMatching:
             if quality[1] > self.QUALITY_THRESHOLD:
                 for (tracklet, track_id) in perm:
                     print "[{} |{}| (te: {})] -> {}".format(tracklet.id(), len(tracklet), tracklet.end_frame(self.p.gm), track_id)
-                    tracklets_track = tracklets_2_tracks[tracklet]
-                    self.update_prototypes(prototypes[track_id], prototypes[tracklets_track])
-                    del prototypes[tracklets_track]
+                    tracklets_track = self.tracklets_2_tracks[tracklet]
+                    self.update_prototypes(self.prototypes[track_id], self.prototypes[tracklets_track])
+                    del self.prototypes[tracklets_track]
 
-                    tracklets_2_tracks[tracklet] = track_id
-                    tracks[track_id].append(tracklet)
+                    self.tracklets_2_tracks[tracklet] = track_id
+                    self.tracks[track_id].append(tracklet)
 
                     tracklet.P = set([track_id])
                     tracklet.N = set(range(len(self.p.animals))) - tracklet.P
@@ -157,8 +151,8 @@ class CompleteSetMatching:
         #### visualize and stats
         from utils.rand_cmap import rand_cmap
 
-        new_cmap = rand_cmap(id_+1, type='bright', first_color_black=True, last_color_black=False)
-        print "#IDs: {}".format(id_+1)
+        new_cmap = rand_cmap(self.new_track_id+1, type='bright', first_color_black=True, last_color_black=False)
+        print "#IDs: {}".format(self.new_track_id+1)
         support = {}
         tracks = {}
         tracks_mean_desc = {}
@@ -189,7 +183,7 @@ class CompleteSetMatching:
                 else:
                     c = [0, 0, 1, .3]
 
-                y = t.id() % id_
+                y = t.id() % self.new_track_id
                 plt.scatter(t.start_frame(self.p.gm), y, c=c, marker='s', edgecolor=[0., 0., 0., .1])
                 plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm) + 0.1], [y, y],
                          c=c,
@@ -216,17 +210,6 @@ class CompleteSetMatching:
 
                 if id in t.P:
                     t.P = set([new_id])
-
-        # print "ISOLATED CS GROUPS: {}".format(len(isolated_cs_groups))
-        # for cs in isolated_cs_groups:
-        #     total_len = 0
-        #     s = ""
-        #     for t in cs:
-        #         s += ", "+str(t.id())
-        #         total_len += len(t)
-        #
-        #     print "total len: {}, IDs: {}".format(total_len, s)
-        #     print
 
         p.save()
         qualities = np.array(qualities)
@@ -378,37 +361,36 @@ class CompleteSetMatching:
         probs2.append(max(prob_vec))
         return best_p, best_track
 
-    def sequential_matching(self, CSs, id_):
+    def sequential_matching(self, CSs):
         print "BEGINNING of SEQUENTIAL MATCHING"
-        tracks = {}
-        tracklets_2_tracks = {}
+
         track_CSs = [[]]
-        prototypes = {}
+
         for i, t in enumerate(CSs[0]):
-            tracks[i] = [t]
-            tracklets_2_tracks[t] = i
-            prototypes[i] = self.get_track_prototypes(t)
-            t.P = set([id_])
+            self.tracks[i] = [t]
+            self.tracklets_2_tracks[t] = i
+            self.prototypes[i] = self.get_track_prototypes(t)
+            t.P = set([self.new_track_id])
             t.id_decision_info = 'sequential_matching'
-            track_CSs[-1].append(id_)
-            id_ += 1
+            track_CSs[-1].append(self.new_track_id)
+            self.new_track_id += 1
+
         qualities = []
         for i in range(len(CSs) - 1):
             print "CS {}, CS {}".format(i, i + 1)
 
             # first create new virtual tracks and their prototypes for CSs[i+1] which are not already in tracks
             for t in CSs[i + 1]:
-                if t in tracklets_2_tracks:
+                if t in self.tracklets_2_tracks:
                     continue
 
-                new_track_id = max(tracks.keys()) + 1
-                tracks[new_track_id] = [t]
-                tracklets_2_tracks[t] = new_track_id
-                prototypes[new_track_id] = self.get_track_prototypes(t)
+                new_track_id = max(self.tracks.keys()) + 1
+                self.tracks[new_track_id] = [t]
+                self.tracklets_2_tracks[t] = new_track_id
+                self.prototypes[new_track_id] = self.get_track_prototypes(t)
 
             # perm, quality = self.cs2cs_matching_descriptors_and_spatial(CSs[i], CSs[i+1])
-            perm, quality = self.cs2cs_matching_prototypes_and_spatial(CSs[i], CSs[i + 1], prototypes,
-                                                                       tracklets_2_tracks)
+            perm, quality = self.cs2cs_matching_prototypes_and_spatial(CSs[i], CSs[i + 1])
 
             cs1_max_frame = 0
             cs2_min_frame = np.inf
@@ -439,13 +421,13 @@ class CompleteSetMatching:
                     # if merge...
                     if t1 != t2:
                         track1 = list(t1.P)[0]
-                        track2 = tracklets_2_tracks[t2]
-                        self.update_prototypes(prototypes[track1], prototypes[track2])
-                        del tracks[track2]
-                        del prototypes[track2]
+                        track2 = self.tracklets_2_tracks[t2]
+                        self.update_prototypes(self.prototypes[track1], self.prototypes[track2])
+                        del self.tracks[track2]
+                        del self.prototypes[track2]
 
-                        tracklets_2_tracks[t2] = track1
-                        tracks[track1].append(t2)
+                        self.tracklets_2_tracks[t2] = track1
+                        self.tracks[track1].append(t2)
 
                         t2.P = set(t1.P)
                         t2.N = set(t2.N)
@@ -457,8 +439,8 @@ class CompleteSetMatching:
                 for pair in perm:
                     t = pair[1]
                     if len(t.P) == 0:
-                        t.P = set([id_])
-                        id_ += 1
+                        t.P = set([self.new_track_id])
+                        self.new_track_id += 1
 
                     track_CSs[-1].append(list(t.P)[0])
 
@@ -467,7 +449,7 @@ class CompleteSetMatching:
                         not_same += 1
 
             plt.plot([dividing_frame, dividing_frame], [-5, -5 + 4.7 * quality[1]], c=c)
-            plt.plot([dividing_frame, dividing_frame], [0, id_ - 1 + not_same], c=c)
+            plt.plot([dividing_frame, dividing_frame], [0, self.new_track_id - 1 + not_same], c=c)
 
             print quality
             print
@@ -477,23 +459,24 @@ class CompleteSetMatching:
         tracks_unassigned_len = 0
         tracks_unassigned_num = 0
         for t in self.p.chm.chunk_gen():
-            if t.is_single() and t not in tracklets_2_tracks:
+            if t.is_single() and t not in self.tracklets_2_tracks:
                 tracks_unassigned_len += len(t)
                 tracks_unassigned_num += 1
         num_prototypes = 0
-        for prots in prototypes.itervalues():
+        for prots in self.prototypes.itervalues():
             num_prototypes += len(prots)
         print("seqeuntial CS matching done...")
         print("#tracks: {}, #tracklets2tracks: {}, unassigned #{} len: {}, #prototypes: {}".format(
-            len(tracks), len(tracklets_2_tracks), tracks_unassigned_num, tracks_unassigned_len, num_prototypes))
-        return id_, prototypes, qualities, track_CSs, tracklets_2_tracks, tracks
+            len(self.tracks), len(self.tracklets_2_tracks), tracks_unassigned_num, tracks_unassigned_len, num_prototypes))
+
+        return qualities, track_CSs
 
     def add_to_N_set(self, track_id, tracklet):
         for t in self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)):
             if t.is_single() and t != tracklet:
                 t.N.add(track_id)
 
-    def tracks_CS_matching(self, track_CSs, prototypes, tracklets2tracks, tracks):
+    def tracks_CS_matching(self, track_CSs):
         # 1. get CS of tracks (we already have them in track_CSs from sequential process.
         # 2. sort CS by sum of track lengths
         # 3. try to match all others to this one (spatio-temporal term might be switched on for close tracks?)
@@ -507,7 +490,7 @@ class CompleteSetMatching:
             updated = False
 
             # 2. sort CS by sum of track lengths
-            ordered_CSs = self.sort_track_CSs(track_CSs, tracks)
+            ordered_CSs = self.sort_track_CSs(track_CSs)
 
             # 3.
             for i in range(len(ordered_CSs)-1):
@@ -518,8 +501,9 @@ class CompleteSetMatching:
                 best_CS = None
 
                 for CS in ordered_CSs[i+1:]:
-                    perm, quality = self.cs2cs_matching_prototypes_and_spatial(pivot, CS, prototypes, tracklets2tracks,
-                                                                               use_spatial_probabilities=False)
+                    perm, quality = self.cs2cs_matching_prototypes_and_spatial(
+                        pivot, CS, use_spatial_probabilities=False
+                    )
 
                     print CS, quality
 
@@ -530,7 +514,7 @@ class CompleteSetMatching:
 
                 if best_quality > self.QUALITY_THRESHOLD:
                     print("Best track CS match accepted. {}, {}".format(best_perm, best_quality))
-                    self.merge_track_CSs(best_perm, prototypes, tracklets2tracks, tracks)
+                    self.merge_track_CSs(best_perm)
                     track_CSs.remove(best_CS)
                     self.update_all_track_CSs(best_perm, track_CSs)
                     updated = True
@@ -552,27 +536,27 @@ class CompleteSetMatching:
                 print "CONFLICT ", CS_for_update
             # assert len(set(CS_for_update)) == size_before
 
-    def merge_track_CSs(self, perm, prototypes, tracklets2tracks, tracks):
+    def merge_track_CSs(self, perm):
         # keep attention, here we have tracks, not tracklets...
         for (track1_id, track2_id) in perm:
             print "{} -> {}".format(track1_id, track2_id)
 
             # if merge...
             if track1_id != track2_id:
-                self.update_prototypes(prototypes[track1_id], prototypes[track2_id])
-                for tracklet in tracks[track2_id]:
-                    tracklets2tracks[tracklet] = track1_id
-                    tracks[track1_id].append(tracklet)
+                self.update_prototypes(self.prototypes[track1_id], self.prototypes[track2_id])
+                for tracklet in self.tracks[track2_id]:
+                    self.tracklets2tracks[tracklet] = track1_id
+                    self.tracks[track1_id].append(tracklet)
                     tracklet.P = set([track1_id])
                     tracklet.id_decision_info = 'global_matching'
 
-                del tracks[track2_id]
-                del prototypes[track2_id]
+                del self.tracks[track2_id]
+                del self.prototypes[track2_id]
 
-    def sort_track_CSs(self, track_CSs, tracks):
+    def sort_track_CSs(self, track_CSs):
         values = []
         for CS in track_CSs:
-            val = self.track_support(CS, tracks)
+            val = self.track_support(CS, self.tracks)
 
             values.append(val)
 
@@ -584,10 +568,10 @@ class CompleteSetMatching:
 
         return CS_sorted
 
-    def track_support(self, CS, tracks):
+    def track_support(self, CS):
         val = 0
         for track_id in CS:
-            for tracklet in tracks[track_id]:
+            for tracklet in self.tracks[track_id]:
                 val += len(tracklet)
         return val
 
@@ -699,7 +683,7 @@ class CompleteSetMatching:
 
         return perm, quality
 
-    def cs2cs_matching_prototypes_and_spatial(self, cs1, cs2, prototypes, tracklets_2_tracks, use_spatial_probabilities=True):
+    def cs2cs_matching_prototypes_and_spatial(self, cs1, cs2, use_spatial_probabilities=True):
         perm = []
         cs1, cs2, cs_shared = self.remove_straightforward_tracklets(cs1, cs2)
         # assert len(cs1) == len(cs2)
@@ -711,7 +695,7 @@ class CompleteSetMatching:
             quality = [1.0, 1.0]
         else:
             assert len(cs2) > 1
-            P_a = self.prototypes_distance_probabilities(cs1, cs2, prototypes, tracklets_2_tracks)
+            P_a = self.prototypes_distance_probabilities(cs1, cs2)
 
             if use_spatial_probabilities:
                 P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
@@ -931,7 +915,7 @@ class CompleteSetMatching:
             else:
                 ps1[j].update(p2)
 
-    def prototypes_distance_probabilities(self, cs1, cs2, prototypes, tracklets2tracks):
+    def prototypes_distance_probabilities(self, cs1, cs2):
         P = np.zeros((len(cs1), len(cs2)))
         # P2 = np.zeros((len(cs1), len(cs2)))
 
@@ -943,14 +927,14 @@ class CompleteSetMatching:
                 if isinstance(t1, int):
                     track1 = t1
                 else:
-                    track1 = tracklets2tracks[t1]
+                    track1 = self.tracklets_2_tracks[t1]
 
                 if isinstance(t2, int):
                     track2 = t2
                 else:
-                    track2 = tracklets2tracks[t2]
+                    track2 = self.tracklets_2_tracks[t2]
 
-                prob = prob_prototype_represantion_being_same_id_set(prototypes[track1], prototypes[track2])
+                prob = prob_prototype_represantion_being_same_id_set(self.prototypes[track1], self.prototypes[track2])
                 # prob = self.prototypes_match_probability(prototypes[track1], prototypes[track2])
 
                 P[i, j] = prob
@@ -1232,6 +1216,8 @@ def solve_interactions(p):
     multi = [t for t in p.chm.tracklet_gen() if t.is_multi()]
     tracklets2 = [t for t in multi if t.get_cardinality(p.gm) == 2]
 
+    tracks_id = 0
+
     for t in tqdm(tracklets2, desc='processing 2-interactions'):
         tracks, confidence = t.solve_interaction(detector, p.gm, p.rm, p.img_manager)
 
@@ -1244,7 +1230,7 @@ def solve_interactions(p):
 
         for i, results in tracks.iterrows():
             for id_ in range(cardinality):
-                r = Region(is_origin_interaction=True, frame=start_frame+i)
+                r = Region(is_origin_interaction=True, frame=start_fbest_start_trame+i)
                 r.centroid_ = np.array([results["{}_x".format(id_)],
                                         results["{}_y".format(id_)]])
                 r.theta_ = np.deg2rad(results["{}_angle_deg".format(id_)])
@@ -1255,14 +1241,52 @@ def solve_interactions(p):
                 rs[id_].append(r)
 
         # TODO: another threshold...
-        conf_threshold = 0
+        conf_threshold = 0.5
         if confidence > conf_threshold:
+            already_used_id = []
             for id_ in range(cardinality):
                 p.rm.add(rs[id_])
 
                 # for graph manager, when id < 0 means there is no node in graph but it is a direct link to region id*-1
                 rids = [-r.id_ for r in rs[id_]]
                 p.chm.new_chunk(rids, p.gm, origin_interaction=True)
+
+                # Connect...
+                start_r, end_r = rs[0], rs[-1]
+                start_frame = start_r.frame()
+                end_frame = end_r.frame()
+
+                # PRE tracklets
+                pre_tracklets = p.chm.chunks_in_frame(start_frame)
+                # only tracklets which end before interaction are possible options
+                pre_tracklets = filter(lambda x: x.end_frame(p.gm) == start_frame - 1, pre_tracklets)
+
+                # TODO: do optimization instead of greedy approach
+                best_start_t = None
+                best_d = np.inf
+                for t in pre_tracklets:
+                    t_r = p.gm.region(t.end_vertex_id())
+                    d = np.linalg.norm(t_r.centroid() - start_r.centroid())
+
+                    if d < best_d:
+                        best_d = d
+                        best_start_t = t
+
+                # POST tracklets
+                post_tracklets = p.chm.chunks_in_frame(end_frame)
+                post_tracklets = filter(lambda x: x.start_frame(p.gm) == end_frame + 1, post_tracklets)
+
+                bets_end_t = None
+                best_d = np.inf
+                for t in post_tracklets:
+                    t_r = p.gm.region(t.start_vertex_id())
+                    d = np.linalg.norm(t_r.centroid() - start_r.centroid())
+
+                    if d < best_d:
+                        best_d = d
+                        best_end_t = t
+
+
 
     p.save()
 
@@ -1285,9 +1309,9 @@ if __name__ == '__main__':
         except:
             pass
 
-    solve_interactions(p)
-    import sys
-    sys.exit()
+    # solve_interactions(p)
+    # import sys
+    # sys.exit()
 
     import pickle
     with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:
@@ -1315,4 +1339,4 @@ if __name__ == '__main__':
     # prob_prototype_represantion_being_same_id_set(b1, b2)
 
     # csm.desc_clustering_analysis()
-    csm.process()
+    csm.start_matching_process()

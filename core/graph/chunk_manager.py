@@ -4,7 +4,7 @@ from chunk import Chunk
 from libs.intervaltree.intervaltree import IntervalTree
 from utils.misc import print_progress
 from tqdm import tqdm
-
+import warnings
 
 class ChunkManager:
     def __init__(self):
@@ -103,10 +103,16 @@ class ChunkManager:
 
         return chunks
 
-    def chunks_in_frame(self, frame):
-        intervals = self.itree[frame-self.eps2:frame+self.eps2]
+    def tracklets_in_frame(self, frame):
+        intervals = self.itree[frame - self.eps2:frame + self.eps2]
 
         return self.get_chunks_from_intervals_(intervals)
+
+    def chunks_in_frame(self, frame):
+        warnings.warn("Deprecated, use tracklets_in_frame instead.")
+
+        return self.tracklets_in_frame(frame)
+
 
     def undecided_singleid_tracklets_in_frame(self, frame):
         return filter(lambda x: len(x.P) == 0 and x.is_single(), self.chunks_in_frame(frame))
