@@ -499,5 +499,5 @@ class Chunk:
         tracks, confidence, costs = detector.track(detections)
         return tracks, confidence
 
-    def is_id_decided(self, num_animals):
-        return self.P.union(self.N) == num_animals
+    def is_id_decided(self):
+        return len(self.P) == 1

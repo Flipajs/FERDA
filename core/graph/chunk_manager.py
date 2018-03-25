@@ -196,8 +196,7 @@ class ChunkManager:
                         update_N_callback(id_set, t)
 
     def get_affected_undecided_tracklets(self, tracklet, project):
-        num_animals = len(project.animals)
         affected = set(self.chunks_in_interval(tracklet.start_frame(project.gm),
                                                      tracklet.end_frame(project.gm)))
 
-        return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(num_animals), affected)
+        return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(), affected)

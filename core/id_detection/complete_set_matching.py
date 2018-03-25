@@ -41,6 +41,10 @@ class CompleteSetMatching:
 
         print
 
+        self.p.save()
+        import sys
+        sys.exit()
+
         ##### now do CS of tracks to tracks matching
         self.tracks_CS_matching(track_CSs)
 
@@ -70,7 +74,7 @@ class CompleteSetMatching:
         num_undecided = 0
         for t in self.p.chm.tracklet_gen():
             # TODO: what about matching unmatched Tracks as well?
-            if t in self.tracklets_2_tracks or not t.is_single():
+            if not t.is_single() or t.is_id_decided():
                 continue
 
             # 2) find biggest set
@@ -201,8 +205,8 @@ class CompleteSetMatching:
         for id in range(6):
             for t in self.p.chm.chunk_gen():
                 if id in t.P:
-                    t.P = set([id+100])
-                    map_[id] = id+100
+                    t.P = set([-id])
+                    map_[id] = -id
 
         for new_id, id in enumerate(sorted(support.keys())[:6]):
             for t in p.chm.chunk_gen():
@@ -445,6 +449,7 @@ class CompleteSetMatching:
             print
 
             qualities.append(quality)
+
         print
         tracks_unassigned_len = 0
         tracks_unassigned_num = 0

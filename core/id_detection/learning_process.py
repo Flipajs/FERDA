@@ -387,7 +387,7 @@ class LearningProcess:
             #     if t.id() in self.links and t.id() != self.links[t.id()]:
             #         continue
 
-            if not t.is_id_decided(len(self.p.animals)):
+            if not t.is_id_decided():
                 self.undecided_tracklets.add(t.id())
 
     def run_learning(self):
@@ -1033,7 +1033,7 @@ class LearningProcess:
         tracklet.P = P
 
         # if the tracklet labelling is fully decided
-        if tracklet.is_id_decided(len(self.p.animals)):
+        if tracklet.is_id_decided():
             self.undecided_tracklets.remove(tracklet.id())
 
         # update affected
@@ -1050,7 +1050,7 @@ class LearningProcess:
 
     def __tracklet_is_decided(self, P, N):
         import warnings
-        warnings.warn("Deprecated, use t.is_id_decided(num_animals) instead")
+        warnings.warn("Deprecated, use t.is_id_decided() instead")
 
         return P.union(N) == self.all_ids
 
