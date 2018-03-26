@@ -68,8 +68,7 @@ def assembly_after_parallelization(bgcomp):
     merging_t = time.time()
 
 
-    print
-    print "LOADING PARTS AND MERGIND..."
+    print("\nLOADING PARTS AND MERGING...")
     # for i in range(part_num):
     for i in tqdm(range(bgcomp.first_part, bgcomp.first_part + part_num), leave=False):
         rm_old = RegionManager(db_wd=bgcomp.project.working_directory + '/temp',

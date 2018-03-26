@@ -417,6 +417,7 @@ class ResultsWidget(QtGui.QWidget):
         self.visu_controls_layout.addWidget(self.show_id_bar)
 
         self.show_tracklet_class = QtGui.QCheckBox('t-class')
+        self.show_tracklet_class.setToolTip('Show region classification.')
         self.show_tracklet_class.setChecked(False)
         self.show_tracklet_class.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_tracklet_class)
@@ -2043,7 +2044,7 @@ class ResultsWidget(QtGui.QWidget):
             y, x = RegionChunk(t, self.project.gm, self.project.rm).centroid_in_t(frame)
             permutation_data.append((frame, id_, y, x))
 
-        self.idtracker_data_permutation = self._gt.set_permutation_reversed(permutation_data)
+        self.idtracker_data_permutation = self._gt.set_permutation_reversed(permutation_data)  # ERROR: function is not returning anything
         self.video_player.redraw_visualisations()
 
     def show_results_summary(self):

@@ -111,7 +111,6 @@ if __name__ == '__main__':
         prediction_optimisation_border = 25
         full_segmentation_refresh = 25
 
-
     if not os.path.exists(proj.working_directory+'/temp'):
         try:
             os.mkdir(proj.working_directory+'/temp')
