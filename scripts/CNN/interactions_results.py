@@ -37,7 +37,7 @@ def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, titl
     if isinstance(img, str):
         img = imread(img)
     dpi = 80
-    height, width, nbands = img.shape
+    height, width = img.shape[:2]
     figsize = scale * width / float(dpi), scale * height / float(dpi)
     fig = plt.figure(figsize=figsize)
     ax = fig.add_axes([0, 0, 1, 1])
