@@ -128,7 +128,7 @@ class TransformableRegion:
         return p2e(self.transformation.dot(e2p(coords_xy)))
 
     def get_transformed_angle(self, ccw_angle_deg):
-        return (ccw_angle_deg + math.degrees(math.atan(self.transformation[1, 0] / self.transformation[0, 0]))) % 360
+        return (ccw_angle_deg - math.degrees(math.atan(self.transformation[1, 0] / self.transformation[0, 0]))) % 360
 
     def get_img(self):
         assert np.all(self.transformation[2, :] == (0, 0, 1))
