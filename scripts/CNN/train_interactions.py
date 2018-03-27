@@ -26,6 +26,7 @@ except ImportError as e:
     print('Warning, no keras installed: {}'.format(e))
 import fire
 from core.region.transformableregion import TransformableRegion
+from utils.angles import angle_absolute_error, angle_absolute_error_direction_agnostic
 import warnings
 import yaml
 import re
@@ -58,7 +59,7 @@ class TrainInteractions:
         }
         self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg']
         self.DETECTOR_INPUT_SIZE_PX = 200
-        self.IMAGE_LAYERS = 3
+        self.IMAGE_LAYERS = 1
         self.num_objects = None
         self.array = None  # provide column name to index mapping using ObjectsArray
         if num_objects is not None:
@@ -98,38 +99,6 @@ class TrainInteractions:
         assert len(properties) % n == 0
         properties = properties[:(len(properties) / n) - 1]  # only properties for object 0
         return n, properties, df
-
-    @staticmethod
-    def angle_absolute_error_direction_agnostic(angles_pred, angles_true, backend=np, scaler=None):
-        """
-        Compute direction agnostic error between predicted and true angle(s).
-
-        :param angles_pred: predicted angles; array like, shape=(1, n) or (n, 1)
-        :param angles_true: true angles; array like, shape=(1, n) or (n, 1)
-        :param backend: numpy or keras.backend module
-        :param scaler:
-        :return: error angle(s) in range (0, 90); array like, shape=(1, n) or (n, 1)
-        """
-        if scaler is not None:
-            # y_pred_ = scaler.inverse_transform(y_pred[:, 4:5])  # this doesn't work with Tensors
-            angles_pred_ = angles_pred * scaler[1] + scaler[0]
-        else:
-            angles_pred_ = angles_pred
-        val = backend.abs(angles_pred_ - angles_true) % 180
-        return backend.minimum(val, 180 - val)
-
-    def angle_absolute_error(self, angles_pred, angles_true, backend, scaler=None):
-        if scaler is not None:
-            # y_pred_ = scaler.inverse_transform(y_pred[:, 4:5])  # this doesn't work with Tensors
-            angles_pred_ = angles_pred * scaler[1] + scaler[0]
-        else:
-            angles_pred_ = angles_pred
-        angles_pred_ %= 360
-        angles_true %= 360
-        return backend.minimum(
-            backend.abs(angles_pred_ - angles_true),
-            180 - backend.abs(angles_pred_ % 180 - angles_true % 180)
-        )
 
     def xy_absolute_error(self, y_true, y_pred, i, j, backend):
         return backend.abs(backend.concatenate(
@@ -241,10 +210,10 @@ class TrainInteractions:
 
         if self.num_objects == 1:
             xy = self.xy_absolute_error(y_true, y_pred, 0, 0, backend)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
-            angle = self.angle_absolute_error_direction_agnostic(
+            angle = angle_absolute_error_direction_agnostic(
                 y_pred[:, self.array.prop2idx(0, 'angle_deg')],
                 y_true[:, self.array.prop2idx(0, 'angle_deg')],
-                backend, angle_scaler)  # shape=(n, 1)
+                backend)  # shape=(n, 1)
             mean_errors_xy = norm(xy, axis=1)  # shape=(n,)
             mean_errors_angle = angle  # shape=(n,)
             indices = backend.arange(0, shape(mean_errors_xy, 0))
@@ -254,10 +223,10 @@ class TrainInteractions:
             for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
                 xy[(i, j)] = self.xy_absolute_error(y_true, y_pred, i, j,
                                                bk)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
-                angle[(i, j)] = self.angle_absolute_error_direction_agnostic(
+                angle[(i, j)] = angle_absolute_error_direction_agnostic(
                     y_pred[:, self.array.prop2idx(i, 'angle_deg')],  # shape=(n,)
                     y_true[:, self.array.prop2idx(j, 'angle_deg')],  # shape=(n,)
-                    bk, angle_scaler)  # shape=(n,)
+                    bk)  # shape=(n,)
             mean_errors_xy = bk.stack((
                 bk.mean(bk.stack((norm(xy[0, 0], axis=1),
                                   norm(xy[1, 1], axis=1))), axis=0),
@@ -563,7 +532,7 @@ class TrainInteractions:
                       'n_test': len(X_test),
         }
         if isinstance(loss_alpha, str) and loss_alpha == 'batch':
-            parameters['loss_alpha'] = np.linspace(0, 1, 15)
+            parameters['loss_alpha'] = np.linspace(0, 1, 8)
         else:
             parameters['loss_alpha'] = float(loss_alpha)
 

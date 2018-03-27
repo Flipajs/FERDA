@@ -5,9 +5,11 @@ import matplotlib.pylab as plt
 import numpy as np
 from numpy.testing import assert_array_equal
 import pandas as pd
+import os.path
+from utils.angles import angle_absolute_error
 
 
-class TransformableRegionTestCase(unittest.TestCase):
+class EuclideanProjectiveTestCase(unittest.TestCase):
     def test_p2e(self):
         proj2d = np.array([[1., 2., 3.]]).T
         eucl2d = tr.p2e(proj2d)
@@ -41,6 +43,34 @@ class TransformableRegionTestCase(unittest.TestCase):
 
         assert_array_equal(tr.e2p(np.array([2, 2])), np.array([2, 2, 1]))
 
+
+class TransformableRegionTestCase(unittest.TestCase):
+    def setUp(self):
+        img = plt.imread('test/ferda.png')
+        self.tr = tr.TransformableRegion(img)
+
+    def check_get_transformed_angle(self, angle):
+        self.tr.rotate(angle)
+        plt.imsave(os.path.join('test/out/{}.png'.format(angle)), self.tr.get_img())
+        self.assertTrue(angle_absolute_error(self.tr.get_transformed_angle(0), angle) == 0)
+
+    def test_get_transformed_angle1(self):
+        self.check_get_transformed_angle(20)
+
+    def test_get_transformed_angle2(self):
+        self.check_get_transformed_angle(100)
+
+    def test_get_transformed_angle3(self):
+        self.check_get_transformed_angle(-20)
+
+    def test_get_transformed_angle4(self):
+        self.check_get_transformed_angle(170)
+
+    def test_get_transformed_angle5(self):
+        self.check_get_transformed_angle(-170)
+
+    def test_get_transformed_angle6(self):
+        self.check_get_transformed_angle(270)
 
 if __name__ == '__main__':
     unittest.main()
