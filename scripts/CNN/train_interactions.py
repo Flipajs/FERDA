@@ -32,7 +32,6 @@ import yaml
 import re
 from utils.objectsarray import ObjectsArray
 # import skimage.transform
-# from sklearn.preprocessing import StandardScaler
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
@@ -75,15 +74,6 @@ class TrainInteractions:
         all(x == types[0] for x in types)
         return struct_array.view(types[0]).reshape(struct_array.shape + (-1,))
 
-    # def angle_absolute_error(y_true, y_pred, i, j, backend, scaler=None):
-    #     if scaler is not None:
-    #         # y_pred_ = scaler.inverse_transform(y_pred[:, 4:5])  # this doesn't work with Tensors
-    #         y_pred_ = y_pred[:, NAME2COL[i]['angle_deg']] * scaler[1] + scaler[0]
-    #     else:
-    #         y_pred_ = y_pred[:, NAME2COL[i]['angle_deg']]
-    #     val = backend.abs(y_pred_ - y_true[:, NAME2COL[j]['angle_deg']]) % 180
-    #     return backend.minimum(val, 180 - val)
-
     def read_gt(self, filename):
         regexp = re.compile('(\d*)_(\w*)')
         df = pd.read_csv(filename)
@@ -121,7 +111,7 @@ class TrainInteractions:
         dy = y_true[:, self.array.prop2idx_(i, 'dy')] - y_pred[:, self.array.prop2idx_(j, 'dy')]
         return backend.concatenate((backend.abs(dx), backend.abs(dy)), axis=1)
 
-    def interaction_loss_angle(self, y_true, y_pred, angle_scaler=None, alpha=0.5):
+    def interaction_loss_angle(self, y_true, y_pred, alpha=0.5):
         assert 0 <= alpha <= 1
         # y_pred = (y_pred - 0.5) * 2  # softmax -> tanh range
         # following expects tanh output (-1; 1)
@@ -133,9 +123,8 @@ class TrainInteractions:
                 else:
                     tensor_columns.append((y_pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2) / np.pi * 180)
         y_pred = K.stack(tensor_columns, axis=1)
-        # print(K.eval(y_pred))
 
-        mean_errors_xy, mean_errors_angle, indices = self.match_pred_to_gt(y_true, y_pred, K, angle_scaler)
+        mean_errors_xy, mean_errors_angle, indices = self.match_pred_to_gt(y_true, y_pred, K)
         if self.num_objects == 2:
             errors_xy = tf.gather_nd(mean_errors_xy, indices)
             errors_angle = tf.gather_nd(mean_errors_angle, indices)
@@ -146,9 +135,9 @@ class TrainInteractions:
             assert False, 'not implemented'
         return K.mean(errors_xy * (1 - alpha) + errors_angle * alpha)
 
-    def interaction_loss_dxdy(self, y_true, y_pred, angle_scaler=None, alpha=0.5):
+    def interaction_loss_dxdy(self, y_true, y_pred, alpha=0.5):
         assert 0 <= alpha <= 1
-        mean_errors_xy, mean_errors_delta, indices = self.match_pred_to_gt_dxdy(y_true, y_pred, K, angle_scaler)
+        mean_errors_xy, mean_errors_delta, indices = self.match_pred_to_gt_dxdy(y_true, y_pred, K)
 
         return K.mean(tf.gather_nd(mean_errors_xy, indices) * (1 - alpha) +
                       tf.gather_nd(mean_errors_delta, indices) * alpha)
@@ -193,7 +182,7 @@ class TrainInteractions:
             backend.stack((swap_idx, backend.arange(0, shape(mean_errors_xy, 1)))))  # shape=(n, 2)
         return mean_errors_xy, mean_errors_delta, indices
 
-    def match_pred_to_gt(self, y_true, y_pred, backend, angle_scaler=None):
+    def match_pred_to_gt(self, y_true, y_pred, backend):
         """
         Return mean absolute errors for individual samples for xy and theta
         in two possible combinations of prediction and ground truth.
@@ -315,7 +304,7 @@ class TrainInteractions:
 
     def train(self, model, train_generator, test_generator, params, callbacks=[]):
         # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
-        model.compile(loss=lambda x, y: self.interaction_loss_angle(x, y, alpha=params['loss_alpha']),  # , (angle_scaler.mean_, angle_scaler.scale_)
+        model.compile(loss=lambda x, y: self.interaction_loss_angle(x, y, alpha=params['loss_alpha']),
                       optimizer='adam')
         # model.lr.set_value(0.05)
         with open(join(params['experiment_dir'], 'model.txt'), 'w') as fw:
@@ -334,8 +323,6 @@ class TrainInteractions:
     def evaluate(self, model, test_generator, params, y_test=None, csv_filename=None):
         pred = model.predict_generator(test_generator, int(params['n_test'] / BATCH_SIZE))
         assert pred is not None and pred is not []
-        # pred[:, [0, 1, 5, 6]] = xy_scaler.inverse_transform(pred[:, [0, 1, 5, 6]])
-        # pred[:, [4, 9]] = angle_scaler.inverse_transform(pred[:, [4, 9]])
 
         # with h5py.File(join(params['experiment_dir'], 'predictions.h5'), 'w') as hf:
         #     hf.create_dataset("data", data=pred)
@@ -539,18 +526,6 @@ class TrainInteractions:
         # fix random seed for reproducibility
         seed = 7
         np.random.seed(seed)
-
-        # # # rescale data
-        # xy_scaler = StandardScaler()
-        # xy_scaler.mean_ = 0  # 100
-        # xy_scaler.scale_ = 1  # 100
-        # # # y_train = xy_scaler.transform(y_train)
-        # # # y_test = xy_scaler.transform(y_test)
-        # # y_train[:, [0, 1, 5, 6]] = xy_scaler.transform(y_train[:, [0, 1, 5, 6]])
-        # angle_scaler = StandardScaler()
-        # angle_scaler.mean_ = 0  # 180
-        # angle_scaler.scale_ = 1  # 180
-        # # y_train[:, [4, 9]] = angle_scaler.transform(y_train[:, [4, 9]])
 
         def rotate90(img):
             tregion.set_img(img)
