@@ -50,15 +50,15 @@ class ValidationCallback(Callback):
 
 
 class TrainInteractions:
-    def __init__(self, num_objects=None):
+    def __init__(self, num_objects=None, num_input_layers=3):
         self.models = {
             '6conv_3dense': self.model_6conv_3dense,  # former default
             '6conv_2dense': self.model_6conv_2dense,
             'mobilenet': self.model_mobilenet,
         }
-        self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg']
+        self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg', 'major', 'minor']
         self.DETECTOR_INPUT_SIZE_PX = 200
-        self.IMAGE_LAYERS = 1
+        self.num_input_layers = num_input_layers
         self.num_objects = None
         self.array = None  # provide column name to index mapping using ObjectsArray
         if num_objects is not None:
@@ -96,6 +96,12 @@ class TrainInteractions:
              y_pred[:, self.array.prop2idx_(i, 'y')] - y_true[:, self.array.prop2idx_(j, 'y')]),
             axis=1))
 
+    def axes_absolute_error(self, y_true, y_pred, i, j, backend):
+        return backend.abs(backend.concatenate(
+            (y_pred[:, self.array.prop2idx_(i, 'major')] - y_true[:, self.array.prop2idx_(j, 'major')],
+             y_pred[:, self.array.prop2idx_(i, 'minor')] - y_true[:, self.array.prop2idx_(j, 'minor')]),
+            axis=1))
+
     def delta_error(self, y_true, y_pred, i, j, backend):
         """
         absolute difference between dx and dy in y_pred and y_true
@@ -124,16 +130,17 @@ class TrainInteractions:
                     tensor_columns.append((y_pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2) / np.pi * 180)
         y_pred = K.stack(tensor_columns, axis=1)
 
-        mean_errors_xy, mean_errors_angle, indices = self.match_pred_to_gt(y_true, y_pred, K)
+        mean_errors_xy, mean_errors_angle, mean_errors_axes, indices = self.match_pred_to_gt(y_true, y_pred, K)
         if self.num_objects == 2:
             errors_xy = tf.gather_nd(mean_errors_xy, indices)
             errors_angle = tf.gather_nd(mean_errors_angle, indices)
+            errors_axes = tf.gather_nd(mean_errors_axes, indices)
         elif self.num_objects == 1:
             errors_xy = mean_errors_xy
             errors_angle = mean_errors_angle
         else:
             assert False, 'not implemented'
-        return K.mean(errors_xy * (1 - alpha) + errors_angle * alpha)
+        return K.mean(errors_xy * (1 - alpha) + errors_angle * alpha + errors_axes)
 
     def interaction_loss_dxdy(self, y_true, y_pred, alpha=0.5):
         assert 0 <= alpha <= 1
@@ -209,13 +216,14 @@ class TrainInteractions:
         elif self.num_objects == 2:
             xy = {}
             angle = {}
+            axes = {}
             for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
-                xy[(i, j)] = self.xy_absolute_error(y_true, y_pred, i, j,
-                                               bk)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
+                xy[(i, j)] = self.xy_absolute_error(y_true, y_pred, i, j, bk)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
                 angle[(i, j)] = angle_absolute_error_direction_agnostic(
                     y_pred[:, self.array.prop2idx(i, 'angle_deg')],  # shape=(n,)
                     y_true[:, self.array.prop2idx(j, 'angle_deg')],  # shape=(n,)
                     bk)  # shape=(n,)
+                axes[(i, j)] = self.axes_absolute_error(y_true, y_pred, i, j, bk)
             mean_errors_xy = bk.stack((
                 bk.mean(bk.stack((norm(xy[0, 0], axis=1),
                                   norm(xy[1, 1], axis=1))), axis=0),
@@ -225,6 +233,11 @@ class TrainInteractions:
                 bk.mean(bk.stack((angle[0, 0], angle[1, 1]), axis=0), axis=0),
                 bk.mean(bk.stack((angle[0, 1], angle[1, 0]), axis=0), axis=0)
             ), axis=0)  # shape=(2, n)
+            mean_errors_axes = bk.stack((
+                bk.mean(bk.stack((norm(axes[0, 0], axis=1),
+                                  norm(axes[1, 1], axis=1))), axis=0),
+                bk.mean(bk.stack((norm(axes[0, 1], axis=1),
+                                  norm(axes[1, 0], axis=1))), axis=0)))  # shape=(2, n)
 
             swap_idx = bk.argmin(mean_errors_xy, axis=0)  # shape = (n,)
 
@@ -233,10 +246,10 @@ class TrainInteractions:
         else:
             assert False, 'not implemented'
 
-        return mean_errors_xy, mean_errors_angle, indices
+        return mean_errors_xy, mean_errors_angle, mean_errors_axes, indices
 
     def model_6conv_3dense(self):
-        input_shape = Input(shape=(self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.IMAGE_LAYERS))
+        input_shape = Input(shape=(self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.num_input_layers))
         x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
         x = MaxPooling2D((2, 2))(x)
@@ -268,7 +281,7 @@ class TrainInteractions:
         return Model(input_shape, out)
 
     def model_6conv_2dense(self):
-        input_shape = Input(shape=(self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.IMAGE_LAYERS))
+        input_shape = Input(shape=(self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.num_input_layers))
         x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
         x = MaxPooling2D((2, 2))(x)
@@ -284,7 +297,7 @@ class TrainInteractions:
 
     def model_mobilenet(self):
         base_model = keras.applications.mobilenet.MobileNet(
-            (self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.IMAGE_LAYERS),
+            (self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.num_input_layers),
             include_top=False, weights=None)  # weights='imagenet'
         # add a global spatial average pooling layer
         x = base_model.output
@@ -337,14 +350,16 @@ class TrainInteractions:
 
         if y_test is not None:
             # xy, _, indices = match_pred_to_gt_dxdy(y_test.values, pred, np)
-            xy, angle, indices = self.match_pred_to_gt(y_test[:len(pred)], pred, np)  # trim y_test to be modulo BATCH_SIZE
+            xy, angle, axes, indices = self.match_pred_to_gt(y_test[:len(pred)], pred, np)  # trim y_test to be modulo BATCH_SIZE
 
             if self.num_objects == 1:
                 xy_mae = np.take(xy, indices).mean()
                 angle_mae = np.take(angle, indices).mean()
+                axes_mae = np.take(axes, indices).mean()
             else:
                 xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
                 angle_mae = (angle[indices[:, 0], indices[:, 1]]).mean()
+                axes_mae = (axes[indices[:, 0], indices[:, 1]]).mean()
 
             # # compute angle errors
             # angle = {}
@@ -358,7 +373,7 @@ class TrainInteractions:
             #     np.mean(np.stack((angle[0, 1], angle[1, 0]), axis=1), axis=1)))  # shape=(2, n)
             # angle_mae = (mean_errors_angle[indices[:, 0], indices[:, 1]]).mean()
 
-            results = pd.DataFrame.from_items([('xy MAE', [xy_mae]), ('angle MAE', angle_mae)])
+            results = pd.DataFrame.from_items([('xy MAE', [xy_mae]), ('angle MAE', angle_mae), ('axes MAE', [axes_mae])])
             if csv_filename is not None:
                 results.to_csv(csv_filename)
             return results
@@ -452,10 +467,11 @@ class TrainInteractions:
         return out
 
     def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, rotate=False, exp_name='',
-                           model='6conv_3dense', dataset_names=None):
+                           model='6conv_3dense', dataset_names=None, input_layers=3):
         # example:
         # local: train /home/matej/prace/ferda/data/interactions/1712_1k_36rot/ 0.5 100 --exp-name=two_mobilenet_scratch
         # remote: train /mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/ 0.5 100 --exp-name=two_mobilenet_scratch
+        self.num_input_layers = input_layers
         if dataset_names is None:
             dataset_names = {'train': 'train', 'test': 'test'}
         # load images
@@ -544,7 +560,7 @@ class TrainInteractions:
             preprocessing = rotate90
         else:
             preprocessing = None
-        if self.IMAGE_LAYERS == 1:
+        if self.num_input_layers == 1:
             X_train = np.expand_dims(X_train, 3)
             X_test = np.expand_dims(X_test, 3)
         train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)

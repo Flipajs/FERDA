@@ -108,7 +108,7 @@ class TrainInteractionsTestCase(unittest.TestCase):
     def setUp(self):
         self.n_images = 3
         self.ti = train_interactions.TrainInteractions(2)
-        self.input_shape = (self.ti.DETECTOR_INPUT_SIZE_PX, self.ti.DETECTOR_INPUT_SIZE_PX, self.ti.IMAGE_LAYERS)
+        self.input_shape = (self.ti.DETECTOR_INPUT_SIZE_PX, self.ti.DETECTOR_INPUT_SIZE_PX, self.ti.num_input_layers)
         self.hf = h5py.File(join(DATA_DIR, 'images.h5'), 'r')
         self.X_train = self.hf['train']
         if self.input_shape[2] == 1:
