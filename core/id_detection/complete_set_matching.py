@@ -41,9 +41,19 @@ class CompleteSetMatching:
 
         print
 
-        self.p.save()
-        import sys
-        sys.exit()
+        # support = {}
+        # for t in self.p.chm.chunk_gen():
+        #     if len(t.P):
+        #         t_identity = list(t.P)[0]
+        #         support[t_identity] = support.get(t_identity, 0) + len(t)
+        #
+        # print support
+        #
+        # self.remap_ids_from_0(support)
+
+        # self.p.save()
+        # import sys
+        # sys.exit()
 
         ##### now do CS of tracks to tracks matching
         self.tracks_CS_matching(track_CSs)
@@ -62,6 +72,18 @@ class CompleteSetMatching:
 
         print "BEGINNING of best_set matching"
 
+        # the problem is that we already have IDs in track.P even thought they are not matched
+        # thus we need to reset .P sets
+        for t in self.p.chm.tracklet_gen():
+            try:
+                if list(t.P)[0] not in best_CS:
+                    t.P = set()
+
+                    print t.id()
+            except:
+                pass
+
+
         # update N sets for unassigned tracklets in relations to best_CS track ids
         for tracklet, track_id in self.tracklets_2_tracks.iteritems():
             self.add_to_N_set(track_id, tracklet)
@@ -71,29 +93,66 @@ class CompleteSetMatching:
         #       longest?
         #       for now, process as it is in chunk_generator
 
+
         num_undecided = 0
         for t in self.p.chm.tracklet_gen():
             # TODO: what about matching unmatched Tracks as well?
             if not t.is_single() or t.is_id_decided():
                 continue
 
+            if t not in self.tracklets_2_tracks:
+                self.register_tracklet_as_track(t)
+
             # 2) find biggest set
             best_set = self.find_biggest_undecided_tracklet_set(t)
 
+            # TODO: best_set - replace tracklets with tracks?
+            #             / Users / flipajs / Documents / dev / ferda / core / graph / chunk_manager.py:112: UserWarning: Deprecated, use
+            #             tracklets_in_frame
+            #             instead.
+            #             warnings.warn("Deprecated, use tracklets_in_frame instead.")
+            #         Traceback(most
+            #         recent
+            #         call
+            #         last):
+            #         File
+            #         "/Users/flipajs/Documents/dev/ferda/core/id_detection/complete_set_matching.py", line
+            #         1458, in < module >
+            #         csm.start_matching_process()
+            #
+            #     File
+            #     "/Users/flipajs/Documents/dev/ferda/core/id_detection/complete_set_matching.py", line
+            #     122, in start_matching_process
+            #     P_a = self.prototypes_distance_probabilities(best_set, best_CS)
+            #
+            #
+            # File
+            # "/Users/flipajs/Documents/dev/ferda/core/id_detection/complete_set_matching.py", line
+            # 1029, in prototypes_distance_probabilities
+            # prob = prob_prototype_represantion_being_same_id_set(self.prototypes[track1], self.prototypes[track2])
+            # KeyError: < core.graph.chunk.Chunk
+            # instance
+            # at
+            # 0x11062add0 >
+
+            track_best_set = []
+            for tracklet in best_set:
+                track_best_set.append(self.tracklets_2_tracks[tracklet])
+
+            best_set = track_best_set
+
             prohibited_ids = {}
             for t_ in best_set:
-                if t_ not in self.prototypes:
-                    self.prototypes[self.new_track_id] = self.get_track_prototypes(t_)
-                    self.tracklets_2_tracks[t_] = self.new_track_id
-                    self.new_track_id += 1
+                prohibited_ids[t_] = []
 
-                    prohibited_ids[t_] = []
-                    for test_t in self.p.chm.tracklets_intersecting_t_gen(t_, self.p.gm):
-                        if test_t == t_:
+                for tracklet in self.tracks[t_]:
+                    for test_t in self.p.chm.tracklets_intersecting_t_gen(tracklet, self.p.gm):
+                        if test_t.is_single() and self.tracklets_2_tracks[test_t] == t_:
                             continue
 
                         if len(test_t.P):
                             prohibited_ids[t_].append(list(test_t.P)[0])
+
 
             # 3) compute matching
             P_a = self.prototypes_distance_probabilities(best_set, best_CS)
@@ -126,24 +185,20 @@ class CompleteSetMatching:
 
             # 4) accept?
             if quality[1] > self.QUALITY_THRESHOLD:
-                for (tracklet, track_id) in perm:
-                    print "[{} |{}| (te: {})] -> {}".format(tracklet.id(), len(tracklet), tracklet.end_frame(self.p.gm), track_id)
-                    tracklets_track = self.tracklets_2_tracks[tracklet]
-                    self.update_prototypes(self.prototypes[track_id], self.prototypes[tracklets_track])
-                    del self.prototypes[tracklets_track]
+                for (unassigned_track_id, track_id) in perm:
+                    print("{} -> {}".format(unassigned_track_id, track_id))
+                    # print "[{} |{}| (te: {})] -> {}".format(tracklet.id(), len(tracklet), tracklet.end_frame(self.p.gm), track_id)
+                    # tracklets_track = self.tracklets_2_tracks[tracklet]
+                    for tracklet in self.tracks[unassigned_track_id]:
+                        tracklet.id_decision_info = 'best_set_matching'
 
-                    self.tracklets_2_tracks[tracklet] = track_id
-                    self.tracks[track_id].append(tracklet)
+                    self.merge_tracks(track_id, unassigned_track_id)
 
-                    tracklet.P = set([track_id])
-                    tracklet.N = set(range(len(self.p.animals))) - tracklet.P
-                    tracklet.id_decision_info = 'best_set_matching'
-
-                    # propagate
-                    # TODO: add sanity checks?
-                    for t_ in self.p.chm.singleid_tracklets_intersecting_t_gen(tracklet, self.p.gm):
-                        if t_ != tracklet:
-                            self.add_to_N_set(track_id, t_)
+                    # # propagate
+                    # # TODO: add sanity checks?
+                    # for t_ in self.p.chm.singleid_tracklets_intersecting_t_gen(tracklet, self.p.gm):
+                    #     if t_ != tracklet:
+                    #         self.add_to_N_set(track_id, t_)
 
             else:
                 color_print('QUALITY BELOW', color='red')
@@ -201,20 +256,7 @@ class CompleteSetMatching:
         for id in sorted(support.keys()):
             print "{}: {}, #{} ({})".format(id, support[id], len(tracks[id]), tracks[id])
 
-        map_ = {}
-        for id in range(6):
-            for t in self.p.chm.chunk_gen():
-                if id in t.P:
-                    t.P = set([-id])
-                    map_[id] = -id
-
-        for new_id, id in enumerate(sorted(support.keys())[:6]):
-            for t in p.chm.chunk_gen():
-                if id in map_:
-                    id = map_[id]
-
-                if id in t.P:
-                    t.P = set([new_id])
+        self.remap_ids_from_0(support)
 
         p.save()
         qualities = np.array(qualities)
@@ -244,6 +286,22 @@ class CompleteSetMatching:
         #         print t1.id(), " -> ", t2.id()
         #
         #     print quality
+
+    def remap_ids_from_0(self, support):
+        map_ = {}
+        for id in range(len(self.p.animals)):
+            for t in self.p.chm.chunk_gen():
+                if id in t.P:
+                    t.P = set([-id])
+                    map_[id] = -id
+
+        for new_id, id in enumerate(sorted(support, key=support.get)[-len(self.p.animals):]):
+            for t in p.chm.chunk_gen():
+                if id in map_:
+                    id = map_[id]
+
+                if id in t.P:
+                    t.P = set([new_id])
 
     def find_biggest_undecided_tracklet_set(self, t):
         all_intersecting_t = list(self.p.chm.singleid_tracklets_intersecting_t_gen(t, self.p.gm))
@@ -1425,7 +1483,7 @@ if __name__ == '__main__':
 
     csm = CompleteSetMatching(p, lp, descriptors)
 
-    # csm.solve_interactions()
+    csm.solve_interactions()
     # import sys
     # sys.exit()
 
