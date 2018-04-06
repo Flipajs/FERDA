@@ -1,13 +1,9 @@
 __author__ = 'fnaiser'
-import numpy as np
-from PyQt4 import QtGui
-
-from utils.misc import get_settings
+import math
 import cv2
-
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
-import math
+import numpy as np
 from utils.roi import get_roi
 
 
@@ -97,14 +93,6 @@ def get_img_around_pts(img, pts, margin=0):
     return crop, np.array([y_, x_])
 
 
-def get_pixmap_from_np_bgr(np_image):
-    from PIL import ImageQt
-    img_q = ImageQt.QImage(np_image.data, np_image.shape[1], np_image.shape[0], np_image.shape[1] * 3, 13)
-    pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
-
-    return pix_map
-
-
 def avg_circle_area_color(im, y, x, radius):
     """
     computes average color in circle area given by pos and radius
@@ -127,20 +115,6 @@ def avg_circle_area_color(im, y, x, radius):
     c /= num_px
 
     return [c[0, 0], c[0, 1], c[0, 2]]
-
-
-def get_igbr_normalised(im):
-    igbr = np.zeros((im.shape[0], im.shape[1], 4), dtype=np.double)
-
-    igbr[:, :, 0] = np.sum(im, axis=2) + 1
-    igbr[:, :, 1] = im[:, :, 0] / igbr[:, :, 0]
-    igbr[:, :, 2] = im[:, :, 1] / igbr[:, :, 0]
-    igbr[:, :, 3] = im[:, :, 2] / igbr[:, :, 0]
-
-    i_norm = (1 / get_settings('igbr_i_weight', float)) * get_settings('igbr_i_norm', float)
-    igbr[:, :, 0] = igbr[:, :, 0] / i_norm
-
-    return igbr
 
 
 def prepare_for_visualisation(img, project):

@@ -14,6 +14,7 @@ from gui.video_loader import check_video_path
 from utils.img_manager import ImgManager
 import os
 
+
 class Project:
     """
     This class encapsulates one experiment using FERDA

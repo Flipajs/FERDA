@@ -4,7 +4,7 @@ from PyQt4 import QtGui, QtCore
 
 from gui.img_controls import my_view, my_scene
 from utils import video_manager
-from utils.misc import set_settings
+from gui.gui_utils import set_settings
 import utils.img
 import gui.gui_utils
 from gui.init.class_widget import ClassWidget

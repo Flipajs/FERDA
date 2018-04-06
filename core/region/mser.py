@@ -1,5 +1,4 @@
 __author__ = 'fnaiser'
-
 import cv2
 import warnings
 import time

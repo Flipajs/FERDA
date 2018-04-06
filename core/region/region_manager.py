@@ -8,12 +8,14 @@ from core.region.region import encode_RLE
 from libs.cachetools import LRUCache
 import sys
 
+
 class Dummy():
     def __getitem__(self, item):
         return None
 
     def __setitem__(self, key, value):
         pass
+
 
 class RegionManager:
     def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=1000, data=None, supress_init_print=False):
