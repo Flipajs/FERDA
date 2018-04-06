@@ -107,7 +107,7 @@ if __name__ == '__main__':
         prediction_optimisation_border = proj.other_parameters.segmentation_prediction_optimisation_border
         full_segmentation_refresh = proj.other_parameters.segmentation_full_segmentation_refresh_in
     except:
-        use_roi_prediction_optimisation = True
+        use_roi_prediction_optimisation = True  # obsolete, per-pixel classification
         prediction_optimisation_border = 25
         full_segmentation_refresh = 25
 
@@ -138,6 +138,7 @@ if __name__ == '__main__':
 
         temp_local_path=temp_local_path+'/temp'
 
+    # init managers
     solver = Solver(proj)
     from core.graph.graph_manager import GraphManager
     proj.gm = GraphManager(proj, proj.solver.assignment_score)
@@ -168,11 +169,13 @@ if __name__ == '__main__':
     border2 = 3
 
     jj = 0
+    # for all frames: extract regions and add them to the graph
     for i in range(frames_in_row + last_n_frames):
         frame = id*frames_in_row + i
 
         s = time.time()
 
+        # per pixel classification -> fg, bg (not used)
         if hasattr(proj, 'segmentation_model'):
             if rois and i%full_segmentation_refresh != 0:
                 try:
@@ -238,6 +241,7 @@ if __name__ == '__main__':
             else:
                 img = segment(proj, img)
 
+        # get segmented regions
         msers = ferda_filtered_msers(img, proj, frame)
 
         if proj.colormarks_model:
@@ -263,6 +267,7 @@ if __name__ == '__main__':
         if use_roi_prediction_optimisation:
             rois = get_rois(msers, img, prediction_optimisation_border)
 
+        # add regions to graph
         proj.gm.add_regions_in_t(msers, frame, fast=True)
         solver_t += time.time() - s
 
@@ -305,5 +310,5 @@ if __name__ == '__main__':
     if proj.is_cluster():
         import shutil
         import glob
-        for file in glob.glob(temp_local_path+'/part'+str(id)+'_rm.sqlite3'):
-            shutil.move(file,working_dir+'/temp')
+        for file in glob.glob(temp_local_path + '/part' + str(id) + '_rm.sqlite3'):
+            shutil.move(file, working_dir + '/temp')
