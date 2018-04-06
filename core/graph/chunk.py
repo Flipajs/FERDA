@@ -431,25 +431,28 @@ class Chunk:
             return 1
 
         if self.is_multi():
-
             # first try INcoming...
-            cardinality = 0
+            cardinality_based_on_in = 0
             for ch in gm.get_incoming_tracklets(self.start_vertex(gm)):
                 if ch.is_single() and ch.num_outcoming_edges(gm) == 1:
-                    cardinality += 1
+                    cardinality_based_on_in += 1
                 else:
-                    cardinality = 0
+                    cardinality_based_on_in = 0
                     break
 
-            if not cardinality:
-                # lets try OUTcoming...
-                for ch in gm.get_outcoming_tracklets(self.end_vertex(gm)):
-                    if ch.is_single() and ch.num_incoming_edges(gm) == 1:
-                        cardinality += 1
-                    else:
-                        return -1
+            cardinality_based_on_out = 0
+            # lets try OUTcoming...
+            for ch in gm.get_outcoming_tracklets(self.end_vertex(gm)):
+                if ch.is_single() and ch.num_incoming_edges(gm) == 1:
+                    cardinality_based_on_out += 1
+                else:
+                    return -1
 
-            return cardinality if cardinality > 0 else -1
+            if cardinality_based_on_in == 0 and cardinality_based_on_out:
+                return cardinality_based_on_out
+
+            if cardinality_based_on_in and cardinality_based_on_out == 0:
+                return cardinality_based_on_in
 
         return -1
 
