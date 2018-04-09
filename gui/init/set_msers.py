@@ -574,9 +574,12 @@ class SetMSERs(QtGui.QWidget):
         self.region_min_intensity.setMinimum(0)
         self.region_min_intensity.setSingleStep(1)
 
-        self.gb_mser_related.layout().addRow('region min intensity', self.region_min_intensity)
+        self.gb_mser_related.layout().addRow('suppress bright region (all pixels intensity above threshold)', self.region_min_intensity)
         # this line is necessary to avoid possible bugs in the future
         self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
+
+        self.gb_region_filtering.layout().addRow('use percentile for bright regions suppression', self.use_intensity_percentile_threshold)
+        self.gb_region_filtering.layout().addRow('percentile: ', self.intensity_percentile)
 
         self.gb_mser_related.layout().addRow('<i>use only red channel</i>', self.use_only_red_ch)
         self.gb_mser_related.layout().addRow('<i>Gauss. blur kernel size</i>', self.blur_kernel_size)
@@ -588,10 +591,6 @@ class SetMSERs(QtGui.QWidget):
                 not self.use_intensity_percentile_threshold.isChecked()
             )
         )
-
-        self.gb_region_filtering.layout().addRow('use intensity percentile', self.use_intensity_percentile_threshold)
-
-        self.gb_region_filtering.layout().addRow('percentile: ', self.intensity_percentile)
 
         self.gb_region_filtering.layout().addRow('use margin filter', self.use_margin_filter)
 
