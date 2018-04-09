@@ -6,6 +6,7 @@ from utils.constants import EDGE_CONFIRMED
 from core.log import LogCategories, ActionNames
 from core.settings import Settings as S_
 from core.region.region import Region
+from random import randint
 
 
 class Chunk:
@@ -510,3 +511,7 @@ class Chunk:
 
     def is_id_decided(self):
         return len(self.P) == 1
+
+    def get_random_region(self, gm):
+        r_frame = randint(self.start_frame(gm), self.end_frame(gm))
+        return self.get_region_in_frame(gm, r_frame)

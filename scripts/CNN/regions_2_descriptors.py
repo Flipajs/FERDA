@@ -25,10 +25,6 @@ def process_batch(imgs_batch, ids_batch):
     for k, r_id in enumerate(ids_batch):
         descriptors[r_id] = descs[k, :]
 
-        imgs_batch = []
-        ids_batch = []
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='train siamese CNN with contrastive loss')
@@ -67,7 +63,7 @@ if __name__ == '__main__':
     ELLIPSE_DILATION = 10
     MASK_SIGMA = 10
     BATCH_SIZE = 500
-    APPLY_ELLIPSE = False
+    APPLY_ELLIPSE = True
 
     np.set_printoptions(precision=2)
     from tqdm import tqdm
