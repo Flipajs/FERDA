@@ -619,7 +619,8 @@ class ResultsWidget(QtGui.QWidget):
         try:
             id_ = int(self.highlight_tracklet_input.text())
             tracklet = self.project.chm[id_]
-        except:
+        except Exception as e:
+            print e
             return
 
         if tracklet is None:
@@ -778,7 +779,14 @@ class ResultsWidget(QtGui.QWidget):
 
             item = QtGui.QGraphicsEllipseItem(-a/2, -b/2, a, b)
             brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
-            c_ = QtGui.QColor(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue())
+
+            if len(tracklet.P):
+                id_ = list(tracklet.P)[0]
+                c_ = self.project.animals[id_].color_
+                c_ = QtGui.QColor(c_[2], c_[1], c_[0], alpha)
+            else:
+                c_ = QtGui.QColor(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue())
+
             brush.setColor(c_)
             item.setBrush(brush)
             item.setOpacity(0.5)

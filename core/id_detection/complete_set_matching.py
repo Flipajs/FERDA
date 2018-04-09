@@ -1140,7 +1140,7 @@ class CompleteSetMatching:
                 X.append(self.descriptors[r_id])
                 r_ids.append(r_id)
             else:
-                print r_id
+                print("descriptor missing for r_id: {}".format(r_id))
 
         if len(X) == 0:
             import warnings
@@ -1330,6 +1330,7 @@ class CompleteSetMatching:
 
                 if not conflict:
                     for t1, t2 in to_merge:
+                        print("merging: {} -> {}".format(t1, t2))
                         if t1 != t2:
                             self.merge_tracklets(t1, t2)
 
