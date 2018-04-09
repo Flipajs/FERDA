@@ -20,7 +20,6 @@ if __name__ == '__main__':
     p = Project()
     p.load(P_WD)
 
-    # go in frame order (optimized video accesss) and pick regions from single-ID tracklets. Compute for them descriptor
     imgs_batch = []
     ids_batch = []
     descriptors = {}
@@ -66,11 +65,45 @@ if __name__ == '__main__':
                 cropB = get_region_image(regionB, vm, offset=OFFSET, add_ellipse_mask=APPLY_ELLIPSE,
                                           mask_sigma=MASK_SIGMA, ellipse_dilation=ELLIPSE_DILATION)
 
-
                 cv2.imshow('A1', cropA1)
                 cv2.imshow('A2', cropA2)
                 cv2.imshow('B', cropB)
                 cv2.waitKey(0)
 
+                # imgs += [[im1, im2]]
+                # imgs += [[im1, im_negative]]
+                # labels += [1, 0]
+
                 # imgs_batch.append(crop)
                 # ids_batch.append(region.id())
+                i += 1
+
+    # imgs = np.array(imgs)
+    # # normalize..
+    # imgs = imgs.astype('float32')
+    # imgs /= 255
+    #
+    # split_idx = int(args.test_ratio * len(imgs))
+    #
+    # imgs_test = np.array(imgs[:split_idx])
+    # imgs_train = np.array(imgs[split_idx:])
+    # labels_test = np.array(labels[:split_idx])
+    # labels_train = np.array(labels[split_idx:])
+    #
+    # print "imgs TEST: {}, TRAIN: {}".format(imgs_test.shape, imgs_train.shape)
+    # print "labels TEST: {}, TRAIN: {}".format(labels_test.shape, labels_train.shape)
+    #
+    # outdir = args.datadir[0]
+    # try:
+    #     outdir = args.outdir
+    # except:
+    #     pass
+    #
+    # with h5py.File(outdir + '/imgs_train_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
+    #     hf.create_dataset("data", data=imgs_train)
+    # with h5py.File(outdir + '/imgs_test_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
+    #     hf.create_dataset("data", data=imgs_test)
+    # with h5py.File(outdir + '/labels_train_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
+    #     hf.create_dataset("data", data=labels_train)
+    # with h5py.File(outdir + '/labels_test_hard_' + str(args.num_negative) + '.h5', 'w') as hf:
+    #     hf.create_dataset("data", data=labels_test)
