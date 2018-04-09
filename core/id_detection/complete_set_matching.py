@@ -1,10 +1,13 @@
-import numpy as np
-from utils.video_manager import get_auto_video_manager
-from tqdm import tqdm
-from lazyme.string import color_print
+import os
+import random
+
 import matplotlib.pyplot as plt
+import numpy as np
+from lazyme.string import color_print
 from scipy.misc import imread
-import os, random
+from tqdm import tqdm
+
+from utils.video_manager import get_auto_video_manager
 
 
 class CompleteSetMatching:
@@ -656,7 +659,7 @@ class CompleteSetMatching:
     def sort_track_CSs(self, track_CSs):
         values = []
         for CS in track_CSs:
-            val = self.track_support(CS, self.tracks)
+            val = self.track_support(CS)
 
             values.append(val)
 
@@ -1179,7 +1182,6 @@ class CompleteSetMatching:
                 # cov_ = np.cov(X[ids, :].T)
 
                 # this is for case when weight = 1, thus std = 0
-                import scipy
                 from scipy.spatial.distance import cdist, pdist, squareform
                 d_std = np.mean(cdist([desc], X))
                 # std = max(np.mean(np.std(X[ids, :], axis=0)), std_eps)
@@ -1457,7 +1459,9 @@ if __name__ == '__main__':
     from core.id_detection.learning_process import LearningProcess
 
     p = Project()
-    p.load('/Users/flipajs/Documents/wd/FERDA/Cam1')
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/Cam1'
+    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip'
+    p.load(P_WD)
     # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_new')
 
     lp = LearningProcess(p)
@@ -1472,7 +1476,8 @@ if __name__ == '__main__':
 
 
     import pickle
-    with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:
+    # with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:
+    with open(p.working_directory+'/descriptors.pkl') as f:
         descriptors = pickle.load(f)
 
     from numpy.linalg import norm

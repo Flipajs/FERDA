@@ -417,7 +417,7 @@ class ResultsWidget(QtGui.QWidget):
         self.show_id_bar.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_id_bar)
 
-        self.show_tracklet_class = QtGui.QCheckBox('t-class')
+        self.show_tracklet_class = QtGui.QCheckBox('show t-cardinality')
         self.show_tracklet_class.setChecked(False)
         self.show_tracklet_class.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_tracklet_class)
@@ -780,16 +780,18 @@ class ResultsWidget(QtGui.QWidget):
             item = QtGui.QGraphicsEllipseItem(-a/2, -b/2, a, b)
             brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
 
+            opacity = 0.5
             if len(tracklet.P):
                 id_ = list(tracklet.P)[0]
                 c_ = self.project.animals[id_].color_
                 c_ = QtGui.QColor(c_[2], c_[1], c_[0], alpha)
             else:
                 c_ = QtGui.QColor(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue())
+                opacity = 1.0
 
             brush.setColor(c_)
             item.setBrush(brush)
-            item.setOpacity(0.5)
+            item.setOpacity(opacity)
             item.setZValue(0.65)
             item.rotate(np.rad2deg(r.theta_))
             item.setPos(x, y)

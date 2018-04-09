@@ -1,20 +1,22 @@
 import os.path
+import tempfile
 from os.path import join
-from keras.models import model_from_yaml, model_from_json
-from utils.img import safe_crop
-import yaml
-from utils.objectsarray import ObjectsArray
-from scripts.CNN.interactions_results import show_prediction
+
+import fire
+import imageio
 import keras.applications.mobilenet as mobilenet
 import numpy as np
-from scripts.CNN.train_interactions import TrainInteractions
 import pandas as pd
-import imageio
-import tempfile
-from tqdm import tqdm
-from scripts.CNN.interactions_results import save_prediction_img
+import yaml
+from keras.models import model_from_yaml, model_from_json
 from scipy.special import expit
-import fire
+from scripts.CNN.interactions_results import save_prediction_img
+from scripts.CNN.interactions_results import show_prediction
+from tqdm import tqdm
+
+from scripts.CNN.trash.train_interactions import TrainInteractions
+from utils.img import safe_crop
+from utils.objectsarray import ObjectsArray
 
 
 class InteractionDetector:

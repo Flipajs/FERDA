@@ -1664,7 +1664,8 @@ class LearningProcess:
         #
         #     print t.id(), np.mean(probs), np.median(probs), len(t)
 
-        ret = self.train(init=True, use_xgboost=use_xgboost)
+        ret = None
+        # ret = self.train(init=True, use_xgboost=use_xgboost)
         print "TRAINING FINISHED"
 
         return ret

@@ -501,6 +501,13 @@ class Project:
         self.load_snapshot({'chm': self.working_directory+'/.auto_save/'+str(self.active_snapshot)+'__chunk_manager.pkl',
                            'gm': self.working_directory+'/.auto_save/'+str(self.active_snapshot)+'__graph_manager.pkl'})
 
+    def get_video_manager(self):
+        from utils.video_manager import get_auto_video_manager
+        return get_auto_video_manager(self)
+
+    def num_frames(self):
+        return self.get_video_manager().total_frame_count()
+
 
 def dummy_project():
     from core.classes_stats import dummy_classes_stats

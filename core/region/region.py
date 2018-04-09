@@ -74,7 +74,10 @@ class Region(object):
         return hash(self) == hash(other)
 
     def is_origin_interaction(self):
-        return self.is_origin_interaction_
+        try:
+            return self.is_origin_interaction_
+        except AttributeError:
+            return False
 
     def id(self):
         return self.id_

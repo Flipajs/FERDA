@@ -369,7 +369,16 @@ class Chunk:
             yield gm.region_id(id_)
 
     def get_region(self, gm, i):
-        return gm.region_id[self.nodes_[i]]
+        return gm.region(self.nodes_[i])
+
+    def get_region_in_frame(self, gm, frame):
+        sf = self.start_frame(gm)
+        try:
+            return self.get_region(gm, frame-sf)
+        except Exception as e:
+            import warnings
+            warnings.warn(e.message)
+            return None
 
     def r_gen(self, gm, rm):
         for rid in self.rid_gen(gm):

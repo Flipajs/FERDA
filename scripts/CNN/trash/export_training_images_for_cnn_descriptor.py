@@ -75,7 +75,6 @@ if __name__ == '__main__':
                     crop = get_safe_selection(img, y-offset, x-offset, 2*offset, 2*offset)
                     cv2.imwrite(OUT_DIR+'/'+str(id)+'/'+str(r.id())+'.jpg', crop, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
 
-
     for i, num in enumerate(examples):
         print "ID: {} #{}".format(i, num)
 

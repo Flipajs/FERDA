@@ -26,27 +26,9 @@ wd = None
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 # if is_flipajs_pc() and False:
 if is_flipajs_pc():
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
+    wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_new'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rfs2'
-    wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Cam3_new'
-
-    # wd = '/Volumes/Seagate Expansion Drive/HH1_PRE_upper_thr_'
-
-    # wd = '/Volumes/Seagate Expansion Drive/HH1_POST'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Barbara_flu_bug/test6'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam2'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/rep1-cam3'
-
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3_new'
-
-    # wd = '/Users/flipajs/Documents/wd/FERDA/test'
 
 if is_matejs_pc():
     # wd = '/home/matej/prace/ferda/10-15/'

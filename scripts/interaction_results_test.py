@@ -1,8 +1,9 @@
 import unittest
-import numpy as np
-from scripts.CNN.interactions_results import plot_interaction
+
 import matplotlib.pylab as plt
 import pandas as pd
+
+from scripts.CNN.interactions_results import plot_interaction
 
 
 class InteractionResultsTestCase(unittest.TestCase):

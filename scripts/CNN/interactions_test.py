@@ -1,8 +1,10 @@
 import unittest
-from scripts.CNN.interactions import InteractionDetector
-from core.project.project import Project
-from utils.video_manager import get_auto_video_manager
+
 import numpy as np
+
+from core.project.project import Project
+from scripts.CNN.interactions import InteractionDetector
+from utils.video_manager import get_auto_video_manager
 
 
 class InteractionDetectorTestCase(unittest.TestCase):
