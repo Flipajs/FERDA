@@ -33,6 +33,7 @@ def check_if_already_assembled(project):
         dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         os.rename(gm_path, gm_path[:-4] + '_' + dt + '.pkl')
 
+
 def assembly_after_parallelization(bgcomp):
     check_if_already_assembled(bgcomp.project)
 
@@ -64,9 +65,7 @@ def assembly_after_parallelization(bgcomp):
     bgcomp.project.color_manager = None
 
     import time
-
     merging_t = time.time()
-
 
     print("\nLOADING PARTS AND MERGING...")
     # for i in range(part_num):

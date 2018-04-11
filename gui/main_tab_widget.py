@@ -88,7 +88,6 @@ class MainTabWidget(QtGui.QWidget):
         self.update_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_U))
         self.addAction(self.update_undecided_a)
 
-
         print "LOADING GRAPH..."
         if project.gm is None or project.gm.g.num_vertices() == 0:
             # project.gm = GraphManager(project, project.solver.assignment_score)

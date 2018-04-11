@@ -26,6 +26,7 @@ def get_data(r, scaler=None):
     else:
         return scaler.transform(np.array([d]))[0]
 
+
 def prepare_region_cardinality_samples(p, compute_data=True, num_random=1000):
     print "___________________________________"
     print "Preparing data for prepare_region_cardinality_samples..."

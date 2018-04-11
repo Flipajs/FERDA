@@ -10,7 +10,7 @@ import numpy as np
 import cv2
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from functools import partial
-from utils.misc import print_progress
+import tqdm
 
 
 class RegionClassifierTool(QtGui.QWidget):
@@ -348,7 +348,7 @@ class RegionClassifierTool(QtGui.QWidget):
 
             d = None
             ask = True
-            for i in range(n):
+            for i in tqdm.tqdm(range(n)):
                 if self.redraw_:
                     im = draw_region(p, vm, vertices[id_])
                     if im.shape[0] == 0 or im.shape[1] == 0:
@@ -386,7 +386,6 @@ class RegionClassifierTool(QtGui.QWidget):
 
                 id_ = new_id
 
-                print_progress(i, n)
 
             with open(self.p.working_directory+'/temp/clustering_tool.pkl', 'wb') as f:
                 pickle.dump((images, undecided), f)
@@ -573,8 +572,6 @@ class RegionClassifierTool(QtGui.QWidget):
 
         return gt_map, in_gt
 
-
-
     def eval(self, training_n=5, more_singles=False):
         gt_map, in_gt = self.train(training_n, more_singles)
 
@@ -631,7 +628,6 @@ class RegionClassifierTool(QtGui.QWidget):
         self.p.save_semistate('tracklets_s_classified_gt')
         print "Classification DONE"
 
-
     def classify_project(self, p, data=None, train_n=30, semistate='tracklets_s_classified', gt_classify=False):
         from utils.gt.gt import GT
 
@@ -655,9 +651,9 @@ class RegionClassifierTool(QtGui.QWidget):
 
         from core.graph.region_chunk import RegionChunk
 
-        print "Classifying tracklets (single/multi/part/no-ID)"
-        for i, t in enumerate(self.p.chm.chunk_gen()):
-            print_progress(i+1, len(p.chm))
+        for i, t in enumerate(tqdm.tqdm(self.p.chm.chunk_gen(),
+                                        total=len(self.p.chm),
+                                        desc='Classifying tracklets (single/multi/part/no-ID)')):
             freq = [0, 0, 0, 0]
             rch = RegionChunk(t, p.gm, p.rm)
             for r in rch.regions_gen():
@@ -696,7 +692,6 @@ class RegionClassifierTool(QtGui.QWidget):
         # TODO: solve semistates
         self.p.save_semistate(semistate)
         self.p.save()
-        print "Classification DONE"
 
     def classify_tracklets(self):
         self.classify_project(self.p, self.data, train_n=50)

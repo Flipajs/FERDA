@@ -27,6 +27,7 @@ from utils.misc import print_progress
 CNN_SOFTMAX = 1
 RFC = 2
 
+
 class LearningProcess:
     """
     each tracklet has 2 id sets.
