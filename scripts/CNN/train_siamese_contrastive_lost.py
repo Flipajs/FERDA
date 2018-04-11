@@ -345,6 +345,74 @@ def create_base_network10(input_shape):
     x = Dense(32, activation='linear')(x)
     m = Model(input, x)
     m.summary()
+
+def create_base_network_mobilenet_like(input_shape):
+    from keras.applications.mobilenet import _conv_block, _depthwise_conv_block
+
+    input = Input(shape=input_shape)
+    alpha = 1.0
+    depth_multiplier = 1
+    x = _conv_block(input, 32, alpha, strides=(2, 2))
+    x = _depthwise_conv_block(x, 32, alpha, depth_multiplier, block_id=1)
+
+    x = _depthwise_conv_block(x, 32, alpha, depth_multiplier,
+                              strides=(2, 2), block_id=2)
+    x = _depthwise_conv_block(x, 32, alpha, depth_multiplier, block_id=3)
+
+    x = _depthwise_conv_block(x, 32, alpha, depth_multiplier,
+                              strides=(2, 2), block_id=4)
+
+
+    x = _depthwise_conv_block(x, 32, alpha, depth_multiplier, block_id=5)
+    x = _depthwise_conv_block(x, 32, alpha, depth_multiplier,
+                              strides=(2, 2), block_id=6)
+    x = _depthwise_conv_block(x, 32, alpha, depth_multiplier, block_id=7)
+    x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=8)
+    x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=9)
+    x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=10)
+    x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=11)
+    x = Flatten()(x)
+    x = Dense(32, activation='linear')(x)
+    m = Model(input, x)
+
+    m.summary()
+    return m
+
+def create_basenetwork_squeezenet_like(input_shape):
+    from keras_squeezenet.squeezenet import fire_module
+    input = Input(shape=input_shape)
+
+    x = Conv2D(64, (3, 3), strides=(2, 2), padding='valid', name='conv1')(input)
+    x = Activation('relu', name='relu_conv1')(x)
+    x = MaxPooling2D(pool_size=(3, 3), strides=(2, 2), name='pool1')(x)
+
+    x = fire_module(x, fire_id=2, squeeze=16, expand=64)
+    x = fire_module(x, fire_id=3, squeeze=16, expand=64)
+    x = MaxPooling2D(pool_size=(3, 3), strides=(2, 2), name='pool3')(x)
+
+    x = fire_module(x, fire_id=4, squeeze=32, expand=128)
+    x = fire_module(x, fire_id=5, squeeze=32, expand=128)
+    x = MaxPooling2D(pool_size=(3, 3), strides=(2, 2), name='pool5')(x)
+
+    x = fire_module(x, fire_id=6, squeeze=48, expand=192)
+    x = fire_module(x, fire_id=7, squeeze=48, expand=192)
+
+    x = fire_module(x, fire_id=8, squeeze=64, expand=256)
+
+    # x = Dropout(0.5, name='drop9')(x)
+    #
+    # x = Conv2D(32, (1, 1), padding='valid', name='conv10')(x)
+    # x = Activation('linear', name='relu_conv10')(x)
+
+    x = Flatten()(x)
+    x = Dense(32, activation='linear')(x)
+
+# x = GlobalAveragePooling2D()(x)
+#
+#     x = Dense(32, activation='linear')(x)
+    m = Model(input, x)
+    m.summary()
+
     return m
 
 
@@ -410,7 +478,8 @@ if __name__ == '__main__':
         description='train siamese CNN with contrastive loss')
 
     parser.add_argument('--datadir', type=str,
-                        default='/Users/flipajs/Documents/wd/FERDA/CNN_hard_datagen',
+                        default='/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip/',
+                        # default='/Users/flipajs/Documents/wd/FERDA/zebrafish_new/',
                         help='path to dataset')
     parser.add_argument('--epochs', type=int,
                         default=10,
@@ -428,17 +497,24 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
 
-    with h5py.File(args.datadir + '/imgs_train_hard_' + str(args.num_negative) + '.h5', 'r') as hf:
+    with h5py.File(args.datadir + '/descriptor_cnn_imgs_train.h5', 'r') as hf:
         tr_pairs = hf['data'][:]
 
-    with h5py.File(args.datadir + '/imgs_test_hard_' + str(args.num_negative) + '.h5', 'r') as hf:
+    with h5py.File(args.datadir + '/descriptor_cnn_imgs_test.h5', 'r') as hf:
         te_pairs = hf['data'][:]
 
-    with h5py.File(args.datadir + '/labels_train_hard_' + str(args.num_negative) + '.h5', 'r') as hf:
+    with h5py.File(args.datadir + '/descriptor_cnn_labels_train.h5', 'r') as hf:
         tr_y = hf['data'][:]
 
-    with h5py.File(args.datadir + '/labels_test_hard_' + str(args.num_negative) + '.h5', 'r') as hf:
+    with h5py.File(args.datadir + '/descriptor_cnn_labels_test.h5', 'r') as hf:
         te_y = hf['data'][:]
+
+    # # normalize..
+    tr_pairs = tr_pairs.astype('float32')
+    tr_pairs /= 255
+
+    te_pairs = te_pairs.astype('float32')
+    te_pairs /= 255
 
     print("train shape {}, min: {} max: {}".format(tr_pairs.shape, tr_pairs.min(), tr_pairs.max()))
     print("test shape {}, min: {} max: {}".format(te_pairs.shape, te_pairs.min(), te_pairs.max()))
@@ -457,7 +533,9 @@ if __name__ == '__main__':
                      # create_base_network7,
                      # create_base_network8,
                      # create_base_network9,
-                     create_base_network10,
+                     # create_base_network10,
+                     # create_base_network11,
+                     create_basenetwork_squeezenet_like
                      ]
     datagen = DataGenerator(args.batch_size, tr_pairs, tr_y)
 
@@ -487,6 +565,7 @@ if __name__ == '__main__':
             from keras.models import load_model
             model = load_model(args.datadir+'/best_model.h5', compile=False)
 
+
         # train
         # rms = RMSprop()
         model.compile(loss=contrastive_loss2, optimizer='adam', metrics=[accuracy])
@@ -494,7 +573,7 @@ if __name__ == '__main__':
         checkpoint = ModelCheckpoint(args.datadir+'/best_model.h5', monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
         callbacks_list = [checkpoint]
 
-        model.fit_generator(generator=datagen.next_train(), samples_per_epoch=datagen.samples_per_train,
+        model.fit_generator(generator=datagen.next_train(), samples_per_epoch=10*datagen.samples_per_train,
                             nb_epoch=args.epochs, validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y),
                             callbacks=callbacks_list)
 
