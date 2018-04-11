@@ -9,29 +9,46 @@ import core.region.transformableregion as tr
 import h5py
 from keras.preprocessing.image import ImageDataGenerator
 from keras import backend as K
+from utils import angles
+from numpy.testing import assert_array_equal
 
 
 class LossFunctionsTestCase(unittest.TestCase):
     def setUp(self):
         # ant1_x ant1_y ant1_major ant1_minor ant1_angle_deg ant1_dx ant1_dy; ant2_x ant2_y ant2_major ant2_minor ant2_angle_deg ant2_dx ant2_dy
-        self.y_a = np.array([[10., 10, 25, 5, 100, -1, -1, 100, 100, 25, 5, 30, -1, -1],
-                             [100., 100, 25, 5, 30, -1, -1, 20, 20, 25, 5, 20, -1, -1],
-                             [10., 10, 25, 5, 20, -1, -1, 200, 200, 25, 5, 30, -1, -1]])
-        self.y_b = np.array([[20., 20, 25, 5, 30, -1, -1, 150, 170, 25, 5, 0, -1, -1],
-                             [30., 30, 25, 5, 30, -1, -1, 170, 150, 25, 5, 5, -1, -1],
-                             [30., 60, 25, 5, 30, -1, -1, 170, 120, 25, 5, 5, -1, -1]])
-        self.ti = TrainInteractions()
+        self.y_a = np.array([[10., 10, 25, 5, 20,   100, 100, 25, 5, 30],
+                             [200, 200, 25, 5, 30,   10., 10, 25, 5, 20]])
 
-    def run_interaction_loss_angle(self):
-        data_dir = '/home/matej/prace/ferda/data/interactions/1712_36k_random'
+        self.y_b = np.array([[20., 20, 20, 4, -5,   150, 170, 25, 5, 0],
+                             [30., 60, 30, 3, 30,   170, 120, 25, 5, 5]])
+
+        self.y_a1 = np.array([[100, 100, 25, 5, 30],
+                             [10., 10, 25, 5, 20]])
+
+        self.y_b1 = np.array([[150, 170, 25, 5, 0],
+                             [170, 120, 25, 5, 5]])
+
+        self.ti = TrainInteractions(num_objects=2)
+
+    def test_errors_ij(self):
+        errors00 = self.ti.errors_ij(self.y_a, self.y_b, 0, 0)
+        assert_array_equal(errors00, [[10, 10, 5, 1, 25],
+                                      [20, 50, 5, 2, 10]])
+        errors01 = self.ti.errors_ij(self.y_a, self.y_b, 0, 1)
+        assert_array_equal(errors01, [[140, 160, 0, 0, 20],
+                                      [160, 110, 0, 0, 15]])
+
+    def test_interaction_loss_angle(self):
+        data_dir = 'test/interactions_dataset'
         n, properties, y_test_df = self.ti.read_gt(join(data_dir, 'test.csv'))
         self.ti.array = train_interactions.ObjectsArray(self.ti.PREDICTED_PROPERTIES, n)
         self.ti.set_num_objects(n)
         y_test = self.ti.array.dataframe_to_array(y_test_df)
         pred = y_test.copy()
         # pred += 1
-        pred = 10
-        xy, angle, indices = self.ti.match_pred_to_gt(pred[:5], y_test[:5], np)
+        pred[:] = 10
+        # xy, angle, indices = self.ti.match_pred_to_gt(pred[:5], y_test[:5], np)
+        xy, angle, axes, indices = self.ti.match_pred_to_gt(pred, y_test, np)
 
         # xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
         # angle_mae = (angle[indices[:, 0], indices[:, 1]]).mean()
@@ -44,16 +61,33 @@ class LossFunctionsTestCase(unittest.TestCase):
         # pred['1_angle_deg'] = 1. / np.tan(np.radians(45.))
         print(train_interactions.K.eval(self.ti.interaction_loss_angle(y_test[:3], pred[:3])))
 
-    def run_match_pred_to_gt(self):
+    def test_match_pred_to_gt(self):
         self.ti.set_num_objects(2)
-        with patch.object(self.ti, 'xy_absolute_error',
-                          return_value=np.array([[10, 10], [20, 20], [30, 30]])) as mock_method1:
-            with patch.object(self.ti, 'angle_absolute_error_direction_agnostic',
-                              return_value=np.array([10, 20, 30])) as mock_method2:
-                mean_errors_xy, mean_errors_angle, indices = self.ti.match_pred_to_gt(self.y_a, self.y_b, np)
-        print(mean_errors_xy)
-        print(mean_errors_angle)
-        print(indices)
+        errors, indices = self.ti.match_pred_to_gt(self.y_a, self.y_b)
+        print(K.eval(errors))
+        print(K.eval(indices))
+
+        errors_np, indices_np = self.ti.match_pred_to_gt_numpy(self.y_a, self.y_b)
+        assert_array_equal(K.eval(errors), errors_np)
+        assert_array_equal(K.eval(indices), indices_np)
+
+        self.ti.set_num_objects(1)
+        errors, indices = self.ti.match_pred_to_gt(self.y_a1, self.y_b1)
+        print(K.eval(errors))
+        print(K.eval(indices))
+
+        errors_np, indices_np = self.ti.match_pred_to_gt_numpy(self.y_a1, self.y_b1)
+        assert_array_equal(K.eval(errors), errors_np)
+        assert_array_equal(K.eval(indices), indices_np)
+
+        # with patch.object(self.ti, 'xy_absolute_error',
+        #                   return_value=np.array([[10, 10], [20, 20], [30, 30]])) as mock_method1:
+        #     with patch.object(angles, 'angle_absolute_error_direction_agnostic',
+        #                       return_value=np.array([10, 20, 30])) as mock_method2:
+        #         mean_errors_xy, axes, mean_errors_angle, indices = self.ti.match_pred_to_gt(self.y_a, self.y_b, np)
+        # print(mean_errors_xy)
+        # print(mean_errors_angle)
+
 
 
     # def test_interaction_loss_angle(self):
@@ -95,13 +129,13 @@ class LossFunctionsTestCase(unittest.TestCase):
     def load_images():
         import h5py
         from os.path import join
-        data_dir = '/home/matej/prace/ferda/data/interactions/1712_1k_36rot'
+        data_dir = 'test/interactions_dataset'
         hf = h5py.File(join(data_dir, 'images.h5'), 'r')
         images = hf['train']
         return images
 
 
-DATA_DIR = '/home/matej/prace/ferda/data/interactions/1712_1k_36rot/'
+DATA_DIR = 'test/interactions_dataset'
 
 
 class TrainInteractionsTestCase(unittest.TestCase):
