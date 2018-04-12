@@ -1,7 +1,6 @@
 import sys
 import cPickle as pickle
 from PyQt4 import QtGui
-
 from gui import main_window
 from core.settings import Settings as S_
 from utils.misc import is_flipajs_pc, is_matejs_pc
@@ -9,22 +8,24 @@ import time
 from core.project.project import Project
 import timeit
 import numpy as np
+import argparse
 
+parser = argparse.ArgumentParser(description='FERDA laboratory animal tracking system.')
+parser.add_argument('project', nargs='?', help='project directory or file')
+args = parser.parse_args()
 
 app = QtGui.QApplication(sys.argv)
 ex = main_window.MainWindow()
 ex.setFocus()
 
 t_ = time.time()
-
-project = Project()
-
 S_.general.print_log = False
 
 # This is development speed up process (kind of fast start). Runs only on developers machines...
 # if is_flipajs_pc() and False:
-wd = None
-if is_flipajs_pc():
+if args.project is not None:
+    wd = args.project
+elif is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/test6'
@@ -45,18 +46,19 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3_new'
 
     # wd = '/Users/flipajs/Documents/wd/FERDA/test'
-
-if is_matejs_pc():
-    # wd = '/home/matej/prace/ferda/10-15/'
+elif is_matejs_pc():
+    # wd = '/home/matej/prace/ferda/projects/Cam1_clip'
     # wd = '/home/matej/prace/ferda/10-15 (copy)/'
     pass
+else:
+    wd = None
 
+project = Project()
 if wd is not None:
     project.load(wd)
 
-
-    for t in project.chm.chunk_gen():
-        print "Cardinality: {}, t_id: {}".format(t.get_cardinality(project.gm), t.id())
+    # for t in project.chm.chunk_gen():
+    #     print "Cardinality: {}, t_id: {}".format(t.get_cardinality(project.gm), t.id())
 
     # from tqdm import tqdm
     # thetas = []
