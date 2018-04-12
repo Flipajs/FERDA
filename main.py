@@ -22,7 +22,6 @@ S_.general.print_log = False
 if args.project is not None:
     project = Project()
     project.load(args.project)
-
     # for t in project.chm.chunk_gen():
     #     print "Cardinality: {}, t_id: {}".format(t.get_cardinality(project.gm), t.id())
 
