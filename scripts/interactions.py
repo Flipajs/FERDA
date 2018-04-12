@@ -9,23 +9,18 @@ use: $ python interactions.py -- --help
 import sys
 import cPickle as pickle
 from utils.misc import is_flipajs_pc, is_matejs_pc
-import time
 from core.project.project import Project
 import numpy as np
 import matplotlib.pylab as plt
 import math
 import os.path
 from core.graph.region_chunk import RegionChunk
-from core.region.region import Region
 from utils.video_manager import get_auto_video_manager
-from utils.img import get_img_around_pts
-from utils.drawing.points import get_roi
 from core.region.transformableregion import TransformableRegion
-from core.region.region import get_region_endpoints, get_orientation
+from core.region.region import get_region_endpoints
 import cv2
 import fire
 import tqdm
-import copy
 # from joblib import Parallel, delayed
 import csv
 import waitforbuttonpress

@@ -6,10 +6,11 @@ from utils.constants import EDGE_CONFIRMED
 from core.log import LogCategories, ActionNames
 from core.settings import Settings as S_
 from core.region.region import Region
+from random import randint
 
 
 class Chunk:
-    def __init__(self, vertices_ids, id_, gm, color=None):
+    def __init__(self, vertices_ids, id_, gm, color=None, origin_interaction=False):
         # if not isinstance(vertices_ids, list):
         #     raise Exception('vertices_ids must be a list! (in chunk.py)')
         # if len(vertices_ids) < 2:
@@ -25,32 +26,35 @@ class Chunk:
         self.N = set()
         self.segmentation_class = -1
 
-        if len(vertices_ids) > 1:
-            if vertices_ids[0] > 0:
-                v1 = gm.g.vertex(vertices_ids[0])
-                out_edges = [e for e in v1.out_edges()]
-                for e in out_edges:
-                    gm.remove_edge_(e)
+        self.origin_interaction = origin_interaction
 
-            if vertices_ids[-1] > 0:
-                v2 = gm.g.vertex(vertices_ids[-1])
+        if not self.origin_interaction:
+            if len(vertices_ids) > 1:
+                if vertices_ids[0] > 0:
+                    v1 = gm.g.vertex(vertices_ids[0])
+                    out_edges = [e for e in v1.out_edges()]
+                    for e in out_edges:
+                        gm.remove_edge_(e)
 
-                in_edges = [e for e in v2.in_edges()]
-                for e in in_edges:
-                    gm.remove_edge_(e)
+                if vertices_ids[-1] > 0:
+                    v2 = gm.g.vertex(vertices_ids[-1])
 
-            if len(vertices_ids) > 2:
-                for v in vertices_ids[1:-1]:
-                    if v > 0:
-                        gm.remove_vertex(v)
-                        # v = gm.g.vertex(v)
-                        # for e in v.in_edges():
-                        #     gm.remove_edge_(e)
+                    in_edges = [e for e in v2.in_edges()]
+                    for e in in_edges:
+                        gm.remove_edge_(e)
 
-        self.chunk_reconnect_(gm)
+                if len(vertices_ids) > 2:
+                    for v in vertices_ids[1:-1]:
+                        if v > 0:
+                            gm.remove_vertex(v)
+                            # v = gm.g.vertex(v)
+                            # for e in v.in_edges():
+                            #     gm.remove_edge_(e)
+
+            self.chunk_reconnect_(gm)
 
     def __str__(self):
-        s = "CHUNK --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
+        s = "CHUNK --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+" "+str(self.P)+"\n"
         return s
 
     def __len__(self):
@@ -248,7 +252,7 @@ class Chunk:
             i = 1
             for f in range(self.end_frame(gm)+1, ch2.start_frame(gm)):
                 r = Region(frame=f)
-                r.is_virtual = True
+                r.is_origin_interaction_ = True
                 c = ch1end_region.centroid() + np.array(c_diff_part * i)
                 r.centroid_ = c.copy()
 
@@ -366,7 +370,16 @@ class Chunk:
             yield gm.region_id(id_)
 
     def get_region(self, gm, i):
-        return gm.region_id[self.nodes_[i]]
+        return gm.region(self.nodes_[i])
+
+    def get_region_in_frame(self, gm, frame):
+        sf = self.start_frame(gm)
+        try:
+            return self.get_region(gm, frame-sf)
+        except Exception as e:
+            import warnings
+            warnings.warn(e.message)
+            return None
 
     def r_gen(self, gm, rm):
         for rid in self.rid_gen(gm):
@@ -378,6 +391,12 @@ class Chunk:
             return self.nodes_[t]
         else:
             return None
+
+    def is_origin_interaction(self):
+        try:
+            return self.origin_interaction
+        except:
+            return False
 
     def r_id_in_t(self, t, gm):
         return gm.region_id(self.v_id_in_t(t, gm))
@@ -408,6 +427,15 @@ class Chunk:
             return "part-of-ID"
         else:
             return "undefined"
+
+    def is_ghost(self):
+        return False
+
+    def is_tracklet(self):
+        return True
+
+    def is_track(self):
+        return False
 
     def num_outcoming_edges(self, gm):
         return self.end_vertex(gm).out_degree()
@@ -481,3 +509,9 @@ class Chunk:
         tracks, confidence, costs = detector.track(detections)
         return tracks, confidence
 
+    def is_id_decided(self):
+        return len(self.P) == 1
+
+    def get_random_region(self, gm):
+        r_frame = randint(self.start_frame(gm), self.end_frame(gm))
+        return self.get_region_in_frame(gm, r_frame)

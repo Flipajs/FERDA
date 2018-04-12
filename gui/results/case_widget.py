@@ -246,7 +246,7 @@ class CaseWidget(QtGui.QWidget):
 
         virtual = False
         try:
-            if r.is_virtual:
+            if r.is_origin_interaction():
                 virtual = True
         except:
             pass

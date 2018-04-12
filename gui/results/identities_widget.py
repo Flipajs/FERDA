@@ -63,7 +63,7 @@ class AnimalVisu(QtGui.QWidget):
         self.hbox.addWidget(self.img1)
 
         bb = rotate_img(bb, region.theta_)
-        bb = centered_crop(bb, 6*region.b_, 3*region.a_)
+        bb = centered_crop(bb, 6*region.ellipse_minor_axis_length(), 3*region.ellipse_major_axis_length())
 
         from utils.img import img_saturation
         bb = img_saturation(bb, saturation_coef=2.0, intensity_coef=1.2)

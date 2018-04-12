@@ -78,7 +78,7 @@ def area_np(p):
 def get_x(r, AVG_AREA, AVG_MARGIN):
     x = []
     x.append(r.area() / float(AVG_AREA))
-    x.append(r.a_ / r.b_)
+    x.append(r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())
 
     c1 = len(r.contour())
     roi_ = r.roi()
@@ -237,7 +237,7 @@ if __name__ == '__main__':
             if r not in used_ids:
                 used_ids[r] = True
                 areas.append(r.area())
-                major_axes.append(r.a_ * 2)
+                major_axes.append(r.ellipse_major_axis_length() * 2)
                 margins.append(r.margin_)
 
     areas = np.array(areas)
@@ -316,7 +316,7 @@ if __name__ == '__main__':
     #     for r in f_regions[f]:
     #         if classes[i]:
     #             areas.append(r.area())
-    #             major_axes.append(r.a_ * 2)
+    #             major_axes.append(r.ellipse_major_axis_length() * 2)
     #             margins.append(r.margin_)
     #         i += 1
     #
@@ -355,20 +355,20 @@ if __name__ == '__main__':
     #
     #         cont = m.contour()
     #
-    #         prob = clf.predict_proba([x])
-    #         r_ = int(255*prob[0][0])
-    #         g_ = int(255*prob[0][1])
+    #         prob_prototype_represantion_being_same_id_set = clf.predict_proba([x])
+    #         r_ = int(255*prob_prototype_represantion_being_same_id_set[0][0])
+    #         g_ = int(255*prob_prototype_represantion_being_same_id_set[0][1])
     #
     #         a_ = antlikeness.get_prob(m)
     #
-    #         if prob[0][1] < 0.1 or a_[1] < 0.2:
+    #         if prob_prototype_represantion_being_same_id_set[0][1] < 0.1 or a_[1] < 0.2:
     #             continue
     #
     #         vis = draw_points_crop(im.copy(), cont, color=(0, g_, r_, 1), square=True)
     #         # im2 = draw_points(im2, cont, color=(0, g_, r_, 1))
     #
     #         vis = np.asarray(resize(vis, (70, 70)) * 255, dtype=np.uint8)
-    #         cv2.putText(vis, str(f)+' '+str(prob[0][1])[0:5], (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 100), 1, cv2.cv.CV_AA)
+    #         cv2.putText(vis, str(f)+' '+str(prob_prototype_represantion_being_same_id_set[0][1])[0:5], (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 100), 1, cv2.cv.CV_AA)
     #
     #         iml = get_image_label(vis)
     #         dial.img_grid.add_item(iml)

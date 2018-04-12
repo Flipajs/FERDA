@@ -24,7 +24,6 @@ if args.project is not None:
     project.load(args.project)
     # for t in project.chm.chunk_gen():
     #     print "Cardinality: {}, t_id: {}".format(t.get_cardinality(project.gm), t.id())
-
     # from tqdm import tqdm
     # thetas = []
     # for t in tqdm(project.chm.chunk_gen(), total=len(project.chm)):

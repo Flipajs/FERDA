@@ -23,18 +23,18 @@ def process_tracklet(t, p, cnn):
             i += 1
             continue
 
-        if not r.is_virtual:
+        if not r.is_origin_interaction():
             import math
             from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot, get_safe_selection
             relative_border = 3.0
 
             bb, offset = get_bounding_box(r, p, relative_border)
-            p_ = np.array([r.a_ * math.sin(-r.theta_), r.a_ * math.cos(-r.theta_)])
+            p_ = np.array([r.ellipse_major_axis_length() * math.sin(-r.theta_), r.ellipse_major_axis_length() * math.cos(-r.theta_)])
             endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
             endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
 
             bb = rotate_img(bb, r.theta_)
-            bb = centered_crop(bb, 8 * r.b_, 4 * r.a_)
+            bb = centered_crop(bb, 8 * r.ellipse_minor_axis_length(), 4 * r.ellipse_major_axis_length())
 
 
             bb = cv2.resize(bb, (0, 0), fx=2.5, fy=4)

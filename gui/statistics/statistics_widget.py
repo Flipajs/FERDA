@@ -318,8 +318,8 @@ class StatisticsWidget(QtGui.QWidget):
             d['area'].append(r.area())
 
         if self.include_axes.isChecked():
-            d['major_axis'].append(r.a_)
-            d['minor_axis'].append(r.b_)
+            d['major_axis'].append(r.ellipse_major_axis_length())
+            d['minor_axis'].append(r.ellipse_minor_axis_length())
 
         if self.include_region_points.isChecked():
             pts = r.pts()

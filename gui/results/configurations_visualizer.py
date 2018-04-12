@@ -164,7 +164,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             r.pts_ = data['pts']
             r.centroid_ = data['centroid']
             r.frame_ = data['frame']
-            r.is_virtual = True
+            r.is_origin_interaction_ = True
             #TODO: get rid of this hack... also in antlikness test in solver.py
             # flag for virtual region
             r.min_intensity_ = -2

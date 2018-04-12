@@ -20,6 +20,7 @@ import cv2
 import time
 from gui.qt_flow_layout import FlowLayout
 from tqdm import tqdm
+from pyqtgraph import makeQImage
 
 MARKER_SIZE = 15
 
@@ -416,8 +417,8 @@ class ResultsWidget(QtGui.QWidget):
         self.show_id_bar.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_id_bar)
 
-        self.show_tracklet_class = QtGui.QCheckBox('t-class')
-        self.show_tracklet_class.setToolTip('Show region classification.')
+        self.show_tracklet_class = QtGui.QCheckBox('show t-cardinality')
+        self.show_tracklet_class.setToolTip('Show region cardinality classification.')
         self.show_tracklet_class.setChecked(False)
         self.show_tracklet_class.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_tracklet_class)
@@ -619,7 +620,11 @@ class ResultsWidget(QtGui.QWidget):
         try:
             id_ = int(self.highlight_tracklet_input.text())
             tracklet = self.project.chm[id_]
-        except:
+        except Exception as e:
+            print e
+            return
+
+        if tracklet is None:
             return
 
         frame = tracklet.start_frame(self.project.gm)
@@ -652,58 +657,9 @@ class ResultsWidget(QtGui.QWidget):
         self.video_player.setFocus()
 
     def _evaluate_gt(self):
-        # from utils.gt.evaluator import Evaluator
-        # if self._gt is not None:
-        #     ev = Evaluator(None, self._gt)
-        #     ev.evaluate_FERDA(self.project, step=20)
-        #
-        # return
-        # my_data = {}
-        #
-        # # TODO: clearmetrics bug workaround...
-        # max_frame = 0
-        # for frame in self._gt:
-        #     # if frame > 4000:
-        #     #     continue
-        #
-        #     my_data[frame] = np.array(([None] * len(self.project.animals)))
-        #     for ch in self.project.chm.chunks_in_frame(frame):
-        #         rch = RegionChunk(ch, self.project.gm, self.project.rm)
-        #
-        #         if ch.is_only_one_id_assigned(len(self.project.animals)):
-        #             id_ = list(ch.P)[0]
-        #             my_data[frame][id_] = rch.centroid_in_t(frame)
-        #
-        #     max_frame = max(max_frame, frame)
-        #
-        # for f in xrange(max_frame+100):
-        #     my_data.setdefault(f, np.array([None] * len(self.project.animals)))
-
-        # from utils.clearmetrics import _clearmetrics
-        from utils.gt.evaluator import draw_id_t_img, compare_trackers
+        from utils.gt.evaluator import compare_trackers
         compare_trackers(self.project, skip_idtracker=True, gt_ferda_perm=self._gt.get_permutation_reversed(),
                          gt=self._gt, draw=self.eval_gt_draw_ch.isChecked())
-        # draw_id_t_img(p, [match, match2], [perm, perm2], name=name, row_h=50, gt_h=10, gt_border=2, bg=[200, 200, 200],
-        #               impath=impath)
-        # threshold = 10
-
-        # gt_ = self.__prepare_gt()
-
-        # clear = _clearmetrics(gt_, my_data, threshold)
-        # clear.match_sequence()
-        # evaluation = [clear.get_mota(),
-        #               clear.get_motp(),
-        #               clear.get_fn_count(),
-        #               clear.get_fp_count(),
-        #               clear.get_mismatches_count(),
-        #               clear.get_object_count(),
-        #               clear.get_matches_count()]
-        #
-        # print ("MOTA: %.3f\nMOTP: %.3f\n#FN: %d\n#FP:%d\n#mismatches: %d\n#objects: %d\n#matches: %d") % (
-        #     tuple(evaluation)
-        # )
-
-        # return evaluation
 
     def _evolve_gt_id(self):
         from utils.gt.evaluator import Evaluator
@@ -816,6 +772,32 @@ class ResultsWidget(QtGui.QWidget):
         return pts, roi
 
     def draw_region(self, r, tracklet, use_ch_color=None, alpha=120, highlight_contour=False, force_color=None):
+        if r.is_origin_interaction():
+            y, x = r.centroid()
+            # TODO:
+            a = 50
+            b = 17
+
+            item = QtGui.QGraphicsEllipseItem(-a/2, -b/2, a, b)
+            brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+
+            opacity = 0.5
+            if len(tracklet.P):
+                id_ = list(tracklet.P)[0]
+                c_ = self.project.animals[id_].color_
+                c_ = QtGui.QColor(c_[2], c_[1], c_[0], alpha)
+            else:
+                c_ = QtGui.QColor(use_ch_color.red(), use_ch_color.green(), use_ch_color.blue())
+                opacity = 1.0
+
+            brush.setColor(c_)
+            item.setBrush(brush)
+            item.setOpacity(opacity)
+            item.setZValue(0.65)
+            item.rotate(np.rad2deg(r.theta_))
+            item.setPos(x, y)
+            return item
+
         # hnus... prepsat
         from utils.img import get_cropped_pts
 
@@ -867,10 +849,8 @@ class ResultsWidget(QtGui.QWidget):
         else:
             c = force_color
 
-        if r.is_virtual:
+        if r.is_origin_interaction():
             step = 1
-
-        from pyqtgraph import makeQImage
 
         if self.show_tracklet_class.isChecked():
             step = 1
@@ -879,12 +859,18 @@ class ResultsWidget(QtGui.QWidget):
 
         rgba = np.zeros((roi.width(), roi.height(), 4), dtype=np.uint8)
         # 2 1 0 BGR vs RGB...
-        rgba[pts_[::step, 1], pts_[::step, 0], :] = c[2], c[1], c[0], c[3]
+        # this if might help a little bit with performance...
+        if step > 1:
+            rgba[pts_[::step, 1], pts_[::step, 0], :] = c[2], c[1], c[0], c[3]
+        else:
+            rgba[pts_[:, 1], pts_[:, 0], :] = c[2], c[1], c[0], c[3]
+
+        # TODO: do other way if possible. This is the only place where pyqtgraph is needed.
         qim_ = makeQImage(rgba)
 
         pixmap = QtGui.QPixmap.fromImage(qim_)
 
-        item = ClickableQGraphicsPixmapItem(pixmap, tracklet.id(), self._gt_marker_clicked)
+        item = ClickableQGraphicsPixmapItem(pixmap, tracklet.id(), self._highlight_tracklet)
         item.setPos(offset[1], offset[0])
         item.setZValue(0.6)
 
@@ -1093,7 +1079,8 @@ class ResultsWidget(QtGui.QWidget):
 
         it_x += stripe_w + 1
 
-        idset = set(range(len(self.project.animals)))
+        num_animals = len(self.project.animals)
+        idset = set(range(num_animals))
         for ch in self.project.chm.chunks_in_frame(frame):
             if len(ch.P) == 1:
                 id_ = list(ch.P)[0]
@@ -1105,6 +1092,9 @@ class ResultsWidget(QtGui.QWidget):
 
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
             r = rch.region_in_t(frame)
+
+            if r is None:
+                continue
 
             cenY, cenX = r.centroid()
 
@@ -1158,7 +1148,10 @@ class ResultsWidget(QtGui.QWidget):
 
 
     def update_visualisations(self):
-        self.draw_id_profiles()
+        try:
+            self.draw_id_profiles()
+        except:
+            pass
 
         self._update_tracklet_info(from_update_visu=True)
 
@@ -1175,57 +1168,70 @@ class ResultsWidget(QtGui.QWidget):
         animal_ids2centroids = {}
 
         for ch in self.project.chm.chunks_in_frame(frame):
-            rch = RegionChunk(ch, self.project.gm, self.project.rm)
-            r = rch.region_in_t(frame)
+            # try:
+                rch = RegionChunk(ch, self.project.gm, self.project.rm)
+                r = rch.region_in_t(frame)
 
-            # print r.id_
-            # if r.id_ > 22612:
-            #     print r.id_
+                # print r.id_
+                # if r.id_ > 22612:
+                #     print r.id_
 
-            if r is None:
-                print ch
+                if r is None:
+                    print ch
+                    continue
 
-            centroid = r.centroid().copy()
+                centroid = r.centroid().copy()
 
-            if self.show_id_bar.isChecked() and len(ch.N) < len(self.project.animals)-1:
+                if self.show_id_bar.isChecked() and len(ch.N) < len(self.project.animals)-1:
+                    try:
+                        item = self.show_pn_ids_visualisation(ch, frame)
+
+                        self.video_player.visualise_temp(item, category='id_bar')
+                    except AttributeError:
+                        pass
+
+                if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
+                    alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
+
+                    c_ = ch.color
+                    if c_ is None:
+                        import random
+                        c = QtGui.QColor.fromRgb(random.randint(0, 255),
+                                                 random.randint(0, 255),
+                                                 random.randint(0, 255))
+                        ch.color = c
+                        c_ = ch.color
+
+                    item = self.draw_region(r, ch, use_ch_color=c_, alpha=alpha)
+
+                    self.video_player.visualise_temp(item, category='region')
+
+                # # TODO: fix for option when only P set is displayed using circles
                 try:
-                    item = self.show_pn_ids_visualisation(ch, frame)
-
-                    self.video_player.visualise_temp(item, category='id_bar')
-                except AttributeError:
+                    if len(ch.P) == 1:
+                        id_ = list(ch.P)[0]
+                        animal_ids2centroids.setdefault(id_, [])
+                        animal_ids2centroids[id_].append((centroid, ch.is_only_one_id_assigned(len(self.project.animals)), ch))
+                except:
                     pass
 
-            if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
-                alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
+                if ch.id() == self.active_tracklet_id: # in self._highlight_regions or ch in self._highlight_tracklets:
+                    item = self.draw_region(r, ch, highlight_contour=True, force_color=self.highlight_color)
+                    self.video_player.visualise_temp(item, category='region_highlight')
 
-                c_ = ch.color
-                item = self.draw_region(r, ch, use_ch_color=c_, alpha=alpha)
+            # except:
+            #     pass
 
-                self.video_player.visualise_temp(item, category='region')
+                # from scripts.regions_stats import fix_head
+                # fix_head(self.project, r, rfc)
 
-            # # TODO: fix for option when only P set is displayed using circles
-            try:
-                if len(ch.P) == 1:
-                    id_ = list(ch.P)[0]
-                    animal_ids2centroids.setdefault(id_, [])
-                    animal_ids2centroids[id_].append((centroid, ch.is_only_one_id_assigned(len(self.project.animals)), ch))
-            except:
-                pass
-
-            if ch.id() == self.active_tracklet_id: # in self._highlight_regions or ch in self._highlight_tracklets:
-                item = self.draw_region(r, ch, highlight_contour=True, force_color=self.highlight_color)
-                self.video_player.visualise_temp(item, category='region_highlight')
-
-            # from scripts.regions_stats import fix_head
-            # fix_head(self.project, r, rfc)
-
-            # head, _ = get_region_endpoints(r)
-            # head_item = markers.CenterMarker(head[1], head[0], 5, QtGui.QColor(0, 0, 0), ch.id(),
-            #                                  self._gt_marker_clicked)
-            #
-            # head_item.setZValue(0.95)
-            #
-            # self.video_player.visualise_temp(head_item, category='head')
+                # head, _ = get_region_endpoints(r)
+                # head_item = markers.CenterMarker(head[1], head[0], 5, QtGui.QColor(0, 0, 0), ch.id(),
+                #                                  self._gt_marker_clicked)
+                #
+                # head_item.setZValue(0.95)
+                #
+                # self.video_player.visualise_temp(head_item, category='head')
 
         if S_.visualization.history_depth > 0:
             self.draw_history()
@@ -1315,6 +1321,10 @@ class ResultsWidget(QtGui.QWidget):
 
         c = self.get_tracklet_class_color(tracklet)
 
+        id_ = list(tracklet.P)
+        virtual_id = False
+        if len(tracklet.P) and id_ >= len(self.project.animals):
+            virtual_id = True
         item = pn_ids_visualisation.get_pixmap_item(ids_, tracklet.P, tracklet.N,
                                                      tracklet_id=tracklet.id(),
                                                      callback=self.pn_pixmap_clicked,
@@ -1322,7 +1332,8 @@ class ResultsWidget(QtGui.QWidget):
                                                      probs=None,
                                                      # probs=tracklet.animal_id_['probabilities'],
                                                      params=params, tracklet_len=tlen, tracklet_ptr=ptr,
-                                                     tracklet_class_color=c
+                                                     tracklet_class_color=c,
+                                                     virtual_id=virtual_id
                                                      )
 
         reg = rch.region_in_t(frame)
@@ -1333,7 +1344,7 @@ class ResultsWidget(QtGui.QWidget):
         return item
 
     def pn_pixmap_clicked(self, id_):
-        self._gt_marker_clicked(id_)
+        self._highlight_tracklet(id_)
 
     def __compute_radius(self, r):
         from scipy.spatial.distance import cdist
@@ -1371,29 +1382,33 @@ class ResultsWidget(QtGui.QWidget):
 
         s += "\n tracklet class: "+ch.segmentation_class_str()
 
-        avg_area = 0
-        for r_ in rch.regions_gen():
-            avg_area += r_.area()
+        if hasattr(ch, 'id_decision_info'):
+            s += "\n idDecision: {}".format(ch.id_decision_info)
 
-        avg_area /= rch.chunk_.length()
+        # avg_area = 0
+        # for r_ in rch.regions_gen():
+        #     avg_area += r_.area()
+        #
+        # avg_area /= rch.chunk_.length()
 
-        s += "\n avg area: " + str(avg_area)
+        # s += "\n avg area: " + str(avg_area)
+        # s += "\n avg area: " + str(avg_area)
 
         if r:
             s += "\n\nregion (id: "+str(r.id())+")"
             s += "\n " + textwrap.fill(str(r), 40)
             s += " radius: {:.3}\n".format(self.__compute_radius(r))
 
-        if self.tracklet_measurements is not None:
-            s += "\nTracklet ID probs: \n"
-            try:
-                vals = np.mean(self.tracklet_measurements(ch.id()))
-            except TypeError:
-                vals = self.tracklet_measurements(ch.id())
-
-            if vals is not None:
-                for i, a in enumerate(vals.flatten()):
-                    s += "\t{}: {:.2%}\n".format(i, a)
+        # if self.tracklet_measurements is not None:
+        #     s += "\nTracklet ID probs: \n"
+        #     try:
+        #         vals = np.mean(self.tracklet_measurements(ch.id()))
+        #     except TypeError:
+        #         vals = self.tracklet_measurements(ch.id())
+        #
+        #     if vals is not None:
+        #         for i, a in enumerate(vals.flatten()):
+        #             s += "\t{}: {:.2%}\n".format(i, a)
 
         self.info_l.setText(s)
 
@@ -1407,13 +1422,18 @@ class ResultsWidget(QtGui.QWidget):
             self.video_player.redraw_visualisations()
 
     def _gt_marker_clicked(self, id_):
-        try:
-            frame = self.video_player.current_frame()
-            y, x = self._gt_markers[id_].centerPos().y(), self._gt_markers[id_].centerPos().x()
-            self._gt.set_position(frame, id_, y, x)
-        except:
-            pass
+        # try:
+        frame = self.video_player.current_frame()
+        y, x = self._gt_markers[id_].centerPos().y(), self._gt_markers[id_].centerPos().x()
+        self._gt.set_position(frame, id_, y, x)
+        # except:
+        #     pass
 
+        # self._highlight_tracklet(id_)
+
+        self.video_player.redraw_visualisations()
+
+    def _highlight_tracklet(self, id_):
         try:
             self.decide_tracklet_button.setDisabled(False)
             self._set_active_tracklet_id(id_)
@@ -1422,6 +1442,7 @@ class ResultsWidget(QtGui.QWidget):
             self._update_tracklet_info()
         except:
             pass
+
 
     def add_data(self, solver, just_around_frame=-1, margin=1000):
         self.solver = solver
@@ -2148,6 +2169,7 @@ class ResultsWidget(QtGui.QWidget):
                 singles_group = filter(lambda x: x.is_single(), group)
                 df = frame
 
+                # if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= self.min_tracklet_len:
                 if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 1:
                     groups.append(singles_group)
 
@@ -2216,10 +2238,44 @@ class ResultsWidget(QtGui.QWidget):
 
         num_single = 0
 
+        pivot = groups[ids[0]]
+
+        print pivot
+
+
         g1 = groups[0]
         for g2 in groups[1:]:
             if len(set(g1).intersection(g2)) == len(self.project.animals) - 1:
                 num_single += 1
+
+                print "single ID:"
+                t1 = list(set(g1).difference(set(g1).intersection(g2)))[0]
+                t2 = list(set(g2).difference(set(g1).intersection(g2)))[0]
+                print t1.id(), t1.length()
+                print t2.id(), t2.length()
+
+
+                # was added to Track
+                if t1.id() not in self.project.chm.chunks_:
+                    for t in self.project.chm.chunks_in_frame(t1.end_frame(self.project.gm)):
+                        if t.is_track():
+                            if t.is_inside(t1):
+                                t1 = t
+                                break
+
+                # was added to Track, shouldn'd happen
+                if t2.id() not in self.project.chm.chunks_:
+                    print "T2 happened....."
+                    for t in self.project.chm.chunks_in_frame(t2.start_frame(self.project.gm)):
+                        if t.is_track():
+                            if t.is_inside(t1):
+                                t2 = t
+                                break
+
+                from core.graph.track import Track
+                tt = Track([t1, t2], self.project.gm)
+                self.project.chm.new_track(tt, self.project.gm)
+                print "T", tt.id()
 
             g1 = g2
 

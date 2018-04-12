@@ -19,11 +19,11 @@ def match_cms_region(cms, r, offset, thresh=2.0):
     cont = r.contour()
 
     # centroid test - colormark can be only near endpoints
-    p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
+    p_ = np.array([r.ellipse_major_axis_length()*math.sin(-r.theta_), r.ellipse_major_axis_length()*math.cos(-r.theta_)])
     endpoint1 = np.ceil(r.centroid() + p_)
     endpoint2 = np.ceil(r.centroid() - p_)
 
-    thresh1 = r.a_
+    thresh1 = r.ellipse_major_axis_length()
     thresh2 = (1/6.0) * np.pi
 
     for cm in cms:

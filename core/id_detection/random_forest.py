@@ -32,7 +32,7 @@ def get_training_data(p, get_features, first_n=-1, offset=0):
                 break
 
             r = r_ch.region_in_t(t)
-            if not r.is_virtual:
+            if not r.is_origin_interaction():
                 f_ = get_features(r, p)
                 X.append(f_)
                 y.append(id_)
@@ -64,19 +64,19 @@ def get_features1(r, p):
     f.append(r.area())
 
     # major axis
-    f.append(r.a_)
+    f.append(r.ellipse_major_axis_length())
 
     # minor axis
-    f.append(r.b_)
+    f.append(r.ellipse_minor_axis_length())
 
     # axis ratio
-    f.append(r.a_ / r.b_)
+    f.append(r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())
 
     # axis ratio sqrt
-    f.append((r.a_ / r.b_)**0.5)
+    f.append((r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())**0.5)
 
     # axis ratio to power of 2
-    f.append((r.a_ / r.b_)**2.0)
+    f.append((r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())**2.0)
 
     img = p.img_manager.get_whole_img(r.frame_)
     crop, offset = get_img_around_pts(img, r.pts())

@@ -1,25 +1,24 @@
 from __future__ import print_function
-import matplotlib.pyplot as plt
-import h5py
-from imageio import imread
-import numpy as np
-from matplotlib.patches import Ellipse, Arc
-import os
-from os.path import join
-import os
-import tqdm
+
 import glob
-import scripts.CNN.train_interactions as train_interactions
-import pandas as pd
-from subprocess import call
-import glob
-import shlex
-import fire
-import skimage.transform
-from core.region.transformableregion import TransformableRegion
 import itertools
+import os
+import shlex
 import warnings
+from os.path import join
+from subprocess import call
+
+import fire
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import tqdm
 import yaml
+from imageio import imread
+from matplotlib.patches import Ellipse
+
+import scripts.CNN.trash.train_interactions as train_interactions
 
 
 def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, title=None, scale=1.5):

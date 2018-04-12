@@ -136,6 +136,10 @@ class LearningWidget(QtGui.QWidget):
         self.reset_learning_button.clicked.connect(self.reset_learning)
         self.top_stripe_layout.addWidget(self.reset_learning_button)
 
+        self.prepare_unassigned_cs_b = QtGui.QPushButton('prepare unassigned CS')
+        self.prepare_unassigned_cs_b.clicked.connect(self.prepare_unassigned_cs)
+        self.top_stripe_layout.addWidget(self.prepare_unassigned_cs_b)
+
         self.label_tracklet_min_length = QtGui.QLabel('tracklet min len: ')
         self.top_stripe_layout.addWidget(self.label_tracklet_min_length)
 
@@ -346,6 +350,11 @@ class LearningWidget(QtGui.QWidget):
         self.enable_all()
         self.update_callback()
 
+
+    def prepare_unassigned_cs(self):
+        self.lp.prepare_unassigned_cs()
+        self.update_callback()
+
     def show_tracklet(self):
         indexes = self.tracklets_table.selectionModel().selectedRows()
         indexes = sorted(indexes)
@@ -438,10 +447,11 @@ class LearningWidget(QtGui.QWidget):
             #     header_labels += (str(i), )
 
             it = QCustomTableWidgetItem
+            from tqdm import tqdm
 
             self.tracklets_table.setHorizontalHeaderLabels(header_labels)
             if len(self.lp.tracklet_certainty):
-                for i, t_id in enumerate(self.lp.undecided_tracklets):
+                for i, t_id in tqdm(enumerate(self.lp.undecided_tracklets)):
                     if t_id not in self.lp.tracklet_certainty:
                         warnings.warn("tracklet id not in lp.tracklet_certainty")
                         continue
@@ -677,24 +687,7 @@ class LearningWidget(QtGui.QWidget):
         self.w = win
 
     def update_N_sets(self):
-        affecting = []
-        for t in self.project.chm.chunk_gen():
-            if len(t.P):
-                affecting.append((t, set(t.P)))
-
-        self.lp._reset_chunk_PN_sets()
-        # todo share callback
-
-        all_ids = set(range(len(self.project.animals)))
-        self.lp.force=True
-        for t, id_set in affecting:
-            t.P = id_set
-            t.N = all_ids.difference(id_set)
-            # self.lp.assign_identity(id_, t)
-
-        for tracklet, id_set in affecting:
-            for t in self.lp._get_affected_undecided_tracklets(tracklet):
-                self.lp._update_N(id_set, t)
+        self.project.chm.update_N_sets(self.project)
 
         self.lp.force=False
 

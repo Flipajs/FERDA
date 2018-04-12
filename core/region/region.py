@@ -15,7 +15,7 @@ class Region(object):
 
     """
 
-    def __init__(self, data=None, frame=-1, id=-1):
+    def __init__(self, data=None, frame=-1, id=-1, is_origin_interaction=False):
         self.id_ = id
         self.pts_ = None
         self.pts_rle_ = None
@@ -34,6 +34,7 @@ class Region(object):
         self.major_axis_ = -1
         self.minor_axis_ = -1
 
+        # TODO: a_, b_ should be deprecated and reduced by major/minor_axis
         self.a_ = -1
         self.b_ = -1
 
@@ -51,14 +52,17 @@ class Region(object):
         self.frame_ = frame
         self.id_ = id
         self.contour_ = None
-        self.is_virtual = False
+
+        # TODO: refactor + method...
+        # TODO: deprecated
+        self.is_origin_interaction_ = is_origin_interaction
 
     def __str__(self):
         s = repr(self)+" frame: "+str(self.frame_)+"\n" \
                        " area: "+str(self.area())+" \n" \
                        " centroid: ["+str(round(self.centroid_[0], 2))+", "+str(round(self.centroid_[1], 2))+"]\n" \
-                       " major axis: {:.3}".format(self.a_) + "\n" \
-                       " minor axis: {:.3}".format(self.b_)+"\n" \
+                       " major axis: {:.3}".format(self.major_axis_) + "\n" \
+                       " minor axis: {:.3}".format(self.minor_axis_) + "\n" \
                        " margin: " + str(self.margin_)
 
         return s
@@ -68,6 +72,12 @@ class Region(object):
 
     def __eq__(self, other):
         return hash(self) == hash(other)
+
+    def is_origin_interaction(self):
+        try:
+            return self.is_origin_interaction_
+        except AttributeError:
+            return False
 
     def id(self):
         return self.id_
@@ -137,8 +147,8 @@ class Region(object):
         b = self.minor_axis_
 
         axis_ratio = a / float(b)
-        self.b_ = math.sqrt(self.area_ / (axis_ratio * math.pi))
-        self.a_ = self.b_ * axis_ratio
+        self.minor_axis_ = math.sqrt(self.area_ / (axis_ratio * math.pi))
+        self.major_axis_ = self.minor_axis_ * axis_ratio
         ########
 
         self.theta_ = get_orientation(self.sxx_, self.syy_, self.sxy_)
@@ -152,6 +162,22 @@ class Region(object):
             self.area_ = len(self.pts())
 
         return self.area_
+
+    def ellipse_major_axis_length(self):
+        """
+
+        Returns: major axis length [px] for an ellipse approximation of the region
+
+        """
+        return self.major_axis_
+
+    def ellipse_minor_axis_length(self):
+        """
+
+        Returns: minor axis length [px] for an ellipse approximation of the region
+
+        """
+        return self.minor_axis_
 
     def label(self):
         return self.label_
@@ -186,6 +212,7 @@ class Region(object):
         return np.copy(self.pts())
 
     def centroid(self):
+        "in order y, x"
         return np.copy(self.centroid_)
 
     def set_centroid(self, centroid):
@@ -261,7 +288,7 @@ class Region(object):
         return not self.roi().is_intersecting_expanded(r2.roi(), max_dist)
 
     def eccentricity(self):
-        return 1-(self.b_ / self.a_)**0.5
+        return 1- (self.minor_axis_ / self.major_axis_) ** 0.5
 
 
     def get_phi(self, r2):
@@ -294,19 +321,26 @@ class Region(object):
     def is_inside(self, pt, tolerance=0):
         tolerance = int(tolerance)
         from utils.drawing.points import draw_points_crop_binary
-        if self.roi().is_inside(pt, tolerance=tolerance):
-            pt_ = np.asarray(np.round(pt - self.roi().top_left_corner()), dtype=np.uint)
-            # TODO + tolerance margin, and fix offset
-            im = draw_points_crop_binary(self.pts())
 
-            y1 = int(max(0, pt_[0] - tolerance))
-            y2 = int(min(pt_[0] + tolerance + 1, im.shape[0]))
-            x1 = int(max(0, pt_[1] - tolerance))
-            x2 = int(min(pt_[1] + tolerance + 1, im.shape[1]))
-            for y in range(y1, y2):
-                for x in range(x1, x2):
-                    if im[y, x]:
-                        return True
+        try:
+            if self.roi().is_inside(pt, tolerance=tolerance):
+                pt_ = np.asarray(np.round(pt - self.roi().top_left_corner()), dtype=np.uint)
+                # TODO + tolerance margin, and fix offset
+                im = draw_points_crop_binary(self.pts())
+
+                y1 = int(max(0, pt_[0] - tolerance))
+                y2 = int(min(pt_[0] + tolerance + 1, im.shape[0]))
+                x1 = int(max(0, pt_[1] - tolerance))
+                x2 = int(min(pt_[1] + tolerance + 1, im.shape[1]))
+                for y in range(y1, y2):
+                    for x in range(x1, x2):
+                        if im[y, x]:
+                            return True
+        except:
+            import warnings
+            warnings.warn("region id: {}".format(self.id_))
+
+            pass
 
         return False
 
@@ -400,7 +434,7 @@ def encode_RLE(pts, return_area=True):
 def get_region_endpoints(r):
     # returns head, tail
 
-    p_ = np.array([r.a_ * math.sin(-r.theta_), r.a_ * math.cos(-r.theta_)])
+    p_ = np.array([r.major_axis_ * math.sin(-r.theta_), r.major_axis_ * math.cos(-r.theta_)])
     endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
     endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
 

@@ -134,6 +134,9 @@ class GraphManager:
     def get_tracklet(self, vertex):
         ch, _ = self.is_chunk(vertex)
 
+        # if ch is not None and ch.id() in self.project.chm.track_refs:
+        #     ch = self.project.chm.track_refs[ch.id()]
+
         return ch
 
     def get_chunk(self, vertex):

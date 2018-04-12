@@ -286,7 +286,7 @@ if __name__ == "__main__":
 
             for t in range(r_ch.start_frame(), r_ch.end_frame() + 1, sample_step):
                 r = r_ch[t - r_ch.start_frame()]
-                if r.is_virtual:
+                if r.is_origin_interaction():
                     continue
 
                 bb, offset = get_bounding_box(r, p, relative_border)
@@ -295,7 +295,7 @@ if __name__ == "__main__":
                 # c_ = tuple(map(int, r.centroid()-offset))[::-1]
                 # cv2.circle(bb, c_, 4, (255, 255, 255), 2)
 
-                p_ = np.array([r.a_*math.sin(-r.theta_), r.a_*math.cos(-r.theta_)])
+                p_ = np.array([r.ellipse_major_axis_length()*math.sin(-r.theta_), r.ellipse_major_axis_length()*math.cos(-r.theta_)])
                 endpoint1 = np.ceil(r.centroid() + p_) + np.array([1, 1])
                 endpoint2 = np.ceil(r.centroid() - p_) - np.array([1, 1])
 
@@ -306,7 +306,7 @@ if __name__ == "__main__":
                 # cv2.circle(bb, c_, 4, (255, 255, 0), 2)
 
                 bb = rotate_img(bb, r.theta_)
-                bb = centered_crop(bb, 8*r.b_, 4*r.a_)
+                bb = centered_crop(bb, 8*r.ellipse_minor_axis_length(), 4*r.ellipse_major_axis_length())
 
                 endpoint1_ = endpoint_rot(bb, endpoint1, -r.theta_, r.centroid())
                 endpoint2_ = endpoint_rot(bb, endpoint2, -r.theta_, r.centroid())
