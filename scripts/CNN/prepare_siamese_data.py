@@ -8,16 +8,34 @@ def get_region_image(region, vm, offset=45, add_ellipse_mask=True, mask_sigma=10
     global cache
     img = cache[region.frame()]
     # img = vm.get_frame(region.frame())
+    crop = get_region_crop(region, img, add_ellipse_mask, ellipse_dilation, mask_sigma, offset)
+
+    import imutils
+    # angle = int(region.theta_ * 57.295)
+    # crop = imutils.rotate(crop, -angle)
+
+    return crop
+
+
+def get_region_crop(region, img, add_ellipse_mask, ellipse_dilation, mask_sigma, offset):
     y, x = region.centroid()
     crop = get_safe_selection(img, y - offset, x - offset, 2 * offset, 2 * offset)
     if add_ellipse_mask:
         crop = apply_ellipse_mask(region, crop, mask_sigma, ellipse_dilation)
-
     return crop
 
+# TODO: project parameter?
+OFFSET = 45
+ELLIPSE_DILATION = 10
+MASK_SIGMA = 10
+BATCH_SIZE = 500
+APPLY_ELLIPSE = True
+
 if __name__ == '__main__':
-    NUM_EXAMPLES = 100
-    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip'
+    NUM_EXAMPLES = 5000
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip'
+    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min'
+    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/zebrafish_new'
     from core.project.project import Project
 
@@ -30,13 +48,6 @@ if __name__ == '__main__':
 
     import cv2
 
-    # TODO: project parameter?
-    OFFSET = 45
-    ELLIPSE_DILATION = 10
-    MASK_SIGMA = 10
-    BATCH_SIZE = 500
-    APPLY_ELLIPSE = True
-
     TEST_RATIO = .1
 
 
@@ -44,7 +55,7 @@ if __name__ == '__main__':
     from tqdm import tqdm
 
     vm = p.get_video_manager()
-    cache = LRUCache(maxsize=1000, missing=lambda x: vm.get_frame(frame))
+    cache = LRUCache(maxsize=5000, missing=lambda x: vm.get_frame(x))
 
     last = None
 

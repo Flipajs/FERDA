@@ -100,7 +100,7 @@ class CompleteSetMatching:
         num_undecided = 0
         for t in self.p.chm.tracklet_gen():
             # TODO: what about matching unmatched Tracks as well?
-            if not t.is_single() or t.is_id_decided():
+            if not t.is_single() or t.is_id_decided() or t.is_origin_interaction():
                 continue
 
             if t not in self.tracklets_2_tracks:
@@ -1223,6 +1223,8 @@ class CompleteSetMatching:
 
         # detector = InteractionDetector('/home/matej/prace/ferda/experiments/171222_0126_batch_36k_random/0.928571428571')
         detector_model_dir = 'data/CNN_models/180222_2253_mobilenet_two_100'
+        # TODO: or?
+        # detector_model_dir = '../../data/CNN_models/180222_2253_mobilenet_two_100'
         detector = InteractionDetector(detector_model_dir)
 
         # extract multi tracklets
@@ -1460,7 +1462,7 @@ if __name__ == '__main__':
 
     p = Project()
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/Cam1'
-    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip'
+    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
     p.load(P_WD)
     # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_new')
 

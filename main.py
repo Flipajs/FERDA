@@ -27,7 +27,9 @@ wd = None
 # if is_flipajs_pc() and False:
 if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
-    wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip'
+    wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
+    wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min'
+    wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_new'
 
 if is_matejs_pc():
