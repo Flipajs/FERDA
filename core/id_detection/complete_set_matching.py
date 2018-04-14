@@ -225,35 +225,35 @@ class CompleteSetMatching:
                 support[t_identity] = support.get(t_identity, 0) + len(t)
                 if t_identity not in tracks:
                     tracks[t_identity] = []
-
+                #
                 tracks[t_identity].append(t.id())
-
+                #
                 t_desc_w = self.get_mean_descriptor(t) * len(t)
                 if t_identity not in tracks_mean_desc:
                     tracks_mean_desc[t_identity] = t_desc_w
                 else:
                     tracks_mean_desc[t_identity] += t_desc_w
-
-                plt.scatter(t.start_frame(self.p.gm), t_identity, c=new_cmap[t_identity], edgecolor=[0.,0.,0.,.3])
-                plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm)+0.1], [t_identity, t_identity],
-                         c=new_cmap[t_identity],
-                         path_effects=[pe.Stroke(linewidth=3, foreground='k'), pe.Normal()])
+                #
+                # plt.scatter(t.start_frame(self.p.gm), t_identity, c=new_cmap[t_identity], edgecolor=[0.,0.,0.,.3])
+                # plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm)+0.1], [t_identity, t_identity],
+                #          c=new_cmap[t_identity],
+                #          path_effects=[pe.Stroke(linewidth=3, foreground='k'), pe.Normal()])
             else:
-                if t.is_noise() or len(t) < 5:
-                    continue
-                if t.is_single():
-                    c = [0, 1, 0, .3]
-                else:
-                    c = [0, 0, 1, .3]
+                # if t.is_noise() or len(t) < 5:
+                #     continue
+                # if t.is_single():
+                #     c = [0, 1, 0, .3]
+                # else:
+                #     c = [0, 0, 1, .3]
+                #
+                # y = t.id() % self.new_track_id
+                # plt.scatter(t.start_frame(self.p.gm), y, c=c, marker='s', edgecolor=[0., 0., 0., .1])
+                # plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm) + 0.1], [y, y],
+                #          c=c,
+                #          linestyle='-')
+                pass
 
-                y = t.id() % self.new_track_id
-                plt.scatter(t.start_frame(self.p.gm), y, c=c, marker='s', edgecolor=[0., 0., 0., .1])
-                plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm) + 0.1], [y, y],
-                         c=c,
-                         linestyle='-')
-
-
-        plt.grid()
+        # plt.grid()
 
         print "SUPPORT"
         for id in sorted(support.keys()):
@@ -262,16 +262,16 @@ class CompleteSetMatching:
         self.remap_ids_from_0(support)
 
         p.save()
-        qualities = np.array(qualities)
-        plt.figure()
-        plt.plot(qualities[:, 0])
-        plt.grid()
-        plt.figure()
-        plt.plot(qualities[:, 1])
-        plt.grid()
-
-        plt.figure()
-        plt.show()
+        # qualities = np.array(qualities)
+        # plt.figure()
+        # plt.plot(qualities[:, 0])
+        # plt.grid()
+        # plt.figure()
+        # plt.plot(qualities[:, 1])
+        # plt.grid()
+        #
+        # plt.figure()
+        # plt.show()
 
         # mean_ds = []
         # for id_, mean in tracks_mean_desc.iteritems():
@@ -1462,12 +1462,26 @@ if __name__ == '__main__':
 
     p = Project()
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/Cam1'
-    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
+    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
     p.load(P_WD)
     # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_new')
 
     lp = LearningProcess(p)
-    lp.reset_learning()
+    lp._reset_chunk_PN_sets()
+
+    import sys
+    from PyQt4 import QtCore, QtGui
+    app = QtGui.QApplication(sys.argv)
+
+    from scripts.regions_stats import decide_one2one
+    decide_one2one(p)
+
+    # from gui.region_classifier_tool import RegionClassifierTool
+    # cardinality_classifier = RegionClassifierTool(p)
+    # cardinality_classifier.start_hil()
+    # cardinality_classifier.load_data(compute=False)
+    # cardinality_classifier.classify_tracklets()
 
     # reset id_decision_info
     for t in p.chm.tracklet_gen():
@@ -1491,7 +1505,7 @@ if __name__ == '__main__':
 
     csm = CompleteSetMatching(p, lp, descriptors)
 
-    csm.solve_interactions()
+    # csm.solve_interactions()
     # import sys
     # sys.exit()
 

@@ -477,12 +477,12 @@ class DataGenerator(object):
         self.tr_pairs_1 = tr_pairs[:, 1]
         self.tr_y = tr_y
 
-        self.datagen_0 = ImageDataGenerator(rotation_range=360,
+        self.datagen_0 = ImageDataGenerator(# rotation_range=360,
                                             # width_shift_range=0.02,
                                             # height_shift_range=0.02
                                             ).flow(self.tr_pairs_0, self.tr_y, batch_size=batch_sz, shuffle=False)
 
-        self.datagen_1 = ImageDataGenerator(rotation_range=360,
+        self.datagen_1 = ImageDataGenerator(# rotation_range=360,
                                             # width_shift_range=0.02,
                                             # height_shift_range=0.02
                                             ).flow(self.tr_pairs_1, self.tr_y, batch_size=batch_sz, shuffle=False)

@@ -260,6 +260,8 @@ class RegionClassifierTool(QtGui.QWidget):
                 self.vertices = up.load()
                 up.load()
                 self.scaler = up.load()
+
+                print "region_cardinality_samples LOADED"
         except:
             if first_run:
                 prepare_region_cardinality_samples(self.p, num_random=num_random)
@@ -630,7 +632,6 @@ class RegionClassifierTool(QtGui.QWidget):
 
         self.p.save_semistate('tracklets_s_classified_gt')
         print "Classification DONE"
-
 
     def classify_project(self, p, data=None, train_n=30, semistate='tracklets_s_classified', gt_classify=False):
         from utils.gt.gt import GT

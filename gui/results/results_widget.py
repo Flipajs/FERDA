@@ -1395,7 +1395,7 @@ class ResultsWidget(QtGui.QWidget):
 
         if r:
             s += "\n\nregion (id: "+str(r.id())+")"
-            s += "\n " + textwrap.fill(str(r), 40)
+            s += "\n " + textwrap.fill(str(r), 35)
             s += " radius: {:.3}\n".format(self.__compute_radius(r))
 
         # if self.tracklet_measurements is not None:
@@ -1658,10 +1658,8 @@ class ResultsWidget(QtGui.QWidget):
         try:
             path = self.project.GT_file
             self._gt.load(path)
-            self._gt.set_offset(y=self.project.video_crop_model['y1'],
-                                x=self.project.video_crop_model['x1'],
-                                frames=self.project.video_start_t)
-        except:
+
+        except Exception as e:
             self._gt = None
 
     def assign_ids_from_gt(self):
