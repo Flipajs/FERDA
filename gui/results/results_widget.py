@@ -1397,6 +1397,12 @@ class ResultsWidget(QtGui.QWidget):
             s += "\n\nregion (id: "+str(r.id())+")"
             s += "\n " + textwrap.fill(str(r), 35)
             s += " radius: {:.3}\n".format(self.__compute_radius(r))
+            s += "\n"
+            s += "area/ellipse {:.2f}".format(r.area() / (4 * r.ellipse_major_axis_length() * r.ellipse_minor_axis_length()))
+            s += "\n"
+            s += "ellipse/area{:.2f}".format((4 * r.ellipse_major_axis_length() * r.ellipse_minor_axis_length())/ r.area())
+            s += "\n"
+            s += "clen/area{:.2f}".format(len(r.contour()) / float(r.area()))
 
         # if self.tracklet_measurements is not None:
         #     s += "\nTracklet ID probs: \n"
@@ -1408,6 +1414,7 @@ class ResultsWidget(QtGui.QWidget):
         #     if vals is not None:
         #         for i, a in enumerate(vals.flatten()):
         #             s += "\t{}: {:.2%}\n".format(i, a)
+
 
         self.info_l.setText(s)
 

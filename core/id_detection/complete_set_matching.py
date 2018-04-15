@@ -11,10 +11,11 @@ from utils.video_manager import get_auto_video_manager
 
 
 class CompleteSetMatching:
-    def __init__(self, project, lp, descriptors, quality_threshold=0.02, tracks={},
+    def __init__(self, project, lp, descriptors, quality_threshold=0.1, quality_threshold2=0.01, tracks={},
                  tracklets_2_tracks={}, prototypes={}):
         self.prototype_distance_threshold = np.inf # ignore
         self.QUALITY_THRESHOLD = quality_threshold
+        self.QUALITY_THRESHOLD2 = quality_threshold2
         self.p = project
         self.lp = lp
         self.get_probs = self.lp._get_tracklet_proba
@@ -187,7 +188,7 @@ class CompleteSetMatching:
             print perm, quality
 
             # 4) accept?
-            if quality[1] > self.QUALITY_THRESHOLD:
+            if quality[1] > self.QUALITY_THRESHOLD2:
                 for (unassigned_track_id, track_id) in perm:
                     print("{} -> {}".format(unassigned_track_id, track_id))
                     # print "[{} |{}| (te: {})] -> {}".format(tracklet.id(), len(tracklet), tracklet.end_frame(self.p.gm), track_id)
@@ -1462,20 +1463,22 @@ if __name__ == '__main__':
 
     p = Project()
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/Cam1'
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
-    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
+    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper-interactions/Cam1_clip_arena_fixed'
+    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper-interactions/Sowbug3-crop'
+    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper-interactions/5Zebrafish_nocover_22min'
+    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper-interactions/Camera3-5min'
     p.load(P_WD)
-    # p.load('/Users/flipajs/Documents/wd/FERDA/Camera3_new')
+    # p.load('/Use/rs/flipajs/Documents/wd/FERDA/Camera3_new')
 
     lp = LearningProcess(p)
     lp._reset_chunk_PN_sets()
 
-    import sys
-    from PyQt4 import QtCore, QtGui
-    app = QtGui.QApplication(sys.argv)
-
-    from scripts.regions_stats import decide_one2one
-    decide_one2one(p)
+    # import sys
+    # from PyQt4 import QtCore, QtGui
+    # app = QtGui.QApplication(sys.argv)
+    #
+    # from scripts.regions_stats import decide_one2one
+    # decide_one2one(p)
 
     # from gui.region_classifier_tool import RegionClassifierTool
     # cardinality_classifier = RegionClassifierTool(p)
@@ -1503,9 +1506,9 @@ if __name__ == '__main__':
     # Probably not necessary, just to make sure...
     np.random.seed(42)
 
-    csm = CompleteSetMatching(p, lp, descriptors)
+    csm = CompleteSetMatching(p, lp, descriptors, quality_threshold=0.2, quality_threshold2=0.01)
 
-    # csm.solve_interactions()
+    csm.solve_interactions()
     # import sys
     # sys.exit()
 

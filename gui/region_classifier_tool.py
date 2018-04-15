@@ -44,8 +44,6 @@ class RegionClassifierTool(QtGui.QWidget):
         self.hbox_buttons = QtGui.QHBoxLayout()
         self.vbox.addLayout(self.hbox_buttons)
 
-
-
         # self.cluster_sample_size_sb = QtGui.QSpinBox()
         # self.cluster_sample_size_sb.setMinimum(10)
         # self.cluster_sample_size_sb.setMaximum(1000000)
@@ -199,11 +197,16 @@ class RegionClassifierTool(QtGui.QWidget):
         self.hbox_check.addWidget(self.ch_margin)
 
         self.ch_c_len = QtGui.QCheckBox('contour len')
-        self.ch_c_len.setChecked(True)
+        self.ch_c_len.setChecked(False)
         self.ch_c_len.stateChanged.connect(self.redraw_grids)
         self.hbox_check.addWidget(self.ch_c_len)
 
-        self.f_ch = [self.ch_area, self.ch_a, self.ch_b, self.ch_min_i, self.ch_max_i, self.ch_margin, self.ch_c_len]
+        self.ch_ellipse_area_ratio = QtGui.QCheckBox('ellipse area ratio')
+        self.ch_ellipse_area_ratio.setChecked(True)
+        self.ch_ellipse_area_ratio.stateChanged.connect(self.redraw_grids)
+        self.hbox_check.addWidget(self.ch_ellipse_area_ratio)
+
+        self.f_ch = [self.ch_area, self.ch_a, self.ch_b, self.ch_min_i, self.ch_max_i, self.ch_margin, self.ch_c_len, self.ch_ellipse_area_ratio]
         self.redraw_ = True
 
         self.grids = {'single': self.singles, 'multi': self.multi, 'noise': self.noise, 'part': self.part}

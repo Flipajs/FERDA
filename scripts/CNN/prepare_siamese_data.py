@@ -44,7 +44,7 @@ if __name__ == '__main__':
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
     P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min'
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
+    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/zebrafish_new'
     from core.project.project import Project
 

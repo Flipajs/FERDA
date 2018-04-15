@@ -29,8 +29,8 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
     wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
     wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min'
-    wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
+    wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3_new'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_new'
 
@@ -114,6 +114,7 @@ if wd is not None:
     #         reg = project.gm.region(t[i])
     #
     #         if erosion:
+
     #             pts = reg.pts()
     #             roi = reg.roi()
     #
@@ -144,7 +145,7 @@ if wd is not None:
 
     from scripts.regions_stats import decide_one2one
     decide_one2one(project)
-
+        #
         # project.chm.add_single_vertices_chunks(project)
         # project.save()
 

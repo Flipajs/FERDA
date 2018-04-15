@@ -1,23 +1,8 @@
-# based on https://github.com/keras-team/keras/blob/master/examples/mnist_siamese.py
-
-'''Trains a Siamese MLP on pairs of digits from the MNIST dataset.
-
-It follows Hadsell-et-al.'06 [1] by computing the Euclidean distance on the
-output of the shared network and by optimizing the contrastive loss (see paper
-for mode details).
-
-# References
-
-- Dimensionality Reduction by Learning an Invariant Mapping
-    http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
-
-Gets to 97.2% test accuracy after 20 epochs.
-2 seconds per epoch on a Titan X Maxwell GPU
-'''
 from __future__ import absolute_import
 from __future__ import print_function
 import numpy as np
 
+import pickle
 import random
 from keras.datasets import mnist
 from keras.models import Model, load_model
@@ -35,10 +20,6 @@ from scripts.CNN.prepare_siamese_data import ELLIPSE_DILATION, APPLY_ELLIPSE, OF
 import cv2
 from keras.utils import CustomObjectScope
 
-def relu6(x):
-  return K.relu(x, max_value=6)
-
-
 def normalize_and_prepare_imgs(imgs):
     imgs = np.array(imgs)
     imgs = imgs.astype('float32')
@@ -52,23 +33,15 @@ if __name__ == '__main__':
         description='train siamese CNN with contrastive loss')
 
     parser.add_argument('--datadir', type=str,
-                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed',
+                        default='/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed',
                         # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop',
-                        default='/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min',
                         # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min',
+                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min',
+                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min',
                         help='path to dataset')
-    parser.add_argument('--epochs', type=int,
-                        default=10,
-                        help='number of epochs')
-    parser.add_argument('--batch_size', type=int,
-                        default=128,
-                        help='batch size')
-    parser.add_argument('--weights_name', type=str, default='best_weights',
-                        help='name used for saving intermediate results')
-    parser.add_argument('--num_negative', type=int, default=1,
-                        help='name used for saving intermediate results')
-    parser.add_argument('--continue_training', type=bool, default=False,
-                        help='if True, use --weights as initialisation')
+
+    parser.add_argument('--add_missing', default=False, action='store_true',
+                        help='if used - only ids missing in descriptors.pkl will be computed')
 
     args = parser.parse_args()
     from scripts.CNN.train_siamese_contrastive_lost import create_base_network10, euclidean_distance, eucl_dist_output_shape
@@ -86,21 +59,29 @@ if __name__ == '__main__':
 
     model = Model([input_a, input_b], distance)
     # model.load_weights(args.datadir+"/best_model_998_weights.h5")
-    model.load_weights(args.datadir+"/best_model_980_weights.h5")
+    # model.load_weights(args.datadir+"/best_model_996_weights.h5")
+    # model.load_weights(args.datadir+"/best_model_980_weights.h5")
+    # model.load_weights(args.datadir+"/best_model_967_weights.h5")
+    # Cam1
+    model.load_weights(args.datadir+"/best_model_996_weights.h5")
     new_model = model.layers[2]
-    # https://github.com/tensorflow/tensorflow/issues/17191
-    # with CustomObjectScope({'relu6': relu6, 'contrastive_loss2': contrastive_loss2}):
-        # m = load_model(args.datadir+"/best_model.h5", compile=False)
-        # new_model = m.layers[2]
 
     from core.project.project import Project
     p = Project()
     p.load(args.datadir)
     vm = p.get_video_manager()
 
+    descriptors = {}
+    if args.add_missing:
+        try:
+            with open(args.datadir + '/descriptors.pkl', 'rb') as f:
+                descriptors = pickle.load(f)
+        except:
+            pass
+
+
     imgs = []
     r_ids = []
-    descriptors = {}
     batch_size = 300
     for frame in tqdm(range(p.num_frames())):
         img = vm.get_frame(frame)
@@ -108,6 +89,9 @@ if __name__ == '__main__':
 
         for tracklet in tracklets:
             region = tracklet.get_region_in_frame(p.gm, frame)
+            if region.id() in descriptors:
+                continue
+
             crop = get_region_crop(region, img, APPLY_ELLIPSE, ELLIPSE_DILATION, MASK_SIGMA , OFFSET)
             imgs.append(crop)
             r_ids.append(region.id())
@@ -129,7 +113,6 @@ if __name__ == '__main__':
     for k, r_id in enumerate(r_ids):
         descriptors[r_id] = descs[k, :]
 
-    import pickle
     with open(args.datadir+'/descriptors.pkl', 'wb') as f:
         pickle.dump(descriptors, f)
 
