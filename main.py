@@ -29,8 +29,9 @@ if is_flipajs_pc():
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1'
     wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
     wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min'
-    # wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
-    wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
+    wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
+    # wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
+    wd = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-fixed-segmentation'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3_new'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_new'
 

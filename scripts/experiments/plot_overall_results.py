@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 # unknown pose: 11.70%
 
 
-raw_data = {'first_name': ['F-Ants1', 'i-Ants1', 'F-Sowbug3', 'i-Sowbug3', 'F-Ants3', 'i-Ants3', 'F-Zebrafish', 'i-Zebrafish'],
+raw_data = {'first_name': ['F-Ants1', 'i-Ants1', 'F-Sow3', 'i-Sow3', 'F-Ants3', 'i-Ants3', 'F-Zebr', 'i-Zebr'],
         'correct': [68.46, 71.68, 80.14, 70.60, 89.95, 82.38, 88.14, 88.00],
         'wrong':   [00.04, 00.32, 06.89, 15.28, 00.17, 05.25, 00.16, 00.63],
         'unknown': [31.50, 28.01, 12.98, 14.12, 09.88, 12.37, 09.88, 11.36]}

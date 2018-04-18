@@ -33,8 +33,8 @@ if __name__ == '__main__':
         description='train siamese CNN with contrastive loss')
 
     parser.add_argument('--datadir', type=str,
-                        default='/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed',
-                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop',
+                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed',
+                        default='/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-fixed-segmentation',
                         # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min',
                         # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min',
                         # default='/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min',
@@ -58,12 +58,12 @@ if __name__ == '__main__':
     distance = Lambda(euclidean_distance, output_shape=eucl_dist_output_shape)([processed_a, processed_b])
 
     model = Model([input_a, input_b], distance)
-    # model.load_weights(args.datadir+"/best_model_998_weights.h5")
+    model.load_weights(args.datadir+"/best_model_998_weights.h5")
     # model.load_weights(args.datadir+"/best_model_996_weights.h5")
     # model.load_weights(args.datadir+"/best_model_980_weights.h5")
     # model.load_weights(args.datadir+"/best_model_967_weights.h5")
     # Cam1
-    model.load_weights(args.datadir+"/best_model_996_weights.h5")
+    # model.load_weights(args.datadir+"/best_model_996_weights.h5")
     new_model = model.layers[2]
 
     from core.project.project import Project

@@ -1184,6 +1184,7 @@ class CompleteSetMatching:
 
                 # this is for case when weight = 1, thus std = 0
                 from scipy.spatial.distance import cdist, pdist, squareform
+                # TODO: np.mean(cdist([desc], X)**2)**0.5
                 d_std = np.mean(cdist([desc], X))
                 # std = max(np.mean(np.std(X[ids, :], axis=0)), std_eps)
                 prototypes.append(TrackPrototype(desc, d_std, weight))
@@ -1463,10 +1464,11 @@ if __name__ == '__main__':
 
     p = Project()
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/Cam1'
-    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper-interactions/Cam1_clip_arena_fixed'
-    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper-interactions/Sowbug3-crop'
-    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper-interactions/5Zebrafish_nocover_22min'
-    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper-interactions/Camera3-5min'
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
+    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-fixed-segmentation'
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min'
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
     p.load(P_WD)
     # p.load('/Use/rs/flipajs/Documents/wd/FERDA/Camera3_new')
 
@@ -1508,8 +1510,13 @@ if __name__ == '__main__':
 
     csm = CompleteSetMatching(p, lp, descriptors, quality_threshold=0.2, quality_threshold2=0.01)
 
-    csm.solve_interactions()
+    # csm.solve_interactions()
     # import sys
     # sys.exit()
 
+
     csm.start_matching_process()
+
+
+
+
