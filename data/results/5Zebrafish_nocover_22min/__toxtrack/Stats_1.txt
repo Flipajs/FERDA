@@ -1,0 +1,61 @@
+Video Resolution :	
+[1920 x 1080]
+Video FrameRate :	
+32.22
+Analysed Video Frames :	
+14999
+Analysed Video Time :	
+465.518
+Arena :	1 1
+[198, 1]	[1722, 1]	[198, 1079]	[1722, 1079]
+[198, 1, 1]	[1722, 1, 1]	[198, 1079, 1]	[1722, 1079, 1]
+Arena Size:	
+[1524 x 1078]
+[1524 x 1078]
+Arena Center:	
+[539, 762]
+Mean Position:	
+[289.41, 541.285]
+
+Av. Speed:	
+208.924
+Mob. Av. Speed:	
+208.929
+Av. Accel:	
+490.339
+Mobility Rate:	
+0.99997
+Visible Frames:	
+13254
+Visible Time:	
+411.359
+Invisible Frames:	
+1745
+Invisible Time:	
+54.1589
+First Visible Frame:	
+0
+Last Visible Frame:	
+14997
+Visibility Rate:	
+0.883659
+Invisibility Rate:	
+0.116341
+Explored Areas:	
+586
+Number of Areas:	
+682
+Exploration Rate:	
+0.859238
+Total Distance:	
+99190.8
+Transitions to White:	
+0
+Transitions to Black:	
+1
+Number of Frozen Events:	
+0
+Total Time Frozen:	
+0
+Average Time Frozen:	
+0
