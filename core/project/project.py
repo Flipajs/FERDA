@@ -3,6 +3,8 @@ __author__ = 'filip@naiser.cz'
 import cPickle as pickle
 import string
 import time
+import numpy as np
+import tqdm
 
 from core.graph.solver import Solver
 from core.log import Log
@@ -13,6 +15,7 @@ from core.settings import Settings as S_
 from gui.video_loader import check_video_path
 from utils.img_manager import ImgManager
 import os
+
 
 
 class Project:
@@ -287,7 +290,7 @@ class Project:
             p.dump(self.chm)
 
 
-    def load(self, path, snapshot=None, parent=None, lightweight=False):
+    def load(self, path, snapshot=None, parent=None, lightweight=False, video_file=None):
         if path[-6:] != '.fproj':
             for f in os.listdir(path):
                 if f[-6:] == '.fproj':
@@ -300,6 +303,8 @@ class Project:
         self.__dict__.update(tmp_dict)
         a_ = path.split('/')
         self.working_directory = str(path[:-(len(a_[-1])+1)])
+        if video_file is not None:
+            self.video_paths = video_file
 
         # BG MODEL
         try:
@@ -508,6 +513,26 @@ class Project:
 
     def num_frames(self):
         return self.get_video_manager().total_frame_count()
+
+    def get_results_trajectories(self):
+        """
+        Return resulting single id centroid trajectories.
+
+        :return: ndarray, shape=(n_frames, n_animals, 2); coordinates are in yx order, nan when id not present
+        """
+        n_frames = self.gm.end_t
+        results = np.ones(shape=(n_frames, len(self.animals), 2)) * np.nan
+        for frame in tqdm.tqdm(range(n_frames), desc='gathering trajectories'):
+            for t in self.chm.chunks_in_frame(frame):
+                if len(t.P) == 1:
+                    id_ = list(t.P)[0]
+                    if id_ >= len(self.animals):
+                        import warnings
+                        warnings.warn("id_ > num animals t_id: {} id: {}".format(t.id(), id_))
+                        continue
+                    results[frame, id_] = self.rm[t.r_id_in_t(frame, self.gm)].centroid()  # yx
+
+        return results
 
 
 def dummy_project():
