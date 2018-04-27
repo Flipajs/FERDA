@@ -451,7 +451,14 @@ class Solver:
         """
 
         affected = set()
-        for v1, v2 in tqdm(edge_pairs, desc='solver.confirm_edges'):
+
+        # quick chcek to prevent console spamming
+        if len(edge_pairs) > 1:
+            x = tqdm(edge_pairs, desc='solver.confirm_edges')
+        else:
+            x = edge_pairs
+
+        for v1, v2 in x:
             affected.add(v1)
             affected.add(v2)
 

@@ -1146,7 +1146,6 @@ def assign_costs(p, frames):
     # with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_modified.pkl', 'wb') as f:
     #     pickle.dump(p.gm.g, f)
 
-
 def decide_one2one(p):
     solver = Solver(p)
 

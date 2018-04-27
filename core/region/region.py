@@ -380,6 +380,9 @@ class Region(object):
 
         return border_point_xy
 
+    def ellipse_area_ratio(self):
+        return (4*self.major_axis_ * self.minor_axis_) / float(self.area())
+
 
 def encode_RLE(pts, return_area=True):
     """

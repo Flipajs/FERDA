@@ -346,6 +346,38 @@ def create_base_network10(input_shape):
     m = Model(input, x)
     m.summary()
 
+    return m
+
+def create_base_network11(input_shape):
+    ''' Basiacly network 5 + padding added...
+    '''
+    input = Input(shape=input_shape)
+
+    x = Conv2D(64, (3, 3), padding='same', activation='relu')(input)
+    x = Conv2D(32, (3, 3), strides=(2, 2), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), strides=(2, 2), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = Conv2D(32, (3, 3))(x)
+    # x = MaxPooling2D((2, 2))(x)
+
+    # x = Conv2D(64, (3, 3))(x)
+    x = Conv2D(16, (3, 3), strides=(2, 2), padding='same', activation='relu', dilation_rate=(2, 2))(x)
+    x = Conv2D(16, (3, 3), strides=(2, 2), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(8, (3, 3), padding='same', activation='relu')(x)
+    x = Conv2D(8, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(8, (3, 3), padding='same', activation='relu')(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Flatten()(x)
+
+    x = Dense(32, activation='linear')(x)
+    m = Model(input, x)
+    m.summary()
+
+    return m
+
 def create_base_network_mobilenet_like(input_shape):
     from keras.applications.mobilenet import _conv_block, _depthwise_conv_block
 
@@ -361,17 +393,22 @@ def create_base_network_mobilenet_like(input_shape):
 
     x = _depthwise_conv_block(x, 32, alpha, depth_multiplier,
                               strides=(2, 2), block_id=4)
-
-
     x = _depthwise_conv_block(x, 32, alpha, depth_multiplier, block_id=5)
-    x = _depthwise_conv_block(x, 32, alpha, depth_multiplier,
-                              strides=(2, 2), block_id=6)
-    x = _depthwise_conv_block(x, 32, alpha, depth_multiplier, block_id=7)
-    x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=8)
-    x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=9)
-    x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=10)
-    x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=11)
-    x = Flatten()(x)
+
+    x = _depthwise_conv_block(x, 32, alpha, depth_multiplier, block_id=6)
+    x = _depthwise_conv_block(x, 8, alpha, depth_multiplier, block_id=7)
+
+    from keras.layers import GlobalAveragePooling2D
+    x = GlobalAveragePooling2D()(x)
+    x = Dropout(0.1)(x)
+    # x = _depthwise_conv_block(x, 32, alpha, depth_multiplier,
+    #                           strides=(2, 2), block_id=6)
+    # x = _depthwise_conv_block(x, 32, alpha, depth_multiplier, block_id=7)
+    # x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=8)
+    # x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=9)
+    # x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=10)
+    # x = _depthwise_conv_block(x, 16, alpha, depth_multiplier, block_id=11)
+    # x = Flatten()(x)
     x = Dense(32, activation='linear')(x)
     m = Model(input, x)
 
@@ -440,12 +477,12 @@ class DataGenerator(object):
         self.tr_pairs_1 = tr_pairs[:, 1]
         self.tr_y = tr_y
 
-        self.datagen_0 = ImageDataGenerator(rotation_range=360,
+        self.datagen_0 = ImageDataGenerator(# rotation_range=360,
                                             # width_shift_range=0.02,
                                             # height_shift_range=0.02
                                             ).flow(self.tr_pairs_0, self.tr_y, batch_size=batch_sz, shuffle=False)
 
-        self.datagen_1 = ImageDataGenerator(rotation_range=360,
+        self.datagen_1 = ImageDataGenerator(# rotation_range=360,
                                             # width_shift_range=0.02,
                                             # height_shift_range=0.02
                                             ).flow(self.tr_pairs_1, self.tr_y, batch_size=batch_sz, shuffle=False)
@@ -533,9 +570,10 @@ if __name__ == '__main__':
                      # create_base_network7,
                      # create_base_network8,
                      # create_base_network9,
-                     # create_base_network10,
+                     create_base_network10,
                      # create_base_network11,
-                     create_basenetwork_squeezenet_like
+                     # create_base_network_mobilenet_like,
+                     # create_basenetwork_squeezenet_like
                      ]
     datagen = DataGenerator(args.batch_size, tr_pairs, tr_y)
 
@@ -563,6 +601,8 @@ if __name__ == '__main__':
 
         if args.continue_training:
             from keras.models import load_model
+
+            # model = load_model('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/best_model_on6_300_ft.h5', compile=False)
             model = load_model(args.datadir+'/best_model.h5', compile=False)
 
 
@@ -573,7 +613,7 @@ if __name__ == '__main__':
         checkpoint = ModelCheckpoint(args.datadir+'/best_model.h5', monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
         callbacks_list = [checkpoint]
 
-        model.fit_generator(generator=datagen.next_train(), samples_per_epoch=10*datagen.samples_per_train,
+        model.fit_generator(generator=datagen.next_train(), samples_per_epoch=datagen.samples_per_train,
                             nb_epoch=args.epochs, validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y),
                             callbacks=callbacks_list)
 

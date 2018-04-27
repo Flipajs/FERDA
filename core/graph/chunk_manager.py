@@ -200,3 +200,21 @@ class ChunkManager:
                                                      tracklet.end_frame(project.gm)))
 
         return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(), affected)
+
+    def complete_set_gen(self, project):
+        from sys import maxint
+
+        num_animals = len(project.animals)
+        frame = 0
+        while frame < project.num_frames():
+            s = self.tracklets_in_frame(frame)
+            s = filter(lambda x: x.is_single(), s)
+
+            if len(s) == num_animals:
+                yield s
+
+            min_end_frame = maxint
+            for tracklet in s:
+                min_end_frame = min(min_end_frame, tracklet.end_frame(project.gm))
+
+            frame = min_end_frame + 1

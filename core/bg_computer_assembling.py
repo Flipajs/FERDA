@@ -58,7 +58,7 @@ def assembly_after_parallelization(bgcomp):
     from utils.misc import is_flipajs_pc
     if is_flipajs_pc():
         # TODO: remove this line
-        part_num = 5
+        # part_num = 5
         # bgcomp.first_part = 100
         pass
 

@@ -135,6 +135,19 @@ if args.project is not None:
     #
     # project.gm.update_nodes_in_t_refs()
 
+    from scripts.regions_stats import decide_one2one
+    decide_one2one(project)
+        #
+        # project.chm.add_single_vertices_chunks(project)
+        # project.save()
+
+        # project.load_semistate(wd, 'edge_cost_updated', update_t_nodes=True)
+        # project.load_semistate(wd, 'first_tracklets')
+        # project.load_semistate(wd, 'lp_id_SEG_IDCR_0')
+        # project.load_semistate(wd, 'lp_HIL_INIT3_0')
+
+        # project.gm.update_nodes_in_t_refs()
+
     try:
         # old projects WORKAROUND:
         for t in project.chm.chunk_gen():
