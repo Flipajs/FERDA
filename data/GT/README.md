@@ -27,3 +27,13 @@ Defined at https://motchallenge.net/. CSV file with `frame, id, x, y, width, hei
 
     python -m utils.gt.pkltomot data/GT/5Zebrafish_nocover_22min.pkl data/GT/5Zebrafish_nocover_22min.txt
 
+## Files Renamed
+
+New filenames match the video filenames.
+
+```
+Cam1_.pkl -> Cam1_clip.avi.pkl
+Cam1_sparse.pkl ->  Cam1_clip.avi_sparse.pkl
+Cam2_sparse.pkl Cam2_clip.avi_sparse.pkl
+Camera3.pkl -> Camera3-5min.mp4.pkl
+```
