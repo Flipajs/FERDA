@@ -23,12 +23,21 @@ class ObjectsArray(object):
             assert False, 'properties argument has to be set, list or tuple'
         self.n = n
 
-    def prop2idx(self, obj, prop):
-        assert prop in self.properties, 'invalid property name'
-        return obj * len(self.properties) + self.properties.index(prop)
+    def prop2idx(self, object_index, prop):
+        if not isinstance(prop, (list, tuple)):
+            prop_ = (prop,)
+        else:
+            prop_ = prop
+        for p in prop_:
+            assert p in self.properties, 'invalid property name'
+        idxs = [object_index * len(self.properties) + self.properties.index(p) for p in prop_]
+        if not isinstance(prop, (list, tuple)):
+            return idxs[0]
+        else:
+            return idxs
 
-    def prop2idx_(self, obj, prop):
-        return slice(self.prop2idx(obj, prop), self.prop2idx(obj, prop) + 1)
+    def prop2idx_(self, object_index, prop):
+        return slice(self.prop2idx(object_index, prop), self.prop2idx(object_index, prop) + 1)
 
     def columns(self):
         names = []
