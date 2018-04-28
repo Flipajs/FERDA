@@ -91,6 +91,9 @@ class InteractionDetector:
         :return:
         """
         def cost(prev, cur):
+            """
+            Cost for connecting two consecutive object positions.
+            """
             w = self.TRACKING_COST_WEIGHT
             return w * np.sqrt((cur['x'] - prev['x']) ** 2 + (cur['y'] - prev['y']) ** 2) + \
                    (1 - w) * angle_absolute_error_direction_agnostic(cur['angle_deg'], prev['angle_deg'])

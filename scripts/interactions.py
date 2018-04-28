@@ -123,7 +123,7 @@ class Interactions(object):
                                        }
         # self.__i = 0  # used for visualizations commented out
 
-    def _load_project(self, project_dir=None):
+    def _load_project(self, project_dir=None, video_file=None):
         self._project = Project()
         # This is development speed up process (kind of fast start). Runs only on developers machines...
         # if is_flipajs_pc() and False:
@@ -146,7 +146,7 @@ class Interactions(object):
                 # project_dir = '/home/matej/prace/ferda/10-15/'
                 project_dir = '/home/matej/prace/ferda/projects/camera1_10-15/'
         assert project_dir is not None
-        self._project.load(project_dir)
+        self._project.load(project_dir, video_file=video_file)
 
         # img = video.get_frame(region.frame())  # ndarray bgr
         # img_region = get_img_around_pts(img, region.pts(), margin=0)

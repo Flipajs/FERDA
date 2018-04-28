@@ -61,17 +61,18 @@ def show_prediction(img, num_objects, prediction=None, gt=None, title=None):
     return ax
 
 
-def plot_interaction(num_objects, pred=None, gt=None):
+def plot_interaction(num_objects, pred=None, gt=None, ax=None):
     """
     Angles are in degrees counter-clockwise.
     """
-    ax = plt.gca()
+    if ax is None:
+        ax = plt.gca()
     colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
     for i, c in zip(range(num_objects), colors):
         if pred is not None:
             ax.add_patch(Ellipse((pred['%d_x' % i], pred['%d_y' % i]),
                                  pred['%d_major' % i], pred['%d_minor' % i],
-                                 angle=pred['%d_angle_deg' % i], edgecolor=c, facecolor='none',
+                                 angle=pred['%d_angle_deg' % i],  facecolor='none', edgecolor=c,
                                  label='object %d prediction' % i, linewidth=2))
             # ax.add_patch(Arc(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
             #                  pred['%d_major' % i], pred['%d_minor' % i],
