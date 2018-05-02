@@ -24,7 +24,9 @@ class InteractionDetectorTestCase(unittest.TestCase):
         self.tracklets_multi = [t for t in self.cm.chunk_gen() if t.is_multi()]
         self.tracklets_two = [t for t in self.tracklets_multi if t.get_cardinality(self.gm) == 2]
         self.tracklets_two.sort(lambda x, y: cmp(len(x), len(y)), reverse=True)  # descending by tracklet length
-        self.detector = InteractionDetector('/home/matej/prace/ferda/experiments/180222_2253_mobilenet_two_100')
+        self.detector = InteractionDetector('data/CNN_models/180222_2253_mobilenet_two_100/')
+        assert len(self.detector.ti.PREDICTED_PROPERTIES) == 3
+
 
     def test_detect(self):
         t = np.random.choice(self.tracklets_two)
