@@ -50,13 +50,22 @@ class ValidationCallback(Callback):
 
 
 class TrainInteractions:
-    def __init__(self, num_objects=None, num_input_layers=3):
+    def __init__(self, num_objects=None, num_input_layers=3, predicted_properties=None, error_functions=None):
+        assert (predicted_properties is None and error_functions is None) or \
+               len(predicted_properties) == len(error_functions)
         self.models = {
             '6conv_3dense': self.model_6conv_3dense,  # former default
             '6conv_2dense': self.model_6conv_2dense,
             'mobilenet': self.model_mobilenet,
         }
-        self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg', 'major', 'minor']
+        if predicted_properties is None:
+            self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg']  # , 'major', 'minor']
+        else:
+            self.PREDICTED_PROPERTIES = predicted_properties
+        if error_functions is None:
+            self.ERROR_FUNCTIONS = ['abs', 'abs', 'angle_180']  # , 'abs', 'abs']
+        else:
+            self.ERROR_FUNCTIONS = error_functions
         self.DETECTOR_INPUT_SIZE_PX = 200
         self.num_input_layers = num_input_layers
         self.num_objects = None
@@ -118,9 +127,19 @@ class TrainInteractions:
         return backend.concatenate((backend.abs(dx), backend.abs(dy)), axis=1)
 
     def interaction_loss_angle(self, y_true, y_pred, alpha=0.5):
+        """
+        Compute prediction loss with respect to true xy and angle of all detected objects.
+
+        :param y_true: ground truth for all objects; shape=(n_samples, n_objects * len(PREDICTED_PROPERTIES))
+        :param y_pred: predictions for all objects; shape=(n_samples, n_objects * len(PREDICTED_PROPERTIES))
+        :param alpha: float; xy error and angle error balancing weight, 0 means only xy error is considered,
+                      1 only angle error is considered
+        :return: float; scalar loss
+        """
         assert 0 <= alpha <= 1
         # y_pred = (y_pred - 0.5) * 2  # softmax -> tanh range
         # following expects tanh output (-1; 1)
+        # TODO: replace with generalized postprocess_predictions()
         tensor_columns = []
         for i in range(self.num_objects):
             for col in self.array.properties:
@@ -130,17 +149,15 @@ class TrainInteractions:
                     tensor_columns.append((y_pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2) / np.pi * 180)
         y_pred = K.stack(tensor_columns, axis=1)
 
-        mean_errors_xy, mean_errors_angle, mean_errors_axes, indices = self.match_pred_to_gt(y_true, y_pred, K)
-        if self.num_objects == 2:
-            errors_xy = tf.gather_nd(mean_errors_xy, indices)
-            errors_angle = tf.gather_nd(mean_errors_angle, indices)
-            errors_axes = tf.gather_nd(mean_errors_axes, indices)
-        elif self.num_objects == 1:
-            errors_xy = mean_errors_xy
-            errors_angle = mean_errors_angle
-        else:
-            assert False, 'not implemented'
-        return K.mean(errors_xy * (1 - alpha) + errors_angle * alpha + errors_axes)
+        errors, errors_xy, _ = self.match_pred_to_gt(y_true, y_pred)
+
+        loss = 0
+        for i in range(self.num_objects):
+            error_angle = errors[:, self.array.prop2idx(i, 'angle_deg')]  # shape=(n,)
+            error_xy = errors_xy[:, i]  # shape=(n,)
+            loss += K.sum(error_xy * (1 - alpha) + error_angle * alpha)
+
+        return loss
 
     def interaction_loss_dxdy(self, y_true, y_pred, alpha=0.5):
         assert 0 <= alpha <= 1
@@ -189,64 +206,118 @@ class TrainInteractions:
             backend.stack((swap_idx, backend.arange(0, shape(mean_errors_xy, 1)))))  # shape=(n, 2)
         return mean_errors_xy, mean_errors_delta, indices
 
-    def match_pred_to_gt(self, y_true, y_pred, backend):
+    def errors_ij(self, y_true, y_pred, j_true, i_pred, backend=np):
         """
-        Return mean absolute errors for individual samples for xy and theta
-        in two possible combinations of prediction and ground truth.
-        """
-        bk = backend
-        if backend == np:
-            norm = np.linalg.norm
-            int64 = np.int64
-            shape = lambda x, n: x.shape[n]
-        else:
-            norm = tf.linalg.norm
-            int64 = tf.int64
-            shape = lambda x, n: bk.cast(bk.shape(x)[n], int64)
+        Compute error of ith predicted object with respect to jth ground truth object.
 
+        Uses self.ERROR_FUNCTIONS corresponding to self.PREDICTED_PROPERTIES.
+
+        :param y_true: ground truth for all objects; shape=(n_samples, len(PREDICTED_PROPERTIES))
+        :param y_pred: predictions for all objects; shape=(n_samples, len(PREDICTED_PROPERTIES))
+        :param j_true: ground truth object index
+        :param i_pred: predicted object index
+        :param backend: backend to use (numpy or keras backend)
+        :return: tensor or array, shape=(n_samples, len(PREDICTED_PROPERTIES))
+        """
+        errors_columns = []
+        for i, (prop, error_fun) in enumerate(zip(self.PREDICTED_PROPERTIES, self.ERROR_FUNCTIONS)):
+            true = y_true[:, self.array.prop2idx(j_true, prop)]  # shape=(n,)
+            pred = y_pred[:, self.array.prop2idx(i_pred, prop)]  # shape=(n,)
+            if error_fun == 'abs':
+                errors_columns.append(backend.abs(pred - true))
+            elif error_fun == 'angle_180':
+                errors_columns.append(angle_absolute_error_direction_agnostic(pred, true, backend))
+            elif error_fun == 'angle_360':
+                errors_columns.append(angle_absolute_error(pred, true, backend))
+            else:
+                assert False, 'error function ' + error_fun + ' not implemented'
+        return backend.stack(errors_columns, axis=1)
+
+    def match_pred_to_gt_numpy(self, y_true, y_pred):
+        """
+        Return errors for individual samples and indices to matching predicted and ground truth values.
+        """
         if self.num_objects == 1:
-            xy = self.xy_absolute_error(y_true, y_pred, 0, 0, backend)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
-            angle = angle_absolute_error_direction_agnostic(
-                y_pred[:, self.array.prop2idx(0, 'angle_deg')],
-                y_true[:, self.array.prop2idx(0, 'angle_deg')],
-                backend)  # shape=(n, 1)
-            mean_errors_xy = norm(xy, axis=1)  # shape=(n,)
-            mean_errors_angle = angle  # shape=(n,)
-            indices = backend.arange(0, shape(mean_errors_xy, 0))
+            possible_matchings = (((0, 0),),
+                                  )
         elif self.num_objects == 2:
-            xy = {}
-            angle = {}
-            axes = {}
-            for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
-                xy[(i, j)] = self.xy_absolute_error(y_true, y_pred, i, j, bk)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
-                angle[(i, j)] = angle_absolute_error_direction_agnostic(
-                    y_pred[:, self.array.prop2idx(i, 'angle_deg')],  # shape=(n,)
-                    y_true[:, self.array.prop2idx(j, 'angle_deg')],  # shape=(n,)
-                    bk)  # shape=(n,)
-                axes[(i, j)] = self.axes_absolute_error(y_true, y_pred, i, j, bk)
-            mean_errors_xy = bk.stack((
-                bk.mean(bk.stack((norm(xy[0, 0], axis=1),
-                                  norm(xy[1, 1], axis=1))), axis=0),
-                bk.mean(bk.stack((norm(xy[0, 1], axis=1),
-                                  norm(xy[1, 0], axis=1))), axis=0)))  # shape=(2, n)
-            mean_errors_angle = bk.stack((
-                bk.mean(bk.stack((angle[0, 0], angle[1, 1]), axis=0), axis=0),
-                bk.mean(bk.stack((angle[0, 1], angle[1, 0]), axis=0), axis=0)
-            ), axis=0)  # shape=(2, n)
-            mean_errors_axes = bk.stack((
-                bk.mean(bk.stack((norm(axes[0, 0], axis=1),
-                                  norm(axes[1, 1], axis=1))), axis=0),
-                bk.mean(bk.stack((norm(axes[0, 1], axis=1),
-                                  norm(axes[1, 0], axis=1))), axis=0)))  # shape=(2, n)
-
-            swap_idx = bk.argmin(mean_errors_xy, axis=0)  # shape = (n,)
-
-            indices = backend.transpose(
-                backend.stack((swap_idx, backend.arange(0, shape(mean_errors_xy, 1)))))  # shape=(n, 2)
+            possible_matchings = (((0, 0), (1, 1)),
+                                  ((0, 1), (1, 0)))
         else:
             assert False, 'not implemented'
 
-        return mean_errors_xy, mean_errors_angle, mean_errors_axes, indices
+        sum_xy_errors = []
+        all_matching_errors = []
+        all_xy_euclidean_errors = []
+        for matching in possible_matchings:
+            matching_errors = [self.errors_ij(y_true, y_pred, i, j, np) for i, j in matching]
+            matching_errors_array = np.concatenate(matching_errors, axis=1)  # shape=(n, num_objects * len(self.PREDICTED_PROPERTIES))
+            all_matching_errors.append(matching_errors_array)
+
+            xy_euclidean_errors_ = [np.linalg.norm(matching_errors_array[:, self.array.prop2idx(i, ['x', 'y'])],
+                                                   axis=1, keepdims=True)
+                                    for i in range(self.num_objects)]
+            xy_euclidean_errors = np.concatenate(xy_euclidean_errors_, axis=1)  # shape=(n, num_objects)
+            sum_xy_errors.append(np.sum(xy_euclidean_errors, axis=1, keepdims=True))  # shape=(n, 1)
+            all_xy_euclidean_errors.append(xy_euclidean_errors)  # list of array like, shape=(n, num_objects)
+
+        swap_indices = np.argmin(np.concatenate(sum_xy_errors, axis=1), axis=1)  # shape = (n,)
+        errors = np.array([all_matching_errors[i_swap][i_row] for i_row, i_swap in enumerate(swap_indices)])
+        errors_xy = np.array([all_xy_euclidean_errors[i_swap][i_row] for i_row, i_swap in enumerate(swap_indices)])  # shape=(n, num_objects)
+        return errors, errors_xy, swap_indices
+
+    def match_pred_to_gt(self, y_true, y_pred):
+        """
+        Return errors of predicted properties and indices to matching predicted and ground truth values.
+
+        :param y_true: shape=(n_samples, n_dims)
+        :param y_pred: shape=(n_samples, n_dims)
+        :return errors: errors of individual predicted properties, shape=(n, n_objects * len(PREDICTED_PROPERTIES))
+                errors_xy: distance errors, shape=(n,)
+                swap_indices: index of shape = (n,)
+        """
+        norm = tf.linalg.norm
+        if self.num_objects == 1:
+            possible_matchings = (((0, 0),),
+                                  )
+        elif self.num_objects == 2:
+            possible_matchings = (((0, 0), (1, 1)),
+                                  ((0, 1), (1, 0)))
+        else:
+            assert False, 'not implemented'
+
+        sum_xy_errors = []
+        all_matching_errors = []
+        all_xy_euclidean_errors = []
+        for matching in possible_matchings:
+            matching_errors = [self.errors_ij(y_true, y_pred, i, j, K) for i, j in matching]
+            matching_errors_array = K.concatenate(matching_errors, axis=1)  # shape=(n, n_objects * len(PREDICTED_PROPERTIES))
+            all_matching_errors.append(matching_errors_array)
+
+            # xy_euclidean_errors_ = [norm(matching_errors_array[:, self.array.prop2idx(i, ['x', 'y'])],
+            #                              axis=1, keepdims=True)
+            #                         for i in range(self.num_objects)]
+            xy_euclidean_errors_ = []
+            for i in range(self.num_objects):
+                xy = K.concatenate([K.expand_dims(matching_errors_array[:, j]) for j in
+                                    self.array.prop2idx(i, ['x', 'y'])], axis=1)  # shape=(n, 2)
+                xy_euclidean_errors_.append(K.expand_dims(norm(xy, axis=1)))  # shape=(n, 1)
+            xy_euclidean_errors = K.concatenate(xy_euclidean_errors_, axis=1)  # shape=(n, num_objects)
+            sum_xy_errors.append(K.sum(xy_euclidean_errors, axis=1, keepdims=True))  # shape=(n, 1)
+            all_xy_euclidean_errors.append(xy_euclidean_errors)  # list of array like, shape=(n, num_objects)
+
+        swap_indices = K.argmin(K.concatenate(sum_xy_errors, axis=1), axis=1)  # shape = (n,)
+        n = K.shape(swap_indices)[0]
+        indices_gather = K.transpose(K.stack((swap_indices, K.arange(0, n, dtype=K.dtype(swap_indices)))))  # shape=(n, 2)
+        errors = tf.gather_nd(K.stack(all_matching_errors), indices_gather)  # shape=(n, n_objects * len(PREDICTED_PROPERTIES))
+        errors_xy = tf.gather_nd(K.stack(all_xy_euclidean_errors), indices_gather)  # shape=(n, num_objects)
+
+        # errors = K.stack([all_matching_errors[i_swap][i_row]
+        #                   for i_row, i_swap in enumerate(K.eval(swap_indices))], axis=0)
+        # errors_xy = K.stack([all_xy_euclidean_errors[i_swap][i_row]
+        #                   for i_row, i_swap in enumerate(K.eval(swap_indices))], axis=0)
+
+        return errors, errors_xy, swap_indices
 
     def model_6conv_3dense(self):
         input_shape = Input(shape=(self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.num_input_layers))
@@ -344,22 +415,16 @@ class TrainInteractions:
         # following expects tanh output (-1; 1)
         pred = self.postprocess_predictions(pred)
 
-        pred_df = self.array.array_to_dataframe(pred)
-        pred_df.to_csv(join(params['experiment_dir'], 'predictions.csv'), index=False)
-        self.save_model_properties(join(params['experiment_dir'], 'config.yaml'))
+        if 'experiment_dir' in params:
+            pred_df = self.array.array_to_dataframe(pred)
+            pred_df.to_csv(join(params['experiment_dir'], 'predictions.csv'), index=False)
+            self.save_model_properties(join(params['experiment_dir'], 'config.yaml'))
 
         if y_test is not None:
             # xy, _, indices = match_pred_to_gt_dxdy(y_test.values, pred, np)
-            xy, angle, axes, indices = self.match_pred_to_gt(y_test[:len(pred)], pred, np)  # trim y_test to be modulo BATCH_SIZE
+            errors, errors_xy, _ = self.match_pred_to_gt(y_test[:len(pred)], pred)  # trim y_test to be modulo BATCH_SIZE
 
-            if self.num_objects == 1:
-                xy_mae = np.take(xy, indices).mean()
-                angle_mae = np.take(angle, indices).mean()
-                axes_mae = np.take(axes, indices).mean()
-            else:
-                xy_mae = (xy[indices[:, 0], indices[:, 1]]).mean()
-                angle_mae = (angle[indices[:, 0], indices[:, 1]]).mean()
-                axes_mae = (axes[indices[:, 0], indices[:, 1]]).mean()
+            errors_angle = K.concatenate([errors[:, self.array.prop2idx_(i, 'angle_deg')] for i in range(self.num_objects)])
 
             # # compute angle errors
             # angle = {}
@@ -373,7 +438,10 @@ class TrainInteractions:
             #     np.mean(np.stack((angle[0, 1], angle[1, 0]), axis=1), axis=1)))  # shape=(2, n)
             # angle_mae = (mean_errors_angle[indices[:, 0], indices[:, 1]]).mean()
 
-            results = pd.DataFrame.from_items([('xy MAE', [xy_mae]), ('angle MAE', angle_mae), ('axes MAE', [axes_mae])])
+            results = pd.DataFrame.from_items([('xy MAE', [K.eval(K.mean(errors_xy))]),
+                                               ('angle MAE', [K.eval(K.mean(errors_angle))]),
+            #                                   ('axes MAE', [axes_mae])
+                                              ])
             if csv_filename is not None:
                 results.to_csv(csv_filename)
             return results
