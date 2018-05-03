@@ -41,6 +41,7 @@ class Project:
 
         self.bg_model = None
         self.arena_model = None
+        self.video_crop_model = None
         self.classes = None
         self.groups = None
         self.animals = None
@@ -520,17 +521,22 @@ class Project:
 
         :return: ndarray, shape=(n_frames, n_animals, 2); coordinates are in yx order, nan when id not present
         """
-        n_frames = self.gm.end_t
+        assert self.video_start_t != -1
+        n_frames = self.video_end_t
         results = np.ones(shape=(n_frames, len(self.animals), 2)) * np.nan
-        for frame in tqdm.tqdm(range(n_frames), desc='gathering trajectories'):
-            for t in self.chm.chunks_in_frame(frame):
+        for frame in tqdm.tqdm(range(self.video_start_t, n_frames), desc='gathering trajectories'):
+            for t in self.chm.tracklets_in_frame(frame - self.video_start_t):
                 if len(t.P) == 1:
                     id_ = list(t.P)[0]
                     if id_ >= len(self.animals):
                         import warnings
                         warnings.warn("id_ > num animals t_id: {} id: {}".format(t.id(), id_))
                         continue
-                    results[frame, id_] = self.rm[t.r_id_in_t(frame, self.gm)].centroid()  # yx
+                    results[frame, id_] = self.rm[t.r_id_in_t(frame - self.video_start_t, self.gm)].centroid()  # yx
+
+        if self.video_crop_model is not None:
+            results[:, :, 0] += self.video_crop_model['y1']
+            results[:, :, 1] += self.video_crop_model['x1']
 
         return results
 
