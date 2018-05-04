@@ -230,6 +230,15 @@ class Interactions(object):
         return os.path.relpath(os.path.abspath(out_dir), os.path.abspath(os.path.dirname(out_file)))
 
     def write_regions_for_testing(self, project_file, out_dir, n, multi=True, single=False):
+        """
+        Write n randomly chosen cropped region images in hdf5 file.
+
+        :param project_file: gather regions from the FERDA project file
+        :param out_dir: output directory where images.h5 and parameters.txt will be placed
+        :param n: number of region images to write
+        :param multi: include multi animal regions
+        :param single: include single animal regions
+        """
         # write-regions-for-testing /home/matej/prace/ferda/projects/camera1_10-15/10-15.fproj /home/matej/prace/ferda/data/interactions/180129_camera1_10-15_multi_test 100
         self._load_project(project_file)
         self._write_argv(out_dir)
@@ -265,6 +274,11 @@ class Interactions(object):
             fw.writelines('\n'.join(sys.argv))
 
     def write_annotated_blobs_groundtruth(self, project_file, blobs_filename, n_objects, out_dir):
+        """
+        Load annotated blobs and write interaction ground truth to hdf5 and csv files.
+
+        For annotated blobs see data.GT.ant_blob.ant_blob_gt_manager.
+        """
         # write_annotated_blobs_groundtruth '/home/matej/prace/ferda/projects/camera1/Camera 1.fproj' ../data/annotated_blobs/Camera1_blob_gt.pkl 2 ../data/interactions/180126_test_real_2_ants
         self._write_argv(out_dir)
         import data.GT.ant_blob.ant_blob_gt_manager as ant_blob_gt_manager
@@ -781,6 +795,16 @@ class Interactions(object):
         # ax.add_patch(Rectangle(bb_xywh[:2], bb_xywh[2], bb_xywh[3], linewidth=1, edgecolor='r', facecolor='none'))
 
     def show_ground_truth(self, csv_file, out_dir, image_dir=None, image_hdf5=None, hdf5_dataset_name=None, n_objects=2):
+        """
+        Save images with visualized ground truth.
+
+        :param csv_file: input ground truth
+        :param out_dir: directory for output images
+        :param image_dir: input images, image_dir or image_hdf5 is required
+        :param image_hdf5: input images, image_dir or image_hdf5 is required
+        :param hdf5_dataset_name: input images dataset name
+        :param n_objects: number of objects in the ground truth
+        """
         assert image_dir is not None or image_hdf5 is not None
         if image_hdf5 is not None:
             assert hdf5_dataset_name is not None
