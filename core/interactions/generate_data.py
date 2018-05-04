@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 """
-use: $ python interactions.py -- --help
+use: $ python detect.py -- --help
 """
 
 #TODO change self.__video.get_frame() for cached self._project.img_manager.get_whole_img()
@@ -25,7 +25,7 @@ import csv
 import h5py
 import warnings
 from itertools import product
-from scripts.CNN.interactions_results import save_prediction_img
+from core.interactions.visualization import save_prediction_img
 from os.path import join
 import pandas as pd
 import errno
@@ -109,7 +109,7 @@ def head_fix(tracklet_regions):
                 r.theta_ -= 2 * np.pi
 
 
-class Interactions(object):
+class DataGenerator(object):
     def __init__(self):
         self._video = None
         self._single = None
@@ -693,4 +693,4 @@ class Interactions(object):
 
 
 if __name__ == '__main__':
-    fire.Fire(Interactions)
+    fire.Fire(DataGenerator)

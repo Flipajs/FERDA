@@ -1,25 +1,20 @@
-import os.path
 import tempfile
-from os.path import join
 
 import fire
 import imageio
 import keras.applications.mobilenet as mobilenet
 import numpy as np
+import os.path
 import pandas as pd
-import imageio
-import tempfile
-from tqdm import tqdm
-from scripts.CNN.interactions_results import save_prediction_img
-from utils.angles import angle_absolute_error, angle_absolute_error_direction_agnostic
 import yaml
 from keras.models import model_from_yaml, model_from_json
+from os.path import join
 from scipy.special import expit
-from scripts.CNN.interactions_results import save_prediction_img
-from scripts.CNN.interactions_results import show_prediction
 from tqdm import tqdm
 
-from scripts.CNN.trash.train_interactions import TrainInteractions
+from core.interactions.train import TrainInteractions
+from core.interactions.visualization import save_prediction_img, show_prediction
+from utils.angles import angle_absolute_error_direction_agnostic
 from utils.img import safe_crop
 from utils.objectsarray import ObjectsArray
 

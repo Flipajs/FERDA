@@ -1,12 +1,11 @@
 import unittest
+
 import numpy as np
-import scripts.interactions as interactions
-import numpy as np
-from numpy.testing import assert_array_equal
-import pandas as pd
 from os.path import join
-import core.region.transformableregion as tr
-import matplotlib.pylab as plt
+
+import core.interactions.generate_data as interactions
+
+# TODO prepare small dummy video file and project and add it to test/interactions_dataset
 
 PROJECT_DIR = '/home/matej/prace/ferda/projects/camera1_10-15/'
 VIDEO_FILE = '/datagrid/ferda/data/ants_ist/camera_1/camera_1_ss00:10:00_t00:05:00.mp4'
@@ -14,7 +13,7 @@ VIDEO_FILE = '/datagrid/ferda/data/ants_ist/camera_1/camera_1_ss00:10:00_t00:05:
 
 class InteractionsTestCase(unittest.TestCase):
     def setUp(self):
-        self.intr = interactions.Interactions()
+        self.intr = interactions.DataGenerator()
 
     def init(self):
         self.intr._load_project(PROJECT_DIR, video_file=VIDEO_FILE)

@@ -3,7 +3,7 @@ import unittest
 import matplotlib.pylab as plt
 import pandas as pd
 
-from scripts.CNN.interactions_results import plot_interaction
+from core.interactions.visualization import plot_interaction
 
 
 class InteractionResultsTestCase(unittest.TestCase):

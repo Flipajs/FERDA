@@ -2,36 +2,36 @@ from __future__ import print_function
 
 import glob
 import itertools
-import os
 import shlex
-import warnings
-from os.path import join
 from subprocess import call
 
 import fire
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
 import tqdm
+import warnings
 import yaml
 from imageio import imread
 from matplotlib.patches import Ellipse
+from os.path import join
 
-import scripts.CNN.trash.train_interactions as train_interactions
+import core.interactions.train as train_interactions
 
 
 def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, title=None, scale=1.5):
     """
+    Save visualization of detected objects and/or ground truth on an image.
 
-    :param out_filename:
-    :param num_objects:
-    :param img:
-    :param pred:
-    :param gt:
-    :param title:
+    :param out_filename: str; output filename
+    :param num_objects: int
+    :param img: ndarray
+    :param pred: predictions DataFrame
+    :param gt: ground truth DataFrame
+    :param title: plot title
     :param scale: image scaling, 1.0 is original image size
-    :return:
     """
     if isinstance(img, str):
         img = imread(img)
@@ -52,6 +52,18 @@ def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, titl
 
 
 def show_prediction(img, num_objects, prediction=None, gt=None, title=None):
+    """
+    Visualize detected objects and/or ground truth on an image.
+
+    Angles are in degrees counter-clockwise.
+
+    :param img: image
+    :param num_objects: number of objects
+    :param prediction: predictions DataFrame
+    :param gt: ground truth DataFrame
+    :param title: plot title
+    :return ax
+    """
     ax = plt.gca()
     ax.axis('off')
     ax.imshow(img, animated=True)
@@ -63,7 +75,14 @@ def show_prediction(img, num_objects, prediction=None, gt=None, title=None):
 
 def plot_interaction(num_objects, pred=None, gt=None, ax=None):
     """
+    Visualize detected objects and/or ground truth.
+
     Angles are in degrees counter-clockwise.
+
+    :param num_objects: number of objects
+    :param pred: predictions DataFrame
+    :param gt: ground truth DataFrame
+    :param ax: axis to draw on
     """
     if ax is None:
         ax = plt.gca()
@@ -95,6 +114,13 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None):
 
 
 def visualize_results(experiment_dir, data_dir, n_objects=None):
+    """
+    Visualize experimental results. Save montage of random and worst results.
+
+    :param experiment_dir: predictions on the test dataset (predictions.csv, predictions.yaml)
+    :param data_dir: test dateset images and ground truth (images.h5, test.csv)
+    :param n_objects: number of objects
+    """
     hf_img = h5py.File(join(data_dir, 'images.h5'), 'r')
     X_test = hf_img['test']
 

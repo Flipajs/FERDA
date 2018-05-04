@@ -2,8 +2,8 @@ import unittest
 
 import numpy as np
 
+from core.interactions.detect import InteractionDetector
 from core.project.project import Project
-from scripts.CNN.interactions import InteractionDetector
 from utils.video_manager import get_auto_video_manager
 
 
@@ -26,7 +26,6 @@ class InteractionDetectorTestCase(unittest.TestCase):
         self.tracklets_two.sort(lambda x, y: cmp(len(x), len(y)), reverse=True)  # descending by tracklet length
         self.detector = InteractionDetector('data/CNN_models/180222_2253_mobilenet_two_100/')
         assert len(self.detector.ti.PREDICTED_PROPERTIES) == 3
-
 
     def test_detect(self):
         t = np.random.choice(self.tracklets_two)

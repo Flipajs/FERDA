@@ -1,21 +1,16 @@
 import unittest
-import numpy as np
-from mock import patch
-import pandas as pd
-from os.path import join
-import h5py
-from utils import angles
-from os.path import join
+
 import h5py
 import numpy as np
+import tensorflow as tf
 from keras import backend as K
 from keras.preprocessing.image import ImageDataGenerator
-import tensorflow as tf
-from mock import patch
 from numpy.testing import assert_array_equal
+from os.path import join
+
+import core.interactions.train as train_interactions
 import core.region.transformableregion as tr
-import scripts.CNN.trash.train_interactions as train_interactions
-from scripts.CNN.trash.train_interactions import TrainInteractions
+from core.interactions.train import TrainInteractions
 
 
 class LossFunctionsTestCase(unittest.TestCase):

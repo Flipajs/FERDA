@@ -1,8 +1,8 @@
-import os
 import random
 
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 from lazyme.string import color_print
 from scipy.misc import imread
 from tqdm import tqdm
@@ -33,9 +33,6 @@ class CompleteSetMatching:
 
     def start_matching_process(self):
         track_CSs = self.find_track_cs()
-
-        import matplotlib.pyplot as plt
-        import matplotlib.patheffects as pe
 
         qualities, track_CSs = self.sequential_matching(track_CSs)
 
@@ -1220,7 +1217,7 @@ class CompleteSetMatching:
         return prototypes
 
     def solve_interactions(self):
-        from scripts.CNN.interactions import InteractionDetector
+        from core.interactions.detect import InteractionDetector
         from core.region.region import Region
 
         # detector = InteractionDetector('/home/matej/prace/ferda/experiments/171222_0126_batch_36k_random/0.928571428571')
