@@ -4,11 +4,12 @@ import fire
 import imageio
 import keras.applications.mobilenet as mobilenet
 import numpy as np
-import os.path
 import pandas as pd
 import yaml
 from keras.models import model_from_yaml, model_from_json
+import os.path
 from os.path import join
+from os import remove
 from scipy.special import expit
 from tqdm import tqdm
 
@@ -17,6 +18,8 @@ from core.interactions.visualization import save_prediction_img, show_prediction
 from utils.angles import angle_absolute_error_direction_agnostic
 from utils.img import safe_crop
 from utils.objectsarray import ObjectsArray
+from core.interactions.generate_data import DataGenerator
+from core.interactions.train import TrainInteractions
 
 
 class InteractionDetector:
@@ -157,7 +160,46 @@ class InteractionDetector:
         os.unlink(tmp_file)
 
 
+def train(project_dir, output_model_dir, temp_dataset_dir, num_objects=2, delete_data=False, video_file=None):  # model_dir=None,
+    """
+
+    Creates interaction detection model
+
+    :param project_dir:
+    :param output_model_dir: the model weights are saved in weights.h5
+    :param temp_dataset_dir:
+    :param model_dir:
+    :param num_objects:
+    :return:
+    """
+    dg = DataGenerator()
+    dg.write_synthetized_interactions(project_dir, 1080, num_objects,
+                                      join(temp_dataset_dir, 'train.csv'), 10,
+                                      join(temp_dataset_dir, 'images.h5'), 'train',
+                                      write_masks=True, video_file=video_file)
+    dg.write_synthetized_interactions(project_dir, 100, num_objects,
+                                      join(temp_dataset_dir, 'test.csv'), 'random',
+                                      join(temp_dataset_dir, 'images.h5'), 'test',
+                                      write_masks=True, video_file=video_file)
+    ti = TrainInteractions(num_objects, num_input_layers=1)
+    ti.train_and_evaluate(temp_dataset_dir, 0.42, 10, model='mobilenet', input_layers=1,
+                          experiment_dir=output_model_dir)
+    if delete_data:
+        remove(join(temp_dataset_dir, 'images.h5'))
+        remove(join(temp_dataset_dir, 'train.csv'))
+        remove(join(temp_dataset_dir, 'test.csv'))
+
+
 def detect_and_visualize(model_dir, in_img, x, y, out_img=None):
+    """
+    Run detector of objects in interaction on single image.
+
+    :param model_dir: directory with trained detector model (config.yaml, model.yaml)
+    :param in_img: input image file
+    :param x: position of the interaction
+    :param y: position of the interaction
+    :param out_img: output image file with results visualization
+    """
     img = imageio.imread(in_img)
     detector = InteractionDetector(model_dir)
     detections = detector.detect(img, (x, y))
@@ -172,4 +214,7 @@ def detect_and_visualize(model_dir, in_img, x, y, out_img=None):
 
 
 if __name__ == '__main__':
-    fire.Fire(detect_and_visualize)
+    fire.Fire({
+      'detect_and_visualize': detect_and_visualize,
+      'train': train,
+    })

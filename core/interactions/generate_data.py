@@ -319,7 +319,7 @@ class DataGenerator(object):
 
     def write_synthetized_interactions(self, project_dir, count=100, n_objects=2, out_csv='./out/doubleregions.csv',
                                        rotation='random', xy_jitter_width=0, out_hdf5=None,
-                                       hdf5_dataset_name=None, write_masks=False, out_image_dir=None):
+                                       hdf5_dataset_name=None, write_masks=False, out_image_dir=None, video_file=None):
         # write_synthetized_interactions --project_dir /home/matej/prace/ferda/projects/camera1_10-15/ --count=360
         # --n-objects=1 --out-csv=../data/interactions/180208_1k_36rot_single_mask/train.csv --rotation 10  --xy_jitter_width=40 --out_hdf5=../data/interactions/180208_1k_36rot_single_mask/images.h5 --hdf5_dataset_name=train
         if rotation == 'random' or rotation == 'normalize':
@@ -335,7 +335,7 @@ class DataGenerator(object):
                    'region_id', 'theta_rad', 'phi_rad', 'overlap_px']
 
         # angles: positive clockwise, zero direction to right
-        self._load_project(project_dir)
+        self._load_project(project_dir, video_file)
         self._init_regions()
         from core.bg_model.median_intensity import MedianIntensity
         self._bg = MedianIntensity(self._project)

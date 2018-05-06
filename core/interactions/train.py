@@ -394,12 +394,15 @@ class TrainInteractions:
         with open(join(params['experiment_dir'], 'model.txt'), 'w') as fw:
             model.summary(print_fn=lambda x: fw.write(x + '\n'))
         csv_logger = CSVLogger(join(params['experiment_dir'], 'log.csv'), append=True, separator=';')
-        tb = TensorBoard(log_dir=params['tensorboard_dir'], histogram_freq=0, batch_size=32, write_graph=True, write_grads=False,
-                         write_images=False, embeddings_freq=0, embeddings_layer_names=None,
-                         embeddings_metadata=None)
         checkpoint = ModelCheckpoint(join(params['experiment_dir'], 'weights.h5'), save_best_only=True)
+        callbacks.extend([csv_logger, checkpoint])
+        if 'tensorboard_dir' in params and params['tensorboard_dir'] is not None:
+            tb = TensorBoard(log_dir=params['tensorboard_dir'], histogram_freq=0, batch_size=32, write_graph=True, write_grads=False,
+                             write_images=False, embeddings_freq=0, embeddings_layer_names=None,
+                             embeddings_metadata=None)
+            callbacks.append(tb)
         model.fit_generator(train_generator, steps_per_epoch=params['steps_per_epoch'], epochs=params['epochs'],
-                            verbose=1, callbacks=[csv_logger, tb, checkpoint] + callbacks,
+                            verbose=1, callbacks=callbacks,
                             validation_data=test_generator, validation_steps=params['n_test'])
         # model.save_weights(join(params['experiment_dir'], 'weights.h5'))
         return model
@@ -535,7 +538,7 @@ class TrainInteractions:
         return out
 
     def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, rotate=False, exp_name='',
-                           model='6conv_3dense', dataset_names=None, input_layers=3):
+                           model='6conv_3dense', dataset_names=None, input_layers=3, experiment_dir=None):
         # example:
         # local: train /home/matej/prace/ferda/data/interactions/1712_1k_36rot/ 0.5 100 --exp-name=two_mobilenet_scratch
         # remote: train /mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/ 0.5 100 --exp-name=two_mobilenet_scratch
@@ -594,8 +597,6 @@ class TrainInteractions:
         y_train = self.array.dataframe_to_array(y_train_df)
         y_test = self.array.dataframe_to_array(y_test_df)
 
-        print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-
         assert model in self.models, 'model {} doesn\'t exist'.format(model)
 
         parameters = {'epochs': n_epochs,
@@ -642,13 +643,17 @@ class TrainInteractions:
 
         val_callback = ValidationCallback(test_generator, eval_and_print)
 
-        base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime()) + '_' + exp_name
-        base_experiment_dir = join(ROOT_EXPERIMENT_DIR, base_experiment_name)
-        base_tensor_board_dir = join(ROOT_TENSOR_BOARD_DIR, base_experiment_name)
+        if experiment_dir is None:
+            base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime()) + '_' + exp_name
+            base_experiment_dir = join(ROOT_EXPERIMENT_DIR, base_experiment_name)
+            base_tensor_board_dir = join(ROOT_TENSOR_BOARD_DIR, base_experiment_name)
+            if not os.path.exists(base_experiment_dir):
+                os.mkdir(base_experiment_dir)
+        else:
+            base_experiment_dir = experiment_dir
+            base_tensor_board_dir = None
 
-        if not os.path.exists(base_experiment_dir):
-            os.mkdir(base_experiment_dir)
-
+        print('argv -{}-'.format(sys.argv))
         self._write_argv(base_experiment_dir)
 
         results = pd.DataFrame()
