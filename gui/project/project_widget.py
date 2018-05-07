@@ -1,17 +1,17 @@
 __author__ = 'fnaiser'
 
 import sys
-import os
-import time
+from functools import partial
 
+import os
 from PyQt4 import QtGui, QtCore
+
 import core.project.project
 import gui.gui_utils
-from core.settings import Settings as S_
-from gui.loading_widget import LoadingWidget
-from functools import partial
-from gui.settings.settings_dialog import SettingsDialog
 from core.project.compatibility_solver import CompatibilitySolver
+from gui.loading_widget import LoadingWidget
+from gui.settings import Settings as S_
+from gui.settings_widgets.settings_dialog import SettingsDialog
 
 
 class ProjectLoader(QtCore.QThread):

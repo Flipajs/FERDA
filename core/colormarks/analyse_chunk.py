@@ -116,6 +116,7 @@ def colormarks_init_finished_cb(project, masks):
 
 
 if __name__ == '__main__':
+    from core.config import config
     from colormarks_model import ColormarksModel
     from core.project.project import Project
     cm_model = ColormarksModel()
@@ -124,7 +125,7 @@ if __name__ == '__main__':
     p = Project()
     p.load('/Users/flipajs/Documents/wd/GT/Cam1__/cam1.fproj')
     # p.load('/Users/flipajs/Documents/wd/C210/c210.fproj')
-    p.img_manager = ImgManager(p, max_size_mb=S_.cache.img_manager_size_MB)
+    p.img_manager = ImgManager(p, max_size_mb=config['cache']['img_manager_size_MB'])
 
     if False:
         app = QtGui.QApplication(sys.argv)

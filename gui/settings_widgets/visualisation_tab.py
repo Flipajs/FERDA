@@ -1,9 +1,8 @@
 __author__ = 'naiser'
 
-from PyQt4 import QtGui, QtCore
-from gui.settings.default import get_tooltip
-from gui import gui_utils
-from core.settings import Settings as S_
+from PyQt4 import QtGui
+
+from gui.settings import Settings as S_
 
 
 class VisualisationTab(QtGui.QWidget):

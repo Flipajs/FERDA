@@ -1,19 +1,19 @@
 __author__ = 'fnaiser'
 
+import math
 import sys
 
 from PyQt4 import QtGui, QtCore
-
-from gui.init.init_widget import InitWidget
-from gui.project import project_widget, new_project_widget
-from gui.main_tab_widget import MainTabWidget
-import core.project.project
-from core.settings import Settings as S_
-from gui.settings.settings_dialog import SettingsDialog
-import time
-import math, sys
-from PyQt4.QtCore import Qt, QTimer
+from PyQt4.QtCore import Qt
 from PyQt4.QtGui import QWidget, QPalette, QPainter, QBrush, QPen, QColor
+
+import core.project.project
+from gui.init.init_widget import InitWidget
+from gui.main_tab_widget import MainTabWidget
+from gui.project import project_widget, new_project_widget
+from gui.settings import Settings as S_
+from gui.settings_widgets.settings_dialog import SettingsDialog
+
 
 class Overlay(QWidget):
     def __init__(self, parent=None):

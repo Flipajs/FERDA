@@ -1,14 +1,12 @@
-import random
-from PyQt4 import QtGui
-
 import sys
 
 import cv2
+from PyQt4 import QtGui
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
-from core.settings import Settings as S_
 from gui.graph_widget.graph_line import LineType, GraphLine, Overlap
+from gui.settings import Settings as S_
 from utils.img_manager import ImgManager
 
 __author__ = 'Simon Mandlik'

@@ -1,13 +1,12 @@
-import sys
-import cPickle as pickle
-from PyQt4 import QtGui
-from gui import main_window
-from core.settings import Settings as S_
-import time
-from core.project.project import Project
-import timeit
-import numpy as np
 import argparse
+import sys
+import time
+
+from PyQt4 import QtGui
+
+from core.project.project import Project
+from gui import main_window
+from gui.settings import Settings as S_
 
 parser = argparse.ArgumentParser(description='FERDA laboratory animal tracking system.')
 parser.add_argument('project', nargs='?', help='project directory or file')

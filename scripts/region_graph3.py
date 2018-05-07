@@ -1,20 +1,20 @@
 __author__ = 'simon'
 
-import matplotlib.colors as colors
 import random
-from PyQt4 import QtGui, QtCore
 
+import matplotlib.colors as colors
 import numpy as np
+from PyQt4 import QtGui, QtCore
 from skimage.transform import resize
 
 from core.log import LogCategories, ActionNames
 from core.region.region import Region
-from core.settings import Settings as S_
 from gui.graph_widget.custom_line_selectable import Custom_Line_Selectable
 from gui.graph_widget.pixmap_selectable import Pixmap_Selectable
-from gui.img_controls.my_scene import MyScene
 from gui.img_controls.gui_utils import cvimg2qtpixmap
+from gui.img_controls.my_scene import MyScene
 from gui.plot.plot_chunks import PlotChunks
+from gui.settings import Settings as S_
 from gui.view.chunks_on_frame import ChunksOnFrame
 from utils.drawing.points import draw_points_crop
 

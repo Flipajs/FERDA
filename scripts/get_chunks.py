@@ -1,20 +1,20 @@
 __author__ = 'fnaiser'
 
-import numpy as np
+import math
 import pickle
-from utils.video_manager import get_auto_video_manager
-from core.region import mser
-from core.settings import Settings as S_
-from numpy.linalg import norm
-from matplotlib.mlab import normpdf
-from gui.img_grid.img_grid_dialog import ImgGridDialog
-from utils.drawing.points import draw_points_crop, draw_points
-from gui.gui_utils import get_image_label
+
 import cv2
-from core.animal import colors_
 import matplotlib.pyplot as plt
 import numpy as np
-import math
+from matplotlib.mlab import normpdf
+from numpy.linalg import norm
+
+from core.animal import colors_
+from core.region import mser
+from gui.settings import Settings as S_
+from utils.drawing.points import draw_points
+from utils.video_manager import get_auto_video_manager
+
 
 def dist_score(pos, region, std=10):
         # half the radius

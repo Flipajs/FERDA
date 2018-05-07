@@ -1,9 +1,10 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui, QtCore
-from core.settings import Settings as S_
 import numpy as np
+from PyQt4 import QtGui, QtCore
+
 from gui import gui_utils
+from gui.settings import Settings as S_
 from utils.img import get_safe_selection
 
 

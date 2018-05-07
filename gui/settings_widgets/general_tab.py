@@ -1,9 +1,10 @@
 __author__ = 'fnaiser'
 
 from PyQt4 import QtGui, QtCore
-from gui.settings.default import get_tooltip
+
 from gui import gui_utils
-from core.settings import Settings as S_
+from gui.settings import Settings as S_
+
 
 class GeneralTab(QtGui.QWidget):
     def __init__(self):
@@ -15,7 +16,7 @@ class GeneralTab(QtGui.QWidget):
         self.cache_box = QtGui.QGroupBox('Cache')
         self.cache_box.setCheckable(True)
         self.cache_box.setChecked(S_.cache.use)
-        self.cache_box.toggled.connect(lambda : gui_utils.gbox_collapse_expand(self.cache_box))
+        self.cache_box.toggled.connect(lambda: gui_utils.gbox_collapse_expand(self.cache_box))
 
         if not self.cache_box.isChecked():
             gui_utils.gbox_collapse_expand(self.cache_box)

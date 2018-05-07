@@ -1,25 +1,21 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui
-from gui.img_grid.img_grid_widget import ImgGridWidget
-from gui.img_grid.img_grid_dialog import ImgGridDialog
-from utils.video_manager import get_auto_video_manager
-from core.region.mser import get_msers_
-from PIL import ImageQt
-from utils.drawing.points import draw_points_crop, get_contour
 import numpy as np
-from skimage.transform import resize
-from gui.gui_utils import SelectableQLabel
+from PIL import ImageQt
+from PyQt4 import QtGui
 from matplotlib.mlab import normpdf
 from numpy.linalg import norm
+
 from core import colormark
-from gui.view.assignment_widget import AssignmentWidget
-import cv2
-from gui.img_grid.img_grid_widget import ImgGridWidget
-from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 from core.classes_stats import ClassesStats
-from core.settings import Settings as S_
+from core.region.mser import get_msers_
+from core.region.mser_operations import get_region_groups, margin_filter
+from gui.gui_utils import SelectableQLabel
+from gui.img_grid.img_grid_widget import ImgGridWidget
+from gui.view.assignment_widget import AssignmentWidget
+from utils.drawing.points import draw_points_crop, get_contour
 from utils.img import prepare_for_segmentation
+from utils.video_manager import get_auto_video_manager
 
 
 class InitHowWidget(QtGui.QWidget):

@@ -1,14 +1,16 @@
 __author__ = 'fnaiser'
 
 import pickle
+
 import cv2
 import numpy as np
+from PyQt4 import QtCore
+from PyQt4 import QtGui
+
 from core.region import mser, mser_operations
 from utils.img import get_safe_selection
 from utils.roi import get_roi
-from core.settings import Settings as S_
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+
 
 def process_color(c):
     """

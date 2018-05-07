@@ -1,19 +1,19 @@
 __author__ = 'fnaiser'
 
-from utils.roi import ROI, get_roi
-from utils.drawing.points import draw_points_crop, draw_points
-from skimage.transform import resize
-from gui.img_controls.my_scene import MyScene
-from PyQt4 import QtGui, QtCore
-from gui.img_controls.gui_utils import cvimg2qtpixmap
-import numpy as np
 from functools import partial
-from core.animal import colors_
-from core.region.fitting import Fitting
+
 import cv2
-from copy import deepcopy
+import numpy as np
+from PyQt4 import QtGui, QtCore
 from skimage.transform import rescale
-from core.settings import Settings as S_
+from skimage.transform import resize
+
+from core.animal import colors_
+from gui.img_controls.gui_utils import cvimg2qtpixmap
+from gui.img_controls.my_scene import MyScene
+from gui.settings import Settings as S_
+from utils.drawing.points import draw_points_crop, draw_points
+from utils.roi import ROI, get_roi
 
 
 class CaseWidget(QtGui.QWidget):

@@ -1,26 +1,22 @@
 __author__ = 'fnaiser'
 
 import cPickle as pickle
-import Queue
 from functools import partial
 
 import numpy as np
 from PyQt4 import QtGui, QtCore
+from pyqtgraph import makeQImage
+from tqdm import tqdm
 
 from core.graph.region_chunk import RegionChunk
-from core.settings import Settings as S_
+from core.region.region import get_region_endpoints
 from gui.gui_utils import SelectAllLineEdit, ClickableQGraphicsPixmapItem
 from gui.img_controls import markers
-from gui.video_player.video_player import VideoPlayer
-from utils.img import img_saturation_coef
-from utils.misc import is_flipajs_pc
-from core.region.region import get_region_endpoints
-from utils.idtracker import load_idtracker_data
-import cv2
-import time
 from gui.qt_flow_layout import FlowLayout
-from tqdm import tqdm
-from pyqtgraph import makeQImage
+from gui.settings import Settings as S_
+from gui.video_player.video_player import VideoPlayer
+from utils.idtracker import load_idtracker_data
+from utils.img import img_saturation_coef
 
 MARKER_SIZE = 15
 
@@ -1056,7 +1052,6 @@ class ResultsWidget(QtGui.QWidget):
     def draw_id_profiles(self):
         from utils.img import get_safe_selection
         from gui.img_controls.gui_utils import cvimg2qtpixmap
-        from core.animal import colors_
 
         frame = self.video_player.current_frame()
         img = self.video_player._vm.img().copy()

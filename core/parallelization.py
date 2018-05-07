@@ -1,8 +1,10 @@
 __author__ = 'fnaiser'
-import os
-import sys
 import inspect
 import multiprocessing
+import sys
+
+import os
+
 pool=multiprocessing.Pool(processes=4)
 from subprocess import call
 call(["hostname"])
@@ -10,20 +12,18 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 
-import sys
 from utils.video_manager import get_auto_video_manager
 import cPickle as pickle
 from core.region.mser import ferda_filtered_msers
 from core.graph.solver import Solver
 from core.project.project import Project
-from core.settings import Settings as S_
+from config import config
 from utils.img import prepare_for_segmentation
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 import numpy as np
 import time
 import cv2
-from core.region.mser_operations import children_filter
 import fire
 import subprocess
 import tqdm
@@ -174,7 +174,7 @@ def compute_single_id(working_dir, proj_name, id, frames_in_row, last_n_frames):
     proj.rm = RegionManager(db_wd=temp_local_path, db_name='part' + str(id) + '_rm.sqlite3', cache_size_limit=10000)
     proj.chm = ChunkManager()
     proj.color_manager = None
-    S_.general.log_graph_edits = False
+    config['general']['log_graph_edits'] = False
     vid = get_auto_video_manager(proj)
     if id * frames_in_row > 0:
         img = vid.seek_frame(id * frames_in_row)

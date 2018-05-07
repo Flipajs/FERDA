@@ -1,12 +1,13 @@
-from pyqtgraph.Qt import QtCore, QtGui
-import pyqtgraph.opengl as gl
-import pyqtgraph as pg
 import numpy as np
-import cv2
-from core.project.project import Project
+import pyqtgraph as pg
+import pyqtgraph.opengl as gl
+from pyqtgraph.Qt import QtCore, QtGui
+
 import scripts.trajectories_data.eight_gt as data
 import utils.img_manager as imm
-from core.settings import Settings as S_
+from core.project.project import Project
+from gui.settings import Settings as S_
+
 
 class FrameLoader(QtCore.QThread):
     proc_done = QtCore.pyqtSignal(object)

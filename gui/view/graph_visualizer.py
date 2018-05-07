@@ -5,15 +5,14 @@ __author__ = 'flipajs'
 
 import sys
 
-from PyQt4 import QtGui
 import numpy as np
+from PyQt4 import QtGui
 from skimage.transform import rescale
 
-from scripts.region_graph3 import NodeGraphVisualizer, visualize_nodes
-from core.settings import Settings as S_
-from utils.video_manager import get_auto_video_manager, optimize_frame_access
 from core.project.project import Project
+from scripts.region_graph3 import NodeGraphVisualizer, visualize_nodes
 from utils.misc import is_flipajs_pc
+from utils.video_manager import get_auto_video_manager
 
 
 def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callback=None, node_size=30, node_margin=0.1, show_in_visualizer_callback=None, reset_cache=True, show_vertically=False):

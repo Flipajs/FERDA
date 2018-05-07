@@ -1,15 +1,13 @@
 from PIL import ImageQt
+
 from utils.drawing.points import get_contour, draw_points_crop
 
 __author__ = 'fnaiser'
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QImage
-from utils.misc import get_settings
 import utils.img
-from gui.settings.default import get_tooltip
-import os
-from core.settings import Settings as S_
+from gui.settings_widgets.default import get_tooltip, get_default
 import numpy as np
 
 

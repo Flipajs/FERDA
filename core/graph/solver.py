@@ -7,6 +7,7 @@ from utils.constants import EDGE_CONFIRMED
 import cPickle as pickle
 from tqdm import tqdm
 
+
 class Solver:
     SPLIT_JOIN_THRESHOLD = 0.5
 

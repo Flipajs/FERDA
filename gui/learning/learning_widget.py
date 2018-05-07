@@ -1,13 +1,15 @@
-from PyQt4 import QtGui, QtCore
 import sys
-import os
-from core.project.project import Project
-from utils.img_manager import ImgManager
-from core.id_detection.learning_process import LearningProcess
-from core.settings import Settings as S_
+
 import numpy as np
-from gui.qt_flow_layout import FlowLayout
+import os
 import warnings
+from PyQt4 import QtGui, QtCore
+
+from core.id_detection.learning_process import LearningProcess
+from core.project.project import Project
+from gui.qt_flow_layout import FlowLayout
+from gui.settings import Settings as S_
+from utils.img_manager import ImgManager
 
 
 class QCustomTableWidgetItem (QtGui.QTableWidgetItem):

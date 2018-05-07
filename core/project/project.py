@@ -3,7 +3,9 @@ __author__ = 'filip@naiser.cz'
 import cPickle as pickle
 import string
 import time
+
 import numpy as np
+import os
 import tqdm
 
 from core.graph.solver import Solver
@@ -11,11 +13,9 @@ from core.log import Log
 from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
-from core.settings import Settings as S_
+from core.config import config
 from gui.video_loader import check_video_path
 from utils.img_manager import ImgManager
-import os
-
 
 
 class Project:
@@ -420,7 +420,8 @@ class Project:
         self.solver = Solver(self)
         self.gm.assignment_score = self.solver.assignment_score
 
-        self.rm = RegionManager(db_wd=self.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
+        self.rm = RegionManager(db_wd=self.working_directory,
+                                cache_size_limit=config['cache']['region_manager_num_of_instances'])
 
         self.gm.project = self
         self.gm.rm = self.rm

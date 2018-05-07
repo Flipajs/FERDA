@@ -1,15 +1,17 @@
 __author__ = 'fnaiser'
 
-import numpy as np
-from PyQt4 import QtGui, QtCore
+import errno
+import sys
 import time
 from functools import partial
-import sys
+
+import numpy as np
 import os
-import errno
-from core.settings import Settings as S_
-from utils.video_manager import get_auto_video_manager
+from PyQt4 import QtCore
+
 from bg_computer_assembling import assembly_after_parallelization
+from core.config import config
+from utils.video_manager import get_auto_video_manager
 
 
 class BackgroundComputer:
@@ -19,7 +21,7 @@ class BackgroundComputer:
 
     def __init__(self, project, update_callback, finished_callback, postpone_parallelisation):
         self.project = project
-        self.process_n = S_.parallelization.processes_num
+        self.process_n = config['parallelization']['processes_num']
         self.results = []
         self.update_callback = update_callback
         self.finished_callback = finished_callback
@@ -62,8 +64,8 @@ class BackgroundComputer:
             # if self.postpone_parallelisation:
                 # f = open(self.project.working_directory+'/limits.txt', 'w')
 
-            if not S_.general.log_in_bg_computation:
-                S_.general.log_graph_edits = False
+            if not config['general']['log_in_bg_computation']:
+                config['general']['log_graph_edits'] = False
 
             # change this if parallelisation stopped working and you want to run it from given part
             skip_n_first_parts = 0
@@ -120,7 +122,7 @@ class BackgroundComputer:
             if self.postpone_parallelisation:
                 self.precomputed = True
 
-            S_.general.log_graph_edits = True
+            config['general']['log_graph_edits'] = True
             if self.postpone_parallelisation:
                 limitsFile.close()
                 sys.exit() ## Comment for cluster usage

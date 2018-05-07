@@ -1,11 +1,8 @@
-__author__ = 'fnaiser'
-
-from PyQt4 import QtCore, QtGui
-
-
 """
 In this file all global settings are stored.
 """
+__author__ = 'fnaiser'
+from PyQt4 import QtCore, QtGui
 
 
 class SettingsType(type):
@@ -30,7 +27,7 @@ class SettingsType(type):
         return type.__getattribute__(self, attr).set(val)
 
 
-class Item():
+class Item:
     def __init__(self, key, val, tooltip=''):
         self.key_ = key
         self.val_ = val
@@ -66,12 +63,12 @@ class Item():
         return self.tooltip_
 
 
-class Cache(object):
-    __metaclass__ = SettingsType
-    use = Item('cache/use', True, 'There will be stored information in working directory to speed up mainly the results tool.')
-    mser = Item('cache/mser', True, 'Storing MSERs have huge impact on speed but it also needs huge space amount.')
-    img_manager_size_MB = Item('cache/img_manager_size_MB', 500, '')
-    region_manager_num_of_instances = Item('cache/region_manager_num_of_instances', 0, '')
+# class Cache(object):
+#     __metaclass__ = SettingsType
+#     use = Item('cache/use', True, 'There will be stored information in working directory to speed up mainly the results tool.')
+#     mser = Item('cache/mser', True, 'Storing MSERs have huge impact on speed but it also needs huge space amount.')
+#     img_manager_size_MB = Item('cache/img_manager_size_MB', 500, '')
+#     region_manager_num_of_instances = Item('cache/region_manager_num_of_instances', 0, '')
 
 class Colormarks:
     __metaclass__ = SettingsType
@@ -97,18 +94,6 @@ class Visualization:
     history_alpha = Item('visualization/history_alpha', 2.0, '...')
     tracklet_len_per_px = Item('visualization/tracklet_len_per_px_sb', 1, '...')
 
-class Parallelization:
-    __metaclass__ = SettingsType
-    import multiprocessing
-
-    num = multiprocessing.cpu_count()
-    if num > 1:
-        num -= 1
-
-    processes_num = Item('parallelization/processes_num', num, 'The number of processes. It is good idea to set it <= num of CPUs')
-    use = Item('parallelization/use', True, '...')
-    frames_in_row = Item('parallelization/frames_in_row', 100, 'num of frames in one part into which the whole video is divided...')
-
 
 class Temp:
     __metaclass__ = SettingsType
@@ -116,12 +101,6 @@ class Temp:
     last_wd_path = Item('temp/last_wd_path', '')
     last_gt_path = Item('temp/last_gt_path', '')
 
-
-class General:
-    __metaclass__ = SettingsType
-    log_graph_edits = Item('general/log_graph_edits', True, '...')
-    log_in_bg_computation = Item('general/log_in_bg_computation', False, 'Could be switched off before user interactions to save space.')
-    print_log = Item('general/print_log', True, '...')
 
 class Controls:
     __metaclass__ = SettingsType
@@ -166,10 +145,7 @@ class Controls:
 
 
 class Settings:
-    cache = Cache
     colormarks = Colormarks
     visualization = Visualization
-    parallelization = Parallelization
     temp = Temp
-    general = General
     controls = Controls

@@ -4,7 +4,6 @@ import numpy as np
 from reduced import Reduced
 from utils.constants import EDGE_CONFIRMED
 from core.log import LogCategories, ActionNames
-from core.settings import Settings as S_
 from core.region.region import Region
 from random import randint
 
@@ -448,6 +447,15 @@ class Chunk:
         cardinality = #IDS in given tracklet
         
         Returns: 1 if single, 2, 3, ... when cardinality is known, 0 when cardinality is known and tracklet is noise, 
+        -1 when cardinality is not defined
+
+        """
+
+    def get_cardinality(self, gm):
+        """
+        cardinality = #IDS in given tracklet
+
+        Returns: 1 if single, 2, 3, ... when cardinality is known, 0 when cardinality is known and tracklet is noise,
         -1 when cardinality is not defined
 
         """

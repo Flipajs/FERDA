@@ -1,11 +1,8 @@
-
-from gui.settings.default import get_default
 from PyQt4 import QtGui, QtCore
-import copy
-from gui.settings.parameters_tab import ParametersTab
-from gui.settings.general_tab import GeneralTab
-from gui.settings.visualisation_tab import VisualisationTab
-from core.settings import Settings as S_
+
+from gui.settings_widgets.general_tab import GeneralTab
+from gui.settings_widgets.parameters_tab import ParametersTab
+from gui.settings_widgets.visualisation_tab import VisualisationTab
 
 
 class SettingsDialog(QtGui.QDialog):

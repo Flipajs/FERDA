@@ -2,8 +2,6 @@ __author__ = 'fnaiser'
 
 from PyQt4 import QtGui, QtCore
 
-from core.settings import Settings as S_
-
 #meaning of these parameters can be found in tooltips
 default_settings = {
     # CACHE
