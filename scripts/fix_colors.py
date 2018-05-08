@@ -16,11 +16,7 @@ if __name__ == "__main__":
         chm = pickle.load(f)
 
     for ch in chm.chunk_gen():
-        r = random.randint(0, 255)
-        g = random.randint(0, 255)
-        b = random.randint(0, 255)
-        ch.color = QtGui.QColor.fromRgb(r, g, b)
-
+        ch.set_random_color()
         if not hasattr(ch, 'N'):
             ch.N = set()
             ch.P = set()

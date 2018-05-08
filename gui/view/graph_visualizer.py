@@ -66,7 +66,7 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
 
             # TODO: optimize... and add opacity parameter
             ch, _ = project.gm.is_chunk(n)
-            c = (ch.color.blue(), ch.color.green(), ch.color.red(), 0.9)
+            c = tuple(ch.color) + (0.9, )
 
             solver.g.node[n]['img'] = visualize_nodes(im, n, margin=node_margin, color=c)
 

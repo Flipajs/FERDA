@@ -10,6 +10,7 @@ from random import randint
 
 class Chunk:
     def __init__(self, vertices_ids, id_, gm, color=None, origin_interaction=False):
+        assert color is None or isinstance(color, np.ndarray)
         # if not isinstance(vertices_ids, list):
         #     raise Exception('vertices_ids must be a list! (in chunk.py)')
         # if len(vertices_ids) < 2:
@@ -90,6 +91,9 @@ class Chunk:
             items.append(self.nodes_[i])
 
         return items
+
+    def set_random_color(self, low=0, high=255):
+        self.color = np.random.randint(low, high, 3)
 
     def print_info(self, gm):
         s = "TRACKLET --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"

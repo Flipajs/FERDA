@@ -85,7 +85,7 @@ class CaseWidget(QtGui.QWidget):
                     ch, _ = self.project.gm.is_chunk(n)
                     if ch and ch.length() > 1:
                         chunk_nodes.add(n)
-                        self.color_assignments[n] = (ch.color.blue(), ch.color.green(), ch.color.red(), self.opacity)
+                        self.color_assignments[n] = tuple(ch.color) + (self.opacity, )
                     else:
                         self.color_assignments[n] = colors_[i % len(colors_)] + (self.opacity,)
                     i += 1

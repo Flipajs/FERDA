@@ -231,7 +231,6 @@ class Project:
         self.snapshot_id += 1
         self.active_snapshot = -1
 
-
     def save_qsettings(self,toFolder=""):
         if (toFolder == ""):
             destinationFolder = self.working_directory
@@ -442,14 +441,7 @@ class Project:
                 for ch in self.chm.chunk_gen():
                     if hasattr(ch, 'color') and ch.color is not None:
                         break
-
-                    import random
-                    from PyQt4 import QtGui
-
-                    r = random.randint(0, 255)
-                    g = random.randint(0, 255)
-                    b = random.randint(0, 255)
-                    ch.color = QtGui.QColor.fromRgb(r, g, b)
+                    ch.set_random_color()
 
                 for ch in self.chm.chunk_gen():
                     if hasattr(ch, 'N'):

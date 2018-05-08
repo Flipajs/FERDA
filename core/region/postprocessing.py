@@ -1,5 +1,3 @@
-
-from PyQt4 import QtGui, QtCore
 import sys
 from core.region.clustering import prepare_region_cardinality_samples, display_cluster_representants, draw_region
 import cPickle as pickle

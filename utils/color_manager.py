@@ -398,12 +398,7 @@ def colorize_project(project):
     for ch in project.chm.chunk_gen():
         if ch.length() > 0:
             if ch.length() < 100:
-                r = random.randint(50, 255)
-                g = random.randint(50, 255)
-                b = random.randint(50, 255)
-
-                c = QtGui.QColor.fromRgb(r, g, b)
-                ch.color = c
+                ch.set_random_color(low=50)
             else:
                 rch = RegionChunk(ch, project.gm, project.rm)
                 ch.color, _ = project.color_manager.new_track(rch.start_frame(), rch.end_frame())

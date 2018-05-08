@@ -20,6 +20,7 @@ from utils.img import img_saturation_coef
 
 MARKER_SIZE = 15
 
+
 class ResultsWidget(QtGui.QWidget):
     def __init__(self, project, start_on_frame=-1, callbacks=None):
         super(ResultsWidget, self).__init__()
@@ -1187,17 +1188,10 @@ class ResultsWidget(QtGui.QWidget):
 
                 if self.show_contour_ch.isChecked() or self.show_filled_ch.isChecked():
                     alpha = self.alpha_filled if self.show_filled_ch.isChecked() else self.alpha_contour
+                    if ch.color is None:
+                        ch.set_random_color()
 
-                    c_ = ch.color
-                    if c_ is None:
-                        import random
-                        c = QtGui.QColor.fromRgb(random.randint(0, 255),
-                                                 random.randint(0, 255),
-                                                 random.randint(0, 255))
-                        ch.color = c
-                        c_ = ch.color
-
-                    item = self.draw_region(r, ch, use_ch_color=c_, alpha=alpha)
+                    item = self.draw_region(r, ch, use_ch_color=QtGui.QColor(*ch.color), alpha=alpha)
 
                     self.video_player.visualise_temp(item, category='region')
 
