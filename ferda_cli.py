@@ -37,6 +37,21 @@ def results_to_mot(results):
     return df
 
 
+def fix_chunk_manager_color(project):
+    import pickle
+    from PyQt4 import QtGui
+    chm_path = project.working_directory + '/chunk_manager.pkl'
+    with open(chm_path, 'rb') as f:
+        chm = pickle.load(f)
+
+    for _, ch in chm.chunks_.iteritems():
+        ch.project = None
+        assert isinstance(ch.color, QtGui.QColor)
+        ch.color = ch.color.getRgb()[:3]
+    with open(chm_path, 'wb') as f:
+        pickle.dump(chm, f, -1)
+
+
 if __name__ == '__main__':
     import argparse
 
@@ -44,6 +59,7 @@ if __name__ == '__main__':
     parser.add_argument('project', type=str, help='project file or directory')
     parser.add_argument('--video-file', type=str, help='project input video file')
     parser.add_argument('--save-results-mot', type=str, help='write found trajectories in MOT challenge format')
+    parser.add_argument('--fix-chunk-manager-color', action='store_true', help='fix legacy project\'s ChunkManager.color')
     args = parser.parse_args()
 
     project = Project()
@@ -53,3 +69,6 @@ if __name__ == '__main__':
         results = project.get_results_trajectories()
         df = results_to_mot(results)
         df.to_csv(args.save_results_mot, header=False, index=False)
+
+    if args.fix_chunk_manager_color:
+        fix_chunk_manager_color(project)
