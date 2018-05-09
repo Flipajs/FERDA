@@ -11,6 +11,7 @@ import gui.gui_utils
 from core.project.compatibility_solver import CompatibilitySolver
 from gui.loading_widget import LoadingWidget
 from gui.settings import Settings as S_
+from core.config import config
 from gui.settings_widgets.settings_dialog import SettingsDialog
 
 
@@ -150,7 +151,7 @@ class ProjectWidget(QtGui.QWidget):
         self.timer.stop()
 
         from core.region.region_manager import RegionManager
-        project.rm = RegionManager(db_wd=project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
+        project.rm = RegionManager(db_wd=project.working_directory, cache_size_limit=config['cache']['region_manager_num_of_instances'])
 
         self.finish_callback('load_project', project)
 

@@ -19,7 +19,7 @@ from gui.init.set_msers import SetMSERs
 from core.project.project import Project
 from gui.init.crop_video_widget import CropVideoWidget
 from functools import partial
-from core.settings import Settings as S_
+from gui.settings import Settings as S_
 import cPickle as pickle
 
 class NewProjectWidget(QtGui.QWidget):

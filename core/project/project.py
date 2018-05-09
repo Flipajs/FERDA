@@ -180,7 +180,8 @@ class Project:
 
         self.save_gm_(destinationFolder+'/graph_manager.pkl')
 
-        self.save_qsettings(to_folder)
+        print('project.load settings...')  # TODO
+        # self.save_qsettings(to_folder)
 
         self.save_project_file_(to_folder)
 
@@ -231,36 +232,36 @@ class Project:
         self.snapshot_id += 1
         self.active_snapshot = -1
 
-    def save_qsettings(self,toFolder=""):
-        if (toFolder == ""):
-            destinationFolder = self.working_directory
-        else:
-            destinationFolder = toFolder
-        from PyQt4 import QtCore
-        s = QtCore.QSettings('FERDA')
-        settings = {}
-
-        for k in s.allKeys():
-            try:
-                settings[str(k)] = str(s.value(k, 0, str))
-            except:
-                pass
-
-        with open(destinationFolder+'/settings.pkl', 'wb') as f:
-            pickle.dump(settings, f)
-
-    def load_qsettings(self):
-        with open(self.working_directory+'/settings.pkl', 'rb') as f:
-            settings = pickle.load(f)
-            from PyQt4 import QtCore
-            qs = QtCore.QSettings('FERDA')
-            qs.clear()
-
-            for key, it in settings.iteritems():
-                try:
-                    qs.setValue(key, it)
-                except:
-                    pass
+    # def save_qsettings(self,toFolder=""):
+    #     if (toFolder == ""):
+    #         destinationFolder = self.working_directory
+    #     else:
+    #         destinationFolder = toFolder
+    #     from PyQt4 import QtCore
+    #     s = QtCore.QSettings('FERDA')
+    #     settings = {}
+    #
+    #     for k in s.allKeys():
+    #         try:
+    #             settings[str(k)] = str(s.value(k, 0, str))
+    #         except:
+    #             pass
+    #
+    #     with open(destinationFolder+'/settings.pkl', 'wb') as f:
+    #         pickle.dump(settings, f)
+    #
+    # def load_qsettings(self):
+    #     with open(self.working_directory+'/settings.pkl', 'rb') as f:
+    #         settings = pickle.load(f)
+    #         from PyQt4 import QtCore
+    #         qs = QtCore.QSettings('FERDA')
+    #         qs.clear()
+    #
+    #         for key, it in settings.iteritems():
+    #             try:
+    #                 qs.setValue(key, it)
+    #             except:
+    #                 pass
 
     def load_semistate(self, path, state='isolation_score', one_vertex_chunk=False, update_t_nodes=False):
         self.load(path)
@@ -358,7 +359,8 @@ class Project:
         if not lightweight:
             # SETTINGS
             try:
-                self.load_qsettings()
+                print('settings...')  #TODO
+                # self.load_qsettings()
             except:
                 pass
 

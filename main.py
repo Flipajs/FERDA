@@ -7,6 +7,7 @@ from PyQt4 import QtGui
 from core.project.project import Project
 from gui import main_window
 from gui.settings import Settings as S_
+from core.config import config
 
 parser = argparse.ArgumentParser(description='FERDA laboratory animal tracking system.')
 parser.add_argument('project', nargs='?', help='project directory or file')
@@ -17,7 +18,7 @@ ex = main_window.MainWindow()
 ex.setFocus()
 
 t_ = time.time()
-S_.general.print_log = False
+config['general']['print_log'] = False
 if args.project is not None:
     project = Project()
     project.load(args.project)

@@ -6,7 +6,6 @@ import math
 import cv2
 from gui.img_controls import markers
 from core.animal import colors_
-from core.settings import Settings as S_
 from core.graph.region_chunk import RegionChunk
 import numpy as np
 import sys
