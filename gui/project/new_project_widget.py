@@ -20,7 +20,9 @@ from core.project.project import Project
 from gui.init.crop_video_widget import CropVideoWidget
 from functools import partial
 from gui.settings import Settings as S_
+from core.config import config
 import cPickle as pickle
+
 
 class NewProjectWidget(QtGui.QWidget):
     def __init__(self, finish_callback):
@@ -213,7 +215,7 @@ class NewProjectWidget(QtGui.QWidget):
         self.update_project_step1()
 
         from utils.img_manager import ImgManager
-        self.project.img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
+        self.project.img_manager = ImgManager(self.project, max_size_mb=config['cache']['img_manager_size_MB'])
 
         # if self.finish_callback:
         #     self.finish_callback('project_created', self.project)

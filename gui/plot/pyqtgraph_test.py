@@ -6,7 +6,7 @@ from pyqtgraph.Qt import QtCore, QtGui
 import scripts.trajectories_data.eight_gt as data
 import utils.img_manager as imm
 from core.project.project import Project
-from gui.settings import Settings as S_
+from core.config import config
 
 
 class FrameLoader(QtCore.QThread):
@@ -27,12 +27,13 @@ class FrameLoader(QtCore.QThread):
         for i in range (self.frame, self.frame+self.limit):
             self.imm.get_whole_img(i)
 
+
 class MyView(QtGui.QWidget):
     def __init__(self, project):
         super(MyView, self).__init__()
 
         self.w = gl.GLViewWidget()
-        self.imm = imm.ImgManager(project, max_size_mb=S_.cache.img_manager_size_MB)
+        self.imm = imm.ImgManager(project, max_size_mb=config['cache']['img_manager_size_MB'])
         self.w.setCameraPosition(elevation=20, distance=2100)
         self.w.setVisible(True)
 

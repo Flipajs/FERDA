@@ -19,6 +19,7 @@ from gui.results.noise_filter_computer import NoiseFilterComputer
 from gui.settings import Settings as S_
 from gui.view.graph_visualizer import call_visualizer
 from new_region_widget import NewRegionWidget
+from core.config import config
 
 
 class ConfigurationsVisualizer(QtGui.QWidget):
@@ -84,7 +85,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.fitting_finished_mutex = QtCore.QMutex()
         from utils.img_manager import ImgManager
         # TODO: add to settings
-        self.img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
+        self.img_manager = ImgManager(self.project, max_size_mb=config['cache']['img_manager_size_MB'])
 
 
     def create_tool_w(self):

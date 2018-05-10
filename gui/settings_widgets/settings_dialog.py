@@ -3,6 +3,7 @@ from PyQt4 import QtGui, QtCore
 from gui.settings_widgets.general_tab import GeneralTab
 from gui.settings_widgets.parameters_tab import ParametersTab
 from gui.settings_widgets.visualisation_tab import VisualisationTab
+from gui.settings import Settings as S_
 
 
 class SettingsDialog(QtGui.QDialog):
@@ -17,7 +18,7 @@ class SettingsDialog(QtGui.QDialog):
     settings.value(key, default_value, type)
     """
 
-    def __init__(self, parent=None, settable_buttons = []):
+    def __init__(self, parent=None, settable_buttons=[]):
         super(SettingsDialog, self).__init__(parent, QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowSystemMenuHint)
 
         self.setStyleSheet("""QToolTip {
@@ -33,8 +34,7 @@ class SettingsDialog(QtGui.QDialog):
         self.buttonBox.button(QtGui.QDialogButtonBox.RestoreDefaults).clicked.connect(self.restore_defaults)
 
         self.tabWidget = QtGui.QTabWidget()
-        self.general_tab = GeneralTab()
-        self.tabWidget.addTab(self.general_tab, "General")
+
         # self.appearance_tab = AppearanceTab()
         # self.tabWidget.addTab(self.appearance_tab, "Appearance")
         # self.controls_tab = ControlsTab()

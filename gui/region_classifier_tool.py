@@ -533,7 +533,6 @@ class RegionClassifierTool(QtGui.QWidget):
 
         return item
 
-
     def train(self, n, more_singles=False):
         with open(self.p.working_directory + '/temp/clustering_tool.pkl') as f:
             _, undecided = pickle.load(f)
