@@ -198,6 +198,7 @@ class MainWindow(QtGui.QMainWindow):
         dialog = SettingsDialog(self)
         dialog.exec_()
 
+
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     ex = MainWindow()

@@ -10,6 +10,7 @@ For more help run this file as a script with --help parameter.
 from core.project.project import Project
 import pandas as pd
 import numpy as np
+import os
 
 
 def results_to_mot(results):
@@ -37,19 +38,46 @@ def results_to_mot(results):
     return df
 
 
-def fix_chunk_manager_color(project):
+def fix_legacy_project(project_path):
     import pickle
-    from PyQt4 import QtGui
-    chm_path = project.working_directory + '/chunk_manager.pkl'
-    with open(chm_path, 'rb') as f:
-        chm = pickle.load(f)
+    from PyQt4 import QtGui, QtCore
 
-    for _, ch in chm.chunks_.iteritems():
-        ch.project = None
-        assert isinstance(ch.color, QtGui.QColor)
-        ch.color = ch.color.getRgb()[:3]
-    with open(chm_path, 'wb') as f:
-        pickle.dump(chm, f, -1)
+    project_dirname, project_filename = Project.get_project_dir_and_file(project_path)
+
+    chm_path = os.path.join(project_dirname, 'chunk_manager.pkl')
+    if os.path.isfile(chm_path):
+        with open(chm_path, 'rb') as fr:
+            chm = pickle.load(fr)
+        for _, ch in chm.chunks_.iteritems():
+            ch.project = None
+            if isinstance(ch.color, QtGui.QColor):
+                ch.color = ch.color.getRgb()[:3]
+        with open(chm_path, 'wb') as fw:
+            pickle.dump(chm, fw, -1)
+        print('Fixed chunk.color.')
+    else:
+        print('Can\'t find chunk manager {}'.format(chm_path))
+
+    with open(project_filename, 'rb') as fr:
+        project_pickle = pickle.load(fr)
+    if isinstance(project_pickle['name'], QtCore.QString):
+        project_pickle['name'] = str(project_pickle['name'])
+    with open(project_filename, 'wb') as fw:
+        pickle.dump(project_pickle, fw, -1)
+    print('Fixed project.name.')
+
+
+def run_tracking(project_path, video_file=None):
+    _, project_filename = Project.get_project_dir_and_file(project_path)
+    import core.segmentation
+    import core.graph_assembly
+    import core.graph.solver
+    n_parts = core.segmentation.segmentation(project_filename)
+    project = Project()
+    project.load(project_filename, video_file=video_file)
+    graph_solver = core.graph.solver.Solver(project)
+    core.graph_assembly.graph_assembly(project, graph_solver, n_parts)
+    project.save()
 
 
 if __name__ == '__main__':
@@ -59,16 +87,21 @@ if __name__ == '__main__':
     parser.add_argument('project', type=str, help='project file or directory')
     parser.add_argument('--video-file', type=str, help='project input video file')
     parser.add_argument('--save-results-mot', type=str, help='write found trajectories in MOT challenge format')
-    parser.add_argument('--fix-chunk-manager-color', action='store_true', help='fix legacy project\'s ChunkManager.color')
+    parser.add_argument('--fix-legacy-project', action='store_true', help='fix legacy project\'s Qt dependencies')
+    parser.add_argument('--run-tracking', action='store_true', help='run tracking on initilized project')
     args = parser.parse_args()
 
-    project = Project()
-    project.load(args.project, video_file=args.video_file)
-
     if args.save_results_mot:
+        project = Project()
+        project.load(args.project, video_file=args.video_file)
         results = project.get_results_trajectories()
         df = results_to_mot(results)
         df.to_csv(args.save_results_mot, header=False, index=False)
 
-    if args.fix_chunk_manager_color:
-        fix_chunk_manager_color(project)
+    if args.fix_legacy_project:
+        fix_legacy_project(args.project)
+
+    if args.run_tracking:
+        project = Project()
+        project.load(args.project, video_file=args.video_file)
+        run_tracking(args.project, video_file=args.video_file)

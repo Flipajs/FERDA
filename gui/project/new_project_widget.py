@@ -115,7 +115,6 @@ class NewProjectWidget(QtGui.QWidget):
         self.go_to_video_config()
         self.video_boundaries_confirmed()
 
-
     def select_video_files_clicked(self):
         path = ''
         if os.path.isdir(S_.temp.last_vid_path):
@@ -184,7 +183,7 @@ class NewProjectWidget(QtGui.QWidget):
             self.finish_callback('project_created', project)
 
     def update_project_step1(self):
-        self.project.name = self.project_name.text()
+        self.project.name = str(self.project_name.text())
         if not len(self.project.name):
             self.project.name = "untitled"
 
@@ -232,9 +231,12 @@ class NewProjectWidget(QtGui.QWidget):
 
             self.project.segmentation_model = self.step4_w.helper
 
-        self.project.other_parameters.segmentation_use_roi_prediction_optimisation = self.step4_w.use_roi_prediction_optimisation_ch.isChecked()
-        self.project.other_parameters.segmentation_prediction_optimisation_border = self.step4_w.prediction_optimisation_border_spin.value()
-        self.project.other_parameters.full_segmentation_refresh_in_spin = self.step4_w.full_segmentation_refresh_in_spin.value()
+        self.project.other_parameters.segmentation_use_roi_prediction_optimisation = \
+            self.step4_w.use_roi_prediction_optimisation_ch.isChecked()
+        self.project.other_parameters.segmentation_prediction_optimisation_border = \
+            self.step4_w.prediction_optimisation_border_spin.value()
+        self.project.other_parameters.full_segmentation_refresh_in_spin = \
+            self.step4_w.full_segmentation_refresh_in_spin.value()
 
         self.project.stats = dummy_classes_stats()
 

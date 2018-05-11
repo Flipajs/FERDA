@@ -1,5 +1,4 @@
 import sys
-from core.region.clustering import prepare_region_cardinality_samples, display_cluster_representants, draw_region
 import cPickle as pickle
 from sklearn.preprocessing import StandardScaler
 from utils.video_manager import get_auto_video_manager

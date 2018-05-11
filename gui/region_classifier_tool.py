@@ -1,11 +1,12 @@
 from PyQt4 import QtGui, QtCore
 import sys
-from core.region.clustering import prepare_region_cardinality_samples, display_cluster_representants, draw_region, get_data
+from core.region.clustering import prepare_region_cardinality_samples, display_cluster_representants, get_data
 import cPickle as pickle
 from sklearn.preprocessing import StandardScaler
 from utils.video_manager import get_auto_video_manager
 from utils.drawing.collage import create_collage_rows
 from scipy.spatial.distance import cdist
+from utils.drawing.points import draw_points
 import numpy as np
 import cv2
 from gui.img_grid.img_grid_widget import ImgGridWidget
@@ -332,6 +333,16 @@ class RegionClassifierTool(QtGui.QWidget):
 
         return X, vertices, undecided, images, compute
 
+    def draw_region(self, p, vm, v):
+        r1 = p.gm.region(v)
+        im1 = vm.get_frame(r1.frame()).copy()
+        draw_points(im1, r1.contour(), color=(255, 0, 0, 255))
+        draw_points(im1, r1.pts(), color=(255, 0, 0, 20))
+        roi = r1.roi().safe_expand(30, im1)
+        im = im1[roi.slices()].copy()
+
+        return im
+
     def human_iloop_classification(self, compute=False, sort=False, n=100):
         p = self.p
 
@@ -355,7 +366,7 @@ class RegionClassifierTool(QtGui.QWidget):
             ask = True
             for i in tqdm.tqdm(range(n)):
                 if self.redraw_:
-                    im = draw_region(p, vm, vertices[id_])
+                    im = self.draw_region(p, vm, vertices[id_])
                     if im.shape[0] == 0 or im.shape[1] == 0:
                         print self.p.gm.region(vertices[id_]).area(), vertices[id_]
                         continue

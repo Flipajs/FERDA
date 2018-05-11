@@ -1,6 +1,6 @@
 from utils.img import prepare_for_visualisation, get_safe_selection
 from utils.video_manager import get_auto_video_manager
-from utils.drawing.points import draw_points
+# from utils.drawing.points import draw_points
 from utils.roi import ROI, get_roi
 import numpy as np
 import cv2

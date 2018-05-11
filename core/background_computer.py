@@ -9,9 +9,10 @@ import numpy as np
 import os
 from PyQt4 import QtCore
 
-from bg_computer_assembling import assembly_after_parallelization
+from graph_assembly import graph_assembly
 from core.config import config
 from utils.video_manager import get_auto_video_manager
+from core.graph.solver import Solver
 
 
 class BackgroundComputer:
@@ -30,12 +31,12 @@ class BackgroundComputer:
         # TODO: Settings
         self.frames_in_row = project.solver_parameters.frames_in_row
         self.frames_in_row_last = -1
-        self.part_num = -1
+        self.n_parts = -1
 
         self.processes = []
 
         self.set_frames_in_row()
-        self.finished = np.array([False for i in range(self.part_num)])
+        self.finished = np.array([False for i in range(self.n_parts)])
 
         self.solver = None
 
@@ -53,8 +54,8 @@ class BackgroundComputer:
         vid = get_auto_video_manager(self.project)
         frame_num = int(vid.total_frame_count())
 
-        self.part_num = int(int(frame_num) / int(self.frames_in_row))
-        self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.part_num))
+        self.n_parts = int(int(frame_num) / int(self.frames_in_row))
+        self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.n_parts))
 
     def run(self):
         if not os.path.exists(self.project.working_directory + '/temp'):
@@ -70,52 +71,50 @@ class BackgroundComputer:
             # change this if parallelisation stopped working and you want to run it from given part
             skip_n_first_parts = 0
 
-            self.start = [0] * self.part_num
+            self.start = [0] * self.n_parts
 
             for i in range(skip_n_first_parts):
                 self.processes.append(None)
 
             if self.postpone_parallelisation:
-                limitsFile = open(str(self.project.working_directory)+"/limits.txt","w")
+                limits_file = open(str(self.project.working_directory)+"/limits.txt","w")
 
-            for i in range(skip_n_first_parts, self.part_num):
+            for i in range(skip_n_first_parts, self.n_parts):
                 p = QtCore.QProcess()
 
                 p.finished.connect(partial(self.onFinished, i))
                 p.readyReadStandardError.connect(partial(self.OnProcessErrorReady, i))
                 p.readyReadStandardOutput.connect(partial(self.OnProcessOutputReady, i))
 
-                f_num = self.frames_in_row
-
                 last_n_frames = 0
-                if i == self.part_num - 1:
+                if i == self.n_parts - 1:
                     last_n_frames = self.frames_in_row_last - self.frames_in_row
 
-                ex_str = str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
-                    self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
-                    f_num) + ' ' + str(last_n_frames)
-                print ex_str
+                commandline = '{executable} "{cwd}/core/segmentation.py" ' \
+                              'part_segmentation "{project_file}" {part_id} {frames_in_row} {last_n_frames}'.format(
+                    executable=sys.executable,
+                    cwd=os.getcwd(),
+                    project_file=self.project.project_file,
+                    part_id=i,
+                    frames_in_row=self.frames_in_row,
+                    last_n_frames=last_n_frames)
+                print(commandline)
 
                 if self.postpone_parallelisation:
-                    limitsFile.write(str(i)+'\t'+str(f_num)+'\t'+str(last_n_frames)+'\n')
+                    limits_file.write('{}\t{}\t{}\n'.format(i, self.frames_in_row, last_n_frames))
 
-                status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
-                    status = self.RUNNING
-
                     if not self.postpone_parallelisation:
-                        p.start(str(sys.executable) + ' "' + os.getcwd() + '/core/parallelization.py" "' + str(
-                            self.project.working_directory) + '" "' + str(self.project.name) + '" ' + str(i) + ' ' + str(
-                            f_num) + ' ' + str(last_n_frames))
+                        p.start(commandline)
 
                 self.start[i] = time.time()
 
-                status = self.WAITING
                 if i < skip_n_first_parts + self.process_n:
                     status = self.RUNNING
-                    #p.start(str(sys.executable) + ' "'+os.getcwd()+'/core/parallelization.py" "'+ str(self.project.working_directory)+'" "'+str(self.project.name)+'" '+str(i)+' '+str(f_num)+' '+str(last_n_frames))   ## Uncomment for cluster usage
+                else:
+                    status = self.WAITING
 
-                self.processes.append([p, ex_str, status])
+                self.processes.append([p, commandline, status])
 
                 # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
 
@@ -124,7 +123,7 @@ class BackgroundComputer:
 
             config['general']['log_graph_edits'] = True
             if self.postpone_parallelisation:
-                limitsFile.close()
+                limits_file.close()
                 sys.exit() ## Comment for cluster usage
             
         else:
@@ -134,7 +133,9 @@ class BackgroundComputer:
         if not self.postpone_parallelisation and (self.finished.all() or self.precomputed):
             self.check_parallelization_timer.stop()
             self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
-            assembly_after_parallelization(self)
+            self.solver = Solver(self.project)
+            graph_assembly(self.project, self.solver, self.n_parts,
+                           self.first_part, self.do_semi_merge)
 
             # from utils.color_manager import colorize_project
             # import time
@@ -174,9 +175,9 @@ class BackgroundComputer:
                     if i:
                         num_finished += 1
 
-                self.update_callback(num_finished / float(self.part_num))
+                self.update_callback(num_finished / float(self.n_parts))
 
-                print "PART " + str(p_id + 1) + "/" + str(self.part_num) + " FINISHED MSERS, takes ", round(
+                print "PART " + str(p_id + 1) + "/" + str(self.n_parts) + " FINISHED MSERS, takes ", round(
                     end - self.start[p_id], 2), " seconds which is ", round((end - self.start[p_id]) / (
                     self.process_n * self.frames_in_row), 4), " seconds per frame"
 

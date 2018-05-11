@@ -11,7 +11,6 @@ from utils.video_manager import get_auto_video_manager
 from utils.drawing.collage import create_collage_rows
 from scipy.spatial.distance import cdist
 import cv2
-from PyQt4 import QtGui
 from tqdm import tqdm
 
 
@@ -153,17 +152,6 @@ def display_cluster_representants(p, N=30):
         cv2.waitKey(0)
         # cv2.imwrite(p.working_directory+'/temp/cluster_representant_'+str(label)+'.jpg', collage)
 
-def draw_region(p, vm, v):
-    r1 = p.gm.region(v)
-    im1 = vm.get_frame(r1.frame()).copy()
-    c1 = QtGui.QColor(255, 0, 0, 255)
-    draw_points(im1, r1.contour(), color=c1)
-    c2 = QtGui.QColor(255, 0, 0, 20)
-    draw_points(im1, r1.pts(), color=c2)
-    roi = r1.roi().safe_expand(30, im1)
-    im = im1[roi.slices()].copy()
-
-    return im
 
 if __name__ == '__main__':
     from core.project.project import Project

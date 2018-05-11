@@ -9,7 +9,7 @@ from change_property import change_pr
 import shutil
 import numpy as np
 
-#This script prepares a bash for execution of parallelization.py in  the cluster. It also modifies a copy of .fproj to point to correct working directory, project and video paths in the cluster.
+#This script prepares a bash for execution of segmentation.py in  the cluster. It also modifies a copy of .fproj to point to correct working directory, project and video paths in the cluster.
 
 #These parameters we get from command line, they must change with every project
 #local_working_directory = sys.argv[1];
@@ -45,7 +45,7 @@ def prepareForClusterDummy(local_working_directory,cluster_working_directory,clu
 	# create bash script
 	clusterScriptHeader += '\n#$ -t 1-'+str(numLines)+':1'
 	clusterScriptBody = 'LIMIT=$(awk \"NR==$SGE_TASK_ID\" '+ cluster_working_directory+'/copy_for_cluster/limits.txt)\n'
-	clusterScriptBody += 'python '+  'core/parallelization.py ' + cluster_working_directory + '/copy_for_cluster/ ' +  project_name + ' $LIMIT'
+	clusterScriptBody += 'python '+  'core/segmentation.py ' + cluster_working_directory + '/copy_for_cluster/ ' +  project_name + ' $LIMIT'
 	scriptFile = open(local_temp_path+'run_ferda_parallel.sh','w');
 	scriptFile.write(clusterScriptHeader+'\n\n'+clusterScriptBody);
 	scriptFile.close()
@@ -98,7 +98,7 @@ def prepareForCluster(local_working_directory,cluster_working_directory,cluster_
 	clusterScriptBody += 'LIMIT=$(awk \"NR==$SGE_TASK_ID\" '+ cluster_working_directory+'copy_for_cluster/limits.txt)\n'
 	clusterScriptBody +='module load mahotas \n'
 	clusterScriptBody +='module load graph-tool/2.12 \n'
-	clusterScriptBody += 'python '+ cluster_Ferda_Dir+ 'core/parallelization.py ' + cluster_working_directory + 'copy_for_cluster/ ' +  project_name + ' $LIMIT'
+	clusterScriptBody += 'python '+ cluster_Ferda_Dir+ 'core/segmentation.py ' + cluster_working_directory + 'copy_for_cluster/ ' +  project_name + ' $LIMIT'
 
 	scriptFile = open(local_temp_path+'run_ferda_parallel.sh','w');
 	scriptFile.write(clusterScriptHeader+'\n\n'+clusterScriptBody);  #!!!

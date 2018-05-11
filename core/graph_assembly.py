@@ -1,7 +1,7 @@
 import cPickle as pickle
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
-from core.graph.solver import Solver
+from core.graph.graph_manager import GraphManager
 import warnings
 from itertools import izip
 from tqdm import tqdm
@@ -34,121 +34,89 @@ def check_if_already_assembled(project):
         os.rename(gm_path, gm_path[:-4] + '_' + dt + '.pkl')
 
 
-def assembly_after_parallelization(bgcomp):
-    check_if_already_assembled(bgcomp.project)
+def graph_assembly(project, graph_solver, n_parts, first_part=0, do_semi_merge=False):
+    check_if_already_assembled(project)
 
     print "Starting assembly..."
-    from core.graph.graph_manager import GraphManager
     # TODO: add to settings
 
-    bgcomp.project.chm = ChunkManager()
-    bgcomp.solver = Solver(bgcomp.project)
-    bgcomp.project.gm = GraphManager(bgcomp.project, bgcomp.solver.assignment_score)
-
-    if not bgcomp.project.is_cluster():
-        bgcomp.update_callback(0, 're-indexing...')
-
-    # if not bgcomp.project.is_cluster():
-    #     from core.settings import Settings as S_
-    #     # switching off... We don't want to log following...
-    #     S_.general.log_graph_edits = False
-
-    part_num = bgcomp.part_num
-
-    from utils.misc import is_flipajs_pc
-    if is_flipajs_pc():
-        # TODO: remove this line
-        # part_num = 5
-        # bgcomp.first_part = 100
-        pass
-
-    bgcomp.project.color_manager = None
+    project.chm = ChunkManager()
+    project.gm = GraphManager(project, graph_solver.assignment_score)
+    project.color_manager = None
 
     import time
     merging_t = time.time()
 
     print("\nLOADING PARTS AND MERGING...")
-    # for i in range(part_num):
-    for i in tqdm(range(bgcomp.first_part, bgcomp.first_part + part_num), leave=False):
-        rm_old = RegionManager(db_wd=bgcomp.project.working_directory + '/temp',
+    # for i in range(n_parts):
+    for i in tqdm(range(first_part, first_part + n_parts), leave=False):
+        rm_old = RegionManager(db_wd=project.working_directory + '/temp',
                                db_name='part' + str(i) + '_rm.sqlite3', cache_size_limit=1, supress_init_print=True)
 
-        with open(bgcomp.project.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
+        with open(project.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
             up = pickle.Unpickler(f)
             g_ = up.load()
             relevant_vertices = up.load()
             chm_ = up.load()
 
-            merge_parts(bgcomp.project.gm, g_, relevant_vertices, bgcomp.project, rm_old, chm_)
+            merge_parts(project.gm, g_, relevant_vertices, project, rm_old, chm_)
 
-        if not bgcomp.project.is_cluster():
-            bgcomp.update_callback((i + 1) / float(part_num))
+    fir = project.solver_parameters.frames_in_row
 
-    fir = bgcomp.project.solver_parameters.frames_in_row
-
-    if not bgcomp.project.is_cluster():
-        bgcomp.update_callback(-1, 'joining parts...')
-
-    bgcomp.project.gm.rm = bgcomp.project.rm
+    project.gm.rm = project.rm
 
     print
     print "RECONNECTING GRAPHS"
     print
     vs_todo = []
 
-    start_ = (bgcomp.first_part + 1) * fir
-    for part_end_t in range(start_, start_ + fir*part_num, fir):
-        t_v = bgcomp.project.gm.get_vertices_in_t(part_end_t - 1)
-        t1_v = bgcomp.project.gm.get_vertices_in_t(part_end_t)
+    start_ = (first_part + 1) * fir
+    for part_end_t in range(start_, start_ + fir*n_parts, fir):
+        t_v = project.gm.get_vertices_in_t(part_end_t - 1)
+        t1_v = project.gm.get_vertices_in_t(part_end_t)
 
         vs_todo.extend(t_v)
 
-        connect_graphs(bgcomp, t_v, t1_v, bgcomp.project.gm, bgcomp.project.rm)
+        connect_graphs(project, t_v, t1_v, project.gm, project.rm)
         # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
 
     print "merge t: {:.2f}".format(time.time() - merging_t)
-    print "#CHUNKS: ", len(bgcomp.project.chm)
+    print "#CHUNKS: ", len(project.chm)
     print "simplifying "
 
-    p = bgcomp.project
+    p = project
     one2one_t = time.time()
     try:
-        # TODO:
-        if bgcomp.project.type == 'colony':
-            rules = [bgcomp.solver.adaptive_threshold]
-
-            while True:
-                if bgcomp.solver.simplify(rules=rules) == 0:
-                    break
-        else:
-            bgcomp.solver.simplify(rules=[bgcomp.solver.one2one])
+        graph_solver.simplify(rules=[graph_solver.one2one])
     except:
-        bgcomp.solver.one2one()
+        graph_solver.one2one()
 
     print
     print "\tfirst one2one t: {:.2f}s".format(time.time() - one2one_t)
 
     learn_assignment_t = time.time()
 
-    bgcomp.project.save_semistate('first_tracklets')
-    from scripts.regions_stats import learn_assignments, add_score_to_edges, tracklet_stats
-    learn_assignments(bgcomp.project, max_examples=50000, display=False)
+    project.save_semistate('first_tracklets')
 
-    print
-    print "\tlearn assignment t: {:.2f}s".format(time.time() - learn_assignment_t)
+    # project.load_semistate(project.project_file, 'first_tracklets')
+    from scripts.regions_stats import learn_assignments, add_score_to_edges, tracklet_stats
+    learn_assignments(project, max_examples=50000, display=False)
+
+    print()
+    print("\tlearn assignment t: {:.2f}s".format(time.time() - learn_assignment_t))
     learn_assignment_t = time.time()
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
     add_score_to_edges(p)
 
-    print "\tscore edges t: {:.2f}s".format(time.time() - learn_assignment_t)
+    print("\tscore edges t: {:.2f}s".format(time.time() - learn_assignment_t))
 
     p.save_semistate('edge_cost_updated')
 
     update_t = time.time()
     p.gm.update_nodes_in_t_refs()
     p.chm.reset_itree(p.gm)
-    print "\tupdate t: {:.2f}s".format(time.time() - update_t)
+    print("\tupdate t: {:.2f}s".format(time.time() - update_t))
 
     tracklet_stats(p)
 
@@ -171,7 +139,7 @@ def assembly_after_parallelization(bgcomp):
         confirm_t = time.time()
         for _, e in tqdm(strongly_better_e, leave=False):
             if p.gm.g.edge(e.source(), e.target()) is not None:
-                bgcomp.solver.confirm_edges([(e.source(), e.target())])
+                graph_solver.confirm_edges([(e.source(), e.target())])
 
         print "\tconfirm_t: {:.2f}".format(time.time() - confirm_t)
 
@@ -182,21 +150,18 @@ def assembly_after_parallelization(bgcomp):
 
     p.save_semistate('eps_edge_filter')
 
-    # if not bgcomp.project.is_cluster():
+    # if not project.is_cluster():
     #     from core.settings import Settings as S_
     #     S_.general.log_graph_edits = True
 
-    p.solver = bgcomp.solver
+    p.solver = graph_solver
 
-    p.gm.project = bgcomp.project
+    p.gm.project = project
     p.chm.add_single_vertices_chunks(p)
-
-    if not bgcomp.project.is_cluster():
-        bgcomp.update_callback(-1, 'saving...')
 
     p.gm.update_nodes_in_t_refs()
 
-    if not bgcomp.do_semi_merge:
+    if not do_semi_merge:
         p.save()
 
     print "SANITY CHECK..."
@@ -219,20 +184,17 @@ def assembly_after_parallelization(bgcomp):
 
     print
     print "ONE 2 ONE optimization"
-    bgcomp.project.solver.one2one(check_tclass=True)
+    project.solver.one2one(check_tclass=True)
     print "DONE"
     print
-    tracklet_stats(bgcomp.project)
-
-    if not bgcomp.project.is_cluster():
-        bgcomp.finished_callback(bgcomp.solver)
+    tracklet_stats(project)
 
 
-def connect_graphs(bgcomp, vertices1, vertices2, gm, rm):
+def connect_graphs(project, vertices1, vertices2, gm, rm):
     if vertices1:
         #r1 = gm.region(vertices1[0])
 
-        bgcomp.project.gm.add_edges_(vertices1, vertices2)
+        project.gm.add_edges_(vertices1, vertices2)
 
     # for v1 in vertices1:
     #     r1 = gm.region(v1)

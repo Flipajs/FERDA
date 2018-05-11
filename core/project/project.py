@@ -14,7 +14,6 @@ from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
 from core.config import config
-from gui.video_loader import check_video_path
 from utils.img_manager import ImgManager
 
 
@@ -29,6 +28,7 @@ class Project:
         self.video_start_t = -1
         self.video_end_t = -1
         self.working_directory = ''
+        self.project_file = None
         self.date_created = -1
         self.date_last_modifiaction = -1
 
@@ -282,7 +282,6 @@ class Project:
         if update_t_nodes:
             self.gm.update_nodes_in_t_refs()
 
-
     def save_semistate(self, state):
         with open(self.working_directory + '/temp/'+state+'.pkl', 'wb') as f:
             p = pickle.Pickler(f)
@@ -290,20 +289,36 @@ class Project:
             p.dump(None)
             p.dump(self.chm)
 
+    @staticmethod
+    def get_project_dir_and_file(filename_or_dir):
+        if filename_or_dir[-6:] == '.fproj' and os.path.isfile(filename_or_dir):
+            filename = filename_or_dir
+            dirname = os.path.dirname(filename)
+            return dirname, filename
+        elif os.path.isdir(filename_or_dir):
+            dirname = filename_or_dir
+            filename = os.path.join(dirname, 'project.fproj')
+            if os.path.isfile(filename):
+                return dirname, filename
+            filename = os.path.join(dirname,
+                os.path.basename(os.path.normpath('/home/matej/prace/ferda/projects/F3C51min/')) + '.fproj')
+            if os.path.isfile(filename):
+                return dirname, filename
+            for filename in os.listdir(dirname):
+                if filename[-6:] == '.fproj':
+                    return dirname, os.path.join(dirname, filename)
+            assert False, 'no .fproj file exists in ' + dirname
+        else:
+            assert False, 'path is not existing directory or .fproj file'
 
-    def load(self, path, snapshot=None, parent=None, lightweight=False, video_file=None):
-        if path[-6:] != '.fproj':
-            for f in os.listdir(path):
-                if f[-6:] == '.fproj':
-                    path += '/'+f
-                    break
-
-        with open(path, 'rb') as f:
+    def load(self, path, snapshot=None, lightweight=False, video_file=None):
+        self.working_directory, project_filename = self.get_project_dir_and_file(path)
+        self.project_file = project_filename
+        with open(project_filename, 'rb') as f:
             tmp_dict = pickle.load(f)
-
         self.__dict__.update(tmp_dict)
-        a_ = path.split('/')
-        self.working_directory = str(path[:-(len(a_[-1])+1)])
+
+        # check for video file
         if video_file is not None:
             self.video_paths = video_file
 
@@ -364,23 +379,12 @@ class Project:
             except:
                 pass
 
-
-        if not lightweight:
-            # check if video exists
-            if parent:
-                self.video_paths, changed = check_video_path(self.video_paths, parent)
-                print "New path is %s" % self.video_paths
-
-                if changed:
-                    self.save()
-
         # # Region Manager
         # try:
         #     with open(self.working_directory+'/region_manager.pkl', 'rb') as f:
         #         self.rm = pickle.load(f)
         # except:
         #     pass
-
 
         self.load_snapshot(snapshot)
 
@@ -460,6 +464,14 @@ class Project:
 
         # if self.chm is not None:
         #     self.solver.one2one(check_tclass=True)
+
+    def video_exists(self):
+        if isinstance(self.video_paths, list):
+            for path in self.video_paths:
+                if os.path.isfile(path):
+                    return True
+            return False
+        return os.path.isfile(self.video_paths)
 
     def load_snapshot(self, snapshot):
         chm_path = self.working_directory+'/chunk_manager.pkl'

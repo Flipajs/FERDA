@@ -1,52 +1,33 @@
 __author__ = 'fnaiser'
 
 import pickle
-
 import cv2
 import numpy as np
-from PyQt4 import QtCore
-from PyQt4 import QtGui
 
 from core.region import mser, mser_operations
 from utils.img import get_safe_selection
 from utils.roi import get_roi
 
 
-def process_color(c):
-    """
-    Returns np.array in format [B G R alpha], where BGR are in range <0, 255> and alpha is in range <0, 1>
-    :param c:
-    :return:
-    """
+def draw_points(img, pts, color=(255, 0, 255, 70)):
+    assert isinstance(color, tuple)
+    assert len(color) == 4
+    for i in range(4):
+        assert 0 <= color[i] <= 255
 
-    if isinstance(c, QtGui.QColor):
-        alpha = c.alpha() / 255.0
-        c = np.array([c.blue(), c.green(), c.red(), alpha])
-    elif isinstance(c, tuple):
-        c = np.array(c)
-
-    return c
-
-
-def draw_points(img, pts, color=None):
     if pts.size == 0:
         return img
 
-    if not color:
-        # TODO:
-        color = QtGui.QColor(255, 0, 255, 70)
-        # color = S_.visualization.default_region_color
-
-    color = process_color(color)
     alpha = color[3]
-    c = color[:3]
+    c = np.array(color[:3])
 
-    valid_ids1 = np.logical_and(pts[:, 0] > 0, pts[:,0] < img.shape[0])
-    valid_ids2 = np.logical_and(pts[:, 1] > 0, pts[:,1] < img.shape[1])
+    valid_ids1 = np.logical_and(pts[:, 0] > 0, pts[:, 0] < img.shape[0])
+    valid_ids2 = np.logical_and(pts[:, 1] > 0, pts[:, 1] < img.shape[1])
     ids = np.logical_and(valid_ids1, valid_ids2)
     img[pts[ids, 0], pts[ids, 1], :] = alpha * c + (1 - alpha) * img[pts[ids, 0], pts[ids, 1], :]
 
     return img
+
 
 def draw_points_binary(img, pts):
     if pts.size == 0:
@@ -214,13 +195,6 @@ def get_contour_without_holes(pts):
         cont += np.array([roi.y() - 1, roi.x() - 1])
 
     return cont
-
-def draw_pts_qpixmap():
-    pixmap = QtGui.QPixmap(QtCore.QSize(400, 400))
-    painter = QtGui.QPainter(pixmap)
-
-    # pixmap.
-
 
 
 if __name__ == '__main__':

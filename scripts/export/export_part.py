@@ -177,8 +177,8 @@ if __name__ == '__main__':
 
     bgcomp = FakeBGComp(p, first_part, part_num)
 
-    from core.bg_computer_assembling import assembly_after_parallelization
-    assembly_after_parallelization(bgcomp)
+    from core.graph_assembly import graph_assembly
+    graph_assembly(bgcomp)
 
     # rm = RegionManager(db_wd=working_dir+ '/temp',
     #                    db_name='part' + str(i) + '_rm.sqlite3',

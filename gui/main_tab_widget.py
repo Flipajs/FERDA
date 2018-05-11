@@ -119,8 +119,6 @@ class MainTabWidget(QtGui.QWidget):
         except AttributeError:
             pass
 
-
-
     def show_in_visualizer(self, data):
         self.show_results_only_around_frame = data['n1'].frame_
         self.tabs.setCurrentIndex(1)

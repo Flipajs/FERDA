@@ -29,6 +29,7 @@ class ProjectLoader(QtCore.QThread):
         CompatibilitySolver(self.project)
         self.proc_done.emit(self.project)
 
+
 class TestLoader(QtCore.QThread):
     proc_done = QtCore.pyqtSignal(object)
     part_done = QtCore.pyqtSignal(float)
@@ -44,6 +45,7 @@ class TestLoader(QtCore.QThread):
             list.append(i)
 
         self.proc_done.emit(self.project)
+
 
 class ProjectWidget(QtGui.QWidget):
     def __init__(self, finish_callback=None, progress_callback=None):
@@ -99,6 +101,16 @@ class ProjectWidget(QtGui.QWidget):
         if self.finish_callback:
             self.finish_callback('new_project')
 
+    def pick_new_video(self):
+        reply = QtGui.QMessageBox.question(
+            self, "Video file not found",
+            "A video file for this project wasn't found. Please select the new position of the video in your filesystem.",
+            "Cancel", "Choose video")
+        if reply == 1:
+            return str(QtGui.QFileDialog.getOpenFileName(self, 'Select new video location', '.'))
+        else:
+            return None
+
     def load_project(self):
         # pick .fproj location
         path = ''
@@ -115,6 +127,14 @@ class ProjectWidget(QtGui.QWidget):
 
         S_.temp.last_wd_path = f
 
+        # load project - this doesn't take as much time and is needed in the main thread to run popup windows
+        if not project.video_exists():
+            path = self.pick_new_video()
+            if path is None:
+                return
+            else:
+                project.video_paths = path
+
         # disable all buttons, so another project can't be loaded/created at the same time
         self.load_project_button.setEnabled(False)
         self.new_project_button.setEnabled(False)
@@ -125,8 +145,7 @@ class ProjectWidget(QtGui.QWidget):
         self.layout().addWidget(self.loading_w)
         QtGui.QApplication.processEvents()
 
-        # load project - this doesn't take as much time and is needed in the main thread to run popup windows
-        project.load(f, parent=self)
+        project.load(f)
 
         # setup loading thread
         self.loading_thread = ProjectLoader(project, f)
@@ -184,6 +203,7 @@ class ProjectWidget(QtGui.QWidget):
             pass
 
         return size
+
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
