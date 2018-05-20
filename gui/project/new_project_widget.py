@@ -1,27 +1,24 @@
 __author__ = 'fnaiser'
-
-import threading
 import os
-
 from PyQt4 import QtGui, QtCore
 import numpy as np
-import skimage.transform
 import time
-
-import core.project.project
-import gui.gui_utils
-import utils.video_manager
-import utils.misc
-import utils.img
-from core.bg_model.max_intensity import MaxIntensity
-from gui.project.import_widget import ImportWidget
-from gui.init.set_msers import SetMSERs
-from core.project.project import Project
-from gui.init.crop_video_widget import CropVideoWidget
-from functools import partial
-from gui.settings import Settings as S_
-from core.config import config
 import cPickle as pickle
+from functools import partial
+from core.region.region_manager import RegionManager
+from core.graph.graph_manager import GraphManager
+from core.graph.solver import Solver
+from core.graph.chunk_manager import ChunkManager
+from gui.project.import_widget import ImportWidget
+from core.animal import Animal
+from core.project.project import Project
+from core.config import config
+import gui.gui_utils
+from gui.init.crop_video_widget import CropVideoWidget
+from gui.region_classifier_tool import RegionClassifierTool
+from gui.init.circle_arena_editor_widget import CircleArenaEditorWidget
+from gui.init.set_msers import SetMSERs
+from gui.settings import Settings as S_
 
 
 class NewProjectWidget(QtGui.QWidget):
@@ -36,16 +33,16 @@ class NewProjectWidget(QtGui.QWidget):
         # self.back_button.clicked.connect(self.back_button_clicked)
         # self.hbox.addWidget(self.back_button)
 
-        self.step1_w = QtGui.QWidget()
-        self.step2_w = QtGui.QWidget()
-        self.step3_w = QtGui.QWidget()
-        self.step4_w = QtGui.QWidget()
-        self.step5_w = QtGui.QWidget()
+        self.widget1_create_project = QtGui.QWidget()
+        self.widget2_crop_video = QtGui.QWidget()
+        self.widget3_arena_editor = QtGui.QWidget()
+        self.widget4_mser_setup = QtGui.QWidget()
+        self.widget5_cardinality_classification = QtGui.QWidget()
 
         self.postpone_parallelisation = False
 
         self.form_layout = QtGui.QFormLayout()
-        self.step1_w.setLayout(self.form_layout)
+        self.widget1_create_project.setLayout(self.form_layout)
 
         self.form_layout.addRow(QtGui.QLabel('<i>Entries in </i><b>bold</b><i> are obligatory. When in doubt, use tooltips displayed on hover over given entries.</i>'))
         label = QtGui.QLabel('<b>Video files:</b> ')
@@ -81,15 +78,11 @@ class NewProjectWidget(QtGui.QWidget):
         self.import_widget.hide()
         self.import_widget.setDisabled(True)
 
-        self.create_project_button = QtGui.QPushButton('continue', self)
-        self.create_project_button.clicked.connect(self.create_project)
-
         self.hbox.addLayout(self.left_vbox)
 
-        self.left_vbox.addWidget(self.step1_w)
+        self.left_vbox.addWidget(self.widget1_create_project)
 
         self.left_vbox.addWidget(self.import_widget)
-        self.step1_w.layout().addWidget(self.create_project_button)
 
         self.bg_progress_bar = QtGui.QProgressBar()
         self.bg_progress_bar.setRange(0, 100)
@@ -100,20 +93,15 @@ class NewProjectWidget(QtGui.QWidget):
         self.hbox.addLayout(self.video_preview_layout)
 
         self.activateWindow()
+
+        self.create_project_button = QtGui.QPushButton('continue', self)
+        self.create_project_button.clicked.connect(self.create_project)
+        self.widget1_create_project.layout().addWidget(self.create_project_button)
         self.create_project_button.setFocus()
 
         self.project = Project()
         # self.project.working_directory = '/Users/flipajs/Documents/wd/FERDA/test/'
         # self.__go_to_3()
-
-    def __go_to_3(self):
-        self.project.video_paths = ['/Users/flipajs/Dropbox/FERDA/S9T95min.avi']
-
-        setattr(self.step2_w, 'start_frame', 1)
-        setattr(self.step2_w, 'end_frame', 4000)
-
-        self.go_to_video_config()
-        self.video_boundaries_confirmed()
 
     def select_video_files_clicked(self):
         path = ''
@@ -182,27 +170,17 @@ class NewProjectWidget(QtGui.QWidget):
         if self.finish_callback:
             self.finish_callback('project_created', project)
 
-    def update_project_step1(self):
-        self.project.name = str(self.project_name.text())
-        if not len(self.project.name):
-            self.project.name = "untitled"
-
-        self.project.description = str(self.project_description.toPlainText())
-
-        self.project.date_created = time.time()
-        self.project.date_last_modifiaction = time.time()
-
-    def go_to_video_config(self):
+    def setup_crop_video_widget(self):
         self.showMaximized()
-        self.step1_w.hide()
+        self.widget1_create_project.hide()
 
         w = CropVideoWidget(self.project)
         button = QtGui.QPushButton('confirm and continue')
-        button.clicked.connect(self.video_boundaries_confirmed)
+        button.clicked.connect(self.crop_video_confirmed)
         w.layout().addWidget(button)
 
-        self.step2_w = w
-        self.left_vbox.addWidget(self.step2_w)
+        self.widget2_crop_video = w
+        self.left_vbox.addWidget(self.widget2_crop_video)
 
     def create_project(self):
         if self.project.working_directory == '':
@@ -210,90 +188,88 @@ class NewProjectWidget(QtGui.QWidget):
             return
 
         self.postpone_parallelisation = self.postpone_parallelisation_ch.isChecked()
-
-        self.update_project_step1()
+        self.project.name = str(self.project_name.text())
+        if not len(self.project.name):
+            self.project.name = "untitled"
+        self.project.description = str(self.project_description.toPlainText())
+        self.project.date_created = time.time()
+        self.project.date_last_modifiaction = time.time()
 
         from utils.img_manager import ImgManager
         self.project.img_manager = ImgManager(self.project, max_size_mb=config['cache']['img_manager_size_MB'])
 
-        # if self.finish_callback:
-        #     self.finish_callback('project_created', self.project)
+        self.setup_crop_video_widget()
 
-        self.go_to_video_config()
-
-    def segmentation_confirmed(self):
+    def mser_setup_confirmed(self):
         from core.classes_stats import dummy_classes_stats
-        print "segmentation_confirmed"
+        print "mser setup confirmed"
 
-        if self.step4_w.gb_pixel_classifier.isChecked():
+        if self.widget4_mser_setup.gb_pixel_classifier.isChecked():
             with open(self.project.working_directory+'/segmentation_model.pkl', 'wb') as f:
-                pickle.dump(self.step4_w.helper, f, -1)
+                pickle.dump(self.widget4_mser_setup.helper, f, -1)
 
-            self.project.segmentation_model = self.step4_w.helper
+            self.project.segmentation_model = self.widget4_mser_setup.helper
 
         self.project.other_parameters.segmentation_use_roi_prediction_optimisation = \
-            self.step4_w.use_roi_prediction_optimisation_ch.isChecked()
+            self.widget4_mser_setup.use_roi_prediction_optimisation_ch.isChecked()
         self.project.other_parameters.segmentation_prediction_optimisation_border = \
-            self.step4_w.prediction_optimisation_border_spin.value()
+            self.widget4_mser_setup.prediction_optimisation_border_spin.value()
         self.project.other_parameters.full_segmentation_refresh_in_spin = \
-            self.step4_w.full_segmentation_refresh_in_spin.value()
+            self.widget4_mser_setup.full_segmentation_refresh_in_spin.value()
 
         self.project.stats = dummy_classes_stats()
 
-        self.project.stats.major_axis_median = self.step4_w.major_axis_median.value()
-        self.project.solver_parameters.max_edge_distance_in_ant_length = self.step4_w.max_dist_object_length.value()
-        self.step4_w.hide()
-
-        w = self.step5_w
-        w.setLayout(QtGui.QHBoxLayout())
-
-        # TODO: clustering_tool
-
-        button = QtGui.QPushButton('confirm and continue')
-        button.clicked.connect(self.finish_initialisation)
-        w.layout().addWidget(button)
-
-        self.left_vbox.addWidget(self.step5_w)
-        self.finish_initialisation(self.step4_w.num_animals_sb.value())
-
-    def finish_initialisation(self, num_animals):
-        from core.region.region_manager import RegionManager
-        from core.graph.graph_manager import GraphManager
-        from core.graph.solver import Solver
-        from core.graph.chunk_manager import ChunkManager
-        from core.animal import Animal
+        self.project.stats.major_axis_median = self.widget4_mser_setup.major_axis_median.value()
+        self.project.solver_parameters.max_edge_distance_in_ant_length = self.widget4_mser_setup.max_dist_object_length.value()
 
         self.project.rm = RegionManager(self.project.working_directory)
         self.project.solver = Solver(self.project)
         self.project.gm = GraphManager(self.project, self.project.solver)
         self.project.chm = ChunkManager()
-
         self.project.animals = []
-        for i in range(num_animals):
+        for i in range(self.widget4_mser_setup.num_animals_sb.value()):
             self.project.animals.append(Animal(i))
 
         self.project.solver_parameters.certainty_threshold = .01
 
         self.project.save()
 
+        self.setup_cardinality_classification_widget()
+
+    def setup_cardinality_classification_widget(self):
+        self.widget4_mser_setup.hide()
+        self.widget5_cardinality_classification = RegionClassifierTool(self.project)
+        # w.setLayout(QtGui.QHBoxLayout())
+        # button = QtGui.QPushButton('confirm and continue')
+        # button.clicked.connect(self.finish_initialisation)
+        # w.layout().addWidget(button)
+        self.widget5_cardinality_classification.on_finished.connect(self.cardinality_classification_finished)
+        self.left_vbox.addWidget(self.widget5_cardinality_classification)
+
+    def cardinality_classification_finished(self):
+        self.finish_initialisation()
+
+    def finish_initialisation(self):
         if self.finish_callback:
             self.finish_callback('initialization_finished', [self.project, self.postpone_parallelisation])
 
-    def video_boundaries_confirmed(self):
-        self.project.video_start_t = self.step2_w.start_frame + 1
-        self.project.video_end_t = self.step2_w.end_frame
+    def crop_video_confirmed(self):
+        self.project.video_start_t = self.widget2_crop_video.start_frame + 1
+        self.project.video_end_t = self.widget2_crop_video.end_frame
 
-        self.step2_w.hide()
+        self.setup_arena_editor_widget()
 
-        from gui.init.init_where_widget import InitWhereWidget
-        self.step3_w = InitWhereWidget(self.roi_finished, self.project)
-        self.left_vbox.addWidget(self.step3_w)
+    def setup_arena_editor_widget(self):
+        self.widget2_crop_video.hide()
 
-    def roi_finished(self, mask_already_prepared=False):
+        self.widget3_arena_editor = CircleArenaEditorWidget(finish_callback=self.arena_editor_confirmed, project=self.project)
+        self.left_vbox.addWidget(self.widget3_arena_editor)
+
+    def arena_editor_confirmed(self, mask_already_prepared=False):
         if not mask_already_prepared:
             # TODO: deal with advanced arena editor
-            c = np.array([self.step3_w.arena_ellipse.c.pos().y(), self.step3_w.arena_ellipse.c.pos().x()])
-            r = np.array([self.step3_w.arena_ellipse.a.pos().y(), self.step3_w.arena_ellipse.a.pos().x()])
+            c = np.array([self.widget3_arena_editor.arena_ellipse.c.pos().y(), self.widget3_arena_editor.arena_ellipse.c.pos().x()])
+            r = np.array([self.widget3_arena_editor.arena_ellipse.a.pos().y(), self.widget3_arena_editor.arena_ellipse.a.pos().x()])
             r = np.linalg.norm(c - r)
 
             from utils.video_manager import get_auto_video_manager
@@ -315,14 +291,12 @@ class NewProjectWidget(QtGui.QWidget):
                                               video_crop_model['x2'] - video_crop_model['x1'])
             self.project.arena_model.set_circle(c, r)
 
-        from gui.init.set_msers import SetMSERs
-        self.step3_w.hide()
-        self.step4_w = SetMSERs(self.project)
-        button = QtGui.QPushButton('confirm and continue')
-        button.clicked.connect(self.segmentation_confirmed)
-        self.step4_w.left_panel.layout().addWidget(button)
+        self.setup_mser_setup_widget()
 
-        self.left_vbox.addWidget(self.step4_w)
+    def setup_mser_setup_widget(self):
+        self.widget3_arena_editor.hide()
+        self.widget4_mser_setup = SetMSERs(self.project, finish_callback=self.mser_setup_confirmed)
+        self.left_vbox.addWidget(self.widget4_mser_setup)
 
     def set_video_bounds(self):
         if not self.project.video_paths:
@@ -331,6 +305,7 @@ class NewProjectWidget(QtGui.QWidget):
 
         w = CropVideoWidget(self.project)
         button = QtGui.QPushButton('confirm boundaries')
-        button.clicked.connect(partial(self.video_boundaries_confirmed, w))
+        button.clicked.connect(partial(self.crop_video_confirmed, w))
         w.layout().addWidget(button)
         self.layout().addWidget(w)
+

@@ -3,7 +3,7 @@ from utils.video_manager import get_auto_video_manager
 from matplotlib import pyplot as plt
 import cv2
 import numpy as np
-from core.region.mser import ferda_filtered_msers
+from core.region.mser import get_filtered_msers
 import scipy.ndimage as ndimage
 import warnings
 from math import acos
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
         gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
 
-        msers = ferda_filtered_msers(im, p)
+        msers = get_filtered_msers(im, p)
         i = 0
         for r in msers:
             if r.area() < 100:

@@ -14,7 +14,7 @@ from os.path import join
 
 from utils.video_manager import get_auto_video_manager
 import cPickle as pickle
-from core.region.mser import ferda_filtered_msers
+from core.region.mser import get_filtered_msers
 from core.graph.solver import Solver
 from core.project.project import Project
 from config import config
@@ -178,7 +178,7 @@ def do_segmentation_part(project_file, part_id, frames_in_row, last_n_frames):
         if hasattr(proj, 'segmentation_model'):
             img = frame_segmentation(img, i, proj, rois, full_segmentation_refresh=full_segmentation_refresh)
         # get segmented regions
-        msers = ferda_filtered_msers(img, proj, frame)
+        msers = get_filtered_msers(img, proj, frame)
 
         if proj.colormarks_model:
             proj.colormarks_model.assign_colormarks(proj, msers)

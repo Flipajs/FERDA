@@ -1,5 +1,6 @@
 from utils.img import prepare_for_visualisation, get_safe_selection
 from utils.video_manager import get_auto_video_manager
+#
 # from utils.drawing.points import draw_points
 from utils.roi import ROI, get_roi
 import numpy as np
@@ -302,6 +303,7 @@ class Frame:
 
     def equals(self, crop):
         return self.frame == crop.frame and self.x0 == crop.x0 and self.y0 == crop.y0 and self.x1 == crop.x1 and self.y1 == crop.y1
+
 
 class Properties:
     def __init__(self, frame, is_crop, roi=ROI(), margin=0, relative_margin=0, width=-1, height=-1, wrap_width=-1,

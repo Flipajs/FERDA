@@ -136,6 +136,7 @@ class BackgroundComputer:
             self.solver = Solver(self.project)
             graph_assembly(self.project, self.solver, self.n_parts,
                            self.first_part, self.do_semi_merge)
+            self.project.region_cardinality_classifier.classify_project(self.project)
 
             # from utils.color_manager import colorize_project
             # import time

@@ -6,6 +6,7 @@ import time
 
 import numpy as np
 import os
+from os.path import join
 import tqdm
 
 from core.graph.solver import Solver
@@ -42,6 +43,7 @@ class Project:
         self.bg_model = None
         self.arena_model = None
         self.video_crop_model = None
+        self.region_cardinality_classifier = None
         self.classes = None
         self.groups = None
         self.animals = None
@@ -82,12 +84,10 @@ class Project:
 
         return True
 
-    def save_project_file_(self,toFolder=""):	
-        if (toFolder == ""):
-            destinationFolder = self.working_directory;
-        else:
-            destinationFolder = toFolder;
-        
+    def save_project_file_(self, dir_path=None):
+        if dir_path is None:
+            dir_path = self.working_directory
+
         p = Project()
         p.name = self.name
         p.description = self.description
@@ -121,14 +121,13 @@ class Project:
         except AttributeError:
             pass
 
-        with open(destinationFolder+'/'+self.name+'.fproj', 'wb') as f:
+        self.project_file = join(dir_path, '{}.fproj'.format(self.name))
+        with open(self.project_file, 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 
-    def save(self, to_folder=""):
-        if (to_folder == ""):
-            destinationFolder = self.working_directory
-        else:
-            destinationFolder = to_folder
+    def save(self, path=None):
+        if path is None:
+            path = self.working_directory
 
         # BG MODEL
         try:
@@ -138,52 +137,56 @@ class Project:
                     if self.bg_model.is_computed():
                         self.bg_model = self.bg_model.get_model()
 
-                        with open(destinationFolder+'/bg_model.pkl', 'wb') as f:
+                        with open(path+ '/bg_model.pkl', 'wb') as f:
                             pickle.dump(self.bg_model, f)
                 else:
-                    with open(destinationFolder+'/bg_model.pkl', 'wb') as f:
+                    with open(path+ '/bg_model.pkl', 'wb') as f:
                         pickle.dump(self.bg_model, f)
         except:
             pass
 
         # ARENA MODEL
         if self.arena_model:
-            with open(destinationFolder+'/arena_model.pkl', 'wb') as f:
+            with open(path+ '/arena_model.pkl', 'wb') as f:
                 pickle.dump(self.arena_model, f)
 
         # CLASSES
         if self.classes:
-            with open(destinationFolder+'/classes.pkl', 'wb') as f:
+            with open(path+ '/classes.pkl', 'wb') as f:
                 pickle.dump(self.classes, f)
 
         # GROUPS
         if self.groups:
-            with open(destinationFolder+'/groups.pkl', 'wb') as f:
+            with open(path+ '/groups.pkl', 'wb') as f:
                 pickle.dump(self.groups, f)
 
         # ANIMALS
         if self.animals:
-            with open(destinationFolder+'/animals.pkl', 'wb') as f:
+            with open(path+ '/animals.pkl', 'wb') as f:
                 pickle.dump(self.animals, f)
 
         # STATS
         if self.stats:
-            with open(destinationFolder+'/stats.pkl', 'wb') as f:
+            with open(path+ '/stats.pkl', 'wb') as f:
                 pickle.dump(self.stats, f)
+
+        if self.region_cardinality_classifier:
+            with open(join(path, 'region_cardinality_clustering.pkl'), 'wb') as f:
+                pickle.dump(self.region_cardinality_classifier, f)
 
         # # Region Manager
         # if self.rm:
         #     with open(self.working_directory+'/region_manager.pkl', 'wb') as f:
         #         pickle.dump(self.rm, f, -1)
 
-        self.save_chm_(destinationFolder+'/chunk_manager.pkl')
+        self.save_chm_(path + '/chunk_manager.pkl')
 
-        self.save_gm_(destinationFolder+'/graph_manager.pkl')
+        self.save_gm_(path + '/graph_manager.pkl')
 
         print('project.load settings...')  # TODO
         # self.save_qsettings(to_folder)
 
-        self.save_project_file_(to_folder)
+        self.save_project_file_(path)
 
     def save_gm_(self, file_path):
         print "saving GM"
@@ -368,6 +371,12 @@ class Project:
         try:
             with open(self.working_directory+'/segmentation_model.pkl', 'rb') as f:
                 self.segmentation_model = pickle.load(f)
+        except:
+            pass
+
+        try:
+            with open(join(self.working_directory, 'region_cardinality_clustering.pkl'), 'rb') as f:
+                self.region_cardinality_classifier = pickle.load(f)
         except:
             pass
 

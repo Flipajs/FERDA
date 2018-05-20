@@ -19,9 +19,9 @@ from core.bg_model.model import Model
 from core.bg_model.bg_model import BGModel
 
 
-class InitWhereWidget(QtGui.QWidget):
+class CircleArenaEditorWidget(QtGui.QWidget):
     def __init__(self, finish_callback, project):
-        super(InitWhereWidget, self).__init__()
+        super(CircleArenaEditorWidget, self).__init__()
         self.arena_mark_size = 15
         self.project = project
 
@@ -48,10 +48,6 @@ class InitWhereWidget(QtGui.QWidget):
         self.use_advanced_arena_editor.setDisabled(False)
         self.top_stripe_layout.addWidget(self.use_advanced_arena_editor)
 
-        self.confirm_arena_selection = QtGui.QPushButton('Arena selection is ok, lets continue!')
-        self.confirm_arena_selection.clicked.connect(self.confirm_arena_selection_clicked)
-        self.top_stripe_layout.addWidget(self.confirm_arena_selection)
-
         self.skip_bg_model = QtGui.QPushButton('Run without background model')
         self.skip_bg_model.clicked.connect(self.skip_bg_clicked)
         self.confirm_bg_model = QtGui.QPushButton('Everything is all right, lets continue!')
@@ -69,10 +65,11 @@ class InitWhereWidget(QtGui.QWidget):
 
         self.vbox.addWidget(self.graphics_view)
 
-    def confirm_arena_selection_clicked(self):
-        self.finish_callback()
-        return
+        self.confirm_arena_selection = QtGui.QPushButton('Continue')
+        self.confirm_arena_selection.clicked.connect(self.finish_callback)
+        self.vbox.addWidget(self.confirm_arena_selection)
 
+    def unused(self):
         # if isinstance(self.project.bg_model, BGModel) or self.project.bg_model.is_computed():
         #     if isinstance(self.project.bg_model, Model):
         #         self.project.bg_model = self.project.bg_model.get_model()

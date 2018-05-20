@@ -78,6 +78,7 @@ def run_tracking(project_path, video_file=None):
     graph_solver = core.graph.solver.Solver(project)
     core.graph_assembly.graph_assembly(project, graph_solver, n_parts)
     project.save()
+    project.region_cardinality_classifier.classify_project(project)
 
 
 if __name__ == '__main__':

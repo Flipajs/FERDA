@@ -1,4 +1,5 @@
 from PyQt4 import QtGui
+from gui.gui_utils import SelectableQLabel
 
 __author__ = 'fnaiser'
 
@@ -34,17 +35,22 @@ class ImgGridWidget(QtGui.QWidget):
 
             self.layout().addWidget(self.scroll_)
 
+    def _widget(self, item):
+        if issubclass(type(item), SelectableQLabel):
+            return item
+        else:
+            return item.widget
+
     def reshape(self, cols, element_width=100):
         self.cols = cols
         self.element_width = element_width
 
         grid2 = QtGui.QGridLayout()
 
-        for i in range(len(self.items)):
-            row = i/cols
-            col = i%cols
-
-            grid2.addWidget(self.items[i], row, col)
+        for i, item in enumerate(self.items):
+            row = i / cols
+            col = i % cols
+            grid2.addWidget(self._widget(item), row, col)
 
         QtGui.QWidget().setLayout(self.grid)
         self.grid_widget.setLayout(grid2)
@@ -55,13 +61,19 @@ class ImgGridWidget(QtGui.QWidget):
         self.set_width_()
 
     def add_item(self, item, append=True):
+        """
+        Add items to the grid.
+
+        :param item: SelectableQLabel subclass or object with object.widget subclass of SelectableQLabel
+        :param append: if False, add item only to grid widget not to list of items
+        """
         if append:
             self.items.append(item)
 
-        row = self.id/self.cols
-        col = self.id%self.cols
+        row = self.id / self.cols
+        col = self.id % self.cols
 
-        self.grid.addWidget(self.items[self.id], row, col)
+        self.grid.addWidget(self._widget(self.items[self.id]), row, col)
 
         self.set_width_()
 
@@ -75,14 +87,22 @@ class ImgGridWidget(QtGui.QWidget):
 
         self.redraw()
 
+    def delete_all(self):
+        self.items = []
+        self.redraw()
+
     def redraw(self):
-        for it in self.items:
-            self.grid.removeWidget(it)
+        # remove all widgets
+        for i in reversed(range(self.grid.count())):
+            widget_to_remove = self.grid.itemAt(i).widget()
+            # remove it from the layout list
+            self.grid.removeWidget(widget_to_remove)
+            # remove it from the gui
+            widget_to_remove.setParent(None)
 
         self.id = 0
-
-        for it in self.items():
-            self.add_item(it, False)
+        for item in self.items:
+            self.add_item(item, False)
 
     def set_width_(self):
         w = self.cols*self.element_width + (self.cols + 1)
@@ -94,37 +114,32 @@ class ImgGridWidget(QtGui.QWidget):
             self.setMinimumWidth(w)
 
     def get_selected(self):
-        ids = []
+        return [item.id_ for item in self.items if self._widget(item).selected]
 
-        for i in range(len(self.items)):
-            if self.items[i].selected:
-                ids.append(self.items[i].id_)
-
-        return ids
+    def get_selected_items(self):
+        return [item for item in self.items if self._widget(item).selected]
 
     def get_unselected(self):
-        ids = []
-        for i in range(len(self.items)):
-            if not self.items[i].selected:
-                ids.append(self.items[i].id_)
+        return [item.id_ for item in self.items if not self._widget(item).selected]
 
-        return ids
+    def get_unselected_items(self):
+        return [item for item in self.items if not self._widget(item).selected]
 
     def swap_selection(self):
-        for i in range(len(self.items)):
-            self.items[i].set_selected(not self.items[i].selected)
+        for item in self.items:
+            self._widget(item).set_selected(not self._widget(item.selected))
 
     def deselect_all(self):
-        for i in range(len(self.items)):
-            self.items[i].set_selected(False)
+        for item in self.items:
+            self._widget(item).set_selected(False)
 
     def select_all(self):
-        for i in range(len(self.items)):
-            self.items[i].set_selected(True)
+        for item in self.items:
+            self._widget(item).set_selected(True)
 
     def select_all_until_first(self):
-        for i in range(len(self.items)):
-            if not self.items[i].selected:
-                self.items[i].set_selected(True)
+        for item in self.items:
+            if not self._widget(item.selected):
+                self._widget(item).set_selected(True)
             else:
                 break

@@ -9,7 +9,7 @@ from PyQt4 import QtGui
 from scipy.spatial import ConvexHull
 from sklearn import svm
 
-from core.region.mser import get_msers_, get_all_msers
+from core.region.mser import get_msers_img, get_all_msers
 from core.region.mser_operations import get_region_groups, margin_filter, children_filter
 from gui.gui_utils import get_image_label
 from gui.img_grid.img_grid_dialog import ImgGridDialog
@@ -184,7 +184,7 @@ def test():
     im = vid.next_frame()
     im = vid.next_frame()
 
-    msers = get_msers_(im)
+    msers = get_msers_img(im)
     groups = get_region_groups(msers)
     ids = margin_filter(msers, groups)
     for id in ids:

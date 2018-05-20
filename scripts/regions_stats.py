@@ -14,7 +14,7 @@ from core.graph.region_chunk import RegionChunk
 from core.graph.solver import Solver
 from core.id_detection.features import get_hog_features, get_crop
 from core.project.project import Project
-from core.region.clustering import prepare_region_cardinality_samples
+# from core.region.clustering import prepare_region_cardinality_samples
 from utils.drawing.collage import create_collage_rows
 from utils.drawing.points import draw_points
 from tqdm import tqdm
@@ -1363,6 +1363,7 @@ def add_score_to_edges(p):
         print "saving..."
 
     save_p_checkpoint(p, 'isolation_score')
+
 
 def process_project(p):
     from core.graph.solver2 import Solver2

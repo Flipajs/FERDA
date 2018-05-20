@@ -9,7 +9,7 @@ import cv2
 
 from core.segmentation_helper import SegmentationHelper
 from core.project.project import Project
-from core.region.mser import ferda_filtered_msers
+from core.region.mser import get_filtered_msers
 from gui.gui_utils import SelectableQLabel
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from gui.segmentation.painter import Painter
@@ -17,13 +17,13 @@ from gui.segmentation.painter import array2qimage
 from utils.drawing.points import draw_points_crop, get_contour, draw_points_binary
 from utils.img import prepare_for_segmentation
 from utils.video_manager import get_auto_video_manager
-from core.region.mser import ferda_filtered_msers
+from core.region.mser import get_filtered_msers
 
 __author__ = 'filip@naiser.cz', 'dita'
 
 
 class SetMSERs(QtGui.QWidget):
-    def __init__(self, project, mser_color=(255, 128, 0, 200), prob_color=(0, 255, 0, 200),
+    def __init__(self, project, finish_callback=None, mser_color=(255, 128, 0, 200), prob_color=(0, 255, 0, 200),
                  foreground_color=(0, 255, 0, 255), background_color=(255, 0, 238, 255)):
         """
         Interactive tool to improve msers search using segmentation.
@@ -79,7 +79,9 @@ class SetMSERs(QtGui.QWidget):
         self.old_max_area_helper = None
         self.old_max_area_helper_text = None
 
-        self.setLayout(QtGui.QHBoxLayout())
+        self.setLayout(QtGui.QVBoxLayout())  # all + continue button
+        self.left_panel_and_preview = QtGui.QWidget()
+        self.left_panel_and_preview.setLayout(QtGui.QHBoxLayout())
 
         # Left panel with options and paint tools
         self.left_panel = QtGui.QWidget()
@@ -137,9 +139,13 @@ class SetMSERs(QtGui.QWidget):
         self.configure_paint_panel()
 
         # Complete the gui
-        self.layout().addWidget(left_scroll)  # self.layout().addWidget(self.left_panel)
-        self.layout().addWidget(self.painter)
-        self.layout().addWidget(self.right_panel)
+        self.left_panel_and_preview.layout().addWidget(left_scroll)  # self.layout().addWidget(self.left_panel)
+        self.left_panel_and_preview.layout().addWidget(self.painter)
+        self.layout().addWidget(self.left_panel_and_preview)
+        if finish_callback:
+            self.finish_button = QtGui.QPushButton('Continue')
+            self.finish_button.clicked.connect(finish_callback)
+            self.layout().addWidget(self.finish_button)
 
         # Set a callback in painter when paint event occurs
         self.painter.update_callback = self.update_all
@@ -208,10 +214,10 @@ class SetMSERs(QtGui.QWidget):
 
         # get msers
         s = time.time()
-        from core.region.mser import get_msers_
+        from core.region.mser import get_msers_img
         # msers = get_msers_(img_, self.project, 0, prefiltered=False)
 
-        msers = ferda_filtered_msers(img_, self.project, 0)
+        msers = get_filtered_msers(img_, self.project, 0)
 
         # print "mser takes: ", time.time() - s
 

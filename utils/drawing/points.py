@@ -19,6 +19,8 @@ def draw_points(img, pts, color=(255, 0, 255, 70)):
         return img
 
     alpha = color[3]
+    if alpha > 1:
+        alpha /= 255.
     c = np.array(color[:3])
 
     valid_ids1 = np.logical_and(pts[:, 0] > 0, pts[:, 0] < img.shape[0])
@@ -204,7 +206,7 @@ if __name__ == '__main__':
     img = cv2.imread('/Users/fnaiser/Documents/colormarktests/imgs/0.png')
 
 
-    regions = mser.get_msers_(img)
+    regions = mser.get_msers_img(img)
     groups = mser_operations.get_region_groups(regions)
     idx = mser_operations.margin_filter(regions, groups)
 

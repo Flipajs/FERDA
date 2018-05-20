@@ -157,7 +157,6 @@ class LearningProcess:
         except IOError:
             pass
 
-
     def load_features(self, db_names='fm.sqlite3'):
         # TODO: ...
         return
@@ -542,7 +541,6 @@ class LearningProcess:
         probs = np.array(probs)
 
         return probs
-
 
     def __train_rfc(self, init=False, use_xgboost=False):
         if use_xgboost:
@@ -2811,6 +2809,7 @@ class LearningProcess:
 
         return rest_groups
 
+
 def compute_features_process(counter, lock, q_tasks, project_wd, num_frames, first_time=True):
     print "starting..."
     from core.project.project import Project
@@ -2861,7 +2860,6 @@ if __name__ == '__main__':
     # wd = '/Users/flipajs/Documents/wd/FERDA/Zebrafish_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Camera3'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Sowbug3'
-
 
     p = Project()
     p.load_semistate(wd, state='eps_edge_filter')

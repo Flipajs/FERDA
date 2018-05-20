@@ -218,3 +218,16 @@ class ChunkManager:
                 min_end_frame = min(min_end_frame, tracklet.end_frame(project.gm))
 
             frame = min_end_frame + 1
+
+    def get_random_regions(self, n, gm):
+        import random
+
+        tracklet_ids = self.chm.chunks_.keys()
+        regions = []
+        vertices = []
+        for _ in range(n):
+            tracklet = self[random.choice(tracklet_ids)]
+            vertex = tracklet[random.randint(0, len(tracklet) - 1)]
+            regions.append(gm.region(vertex))
+            vertices.append(int(vertex))
+        return regions, vertices

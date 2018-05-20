@@ -229,7 +229,6 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_crop_buttons_layout.addWidget(self.end_frame_sign)
         self.video_crop_buttons_layout.addWidget(self.num_frames_sign)
 
-
         img = self.video.next_frame()
 
         self.connect_GUI()

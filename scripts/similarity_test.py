@@ -10,7 +10,7 @@ from PyQt4 import QtGui, QtCore
 import sys
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from gui.gui_utils import get_image_label
-from core.region.mser import get_msers_
+from core.region.mser import get_msers_img
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
 
 WORKING_DIR = '/Users/fnaiser/Documents/chunks'
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     #         r1 = r2
 
     im = vid.next_frame()
-    msers = get_msers_(im)
+    msers = get_msers_img(im)
     groups = get_region_groups(msers)
     ids = margin_filter(msers, groups)
 
