@@ -1,162 +1,176 @@
+from __future__ import print_function
 import cPickle as pickle
-
+import os.path
 import numpy as np
-from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import StandardScaler
-
-from core.id_detection.features import get_hu_moments
-from utils.misc import print_progress
-from utils.drawing.points import draw_points
-from utils.video_manager import get_auto_video_manager
-from utils.drawing.collage import create_collage_rows
-from scipy.spatial.distance import cdist
-import cv2
 from tqdm import tqdm
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from utils.drawing.points import draw_points
+from collections import OrderedDict
+import tqdm
+
+region_features = OrderedDict([
+    ('area', lambda r: r.area()),
+    ('major axis length', lambda r: r.ellipse_major_axis_length()),
+    ('minor axis length', lambda r: r.ellipse_minor_axis_length()),
+    ('min intensity', lambda r: r.min_intensity_),
+    ('max intensity', lambda r: r.max_intensity_),
+    ('margin', lambda r: r.margin_),
+    ('contour length', lambda r: len(r.contour())),
+    ('ellipse area ratio', lambda r: r.ellipse_area_ratio()),
+    ])
+
+labels = ['single', 'multi', 'noise', 'part']
+
+# id_to_label = dict(enumerate(labels))
+# label_to_id = dict([x[::-1] for x in enumerate(labels)])
 
 
-def get_data(r, scaler=None):
-    from utils.drawing.points import draw_points_crop_binary
-    # bimg = draw_points_crop_binary(r.pts())
-    # hu_m = get_hu_moments(np.asarray(bimg, dtype=np.uint8))
-    d = [r.area(), r.ellipse_major_axis_length(), r.ellipse_minor_axis_length(), r.min_intensity_, r.max_intensity_, r.margin_, len(r.contour()), r.ellipse_area_ratio()]
+class RegionSample(object):
+    def __init__(self, region, frame_image=None):
+        self.region = region
+        self.label = None
+        self.confidence = None
+        self.widget = None
 
-    if scaler is None:
-        return d
-    else:
-        return scaler.transform(np.array([d]))[0]
+        self.features = self.compute_features(self.region)
+        self.image = None
+        if frame_image is not None:
+            self._draw_region(frame_image)
 
+    def __lt__(self, other):
+        return self.confidence < other.confidence
 
-def prepare_region_cardinality_samples(p, compute_data=True, num_random=1000):
-    print "___________________________________"
-    print "Preparing data for prepare_region_cardinality_samples..."
+    @staticmethod
+    def compute_features(region):
+        return [fun(region) for fun in region_features.values()]
 
-    if not compute_data:
-        try:
-            with open(p.working_directory + '/temp/region_cardinality_samples.pkl') as f:
-                up = pickle.Unpickler(f)
-                data = up.load()
-                vertices = up.load()
-                scaler = up.load()
-        except:
-            compute_data = True
-
-    if compute_data:
-        r_data = []
-        vertices = []
-
-        import random
-
-        tracklet_ids = p.chm.chunks_.keys()
-
-        for _ in tqdm(range(num_random), leave=False):
-            t = p.chm[random.choice(tracklet_ids)]
-            b = random.randint(0, len(t)-1)
-
-            v = t[b]
-            r = p.gm.region(v)
-
-            r_data.append(get_data(r))
-            vertices.append(int(v))
-
-        data = np.array(r_data)
-        vertices=np.array(vertices)
-
-        print "preparations for region prepare_region_cardinality_samples FINISHED\n"
-
-    min_samples = max(5, int(len(data) * 0.001))
-    eps = 0.1
-
-    print "Normalising data..."
-    scaler = StandardScaler()
-    X = scaler.fit_transform(data)
-
-    print "Clustering using DBSCAN... min samples: {}, eps: {}".format(min_samples, eps)
-
-    db = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
-    # core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-    # core_samples_mask[db.core_sample_indices_] = True
-    labels = db.labels_
-
-    labels_set = set(labels)
-    n_clusters_ = len(labels_set) - (1 if -1 in labels_set else 0)
-
-    print('Estimated number of clusters: %d' % n_clusters_)
-
-    for i in labels_set:
-        print "\tLabel: {}, #{}".format(i, np.sum(labels == i))
-
-    # plotNdto3d(data, labels, core_samples_mask, [0, 1, 2], label_names[[0, 1, 2]])
-    # plotNdto3d(data, labels, core_samples_mask, [0, 2, 3], label_names[[0, 2, 3]])
-    # plotNdto3d(data, labels, core_samples_mask, [0, 2, 4], label_names[[0, 2, 4]])
-
-    print "saving results"
-    with open(p.working_directory+'/temp/region_cardinality_samples.pkl', 'wb') as f:
-        pic = pickle.Pickler(f)
-        pic.dump(data)
-        pic.dump(vertices)
-        pic.dump(labels)
-        pic.dump(scaler)
-
-    print "prepare_region_cardinality_samples part finished"
-    print "_________________________________"
+    def _draw_region(self, frame_img):
+        img_copy = frame_img.copy()
+        draw_points(img_copy, self.region.contour(), color=(255, 0, 0, 255))
+        draw_points(img_copy, self.region.pts(), color=(255, 0, 0, 20))
+        roi = self.region.roi().safe_expand(30, img_copy)
+        self.image = img_copy[roi.slices()].copy()
 
 
-def display_cluster_representants(p, N=30):
-    with open(p.working_directory+'/temp/region_cardinality_samples.pkl') as f:
-        up = pickle.Unpickler(f)
-        data = up.load()
-        vertices = up.load()
-        labels = up.load()
+class RegionCardinality:
+    def __init__(self):
+        # self.storage_directory = os.path.join(project.working_directory, 'temp')
+        # self.samples_filename = os.path.join(self.storage_directory, 'region_cardinality_samples.pkl')
 
-    labels_set = set(labels)
-    scaler = StandardScaler()
+        self.scaler = StandardScaler()
+        self.label_encoder = LabelEncoder()
 
-    X = scaler.fit_transform(data)
+        self.active_features_mask = np.ones(len(region_features), dtype=np.bool)
+        self.classifier = KNeighborsClassifier(n_neighbors=1)
 
-    for label in labels_set:
-        X_ = X[labels==label,:]
-        print "displaying cluster {} representants, cluster size: {}".format(label, len(X_))
-        vertices_ = vertices[labels==label]
+    def init_scaler(self, samples):
+        X = np.array([s.features for s in samples])
+        self.scaler.fit(X)
 
-        if len(X_) == 0:
-            print "ZERO SIZE CLUSTER: ", label
-            continue
+    def gather_samples(self, n, project, progress_update_fun=None):
+        # if len(self.project.chm) > 0:
+        #     regions, vertices = self.project.chm.get_random_regions(n, self.project.gm)
+        # else:
+        samples = self.get_random_segmented_regions(n, project, progress_update_fun)
+        X = np.array([s.features for s in samples])
+        self.scaler.fit(X)
+        return samples
+        # self.data = np.array([s.features for s in self.samples])
 
-        n_clusters = min(N, len(X_))
+    def set_active_features(self, features_mask):
+        self.active_features_mask = features_mask
 
-        from sklearn.cluster import KMeans
-        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(X_)
+    def train(self, labeled_samples):
+        if labeled_samples:
+            X = np.array([s.features for s in labeled_samples])
+            X = self.scaler.transform(X)
+            labels = [s.label for s in labeled_samples]
+            self.label_encoder.fit(labels)
+            X_active = X[:, self.active_features_mask]
+            y = self.label_encoder.transform(labels)
+            self.classifier.fit(X_active, y)
 
-        kmeans_labels = kmeans.labels_
-        data = []
+    def classify_samples(self, samples):
+        X = np.array([s.features for s in samples])
+        X = self.scaler.transform(X)
+        X_active = X[:, self.active_features_mask]
+        y = self.classifier.predict(X_active)
+        p = self.classifier.predict_proba(X_active)
+        for sample, label_id, class_probs in zip(samples, y, p):
+            sample.label = self.label_encoder.inverse_transform(label_id)
+            assert class_probs[label_id] == max(class_probs)
+            sample.confidence = class_probs[label_id]
+        return samples
 
-        vm = get_auto_video_manager(p)
+    def classify(self, region):
+        features = np.atleast_2d(RegionSample.compute_features(region))
+        features_scaled = self.scaler.transform(features)
+        return self.label_encoder.inverse_transform(
+            self.classifier.predict(features_scaled[:, self.active_features_mask]))[0]
 
-        for k in range(n_clusters):
-            class_member_mask = (kmeans_labels == k)
-            a_ = vertices_[class_member_mask]
+    def classify_tracklet(self, region_chunk):
+        """
+        Classify cardinality of a tracklet.
 
-            v1 = a_[0]
+        :param region_chunk: core.graph.region_chunk.RegionChunk
+        :return: int, label 0, 1, 2, 3, 4
+        """
+        freq = np.zeros(len(labels), dtype=np.int)
+        for region in region_chunk.regions_gen():
+            label = self.classify(region)
+            freq[labels.index(label)] += 1
 
-            r1 = p.gm.region(v1)
+        return np.argmax(freq)
 
-            im1 = vm.get_frame(r1.frame()).copy()
+    def classify_project(self, project):
+        """
+        Classify tracklet cardinality for all tracklets in a project.
 
-            draw_points(im1, r1.pts())
+        :param project: core.project.Project
+        """
+        from core.graph.region_chunk import RegionChunk
 
-            im = im1[r1.roi().slices()].copy()
-            data.append(im)
+        for i, tracklet in enumerate(tqdm.tqdm(project.chm.chunk_gen(),
+                                               total=len(project.chm),
+                                               desc='Classifying tracklets (single/multi/part/no-ID)')):
+            region_chunk = RegionChunk(tracklet, project.gm, project.rm)
+            tracklet.segmentation_class = self.classify_tracklet(region_chunk)
 
-        collage = create_collage_rows(data, 7, 100, 100)
-        cv2.imshow('collage', collage)
-        cv2.waitKey(0)
-        # cv2.imwrite(p.working_directory+'/temp/cluster_representant_'+str(label)+'.jpg', collage)
+
+def is_project_cardinality_classified(project):
+    for tracklet in project.chm.chunk_gen():
+        if tracklet.segmentation_class == -1:
+            return False
+    return True
+
+
+def get_random_segmented_regions(n, project, progress_update_fun=None):
+    from utils.img import prepare_for_segmentation
+    from core.region.mser import get_filtered_msers
+
+    samples = []
+    vm = project.get_video_manager()
+
+    if progress_update_fun is None:
+        pbar = tqdm(total=n, desc='segmenting regions for learning cardinality classification')
+        progress_update_fun = pbar.update
+
+    while len(samples) < n:
+        img_rgb = vm.random_frame()
+        img = prepare_for_segmentation(img_rgb, project)
+        regions = get_filtered_msers(img, project)
+        samples.extend([RegionSample(r, img_rgb) for r in regions])
+        progress_update_fun(len(regions))
+
+    return samples[:n]
 
 
 if __name__ == '__main__':
     from core.project.project import Project
 
     p = Project()
-    p.load_semistate('/Users/flipajs/Documents/wd/FERDA/zebrafish_playground')
+    p.load('/home/matej/prace/ferda/projects/Sowbug_deleteme2/')
+    # p.load_semistate('/Users/flipajs/Documents/wd/FERDA/zebrafish_playground')
 
-    prepare_region_cardinality_samples(p, compute_data=True)
+    p.region_cardinality_classifier.classify_project(p)

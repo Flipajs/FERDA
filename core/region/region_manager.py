@@ -411,6 +411,7 @@ class RegionManager:
             return len(self)+1 > item.id() > 0
         return isinstance(item, (int, long)) and len(self)+1 > item > 0
 
+
 if __name__ == "__main__":
     # rm = RegionManager()
     f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
