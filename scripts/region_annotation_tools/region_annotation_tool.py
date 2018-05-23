@@ -31,11 +31,11 @@ class AntBlobGtManager(object):
             logging.info("There is no file named {}, creating a new one".format(self.pkl_file))
             self.pickle_gt = project.name, project.video_paths, AntBlobs(), TrackletTypes()
         else:
-            sys.path.append('data/GT/ant_blob')  # hack to load old pkl file
+            sys.path.append('data/GT/region_annotation_tools')  # hack to load old pkl file
             with open(self.pkl_file, 'r') as f:
                 self.pickle_gt = pickle.load(f)
             logging.info("Successfuly loaded pkl file")
-            sys.path.remove('data/GT/ant_blob')
+            sys.path.remove('data/GT/region_annotation_tools')
         self.project_name, self.video_file, self.ant_blobs, self.tracklet_types = self.pickle_gt
 
         self.check_valid_setting(project)
@@ -179,8 +179,8 @@ def blobs_to_dict(blobs, img_shape, region_manager):
     import numpy as np
 
 
-def blob_annotation_tool(project_path, blob_gt_path, label_tracklets=False, label_blobs=False,
-                         visualize_blobs=False, visualize_gt=False, write_interactions_dataset=False, out_dir='.'):
+def region_annotation_tool(project_path, blob_gt_path, label_tracklets=False, label_blobs=False,
+                           visualize_blobs=False, visualize_gt=False, write_interactions_dataset=False, out_dir='.'):
     # fix_video_filename('./Camera1_blob_gt.pkl', '/run/media/matej/mybook_ntfs/ferda/Camera 1.avi')
     logging.basicConfig(level=logging.INFO)
     p = Project(project_path)
@@ -278,6 +278,6 @@ def blob_annotation_tool(project_path, blob_gt_path, label_tracklets=False, labe
 
 
 if __name__ == "__main__":
-    fire.Fire(blob_annotation_tool)
+    fire.Fire(region_annotation_tool)
 
 

@@ -276,11 +276,11 @@ class DataGenerator(object):
         """
         Load annotated blobs and write interaction ground truth to hdf5 and csv files.
 
-        For annotated blobs see data.GT.ant_blob.ant_blob_gt_manager.
+        For annotated blobs see data.GT.region_annotation_tools.ant_blob_gt_manager.
         """
         # write_annotated_blobs_groundtruth '/home/matej/prace/ferda/projects/camera1/Camera 1.fproj' ../data/annotated_blobs/Camera1_blob_gt.pkl 2 ../data/interactions/180126_test_real_2_ants
         self._write_argv(out_dir)
-        import data.GT.ant_blob.ant_blob_gt_manager as ant_blob_gt_manager
+        import scripts.region_annotation_tools.region_annotation_tool as ant_blob_gt_manager
         self._load_project(project_file)
         img_shape = self._project.img_manager.get_whole_img(0).shape[:2]
         blob_manager = ant_blob_gt_manager.AntBlobGtManager(blobs_filename, self._project)
