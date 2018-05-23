@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
         projects.append(p)
 
-    tracklets = projects[0].chm.chunks_in_frame(MATCHING_FRAME)
+    tracklets = projects[0].chm.tracklets_in_frame(MATCHING_FRAME)
 
     matchings = []
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     matchings.append(ids_)
 
     for p in projects[1:]:
-        tracklets = p.chm.chunks_in_frame(MATCHING_FRAME)
+        tracklets = p.chm.tracklets_in_frame(MATCHING_FRAME)
 
         ids_ = {}
         for t in tracklets:

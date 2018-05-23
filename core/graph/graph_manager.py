@@ -696,7 +696,7 @@ class GraphManager:
         from core.graph.region_chunk import RegionChunk
         regions = set()
 
-        for t in self.project.chm.chunks_in_frame(frame):
+        for t in self.project.chm.tracklets_in_frame(frame):
             rch = RegionChunk(t, self, self.project.rm)
             regions.add(rch.region_in_t(frame))
 
@@ -708,7 +708,7 @@ class GraphManager:
 
     def regions_and_t_ids_in_t(self, frame):
         regions = []
-        for t in self.project.chm.chunks_in_frame(frame):
+        for t in self.project.chm.tracklets_in_frame(frame):
             r_id = t.r_id_in_t(frame, self.project.gm)
             regions.append((r_id, t.id()))
 

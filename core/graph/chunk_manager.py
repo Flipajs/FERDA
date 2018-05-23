@@ -108,14 +108,8 @@ class ChunkManager:
 
         return self.get_chunks_from_intervals_(intervals)
 
-    def chunks_in_frame(self, frame):
-        warnings.warn("Deprecated, use tracklets_in_frame instead.")
-
-        return self.tracklets_in_frame(frame)
-
-
     def undecided_singleid_tracklets_in_frame(self, frame):
-        return filter(lambda x: len(x.P) == 0 and x.is_single(), self.chunks_in_frame(frame))
+        return filter(lambda x: len(x.P) == 0 and x.is_single(), self.tracklets_in_frame(frame))
 
     def chunks_in_interval(self, start_frame, end_frame):
         intervals = self.itree[start_frame-self.eps2:end_frame+self.eps2]

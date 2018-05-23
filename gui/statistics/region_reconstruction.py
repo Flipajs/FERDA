@@ -83,7 +83,7 @@ class RegionReconstruction(QtGui.QWidget):
         convex_t = 0
 
         for f in frames:
-            ch_in_frame = self.project.solver.chunks_in_frame(f)
+            ch_in_frame = self.project.solver.tracklets_in_frame(f)
             im = vid.get_frame(f)
             regions = get_msers_img(im, self.project, frame=f)
 
@@ -139,7 +139,7 @@ class RegionReconstruction(QtGui.QWidget):
 
         for f in frames:
             reconstructed[f] = []
-            ch_in_frame = self.project.solver.chunks_in_frame(f)
+            ch_in_frame = self.project.solver.tracklets_in_frame(f)
             im = vid.get_frame(f)
             regions = get_msers_img(im, self.project, frame=f)
 

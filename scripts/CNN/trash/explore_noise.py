@@ -45,7 +45,7 @@ for id, val in tqdm(d.iteritems()):
     frame = r.frame()
 
     t_id = None
-    for t in p.chm.chunks_in_frame(frame):
+    for t in p.chm.tracklets_in_frame(frame):
         if id in t.rid_gen(p.gm):
             t_id = t.id()
         break

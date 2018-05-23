@@ -107,7 +107,7 @@ class IdentitiesWidget(QtGui.QWidget):
         from utils.video_manager import get_auto_video_manager
         from core.graph.region_chunk import RegionChunk
         vm = get_auto_video_manager(self.p)
-        chunks = self.p.gm.chunks_in_frame(frame)
+        chunks = self.p.gm.tracklets_in_frame(frame)
         img = vm.get_frame(frame)
 
         for ch in chunks:

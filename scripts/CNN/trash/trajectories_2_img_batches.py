@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     t_ = time.time()
     for frame in tqdm.tqdm(xrange(vm.total_frame_count())):
-        for t in p.chm.chunks_in_frame(frame):
+        for t in p.chm.tracklets_in_frame(frame):
             if t.is_single():
                 rch = RegionChunk(t, p.gm, p.rm)
                 r = rch.region_in_t(frame)

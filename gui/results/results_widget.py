@@ -493,7 +493,7 @@ class ResultsWidget(QtGui.QWidget):
         self._load_gt()
 
         try:
-            if len(self.project.animals) == len(self.project.chm.chunks_in_frame(self.video_player.current_frame())):
+            if len(self.project.animals) == len(self.project.chm.tracklets_in_frame(self.video_player.current_frame())):
                 self._gt_(True)
         except:
             pass
@@ -560,7 +560,7 @@ class ResultsWidget(QtGui.QWidget):
                     frame = t.start_frame(self.project.gm)
 
                 new_t_found = False
-                for new_t in self.project.chm.chunks_in_frame(frame+frame_step):
+                for new_t in self.project.chm.tracklets_in_frame(frame+frame_step):
                     if new_t.is_only_one_id_assigned(len(self.project.animals)):
                         new_id = list(new_t.P)[0]
 
@@ -600,7 +600,7 @@ class ResultsWidget(QtGui.QWidget):
         frame = r.frame()
 
         t_id = None
-        for t in self.project.chm.chunks_in_frame(frame):
+        for t in self.project.chm.tracklets_in_frame(frame):
             if id_ in t.rid_gen(self.project.gm):
                 t_id = t.id()
                 break
@@ -711,7 +711,7 @@ class ResultsWidget(QtGui.QWidget):
 
     def __auto_gt_assignment(self):
         frame = self.video_player.current_frame()
-        for ch in self.project.chm.chunks_in_frame(frame):
+        for ch in self.project.chm.tracklets_in_frame(frame):
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
             r = rch.region_in_t(frame)
             centroid = r.centroid().copy()
@@ -1035,7 +1035,7 @@ class ResultsWidget(QtGui.QWidget):
             if alpha < 0.01:
                 continue
 
-            for ch in self.project.chm.chunks_in_frame(frame):
+            for ch in self.project.chm.tracklets_in_frame(frame):
                 if ch.is_only_one_id_assigned(num_animals):
                     rch = RegionChunk(ch, self.project.gm, self.project.rm)
                     r = rch.region_in_t(frame)
@@ -1077,7 +1077,7 @@ class ResultsWidget(QtGui.QWidget):
 
         num_animals = len(self.project.animals)
         idset = set(range(num_animals))
-        for ch in self.project.chm.chunks_in_frame(frame):
+        for ch in self.project.chm.tracklets_in_frame(frame):
             if len(ch.P) == 1:
                 id_ = list(ch.P)[0]
                 it_y = (2 * A) * id_
@@ -1163,7 +1163,7 @@ class ResultsWidget(QtGui.QWidget):
 
         animal_ids2centroids = {}
 
-        for ch in self.project.chm.chunks_in_frame(frame):
+        for ch in self.project.chm.tracklets_in_frame(frame):
             # try:
                 rch = RegionChunk(ch, self.project.gm, self.project.rm)
                 r = rch.region_in_t(frame)
@@ -1527,7 +1527,7 @@ class ResultsWidget(QtGui.QWidget):
         frame = self.video_player.current_frame()
 
         data = []
-        for t in self.project.chm.chunks_in_frame(frame):
+        for t in self.project.chm.tracklets_in_frame(frame):
             # TODO: remove this... temp skip decided.
             if len(t.P) == 1:
                 continue
@@ -1560,7 +1560,7 @@ class ResultsWidget(QtGui.QWidget):
         min_frame = self.video_player.total_frame_count() - 1
         t_id = -1
 
-        for t in self.project.chm.chunks_in_frame(frame):
+        for t in self.project.chm.tracklets_in_frame(frame):
             if min_frame > t.end_frame(self.project.gm):
                 min_frame = t.end_frame(self.project.gm)
                 t_id = t.id()
@@ -1580,7 +1580,7 @@ class ResultsWidget(QtGui.QWidget):
 
         max_frame = 0
         t_id = -1
-        for t in self.project.chm.chunks_in_frame(frame):
+        for t in self.project.chm.tracklets_in_frame(frame):
             if max_frame < t.start_frame(self.project.gm):
                 max_frame = t.start_frame(self.project.gm)
                 t_id = t.id()
@@ -1667,7 +1667,7 @@ class ResultsWidget(QtGui.QWidget):
         for frame, data in self._gt.get_clear_positions_dict().iteritems():
             print frame
             matches = [list() for _ in range(len(self.project.animals))]
-            for t in self.project.chm.chunks_in_frame(frame):
+            for t in self.project.chm.tracklets_in_frame(frame):
                 rch = RegionChunk(t, self.project.gm, self.project.rm)
                 c = rch.centroid_in_t(frame)
 
@@ -1716,7 +1716,7 @@ class ResultsWidget(QtGui.QWidget):
             used_ids = set()
 
             next_frame = np.inf
-            for t in self.project.chm.chunks_in_frame(frame):
+            for t in self.project.chm.tracklets_in_frame(frame):
                 if len(t.P.intersection(used_ids)):
                     problemsC.append((frame, t))
 
@@ -2051,7 +2051,7 @@ class ResultsWidget(QtGui.QWidget):
                 print "SEPARATED IN: ", frame
 
         permutation_data = []
-        for t in self.project.chm.chunks_in_frame(frame):
+        for t in self.project.chm.tracklets_in_frame(frame):
             if not t.is_single():
                 continue
 
@@ -2088,7 +2088,7 @@ class ResultsWidget(QtGui.QWidget):
                 region_representants.append(None)
                 img_representants.append(None)
 
-            for t in self.project.chm.chunks_in_frame(frame):
+            for t in self.project.chm.tracklets_in_frame(frame):
                 if t.is_only_one_id_assigned(num_animals):
                     a_id = list(t.P)[0]
 
@@ -2156,7 +2156,7 @@ class ResultsWidget(QtGui.QWidget):
 
         with tqdm(total=total_frame_count) as pbar:
             while True:
-                group = self.p.chm.chunks_in_frame(frame)
+                group = self.p.chm.tracklets_in_frame(frame)
                 if len(group) == 0:
                     break
 
@@ -2251,7 +2251,7 @@ class ResultsWidget(QtGui.QWidget):
 
                 # was added to Track
                 if t1.id() not in self.project.chm.chunks_:
-                    for t in self.project.chm.chunks_in_frame(t1.end_frame(self.project.gm)):
+                    for t in self.project.chm.tracklets_in_frame(t1.end_frame(self.project.gm)):
                         if t.is_track():
                             if t.is_inside(t1):
                                 t1 = t
@@ -2260,7 +2260,7 @@ class ResultsWidget(QtGui.QWidget):
                 # was added to Track, shouldn'd happen
                 if t2.id() not in self.project.chm.chunks_:
                     print "T2 happened....."
-                    for t in self.project.chm.chunks_in_frame(t2.start_frame(self.project.gm)):
+                    for t in self.project.chm.tracklets_in_frame(t2.start_frame(self.project.gm)):
                         if t.is_track():
                             if t.is_inside(t1):
                                 t2 = t

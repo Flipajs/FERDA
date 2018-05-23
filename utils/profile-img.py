@@ -6,7 +6,7 @@ p = Project()
 p.load('/Users/flipajs/Documents/wd/FERDA/rep1-cam3')
 
 for frame in range(100):
-    for ch in p.chm.chunks_in_frame(frame):
+    for ch in p.chm.tracklets_in_frame(frame):
         rch = RegionChunk(ch, p.gm, p.rm)
         r = rch.region_in_t(frame)
 
