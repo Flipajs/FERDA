@@ -6,6 +6,14 @@ import multiprocessing
 import sys
 import os
 from os.path import join
+import numpy as np
+import time
+import cv2
+import fire
+import subprocess
+import tqdm
+import json
+from joblib import Parallel, delayed
 
 # pool = multiprocessing.Pool(processes=4)
 # currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -21,12 +29,7 @@ from config import config
 from utils.img import prepare_for_segmentation
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
-import numpy as np
-import time
-import cv2
-import fire
-import subprocess
-import tqdm
+from utils.video_manager import get_auto_video_manager
 
 
 def segment(proj, img):
@@ -84,44 +87,27 @@ def get_rois(msers, img, prediction_optimisation_border):
     return rois
 
 
-def segmentation(project_file, sge=False):
+def segmentation(project_file):
     """
-    Process all segmentation parts according to limits.txt.
+    Segment regions in all frames.
 
     :param project_file: project file
     :return: int, number of parts
     """
     working_dir, _ = Project.get_project_dir_and_file(project_file)
-    try:
-        with open(os.path.join(working_dir, 'limits.txt'), 'r') as fr:
-            # the file should look like:
-            # 0	100	0
-            # 1	100	0
-            # 2	100	0
-            # ...
-            parameters = []
-            for line in fr.readlines():
-                split = line.split()
-                parameters.append({'id': int(split[0]),
-                                   'frames_in_row': int(split[1]),
-                                   'last_n_frames': int(split[2])})
-        for par in tqdm.tqdm(parameters, desc='processing segmentation jobs in sequence'):
-            if sge:
-                assert False, 'not implemented'
-                # subprocess.check_call(
-                #     ['scripts/sun_grid_engine_parallelization/compute_single_id.sh',
-                #      working_dir, proj_name, par['id'], par['frames_in_row'], par['last_n_frames']
-                #      ])
-            else:
-                do_segmentation_part(project_file, par['id'], par['frames_in_row'], par['last_n_frames'])
-        return len(parameters)
-
-    except IOError as e:
-        print('Can''t open limits.txt file: {}'.format(e))
-        raise
+    project = Project(project_file)
+    vid = get_auto_video_manager(project)
+    frame_num = int(vid.total_frame_count())
+    frames_in_row = config['segmentation']['frames_in_row']
+    Parallel(n_jobs=config['general']['n_jobs'], verbose=10)\
+        (delayed(do_segmentation_part)(project_file, i, frame_start)
+         for i, frame_start in enumerate(range(0, frame_num, frames_in_row)))
+    # with tqdm.tqdm(total=frame_num, desc='segmenting regions') as pbar:
+    #     for i, frame_start in enumerate(range(0, frame_num, frames_in_row)):
+    #         do_segmentation_part(project_file, i, frame_start, pbar.update)
 
 
-def do_segmentation_part(project_file, part_id, frames_in_row, last_n_frames):
+def do_segmentation_part(project_file, part_id, frame_start, frame_done_func=None):
     working_dir, _ = Project.get_project_dir_and_file(project_file)
     # check if part was computed before
     temp_path = os.path.join(working_dir, 'temp')
@@ -157,26 +143,22 @@ def do_segmentation_part(project_file, part_id, frames_in_row, last_n_frames):
     proj.color_manager = None
     config['general']['log_graph_edits'] = False
     vid = get_auto_video_manager(proj)
-    if part_id * frames_in_row > 0:
-        img = vid.seek_frame(part_id * frames_in_row)
-    else:
-        img = vid.next_frame()
-    if img is None:
-        raise Exception("img is None, there is something wrong with frame: {}".format(part_id * frames_in_row))
-    rois = []
-    img = prepare_img(proj, img)
-    msers_t = 0
-    solver_t = 0
-    vid_t = 0
+    frames_num = int(vid.total_frame_count())
+    frames_in_row = config['segmentation']['frames_in_row']
+    img = vid.seek_frame(frame_start)
+    frame_end = frame_start + frames_in_row - 1
+    if frame_end > frames_num - 1:
+        frame_end = frames_num - 1
+
     # for all frames: extract regions and add them to the graph
-    for i in range(frames_in_row + last_n_frames):
-        frame = part_id * frames_in_row + i
+    for frame in range(frame_start, frame_end + 1):
+        rois = []
+        img = prepare_img(proj, img)
 
-        s = time.time()
+        # # per pixel classification -> fg, bg (not used)
+        # if hasattr(proj, 'segmentation_model'):
+        #     img = frame_segmentation(img, i, proj, rois, full_segmentation_refresh=full_segmentation_refresh)
 
-        # per pixel classification -> fg, bg (not used)
-        if hasattr(proj, 'segmentation_model'):
-            img = frame_segmentation(img, i, proj, rois, full_segmentation_refresh=full_segmentation_refresh)
         # get segmented regions
         msers = get_filtered_msers(img, proj, frame)
 
@@ -184,58 +166,43 @@ def do_segmentation_part(project_file, part_id, frames_in_row, last_n_frames):
             proj.colormarks_model.assign_colormarks(proj, msers)
 
         proj.rm.add(msers)
-        msers_t += time.time() - s
 
-        s = time.time()
-
-        # Check for last frame...
-        if i + 1 < frames_in_row + last_n_frames:
-            img = vid.next_frame()
-            if img is None:
-                raise Exception("img is None, there is something wrong with frame: {}".format(frame))
-
-            img = prepare_img(proj, img)
-
-        vid_t += time.time() - s
-
-        s = time.time()
-
-        if use_roi_prediction_optimisation:
-            rois = get_rois(msers, img, prediction_optimisation_border)
+        # if use_roi_prediction_optimisation:
+        #     rois = get_rois(msers, img, prediction_optimisation_border)
 
         # add regions to graph
         proj.gm.add_regions_in_t(msers, frame, fast=True)
-        solver_t += time.time() - s
 
-    # if proj.solver_parameters.use_emd_for_split_merge_detection():
-    #     solver.detect_split_merge_cases()
-    s = time.time()
+        img = vid.next_frame()
+        if img is None:
+            raise Exception("img is None, there is something wrong with frame: {}".format(frame))
+        if frame_done_func is not None:
+            frame_done_func()
+
     print("#Edges BEFORE: ", proj.gm.g.num_edges())
     try:
-        # TODO:
-        if proj.type == 'colony':
-            rules = [solver.adaptive_threshold]
-
-            while True:
-                if solver.simplify(rules=rules) == 0:
-                    break
-        else:
-            solver.simplify(rules=[solver.one2one])
+        solver.simplify(rules=[solver.one2one])
     except:
         solver.one2one()
     print ("#Edges AFTER: ", proj.gm.g.num_edges())
-    solver_t += time.time() - s
-    s = time.time()
     with open(pkl_filename, 'wb') as f:
         p = pickle.Pickler(f, -1)
         p.dump(proj.gm.g)
         p.dump(proj.gm.get_all_relevant_vertices())
         p.dump(proj.chm)
-    file_t = time.time() - s
+    save_segmentation_info(temp_path, part_id, frame_start=frame_start, frame_end=frame_end)
     print("#Vertices: {}, #Edges: {}".format(proj.gm.g.num_vertices(), proj.gm.g.num_edges()))
-    print("MSERS t:", round(msers_t, 2), "SOLVER t: ", round(solver_t, 2), "VIDEO t:", round(vid_t,
-                                                                                              2), "FILE t: ", round(
-        file_t, 2), "SUM t / frames_in_row:", round((msers_t + solver_t + vid_t + file_t) / float(frames_in_row), 2))
+
+
+def save_segmentation_info(dirname, part_id, **kwargs):
+    with open(join(dirname, 'part{}.json'.format(part_id)), 'w') as fw:
+        json.dump(kwargs, fw)
+
+
+def load_segmentation_info(dirname, part_id):
+    with open(join(dirname, 'part{}.json'.format(part_id)), 'r') as fr:
+        info = json.load(fr)
+    return info
 
 
 def frame_segmentation(img, i, project, rois, border_px=3, full_segmentation_refresh=25):

@@ -2,31 +2,47 @@ import cPickle as pickle
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 from core.graph.graph_manager import GraphManager
+from core.segmentation import load_segmentation_info
+from core.config import config
 import warnings
 from itertools import izip
 from tqdm import tqdm
 import os
+from os.path import join
 import datetime
+import glob
+import shutil
 
 
-def check_if_already_assembled(project):
-    wd = project.working_directory
-    rm_path = wd+'/rm.sqlite3'
+def is_assemply_completed(project):
+    rm_path = join(project.working_directory, 'rm.sqlite3')
+    chm_path = join(project.working_directory, 'chunk_manager.pkl')
+    gm_path = join(project.working_directory, 'graph_manager.pkl')
+    if os.path.isfile(rm_path) and len(project.rm) > 0 and \
+            os.path.isfile(chm_path) and \
+            os.path.isfile(gm_path):
+        return True
+    else:
+        return False
+
+
+def backup(project):
+    rm_path = join(project.working_directory, 'rm.sqlite3')
+    chm_path = join(project.working_directory, 'chunk_manager.pkl')
+    gm_path = join(project.working_directory, 'graph_manager.pkl')
     if os.path.exists(rm_path) and len(project.rm):
         warnings.warn("Region Manager already exists. It was renamed to rm_CURRENT_DATETIME.sqlite3")
 
         dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         os.rename(rm_path, rm_path[:-8] + '_' + dt + '.sqlite3')
-        project.rm = RegionManager(wd)
+        project.rm = RegionManager(project.working_directory)
 
-    chm_path = wd + '/chunk_manager.pkl'
     if os.path.exists(chm_path):
         warnings.warn("Chunk Manager already exists. It was renamed to chm_CURRENT_DATETIME.sqlite")
 
         dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         os.rename(chm_path, chm_path[:-4] + '_' + dt + '.pkl')
 
-    gm_path = wd + '/graph_manager.pkl'
     if os.path.exists(gm_path):
         warnings.warn("Graph Manager already exists. It was renamed to gm_CURRENT_DATETIME.sqlite")
 
@@ -34,10 +50,14 @@ def check_if_already_assembled(project):
         os.rename(gm_path, gm_path[:-4] + '_' + dt + '.pkl')
 
 
-def graph_assembly(project, graph_solver, n_parts, first_part=0, do_semi_merge=False):
-    check_if_already_assembled(project)
+def get_parts_num(parts_path):
+    return len(glob.glob(join(parts_path, 'part*.json')))
 
-    print "Starting assembly..."
+
+def graph_assembly(project, graph_solver, do_semi_merge=False):
+    backup(project)
+
+    print("Starting assembly...")
     # TODO: add to settings
 
     project.chm = ChunkManager()
@@ -48,12 +68,15 @@ def graph_assembly(project, graph_solver, n_parts, first_part=0, do_semi_merge=F
     merging_t = time.time()
 
     print("\nLOADING PARTS AND MERGING...")
-    # for i in range(n_parts):
-    for i in tqdm(range(first_part, first_part + n_parts), leave=False):
-        rm_old = RegionManager(db_wd=project.working_directory + '/temp',
-                               db_name='part' + str(i) + '_rm.sqlite3', cache_size_limit=1, supress_init_print=True)
+    parts_path = join(project.working_directory, 'temp')
+    n_parts = get_parts_num(parts_path)
+    parts_info = []
+    for i in tqdm(range(n_parts), leave=False):
+        parts_info.append(load_segmentation_info(parts_path, i))
+        rm_old = RegionManager(db_wd=parts_path,
+                               db_name='part{}_rm.sqlite3'.format(i), cache_size_limit=1, supress_init_print=True)
 
-        with open(project.working_directory + '/temp/part' + str(i) + '.pkl', 'rb') as f:
+        with open(join(parts_path, 'part{}.pkl'.format(i)), 'rb') as f:
             up = pickle.Unpickler(f)
             g_ = up.load()
             relevant_vertices = up.load()
@@ -61,24 +84,19 @@ def graph_assembly(project, graph_solver, n_parts, first_part=0, do_semi_merge=F
 
             merge_parts(project.gm, g_, relevant_vertices, project, rm_old, chm_)
 
-    fir = project.solver_parameters.frames_in_row
-
     project.gm.rm = project.rm
 
-    print
-    print "RECONNECTING GRAPHS"
-    print
+    print("\nRECONNECTING GRAPHS\n")
+
     vs_todo = []
+    for info1, info2 in zip(parts_info[:-1], parts_info[1:]):
+    # for part_end_t in range(start_, start_ + frames_in_row * n_parts, frames_in_row):
+        vertices1 = project.gm.get_vertices_in_t(info1['frame_end'])
+        vertices2 = project.gm.get_vertices_in_t(info2['frame_start'])
+        vs_todo.extend(vertices1)
 
-    start_ = (first_part + 1) * fir
-    for part_end_t in range(start_, start_ + fir*n_parts, fir):
-        t_v = project.gm.get_vertices_in_t(part_end_t - 1)
-        t1_v = project.gm.get_vertices_in_t(part_end_t)
-
-        vs_todo.extend(t_v)
-
-        connect_graphs(project, t_v, t1_v, project.gm, project.rm)
-        # self.solver.simplify(t_v, rules=[self.solver.adaptive_threshold])
+        connect_graphs(project, vertices1, vertices2, project.gm, project.rm)
+        # self.solver.simplify(vertices1, rules=[self.solver.adaptive_threshold])
 
     print "merge t: {:.2f}".format(time.time() - merging_t)
     print "#CHUNKS: ", len(project.chm)
@@ -91,8 +109,7 @@ def graph_assembly(project, graph_solver, n_parts, first_part=0, do_semi_merge=F
     except:
         graph_solver.one2one()
 
-    print
-    print "\tfirst one2one t: {:.2f}s".format(time.time() - one2one_t)
+    print "\n\tfirst one2one t: {:.2f}s".format(time.time() - one2one_t)
 
     learn_assignment_t = time.time()
 
@@ -102,8 +119,7 @@ def graph_assembly(project, graph_solver, n_parts, first_part=0, do_semi_merge=F
     from scripts.regions_stats import learn_assignments, add_score_to_edges, tracklet_stats
     learn_assignments(project, max_examples=50000, display=False)
 
-    print()
-    print("\tlearn assignment t: {:.2f}s".format(time.time() - learn_assignment_t))
+    print("\n\tlearn assignment t: {:.2f}s".format(time.time() - learn_assignment_t))
     learn_assignment_t = time.time()
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
@@ -128,14 +144,12 @@ def graph_assembly(project, graph_solver, n_parts, first_part=0, do_semi_merge=F
         strongly_better_t = time.time()
         strongly_better_e = p.gm.strongly_better_eps2(eps=eps, score_type=score_type)
         if len(strongly_better_e) == 0:
-            print
-            print "BREAK"
+            print "\nBREAK"
             break
 
         strongly_better_e = sorted(strongly_better_e, key=lambda x: -x[0])
 
-        print
-        print "ITERATION: {}, #decisions: {}, t: {:.2f}s".format(i, len(strongly_better_e), time.time()-strongly_better_t)
+        print "\nITERATION: {}, #decisions: {}, t: {:.2f}s".format(i, len(strongly_better_e), time.time()-strongly_better_t)
         confirm_t = time.time()
         for _, e in tqdm(strongly_better_e, leave=False):
             if p.gm.g.edge(e.source(), e.target()) is not None:
@@ -164,7 +178,7 @@ def graph_assembly(project, graph_solver, n_parts, first_part=0, do_semi_merge=F
     if not do_semi_merge:
         p.save()
 
-    print "SANITY CHECK..."
+    print("SANITY CHECK...")
     sanity_check = True
     for ch in tqdm(p.chm.chunk_gen(), total=len(p.chm), leave=False):
         if len(ch) > 1:
@@ -188,6 +202,7 @@ def graph_assembly(project, graph_solver, n_parts, first_part=0, do_semi_merge=F
     print "DONE"
     print
     tracklet_stats(project)
+    shutil.rmtree(parts_path)  # remove segmentation parts
 
 
 def connect_graphs(project, vertices1, vertices2, gm, rm):
