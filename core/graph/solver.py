@@ -94,7 +94,6 @@ class Solver:
             self.project.gm.update_nodes_in_t_refs()
             self.project.chm.reset_itree(self.project.gm)
 
-
     def adaptive_threshold(self, vertex):
         if self.project.gm.ch_start_longer(vertex):
             return []
@@ -467,7 +466,7 @@ class Solver:
             for e in out_edges:
                 affected.add(e.target())
 
-                for aff_neigh in e.target().in_neighbours():
+                for aff_neigh in e.target().in_neighbors():
                     affected.add(aff_neigh)
 
                 self.project.gm.remove_edge_(e)
@@ -476,7 +475,7 @@ class Solver:
             for e in in_edges:
                 affected.add(e.source())
 
-                for aff_neigh in e.source().out_neighbours():
+                for aff_neigh in e.source().out_neighbors():
                     affected.add(aff_neigh)
 
                 self.project.gm.remove_edge_(e)
