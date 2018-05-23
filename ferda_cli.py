@@ -11,6 +11,7 @@ from core.project.project import Project
 import pandas as pd
 import numpy as np
 import os
+from os.path import join
 
 
 def results_to_mot(results):
@@ -67,18 +68,30 @@ def fix_legacy_project(project_path):
     print('Fixed project.name.')
 
 
-def run_tracking(project_path, video_file=None):
-    _, project_filename = Project.get_project_dir_and_file(project_path)
+def run_tracking(project_path, video_file=None, force_recompute=False, reid_model_weights_path=None):
+    project_dir, project_filename = Project.get_project_dir_and_file(project_path)
     import core.segmentation
+    from core.region.clustering import is_project_cardinality_classified
     import core.graph_assembly
     import core.graph.solver
-    n_parts = core.segmentation.segmentation(project_filename)
+    from core.id_detection.complete_set_matching import do_complete_set_matching
+    core.segmentation.segmentation(project_filename)
     project = Project()
     project.load(project_filename, video_file=video_file)
-    graph_solver = core.graph.solver.Solver(project)
-    core.graph_assembly.graph_assembly(project, graph_solver, n_parts)
+    if force_recompute or not core.graph_assembly.is_assemply_completed(project):
+        graph_solver = core.graph.solver.Solver(project)
+        core.graph_assembly.graph_assembly(project, graph_solver)
+        project.save()
+    if force_recompute or not is_project_cardinality_classified(project):
+        project.region_cardinality_classifier.classify_project(project)
+        project.save()
+    if force_recompute or not os.path.isfile(join(project_dir, 'descriptors.pkl')):
+        assert reid_model_weights_path is not None, \
+            'missing reidentification model weights, to train a model see prepare_siamese_data.py, train_siamese_contrastive_lost.py'
+        from scripts.CNN.siamese_descriptor import compute_descriptors
+        compute_descriptors(project_dir, reid_model_weights_path)
+    do_complete_set_matching(project)
     project.save()
-    project.region_cardinality_classifier.classify_project(project)
 
 
 if __name__ == '__main__':
@@ -90,14 +103,9 @@ if __name__ == '__main__':
     parser.add_argument('--save-results-mot', type=str, help='write found trajectories in MOT challenge format')
     parser.add_argument('--fix-legacy-project', action='store_true', help='fix legacy project\'s Qt dependencies')
     parser.add_argument('--run-tracking', action='store_true', help='run tracking on initilized project')
+    parser.add_argument('--reidentification-weights', type=str, help='tracking: path to reidentification model weights',
+                        default=None)
     args = parser.parse_args()
-
-    if args.save_results_mot:
-        project = Project()
-        project.load(args.project, video_file=args.video_file)
-        results = project.get_results_trajectories()
-        df = results_to_mot(results)
-        df.to_csv(args.save_results_mot, header=False, index=False)
 
     if args.fix_legacy_project:
         fix_legacy_project(args.project)
@@ -105,4 +113,11 @@ if __name__ == '__main__':
     if args.run_tracking:
         project = Project()
         project.load(args.project, video_file=args.video_file)
-        run_tracking(args.project, video_file=args.video_file)
+        run_tracking(args.project, video_file=args.video_file, reid_model_weights_path=args.reidentification_weights)
+
+    if args.save_results_mot:
+        project = Project()
+        project.load(args.project, video_file=args.video_file)
+        results = project.get_results_trajectories()
+        df = results_to_mot(results)
+        df.to_csv(args.save_results_mot, header=False, index=False)

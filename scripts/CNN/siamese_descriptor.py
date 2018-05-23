@@ -1,85 +1,39 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import numpy as np
-
 import pickle
-import random
-from keras.datasets import mnist
+from os.path import join
 from keras.models import Model, load_model
 from keras.layers import Input, Flatten, Dense, Dropout, Lambda
-from keras.optimizers import RMSprop
-from keras import backend as K
 from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, BatchNormalization, Activation
-from keras.preprocessing.image import ImageDataGenerator
-from keras.callbacks import ModelCheckpoint
 from tqdm import tqdm
 import argparse
-from scripts.CNN.train_siamese_contrastive_lost import contrastive_loss2
+
 from scripts.CNN.prepare_siamese_data import get_region_crop
 from scripts.CNN.prepare_siamese_data import ELLIPSE_DILATION, APPLY_ELLIPSE, OFFSET, MASK_SIGMA
-import cv2
-from keras.utils import CustomObjectScope
+from scripts.CNN.train_siamese_contrastive_lost import create_base_network10, euclidean_distance, eucl_dist_output_shape
+from core.project.project import Project
+
 
 def normalize_and_prepare_imgs(imgs):
     imgs = np.array(imgs)
     imgs = imgs.astype('float32')
     imgs /= 255
-
     return imgs
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='train siamese CNN with contrastive loss')
+def compute_descriptors(project_dir, model_weights_path, add_missing=False):
+    model = create_model(model_weights_path)
 
-    parser.add_argument('--datadir', type=str,
-                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed',
-                        default='/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-fixed-segmentation',
-                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min',
-                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min',
-                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min',
-                        help='path to dataset')
-
-    parser.add_argument('--add_missing', default=False, action='store_true',
-                        help='if used - only ids missing in descriptors.pkl will be computed')
-
-    args = parser.parse_args()
-    from scripts.CNN.train_siamese_contrastive_lost import create_base_network10, euclidean_distance, eucl_dist_output_shape
-
-    input_shape = (90, 90, 3)
-    input_a = Input(shape=input_shape)
-    input_b = Input(shape=input_shape)
-
-    architecture = create_base_network10
-    base_network = architecture(input_shape)
-    processed_a = base_network(input_a)
-    processed_b = base_network(input_b)
-
-    distance = Lambda(euclidean_distance, output_shape=eucl_dist_output_shape)([processed_a, processed_b])
-
-    model = Model([input_a, input_b], distance)
-    model.load_weights(args.datadir+"/best_model_998_weights.h5")
-    # model.load_weights(args.datadir+"/best_model_996_weights.h5")
-    # model.load_weights(args.datadir+"/best_model_980_weights.h5")
-    # model.load_weights(args.datadir+"/best_model_967_weights.h5")
-    # Cam1
-    # model.load_weights(args.datadir+"/best_model_996_weights.h5")
-    new_model = model.layers[2]
-
-    from core.project.project import Project
-    p = Project()
-    p.load(args.datadir)
+    p = Project(project_dir)
     vm = p.get_video_manager()
-
     descriptors = {}
-    if args.add_missing:
+    if add_missing:
         try:
-            with open(args.datadir + '/descriptors.pkl', 'rb') as f:
+            with open(join(project_dir, 'descriptors.pkl'), 'rb') as f:
                 descriptors = pickle.load(f)
         except:
             pass
-
-
     imgs = []
     r_ids = []
     batch_size = 300
@@ -92,13 +46,13 @@ if __name__ == '__main__':
             if region.id() in descriptors:
                 continue
 
-            crop = get_region_crop(region, img, APPLY_ELLIPSE, ELLIPSE_DILATION, MASK_SIGMA , OFFSET)
+            crop = get_region_crop(region, img, APPLY_ELLIPSE, ELLIPSE_DILATION, MASK_SIGMA, OFFSET)
             imgs.append(crop)
             r_ids.append(region.id())
 
         if len(imgs) >= batch_size:
             imgs = normalize_and_prepare_imgs(imgs)
-            descs = new_model.predict(imgs)
+            descs = model.predict(imgs)
 
             for k, r_id in enumerate(r_ids):
                 descriptors[r_id] = descs[k, :]
@@ -108,12 +62,35 @@ if __name__ == '__main__':
 
     # Do the rest
     imgs = normalize_and_prepare_imgs(imgs)
-    descs = new_model.predict(imgs)
-
+    descs = model.predict(imgs)
     for k, r_id in enumerate(r_ids):
         descriptors[r_id] = descs[k, :]
-
-    with open(args.datadir+'/descriptors.pkl', 'wb') as f:
+    with open(join(project_dir, 'descriptors.pkl'), 'wb') as f:
         pickle.dump(descriptors, f)
-
     print("DONE")
+
+
+def create_model(model_weights_path):
+    input_shape = (90, 90, 3)
+    input_a = Input(shape=input_shape)
+    input_b = Input(shape=input_shape)
+    architecture = create_base_network10
+    base_network = architecture(input_shape)
+    processed_a = base_network(input_a)
+    processed_b = base_network(input_b)
+    distance = Lambda(euclidean_distance, output_shape=eucl_dist_output_shape)([processed_a, processed_b])
+    model_ = Model([input_a, input_b], distance)
+    model_.load_weights(model_weights_path)
+    model = model_.layers[2]
+    return model
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='compute reidentification descriptors for tracklets')
+    parser.add_argument('--weights', type=str, help='filename of the CNN model weights')
+    parser.add_argument('--project-dir', type=str, help='project directory')
+    parser.add_argument('--add-missing', default=False, action='store_true',
+                        help='if used - only ids missing in descriptors.pkl will be computed')
+
+    args = parser.parse_args()
+    compute_descriptors(args.project_dir, args.weights, args.add_missing)

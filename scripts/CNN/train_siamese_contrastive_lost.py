@@ -469,6 +469,7 @@ def accuracy(y_true, y_pred):
 import h5py
 import argparse
 
+
 class DataGenerator(object):
     """docstring for DataGenerator"""
     def __init__(self, batch_sz, tr_pairs, tr_y):
@@ -488,7 +489,7 @@ class DataGenerator(object):
                                             ).flow(self.tr_pairs_1, self.tr_y, batch_size=batch_sz, shuffle=False)
 
         self.batch_sz = batch_sz
-        self.samples_per_train  = (self.tr_pairs.shape[0]/self.batch_sz)
+        self.samples_per_train = (self.tr_pairs.shape[0]/self.batch_sz)
 
         self.cur_train_index=0
         self.cur_val_index=0
@@ -509,6 +510,7 @@ class DataGenerator(object):
             #         ],
             #         self.tr_y[self.cur_train_index:self.cur_train_index+self.batch_sz]
             #     )
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
