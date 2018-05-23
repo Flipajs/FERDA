@@ -20,7 +20,7 @@ class BackgroundComputer:
     RUNNING = 1
     FINISHED = 2
 
-    def __init__(self, project, update_callback, finished_callback, postpone_parallelisation):
+    def __init__(self, project, update_callback, finished_callback):
         self.project = project
         self.process_n = config['parallelization']['processes_num']
         self.results = []
@@ -35,7 +35,8 @@ class BackgroundComputer:
 
         self.processes = []
 
-        self.set_frames_in_row()
+        vid = get_auto_video_manager(self.project)
+        self.frame_num = int(vid.total_frame_count())
         self.finished = np.array([False for i in range(self.n_parts)])
 
         self.solver = None
@@ -44,72 +45,45 @@ class BackgroundComputer:
         self.check_parallelization_timer.timeout.connect(self.check_parallelization)
         self.check_parallelization_timer.start(100)
         self.precomputed = False
-        self.postpone_parallelisation = postpone_parallelisation
 
         self.first_part = 0
         # is True when semi merge is done on cluster... e.g. parts 0-9, 10-19 etc...
         self.do_semi_merge = False
-
-    def set_frames_in_row(self):
-        vid = get_auto_video_manager(self.project)
-        frame_num = int(vid.total_frame_count())
-
-        self.n_parts = int(int(frame_num) / int(self.frames_in_row))
-        self.frames_in_row_last = self.frames_in_row + (frame_num - (self.frames_in_row * self.n_parts))
 
     def run(self):
         if not os.path.exists(self.project.working_directory + '/temp'):
             os.mkdir(self.project.working_directory + '/temp')
             
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
-            # if self.postpone_parallelisation:
-                # f = open(self.project.working_directory+'/limits.txt', 'w')
 
             if not config['general']['log_in_bg_computation']:
                 config['general']['log_graph_edits'] = False
 
-            # change this if parallelisation stopped working and you want to run it from given part
-            skip_n_first_parts = 0
-
             self.start = [0] * self.n_parts
 
-            for i in range(skip_n_first_parts):
-                self.processes.append(None)
-
-            if self.postpone_parallelisation:
-                limits_file = open(str(self.project.working_directory)+"/limits.txt","w")
-
-            for i in range(skip_n_first_parts, self.n_parts):
+            for i, frame_start in enumerate(range(0, self.frame_num, config['segmentation']['frames_in_row'])):
                 p = QtCore.QProcess()
 
                 p.finished.connect(partial(self.onFinished, i))
                 p.readyReadStandardError.connect(partial(self.OnProcessErrorReady, i))
                 p.readyReadStandardOutput.connect(partial(self.OnProcessOutputReady, i))
 
-                last_n_frames = 0
-                if i == self.n_parts - 1:
-                    last_n_frames = self.frames_in_row_last - self.frames_in_row
-
                 commandline = '{executable} "{cwd}/core/segmentation.py" ' \
-                              'part_segmentation "{project_file}" {part_id} {frames_in_row} {last_n_frames}'.format(
+                              'part_segmentation "{project_file}" {part_id} {frame_start}'.format(
                     executable=sys.executable,
                     cwd=os.getcwd(),
                     project_file=self.project.project_file,
                     part_id=i,
-                    frames_in_row=self.frames_in_row,
-                    last_n_frames=last_n_frames)
+                    frame_start=frame_start,
+                    )
                 print(commandline)
 
-                if self.postpone_parallelisation:
-                    limits_file.write('{}\t{}\t{}\n'.format(i, self.frames_in_row, last_n_frames))
-
-                if i < skip_n_first_parts + self.process_n:
-                    if not self.postpone_parallelisation:
-                        p.start(commandline)
+                if i < self.process_n:
+                    p.start(commandline)
 
                 self.start[i] = time.time()
 
-                if i < skip_n_first_parts + self.process_n:
+                if i < self.process_n:
                     status = self.RUNNING
                 else:
                     status = self.WAITING
@@ -118,19 +92,12 @@ class BackgroundComputer:
 
                 # self.update_callback('DONE: '+str(i+1)+' out of '+str(self.process_n))
 
-            if self.postpone_parallelisation:
-                self.precomputed = True
-
             config['general']['log_graph_edits'] = True
-            if self.postpone_parallelisation:
-                limits_file.close()
-                sys.exit() ## Comment for cluster usage
-            
         else:
             self.precomputed = True
 
     def check_parallelization(self):
-        if not self.postpone_parallelisation and (self.finished.all() or self.precomputed):
+        if self.finished.all() or self.precomputed:
             self.check_parallelization_timer.stop()
             self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
             self.solver = Solver(self.project)

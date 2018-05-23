@@ -251,7 +251,7 @@ class NewProjectWidget(QtGui.QWidget):
 
     def finish_initialisation(self):
         if self.finish_callback:
-            self.finish_callback('initialization_finished', [self.project, self.postpone_parallelisation])
+            self.finish_callback('initialization_finished', self.project)
 
     def crop_video_confirmed(self):
         self.project.video_start_t = self.widget2_crop_video.start_frame + 1

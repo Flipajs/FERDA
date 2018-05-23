@@ -18,7 +18,7 @@ from gui.learning.learning_widget import LearningWidget
 
 
 class MainTabWidget(QtGui.QWidget):
-    def __init__(self, finish_callback, project, postpone_parallelisation=False, progress_callback=None):
+    def __init__(self, finish_callback, project, progress_callback=None):
         super(MainTabWidget, self).__init__()
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
@@ -91,8 +91,7 @@ class MainTabWidget(QtGui.QWidget):
         print "LOADING GRAPH..."
         if project.gm is None or project.gm.g.num_vertices() == 0:
             # project.gm = GraphManager(project, project.solver.assignment_score)
-            self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished,
-                                               postpone_parallelisation)
+            self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)
             self.bc_msers.run()
         else:
             self.background_computer_finished(project.solver)
@@ -196,7 +195,7 @@ class MainTabWidget(QtGui.QWidget):
             # TODO: show loading or something...
             if not isinstance(self.id_detection_tab, LearningWidget):
                 ok = False
-                for ch in self.project.chm.chunks_in_frame(0):
+                for ch in self.project.chm.tracklets_in_frame(0):
                     if not ch.is_undefined():
                         ok = True
                         break
