@@ -3,11 +3,11 @@ import logging
 from PyQt4 import QtGui
 from collections import namedtuple
 from os.path import exists
-# import matplotlib
-# matplotlib.use('Agg')
 import matplotlib.pylab as plt
-
+import fire
 import pickle
+import tqdm
+import os
 
 from core.project.project import Project
 from ant_blobs import AntBlobs
@@ -15,11 +15,7 @@ from tracklet_types import TrackletTypes
 from util.blob_widget import BlobWidget
 from util.tracklet_viewer import TrackletViewer
 import utils.roi
-from core.region.region import Region
 import core.region.region
-import tqdm
-import os
-import numpy as np
 from skimage.measure import regionprops
 
 PickleGT = namedtuple("PickleGT", "project_name, video_file ant_blobs tracklet_types")
@@ -68,9 +64,6 @@ class AntBlobGtManager(object):
 
     def feed_ant_blobs(self):
         return self.ant_blobs.feed_blobs()
-
-    def view_gt(self):
-        pass
 
     def label_tracklets(self):
         # label tracklets first
@@ -181,51 +174,56 @@ def blobs_to_dict(blobs, img_shape, region_manager):
     return gt
 
 
-if __name__ == "__main__":
+
     from skimage.measure import label, regionprops
     import numpy as np
 
-    out_dir = './out'
+
+def blob_annotation_tool(project_path, blob_gt_path, label_tracklets=False, label_blobs=False,
+                         visualize_blobs=False, visualize_gt=False, write_interactions_dataset=False, out_dir='.'):
     # fix_video_filename('./Camera1_blob_gt.pkl', '/run/media/matej/mybook_ntfs/ferda/Camera 1.avi')
     logging.basicConfig(level=logging.INFO)
-    p = Project()
-    # p.load("/home/matej/prace/ferda/10-15 (copy)/10-15.fproj")
-    p.load('/home/matej/prace/ferda/projects/camera1/Camera 1.fproj')
-    manager = AntBlobGtManager('./Camera1_blob_gt.pkl', p)
+    p = Project(project_path)
+    manager = AntBlobGtManager(blob_gt_path, p)
     img_shape = manager.project.img_manager.get_whole_img(0).shape[:2]
 
-    # # interactive ground truth annotation
-    # manager.label_tracklets()
-    # manager.label_blobs()
-    # manager.view_gt()
+    # interactive ground truth annotation
+    if label_tracklets:
+        manager.label_tracklets()
+
+    if label_blobs:
+        manager.label_blobs()
 
     blobs = manager.get_ant_blobs()  # see AntBlobs() docs
     # blob_gen = manager.feed_ant_blobs()
 
-    # # visualize annotated blobs
-    # for i, blob in enumerate(tqdm.tqdm(blobs)):
-    #     fig = plt.figure()
-    #     manager.show_gt(blob)
-    #     plt.axis('off')
-    #     fig.savefig(os.path.join(out_dir, '%03d.png' % i), transparent=True, bbox_inches='tight', pad_inches=0)
-    #     plt.close(fig)
+    # visualize annotated blobs
+    if visualize_blobs:
+        for i, blob in enumerate(tqdm.tqdm(blobs)):
+            fig = plt.figure()
+            manager.show_gt(blob)
+            plt.axis('off')
+            fig.savefig(os.path.join(out_dir, 'blob_%03d.png' % i), transparent=True, bbox_inches='tight', pad_inches=0)
+            plt.close(fig)
 
     gt = blobs_to_dict(blobs, img_shape, manager.project.rm)
 
-    # # ellipses ground truth visualization
-    # from scripts.CNN.interactions_results import plot_interaction
-    # for i, item in tqdm.tqdm(enumerate(gt)):
-    #     img = manager.project.img_manager.get_whole_img(item['frame'])
-    #     fig = plt.figure()
-    #     plt.imshow(img)
-    #     plt.axis('off')
-    #     plot_interaction(item['n_objects'], gt=item)
-    #     fig.savefig('out2/%05d.png' % i, transparent=True, bbox_inches='tight', pad_inches=0)
-    #     plt.close(fig)
-    #     plt.clf()
+    # ellipses ground truth visualization
+    if visualize_gt:
+        from core.interactions.visualization import plot_interaction
+        for i, item in tqdm.tqdm(enumerate(gt)):
+            img = manager.project.img_manager.get_whole_img(item['frame'])
+            fig = plt.figure()
+            plt.imshow(img)
+            plt.axis('off')
+            plot_interaction(item['n_objects'], gt=item)
+            fig.savefig(os.path.join(out_dir, 'gt_%05d.png' % i), transparent=True, bbox_inches='tight', pad_inches=0)
+            plt.close(fig)
+            plt.clf()
 
-    import pandas as pd
-    gtdf = pd.DataFrame(gt)
+    # # analyze gt in pandas
+    # import pandas as pd
+    # gtdf = pd.DataFrame(gt)
 
     # # compute ellipses gt from moments using Region() - NOT WORKING
     # import cv2
@@ -261,20 +259,25 @@ if __name__ == "__main__":
     # plt.close(fig)
     # plt.clf()
 
-    # # write test dataset
-    # import h5py
-    # import warnings
+    # # not finished
+    # if write_interactions_dataset:
+    #     # write test dataset
+    #     import h5py
+    #     import warnings
     #
-    # out_hdf5 = 'images.h5'
-    # hdf5_dataset_name = 'test'
+    #     out_hdf5 = 'images.h5'
+    #     hdf5_dataset_name = 'test'
     #
-    # if out_hdf5 is not None:
-    #     assert hdf5_dataset_name is not None
-    #     if os.path.exists(out_hdf5):
-    #         warnings.warn('HDF5 file %s already exists, adding dataset %s.' % (out_hdf5, hdf5_dataset_name))
-    #     hdf5_file = h5py.File(out_hdf5, mode='a')
-    #     hdf5_file.create_dataset(hdf5_dataset_name, (count, IMAGE_SIZE_PX, IMAGE_SIZE_PX, 3),
-    #                              np.uint8)  # , compression='szip')
-    #
+    #     if out_hdf5 is not None:
+    #         assert hdf5_dataset_name is not None
+    #         if os.path.exists(out_hdf5):
+    #             warnings.warn('HDF5 file %s already exists, adding dataset %s.' % (out_hdf5, hdf5_dataset_name))
+    #         hdf5_file = h5py.File(out_hdf5, mode='a')
+    #         hdf5_file.create_dataset(hdf5_dataset_name, (count, IMAGE_SIZE_PX, IMAGE_SIZE_PX, 3),
+    #                                  np.uint8)  # , compression='szip')
+
+
+if __name__ == "__main__":
+    fire.Fire(blob_annotation_tool)
 
 
