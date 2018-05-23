@@ -557,6 +557,16 @@ class Project:
         return results
 
 
+def project_video_file_exists(project_path):
+    working_directory, project_filename = Project.get_project_dir_and_file(project_path)
+    with open(project_filename, 'rb') as f:
+        project_dict = pickle.load(f)
+    for path in project_dict['video_paths']:
+        if os.path.isfile(path):
+            return True
+    return False
+
+
 def dummy_project():
     from core.classes_stats import dummy_classes_stats
     from core.region.region_manager import RegionManager

@@ -128,7 +128,7 @@ class ProjectWidget(QtGui.QWidget):
         S_.temp.last_wd_path = f
 
         # load project - this doesn't take as much time and is needed in the main thread to run popup windows
-        if not project.video_exists():
+        if not core.project.project.project_video_file_exists(files[0]):
             path = self.pick_new_video()
             if path is None:
                 return
