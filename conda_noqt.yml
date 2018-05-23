@@ -1,0 +1,29 @@
+# use: conda env create -f conda_noqt.yml
+name: ferda_noqt
+channels: 
+    - conda-forge
+    - ostrokach-forge  # graph-tool
+dependencies:
+  - python=2.7
+  - imageio
+  - pyyaml
+  - opencv
+  - scikit-image
+  - pip:
+    - matplotlib
+    - pyqtgraph
+    - pympler
+    - qimage2ndarray
+    - lazyme
+    - cachetools
+    - imutils
+    - joblib
+  - scikit-learn
+  - tqdm
+  - pandas
+  - h5py
+  - fire
+  - numpy
+  - graph-tool
+  - keras
+
