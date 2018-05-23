@@ -72,5 +72,6 @@ class TransformableRegionTestCase(unittest.TestCase):
     def test_get_transformed_angle6(self):
         self.check_get_transformed_angle(270)
 
+
 if __name__ == '__main__':
     unittest.main()
