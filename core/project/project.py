@@ -22,7 +22,7 @@ class Project:
     """
     This class encapsulates one experiment using FERDA
     """
-    def __init__(self):
+    def __init__(self, path=None):
         self.name = ''
         self.description = ''
         self.video_paths = []
@@ -66,6 +66,9 @@ class Project:
 
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
+
+        if path is not None:
+            self.load(path)
 
     def is_cluster(self):
         if hasattr(self, 'is_cluster_'):
@@ -182,9 +185,6 @@ class Project:
         self.save_chm_(path + '/chunk_manager.pkl')
 
         self.save_gm_(path + '/graph_manager.pkl')
-
-        print('project.load settings...')  # TODO
-        # self.save_qsettings(to_folder)
 
         self.save_project_file_(path)
 
