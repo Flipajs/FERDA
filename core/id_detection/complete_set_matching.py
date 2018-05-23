@@ -1,12 +1,11 @@
 import random
-
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 from lazyme.string import color_print
 from scipy.misc import imread
 from tqdm import tqdm
-
+import pickle
 from utils.video_manager import get_auto_video_manager
 
 
@@ -20,7 +19,11 @@ class CompleteSetMatching:
         self.lp = lp
         self.get_probs = self.lp._get_tracklet_proba
         self.get_p1s = self.lp.get_tracklet_p1s
-        self.descriptors = descriptors
+        if isinstance(descriptors, str):
+            with open(descriptors, 'rb') as fr:
+                self.descriptors = pickle.load(fr)
+        else:
+            self.descriptors = descriptors
 
         self.new_track_id = 0
         self.tracks = tracks
@@ -84,7 +87,6 @@ class CompleteSetMatching:
             except:
                 pass
 
-
         # update N sets for unassigned tracklets in relations to best_CS track ids
         for tracklet, track_id in self.tracklets_2_tracks.iteritems():
             self.add_to_N_set(track_id, tracklet)
@@ -93,7 +95,6 @@ class CompleteSetMatching:
         # 1) choose tracklet
         #       longest?
         #       for now, process as it is in chunk_generator
-
 
         num_undecided = 0
         for t in self.p.chm.tracklet_gen():
@@ -153,7 +154,6 @@ class CompleteSetMatching:
 
                         if len(test_t.P):
                             prohibited_ids[t_].append(list(test_t.P)[0])
-
 
             # 3) compute matching
             P_a = self.prototypes_distance_probabilities(best_set, best_CS)
@@ -259,7 +259,6 @@ class CompleteSetMatching:
 
         self.remap_ids_from_0(support)
 
-        p.save()
         # qualities = np.array(qualities)
         # plt.figure()
         # plt.plot(qualities[:, 0])
@@ -297,7 +296,7 @@ class CompleteSetMatching:
                     map_[id] = -id
 
         for new_id, id in enumerate(sorted(support, key=support.get)[-len(self.p.animals):]):
-            for t in p.chm.chunk_gen():
+            for t in self.p.chm.chunk_gen():
                 if id in map_:
                     id = map_[id]
 
@@ -1273,7 +1272,7 @@ class CompleteSetMatching:
                     end_frame = end_r.frame()
 
                     # PRE tracklets
-                    pre_tracklets = self.p.chm.chunks_in_frame(start_frame - 1)
+                    pre_tracklets = self.p.chm.tracklets_in_frame(start_frame - 1)
                     # only tracklets which end before interaction are possible options
                     pre_tracklets = filter(lambda x: x.end_frame(self.p.gm) == start_frame - 1 and x.is_single(), pre_tracklets)
 
@@ -1289,7 +1288,7 @@ class CompleteSetMatching:
                             best_start_t = t
 
                     # POST tracklets
-                    post_tracklets = self.p.chm.chunks_in_frame(end_frame + 1)
+                    post_tracklets = self.p.chm.tracklets_in_frame(end_frame + 1)
                     post_tracklets = filter(lambda x: x.start_frame(self.p.gm) == end_frame + 1 and x.is_single(), post_tracklets)
 
                     best_end_t = None
@@ -1339,6 +1338,7 @@ class CompleteSetMatching:
 
         p.save()
 
+
 def _get_ids_from_folder(wd, n):
     # .DS_Store...
     files = list(filter(lambda x: x[0] != '.', os.listdir(wd)))
@@ -1346,6 +1346,7 @@ def _get_ids_from_folder(wd, n):
 
     rids = map(lambda x: x[:-4], rids)
     return np.array(map(int, rids))
+
 
 def _get_distances(ids1, ids2, descriptors):
     x = []
@@ -1356,6 +1357,7 @@ def _get_distances(ids1, ids2, descriptors):
         x.append(np.linalg.norm(np.array(descriptors[i]) - np.array(descriptors[j])))
 
     return x
+
 
 def test_descriptors_distance(descriptors, n=2000):
     WD = '/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/'
@@ -1453,67 +1455,35 @@ def prototypes_distribution_probability(prot1, prot2):
     return p_to_prot2
 
 
-
-
-if __name__ == '__main__':
-    from core.project.project import Project
+def do_complete_set_matching(project):
     from core.id_detection.learning_process import LearningProcess
-
-    p = Project()
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/Cam1'
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
-    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-fixed-segmentation'
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min'
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
-    p.load(P_WD)
-    # p.load('/Use/rs/flipajs/Documents/wd/FERDA/Camera3_new')
-
-    lp = LearningProcess(p)
-    lp._reset_chunk_PN_sets()
-
-    # import sys
-    # from PyQt4 import QtCore, QtGui
-    # app = QtGui.QApplication(sys.argv)
+    lp = LearningProcess(project)
+    # lp._reset_chunk_PN_sets()
     #
-    # from scripts.regions_stats import decide_one2one
-    # decide_one2one(p)
-
-    # from gui.region_classifier_tool import RegionClassifierTool
-    # cardinality_classifier = RegionClassifierTool(p)
-    # cardinality_classifier.start_hil()
-    # cardinality_classifier.load_data(compute=False)
-    # cardinality_classifier.classify_tracklets()
-
-    # reset id_decision_info
-    for t in p.chm.tracklet_gen():
-        try:
-            t.id_decision_info = ''
-        except:
-            pass
-
-
-    import pickle
-    # with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:
-    with open(p.working_directory+'/descriptors.pkl') as f:
-        descriptors = pickle.load(f)
-
-    from numpy.linalg import norm
-
-    # test_descriptors_distance(descriptors)
-    # np.random.seed(13)
-    # Probably not necessary, just to make sure...
-    np.random.seed(42)
-
-    csm = CompleteSetMatching(p, lp, descriptors, quality_threshold=0.2, quality_threshold2=0.01)
-
+    # # reset id_decision_info
+    # for t in p.chm.tracklet_gen():
+    #     # try:
+    #     t.id_decision_info = ''
+    #     # except:
+    #     #     pass
+    descriptors_path = os.path.join(project.working_directory, 'descriptors.pkl')
+    csm = CompleteSetMatching(project, lp, descriptors_path, quality_threshold=0.2, quality_threshold2=0.01)
     # csm.solve_interactions()
-    # import sys
-    # sys.exit()
-
-
     csm.start_matching_process()
 
 
+if __name__ == '__main__':
+
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/Cam1'
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
+    # path = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-fixed-segmentation'
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min'
+    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
+    # p.load('/Use/rs/flipajs/Documents/wd/FERDA/Camera3_new')
+    path = '../projects/Sowbug_deleteme2'
+    from core.project.project import Project
+    p = Project(path)
+    do_complete_set_matching(p)
 
 

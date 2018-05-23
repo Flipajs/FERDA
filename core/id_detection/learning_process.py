@@ -9,13 +9,11 @@ from tqdm import tqdm, trange
 import numpy as np
 import os
 # import psutil
-from PyQt4 import QtGui
 from sklearn.ensemble import RandomForestClassifier
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
 from features import get_basic_properties, get_colornames_hists, get_colornames_and_basic
-from gui.learning.ids_names_widget import IdsNamesWidget
 from utils.img_manager import ImgManager
 from utils.video_manager import get_auto_video_manager
 import itertools
@@ -1588,9 +1586,10 @@ class LearningProcess:
                 test_set.add(d['ids'][0])
 
         if len(full_set.intersection(test_set)) != len(full_set) and self.classifier_name == RFC:
-            QtGui.QMessageBox.information(None, '',
-                                          'There are not examples for all classes. Did you use auto initialisation? Missing ids: '+str(full_set-test_set))
-            return
+            print(
+'core.id_detection.learning_process.LearningProcess#reset_learning error: there are not examples for all classes, '
+'did you use auto initialisation? missing ids: {}'.format(full_set-test_set))
+            return None
 
         for d in self.user_decisions:
             tracklet_id = d['tracklet_id_set']
@@ -2078,7 +2077,7 @@ class LearningProcess:
         print
         with tqdm(total=total_frame_count) as pbar:
             while True:
-                group = self.p.chm.chunks_in_frame(frame)
+                group = self.p.chm.tracklets_in_frame(frame)
                 if len(group) == 0:
                     break
 
@@ -2495,7 +2494,7 @@ class LearningProcess:
                                 frames=self.p.video_start_t)
 
             permutation_data = []
-            for id_, t in enumerate(self.p.chm.chunks_in_frame(max_best_frame)):
+            for id_, t in enumerate(self.p.chm.tracklets_in_frame(max_best_frame)):
                 if not t.is_single():
                     continue
 
@@ -2587,7 +2586,7 @@ class LearningProcess:
 
         frame = 0
         while True:
-            group = self.p.chm.chunks_in_frame(frame)
+            group = self.p.chm.tracklets_in_frame(frame)
             if len(group) == 0:
                 break
 
@@ -2613,9 +2612,9 @@ class LearningProcess:
         if method == 'maxsum':
             self.user_decisions = []
             self.separated_frame = max_best_frame
-            group = self.p.chm.chunks_in_frame(max_best_frame)
+            group = self.p.chm.tracklets_in_frame(max_best_frame)
         else:
-            group = self.p.chm.chunks_in_frame(best_frame)
+            group = self.p.chm.tracklets_in_frame(best_frame)
             max_best_frame = best_frame
 
         group = filter(lambda x: x.is_single(), group)
@@ -2634,7 +2633,7 @@ class LearningProcess:
                                 frames=self.p.video_start_t)
 
             permutation_data = []
-            for t in self.p.chm.chunks_in_frame(max_best_frame):
+            for t in self.p.chm.tracklets_in_frame(max_best_frame):
                 if not t.is_single():
                     continue
 
@@ -2832,7 +2831,7 @@ def compute_features_process(counter, lock, q_tasks, project_wd, num_frames, fir
         frame_start, frame_end = task
 
         for frame in range(frame_start, frame_end):
-            for t in project.chm.chunks_in_frame(frame):
+            for t in project.chm.tracklets_in_frame(frame):
                 if not t.is_single():
                     continue
 
