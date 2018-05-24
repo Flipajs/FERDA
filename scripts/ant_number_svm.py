@@ -1,35 +1,20 @@
 __author__ = 'fnaiser'
 
 import pickle
-import numpy as np
-from utils.video_manager import get_auto_video_manager
-from utils.drawing.points import draw_points, draw_points_crop, draw_points_crop_binary
-import cv2
-from math import sin, cos
-from PyQt4 import QtGui, QtCore
 import sys
-from gui.img_grid.img_grid_widget import ImgGridWidget
-from gui.gui_utils import get_image_label
-from core.region.mser import get_msers_
-from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
-from scripts.similarity_test import similarity_loss
-from scipy.ndimage.filters import gaussian_filter1d
-from scipy.stats.stats import pearsonr
-from core.region import region
-from sklearn import svm
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
-from skimage.morphology import skeletonize, medial_axis, convex_hull_image, binary_closing, binary_opening
-from core.region.mser import get_msers_, get_all_msers
-from skimage.transform import resize
-from gui.img_grid.img_grid_dialog import ImgGridDialog
-from scipy.spatial import ConvexHull
-from scipy.spatial.qhull import QhullError
-import warnings
-import os
-from skimage.transform import resize
-from core.settings import Settings as S_
 
+import cv2
+import numpy as np
+from PyQt4 import QtGui
+from scipy.spatial import ConvexHull
+from sklearn import svm
+
+from core.region.mser import get_msers_img, get_all_msers
+from core.region.mser_operations import get_region_groups, margin_filter, children_filter
+from gui.gui_utils import get_image_label
+from gui.img_grid.img_grid_dialog import ImgGridDialog
+from utils.drawing.points import draw_points_crop
+from utils.video_manager import get_auto_video_manager
 
 WORKING_DIR = '/Users/fnaiser/Documents/chunks'
 vid_path = '/Users/fnaiser/Documents/chunks/eight.m4v'
@@ -199,7 +184,7 @@ def test():
     im = vid.next_frame()
     im = vid.next_frame()
 
-    msers = get_msers_(im)
+    msers = get_msers_img(im)
     groups = get_region_groups(msers)
     ids = margin_filter(msers, groups)
     for id in ids:
@@ -355,20 +340,20 @@ if __name__ == '__main__':
     #
     #         cont = m.contour()
     #
-    #         prob = clf.predict_proba([x])
-    #         r_ = int(255*prob[0][0])
-    #         g_ = int(255*prob[0][1])
+    #         prob_prototype_represantion_being_same_id_set = clf.predict_proba([x])
+    #         r_ = int(255*prob_prototype_represantion_being_same_id_set[0][0])
+    #         g_ = int(255*prob_prototype_represantion_being_same_id_set[0][1])
     #
     #         a_ = antlikeness.get_prob(m)
     #
-    #         if prob[0][1] < 0.1 or a_[1] < 0.2:
+    #         if prob_prototype_represantion_being_same_id_set[0][1] < 0.1 or a_[1] < 0.2:
     #             continue
     #
     #         vis = draw_points_crop(im.copy(), cont, color=(0, g_, r_, 1), square=True)
     #         # im2 = draw_points(im2, cont, color=(0, g_, r_, 1))
     #
     #         vis = np.asarray(resize(vis, (70, 70)) * 255, dtype=np.uint8)
-    #         cv2.putText(vis, str(f)+' '+str(prob[0][1])[0:5], (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 100), 1, cv2.cv.CV_AA)
+    #         cv2.putText(vis, str(f)+' '+str(prob_prototype_represantion_being_same_id_set[0][1])[0:5], (1, 10), cv2.FONT_HERSHEY_PLAIN, 0.65, (0, 255, 100), 1, cv2.cv.CV_AA)
     #
     #         iml = get_image_label(vis)
     #         dial.img_grid.add_item(iml)

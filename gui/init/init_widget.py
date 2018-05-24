@@ -3,7 +3,7 @@ __author__ = 'fnaiser'
 import pickle
 from PyQt4 import QtGui
 
-from gui.init.init_where_widget import InitWhereWidget
+from gui.init.circle_arena_editor_widget import CircleArenaEditorWidget
 from gui.init.init_what_widget import InitWhatWidget
 from gui.init.init_how_widget import InitHowWidget
 
@@ -21,7 +21,7 @@ class InitWidget(QtGui.QWidget):
         self.setLayout(self.vbox)
 
         self.tabs = QtGui.QTabWidget()
-        self.where_tab = InitWhereWidget(self.widget_control, project)
+        self.where_tab = CircleArenaEditorWidget(self.widget_control, project)
         self.what_tab = None
         self.how_tab = None
 

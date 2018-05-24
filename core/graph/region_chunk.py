@@ -21,6 +21,9 @@ class RegionChunk:
 
     def __getitem__(self, key):
         ids = self.chunk_[key]
+        if ids is None:
+            return None
+
         if isinstance(ids, int):
             return self.get_region_(ids)
 
@@ -43,14 +46,16 @@ class RegionChunk:
             return self.gm_.region(id)
 
     def start_frame(self):
-        return self[0].frame_
+        return self.chunk_.start_frame(self.gm_)
+        # return self[0].frame_
 
     def end_frame(self):
-        return self[-1].frame_
+        return self.chunk_.end_frame(self.gm_)
+        # return self[-1].frame_
 
     def region_in_t(self, t):
         t = t-self.start_frame()
-        if -1 < t < len(self.chunk_.nodes_):
+        if -1 < t < len(self.chunk_):
             return self[t]
         else:
             return None
@@ -65,7 +70,9 @@ class RegionChunk:
     def regions_gen(self):
         i = 0
         while i < self.chunk_.length():
-            yield self[i]
+            x = self[i]
+            if x is not None:
+                yield x
             i += 1
 
     def rid_gen(self):

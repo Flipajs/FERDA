@@ -15,7 +15,7 @@ from new_region_widget import NewRegionWidget
 from core.region.region import Region
 from core.log import LogCategories, ActionNames
 from gui.img_grid.img_grid_widget import ImgGridWidget
-from core.settings import Settings as S_
+from gui.settings import Settings as S_
 import math
 from gui.view.graph_visualizer import call_visualizer
 from gui.loading_widget import LoadingWidget

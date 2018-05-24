@@ -1,19 +1,11 @@
 __author__ = 'filip@naiser.cz'
 
-from PyQt4 import QtGui, QtCore
-from numpy import arange, sin, pi, cos
-from my_mpl_canvas import *
-import sys
 from pylab import *
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.cbook import get_sample_data
-from matplotlib._png import read_png
-import numpy as np
+
 from gui.plot.plot_utils import line_picker
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from gui.settings import Settings as S_
+from my_mpl_canvas import *
 from utils.img import DistinguishableColors
-import time
-from core.settings import Settings as S_
 
 
 class PlotChunks(QtGui.QWidget):

@@ -1,0 +1,18 @@
+general:
+    log_graph_edits: false
+    log_in_bg_computation: false  # Could be switched off before user interactions to save space.
+    print_log: true
+    n_jobs: -1  # number of jobs to run in parallel, if -1 all CPUs are used,
+                # see https://pythonhosted.org/joblib/parallel.html#parallel-reference-documentation
+
+cache:
+    use: true # There will be stored information in working directory to speed up mainly the results tool.
+    mser: true # Storing MSERs have huge impact on speed but it also needs huge space amount.
+    img_manager_size_MB: 500
+    region_manager_num_of_instances: 0
+
+region_classifier:
+    samples_num: 100
+
+segmentation:
+    frames_in_row: 100

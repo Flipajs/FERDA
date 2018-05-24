@@ -1,23 +1,24 @@
 __author__ = 'fnaiser'
 
+from functools import partial
+
+import numpy as np
 from PyQt4 import QtGui, QtCore
 
-from gui.img_controls import my_view, my_scene
-from utils import video_manager
-from utils.misc import set_settings
-import utils.img
 import gui.gui_utils
+import utils.img
+from core import colormark
+from core.animal import Animal
+from gui.gui_utils import set_settings
+from gui.img_controls import my_view, my_scene
+from gui.init.arena.arena_circle import ArenaCircle as Circle
+from gui.init.arena.arena_mark import ArenaMark as Mark
 from gui.init.class_widget import ClassWidget
 from gui.init.groups_widget import GroupsWidget
 from gui.init.identity_widget import IdentityWidget
-from gui.init.arena.arena_mark import ArenaMark as Mark
-from gui.init.arena.arena_circle import ArenaCircle as Circle
-from core import colormark
-import numpy as np
-from core.animal import Animal
-from functools import partial
-from core.settings import Settings as S_
-import cv2
+from gui.settings import Settings as S_
+from utils import video_manager
+
 
 class InitWhatWidget(QtGui.QWidget):
     def __init__(self, finish_callback, project):

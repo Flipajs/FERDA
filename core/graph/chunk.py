@@ -4,12 +4,13 @@ import numpy as np
 from reduced import Reduced
 from utils.constants import EDGE_CONFIRMED
 from core.log import LogCategories, ActionNames
-from core.settings import Settings as S_
 from core.region.region import Region
+from random import randint
 
 
 class Chunk:
-    def __init__(self, vertices_ids, id_, gm, color=None):
+    def __init__(self, vertices_ids, id_, gm, color=None, origin_interaction=False):
+        assert color is None or isinstance(color, np.ndarray)
         # if not isinstance(vertices_ids, list):
         #     raise Exception('vertices_ids must be a list! (in chunk.py)')
         # if len(vertices_ids) < 2:
@@ -25,32 +26,35 @@ class Chunk:
         self.N = set()
         self.segmentation_class = -1
 
-        if len(vertices_ids) > 1:
-            if vertices_ids[0] > 0:
-                v1 = gm.g.vertex(vertices_ids[0])
-                out_edges = [e for e in v1.out_edges()]
-                for e in out_edges:
-                    gm.remove_edge_(e)
+        self.origin_interaction = origin_interaction
 
-            if vertices_ids[-1] > 0:
-                v2 = gm.g.vertex(vertices_ids[-1])
+        if not self.origin_interaction:
+            if len(vertices_ids) > 1:
+                if vertices_ids[0] > 0:
+                    v1 = gm.g.vertex(vertices_ids[0])
+                    out_edges = [e for e in v1.out_edges()]
+                    for e in out_edges:
+                        gm.remove_edge_(e)
 
-                in_edges = [e for e in v2.in_edges()]
-                for e in in_edges:
-                    gm.remove_edge_(e)
+                if vertices_ids[-1] > 0:
+                    v2 = gm.g.vertex(vertices_ids[-1])
 
-            if len(vertices_ids) > 2:
-                for v in vertices_ids[1:-1]:
-                    if v > 0:
-                        gm.remove_vertex(v)
-                        # v = gm.g.vertex(v)
-                        # for e in v.in_edges():
-                        #     gm.remove_edge_(e)
+                    in_edges = [e for e in v2.in_edges()]
+                    for e in in_edges:
+                        gm.remove_edge_(e)
 
-        self.chunk_reconnect_(gm)
+                if len(vertices_ids) > 2:
+                    for v in vertices_ids[1:-1]:
+                        if v > 0:
+                            gm.remove_vertex(v)
+                            # v = gm.g.vertex(v)
+                            # for e in v.in_edges():
+                            #     gm.remove_edge_(e)
+
+            self.chunk_reconnect_(gm)
 
     def __str__(self):
-        s = "CHUNK --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
+        s = "CHUNK --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+" "+str(self.P)+"\n"
         return s
 
     def __len__(self):
@@ -87,6 +91,9 @@ class Chunk:
             items.append(self.nodes_[i])
 
         return items
+
+    def set_random_color(self, low=0, high=255):
+        self.color = np.random.randint(low, high, 3)
 
     def print_info(self, gm):
         s = "TRACKLET --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
@@ -134,7 +141,7 @@ class Chunk:
         region = gm.region(vertex_id)
         if region.frame() != self.end_frame(gm) + 1:
             # print "DISCONTINUITY in chunk.py/append_right", region.frame(), self.end_frame(gm), region, self.end_node()
-            raise Exception("DISCONTINUITY in chunk.py/append_right")
+            raise Exception("DISCONTINUITY in chunk.py/append_right, frame: {}, r_id: {}".format(region.frame(), region.id()))
 
         last = self.end_node()
 
@@ -248,7 +255,7 @@ class Chunk:
             i = 1
             for f in range(self.end_frame(gm)+1, ch2.start_frame(gm)):
                 r = Region(frame=f)
-                r.is_virtual = True
+                r.is_origin_interaction_ = True
                 c = ch1end_region.centroid() + np.array(c_diff_part * i)
                 r.centroid_ = c.copy()
 
@@ -365,12 +372,34 @@ class Chunk:
         for id_ in self.nodes_:
             yield gm.region_id(id_)
 
+    def get_region(self, gm, i):
+        return gm.region(self.nodes_[i])
+
+    def get_region_in_frame(self, gm, frame):
+        sf = self.start_frame(gm)
+        try:
+            return self.get_region(gm, frame-sf)
+        except Exception as e:
+            import warnings
+            warnings.warn(e.message)
+            return None
+
+    def r_gen(self, gm, rm):
+        for rid in self.rid_gen(gm):
+            yield rm[rid]
+
     def v_id_in_t(self, t, gm):
         t = t - self.start_frame(gm)
         if -1 < t < len(self.nodes_):
             return self.nodes_[t]
         else:
             return None
+
+    def is_origin_interaction(self):
+        try:
+            return self.origin_interaction
+        except:
+            return False
 
     def r_id_in_t(self, t, gm):
         return gm.region_id(self.v_id_in_t(t, gm))
@@ -401,3 +430,100 @@ class Chunk:
             return "part-of-ID"
         else:
             return "undefined"
+
+    def is_ghost(self):
+        return False
+
+    def is_tracklet(self):
+        return True
+
+    def is_track(self):
+        return False
+
+    def num_outcoming_edges(self, gm):
+        return self.end_vertex(gm).out_degree()
+
+    def num_incoming_edges(self, gm):
+        return self.start_vertex(gm).in_degree()
+
+    def get_cardinality(self, gm):
+        """
+        cardinality = #IDS in given tracklet
+        
+        Returns: 1 if single, 2, 3, ... when cardinality is known, 0 when cardinality is known and tracklet is noise, 
+        -1 when cardinality is not defined
+
+        """
+
+    def get_cardinality(self, gm):
+        """
+        cardinality = #IDS in given tracklet
+
+        Returns: 1 if single, 2, 3, ... when cardinality is known, 0 when cardinality is known and tracklet is noise,
+        -1 when cardinality is not defined
+
+        """
+
+        if self.is_noise():
+            return 0
+
+        if self.is_single():
+            return 1
+
+        if self.is_multi():
+            # first try INcoming...
+            cardinality_based_on_in = 0
+            for ch in gm.get_incoming_tracklets(self.start_vertex(gm)):
+                if ch.is_single() and ch.num_outcoming_edges(gm) == 1:
+                    cardinality_based_on_in += 1
+                else:
+                    cardinality_based_on_in = 0
+                    break
+
+            cardinality_based_on_out = 0
+            # lets try OUTcoming...
+            for ch in gm.get_outcoming_tracklets(self.end_vertex(gm)):
+                if ch.is_single() and ch.num_incoming_edges(gm) == 1:
+                    cardinality_based_on_out += 1
+                else:
+                    return -1
+
+            if cardinality_based_on_in == 0 and cardinality_based_on_out:
+                return cardinality_based_on_out
+
+            if cardinality_based_on_in and cardinality_based_on_out == 0:
+                return cardinality_based_on_in
+
+        return -1
+
+    def entering_tracklets(self, gm):
+        return gm.get_incoming_tracklets(self.start_vertex(gm))
+
+    def exiting_tracklets(self, gm):
+        return gm.get_outcoming_tracklets(self.end_vertex(gm))
+
+    def solve_interaction(self, detector, gm, rm, im):
+        """
+        Find tracks in chunks containing two objects.
+
+        :param detector: InteractionDetector() object
+        :param gm:
+        :param rm:
+        :param im:
+        :return: pandas.DataFrame - two tracks
+        """
+        assert self.get_cardinality(gm) == 2
+        detections = []
+        for r in self.r_gen(gm, rm):
+            img = im.get_whole_img(r.frame())
+            pred = detector.detect(img, r.centroid()[::-1])
+            detections.append(pred)
+        tracks, confidence, costs = detector.track(detections)
+        return tracks, confidence
+
+    def is_id_decided(self):
+        return len(self.P) == 1
+
+    def get_random_region(self, gm):
+        r_frame = randint(self.start_frame(gm), self.end_frame(gm))
+        return self.get_region_in_frame(gm, r_frame)

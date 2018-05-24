@@ -4,30 +4,32 @@ import cPickle as pickle
 import string
 import time
 
-from PyQt4 import QtCore
+import numpy as np
+import os
+from os.path import join
+import tqdm
 
-from core.bg_model.model import Model
 from core.graph.solver import Solver
 from core.log import Log
 from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
-from core.settings import Settings as S_
-from gui.video_loader import check_video_path
+from core.config import config
 from utils.img_manager import ImgManager
-import os
+
 
 class Project:
     """
     This class encapsulates one experiment using FERDA
     """
-    def __init__(self):
+    def __init__(self, path=None):
         self.name = ''
         self.description = ''
         self.video_paths = []
         self.video_start_t = -1
         self.video_end_t = -1
         self.working_directory = ''
+        self.project_file = None
         self.date_created = -1
         self.date_last_modifiaction = -1
 
@@ -40,6 +42,8 @@ class Project:
 
         self.bg_model = None
         self.arena_model = None
+        self.video_crop_model = None
+        self.region_cardinality_classifier = None
         self.classes = None
         self.groups = None
         self.animals = None
@@ -63,6 +67,9 @@ class Project:
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
 
+        if path is not None:
+            self.load(path)
+
     def is_cluster(self):
         if hasattr(self, 'is_cluster_'):
             return self.is_cluster_
@@ -80,12 +87,10 @@ class Project:
 
         return True
 
-    def save_project_file_(self,toFolder=""):	
-        if (toFolder == ""):
-            destinationFolder = self.working_directory;
-        else:
-            destinationFolder = toFolder;
-        
+    def save_project_file_(self, dir_path=None):
+        if dir_path is None:
+            dir_path = self.working_directory
+
         p = Project()
         p.name = self.name
         p.description = self.description
@@ -119,66 +124,72 @@ class Project:
         except AttributeError:
             pass
 
-        with open(destinationFolder+'/'+self.name+'.fproj', 'wb') as f:
+        self.project_file = join(dir_path, '{}.fproj'.format(self.name))
+        with open(self.project_file, 'wb') as f:
             pickle.dump(p.__dict__, f, 2)
 
-    def save(self, to_folder=""):
-        if (to_folder == ""):
-            destinationFolder = self.working_directory
-        else:
-            destinationFolder = to_folder
+    def save(self, path=None):
+        if path is None:
+            path = self.working_directory
 
         # BG MODEL
-        if self.bg_model:
-            if isinstance(self.bg_model, Model):
-                if self.bg_model.is_computed():
-                    self.bg_model = self.bg_model.get_model()
+        try:
+            from core.bg_model.model import Model
+            if self.bg_model:
+                if isinstance(self.bg_model, Model):
+                    if self.bg_model.is_computed():
+                        self.bg_model = self.bg_model.get_model()
 
-                    with open(destinationFolder+'/bg_model.pkl', 'wb') as f:
+                        with open(path+ '/bg_model.pkl', 'wb') as f:
+                            pickle.dump(self.bg_model, f)
+                else:
+                    with open(path+ '/bg_model.pkl', 'wb') as f:
                         pickle.dump(self.bg_model, f)
-            else:
-                with open(destinationFolder+'/bg_model.pkl', 'wb') as f:
-                    pickle.dump(self.bg_model, f)
+        except:
+            pass
 
         # ARENA MODEL
         if self.arena_model:
-            with open(destinationFolder+'/arena_model.pkl', 'wb') as f:
+            with open(path+ '/arena_model.pkl', 'wb') as f:
                 pickle.dump(self.arena_model, f)
 
         # CLASSES
         if self.classes:
-            with open(destinationFolder+'/classes.pkl', 'wb') as f:
+            with open(path+ '/classes.pkl', 'wb') as f:
                 pickle.dump(self.classes, f)
 
         # GROUPS
         if self.groups:
-            with open(destinationFolder+'/groups.pkl', 'wb') as f:
+            with open(path+ '/groups.pkl', 'wb') as f:
                 pickle.dump(self.groups, f)
 
         # ANIMALS
         if self.animals:
-            with open(destinationFolder+'/animals.pkl', 'wb') as f:
+            with open(path+ '/animals.pkl', 'wb') as f:
                 pickle.dump(self.animals, f)
 
         # STATS
         if self.stats:
-            with open(destinationFolder+'/stats.pkl', 'wb') as f:
+            with open(path+ '/stats.pkl', 'wb') as f:
                 pickle.dump(self.stats, f)
+
+        if self.region_cardinality_classifier:
+            with open(join(path, 'region_cardinality_clustering.pkl'), 'wb') as f:
+                pickle.dump(self.region_cardinality_classifier, f)
 
         # # Region Manager
         # if self.rm:
         #     with open(self.working_directory+'/region_manager.pkl', 'wb') as f:
         #         pickle.dump(self.rm, f, -1)
 
-        self.save_chm_(destinationFolder+'/chunk_manager.pkl')
+        self.save_chm_(path + '/chunk_manager.pkl')
 
-        self.save_gm_(destinationFolder+'/graph_manager.pkl')
+        self.save_gm_(path + '/graph_manager.pkl')
 
-        self.save_qsettings(to_folder)
-
-        self.save_project_file_(to_folder)
+        self.save_project_file_(path)
 
     def save_gm_(self, file_path):
+        print "saving GM"
         # Graph Manager
         if self.gm:
             self.gm.project = None
@@ -224,36 +235,36 @@ class Project:
         self.snapshot_id += 1
         self.active_snapshot = -1
 
-
-    def save_qsettings(self,toFolder=""):
-        if (toFolder == ""):
-            destinationFolder = self.working_directory
-        else:
-            destinationFolder = toFolder
-
-        s = QtCore.QSettings('FERDA')
-        settings = {}
-
-        for k in s.allKeys():
-            try:
-                settings[str(k)] = str(s.value(k, 0, str))
-            except:
-                pass
-
-        with open(destinationFolder+'/settings.pkl', 'wb') as f:
-            pickle.dump(settings, f)
-
-    def load_qsettings(self):
-        with open(self.working_directory+'/settings.pkl', 'rb') as f:
-            settings = pickle.load(f)
-            qs = QtCore.QSettings('FERDA')
-            qs.clear()
-
-            for key, it in settings.iteritems():
-                try:
-                    qs.setValue(key, it)
-                except:
-                    pass
+    # def save_qsettings(self,toFolder=""):
+    #     if (toFolder == ""):
+    #         destinationFolder = self.working_directory
+    #     else:
+    #         destinationFolder = toFolder
+    #     from PyQt4 import QtCore
+    #     s = QtCore.QSettings('FERDA')
+    #     settings = {}
+    #
+    #     for k in s.allKeys():
+    #         try:
+    #             settings[str(k)] = str(s.value(k, 0, str))
+    #         except:
+    #             pass
+    #
+    #     with open(destinationFolder+'/settings.pkl', 'wb') as f:
+    #         pickle.dump(settings, f)
+    #
+    # def load_qsettings(self):
+    #     with open(self.working_directory+'/settings.pkl', 'rb') as f:
+    #         settings = pickle.load(f)
+    #         from PyQt4 import QtCore
+    #         qs = QtCore.QSettings('FERDA')
+    #         qs.clear()
+    #
+    #         for key, it in settings.iteritems():
+    #             try:
+    #                 qs.setValue(key, it)
+    #             except:
+    #                 pass
 
     def load_semistate(self, path, state='isolation_score', one_vertex_chunk=False, update_t_nodes=False):
         self.load(path)
@@ -274,7 +285,6 @@ class Project:
         if update_t_nodes:
             self.gm.update_nodes_in_t_refs()
 
-
     def save_semistate(self, state):
         with open(self.working_directory + '/temp/'+state+'.pkl', 'wb') as f:
             p = pickle.Pickler(f)
@@ -282,20 +292,38 @@ class Project:
             p.dump(None)
             p.dump(self.chm)
 
+    @staticmethod
+    def get_project_dir_and_file(filename_or_dir):
+        if filename_or_dir[-6:] == '.fproj' and os.path.isfile(filename_or_dir):
+            filename = filename_or_dir
+            dirname = os.path.dirname(filename)
+            return dirname, filename
+        elif os.path.isdir(filename_or_dir):
+            dirname = filename_or_dir
+            filename = os.path.join(dirname, 'project.fproj')
+            if os.path.isfile(filename):
+                return dirname, filename
+            filename = os.path.join(dirname,
+                os.path.basename(os.path.normpath('/home/matej/prace/ferda/projects/F3C51min/')) + '.fproj')
+            if os.path.isfile(filename):
+                return dirname, filename
+            for filename in os.listdir(dirname):
+                if filename[-6:] == '.fproj':
+                    return dirname, os.path.join(dirname, filename)
+            assert False, 'no .fproj file exists in ' + dirname
+        else:
+            assert False, 'path is not existing directory or .fproj file'
 
-    def load(self, path, snapshot=None, parent=None, lightweight=False):
-        if path[-6:] != '.fproj':
-            for f in os.listdir(path):
-                if f[-6:] == '.fproj':
-                    path += '/'+f
-                    break
-
-        with open(path, 'rb') as f:
+    def load(self, path, snapshot=None, lightweight=False, video_file=None):
+        self.working_directory, project_filename = self.get_project_dir_and_file(path)
+        self.project_file = project_filename
+        with open(project_filename, 'rb') as f:
             tmp_dict = pickle.load(f)
-
         self.__dict__.update(tmp_dict)
-        a_ = path.split('/')
-        self.working_directory = str(path[:-(len(a_[-1])+1)])
+
+        # check for video file
+        if video_file is not None:
+            self.video_paths = video_file
 
         # BG MODEL
         try:
@@ -346,22 +374,19 @@ class Project:
         except:
             pass
 
+        try:
+            with open(join(self.working_directory, 'region_cardinality_clustering.pkl'), 'rb') as f:
+                self.region_cardinality_classifier = pickle.load(f)
+        except:
+            pass
+
         if not lightweight:
             # SETTINGS
             try:
-                self.load_qsettings()
+                print('settings...')  #TODO
+                # self.load_qsettings()
             except:
                 pass
-
-
-        if not lightweight:
-            # check if video exists
-            if parent:
-                self.video_paths, changed = check_video_path(self.video_paths, parent)
-                print "New path is %s" % self.video_paths
-
-                if changed:
-                    self.save()
 
         # # Region Manager
         # try:
@@ -369,7 +394,6 @@ class Project:
         #         self.rm = pickle.load(f)
         # except:
         #     pass
-
 
         self.load_snapshot(snapshot)
 
@@ -410,7 +434,8 @@ class Project:
         self.solver = Solver(self)
         self.gm.assignment_score = self.solver.assignment_score
 
-        self.rm = RegionManager(db_wd=self.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
+        self.rm = RegionManager(db_wd=self.working_directory,
+                                cache_size_limit=config['cache']['region_manager_num_of_instances'])
 
         self.gm.project = self
         self.gm.rm = self.rm
@@ -431,14 +456,7 @@ class Project:
                 for ch in self.chm.chunk_gen():
                     if hasattr(ch, 'color') and ch.color is not None:
                         break
-
-                    import random
-                    from PyQt4 import QtGui
-
-                    r = random.randint(0, 255)
-                    g = random.randint(0, 255)
-                    b = random.randint(0, 255)
-                    ch.color = QtGui.QColor.fromRgb(r, g, b)
+                    ch.set_random_color()
 
                 for ch in self.chm.chunk_gen():
                     if hasattr(ch, 'N'):
@@ -453,6 +471,17 @@ class Project:
 
         self.active_snapshot = -1
 
+        # if self.chm is not None:
+        #     self.solver.one2one(check_tclass=True)
+
+    def video_exists(self):
+        if isinstance(self.video_paths, list):
+            for path in self.video_paths:
+                if os.path.isfile(path):
+                    return True
+            return False
+        return os.path.isfile(self.video_paths)
+
     def load_snapshot(self, snapshot):
         chm_path = self.working_directory+'/chunk_manager.pkl'
         gm_path = self.working_directory+'/graph_manager.pkl'
@@ -465,7 +494,9 @@ class Project:
         try:
             with open(chm_path, 'rb') as f:
                 self.chm = pickle.load(f)
-        except:
+        except Exception as e:
+            print e
+            print "CHM not loaded"
             pass
 
         # Graph Manager
@@ -492,6 +523,48 @@ class Project:
 
         self.load_snapshot({'chm': self.working_directory+'/.auto_save/'+str(self.active_snapshot)+'__chunk_manager.pkl',
                            'gm': self.working_directory+'/.auto_save/'+str(self.active_snapshot)+'__graph_manager.pkl'})
+
+    def get_video_manager(self):
+        from utils.video_manager import get_auto_video_manager
+        return get_auto_video_manager(self)
+
+    def num_frames(self):
+        return self.get_video_manager().total_frame_count()
+
+    def get_results_trajectories(self):
+        """
+        Return resulting single id centroid trajectories.
+
+        :return: ndarray, shape=(n_frames, n_animals, 2); coordinates are in yx order, nan when id not present
+        """
+        assert self.video_start_t != -1
+        n_frames = self.video_end_t
+        results = np.ones(shape=(n_frames, len(self.animals), 2)) * np.nan
+        for frame in tqdm.tqdm(range(self.video_start_t, n_frames), desc='gathering trajectories'):
+            for t in self.chm.tracklets_in_frame(frame - self.video_start_t):
+                if len(t.P) == 1:
+                    id_ = list(t.P)[0]
+                    if id_ >= len(self.animals):
+                        import warnings
+                        warnings.warn("id_ > num animals t_id: {} id: {}".format(t.id(), id_))
+                        continue
+                    results[frame, id_] = self.rm[t.r_id_in_t(frame - self.video_start_t, self.gm)].centroid()  # yx
+
+        if self.video_crop_model is not None:
+            results[:, :, 0] += self.video_crop_model['y1']
+            results[:, :, 1] += self.video_crop_model['x1']
+
+        return results
+
+
+def project_video_file_exists(project_path):
+    working_directory, project_filename = Project.get_project_dir_and_file(project_path)
+    with open(project_filename, 'rb') as f:
+        project_dict = pickle.load(f)
+    for path in project_dict['video_paths']:
+        if os.path.isfile(path):
+            return True
+    return False
 
 
 def dummy_project():

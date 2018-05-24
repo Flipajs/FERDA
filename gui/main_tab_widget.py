@@ -18,7 +18,7 @@ from gui.learning.learning_widget import LearningWidget
 
 
 class MainTabWidget(QtGui.QWidget):
-    def __init__(self, finish_callback, project, postpone_parallelisation=False, progress_callback=None):
+    def __init__(self, finish_callback, project, progress_callback=None):
         super(MainTabWidget, self).__init__()
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
@@ -88,11 +88,10 @@ class MainTabWidget(QtGui.QWidget):
         self.update_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_U))
         self.addAction(self.update_undecided_a)
 
-
         print "LOADING GRAPH..."
         if project.gm is None or project.gm.g.num_vertices() == 0:
             # project.gm = GraphManager(project, project.solver.assignment_score)
-            self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished, postpone_parallelisation)
+            self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)
             self.bc_msers.run()
         else:
             self.background_computer_finished(project.solver)
@@ -119,8 +118,6 @@ class MainTabWidget(QtGui.QWidget):
             self.results_tab.update_positions()
         except AttributeError:
             pass
-
-
 
     def show_in_visualizer(self, data):
         self.show_results_only_around_frame = data['n1'].frame_
@@ -198,7 +195,7 @@ class MainTabWidget(QtGui.QWidget):
             # TODO: show loading or something...
             if not isinstance(self.id_detection_tab, LearningWidget):
                 ok = False
-                for ch in self.project.chm.chunks_in_frame(0):
+                for ch in self.project.chm.tracklets_in_frame(0):
                     if not ch.is_undefined():
                         ok = True
                         break
@@ -211,13 +208,13 @@ class MainTabWidget(QtGui.QWidget):
                 self.tabs.removeTab(2)
                 self.id_detection_tab.setParent(None)
                 self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet, self.progress_callback)
-                self.id_detection_tab.update_callback()
                 self.tabs.insertTab(2, self.id_detection_tab, "id detection")
                 self.tabs.setCurrentIndex(2)
                 self.ignore_tab_change = False
 
             if not len(self.id_detection_tab.lp.features):
-                self.id_detection_tab.disable_before_features()
+                pass
+                # self.id_detection_tab.disable_before_features()
 
         if i == 3:
             self.statistics_tab.update_data(self.project)

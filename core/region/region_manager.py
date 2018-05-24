@@ -8,6 +8,7 @@ from core.region.region import encode_RLE
 from libs.cachetools import LRUCache
 import sys
 
+
 class Dummy():
     def __getitem__(self, item):
         return None
@@ -15,8 +16,9 @@ class Dummy():
     def __setitem__(self, key, value):
         pass
 
+
 class RegionManager:
-    def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=1000, data=None):
+    def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=1000, data=None, supress_init_print=False):
         """
         RegionManager is designed to store regions data. By default, all data is stored in memory cache (dictionary) and
         identified using unique ids. Optionally, database can be used, in which case the memory cache size can be
@@ -48,7 +50,8 @@ class RegionManager:
         else:
             self.use_db = True
             self.db_path = db_wd+"/"+db_name
-            print "Initializing db at %s " % self.db_path
+            if not supress_init_print:
+                print "Initializing db at %s " % self.db_path
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
             # DEBUG, do not use! self.cur.execute("DROP TABLE IF EXISTS regions;")
@@ -376,7 +379,8 @@ class RegionManager:
 
     def prepare_region(self, region):
         if region.pts_rle_ == None:
-            region.pts_rle_ = encode_RLE(region.pts_)
+            if not region.is_origin_interaction():
+                region.pts_rle_ = encode_RLE(region.pts_)
 
         tmp_pts = region.pts_
         region.pts_ = None
@@ -406,6 +410,7 @@ class RegionManager:
         if isinstance(item, Region):
             return len(self)+1 > item.id() > 0
         return isinstance(item, (int, long)) and len(self)+1 > item > 0
+
 
 if __name__ == "__main__":
     # rm = RegionManager()

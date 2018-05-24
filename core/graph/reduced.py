@@ -4,7 +4,7 @@ __author__ = 'fnaiser'
 import numpy as np
 from utils.video_manager import get_auto_video_manager
 from utils.img import prepare_for_segmentation
-from core.region.mser import ferda_filtered_msers
+from core.region.mser import get_filtered_msers
 
 class Reduced:
     def __init__(self, region=None):
@@ -22,7 +22,7 @@ class Reduced:
         vid = get_auto_video_manager(project)
         img = vid.seek_frame(self.frame_)
         img = prepare_for_segmentation(img, project)
-        msers = ferda_filtered_msers(img, project, self.frame_)
+        msers = get_filtered_msers(img, project, self.frame_)
 
         best_match_d = np.inf
         region = None

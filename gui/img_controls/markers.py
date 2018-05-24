@@ -1,7 +1,8 @@
 from PyQt4 import QtCore, QtGui
 
 import utils
-from core.settings import Settings as S_
+from gui.settings import Settings as S_
+
 
 class BaseMarker(QtGui.QGraphicsEllipseItem, object):
     """An ancestor to all ant markers. Note the changeHandler attribute. The changeHandler's marker_changed method

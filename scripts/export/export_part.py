@@ -6,7 +6,7 @@ from core.graph.chunk_manager import ChunkManager
 from core.project.project import Project
 from core.region.region_manager import RegionManager
 import scipy.io as sio
-
+from core.fake_background_computer import FakeBGComp
 
 class Exporter:
     def __init__(self, chm, gm, rm, pts_export=False, contour_pts_export=True):
@@ -124,21 +124,6 @@ class Exporter:
         with open(file_name+'.mat', 'wb') as f:
             sio.savemat(f, {'FERDA': obj_arr}, do_compression=True)
 
-class FakeBGComp:
-    def __init__(self, project, first_part, part_num, frames_in_row=100):
-        self.project = project
-        self.part_num = part_num
-        self.first_part = first_part
-        self.do_semi_merge = True
-        self.frames_in_row = frames_in_row
-
-    def update_callback(self, fake1=None, fake2=None):
-        pass
-
-    def finished_callback(self, fake1=None, fake2=None):
-        pass
-
-
 def export_arena(out_path, project):
     with open(out_path + '_arena.mat', 'wb') as f:
         arena = None
@@ -192,8 +177,8 @@ if __name__ == '__main__':
 
     bgcomp = FakeBGComp(p, first_part, part_num)
 
-    from core.bg_computer_assembling import assembly_after_parallelization
-    assembly_after_parallelization(bgcomp)
+    from core.graph_assembly import graph_assembly
+    graph_assembly(bgcomp)
 
     # rm = RegionManager(db_wd=working_dir+ '/temp',
     #                    db_name='part' + str(i) + '_rm.sqlite3',

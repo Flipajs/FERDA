@@ -1,17 +1,18 @@
 __author__ = 'fnaiser'
 
 import sys
-import os
-import time
+from functools import partial
 
+import os
 from PyQt4 import QtGui, QtCore
+
 import core.project.project
 import gui.gui_utils
-from core.settings import Settings as S_
-from gui.loading_widget import LoadingWidget
-from functools import partial
-from gui.settings.settings_dialog import SettingsDialog
 from core.project.compatibility_solver import CompatibilitySolver
+from gui.loading_widget import LoadingWidget
+from gui.settings import Settings as S_
+from core.config import config
+from gui.settings_widgets.settings_dialog import SettingsDialog
 
 
 class ProjectLoader(QtCore.QThread):
@@ -28,6 +29,7 @@ class ProjectLoader(QtCore.QThread):
         CompatibilitySolver(self.project)
         self.proc_done.emit(self.project)
 
+
 class TestLoader(QtCore.QThread):
     proc_done = QtCore.pyqtSignal(object)
     part_done = QtCore.pyqtSignal(float)
@@ -43,6 +45,7 @@ class TestLoader(QtCore.QThread):
             list.append(i)
 
         self.proc_done.emit(self.project)
+
 
 class ProjectWidget(QtGui.QWidget):
     def __init__(self, finish_callback=None, progress_callback=None):
@@ -98,6 +101,16 @@ class ProjectWidget(QtGui.QWidget):
         if self.finish_callback:
             self.finish_callback('new_project')
 
+    def pick_new_video(self):
+        reply = QtGui.QMessageBox.question(
+            self, "Video file not found",
+            "A video file for this project wasn't found. Please select the new position of the video in your filesystem.",
+            "Cancel", "Choose video")
+        if reply == 1:
+            return str(QtGui.QFileDialog.getOpenFileName(self, 'Select new video location', '.'))
+        else:
+            return None
+
     def load_project(self):
         # pick .fproj location
         path = ''
@@ -114,6 +127,14 @@ class ProjectWidget(QtGui.QWidget):
 
         S_.temp.last_wd_path = f
 
+        # load project - this doesn't take as much time and is needed in the main thread to run popup windows
+        if not core.project.project.project_video_file_exists(files[0]):
+            path = self.pick_new_video()
+            if path is None:
+                return
+            else:
+                project.video_paths = path
+
         # disable all buttons, so another project can't be loaded/created at the same time
         self.load_project_button.setEnabled(False)
         self.new_project_button.setEnabled(False)
@@ -124,8 +145,7 @@ class ProjectWidget(QtGui.QWidget):
         self.layout().addWidget(self.loading_w)
         QtGui.QApplication.processEvents()
 
-        # load project - this doesn't take as much time and is needed in the main thread to run popup windows
-        project.load(f, parent=self)
+        project.load(f)
 
         # setup loading thread
         self.loading_thread = ProjectLoader(project, f)
@@ -150,7 +170,7 @@ class ProjectWidget(QtGui.QWidget):
         self.timer.stop()
 
         from core.region.region_manager import RegionManager
-        project.rm = RegionManager(db_wd=project.working_directory, cache_size_limit=S_.cache.region_manager_num_of_instances)
+        project.rm = RegionManager(db_wd=project.working_directory, cache_size_limit=config['cache']['region_manager_num_of_instances'])
 
         self.finish_callback('load_project', project)
 
@@ -183,6 +203,7 @@ class ProjectWidget(QtGui.QWidget):
             pass
 
         return size
+
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

@@ -1,11 +1,12 @@
 __author__ = 'fnaiser'
 
 from core.graph.graph_utils import *
-from core.settings import Settings as S_
 import numpy as np
 from configuration import Configuration
 from utils.constants import EDGE_CONFIRMED
 import cPickle as pickle
+from tqdm import tqdm
+
 
 class Solver:
     SPLIT_JOIN_THRESHOLD = 0.5
@@ -69,20 +70,29 @@ class Solver:
 
         return num_changed
 
-    def one2one(self):
+    def one2one(self, check_tclass=False):
         confirm_later = []
 
-        for v in self.project.gm.g.vertices():
+        for v in tqdm(self.project.gm.g.vertices(), desc='solver.one2one', total=self.project.gm.g.num_vertices(), leave=False):
             if self.project.gm.one2one_check(v):
                 e = self.project.gm.out_e(v)
+
+                if check_tclass:
+                    t1 = self.project.gm.get_chunk(v)
+                    t2 = self.project.gm.get_chunk(self.project.gm.g.vertex(e.target()))
+
+                    if t1.segmentation_class != t2.segmentation_class:
+                        print "1on1", t1.id(), t2.id()
+                        # continue
+
                 confirm_later.append((e.source(), e.target()))
 
         print "one2one, ", len(confirm_later)
         self.confirm_edges(confirm_later)
 
-        self.project.gm.update_nodes_in_t_refs()
-        self.project.chm.reset_itree(self.project.gm)
-
+        if len(confirm_later):
+            self.project.gm.update_nodes_in_t_refs()
+            self.project.chm.reset_itree(self.project.gm)
 
     def adaptive_threshold(self, vertex):
         if self.project.gm.ch_start_longer(vertex):
@@ -441,7 +451,14 @@ class Solver:
         """
 
         affected = set()
-        for v1, v2 in edge_pairs:
+
+        # quick chcek to prevent console spamming
+        if len(edge_pairs) > 1:
+            x = tqdm(edge_pairs, desc='solver.confirm_edges')
+        else:
+            x = edge_pairs
+
+        for v1, v2 in x:
             affected.add(v1)
             affected.add(v2)
 
@@ -449,7 +466,7 @@ class Solver:
             for e in out_edges:
                 affected.add(e.target())
 
-                for aff_neigh in e.target().in_neighbours():
+                for aff_neigh in e.target().in_neighbors():
                     affected.add(aff_neigh)
 
                 self.project.gm.remove_edge_(e)
@@ -458,7 +475,7 @@ class Solver:
             for e in in_edges:
                 affected.add(e.source())
 
-                for aff_neigh in e.source().out_neighbours():
+                for aff_neigh in e.source().out_neighbors():
                     affected.add(aff_neigh)
 
                 self.project.gm.remove_edge_(e)
@@ -644,7 +661,7 @@ class Solver:
                 to_remove.append(n)
 
         print "NODES", len(self.g)
-        S_.general.log_graph_edits = False
+        # S_.general.log_graph_edits = False
         for n in to_remove:
             if n not in self.g:
                 continue
@@ -655,7 +672,7 @@ class Solver:
                 pass
 
         print "NODES", len(self.g)
-        S_.general.log_graph_edits = True
+        # S_.general.log_graph_edits = True
 
         with open(wd+name, 'wb') as f:
             pc = pickle.Pickler(f, -1)

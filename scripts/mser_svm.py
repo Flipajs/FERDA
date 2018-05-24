@@ -4,7 +4,7 @@ from PyQt4 import QtCore, QtGui
 import sys
 from sklearn import svm
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
-from core.region.mser import get_msers_, get_all_msers
+from core.region.mser import get_msers_img, get_all_msers
 from gui.img_grid.img_grid_dialog import ImgGridDialog
 from utils.drawing.points import draw_points_crop, get_contour, draw_points
 from utils.video_manager import get_auto_video_manager

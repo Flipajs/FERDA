@@ -1,0 +1,3 @@
+num_objects: 2
+properties: [x, y, angle_deg]
+input_size_px: 224

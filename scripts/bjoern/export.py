@@ -18,7 +18,7 @@ def test_output(wd, vm, p, k):
         vertices = hf['vertices'][:]
 
     with h5py.File(wd + "/out_vertex_probs.hdf5", 'r') as hf:
-        # float16 (V x [prob])
+        # float16 (V x [prob_prototype_represantion_being_same_id_set])
         vertex_probs = hf['vertex_probs'][:]
 
     with h5py.File(wd + "/out_edges.hdf5", 'r') as hf:
@@ -26,7 +26,7 @@ def test_output(wd, vm, p, k):
         edges = hf['edges'][:]
 
     with h5py.File(wd + "/out_edge_probs.hdf5", 'r') as hf:
-        # float16 (E x [prob])
+        # float16 (E x [prob_prototype_represantion_being_same_id_set])
         edge_probs = hf['edge_probs'][:]
 
     # f = h5py.File(wd + "/out_vertices_u.hdf5", "w")

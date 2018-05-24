@@ -2,7 +2,6 @@ __author__ = 'fnaiser'
 
 from PyQt4 import QtCore
 
-
 class Model(QtCore.QThread):
     def __init__(self):
         super(Model, self).__init__()

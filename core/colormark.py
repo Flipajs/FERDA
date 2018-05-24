@@ -1,12 +1,14 @@
+import utils.img_temp
+
 __author__ = 'fnaiser'
 
 import numpy as np
-from PyQt4 import QtCore
-from utils.misc import get_settings
+from gui.gui_utils import get_settings
 from core.region.mser import Mser
 from core.region import mser_operations
 import utils.img
 import cv2
+
 
 class Colormark():
     I_NORM = (255 * 3 + 1) * 3
@@ -86,7 +88,7 @@ def get_colormark(img, color, position, radius, colormark_radius=-1):
     c = Colormark(color)
 
     img_crop = utils.img.get_safe_selection(img, y_, x_, radius*2, radius*2)
-    igbr = utils.img.get_igbr_normalised(img_crop)
+    igbr = utils.img_temp.get_igbr_normalised(img_crop)
 
     dist_im = np.linalg.norm(igbr - c.color_igbr(), axis=2)
     dist_im /= np.max(dist_im)

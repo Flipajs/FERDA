@@ -1,17 +1,15 @@
 __author__ = 'fnaiser'
+import pickle
 
 import cv2
-import warnings
-import time
-from core.region.region import Region
-from core.region import cyMser
-import pickle
-from utils.video_manager import get_auto_video_manager
-from core.settings import Settings as S_
-from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
-from utils.misc import is_flipajs_pc
-from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_, antlikeness_filter
 import numpy as np
+
+from core.region import cyMser
+from core.region.mser_operations import children_filter
+from core.region.region import Region
+from core.config import config
+from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_
+from utils.video_manager import get_auto_video_manager
 
 
 class Mser():
@@ -87,17 +85,6 @@ class Mser():
         self.mser.set_max_area(max_area_relative)
 
 
-def get_mser(frame_number, id, project):
-    """
-    Tries to use cached MSERs, if cache is empty, MSERs are computed and if caching is allowed, then stored.
-    Returns region based on id
-    :param frame_number:
-    :param id:
-    :param project:
-    :return:
-    """
-    return get_mser(frame_number, id, project.video_paths, project.working_directory)
-
 def get_mser(frame_number, id, video_paths, working_dir):
     """
     Tries to use cached MSERs, if cache is empty, MSERs are computed and if caching is allowed, then stored.
@@ -106,13 +93,14 @@ def get_mser(frame_number, id, video_paths, working_dir):
 
     return get_all_msers(frame_number, video_paths, working_dir)[id]
 
+
 def get_all_msers(frame_number, project):
     """
     Tries to use cached MSERs, if cache is empty, MSERs are computed and if caching is allowed, then stored.
     Returns all regions
     """
 
-    if S_.cache.mser:
+    if config['cache']['mser']:
         try:
             with open(project.working_directory+'/mser/'+str(frame_number)+'.pkl', 'rb') as f:
                 msers = pickle.load(f)
@@ -120,7 +108,7 @@ def get_all_msers(frame_number, project):
             return msers
         except IOError:
             vid = get_auto_video_manager(project)
-            msers = get_msers_(vid.seek_frame(frame_number), frame_number)
+            msers = get_msers_img(vid.seek_frame(frame_number), frame_number)
 
             try:
                 with open(project.working_directory+'/mser/'+str(frame_number)+'.pkl', 'wb') as f:
@@ -132,12 +120,12 @@ def get_all_msers(frame_number, project):
 
     else:
         vid = get_auto_video_manager(project)
-        return get_msers_(vid.seek_frame(frame_number))
+        return get_msers_img(vid.seek_frame(frame_number))
 
 
-def get_msers_(img, project, frame=-1, prefiltered=False):
+def get_msers_img(img, project, frame=-1, prefiltered=False):
     """
-    Returns msers using MSER algorithm with default settings.
+    Returns msers as list of Region objects using MSER algorithm with default settings.
 
     """
     max_area = project.mser_parameters.max_area
@@ -176,7 +164,15 @@ def get_msers_(img, project, frame=-1, prefiltered=False):
                               )
 
 
-def ferda_filtered_msers(img, project, frame=-1):
+def get_filtered_msers(img, project, frame=-1):
+    """
+    Extracts maximally stable extremal regions from an image and return filtered results.
+
+    :param img: input image
+    :param project:
+    :param frame:
+    :return: list of Region() objects
+    """
     # if project.mser_parameters.use_children_filter:
     #     m = get_msers_(img, project, frame, prefiltered=True)
         # groups = get_region_groups(m)
@@ -199,7 +195,7 @@ def ferda_filtered_msers(img, project, frame=-1):
         # return [m[id] for id in ids]
     # else:
 
-    msers = get_msers_(img, project, frame, prefiltered=True)
+    msers = get_msers_img(img, project, frame, prefiltered=True)
 
     ratio_th = project.mser_parameters.area_roi_ratio_threshold
     if project.mser_parameters.area_roi_ratio_threshold > ratio_th:

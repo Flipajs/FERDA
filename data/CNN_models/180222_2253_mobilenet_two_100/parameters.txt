@@ -1,0 +1,8 @@
+/mnt/home.stud/smidm/ferda/scripts/CNN/train_interactions.py
+train
+/mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/
+0.64
+100
+--model
+mobilenet
+--exp-name=mobilenet_two_100

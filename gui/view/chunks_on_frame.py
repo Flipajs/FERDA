@@ -1,12 +1,13 @@
 __author__ = 'flipajs'
 
-from PyQt4 import QtGui, QtCore
-from utils.video_manager import get_auto_video_manager
-from gui.img_controls.gui_utils import cvimg2qtpixmap
-from skimage.transform import resize
 import numpy as np
+from PyQt4 import QtGui
+from skimage.transform import resize
+
 from gui.img_controls import markers
-from core.settings import Settings as S_
+from gui.img_controls.gui_utils import cvimg2qtpixmap
+from gui.settings import Settings as S_
+from utils.video_manager import get_auto_video_manager
 
 
 class ChunksOnFrame(QtGui.QWidget):

@@ -1,13 +1,15 @@
-from PyQt4 import QtGui, QtCore
 import sys
-import os
-from core.project.project import Project
-from utils.img_manager import ImgManager
-from core.id_detection.learning_process import LearningProcess
-from core.settings import Settings as S_
+
 import numpy as np
-from gui.qt_flow_layout import FlowLayout
+import os
 import warnings
+from PyQt4 import QtGui, QtCore
+
+from core.id_detection.learning_process import LearningProcess
+from core.project.project import Project
+from gui.qt_flow_layout import FlowLayout
+from gui.settings import Settings as S_
+from utils.img_manager import ImgManager
 
 
 class QCustomTableWidgetItem (QtGui.QTableWidgetItem):
@@ -136,6 +138,10 @@ class LearningWidget(QtGui.QWidget):
         self.reset_learning_button.clicked.connect(self.reset_learning)
         self.top_stripe_layout.addWidget(self.reset_learning_button)
 
+        self.prepare_unassigned_cs_b = QtGui.QPushButton('prepare unassigned CS')
+        self.prepare_unassigned_cs_b.clicked.connect(self.prepare_unassigned_cs)
+        self.top_stripe_layout.addWidget(self.prepare_unassigned_cs_b)
+
         self.label_tracklet_min_length = QtGui.QLabel('tracklet min len: ')
         self.top_stripe_layout.addWidget(self.label_tracklet_min_length)
 
@@ -213,9 +219,11 @@ class LearningWidget(QtGui.QWidget):
         self.tracklet_debug_info_b.clicked.connect(self.tracklet_debug_info)
         self.top_stripe_layout.addWidget(self.tracklet_debug_info_b)
 
-        self.lp.set_tracklet_length_k(self.tracklet_min_length_sb.value())
+        self.lp.set_tracklet_length_k(self.tracklet_min_length_sb.value(), first_time=True)
         self.add_tracklet_table()
         self.update_callback()
+
+        # self.enable_all()
 
     def enable_all(self):
         self.auto_init_method_cb.setEnabled(True)
@@ -272,7 +280,7 @@ class LearningWidget(QtGui.QWidget):
         self.num_next_step.setEnabled(False)
         self.n_next_steps_button.setEnabled(False)
         self.show_tracklet_button.setEnabled(False)
-        self.reset_learning_button.setEnabled(False)
+        self.reset_learning_button.setEnabled(True)
         self.save_button.setEnabled(False)
         self.update_b.setEnabled(False)
         self.delete_user_decisions_b.setEnabled(False)
@@ -296,7 +304,7 @@ class LearningWidget(QtGui.QWidget):
         self.lp.update_callback = self.update_callback
         self.lp.question_callback = self.question_callback
 
-        self.disable_before_classifier()
+        # self.disable_before_classifier()
 
     def recompute_features(self):
         # self.lp = LearningProcess(self.project, use_feature_cache=False, use_rf_cache=False,
@@ -319,7 +327,7 @@ class LearningWidget(QtGui.QWidget):
             num_animals = len(self.project.animals)
             self.tracklets_table.setColumnCount(num_animals + 5)
             self.tracklets_table.setMinimumWidth(1000)
-            self.tracklets_table.setMinimumHeight(1000)
+            self.tracklets_table.setMinimumHeight(900)
 
             self.tracklets_table.setSortingEnabled(True)
             self.hbox.addWidget(self.tracklets_table)
@@ -342,6 +350,11 @@ class LearningWidget(QtGui.QWidget):
         self.lp.save_learning()
         self.project.save()
         self.enable_all()
+        self.update_callback()
+
+
+    def prepare_unassigned_cs(self):
+        self.lp.prepare_unassigned_cs()
         self.update_callback()
 
     def show_tracklet(self):
@@ -412,7 +425,9 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setItem(10, 0, QCustomTableWidgetItem('# user decisions: '))
         self.info_table.setItem(10, 1, QCustomTableWidgetItem(str(len(self.lp.user_decisions))))
 
-        full_coverage, single_id_coverage = self.get_id_coverage()
+        full_coverage, single_id_coverage = 0, 0
+        # TODO: speed up
+        # full_coverage, single_id_coverage = self.get_id_coverage()
         self.info_table.setItem(11, 0, QCustomTableWidgetItem('full coverage:'))
         self.info_table.setItem(11, 1, QCustomTableWidgetItem(self.__f2str(full_coverage)))
 
@@ -434,10 +449,11 @@ class LearningWidget(QtGui.QWidget):
             #     header_labels += (str(i), )
 
             it = QCustomTableWidgetItem
+            from tqdm import tqdm
 
             self.tracklets_table.setHorizontalHeaderLabels(header_labels)
             if len(self.lp.tracklet_certainty):
-                for i, t_id in enumerate(self.lp.undecided_tracklets):
+                for i, t_id in tqdm(enumerate(self.lp.undecided_tracklets)):
                     if t_id not in self.lp.tracklet_certainty:
                         warnings.warn("tracklet id not in lp.tracklet_certainty")
                         continue
@@ -473,7 +489,7 @@ class LearningWidget(QtGui.QWidget):
                     except:
                         pass
 
-                    d = self.lp.tracklet_measurements[t_id]
+                    d = np.mean(self.lp.tracklet_measurements[t_id], axis=0)
                     stds = self.lp.tracklet_stds[t_id]
                     for j in range(num_animals):
                         self.tracklets_table.setItem(i, 5+j, QCustomTableWidgetItem(self.__f2str(d[j])+", {:.2f}".format(stds[j])))
@@ -499,9 +515,6 @@ class LearningWidget(QtGui.QWidget):
                len(t.N) == len(self.project.animals) - 1
 
     def get_id_coverage(self):
-        from utils.video_manager import get_auto_video_manager
-        vm = get_auto_video_manager(self.project)
-
         coverage = 0
         max_ = 0
         single_id_sum = 0
@@ -676,24 +689,7 @@ class LearningWidget(QtGui.QWidget):
         self.w = win
 
     def update_N_sets(self):
-        affecting = []
-        for t in self.project.chm.chunk_gen():
-            if len(t.P):
-                affecting.append((t, set(t.P)))
-
-        self.lp._reset_chunk_PN_sets()
-        # todo share callback
-
-        all_ids = set(range(len(self.project.animals)))
-        self.lp.force=True
-        for t, id_set in affecting:
-            t.P = id_set
-            t.N = all_ids.difference(id_set)
-            # self.lp.assign_identity(id_, t)
-
-        for tracklet, id_set in affecting:
-            for t in self.lp._get_affected_undecided_tracklets(tracklet):
-                self.lp._update_N(id_set, t)
+        self.project.chm.update_N_sets(self.project)
 
         self.lp.force=False
 

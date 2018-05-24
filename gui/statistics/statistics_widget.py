@@ -434,7 +434,7 @@ class StatisticsWidget(QtGui.QWidget):
         vals = []
         ff = range(0, frames, step)
         for f in ff:
-            vals.append(len(self.project.chm.chunks_in_frame(f)))
+            vals.append(len(self.project.chm.tracklets_in_frame(f)))
 
         ind = np.arange(len(vals))
         ff = np.array(ff)

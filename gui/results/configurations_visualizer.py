@@ -1,27 +1,25 @@
 __author__ = 'fnaiser'
 
 
-from gui.results.noise_filter_computer import NoiseFilterComputer
-from gui.gui_utils import get_img_qlabel
-from utils.video_manager import get_auto_video_manager
-import sys
-from PyQt4 import QtGui, QtCore
-import numpy as np
-import pickle
-from functools import partial
-from core.region.fitting import Fitting
-from copy import deepcopy
-from case_widget import CaseWidget
-from new_region_widget import NewRegionWidget
-from core.region.region import Region
-from core.log import LogCategories, ActionNames
-from gui.img_grid.img_grid_widget import ImgGridWidget
-from core.settings import Settings as S_
 import math
-from gui.view.graph_visualizer import call_visualizer
-from gui.loading_widget import LoadingWidget
+from copy import deepcopy
+from functools import partial
+
+import numpy as np
+from PyQt4 import QtGui, QtCore
+
+from case_widget import CaseWidget
+from core.log import LogCategories, ActionNames
+from core.region.region import Region
 from fitting_threading_manager import FittingThreadingManager
-from core.settings import Settings as S_
+from gui.gui_utils import get_img_qlabel
+from gui.img_grid.img_grid_widget import ImgGridWidget
+from gui.loading_widget import LoadingWidget
+from gui.results.noise_filter_computer import NoiseFilterComputer
+from gui.settings import Settings as S_
+from gui.view.graph_visualizer import call_visualizer
+from new_region_widget import NewRegionWidget
+from core.config import config
 
 
 class ConfigurationsVisualizer(QtGui.QWidget):
@@ -87,7 +85,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         self.fitting_finished_mutex = QtCore.QMutex()
         from utils.img_manager import ImgManager
         # TODO: add to settings
-        self.img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
+        self.img_manager = ImgManager(self.project, max_size_mb=config['cache']['img_manager_size_MB'])
 
 
     def create_tool_w(self):
@@ -164,7 +162,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             r.pts_ = data['pts']
             r.centroid_ = data['centroid']
             r.frame_ = data['frame']
-            r.is_virtual = True
+            r.is_origin_interaction_ = True
             #TODO: get rid of this hack... also in antlikness test in solver.py
             # flag for virtual region
             r.min_intensity_ = -2
@@ -863,7 +861,6 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         import numpy as np
         import matplotlib.pyplot as plt
-        import matplotlib as mpl
         im = self.img_manager.get_whole_img(frames[0])
         alpha = np.zeros((im.shape[0], im.shape[1]), dtype=np.int32)
         alpha2 = np.zeros((im.shape[0], im.shape[1], 3), dtype=np.int32)

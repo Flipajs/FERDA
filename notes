@@ -1,0 +1,12 @@
+prototypes_match_probability - doesn't return 1.0 for same prototypes... It is related to the weights.di
+
+seed 7
+track ids order: [0, 2, 5, 6, 9, 10, 11, 12]
+8
+
+seed 8
+track ids order: [0, 2, 5, 6, 9, 10, 11, 12]
+8
+
+track ids order: [0, 2, 5, 6, 9, 10, 11, 12]
+8

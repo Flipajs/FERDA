@@ -1,19 +1,19 @@
 __author__ = 'fnaiser'
 
-from utils.roi import ROI, get_roi
-from utils.drawing.points import draw_points_crop, draw_points
-from skimage.transform import resize
-from gui.img_controls.my_scene import MyScene
-from PyQt4 import QtGui, QtCore
-from gui.img_controls.gui_utils import cvimg2qtpixmap
-import numpy as np
 from functools import partial
-from core.animal import colors_
-from core.region.fitting import Fitting
+
 import cv2
-from copy import deepcopy
+import numpy as np
+from PyQt4 import QtGui, QtCore
 from skimage.transform import rescale
-from core.settings import Settings as S_
+from skimage.transform import resize
+
+from core.animal import colors_
+from gui.img_controls.gui_utils import cvimg2qtpixmap
+from gui.img_controls.my_scene import MyScene
+from gui.settings import Settings as S_
+from utils.drawing.points import draw_points_crop, draw_points
+from utils.roi import ROI, get_roi
 
 
 class CaseWidget(QtGui.QWidget):
@@ -85,7 +85,7 @@ class CaseWidget(QtGui.QWidget):
                     ch, _ = self.project.gm.is_chunk(n)
                     if ch and ch.length() > 1:
                         chunk_nodes.add(n)
-                        self.color_assignments[n] = (ch.color.blue(), ch.color.green(), ch.color.red(), self.opacity)
+                        self.color_assignments[n] = tuple(ch.color) + (self.opacity, )
                     else:
                         self.color_assignments[n] = colors_[i % len(colors_)] + (self.opacity,)
                     i += 1
@@ -246,7 +246,7 @@ class CaseWidget(QtGui.QWidget):
 
         virtual = False
         try:
-            if r.is_virtual:
+            if r.is_origin_interaction():
                 virtual = True
         except:
             pass

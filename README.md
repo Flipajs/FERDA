@@ -5,31 +5,51 @@
 - version 2.2.10
 - FERDA is a multi object tracker developed mainly to meet the needs of biologists analysing video sequences of their animal experiments.
 
-## How do I get set up?
+## Installation
 
-### Dependencies:
+### Conda
+
+Install Conda: https://conda.io.
+
+Setup Conda environment with GUI support:
+
+`$ conda env create -f conda.yml`
+
+Setup Conda environment for batch processing (no GUI):
+
+`$ conda env create -f conda_noqt.yml`
+
+### Manual
 
 * python 2.7.\*
 * [opencv](http://opencv.org) for python (pycv) builded with FFMPEG support (2.4.12)
 * [PyQt4](https://www.riverbankcomputing.com/software/pyqt/download)
-* [graph-tool](https://pypi.python.org/pypi/graph-tool) (2.22)
+* [graph-tool](https://pypi.python.org/pypi/graph-tool) (2.26)
 
 `$ pip install -r requirements.txt`
 
 ## Quickstart
 
-- when nothing is happening check the progress bars in the terminal
+Activate environment if necesary:
+
+`$ conda activate ferda` or `$ conda activate ferda_noqt`
+
+Start GUI:
 
 `$ python main.py`
+
+Note: when nothing is happening check the progress bars in the terminal.
+
+Or use command line interace:
+
+`$ python ferda_cli.py --help`
     
 ### Automatic Tracking    
 
 1. new project
 2. set video range, tracking arena and settings (sane defaults can be accepted)
 3. teach algorithm to distinguish single and multiple animals
-    - pick *region classifier* tab and click *find candidates...* button
     - sort out the regions into 4 categories using the buttons under the regions, the classifier will learn on the go
-    - when satisfied click on *classify tracklets*
     - inspect the results in the *results viewer* by checking the *t-class* checker box
     - the animals should be correctly classified as single, multiple, etc.
 4. train algorithm to distinguish animal identities
@@ -88,14 +108,36 @@ assign id to tracklet (advanced)
 show / hide all animals overlays
 : h
 
+## Unit Tests
+
+Run unit tests:
+
+`python -m unittest discover -v`
+
+## Architecture
+
+Key components:
+
+core/parallelization.py
+- extraction of animal containing regions using MSER algorithm
+- construction of region graph (nodes are regions in both space and time, edges are possible transitions)
+
+## Known Issues
+
+`AttributeError: 'Vertex' object has no attribute 'in_neighbors'`
+
+- upgrade Graph-tool to version > 2.26
+
 ## Team
 
-* **author:** Filip Naiser (naisefil@cmp.felk.cvut.cz)
-* **collaborators:** Barbara Casillas Perez, 
-* **supervisor:** Prof. Jiří Matas
+* author: Filip Naiser, CTU Prague <mailto:filip@naiser.cz>
+* author: Matěj Šmíd, CTU Prague <mailto:smidm@cmp.felk.cvut.cz>
+* collaborator: Barbara Casillas Perez, Cremer Group IST Austria 
+* supervisor: Prof. Jiří Matas, CTU Prague
 
 ## Acknowledgement
 
-* Dita Hollmannová - long term intern in CMP. Databases, visualisations, segmentation.
-* Šimon Mandlík - long term intern in CMP. Visualisations, PCA of ant shapes, region fitting problem.
-* Michael Hlaváček - 1 month intern in CMP, he was working on early version of results visualiser.
+* Dita Hollmannová - long term intern in CMP CTU Prague. Databases, visualisations, segmentation.
+* Šimon Mandlík - long term intern in CMP CTU Prague. Visualisations, PCA of ant shapes, region fitting problem.
+* Michael Hlaváček - 1 month intern in CMP CTU Prague, he was working on early version of results visualiser.
+

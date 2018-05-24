@@ -1,14 +1,13 @@
-import random
-from PyQt4 import QtGui
-
 import sys
 
 import cv2
+from PyQt4 import QtGui
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
-from core.settings import Settings as S_
 from gui.graph_widget.graph_line import LineType, GraphLine, Overlap
+from gui.settings import Settings as S_
+from core.config import config
 from utils.img_manager import ImgManager
 
 __author__ = 'Simon Mandlik'
@@ -214,7 +213,7 @@ class GraphWidgetLoader:
         self.prepare_lines(frames[0], frames[-1])
         self.prepare_tracklets(frames)
         # print("Preparing visualizer...")
-        img_manager = ImgManager(self.project, max_size_mb=S_.cache.img_manager_size_MB)
+        img_manager = ImgManager(self.project, max_size_mb=config['cache']['img_manager_size_MB'])
         from gui.graph_widget.graph_visualizer import GraphVisualizer
         self.g = GraphVisualizer(self, img_manager, show_tracklet_callback)
         return self.g

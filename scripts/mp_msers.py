@@ -3,7 +3,7 @@ __author__ = 'fnaiser'
 import multiprocessing as mp
 import random
 import string
-from core.region.mser import get_msers_
+from core.region.mser import get_msers_img
 from utils.video_manager import get_auto_video_manager
 import numpy as np
 from copy import deepcopy
@@ -14,7 +14,7 @@ output = mp.Queue()
 
 # define a example function
 def compute_msers(i, img):
-    m = get_msers_(img)
+    m = get_msers_img(img)
     return i, m
 
 N_FRAMES = 200

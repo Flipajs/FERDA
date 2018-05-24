@@ -1,11 +1,7 @@
-import os
-import sys
-
 __author__ = 'filip@naiser.cz'
+import os
 import pickle
 import numpy as np
-from PyQt4 import QtCore
-from gui.settings.default import get_default
 import sys
 
 
@@ -53,6 +49,7 @@ def is_flipajs_pc():
     else:
         return False
 
+
 def is_matejs_pc():
     """
     This function tests whether FERDA runs under user matej.
@@ -60,14 +57,6 @@ def is_matejs_pc():
     import getpass
     return getpass.getuser() == 'matej'
 
-def get_settings(key, type=str):
-    settings = QtCore.QSettings('FERDA')
-    return settings.value(key, get_default(key), type)
-
-
-def set_settings(key, value):
-    settings = QtCore.QSettings('FERDA')
-    settings.setValue(key, value)
 
 # Print iterations progress
 def print_progress(iteration, total, prefix = '', suffix = '', decimals = 1, barLength = 100):

@@ -48,9 +48,10 @@ class PNIdsItem(QtGui.QGraphicsPixmapItem):
 
 
 def get_pixmap_item(ids, P, N, tracklet_id=None, callback=None, probs=None, params=None, tracklet_len=0,
-                    tracklet_ptr=0, tracklet_class_color=None):
-    img = draw(ids, P, N, probs=probs, params=params, tracklet_len=tracklet_len, tracklet_ptr=tracklet_ptr,
-               tracklet_class_color=tracklet_class_color)
+                    tracklet_ptr=0, tracklet_class_color=None, virtual_id=False):
+
+    img = draw(ids, P, N, probs=probs, params=params, tracklet_len=tracklet_len,
+               tracklet_class_color=tracklet_class_color, virtual_id=virtual_id)
     pix_map = cvimg2qtpixmap(img)
 
     p = PNIdsItem(pix_map, id_=tracklet_id, callback=callback)
@@ -58,11 +59,11 @@ def get_pixmap_item(ids, P, N, tracklet_id=None, callback=None, probs=None, para
     return p
 
 
-def draw(ids, P, N, probs=None, params=None, tracklet_len=0, tracklet_ptr=0, tracklet_class_color=None):
+def draw(ids, P, N, probs=None, params=None, tracklet_len=0, tracklet_ptr=0, tracklet_class_color=None, virtual_id=False):
     if params is None:
         params = default_params
 
-    h = 2
+    h = 4
 
     hh = 0
     if tracklet_len > 0:
@@ -79,22 +80,40 @@ def draw(ids, P, N, probs=None, params=None, tracklet_len=0, tracklet_ptr=0, tra
         img[-hh:, :min(max_w, tracklet_len), :] = (255, 255, 0)
         img[-hh:, max(0, tracklet_ptr-1):min(max_w, tracklet_ptr+1), :] = (0, 0, 255 )
 
-    w = 1
-    for id_ in ids:
-        old_w = w
+    if virtual_id and len(P):
+        id_ = list(P)[0]
 
-        if id_ in P:
-            # present
-            w = draw_P(img, w, id_, params)
-        elif id_ in N:
-            # not present
-            w = draw_N(img, w, id_, params)
-        else:
-            # unknown
-            w = draw_U(img, w, id_, params)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        bottomLeftCornerOfText = (2, h+params['P_height'])
+        fontScale = 0.75
+        fontColor = (255, 255, 255)
+        lineType = 2
 
-        if params['show_probabilities'] and probs is not None:
-            show_probs(img, old_w, w, probs[id_], params)
+        cv2.putText(img, str(id_),
+                    bottomLeftCornerOfText,
+                    font,
+                    fontScale,
+                    fontColor,
+                    lineType)
+
+        w = 50
+    else:
+        w = 1
+        for id_ in ids:
+            old_w = w
+
+            if id_ in P:
+                # present
+                w = draw_P(img, w, id_, params)
+            elif id_ in N:
+                # not present
+                w = draw_N(img, w, id_, params)
+            else:
+                # unknown
+                w = draw_U(img, w, id_, params)
+
+            if params['show_probabilities'] and probs is not None:
+                show_probs(img, old_w, w, probs[id_], params)
 
     # crop it...
     img = img[:, :w+1, :].copy()

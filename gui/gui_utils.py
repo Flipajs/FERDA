@@ -1,15 +1,13 @@
 from PIL import ImageQt
+
 from utils.drawing.points import get_contour, draw_points_crop
 
 __author__ = 'fnaiser'
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QImage
-from utils.misc import get_settings
 import utils.img
-from gui.settings.default import get_tooltip
-import os
-from core.settings import Settings as S_
+from gui.settings_widgets.default import get_tooltip, get_default
 import numpy as np
 
 
@@ -121,7 +119,7 @@ def get_image_label(im):
     item.setScaledContents(True)
     item.setFixedWidth(w)
     item.setFixedHeight(h)
-    item.setPixmap(utils.img.get_pixmap_from_np_bgr(im))
+    item.setPixmap(get_pixmap_from_np_bgr(im))
 
     return item
 
@@ -184,3 +182,19 @@ class SelectAllLineEdit(QtGui.QLineEdit):
         super(SelectAllLineEdit, self).focusOutEvent(e) #required to remove cursor on focusOut
         self.deselect()
         self.readyToEdit = True
+
+
+def get_pixmap_from_np_bgr(np_image):
+    img_q = ImageQt.QImage(np_image.data, np_image.shape[1], np_image.shape[0], np_image.shape[1] * 3, 13)
+    pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
+    return pix_map
+
+
+def get_settings(key, type=str):
+    settings = QtCore.QSettings('FERDA')
+    return settings.value(key, get_default(key), type)
+
+
+def set_settings(key, value):
+    settings = QtCore.QSettings('FERDA')
+    settings.setValue(key, value)

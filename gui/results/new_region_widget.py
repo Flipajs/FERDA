@@ -1,15 +1,16 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui, QtCore
-from gui.img_controls.my_scene import MyScene
-from gui.gui_utils import cvimg2qtpixmap
-from functools import partial
-from core.settings import Settings as S_
-from gui.init.arena.arena_mark import ArenaMark as Mark
-from gui.init.arena.arena_circle import ArenaCircle as Circle
 import math
+from functools import partial
+
 import cv2
 import numpy as np
+from PyQt4 import QtGui, QtCore
+
+from gui.img_controls.my_scene import MyScene
+from gui.init.arena.arena_circle import ArenaCircle as Circle
+from gui.init.arena.arena_mark import ArenaMark as Mark
+from gui.settings import Settings as S_
 
 
 class NewRegionWidget(QtGui.QWidget):

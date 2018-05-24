@@ -1,19 +1,19 @@
 __author__ = 'fnaiser'
 
+import math
 import sys
 
 from PyQt4 import QtGui, QtCore
-
-from gui.init.init_widget import InitWidget
-from gui.project import project_widget, new_project_widget
-from gui.main_tab_widget import MainTabWidget
-import core.project.project
-from core.settings import Settings as S_
-from gui.settings.settings_dialog import SettingsDialog
-import time
-import math, sys
-from PyQt4.QtCore import Qt, QTimer
+from PyQt4.QtCore import Qt
 from PyQt4.QtGui import QWidget, QPalette, QPainter, QBrush, QPen, QColor
+
+import core.project.project
+from gui.init.init_widget import InitWidget
+from gui.main_tab_widget import MainTabWidget
+from gui.project import project_widget, new_project_widget
+from gui.settings import Settings as S_
+from gui.settings_widgets.settings_dialog import SettingsDialog
+
 
 class Overlay(QWidget):
     def __init__(self, parent=None):
@@ -153,11 +153,10 @@ class MainWindow(QtGui.QMainWindow):
             self.central_widget.setCurrentWidget(self.project_widget)
 
         if state == 'initialization_finished':
-            self.project = values[0]
+            self.project = values
             # self.project.save()
 
-            self.main_tab_widget = MainTabWidget(self.widget_control, self.project, values[1],
-                                                 progress_callback=self.progress_callback)
+            self.main_tab_widget = MainTabWidget(self.widget_control, self.project, progress_callback=self.progress_callback)
             self.central_widget.addWidget(self.main_tab_widget)
             self.central_widget.setCurrentWidget(self.main_tab_widget)
 
@@ -197,6 +196,7 @@ class MainWindow(QtGui.QMainWindow):
     def show_settings(self):
         dialog = SettingsDialog(self)
         dialog.exec_()
+
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

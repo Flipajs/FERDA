@@ -286,7 +286,7 @@ if __name__ == "__main__":
 
             for t in range(r_ch.start_frame(), r_ch.end_frame() + 1, sample_step):
                 r = r_ch[t - r_ch.start_frame()]
-                if r.is_virtual:
+                if r.is_origin_interaction():
                     continue
 
                 bb, offset = get_bounding_box(r, p, relative_border)

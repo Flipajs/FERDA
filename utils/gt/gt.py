@@ -1,7 +1,9 @@
-import cPickle as pickle
+from __future__ import print_function
+import pickle
 import sys
 import warnings
 import numpy as np
+import tqdm
 
 
 class GT:
@@ -27,7 +29,7 @@ class GT:
         self.__gt_version = version
 
         self.__min_frame = 0
-        self.__max_frame = sys.maxint
+        self.__max_frame = sys.maxsize
 
         self.__permutation = {}
         self.__gt_id_to_real_permutation = {}
@@ -117,7 +119,7 @@ class GT:
         self.__dict__.update(tmp_dict)
         self.__init_permutations()
 
-        print "GT was sucessfully loaded from ", path
+        print("GT was sucessfully loaded from " + path)
         # except:
         #     print "GT was not loaded ", path
 
@@ -190,7 +192,7 @@ class GT:
         if frame in self.__rois:
             for i, it in enumerate(self.__rois[frame]):
                 if it is not None:
-                    y1, x1, y2, x2, type_  = it
+                    y1, x1, y2, x2, type_ = it
                     if type_ == 1:
                         p[self.__permutation[i]] = (y1 + self.__y_offset, x1 + self.__x_offset,
                                                     y2 + self.__y_offset, x2 + self.__x_offset)
@@ -202,9 +204,10 @@ class GT:
         return self.get_clear_positions(frame)[id_]
 
     def set_position(self, frame, id_, y, x, type_=1):
+        frame -= self.__frames_offset
         self.__set_frame(self.__positions, frame)
         id_ = self.__permutation[id_]
-        self.__positions[frame][id_] = (y - self.__y_offset, x - self.__y_offset, type_)
+        self.__positions[frame][id_] = (y - self.__y_offset, x - self.__x_offset, type_)
 
     def save(self, path, make_copy=True):
         import os
@@ -228,7 +231,7 @@ class GT:
         """
         from utils.misc import print_progress
         from core.graph.region_chunk import RegionChunk
-        print "... CREATING GT from PN sets ..."
+        print("... CREATING GT from PN sets ...")
 
         if frame_limits_end < 0:
             from utils.video_manager import get_auto_video_manager
@@ -283,7 +286,7 @@ class GT:
                             self.__rois[frame][id_] = (y1, x1, y2, x2, len(t.P))
 
         self.__init_permutations()
-        print
+        print()
 
     def match_gt(self, frame, y, x, limit_distance=None):
         """
@@ -373,19 +376,30 @@ class GT:
         return self.__max_frame
 
     def check_none_occurence(self):
-        print "Checking None occurence"
+        print("Checking None occurence")
         for frame, vals in self.__positions.iteritems():
             for it in vals:
                 if it is None:
-                    print frame
+                    print(frame)
 
                 # Old way of representing undefined
                 if it[0] < 50 and it[1] < 100:
-                    print "UNDEF POS:", frame
+                    print("UNDEF POS:", frame)
 
-        print "DONE"
+        print("DONE")
 
     def match_on_data(self, project, frames=None, max_d=5, data_centroids=None, match_on='tracklets', permute=False):
+        """
+        Match ground truth on tracklets or regions.
+
+        :param project: Project() instance
+        :param frames: list or None for all frames where gt is defined
+        :param max_d: maximum euclidean distance in px to match
+        :param data_centroids: centroids for tracklets or regions, None to compute
+        :param match_on: 'tracklets' or 'regions'
+        :param permute:
+        :return: match, match[frame][gt position id]: chunk or region id
+        """
         from scipy.spatial.distance import cdist
         from utils.misc import print_progress
         from itertools import izip
@@ -399,11 +413,14 @@ class GT:
         if frames is None:
             frames = range(self.min_frame(), self.max_frame())
 
-        for frame in frames:
+        for frame in tqdm.tqdm(frames):
             match[frame] = [None for _ in range(len(project.animals))]
 
+            if frame >= 2122:
+                pass
+
             # add chunk ids
-            if match_on=='tracklets':
+            if match_on == 'tracklets':
                 r_t = project.gm.regions_and_t_ids_in_t(frame)
                 regions = [project.rm[x[0]] for x in r_t]
                 ch_ids = [x[1] for x in r_t]
@@ -425,12 +442,13 @@ class GT:
             if None in pos:
                 continue
             pos = np.array([(x[0] + self.__y_offset, x[1] + self.__x_offset) for x in pos])
+            # pos = np.array([(y + self.__y_offset, x + self.__x_offset) for y, x in pos])  # check and replace line above
 
             centroids[np.isnan(centroids)] = np.inf
             try:
                 dists = cdist(pos, centroids)
             except:
-                print centroids, regions, frame
+                print(centroids, regions, frame)
 
             m1_i = np.argmin(dists, axis=1)
             m1 = dists[range(pos.shape[0]), m1_i]
@@ -447,7 +465,7 @@ class GT:
                                 match[frame][a_id] = t_id
                                 break
                     elif match_on == 'centroids':
-                        pass
+                        raise Exception('not implemented')
                     else:
                         for r in regions:
                             if r.is_inside(pos[a_id], tolerance=max_d):
@@ -510,7 +528,7 @@ class GT:
             return [self.__gt_id_to_real_permutation[id_] for id_ in ids]
         else:
             warnings.warn('Tracklet id: {} is inconsistent'.format(tracklet.id()))
-            print match, ids
+            print(match, ids)
 
         return None
 
@@ -523,7 +541,7 @@ class GT:
 
         for i in range(1, len(match)):
             if ids != self.__get_ids_from_match(match[i], tracklet.id()):
-                print "CONSISTENCY I, ", i
+                print("CONSISTENCY I, ", i)
 
                 if self.break_on_inconsistency:
                     return False
@@ -607,15 +625,14 @@ class GT:
                     singles_splits.discard(t.end_frame(p.gm))
 
         num_t = len(p.chm)
-        print "#max_len singles: {}({:.2%}) all: {}({:.2%}), #not consitent: {}".format(num_max_len_singles,
-                                                                                         num_max_len_singles/float(num_singles),
-                                                                                         num_max_len,
-                                                                                         num_max_len/float(num_t),
-                                                                                         not_consistent)
-
-
-        print "single nonmax splits: "
-        print sorted(list(singles_splits))
+        print("#max_len singles: {}({:.2%}) all: {}({:.2%}), #not consitent: {}".format(num_max_len_singles,
+                                                                                        num_max_len_singles / float(
+                                                                                            num_singles),
+                                                                                        num_max_len,
+                                                                                        num_max_len / float(num_t),
+                                                                                        not_consistent)  \
+            + "single nonmax splits:"  \
+            + sorted(list(singles_splits)))
 
     def get_single_region_ids(self, project, max_frame=np.inf):
         single_region_ids = []
@@ -650,7 +667,7 @@ class GT:
 
     def get_class_and_id(self, tracklet, project, verbose=0):
         if verbose:
-            print "ASKING ABOUT ID ", tracklet.id()
+            print("ASKING ABOUT ID ", tracklet.id())
 
         id_set = self.tracklet_id_set(tracklet, project)
         t_class = self.segmentation_class_from_idset(id_set)
@@ -733,9 +750,9 @@ if __name__ == '__main__':
                 epsilons.append(eps)
                 edges.append((int(e[0].source()), int(e[0].target())))
 
-        print min(epsilons), max(epsilons)
+        print(min(epsilons), max(epsilons))
 
-        print "T: ", out_t, test_t
+        print("T: ", out_t, test_t)
 
         with open(p.working_directory+'/temp/epsilons.pkl', 'wb') as f:
             pickle.dump((epsilons, edges, variant, AA, BB), f)

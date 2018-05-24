@@ -1,0 +1,1910 @@
+backend: !!python/unicode 'tensorflow'
+class_name: Model
+config:
+  input_layers:
+  - [input_1, 0, 0]
+  layers:
+  - class_name: InputLayer
+    config:
+      batch_input_shape: !!python/tuple [null, 224, 224, 3]
+      dtype: float32
+      name: input_1
+      sparse: false
+    inbound_nodes: []
+    name: input_1
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: &id001 !!python/tuple [1, 1]
+      filters: 32
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: !!python/tuple [3, 3]
+      name: conv1
+      padding: same
+      strides: !!python/tuple [2, 2]
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - input_1
+        - 0
+        - 0
+        - {}
+    name: conv1
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv1_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv1
+        - 0
+        - 0
+        - {}
+    name: conv1_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv1_relu, trainable: true}
+    inbound_nodes:
+    - - - conv1_bn
+        - 0
+        - 0
+        - {}
+    name: conv1_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: &id002 !!python/tuple [3, 3]
+      name: conv_dw_1
+      padding: same
+      strides: &id005 !!python/tuple [1, 1]
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv1_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_1
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_1_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_1
+        - 0
+        - 0
+        - {}
+    name: conv_dw_1_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_1_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_1_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_1_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 64
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: &id003 !!python/tuple [1, 1]
+      name: conv_pw_1
+      padding: same
+      strides: &id004 !!python/tuple [1, 1]
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_1_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_1
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_1_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_1
+        - 0
+        - 0
+        - {}
+    name: conv_pw_1_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_1_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_1_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_1_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_2
+      padding: same
+      strides: !!python/tuple [2, 2]
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_1_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_2
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_2_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_2
+        - 0
+        - 0
+        - {}
+    name: conv_dw_2_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_2_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_2_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_2_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 128
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_2
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_2_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_2
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_2_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_2
+        - 0
+        - 0
+        - {}
+    name: conv_pw_2_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_2_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_2_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_2_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_3
+      padding: same
+      strides: *id005
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_2_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_3
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_3_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_3
+        - 0
+        - 0
+        - {}
+    name: conv_dw_3_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_3_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_3_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_3_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 128
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_3
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_3_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_3
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_3_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_3
+        - 0
+        - 0
+        - {}
+    name: conv_pw_3_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_3_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_3_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_3_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_4
+      padding: same
+      strides: !!python/tuple [2, 2]
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_3_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_4
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_4_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_4
+        - 0
+        - 0
+        - {}
+    name: conv_dw_4_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_4_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_4_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_4_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 256
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_4
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_4_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_4
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_4_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_4
+        - 0
+        - 0
+        - {}
+    name: conv_pw_4_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_4_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_4_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_4_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_5
+      padding: same
+      strides: *id005
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_4_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_5
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_5_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_5
+        - 0
+        - 0
+        - {}
+    name: conv_dw_5_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_5_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_5_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_5_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 256
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_5
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_5_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_5
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_5_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_5
+        - 0
+        - 0
+        - {}
+    name: conv_pw_5_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_5_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_5_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_5_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_6
+      padding: same
+      strides: !!python/tuple [2, 2]
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_5_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_6
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_6_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_6
+        - 0
+        - 0
+        - {}
+    name: conv_dw_6_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_6_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_6_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_6_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 512
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_6
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_6_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_6
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_6_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_6
+        - 0
+        - 0
+        - {}
+    name: conv_pw_6_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_6_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_6_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_6_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_7
+      padding: same
+      strides: *id005
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_6_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_7
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_7_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_7
+        - 0
+        - 0
+        - {}
+    name: conv_dw_7_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_7_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_7_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_7_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 512
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_7
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_7_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_7
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_7_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_7
+        - 0
+        - 0
+        - {}
+    name: conv_pw_7_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_7_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_7_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_7_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_8
+      padding: same
+      strides: *id005
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_7_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_8
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_8_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_8
+        - 0
+        - 0
+        - {}
+    name: conv_dw_8_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_8_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_8_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_8_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 512
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_8
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_8_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_8
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_8_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_8
+        - 0
+        - 0
+        - {}
+    name: conv_pw_8_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_8_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_8_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_8_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_9
+      padding: same
+      strides: *id005
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_8_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_9
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_9_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_9
+        - 0
+        - 0
+        - {}
+    name: conv_dw_9_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_9_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_9_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_9_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 512
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_9
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_9_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_9
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_9_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_9
+        - 0
+        - 0
+        - {}
+    name: conv_pw_9_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_9_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_9_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_9_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_10
+      padding: same
+      strides: *id005
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_9_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_10
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_10_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_10
+        - 0
+        - 0
+        - {}
+    name: conv_dw_10_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_10_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_10_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_10_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 512
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_10
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_10_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_10
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_10_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_10
+        - 0
+        - 0
+        - {}
+    name: conv_pw_10_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_10_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_10_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_10_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_11
+      padding: same
+      strides: *id005
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_10_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_11
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_11_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_11
+        - 0
+        - 0
+        - {}
+    name: conv_dw_11_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_11_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_11_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_11_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 512
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_11
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_11_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_11
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_11_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_11
+        - 0
+        - 0
+        - {}
+    name: conv_pw_11_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_11_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_11_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_11_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_12
+      padding: same
+      strides: !!python/tuple [2, 2]
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_11_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_12
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_12_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_12
+        - 0
+        - 0
+        - {}
+    name: conv_dw_12_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_12_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_12_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_12_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 1024
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_12
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_12_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_12
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_12_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_12
+        - 0
+        - 0
+        - {}
+    name: conv_pw_12_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_12_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_12_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_12_relu
+  - class_name: DepthwiseConv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      depth_multiplier: 1
+      depthwise_constraint: null
+      depthwise_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      depthwise_regularizer: null
+      dilation_rate: *id001
+      kernel_size: *id002
+      name: conv_dw_13
+      padding: same
+      strides: *id005
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_pw_12_relu
+        - 0
+        - 0
+        - {}
+    name: conv_dw_13
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_dw_13_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_dw_13
+        - 0
+        - 0
+        - {}
+    name: conv_dw_13_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_dw_13_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_dw_13_bn
+        - 0
+        - 0
+        - {}
+    name: conv_dw_13_relu
+  - class_name: Conv2D
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      filters: 1024
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      kernel_size: *id003
+      name: conv_pw_13
+      padding: same
+      strides: *id004
+      trainable: true
+      use_bias: false
+    inbound_nodes:
+    - - - conv_dw_13_relu
+        - 0
+        - 0
+        - {}
+    name: conv_pw_13
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: conv_pw_13_bn
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - conv_pw_13
+        - 0
+        - 0
+        - {}
+    name: conv_pw_13_bn
+  - class_name: Activation
+    config: {activation: relu6, name: conv_pw_13_relu, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_13_bn
+        - 0
+        - 0
+        - {}
+    name: conv_pw_13_relu
+  - class_name: GlobalAveragePooling2D
+    config: {data_format: channels_last, name: global_average_pooling2d_1, trainable: true}
+    inbound_nodes:
+    - - - conv_pw_13_relu
+        - 0
+        - 0
+        - {}
+    name: global_average_pooling2d_1
+  - class_name: Dense
+    config:
+      activation: relu
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      name: dense_1
+      trainable: true
+      units: 1024
+      use_bias: true
+    inbound_nodes:
+    - - - global_average_pooling2d_1
+        - 0
+        - 0
+        - {}
+    name: dense_1
+  - class_name: Dense
+    config:
+      activation: tanh
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      name: dense_2
+      trainable: true
+      units: 6
+      use_bias: true
+    inbound_nodes:
+    - - - dense_1
+        - 0
+        - 0
+        - {}
+    name: dense_2
+  name: model_1
+  output_layers:
+  - [dense_2, 0, 0]
+keras_version: 2.1.1

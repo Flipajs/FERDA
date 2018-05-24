@@ -1,17 +1,17 @@
 __author__ = 'flipajs'
 
-import sys
 import math
+import sys
 
 from PyQt4 import QtGui, QtCore
 
-from gui.img_controls.my_view import MyView
-from utils.video_manager import get_auto_video_manager
-from gui.img_controls.gui_utils import cvimg2qtpixmap
-from gui.img_controls import markers
 from core.animal import colors_
-from core.settings import Settings as S_
 from core.project.project import Project
+from gui.img_controls import markers
+from gui.img_controls.gui_utils import cvimg2qtpixmap
+from gui.img_controls.my_view import MyView
+from gui.settings import Settings as S_
+from utils.video_manager import get_auto_video_manager
 
 MARKER_SIZE = 15
 
@@ -228,7 +228,6 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_crop_buttons_layout.addWidget(self.start_frame_sign)
         self.video_crop_buttons_layout.addWidget(self.end_frame_sign)
         self.video_crop_buttons_layout.addWidget(self.num_frames_sign)
-
 
         img = self.video.next_frame()
 

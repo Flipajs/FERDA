@@ -1,7 +1,7 @@
 __author__ = 'flipajs'
 
 import time
-from core.settings import Settings as S_
+from core.config import config
 
 
 class LogCategories:
@@ -20,6 +20,7 @@ class LogCategories:
             return 'others'
         elif val == LogCategories.DEBUG_INFO:
             return 'debug info'
+
 
 class ActionNames:
     # GRAPH_EDIT
@@ -55,6 +56,7 @@ class ActionNames:
     MARK_SPLIT = 'mark_split'
     MARK_JOIN_AND_SPLIT = 'mark_join_and_split'
 
+
 class LogEntry:
     def __init__(self, category, action_name, data=None):
         self.category = category
@@ -69,15 +71,16 @@ class LogEntry:
 
         return s
 
+
 class Log:
     def __init__(self):
         self.data_ = []
 
     def add(self, category, action_name, data=None):
-        if category == LogCategories.GRAPH_EDIT and not S_.general.log_graph_edits:
+        if category == LogCategories.GRAPH_EDIT and not config['general']['log_graph_edits']:
             return
 
-        if S_.general.print_log:
+        if config['general']['print_log']:
             print category, action_name, data
 
         self.data_.append(LogEntry(category, action_name, data))
