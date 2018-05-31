@@ -1,6 +1,7 @@
 from PyQt4 import QtGui, QtCore
 from gui.settings_widgets.parameters_tab import ParametersTab
 from gui.settings_widgets.visualisation_tab import VisualisationTab
+from gui.settings import Settings as S_
 
 
 class SettingsDialog(QtGui.QDialog):
