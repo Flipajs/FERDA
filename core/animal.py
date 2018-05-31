@@ -30,7 +30,6 @@ class Animal():
         if color:
             self.color_ = color
 
-
         self.init_pos_center_ = None
         self.init_pos_head_ = None
 

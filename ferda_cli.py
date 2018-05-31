@@ -68,16 +68,18 @@ def fix_legacy_project(project_path):
     print('Fixed project.name.')
 
 
-def run_tracking(project_path, video_file=None, force_recompute=False, reid_model_weights_path=None):
-    project_dir, project_filename = Project.get_project_dir_and_file(project_path)
+def run_tracking(project_dir, video_file=None, force_recompute=False, reid_model_weights_path=None):
     import core.segmentation
     from core.region.clustering import is_project_cardinality_classified
     import core.graph_assembly
     import core.graph.solver
     from core.id_detection.complete_set_matching import do_complete_set_matching
-    core.segmentation.segmentation(project_filename)
     project = Project()
-    project.load(project_filename, video_file=video_file)
+    project.load(project_dir, video_file=video_file)
+    if force_recompute or not core.graph_assembly.is_assemply_completed(project):
+        core.segmentation.segmentation(project_dir)
+    project = Project()
+    project.load(project_dir, video_file=video_file)
     if force_recompute or not core.graph_assembly.is_assemply_completed(project):
         graph_solver = core.graph.solver.Solver(project)
         core.graph_assembly.graph_assembly(project, graph_solver)
@@ -98,7 +100,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Convert and visualize mot ground truth and results.')
-    parser.add_argument('project', type=str, help='project file or directory')
+    parser.add_argument('project', type=str, help='project directory')
     parser.add_argument('--video-file', type=str, help='project input video file')
     parser.add_argument('--save-results-mot', type=str, help='write found trajectories in MOT challenge format')
     parser.add_argument('--fix-legacy-project', action='store_true', help='fix legacy project\'s Qt dependencies')

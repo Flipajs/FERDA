@@ -87,30 +87,28 @@ def get_rois(msers, img, prediction_optimisation_border):
     return rois
 
 
-def segmentation(project_file):
+def segmentation(project_dir):
     """
     Segment regions in all frames.
 
-    :param project_file: project file
+    :param project_dir: project directory
     :return: int, number of parts
     """
-    working_dir, _ = Project.get_project_dir_and_file(project_file)
-    project = Project(project_file)
+    project = Project(project_dir)
     vid = get_auto_video_manager(project)
     frame_num = int(vid.total_frame_count())
     frames_in_row = config['segmentation']['frames_in_row']
     Parallel(n_jobs=config['general']['n_jobs'], verbose=10)\
-        (delayed(do_segmentation_part)(project_file, i, frame_start)
+        (delayed(do_segmentation_part)(project_dir, i, frame_start)
          for i, frame_start in enumerate(range(0, frame_num, frames_in_row)))
     # with tqdm.tqdm(total=frame_num, desc='segmenting regions') as pbar:
     #     for i, frame_start in enumerate(range(0, frame_num, frames_in_row)):
     #         do_segmentation_part(project_file, i, frame_start, pbar.update)
 
 
-def do_segmentation_part(project_file, part_id, frame_start, frame_done_func=None):
-    working_dir, _ = Project.get_project_dir_and_file(project_file)
+def do_segmentation_part(project_dir, part_id, frame_start, frame_done_func=None):
     # check if part was computed before
-    temp_path = os.path.join(working_dir, 'temp')
+    temp_path = os.path.join(project_dir, 'temp')
     sqlite_filename = join(temp_path, 'part{}_rm.sqlite3'.format(part_id))
     pkl_filename = join(temp_path, 'part{}.pkl'.format(part_id))
     if os.path.isfile(sqlite_filename) and os.path.getsize(sqlite_filename) != 0 \
@@ -118,7 +116,7 @@ def do_segmentation_part(project_file, part_id, frame_start, frame_done_func=Non
         print('Part {} already processed.'.format(part_id))
         return
     proj = Project()
-    proj.load(project_file)
+    proj.load(project_dir)
     try:
         use_roi_prediction_optimisation = proj.other_parameters.segmentation_use_roi_prediction_optimisation
 
@@ -145,14 +143,20 @@ def do_segmentation_part(project_file, part_id, frame_start, frame_done_func=Non
     vid = get_auto_video_manager(proj)
     frames_num = int(vid.total_frame_count())
     frames_in_row = config['segmentation']['frames_in_row']
-    img = vid.seek_frame(frame_start)
     frame_end = frame_start + frames_in_row - 1
     if frame_end > frames_num - 1:
         frame_end = frames_num - 1
 
     # for all frames: extract regions and add them to the graph
     for frame in range(frame_start, frame_end + 1):
-        rois = []
+        if frame == frame_start:
+            img = vid.seek_frame(frame_start)
+        else:
+            img = vid.next_frame()
+            if img is None:
+                raise Exception("failed to load frame {}".format(frame))
+
+        # rois = []
         img = prepare_img(proj, img)
 
         # # per pixel classification -> fg, bg (not used)
@@ -173,9 +177,6 @@ def do_segmentation_part(project_file, part_id, frame_start, frame_done_func=Non
         # add regions to graph
         proj.gm.add_regions_in_t(msers, frame, fast=True)
 
-        img = vid.next_frame()
-        if img is None:
-            raise Exception("img is None, there is something wrong with frame: {}".format(frame))
         if frame_done_func is not None:
             frame_done_func()
 

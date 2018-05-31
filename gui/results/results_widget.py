@@ -1142,12 +1142,14 @@ class ResultsWidget(QtGui.QWidget):
 
             self.video_player.visualise_temp(pixmap)
 
-
     def update_visualisations(self):
         try:
             self.draw_id_profiles()
         except:
             pass
+
+        if self.project.chm is None:
+            return
 
         self._update_tracklet_info(from_update_visu=True)
 

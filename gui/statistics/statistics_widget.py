@@ -12,6 +12,7 @@ from pympler import asizeof
 import gc
 from scripts.export.export_part import Exporter, export_arena
 
+
 class StatisticsWidget(QtGui.QWidget):
     def __init__(self, project):
         super(StatisticsWidget, self).__init__()

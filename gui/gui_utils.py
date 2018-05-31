@@ -65,6 +65,7 @@ def file_names_dialog(window, text='Select files', path='', filter_=''):
 
     return names
 
+
 def cvimg2qtpixmap(img):
     img_q = QImage(img.data, img.shape[1], img.shape[0], img.shape[1]*3, 13)
     pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())

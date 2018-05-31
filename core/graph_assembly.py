@@ -163,11 +163,6 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
         p.chm.reset_itree(p.gm)
 
     p.save_semistate('eps_edge_filter')
-
-    # if not project.is_cluster():
-    #     from core.settings import Settings as S_
-    #     S_.general.log_graph_edits = True
-
     p.solver = graph_solver
 
     p.gm.project = project

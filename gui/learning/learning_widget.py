@@ -399,7 +399,11 @@ class LearningWidget(QtGui.QWidget):
 
     def update_callback(self):
         self.info_table.setItem(0, 0, QCustomTableWidgetItem('#tracklets'))
-        self.info_table.setItem(0, 1, QCustomTableWidgetItem(str(len(self.project.chm))))
+        if self.project.chm is not None:
+            num_tracklets = str(len(self.project.chm))
+        else:
+            num_tracklets = '-'
+        self.info_table.setItem(0, 1, QCustomTableWidgetItem())
 
         self.info_table.setItem(1, 0, QCustomTableWidgetItem('#collision tracklets'))
         self.info_table.setItem(1, 1, QCustomTableWidgetItem(str(len(self.lp.collision_chunks))))

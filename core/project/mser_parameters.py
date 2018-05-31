@@ -2,7 +2,7 @@ __author__ = 'flipajs'
 
 
 class MSERParameters():
-    def __init__(self, refresh=None):
+    def __init__(self, initial_data=None):
         self.max_area = 50000
         self.min_area = 50
         self.min_margin = 5
@@ -16,8 +16,8 @@ class MSERParameters():
         self.area_roi_ratio_threshold = 0
         self.use_intensity_percentile_threshold = False
 
-        if refresh:
-            self.__dict__.update(refresh.__dict__)
+        if initial_data:
+            self.__dict__.update(initial_data)
 
     def __str__(self):
         s = "MSER parameters:\n"
@@ -28,5 +28,4 @@ class MSERParameters():
         s += "intensity_threshold: "+str(self.intensity_threshold)+"\n"
         s += "region_min_intensity: "+str(self.region_min_intensity)+"\n"
         s += "use_children_filter: "+str(self.use_children_filter)+"\n"
-
         return s

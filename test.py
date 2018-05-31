@@ -13,7 +13,6 @@ if __name__ == '__main__':
 
     bgcomp = FakeBGComp(p, 0, part_num)
     bgcomp.project = p
-    bgcomp.project.is_cluster_ = True
     bgcomp.part_num = part_num
 
     graph_assembly(bgcomp)

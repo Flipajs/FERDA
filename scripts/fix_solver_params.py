@@ -9,13 +9,8 @@ if __name__ == '__main__':
     use_emd_for_split_merge_detection = bool(int(sys.argv[2]))
     use_colony_split_merge_relaxation = bool(int(sys.argv[3]))
 
-    is_cluster = False
-    if len(sys.argv) > 4:
-        is_cluster = bool(int(sys.argv[4]))
-
     p = Project()
     p.load(wd)
-    p.is_cluster_ = is_cluster
 
     old_sp = p.solver_parameters
     new_sp = SolverParameters()

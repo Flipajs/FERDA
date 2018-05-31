@@ -1,13 +1,12 @@
 __author__ = 'filip@naiser.cz'
-
 import cPickle as pickle
 import string
 import time
-
 import numpy as np
 import os
 from os.path import join
 import tqdm
+import json
 
 from core.graph.solver import Solver
 from core.log import Log
@@ -23,15 +22,25 @@ class Project:
     This class encapsulates one experiment using FERDA
     """
     def __init__(self, path=None):
+        self.working_directory = ''
+
         self.name = ''
         self.description = ''
         self.video_paths = []
         self.video_start_t = -1
         self.video_end_t = -1
-        self.working_directory = ''
-        self.project_file = None
         self.date_created = -1
         self.date_last_modifiaction = -1
+        self.video_crop_model = None
+        self.classes = None
+        self.groups = None
+        self.stats = None
+        self.mser_parameters = MSERParameters()
+        self.other_parameters = OtherParameters()
+        self.solver_parameters = SolverParameters()
+        self.use_colormarks = False
+        self.colormarks_model = None
+        self.version = "3.1.0"
 
         # REGION MANAGER
         self.rm = None
@@ -40,41 +49,23 @@ class Project:
         # GRAPH MANAGER
         self.gm = None
 
-        self.bg_model = None
         self.arena_model = None
-        self.video_crop_model = None
-        self.region_cardinality_classifier = None
-        self.classes = None
-        self.groups = None
-        self.animals = None
-        self.stats = None
-        self.mser_parameters = MSERParameters()
-        self.other_parameters = OtherParameters()
-        self.solver_parameters = SolverParameters()
-        self.use_colormarks = False
-        self.colormarks_model = None
-        self.color_manager = None
-        self.img_manager = None
-        self.log = Log()
         self.solver = None
-        self.version = "3.1.0"
+        self.img_manager = None
+        self.region_cardinality_classifier = None
+        self.bg_model = None
+        self.animals = None
+        self.color_manager = None
+        self.log = Log()
 
         self.snapshot_id = 0
         self.active_snapshot = -1
-
-        self.is_cluster_ = False
 
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
 
         if path is not None:
             self.load(path)
-
-    def is_cluster(self):
-        if hasattr(self, 'is_cluster_'):
-            return self.is_cluster_
-
-        return False
 
     def version_is_le(self, ver):
         # returns true if self.version is lower or equal then version
@@ -87,46 +78,68 @@ class Project:
 
         return True
 
-    def save_project_file_(self, dir_path=None):
-        if dir_path is None:
-            dir_path = self.working_directory
+    # def save_project_file_(self, dir_path=None):
+    #     if dir_path is None:
+    #         dir_path = self.working_directory
+    #
+    #     p = Project()
+    #     p.name = self.name
+    #     p.description = self.description
+    #     p.video_paths = self.video_paths
+    #     p.working_directory = self.working_directory
+    #     p.video_start_t = self.video_start_t
+    #     p.video_end_t = self.video_end_t
+    #
+    #     p.mser_parameters = self.mser_parameters
+    #     p.other_parameters = self.other_parameters
+    #     p.solver_parameters = self.solver_parameters
+    #     p.version = self.version
+    #
+    #     p.date_created = self.date_created
+    #     p.use_colormarks = self.use_colormarks
+    #     p.colormarks_model = self.colormarks_model
+    #     p.color_manager = self.color_manager
+    #
+    #     p.date_last_modifiaction = time.time()
+    #
+    #     p.snapshot_id = self.snapshot_id
+    #     p.active_snapshot = self.active_snapshot
+    #
+    #     try:
+    #         p.GT_file = self.GT_file
+    #     except AttributeError:
+    #         pass
+    #
+    #     try:
+    #         p.video_crop_model = self.video_crop_model
+    #     except AttributeError:
+    #         pass
+    #
+    #     self.project_file = join(dir_path, '{}.fproj'.format(self.name))
+    #     with open(self.project_file, 'wb') as f:
+    #         pickle.dump(p.__dict__, f, 2)
 
-        p = Project()
-        p.name = self.name
-        p.description = self.description
-        p.video_paths = self.video_paths
-        p.working_directory = self.working_directory
-        p.video_start_t = self.video_start_t
-        p.video_end_t = self.video_end_t
+    def to_json(self):
+        d = self.__dict__.copy()
+        del d['working_directory']
+        del d['rm']
+        del d['chm']
+        del d['gm']
+        del d['arena_model']
+        del d['solver']
+        del d['img_manager']
+        del d['region_cardinality_classifier']
+        del d['bg_model']
+        del d['color_manager']
+        del d['log']
+        return json.dumps(d, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
-        p.mser_parameters = self.mser_parameters
-        p.other_parameters = self.other_parameters
-        p.solver_parameters = self.solver_parameters
-        p.version = self.version
-
-        p.date_created = self.date_created
-        p.use_colormarks = self.use_colormarks
-        p.colormarks_model = self.colormarks_model
-        p.color_manager = self.color_manager
-
-        p.date_last_modifiaction = time.time()
-
-        p.snapshot_id = self.snapshot_id
-        p.active_snapshot = self.active_snapshot
-
-        try:
-            p.GT_file = self.GT_file
-        except AttributeError:
-            pass
-
-        try:
-            p.video_crop_model = self.video_crop_model
-        except AttributeError:
-            pass
-
-        self.project_file = join(dir_path, '{}.fproj'.format(self.name))
-        with open(self.project_file, 'wb') as f:
-            pickle.dump(p.__dict__, f, 2)
+    def from_json(self, json_content):
+        d = json.loads(json_content)
+        d['mser_parameters'] = MSERParameters(d['mser_parameters'])
+        d['solver_parameters'] = SolverParameters(d['solver_parameters'])
+        d['other_parameters'] = OtherParameters(d['other_parameters'])
+        self.__dict__.update(d)
 
     def save(self, path=None):
         if path is None:
@@ -186,7 +199,9 @@ class Project:
 
         self.save_gm_(path + '/graph_manager.pkl')
 
-        self.save_project_file_(path)
+        # self.save_project_file_(path)
+        with open(join(path, 'project.json'), 'w') as fw:
+            fw.write(self.to_json())
 
     def save_gm_(self, file_path):
         print "saving GM"
@@ -235,37 +250,6 @@ class Project:
         self.snapshot_id += 1
         self.active_snapshot = -1
 
-    # def save_qsettings(self,toFolder=""):
-    #     if (toFolder == ""):
-    #         destinationFolder = self.working_directory
-    #     else:
-    #         destinationFolder = toFolder
-    #     from PyQt4 import QtCore
-    #     s = QtCore.QSettings('FERDA')
-    #     settings = {}
-    #
-    #     for k in s.allKeys():
-    #         try:
-    #             settings[str(k)] = str(s.value(k, 0, str))
-    #         except:
-    #             pass
-    #
-    #     with open(destinationFolder+'/settings.pkl', 'wb') as f:
-    #         pickle.dump(settings, f)
-    #
-    # def load_qsettings(self):
-    #     with open(self.working_directory+'/settings.pkl', 'rb') as f:
-    #         settings = pickle.load(f)
-    #         from PyQt4 import QtCore
-    #         qs = QtCore.QSettings('FERDA')
-    #         qs.clear()
-    #
-    #         for key, it in settings.iteritems():
-    #             try:
-    #                 qs.setValue(key, it)
-    #             except:
-    #                 pass
-
     def load_semistate(self, path, state='isolation_score', one_vertex_chunk=False, update_t_nodes=False):
         self.load(path)
 
@@ -292,34 +276,21 @@ class Project:
             p.dump(None)
             p.dump(self.chm)
 
-    @staticmethod
-    def get_project_dir_and_file(filename_or_dir):
-        if filename_or_dir[-6:] == '.fproj' and os.path.isfile(filename_or_dir):
-            filename = filename_or_dir
-            dirname = os.path.dirname(filename)
-            return dirname, filename
-        elif os.path.isdir(filename_or_dir):
-            dirname = filename_or_dir
-            filename = os.path.join(dirname, 'project.fproj')
-            if os.path.isfile(filename):
-                return dirname, filename
-            filename = os.path.join(dirname,
-                os.path.basename(os.path.normpath('/home/matej/prace/ferda/projects/F3C51min/')) + '.fproj')
-            if os.path.isfile(filename):
-                return dirname, filename
-            for filename in os.listdir(dirname):
-                if filename[-6:] == '.fproj':
-                    return dirname, os.path.join(dirname, filename)
-            assert False, 'no .fproj file exists in ' + dirname
-        else:
-            assert False, 'path is not existing directory or .fproj file'
+    # @staticmethod
+    # def get_project_dir_and_file(filename_or_dir):
+    #     if os.path.splitext(filename_or_dir)[1] == '.json':
+    #         filename = filename_or_dir
+    #         dirname = os.path.dirname(filename)
+    #     else:
+    #         dirname = filename_or_dir
+    #         filename = os.path.join(dirname, 'project.json')
+    #     return dirname, filename
 
     def load(self, path, snapshot=None, lightweight=False, video_file=None):
-        self.working_directory, project_filename = self.get_project_dir_and_file(path)
-        self.project_file = project_filename
-        with open(project_filename, 'rb') as f:
-            tmp_dict = pickle.load(f)
-        self.__dict__.update(tmp_dict)
+        self.working_directory = path # , self.project_file = self.get_project_dir_and_file(path)
+
+        with open(join(self.working_directory, 'project.json'), 'r') as fr:
+            self.from_json(fr.read())
 
         # check for video file
         if video_file is not None:
@@ -379,14 +350,6 @@ class Project:
                 self.region_cardinality_classifier = pickle.load(f)
         except:
             pass
-
-        if not lightweight:
-            # SETTINGS
-            try:
-                print('settings...')  #TODO
-                # self.load_qsettings()
-            except:
-                pass
 
         # # Region Manager
         # try:
@@ -557,11 +520,11 @@ class Project:
         return results
 
 
-def project_video_file_exists(project_path):
-    working_directory, project_filename = Project.get_project_dir_and_file(project_path)
-    with open(project_filename, 'rb') as f:
-        project_dict = pickle.load(f)
-    for path in project_dict['video_paths']:
+def project_video_file_exists(project_dir):
+    project = Project()
+    with open(join(project_dir, 'project.json'), 'r') as fr:
+        project.from_json(fr.read())
+    for path in project.video_paths:
         if os.path.isfile(path):
             return True
     return False

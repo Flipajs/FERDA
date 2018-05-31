@@ -22,14 +22,14 @@ class BackgroundComputer:
 
     def __init__(self, project, update_callback, finished_callback):
         self.project = project
-        self.process_n = config['parallelization']['processes_num']
+        self.process_n = config['general']['n_jobs']
         self.results = []
         self.update_callback = update_callback
         self.finished_callback = finished_callback
         self.start = []
 
         # TODO: Settings
-        self.frames_in_row = project.solver_parameters.frames_in_row
+        self.frames_in_row = config['segmentation']['frames_in_row']
         self.frames_in_row_last = -1
         self.n_parts = -1
 
@@ -59,6 +59,7 @@ class BackgroundComputer:
             if not config['general']['log_in_bg_computation']:
                 config['general']['log_graph_edits'] = False
 
+            self.n_parts = len(range(0, self.frame_num, config['segmentation']['frames_in_row']))
             self.start = [0] * self.n_parts
 
             for i, frame_start in enumerate(range(0, self.frame_num, config['segmentation']['frames_in_row'])):
@@ -99,10 +100,9 @@ class BackgroundComputer:
     def check_parallelization(self):
         if self.finished.all() or self.precomputed:
             self.check_parallelization_timer.stop()
-            self.project.load(self.project.working_directory+'/'+self.project.name+'.fproj')
+            self.project.load(self.project.working_directory)
             self.solver = Solver(self.project)
-            graph_assembly(self.project, self.solver, self.n_parts,
-                           self.first_part, self.do_semi_merge)
+            graph_assembly(self.project, self.solver, self.do_semi_merge)
             self.project.region_cardinality_classifier.classify_project(self.project)
 
             # from utils.color_manager import colorize_project

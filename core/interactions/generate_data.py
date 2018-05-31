@@ -123,34 +123,7 @@ class DataGenerator(object):
 
     def _load_project(self, project_dir=None, video_file=None):
         self._project = Project()
-        # This is development speed up process (kind of fast start). Runs only on developers machines...
-        # if is_flipajs_pc() and False:
-        if project_dir is None:
-            if is_flipajs_pc():
-                # project_dir = '/Users/iflipajs/Documents/project_dir/FERDA/Cam1_rf'
-                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/Cam1_playground'
-                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/test6'
-                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/zebrafish_playground'
-                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/Camera3'
-                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/Cam1_rfs2'
-                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/Cam1'
-                project_dir = '/Users/flipajs/Documents/project_dir/FERDA/rep1-cam2'
-                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/rep1-cam3'
-
-                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/Sowbug3'
-
-                # project_dir = '/Users/flipajs/Documents/project_dir/FERDA/test'
-            if is_matejs_pc():
-                # project_dir = '/home/matej/prace/ferda/10-15/'
-                project_dir = '/home/matej/prace/ferda/projects/camera1_10-15/'
-        assert project_dir is not None
         self._project.load(project_dir, video_file=video_file)
-
-        # img = video.get_frame(region.frame())  # ndarray bgr
-        # img_region = get_img_around_pts(img, region.pts(), margin=0)
-        # cv2.imshow('test', img_region[0])
-        # cv2.waitKey()
-
         self._video = get_auto_video_manager(self._project)
 
     @staticmethod
@@ -228,18 +201,18 @@ class DataGenerator(object):
             os.mkdir(out_dir)
         return os.path.relpath(os.path.abspath(out_dir), os.path.abspath(os.path.dirname(out_file)))
 
-    def write_regions_for_testing(self, project_file, out_dir, n, multi=True, single=False):
+    def write_regions_for_testing(self, project_dir, out_dir, n, multi=True, single=False):
         """
         Write n randomly chosen cropped region images in hdf5 file.
 
-        :param project_file: gather regions from the FERDA project file
+        :param project_dir: gather regions from the FERDA project file
         :param out_dir: output directory where images.h5 and parameters.txt will be placed
         :param n: number of region images to write
         :param multi: include multi animal regions
         :param single: include single animal regions
         """
         # write-regions-for-testing /home/matej/prace/ferda/projects/camera1_10-15/10-15.fproj /home/matej/prace/ferda/data/interactions/180129_camera1_10-15_multi_test 100
-        self._load_project(project_file)
+        self._load_project(project_dir)
         self._write_argv(out_dir)
         # load regions
         self._init_regions()
@@ -272,7 +245,7 @@ class DataGenerator(object):
         with open(join(out_dir, 'parameters.txt'), 'w') as fw:
             fw.writelines('\n'.join(sys.argv))
 
-    def write_annotated_blobs_groundtruth(self, project_file, blobs_filename, n_objects, out_dir):
+    def write_annotated_blobs_groundtruth(self, project_dir, blobs_filename, n_objects, out_dir):
         """
         Load annotated blobs and write interaction ground truth to hdf5 and csv files.
 
@@ -281,7 +254,7 @@ class DataGenerator(object):
         # write_annotated_blobs_groundtruth '/home/matej/prace/ferda/projects/camera1/Camera 1.fproj' ../data/annotated_blobs/Camera1_blob_gt.pkl 2 ../data/interactions/180126_test_real_2_ants
         self._write_argv(out_dir)
         import scripts.region_annotation_tools.region_annotation_tool as ant_blob_gt_manager
-        self._load_project(project_file)
+        self._load_project(project_dir)
         img_shape = self._project.img_manager.get_whole_img(0).shape[:2]
         blob_manager = ant_blob_gt_manager.AntBlobGtManager(blobs_filename, self._project)
         blobs = blob_manager.get_ant_blobs()  # see AntBlobs() docs

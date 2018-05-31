@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
-
 from PyQt4 import QtGui
+
 
 class LoadingWidget(QtGui.QWidget):
     def __init__(self, max_range=100, text='processing...'):

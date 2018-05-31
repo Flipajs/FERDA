@@ -32,7 +32,8 @@ class CompatibilitySolver:
             self.project.save_project_file_()
 
     def fix_225(self):
-        self.project.mser_parameters = MSERParameters(refresh=self.project)
+        assert False, 'MSERParameters constructor changed'
+        self.project.mser_parameters = MSERParameters(initial_data=self.project)
         self.project.version = '2.2.9'
         self.project.save_project_file_()
 

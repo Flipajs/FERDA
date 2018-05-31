@@ -117,18 +117,16 @@ class ProjectWidget(QtGui.QWidget):
         if os.path.isdir(S_.temp.last_wd_path):
             path = S_.temp.last_wd_path
 
-        files = gui.gui_utils.file_names_dialog(self, 'Select FERDA project', filter_="Project (*.fproj)", path=path)
-
-        if len(files) == 1:
-            f = files[0]
-            project = core.project.project.Project()
-        else:
+        project_dir = QtGui.QFileDialog.getExistingDirectory(self, 'Select FERDA project folder', directory=path)
+        project_dir = str(project_dir)
+        if not project_dir:
             return
 
-        S_.temp.last_wd_path = f
+        project = core.project.project.Project()
+        S_.temp.last_wd_path = project_dir
 
         # load project - this doesn't take as much time and is needed in the main thread to run popup windows
-        if not core.project.project.project_video_file_exists(files[0]):
+        if not core.project.project.project_video_file_exists(project_dir):
             path = self.pick_new_video()
             if path is None:
                 return
@@ -145,15 +143,15 @@ class ProjectWidget(QtGui.QWidget):
         self.layout().addWidget(self.loading_w)
         QtGui.QApplication.processEvents()
 
-        project.load(f)
+        project.load(project_dir)
 
         # setup loading thread
-        self.loading_thread = ProjectLoader(project, f)
+        self.loading_thread = ProjectLoader(project, project_dir)
         self.loading_thread.proc_done.connect(partial(self.loading_finished, project))
         self.loading_thread.part_done.connect(self.loading_w.update_progress)
 
         # start loading thread and timer
-        self.start_timer(f)
+        self.start_timer(project_dir)
         self.loading_thread.start()
 
     def start_timer(self, path):
@@ -179,25 +177,24 @@ class ProjectWidget(QtGui.QWidget):
         self.status += self.timer_step
         self.loading_w.update_progress(self.status)
 
-    def get_size(self, path):
+    def get_size(self, project_dir):
         # gets size in bytes from all files that should be loaded
-        path = os.path.dirname(path)
         size = 0
         # file = path+'/bg_model.pkl'
         # size += os.path.getsize(file)
-        file = path+'/arena_model.pkl'
+        file = project_dir + '/arena_model.pkl'
         size += os.path.getsize(file)
         # file = path+'/classes.pkl'
         # size += os.path.getsize(file)
         # file = path+'/groups.pkl'
         # size += os.path.getsize(file)
-        file = path+'/animals.pkl'
+        file = project_dir + '/animals.pkl'
         size += os.path.getsize(file)
-        file = path+'/stats.pkl'
+        file = project_dir + '/stats.pkl'
         size += os.path.getsize(file)
 
         try:
-            file = path+'/progress_save.pkl'
+            file = project_dir + '/progress_save.pkl'
             size += os.path.getsize(file)
         except OSError:
             pass
