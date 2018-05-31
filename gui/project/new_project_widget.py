@@ -39,8 +39,6 @@ class NewProjectWidget(QtGui.QWidget):
         self.widget4_mser_setup = QtGui.QWidget()
         self.widget5_cardinality_classification = QtGui.QWidget()
 
-        self.postpone_parallelisation = False
-
         self.form_layout = QtGui.QFormLayout()
         self.widget1_create_project.setLayout(self.form_layout)
 
@@ -64,12 +62,6 @@ class NewProjectWidget(QtGui.QWidget):
         label = QtGui.QLabel('Project description')
         self.project_description = QtGui.QPlainTextEdit(self)
         self.form_layout.addRow(label, self.project_description)
-
-        self.postpone_parallelisation_ch = QtGui.QCheckBox('')
-        self.postpone_parallelisation_ch.setChecked(False)
-
-        self.postpone_parallelisation_ch.setToolTip("Check in a case when the segmentation will be computed on a cluster")
-        self.form_layout.addRow('postpone segmentation parallelisation', self.postpone_parallelisation_ch)
 
         self.left_vbox = QtGui.QVBoxLayout()
 
@@ -187,13 +179,12 @@ class NewProjectWidget(QtGui.QWidget):
             QtGui.QMessageBox.warning(self, "Warning", "Please choose working directory", QtGui.QMessageBox.Ok)
             return
 
-        self.postpone_parallelisation = self.postpone_parallelisation_ch.isChecked()
         self.project.name = str(self.project_name.text())
         if not len(self.project.name):
             self.project.name = "untitled"
         self.project.description = str(self.project_description.toPlainText())
         self.project.date_created = time.time()
-        self.project.date_last_modifiaction = time.time()
+        self.project.date_last_modification = time.time()
 
         from utils.img_manager import ImgManager
         self.project.img_manager = ImgManager(self.project, max_size_mb=config['cache']['img_manager_size_MB'])

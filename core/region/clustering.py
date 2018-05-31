@@ -139,6 +139,8 @@ class RegionCardinality:
 
 
 def is_project_cardinality_classified(project):
+    if not project.chm:
+        return False
     for tracklet in project.chm.chunk_gen():
         if tracklet.segmentation_class == -1:
             return False

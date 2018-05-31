@@ -395,8 +395,10 @@ class StatisticsWidget(QtGui.QWidget):
 
     def update_data(self, project):
         self.project = project
-        self.num_of_single_nodes.setText(str(project.gm.g.num_vertices()))
-        self.num_of_chunks.setText(str(len(project.chm)))
+        if project.gm:
+            self.num_of_single_nodes.setText(str(project.gm.g.num_vertices()))
+        if project.chm:
+            self.num_of_chunks.setText(str(len(project.chm)))
 
         # TODO: takes too much time... Compute statistics during project creation
 

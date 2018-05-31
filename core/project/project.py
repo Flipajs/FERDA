@@ -30,7 +30,7 @@ class Project:
         self.video_start_t = -1
         self.video_end_t = -1
         self.date_created = -1
-        self.date_last_modifiaction = -1
+        self.date_last_modification = -1
         self.video_crop_model = None
         self.classes = None
         self.groups = None
