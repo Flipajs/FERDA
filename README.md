@@ -126,7 +126,12 @@ core/parallelization.py
 
 `AttributeError: 'Vertex' object has no attribute 'in_neighbors'`
 
-- upgrade Graph-tool to version > 2.26
+- solution: upgrade Graph-tool to version > 2.26
+
+`OpenCV Error: Assertion failed (chunk.m_size <= 0xFFFF)`
+
+- opencv 3.4.1 introduced the issue https://github.com/opencv/opencv/issues/11126
+- solution: downgrade opencv to version 3.3.1 or upgrade to opencv with the mentioned issue solved
 
 ## Team
 

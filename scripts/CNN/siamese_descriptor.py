@@ -37,7 +37,7 @@ def compute_descriptors(project_dir, model_weights_path, add_missing=False):
     imgs = []
     r_ids = []
     batch_size = 300
-    for frame in tqdm(range(p.num_frames())):
+    for frame in tqdm(range(p.num_frames()), desc='computing re-identification descriptors'):
         img = vm.get_frame(frame)
         tracklets = filter(lambda x: x.is_single(), p.chm.tracklets_in_frame(frame))
 

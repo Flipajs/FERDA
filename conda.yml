@@ -8,7 +8,7 @@ dependencies:
   - imageio
   - pyqt=4
   - pyyaml
-  - opencv
+  - opencv=3.3.1  # opencv 3.4.1 has issue "OpenCV Error: Assertion failed (chunk.m_size <= 0xFFFF)" https://github.com/opencv/opencv/issues/11126
   - scikit-image
   - pip:
     - matplotlib
