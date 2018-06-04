@@ -197,7 +197,7 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
     print "DONE"
     print
     tracklet_stats(project)
-    shutil.rmtree(parts_path)  # remove segmentation parts
+    # shutil.rmtree(parts_path)  # remove segmentation parts
 
 
 def connect_graphs(project, vertices1, vertices2, gm, rm):
