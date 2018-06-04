@@ -12,6 +12,23 @@ import pandas as pd
 import numpy as np
 import os
 from os.path import join
+import logging
+import logging.config
+import yaml
+
+
+def setup_logging():
+    logger_config_file = 'logging_conf.yaml'
+    if os.path.isfile(logger_config_file):
+        with open(logger_config_file, 'r') as fr:
+            log_conf = yaml.load(fr)
+        logging.config.dictConfig(log_conf)
+    else:
+        print('logger configuration file {} not found, using default settings'.format(logger_config_file))
+
+
+setup_logging()
+logger = logging.getLogger()
 
 
 def results_to_mot(results):
@@ -74,24 +91,29 @@ def run_tracking(project_dir, video_file=None, force_recompute=False, reid_model
     import core.graph_assembly
     import core.graph.solver
     from core.id_detection.complete_set_matching import do_complete_set_matching
+    logger.info('run_tracking: segmentation')
     project = Project()
     project.load(project_dir, video_file=video_file)
     if force_recompute or not core.graph_assembly.is_assemply_completed(project):
         core.segmentation.segmentation(project_dir)
+    logger.info('run_tracking: graph assembly')
     project = Project()
     project.load(project_dir, video_file=video_file)
     if force_recompute or not core.graph_assembly.is_assemply_completed(project):
         graph_solver = core.graph.solver.Solver(project)
         core.graph_assembly.graph_assembly(project, graph_solver)
         project.save()
+    logger.info('run_tracking: cardinality classification')
     if force_recompute or not is_project_cardinality_classified(project):
         project.region_cardinality_classifier.classify_project(project)
         project.save()
+    logger.info('run_tracking: re-identification descriptors computation')
     if force_recompute or not os.path.isfile(join(project_dir, 'descriptors.pkl')):
         assert reid_model_weights_path is not None, \
             'missing reidentification model weights, to train a model see prepare_siamese_data.py, train_siamese_contrastive_lost.py'
         from scripts.CNN.siamese_descriptor import compute_descriptors
         compute_descriptors(project_dir, reid_model_weights_path)
+    logger.info('run_tracking: complete set matching')
     do_complete_set_matching(project)
     project.save()
 
