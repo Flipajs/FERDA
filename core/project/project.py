@@ -141,6 +141,11 @@ class Project:
         d['other_parameters'] = OtherParameters(d['other_parameters'])
         self.__dict__.update(d)
 
+    def from_pkl(self, pkl_file):
+        with open(pkl_file, 'rb') as f:
+            tmp_dict = pickle.load(f)
+        self.__dict__.update(tmp_dict)
+
     def save(self, path=None):
         if path is None:
             path = self.working_directory
@@ -289,8 +294,15 @@ class Project:
     def load(self, path, snapshot=None, lightweight=False, video_file=None):
         self.working_directory = path # , self.project_file = self.get_project_dir_and_file(path)
 
-        with open(join(self.working_directory, 'project.json'), 'r') as fr:
-            self.from_json(fr.read())
+        project_json = join(self.working_directory, 'project.json')
+        project_fproj = join(self.working_directory, 'project.fproj')
+        if os.path.isfile(project_json):
+            with open(project_json, 'r') as fr:
+                self.from_json(fr.read())
+        elif os.path.isfile(project_fproj):
+            self.from_pkl(project_fproj)
+        else:
+            assert False
 
         # check for video file
         if video_file is not None:
