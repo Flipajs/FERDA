@@ -1466,7 +1466,9 @@ if __name__ == '__main__':
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/Cam1'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
-    P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-fixed-segmentation'
+    # P_WD = '../projects/Sowbug3-fixed-segmentation'
+    # P_WD = '../projects/5Zebrafish_nocover_22min'
+    P_WD = '/home/matej/prace/ferda/projects/fb4ae2d4/cowbug-cut'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
     p.load(P_WD)

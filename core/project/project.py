@@ -452,7 +452,8 @@ class Project:
 
                 self.save()
 
-        self.img_manager = ImgManager(self, max_num_of_instances=500)
+        if not lightweight:
+            self.img_manager = ImgManager(self, max_num_of_instances=500)
 
         self.active_snapshot = -1
 
@@ -485,7 +486,10 @@ class Project:
         except:
             pass
 
-        self.img_manager = ImgManager(self, max_num_of_instances=500)
+        try:
+            self.img_manager = ImgManager(self, max_num_of_instances=500)
+        except:
+            pass
 
     def snapshot_undo(self):
         if self.active_snapshot < 0:

@@ -37,7 +37,8 @@ if is_flipajs_pc():
 
 if is_matejs_pc():
     # wd = '/home/matej/prace/ferda/10-15/'
-    wd = '/home/matej/prace/ferda/10-15 (copy)/'
+    # wd = '/home/matej/prace/ferda/10-15 (copy)/'
+    pass
 
 if wd is not None:
     project.load(wd)

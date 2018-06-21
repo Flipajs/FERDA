@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
     imgs = []
     r_ids = []
-    batch_size = 300
+    batch_size = 100
     for frame in tqdm(range(p.num_frames())):
         img = vm.get_frame(frame)
         tracklets = filter(lambda x: x.is_single(), p.chm.tracklets_in_frame(frame))
