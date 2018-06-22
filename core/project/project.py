@@ -144,6 +144,7 @@ class Project:
     def from_pkl(self, pkl_file):
         with open(pkl_file, 'rb') as f:
             tmp_dict = pickle.load(f)
+        del tmp_dict['working_directory']
         self.__dict__.update(tmp_dict)
 
     def save(self, path=None):
@@ -292,7 +293,7 @@ class Project:
     #     return dirname, filename
 
     def load(self, path, snapshot=None, lightweight=False, video_file=None):
-        self.working_directory = path # , self.project_file = self.get_project_dir_and_file(path)
+        self.working_directory = path  # , self.project_file = self.get_project_dir_and_file(path)
 
         project_json = join(self.working_directory, 'project.json')
         project_fproj = join(self.working_directory, 'project.fproj')
@@ -302,7 +303,7 @@ class Project:
         elif os.path.isfile(project_fproj):
             self.from_pkl(project_fproj)
         else:
-            assert False
+            assert False, 'no project file found at {} or {}'.format(project_json, project_fproj)
 
         # check for video file
         if video_file is not None:
@@ -554,7 +555,7 @@ def dummy_project():
 
 
 if __name__ == "__main__":
-    p = Project()
+    p = Project('/home/matej/prace/ferda/projects/630e88d5/cowbug-cut/')
     p.name = 'test'
     p.a = 20
     p.working_directory = '/home/flipajs/test'
