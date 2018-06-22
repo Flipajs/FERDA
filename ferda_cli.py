@@ -129,7 +129,21 @@ if __name__ == '__main__':
     parser.add_argument('--run-tracking', action='store_true', help='run tracking on initilized project')
     parser.add_argument('--reidentification-weights', type=str, help='tracking: path to reidentification model weights',
                         default=None)
+    parser.add_argument('--info', action='store_true', help='show project info')
     args = parser.parse_args()
+
+    if args.info:
+        import core.graph_assembly
+        from core.region.clustering import is_project_cardinality_classified
+        project = Project(args.project)
+        print('assembled: {}'.format(core.graph_assembly.is_assemply_completed(project)))
+        print('cardinality classified: {}'.format(is_project_cardinality_classified(project)))
+        print('descriptors computed: {}'.format(os.path.isfile(join(project.working_directory, 'descriptors.pkl'))))
+        if not project.chm:
+            print('chunk manager not initialized')
+        else:
+            print('number of chunks {}'.format(len(project.chm)))
+            print('tracklet cardinality stats: {}'.format(np.bincount([tracklet.segmentation_class for tracklet in project.chm.chunk_gen()])))
 
     if args.fix_legacy_project:
         fix_legacy_project(args.project)
