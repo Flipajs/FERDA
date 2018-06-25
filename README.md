@@ -133,6 +133,11 @@ core/parallelization.py
 - opencv 3.4.1 introduced the issue https://github.com/opencv/opencv/issues/11126
 - solution: downgrade opencv to version 3.3.1 or upgrade to opencv with the mentioned issue solved
 
+`sklearn/preprocessing/label.py:151: DeprecationWarning: The truth value of an empty array is ambiguous.`
+
+- update sklearn or fix the line to `if len(diff):`
+- see https://github.com/scikit-learn/scikit-learn/issues/10449
+
 ## Team
 
 * author: Filip Naiser, CTU Prague <mailto:filip@naiser.cz>
