@@ -1314,7 +1314,7 @@ def add_score_to_edges(p):
     features_movement = []
     edges = []
 
-    for e in tqdm(p.gm.g.edges(), total=p.gm.g.num_edges()):
+    for e in tqdm(p.gm.g.edges(), total=p.gm.g.num_edges(), desc='adding score to edges'):
         i += 1
         if p.gm.edge_is_chunk(e):
             continue

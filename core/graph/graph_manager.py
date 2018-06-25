@@ -171,6 +171,11 @@ class GraphManager:
         self.start_t = np.min(keys)
 
     def add_regions_in_t(self, regions, t, fast=False):
+        """
+        Add regions to the graph at specified time/frame.
+
+        The edges from regions in previous frame are added when the distance is lower than a threshold.
+        """
         self.add_vertices(regions)
 
         if t-1 in self.vertices_in_t and t in self.vertices_in_t:
@@ -529,14 +534,10 @@ class GraphManager:
         if self.g.vp['chunk_start_id'][v] and len(self.project.chm[self.g.vp['chunk_start_id'][v]]) > 1:
             return False
 
-        for v2 in v.out_neighbours():
-            if v2.in_degree() != 1:
-                return False
-
-        # if self.get_chunk(v) is None:
-        #     return True
-
-        return True
+        if list(v.out_neighbors())[0].in_degree() == 1:  # this is the only incoming edge to for the neighbor
+            return True
+        else:
+            return False
 
     def edge_is_chunk(self, e):
         ch_s = self.g.vp['chunk_start_id'][e.source()]

@@ -71,6 +71,9 @@ class Solver:
         return num_changed
 
     def one2one(self, check_tclass=False):
+        """
+        Create tracklets out of unambiguous paths in graph.
+        """
         confirm_later = []
 
         for v in tqdm(self.project.gm.g.vertices(), desc='solver.one2one', total=self.project.gm.g.num_vertices(), leave=False):
@@ -88,7 +91,7 @@ class Solver:
                 confirm_later.append((e.source(), e.target()))
 
         print "one2one, ", len(confirm_later)
-        self.confirm_edges(confirm_later)
+        self.confirm_edges(confirm_later)  # TODO: this is probably not needed, there are no spurious edges between vertices; we only need to create tracklets
 
         if len(confirm_later):
             self.project.gm.update_nodes_in_t_refs()
