@@ -95,12 +95,12 @@ if __name__ == '__main__':
             imgs = []
             r_ids = []
 
-    # Do the rest
-    imgs = normalize_and_prepare_imgs(imgs)
-    descs = new_model.predict(imgs)
-
-    for k, r_id in enumerate(r_ids):
-        descriptors[r_id] = descs[k, :]
+    if imgs:
+        # Do the rest
+        imgs = normalize_and_prepare_imgs(imgs)
+        descs = new_model.predict(imgs)
+        for k, r_id in enumerate(r_ids):
+            descriptors[r_id] = descs[k, :]
 
     with open(args.project + '/descriptors.pkl', 'wb') as f:
         pickle.dump(descriptors, f)
