@@ -218,3 +218,10 @@ class ChunkManager:
                 min_end_frame = min(min_end_frame, tracklet.end_frame(project.gm))
 
             frame = min_end_frame + 1
+
+    def show_tracklets(self, gm, rm):
+        import matplotlib.pylab as plt
+        import numpy as np
+        for t in self.chunk_gen():
+            yx = np.array([r.centroid() for r in t.r_gen(gm, rm)])
+            plt.plot(yx[:, 1], yx[:, 0])
