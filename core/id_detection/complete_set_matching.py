@@ -1466,7 +1466,8 @@ if __name__ == '__main__':
     parser.add_argument('project', type=str, help='project path')
     args = parser.parse_args()
 
-    p = Project(args.project)
+    p = Project()
+    p.load(args.project)
 
     lp = LearningProcess(p)
     lp._reset_chunk_PN_sets()
