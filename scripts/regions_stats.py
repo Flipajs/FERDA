@@ -1267,10 +1267,10 @@ def learn_assignments(p, max_examples=np.inf, display=False):
             break
 
     # TODO: I think contamination doesn't matter...
-    IF_appearance = IsolationForest(contamination=0.005)
+    IF_appearance = IsolationForest(contamination=0.005, random_state=42)
     IF_appearance.fit(X_appearance)
 
-    IF_movement = IsolationForest(contamination=0.005)
+    IF_movement = IsolationForest(contamination=0.005, random_state=42)
     IF_movement.fit(X_movement)
 
     with open(p.working_directory + '/temp/isolation_forests.pkl', 'wb') as f:
