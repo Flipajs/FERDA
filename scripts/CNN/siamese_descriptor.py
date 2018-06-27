@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     from core.project.project import Project
     p = Project()
-    p.load(args.datadir)
+    p.load(args.project)
     vm = p.get_video_manager()
 
     descriptors = {}
