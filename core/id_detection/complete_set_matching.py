@@ -1456,23 +1456,17 @@ def prototypes_distribution_probability(prot1, prot2):
     return p_to_prot2
 
 
-
-
 if __name__ == '__main__':
+    import argparse
     from core.project.project import Project
     from core.id_detection.learning_process import LearningProcess
 
-    p = Project()
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/Cam1'
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
-    # P_WD = '../projects/Sowbug3-fixed-segmentation'
-    # P_WD = '../projects/5Zebrafish_nocover_22min'
-    P_WD = '/home/matej/prace/ferda/projects/fb4ae2d4/cowbug-cut'
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min'
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
-    p.load(P_WD)
-    # p.load('/Use/rs/flipajs/Documents/wd/FERDA/Camera3_new')
+    parser = argparse.ArgumentParser(
+        description='find tracks by re-identification')
+    parser.add_argument('project', type=str, help='project path')
+    args = parser.parse_args()
+
+    p = Project(args.project)
 
     lp = LearningProcess(p)
     lp._reset_chunk_PN_sets()
@@ -1500,7 +1494,7 @@ if __name__ == '__main__':
 
     import pickle
     # with open('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/descriptors.pkl') as f:
-    with open(p.working_directory+'/descriptors.pkl') as f:
+    with open(p.working_directory + '/descriptors.pkl') as f:
         descriptors = pickle.load(f)
 
     from numpy.linalg import norm
@@ -1516,9 +1510,4 @@ if __name__ == '__main__':
     # import sys
     # sys.exit()
 
-
     csm.start_matching_process()
-
-
-
-

@@ -30,16 +30,10 @@ def normalize_and_prepare_imgs(imgs):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='train siamese CNN with contrastive loss')
+        description='compute re-identification descriptors')
 
-    parser.add_argument('--datadir', type=str,
-                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed',
-                        default='/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-fixed-segmentation',
-                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min',
-                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min',
-                        # default='/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min',
-                        help='path to dataset')
-
+    parser.add_argument('--project', type=str, help='project path')
+    parser.add_argument('--weights', type=str, help='re-identification network weights')
     parser.add_argument('--add_missing', default=False, action='store_true',
                         help='if used - only ids missing in descriptors.pkl will be computed')
 
@@ -58,12 +52,7 @@ if __name__ == '__main__':
     distance = Lambda(euclidean_distance, output_shape=eucl_dist_output_shape)([processed_a, processed_b])
 
     model = Model([input_a, input_b], distance)
-    model.load_weights(args.datadir+"/best_model_998_weights.h5")
-    # model.load_weights(args.datadir+"/best_model_996_weights.h5")
-    # model.load_weights(args.datadir+"/best_model_980_weights.h5")
-    # model.load_weights(args.datadir+"/best_model_967_weights.h5")
-    # Cam1
-    # model.load_weights(args.datadir+"/best_model_996_weights.h5")
+    model.load_weights(args.weights)
     new_model = model.layers[2]
 
     from core.project.project import Project
@@ -74,7 +63,7 @@ if __name__ == '__main__':
     descriptors = {}
     if args.add_missing:
         try:
-            with open(args.datadir + '/descriptors.pkl', 'rb') as f:
+            with open(args.project + '/descriptors.pkl', 'rb') as f:
                 descriptors = pickle.load(f)
         except:
             pass
@@ -113,7 +102,7 @@ if __name__ == '__main__':
     for k, r_id in enumerate(r_ids):
         descriptors[r_id] = descs[k, :]
 
-    with open(args.datadir+'/descriptors.pkl', 'wb') as f:
+    with open(args.project + '/descriptors.pkl', 'wb') as f:
         pickle.dump(descriptors, f)
 
     print("DONE")
