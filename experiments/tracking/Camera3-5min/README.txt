@@ -1,0 +1,1 @@
+python ferda_cli.py --save-results-mot experiments/tracking/Camera3-5min/180427_vaib/results.txt /datagrid/ferda/projects/old/6_results_vaib_2018/Camera3-5min/ --video-file /datagrid/ferda/data/ants_ist/Camera3-5min.mp4

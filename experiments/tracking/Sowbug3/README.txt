@@ -1,0 +1,1 @@
+python ferda_cli.py --save-results-mot experiments/tracking/Sowbug3/180427_vaib/results.txt /datagrid/ferda/projects/old/6_results_vaib_2018/Sowbug3-fixed-segmentation/ --video-file /datagrid/ferda/data/youtube/Sowbug3.mp4
