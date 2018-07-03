@@ -5,6 +5,7 @@ from libs.intervaltree.intervaltree import IntervalTree
 from utils.misc import print_progress
 from tqdm import tqdm
 import warnings
+import numpy as np
 
 
 class ChunkManager:
@@ -226,3 +227,10 @@ class ChunkManager:
             regions.append(gm.region(vertex))
             vertices.append(int(vertex))
         return regions, vertices
+
+    def show_tracklets(self, gm, rm):
+        import matplotlib.pylab as plt
+        for t in self.chunk_gen():
+            yx = np.array([r.centroid() for r in t.r_gen(gm, rm)])
+            plt.plot(yx[:, 1], yx[:, 0])
+
