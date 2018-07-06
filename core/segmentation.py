@@ -174,17 +174,17 @@ def do_segmentation_part(project_dir, part_id, frame_start, frame_done_func=None
         # if use_roi_prediction_optimisation:
         #     rois = get_rois(msers, img, prediction_optimisation_border)
 
-        # add regions to graph
+        # add regions to the graph
         proj.gm.add_regions_in_t(msers, frame, fast=True)
 
         if frame_done_func is not None:
             frame_done_func()
 
     print("#Edges BEFORE: ", proj.gm.g.num_edges())
-    try:
-        solver.simplify(rules=[solver.one2one])
-    except:
-        solver.one2one()
+    # try:
+    #     solver.simplify(rules=[solver.one2one])
+    # except:
+    solver.one2one()  # creates tracklets
     print ("#Edges AFTER: ", proj.gm.g.num_edges())
     with open(pkl_filename, 'wb') as f:
         p = pickle.Pickler(f, -1)

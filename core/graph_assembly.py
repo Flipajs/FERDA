@@ -102,10 +102,10 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
 
     p = project
     one2one_t = time.time()
-    try:
-        graph_solver.simplify(rules=[graph_solver.one2one])
-    except:
-        graph_solver.one2one()
+    # try:
+    #     graph_solver.simplify(rules=[graph_solver.one2one])
+    # except:
+    graph_solver.one2one()
 
     print "\n\tfirst one2one t: {:.2f}s".format(time.time() - one2one_t)
 
