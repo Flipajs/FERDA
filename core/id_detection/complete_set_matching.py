@@ -572,13 +572,17 @@ class CompleteSetMatching:
                 t.N.add(track_id)
 
     def tracks_CS_matching(self, track_CSs):
-        # 1. get CS of tracks (we already have them in track_CSs from sequential process.
-        # 2. sort CS by sum of track lengths
-        # 3. try to match all others to this one (spatio-temporal term might be switched on for close tracks?)
-        # 4. if any match accepted update and goto 2.
-        # 5. else take second biggest and goto 3.
-        # 6. end if only one CS, or # of CS didn't changed...
+        """
+        1. get CS of tracks (we already have them in track_CSs from sequential process.
+        2. sort CS by sum of track lengths
+        3. try to match all others to this one (spatio-temporal term might be switched on for close tracks?)
+        4. if any match accepted update and goto 2.
+        5. else take second biggest and goto 3.
+        6. end if only one CS, or # of CS didn't changed...
 
+        :param track_CSs: complete sets of tracklets; list of lists of tracklet ids,
+                 e.g. [[141, 404, 1, 93, 6], [141, 93, 1, 404, 6], ...]
+        """
         logger.info("beginning of global matching")
         updated = True
         with tqdm(total=len(track_CSs), desc='global matching') as pbar:
@@ -619,9 +623,13 @@ class CompleteSetMatching:
 
     def update_all_track_CSs(self, pair, track_CSs):
         """
+        Replace track references in complete sets to respect a complete sets merge.
 
-        :param pair: pair of complete sets, list of tuples, e.g. [(1, 416), ...]
-        :param track_CSs: list of lists of tracklet ids, e.g. [[141, 404, 1, 93, 6], [141, 93, 1, 404, 6], ...]
+        :param pair: pair of merged complete sets, the first stays, the second gets replaced
+                     list of tuples, e.g. [(1, 416), ...]
+        :param track_CSs: complete sets
+                          list of lists of tracklet ids, e.g. [[141, 404, 1, 93, 6], [141, 93, 1, 404, 6], ...]
+        :return False on conflict, True when CSs update finished ok
         """
         for CS_for_update in track_CSs:
             size_before = len(CS_for_update)
@@ -686,7 +694,8 @@ class CompleteSetMatching:
         Complete set C is set of tracklets where |C| = number of objects. Then it is guaranteed that no object is
         missing in the set.
 
-        :return: list of lists of tracklet ids, e.g. [[141, 404, 1, 93, 6], [141, 93, 1, 404, 6], ...]
+        :return: complete sets of tracklets; list of lists of tracklet ids,
+                 e.g. [[141, 404, 1, 93, 6], [141, 93, 1, 404, 6], ...]
         """
         for t in self.p.chm.tracklet_gen():
             if t.is_single():
@@ -991,13 +1000,20 @@ class CompleteSetMatching:
 
         return C
 
-    def best_prototype(self, ps, p):
+    def best_prototype(self, prototypes, pivot_prototype):
+        """
+        Find a nearest prototype to pivot prototype.
+
+        :param prototypes: list of prototypes
+        :param pivot_prototype: prototype to compare to
+        :return: best distance, best weights, best index
+        """
         best_d = np.inf
         best_w = 0
         best_i = 0
 
-        for i, p_ in enumerate(ps):
-            d, w = p_.distance_and_weight(p)
+        for i, p_ in enumerate(prototypes):
+            d, w = p_.distance_and_weight(pivot_prototype)
             if d < np.inf:
                 best_d = d
                 best_w = w
@@ -1049,6 +1065,12 @@ class CompleteSetMatching:
         return final_d
 
     def update_prototypes(self, ps1, ps2):
+        """
+        Update ps1 prototypes with ps2 prototypes.
+
+        :param ps1: list of prototypes to be modified
+        :param ps2: list of prototypes to be merged
+        """
         for i, p2 in enumerate(ps2):
             d, w, j = self.best_prototype(ps1, p2)
 

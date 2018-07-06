@@ -88,12 +88,10 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
 
     print("\nRECONNECTING GRAPHS\n")
 
-    vs_todo = []
     for info1, info2 in zip(parts_info[:-1], parts_info[1:]):
     # for part_end_t in range(start_, start_ + frames_in_row * n_parts, frames_in_row):
         vertices1 = project.gm.get_vertices_in_t(info1['frame_end'])
         vertices2 = project.gm.get_vertices_in_t(info2['frame_start'])
-        vs_todo.extend(vertices1)
 
         connect_graphs(project, vertices1, vertices2, project.gm, project.rm)
         # self.solver.simplify(vertices1, rules=[self.solver.adaptive_threshold])
@@ -117,6 +115,7 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
 
     # project.load_semistate(project.project_file, 'first_tracklets')
     from scripts.regions_stats import learn_assignments, add_score_to_edges, tracklet_stats
+    # learn isolation forests for appearance and movement of consecutive regions in all tracklets
     learn_assignments(project, max_examples=50000, display=False)
 
     print("\n\tlearn assignment t: {:.2f}s".format(time.time() - learn_assignment_t))

@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.linalg import norm
 
+
 class TrackPrototype:
     def __init__(self, descriptor, std, weight=1):
         self.descriptor = descriptor
@@ -15,5 +16,5 @@ class TrackPrototype:
     def distance(self, prototype):
         return norm(self.descriptor - prototype.descriptor)
 
-    def distance_and_weight(self, descriptor):
-        return self.distance(descriptor), self.weight
+    def distance_and_weight(self, prototype):
+        return self.distance(prototype), self.weight
