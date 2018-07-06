@@ -585,6 +585,7 @@ class CompleteSetMatching:
         """
         logger.info("beginning of global matching")
         updated = True
+        j = 0
         with tqdm(total=len(track_CSs), desc='global matching') as pbar:
             while len(track_CSs) > 1 and updated:
                 updated = False
@@ -611,12 +612,18 @@ class CompleteSetMatching:
                             best_CS = CS
 
                     if best_quality > self.QUALITY_THRESHOLD:
-                        logger.debug("Best track CS match accepted. {}, {}".format(best_perm, best_quality))
-                        self.merge_track_CSs(best_perm)
                         track_CSs.remove(best_CS)
-                        self.update_all_track_CSs(best_perm, track_CSs)
-                        updated = True
+                        update_success = self.update_all_track_CSs(best_perm, track_CSs)
+                        if update_success:
+                            self.merge_track_CSs(best_perm)
+                            logger.debug("Best track CS match accepted. {}, {}".format(best_perm, best_quality))
+                            updated = True
+                        else:
+                            # conflict
+                            track_CSs.append(best_CS)  # add the best_CS back
+                            logger.debug("Best track CS match is in conflict. {}, {}".format(best_perm, best_quality))
                         pbar.update()
+                        j += 1
                         break
                     else:
                         logger.debug("Best track CS match rejected. {}, {}".format(perm, quality))
@@ -632,16 +639,22 @@ class CompleteSetMatching:
         :return False on conflict, True when CSs update finished ok
         """
         for CS_for_update in track_CSs:
-            size_before = len(CS_for_update)
+            CS_for_update_ = CS_for_update[:]
+            size_before = len(CS_for_update_)
             for track_id1, track_id2 in pair:
-                for i, track_id in enumerate(CS_for_update):
+                for i, track_id in enumerate(CS_for_update_):
                     if track_id == track_id2:
-                        CS_for_update[i] = track_id1
+                        CS_for_update_[i] = track_id1
 
             # TODO: this means conflict...
-            if len(set(CS_for_update)) != size_before:
-                logger.debug("CONFLICT {}".format(CS_for_update))
-            assert len(set(CS_for_update)) == size_before
+            if len(set(CS_for_update_)) != size_before:
+                logger.debug("CONFLICT {}".format(CS_for_update_))
+                return False
+            else:
+                CS_for_update[:] = CS_for_update_
+
+        return True
+            # assert len(set(CS_for_update)) == size_before
 
     def merge_track_CSs(self, perm):
         # keep attention, here we have tracks, not tracklets...
