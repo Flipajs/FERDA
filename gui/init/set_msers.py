@@ -580,7 +580,7 @@ class SetMSERs(QtGui.QWidget):
         self.region_min_intensity.setMinimum(0)
         self.region_min_intensity.setSingleStep(1)
 
-        self.gb_mser_related.layout().addRow('suppress bright region (all pixels intensity above threshold)', self.region_min_intensity)
+        self.gb_mser_related.layout().addRow('suppress bright region\n(all pixels intensity above threshold)', self.region_min_intensity)
         # this line is necessary to avoid possible bugs in the future
         self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
 
