@@ -1650,6 +1650,7 @@ class ResultsWidget(QtGui.QWidget):
     def _load_gt(self):
         from utils.gt.gt import GT
         self._gt = GT()
+
         # self._gt.set_offset(y=self.project.video_crop_model['y1'],
         #                        x=self.project.video_crop_model['x1'],
         #                        frames=self.project.video_start_t)
@@ -1657,6 +1658,10 @@ class ResultsWidget(QtGui.QWidget):
         try:
             path = self.project.GT_file
             self._gt.load(path)
+
+            self._gt.set_offset(y=self.project.video_crop_model['y1'],
+                                x=self.project.video_crop_model['x1'],
+                                frames=self.project.video_start_t)
 
         except Exception as e:
             self._gt = None

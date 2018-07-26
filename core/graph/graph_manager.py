@@ -726,10 +726,10 @@ class GraphManager:
         return tracklets
 
     def get_incoming_tracklets(self, vertex):
-        return self._get_tracklets_from_gen(vertex.in_neighbours())
+        return self._get_tracklets_from_gen(vertex.in_neighbors())
 
     def get_outcoming_tracklets(self, vertex):
-        return self._get_tracklets_from_gen(vertex.out_neighbours())
+        return self._get_tracklets_from_gen(vertex.out_neighbors())
 
 
 
