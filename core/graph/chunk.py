@@ -449,15 +449,6 @@ class Chunk:
     def get_cardinality(self, gm):
         """
         cardinality = #IDS in given tracklet
-        
-        Returns: 1 if single, 2, 3, ... when cardinality is known, 0 when cardinality is known and tracklet is noise, 
-        -1 when cardinality is not defined
-
-        """
-
-    def get_cardinality(self, gm):
-        """
-        cardinality = #IDS in given tracklet
 
         Returns: 1 if single, 2, 3, ... when cardinality is known, 0 when cardinality is known and tracklet is noise,
         -1 when cardinality is not defined
