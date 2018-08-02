@@ -271,7 +271,7 @@ class MainTabWidget(QtGui.QWidget):
             if ok:
                 frames = None
 
-                to_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", from_frame+1, from_frame+1, max_f)
+                to_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "To: ", from_frame+1, from_frame+1, max_f)
                 if ok:
                     frames = range(from_frame, to_frame)
 
@@ -283,8 +283,7 @@ class MainTabWidget(QtGui.QWidget):
                 self.tabs.insertTab(4,  self.widgets['graph'],  self.widgets_info['graph'])
                 self.tabs.setCurrentIndex(4)
                 self.ignore_tab_change = False
-
-                self.graph_tab.redraw()
+                self.widgets['graph'].redraw()
 
     # def detach_tab(self):
     #     tab_number = self.tabs.currentIndex()
