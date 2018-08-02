@@ -58,7 +58,7 @@ class MainTabWidget(QtGui.QWidget):
         #                                             'update_N_sets': self.update_N_sets,
         #                                             'tracklet_measurements': self.tracklet_measurements})
         # self.statistics_tab = StatisticsWidget(project)
-        self.graph_tab = QtGui.QWidget()
+        # self.graph_tab = QtGui.QWidget()
         # self.region_classifier = QtGui.QWidget()
         # self.id_detection_tab = QtGui.QWidget()
         # self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet,
@@ -267,22 +267,20 @@ class MainTabWidget(QtGui.QWidget):
             vm = get_auto_video_manager(self.project)
             max_f = vm.total_frame_count()
 
-            from_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", 0, 0, max_f - 1)
+            from_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", 0, 0, max_f-1)
             if ok:
                 frames = None
 
-                to_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", from_frame + 1, from_frame + 1,
-                                                         max_f)
+                to_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", from_frame+1, from_frame+1, max_f)
                 if ok:
                     frames = range(from_frame, to_frame)
 
                 self.ignore_tab_change = True
                 # TODO: show loading...
                 self.tabs.removeTab(4)
-                self.graph_tab.setParent(None)
-                self.graph_tab = GraphWidgetLoader(self.project, width=50, height=50).get_widget(
-                    show_tracklet_callback=self.play_and_highlight_tracklet, frames=frames)
-                self.tabs.insertTab(4, self.graph_tab, "graph")
+                self.widgets['graph'].setParent(None)
+                self.widgets['graph'] = GraphWidgetLoader(self.project, width=50, height=50).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet, frames=frames)
+                self.tabs.insertTab(4,  self.widgets['graph'],  self.widgets_info['graph'])
                 self.tabs.setCurrentIndex(4)
                 self.ignore_tab_change = False
 
