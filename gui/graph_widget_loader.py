@@ -1,5 +1,4 @@
 import sys
-
 import cv2
 from PyQt4 import QtGui
 
@@ -9,6 +8,8 @@ from gui.graph_widget.graph_line import LineType, GraphLine, Overlap
 from gui.settings import Settings as S_
 from core.config import config
 from utils.img_manager import ImgManager
+from gui.ui_graph_widget import Ui_graph_widget
+from utils.video_manager import get_auto_video_manager
 
 __author__ = 'Simon Mandlik'
 
@@ -31,9 +32,13 @@ MINIMUM = 5
 # Opacity of the colors
 OPACITY = 255
 
+from gui.graph_widget.graph_visualizer import GraphVisualizer
 
-class GraphWidgetLoader:
-    def __init__(self, project=None, width=WIDTH, height=HEIGHT, relative_margin=RELATIVE_MARGIN):
+
+class GraphWidgetLoader(QtGui.QWidget):
+    def __init__(self, project=None, width=WIDTH, height=HEIGHT, relative_margin=RELATIVE_MARGIN, tracklet_callback=None):
+        super(GraphWidgetLoader, self).__init__()
+
         self.project = project
 
         self.graph_manager = None
@@ -53,6 +58,22 @@ class GraphWidgetLoader:
         self.relative_margin = relative_margin
         self.height = height
         self.width = width
+        self.tracklet_callback = tracklet_callback
+
+        # Set up the user interface from Designer.
+        self.ui = Ui_graph_widget()
+        self.ui.setupUi(self)
+        self.ui.spinBoxTo.setValue(100)
+        self.ui.spinBoxTo.setMaximum(get_auto_video_manager(self.project).total_frame_count() - 1)
+        self.update_range_minmax()
+        self.ui.spinBoxTo.valueChanged.connect(self.update_range_minmax)
+        self.ui.spinBoxFrom.valueChanged.connect(self.update_range_minmax)
+        self.ui.pushButtonDrawGraph.clicked.connect(self.draw_graph)
+        self.graph_visualizer = self.ui.graph_visualizer
+
+    def update_range_minmax(self):
+        self.ui.spinBoxTo.setMinimum(self.ui.spinBoxFrom.value() + 1)
+        self.ui.spinBoxFrom.setMaximum(self.ui.spinBoxTo.value() - 1)
 
     def set_project(self, project):
         self.project = project
@@ -175,8 +196,7 @@ class GraphWidgetLoader:
                 self.edges.add(line)
 
             # self.chunks_region_chunks[line] = RegionChunk(self.project.chm[source_start_id], self.graph_manager,
-            #                                                    self.region_manager)
-
+            #                                                   self.region_manager)
 
     def get_node_info(self, region):
         n = self.regions_vertices[region]
@@ -203,9 +223,8 @@ class GraphWidgetLoader:
     def get_edge_info(self, edge):
         return "Type = {}\nAppearance score = {}\nMovement score={}\nScore product={}\nTracklet id: {}".format(edge.type, edge.appearance_score, edge.movement_score, edge.appearance_score * edge.movement_score, edge.id)
 
-    def get_widget(self, frames=None, show_tracklet_callback=None):
-        if frames is None:
-            frames = range(self.graph_manager.start_t, self.graph_manager.end_t)
+    def draw_graph(self):
+        frames = range(self.ui.spinBoxFrom.value(), self.ui.spinBoxTo.value())
         self.prepare_vertices(frames)
         # print("Preparing nodes...")
         self.prepare_nodes()
@@ -214,9 +233,10 @@ class GraphWidgetLoader:
         self.prepare_tracklets(frames)
         # print("Preparing visualizer...")
         img_manager = ImgManager(self.project, max_size_mb=config['cache']['img_manager_size_MB'])
-        from gui.graph_widget.graph_visualizer import GraphVisualizer
-        self.g = GraphVisualizer(self, img_manager, show_tracklet_callback)
-        return self.g
+        self.ui.verticalLayout.removeWidget(self.graph_visualizer)
+        self.graph_visualizer = GraphVisualizer(self, img_manager, self.tracklet_callback)
+        self.ui.verticalLayout.addWidget(self.graph_visualizer)
+        self.graph_visualizer.redraw()
 
     def get_chunk_by_id(self, id):
         return self.project.chm[id]

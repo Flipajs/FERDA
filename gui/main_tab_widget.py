@@ -13,9 +13,6 @@ from gui.statistics.statistics_widget import StatisticsWidget
 
 from core.background_computer import BackgroundComputer
 from functools import partial
-from gui.graph_widget.graph_visualizer import GraphVisualizer
-from core.graph.graph_manager import GraphManager
-import time
 from gui.learning.learning_widget import LearningWidget
 
 
@@ -47,23 +44,6 @@ class MainTabWidget(QtGui.QWidget):
         # self.buttons.layout().addWidget(self.undock_button)
         # self.undock_button.setFixedHeight(30)
 
-        # self.tracker_tab = TrackerWidget(project, show_in_visualizer_callback=self.show_in_visualizer)
-        # self.tabs.setTabEnabled(0, False)
-
-        # self.results_tab = QtGui.QWidget()
-        # self.results_tab = ResultsWidget(self.project,
-        #                                  callbacks={'decide_tracklet': self.decide_tracklet,
-        #                                             'edit_tracklet': self.edit_tracklet,
-        #                                             'get_separated_frame': self.get_separated_frame,
-        #                                             'update_N_sets': self.update_N_sets,
-        #                                             'tracklet_measurements': self.tracklet_measurements})
-        # self.statistics_tab = StatisticsWidget(project)
-        # self.graph_tab = QtGui.QWidget()
-        # self.region_classifier = QtGui.QWidget()
-        # self.id_detection_tab = QtGui.QWidget()
-        # self.id_detection_tab = LearningWidget(self.project, self.play_and_highlight_tracklet,
-        #                                        progressbar_callback=progress_callback)
-
         self.finish_callback = finish_callback
 
         self.widgets = OrderedDict([
@@ -76,7 +56,7 @@ class MainTabWidget(QtGui.QWidget):
                                                     'tracklet_measurements': self.tracklet_measurements})),
             ('id_detection', LearningWidget(self.project, self.play_and_highlight_tracklet, self.progress_callback)),
             ('stats', StatisticsWidget(project)),
-            ('graph', QtGui.QWidget()),
+            ('graph', GraphWidgetLoader(project, tracklet_callback=self.play_and_highlight_tracklet)),
         ])
 
         self.widgets_info = dict(
@@ -87,32 +67,11 @@ class MainTabWidget(QtGui.QWidget):
                 ('stats', 'Statistics'),
                 ('graph', 'Graph'),
             ])
-            # {'widget': TrackingWidget(),
-            #  'name': 'Tracking',
-            #  },
-            # {'widget': QtGui.QWidget(),
-            #  'name': 'Results',
-            #  },
-            # {'widget': QtGui.QWidget(),
-            #  'name': 'Id Detection',
-            #  },
-            # {'widget': StatisticsWidget(project),
-            #  'name': 'Statistics',
-            #  },
-            # {'widget': QtGui.QWidget(),
-            #  'name': 'Graph',
-            #  },
 
         for i, (name, widget) in enumerate(self.widgets.iteritems()):
             self.tabs.addTab(widget, name)
             self.tabs.setEnabled(i)
 
-        # self.tab_widgets = [self.tracker_tab, self.results_tab, self.id_detection_tab, self.statistics_tab, self.graph_tab]
-        # self.tab_names = ["-", "results viewer", "id detection", "stats && results", "graph"]
-        # self.tab_docked = [False] * len(self.tab_widgets)
-        # for i in range(len(self.tab_widgets)):
-        #     self.tabs.addTab(self.tab_widgets[i], self.tab_names[i])
-        #     self.tabs.setEnabled(i)
         self.vbox.addWidget(self.tabs)
         self.tabs.currentChanged.connect(self.tab_changed)
         self.tabs.setCurrentIndex(0)
@@ -131,14 +90,6 @@ class MainTabWidget(QtGui.QWidget):
         self.update_undecided_a.triggered.connect(self.learning_widget_update_undecided)
         self.update_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_U))
         self.addAction(self.update_undecided_a)
-
-        print "LOADING GRAPH..."
-        # if project.gm is None or project.gm.g.num_vertices() == 0:
-        #     # project.gm = GraphManager(project, project.solver.assignment_score)
-        #     self.bc_msers = BackgroundComputer(project, self.tracker_tab.bc_update, self.background_computer_finished)
-        #     self.bc_msers.run()
-        # else:
-        # self.background_computer_finished(project.solver)
 
     def reload_ids(self):
         print "RELOADING"
@@ -217,21 +168,6 @@ class MainTabWidget(QtGui.QWidget):
             return
 
         if i == 1:
-            # if not isinstance(self.results_tab, ResultsWidget):
-            #     self.ignore_tab_change = True
-            #     self.tabs.removeTab(1)
-            #     self.results_tab.setParent(None)
-            #     self.results_tab = ResultsWidget(self.project,
-            #                                      callbacks={'decide_tracklet': self.decide_tracklet,
-            #                                                 'edit_tracklet': self.edit_tracklet,
-            #                                                 'get_separated_frame': self.get_separated_frame,
-            #                                                 'update_N_sets': self.update_N_sets,
-            #                                                 'tracklet_measurements': self.tracklet_measurements})
-            #     # self.results_tab.redraw_video_player_visualisations()
-            #     self.tabs.insertTab(1, self.results_tab, 'results viewer')
-            #     self.tabs.setCurrentIndex(1)
-            #     self.ignore_tab_change = False
-
             self.widgets['results'].update_visualisations()
 
         if i == 2:
@@ -263,27 +199,7 @@ class MainTabWidget(QtGui.QWidget):
         if i == 3:
             self.widgets['stats'].update_data(self.project)
         if i == 4:
-            from utils.video_manager import get_auto_video_manager
-            vm = get_auto_video_manager(self.project)
-            max_f = vm.total_frame_count()
-
-            from_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "From: ", 0, 0, max_f-1)
-            if ok:
-                frames = None
-
-                to_frame, ok = QtGui.QInputDialog.getInt(self, "show range", "To: ", from_frame+1, from_frame+1, max_f)
-                if ok:
-                    frames = range(from_frame, to_frame)
-
-                self.ignore_tab_change = True
-                # TODO: show loading...
-                self.tabs.removeTab(4)
-                self.widgets['graph'].setParent(None)
-                self.widgets['graph'] = GraphWidgetLoader(self.project, width=50, height=50).get_widget(show_tracklet_callback=self.play_and_highlight_tracklet, frames=frames)
-                self.tabs.insertTab(4,  self.widgets['graph'],  self.widgets_info['graph'])
-                self.tabs.setCurrentIndex(4)
-                self.ignore_tab_change = False
-                self.widgets['graph'].redraw()
+            pass
 
     # def detach_tab(self):
     #     tab_number = self.tabs.currentIndex()
