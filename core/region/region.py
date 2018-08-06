@@ -58,14 +58,10 @@ class Region(object):
         self.is_origin_interaction_ = is_origin_interaction
 
     def __str__(self):
-        s = repr(self)+" frame: "+str(self.frame_)+"\n" \
-                       " area: "+str(self.area())+" \n" \
-                       " centroid: ["+str(round(self.centroid_[0], 2))+", "+str(round(self.centroid_[1], 2))+"]\n" \
-                       " major axis: {:.3}".format(self.major_axis_) + "\n" \
-                       " minor axis: {:.3}".format(self.minor_axis_) + "\n" \
-                       " margin: " + str(self.margin_)
-
-        return s
+        return '{}\nid: {}\nframe: {}\narea: {}\ncentroid: [{:.2f}, {:.2f}]\n' \
+               'major axis: {:.2f}\nminor axis: {:.2f}\nmargin: {}'.format(
+            repr(self), self.id_, self.frame_, self.area(), self.centroid_[0], self.centroid_[1],
+            self.major_axis_, self.minor_axis_, self.margin_)
 
     def __hash__(self):
         return hash(self.id_)
@@ -382,6 +378,9 @@ class Region(object):
 
     def ellipse_area_ratio(self):
         return (4*self.major_axis_ * self.minor_axis_) / float(self.area())
+
+    def get_img(self, image_manager, **kwargs):
+        return image_manager.get_crop(self.frame(), self.roi(), **kwargs)
 
 
 def encode_RLE(pts, return_area=True):

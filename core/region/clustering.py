@@ -2,7 +2,6 @@ from __future__ import print_function
 import cPickle as pickle
 import os.path
 import numpy as np
-from tqdm import tqdm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from utils.drawing.points import draw_points
@@ -72,7 +71,7 @@ class RegionCardinality:
         # if len(self.project.chm) > 0:
         #     regions, vertices = self.project.chm.get_random_regions(n, self.project.gm)
         # else:
-        samples = self.get_random_segmented_regions(n, project, progress_update_fun)
+        samples = get_random_segmented_regions(n, project, progress_update_fun)
         X = np.array([s.features for s in samples])
         self.scaler.fit(X)
         return samples
@@ -155,13 +154,13 @@ def get_random_segmented_regions(n, project, progress_update_fun=None):
     vm = project.get_video_manager()
 
     if progress_update_fun is None:
-        pbar = tqdm(total=n, desc='segmenting regions for learning cardinality classification')
+        pbar = tqdm.tqdm(total=n, desc='segmenting regions for learning cardinality classification')
         progress_update_fun = pbar.update
 
     while len(samples) < n:
-        img_rgb = vm.random_frame()
+        img_rgb, frame = vm.random_frame()
         img = prepare_for_segmentation(img_rgb, project)
-        regions = get_filtered_msers(img, project)
+        regions = get_filtered_msers(img, project, frame)
         samples.extend([RegionSample(r, img_rgb) for r in regions])
         progress_update_fun(len(regions))
 

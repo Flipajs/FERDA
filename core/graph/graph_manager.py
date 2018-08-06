@@ -708,6 +708,12 @@ class GraphManager:
         return list(regions)
 
     def regions_and_t_ids_in_t(self, frame):
+        """
+        Get regions and tracklets in a frame.
+
+        :param frame: int
+        :return: list of regions and tracklet ids tuples; [(r_id, t_id), ... ]
+        """
         regions = []
         for t in self.project.chm.tracklets_in_frame(frame):
             r_id = t.r_id_in_t(frame, self.project.gm)
