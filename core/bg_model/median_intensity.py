@@ -30,9 +30,9 @@ class MedianIntensity(Model):
         frame_i = 0
         for i in range(self.iterations):
             if self.random_frames:
-                im = self.video.random_frame()
+                im, _ = self.video.random_frame()
             else:
-                im = self.video.seek_frame(frame_i)
+                im, _ = self.video.seek_frame(frame_i)
 
             imgs[i] = im
             # self.emit(QtCore.SIGNAL('update(int)'), int(100*(i+1)/float(self.iterations)))
@@ -106,7 +106,7 @@ if __name__ == '__main__':
 
     plt.figure(2)
     while True:
-        im = vid.random_frame()
+        im, _ = vid.random_frame()
         # cv2.imshow('orig', im)
         processed = np.subtract(0.8 * np.asarray(bg.bg_model, dtype=np.int32), np.asarray(im, dtype=np.int32))
 

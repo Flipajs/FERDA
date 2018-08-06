@@ -377,7 +377,7 @@ class SetMSERs(QtGui.QWidget):
         Show current settings on random frame
         :return: None
         """
-        im = self.video.random_frame()
+        im, _ = self.video.random_frame()
 
         if self.project.bg_model:
             im = self.project.bg_model.bg_subtraction(im)

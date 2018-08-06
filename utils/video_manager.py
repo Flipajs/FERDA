@@ -135,9 +135,9 @@ class VideoManager():
         :return:
         """
         frame_num = self.total_frame_count()
-        random_f = randint(0, frame_num)
+        frame = randint(0, frame_num)
 
-        return self.seek_frame(random_f)
+        return self.seek_frame(frame), frame
 
     def frame_number(self):
         return self.position_

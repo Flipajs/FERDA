@@ -33,9 +33,9 @@ class MaxIntensity(Model):
         frame_i = 0
         for i in range(self.iterations):
             if self.random_frames:
-                im = self.video.random_frame()
+                im, _ = self.video.random_frame()
             else:
-                im = self.video.seek_frame(frame_i)
+                im, _ = self.video.seek_frame(frame_i)
 
             self.iteration(im)
             self.emit(QtCore.SIGNAL('update(int)'), int(100*(i+1)/float(self.iterations)))

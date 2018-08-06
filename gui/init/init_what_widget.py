@@ -433,7 +433,7 @@ class InitWhatWidget(QtGui.QWidget):
 
     def random_frame_action_(self):
         if self.put_colormark_active_state == 0:
-            img = self.video.random_frame()
+            img, _ = self.video.random_frame()
 
             if self.random_frame_pixmap:
                 self.scene.removeItem(self.random_frame_pixmap)

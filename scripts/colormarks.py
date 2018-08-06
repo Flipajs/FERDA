@@ -251,7 +251,7 @@ def init(path):
 
         # r, R - random frame
         if k == 114 or k == 82:
-            im = vid.random_frame()
+            im, _ = vid.random_frame()
             cv2.imshow('img', im)
 
         # b, B - go back in assignment
