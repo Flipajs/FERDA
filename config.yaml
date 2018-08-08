@@ -2,7 +2,7 @@ general:
     log_graph_edits: false
     log_in_bg_computation: false  # Could be switched off before user interactions to save space.
     print_log: true
-    n_jobs: 10  # number of jobs to run in parallel, if -1 all CPUs are used,
+    n_jobs: 15  # number of jobs to run in parallel, if -1 all CPUs are used,
                 # see https://pythonhosted.org/joblib/parallel.html#parallel-reference-documentation
 
 cache:
@@ -12,7 +12,10 @@ cache:
     region_manager_num_of_instances: 0
 
 region_classifier:
-    samples_num: 500
+    samples_preselection_num: 1000
+    samples_num: 100
 
 segmentation:
     frames_in_row: 100
+
+

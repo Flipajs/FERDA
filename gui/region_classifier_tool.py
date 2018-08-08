@@ -159,22 +159,29 @@ class RegionClassifierTool(QtGui.QWidget):
             samples_ready = QtCore.pyqtSignal(list)
             update = QtCore.pyqtSignal(int)
 
-            def __init__(self, project):
+            def __init__(self, project, clustering):
                 super(GatherSamplesThread, self).__init__()
                 self.project = project
+                self.clustering = clustering
 
             def run(self):
-                samples = core.region.clustering.get_random_segmented_regions(
+                samples = self.clustering.gather_diverse_samples(
+                    config['region_classifier']['samples_preselection_num'],
                     config['region_classifier']['samples_num'],
                     self.project,
                     self.update.emit
                 )
+                # samples = core.region.clustering.get_random_segmented_regions(
+                #     config['region_classifier']['samples_num'],
+                #     self.project,
+                #     self.update.emit
+                # )
                 self.samples_ready.emit(samples)
 
             def __del__(self):
                 self.wait()
 
-        self.gather_samples_thread = GatherSamplesThread(self.project)
+        self.gather_samples_thread = GatherSamplesThread(self.project, self.clustering)
         self.gather_samples_thread.samples_ready.connect(self.retrieve_samples)
         self.gather_samples_thread.update.connect(self.progress_bar_update)
         self.gather_samples_thread.finished.connect(self.gather_samples_finished)
@@ -227,13 +234,6 @@ class RegionClassifierTool(QtGui.QWidget):
 
         self.clustering.train(self.labeled_samples)
         self.samples = self.clustering.classify_samples(self.samples)
-        self.redraw_grids()
-
-    def gather_samples(self):
-        self.samples = self.clustering.gather_samples(config['region_classifier']['samples_num'], self.project)
-        for i, s in enumerate(self.samples):
-            s.widget = self.make_item(s.image, i)
-            s.label = 'single'
         self.redraw_grids()
 
     def redraw_grids(self):

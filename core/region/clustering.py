@@ -77,6 +77,18 @@ class RegionCardinality:
         return samples
         # self.data = np.array([s.features for s in self.samples])
 
+    def gather_diverse_samples(self, n_gather, n_final, project, progress_update_fun=None):
+        samples = get_random_segmented_regions(n_gather, project, progress_update_fun, get_diverse_samples=True)
+        X = np.array([s.features for s in samples])
+        self.init_scaler(X)
+        X_norm = self.scaler.transform(X)
+
+        from sklearn.cluster.k_means_ import _k_init
+        init = _k_init(X_norm, n_final, x_squared_norms=(X_norm ** 2).sum(axis=1), random_state=np.random.RandomState())
+        indices = [np.argmin(((X_norm - x) ** 2).sum(axis=1)) for x in init]
+        # TODO rerun self.init_scaler(X) ?
+        return samples[indices]
+
     def set_active_features(self, features_mask):
         self.active_features_mask = features_mask
 
@@ -146,10 +158,13 @@ def is_project_cardinality_classified(project):
     return True
 
 
-def get_random_segmented_regions(n, project, progress_update_fun=None):
+def get_random_segmented_regions(n, project, progress_update_fun=None,
+                                 get_diverse_samples=False, complete_frames=False):
     from utils.img import prepare_for_segmentation
     from core.region.mser import get_filtered_msers
 
+    if get_diverse_samples:
+        assert project.animals is not None
     samples = []
     vm = project.get_video_manager()
 
@@ -157,14 +172,24 @@ def get_random_segmented_regions(n, project, progress_update_fun=None):
         pbar = tqdm.tqdm(total=n, desc='segmenting regions for learning cardinality classification')
         progress_update_fun = pbar.update
 
+    used_frames = []
     while len(samples) < n:
         img_rgb, frame = vm.random_frame()
+        if frame in used_frames:
+            continue
+        used_frames.append(frame)
         img = prepare_for_segmentation(img_rgb, project)
         regions = get_filtered_msers(img, project, frame)
+        if get_diverse_samples and len(regions) == len(project.animals):
+            # TODO: guard against infinite loop when not enough diverse samples
+            continue
         samples.extend([RegionSample(r, img_rgb) for r in regions])
         progress_update_fun(len(regions))
 
-    return samples[:n]
+    if complete_frames:
+        return samples
+    else:
+        return samples[:n]
 
 
 if __name__ == '__main__':
