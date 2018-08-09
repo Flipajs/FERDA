@@ -104,7 +104,7 @@ class CropVideoWidget(QtGui.QWidget):
 
         self.setLayout(self.vbox)
 
-        self.vbox.addWidget(QtGui.QLabel('<i>If tracking on whole video is desired, continue on </i><b>confirm and continue</b><i> button. Else set relevant range using video player, pressing  </i><b>mark start</b> and <b>mark end</b>buttons in intended frames.</i>'))
+        self.vbox.addWidget(QtGui.QLabel('Press <i>Continue</i> to use the whole video or mark start and end of a custom video cut.'))
 
         graphics_view_widget = QtGui.QWidget()
         self.graphics_view = MyView(graphics_view_widget)
@@ -142,8 +142,8 @@ class CropVideoWidget(QtGui.QWidget):
 
         self.speedSlider = QtGui.QSlider()
         self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
-        self.speedSlider.setMinimum(0)
-        self.speedSlider.setMaximum(self.end_frame)
+        self.speedSlider.setMinimum(1)
+        self.speedSlider.setMaximum(120)
 
         self.backward = QtGui.QToolButton()
         self.backward.setText('back')
@@ -161,6 +161,8 @@ class CropVideoWidget(QtGui.QWidget):
         self.to_stop = QtGui.QPushButton('go to stop')
         self.clear = QtGui.QPushButton('reset range')
         self.frameEdit = SelectAllLineEdit()
+        self.frameEditValidator = QtGui.QIntValidator(0, 1)
+        self.frameEdit.setValidator(self.frameEditValidator)
         self.showFrame = QtGui.QPushButton('go to frame')
         self.fpsLabel = QtGui.QLabel()
         self.fpsLabel.setAlignment(QtCore.Qt.AlignRight)
@@ -222,7 +224,7 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_crop_buttons_layout.addWidget(self.end_frame_sign)
         self.video_crop_buttons_layout.addWidget(self.num_frames_sign)
 
-        self.connect_GUI()
+        self.connect_ui()
 
         self.chunks = []
         self.markers = []
@@ -230,9 +232,10 @@ class CropVideoWidget(QtGui.QWidget):
 
     def set_video(self, video_manager):
         self.video = video_manager
+        end_frame_raw = self.video.video_frame_count_without_bounds() - 1
         self.start_frame = self.video.start_t
         self.end_frame = self.video.end_t
-        self.videoSlider.setMaximum(self.end_frame)
+        self.videoSlider.setMaximum(end_frame_raw)
         self.update_start_end_num_labels()
 
         img = self.video.next_frame()
@@ -241,6 +244,11 @@ class CropVideoWidget(QtGui.QWidget):
         item = self.scene.addPixmap(self.pixMap)
         self.pixMapItem = item
         self.update_frame_number()
+
+        self.speedSlider.setValue(self.video.fps())
+        self.speed_slider_changed()
+
+        self.frameEditValidator.setRange(0, end_frame_raw)
 
     def sc_changed(self):
         self.video.crop_model = {'y1': self.sc_y1.value(),
@@ -255,14 +263,6 @@ class CropVideoWidget(QtGui.QWidget):
 
     def marker_changed(self):
         pass
-
-    def init_speed_slider(self):
-        """Initiates components associated with speed of viewing videos"""
-        self.speedSlider.setValue(self.frame_rate)
-        self.timer.setInterval(1000 / self.frame_rate)
-        self.fpsLabel.setText(str(self.frame_rate) + ' fps')
-        self.speedSlider.setMinimum(1)
-        self.speedSlider.setMaximum(120)
 
     def speed_slider_changed(self):
         """Method invoked when value of slider controlling speed of video changed it's value"""
@@ -296,7 +296,7 @@ class CropVideoWidget(QtGui.QWidget):
 
             i += 1
 
-    def connect_GUI(self):
+    def connect_ui(self):
         """Connects GUI elements to appropriate methods"""
         from functools import partial
 
@@ -304,6 +304,7 @@ class CropVideoWidget(QtGui.QWidget):
         self.backward.clicked.connect(self.load_previous_frame)
         self.playPause.clicked.connect(self.play_pause)
         self.speedSlider.valueChanged.connect(self.speed_slider_changed)
+        self.frameEdit.returnPressed.connect(self.showFrame.click)
         self.showFrame.clicked.connect(partial(self.change_frame, None))
         self.videoSlider.valueChanged.connect(self.video_slider_changed)
         self.timer.timeout.connect(self.load_next_frame)

@@ -77,14 +77,12 @@ class VideoManager:
     def next_frame(self):
         # continue reading new frames
         if self.dec_pos_(self.buffer_position_) == self.view_position_:
-            f, self.buffer_[self.buffer_position_] = self.capture.read()
-            if self.crop_model:
-                self.buffer_[self.buffer_position_] = self.crop_(self.buffer_[self.buffer_position_])
-
-            if not f or self.position >= self.total_frame_count():
-                print "No more frames, end of video file. (video_manager.py)"
+            retval, self.buffer_[self.buffer_position_] = self.capture.read()
+            if not retval or self.position >= self.total_frame_count():
                 return None
 
+            if self.crop_model:
+                self.buffer_[self.buffer_position_] = self.crop_(self.buffer_[self.buffer_position_])
             self.buffer_position_ = self.inc_pos_(self.buffer_position_)
 
         self.view_position_ = self.inc_pos_(self.view_position_)
