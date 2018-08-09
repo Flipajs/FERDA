@@ -96,7 +96,6 @@ class CropVideoWidget(QtGui.QWidget):
         self.frame_rate = 25
         self.start_frame = 0
         self.end_frame = 1
-        self.toggle_borders_bool = False
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(1000 / self.frame_rate)
         self.scene = QtGui.QGraphicsScene()
@@ -157,17 +156,10 @@ class CropVideoWidget(QtGui.QWidget):
         self.forward.setShortcut(S_.controls.video_next)
 
         self.mark_start = QtGui.QPushButton('mark start')
-        # self.mark_start.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
         self.mark_stop = QtGui.QPushButton('mark stop')
-        # self.mark_stop.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
         self.to_start = QtGui.QPushButton('go to start')
-        # self.to_start.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
         self.to_stop = QtGui.QPushButton('go to stop')
-        # self.to_start.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
         self.clear = QtGui.QPushButton('reset range')
-        # self.to_start.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
-        self.toggle_borders = QtGui.QPushButton('toggle borders')
-        # self.to_start.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
         self.frameEdit = SelectAllLineEdit()
         self.showFrame = QtGui.QPushButton('go to frame')
         self.fpsLabel = QtGui.QLabel()
@@ -225,9 +217,7 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_crop_buttons_layout.addWidget(self.clear)
         self.to_start.hide()
         self.to_stop.hide()
-        self.toggle_borders.hide()
         self.clear.hide()
-        self.video_crop_buttons_layout.addWidget(self.toggle_borders)
         self.video_crop_buttons_layout.addWidget(self.start_frame_sign)
         self.video_crop_buttons_layout.addWidget(self.end_frame_sign)
         self.video_crop_buttons_layout.addWidget(self.num_frames_sign)
@@ -321,7 +311,6 @@ class CropVideoWidget(QtGui.QWidget):
         self.mark_start.clicked.connect(self.get_start_frame_number)
         self.mark_stop.clicked.connect(self.get_end_frame_number)
         self.clear.clicked.connect(self.all_clear)
-        self.toggle_borders.clicked.connect(self.set_borders_action)
         self.to_start.clicked.connect(self.go_to_start)
         self.to_stop.clicked.connect(self.go_to_stop)
 
@@ -332,14 +321,6 @@ class CropVideoWidget(QtGui.QWidget):
 
     def load_next_frame(self):
         """Loads next frame of the video and displays it. If there is no next frame, calls self.out_of_frames"""
-        if self.toggle_borders_bool:
-            if(self.video.frame_number() + 2 == self.end_frame or
-               self.video.frame_number() + 2 == self.start_frame):
-                self.play_pause()
-            # elif(self.video.frame_number() + 1  > self.end_frame) or\
-            #     (self.video.frame_number() + 1  < self.start_frame):
-            #     self.change_frame(self.start_frame)
-
         if self.video is not None:
             img = self.video.next_frame()
             if img is not None:
@@ -423,7 +404,6 @@ class CropVideoWidget(QtGui.QWidget):
         self.start_frame = self.video.frame_number()
         self.to_start.show()
         self.to_stop.show()
-        self.toggle_borders.show()
         self.clear.show()
         self.video_labels_repaint()
 
@@ -431,7 +411,6 @@ class CropVideoWidget(QtGui.QWidget):
         self.end_frame = self.video.frame_number()
         self.to_start.show()
         self.to_stop.show()
-        self.toggle_borders.show()
         self.clear.show()
         self.video_labels_repaint()
 
@@ -470,13 +449,8 @@ class CropVideoWidget(QtGui.QWidget):
         self.end_frame = self.video.total_frame_count() - 1
         self.to_start.hide()
         self.to_stop.hide()
-        self.toggle_borders.hide()
         self.clear.hide()
         self.video_labels_repaint()
-
-    def set_borders_action(self):
-        self.toggle_borders_bool = False if self.toggle_borders_bool else True
-        self.toggle_borders.setText("Untoggle borders" if self.toggle_borders_bool else "Toggle Borders")
 
 
 def view_add_bg_image(g_view, pix_map):
