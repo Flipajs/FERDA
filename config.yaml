@@ -14,6 +14,7 @@ cache:
 region_classifier:
     samples_preselection_num: 1000
     samples_num: 100
+    default_features: ['area', 'major axis length', 'minor axis length', 'contour length']
 
 segmentation:
     frames_in_row: 100

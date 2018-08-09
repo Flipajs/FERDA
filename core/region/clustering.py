@@ -80,14 +80,17 @@ class RegionCardinality:
     def gather_diverse_samples(self, n_gather, n_final, project, progress_update_fun=None):
         samples = get_random_segmented_regions(n_gather, project, progress_update_fun, get_diverse_samples=True)
         X = np.array([s.features for s in samples])
-        self.init_scaler(X)
+        self.scaler.fit(X)
         X_norm = self.scaler.transform(X)
 
         from sklearn.cluster.k_means_ import _k_init
-        init = _k_init(X_norm, n_final, x_squared_norms=(X_norm ** 2).sum(axis=1), random_state=np.random.RandomState())
-        indices = [np.argmin(((X_norm - x) ** 2).sum(axis=1)) for x in init]
-        # TODO rerun self.init_scaler(X) ?
-        return samples[indices]
+        X_norm_active = X_norm[:, self.active_features_mask]
+        X_selected = _k_init(X_norm_active, n_final,
+                             x_squared_norms=(X_norm_active ** 2).sum(axis=1),
+                             random_state=np.random.RandomState())
+        indices = [np.argmin(((X_norm_active - x) ** 2).sum(axis=1)) for x in X_selected]
+        self.scaler.fit(X[indices])
+        return [samples[i] for i in indices]
 
     def set_active_features(self, features_mask):
         self.active_features_mask = features_mask
@@ -103,8 +106,9 @@ class RegionCardinality:
             self.classifier.fit(X_active, y)
 
     def classify_samples(self, samples):
+        assert len(samples) > 0
         X = np.array([s.features for s in samples])
-        X = self.scaler.transform(X)
+        X = self.scaler.transform(np.atleast_2d(X))
         X_active = X[:, self.active_features_mask]
         y = self.classifier.predict(X_active)
         p = self.classifier.predict_proba(X_active)

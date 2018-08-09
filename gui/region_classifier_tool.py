@@ -66,7 +66,7 @@ class RegionClassifierTool(QtGui.QWidget):
         self.vbox.addLayout(self.hbox_buttons)
 
         self.progress_bar = QtGui.QProgressBar()
-        self.progress_bar.setMaximum(config['region_classifier']['samples_num'])
+        self.progress_bar.setMaximum(config['region_classifier']['samples_preselection_num'])
         self.vbox.addWidget(self.progress_bar)
 
         actions = [
@@ -143,10 +143,14 @@ class RegionClassifierTool(QtGui.QWidget):
         self.feature_checkboxes = []
         for i, description in enumerate(core.region.clustering.region_features.iterkeys()):
             w = QtGui.QCheckBox(description)
-            w.setChecked(True)
+            if description in config['region_classifier']['default_features']:
+                w.setChecked(True)
+            else:
+                w.setChecked(False)
             w.stateChanged.connect(self.active_features_changed)
             self.hbox_check.addWidget(w)
             self.feature_checkboxes.append(w)
+        self.apply_active_features()
 
         self.button_continue = QtGui.QPushButton('continue')
         # self.classify_tracklets_b.clicked.connect(self.classify_tracklets)
@@ -171,11 +175,6 @@ class RegionClassifierTool(QtGui.QWidget):
                     self.project,
                     self.update.emit
                 )
-                # samples = core.region.clustering.get_random_segmented_regions(
-                #     config['region_classifier']['samples_num'],
-                #     self.project,
-                #     self.update.emit
-                # )
                 self.samples_ready.emit(samples)
 
             def __del__(self):
@@ -201,16 +200,19 @@ class RegionClassifierTool(QtGui.QWidget):
 
     def gather_samples_finished(self):
         self.setEnabled(True)
-        self.progress_bar.setValue(config['region_classifier']['samples_num'])
+        self.progress_bar.setValue(config['region_classifier']['samples_preselection_num'])
         # self.vbox.removeWidget(self.progress_bar)
         # self.vbox.addWidget()
 
-    def active_features_changed(self):
+    def apply_active_features(self):
         mask = np.zeros(len(self.feature_checkboxes), dtype=np.int)
         for i, checkbox in enumerate(self.feature_checkboxes):
             if checkbox.checkState() == QtCore.Qt.Checked:
                 mask[i] = True
         self.clustering.set_active_features(mask)
+
+    def active_features_changed(self):
+        self.apply_active_features()
         self.clustering.train(self.labeled_samples)
         self.samples = self.clustering.classify_samples(self.samples)
         self.redraw_grids()
@@ -221,19 +223,30 @@ class RegionClassifierTool(QtGui.QWidget):
     def select_until(self, key):
         self.grids[key].select_all_until_first()
 
-    def move_selected_to(self, to='single'):
+    def move_selected_to(self, to):
         for label, grid in self.grids.iteritems():
             for item in grid.get_selected_items():
-                if to == 'undecided':
-                    self.labeled_samples.remove(item)
-                else:
+                if to != 'undecided':
                     item.label = to
+                    if item in self.samples:
+                        self.samples.remove(item)
+                    elif item in self.labeled_samples:
+                        self.labeled_samples.remove(item)
+                    else:
+                        assert True
                     self.labeled_samples.append(item)
+                else:
+                    if item in self.labeled_samples:
+                        self.labeled_samples.remove(item)
+                        self.samples.append(item)
+                    else:
+                        assert item in self.samples
 
             grid.deselect_all()
 
         self.clustering.train(self.labeled_samples)
-        self.samples = self.clustering.classify_samples(self.samples)
+        if self.samples:
+            self.samples = self.clustering.classify_samples(self.samples)
         self.redraw_grids()
 
     def redraw_grids(self):
@@ -254,24 +267,20 @@ class RegionClassifierTool(QtGui.QWidget):
                 s.widget = self.make_item(s.image, i)
                 self.grids[label].add_item(s)
 
-    def make_item(self, im, id_):
+    def make_item(self, im, item_id):
         from PyQt4 import QtGui
         from gui.gui_utils import SelectableQLabel
         from PIL import ImageQt
 
-        im_ = np.zeros((max(im.shape[0], self.GRID_ITEM_WH[1]), max(im.shape[1], self.GRID_ITEM_WH[0]), 3), dtype=np.uint8)
-        im_[:im.shape[0], :im.shape[1], :] = im
-        im = im_
+        im_item = np.zeros((max(im.shape[0], self.GRID_ITEM_WH[1]), max(im.shape[1], self.GRID_ITEM_WH[0]), 3), dtype=np.uint8)
+        im_item[:im.shape[0], :im.shape[1], :] = im
 
-        img_q = ImageQt.QImage(im.data, im.shape[1], im.shape[0], im.shape[1] * 3, 13)
+        img_q = ImageQt.QImage(im_item.data, im_item.shape[1], im_item.shape[0], im_item.shape[1] * 3, 13)
         pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
 
-        item = SelectableQLabel(id=id_)
-
+        item = SelectableQLabel(id=item_id)
         item.setScaledContents(True)
-        if im.shape[0] > self.GRID_ITEM_WH[1] or im.shape[1] > self.GRID_ITEM_WH[0]:
-            item.setFixedSize(self.GRID_ITEM_WH[1], self.GRID_ITEM_WH[0])
-
+        item.setFixedSize(self.GRID_ITEM_WH[0], self.GRID_ITEM_WH[1])
         item.setPixmap(pix_map)
 
         return item
