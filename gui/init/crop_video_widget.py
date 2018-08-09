@@ -15,6 +15,7 @@ from utils.video_manager import get_auto_video_manager
 
 MARKER_SIZE = 15
 
+
 class VideoSlider(QtGui.QSlider):
     """A slider that changes it's value directly to the part where it was clicked instead of slowly sliding there.
     Also, it's nice! """
@@ -72,7 +73,6 @@ class SelectAllLineEdit(QtGui.QLineEdit):
     def __init__(self, parent=None):
         super(SelectAllLineEdit, self).__init__(parent)
         self.readyToEdit = True
-        self.setFixedHeight(15)
 
     def mousePressEvent(self, e, Parent=None):
         super(SelectAllLineEdit, self).mousePressEvent(e) #required to deselect on 2e click
@@ -87,16 +87,15 @@ class SelectAllLineEdit(QtGui.QLineEdit):
 
 
 class CropVideoWidget(QtGui.QWidget):
-    def __init__(self, project):
+    def __init__(self):
         super(CropVideoWidget, self).__init__()
         self.vbox = QtGui.QVBoxLayout()
         self.solver = None
-        self.project = project
-        self.video = get_auto_video_manager(project)
+        self.video = None
 
-        self.frame_rate = 30
-        self.start_frame = 1
-        self.end_frame = self.video.total_frame_count()
+        self.frame_rate = 25
+        self.start_frame = 0
+        self.end_frame = 1
         self.toggle_borders_bool = False
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(1000 / self.frame_rate)
@@ -120,7 +119,6 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_control_widget = QtGui.QWidget()
         self.video_control_layout = QtGui.QVBoxLayout()
         self.video_control_widget.setLayout(self.video_control_layout)
-        self.video_control_widget.setMaximumHeight(70)
 
         self.video_control_buttons_widget = QtGui.QWidget()
         self.video_control_buttons_layout = QtGui.QHBoxLayout()
@@ -146,14 +144,18 @@ class CropVideoWidget(QtGui.QWidget):
         self.speedSlider = QtGui.QSlider()
         self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
         self.speedSlider.setMinimum(0)
-        self.speedSlider.setMaximum(99)
+        self.speedSlider.setMaximum(self.end_frame)
 
-        self.backward = QtGui.QPushButton('back')
+        self.backward = QtGui.QToolButton()
+        self.backward.setText('back')
         self.backward.setShortcut(S_.controls.video_prev)
-        self.playPause = QtGui.QPushButton('play')
+        self.playPause = QtGui.QToolButton()
+        self.playPause.setText('play')
         self.playPause.setShortcut(S_.controls.video_play_pause)
-        self.forward = QtGui.QPushButton('forward')
+        self.forward = QtGui.QToolButton()
+        self.forward.setText('forward')
         self.forward.setShortcut(S_.controls.video_next)
+
         self.mark_start = QtGui.QPushButton('mark start')
         # self.mark_start.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
         self.mark_stop = QtGui.QPushButton('mark stop')
@@ -172,16 +174,15 @@ class CropVideoWidget(QtGui.QWidget):
         self.fpsLabel.setAlignment(QtCore.Qt.AlignRight)
         self.start_frame_sign = QtGui.QLabel()
         self.start_frame_sign.setAlignment(QtCore.Qt.AlignCenter)
-        self.start_frame_sign.setText("start frame: " + str(self.start_frame))
         self.end_frame_sign = QtGui.QLabel()
         self.end_frame_sign.setAlignment(QtCore.Qt.AlignCenter)
-        self.end_frame_sign.setText("end frame: " + str(self.end_frame))
-        self.num_frames_sign = QtGui.QLabel("#frames in range: " + str(self.end_frame - self.start_frame))
+        self.num_frames_sign = QtGui.QLabel()
+        self.update_start_end_num_labels()
         self.videoSlider = VideoSlider()
         self.videoSlider.setOrientation(QtCore.Qt.Horizontal)
         self.videoSlider.setFocusPolicy(QtCore.Qt.NoFocus)
         self.videoSlider.setMaximumHeight(10)
-        self.videoSlider.setMaximum(self.video.total_frame_count())
+        self.videoSlider.setMaximum(100)
 
         self.video_middle_label = QtGui.QLabel()
         self.video_middle_label.setStyleSheet("QLabel { background-color: white; }")
@@ -210,9 +211,11 @@ class CropVideoWidget(QtGui.QWidget):
 
         self.video_control_buttons_layout.addWidget(self.speedSlider)
         self.video_control_buttons_layout.addWidget(self.fpsLabel)
+        self.video_control_buttons_layout.addStretch()
         self.video_control_buttons_layout.addWidget(self.backward)
         self.video_control_buttons_layout.addWidget(self.playPause)
         self.video_control_buttons_layout.addWidget(self.forward)
+        self.video_control_buttons_layout.addStretch()
         self.video_control_buttons_layout.addWidget(self.frameEdit)
         self.video_control_buttons_layout.addWidget(self.showFrame)
         self.video_crop_buttons_layout.addWidget(self.mark_start)
@@ -229,19 +232,25 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_crop_buttons_layout.addWidget(self.end_frame_sign)
         self.video_crop_buttons_layout.addWidget(self.num_frames_sign)
 
-        img = self.video.next_frame()
-
         self.connect_GUI()
-
-        if img is not None:
-            self.pixMap = cvimg2qtpixmap(img)
-            item = self.scene.addPixmap(self.pixMap)
-            self.pixMapItem = item
-            self.update_frame_number()
 
         self.chunks = []
         self.markers = []
         self.items = []
+
+    def set_video(self, video_manager):
+        self.video = video_manager
+        self.start_frame = self.video.start_t
+        self.end_frame = self.video.end_t
+        self.videoSlider.setMaximum(self.end_frame)
+        self.update_start_end_num_labels()
+
+        img = self.video.next_frame()
+        assert img is not None
+        self.pixMap = cvimg2qtpixmap(img)
+        item = self.scene.addPixmap(self.pixMap)
+        self.pixMapItem = item
+        self.update_frame_number()
 
     def sc_changed(self):
         self.video.crop_model = {'y1': self.sc_y1.value(),
@@ -321,12 +330,10 @@ class CropVideoWidget(QtGui.QWidget):
         # self.sc_y2.valueChanged.connect(self.sc_changed)
         # self.sc_x2.valueChanged.connect(self.sc_changed)
 
-
-
     def load_next_frame(self):
         """Loads next frame of the video and displays it. If there is no next frame, calls self.out_of_frames"""
         if self.toggle_borders_bool:
-            if(self.video.frame_number() + 2 == self.end_frame or \
+            if(self.video.frame_number() + 2 == self.end_frame or
                self.video.frame_number() + 2 == self.start_frame):
                 self.play_pause()
             # elif(self.video.frame_number() + 1  > self.end_frame) or\
@@ -374,7 +381,7 @@ class CropVideoWidget(QtGui.QWidget):
 
     def update_frame_number(self):
         """Updates values of components displaying frame number"""
-        self.frameEdit.setText(str(int(self.video.frame_number() + 1)) + '/' + str(self.video.total_frame_count()))
+        self.frameEdit.setText(str(self.video.frame_number()))
         self.videoSlider.setValue(self.video.frame_number())
 
     def out_of_frames(self):
@@ -397,10 +404,7 @@ class CropVideoWidget(QtGui.QWidget):
     def change_frame(self, position=None):
         """Changes current frame to position given. If there is no such position, calls self.out_of_frames"""
         if position is None:
-            try:
-                position = int(self.frameEdit.text())
-            except ValueError:
-                position = int(self.frameEdit.text().split('/')[0])
+            position = int(self.frameEdit.text())
 
         if self.video is not None:
             img = self.video.seek_frame(position)
@@ -416,7 +420,7 @@ class CropVideoWidget(QtGui.QWidget):
                 self.out_of_frames()
 
     def get_start_frame_number(self):
-        self.start_frame = self.video.frame_number() + 1
+        self.start_frame = self.video.frame_number()
         self.to_start.show()
         self.to_stop.show()
         self.toggle_borders.show()
@@ -424,7 +428,7 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_labels_repaint()
 
     def get_end_frame_number(self):
-        self.end_frame = self.video.frame_number() + 1
+        self.end_frame = self.video.frame_number()
         self.to_start.show()
         self.to_stop.show()
         self.toggle_borders.show()
@@ -432,7 +436,6 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_labels_repaint()
 
     def video_labels_repaint(self):
-
         self.width = self.videoSlider.width()
         self.ratio = self.width / float(self.video.total_frame_count())
 
@@ -441,20 +444,20 @@ class CropVideoWidget(QtGui.QWidget):
         self.middle = self.width - self.first - self.second
 
         if self.start_frame > self.end_frame:
-            self.end_frame = self.video.total_frame_count()
-            self.video_signs_repaint()
+            self.end_frame = self.video.total_frame_count() - 1
+            self.update_start_end_num_labels()
             self.video_labels_repaint()
         else:
             self.video_first_label.setFixedWidth(self.first)
             self.video_middle_label.setFixedWidth(self.middle)
             self.video_second_label.setFixedWidth(self.second)
 
-        self.video_signs_repaint()
+        self.update_start_end_num_labels()
 
-    def video_signs_repaint(self):
-        self.start_frame_sign.setText("start frame: " + str(self.start_frame))
-        self.end_frame_sign.setText("end frame: " + str(self.end_frame))
-        self.num_frames_sign.setText("num frames: " + str(self.end_frame - self.start_frame))
+    def update_start_end_num_labels(self):
+        self.start_frame_sign.setText("start frame: {}".format(self.start_frame))
+        self.end_frame_sign.setText("end frame: {}".format(self.end_frame))
+        self.num_frames_sign.setText("frames in range: {}".format(self.end_frame - self.start_frame + 1))
 
     def go_to_start(self):
         self.change_frame(self.start_frame)
@@ -464,7 +467,7 @@ class CropVideoWidget(QtGui.QWidget):
 
     def all_clear(self):
         self.start_frame = 0
-        self.end_frame = self.video.total_frame_count()
+        self.end_frame = self.video.total_frame_count() - 1
         self.to_start.hide()
         self.to_stop.hide()
         self.toggle_borders.hide()
@@ -474,6 +477,7 @@ class CropVideoWidget(QtGui.QWidget):
     def set_borders_action(self):
         self.toggle_borders_bool = False if self.toggle_borders_bool else True
         self.toggle_borders.setText("Untoggle borders" if self.toggle_borders_bool else "Toggle Borders")
+
 
 def view_add_bg_image(g_view, pix_map):
     gv_w = g_view.geometry().width()
@@ -496,11 +500,11 @@ def view_add_bg_image(g_view, pix_map):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     project = Project()
-    project.load('/home/simon/Documents/res/c3_0h30/c3_0h30.fproj')
+    project.load('/home/matej/prace/ferda/projects/1_initial_projects_180808_diverse/Cam1_clip (copy)')
 
-    ex = CropVideoWidget(project)
+    ex = CropVideoWidget()
+    ex.set_video(get_auto_video_manager(project))
     ex.showMaximized()
-    print "test"
 
     app.exec_()
     app.deleteLater()

@@ -358,7 +358,7 @@ class SetMSERs(QtGui.QWidget):
         Show current settings on next frame
         :return: None
         """
-        image = self.video.prev_frame()
+        image = self.video.previous_frame()
         self.update_frame_number()
         self.set_image(image)
 

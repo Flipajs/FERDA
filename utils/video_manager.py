@@ -17,28 +17,36 @@ class VideoType:
         pass
 
 
-class VideoManager():
+class VideoManager:
     """
     this class encapsulates video capturing using OpenCV class VideoCapture
     """
-
-    def __init__(self, video_path, start_t=0, end_t=np.inf, buffer_length=51, crop_model=None):
+    def __init__(self, video_path, start_t=0, end_t=None, buffer_length=51, crop_model=None):
         """
-        :type video_path: str,
-        :type buffer_length: int, determines internal buffer length, which allows going back into history without
+
+        :param video_path: str, path to video file
+        :param start_t: start frame
+        :param end_t: end frame (inclusive), is None, last frame is used
+        :param buffer_length: int, determines internal buffer length, which allows going back into history without
         frame seeking.
+        :param crop_model:
         """
-
-        self.capture = cv2.VideoCapture(video_path)  # OpenCV video capture class
-        self.start_t = start_t if start_t > 0 else 0
-        self.end_t = end_t if start_t < end_t <= self.video_frame_count_without_bounds() else np.inf
-
         self.video_path = video_path
+        self.capture = cv2.VideoCapture(self.video_path)
+
+        self.start_t = start_t
+        if end_t is not None:
+            self.end_t = end_t
+        else:
+            self.end_t = self.video_frame_count_without_bounds() - 1
+        assert self.start_t >= 0
+        assert self.start_t < self.end_t <= self.video_frame_count_without_bounds() - 1
+
         self.buffer_position_ = 0
         self.buffer_length_ = buffer_length  #
         self.view_position_ = self.buffer_length_ - 1  #
         self.buffer_ = [None] * self.buffer_length_
-        self.position_ = -1
+        self.position = -1
         self.crop_model = crop_model
 
         if not self.capture.isOpened():
@@ -73,56 +81,53 @@ class VideoManager():
             if self.crop_model:
                 self.buffer_[self.buffer_position_] = self.crop_(self.buffer_[self.buffer_position_])
 
-            if not f or self.position_ >= self.total_frame_count():
+            if not f or self.position >= self.total_frame_count():
                 print "No more frames, end of video file. (video_manager.py)"
                 return None
 
             self.buffer_position_ = self.inc_pos_(self.buffer_position_)
 
         self.view_position_ = self.inc_pos_(self.view_position_)
-        self.position_ += 1
+        self.position += 1
         return self.buffer_[self.view_position_]
 
-    def prev_frame(self):
-        return self.previous_frame()
-
     def previous_frame(self):
-        if self.position_ > 0:
-            self.position_ -= 1
-            view_dec = self.dec_pos_(self.view_position_)
-            if (view_dec == self.buffer_position_) or (self.buffer_[view_dec] is None):
-                self.buffer_position_ = self.dec_pos_(self.buffer_position_)
-                self.view_position_ = self.dec_pos_(self.view_position_)
-                self.buffer_[self.view_position_] = self.seek_frame(self.position_)
+        assert self.position >= 0
+        if self.position == 0:
+            return None
 
-                # if self.crop_model:
-                #     self.buffer_[self.view_position_] = self.crop_(self.buffer_[self.view_position_])
+        self.position -= 1
+        view_dec = self.dec_pos_(self.view_position_)
+        if (view_dec == self.buffer_position_) or (self.buffer_[view_dec] is None):
+            self.buffer_position_ = self.dec_pos_(self.buffer_position_)
+            self.view_position_ = self.dec_pos_(self.view_position_)
+            self.buffer_[self.view_position_] = self.seek_frame(self.position)
 
-                return self.buffer_[self.view_position_]
-            else:
-                self.view_position_ = view_dec
-                return self.buffer_[self.view_position_]
+            # if self.crop_model:
+            #     self.buffer_[self.view_position_] = self.crop_(self.buffer_[self.view_position_])
+
+            return self.buffer_[self.view_position_]
+        else:
+            self.view_position_ = view_dec
+            return self.buffer_[self.view_position_]
 
     def init_video(self):
         if self.start_t > 0:
-            # that is enough... when next_frame is called, the position will be processed
             self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, self.start_t)
 
     def seek_frame(self, frame_number):
-        if frame_number < 0 or frame_number >= self.total_frame_count():
-            frame_number = self.total_frame_count() - 1
-            # raise Exception("Frame_number is invalid: "+str(frame_number))
+        assert 0 < frame_number <= self.total_frame_count()
 
-        frame_number_ = frame_number + self.start_t
+        frame_number_raw = frame_number + self.start_t
         # Reset buffer as buffered images are now from other part of the video
         self.buffer_position_ = 0
         self.view_position_ = self.buffer_length_ - 1
         self.buffer_ = [None] * self.buffer_length_
 
-        self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number_)
+        self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, frame_number_raw)
 
         # because in next_frame it will be increased by one as usual
-        self.position_ = frame_number - 1
+        self.position = frame_number - 1
 
         return self.next_frame()
 
@@ -140,21 +145,13 @@ class VideoManager():
         return self.seek_frame(frame), frame
 
     def frame_number(self):
-        return self.position_
-        # return self.capture.get(cv_compatibility.cv_CAP_PROP_POS_FRAMES)
+        return self.position
 
     def fps(self):
         return self.capture.get(cv_compatibility.cv_CAP_PROP_FPS)
 
     def total_frame_count(self):
-        vid_frame_num = int(self.capture.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT))
-        if self.end_t < np.inf:
-            vid_frame_num -= vid_frame_num - self.end_t
-
-        if self.start_t > 0:
-            vid_frame_num -= self.start_t
-
-        return vid_frame_num
+        return self.end_t - self.start_t + 1
 
     def video_frame_count_without_bounds(self):
         return int(self.capture.get(cv_compatibility.cv_CAP_PROP_FRAME_COUNT))
@@ -168,7 +165,7 @@ class VideoManager():
         self.buffer_length_ = 51
         self.view_position_ = self.buffer_length_ - 1
         self.reset_buffer()
-        self.position_ = -1
+        self.position = -1
 
     def reset_buffer(self):
         self.buffer_ = [None] * self.buffer_length_

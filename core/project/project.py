@@ -27,8 +27,8 @@ class Project:
         self.name = ''
         self.description = ''
         self.video_paths = []
-        self.video_start_t = -1
-        self.video_end_t = -1
+        self.video_start_t = 0
+        self.video_end_t = None
         self.date_created = -1
         self.date_last_modification = -1
         self.video_crop_model = None
