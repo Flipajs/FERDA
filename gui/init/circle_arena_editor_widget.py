@@ -74,59 +74,15 @@ class CircleArenaEditorWidget(QtGui.QWizardPage):
         self.save_arena_to_project()
         return True
 
-    def unused(self):
-        # if isinstance(self.project.bg_model, BGModel) or self.project.bg_model.is_computed():
-        #     if isinstance(self.project.bg_model, Model):
-        #         self.project.bg_model = self.project.bg_model.get_model()
-
-        self.graphics_view.hide()
-        self.bg_fix_widget = BgFixWidget(self.project.bg_model.img(), self.finish)
-        self.graphics_view.hide()
-        self.vbox.addWidget(self.bg_fix_widget)
-
-        h_, w_, _ = self.project.bg_model.img().shape
-        self.project.arena_model = Circle(h_, w_)
-        c = np.array([self.arena_ellipse.c.pos().y(), self.arena_ellipse.c.pos().x()])
-        r = np.array([self.arena_ellipse.a.pos().y(), self.arena_ellipse.a.pos().x()])
-
-        self.project.arena_model.set_circle(c, np.linalg.norm(c-r))
-
-        if self.progress_dialog:
-            self.progress_dialog.cancel()
-            self.progress_dialog = None
-        # else:
-        #     while True:
-        #         time.sleep(.100)
-        #         if not self.progress_dialog:
-        #             self.progress_dialog = QtGui.QProgressDialog('Computing background model. Be patient please...', QtCore.QString("Cancel"), 0, 100)
-        #             self.progress_dialog.setWindowTitle('Upload status')
-        #         else:
-        #             self.progress_dialog.setLabelText('Computing '+str(self.project.bg_model.get_progress()))
-        #             self.progress_dialog.setValue(self.project.bg_model.get_progress())
-        #             QtGui.QApplication.processEvents()
-        #
-        #         if self.project.bg_model.is_computed():
-        #             break
-        #
-        #     self.confirm_arena_selection_clicked()
-        #     return
-
-        self.label_instructions.setText('To support FERDA performance, we are using background model. Bellow you can see background model. There should be no tracked object visible. If they are, please fix them by selecting problematic area in image. Then click f and by draggin move the green selection to area with background only. Press ctrl+z if you don\'t like the result for new selection."')
-        self.confirm_arena_selection.setHidden(True)
-        self.use_advanced_arena_editor.setHidden(True)
-
-        self.top_stripe_layout.addWidget(self.skip_bg_model)
-        self.top_stripe_layout.addWidget(self.confirm_bg_model)
-
     def use_advanced_editor(self):
         self.advanced_editor = ArenaEditor(self.first_frame, self.project, finish_callback=self.advanced_editor_done)
-        self.advanced_editor.show()
+        self.advanced_editor.exec_()
 
     def advanced_editor_done(self, arena_mask, occultation_mask):
         self.advanced_editor.hide()
         h_, w_, _ = self.first_frame.shape
         self.project.arena_model = PaintMask(h_, w_)
-        self.project.arena_model.set_mask(arena_mask!=0)
+        self.project.arena_model.set_mask(arena_mask != 0)
         # if isinstance(self.project.bg_model, BGModel) or self.project.bg_model.is_computed():
         if True:
             if isinstance(self.project.bg_model, Model):
@@ -164,8 +120,7 @@ class CircleArenaEditorWidget(QtGui.QWizardPage):
         #
         # self.top_stripe_layout.addWidget(self.skip_bg_model)
         # self.top_stripe_layout.addWidget(self.confirm_bg_model)
-
-        self.finish_callback(mask_already_prepared=True)
+        self.wizard().next()
 
     def add_circle_selection(self):
         self.arena_ellipse = ArenaCircle()
@@ -225,27 +180,28 @@ class CircleArenaEditorWidget(QtGui.QWizardPage):
         self.finish()
 
     def save_arena_to_project(self):
-        c = np.array(
-            [self.arena_ellipse.c.pos().y(), self.arena_ellipse.c.pos().x()])
-        r = np.array(
-            [self.arena_ellipse.a.pos().y(), self.arena_ellipse.a.pos().x()])
-        r = np.linalg.norm(c - r)
+        if self.project.arena_model is None:
+            c = np.array(
+                [self.arena_ellipse.c.pos().y(), self.arena_ellipse.c.pos().x()])
+            r = np.array(
+                [self.arena_ellipse.a.pos().y(), self.arena_ellipse.a.pos().x()])
+            r = np.linalg.norm(c - r)
 
-        im = self.video.next_frame()
+            im = self.video.next_frame()
 
-        video_crop_model = {
-            'y1': int(max(0, floor(c[0] - r))),
-            'x1': int(max(0, floor(c[1] - r))),
-            'y2': int(min(im.shape[0], ceil(c[0] + r))),
-            'x2': int(min(im.shape[1], ceil(c[1] + r))),
-        }
+            video_crop_model = {
+                'y1': int(max(0, floor(c[0] - r))),
+                'x1': int(max(0, floor(c[1] - r))),
+                'y2': int(min(im.shape[0], ceil(c[0] + r))),
+                'x2': int(min(im.shape[1], ceil(c[1] + r))),
+            }
 
-        self.project.video_crop_model = video_crop_model
+            self.project.video_crop_model = video_crop_model
 
-        c = np.array([c[0] - video_crop_model['y1'], c[1] - video_crop_model['x1']])
-        self.project.arena_model = Circle(video_crop_model['y2'] - video_crop_model['y1'],
-                                          video_crop_model['x2'] - video_crop_model['x1'])
-        self.project.arena_model.set_circle(c, r)
+            c = np.array([c[0] - video_crop_model['y1'], c[1] - video_crop_model['x1']])
+            self.project.arena_model = Circle(video_crop_model['y2'] - video_crop_model['y1'],
+                                              video_crop_model['x2'] - video_crop_model['x1'])
+            self.project.arena_model.set_circle(c, r)
 
     def finish(self):
         #TODO save values...

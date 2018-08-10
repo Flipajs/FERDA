@@ -16,7 +16,7 @@ from gui.arena.my_ellipse import MyEllipse
 from gui.arena.my_view    import MyView
 
 
-class ArenaEditor(QtGui.QWidget):
+class ArenaEditor(QtGui.QDialog):
     DEBUG = True
 
     def __init__(self, img, project, finish_callback=None):

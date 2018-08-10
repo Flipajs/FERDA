@@ -148,8 +148,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
 
     def initializePage(self):
         self.project = self.wizard().project
-        if self.video is None:
-            self.set_video(get_auto_video_manager(self.project))
+        self.set_video(get_auto_video_manager(self.project))
 
     def validatePage(self):
         if self.gb_pixel_classifier.isChecked():
@@ -404,7 +403,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         Show current settings on next frame
         :return: None
         """
-        image = self.video.prev_frame()
+        image = self.video.previous_frame()
         self.update_frame_number()
         self.set_image(image)
 

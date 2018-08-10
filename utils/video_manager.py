@@ -147,7 +147,7 @@ class VideoManager:
         :return:
         """
         frame_num = self.total_frame_count()
-        frame = randint(0, frame_num)
+        frame = randint(0, frame_num - 1)
 
         return self.seek_frame(frame), frame
 
