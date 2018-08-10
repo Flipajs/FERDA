@@ -9,6 +9,7 @@ import numpy as np
 from sklearn import svm, preprocessing
 from sklearn.ensemble import RandomForestClassifier, IsolationForest
 
+from core.config import config
 from core.graph.chunk_manager import ChunkManager
 from core.graph.region_chunk import RegionChunk
 from core.graph.solver import Solver
@@ -19,6 +20,7 @@ from utils.drawing.collage import create_collage_rows
 from utils.drawing.points import draw_points
 from tqdm import tqdm
 from utils.video_manager import get_auto_video_manager
+
 
 EXP = 'exp1'
 DEFAULT_H_DENSITY = 1e-10
@@ -1276,10 +1278,14 @@ def learn_assignments(p, max_examples=np.inf, display=False):
             break
 
     # TODO: I think contamination doesn't matter...
-    IF_appearance = IsolationForest(contamination=0.005)
+    if config['general']['fix_random_seed']:
+        seed = 42
+    else:
+        seed = None
+    IF_appearance = IsolationForest(contamination=0.005, random_state=seed)
     IF_appearance.fit(X_appearance)
 
-    IF_movement = IsolationForest(contamination=0.005)
+    IF_movement = IsolationForest(contamination=0.005, random_state=seed)
     IF_movement.fit(X_movement)
 
     with open(p.working_directory + '/temp/isolation_forests.pkl', 'wb') as f:
@@ -1551,20 +1557,20 @@ if __name__ == '__main__':
             better_n_times = 50
 
             strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
-            print "strongly better: {}".format(len(strongly_better_e))
+            print("strongly better: {}".format(len(strongly_better_e)))
             for e in strongly_better_e:
                 solver.confirm_edges([(e.source(), e.target())])
 
             tracklet_stats(p)
 
             strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
-            print "strongly better: {}".format(len(strongly_better_e))
+            print("strongly better: {}".format(len(strongly_better_e)))
             for e in strongly_better_e:
                 solver.confirm_edges([(e.source(), e.target())])
 
             tracklet_stats(p)
             strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
-            print "strongly better: {}".format(len(strongly_better_e))
+            print("strongly better: {}".format(len(strongly_better_e)))
             for e in strongly_better_e:
                 solver.confirm_edges([(e.source(), e.target())])
 
