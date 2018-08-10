@@ -1,5 +1,8 @@
 from core.arena.paint_mask import PaintMask
 from gui.arena.arena_editor import ArenaEditor
+from utils.video_manager import get_auto_video_manager
+from math import ceil, floor
+from core.arena.circle import Circle
 
 __author__ = 'fnaiser'
 
@@ -19,13 +22,11 @@ from core.bg_model.model import Model
 from core.bg_model.bg_model import BGModel
 
 
-class CircleArenaEditorWidget(QtGui.QWidget):
-    def __init__(self, finish_callback, project):
+class CircleArenaEditorWidget(QtGui.QWizardPage):
+    def __init__(self):
         super(CircleArenaEditorWidget, self).__init__()
         self.arena_mark_size = 15
-        self.project = project
-
-        self.finish_callback = finish_callback
+        self.project = None
 
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
@@ -36,8 +37,8 @@ class CircleArenaEditorWidget(QtGui.QWidget):
         self.top_stripe_layout = QtGui.QHBoxLayout()
         self.vbox.addLayout(self.top_stripe_layout)
 
-        self.video = video_manager.get_auto_video_manager(project)
-        self.first_frame = self.video.next_frame()
+        self.video = None
+        self.first_frame = None
 
         self.label_instructions = QtGui.QLabel('<i>Please select region of interest by dragging red and blue dot or confirm the suggested one.</i>')
         self.label_instructions.setWordWrap(True)
@@ -58,16 +59,20 @@ class CircleArenaEditorWidget(QtGui.QWidget):
         self.scene = QtGui.QGraphicsScene()
         self.graphics_view = my_view.MyView()
         self.graphics_view.setScene(self.scene)
-        self.scene.addPixmap(gui_utils.cvimg2qtpixmap(self.first_frame))
         self.bg_model_pixmap = None
-
-        self.add_circle_selection()
 
         self.vbox.addWidget(self.graphics_view)
 
-        self.confirm_arena_selection = QtGui.QPushButton('Continue')
-        self.confirm_arena_selection.clicked.connect(self.finish_callback)
-        self.vbox.addWidget(self.confirm_arena_selection)
+    def initializePage(self):
+        self.project = self.wizard().project
+        self.video = get_auto_video_manager(self.project)
+        self.first_frame = self.video.next_frame()
+        self.scene.addPixmap(gui_utils.cvimg2qtpixmap(self.first_frame))
+        self.add_circle_selection()
+
+    def validatePage(self):
+        self.save_arena_to_project()
+        return True
 
     def unused(self):
         # if isinstance(self.project.bg_model, BGModel) or self.project.bg_model.is_computed():
@@ -218,6 +223,29 @@ class CircleArenaEditorWidget(QtGui.QWidget):
         print "SKIP"
         self.project.bg_model = None
         self.finish()
+
+    def save_arena_to_project(self):
+        c = np.array(
+            [self.arena_ellipse.c.pos().y(), self.arena_ellipse.c.pos().x()])
+        r = np.array(
+            [self.arena_ellipse.a.pos().y(), self.arena_ellipse.a.pos().x()])
+        r = np.linalg.norm(c - r)
+
+        im = self.video.next_frame()
+
+        video_crop_model = {
+            'y1': int(max(0, floor(c[0] - r))),
+            'x1': int(max(0, floor(c[1] - r))),
+            'y2': int(min(im.shape[0], ceil(c[0] + r))),
+            'x2': int(min(im.shape[1], ceil(c[1] + r))),
+        }
+
+        self.project.video_crop_model = video_crop_model
+
+        c = np.array([c[0] - video_crop_model['y1'], c[1] - video_crop_model['x1']])
+        self.project.arena_model = Circle(video_crop_model['y2'] - video_crop_model['y1'],
+                                          video_crop_model['x2'] - video_crop_model['x1'])
+        self.project.arena_model.set_circle(c, r)
 
     def finish(self):
         #TODO save values...

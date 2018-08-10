@@ -1,32 +1,88 @@
 import sys
 from collections import OrderedDict
-
-from gui.graph_widget_loader import GraphWidgetLoader
-
-__author__ = 'fnaiser'
+from functools import partial
+import os.path
 
 from PyQt4 import QtGui, QtCore
-from gui.tracker.tracker_widget import TrackerWidget
 from gui.tracking_widget import TrackingWidget
 from gui.results.results_widget import ResultsWidget
 from gui.statistics.statistics_widget import StatisticsWidget
-
-from core.background_computer import BackgroundComputer
-from functools import partial
+from gui.graph_widget_loader import GraphWidgetLoader
 from gui.learning.learning_widget import LearningWidget
+from core.project.project import Project, ProjectNotFoundError
+from utils.video_manager import VideoFileError
+from gui.project.new_project_wizard import NewProjectWizard
+from gui.settings_widgets.settings_dialog import SettingsDialog
+from gui.settings import Settings as S_
+
+from gui.generated.ui_landing_tab import Ui_landingForm
+
+
+class LandingTab(QtGui.QWidget):
+    project_ready = QtCore.pyqtSignal(object)
+
+    def __init__(self):
+        super(LandingTab, self).__init__()
+        self.ui = Ui_landingForm()
+        self.ui.setupUi(self)
+
+        self.ui.newProjectButton.clicked.connect(self.show_new_project_wizard)
+        self.ui.loadProjectButton.clicked.connect(lambda state: self.load_project())
+        self.ui.settingsButton.clicked.connect(self.show_settings_dialog)
+
+    def show_new_project_wizard(self):
+        wizard = NewProjectWizard(self)
+        if wizard.exec_() == QtGui.QDialog.Accepted:
+            self.project_ready.emit(wizard.project)
+
+    def show_settings_dialog(self):
+        dialog = SettingsDialog(self)
+        dialog.exec_()
+
+    def load_project(self, project_dir=None):
+        if project_dir is None:
+            # ask for a project folder
+            if os.path.isdir(S_.temp.last_wd_path):
+                path = S_.temp.last_wd_path
+            else:
+                path = ''
+
+            project_dir = str(QtGui.QFileDialog.getExistingDirectory(self, 'Select a project folder', directory=path))
+            if not project_dir:
+                return
+
+        project = Project()
+        video_file = None
+        while True:
+            try:
+                project.load(project_dir, video_file=video_file)
+                break
+            except ProjectNotFoundError as e:
+                QtGui.QMessageBox.critical(self, 'No project found!', e.strerror, QtGui.QMessageBox.Ok)
+                return
+            except VideoFileError:
+                video_file = str(QtGui.QFileDialog.getOpenFileName(
+                    self, 'Project video file not found or can\'t be opened. Select new video location.',
+                    '.', filter='Videos (*.mp4 *.avi *.mkv *.webm *.mpg *.mpeg *.mov);;All Files (*.*)'))
+                if not video_file:
+                    return
+
+        S_.temp.last_wd_path = project_dir
+        self.project_ready.emit(project)
 
 
 class MainTabWidget(QtGui.QWidget):
-    def __init__(self, finish_callback, project, progress_callback=None):
+    def __init__(self):
         super(MainTabWidget, self).__init__()
 
-        self.project = project
+        self.project = None
         self.ignore_tab_change = False
         self.show_results_only_around_frame = -1
         self.solver = None
 
-        self.progress_callback = progress_callback
-
+        self.setWindowIcon(QtGui.QIcon('imgs/ferda.ico'))
+        self.setWindowTitle('FERDA')
+        # self.setGeometry(100, 100, 700, 400)
 
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
@@ -44,37 +100,29 @@ class MainTabWidget(QtGui.QWidget):
         # self.buttons.layout().addWidget(self.undock_button)
         # self.undock_button.setFixedHeight(30)
 
-        self.finish_callback = finish_callback
-
         self.widgets = OrderedDict([
-            ('tracking', TrackingWidget(self.project)),
-            ('results', ResultsWidget(self.project,
-                                         callbacks={'decide_tracklet': self.decide_tracklet,
-                                                    'edit_tracklet': self.edit_tracklet,
-                                                    'get_separated_frame': self.get_separated_frame,
-                                                    'update_N_sets': self.update_N_sets,
-                                                    'tracklet_measurements': self.tracklet_measurements})),
-            ('id_detection', LearningWidget(self.project, self.play_and_highlight_tracklet, self.progress_callback)),
-            ('stats', StatisticsWidget(project)),
-            ('graph', GraphWidgetLoader(project, tracklet_callback=self.play_and_highlight_tracklet)),
+            ('main', LandingTab()),
+            ('tracking', QtGui.QWidget()),
+            ('results', QtGui.QWidget()),
+            # ('id_detection', QtGui.QWidget()),
+            # ('stats', QtGui.QWidget()),
+            ('graph', QtGui.QWidget()),
         ])
 
         self.widgets_info = dict(
             [
+                ('main', 'Main'),
                 ('tracking', 'Tracking'),
                 ('results', 'Results'),
-                ('id_detection', 'Id Detection'),
-                ('stats', 'Statistics'),
+                # ('id_detection', 'Id Detection'),
+                # ('stats', 'Statistics'),
                 ('graph', 'Graph'),
             ])
-
-        for i, (name, widget) in enumerate(self.widgets.iteritems()):
-            self.tabs.addTab(widget, name)
-            self.tabs.setEnabled(i)
+        self.reload_tabs()
 
         self.vbox.addWidget(self.tabs)
         self.tabs.currentChanged.connect(self.tab_changed)
-        self.tabs.setCurrentIndex(0)
+        self.widgets['main'].project_ready.connect(self.update_project)
 
         self.switch_to_tracking_window_action = QtGui.QAction('switch tab to tracking', self)
         self.switch_to_tracking_window_action.triggered.connect(partial(self.tabs.setCurrentIndex, 0))
@@ -90,6 +138,31 @@ class MainTabWidget(QtGui.QWidget):
         self.update_undecided_a.triggered.connect(self.learning_widget_update_undecided)
         self.update_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_U))
         self.addAction(self.update_undecided_a)
+
+    def update_project(self, project):
+        self.project = project
+        self.widgets['tracking'] = TrackingWidget(self.project)
+        self.widgets['results'] = ResultsWidget(self.project,
+                                         callbacks={'decide_tracklet': self.decide_tracklet,
+                                                    'edit_tracklet': self.edit_tracklet,
+                                                    'get_separated_frame': self.get_separated_frame,
+                                                    'update_N_sets': self.update_N_sets,
+                                                    'tracklet_measurements': self.tracklet_measurements})
+        # self.widgets['id_detection'] = LearningWidget(self.project, self.play_and_highlight_tracklet)
+        # self.widgets['id_detection'].setEnabled(True)
+        # self.widgets['stats'] = StatisticsWidget(project)
+        # self.widgets['stats'].setEnabled(True)
+        self.widgets['graph'] = GraphWidgetLoader(project, tracklet_callback=self.play_and_highlight_tracklet)
+        self.reload_tabs()
+
+    def reload_tabs(self):
+        self.tabs.clear()
+        for i, (name, widget) in enumerate(self.widgets.iteritems()):
+            self.tabs.addTab(widget, self.widgets_info[name])
+            if self.project is not None or name == 'main':
+                self.tabs.setTabEnabled(i, True)
+            else:
+                self.tabs.setTabEnabled(i, False)
 
     def reload_ids(self):
         print "RELOADING"

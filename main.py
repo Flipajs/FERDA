@@ -4,16 +4,17 @@ import time
 from PyQt4 import QtGui
 
 from core.project.project import Project
-from gui import main_window
 from core.config import config
+from gui.main_tab_widget import MainTabWidget
 
-parser = argparse.ArgumentParser(description='FERDA laboratory animal tracking system.')
+
+parser = argparse.ArgumentParser(description='FERDA laboratory animal tracking system')
 parser.add_argument('project', nargs='?', help='project directory or file')
 args = parser.parse_args()
 
 app = QtGui.QApplication(sys.argv)
-ex = main_window.MainWindow()
-ex.setFocus()
+ex = MainTabWidget()
+ex.show()
 
 t_ = time.time()
 config['general']['print_log'] = False
@@ -146,6 +147,4 @@ if args.project is not None:
 
 print "FERDA is READY, loaded in {:.3}s".format(time.time()-t_)
 
-app.exec_()
-app.deleteLater()
-sys.exit()
+sys.exit(app.exec_())

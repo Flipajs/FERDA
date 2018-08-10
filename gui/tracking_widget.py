@@ -1,7 +1,8 @@
 from PyQt4 import QtGui, QtCore
 # regenerate the ui_tracking_widget code with `pyuic4 tracking_widget.ui -o ui_tracking_widget.py -x`
-from gui.ui_tracking_widget import Ui_tracking_widget
+from gui.generated.ui_tracking_widget import Ui_tracking_widget
 import core.segmentation
+import core.graph_assembly
 from core.id_detection.complete_set_matching import do_complete_set_matching
 
 # TODO:

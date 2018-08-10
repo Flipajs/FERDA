@@ -5,8 +5,7 @@ from gui.img_controls.my_scene import MyScene
 
 __author__ = 'dita'
 
-from PyQt4 import QtGui, QtCore, Qt
-from skimage.measure import label
+from PyQt4 import QtGui, QtCore
 import cv2
 import sys
 import math

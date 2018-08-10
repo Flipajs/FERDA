@@ -6,7 +6,6 @@ __author__ = 'fnaiser'
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QImage
-import utils.img
 from gui.settings_widgets.default import get_tooltip, get_default
 import numpy as np
 
@@ -52,18 +51,24 @@ class SelectableQLabel(QtGui.QLabel):
             self.selected = False
 
 
+def set_input_field_bg_valid(input_widget, valid=True):
+    palette = QtGui.QPalette()
+    if valid:
+        palette.setColor(QtGui.QPalette.Base, QtCore.Qt.white)
+        # input_widget.setStyleSheet('QLineEdit { background: rgb(255, 0, 0); }')
+    else:
+        # input_widget.setStyleSheet('QLineEdit { background: rgb(255, 0, 0); }')
+        palette.setColor(QtGui.QPalette.Base, QtCore.Qt.red)
+    input_widget.setPalette(palette)
+
+
 def file_name_dialog(window, text='Select files', path='', filter_=''):
-    return file_names_dialog(window, text=text, path=path, filter_=filter_)[0]
+    return str(QtGui.QFileDialog.getOpenFileName(window, text, path, filter=filter_))
 
 
 def file_names_dialog(window, text='Select files', path='', filter_=''):
-    file_names = QtGui.QFileDialog.getOpenFileNames(window, text, path, filter=filter_)
-
-    names = []
-    for f in file_names:
-        names.append(str(f))
-
-    return names
+    file_names_qstr = QtGui.QFileDialog.getOpenFileNames(window, text, path, filter=filter_)
+    return [str(s) for s in file_names_qstr]
 
 
 def cvimg2qtpixmap(img):
@@ -71,6 +76,7 @@ def cvimg2qtpixmap(img):
     pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
 
     return pix_map
+
 
 def reconnect(signal, newhandler=None, oldhandler=None):
     while True:
@@ -84,6 +90,7 @@ def reconnect(signal, newhandler=None, oldhandler=None):
     if newhandler is not None:
         signal.connect(newhandler)
 
+
 def get_spin_box(from_=0, to=100, step=1, key=None):
     sb = QtGui.QSpinBox()
     sb.setRange(from_, to)
@@ -93,6 +100,7 @@ def get_spin_box(from_=0, to=100, step=1, key=None):
         sb.setToolTip(get_tooltip(key))
 
     return sb
+
 
 def get_double_spin_box(from_=0, to=1, step=0.01, key=None):
     sb = QtGui.QDoubleSpinBox()
@@ -104,6 +112,7 @@ def get_double_spin_box(from_=0, to=1, step=0.01, key=None):
 
     return sb
 
+
 def get_checkbox(text, key=None):
     ch = QtGui.QCheckBox(text)
     if key:
@@ -111,6 +120,7 @@ def get_checkbox(text, key=None):
         ch.setChecked(get_settings(key, bool))
 
     return ch
+
 
 def get_image_label(im):
     h = im.shape[0]
@@ -123,6 +133,7 @@ def get_image_label(im):
     item.setPixmap(get_pixmap_from_np_bgr(im))
 
     return item
+
 
 def gbox_collapse_expand(gbox, height=35):
     # it is still not changed because it is called on toggle, so it is a little bit contra-intuitive
@@ -148,6 +159,7 @@ def get_img_qlabel(pts, img, id, height=100, width=100, filled=False):
     item.setPixmap(pix_map)
 
     return item
+
 
 class ClickableQGraphicsPixmapItem(QtGui.QGraphicsPixmapItem):
     def __init__(self, pixmap, id_, callback):

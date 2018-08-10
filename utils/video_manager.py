@@ -3,7 +3,8 @@ __author__ = 'filip@naiser.cz'
 import cv2
 import cv_compatibility
 from random import randint
-import numpy as np
+import errno
+import warnings
 
 
 class VideoType:
@@ -15,6 +16,11 @@ class VideoType:
 
     def __init__(self):
         pass
+
+
+class VideoFileError(OSError):
+    def __init__(self, *args, **kwargs):
+        super(VideoFileError, self).__init__(*args, **kwargs)
 
 
 class VideoManager:
@@ -33,12 +39,18 @@ class VideoManager:
         """
         self.video_path = video_path
         self.capture = cv2.VideoCapture(self.video_path)
+        if not self.capture.isOpened():
+            raise VideoFileError(errno.ENOENT, 'can\'t open video file {}'.format(video_path))
 
         self.start_t = start_t
         if end_t is not None:
             self.end_t = end_t
         else:
             self.end_t = self.video_frame_count_without_bounds() - 1
+        # legacy project support
+        if self.end_t == self.video_frame_count_without_bounds():
+            self.end_t -= 1
+            warnings.warn('Legacy project correction: end_t -= 1.')
         assert self.start_t >= 0
         assert self.start_t < self.end_t <= self.video_frame_count_without_bounds() - 1
 
@@ -48,9 +60,6 @@ class VideoManager:
         self.buffer_ = [None] * self.buffer_length_
         self.position = -1
         self.crop_model = crop_model
-
-        if not self.capture.isOpened():
-            raise Exception("Cannot open video! Path: " + video_path)
 
         self.init_video()
 
@@ -213,13 +222,12 @@ def get_auto_video_manager(project):
     based on file_paths return VideoManager or FerdaCompressedVideoManager instance
     :type file_paths: [str]
     """
-
     file_paths = project.video_paths
-    crop_model = None
-    try:
+
+    if hasattr(project, 'video_crop_model'):
         crop_model = project.video_crop_model
-    except:
-        pass
+    else:
+        crop_model = None
 
     if isinstance(file_paths, list) and len(file_paths) == 1:
         file_paths = file_paths[0]

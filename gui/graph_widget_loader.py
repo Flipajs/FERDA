@@ -8,7 +8,7 @@ from gui.graph_widget.graph_line import LineType, GraphLine, Overlap
 from gui.settings import Settings as S_
 from core.config import config
 from utils.img_manager import ImgManager
-from gui.ui_graph_widget import Ui_graph_widget
+from gui.generated.ui_graph_widget import Ui_graph_widget
 from utils.video_manager import get_auto_video_manager
 
 __author__ = 'Simon Mandlik'
@@ -70,6 +70,7 @@ class GraphWidgetLoader(QtGui.QWidget):
         self.ui.spinBoxFrom.valueChanged.connect(self.update_range_minmax)
         self.ui.pushButtonDrawGraph.clicked.connect(self.draw_graph)
         self.graph_visualizer = self.ui.graph_visualizer
+        self.draw_graph()
 
     def update_range_minmax(self):
         self.ui.spinBoxTo.setMinimum(self.ui.spinBoxFrom.value() + 1)

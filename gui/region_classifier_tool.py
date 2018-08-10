@@ -1,33 +1,23 @@
 from PyQt4 import QtGui, QtCore
 import sys
 import core.region.clustering
-import cPickle as pickle
-from utils.video_manager import get_auto_video_manager
 import numpy as np
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from functools import partial
-import os
-from os.path import join
 from core.config import config
 
 
-class RegionClassifierTool(QtGui.QWidget):
+class RegionClassifierTool(QtGui.QWizardPage):
 
-    on_finished = QtCore.pyqtSignal()
-
-    def __init__(self, project):
+    def __init__(self):
         super(RegionClassifierTool, self).__init__()
-
-        self.project = project
-        # self.project_temp_dir = join(project.working_directory, 'temp')
-        # if not os.path.isdir(self.project_temp_dir):
-        #     os.mkdir(self.project_temp_dir)
-        # self.vm = get_auto_video_manager(self.project)
 
         self.clustering = core.region.clustering.RegionCardinality()
         self.samples = []
         self.labeled_samples = []
+        self.gather_samples_thread = None
 
+        # build UI
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
         self.hbox = QtGui.QHBoxLayout()
@@ -152,13 +142,9 @@ class RegionClassifierTool(QtGui.QWidget):
             self.feature_checkboxes.append(w)
         self.apply_active_features()
 
-        self.button_continue = QtGui.QPushButton('continue')
-        # self.classify_tracklets_b.clicked.connect(self.classify_tracklets)
-        self.hbox_buttons.addWidget(self.button_continue)
-        self.button_continue.clicked.connect(self.save_classifier)
+        self.setDisabled(True)
 
-        self.show()
-
+    def initializePage(self):
         class GatherSamplesThread(QtCore.QThread):
             samples_ready = QtCore.pyqtSignal(list)
             update = QtCore.pyqtSignal(int)
@@ -180,12 +166,16 @@ class RegionClassifierTool(QtGui.QWidget):
             def __del__(self):
                 self.wait()
 
-        self.gather_samples_thread = GatherSamplesThread(self.project, self.clustering)
+        self.gather_samples_thread = GatherSamplesThread(self.wizard().project, self.clustering)
         self.gather_samples_thread.samples_ready.connect(self.retrieve_samples)
         self.gather_samples_thread.update.connect(self.progress_bar_update)
         self.gather_samples_thread.finished.connect(self.gather_samples_finished)
         self.gather_samples_thread.start()
-        self.setDisabled(True)
+
+    def validatePage(self):
+        self.wizard().project.region_cardinality_classifier = self.clustering
+        self.wizard().project.save()
+        return True
 
     def progress_bar_update(self, delta):
         self.progress_bar.setValue(self.progress_bar.value() + delta)
@@ -201,8 +191,6 @@ class RegionClassifierTool(QtGui.QWidget):
     def gather_samples_finished(self):
         self.setEnabled(True)
         self.progress_bar.setValue(config['region_classifier']['samples_preselection_num'])
-        # self.vbox.removeWidget(self.progress_bar)
-        # self.vbox.addWidget()
 
     def apply_active_features(self):
         mask = np.zeros(len(self.feature_checkboxes), dtype=np.int)
@@ -282,13 +270,7 @@ class RegionClassifierTool(QtGui.QWidget):
         item.setScaledContents(True)
         item.setFixedSize(self.GRID_ITEM_WH[0], self.GRID_ITEM_WH[1])
         item.setPixmap(pix_map)
-
         return item
-
-    def save_classifier(self):
-        self.project.region_cardinality_classifier = self.clustering
-        self.project.save()
-        self.on_finished.emit()
 
 
 if __name__ == '__main__':

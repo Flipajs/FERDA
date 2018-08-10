@@ -12,6 +12,8 @@ from gui.img_controls.gui_utils import cvimg2qtpixmap
 from gui.img_controls.my_view import MyView
 from gui.settings import Settings as S_
 from utils.video_manager import get_auto_video_manager
+import core.config as config
+
 
 MARKER_SIZE = 15
 
@@ -86,9 +88,9 @@ class SelectAllLineEdit(QtGui.QLineEdit):
         self.readyToEdit = True
 
 
-class CropVideoWidget(QtGui.QWidget):
+class CropVideoPage(QtGui.QWizardPage):
     def __init__(self):
-        super(CropVideoWidget, self).__init__()
+        super(CropVideoPage, self).__init__()
         self.vbox = QtGui.QVBoxLayout()
         self.solver = None
         self.video = None
@@ -223,12 +225,20 @@ class CropVideoWidget(QtGui.QWidget):
         self.video_crop_buttons_layout.addWidget(self.start_frame_sign)
         self.video_crop_buttons_layout.addWidget(self.end_frame_sign)
         self.video_crop_buttons_layout.addWidget(self.num_frames_sign)
-
         self.connect_ui()
 
         self.chunks = []
         self.markers = []
         self.items = []
+
+    def initializePage(self):
+        self.set_video(get_auto_video_manager(self.wizard().project))
+
+    def validatePage(self):
+        # super(CropVideoPage, self).validatePage()
+        self.wizard().project.video_start_t = self.start_frame
+        self.wizard().project.video_end_t = self.end_frame
+        return True
 
     def set_video(self, video_manager):
         self.video = video_manager

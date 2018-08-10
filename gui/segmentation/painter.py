@@ -11,6 +11,7 @@ from qimage2ndarray import array2qimage
 
 __author__ = 'dita'
 
+
 class Painter(QtGui.QWidget):
     """ Painter widget that can be used in all painting applications"""
 
@@ -40,9 +41,27 @@ class Painter(QtGui.QWidget):
         self.undo_len = undo_len
 
         # show background in one pixmap
-        self.set_image(image)
+        if image is not None:
+            self.set_image(image)
 
+        self.overlay_pixmap = None
+        self.overlay2_pixmap = None
+
+        # PAINT SETUP
+        self.pen_size = pen_size / 2
+        self.eraser = 1  # 1 for painting (eraser off), 0 for erasing
+
+        self.colors = {}  # dictionary: [name] : (mask, color, pixmap)
+        self.add_color(paint_name, paint_r, paint_g, paint_b, paint_a) # add the first - default color
+        self.set_pen_color(paint_name)
+
+        # create the main view and left panel with buttons
+        self.make_gui()
+
+    def set_size(self, w, h):
         # create empty overlay - this can be used to set masks from outside the painter
+        self.w = w
+        self.h = h
         bg_size = QtCore.QSize(self.w, self.h)
         fmt = QtGui.QImage.Format_ARGB32
         overlay_image = QtGui.QImage(bg_size, fmt)
@@ -50,16 +69,9 @@ class Painter(QtGui.QWidget):
         self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
         self.overlay2_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
 
-        # PAINT SETUP
-        self.pen_size = pen_size / 2
-        self.eraser = 1  # 1 for painting (eraser off), 0 for erasing
-
-        self.colors = {} # dictionary: [name] : (mask, color, pixmap)
-        self.add_color(paint_name, paint_r, paint_g, paint_b, paint_a) # add the first - default color
-        self.set_pen_color(paint_name)
-
-        # create the main view and left panel with buttons
-        self.make_gui()
+        for color in self.colors.itervalues():
+            if color[0] is None:
+                color[0] = np.zeros((self.h, self.w))
 
     def set_image(self, image):
         self.background = array2qimage(bgr2rgb(image))
@@ -67,8 +79,8 @@ class Painter(QtGui.QWidget):
             self.scene.removeItem(self.paint_pixmap)
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.background))
 
-        self.w = self.background.width()
-        self.h = self.background.height()
+        if self.w != self.background.width() or self.h != self.background.height():
+            self.set_size(self.background.width(), self.background.height())
 
     def set_image_visible(self, visibility):
         """ Toggles background visibility
@@ -160,7 +172,10 @@ class Painter(QtGui.QWidget):
         """
         
         # prepare new mask
-        mask = np.zeros((self.h, self.w))
+        if self.h is None or self.w is None:
+            mask = None
+        else:
+            mask = np.zeros((self.h, self.w))
         # save color data
         color = (r, g, b, a)
         # fill the dictionary (pixmap will be set once the mask is not empty)

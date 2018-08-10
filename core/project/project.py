@@ -7,6 +7,7 @@ import os
 from os.path import join
 import tqdm
 import json
+import errno
 
 from core.graph.solver import Solver
 from core.log import Log
@@ -15,6 +16,11 @@ from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
 from core.config import config
 from utils.img_manager import ImgManager
+
+
+class ProjectNotFoundError(OSError):
+    def __init__(self, *args, **kwargs):
+        super(ProjectNotFoundError, self).__init__(*args, **kwargs)
 
 
 class Project:
@@ -303,7 +309,7 @@ class Project:
         elif os.path.isfile(project_fproj):
             self.from_pkl(project_fproj)
         else:
-            assert False, 'no project file found at {} or {}'.format(project_json, project_fproj)
+            raise ProjectNotFoundError(errno.ENOENT, 'no project file found at {} or {}'.format(project_json, project_fproj))
 
         # check for video file
         if video_file is not None:

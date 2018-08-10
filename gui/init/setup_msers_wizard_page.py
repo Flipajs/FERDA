@@ -9,7 +9,6 @@ import cv2
 
 from core.segmentation_helper import SegmentationHelper
 from core.project.project import Project
-from core.region.mser import get_filtered_msers
 from gui.gui_utils import SelectableQLabel
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from gui.segmentation.painter import Painter
@@ -18,46 +17,39 @@ from utils.drawing.points import draw_points_crop, get_contour, draw_points_bina
 from utils.img import prepare_for_segmentation
 from utils.video_manager import get_auto_video_manager
 from core.region.mser import get_filtered_msers
+from core.region.region_manager import RegionManager
+from core.graph.graph_manager import GraphManager
+from core.graph.solver import Solver
+from core.graph.chunk_manager import ChunkManager
+from core.animal import Animal
+from core.classes_stats import dummy_classes_stats
 
 __author__ = 'filip@naiser.cz', 'dita'
 
 
-class SetMSERs(QtGui.QWidget):
-    def __init__(self, project, finish_callback=None, mser_color=(255, 128, 0, 200), prob_color=(0, 255, 0, 200),
-                 foreground_color=(0, 255, 0, 255), background_color=(255, 0, 238, 255)):
+class SetupMSERsWizardPage(QtGui.QWizardPage):
+    def __init__(self):
         """
         Interactive tool to improve msers search using segmentation.
-        :param project: Ferda project
-        :param mser_color: 0-255 rgba color to visualise mser borders (orange by default)
-        :param prob_color: 0-255 rgba color to visualise segmentation probability mask (green by default)
-        :param foreground_color: 0-255 rgba color to visualise foreground when painting (pink by default)
-        :param background_color: 0-255 rgba color to visualise background when painting (green by default)
         """
-        super(SetMSERs, self).__init__()
+        super(SetupMSERsWizardPage, self).__init__()
 
         self.grid_element_width = 100
 
-        self.project = project
-        self.video = get_auto_video_manager(project)
-
-        self.im = self.video.next_frame()
-        im = self.im
-        if self.project.bg_model:
-            im = self.project.bg_model.bg_subtraction(im)
-
-        if self.project.arena_model:
-            im = self.project.arena_model.mask_image(im)
-        self.im = im
-        self.w, self.h, c = self.im.shape
+        self.project = None
+        self.video = None
+        self.im = None
+        self.w = None
+        self.h = None
 
         self.use_segmentation_ = True
         self.segmentation = None
 
         # Setup colors
-        self.color_mser = mser_color
-        self.color_prob = prob_color
-        self.color_foreground = foreground_color
-        self.color_background = background_color
+        self.color_mser = (255, 128, 0, 200)  # mser borders (orange by default)
+        self.color_prob = (0, 255, 0, 200)  # segmentation probability mask (green by default)
+        self.color_foreground = (0, 255, 0, 255)  # foreground when painting (pink by default)
+        self.color_background = (255, 0, 238, 255)  # background when painting (green by default)
 
         # Setup painting tools
         self.pen_size = 5
@@ -70,7 +62,7 @@ class SetMSERs(QtGui.QWidget):
         self.painter.add_color_("foreground", self.color_foreground)
 
         # Setup segmentation helper
-        self.helper = SegmentationHelper(self.im)
+        self.helper = None
 
         # Prepare img_grid variable
         self.img_grid = None
@@ -78,10 +70,6 @@ class SetMSERs(QtGui.QWidget):
         # max area helper
         self.old_max_area_helper = None
         self.old_max_area_helper_text = None
-
-        self.setLayout(QtGui.QVBoxLayout())  # all + continue button
-        self.left_panel_and_preview = QtGui.QWidget()
-        self.left_panel_and_preview.setLayout(QtGui.QHBoxLayout())
 
         # Left panel with options and paint tools
         self.left_panel = QtGui.QWidget()
@@ -92,9 +80,12 @@ class SetMSERs(QtGui.QWidget):
         left_scroll.setWidgetResizable(True)
         left_scroll.setWidget(self.left_panel)
         left_scroll.setMaximumWidth(450)
-        left_scroll.setMinimumWidth(300)
+        left_scroll.setMinimumWidth(200)
+
+        form_row_wrap_policy = QtGui.QFormLayout.WrapLongRows  # WrapAllRows
 
         self.form_panel = QtGui.QFormLayout()
+        self.form_panel.setRowWrapPolicy(form_row_wrap_policy)
 
         self.gb_general = QtGui.QGroupBox('general')
         self.gb_general.setLayout(QtGui.QFormLayout())
@@ -102,11 +93,13 @@ class SetMSERs(QtGui.QWidget):
 
         self.gb_mser_related = QtGui.QGroupBox('MSER settings')
         self.gb_mser_related.setLayout(QtGui.QFormLayout())
+        self.gb_mser_related.layout().setRowWrapPolicy(form_row_wrap_policy)
         self.left_panel.layout().addWidget(self.gb_mser_related)
 
         # TODO: describe all parameters...
         self.gb_region_filtering = QtGui.QGroupBox('region filtering')
         self.gb_region_filtering.setLayout(QtGui.QFormLayout())
+        self.gb_region_filtering.layout().setRowWrapPolicy(form_row_wrap_policy)
         self.left_panel.layout().addWidget(self.gb_region_filtering)
 
         self.gb_video_controls = QtGui.QGroupBox('video controls')
@@ -115,6 +108,7 @@ class SetMSERs(QtGui.QWidget):
 
         self.gb_pixel_classifier = QtGui.QGroupBox('pixel classifier')
         self.gb_pixel_classifier.setLayout(QtGui.QFormLayout())
+        self.gb_pixel_classifier.layout().setRowWrapPolicy(form_row_wrap_policy)
         self.gb_pixel_classifier.setCheckable(True)
         self.gb_pixel_classifier.setChecked(False)
         self.left_panel.layout().addWidget(self.gb_pixel_classifier)
@@ -135,24 +129,76 @@ class SetMSERs(QtGui.QWidget):
 
         # Setup gui elements
         self.prepare_widgets()
-        self.configure_form_panel()
+
         self.configure_paint_panel()
 
         # Complete the gui
-        self.left_panel_and_preview.layout().addWidget(left_scroll)  # self.layout().addWidget(self.left_panel)
-        self.left_panel_and_preview.layout().addWidget(self.painter)
-        self.layout().addWidget(self.left_panel_and_preview)
-        if finish_callback:
-            self.finish_button = QtGui.QPushButton('Continue')
-            self.finish_button.clicked.connect(finish_callback)
-            self.layout().addWidget(self.finish_button)
+        self.setLayout(QtGui.QHBoxLayout())
+        self.layout().addWidget(left_scroll)
+        self.layout().addWidget(self.painter)
+
+        # # optional: use splitter
+        # self.splitter = QtGui.QSplitter()
+        # self.splitter.addWidget(left_scroll)
+        # self.splitter.addWidget(self.painter)
+        # self.layout().addWidget(self.splitter)
 
         # Set a callback in painter when paint event occurs
         self.painter.update_callback = self.update_all
 
+    def initializePage(self):
+        self.project = self.wizard().project
+        if self.video is None:
+            self.set_video(get_auto_video_manager(self.project))
+
+    def validatePage(self):
+        if self.gb_pixel_classifier.isChecked():
+            with open(self.project.working_directory+'/segmentation_model.pkl', 'wb') as f:
+                pickle.dump(self.helper, f, -1)
+            self.project.segmentation_model = self.helper
+
+        self.project.other_parameters.segmentation_use_roi_prediction_optimisation = \
+            self.use_roi_prediction_optimisation_ch.isChecked()
+        self.project.other_parameters.segmentation_prediction_optimisation_border = \
+            self.prediction_optimisation_border_spin.value()
+        self.project.other_parameters.full_segmentation_refresh_in_spin = \
+            self.full_segmentation_refresh_in_spin.value()
+
+        self.project.stats = dummy_classes_stats()
+
+        self.project.stats.major_axis_median = self.major_axis_median.value()
+        self.project.solver_parameters.max_edge_distance_in_ant_length = self.max_dist_object_length.value()
+
+        self.project.rm = RegionManager(self.project.working_directory)
+        self.project.solver = Solver(self.project)
+        self.project.gm = GraphManager(self.project, self.project.solver)
+        self.project.chm = ChunkManager()
+        self.project.animals = []
+        for i in range(self.num_animals_sb.value()):
+            self.project.animals.append(Animal(i))
+
+        self.project.solver_parameters.certainty_threshold = .01
+
+        self.project.save()
+        return True
+
+    def set_video(self, video_manager):
+        self.video = video_manager
+        self.im = self.video.next_frame()
+        self.painter.set_image(self.im)
+        im = self.im
+        if self.project.bg_model:
+            im = self.project.bg_model.bg_subtraction(im)
+
+        if self.project.arena_model:
+            im = self.project.arena_model.mask_image(im)
+        self.im = im
+        self.w, self.h, c = self.im.shape
+
+        self.configure_form_panel()
+
+        self.helper = SegmentationHelper(self.im)
         self.update_all()
-        self.update_frame_number()
-        self.show()
 
     def update_all(self):
         """
@@ -358,7 +404,7 @@ class SetMSERs(QtGui.QWidget):
         Show current settings on next frame
         :return: None
         """
-        image = self.video.previous_frame()
+        image = self.video.prev_frame()
         self.update_frame_number()
         self.set_image(image)
 
@@ -580,7 +626,9 @@ class SetMSERs(QtGui.QWidget):
         self.region_min_intensity.setMinimum(0)
         self.region_min_intensity.setSingleStep(1)
 
-        self.gb_mser_related.layout().addRow('suppress bright region\n(all pixels intensity above threshold)', self.region_min_intensity)
+        tmp_label = QtGui.QLabel('suppress bright region (all pixels intensity above threshold)')
+        tmp_label.setWordWrap(True)
+        self.gb_mser_related.layout().addRow(tmp_label, self.region_min_intensity)
         # this line is necessary to avoid possible bugs in the future
         self.project.mser_parameters.region_min_intensity = self.region_min_intensity.value()
 
@@ -729,10 +777,10 @@ if __name__ == "__main__":
     proj = Project()
 
     # proj.load('/Users/flipajs/Documents/wd/FERDA/Cam1_rfs')
-    proj.load('/Users/flipajs/Documents/wd/FERDA/Cam1')
+    proj.load('/home/matej/prace/ferda/projects/1_initial_projects_180808_diverse/Cam1_clip (copy)')
     # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
-    proj.arena_model = None
-    proj.bg_model = None
+    # proj.arena_model = None
+    # proj.bg_model = None
 
     # proj.video_crop_model = {'y1': 110, 'y2': 950, 'x1': 70, 'x2': 910}
 
@@ -743,7 +791,9 @@ if __name__ == "__main__":
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
     # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c2.avi'
 
-    ex = SetMSERs(proj)
+    ex = SetupMSERsWizardPage()
+    ex.project = proj
+    ex.set_video(get_auto_video_manager(proj))
 
     ex.raise_()
     ex.showMaximized()
