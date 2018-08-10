@@ -141,7 +141,7 @@ def do_segmentation_part(project_dir, part_id, frame_start, frame_done_func=None
     proj.color_manager = None
     config['general']['log_graph_edits'] = False
     vid = get_auto_video_manager(proj)
-    frames_num = int(vid.total_frame_count())
+    frames_num = vid.total_frame_count()
     frames_in_row = config['segmentation']['frames_in_row']
     frame_end = frame_start + frames_in_row - 1
     if frame_end > frames_num - 1:

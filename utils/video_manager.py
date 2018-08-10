@@ -123,7 +123,7 @@ class VideoManager:
             self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, self.start_t)
 
     def seek_frame(self, frame_number):
-        assert 0 < frame_number <= self.total_frame_count()
+        assert 0 <= frame_number < self.total_frame_count()
 
         frame_number_raw = frame_number + self.start_t
         # Reset buffer as buffered images are now from other part of the video
