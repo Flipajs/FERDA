@@ -61,10 +61,11 @@ def compute_descriptors(project_dir, model_weights_path, add_missing=False):
             r_ids = []
 
     # Do the rest
-    imgs = normalize_and_prepare_imgs(imgs)
-    descs = model.predict(imgs)
-    for k, r_id in enumerate(r_ids):
-        descriptors[r_id] = descs[k, :]
+    if imgs:
+        imgs = normalize_and_prepare_imgs(imgs)
+        descs = model.predict(imgs)
+        for k, r_id in enumerate(r_ids):
+            descriptors[r_id] = descs[k, :]
     with open(join(project_dir, 'descriptors.pkl'), 'wb') as f:
         pickle.dump(descriptors, f)
     print("DONE")

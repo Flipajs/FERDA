@@ -21,6 +21,7 @@ import subprocess
 import shutil
 from core.config import config
 
+
 def setup_logging():
     logger_config_file = 'logging_conf.yaml'
     if os.path.isfile(logger_config_file):
