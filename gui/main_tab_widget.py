@@ -154,6 +154,7 @@ class MainTabWidget(QtGui.QWidget):
         # self.widgets['stats'].setEnabled(True)
         self.widgets['graph'] = GraphWidgetLoader(project, tracklet_callback=self.play_and_highlight_tracklet)
         self.reload_tabs()
+        self.tabs.setCurrentWidget(self.widgets['results'])
 
     def reload_tabs(self):
         self.tabs.clear()
