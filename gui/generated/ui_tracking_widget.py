@@ -108,10 +108,10 @@ class Ui_tracking_widget(object):
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:\'Cantarell\'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Performing tracking in the GUI is not supported yet. Please exit the application and use the command line tool <span style=\" font-family:\'Courier New,courier\';\">ferda_cli.py</span>. When the tracking is completed, open the project in the application again.</p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Project processing in the GUI is not supported yet. Please exit the application and use the command line tool <span style=\" font-family:\'Courier New,courier\';\">ferda_cli.py</span>. When the tracking is completed, open the project in the application again.</p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Example:</p>\n"
-"<pre style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Courier New,courier\';\">$ python ferda_cli.py ../projects/project1/ --run-tracking --reidentification-weights ../weights/ants.h5</span></pre>\n"
-"<pre style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'Courier New,courier\';\"><br /></pre></body></html>", None))
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Courier New,courier\';\">$ python ferda_cli.py ../projects/project1/ --run-tracking --reidentification-weights ../weights/ants.h5</span></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'Courier New,courier\';\"><br /></p></body></html>", None))
         self.label_4.setText(_translate("tracking_widget", "Re-identification Descriptors", None))
         self.label.setText(_translate("tracking_widget", "Segmentation", None))
         self.label_2.setText(_translate("tracking_widget", "Graph Construction", None))

@@ -102,11 +102,11 @@ class MainTabWidget(QtGui.QWidget):
 
         self.widgets = OrderedDict([
             ('main', LandingTab()),
-            ('tracking', QtGui.QWidget()),
-            ('results', QtGui.QWidget()),
+            ('tracking', None),
+            ('results', None),
             # ('id_detection', QtGui.QWidget()),
             # ('stats', QtGui.QWidget()),
-            ('graph', QtGui.QWidget()),
+            ('graph', None),
         ])
 
         self.widgets_info = dict(
@@ -152,17 +152,19 @@ class MainTabWidget(QtGui.QWidget):
         # self.widgets['id_detection'].setEnabled(True)
         # self.widgets['stats'] = StatisticsWidget(project)
         # self.widgets['stats'].setEnabled(True)
-        self.widgets['graph'] = GraphWidgetLoader(project, tracklet_callback=self.play_and_highlight_tracklet)
+        if self.project.chm is not None and len(self.project.chm) > 0:
+            self.widgets['graph'] = GraphWidgetLoader(project, tracklet_callback=self.play_and_highlight_tracklet)
         self.reload_tabs()
         self.tabs.setCurrentWidget(self.widgets['results'])
 
     def reload_tabs(self):
         self.tabs.clear()
         for i, (name, widget) in enumerate(self.widgets.iteritems()):
-            self.tabs.addTab(widget, self.widgets_info[name])
-            if self.project is not None or name == 'main':
+            if widget is not None:
+                self.tabs.addTab(widget, self.widgets_info[name])
                 self.tabs.setTabEnabled(i, True)
             else:
+                self.tabs.addTab(QtGui.QWidget(), self.widgets_info[name])
                 self.tabs.setTabEnabled(i, False)
 
     def reload_ids(self):
