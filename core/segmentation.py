@@ -128,8 +128,10 @@ def do_segmentation_part(project_dir, part_id, frame_start, frame_done_func=None
         prediction_optimisation_border = 25
         full_segmentation_refresh = 25
 
-    if not os.path.isdir(temp_path):
-        os.mkdir(temp_path)
+    try:
+        os.makedirs(temp_path)
+    except OSError:
+        pass
 
     # init managers
     solver = Solver(proj)

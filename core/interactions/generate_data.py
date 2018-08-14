@@ -197,8 +197,10 @@ class DataGenerator(object):
         return single, multi
 
     def _get_out_dir_rel(self, out_dir, out_file):
-        if not os.path.exists(out_dir):
-            os.mkdir(out_dir)
+        try:
+            os.makedirs(out_dir)
+        except OSError:
+            pass
         return os.path.relpath(os.path.abspath(out_dir), os.path.abspath(os.path.dirname(out_file)))
 
     def write_regions_for_testing(self, project_dir, out_dir, n, multi=True, single=False):

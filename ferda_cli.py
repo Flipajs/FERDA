@@ -165,9 +165,10 @@ def run_experiment(config):
     if config['exp_name']:
         base_experiment_name += '_' + config['exp_name']
     base_experiment_dir = join(config['dir'], base_experiment_name)
-    if not os.path.exists(base_experiment_dir):
-        os.mkdir(base_experiment_dir)
-
+    try:
+        os.makedirs(base_experiment_dir)
+    except OSError:
+        pass
     project_dir = join(config['projects_dir'], base_experiment_name)
     shutil.copytree(config['dataset']['initial_project'], project_dir)
 

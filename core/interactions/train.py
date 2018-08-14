@@ -517,8 +517,10 @@ class TrainInteractions:
         base_experiment_dir = ROOT_EXPERIMENT_DIR + base_experiment_name
         base_tensor_board_dir = join(ROOT_TENSOR_BOARD_DIR, base_experiment_name)
 
-        if not os.path.exists(base_experiment_dir):
-            os.mkdir(base_experiment_dir)
+        try:
+            os.makedirs(base_experiment_dir)
+        except OSError:
+            pass
         self._write_argv(base_experiment_dir)
 
         parameters = {'experiment_dir': base_experiment_dir,
@@ -647,8 +649,10 @@ class TrainInteractions:
             base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime()) + '_' + exp_name
             base_experiment_dir = join(ROOT_EXPERIMENT_DIR, base_experiment_name)
             base_tensor_board_dir = join(ROOT_TENSOR_BOARD_DIR, base_experiment_name)
-            if not os.path.exists(base_experiment_dir):
-                os.mkdir(base_experiment_dir)
+            try:
+                os.makedirs(base_experiment_dir)
+            except OSError:
+                pass
         else:
             base_experiment_dir = experiment_dir
             base_tensor_board_dir = None
@@ -663,8 +667,10 @@ class TrainInteractions:
                 m = self.models[model]()
                 print('loss_alpha %f' % alpha)
                 experiment_dir = join(base_experiment_dir, str(alpha))
-                if not os.path.exists(experiment_dir):
-                    os.mkdir(experiment_dir)
+                try:
+                    os.makedirs(experiment_dir)
+                except OSError:
+                    pass
 
                 parameters['loss_alpha'] = alpha
                 parameters['experiment_dir'] = experiment_dir

@@ -252,8 +252,10 @@ class Project:
         # print self.snapshot_id, self.active_snapshot
         import os
 
-        if not os.path.exists(self.working_directory + '/.auto_save'):
-            os.mkdir(self.working_directory + '/.auto_save')
+        try:
+            os.makedirs(self.working_directory + '/.auto_save')
+        except OSError:
+            pass
 
         self.save_chm_(self.working_directory+'/.auto_save/'+str(self.snapshot_id)+'__chunk_manager.pkl')
 

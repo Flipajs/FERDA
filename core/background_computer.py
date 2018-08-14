@@ -51,9 +51,11 @@ class BackgroundComputer:
         self.do_semi_merge = False
 
     def run(self):
-        if not os.path.exists(self.project.working_directory + '/temp'):
-            os.mkdir(self.project.working_directory + '/temp')
-            
+        try:
+            os.makedirs(self.project.working_directory + '/temp')
+        except OSError:
+            pass
+
         if not os.path.exists(self.project.working_directory + '/temp/part0.pkl'):
 
             if not config['general']['log_in_bg_computation']:

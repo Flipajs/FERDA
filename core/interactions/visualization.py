@@ -190,14 +190,13 @@ def visualize_results(experiment_dir, data_dir, n_objects=None):
         pred['%d_major' % i] = mean_major
         pred['%d_minor' % i] = mean_minor
 
-    if not os.path.exists(experiment_dir):
-        os.mkdir(experiment_dir)
     out_dir = join(experiment_dir, 'visualization')
-    if not os.path.exists(out_dir):
-        os.mkdir(out_dir)
-    else:
-        for fn in glob.glob(join(experiment_dir, 'visualization', '*.png')):
-            os.remove(fn)
+    try:
+        os.makedirs(out_dir)
+    except OSError:
+        pass
+    for fn in glob.glob(join(out_dir, '*.png')):
+        os.remove(fn)
 
     visualizations = ['random']
     for i in tqdm.tqdm(np.random.randint(0, len(pred), 50), desc='random predictions'):
