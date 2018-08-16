@@ -942,8 +942,6 @@ class ResultsWidget(QtGui.QWidget):
 
         marker.setPos(c[1] - MARKER_SIZE / 2, c[0] - MARKER_SIZE/2)
 
-
-
     def highlight_area(self, data, radius=50):
         centroid = data['n1'].centroid()
         self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(167, 255, 36), 0, self.marker_changed)

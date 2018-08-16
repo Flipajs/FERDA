@@ -125,8 +125,6 @@ class VideoPlayer(QtGui.QWidget):
         self.init_speed_slider()
         self.connect_GUI()
 
-
-
     def _add_actions(self):
         #   video step
         self.increase_video_step_a = QtGui.QAction('increase video step', self)

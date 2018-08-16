@@ -4,6 +4,7 @@ __author__ = 'filip@naiser.cz'
 
 from PyQt4 import QtGui, QtCore
 
+
 class MyView(QtGui.QGraphicsView, object):
     areaSelected = QtCore.pyqtSignal("PyQt_PyObject", "PyQt_PyObject")
     clicked = QtCore.pyqtSignal("PyQt_PyObject")
@@ -105,7 +106,6 @@ class MyView(QtGui.QGraphicsView, object):
                     return
 
                 self.scale(1.0 / scale_factor, 1.0 / scale_factor)
-
 
     def zoom(self, factor, center_point):
         self.scale(factor, factor)
