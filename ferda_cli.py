@@ -324,4 +324,7 @@ if __name__ == '__main__':
             experiments = yaml.load(fr)
         evaluations = load_evaluations(experiments)
         for dataset_name, dataset in experiments['datasets'].iteritems():
-            run_visualization(dataset['visualize_experiments'], evaluations[dataset_name], dataset)
+            if 'visualize_experiments' in dataset:
+                print(dataset_name)
+                run_visualization(dataset['visualize_experiments'], evaluations[dataset_name], dataset)
+
