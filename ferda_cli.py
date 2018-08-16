@@ -226,7 +226,7 @@ def run_visualization(experiment_names, all_experiments, dataset, out_video=None
             df_mots.append(load_mot(exp['mot_trajectories']))
             names.append(exp['exp_name'])
             if out_video is None:
-                out_video = join(os.path.dirname(exp['mot_trajectories']), 'visulization.mp4')
+                out_video = join(os.path.dirname(exp['mot_trajectories']), 'visualization.mp4')
         else:
             matching_experiments = [e for e in all_experiments if e['exp_name'] == name]
             assert len(matching_experiments) == 1, \
