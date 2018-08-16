@@ -1,0 +1,3 @@
+dataset: {gt: data/GT/Camera3-5min.mp4.txt, video: /datagrid/ferda/data/ants_ist/Camera3-5min.mp4}
+dataset_name: Camera3-5min
+exp_name: toxtrac

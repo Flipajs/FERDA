@@ -1,0 +1,3 @@
+dataset: {gt: data/GT/5Zebrafish_nocover_22min.txt, video: /datagrid/ferda/data/idTracker/5Zebrafish_nocover_22min.avi}
+dataset_name: 5Zebrafish_nocover_22min
+exp_name: idtracker_nogaps

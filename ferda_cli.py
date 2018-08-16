@@ -19,6 +19,7 @@ import logging.config
 import yaml
 import subprocess
 import shutil
+from collections import defaultdict
 from core.config import config
 
 
@@ -212,11 +213,53 @@ def run_benchmarking(notebook_path='experiments/tracking/benchmarking.ipynb',
             fw.write(body)
 
 
-if __name__ == '__main__':
-    # run_benchmarking()
-    # import sys
-    # sys.exit()
+def run_visualization(experiment_names, all_experiments, dataset, out_video=None):
+    from utils.gt.mot import visualize_mot, load_mot
+    df_mots = []
+    names = []
+    for name in experiment_names:
+        if name == 'gt':
+            df_mots.append(load_mot(dataset['gt']))
+            names.append(name)
+        elif isinstance(name, int):
+            exp = all_experiments[name]
+            df_mots.append(load_mot(exp['mot_trajectories']))
+            names.append(exp['exp_name'])
+            if out_video is None:
+                out_video = join(os.path.dirname(exp['mot_trajectories']), 'visulization.mp4')
+        else:
+            matching_experiments = [e for e in all_experiments if e['exp_name'] == name]
+            assert len(matching_experiments) == 1, \
+                'experiment {} not found or ambiguous match: {}'.format(name, matching_experiments)
+            df_mots.append(load_mot(matching_experiments[0]['mot_trajectories']))
+            names.append(name)
 
+    assert out_video is not None
+    visualize_mot(dataset['video'], out_video, df_mots, names)
+    # print(dataset['video'], out_video, names)
+
+
+def load_evaluations(experiments_config):
+    evaluations = defaultdict(list)
+    for directory, dirnames, filenames in \
+            sorted(os.walk(experiments_config['dir']), key=lambda x: os.path.basename(x[0])):
+        if directory == experiments_config['dir']:
+            continue
+
+        if ('experiment.yaml' in filenames) and ('evaluation.csv' in filenames):
+            with open(join(directory, 'experiment.yaml'), 'r') as fr:
+                experiment_config = yaml.load(fr)
+
+            experiment_config['evaluation'] = join(directory, 'evaluation.csv')
+            if 'results.txt' in filenames:
+                experiment_config['mot_trajectories'] = join(directory, 'results.txt')
+            evaluations[experiment_config['dataset_name']].append(experiment_config)
+        else:
+            print('no experiment.yaml and/or evaluation.csv in {}'.format(directory))
+    return evaluations
+
+
+if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Convert and visualize mot ground truth and results.')
@@ -230,7 +273,9 @@ if __name__ == '__main__':
     parser.add_argument('--info', action='store_true', help='show project info')
     parser.add_argument('--evaluate', action='store_true')
     parser.add_argument('--run-experiments-yaml', type=str, help='run and evaluate experiments on all datasets described in yaml file')
-    parser.add_argument('--experiment-name', type=str, help='experiment name')
+    parser.add_argument('--experiment-name', nargs='?', type=str, default='experiments.yaml', help='experiment name')
+    parser.add_argument('--run-visualizations-yaml', default='experiments.yaml', type=str,
+                        help='visualize experiments described in yaml file')
     args = parser.parse_args()
 
     if args.info:
@@ -274,5 +319,9 @@ if __name__ == '__main__':
             experiment_config['dataset_name'] = dataset_name
             run_experiment(experiment_config)
 
-
-
+    if args.run_visualizations_yaml:
+        with open(args.run_visualizations_yaml, 'r') as fr:
+            experiments = yaml.load(fr)
+        evaluations = load_evaluations(experiments)
+        for dataset_name, dataset in experiments['datasets'].iteritems():
+            run_visualization(dataset['visualize_experiments'], evaluations[dataset_name], dataset)

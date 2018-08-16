@@ -1,0 +1,3 @@
+dataset: {gt: data/GT/Cam1_clip.avi.txt, video: /datagrid/ferda/data/ants_ist/camera_1/Cam1_clip.avi}
+dataset_name: Cam1_clip
+exp_name: toxtrac_tight_segmentation
