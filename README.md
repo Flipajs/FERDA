@@ -2,22 +2,21 @@
 
 ## FERDA - Fast Extremal Region Detector of Ants
 
-- version 2.2.10
 - FERDA is a multi object tracker developed mainly to meet the needs of biologists analysing video sequences of their animal experiments.
 
 ## Installation
 
-### Conda
+### Using Conda
 
 Install Conda: https://conda.io.
 
 Setup Conda environment with GUI support:
 
-`$ conda env create -f conda.yml`
+`$ conda env create -f conda_exported.yml` or tune `conda.yml`
 
-Setup Conda environment for batch processing (no GUI):
+Setup Conda environment for batch processing (without pyqt4):
 
-`$ conda env create -f conda_noqt.yml`
+`$ conda env create -f conda_cli_exported.yml` or tune `conda_cli.yml`
 
 ### Manual
 
@@ -30,35 +29,39 @@ Setup Conda environment for batch processing (no GUI):
 
 ## Quickstart
 
-Activate environment if necesary:
+Activate environment if necessary:
 
 `$ conda activate ferda` or `$ conda activate ferda_noqt`
 
-Start GUI:
+Start gui:
 
 `$ python main.py`
 
+Create a new project. After finishing the new project wizard quit
+the gui.
+
 Note: when nothing is happening check the progress bars in the terminal.
 
-Or use command line interace:
+Process a project using command line interface (possibly on a cluster):
+
+`$ python ferda_cli.py --run-tracking --save-results-mot results.csv \
+--project <project folder> \
+--reidentification-weights /datagrid/ferda/models/180421_reidentification/Cam1_clip/best_model_996_weights.h5`
+
+For more check `ferda_cli.py` help:
 
 `$ python ferda_cli.py --help`
     
 ### Automatic Tracking    
 
-1. new project
-2. set video range, tracking arena and settings (sane defaults can be accepted)
-3. teach algorithm to distinguish single and multiple animals
-    - sort out the regions into 4 categories using the buttons under the regions, the classifier will learn on the go
-    - inspect the results in the *results viewer* by checking the *t-class* checker box
-    - the animals should be correctly classified as single, multiple, etc.
-4. train algorithm to distinguish animal identities
-    - pick *id detection* tab
-    - click *compute features*
-    - click *auto init*
-    - click *learn/restart classifier*
-    - now decide N tracklets by setting the *certainity eps* and the number *N* and hitting *do N steps*
-    - repeat the last point as long as are the new decisions without much errors 
+1. create a new project
+    1. set video range tracking arena and settings (sane defaults can be accepted)
+    2. teach algorithm to distinguish single and multiple animals
+        - sort out the regions into 4 categories using the buttons under the regions, the classifier will learn on the go
+        - inspect the results in the *results viewer* by checking the *t-class* checker box
+        - the animals should be correctly classified as single, multiple, etc.
+2. quit the gui and use `ferda_cli.py` for project processing
+3. inspect the results in the gui
 
 
 ### Creating Ground Truth
@@ -113,14 +116,6 @@ show / hide all animals overlays
 Run unit tests:
 
 `python -m unittest discover -v`
-
-## Architecture
-
-Key components:
-
-core/parallelization.py
-- extraction of animal containing regions using MSER algorithm
-- construction of region graph (nodes are regions in both space and time, edges are possible transitions)
 
 ## Known Issues
 

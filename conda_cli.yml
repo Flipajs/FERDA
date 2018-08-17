@@ -1,14 +1,13 @@
 # Conda environment file with direct project dependencies without secondary dependencies.
 # Won't probably work out of the box. First try the *_exported.yml version.
 #
-# create a new environment: conda env create -f conda.yml
-name: ferda
+# create a new environment: conda env create -f conda_cli.yml
+name: ferda_cli
 channels: 
     - conda-forge
     - ostrokach-forge  # graph-tool on linux
 dependencies:
   - python=2.7
-  - pyqt=4
   - imageio
   - pillow
   - pyyaml
