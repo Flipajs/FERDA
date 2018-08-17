@@ -1,4 +1,8 @@
-name: ferda_noqt
+# export of a working environment on linux (Debian GNU/Linux 9)
+#
+# create a new environament: conda env create -f conda_cli_exported.yml
+# this file was created with: conda env export -n ferda_cli > conda_cli_exported.yml
+name: ferda_cli
 channels:
   - ostrokach-forge
   - conda-forge
@@ -149,5 +153,16 @@ dependencies:
   - termcolor=1.1.0=py27_1
   - werkzeug=0.14.1=py27_0
   - graph-tool=2.26=py27hf09648a_3
-prefix: /home.dokt/smidm/local/miniconda2/envs/ferda_noqt
+  - pip:
+      - cachetools==2.1.0
+      - dask==0.17.5
+      - imutils==0.4.6
+      - joblib==0.11
+      - keras==2.2.0
+      - lazyme==0.0.20
+      - moviepy==0.2.3.5
+      - pympler==0.5
+      - pyqtgraph==0.10.0
+      - qimage2ndarray==1.6
+      - tensorflow-gpu==1.8.0
 
