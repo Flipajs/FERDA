@@ -1,2 +1,2 @@
-idf1,idp,idr,recall,precision,num_unique_objects,mostly_tracked,partially_tracked,mostly_lost,num_false_positives,num_misses,num_switches,num_fragmentations,mota,motp
-0.8919435492832537,0.8920426761502556,0.8918444444444444,0.8959777777777778,0.896176928206268,10,10,0,0,4671,4681,14,247,0.7918666666666667,13.781311689236233
+num_frames,obj_frequencies,pred_frequencies,num_matches,num_switches,num_false_positives,num_misses,num_detections,num_objects,num_predictions,num_unique_objects,track_ratios,mostly_tracked,partially_tracked,mostly_lost,num_fragmentations,motp,mota,precision,recall,id_global_assignment,idfp,idfn,idtp,idp,idr,idf1
+4500,,,40305,14,1,4681,40319,45000,40320,10,,10,0,0,247,13.781311689236233,0.8956444444444445,0.9999751984126984,0.8959777777777778,,187.0,4867.0,40133.0,0.9953621031746032,0.8918444444444444,0.9407641819034224

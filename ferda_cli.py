@@ -46,11 +46,11 @@ def results_to_mot(results):
     """
     assert results.ndim == 3
     assert results.shape[2] == 2
-    results[np.isnan(results)] = -1
     objs = []
     for i in range(results.shape[1]):
         df = pd.DataFrame(results[:, i, ::-1], columns=['x', 'y'])
         df['frame'] = range(1, results.shape[0] + 1)
+        df = df[~(df.x.isna() | df.y.isna())]
         df['id'] = i + 1
         df = df[['frame', 'id', 'x', 'y']]
         objs.append(df)
@@ -273,9 +273,8 @@ if __name__ == '__main__':
     parser.add_argument('--info', action='store_true', help='show project info')
     parser.add_argument('--evaluate', action='store_true')
     parser.add_argument('--run-experiments-yaml', type=str, help='run and evaluate experiments on all datasets described in yaml file')
-    parser.add_argument('--experiment-name', nargs='?', type=str, default='experiments.yaml', help='experiment name')
-    parser.add_argument('--run-visualizations-yaml', default='experiments.yaml', type=str,
-                        help='visualize experiments described in yaml file')
+    parser.add_argument('--experiment-name', nargs='?', type=str, help='experiment name')
+    parser.add_argument('--run-visualizations-yaml', type=str, help='visualize experiments described in yaml file')
     args = parser.parse_args()
 
     if args.info:

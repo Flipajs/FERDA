@@ -1,4 +1,4 @@
-dir: '../experiments_tracking'
+dir: 'experiments/tracking'
 projects_dir: '../projects/2_temp'
 datasets:
     5Zebrafish_nocover_22min:
