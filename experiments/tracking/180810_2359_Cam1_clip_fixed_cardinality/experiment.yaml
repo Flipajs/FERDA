@@ -1,0 +1,7 @@
+dataset: {gt: data/GT/Cam1_clip.avi.txt, initial_project: ../projects/1_initial_projects_180810_diverse/Cam1_clip,
+  reidentification_weights: /datagrid/ferda/models/180421_reidentification/Cam1_clip/best_model_996_weights.h5,
+  video: /datagrid/ferda/data/ants_ist/camera_1/Cam1_clip.avi}
+dataset_name: Cam1_clip
+dir: ../experiments_tracking
+exp_name: fixed_cardinality
+projects_dir: ../projects/2_temp

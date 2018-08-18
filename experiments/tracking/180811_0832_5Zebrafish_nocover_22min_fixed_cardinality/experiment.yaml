@@ -1,0 +1,7 @@
+dataset: {gt: data/GT/5Zebrafish_nocover_22min.txt, initial_project: ../projects/1_initial_projects_180810_diverse/5Zebrafish_nocover_22min,
+  reidentification_weights: /datagrid/ferda/models/180421_reidentification/Zebrafish/best_model_967_weights.h5,
+  video: /datagrid/ferda/data/idTracker/5Zebrafish_nocover_22min.avi}
+dataset_name: 5Zebrafish_nocover_22min
+dir: ../experiments_tracking
+exp_name: fixed_cardinality
+projects_dir: ../projects/2_temp

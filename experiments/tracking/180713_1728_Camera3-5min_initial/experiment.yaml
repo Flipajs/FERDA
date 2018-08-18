@@ -1,0 +1,7 @@
+dataset: {gt: data/GT/Camera3-5min.mp4.txt, initial_project: ../projects/2_temp/180713_1641_Camera3-5min_initial,
+  reidentification_weights: /datagrid/ferda/models/180421_reidentification/Ants3/best_model_980_weights.h5,
+  video: /datagrid/ferda/data/ants_ist/Camera3-5min.mp4}
+dataset_name: Camera3-5min
+dir: ../experiments_tracking
+exp_name: initial
+projects_dir: ../projects/2_temp
