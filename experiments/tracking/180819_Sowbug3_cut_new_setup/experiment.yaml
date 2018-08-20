@@ -1,0 +1,7 @@
+dataset: {gt: data/GT/Sowbug3_cut.txt, initial_project: ../projects/1_initial_projects_180810_diverse/Sowbug3_cut_180819,
+  reidentification_weights: /datagrid/ferda/models/180421_reidentification/Sowbugs3/best_model_998_weights.h5,
+  video: /datagrid/ferda/data/youtube/Sowbug3_cut.mp4}
+dataset_name: Sowbug3_cut
+dir: ../experiments_tracking
+exp_name: 180819_Sowbug3_cut_new_setup
+projects_dir: ../projects/2_temp

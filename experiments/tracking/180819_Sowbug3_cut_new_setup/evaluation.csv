@@ -1,0 +1,2 @@
+num_frames,obj_frequencies,pred_frequencies,num_matches,num_switches,num_false_positives,num_misses,num_detections,num_objects,num_predictions,num_unique_objects,track_ratios,mostly_tracked,partially_tracked,mostly_lost,num_fragmentations,motp,mota,precision,recall,id_global_assignment,idfp,idfn,idtp,idp,idr,idf1
+6734,,,19829,2,0,13839,19831,33670,19831,5,,0,5,0,37,2.224411614188374,0.5889218889218889,1.0,0.588981288981289,,20.0,13859.0,19811.0,0.9989914779890071,0.5883872883872884,0.7405842881441468
