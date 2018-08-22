@@ -5,13 +5,13 @@ datasets:
         video: /datagrid/ferda/data/idTracker/5Zebrafish_nocover_22min.avi
         gt: data/GT/5Zebrafish_nocover_22min.txt
         reidentification_weights: /datagrid/ferda/models/180421_reidentification/Zebrafish/best_model_967_weights.h5
-        initial_project: ../projects/1_initial_projects_180713/5Zebrafish_nocover_22min
+        initial_project: ../projects/1_initial_projects_180810_diverse/5Zebrafish_nocover_22min
         visualize_experiments: [-1, gt, idtracker, 180427_vaib]
     Sowbug3_cut:
         video: /datagrid/ferda/data/youtube/Sowbug3_cut.mp4
         gt: data/GT/Sowbug3_cut.txt
         reidentification_weights: /datagrid/ferda/models/180421_reidentification/Sowbugs3/best_model_998_weights.h5
-        initial_project: ../projects/1_initial_projects_180713/Sowbug3_cut
+        initial_project: ../projects/1_initial_projects_180810_diverse/Sowbug3_cut_180819
         visualize_experiments: [-1, gt, idtracker]
     Cam1_clip:
         video: /datagrid/ferda/data/ants_ist/camera_1/Cam1_clip.avi
@@ -23,5 +23,5 @@ datasets:
         video: /datagrid/ferda/data/ants_ist/Camera3-5min.mp4
         gt: data/GT/Camera3-5min.mp4.txt
         reidentification_weights: /datagrid/ferda/models/180421_reidentification/Ants3/best_model_980_weights.h5
-        initial_project: ../projects/1_initial_projects_180713/Camera3-5min
+        initial_project: ../projects/1_initial_projects_180810_diverse/Camera3-5min
         visualize_experiments: [-1, gt, idtracker, 180427_vaib]
