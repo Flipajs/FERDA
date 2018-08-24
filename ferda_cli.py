@@ -21,6 +21,7 @@ import subprocess
 import shutil
 from collections import defaultdict
 from core.config import config
+import webbrowser
 
 
 def setup_logging():
@@ -185,8 +186,10 @@ def write_experimental_info(experiment_dir, config):
         yaml.dump(config, fw)
 
 
-def run_benchmarking(notebook_path='experiments/tracking/benchmarking.ipynb',
-                     html_output_path='experiments/tracking/benchmarking.html'):
+def run_benchmarks(notebook_path='experiments/tracking/benchmarking.ipynb',
+                   html_output_path='experiments/tracking/benchmarking.html'):
+    # command line version uses also installed themes / css:
+    # jupyter-nbconvert --execute --to html experiments/tracking/benchmarking.ipynb --template=experiments/nbconvert-nocode.tpl
     import nbformat
     from nbconvert import HTMLExporter
     from nbconvert.preprocessors import ExecutePreprocessor
@@ -206,11 +209,12 @@ def run_benchmarking(notebook_path='experiments/tracking/benchmarking.ipynb',
     # write output to html
     if html_output_path:
         html_exporter = HTMLExporter()
-        html_exporter.template_path = ['.']
-        html_exporter.template_file = 'nocode.tpl'
+        html_exporter.template_path = ['./experiments']
+        html_exporter.template_file = 'nbconvert-nocode.tpl'
         body, resources = html_exporter.from_notebook_node(nb)
         with open(html_output_path, 'wt') as fw:
             fw.write(body)
+        webbrowser.open(html_output_path)
 
 
 def run_visualization(experiment_names, all_experiments, dataset, out_video=None):
@@ -275,6 +279,7 @@ if __name__ == '__main__':
     parser.add_argument('--run-experiments-yaml', type=str, help='run and evaluate experiments on all datasets described in yaml file')
     parser.add_argument('--experiment-name', nargs='?', type=str, help='experiment name')
     parser.add_argument('--run-visualizations-yaml', type=str, help='visualize experiments described in yaml file')
+    parser.add_argument('--run-benchmarks', action='store_true', help='run benchmarks and store results to a html file')
     args = parser.parse_args()
 
     if args.info:
@@ -326,4 +331,7 @@ if __name__ == '__main__':
             if 'visualize_experiments' in dataset:
                 print(dataset_name)
                 run_visualization(dataset['visualize_experiments'], evaluations[dataset_name], dataset)
+
+    if args.run_benchmarks:
+        run_benchmarks()
 
