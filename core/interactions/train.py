@@ -7,6 +7,7 @@ import time
 from os.path import join
 import numbers
 import pandas as pd
+from collections import OrderedDict
 try:
     from keras.utils import np_utils
     from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, GlobalAveragePooling2D
@@ -22,6 +23,7 @@ try:
     import keras
     from keras.models import model_from_yaml, model_from_json
     from keras.preprocessing.image import ImageDataGenerator
+    from keras.applications.mobilenet import mobilenet
 except ImportError as e:
     print('Warning, no keras installed: {}'.format(e))
 import fire
@@ -57,6 +59,7 @@ class TrainInteractions:
             '6conv_3dense': self.model_6conv_3dense,  # former default
             '6conv_2dense': self.model_6conv_2dense,
             'mobilenet': self.model_mobilenet,
+            'single_mobilenet': self.model_single_mobilenet,
         }
         if predicted_properties is None:
             self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg']  # , 'major', 'minor']
@@ -66,7 +69,7 @@ class TrainInteractions:
             self.ERROR_FUNCTIONS = ['abs', 'abs', 'angle_180']  # , 'abs', 'abs']
         else:
             self.ERROR_FUNCTIONS = error_functions
-        self.DETECTOR_INPUT_SIZE_PX = 200
+        self.detector_input_size_px = 200
         self.num_input_layers = num_input_layers
         self.num_objects = None
         self.array = None  # provide column name to index mapping using ObjectsArray
@@ -82,22 +85,6 @@ class TrainInteractions:
         types = [x[1] for x in struct_array.dtype.descr]
         all(x == types[0] for x in types)
         return struct_array.view(types[0]).reshape(struct_array.shape + (-1,))
-
-    def read_gt(self, filename):
-        regexp = re.compile('(\d*)_(\w*)')
-        df = pd.read_csv(filename)
-        ids = set()
-        properties = []
-        for col in df.columns:
-            match = regexp.match(col)
-            if match is not None:
-                ids.add(int(match.group(1)))
-                properties.append(match.group(2))
-        n = len(ids)
-        assert min(ids) == 0 and max(ids) == n - 1, 'object describing columns have to be prefixed with numbers starting with 0'
-        assert len(properties) % n == 0
-        properties = properties[:(len(properties) / n) - 1]  # only properties for object 0
-        return n, properties, df
 
     def xy_absolute_error(self, y_true, y_pred, i, j, backend):
         return backend.abs(backend.concatenate(
@@ -144,7 +131,7 @@ class TrainInteractions:
         for i in range(self.num_objects):
             for col in self.array.properties:
                 if col != 'angle_deg':
-                    tensor_columns.append((y_pred[:, self.array.prop2idx(i, col)] + 1) * self.DETECTOR_INPUT_SIZE_PX / 2)
+                    tensor_columns.append((y_pred[:, self.array.prop2idx(i, col)] + 1) * self.detector_input_size_px / 2)
                 else:
                     tensor_columns.append((y_pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2) / np.pi * 180)
         y_pred = K.stack(tensor_columns, axis=1)
@@ -320,7 +307,7 @@ class TrainInteractions:
         return errors, errors_xy, swap_indices
 
     def model_6conv_3dense(self):
-        input_shape = Input(shape=(self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.num_input_layers))
+        input_shape = Input(shape=(self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers))
         x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
         x = MaxPooling2D((2, 2))(x)
@@ -352,7 +339,7 @@ class TrainInteractions:
         return Model(input_shape, out)
 
     def model_6conv_2dense(self):
-        input_shape = Input(shape=(self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.num_input_layers))
+        input_shape = Input(shape=(self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers))
         x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
         x = MaxPooling2D((2, 2))(x)
@@ -368,7 +355,7 @@ class TrainInteractions:
 
     def model_mobilenet(self):
         base_model = keras.applications.mobilenet.MobileNet(
-            (self.DETECTOR_INPUT_SIZE_PX, self.DETECTOR_INPUT_SIZE_PX, self.num_input_layers),
+            (self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers),
             include_top=False, weights=None)  # weights='imagenet'
         # add a global spatial average pooling layer
         x = base_model.output
@@ -377,6 +364,26 @@ class TrainInteractions:
         x = Dense(1024, activation='relu')(x)
         # and a logistic layer -- let's say we have 200 classes
         predictions = Dense(self.array.num_columns(), activation='tanh')(x)  # softmax
+        # this is the model we will train
+        model = Model(inputs=base_model.input, outputs=predictions)
+
+        # first: train only the top layers (which were randomly initialized)
+        # i.e. freeze all convolutional InceptionV3 layers
+        # for layer in base_model.layers:
+        #     layer.trainable = False
+        return model
+
+    def model_single_mobilenet(self):
+        base_model = keras.applications.mobilenet.MobileNet(
+            (self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers),
+            include_top=False, weights=None)  # weights='imagenet'
+        # add a global spatial average pooling layer
+        x = base_model.output
+        x = GlobalAveragePooling2D()(x)
+        # let's add a fully-connected layer
+        x = Dense(1024, activation='relu')(x)
+        # and a logistic layer -- let's say we have 200 classes
+        predictions = Dense(3, activation='tanh')(x)  # softmax
         # this is the model we will train
         model = Model(inputs=base_model.input, outputs=predictions)
 
@@ -408,7 +415,7 @@ class TrainInteractions:
         return model
 
     def evaluate(self, model, test_generator, params, y_test=None, csv_filename=None):
-        pred = model.predict_generator(test_generator, int(params['n_test'] / BATCH_SIZE))
+        pred = model.predict_generator(test_generator)  # , int(params['n_test'] / BATCH_SIZE))
         assert pred is not None and pred is not []
 
         # with h5py.File(join(params['experiment_dir'], 'predictions.h5'), 'w') as hf:
@@ -441,10 +448,11 @@ class TrainInteractions:
             #     np.mean(np.stack((angle[0, 1], angle[1, 0]), axis=1), axis=1)))  # shape=(2, n)
             # angle_mae = (mean_errors_angle[indices[:, 0], indices[:, 1]]).mean()
 
-            results = pd.DataFrame.from_items([('xy MAE', [K.eval(K.mean(errors_xy))]),
-                                               ('angle MAE', [K.eval(K.mean(errors_angle))]),
-            #                                   ('axes MAE', [axes_mae])
-                                              ])
+            results = pd.DataFrame.from_dict(OrderedDict([
+                ('xy MAE', [K.eval(K.mean(errors_xy))]),
+                ('angle MAE', [K.eval(K.mean(errors_angle))]),
+#                ('axes MAE', [axes_mae]),
+                ]))
             if csv_filename is not None:
                 results.to_csv(csv_filename)
             return results
@@ -454,9 +462,9 @@ class TrainInteractions:
             pred[:, self.array.prop2idx(i, 'angle_deg')] = \
                 np.degrees(pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2)
             pred[:, self.array.prop2idx(i, 'x')] = \
-                (pred[:, self.array.prop2idx(i, 'x')] + 1) * self.DETECTOR_INPUT_SIZE_PX / 2
+                (pred[:, self.array.prop2idx(i, 'x')] + 1) * self.detector_input_size_px / 2
             pred[:, self.array.prop2idx(i, 'y')] = \
-                (pred[:, self.array.prop2idx(i, 'y')] + 1) * self.DETECTOR_INPUT_SIZE_PX / 2
+                (pred[:, self.array.prop2idx(i, 'y')] + 1) * self.detector_input_size_px / 2
         return pred
 
     def save_model_properties(self, out_yaml):
@@ -464,14 +472,22 @@ class TrainInteractions:
             yaml.dump({
                 'num_objects': self.num_objects,
                 'properties': self.PREDICTED_PROPERTIES,
-                'input_size_px': self.DETECTOR_INPUT_SIZE_PX,
+                'input_size_px': self.detector_input_size_px,
             }, fw)
 
-    def evaluate_model(self, data_dir, model_dir):
+    def evaluate_model(self, data_dir, model_dir, image_store='images.h5:test'):
+        """
+        Evaluates a model.
+
+        :param data_dir: test dateset images and ground truth (images.h5, test.csv)
+        :param model_dir: model directory (model.yaml, weights.h5, config.yaml)
+        :param image_store: filename of hdf5 image store and image database path
+        """
         # load model
         if os.path.exists(join(model_dir, 'model.yaml')):
             with open(join(model_dir, 'model.yaml'), 'r') as fr:
-                m = model_from_yaml(fr.read())
+                m = model_from_yaml(fr.read(), custom_objects={
+                       'relu6': mobilenet.relu6})
         elif os.path.exists(join(model_dir, 'model.json')):
             with open(join(model_dir, 'model.json'), 'r') as fr:
                 m = model_from_json(fr.read())
@@ -482,17 +498,17 @@ class TrainInteractions:
         with open(join(model_dir, 'config.yaml'), 'r') as fr:
             model_metadata = yaml.load(fr)
         self.PREDICTED_PROPERTIES = model_metadata['properties']
-        self.DETECTOR_INPUT_SIZE_PX = model_metadata['input_size_px']
+        self.detector_input_size_px = model_metadata['input_size_px']
         self.array = ObjectsArray(self.PREDICTED_PROPERTIES, model_metadata['num_objects'])
 
         # load images
-        hf = h5py.File(join(data_dir, 'images.h5'), 'r')
-        X_test = hf['test']
+        hf = h5py.File(join(data_dir, image_store.split(':')[0]), 'r')
+        X_test = hf[image_store.split(':')[1]]
 
         # load gt
         gt_filename = join(data_dir, 'test.csv')
         if os.path.exists(gt_filename):
-            gt_n, gt_columns, y_test_df = self.read_gt(gt_filename)
+            gt_n, gt_columns, y_test_df = read_gt(gt_filename)
             # convert to counter-clockwise
             for i in range(gt_n):
                 y_test_df.loc[:, '%d_angle_deg' % i] *= -1
@@ -539,25 +555,28 @@ class TrainInteractions:
             out[i, :img_shape[0], :img_shape[1]] = img  # np.expand_dims(img, 2)
         return out
 
-    def train_and_evaluate(self, data_dir, loss_alpha, n_epochs=10, rotate=False, exp_name='',
-                           model='6conv_3dense', dataset_names=None, input_layers=3, experiment_dir=None):
-        # example:
-        # local: train /home/matej/prace/ferda/data/interactions/1712_1k_36rot/ 0.5 100 --exp-name=two_mobilenet_scratch
-        # remote: train /mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/ 0.5 100 --exp-name=two_mobilenet_scratch
+    def train_and_evaluate(self, data_dir, loss_alpha, train_img='images.h5:train', test_img='images.h5:test', n_epochs=10, rotate=False, exp_name='',
+                           model='6conv_3dense', input_layers=3, experiment_dir=None, input_size_px=200):
+        """
+        example:
+        local: train /home/matej/prace/ferda/data/interactions/1712_1k_36rot/ 0.5 100 --exp-name=two_mobilenet_scratch
+               train . 0.5 train.h5:train/img1 test.h5:test/img1 --input-size-px=150 --model=single_mobilenet
+        remote: train /mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/ 0.5 100 --exp-name=two_mobilenet_scratch
+        """
         self.num_input_layers = input_layers
-        if dataset_names is None:
-            dataset_names = {'train': 'train', 'test': 'test'}
+        self.detector_input_size_px = input_size_px
         # load images
-        hf = h5py.File(join(data_dir, 'images.h5'), 'r')
-        X_train = hf[dataset_names['train']]
-        X_test = hf[dataset_names['test']]
+        hf_train = h5py.File(join(data_dir, train_img.split(':')[0]), 'r')
+        X_train = hf_train[train_img.split(':')[1]]
+        hf_test = h5py.File(join(data_dir, test_img.split(':')[0]), 'r')
+        X_test = hf_test[test_img.split(':')[1]]
         # if model == 'mobilenet':
         #     X_train = self.resize_images(hf[dataset_names['train']], (224, 224, 1))
         #     X_test = self.resize_images(hf[dataset_names['test']], (224, 224, 1))
 
         # load gt
-        n_train, columns_train, y_train_df = self.read_gt(join(data_dir, 'train.csv'))
-        n_test, columns_test, y_test_df = self.read_gt(join(data_dir, 'test.csv'))
+        n_train, columns_train, y_train_df = read_gt(join(data_dir, 'train.csv'))
+        n_test, columns_test, y_test_df = read_gt(join(data_dir, 'test.csv'))
         assert n_train == n_test
         assert columns_train == columns_test
         self.set_num_objects(n_train)
@@ -607,8 +626,10 @@ class TrainInteractions:
         }
         if isinstance(loss_alpha, str) and loss_alpha == 'batch':
             parameters['loss_alpha'] = np.linspace(0, 1, 8)
-        else:
+        elif isinstance(loss_alpha, numbers.Number):
             parameters['loss_alpha'] = float(loss_alpha)
+        else:
+            assert False, 'invalid loss_alpha specified'
 
         # fix random seed for reproducibility
         seed = 7
@@ -620,7 +641,7 @@ class TrainInteractions:
             # out_img = skimage.transform.rotate(img, 90, preserve_range=True)
             # return out_img
 
-        size = self.DETECTOR_INPUT_SIZE_PX
+        size = self.detector_input_size_px
         x, y = np.mgrid[0:size, 0:size]
         mask = np.expand_dims(np.exp(- 0.0002 * ((x - size / 2) ** 2 + (y - size / 2) ** 2)), 2)
 
@@ -662,7 +683,7 @@ class TrainInteractions:
 
         results = pd.DataFrame()
 
-        if not isinstance(parameters['loss_alpha'], numbers.Number):
+        if isinstance(parameters['loss_alpha'], np.ndarray):
             for alpha in parameters['loss_alpha']:
                 m = self.models[model]()
                 print('loss_alpha %f' % alpha)
@@ -695,11 +716,39 @@ class TrainInteractions:
             results = self.evaluate(m, test_generator, parameters, y_test,
                           csv_filename=join(parameters['experiment_dir'], 'results.csv'))
 
-        hf.close()
+        hf_train.close()
+        hf_test.close()
 
     def _write_argv(self, out_dir):
         with open(join(out_dir, 'parameters.txt'), 'w') as fw:
             fw.writelines('\n'.join(sys.argv))
+
+
+def read_gt(filename):
+    regexp = re.compile('(\d*)_(\w*)')
+    df = pd.read_csv(filename)
+    ids = set()
+    properties = []
+    properties_no_prefix = []
+    for col in df.columns:
+        match = regexp.match(col)
+        if match is not None:
+            ids.add(int(match.group(1)))
+            properties.append(match.group(2))
+        else:
+            properties_no_prefix.append(col)
+    if not properties:
+        # not prefixed columns, assuming single object
+        n = 1
+        properties = properties_no_prefix
+        ids.add(0)
+        df.columns = ['0_{}'.format(col) for col in df.columns]
+    else:
+        n = len(ids)
+    assert min(ids) == 0 and max(ids) == n - 1, 'object describing columns have to be prefixed with numbers starting with 0'
+    assert len(properties) % n == 0
+    properties = properties[:(len(properties) / n)]  # only properties for object 0
+    return n, properties, df
 
 
 if __name__ == '__main__':

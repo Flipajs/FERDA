@@ -10,7 +10,7 @@ from os.path import join
 
 import core.interactions.train as train_interactions
 import core.region.transformableregion as tr
-from core.interactions.train import TrainInteractions
+from core.interactions.train import TrainInteractions, read_gt
 
 
 class LossFunctionsTestCase(unittest.TestCase):
@@ -42,7 +42,7 @@ class LossFunctionsTestCase(unittest.TestCase):
 
     def test_interaction_loss_angle(self):
         data_dir = 'test/interactions_dataset'
-        n, properties, y_test_df = self.ti.read_gt(join(data_dir, 'test.csv'))
+        n, properties, y_test_df = read_gt(join(data_dir, 'test.csv'))
         self.ti.array = train_interactions.ObjectsArray(self.ti.PREDICTED_PROPERTIES, n)
         self.ti.set_num_objects(n)
         y_test = self.ti.array.dataframe_to_array(y_test_df)
@@ -154,7 +154,7 @@ class TrainInteractionsTestCase(unittest.TestCase):
     def setUp(self):
         self.n_images = 3
         self.ti = train_interactions.TrainInteractions(2)
-        self.input_shape = (self.ti.DETECTOR_INPUT_SIZE_PX, self.ti.DETECTOR_INPUT_SIZE_PX, self.ti.num_input_layers)
+        self.input_shape = (self.ti.detector_input_size_px, self.ti.detector_input_size_px, self.ti.num_input_layers)
         self.hf = h5py.File(join(DATA_DIR, 'images.h5'), 'r')
         self.X_train = self.hf['train']
         self.X_test = self.hf['test']
@@ -166,8 +166,8 @@ class TrainInteractionsTestCase(unittest.TestCase):
             self.X_test_ = self.X_test
         self.X_train_ = self.ti.resize_images(self.X_train_, self.input_shape)
         self.X_test_ = self.ti.resize_images(self.X_test_, self.input_shape)
-        n, properties, self.y_test_df = self.ti.read_gt(join(DATA_DIR, 'test.csv'))
-        n, properties, self.y_train_df = self.ti.read_gt(join(DATA_DIR, 'test.csv'))
+        n, properties, self.y_test_df = read_gt(join(DATA_DIR, 'test.csv'))
+        n, properties, self.y_train_df = read_gt(join(DATA_DIR, 'test.csv'))
         self.y_test = self.ti.array.dataframe_to_array(self.y_test_df)
         self.y_train = self.ti.array.dataframe_to_array(self.y_train_df)
 

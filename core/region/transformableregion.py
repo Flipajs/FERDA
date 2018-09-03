@@ -40,7 +40,7 @@ def e2p(euclidean):
 
 
 class TransformableRegion:
-    def __init__(self, image):
+    def __init__(self, image=None):
         self.img = image
         #
         # self.border_px = 0

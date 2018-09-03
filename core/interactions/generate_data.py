@@ -26,11 +26,13 @@ import h5py
 import warnings
 from itertools import product
 from core.interactions.visualization import save_prediction_img
+from core.interactions.train import read_gt
 from os.path import join
 import pandas as pd
 import errno
 import hashlib
 from utils.img import safe_crop
+import random
 
 IMAGE_SIZE_PX = 200
 
@@ -116,9 +118,10 @@ class DataGenerator(object):
         self._multi = None
         self._project = None
         self._bg = None
-        self.collect_regions_params = {'single_min_frames': 20,
-                                       'single_min_average_speed_px': 1.5
-                                       }
+        self.params = {'single_min_frames': 20,
+                       'single_min_average_speed_px': 1.5,
+                       'regression_tracking_image_size_px': 150,
+                      }
         # self.__i = 0  # used for visualizations commented out
 
     def _load_project(self, project_dir=None, video_file=None):
@@ -134,7 +137,7 @@ class DataGenerator(object):
         return m.hexdigest()
 
     def _init_regions(self, cache_dir='../data/cache'):
-        hash = self._get_hash(self._project.video_paths, self.collect_regions_params)
+        hash = self._get_hash(self._project.video_paths, self.params)
         regions_filename = join(cache_dir, hash + '.pkl')
         if os.path.exists(regions_filename):
             print('regions loading...')
@@ -149,7 +152,7 @@ class DataGenerator(object):
                 pickle.dump(self._multi, fw)
 
     def _collect_regions(self):
-        p = self.collect_regions_params
+        p = self.params
         from collections import defaultdict
         single = defaultdict(list)
         multi = defaultdict(list)
@@ -503,7 +506,89 @@ class DataGenerator(object):
         # from matplotlib.patches import Rectangle
         # ax.add_patch(Rectangle(bb_xywh[:2], bb_xywh[2], bb_xywh[3], linewidth=1, edgecolor='r', facecolor='none'))
 
-    def show_ground_truth(self, csv_file, out_dir, image_dir=None, image_hdf5=None, hdf5_dataset_name=None, n_objects=2):
+    def write_regression_tracking_data(self, project_dir, out_csv, out_hdf5, count=None, hdf5_group_name='train'):
+        """
+        --write-regression-tracking-data /home/matej/prace/ferda/projects/2_temp/180713_1633_Cam1_clip_initial foo bar 10
+        :param project_dir:
+        :param out_csv:
+        :param out_hdf5:
+        :param count:
+        :param hdf5_group_name:
+        :return:
+        """
+        assert count
+        self._load_project(project_dir)
+        p = self.params
+
+        # initialize hdf5 output file
+        if os.path.exists(out_hdf5):
+            raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % out_hdf5)
+        h5_file = h5py.File(out_hdf5, mode='w')
+        img_size_px = p['regression_tracking_image_size_px']
+        h5_group = h5_file.create_group(hdf5_group_name)
+        dataset_names = ['img0', 'img1']
+        for name in dataset_names:
+            h5_group.create_dataset(name, (count, img_size_px, img_size_px, 3), np.uint8)
+
+        # initialize csv output file
+        COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg']  # , 'region1_id', 'region2_id']
+        csv_file = open(out_csv, 'w')
+        csv_writer = csv.DictWriter(csv_file, fieldnames=COLUMNS)
+        csv_writer.writeheader()
+
+        single_region_tracklets = []
+        for tracklet in tqdm.tqdm(self._project.chm.chunk_gen()):
+            if len(tracklet) > p['single_min_frames'] and tracklet.is_single():
+                region_tracklet = RegionChunk(tracklet, self._project.gm, self._project.rm)
+                region_tracklet_fixed = list(region_tracklet)
+                head_fix(region_tracklet_fixed)
+                single_region_tracklets.append(region_tracklet_fixed)
+
+        random_regions = []
+        for i in range(count):
+            tracklet = random.choice(single_region_tracklets)
+            idx1 = np.random.randint(0, len(tracklet) - 1)
+            random_regions.append(
+                {
+                    'centroid_xy1': tracklet[idx1].centroid()[::-1],
+                    'theta1': tracklet[idx1].theta_,
+
+                    'centroid_xy2': tracklet[idx1 + 1].centroid()[::-1],
+                    'theta2': tracklet[idx1 + 1].theta_,
+                    'major_px2': tracklet[idx1 + 1].major_axis_,
+                    'minor_px2': tracklet[idx1 + 1].minor_axis_,
+                    'frame2': tracklet[idx1 + 1].frame(),
+                })
+
+        random_regions_sorted = sorted(random_regions, key=lambda x: x['frame2'])
+        # return random_regions_sorted
+
+        for i, region in enumerate(tqdm.tqdm(random_regions_sorted)):
+            timg = TransformableRegion()
+            timg.rotate(-np.rad2deg(region['theta1']), region['centroid_xy1'][::-1])
+
+            for frame, dataset in zip((region['frame2'] - 1, region['frame2']), dataset_names):
+                img = self._project.img_manager.get_whole_img(frame)
+
+                timg.set_img(img)
+                img_rotated = timg.get_img()
+                img_crop, delta_xy = safe_crop(img_rotated, region['centroid_xy1'], img_size_px)
+                h5_group[dataset][i] = img_crop
+
+            centroid_xy2_crop = timg.get_transformed_coords(region['centroid_xy2']) - delta_xy
+
+            csv_writer.writerow({
+                'x': centroid_xy2_crop[0],
+                'y': centroid_xy2_crop[1],
+                'major': region['major_px2'],
+                'minor': region['minor_px2'],
+                'angle_deg': np.rad2deg(region['theta2'] - region['theta1']),
+            })
+
+        h5_file.close()
+        csv_file.close()
+
+    def show_ground_truth(self, csv_file, out_dir, image_dir=None, image_hdf5=None, hdf5_dataset_name=None):
         """
         Save images with visualized ground truth.
 
@@ -512,22 +597,21 @@ class DataGenerator(object):
         :param image_dir: input images, image_dir or image_hdf5 is required
         :param image_hdf5: input images, image_dir or image_hdf5 is required
         :param hdf5_dataset_name: input images dataset name
-        :param n_objects: number of objects in the ground truth
         """
         assert image_dir is not None or image_hdf5 is not None
         if image_hdf5 is not None:
             assert hdf5_dataset_name is not None
             hf = h5py.File(image_hdf5, 'r')
             images = hf[hdf5_dataset_name]
-        csv = pd.read_csv(csv_file)
-        for i in range(n_objects):
-            csv.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
-        for i, row in tqdm.tqdm(csv.iterrows(), total=len(csv)):
+        n, _, df = read_gt(csv_file)
+        for i in range(n):
+            df.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
+        for i, row in tqdm.tqdm(df.iterrows(), total=len(df)):
             if image_hdf5 is not None:
                 img = images[i]
             else:
                 img = plt.imread(os.path.join(image_dir, row['filename']))
-            save_prediction_img(join(out_dir, '%05d.png' % i), n_objects, img, pred=None, gt=row)
+            save_prediction_img(join(out_dir, '%05d.png' % i), n, img, pred=None, gt=row)
 
     def __synthetize(self, regions, theta_rad, phi_rad, overlap_px, images=None, background=None):
         # angles: positive clockwise, zero direction to right
@@ -663,7 +747,7 @@ class DataGenerator(object):
         moments['muprime02'] = moments['mu02'] / moments['m00']
         moments['muprime11'] = moments['mu11'] / moments['m00']
         major_deg = math.degrees(0.5 * math.atan2(2 * moments['muprime11'],
-                                 (moments['muprime20'] - moments['muprime02'])))
+                                                  (moments['muprime20'] - moments['muprime02'])))
         return centroid_xy, major_deg
 
 

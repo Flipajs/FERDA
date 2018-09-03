@@ -17,8 +17,10 @@ import yaml
 from imageio import imread
 from matplotlib.patches import Ellipse
 from os.path import join
+from keras import backend as K
 
 import core.interactions.train as train_interactions
+from core.interactions.train import read_gt
 
 
 def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, title=None, scale=1.5):
@@ -113,23 +115,26 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None):
     plt.legend()
 
 
-def visualize_results(experiment_dir, data_dir, n_objects=None):
+def visualize_results(experiment_dir, data_dir, image_store='images.h5:test', n_objects=None):
     """
     Visualize experimental results. Save montage of random and worst results.
 
     :param experiment_dir: predictions on the test dataset (predictions.csv, predictions.yaml)
     :param data_dir: test dateset images and ground truth (images.h5, test.csv)
+    :param image_store: filename of hdf5 image store and image database path
     :param n_objects: number of objects
     """
-    hf_img = h5py.File(join(data_dir, 'images.h5'), 'r')
-    X_test = hf_img['test']
+    hf_img = h5py.File(join(data_dir, image_store.split(':')[0]), 'r')
+    X_test = hf_img[image_store.split(':')[1]]
 
     if os.path.exists(join(experiment_dir, 'predictions.csv')) and \
-            os.path.exists(join(experiment_dir, 'predictions.yaml')):
+            os.path.exists(join(experiment_dir, 'config.yaml')):
         pred = pd.read_csv(join(experiment_dir, 'predictions.csv'))
-        with open(join(experiment_dir, 'predictions.yaml'), 'r') as fr:
+        with open(join(experiment_dir, 'config.yaml'), 'r') as fr:
             metadata = yaml.load(fr)
-        ti = train_interactions.TrainInteractions(metadata['num_objects'])
+        if n_objects is None:
+            n_objects = metadata['num_objects']
+        ti = train_interactions.TrainInteractions(n_objects)
     else:
         # now obsolete, only for backwards compatibility
         ti = train_interactions.TrainInteractions(n_objects)
@@ -146,7 +151,8 @@ def visualize_results(experiment_dir, data_dir, n_objects=None):
 
     gt_filename = join(data_dir, 'test.csv')
     if os.path.exists(gt_filename):
-        y_test_df = pd.read_csv(join(data_dir, 'test.csv'))
+        _, _, y_test_df = read_gt(gt_filename)
+
         for i in range(n_objects):
             y_test_df.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
             # y_test.loc[:, '%d_angle_deg' % i] += 90
@@ -162,16 +168,20 @@ def visualize_results(experiment_dir, data_dir, n_objects=None):
 
 
         # xy, angle, indices = train_interactions.match_pred_to_gt_dxdy(pred, y_test.values, np)
-        xy, angle, indices = ti.match_pred_to_gt(ti.array.dataframe_to_array(y_test_df), pred.values, np)
+        errors, errors_xy, _ = ti.match_pred_to_gt(ti.array.dataframe_to_array(y_test_df), pred.values)
+        errors = K.eval(errors)
+        errors_xy = K.eval(errors_xy)
+
         if n_objects == 1:
-            xy_errors = xy
-            angle_errors = angle
+            angle_errors = errors[:, ti.array.prop2idx(0, 'angle_deg')]  # shape=(n,)
+            xy_errors = errors_xy[:, 0]  # shape=(n,)
         elif n_objects == 2:
-            xy_errors = (xy[indices[:, 0], indices[:, 1]])
-            angle_errors = (angle[indices[:, 0], indices[:, 1]])
-            swap = indices[:, 0] == 1
-            for prop in ti.array.properties:
-                pred.loc[swap, ['0_%s' % prop, '1_%s' % prop]] = pred.loc[swap, ['1_%s' % prop, '0_%s' % prop]].values
+            assert False, 'not implemented'
+            # xy_errors = (xy[indices[:, 0], indices[:, 1]])
+            # angle_errors = (angle[indices[:, 0], indices[:, 1]])
+            # swap = indices[:, 0] == 1
+            # for prop in ti.array.properties:
+            #     pred.loc[swap, ['0_%s' % prop, '1_%s' % prop]] = pred.loc[swap, ['1_%s' % prop, '0_%s' % prop]].values
         else:
             assert False, 'not implemented'
 
