@@ -58,7 +58,7 @@ def safe_crop(img, xy, crop_size_px):
     :param xy: center of the output image
     :param crop_size_px: output image size (rectangle side length)
     :return: img_crop: output image
-             delta_xy: correction delta for coordinates in the output image; e.g. img_crop_pos = img_pos + delta_xy
+             delta_xy: correction delta for coordinates in the output image; e.g. img_crop_pos = img_pos - delta_xy
     """
     img_crop = np.zeros(((crop_size_px, crop_size_px) + img.shape[2:]), dtype=np.uint8)
     dest_top_left = -np.clip(np.array(xy[::-1]) - crop_size_px / 2, None, 0).round().astype(int)
