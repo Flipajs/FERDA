@@ -2,11 +2,13 @@ import sys
 from core.graph.region_chunk import RegionChunk
 import numpy as np
 import cPickle as pickle
+import os.path
 from core.graph.chunk_manager import ChunkManager
 from core.project.project import Project
 from core.region.region_manager import RegionManager
 import scipy.io as sio
 from core.fake_background_computer import FakeBGComp
+from tqdm import tqdm
 
 class Exporter:
     def __init__(self, chm, gm, rm, pts_export=False, contour_pts_export=True):
@@ -98,8 +100,7 @@ class Exporter:
 
         # it is important to go through vertices to have access to active feature...
         # When processing one part there are inactive chunks in chm...
-
-        for ch in self.chm.chunks_.itervalues():
+        for ch in tqdm(self.chm.chunks_.itervalues(), total=len(self.chm)):
             if ch.length() < min_tracklet_length:
                 continue
 
@@ -121,11 +122,13 @@ class Exporter:
 
             self.obj_arr_append_(obj_arr, d)
 
-        with open(file_name+'.mat', 'wb') as f:
+
+        with open(file_name, 'wb') as f:
             sio.savemat(f, {'FERDA': obj_arr}, do_compression=True)
 
+
 def export_arena(out_path, project):
-    with open(out_path + '_arena.mat', 'wb') as f:
+    with open(out_path, 'wb') as f:
         arena = None
         if project.arena_model:
             am = project.arena_model
@@ -159,26 +162,28 @@ def export_arena(out_path, project):
 
         sio.savemat(f, {'arena': arena}, do_compression=True)
 
+
 if __name__ == '__main__':
-    working_dir = sys.argv[1]
-    out_dir = sys.argv[2]
-    first_part = int(sys.argv[3])
-    part_num = int(sys.argv[4])
-    min_tracklet_length = int(sys.argv[5])
-    pts_export = bool(int(sys.argv[6]))
+    # working_dir = sys.argv[1]
+    # out_dir = sys.argv[2]
+    # first_part = int(sys.argv[3])
+    # part_num = int(sys.argv[4])
+    # min_tracklet_length = int(sys.argv[5])
+    # pts_export = bool(int(sys.argv[6]))
 
-    i = first_part
+    # i = first_part
 
-    p = Project()
-    p.load(working_dir)
+    out_dir = 'out/export'
 
-    if i == 0:
-        export_arena(out_dir, p)
+    p = Project('../projects/2_temp/HH1_crf17_pre')
 
-    bgcomp = FakeBGComp(p, first_part, part_num)
+    # if i == 0:
+    export_arena(os.path.join(out_dir, 'arena.mat'), p)
 
-    from core.graph_assembly import graph_assembly
-    graph_assembly(bgcomp)
+    # bgcomp = FakeBGComp(p, first_part, part_num)
+    #
+    # from core.graph_assembly import graph_assembly
+    # graph_assembly(bgcomp)
 
     # rm = RegionManager(db_wd=working_dir+ '/temp',
     #                    db_name='part' + str(i) + '_rm.sqlite3',
@@ -209,8 +214,8 @@ if __name__ == '__main__':
     # p.gm.g = g_
     # p.gm.rm = rm
 
-    fname = out_dir+'/out_'+str(i)
-    if first_part+part_num-1 > i:
-        fname += '-'+str(first_part+part_num-1)
+    # fname = out_dir+'/out_'+str(i)
+    # if first_part+part_num-1 > i:
+    #     fname += '-'+str(first_part+part_num-1)
 
-    Exporter(p.chm, p.gm, p.rm, pts_export).export(fname, min_tracklet_length=min_tracklet_length)
+    Exporter(p.chm, p.gm, p.rm).export(os.path.join(out_dir, 'export.mat'), min_tracklet_length=1)
