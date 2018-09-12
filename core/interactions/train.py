@@ -52,7 +52,8 @@ class ValidationCallback(Callback):
 
 
 class TrainInteractions:
-    def __init__(self, num_objects=None, num_input_layers=3, predicted_properties=None, error_functions=None):
+    def __init__(self, num_objects=None, num_input_layers=3, predicted_properties=None, error_functions=None,
+                 detector_input_size_px=200):
         assert (predicted_properties is None and error_functions is None) or \
                len(predicted_properties) == len(error_functions)
         self.models = {
@@ -69,7 +70,7 @@ class TrainInteractions:
             self.ERROR_FUNCTIONS = ['abs', 'abs', 'angle_180']  # , 'abs', 'abs']
         else:
             self.ERROR_FUNCTIONS = error_functions
-        self.detector_input_size_px = 200
+        self.detector_input_size_px = detector_input_size_px
         self.num_input_layers = num_input_layers
         self.num_objects = None
         self.array = None  # provide column name to index mapping using ObjectsArray
@@ -119,6 +120,7 @@ class TrainInteractions:
 
         :param y_true: ground truth for all objects; shape=(n_samples, n_objects * len(PREDICTED_PROPERTIES))
         :param y_pred: predictions for all objects; shape=(n_samples, n_objects * len(PREDICTED_PROPERTIES))
+                       all predictions in tanh range (-1; 1)
         :param alpha: float; xy error and angle error balancing weight, 0 means only xy error is considered,
                       1 only angle error is considered
         :return: float; scalar loss
@@ -131,9 +133,11 @@ class TrainInteractions:
         for i in range(self.num_objects):
             for col in self.array.properties:
                 if col != 'angle_deg':
+                    # (-1; 1) -> (0; detector_input_size_px)
                     tensor_columns.append((y_pred[:, self.array.prop2idx(i, col)] + 1) * self.detector_input_size_px / 2)
                 else:
-                    tensor_columns.append((y_pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2) / np.pi * 180)
+                    # (-1; 1) -> (-90; 90)
+                    tensor_columns.append(y_pred[:, self.array.prop2idx(i, 'angle_deg')] * 90)
         y_pred = K.stack(tensor_columns, axis=1)
 
         errors, errors_xy, _ = self.match_pred_to_gt(y_true, y_pred)
@@ -459,8 +463,7 @@ class TrainInteractions:
 
     def postprocess_predictions(self, pred):
         for i in range(self.num_objects):
-            pred[:, self.array.prop2idx(i, 'angle_deg')] = \
-                np.degrees(pred[:, self.array.prop2idx(i, 'angle_deg')] * np.pi / 2)
+            pred[:, self.array.prop2idx(i, 'angle_deg')] = pred[:, self.array.prop2idx(i, 'angle_deg')] * 90
             pred[:, self.array.prop2idx(i, 'x')] = \
                 (pred[:, self.array.prop2idx(i, 'x')] + 1) * self.detector_input_size_px / 2
             pred[:, self.array.prop2idx(i, 'y')] = \
