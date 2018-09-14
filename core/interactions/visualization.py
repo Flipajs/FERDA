@@ -21,6 +21,7 @@ from keras import backend as K
 
 import core.interactions.train as train_interactions
 from core.interactions.train import read_gt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 
 def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, title=None, scale=1.5):
@@ -49,8 +50,16 @@ def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, titl
     if title is not None:
         plt.title(title)
     ax.set(xlim=[0, width], ylim=[height, 0], aspect=1)
-    fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0, dpi=dpi)
-    plt.close(fig)
+    if out_filename is not None:
+        fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0, dpi=dpi)
+        plt.close(fig)
+    else:
+        canvas = FigureCanvas(fig)
+        canvas.draw()
+        width, height = fig.get_size_inches() * fig.get_dpi()
+        img = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape(int(height), int(width), 3)
+        plt.close(fig)
+        return img
 
 
 def show_prediction(img, num_objects, prediction=None, gt=None, title=None):

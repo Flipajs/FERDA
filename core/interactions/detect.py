@@ -2,7 +2,7 @@ import tempfile
 
 import fire
 import imageio
-import keras.applications.mobilenet as mobilenet
+from keras.applications.mobilenet import mobilenet
 import numpy as np
 import pandas as pd
 import yaml
@@ -13,13 +13,13 @@ from os import remove
 from scipy.special import expit
 from tqdm import tqdm
 
-from core.interactions.train import TrainInteractions
 from core.interactions.visualization import save_prediction_img, show_prediction
 from utils.angles import angle_absolute_error_direction_agnostic
 from utils.img import safe_crop
 from utils.objectsarray import ObjectsArray
 from core.interactions.generate_data import DataGenerator
 from core.interactions.train import TrainInteractions
+from core.region.transformableregion import TransformableRegion
 
 
 class InteractionDetector:
@@ -34,11 +34,10 @@ class InteractionDetector:
         self.TRACKING_CONFIDENCE_SCALE = 0.2
         keras_custom_objects = {
             'relu6': mobilenet.relu6,
-            'DepthwiseConv2D': mobilenet.DepthwiseConv2D
         }
         with open(join(model_dir, 'config.yaml'), 'r') as fr:
             self.config = yaml.load(fr)
-        self.ti = TrainInteractions(self.config['num_objects'])  # TODO: remove dependency
+        self.ti = TrainInteractions(self.config['num_objects'], detector_input_size_px=self.config['input_size_px'])  # TODO: remove dependency
 
         if os.path.exists(join(model_dir, 'model.yaml')):
             with open(join(model_dir, 'model.yaml'), 'r') as fr:
@@ -63,19 +62,65 @@ class InteractionDetector:
         :return: dict, properties of the detected objects
                        keys: '0_x', '0_y', '0_angle_deg', .... 'n_x', 'n_y', 'n_angle_deg'
         """
-        # img_crop, delta_xy = safe_crop(img, xy, self.config['input_size_px'])
-        img_crop, delta_xy = safe_crop(img, xy, 200)
-        img_crop = self.ti.resize_images([img_crop], (224, 224, 3))[0]
+        img_crop, delta_xy = safe_crop(img, xy, self.config['input_size_px'])
+        # img_crop, delta_xy = safe_crop(img, xy, 200)
+        # img_crop = self.ti.resize_images([img_crop], (224, 224, 3))[0]
         img = np.expand_dims(img_crop, 0).astype(np.float) / 255.
         # import matplotlib.pylab as plt
         # plt.imshow(img[0])
         pred = self.m.predict(img)
+        pred_ = pred.copy().flatten()
         pred = self.ti.postprocess_predictions(pred)
         pred_dict = self.predictions.array_to_dict(pred)
         for i in range(self.config['num_objects']):
             pred_dict['{}_x'.format(i)] += delta_xy[0]
             pred_dict['{}_y'.format(i)] += delta_xy[1]
-        return pred_dict
+        return pred_dict, pred_, delta_xy
+
+    def region_to_dict(self, r):
+        return({
+            '0_x': r.centroid()[1],
+            '0_y': r.centroid()[0],
+            '0_major': 2 * r.major_axis_,
+            '0_minor': 2 * r.minor_axis_,
+            '0_angle_deg': np.rad2deg(r.theta_),
+        })
+
+    def detect_single(self, img, prev_detection):
+        """
+        Detect objects in interaction.
+
+        :param img: input image
+        :param xy: position of the interaction
+        :return: dict, properties of the detected objects
+                       keys: '0_x', '0_y', '0_angle_deg', .... 'n_x', 'n_y', 'n_angle_deg'
+        """
+        timg = TransformableRegion()
+        prev_xy = (prev_detection['0_x'], prev_detection['0_y'])
+        timg.rotate(-prev_detection['0_angle_deg'], prev_xy[::-1])
+        timg.set_img(img)
+        img_rotated = timg.get_img()
+
+        img_crop, delta_xy = safe_crop(img_rotated, prev_xy, self.config['input_size_px'])
+        img = np.expand_dims(img_crop, 0).astype(np.float) / 255.
+        pred = self.m.predict(img)
+        pred_ = pred.copy().flatten()
+        pred = self.ti.postprocess_predictions(pred)
+        # pred_dict = {
+        #     '0_x':
+        # }
+        pred_dict = self.predictions.array_to_dict(pred)
+        pred_dict['0_x'] += delta_xy[0]
+        pred_dict['0_y'] += delta_xy[1]
+        pred_dict['0_major'] = prev_detection['0_major']
+        pred_dict['0_minor'] = prev_detection['0_minor']
+        # timg.get_transformed_angle()
+        # timg.get_transformed_coords()
+        pred_dict['0_angle_deg'] = -timg.get_inverse_transformed_angle(pred_dict['0_angle_deg'])
+        pred_dict['0_x'], pred_dict['0_y'] = timg.get_inverse_transformed_coords(
+            np.array((pred_dict['0_x'], pred_dict['0_y'])))
+
+        return pred_dict, pred_, delta_xy
 
     def draw_detections(self, img, detections):
         ax = show_prediction(img, self.config['num_objects'], detections)

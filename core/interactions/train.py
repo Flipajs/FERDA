@@ -8,9 +8,10 @@ from os.path import join
 import numbers
 import pandas as pd
 from collections import OrderedDict
+import scipy.stats as stats
 try:
     from keras.utils import np_utils
-    from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, GlobalAveragePooling2D
+    from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, GlobalAveragePooling2D, Concatenate, concatenate
     from keras.models import Model
     from keras.optimizers import Adam
     from keras.layers import Dense
@@ -61,6 +62,8 @@ class TrainInteractions:
             '6conv_2dense': self.model_6conv_2dense,
             'mobilenet': self.model_mobilenet,
             'single_mobilenet': self.model_single_mobilenet,
+            'single_concat_mp': self.model_single_concat_mp,
+            'single_concat_conv3': self.model_single_concat_conv3,
         }
         if predicted_properties is None:
             self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg']  # , 'major', 'minor']
@@ -385,7 +388,7 @@ class TrainInteractions:
         x = base_model.output
         x = GlobalAveragePooling2D()(x)
         # let's add a fully-connected layer
-        x = Dense(1024, activation='relu')(x)
+        x = Dense(32, activation='relu')(x)
         # and a logistic layer -- let's say we have 200 classes
         predictions = Dense(3, activation='tanh')(x)  # softmax
         # this is the model we will train
@@ -396,6 +399,48 @@ class TrainInteractions:
         # for layer in base_model.layers:
         #     layer.trainable = False
         return model
+
+    def model_single_concat_mp(self):
+        input_shape = Input(shape=(self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers))
+        x = Conv2D(1, (1, 1), padding='same', activation='relu')(input_shape)
+        conv2 = Conv2D(32, (7, 7), padding='same', activation='relu')(x)
+        conv3 = Conv2D(32, (5, 5), padding='same', activation='relu')(conv2)
+        mp1 = MaxPooling2D((2, 2))(conv3)
+
+        x = Conv2D(32, (3, 3), padding='same', activation='relu')(mp1)
+        x = MaxPooling2D((2, 2))(x)
+        x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+        x = MaxPooling2D((2, 2))(x)
+        x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+        x = Flatten()(x)
+
+        x = concatenate([x, Flatten()(mp1)])
+
+        x = Dense(64, activation='relu')(x)
+        x = Dense(32, activation='relu')(x)
+        out = Dense(self.array.num_columns(), activation='tanh')(x)
+        return Model(input_shape, out)
+
+    def model_single_concat_conv3(self):
+        input_shape = Input(shape=(self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers))
+        x = Conv2D(1, (1, 1), padding='same', activation='relu')(input_shape)
+        conv2 = Conv2D(32, (7, 7), padding='same', activation='relu')(x)
+        conv3 = Conv2D(32, (5, 5), padding='same', activation='relu')(conv2)
+        mp1 = MaxPooling2D((2, 2))(conv3)
+
+        x = Conv2D(32, (3, 3), padding='same', activation='relu')(mp1)
+        x = MaxPooling2D((2, 2))(x)
+        x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+        x = MaxPooling2D((2, 2))(x)
+        x = Conv2D(32, (3, 3), padding='same', activation='relu')(x)
+        x = Flatten()(x)
+
+        x = concatenate([x, Flatten()(conv3)])
+
+        x = Dense(64, activation='relu')(x)
+        x = Dense(32, activation='relu')(x)
+        out = Dense(self.array.num_columns(), activation='tanh')(x)
+        return Model(input_shape, out)
 
     def train(self, model, train_generator, test_generator, params, callbacks=[]):
         # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
@@ -658,10 +703,21 @@ class TrainInteractions:
         if self.num_input_layers == 1:
             X_train = np.expand_dims(X_train, 3)
             X_test = np.expand_dims(X_test, 3)
+
+        def get_sample_weight(df, detector_input_size_px, max_reweighted_distance_px=20):
+            distance = np.linalg.norm(df[['0_x', '0_y']] - detector_input_size_px / 2, axis=1)
+            kde = stats.gaussian_kde(distance)
+            weights = 1. / kde(distance)
+            max_weight = weights[distance < max_reweighted_distance_px].max()
+            weights[distance >= max_reweighted_distance_px] = max_weight
+            return weights / weights.min()
+
         train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        train_generator = train_datagen.flow(X_train, y_train)
+        train_generator = train_datagen.flow(X_train, y_train,
+                                             sample_weight=get_sample_weight(y_train_df, self.detector_input_size_px))
         test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        test_generator = test_datagen.flow(X_test, y_test, shuffle=False)
+        test_generator = test_datagen.flow(X_test, y_test, shuffle=False,
+                                           sample_weight=get_sample_weight(y_test_df, self.detector_input_size_px))
 
         def eval_and_print(_m, _t):
             results = self.evaluate(_m, _t, parameters, y_test)

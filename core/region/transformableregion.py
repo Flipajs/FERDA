@@ -127,11 +127,22 @@ class TransformableRegion:
         assert coords_xy.shape == (2, ) or (coords_xy.ndim == 2 and coords_xy.shape[0] == 2)  # (2, ) or (2, n)
         return p2e(self.transformation.dot(e2p(coords_xy)))
 
+    def get_inverse_transformed_coords(self, coords_xy):
+        assert coords_xy.shape == (2,) or (coords_xy.ndim == 2 and coords_xy.shape[0] == 2)  # (2, ) or (2, n)
+        return p2e(np.linalg.inv(self.transformation).dot(e2p(coords_xy)))
+
     def get_transformed_angle(self, ccw_angle_deg):
         #TODO
         angle1 = (ccw_angle_deg - math.degrees(math.atan(self.transformation[1, 0] / self.transformation[0, 0]))) % 360
         angle2 = (ccw_angle_deg - math.degrees(math.atan2(self.transformation[1, 0], self.transformation[0, 0]))) % 360
-        assert round(angle1, 2) == round(angle2, 2)
+        # assert round(angle1, 2) == round(angle2, 2)
+        return angle1
+
+    def get_inverse_transformed_angle(self, ccw_angle_deg):
+        #TODO
+        angle1 = (ccw_angle_deg + math.degrees(math.atan(self.transformation[1, 0] / self.transformation[0, 0]))) % 360
+        angle2 = (ccw_angle_deg + math.degrees(math.atan2(self.transformation[1, 0], self.transformation[0, 0]))) % 360
+        # assert round(angle1, 2) == round(angle2, 2)
         return angle1
 
     def get_img(self):
