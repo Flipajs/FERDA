@@ -1657,8 +1657,13 @@ class ResultsWidget(QtGui.QWidget):
             path = self.project.GT_file
             self._gt.load(path)
 
-            self._gt.set_offset(y=self.project.video_crop_model['y1'],
-                                x=self.project.video_crop_model['x1'],
+            cy, cx = 0, 0
+            if self.project.video_crop_model is not None:
+                cy = self.project.video_crop_model['y1']
+                cx = self.project.video_crop_model['x1']
+
+            self._gt.set_offset(y=cy,
+                                x=cx,
                                 frames=self.project.video_start_t)
 
         except Exception as e:
