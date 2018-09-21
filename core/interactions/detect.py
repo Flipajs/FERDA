@@ -25,6 +25,7 @@ from utils.objectsarray import ObjectsArray
 from core.interactions.generate_data import DataGenerator
 from core.interactions.train import TrainInteractions
 from core.region.transformableregion import TransformableRegion
+from core.region.region import Region
 
 from joblib import Memory
 memory = Memory('out/cache', verbose=0)
@@ -43,6 +44,14 @@ class EllipticRegion(object):
         tmp = cls(yx[1], yx[0], -np.rad2deg(region.theta_), 2 * region.major_axis_, 2 * region.minor_axis_,
                   region.frame())
         return tmp
+
+    def to_region(self):
+        r = Region(is_origin_interaction=True, frame=self.frame)
+        r.centroid_ = self.xy[::-1]
+        r.theta_ = -np.deg2rad(self.angle_deg)
+        r.major_axis_ = self.major / 2
+        r.minor_axis_ = self.minor / 2
+        return r
 
     @classmethod
     def from_dict(cls, region_dict):
@@ -89,8 +98,11 @@ class EllipticRegion(object):
         return np.array([self.x, self.y, self.angle_deg, self.major, self.minor, self.frame])
 
     def __add__(self, other):
+        assert self.frame == other.frame
         mean = np.vstack((self.to_array(), other.to_array())).mean(axis=0)
-        return EllipticRegion(*mean)
+        el = EllipticRegion(*mean)
+        el.frame = int(el.frame)
+        return el
 
 
 class InteractionDetector:
@@ -321,6 +333,9 @@ class InteractionDetector:
 
         regions_path = [EllipticRegion.from_region(single_tracklet.get_region(self.project.gm, adjacent_region_idx))]
         track_recursive(v, graph, regions_path, forward)
+        regions_path = regions_path[1:]  # remove adjacent single_tracklet region
+        if not forward:
+            regions_path = sorted(regions_path, key=lambda x: x.frame)
         return regions_path
 
     def region_to_dict(self, r):
@@ -444,19 +459,22 @@ class InteractionDetector:
             plt.imshow(vm.get_frame(frame))
             colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
             # for path_set, color in zip(paths, ('r', 'b')):
-#                for regions_path in path_set:
-            for regions_path, color in zip(paths, colors):
-                plt.plot([r.x for r in regions_path], [r.y for r in regions_path], color=color)
-                frames = [r.frame for r in regions_path]
+#                for regions in path_set:
+            for path, color in zip(paths, colors):
+                regions = path['regions']
+                plt.plot([r.x for r in regions], [r.y for r in regions], color=color)
+                frames = [r.frame for r in regions]
                 try:
-                    r = regions_path[frames.index(frame)]
-                    if r == regions_path[0] or r == regions_path[-1]:
-                        plot_interaction(1, gt=r.to_dict(), color=color)
-                    else:
-                        plot_interaction(1, pred=r.to_dict(), color=color)
+                    r = regions[frames.index(frame)]
+                    plot_interaction(1, pred=r.to_dict(), color=color)
                     plt.plot(r.x, r.y, 'o', color=color)
                 except ValueError:
                     pass
+                if frame == path['in_region'].frame():
+                    plot_interaction(1, gt=EllipticRegion.from_region(path['in_region']).to_dict(), color=color)
+                if frame == path['out_region'].frame():
+                    plot_interaction(1, gt=EllipticRegion.from_region(path['out_region']).to_dict(), color=color)
+
             plt.xlim(roi.x_, roi.x_max_)
             plt.ylim(roi.y_, roi.y_max_)
             # for t in incoming:
@@ -490,34 +508,46 @@ class InteractionDetector:
         fwd = []
         for t in tqdm(incoming, desc='incoming'):
             regions_path = self.track_single_object_in_dense_subgraph(graph, ids, t, forward=True)
-            fwd.append(regions_path)
+            fwd.append({'regions': regions_path,
+                        'in_tracklet': t,
+                        'in_region': t.get_region(self.project.gm, -1)})
         bwd = []
         for t in tqdm(outcoming, desc='outcoming'):
             regions_path = self.track_single_object_in_dense_subgraph(graph, ids, t, forward=False)
-            bwd.append(regions_path)
-        for i, path in enumerate(bwd):
-            bwd[i] = sorted(bwd[i], key=lambda el: el.frame)
+            bwd.append({'regions': regions_path,
+                        'out_tracklet': t,
+                        'out_region': t.get_region(self.project.gm, 0)})
 
         # np.fromfunction(np.vectorize(lambda i, j: min_dist(fwd[i[0]], bwd[j[1]])), (len(fwd), len(bwd)))
-        cost_matrix, frames_matrix = np.vectorize(lambda i, j: min_dist(fwd[i], bwd[j]))(
+        cost_matrix, frames_matrix = np.vectorize(lambda i, j: min_dist(fwd[i]['regions'], bwd[j]['regions']))(
             *np.indices((len(fwd), len(bwd))))
         ii, jj = scipy.optimize.linear_sum_assignment(cost_matrix)
 
         paths = []
         for i, j in zip(ii, jj):
-            mean_major_px = np.concatenate(([el.major for el in fwd[i]], [el.major for el in bwd[j]])).mean()
-            if cost_matrix[i, j] > 2 * mean_major_px:
-                assert False
+            mean_major_px = np.concatenate(([el.major for el in fwd[i]['regions']],
+                                            [el.major for el in bwd[j]['regions']])).mean()
+            if cost_matrix[i, j] > 0.5 * mean_major_px:
+                # TODO, add confident parts of fwd, bwd
+                import warnings
+                warnings.warn('TODO: fwd bwd distance high: distance {} px, threshold {} px'.format(cost_matrix[i, j], 0.5 * mean_major_px))
+
             frame = frames_matrix[i, j]
-            fwd_idx = [el.frame for el in fwd[i]].index(frame)
-            bwd_idx = [el.frame for el in bwd[j]].index(frame)
-            mean_el = fwd[i][fwd_idx] + bwd[j][bwd_idx]
-            mean_el.angle_deg = fwd[i][fwd_idx].angle_deg
-            paths.append(fwd[i][:fwd_idx] + [mean_el] + bwd[j][(bwd_idx + 1):])
+            fwd_idx = [el.frame for el in fwd[i]['regions']].index(frame)
+            bwd_idx = [el.frame for el in bwd[j]['regions']].index(frame)
+            assert fwd[i]['regions'][fwd_idx].frame == bwd[j]['regions'][bwd_idx].frame
+            mean_el = fwd[i]['regions'][fwd_idx] + bwd[j]['regions'][bwd_idx] # mean region
+            mean_el.angle_deg = fwd[i]['regions'][fwd_idx].angle_deg
+            paths.append({
+                'regions': fwd[i]['regions'][:fwd_idx] + [mean_el] + bwd[j]['regions'][(bwd_idx + 1):],
+                'in_tracklet': fwd[i]['in_tracklet'],
+                'in_region': fwd[i]['in_region'],
+                'out_tracklet': bwd[j]['out_tracklet'],
+                'out_region': bwd[j]['out_region'], })
         #     paths.append(fwd[i][:(fwd_idx + 1)])
         #     paths.append([mean_el])
         #     paths.append(bwd[j][bwd_idx:])
-        return paths, fwd, bwd
+        return paths  # , fwd, bwd
 
 
 def train(project_dir, output_model_dir, temp_dataset_dir, num_objects=2, delete_data=False, video_file=None):  # model_dir=None,
@@ -573,8 +603,6 @@ def detect_and_visualize(model_dir, in_img, x, y, out_img=None):
     save_prediction_img(out_img, 2, img, detections)
 
 
-
-
 if __name__ == '__main__':
     # fire.Fire({
     #   'detect_and_visualize': detect_and_visualize,
@@ -583,16 +611,12 @@ if __name__ == '__main__':
     from core.project.project import Project
     from skimage.util import montage
     import matplotlib.pylab as plt
-    plt.switch_backend('Qt4Agg')
+    # plt.switch_backend('Qt4Agg')
 
     project = Project('../projects/2_temp/180810_2359_Cam1_ILP_cardinality')
-    # from utils.video_manager import get_auto_video_manager
-    #
-    # vm = get_auto_video_manager(project)
-    # gm = project.gm
-    # rm = project.rm
-    # '/datagrid/personal/smidm1/ferda/interactions/experiments/180913_1533_single_concat_conv3_alpha0_01'
-    detector = InteractionDetector('/home/matej/prace/ferda/experiments/180913_1533_single_concat_conv3_alpha0_01',
+
+    # '/home/matej/prace/ferda/experiments/180913_1533_single_concat_conv3_alpha0_01'
+    detector = InteractionDetector('/datagrid/ferda/models/180913_1533_tracker_single_concat_conv3_alpha0_01',
                                    project)
     dense_subgraphs = detector.find_dense_subgraphs()
     dense_subgraphs = sorted(dense_subgraphs, key=lambda x: len(x['ids']), reverse=True)
@@ -602,25 +626,14 @@ if __name__ == '__main__':
     for i, dense in enumerate(tqdm(dense_subgraphs)):
         # if i != 5:
         #     continue
-        paths, _, _ = detector.track_dense(dense['graph'], dense['ids'])
+        paths = detector.track_dense(dense['graph'], dense['ids'])
         detector.visualize_tracklets(dense['graph'], paths, 'out/%03d' % i)
 
-    # plt.imshow(montage(np.array(debug_images), multichannel=True))
-    # plt.figure()
-    # detector.draw_graph(graph)
+        # detector.draw_graph(dense['graph'])
 
-    # regions_out = []
-    # for t in outcoming:
-    #     r = t.get_region(project.gm, 0)
-    #     regions_out.append(EllipticRegion.from_region(r))
-    # regions_in = []
-    # for t in incoming:
-    #     r = t.get_region(project.gm, -1)
-    #     regions_in.append(EllipticRegion.from_region(r))
+    ##
 
-
-
-# %load_ext autoreload
-# %autoreload 2
+    # %load_ext autoreload
+    # %autoreload 2
 
 

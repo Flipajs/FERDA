@@ -1264,20 +1264,29 @@ class CompleteSetMatching:
         from core.interactions.detect import InteractionDetector
         from core.region.region import Region
 
-        # detector = InteractionDetector('/home/matej/prace/ferda/experiments/171222_0126_batch_36k_random/0.928571428571')
-        detector_model_dir = 'data/CNN_models/180222_2253_mobilenet_two_100'
+        # dense_tracker = InteractionDetector('/home/matej/prace/ferda/experiments/171222_0126_batch_36k_random/0.928571428571')
+        detector_model_dir = '/datagrid/ferda/models/180913_1533_tracker_single_concat_conv3_alpha0_01'
         # TODO: or?
         # detector_model_dir = '../../data/CNN_models/180222_2253_mobilenet_two_100'
-        detector = InteractionDetector(detector_model_dir)
+        dense_tracker = InteractionDetector(detector_model_dir)
 
-        # extract multi tracklets
-        multi = [t for t in self.p.chm.tracklet_gen() if t.is_multi()]
-        tracklets2 = [t for t in multi if t.get_cardinality(self.p.gm) == 2]
+        dense_subgraphs = dense_tracker.find_dense_subgraphs()
+        for i, dense in enumerate(tqdm(dense_subgraphs, desc='processing dense sections')):
+            paths = dense_tracker.track_dense(dense['graph'], dense['ids'])
+            # paths:
+            #     [{'in_region':Region,
+            #       'in_tracklet': Chunk,
+            #       'out_region': Region,
+            #       'out_tracklet': Chunk,
+            #       'regions': [EllipticRegion, EllipticRegion, EllipticRegion, EllipticRegion, ...]}, ... ]
 
-        for t in tqdm(tracklets2, desc='processing 2-interactions'):
-            tracks, confidence = t.solve_interaction(detector, self.p.gm, self.p.rm, self.p.img_manager)
+            for path in paths:
+                regions = [el.to_region() for el in path['regions']]
+                # ...
+                # TODO
 
-            cardinality = 2
+
+
             start_frame = t.start_frame(self.p.gm)
 
             rs = {}
@@ -1513,7 +1522,7 @@ def do_complete_set_matching(project):
 
     descriptors_path = os.path.join(project.working_directory, 'descriptors.pkl')
     csm = CompleteSetMatching(project, lp, descriptors_path, quality_threshold=0.2, quality_threshold2=0.01)
-    # csm.solve_interactions()
+    csm.solve_interactions()
     csm.start_matching_process()
     logger.info('do_complete_set_matching finished')
 
