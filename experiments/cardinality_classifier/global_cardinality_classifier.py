@@ -57,11 +57,12 @@ def relax_area_cost(cost, k, median_area, area_relaxation_coef):
 
 
 def build_ilp(tracklets, collateral_sets, predecessors, successors, K, median_area, areas, remap_to_ids=True,
-              area_relaxation_coef=0):
+              gamma=2.0, tracklet_weights=None):
     prob = pulp.LpProblem("Cardinality classifier", pulp.LpMinimize)
-    print("relaxation_coef: {}".format(area_relaxation_coef))
+    print("gamma: {}".format(gamma))
 
-    tracklets_len = {t.id(): len(t) for t in tracklets}
+    if tracklet_weights is None:
+        tracklet_weights = {t.id(): len(t) for t in tracklets}
 
     if remap_to_ids:
         tracklets, collateral_sets, predecessors, successors, areas = remap_instances_to_ids(tracklets,
@@ -69,25 +70,29 @@ def build_ilp(tracklets, collateral_sets, predecessors, successors, K, median_ar
                                                                                              predecessors,
                                                                                              successors,
                                                                                              areas)
-    t = time.time()
-    not_used_penalty_coef = 2.0
+    t_start = time.time()
     full_KK = range(0, K + 1)
     KK = range(1, K + 1)
     x = {}
     for t in tracklets:
         for k in full_KK:
             x[(t, k)] = pulp.LpVariable("tid:{}^{}".format(t, k), cat=pulp.LpBinary)
-    print("var registration t: {}".format(time.time() - t))
+    print("var registration t: {}".format(time.time() - t_start))
 
-    t= time.time()
+    t_start = time.time()
     # objective function
-    prob += sum([x[(t, k)] * relax_area_cost(abs(k * median_area - areas[t]), k, median_area, area_relaxation_coef) *
-                 tracklets_len[t] for t in tracklets for k in KK]) \
-            + sum([x[(t, 0)] * max(0, median_area - abs(median_area - areas[t])) * tracklets_len[t] * not_used_penalty_coef for t in tracklets])  # closer to mean the worst..
-            # + sum([x[(t, 0)] * not_used_penalty for t in tracklets])
-    print("objective function: {}".format(time.time() - t))
+    # prob += sum([x[(t, k)] * relax_area_cost(abs(k * median_area - areas[t]), k, median_area, area_relaxation_coef) *
+    #              tracklets_len[t] for t in tracklets for k in KK]) \
+    #         + sum([x[(t, 0)] * max(0, median_area - abs(median_area - areas[t])) * tracklets_len[t] * gamma for t in tracklets])  # closer to mean the worst..
+    #         # + sum([x[(t, 0)] * not_used_penalty for t in tracklets])
 
-    t = time.time()
+    prob += sum([x[(t, k)] * abs(k * median_area - areas[t]) *
+                 tracklet_weights[t] for t in tracklets for k in KK]) \
+            + sum([x[(t, 0)] * max(0, median_area - abs(median_area - areas[t])) * tracklet_weights[t] * gamma for t in
+                   tracklets])  # closer to mean the worst..
+    print("objective function: {}".format(time.time() - t_start))
+
+    t_start = time.time()
     # for each complete set
     for cs_i, cs in enumerate(collateral_sets):
         prob += sum([k * x[(t, k)] for t in cs for k in KK]) == K, "CS{}; ID perservation rule in complete sets".format(
@@ -105,7 +110,7 @@ def build_ilp(tracklets, collateral_sets, predecessors, successors, K, median_ar
     # for each tracklet - only one cardinality option is possible
     for t in tracklets:
         prob += sum([x[(t, k)] for k in full_KK]) == 1
-    print("constraints: {}".format(time.time() - t))
+    print("constraints: {}".format(time.time() - t_start))
 
     return prob, x
 
@@ -171,17 +176,39 @@ def solve(prob, x, print_ilp):
 
 
 def build_ilp_and_solve(tracklets, collateral_sets, predecesors, successors, K, median_area, areas, remap_to_ids=True,
-                        print_ilp=False, area_relaxation_coef=0):
+                        print_ilp=False, gamma=2.0, tracklet_weights=None):
     t = time.time()
     ilp, variable_mapping = build_ilp(tracklets, collateral_sets, predecesors, successors, K, median_area, areas,
                                       remap_to_ids,
-                                      area_relaxation_coef)
+                                      gamma, tracklet_weights=tracklet_weights)
     print("ILP construction tooks: {}s".format(time.time() - t))
 
     if print_ilp:
         print(ilp)
 
     return solve(ilp, variable_mapping, print_ilp)
+
+
+def eval(tracklets, cardinalities, cardinalities_gt):
+    tracklets_len = {t.id(): len(t) for t in tracklets}
+
+    # for coef in [0, 0.1, 0.2, 0.3, 0.4, 0.5]:
+    for coef in [0]:
+        # cardinalities = g_cardinality_clf.build_ilp_and_solve(tracklets, collateral_sets, predecessors, num_animals,
+        #                                                       median_area, areas, area_relaxation_coef=coef)
+        num_mistakes = 0
+
+        tracklets_len_sum = 0
+
+        for id in cardinalities_gt.keys():
+            if cardinalities_gt[id] != cardinalities[id]:
+                print("mistake, id: {}, correct cardinality: {}, estimated: {}".format(id, cardinalities_gt[id],
+                                                                                       cardinalities[id]))
+                num_mistakes += 1
+                tracklets_len_sum += tracklets_len[id]
+
+        print("COEF: {}, #mistakes: {}, len: {}".format(coef, num_mistakes, tracklets_len_sum))
+        print("------------------------------\n")
 
 
 def toy_example():
