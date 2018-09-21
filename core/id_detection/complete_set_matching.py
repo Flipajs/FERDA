@@ -1618,6 +1618,11 @@ def load_dense_sections_tracklets_test():
 
     return dense_sections_tracklets
 
+def do_complete_set_matching_new(csm, dense_sections_tracklets):
+    csm.solve_interactions_regression(dense_sections_tracklets)
+    csm.start_matching_process()
+
+
 if __name__ == '__main__':
     P_WD = '/Users/flipajs/Documents/wd/ferda/180810_2359_Cam1_ILP_cardinality'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
@@ -1634,6 +1639,6 @@ if __name__ == '__main__':
     dense_sections_tracklets = load_dense_sections_tracklets_test()
 
     csm = get_csm(p)
-    csm.solve_interactions_regression(dense_sections_tracklets)
-    csm.start_matching_process()
+    do_complete_set_matching_new(csm, dense_sections_tracklets)
+    
     # do_complete_set_matching(p)
