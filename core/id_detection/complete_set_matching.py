@@ -551,21 +551,25 @@ class CompleteSetMatching:
         # each registered track has its own ID until it is merged to someone else...
         track1 = list(t1.P)[0]
         track2 = self.tracklets_2_tracks[t2]
-        self.update_prototypes(self.prototypes[track1], self.prototypes[track2])
 
-        for t in self.tracks[track2]:
-            if t == track2:
-                import sys
-                import warnings
-                warnings.warn("Infinite cycle in Merge tracklets =/")
-                sys.exit()
-            self.tracks[track1].append(t)
-            self.tracklets_2_tracks[t2] = track1
+        self.merge_tracks(track1, track2)
+        # self.update_prototypes(self.prototypes[track1], self.prototypes[track2])
+        #
+        # for t in self.tracks[track2]:
+        #     if t == track2:
+        #         import sys
+        #         import warnings
+        #         warnings.warn("Infinite cycle in Merge tracklets =/")
+        #         sys.exit()
+        #     self.tracks[track1].append(t)
+        #     self.tracklets_2_tracks[t2] = track1
+        #
+        #     t.P = set(t1.P)
+        #
+        # del self.tracks[track2]
+        # del self.prototypes[track2]
 
-            t.P = set(t1.P)
-
-        del self.tracks[track2]
-        del self.prototypes[track2]
+        return track1
 
     def add_to_N_set(self, track_id, tracklet):
         for t in self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)):
@@ -1284,8 +1288,6 @@ class CompleteSetMatching:
         return max_d
 
     def solve_interactions_regression(self, dense_sections_tracklets):
-        get_id_from = {}
-
         # first register new new chunks
         for _, dense in dense_sections_tracklets.iteritems():
             for path in dense:
@@ -1299,23 +1301,31 @@ class CompleteSetMatching:
 
                 max_d = self.get_max_movement(new_t, path['in_region'], path['out_region'])
 
-                self.register_tracklet_as_track(path['in_tracklet'])
+                in_tracklet = path['in_tracklet']
+                out_tracklet = path['out_tracklet']
+
                 self.register_tracklet_as_track(new_t)
-                self.register_tracklet_as_track(path['out_tracklet'])
+                in_track_id = self.register_tracklet_as_track(in_tracklet)
+                out_track_id = self.register_tracklet_as_track(out_tracklet)
 
                 print('max_d: {}'.format(max_d))
                 if max_d < self.p.stats.major_axis_median / 2.0:
                     print("merging")
-                    self.merge_tracklets(path['in_tracklet'], new_t)
-                    self.merge_tracklets(new_t, path['out_tracklet'])
+
+                    self.merge_tracklets(in_tracklet, new_t)
+                    self.merge_tracklets(new_t, out_tracklet)
                 else:
-                    # TODO: when matching is finished, assign ID from the tracklet which is longer
-                    get_id_from[new_t.id()] = (path['in_tracklet'], path['out_tracklet'])
+                    if self.track_len(in_track_id) >= self.track_len(out_track_id):
+                        self.merge_tracklets(in_tracklet, new_t)
+                    else:
+                        self.merge_tracklets(new_t, out_tracklet)
 
-        # # find obvious cases and merge them
-        # self.merge_tracklets(t1, t2)
+    def track_len(self, track_id):
+        l = 0
+        for tracklet in self.tracks[track_id]:
+            l += len(tracklet)
 
-        #
+        return l
 
     def solve_interactions(self):
         from core.interactions.detect import InteractionDetector
@@ -1625,4 +1635,5 @@ if __name__ == '__main__':
 
     csm = get_csm(p)
     csm.solve_interactions_regression(dense_sections_tracklets)
+    csm.start_matching_process()
     # do_complete_set_matching(p)
