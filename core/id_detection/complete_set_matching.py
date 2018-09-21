@@ -7,7 +7,7 @@ from tqdm import tqdm
 import pickle
 from utils.video_manager import get_auto_video_manager
 import logging
-
+from core.interactions.detect import EllipticRegion
 
 logger = logging.getLogger(__name__)
 
@@ -548,6 +548,7 @@ class CompleteSetMatching:
         return self.tracklets_2_tracks[t]
 
     def merge_tracklets(self, t1, t2):
+        # each registered track has its own ID until it is merged to someone else...
         track1 = list(t1.P)[0]
         track2 = self.tracklets_2_tracks[t2]
         self.update_prototypes(self.prototypes[track1], self.prototypes[track2])
@@ -1260,6 +1261,62 @@ class CompleteSetMatching:
 
         return prototypes
 
+    def dist(self, r1, r2):
+        if r1 is None:
+            return 0
+        if r2 is None:
+            return 0
+
+        return np.linalg.norm(r1.centroid() - r2.centroid())
+
+    def get_max_movement(self, tracklet, in_region, out_region):
+        prev_region = in_region
+
+        max_d = 0
+        for i in range(len(tracklet)):
+            r = tracklet.get_region(self.p.gm, i)
+            max_d = max(max_d, self.dist(prev_region, r))
+
+            prev_region = r
+
+        max_d = max(max_d, self.dist(prev_region, out_region))
+
+        return max_d
+
+    def solve_interactions_regression(self, dense_sections_tracklets):
+        get_id_from = {}
+
+        # first register new new chunks
+        for _, dense in dense_sections_tracklets.iteritems():
+            for path in dense:
+                regions = [el.to_region() for el in path['regions']]
+                self.p.rm.add(regions)
+
+                # for graph manager, when id < 0 means there is no node in graph but it is a direct link to region id*-1
+                # TODO: test -?
+                rids = [-r.id_ for r in regions]
+                new_t, _ = self.p.chm.new_chunk(rids, self.p.gm, origin_interaction=True)
+
+                max_d = self.get_max_movement(new_t, path['in_region'], path['out_region'])
+
+                self.register_tracklet_as_track(path['in_tracklet'])
+                self.register_tracklet_as_track(new_t)
+                self.register_tracklet_as_track(path['out_tracklet'])
+
+                print('max_d: {}'.format(max_d))
+                if max_d < self.p.stats.major_axis_median / 2.0:
+                    print("merging")
+                    self.merge_tracklets(path['in_tracklet'], new_t)
+                    self.merge_tracklets(new_t, path['out_tracklet'])
+                else:
+                    # TODO: when matching is finished, assign ID from the tracklet which is longer
+                    get_id_from[new_t.id()] = (path['in_tracklet'], path['out_tracklet'])
+
+        # # find obvious cases and merge them
+        # self.merge_tracklets(t1, t2)
+
+        #
+
     def solve_interactions(self):
         from core.interactions.detect import InteractionDetector
         from core.region.region import Region
@@ -1284,7 +1341,6 @@ class CompleteSetMatching:
                 regions = [el.to_region() for el in path['regions']]
                 # ...
                 # TODO
-
 
 
             start_frame = t.start_frame(self.p.gm)
@@ -1507,8 +1563,7 @@ def prototypes_distribution_probability(prot1, prot2):
     return p_to_prot2
 
 
-def do_complete_set_matching(project):
-    logger.info('do_complete_set_matching start')
+def get_csm(project):
     from core.id_detection.learning_process import LearningProcess
     lp = LearningProcess(project)
 
@@ -1522,24 +1577,52 @@ def do_complete_set_matching(project):
 
     descriptors_path = os.path.join(project.working_directory, 'descriptors.pkl')
     csm = CompleteSetMatching(project, lp, descriptors_path, quality_threshold=0.2, quality_threshold2=0.01)
-    csm.solve_interactions()
+
+    return csm
+
+def do_complete_set_matching(project):
+    logger.info('do_complete_set_matching start')
+    csm = get_csm(project)
+
+    # csm.solve_interactions()
+    csm.solve_interactions_regression()
     csm.start_matching_process()
     logger.info('do_complete_set_matching finished')
 
 
+def load_dense_sections_tracklets_test():
+    import pickle
+    # from core.interactions.detect import EllipticRegion
+
+    # el = EllipticRegion()
+
+    # out_filename = project_name + '_dense_sections_tracklets.pkl'
+    out_filename = '/Users/flipajs/Downloads/dense_sections_tracklets.pkl'
+
+    try:
+        with file(out_filename, 'rb') as fr:
+            dense_sections_tracklets = pickle.load(fr)
+    except Exception as e:
+        print(e)
+        dense_sections_tracklets = {}
+
+    return dense_sections_tracklets
 
 if __name__ == '__main__':
-
-    # P_WD = '/Users/flipajs/Documents/wd/FERDA/Cam1'
+    P_WD = '/Users/flipajs/Documents/wd/ferda/180810_2359_Cam1_ILP_cardinality'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
     # path = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-fixed-segmentation'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/5Zebrafish_nocover_22min'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
     # p.load('/Use/rs/flipajs/Documents/wd/FERDA/Camera3_new')
-    path = '../projects/Sowbug_deleteme2'
+    # path = '../projects/Sowbug_deleteme2'
     from core.project.project import Project
-    p = Project(path)
-    do_complete_set_matching(p)
+    p = Project()
+    p.load(P_WD)
 
+    dense_sections_tracklets = load_dense_sections_tracklets_test()
 
+    csm = get_csm(p)
+    csm.solve_interactions_regression(dense_sections_tracklets)
+    # do_complete_set_matching(p)
