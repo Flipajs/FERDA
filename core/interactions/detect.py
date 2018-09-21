@@ -28,7 +28,8 @@ from core.region.transformableregion import TransformableRegion
 from core.region.region import Region
 
 from joblib import Memory
-memory = Memory('out/cache', verbose=0)
+# memory = Memory('out/cache', verbose=0)
+memory = Memory(None, verbose=0)
 
 
 def get_hull_poly(region, epsilon_px=5):
