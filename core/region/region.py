@@ -11,7 +11,7 @@ from utils.img import createLineIterator
 class Region(object):
     """ This class encapsulates set of points. It computes and stores statistics like moments, contour of region etc.
         It takes list of list in format [[y1, x1], [y2, x2]... ]
-        Or dict as an output from mser algorithm where the point representation is saved as 'rle' in Run Lenght encoding.
+        Or dict as an output from mser algorithm where the point representation is saved as 'rle' in Run Length encoding.
 
     """
 

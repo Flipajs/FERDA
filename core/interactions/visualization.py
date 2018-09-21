@@ -84,14 +84,14 @@ def show_prediction(img, num_objects, prediction=None, gt=None, title=None):
     return ax
 
 
-def plot_interaction(num_objects, pred=None, gt=None, ax=None):
+def plot_interaction(num_objects, pred=None, gt=None, ax=None, color='r'):
     """
     Visualize detected objects and/or ground truth.
 
     Angles are in degrees counter-clockwise.
 
     :param num_objects: number of objects
-    :param pred: predictions DataFrame
+    :param pred: predictions DataFrame, '%d_angle_deg' positive ccw (when positive y heading to north)
     :param gt: ground truth DataFrame
     :param ax: axis to draw on
     """
@@ -102,8 +102,8 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None):
         if pred is not None:
             ax.add_patch(Ellipse((pred['%d_x' % i], pred['%d_y' % i]),
                                  pred['%d_major' % i], pred['%d_minor' % i],
-                                 angle=pred['%d_angle_deg' % i],  facecolor='none', edgecolor=c,
-                                 label='object %d prediction' % i, linewidth=2))
+                                 angle=pred['%d_angle_deg' % i],  facecolor='none', edgecolor=color,
+                                 label='object %d prediction' % i, linewidth=1))
             # ax.add_patch(Arc(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
             #                  pred['%d_major' % i], pred['%d_minor' % i],
             #                  angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
@@ -113,15 +113,15 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None):
         if gt is not None:
             ax.add_patch(Ellipse((gt['%d_x' % i], gt['%d_y' % i]),
                                  gt['%d_major' % i], gt['%d_minor' % i],
-                                 angle=gt['%d_angle_deg' % i], edgecolor=c, facecolor='none',
-                                 linestyle='dotted', label='object %d gt' % i, linewidth=2))
+                                 angle=gt['%d_angle_deg' % i], edgecolor=color, facecolor='none',
+                                 linestyle='dotted', label='object %d gt' % i, linewidth=1))
             # ax.add_patch(Arc(toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
             #                  gt['%d_major' % i], gt['%d_minor' % i],
             #                  angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
             #                  linewidth=4,
             #                  theta1=-30, theta2=30, linestyle='dotted'))
 
-    plt.legend()
+    # plt.legend()
 
 
 def visualize_results(experiment_dir, data_dir, image_store='images.h5:test', n_objects=None):

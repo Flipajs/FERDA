@@ -105,7 +105,7 @@ class TransformableRegion:
             rotation_center_yx = np.array((0, 0))
 
         rot = cv2.getRotationMatrix2D(tuple(rotation_center_yx[::-1]),
-                                      ccw_angle_deg, 1.)
+                                      -ccw_angle_deg, 1.)
         self.transformation = np.vstack((rot, (0, 0, 1))).dot(self.transformation)
         return self
 
@@ -140,10 +140,10 @@ class TransformableRegion:
 
     def get_inverse_transformed_angle(self, ccw_angle_deg):
         #TODO
-        angle1 = (ccw_angle_deg + math.degrees(math.atan(self.transformation[1, 0] / self.transformation[0, 0]))) % 360
-        angle2 = (ccw_angle_deg + math.degrees(math.atan2(self.transformation[1, 0], self.transformation[0, 0]))) % 360
+        # angle1 = (ccw_angle_deg + math.degrees(math.atan(self.transformation[1, 0] / self.transformation[0, 0]))) % 360
+        angle2 = (ccw_angle_deg + math.degrees(math.atan2(self.transformation[1, 0], self.transformation[0, 0]))) % 360  # TODO y, x
         # assert round(angle1, 2) == round(angle2, 2)
-        return angle1
+        return angle2
 
     def get_img(self):
         assert np.all(self.transformation[2, :] == (0, 0, 1))

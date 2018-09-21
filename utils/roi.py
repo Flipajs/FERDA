@@ -101,7 +101,7 @@ class ROI():
         ])
 
     def slices(self):
-        return [slice(self.y_, self.y_max_), slice(self.x_, self.x_max_)]
+        return slice(self.y_, self.y_max_), slice(self.x_, self.x_max_)
 
     def safe_roi(self, img, border=30):
         y_ = max(0, self.y_-border)
