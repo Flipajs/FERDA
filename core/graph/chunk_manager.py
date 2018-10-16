@@ -218,7 +218,7 @@ class ChunkManager:
     def get_random_regions(self, n, gm):
         import random
 
-        tracklet_ids = self.chm.chunks_.keys()
+        tracklet_ids = self.chunks_.keys()
         regions = []
         vertices = []
         for _ in range(n):
