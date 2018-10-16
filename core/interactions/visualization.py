@@ -66,7 +66,8 @@ def show_prediction(img, num_objects, prediction=None, gt=None, title=None):
     """
     Visualize detected objects and/or ground truth on an image.
 
-    Angles are in degrees counter-clockwise.
+    Angles: 0 deg to right/west, positive values mean counter-clockwise rotation (the coordinate origin is assumed to
+    be the top-left corner), same as OpenCV.
 
     :param img: image
     :param num_objects: number of objects
@@ -88,10 +89,12 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None, color='r'):
     """
     Visualize detected objects and/or ground truth.
 
-    Angles are in degrees counter-clockwise.
+    Angles: 0 deg to right/west, positive values mean counter-clockwise rotation (the coordinate origin is assumed to
+    be the top-left corner), same as OpenCV.
+
 
     :param num_objects: number of objects
-    :param pred: predictions DataFrame, '%d_angle_deg' positive ccw (when positive y heading to north)
+    :param pred: predictions DataFrame
     :param gt: ground truth DataFrame
     :param ax: axis to draw on
     """
@@ -102,7 +105,7 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None, color='r'):
         if pred is not None:
             ax.add_patch(Ellipse((pred['%d_x' % i], pred['%d_y' % i]),
                                  pred['%d_major' % i], pred['%d_minor' % i],
-                                 angle=pred['%d_angle_deg' % i],  facecolor='none', edgecolor=color,
+                                 angle=-pred['%d_angle_deg' % i],  facecolor='none', edgecolor=color,
                                  label='object %d prediction' % i, linewidth=1))
             # ax.add_patch(Arc(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
             #                  pred['%d_major' % i], pred['%d_minor' % i],
@@ -113,7 +116,7 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None, color='r'):
         if gt is not None:
             ax.add_patch(Ellipse((gt['%d_x' % i], gt['%d_y' % i]),
                                  gt['%d_major' % i], gt['%d_minor' % i],
-                                 angle=gt['%d_angle_deg' % i], edgecolor=color, facecolor='none',
+                                 angle=-gt['%d_angle_deg' % i], edgecolor=color, facecolor='none',
                                  linestyle='dotted', label='object %d gt' % i, linewidth=1))
             # ax.add_patch(Arc(toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
             #                  gt['%d_major' % i], gt['%d_minor' % i],
@@ -155,17 +158,9 @@ def visualize_results(experiment_dir, data_dir, image_store='images.h5:test', n_
             pred_table = train_interactions.ObjectsArray(COLUMNS, n_objects)
             pred = pred_table.array_to_dataframe(data)
 
-    # for i in range(n_objects):
-    #     pred['%d_angle_deg' % i] *= -1  # convert to counter-clockwise
-
     gt_filename = join(data_dir, 'test.csv')
     if os.path.exists(gt_filename):
         _, _, y_test_df = read_gt(gt_filename)
-
-        for i in range(n_objects):
-            y_test_df.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
-            # y_test.loc[:, '%d_angle_deg' % i] += 90
-            # y_test.loc[:, '%d_angle_deg' % i] %= 360
 
         # # input image and gt rotation
         # tregion = TransformableRegion(X_test[0])

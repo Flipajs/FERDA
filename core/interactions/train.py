@@ -557,9 +557,6 @@ class TrainInteractions:
         gt_filename = join(data_dir, 'test.csv')
         if os.path.exists(gt_filename):
             gt_n, gt_columns, y_test_df = read_gt(gt_filename)
-            # convert to counter-clockwise
-            for i in range(gt_n):
-                y_test_df.loc[:, '%d_angle_deg' % i] *= -1
             assert model_metadata['num_objects'] == gt_n, 'number of predicted objects and number of objects in gt has to agree'
             y_test = self.array.dataframe_to_array(y_test_df)
         else:
@@ -628,11 +625,6 @@ class TrainInteractions:
         assert n_train == n_test
         assert columns_train == columns_test
         self.set_num_objects(n_train)
-
-        # convert to counter-clockwise
-        for i in range(self.num_objects):
-            y_train_df.loc[:, '%d_angle_deg' % i] *= -1
-            y_test_df.loc[:, '%d_angle_deg' % i] *= -1
 
         # input image and gt rotation
         if rotate:

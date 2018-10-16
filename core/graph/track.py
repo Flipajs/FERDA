@@ -4,6 +4,7 @@ from chunk import Chunk
 from ghost_tracklet import GhostTracklet
 from warnings import warn
 
+
 def unfold(tracklets):
     new_tracklets = []
 
@@ -14,6 +15,7 @@ def unfold(tracklets):
             new_tracklets.extend(unfold(t._data))
 
     return new_tracklets
+
 
 class Track(Chunk):
     def __init__(self, tracklets, gm, id_=-1):

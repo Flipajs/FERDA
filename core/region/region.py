@@ -38,7 +38,9 @@ class Region(object):
         self.a_ = -1
         self.b_ = -1
 
-        # in radians, 0 to the right, positive direction counterclockwise
+        # radians, 0 rad to right/west,
+        # positive values mean counter-clockwise rotation (the coordinate origin is assumed to be the top-left corner),
+        # same as OpenCV
         self.theta_ = -1
 
         self.parent_label_ = -1
