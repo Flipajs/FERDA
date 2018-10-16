@@ -1289,8 +1289,13 @@ class CompleteSetMatching:
 
     def solve_interactions_regression(self, dense_sections_tracklets):
         # first register new new chunks
-        for _, dense in dense_sections_tracklets.iteritems():
+        for _, dense in tqdm(dense_sections_tracklets.iteritems(), desc='dense sections',
+                             total=len(dense_sections_tracklets)):
             for path in dense:
+                in_tracklet = path['in_tracklet']
+                out_tracklet = path['out_tracklet']
+                assert (in_tracklet is not None) or (out_tracklet is not None)
+
                 regions = [el.to_region() for el in path['regions']]
                 self.p.rm.add(regions)
 
@@ -1301,17 +1306,22 @@ class CompleteSetMatching:
 
                 max_d = self.get_max_movement(new_t, path['in_region'], path['out_region'])
 
-                in_tracklet = path['in_tracklet']
-                out_tracklet = path['out_tracklet']
-
                 self.register_tracklet_as_track(new_t)
-                in_track_id = self.register_tracklet_as_track(in_tracklet)
-                out_track_id = self.register_tracklet_as_track(out_tracklet)
+                if in_tracklet is not None:
+                    in_track_id = self.register_tracklet_as_track(in_tracklet)
+                else:
+                    self.merge_tracklets(new_t, out_tracklet)
+                    continue
+                if out_tracklet is not None:
+                    out_track_id = self.register_tracklet_as_track(out_tracklet)
+                else:
+                    self.merge_tracklets(in_tracklet, new_t)
+                    continue
 
+                assert (in_tracklet is not None) and (out_tracklet is not None)
                 print('max_d: {}'.format(max_d))
                 if max_d < self.p.stats.major_axis_median / 2.0:
                     print("merging")
-
                     self.merge_tracklets(in_tracklet, new_t)
                     self.merge_tracklets(new_t, out_tracklet)
                 else:
@@ -1607,7 +1617,7 @@ def load_dense_sections_tracklets_test():
     # el = EllipticRegion()
 
     # out_filename = project_name + '_dense_sections_tracklets.pkl'
-    out_filename = '/Users/flipajs/Downloads/dense_sections_tracklets.pkl'
+    out_filename = 'ants1_dense_sections_tracklets.pkl'
 
     try:
         with file(out_filename, 'rb') as fr:
@@ -1618,13 +1628,15 @@ def load_dense_sections_tracklets_test():
 
     return dense_sections_tracklets
 
+
 def do_complete_set_matching_new(csm, dense_sections_tracklets):
     csm.solve_interactions_regression(dense_sections_tracklets)
     csm.start_matching_process()
 
 
 if __name__ == '__main__':
-    P_WD = '/Users/flipajs/Documents/wd/ferda/180810_2359_Cam1_ILP_cardinality'
+    # P_WD = '/Users/flipajs/Documents/wd/ferda/180810_2359_Cam1_ILP_cardinality'
+    P_WD = '../projects/2_temp/180810_2359_Cam1_ILP_cardinality_dense'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip_arena_fixed'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-crop'
     # path = '/Users/flipajs/Documents/wd/FERDA/april-paper/Sowbug3-fixed-segmentation'
@@ -1641,6 +1653,6 @@ if __name__ == '__main__':
     csm = get_csm(p)
     do_complete_set_matching_new(csm, dense_sections_tracklets)
     # IMPORTANT, it seems project is not saved...
-    # p.save()
+    p.save()
 
     # do_complete_set_matching(p)
