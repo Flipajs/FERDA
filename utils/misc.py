@@ -35,7 +35,7 @@ def float2str(d, precision):
 def print_exception(e):
     exc_type, exc_obj, exc_tb = sys.exc_info()
     f_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    print "EXCEPTION RAISED: ", e.message, "\nin: " + f_name + " on line: " + str(exc_tb.tb_lineno)
+    print("EXCEPTION RAISED: " + e.message + "\nin: " + f_name + " on line: " + str(exc_tb.tb_lineno))
 
 
 def is_flipajs_pc():

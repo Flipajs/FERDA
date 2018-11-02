@@ -2,6 +2,7 @@ __author__ = 'fnaiser'
 
 import numpy as np
 
+
 class BGModel():
     def __init__(self, bg):
         self.bg_model_ = bg

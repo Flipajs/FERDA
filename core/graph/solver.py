@@ -2,9 +2,9 @@ __author__ = 'fnaiser'
 
 from core.graph.graph_utils import *
 import numpy as np
-from configuration import Configuration
+from core.graph.configuration import Configuration
 from utils.constants import EDGE_CONFIRMED
-import cPickle as pickle
+import pickle
 from tqdm import tqdm
 
 
@@ -85,12 +85,12 @@ class Solver:
                     t2 = self.project.gm.get_chunk(self.project.gm.g.vertex(e.target()))
 
                     if t1.segmentation_class != t2.segmentation_class:
-                        print "1on1", t1.id(), t2.id()
+                        print("1on1", t1.id(), t2.id())
                         # continue
 
                 confirm_later.append((e.source(), e.target()))
 
-        print "one2one, ", len(confirm_later)
+        print("one2one, ", len(confirm_later))
         self.confirm_edges(confirm_later)  # TODO: this is probably not needed, there are no spurious edges between vertices; we only need to create tracklets
 
         if len(confirm_later):
@@ -440,7 +440,7 @@ class Solver:
             if len(cc) == 1:
                 new_ccs.append(cc[0])
             elif len(cc) > 1:
-                print "WARINGN: confirm_edges MULTIPLE ccs"
+                print("WARINGN: confirm_edges MULTIPLE ccs")
                 raise IndexError
             else:
                 new_ccs.append(None)
@@ -634,7 +634,7 @@ class Solver:
             return self.project.gm.remove_vertex(vertex)
 
     def save(self, autosave=False):
-        print "SAVING PROGRESS... Wait please"
+        print("SAVING PROGRESS... Wait please")
 
         wd = self.project.working_directory
 
@@ -650,7 +650,7 @@ class Solver:
         #     pc.dump(self.project.chm)
         #     pc.dump(self.ignored_nodes)
 
-        print "PROGRESS SAVED"
+        print("PROGRESS SAVED")
 
     def save_progress_only_chunks(self):
         wd = self.project.working_directory
@@ -663,7 +663,7 @@ class Solver:
             if not is_ch or ch.length() < self.project.solver_parameters.global_view_min_chunk_len:
                 to_remove.append(n)
 
-        print "NODES", len(self.g)
+        print("NODES", len(self.g))
         # S_.general.log_graph_edits = False
         for n in to_remove:
             if n not in self.g:
@@ -674,7 +674,7 @@ class Solver:
             except:
                 pass
 
-        print "NODES", len(self.g)
+        print("NODES", len(self.g))
         # S_.general.log_graph_edits = True
 
         with open(wd+name, 'wb') as f:
@@ -682,7 +682,7 @@ class Solver:
             pc.dump(self.g)
             pc.dump(self.ignored_nodes)
 
-        print "ONLY CHUNKS PROGRESS SAVED"
+        print("ONLY CHUNKS PROGRESS SAVED")
 
     def dsmc_process_cc_(self, s1, s2, area_med):
         from scripts.EMD import get_unstable_num, detect_stable
@@ -742,7 +742,7 @@ class Solver:
 
         for t in frames:
             if t == 2191:
-                print 2191
+                print(2191)
             vs = [v for v in self.project.gm.vertices_in_t[t]]
 
             while vs:
