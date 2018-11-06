@@ -7,7 +7,7 @@ from tqdm import tqdm
 import pickle
 from utils.video_manager import get_auto_video_manager
 import logging
-from core.interactions.detect import EllipticRegion
+from core.region.ellipse import Ellipse
 
 logger = logging.getLogger(__name__)
 
@@ -1355,7 +1355,7 @@ class CompleteSetMatching:
             #       'in_tracklet': Chunk,
             #       'out_region': Region,
             #       'out_tracklet': Chunk,
-            #       'regions': [EllipticRegion, EllipticRegion, EllipticRegion, EllipticRegion, ...]}, ... ]
+            #       'regions': [Ellipse, Ellipse, Ellipse, Ellipse, ...]}, ... ]
 
             for path in paths:
                 regions = [el.to_region() for el in path['regions']]
@@ -1612,9 +1612,9 @@ def do_complete_set_matching(project):
 
 def load_dense_sections_tracklets_test():
     import pickle
-    # from core.interactions.detect import EllipticRegion
+    # from core.region.ellipse import Ellipse
 
-    # el = EllipticRegion()
+    # el = Ellipse()
 
     # out_filename = project_name + '_dense_sections_tracklets.pkl'
     out_filename = 'ants1_dense_sections_tracklets.pkl'
