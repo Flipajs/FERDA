@@ -1,13 +1,15 @@
 from __future__ import print_function
-import os
-import h5py
-import sys
-import numpy as np
-import time
-from os.path import join
+
 import numbers
-import pandas as pd
+import os
+import sys
+import time
 from collections import OrderedDict
+from os.path import join
+
+import h5py
+import numpy as np
+import pandas as pd
 import scipy.stats as stats
 
 from core.interactions.io import read_gt
@@ -35,7 +37,6 @@ from core.region.transformableregion import TransformableRegion
 from utils.angles import angle_absolute_error, angle_absolute_error_direction_agnostic
 import warnings
 import yaml
-import re
 from utils.objectsarray import ObjectsArray
 # import skimage.transform
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -69,7 +70,7 @@ class TrainInteractions:
             'single_concat_conv3': self.model_single_concat_conv3,
         }
         if predicted_properties is None:
-            self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg']  # , 'major', 'minor']
+            self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg_cw']  # , 'major', 'minor']
         else:
             self.PREDICTED_PROPERTIES = predicted_properties
         if error_functions is None:
@@ -138,19 +139,19 @@ class TrainInteractions:
         tensor_columns = []
         for i in range(self.num_objects):
             for col in self.array.properties:
-                if col != 'angle_deg':
+                if col != 'angle_deg_cw':
                     # (-1; 1) -> (0; detector_input_size_px)
                     tensor_columns.append((y_pred[:, self.array.prop2idx(i, col)] + 1) * self.detector_input_size_px / 2)
                 else:
                     # (-1; 1) -> (-90; 90)
-                    tensor_columns.append(y_pred[:, self.array.prop2idx(i, 'angle_deg')] * 90)
+                    tensor_columns.append(y_pred[:, self.array.prop2idx(i, 'angle_deg_cw')] * 90)
         y_pred = K.stack(tensor_columns, axis=1)
 
         errors, errors_xy, _ = self.match_pred_to_gt(y_true, y_pred)
 
         loss = 0
         for i in range(self.num_objects):
-            error_angle = errors[:, self.array.prop2idx(i, 'angle_deg')]  # shape=(n,)
+            error_angle = errors[:, self.array.prop2idx(i, 'angle_deg_cw')]  # shape=(n,)
             error_xy = errors_xy[:, i]  # shape=(n,)
             loss += K.sum(error_xy * (1 - alpha) + error_angle * alpha)
 
@@ -486,13 +487,13 @@ class TrainInteractions:
             # xy, _, indices = match_pred_to_gt_dxdy(y_test.values, pred, np)
             errors, errors_xy, _ = self.match_pred_to_gt(y_test[:len(pred)], pred)  # trim y_test to be modulo BATCH_SIZE
 
-            errors_angle = K.concatenate([errors[:, self.array.prop2idx_(i, 'angle_deg')] for i in range(self.num_objects)])
+            errors_angle = K.concatenate([errors[:, self.array.prop2idx_(i, 'angle_deg_cw')] for i in range(self.num_objects)])
 
             # # compute angle errors
             # angle = {}
             # for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
             #     angle[(i, j)] = angle_absolute_error(
-            #         y_test.values[:, NAME2COL[i]['angle_deg']],
+            #         y_test.values[:, NAME2COL[i]['angle_deg_cw']],
             #         np.degrees(np.arctan((pred[:, NAME2COL[j]['dy']] / pred[:, NAME2COL[j]['dx']]))),
             #         np)
             # mean_errors_angle = np.stack((
@@ -511,7 +512,7 @@ class TrainInteractions:
 
     def postprocess_predictions(self, pred):
         for i in range(self.num_objects):
-            pred[:, self.array.prop2idx(i, 'angle_deg')] = pred[:, self.array.prop2idx(i, 'angle_deg')] * 90
+            pred[:, self.array.prop2idx(i, 'angle_deg_cw')] = pred[:, self.array.prop2idx(i, 'angle_deg_cw')] * 90
             pred[:, self.array.prop2idx(i, 'x')] = \
                 (pred[:, self.array.prop2idx(i, 'x')] + 1) * self.detector_input_size_px / 2
             pred[:, self.array.prop2idx(i, 'y')] = \
@@ -708,11 +709,11 @@ class TrainInteractions:
             return weights / weights.min()
 
         train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        train_generator = train_datagen.flow(X_train, y_train,
-                                             sample_weight=get_sample_weight(y_train_df, self.detector_input_size_px))
+        train_generator = train_datagen.flow(X_train, y_train)
+#                                             sample_weight=get_sample_weight(y_train_df, self.detector_input_size_px))
         test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        test_generator = test_datagen.flow(X_test, y_test, shuffle=False,
-                                           sample_weight=get_sample_weight(y_test_df, self.detector_input_size_px))
+        test_generator = test_datagen.flow(X_test, y_test, shuffle=False)
+#                                           sample_weight=get_sample_weight(y_test_df, self.detector_input_size_px))
 
         def eval_and_print(_m, _t):
             results = self.evaluate(_m, _t, parameters, y_test)

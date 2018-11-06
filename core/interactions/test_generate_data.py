@@ -19,8 +19,8 @@ class InteractionsTestCase(unittest.TestCase):
         self.intr._load_project(PROJECT_DIR, video_file=VIDEO_FILE)
         self.intr._init_regions()
         from core.bg_model.median_intensity import MedianIntensity
-        self.intr._bg = MedianIntensity(self.intr._project)
-        self.intr._bg.compute_model()
+        self.intr.bg_model = MedianIntensity(self.intr._project)
+        self.intr.bg_model.compute_model()
 
     def test__synthetize(self):
         self.init()

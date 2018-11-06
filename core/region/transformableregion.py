@@ -67,11 +67,11 @@ class TransformableRegion:
         self.border_px = border_px
         return self
 
-    def rotate(self, angle_deg, rotation_center_yx=None):
+    def rotate(self, angle_deg_cw, rotation_center_yx=None):
         """
 
-        :param angle_deg: 0 deg to right/west, positive values mean counter-clockwise rotation (the coordinate origin
-                          is assumed to be the top-left corner), same as OpenCV
+        :param angle_deg_cw: 0 deg to right/west, positive values mean clockwise rotation (the coordinate origin
+                          is assumed to be the top-left corner)
         :param rotation_center_yx:
         :return:
         """
@@ -79,7 +79,7 @@ class TransformableRegion:
             rotation_center_yx = np.array((0, 0))
 
         rot = cv2.getRotationMatrix2D(tuple(rotation_center_yx[::-1]),
-                                      angle_deg, 1.)
+                                      -angle_deg_cw, 1.)
         self.transformation = np.vstack((rot, (0, 0, 1))).dot(self.transformation)
         return self
 

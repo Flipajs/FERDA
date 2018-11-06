@@ -40,7 +40,6 @@ class Region(object):
 
         # radians, 0 rad to right/west,
         # positive values mean counter-clockwise rotation (the coordinate origin is assumed to be the top-left corner),
-        # same as OpenCV
         self.theta_ = -1
 
         self.parent_label_ = -1
@@ -70,6 +69,30 @@ class Region(object):
 
     def __eq__(self, other):
         return hash(self) == hash(other)
+
+    @property
+    def angle_deg_ccw(self):
+        """
+        Return region main axis angle.
+
+        Angle orientation on image axes (origin on top left):
+        positive values mean counter-clockwise rotation.
+
+        :return: angle in degrees
+        """
+        return np.rad2deg(self.theta_)
+
+    @property
+    def angle_deg_cw(self):
+        """
+        Return region main axis angle.
+
+        Angle orientation on image axes (origin on top left):
+        positive values mean clockwise rotation.
+
+        :return: angle in degrees
+        """
+        return -np.rad2deg(self.theta_)
 
     def is_origin_interaction(self):
         try:

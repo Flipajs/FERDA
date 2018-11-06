@@ -350,7 +350,7 @@ class InteractionDetector:
             '0_y': r.centroid()[0],
             '0_major': 2 * r.major_axis_,
             '0_minor': 2 * r.minor_axis_,
-            '0_angle_deg': np.rad2deg(r.theta_),
+            '0_angle_deg_cw': -np.rad2deg(r.theta_),
         })
 
     def _detect_single_frame(self, video_file, frame, prev_detection):
@@ -382,7 +382,7 @@ class InteractionDetector:
         """
         timg = TransformableRegion()
         prev_xy = (prev_detection['0_x'], prev_detection['0_y'])
-        timg.rotate(-prev_detection['0_angle_deg'], prev_xy[::-1])
+        timg.rotate(-prev_detection['0_angle_deg_cw'], prev_xy[::-1])
         timg.set_img(img)
         img_rotated = timg.get_img()
 
@@ -397,7 +397,7 @@ class InteractionDetector:
         pred_dict['0_y'] += delta_xy[1]
         pred_dict['0_major'] = prev_detection['0_major']
         pred_dict['0_minor'] = prev_detection['0_minor']
-        pred_dict['0_angle_deg'] += prev_detection['0_angle_deg']
+        pred_dict['0_angle_deg_cw'] += prev_detection['0_angle_deg_cw']
         # pred_dict['0_angle_deg'] = -timg.get_inverse_transformed_angle(pred_dict['0_angle_deg'])
         pred_dict['0_x'], pred_dict['0_y'] = timg.get_inverse_transformed_coords(
             np.array((pred_dict['0_x'], pred_dict['0_y'])))

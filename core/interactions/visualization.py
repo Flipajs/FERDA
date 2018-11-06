@@ -102,7 +102,7 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None, color='r'):
         if pred is not None:
             ax.add_patch(Ellipse((pred['%d_x' % i], pred['%d_y' % i]),
                                  pred['%d_major' % i], pred['%d_minor' % i],
-                                 angle=-pred['%d_angle_deg' % i],  facecolor='none', edgecolor=color,
+                                 angle=pred['%d_angle_deg_cw' % i],  facecolor='none', edgecolor=color,
                                  label='object %d prediction' % i, linewidth=1))
             # ax.add_patch(Arc(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
             #                  pred['%d_major' % i], pred['%d_minor' % i],
@@ -113,7 +113,7 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None, color='r'):
         if gt is not None:
             ax.add_patch(Ellipse((gt['%d_x' % i], gt['%d_y' % i]),
                                  gt['%d_major' % i], gt['%d_minor' % i],
-                                 angle=-gt['%d_angle_deg' % i], edgecolor=color, facecolor='none',
+                                 angle=gt['%d_angle_deg_cw' % i], edgecolor=color, facecolor='none',
                                  linestyle='dotted', label='object %d gt' % i, linewidth=1))
             # ax.add_patch(Arc(toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
             #                  gt['%d_major' % i], gt['%d_minor' % i],
@@ -133,6 +133,8 @@ def visualize_results(experiment_dir, data_dir, image_store='images.h5:test', n_
     :param image_store: filename of hdf5 image store and image database path
     :param n_objects: number of objects
     """
+    import core.interactions.train as train_interactions
+    from keras import backend as K
     hf_img = h5py.File(join(data_dir, image_store.split(':')[0]), 'r')
     X_test = hf_img[image_store.split(':')[1]]
 
