@@ -15,6 +15,7 @@ class TransformableRegion:
         self.transformation = np.eye(3)
         self.mask = None
         self.region = None
+        self.ellipse = None
 
     def compose(self, other):
         assert self.img.shape == other.img.shape
@@ -33,35 +34,53 @@ class TransformableRegion:
     def set_region(self, region):
         self.region = region
 
+    def set_ellipse(self, ellipse):
+        self.ellipse = ellipse
+
     def set_mask(self, mask):
         self.mask = mask
 
     def set_img(self, img):
         self.img = img
 
-    def get_mask(self):
+    def get_mask(self, alpha=False):
         assert np.all(self.transformation[2, :] == (0, 0, 1))
         assert self.mask is not None
-        return cv2.warpAffine(self.mask, self.transformation[:2], self.mask.shape[::-1]).astype(np.bool)
+        mask = cv2.warpAffine(self.mask, self.transformation[:2], self.mask.shape[::-1])
+        if alpha is False:
+            return mask.astype(np.bool)
+        else:
+            return mask
 
-    def set_region_points_mask(self, n_dilations=0):
-        assert self.img is not None
-        assert self.region is not None
-        self.mask = np.zeros(self.img.shape[:2], dtype=np.uint8)
-        pts = self.region.pts()
-        x = y = 0
-        self.mask[pts[:, 0] - y + 1, pts[:, 1] - x + 1] = 1
-        if n_dilations != 0:
-            self.mask = cv2.dilate(self.mask, kernel=np.ones((3, 3), np.uint8), iterations=n_dilations)
+    # def set_region_points_mask(self, n_dilations=0):
+    #     # doesn't work on transformed region
+    #     assert self.img is not None
+    #     assert self.region is not None
+    #     self.mask = np.zeros(self.img.shape[:2], dtype=np.uint8)
+    #     pts = self.region.pts()
+    #     x = y = 0
+    #     self.mask[pts[:, 0] - y + 1, pts[:, 1] - x + 1] = 1
+    #     if n_dilations != 0:
+    #         self.mask = cv2.dilate(self.mask, kernel=np.ones((3, 3), np.uint8), iterations=n_dilations)
 
-    def set_elliptic_mask(self, major_multiplier=4, minor_multiplier=6):
+    # def set_elliptic_mask(self, major_multiplier=4, minor_multiplier=6):
+    #     assert self.img is not None
+    #     assert self.region is not None
+    #     self.mask = np.zeros(shape=self.img.shape[:2], dtype=np.uint8)
+    #     cv2.ellipse(self.mask, tuple(self.region.centroid_[::-1].astype(int)),
+    #                 (int(major_multiplier * self.region.major_axis_),
+    #                  int(minor_multiplier * self.region.minor_axis_)),
+    #                 -int(math.degrees(self.region.theta_)), 0, 360, 255, -1)
+
+    def set_elliptic_mask(self, major_multiplier=1, minor_multiplier=1):  # major_multiplier=4, minor_multiplier=6):
         assert self.img is not None
-        assert self.region is not None
+        assert self.ellipse is not None
         self.mask = np.zeros(shape=self.img.shape[:2], dtype=np.uint8)
-        cv2.ellipse(self.mask, tuple(self.region.centroid_[::-1].astype(int)),
-                    (int(major_multiplier * self.region.major_axis_),
-                     int(minor_multiplier * self.region.minor_axis_)),
-                    -int(math.degrees(self.region.theta_)), 0, 360, 255, -1)
+        cv2.ellipse(self.mask, tuple(self.ellipse.xy.astype(int)),
+                    (int(major_multiplier * self.ellipse.major / 2.) + 4,
+                     int(minor_multiplier * self.ellipse.minor / 2.) + 4),
+                    int(self.ellipse.angle_deg), 0, 360, 255, -1)
+        self.mask = cv2.GaussianBlur(self.mask, (5, 5), -1)
 
     def set_border(self, border_px):
         self.border_px = border_px
@@ -81,6 +100,8 @@ class TransformableRegion:
         rot = cv2.getRotationMatrix2D(tuple(rotation_center_yx[::-1]),
                                       -angle_deg_cw, 1.)
         self.transformation = np.vstack((rot, (0, 0, 1))).dot(self.transformation)
+        if self.ellipse is not None:
+            self.ellipse.rotate(angle_deg_cw, rotation_center_yx[::-1])
         return self
 
     def scale(self, factor, center_yx=None):
@@ -88,6 +109,8 @@ class TransformableRegion:
             center_yx = self.region.centroid()
         trans = cv2.getRotationMatrix2D(center_yx[::-1], 0., factor)
         self.transformation = np.vstack((trans, (0, 0, 1))).dot(self.transformation)
+        if self.ellipse is not None:
+            assert False, 'not implemented'
         return self
 
     def move(self, delta_yx):
@@ -95,6 +118,8 @@ class TransformableRegion:
                                [0., 1., delta_yx[0]],
                                [0., 0., 1.]])
         self.transformation = move_trans.dot(self.transformation)
+        if self.ellipse is not None:
+            self.ellipse.move(delta_yx[::-1])
         return self
 
     def get_transformed_coords(self, coords_xy):
