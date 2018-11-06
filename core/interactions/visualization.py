@@ -17,10 +17,7 @@ import yaml
 from imageio import imread
 from matplotlib.patches import Ellipse
 from os.path import join
-from keras import backend as K
-
-import core.interactions.train as train_interactions
-from core.interactions.train import read_gt
+from core.interactions.io import read_gt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 

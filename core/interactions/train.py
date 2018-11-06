@@ -9,6 +9,9 @@ import numbers
 import pandas as pd
 from collections import OrderedDict
 import scipy.stats as stats
+
+from core.interactions.io import read_gt
+
 try:
     from keras.utils import np_utils
     from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, GlobalAveragePooling2D, Concatenate, concatenate
@@ -773,33 +776,6 @@ class TrainInteractions:
     def _write_argv(self, out_dir):
         with open(join(out_dir, 'parameters.txt'), 'w') as fw:
             fw.writelines('\n'.join(sys.argv))
-
-
-def read_gt(filename):
-    regexp = re.compile('(\d*)_(\w*)')
-    df = pd.read_csv(filename)
-    ids = set()
-    properties = []
-    properties_no_prefix = []
-    for col in df.columns:
-        match = regexp.match(col)
-        if match is not None:
-            ids.add(int(match.group(1)))
-            properties.append(match.group(2))
-        else:
-            properties_no_prefix.append(col)
-    if not properties:
-        # not prefixed columns, assuming single object
-        n = 1
-        properties = properties_no_prefix
-        ids.add(0)
-        df.columns = ['0_{}'.format(col) for col in df.columns]
-    else:
-        n = len(ids)
-    assert min(ids) == 0 and max(ids) == n - 1, 'object describing columns have to be prefixed with numbers starting with 0'
-    assert len(properties) % n == 0
-    properties = properties[:(len(properties) / n)]  # only properties for object 0
-    return n, properties, df
 
 
 if __name__ == '__main__':

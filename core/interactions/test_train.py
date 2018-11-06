@@ -10,7 +10,8 @@ from os.path import join
 
 import core.interactions.train as train_interactions
 import core.region.transformableregion as tr
-from core.interactions.train import TrainInteractions, read_gt
+from core.interactions.train import TrainInteractions
+from core.interactions.io import read_gt
 
 
 class LossFunctionsTestCase(unittest.TestCase):
