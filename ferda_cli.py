@@ -10,7 +10,6 @@ For more help run this file as a script with --help parameter.
 import time
 
 from core.project.project import Project
-import pandas as pd
 import numpy as np
 import os
 from os.path import join
@@ -20,8 +19,9 @@ import yaml
 import subprocess
 import shutil
 from collections import defaultdict
-from core.config import config
 import webbrowser
+
+from utils.gt.mot import results_to_mot
 
 
 def setup_logging():
@@ -36,33 +36,6 @@ def setup_logging():
 
 setup_logging()
 logger = logging.getLogger()
-
-
-def results_to_mot(results):
-    """
-    Create MOT challenge format DataFrame out of trajectories array.
-
-    :param results: ndarray, shape=(n_frames, n_animals, 2); coordinates are in yx order, nan when id not present
-    :return: DataFrame with frame, id, x, y, width, height and confidence columns
-    """
-    assert results.ndim == 3
-    assert results.shape[2] == 2
-    objs = []
-    for i in range(results.shape[1]):
-        df = pd.DataFrame(results[:, i, ::-1], columns=['x', 'y'])
-        df['frame'] = range(1, results.shape[0] + 1)
-        df = df[~(df.x.isna() | df.y.isna())]
-        df['id'] = i + 1
-        df = df[['frame', 'id', 'x', 'y']]
-        objs.append(df)
-
-    df = pd.concat(objs)
-
-    df.sort_values(['frame', 'id'], inplace=True)
-    df['width'] = -1
-    df['height'] = -1
-    df['confidence'] = -1
-    return df
 
 
 def fix_legacy_project(project_path):
