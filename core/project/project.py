@@ -1,5 +1,5 @@
 __author__ = 'filip@naiser.cz'
-import cPickle as pickle
+import pickle
 import string
 import time
 import numpy as np
@@ -37,7 +37,10 @@ class Project:
         self.video_end_t = None
         self.date_created = -1
         self.date_last_modification = -1
+
         self.video_crop_model = None
+        # {'x1': ..., 'x2':..., 'y1':..., 'y2':...}
+        # cropped image: img[cm['y1']:cm['y2'], cm['x1']:cm['x2']]
         self.classes = None
         self.groups = None
         self.stats = None
@@ -216,7 +219,7 @@ class Project:
             fw.write(self.to_json())
 
     def save_gm_(self, file_path):
-        print "saving GM"
+        print("saving GM")
         # Graph Manager
         if self.gm:
             self.gm.project = None
@@ -232,7 +235,7 @@ class Project:
             self.gm.assignment_score = ac
 
     def save_chm_(self, file_path):
-        print "saving chm"
+        print("saving chm")
         import os
 
         try:
@@ -479,8 +482,8 @@ class Project:
             with open(chm_path, 'rb') as f:
                 self.chm = pickle.load(f)
         except Exception as e:
-            print e
-            print "CHM not loaded"
+            print(e)
+            print("CHM not loaded")
             pass
 
         # Graph Manager
@@ -501,7 +504,7 @@ class Project:
             self.active_snapshot -= 1
 
         if self.active_snapshot < 0:
-            print "No more undo possible!"
+            print("No more undo possible!")
 
         # print "UNDO", self.snapshot_id, self.active_snapshot
 
@@ -571,4 +574,4 @@ if __name__ == "__main__":
 
     a = Project()
     a.load('/home/flipajs/test/test.pkl')
-    print "Project name: ", a.name
+    print("Project name: ", a.name)
