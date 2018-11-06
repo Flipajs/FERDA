@@ -7,7 +7,8 @@ use: $ python detect.py -- --help
 #TODO change self.__video.get_frame() for cached self._project.img_manager.get_whole_img()
 
 import sys
-import cPickle as pickle
+
+import pickle
 from utils.misc import is_flipajs_pc, is_matejs_pc
 from core.project.project import Project
 import numpy as np
@@ -18,6 +19,7 @@ from core.graph.region_chunk import RegionChunk
 from utils.video_manager import get_auto_video_manager
 from core.region.transformableregion import TransformableRegion
 from core.region.region import get_region_endpoints
+from core.region.ellipse import Ellipse
 import cv2
 import fire
 import tqdm
@@ -26,13 +28,17 @@ import h5py
 import warnings
 from itertools import product
 from core.interactions.visualization import save_prediction_img
-from core.interactions.train import read_gt
+from core.interactions.io import read_gt
 from os.path import join
 import pandas as pd
 import errno
 import hashlib
 from utils.img import safe_crop
 import random
+import copy
+from joblib import Memory
+memory = Memory('out/cache', verbose=1)
+
 
 IMAGE_SIZE_PX = 200
 
@@ -104,8 +110,9 @@ def head_fix(tracklet_regions):
         # q.put((cost + new_cost1, state))
         # q.put((cost + new_cost2, state2))
 
-    for b, r in zip(result, tracklet_regions):
-        if b:
+    # fix tracklet
+    for state, r in zip(result, tracklet_regions):
+        if state:
             r.theta_ += np.pi
             if r.theta_ >= 2 * np.pi:
                 r.theta_ -= 2 * np.pi
@@ -117,12 +124,19 @@ class DataGenerator(object):
         self._single = None
         self._multi = None
         self._project = None
-        self._bg = None
-        self.params = {'single_min_frames': 20,
+        self.bg_model = None
+        self.params = {'single_min_frames': 10,
                        'single_min_average_speed_px': 1.5,
                        'regression_tracking_image_size_px': 150,
-                      }
+                       'single_tracklet_min_speed': 5,
+                       'single_tracklet_remove_fraction': 0.4,
+#                       'augmentation_elliptic_mask_multiplier': 1,  # fishes, sowbugs
+                       'augmentation_elliptic_mask_multiplier': 4,  # ants
+                       }
         # self.__i = 0  # used for visualizations commented out
+        # self._get_single_region_tracklets_cached = memory.cache(
+        #     self._get_single_region_tracklets_cached,
+        #     ignore=['self'])  # uncomment to enable caching
 
     def _load_project(self, project_dir=None, video_file=None):
         self._project = Project()
@@ -295,29 +309,19 @@ class DataGenerator(object):
         gt_out.to_csv(out_csv, index=False, float_format='%.2f')
         # gt.to_hdf(join(out_dir, 'test.h5'), )
 
-    def write_synthetized_interactions(self, project_dir, count=100, n_objects=2, out_csv='./out/doubleregions.csv',
-                                       rotation='random', xy_jitter_width=0, out_hdf5=None,
-                                       hdf5_dataset_name=None, write_masks=False, out_image_dir=None, video_file=None):
-        # write_synthetized_interactions --project_dir /home/matej/prace/ferda/projects/camera1_10-15/ --count=360
-        # --n-objects=1 --out-csv=../data/interactions/180208_1k_36rot_single_mask/train.csv --rotation 10  --xy_jitter_width=40 --out_hdf5=../data/interactions/180208_1k_36rot_single_mask/images.h5 --hdf5_dataset_name=train
-        if rotation == 'random' or rotation == 'normalize':
-            n_angles = 1
-        elif isinstance(rotation, int):
-            rotations = np.arange(0, 360, rotation)
-            n_angles = len(rotations)
-        else:
-            assert False, 'wrong rotation parameter'
-        assert count % n_angles == 0
-
+    def write_augmented_regression_tracking_data(self, project_dir, out_dir, count=100, test_fraction=0.1):
+        """
+        currently not used
+        """
         COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg',
                    'region_id', 'theta_rad', 'phi_rad', 'overlap_px']
 
         # angles: positive clockwise, zero direction to right
-        self._load_project(project_dir, video_file)
+        self._load_project(project_dir,)
         self._init_regions()
         from core.bg_model.median_intensity import MedianIntensity
-        self._bg = MedianIntensity(self._project)
-        self._bg.compute_model()
+        self.bg_model = MedianIntensity(self._project)
+        self.bg_model.compute_model()
 
         single_regions = [item for sublist in self._single.values() for item in sublist]
         BATCH_SIZE = 250  # 2* BATCH_SIZE images must fit into memory
@@ -373,17 +377,17 @@ class DataGenerator(object):
 
                         try:
                             img_synthetic, mask, centers_xy, main_axis_angles_rad = \
-                                self.__synthetize(use_regions, theta_rad, phi_rad, overlap_px, use_images,
-                                                  self._bg.bg_model)
+                                self._synthetize(use_regions, theta_rad, phi_rad, overlap_px, use_images,
+                                                 self.bg_model.bg_model)
                             if write_masks:
-                                _, mask_synthetic, _, _ = self.__synthetize(use_regions, theta_rad, phi_rad, overlap_px,
-                                                                            masks)
+                                _, mask_synthetic, _, _ = self._synthetize(use_regions, theta_rad, phi_rad, overlap_px,
+                                                                           masks)
                         except IndexError:
                             print('%s: IndexError, repeating' % ('%06d.jpg' % (i + 1)))
                         if img_synthetic is not None:
                             break
 
-                    centroid_xy, major_deg = self.__get_moments(mask)
+                    centroid_xy, major_deg = self._get_moments(mask)
                     if rotation == 'random':
                         angles = [np.random.randint(0, 359)]
                     elif rotation == 'normalize':
@@ -506,114 +510,202 @@ class DataGenerator(object):
         # from matplotlib.patches import Rectangle
         # ax.add_patch(Rectangle(bb_xywh[:2], bb_xywh[2], bb_xywh[3], linewidth=1, edgecolor='r', facecolor='none'))
 
-    def write_regression_tracking_data(self, project_dir, out_csv, out_hdf5, count=None, hdf5_group_name='train'):
+    def write_regression_tracking_data(self, project_dir, out_dir, count, test_fraction=0.1, augmentation=True):
         """
         --write-regression-tracking-data /home/matej/prace/ferda/projects/2_temp/180713_1633_Cam1_clip_initial foo bar 10
-        :param project_dir:
-        :param out_csv:
-        :param out_hdf5:
-        :param count:
-        :param hdf5_group_name:
         :return:
         """
-        assert count
         self._load_project(project_dir)
-        p = self.params
 
         # initialize hdf5 output file
-        if os.path.exists(out_hdf5):
-            raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % out_hdf5)
-        h5_file = h5py.File(out_hdf5, mode='w')
-        img_size_px = p['regression_tracking_image_size_px']
-        h5_group = h5_file.create_group(hdf5_group_name)
+        h5_filename = join(out_dir, 'images.h5')
+        # if os.path.exists(h5_filename):
+        #     raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % h5_filename)
+        h5_file = h5py.File(h5_filename, mode='w')
+        h5_group_train = h5_file.create_group('train')
+        h5_group_test = h5_file.create_group('test')
+
+        all_regions_idx, single_region_tracklets = self._get_single_region_tracklets()
+
+        print('Total regions in single tracklets: {}'.format(len(all_regions_idx)))
+
+        # with open('single_regions.pkl', 'wb') as fw:
+        #     pickle.dump(single_region_tracklets, fw)
+        #     pickle.dump(all_regions_idx, fw)
+
+        idxs = random.sample(all_regions_idx, int(count * (1 + test_fraction)))
+        if augmentation:
+            idxs_augmentation = random.sample(all_regions_idx, int(count * (1 + test_fraction)))
+        else:
+            idxs_augmentation = None
+        self._write_regression_tracking_dataset(h5_group_train, idxs[:count],
+                                                single_region_tracklets, join(out_dir, 'train.csv'),
+                                                None if not augmentation else idxs_augmentation[:count])
+        self._write_regression_tracking_dataset(h5_group_test, idxs[count:],
+                                                single_region_tracklets, join(out_dir, 'test.csv'),
+                                                None if not augmentation else idxs_augmentation[count:])
+        h5_file.close()
+
+    def _get_single_region_tracklets_cached(self, project_working_directory):
+        single_region_tracklets = []
+        all_regions_idx = []  # [(i1, j1), (i2, j2), ... ] where j in <0, n-2> where n is tracklet length
+        i = 0
+        for tracklet in tqdm.tqdm(self._project.chm.chunk_gen(), total=len(self._project.chm),
+                                  desc='gathering single tracklets'):
+            if len(tracklet) > self.params['single_min_frames'] and tracklet.is_single():
+                region_tracklet = RegionChunk(tracklet, self._project.gm, self._project.rm)
+                if 'single_tracklet_min_speed' in self.params:
+                    distances = np.linalg.norm(np.diff(
+                        np.array([r.centroid() for r in region_tracklet.regions_gen()]), axis=0), axis=1)
+                    if distances.mean() < self.params['single_tracklet_min_speed']:
+                        continue
+                region_tracklet_fixed = list(region_tracklet)
+                if 'single_tracklet_remove_fraction' in self.params:
+                    n = len(region_tracklet_fixed)
+                    region_tracklet_fixed = region_tracklet_fixed[
+                        int(n * self.params['single_tracklet_remove_fraction'] / 2):
+                        int(n * (1 - self.params['single_tracklet_remove_fraction'] / 2))]
+                head_fix(region_tracklet_fixed)
+                single_region_tracklets.append(region_tracklet_fixed)
+                all_regions_idx.extend([(i, j) for j in range(len(region_tracklet_fixed) - 1)])
+                i += 1
+            # if i == 10:
+            #     break
+        return all_regions_idx, single_region_tracklets
+
+    def _get_single_region_tracklets(self):
+        return self._get_single_region_tracklets_cached(self._project.working_directory)
+
+    def _write_regression_tracking_dataset(self, h5_group, idx, tracklets, out_csv, idxs_augmentation=None):
+        """
+        write-regression-tracking-data ../projects/2_temp/180811_0832_5Zebrafish_nocover_22min_fixed_cardinality . 20
+        :param h5_group:
+        :param idx:
+        :param tracklets:
+        :param out_csv:
+        :param idxs_augmentation:
+        :return:
+        """
+
         dataset_names = ['img0', 'img1']
+        img_size_px = self.params['regression_tracking_image_size_px']
         for name in dataset_names:
-            h5_group.create_dataset(name, (count, img_size_px, img_size_px, 3), np.uint8)
+            h5_group.create_dataset(name, (len(idx), img_size_px, img_size_px, 3), np.uint8)
 
         # initialize csv output file
-        COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg']  # , 'region1_id', 'region2_id']
+        COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg_cw']  # , 'region1_id', 'region2_id']
         csv_file = open(out_csv, 'w')
         csv_writer = csv.DictWriter(csv_file, fieldnames=COLUMNS)
         csv_writer.writeheader()
 
-        single_region_tracklets = []
-        for tracklet in tqdm.tqdm(self._project.chm.chunk_gen()):
-            if len(tracklet) > p['single_min_frames'] and tracklet.is_single():
-                region_tracklet = RegionChunk(tracklet, self._project.gm, self._project.rm)
-                region_tracklet_fixed = list(region_tracklet)
-                head_fix(region_tracklet_fixed)
-                single_region_tracklets.append(region_tracklet_fixed)
+        # idx_sorted = sorted(idx, key=lambda x: tracklets[x[0]][x[1]].frame())
+        for i, (tracklet_idx, region_idx) in enumerate(tqdm.tqdm(idx)):  # , desc=h5_group['name']):
+            # a region in the frame n and n + 1
+            consecutive_regions = [tracklets[tracklet_idx][j] for j in (region_idx, region_idx + 1)]
+            if idxs_augmentation:
+                aug_tracklet_idx, aug_region_idx = idxs_augmentation[i]
+                aug_consecutive_regions = [tracklets[aug_tracklet_idx][j] for j in (aug_region_idx, aug_region_idx + 1)]
+            else:
+                aug_consecutive_regions = [None, None]
 
-        random_regions = []
-        for i in range(count):
-            tracklet = random.choice(single_region_tracklets)
-            idx1 = np.random.randint(0, len(tracklet) - 1)
-            random_regions.append(
-                {
-                    'centroid_xy1': tracklet[idx1].centroid()[::-1],
-                    'theta1': tracklet[idx1].theta_,
-
-                    'centroid_xy2': tracklet[idx1 + 1].centroid()[::-1],
-                    'theta2': tracklet[idx1 + 1].theta_,
-                    'major_px2': tracklet[idx1 + 1].major_axis_,
-                    'minor_px2': tracklet[idx1 + 1].minor_axis_,
-                    'frame2': tracklet[idx1 + 1].frame(),
-                })
-
-        random_regions_sorted = sorted(random_regions, key=lambda x: x['frame2'])
-        # return random_regions_sorted
-
-        for i, region in enumerate(tqdm.tqdm(random_regions_sorted)):
             timg = TransformableRegion()
-            timg.rotate(-np.rad2deg(region['theta1']), region['centroid_xy1'][::-1])
+            timg.rotate(-consecutive_regions[0].angle_deg_cw, consecutive_regions[0].centroid())  # undo the rotation
 
-            for frame, dataset in zip((region['frame2'] - 1, region['frame2']), dataset_names):
-                img = self._project.img_manager.get_whole_img(frame)
+            if idxs_augmentation is not None:
+                # generate parameters for augmentation
+                # border point angle with respect to object centroid, 0 rad is from the centroid rightwards, positive ccw
+                # theta_rad = np.random.uniform(-np.pi, np.pi, n)
+                theta_deg = np.random.uniform(-180, 180)
+                # approach angle, 0 rad is direction from the object centroid
+                # phi_deg = np.clip(np.random.normal(scale=90 / 2, size=n), -80, 80)
+                phi_deg = np.random.uniform(-90, 90)
+                # shift along ellipse_a major axis
+                aug_shift_px = int(round(np.random.normal(scale=5, loc=-15)))
 
+            for region, aug_region, dataset in zip(consecutive_regions, aug_consecutive_regions, dataset_names):
+                img = self._project.img_manager.get_whole_img(region.frame())
                 timg.set_img(img)
-                img_rotated = timg.get_img()
-                img_crop, delta_xy = safe_crop(img_rotated, region['centroid_xy1'], img_size_px)
+                rotated_img = timg.get_img()
+                if idxs_augmentation is not None:
+                    aug_img = self._project.img_manager.get_whole_img(aug_region.frame())
+                    rotated_ellipse = Ellipse.from_region(region). \
+                        rotate(-consecutive_regions[0].angle_deg_cw, consecutive_regions[0].centroid()[::-1])
+                    rotated_img = self._augment(rotated_img, rotated_ellipse, aug_img, Ellipse.from_region(aug_region),
+                                                theta_deg, phi_deg, aug_shift_px)
+                img_crop, delta_xy = safe_crop(rotated_img, consecutive_regions[0].centroid()[::-1], img_size_px)
+
                 h5_group[dataset][i] = img_crop
 
-            centroid_xy2_crop = timg.get_transformed_coords(region['centroid_xy2']) - delta_xy
+            centroid_xy2_crop = timg.get_transformed_coords(consecutive_regions[1].centroid()[::-1]) - delta_xy
 
             csv_writer.writerow({
                 'x': centroid_xy2_crop[0],
                 'y': centroid_xy2_crop[1],
-                'major': region['major_px2'],
-                'minor': region['minor_px2'],
-                'angle_deg': np.rad2deg(region['theta2'] - region['theta1']),
+                'major': 2 * consecutive_regions[1].major_axis_,
+                'minor': 2 * consecutive_regions[1].minor_axis_,
+                'angle_deg_cw': consecutive_regions[1].angle_deg_cw - consecutive_regions[0].angle_deg_cw,
             })
 
-        h5_file.close()
         csv_file.close()
 
-    def show_ground_truth(self, csv_file, out_dir, image_dir=None, image_hdf5=None, hdf5_dataset_name=None):
+    def _get_bg_model(self):
+        from core.bg_model.median_intensity import MedianIntensity
+        if self.bg_model is None:
+            self.bg_model = MedianIntensity(self._project)
+            self.bg_model.compute_model()
+        return self.bg_model.bg_model
+
+    def _augment(self, img, ellipse, img_a, ellipse_a, theta_deg, phi_deg, aug_shift_px):
+        # base_tregion = TransformableRegion(img)
+        # # base_tregion.set_region(region)
+        # base_tregion.set_ellipse(ellipse)
+        # base_tregion.set_elliptic_mask()
+        # center_xy = region.centroid()[::-1].astype(int)
+
+        # construct alpha channel
+        bg_diff = (self._get_bg_model().astype(np.float) - img_a).mean(axis=2).clip(5, 100)
+        alpha = ((bg_diff - bg_diff.min()) / np.ptp(bg_diff))
+        img_rgba = np.concatenate((img_a, np.expand_dims(alpha * 255, 2).astype(np.uint8)), 2)
+
+        tregion = TransformableRegion(img_rgba)
+        tregion.set_ellipse(copy.deepcopy(ellipse_a))
+        multiplier = self.params['augmentation_elliptic_mask_multiplier']
+        tregion.set_elliptic_mask(multiplier, multiplier)
+
+        head_xy, _ = ellipse_a.get_vertices()
+        tregion.move(-head_xy[::-1])  # move head of object 2 to (0, 0)
+        tregion.rotate(-ellipse_a.angle_deg, (0, 0))  # normalize the rotation to 0 deg, tail is to left, head to right
+        tregion.rotate(phi_deg, (0, 0))  # approach angle
+        tregion.move((0, aug_shift_px))  # positioning closer (even overlapping) or further from object 1
+        # object 2 will be positioned head first under angle theta with respect to the main object 1
+        tregion.rotate(180 + theta_deg, (0, 0))
+        tregion.move(ellipse.get_point(theta_deg)[::-1])  # move the object 2 to the object 1 border
+
+        alpha_trans = tregion.get_img()[:, :, -1].astype(float)
+        alpha_trans *= tregion.get_mask(alpha=True) / 255
+        alpha_trans /= 255
+        alpha_trans = np.expand_dims(alpha_trans, 2)
+
+        img_synthetic = (img.astype(float) * (1 - alpha_trans) +
+                         tregion.get_img()[:, :, :-1].astype(float) * alpha_trans).astype(np.uint8)
+
+        return img_synthetic
+
+    def show_ground_truth(self, csv_file, out_dir, image_hdf5='images.h5:train/img1'):
         """
         Save images with visualized ground truth.
 
         :param csv_file: input ground truth
         :param out_dir: directory for output images
-        :param image_dir: input images, image_dir or image_hdf5 is required
         :param image_hdf5: input images, image_dir or image_hdf5 is required
-        :param hdf5_dataset_name: input images dataset name
         """
-        assert image_dir is not None or image_hdf5 is not None
-        if image_hdf5 is not None:
-            assert hdf5_dataset_name is not None
-            hf = h5py.File(image_hdf5, 'r')
-            images = hf[hdf5_dataset_name]
+        hf = h5py.File(image_hdf5.split(':')[0], 'r')
+        images = hf[image_hdf5.split(':')[1]]
         n, _, df = read_gt(csv_file)
-        for i in range(n):
-            df.loc[:, '%d_angle_deg' % i] *= -1  # convert to counter-clockwise
         for i, row in tqdm.tqdm(df.iterrows(), total=len(df)):
-            if image_hdf5 is not None:
-                img = images[i]
-            else:
-                img = plt.imread(os.path.join(image_dir, row['filename']))
-            save_prediction_img(join(out_dir, '%05d.png' % i), n, img, pred=None, gt=row)
+            save_prediction_img(join(out_dir, '%05d.png' % i), n, images[i], pred=None, gt=row)
 
-    def __synthetize(self, regions, theta_rad, phi_rad, overlap_px, images=None, background=None):
+    def _synthetize(self, regions, theta_rad, phi_rad, overlap_px, images=None, background=None):
         # angles: positive clockwise, zero direction to right
         n_objects = len(regions)
         if images is None:
@@ -735,7 +827,7 @@ class DataGenerator(object):
 
         return img_synthetic, mask, centers_xy, main_axis_angles_rad
 
-    def __get_moments(self, mask):
+    def _get_moments(self, mask):
         # plt.figure()
         # # plt.imshow(mask)
         # zoomed_size = 300
@@ -753,3 +845,4 @@ class DataGenerator(object):
 
 if __name__ == '__main__':
     fire.Fire(DataGenerator)
+
