@@ -1,34 +1,30 @@
+import itertools
+import os.path
 import tempfile
+from os import remove
+from os.path import join, basename
 
-import fire
+import cv2
 import imageio
-from keras.applications.mobilenet import mobilenet
 import numpy as np
 import pandas as pd
-import yaml
-from keras.models import model_from_yaml, model_from_json
-import os.path
-from os.path import join, basename
-from os import remove
-from scipy.special import expit
-from tqdm import tqdm
-from graph_tool import Graph
-from joblib import Parallel, delayed
-import cv2
 import scipy
-import itertools
+import yaml
+from graph_tool import Graph
+from joblib import Memory
+from joblib import Parallel, delayed
+from keras.applications.mobilenet import mobilenet
+from keras.models import model_from_yaml, model_from_json
+from tqdm import tqdm
 
-from core.interactions.visualization import save_prediction_img, show_prediction
-from utils.angles import angle_absolute_error_direction_agnostic
-from utils.geometry import roi_corners
-from utils.img import safe_crop
-from utils.objectsarray import ObjectsArray
 from core.interactions.generate_data import DataGenerator
 from core.interactions.train import TrainInteractions
+from core.interactions.visualization import save_prediction_img, show_prediction
 from core.region.transformableregion import TransformableRegion
-from core.region.region import Region
+from utils.img import safe_crop
+from utils.objectsarray import ObjectsArray
+from utils.gt.mot import load_mot, results_to_mot, eval_mot, mot_in_roi
 
-from joblib import Memory
 memory = Memory('out/cache', verbose=0)
 
 
@@ -36,74 +32,6 @@ def get_hull_poly(region, epsilon_px=5):
     poly = cv2.approxPolyDP(np.fliplr(region.contour()), epsilon_px, True)
     hull = cv2.convexHull(poly.reshape((-1, 2))).reshape((-1, 2))
     return np.vstack((hull, hull[0:1]))
-
-
-class EllipticRegion(object):
-    @classmethod
-    def from_region(cls, region):
-        yx = region.centroid()
-        tmp = cls(yx[1], yx[0], -np.rad2deg(region.theta_), 2 * region.major_axis_, 2 * region.minor_axis_,
-                  region.frame())
-        return tmp
-
-    def to_region(self):
-        r = Region(is_origin_interaction=True, frame=self.frame)
-        r.centroid_ = self.xy[::-1]
-        r.theta_ = -np.deg2rad(self.angle_deg)
-        r.major_axis_ = self.major / 2
-        r.minor_axis_ = self.minor / 2
-        return r
-
-    @classmethod
-    def from_dict(cls, region_dict):
-        return cls(region_dict['0_x'], region_dict['0_y'], region_dict['0_angle_deg'], region_dict['0_major'],
-                   region_dict['0_minor'])
-
-    def __init__(self, x=None, y=None, angle_deg=None, major=None, minor=None, frame=None):
-        self.x = x
-        self.y = y
-        self.angle_deg = angle_deg  # img cw
-        self.major = major
-        self.minor = minor
-        self.frame = frame
-
-    def to_dict(self):
-        return ({
-            '0_x': self.x,
-            '0_y': self.y,
-            '0_angle_deg': self.angle_deg,
-            '0_major': self.major,
-            '0_minor': self.minor,
-        })
-
-    @property
-    def xy(self):
-        return np.array((self.x, self.y))
-
-    @property
-    def area(self):
-        return cv2.contourArea(self.to_poly())
-
-    def to_poly(self):
-        return cv2.ellipse2Poly((int(self.x), int(self.y)), (int(self.major), int(self.minor)), int(self.angle_deg), 0,
-                                360, 30)
-
-    def get_overlap(self, el_region):
-        if isinstance(el_region, EllipticRegion):
-            el_region = el_region.to_poly()
-        area, poly = cv2.intersectConvexConvex(self.to_poly(), el_region)
-        #         poly = poly.reshape((-1, 2))
-        return area
-
-    def to_array(self):
-        return np.array([self.x, self.y, self.angle_deg, self.major, self.minor, self.frame])
-
-    def __add__(self, other):
-        assert self.frame == other.frame
-        mean = np.vstack((self.to_array(), other.to_array())).mean(axis=0)
-        el = EllipticRegion(*mean)
-        el.frame = int(el.frame)
-        return el
 
 
 class InteractionDetector:
@@ -248,7 +176,7 @@ class InteractionDetector:
             prev_prediction = prediction.copy()
 
             prediction, _, _, _ = self.detect_single_frame(frame, prev_prediction)
-            prediction_r = EllipticRegion.from_dict(prediction)
+            prediction_r = Ellipse.from_dict(prediction)
             prediction_r.frame = frame
 
             # img = self.project.img_manager.get_whole_img(frame)
@@ -311,7 +239,7 @@ class InteractionDetector:
                         #TODO: remove if not needed
                         print('Skipping cycle: multi tracklet id: {}'.format(multi_tracklet.id()))
                         continue
-                    # last_region = EllipticRegion.from_region(tracklet.get_region(self.project.gm, last_region_idx))
+                    # last_region = Ellipse.from_region(tracklet.get_region(self.project.gm, last_region_idx))
                     regions, last_frame, success = \
                         self.track_single_object_in_multi_tracklet(regions_path[-1], multi_tracklet, forward)
                     multi_tracklets = processed_tracklets[:] + [multi_tracklet,]
@@ -336,7 +264,7 @@ class InteractionDetector:
         else:
             adjacent_region_idx = 0
 
-        regions_path = [EllipticRegion.from_region(single_tracklet.get_region(self.project.gm, adjacent_region_idx))]
+        regions_path = [Ellipse.from_region(single_tracklet.get_region(self.project.gm, adjacent_region_idx))]
         processed_tracklets = []
         track_recursive(v, graph, regions_path, processed_tracklets, forward)
         regions_path = regions_path[1:]  # remove adjacent single_tracklet region
@@ -454,9 +382,8 @@ class InteractionDetector:
             end_frame = max([t.start_frame(self.project.gm) for t in multi])
         return roi_union, (start_frame, end_frame)
 
-    def visualize_tracklets(self, graph, paths, out_dir):
+    def visualize_tracklets(self, graph, paths, out_dir, gt=None):
         vm = self.project.get_video_manager()
-
         roi, (start_frame, end_frame) = self.get_bounds(graph)
         incoming, outcoming, _ = self.get_tracklets_from_dense(graph)
 
@@ -481,9 +408,14 @@ class InteractionDetector:
                 regions_in_frame.append({'region': r, 'color': color, 'contour_yx': yx})
             regions.append(regions_in_frame)
 
-        Parallel(n_jobs=4, verbose=10)(delayed(plot_dense_frame)(frame, i, imgs[i], regions[i], out_dir, paths, roi)
+        Parallel(n_jobs=1, verbose=10)(delayed(plot_dense_frame)(frame, i, imgs[i], regions[i], out_dir, paths, roi, gt)
                                        for i, frame in enumerate(range(start_frame, end_frame + 1)))
 
+
+
+
+        # for i, frame in tqdm(enumerate(range(start_frame, end_frame + 1))):
+        #     plot_dense_frame(frame, i, imgs[i], regions[i], out_dir, paths, roi)
 
     def track_dense(self, graph, ids):
 
@@ -573,8 +505,23 @@ class InteractionDetector:
                     'out_region': bwd[j]['out_region'], })
         return paths
 
+    def eval_dense_section(self, graph, paths):
+        # (n_frames, n_animals, 2); coordinates are in yx order
+        roi, (start_frame, end_frame) = self.get_bounds(graph)
+        # first_frame = min([path['regions'][0].frame for path in paths])
+        # last_frame = max([path['regions'][-1].frame for path in paths])
+        results = np.ones(shape=(end_frame + 1, len(paths), 2)) * np.nan
+        for idx_path, path in enumerate(paths):
+            for region in path['regions']:
+                results[region.frame, idx_path] = region.xy[::-1]
 
-def plot_dense_frame(frame, i, img, regions_in_frame, out_dir, paths, roi):
+        df_results = results_to_mot(results).set_index(['frame', 'id'])
+        df_gt = mot_in_roi(gt, roi).loc[start_frame + 1:end_frame - 1]
+
+        return eval_mot(df_gt, df_results)
+
+
+def plot_dense_frame(frame, i, img, regions_in_frame, out_dir, paths, roi, gt=None):
     from scripts.montage import save_figure_as_image
     from core.interactions.visualization import plot_interaction
     import matplotlib.pylab as plt
@@ -594,12 +541,13 @@ def plot_dense_frame(frame, i, img, regions_in_frame, out_dir, paths, roi):
         except ValueError:
             pass
         if path['in_region'] is not None and frame == path['in_region'].frame():
-            plot_interaction(1, gt=EllipticRegion.from_region(path['in_region']).to_dict(), color=color)
+            plot_interaction(1, gt=Ellipse.from_region(path['in_region']).to_dict(), color=color)
         if path['out_region'] is not None and frame == path['out_region'].frame():
-            plot_interaction(1, gt=EllipticRegion.from_region(path['out_region']).to_dict(), color=color)
+            plot_interaction(1, gt=Ellipse.from_region(path['out_region']).to_dict(), color=color)
 
         for r in regions_in_frame:
             plt.plot(r['contour_yx'][:, 1], r['contour_yx'][:, 0], color=r['color'], linestyle='dotted', linewidth=0.5)
+
         # for t in self.project.chm.tracklets_in_frame(frame):
         #     r = t.get_region_in_frame(self.project.gm, frame)
         #     yx = r.contour_without_holes()
@@ -610,15 +558,20 @@ def plot_dense_frame(frame, i, img, regions_in_frame, out_dir, paths, roi):
         #     else:
         #         color = 'red'
         #     plt.plot(yx[:, 1], yx[:, 0], color=color, linestyle='dotted', linewidth=0.5)
+    if gt is not None:
+        for track_id, row in gt.loc[frame].iterrows():
+            plt.plot(row.x, row.y, '*w')
+
     plt.xlim(roi.x_, roi.x_max_)
-    plt.ylim(roi.y_, roi.y_max_)
+    plt.ylim(roi.y_max_, roi.y_)
+
     # for t in incoming:
-    #     r = EllipticRegion.from_region(t.get_region(self.project.gm, -1))
+    #     r = Ellipse.from_region(t.get_region(self.project.gm, -1))
     #     plt.plot(r.x, r.y, '.r')
     #     if r.frame == frame:
     #         plot_interaction(1, gt=r.to_dict())
     # for t in outcoming:
-    #     r = EllipticRegion.from_region(t.get_region(self.project.gm, 0))
+    #     r = Ellipse.from_region(t.get_region(self.project.gm, 0))
     #     plt.plot(r.x, r.y, '.b')
     #     if r.frame == frame:
     #         plot_interaction(1, gt=r.to_dict())
@@ -690,17 +643,22 @@ if __name__ == '__main__':
 
     project = Project('/datagrid/ferda/projects/1_initial_projects_180921_ILP/180810_2359_Cam1_ILP_cardinality')
     # ../projects/2_temp/180810_2359_Cam1_ILP_cardinality
-    project_name = 'ants1'
+    project_name = '181101_ants1'
+
+    gt = load_mot('data/GT/Cam1_clip.avi.txt')
+    # gt = None
+    gt[['x', 'y']] -= [project.video_crop_model[key] for key in ['x1', 'y1']]
 
     # '/home/matej/prace/ferda/experiments/180913_1533_single_concat_conv3_alpha0_01'
-    detector = InteractionDetector('/datagrid/ferda/models/180913_1533_tracker_single_concat_conv3_alpha0_01',
+    detector = InteractionDetector('/datagrid/ferda/models/181101_1537_tracker_cam1_1k_aug',
                                    project)
     dense_subgraphs = detector.find_dense_subgraphs()
     dense_subgraphs = sorted(dense_subgraphs, key=lambda x: len(x['ids']), reverse=True)
 
+
     ##
     import pickle
-    from core.interactions.detect import EllipticRegion
+    from core.region.ellipse import Ellipse
     out_filename = project_name + '_dense_sections_tracklets.pkl'
     try:
         with file(out_filename, 'rb') as fr:
@@ -709,15 +667,17 @@ if __name__ == '__main__':
         dense_sections_tracklets = {}
 
     for i, dense in enumerate(tqdm(dense_subgraphs)):
-        if i in dense_sections_tracklets:
+        if i != 10:
             continue
-        dense_sections_tracklets[i] = detector.track_dense(dense['graph'], dense['ids'])
-        with file(out_filename, 'wb') as fw:
-            pickle.dump(dense_sections_tracklets, fw)
-        detector.visualize_tracklets(dense['graph'], dense_sections_tracklets[i], 'out/%03d' % i)
+        if i not in dense_sections_tracklets:
+            dense_sections_tracklets[i] = detector.track_dense(dense['graph'], dense['ids'])
+            with file(out_filename, 'wb') as fw:
+                pickle.dump(dense_sections_tracklets, fw)
+        # detector.visualize_tracklets(dense['graph'], dense_sections_tracklets[i], 'out/dense_tracking/%03d' % i, gt)
 
-    # i = 10
-    # detector.visualize_tracklets(dense_subgraphs[i]['graph'], dense_sections_tracklets[i], 'out/%03d' % i)
+    i = 10
+    detector.eval_dense_section(dense_subgraphs[i]['graph'], dense_sections_tracklets[i])
+    pass
 
 
 
