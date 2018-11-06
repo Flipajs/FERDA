@@ -24,6 +24,7 @@ from core.region.transformableregion import TransformableRegion
 from utils.img import safe_crop
 from utils.objectsarray import ObjectsArray
 from utils.gt.mot import load_mot, results_to_mot, eval_mot, mot_in_roi
+from core.region.ellipse import Ellipse
 
 memory = Memory('out/cache', verbose=0)
 
@@ -658,7 +659,6 @@ if __name__ == '__main__':
 
     ##
     import pickle
-    from core.region.ellipse import Ellipse
     out_filename = project_name + '_dense_sections_tracklets.pkl'
     try:
         with file(out_filename, 'rb') as fr:
