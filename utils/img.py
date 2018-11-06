@@ -60,18 +60,31 @@ def safe_crop(img, xy, crop_size_px):
     :return: img_crop: output image
              delta_xy: correction delta for coordinates in the output image; e.g. img_crop_pos = img_pos - delta_xy
     """
+    def crop_range(x, src_size, dst_size):
+        """
+        Find source and destination ranges to safely copy dst_size array from source array centered in x position.
+
+        :param x: center position
+                  corner case: when x is not modulo 0.5 or dst_size is even (the returned integral range can't be
+                  symmetrical) the returned ranges include the first element rather then the last element
+        :param src_size: size of source array
+        :param dst_size: size of destination array
+        :return: src_range_clipped, dst_range_clipped - ranges (suitable for slice(*src_range_clipped))
+        """
+        src_range = np.array((x - dst_size / 2, x + dst_size / 2)).round().astype(int)  # range end is excluded
+        src_range_clipped = np.clip(src_range, 0, src_size)
+        dst_range = np.array((0, dst_size))  # range end is excluded
+        dst_range_clipped = dst_range - (src_range - src_range_clipped)
+
+        return src_range_clipped, dst_range_clipped
+
     img_crop = np.zeros(((crop_size_px, crop_size_px) + img.shape[2:]), dtype=np.uint8)
-    dest_top_left = -np.clip(np.array(xy[::-1]) - crop_size_px / 2, None, 0).round().astype(int)
-    dest_bot_right = np.clip(
-        crop_size_px - (np.array(xy[::-1]) + crop_size_px / 2 - img.shape[:2]),
-        None, crop_size_px).round().astype(int)
-    x_range = np.clip((xy[0] - crop_size_px / 2, xy[0] + crop_size_px / 2),
-                      0, img.shape[1]).round().astype(int)
-    y_range = np.clip((xy[1] - crop_size_px / 2, xy[1] + crop_size_px / 2),
-                      0, img.shape[0]).round().astype(int)
-    img_crop[dest_top_left[0]:dest_bot_right[0], dest_top_left[1]:dest_bot_right[1]] = \
-        img[slice(*y_range), slice(*x_range)]
-    delta_xy = np.array((x_range[0] - dest_top_left[1], y_range[0] - dest_top_left[0]))
+    x_range_src, x_range_dst = crop_range(xy[0], img.shape[1], crop_size_px)
+    y_range_src, y_range_dst = crop_range(xy[1], img.shape[0], crop_size_px)
+
+    img_crop[slice(*y_range_dst), slice(*x_range_dst)] = \
+        img[slice(*y_range_src), slice(*x_range_src)]
+    delta_xy = np.array((y_range_src[0] - y_range_dst[0], x_range_src[0] - x_range_dst[0]))
     return img_crop, delta_xy
 
 
@@ -249,6 +262,7 @@ def get_cmap(N, step):
 
     return map_index_to_rgb_color
 
+
 def rotate_img(img, theta, center=None):
     s_ = max(img.shape[0], img.shape[1])
 
@@ -263,8 +277,9 @@ def rotate_img(img, theta, center=None):
     elif center is None:
         center = (im_.shape[0] / 2, im_.shape[1] / 2)
 
-    rot_mat = cv2.getRotationMatrix2D(center, -np.rad2deg(theta), 1.0)
+    rot_mat = cv2.getRotationMatrix2D(center, -np.rad2deg(theta), 1.0)  # TODO: 2018-10-31 is this correct? getRotationMatrix2D and Region have both ccw angle orientation
     return cv2.warpAffine(im_, rot_mat, (s_, s_))
+
 
 def centered_crop(img, new_h, new_w):
     new_h = int(new_h)
