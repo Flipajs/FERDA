@@ -1,18 +1,12 @@
 __author__ = 'fnaiser'
-
 from math import floor
-import pickle
-
 import cv2
 import numpy as np
-from PyQt4 import QtCore
-
-from model import Model
 from core.bg_model.bg_model import BGModel
 from utils import video_manager
-from core.bg_model.max_intensity import MaxIntensity
 
-class MedianIntensity(Model):
+
+class MedianIntensity(object):
     def __init__(self, project, iterations=20, random_frames=False, update_callback=None):
         super(MedianIntensity, self).__init__()
         self.video = video_manager.get_auto_video_manager(project)
@@ -32,7 +26,7 @@ class MedianIntensity(Model):
             if self.random_frames:
                 im, _ = self.video.random_frame()
             else:
-                im, _ = self.video.seek_frame(frame_i)
+                im = self.video.seek_frame(frame_i)
 
             imgs[i] = im
             # self.emit(QtCore.SIGNAL('update(int)'), int(100*(i+1)/float(self.iterations)))
@@ -66,7 +60,6 @@ class MedianIntensity(Model):
 
     def get_fg_mask(self, img, threshold=40):
         return np.logical_or.reduce((self.bg_model.astype(np.int) - img) > threshold, axis=2)
-
 
 
 if __name__ == '__main__':
