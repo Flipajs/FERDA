@@ -1,4 +1,4 @@
-__author__ = 'fnaiser'
+from __future__ import division
 import math
 import cv2
 import matplotlib.cm as cmx
@@ -53,6 +53,8 @@ def safe_crop(img, xy, crop_size_px):
     Crop image safely around a position, even if the output lays outside the input image.
 
     (TODO: similar to get_safe_selection)
+    Note: uses numpy rounding, see ndarray.round.
+
 
     :param img: input image
     :param xy: center of the output image
@@ -71,11 +73,10 @@ def safe_crop(img, xy, crop_size_px):
         :param dst_size: size of destination array
         :return: src_range_clipped, dst_range_clipped - ranges (suitable for slice(*src_range_clipped))
         """
-        src_range = np.array((x - dst_size / 2, x + dst_size / 2)).round().astype(int)  # range end is excluded
+        src_range = np.floor(np.array((x - dst_size / 2, x + dst_size / 2)) + 0.5).astype(int)  # range end is excluded
         src_range_clipped = np.clip(src_range, 0, src_size)
         dst_range = np.array((0, dst_size))  # range end is excluded
         dst_range_clipped = dst_range - (src_range - src_range_clipped)
-
         return src_range_clipped, dst_range_clipped
 
     img_crop = np.zeros(((crop_size_px, crop_size_px) + img.shape[2:]), dtype=np.uint8)
@@ -84,7 +85,7 @@ def safe_crop(img, xy, crop_size_px):
 
     img_crop[slice(*y_range_dst), slice(*x_range_dst)] = \
         img[slice(*y_range_src), slice(*x_range_src)]
-    delta_xy = np.array((y_range_src[0] - y_range_dst[0], x_range_src[0] - x_range_dst[0]))
+    delta_xy = np.array((x_range_src[0] - x_range_dst[0], y_range_src[0] - y_range_dst[0]))
     return img_crop, delta_xy
 
 
