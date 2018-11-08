@@ -154,11 +154,11 @@ DATA_DIR = 'test/interactions_dataset'
 class TrainInteractionsTestCase(unittest.TestCase):
     def setUp(self):
         self.n_images = 3
-        self.ti = train_interactions.TrainInteractions(2)
+        self.ti = train_interactions.TrainInteractions(1)
         self.input_shape = (self.ti.detector_input_size_px, self.ti.detector_input_size_px, self.ti.num_input_layers)
         self.hf = h5py.File(join(DATA_DIR, 'images.h5'), 'r')
-        self.X_train = self.hf['train']
-        self.X_test = self.hf['test']
+        self.X_train = self.hf['train/img1']
+        self.X_test = self.hf['test/img1']
         if self.input_shape[2] == 1:
             self.X_train_ = np.mean(self.X_train[:self.n_images], axis=3, keepdims=True)
             self.X_test_ = np.mean(self.X_test, axis=3, keepdims=True)
@@ -168,7 +168,7 @@ class TrainInteractionsTestCase(unittest.TestCase):
         self.X_train_ = self.ti.resize_images(self.X_train_, self.input_shape)
         self.X_test_ = self.ti.resize_images(self.X_test_, self.input_shape)
         n, properties, self.y_test_df = read_gt(join(DATA_DIR, 'test.csv'))
-        n, properties, self.y_train_df = read_gt(join(DATA_DIR, 'test.csv'))
+        n, properties, self.y_train_df = read_gt(join(DATA_DIR, 'train.csv'))
         self.y_test = self.ti.array.dataframe_to_array(self.y_test_df)
         self.y_train = self.ti.array.dataframe_to_array(self.y_train_df)
 
