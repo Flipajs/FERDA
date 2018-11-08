@@ -324,6 +324,7 @@ class DataGenerator(object):
         """
         self._load_project(project_dir)
 
+        self._makedirs(out_dir)
         h5_filename = join(out_dir, 'images.h5')
         train_csv_filename = join(out_dir, 'train.csv')
         test_csv_filename = join(out_dir, 'test.csv')
@@ -523,12 +524,16 @@ class DataGenerator(object):
         n_ids, _, df = read_gt(csv_file)
         if n is not None:
             df = df[:n]
-        try:
-            os.makedirs(out_dir)
-        except OSError:
-            pass
+        DataGenerator._makedirs(out_dir)
         for i, row in tqdm.tqdm(df.iterrows(), total=len(df), desc='saving ground truth samples'):
             save_prediction_img(join(out_dir, '%05d.png' % i), n_ids, images[i], pred=None, gt=row)
+
+    @staticmethod
+    def _makedirs(dir_name):
+        try:
+            os.makedirs(dir_name)
+        except OSError:
+            pass
 
     def _get_moments(self, mask):
         # plt.figure()
