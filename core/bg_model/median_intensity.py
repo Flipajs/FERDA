@@ -35,9 +35,6 @@ class MedianIntensity(object):
             frame_i += step
 
         self.bg_model = np.asarray(np.percentile(np.array(imgs), 80, axis=0), dtype=np.uint8)
-        print self.bg_model.shape
-        print np.max(self.bg_model)
-
         self.model_ready = True
 
     def call_update_callback(self, i):
