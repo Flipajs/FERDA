@@ -637,11 +637,11 @@ class TrainInteractions:
             for i in range(ti.num_objects):
                 y_train_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
                     y_train_df[['%d_x' % i, '%d_y' % i]].values.T).T
-                y_train_df['%d_angle_deg' % i] = tregion.get_transformed_angle(y_train_df['%d_angle_deg' % i])
+                y_train_df['%d_angle_deg_cw' % i] = tregion.get_transformed_angle(y_train_df['%d_angle_deg_cw' % i])
 
                 y_test_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
                     y_test_df[['%d_x' % i, '%d_y' % i]].values.T).T
-                y_test_df['%d_angle_deg' % i] = tregion.get_transformed_angle(y_test_df['%d_angle_deg' % i])
+                y_test_df['%d_angle_deg_cw' % i] = tregion.get_transformed_angle(y_test_df['%d_angle_deg_cw' % i])
 
         # dx and dy columns
         # for i in range(self.num_objects):
