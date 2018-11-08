@@ -137,7 +137,7 @@ class TransformableRegion:
                           is assumed to be the top-left corner), same as OpenCV
         :return:
         """
-        return (angle_deg - math.degrees(math.atan2(self.transformation[1, 0], self.transformation[0, 0]))) % 360
+        return (angle_deg + math.degrees(math.atan2(self.transformation[1, 0], self.transformation[0, 0]))) % 360
 
     def get_inverse_transformed_angle(self, angle_deg):
         """
@@ -146,7 +146,7 @@ class TransformableRegion:
                           is assumed to be the top-left corner), same as OpenCV
         :return:
         """
-        return (angle_deg + math.degrees(math.atan2(self.transformation[1, 0], self.transformation[0, 0]))) % 360
+        return (angle_deg - math.degrees(math.atan2(self.transformation[1, 0], self.transformation[0, 0]))) % 360
 
     def get_img(self):
         assert np.all(self.transformation[2, :] == (0, 0, 1))

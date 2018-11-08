@@ -49,10 +49,11 @@ class EuclideanProjectiveTestCase(unittest.TestCase):
 class TransformableRegionTestCase(unittest.TestCase):
     def setUp(self):
         img = plt.imread('test/ferda.png')
+        self.center_yx = np.array(img.shape[:2][::-1]) / 2
         self.tr = tr.TransformableRegion(img)
 
     def check_get_transformed_angle(self, angle):
-        self.tr.rotate(angle)
+        self.tr.rotate(angle, self.center_yx)
         plt.imsave(os.path.join('test/out/{}.png'.format(angle)), self.tr.get_img())
         self.assertTrue(angle_absolute_error(self.tr.get_transformed_angle(0), angle) == 0)
 
