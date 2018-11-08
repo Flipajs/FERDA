@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sqlite3 as sql
 import cPickle
 import random
@@ -32,7 +33,7 @@ class FeatureManager:
         else:
             self.use_db = True
             self.db_path = db_wd + "/" + db_name
-            print "Initializing db at %s " % self.db_path
+            print("Initializing db at %s " % self.db_path)
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
             # DEBUG, do not use!
@@ -211,7 +212,7 @@ class FeatureManager:
                 pos[id_] = k
                 k += 1
                 if not isinstance(id_, int):
-                    print "TypeError: int expected, %s given! Skipping key '%s'." % (type(id_), id_)
+                    print("TypeError: int expected, %s given! Skipping key '%s'." % (type(id_), id_))
                     continue
                 if id_ in self.features_cache_:
                     # print "%s was found in cache" % id
@@ -411,25 +412,25 @@ if __name__ == "__main__":
     rm = FeatureManager(db_wd="/home/dita", cache_size_limit=30)
     rm.add(test_ids, test_data)
 
-    print "\nINDIVIDUAL ID GET TEST"
-    print "3 (present): ", rm[3]
-    print "DELETING INDIVIDUAL ID (3)"
+    print("\nINDIVIDUAL ID GET TEST")
+    print("3 (present): ", rm[3])
+    print("DELETING INDIVIDUAL ID (3)")
     rm.remove(3)
-    print "3 (missing): ", rm[3]
+    print("3 (missing): ", rm[3])
 
-    print "\nLIST IDS GET TEST"
-    print "[16, 17]:                  ", rm[[16, 17]]
-    print "[3] (missing):             ", rm[[3]]
-    print "[1, 2, 3, 7, 38, 14, -77]: ", rm[[1, 2, 3, 7, 38, 14, -77]]
+    print("\nLIST IDS GET TEST")
+    print("[16, 17]:                  ", rm[[16, 17]])
+    print("[3] (missing):             ", rm[[3]])
+    print("[1, 2, 3, 7, 38, 14, -77]: ", rm[[1, 2, 3, 7, 38, 14, -77]])
 
-    print "DELITING LIST OF IDS (7, 38, 14)"
+    print("DELITING LIST OF IDS (7, 38, 14)")
     rm.remove([7, 38, 14])
-    print "[1, 2, 3, 7, 38, 14, -77]: ", rm[[1, 2, 3, 7, 38, 14, -77]]
+    print("[1, 2, 3, 7, 38, 14, -77]: ", rm[[1, 2, 3, 7, 38, 14, -77]])
 
-    print "\nSLICE GET TEST"
+    print("\nSLICE GET TEST")
 
-    print "(1:5) ", rm[1:5]
-    print "(8:20) ", rm[8:20]
+    print("(1:5) ", rm[1:5])
+    print("(8:20) ", rm[8:20])
 
-    print "\nGET ALL TEST"
-    print rm.get_all()
+    print("\nGET ALL TEST")
+    print(rm.get_all())

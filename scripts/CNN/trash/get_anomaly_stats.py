@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -69,8 +70,8 @@ if __name__ == '__main__':
     X_train /= 255
 
     y = model.predict(X_train)
-    print y[0].shape
-    print y[1].shape
+    print(y[0].shape)
+    print(y[1].shape)
 
     with h5py.File(DATA_DIR+'/penultimate_layer.h5', 'w') as hf:
         hf.create_dataset("data", data=y[1])

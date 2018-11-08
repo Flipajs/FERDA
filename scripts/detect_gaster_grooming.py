@@ -1,3 +1,4 @@
+from __future__ import print_function
 from core.project.project import Project
 from core.id_detection.learning_process import LearningProcess
 from tqdm import tqdm
@@ -29,22 +30,22 @@ X = []
 
 positive_examples_tids = set()
 
-print "preparing positive examples..."
+print("preparing positive examples...")
 for t_id, start_f, end_f in positive_examples:
-    print t_id
+    print(t_id)
     positive_examples_tids.add(t_id)
     rt = RegionChunk(p_pre.chm[t_id], p_pre.gm, p_pre.rm)
 
     for f in range(start_f, end_f):
         r = rt.region_in_t(f)
         if r is None:
-            print "frame: ", f
+            print("frame: ", f)
         y.append(1)
         X.append(lp.get_appearance_features(r))
 
-print len(y), len(X)
+print(len(y), len(X))
 
-print "preparing negative examples"
+print("preparing negative examples")
 
 ch_ids = list(p_pre.chm.chunks_.keys())
 num_examples = len(y)
@@ -67,16 +68,16 @@ with tqdm(total=num_examples) as pbar:
 
 y = np.array(y)
 X = np.array(X)
-print y.shape, X.shape
+print(y.shape, X.shape)
 
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-print np.sum(y_train), np.sum(y_test), np.sum(y_test) * 5
+print(np.sum(y_train), np.sum(y_test), np.sum(y_test) * 5)
 
 rfc = RandomForestClassifier(n_estimators=100)
 rfc.fit(X_train, y_train)
 
-print "TEST set accuracy: ", rfc.score(X_test, y_test)
+print("TEST set accuracy: ", rfc.score(X_test, y_test))
 
 # do P_POST
 p_post = Project()
@@ -84,7 +85,7 @@ p_post.load(WD_POST)
 
 X_post = []
 rids = []
-print "preparing HH1_POST data..."
+print("preparing HH1_POST data...")
 for t in tqdm(p_post.chm.chunk_gen(), total=len(p_post.chm)):
     if t.is_single():
         for r_id in t.rid_gen(p_post.gm):
@@ -93,15 +94,15 @@ for t in tqdm(p_post.chm.chunk_gen(), total=len(p_post.chm)):
             rids.append(r.id())
 
 X_post = np.array(X_post)
-print X_post.shape
+print(X_post.shape)
 
-print "Classifying..."
+print("Classifying...")
 predictions = rfc.predict(X_post)
 rids = np.array(rids)
 
 import pickle
-print "SAVING..."
+print("SAVING...")
 with open('/Users/flipajs/Documents/dev/ferda/scripts/gaster_grooming_out/HH1_post_predictions.pkl', 'wb') as f:
     pickle.dump((predictions, rids), f)
 
-print "DONE"
+print("DONE")

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from utils import video_manager
 
 __author__ = 'filip@naiser.cz'
@@ -23,7 +24,7 @@ bg_gray = gray = cv2.cvtColor(bg, cv2.COLOR_BGR2GRAY)
 
 frame = 0
 while(True):
-    print frame
+    print(frame)
 
     img = vid.next_frame()
     if img is None:

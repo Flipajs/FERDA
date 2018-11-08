@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 import pickle
 import time
@@ -57,7 +58,7 @@ bound = np.array(bound)
 hull = ConvexHull(bound)
 time_length = time.time() - start
 
-print time_length
+print(time_length)
 
 plt.ion()
 plt.figure()
@@ -83,7 +84,7 @@ for simplex in hull.simplices:
     plt.pause(0.0001)
 
     #raw_input("Press [enter] to continue.")
-    print simplex
+    print(simplex)
 
 
 plt.pause(60)
@@ -104,4 +105,4 @@ interesting_points = find_interesting_pairs(bound)
 #    raw_input("Press [enter] to continue.")
 
 
-print hull_points
+print(hull_points)

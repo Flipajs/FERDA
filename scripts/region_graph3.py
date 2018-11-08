@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'simon'
 
 import random
@@ -759,7 +760,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.update_view(n1)
 
     def onpick(self, event):
-        print self.lines.index(event.artist)
+        print(self.lines.index(event.artist))
 
     def toggle_n(self, n):
         from utils.video_manager import get_auto_video_manager

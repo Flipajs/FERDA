@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 
 import pickle
@@ -141,7 +142,7 @@ for frame in n_regions_vals:
 #my_hist += 1
 
 very_blurred = ndimage.gaussian_filter(my_hist, sigma=1)
-print very_blurred.max()
+print(very_blurred.max())
 #
 #afile = open('../out/margin/ab_area_hist_blurred.pkl', 'wb')
 #e_regions_labels = pickle.dump(very_blurred, afile)

@@ -1,10 +1,11 @@
+from __future__ import absolute_import
 __author__ = 'filip@naiser.cz'
 
 from pylab import *
 
 from gui.plot.plot_utils import line_picker
 from gui.settings import Settings as S_
-from my_mpl_canvas import *
+from .my_mpl_canvas import *
 from utils.img import DistinguishableColors
 
 

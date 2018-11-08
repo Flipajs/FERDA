@@ -1,6 +1,7 @@
 """
 CLEAR multi target tracking metric evaluation.
 """
+from __future__ import print_function
 import numpy as np
 import sys
 import math
@@ -149,12 +150,12 @@ class ClearMetrics(object):
                 matches[mask_match_in_both_frames] != last_matches[mask_match_in_both_frames])
 
             if new_mismatches_count and verbose:
-                print "mismatch in frame:{:}".format(frame)
-                print self.measurements[frame]
-                print self.groundtruth[frame]
-                print last_matches
-                print matches
-                print
+                print("mismatch in frame:{:}".format(frame))
+                print(self.measurements[frame])
+                print(self.groundtruth[frame])
+                print(last_matches)
+                print(matches)
+                print()
 
             mismatches += new_mismatches_count
             last_matches = matches

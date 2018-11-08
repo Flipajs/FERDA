@@ -1,14 +1,16 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import cv2
 import cPickle as pickle
 from core.graph.region_chunk import RegionChunk
 from utils.img import get_safe_selection
 from math import ceil
-from processing import get_colormarks, match_cms_region, filter_cms
+from .processing import get_colormarks, match_cms_region, filter_cms
 import matplotlib.pyplot as plt
 import numpy as np
 from scripts.irg_hist_demo import ColorHist3d
 from scripts.irg_hist_demo import *
-from processing import transform_img_
+from .processing import transform_img_
 from utils.img_manager import ImgManager
 
 
@@ -117,7 +119,7 @@ def colormarks_init_finished_cb(project, masks):
 
 if __name__ == '__main__':
     from core.config import config
-    from colormarks_model import ColormarksModel
+    from .colormarks_model import ColormarksModel
     from core.project.project import Project
     cm_model = ColormarksModel()
     cm_model.im_space = 'irb'
@@ -159,7 +161,7 @@ if __name__ == '__main__':
     for cs, _, _ in color_samples:
         for px in cs:
             pos = np.asarray(px / cm_model.num_bins_v, dtype=np.int)
-            print px, cm_model.hist3d.hist_labels_[pos[0], pos[1], pos[2]]
+            print(px, cm_model.hist3d.hist_labels_[pos[0], pos[1], pos[2]])
 
     chunks = []
 

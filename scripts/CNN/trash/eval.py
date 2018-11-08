@@ -1,3 +1,4 @@
+from __future__ import print_function
 import h5py
 import keras
 import sys
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     classification_model = loaded_model
 
     # and on cam1 sequence
-    print "Cam1"
+    print("Cam1")
     DATA_DIR = ROOT_DIR + '/data_cam1'
     with h5py.File(DATA_DIR + '/imgs_a_test.h5', 'r') as hf:
         X_test_a = hf['data'][:]
@@ -58,13 +59,13 @@ if __name__ == '__main__':
     y_predict = classification_model.predict([X_test_a, X_test_b])
     y_predict = np.reshape(y_predict, (y_predict.shape[0], ))
     y_predict = y_predict > 0.975
-    print y_predict
-    print y_predict.min(), y_predict.max(), np.mean(y_predict)
-    print y_predict.shape
+    print(y_predict)
+    print(y_predict.min(), y_predict.max(), np.mean(y_predict))
+    print(y_predict.shape)
     correct = y_predict == y_test
-    print correct.shape
-    print correct[0]
-    print np.sum(correct)
+    print(correct.shape)
+    print(correct[0])
+    print(np.sum(correct))
 
     total_correct = 0
     i = 0
@@ -75,17 +76,17 @@ if __name__ == '__main__':
 
         i += 6
 
-    print "Total correct: ", total_correct
+    print("Total correct: ", total_correct)
 
     correct_match = y_test[correct] == 1
     correct_match = np.sum(correct_match)
-    print correct_match, correct_match/float(y_predict.shape[0])
-    print
+    print(correct_match, correct_match/float(y_predict.shape[0]))
+    print()
 
     results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
-    print results
+    print(results)
 
-    print "cam3"
+    print("cam3")
     DATA_DIR = ROOT_DIR + '/data_cam3'
     with h5py.File(DATA_DIR + '/imgs_a_test.h5', 'r') as hf:
         X_test_a = hf['data'][:]
@@ -102,10 +103,10 @@ if __name__ == '__main__':
     X_test_b /= 255
 
     results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
-    print results
+    print(results)
 
 
-    print "zebrafish"
+    print("zebrafish")
     # and on zebrafish sequence
     DATA_DIR = ROOT_DIR + '/data_zebrafish'
     with h5py.File(DATA_DIR + '/imgs_a_test.h5', 'r') as hf:
@@ -123,4 +124,4 @@ if __name__ == '__main__':
     X_test_b /= 255
 
     results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
-    print results
+    print(results)

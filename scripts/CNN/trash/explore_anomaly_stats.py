@@ -1,3 +1,4 @@
+from __future__ import print_function
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
@@ -26,7 +27,7 @@ with h5py.File(WD + 'labels_multi_train.h5', 'r') as hf:
 with h5py.File(WD + 'penultimate_layer.h5', 'r') as hf:
     X = hf['data'][:]
 
-print X.shape
+print(X.shape)
 
 ids = np.unique(y)
 avg_vects = []
@@ -37,13 +38,13 @@ np.set_printoptions(precision=2)
 
 markers = ['^', '*', '.', '<', '+', '>', 'o']
 for i, id_ in enumerate(ids):
-    print id_
+    print(id_)
     avg_vects.append(np.mean(X[y == id_, :], axis=0))
     med_vects.append(np.median(X[y == id_, :], axis=0))
     std_vects.append(np.std(X[y == id_, :], axis=0))
 
-    print avg_vects[-1]
-    print std_vects[-1]
+    print(avg_vects[-1])
+    print(std_vects[-1])
 
     xx = np.array(range(len(avg_vects[-1]))) + i / float(len(ids) * 2)
     yy = avg_vects[-1]
@@ -60,7 +61,7 @@ for i in ids:
     for j in ids:
         C[i, j] = np.linalg.norm(avg_vects[i] - avg_vects[j])
 
-print C
+print(C)
 
 plt.legend([str(i) for i in ids])
 plt.grid()
@@ -74,21 +75,21 @@ percentiles5 = []
 f, axs = plt.subplots(3, 2, sharex=True, sharey=True, tight_layout=True)
 axs = axs.flatten()
 for id_ in ids:
-    print "*** ", id_
+    print("*** ", id_)
     d = np.linalg.norm(X[y == id_, :] - avg_vects[id_], axis=1)
     axs[id_].hist(d)
     axs[id_].set_title(str(id_))
     axs[id_].grid()
     percentiles1.append(-np.percentile(-d, 1))
     percentiles5.append(-np.percentile(-d, 5))
-    print d.min(), d.max(), np.mean(d), np.std(d), -np.percentile(-d, 1)
+    print(d.min(), d.max(), np.mean(d), np.std(d), -np.percentile(-d, 1))
     sorted_ids = np.argsort(-d)
 
     for i in range(10):
         ii = sorted_ids[i]
 
-        print y[y == id_][ii], d[ii]
-    print
+        print(y[y == id_][ii], d[ii])
+    print()
 
 plt.suptitle('argmax X == i distance to MEAN vector distribution')
 
@@ -96,21 +97,21 @@ plt.suptitle('argmax X == i distance to MEAN vector distribution')
 f, axs = plt.subplots(3, 2, sharex=True, sharey=True, tight_layout=True)
 axs = axs.flatten()
 for id_ in ids:
-    print "*** ", id_
+    print("*** ", id_)
     d = np.linalg.norm(X[y == id_, :] - med_vects[id_], axis=1)
     axs[id_].hist(d)
     axs[id_].set_title(str(id_))
     axs[id_].grid()
     percentiles1.append(-np.percentile(-d, 1))
     percentiles5.append(-np.percentile(-d, 5))
-    print d.min(), d.max(), np.mean(d), np.std(d), -np.percentile(-d, 1)
+    print(d.min(), d.max(), np.mean(d), np.std(d), -np.percentile(-d, 1))
     sorted_ids = np.argsort(-d)
 
     for i in range(10):
         ii = sorted_ids[i]
 
-        print y[y == id_][ii], d[ii]
-    print
+        print(y[y == id_][ii], d[ii])
+    print()
 
 plt.suptitle('argmax X == i distance to MEDIAN vector distribution')
 # plt.show()
@@ -207,7 +208,7 @@ for id, val in tqdm(dists.iteritems()):
             [int(cv2.IMWRITE_JPEG_QUALITY), 95])
 
 
-print num_anomalies
+print(num_anomalies)
 
 f, axs = plt.subplots(3, 2, sharex=True, sharey=True, tight_layout=True)
 axs = axs.flatten()

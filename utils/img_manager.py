@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import cv2
 
@@ -231,7 +232,7 @@ class ImgManager:
                 scaley = max_height / (cr_height + 0.0)
             if cr_width > max_width and max_width > 0:
                 scalex = max_width / (cr_width + 0.0)
-            print "scalex: %s, scaley: %s" % (scalex, scaley)
+            print("scalex: %s, scaley: %s" % (scalex, scaley))
 
             if not constant_propotions:
                 # scale exactly to [max_height, or max_width]
@@ -377,7 +378,7 @@ if __name__ == "__main__":
     import random
     image = get_image(im_manager)
     cv2.imshow("im", image)
-    print "Press SPACE to show another image"
+    print("Press SPACE to show another image")
     key = cv2.waitKey(0)
     while key == 32:
         rnd = random.randint(0, 10)
@@ -389,4 +390,4 @@ if __name__ == "__main__":
         # print "Time taken: %s" % (time.time() - t)
         cv2.imshow("im", image)
         key = cv2.waitKey(0)
-    print "done"
+    print("done")

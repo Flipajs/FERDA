@@ -1,3 +1,4 @@
+from __future__ import print_function
 from reportlab.graphics.barcode.widgets import _BarcodeWidget
 
 __author__ = 'filip@naiser.cz'
@@ -13,7 +14,7 @@ import math
 
 
 def crit(ant1, ant2, mser):
-    print mser
+    print(mser)
 
     a1r0, a1c0, a1r1, a1c1 = region_size(ant1['region']['rle'])
     a2r0, a2c0, a2r1, a2c1 = region_size(ant2['region']['rle'])
@@ -21,13 +22,13 @@ def crit(ant1, ant2, mser):
 
     reg = create_region_img(mser['rle'], margin)
     reg = scipy.misc.imresize(reg, 0.25)
-    print reg.shape
+    print(reg.shape)
     ant1_reg = create_region_img(ant1['region']['rle'], 1, square=True)
     ant1_reg = scipy.misc.imresize(ant1_reg, 0.25)
-    print ant1_reg.shape
+    print(ant1_reg.shape)
     ant2_reg = create_region_img(ant2['region']['rle'], 1, square=True)
     ant2_reg = scipy.misc.imresize(ant2_reg, 0.25)
-    print ant2_reg.shape
+    print(ant2_reg.shape)
 
     plt.imshow(ant1_reg, cmap='gray')
     plt.show()
@@ -46,7 +47,7 @@ def crit(ant1, ant2, mser):
     p_s = 2
     p_s1 = p_s + 1
 
-    min_score = sys.maxint
+    min_score = sys.maxsize
     min_params = []
 
     for th1 in range(0, 180, 25):
@@ -56,7 +57,7 @@ def crit(ant1, ant2, mser):
                     for pos2_x in range(cx - p_s*x_step, cx+p_s1*x_step, x_step):
                         for pos2_y in range(cy - p_s*y_step, cy+p_s1*y_step, y_step):
                             score = count_score((pos1_y, pos1_y), th1, (pos2_y, pos2_x), th2, reg, ant1_reg, ant2_reg)
-                            print th1, th2, pos1_x, pos1_y, pos2_x, pos2_y
+                            print(th1, th2, pos1_x, pos1_y, pos2_x, pos2_y)
                             if score < min_score:
                                 min_score = score
                                 min_params = {'th1': th1, 'th2': th2, 'pos1_x': pos1_x, 'pos1_y': pos1_y, 'pos2_x': pos2_x, 'pos2_y': pos2_y, 'score': score}
@@ -64,8 +65,8 @@ def crit(ant1, ant2, mser):
 
     #score = count_score((cy, cx), 10, (cy, cx), 70, reg, ant1_reg, ant2_reg)
     end = time.time()
-    print min_params
-    print end - start
+    print(min_params)
+    print(end - start)
 
 
 def count_score(ant1_pos, ant1_theta, ant2_pos, ant2_theta, region, ant1_reg, ant2_reg):
@@ -140,7 +141,7 @@ def count_margin(a1_weight, a1_height, a2_weight, a2_height):
 
 def region_size(rle):
     row_start = rle[0]['line']
-    col_start = sys.maxint
+    col_start = sys.maxsize
     col_end = 0
 
     for l in rle:

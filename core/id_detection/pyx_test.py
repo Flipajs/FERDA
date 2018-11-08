@@ -1,7 +1,9 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import pyximport; pyximport.install()
 
-import features2
-from feature_manager import FeatureManager
+from . import features2
+from .feature_manager import FeatureManager
 from utils.misc import print_progress
 
 if __name__ == '__main__':
@@ -42,4 +44,4 @@ if __name__ == '__main__':
     for r in regions:
         features2.get_idtracker_features(r, p)
 
-    print time.time() - t
+    print(time.time() - t)

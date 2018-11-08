@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import cv2
 from PyQt4 import QtGui
@@ -94,7 +95,7 @@ class GraphWidgetLoader(QtGui.QWidget):
             self.region_manager = self.project.rm
             self.graph = self.graph_manager.g
         else:
-            print "No project set!"
+            print("No project set!")
 
     def prepare_vertices(self, frames):
         if frames is None:

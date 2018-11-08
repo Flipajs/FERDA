@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 __author__ = 'fnaiser'
 
 
@@ -8,17 +10,17 @@ from functools import partial
 import numpy as np
 from PyQt4 import QtGui, QtCore
 
-from case_widget import CaseWidget
+from .case_widget import CaseWidget
 from core.log import LogCategories, ActionNames
 from core.region.region import Region
-from fitting_threading_manager import FittingThreadingManager
+from .fitting_threading_manager import FittingThreadingManager
 from gui.gui_utils import get_img_qlabel
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from gui.loading_widget import LoadingWidget
 from gui.results.noise_filter_computer import NoiseFilterComputer
 from gui.settings import Settings as S_
 from gui.view.graph_visualizer import call_visualizer
-from new_region_widget import NewRegionWidget
+from .new_region_widget import NewRegionWidget
 from core.config import config
 
 
@@ -139,7 +141,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
     def new_region(self, t_offset=-1):
         if t_offset < 0:
             t_offset = self.active_cw.active_col
-            print t_offset
+            print(t_offset)
             if t_offset < 0:
                 return
 
@@ -471,11 +473,11 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             vertex = self.active_cw.active_node
 
             if vertex.in_degree() < 2 and vertex.out_degree() > 1:
-                print "Out degree > 0"
+                print("Out degree > 0")
                 return
 
             if vertex.in_degree() < 2:
-                print "In degree < 2"
+                print("In degree < 2")
                 return
 
             chunk, _ = self.project.gm.is_chunk(vertex)
@@ -539,7 +541,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             self.confirm_edges(pairs)
 
     def path_confirm(self):
-        print "PATH CONFIRM"
+        print("PATH CONFIRM")
         n = self.active_cw.active_node
         if n:
             cw = self.active_cw
@@ -547,7 +549,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
             edges = []
 
-            print "WHILE"
+            print("WHILE")
             while True:
                 finish = True
                 for _, n1, n2 in conf:
@@ -560,7 +562,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 if finish:
                     break
 
-            print "END"
+            print("END")
 
             self.confirm_edges(edges)
 

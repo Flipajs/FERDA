@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import sys
 import os
 sys.path.append (os.path.dirname(os.path.abspath("aa.tx")));
@@ -5,7 +7,7 @@ from core.project.project import Project
 import subprocess
 from subprocess import call
 import glob
-from change_property import change_pr
+from .change_property import change_pr
 import shutil
 import numpy as np
 

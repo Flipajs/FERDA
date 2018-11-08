@@ -1,3 +1,4 @@
+from __future__ import print_function
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -85,8 +86,8 @@ if __name__ == '__main__':
     labels_test = np.array(labels[:split_idx])
     labels_train = np.array(labels[split_idx:])
 
-    print "imgs TEST: {}, TRAIN: {}".format(imgs_test.shape, imgs_train.shape)
-    print "labels TEST: {}, TRAIN: {}".format(labels_test.shape, labels_train.shape)
+    print("imgs TEST: {}, TRAIN: {}".format(imgs_test.shape, imgs_train.shape))
+    print("labels TEST: {}, TRAIN: {}".format(labels_test.shape, labels_train.shape))
 
 
     outdir = args.datadir[0]

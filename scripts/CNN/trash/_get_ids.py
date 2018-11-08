@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import pickle
 WD = '/Users/flipajs/Documents/dev/ferda/scripts/out9'
@@ -8,7 +9,7 @@ for id in range(6):
         rids.append(fname.split('_')[-1][:-4])
 
 rids = set(rids)
-print len(rids)
+print(len(rids))
 
 with open(WD+'/rids.pkl', 'wb') as f:
     pickle.dump(rids, f)

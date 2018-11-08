@@ -1,7 +1,9 @@
+from __future__ import print_function
+from __future__ import absolute_import
 __author__ = 'fnaiser'
 
 import numpy as np
-from reduced import Reduced
+from .reduced import Reduced
 from utils.constants import EDGE_CONFIRMED
 from core.log import LogCategories, ActionNames
 from core.region.region import Region
@@ -99,11 +101,11 @@ class Chunk:
         s = "TRACKLET --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
         s += "\tstarts at: "+str(self.start_frame(gm))+" ends at: "+str(self.end_frame(gm))
 
-        print s
+        print(s)
 
     def append_left(self, vertex, gm, undo_action=False):
         if int(vertex) == 4:
-            print vertex
+            print(vertex)
 
         # test: there cannot be any outgoing edge...
         out_edges = [e for e in vertex.out_edges()]

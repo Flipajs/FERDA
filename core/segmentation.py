@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import absolute_import
 
 __author__ = 'fnaiser'
 import inspect
@@ -25,7 +26,7 @@ import cPickle as pickle
 from core.region.mser import get_filtered_msers
 from core.graph.solver import Solver
 from core.project.project import Project
-from config import config
+from .config import config
 from utils.img import prepare_for_segmentation
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager

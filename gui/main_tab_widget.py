@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 from collections import OrderedDict
 from functools import partial
@@ -168,7 +169,7 @@ class MainTabWidget(QtGui.QWidget):
                 self.tabs.setTabEnabled(i, False)
 
     def reload_ids(self):
-        print "RELOADING"
+        print("RELOADING")
         import cPickle as pickle
         try:
             with open(self.project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
@@ -198,7 +199,7 @@ class MainTabWidget(QtGui.QWidget):
         self.results_tab.highlight_area(data, radius=100)
 
     def background_computer_finished(self, solver):
-        print "GRAPH LOADED"
+        print("GRAPH LOADED")
         self.solver = solver
         self.results_tab.solver = solver
 

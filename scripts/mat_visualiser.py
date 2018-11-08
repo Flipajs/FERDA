@@ -1,3 +1,4 @@
+from __future__ import print_function
 import math
 
 from PyQt4 import QtGui, QtCore
@@ -231,7 +232,7 @@ class ResultsWidget(QtGui.QWidget):
 
     @staticmethod
     def marker_changed(id_):
-        print id_
+        print(id_)
 
     def update_marker_position(self, marker, c):
         sf = self.project.other_parameters.img_subsample_factor
@@ -399,7 +400,7 @@ class ResultsWidget(QtGui.QWidget):
                 self.out_of_frames()
 
         if self.video.frame_number() == self.highlight_marker2nd_frame:
-            print "SHOW"
+            print("SHOW")
             self.scene.addItem(self.highlight_marker2nd)
             self.highlight_timer2nd.start(50)
             self.highlight_marker2nd_frame = -1
@@ -523,7 +524,7 @@ def get_chunks_from_mat(mat):
     return chunks
 
 def print_id(id_):
-    print id_
+    print(id_)
 
 if __name__ == "__main__":
     import sys

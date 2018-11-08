@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -80,7 +81,7 @@ if __name__ == '__main__':
 
 
     K = len(np.unique(y_test))
-    print "K: ", K
+    print("K: ", K)
 
     y_test = np_utils.to_categorical(y_test, K)
 
@@ -95,13 +96,13 @@ if __name__ == '__main__':
     X_test_random = X_test[odd_ids, :, :, :]
     y_test_random = y_test[odd_ids, :]
 
-    print X_test_consecutive.shape
-    print X_test_random.shape
-    print y_test_consecutive.shape
-    print y_test_random.shape
+    print(X_test_consecutive.shape)
+    print(X_test_random.shape)
+    print(y_test_consecutive.shape)
+    print(y_test_random.shape)
 
     # print "train shape", X_train.shape
-    print "train size: ", 9*X_test_consecutive.shape[0], "test shape", X_test.shape, "y", y_test.shape
+    print("train size: ", 9*X_test_consecutive.shape[0], "test shape", X_test.shape, "y", y_test.shape)
 
     # 3. Import libraries and modules
     np.random.seed(123)  # for reproducibility
@@ -155,7 +156,7 @@ if __name__ == '__main__':
     classification_model.summary()
 
     if CONTINUE:
-        print "Using last saved weights as initialisation"
+        print("Using last saved weights as initialisation")
         from keras.models import model_from_json
 
         json_file = open(DATA_DIR+"/"+OUT_NAME+".json", 'r')
@@ -182,22 +183,22 @@ if __name__ == '__main__':
     best_eval_consecutive = 0
     best_eval_random = 0
     for e in range(NUM_EPOCHS):
-        print e
+        print(e)
         classification_model.fit_generator(myGenerator(), SAMPLES, epochs=1, verbose=1)
 
         # 10. Evaluate model on test data
         results = classification_model.evaluate(X_test_consecutive, y_test_consecutive, verbose=1)
-        print "CONSECUTIVE", results
+        print("CONSECUTIVE", results)
 
         if results[1] > best_eval_consecutive:
             best_eval_consecutive = results[1]
-            print "saving weights"
+            print("saving weights")
             classification_model.save_weights(DATA_DIR+"/"+OUT_NAME+".h5")
 
         results = classification_model.evaluate(X_test_random, y_test_random, verbose=1)
-        print "RANDOM", results
+        print("RANDOM", results)
 
         if results[1] > best_eval_random:
             best_eval_random = results[1]
-            print "saving weights"
+            print("saving weights")
             classification_model.save_weights(DATA_DIR + "/" + OUT_NAME + "_rand.h5")

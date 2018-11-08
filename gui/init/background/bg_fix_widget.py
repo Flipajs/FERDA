@@ -1,3 +1,4 @@
+from __future__ import print_function
 from PyQt4 import QtGui, QtCore
 from gui.img_controls.my_view import MyView
 import cv2
@@ -124,12 +125,12 @@ class BgFixWidget(QtGui.QWidget):
     def fix_image(self):
         if self.image is not None:
             if self.pos_marker is None:
-                print "No area selected. Please select area to fix first."
+                print("No area selected. Please select area to fix first.")
                 # self.statusBar().showMessage("No area selected. Please select area to fix first.")
             elif self.copy_marker is not None:
                 successed = self.correct_background()
                 if not successed:
-                    print "One or both of the rectangles is not entirely in the image."
+                    print("One or both of the rectangles is not entirely in the image.")
                     # self.statusBar().showMessage("One or both of the rectangles is not entirely in the image.")
                 else:
                     self.remove_copy_marker()

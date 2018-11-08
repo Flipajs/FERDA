@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 __author__ = 'filip@naiser.cz'
 
 from clearmetrics import clearmetrics
-from trajectories_data import eight_ctrax, eight_gt, eight_idtracker, eight_ktrack
+from .trajectories_data import eight_ctrax, eight_gt, eight_idtracker, eight_ktrack
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from numpy import *

@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 import pickle
 import matplotlib as mpl
@@ -10,7 +11,7 @@ if __name__ == '__main__':
     with open('/Users/fnaiser/Documents/graphs2/chunks.pkl', 'rb') as f:
         chunks = pickle.load(f)
 
-    print len(chunks)
+    print(len(chunks))
 
     fig = plt.figure()
     ax = fig.gca(projection='3d')

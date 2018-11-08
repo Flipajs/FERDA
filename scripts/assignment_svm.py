@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 __author__ = 'fnaiser'
 
 import pickle
@@ -21,7 +23,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from skimage.morphology import convex_hull_image
 
-import ant_number_svm
+from . import ant_number_svm
 
 WORKING_DIR = '/Users/fnaiser/Documents/chunks'
 
@@ -185,13 +187,13 @@ def get_svm_model():
 
     clf = svm.SVC(kernel='linear', probability=True, class_weight='auto')
 
-    print clf.fit(X, classes)
-    print clf.support_vectors_
-    print clf.dual_coef_
-    print clf.intercept_
-    print
-    print clf.support_
-    print clf.n_support_
+    print(clf.fit(X, classes))
+    print(clf.support_vectors_)
+    print(clf.dual_coef_)
+    print(clf.intercept_)
+    print()
+    print(clf.support_)
+    print(clf.n_support_)
 
     # ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], clf.support_vectors_[:, 2], c='g', s=100, alpha=1.0)
     # plt.show()
@@ -227,7 +229,7 @@ if __name__ == '__main__':
     x2 = get_x(r1, r2, np.array([0, 0]))
 
     p = svm_model.predict_proba([x1, x2])
-    print p
+    print(p)
 
 
 

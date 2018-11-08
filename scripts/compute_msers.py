@@ -1,3 +1,4 @@
+from __future__ import print_function
 import math
 
 # # -*- coding: utf-8 -*-
@@ -50,4 +51,4 @@ import math
 
 
 if __name__ == '__main__':
-    print math.factorial(1000)
+    print(math.factorial(1000))

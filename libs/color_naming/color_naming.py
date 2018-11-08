@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from pkg_resources import resource_filename, Requirement
 import cPickle as pickle
@@ -168,7 +169,7 @@ if __name__ == '__main__':
     cs = []
     step = 7
     for r in range(0, 255, step):
-        print r
+        print(r)
         for g in range(0, 255, step):
             for b in range(0, 255, step):
                 id_ = int(np.floor(r / 8) + 32 * np.floor(g / 8) + 32 * 32 * np.floor(b / 8))
@@ -193,12 +194,12 @@ if __name__ == '__main__':
 
     time1 = time.time()
     ColorNaming.im2c(im, out_type='probability_vector')
-    print time.time() - time1
+    print(time.time() - time1)
 
     time1 = time.time()
     ColorNaming.im2c(im, out_type='probability_vector')
-    print time.time() - time1
+    print(time.time() - time1)
 
     time1 = time.time()
     ColorNaming.im2c(im, out_type='probability_vector')
-    print time.time() - time1
+    print(time.time() - time1)

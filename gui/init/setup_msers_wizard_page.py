@@ -1,3 +1,4 @@
+from __future__ import print_function
 import cPickle as pickle
 import sys
 import time
@@ -763,7 +764,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         # self.left_panel.layout().addWidget(self.button_done)
 
     def reset_classifier(self):
-        print "reseting pixel classifier..."
+        print("reseting pixel classifier...")
 
         self.painter.reset_masks()
         self.helper.rfc = None

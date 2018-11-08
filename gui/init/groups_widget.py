@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 
 import sys
@@ -94,7 +95,7 @@ class GroupsWidget(QtGui.QWidget):
         return w
 
     def edit(self, id):
-        print id
+        print(id)
         self.new_class_widget.show()
         self.name.setText(self.groups[id].name)
         self.description.setPlainText(self.groups[id].description)

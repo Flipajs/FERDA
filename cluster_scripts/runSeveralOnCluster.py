@@ -1,9 +1,11 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import sys
 import os
 import datetime
 import shutil
-import auxForRunSeveral as ars
-import prepare_for_cluster as pfc
+from . import auxForRunSeveral as ars
+from . import prepare_for_cluster as pfc
 import subprocess
 
 # Usage:
@@ -208,7 +210,7 @@ if ((answer == 'y') or (answer == 'Y')):
 
         pos = r.find("Your job-array ");
         if pos != -1:  #This was a job submission
-            print("FOUND "+str(pos)+" .. \t"),
+            print(("FOUND "+str(pos)+" .. \t"), end=' ')
             r2 = r[pos+15:];
             jobNumber = int(r2[:r2.find('.')]);
             firstJobSubmitted = True;

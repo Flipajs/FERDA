@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import cPickle as pickle
 import operator
 import sys
@@ -13,7 +15,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
-from features import get_basic_properties, get_colornames_hists, get_colornames_and_basic
+from .features import get_basic_properties, get_colornames_hists, get_colornames_and_basic
 from utils.img_manager import ImgManager
 from utils.video_manager import get_auto_video_manager
 import itertools
@@ -220,7 +222,7 @@ class LearningProcess:
             #     self.collision_chunks.add(t.id())
 
         print_progress(expected_sum, expected_sum, "", "LOADED")
-        print len(self.features), len(self.collision_chunks)
+        print(len(self.features), len(self.collision_chunks))
         self.update_undecided_tracklets()
         self.progressbar_callback(False)
 
@@ -252,7 +254,7 @@ class LearningProcess:
         # print "total time: ", time.time() - time_
 
     def compute_features_mp(self):
-        print "computing features... (MP)"
+        print("computing features... (MP)")
         t = time.time()
         # set num cores to 1, so parallelisation works
         import cv2
@@ -287,11 +289,11 @@ class LearningProcess:
             p.join()
 
         print_progress(num_frames, num_frames, "features computation in progress:", "FINIHSED")
-        print "all joined"
+        print("all joined")
 
         # set back to default
         cv2.setNumThreads(default_num_threads)
-        print "total time: ", time.time() - t
+        print("total time: ", time.time() - t)
 
     def set_eps_certainty(self, eps):
         self._eps_certainty = eps
@@ -307,7 +309,7 @@ class LearningProcess:
             try:
                 self.__precompute_measurements(only_unknown=True)
             except Exception as e:
-                print e
+                print(e)
 
         except AttributeError:
             pass
@@ -337,9 +339,9 @@ class LearningProcess:
             min_weighted_difs[i, :] += difs
 
         for i in range(num_a):
-            print i, min_weighted_difs[i, :] / total_len[i]
+            print(i, min_weighted_difs[i, :] / total_len[i])
 
-        print self.classifier.feature_importances_
+        print(self.classifier.feature_importances_)
 
     def load_learning(self):
         try:
@@ -356,11 +358,11 @@ class LearningProcess:
                 self.load_features()
 
         except Exception as e:
-            print e
+            print(e)
 
     def save_learning(self):
         with open(self.p.working_directory+'/learning.pkl', 'wb') as f:
-            print "SAVING learning.pkl"
+            print("SAVING learning.pkl")
             d = {'user_decisions': self.user_decisions,
                  'undecided_tracklets': self.undecided_tracklets,
                  'measurements': self.tracklet_measurements,
@@ -374,7 +376,7 @@ class LearningProcess:
             pickle.dump(d, f)
 
     def update_undecided_tracklets(self):
-        print "Updating undecided tracklets..."
+        print("Updating undecided tracklets...")
         self.undecided_tracklets = set()
         for t in tqdm(self.p.chm.chunk_gen()):
             if not t.is_single() or t.length() < self.min_tracklet_len:
@@ -408,13 +410,13 @@ class LearningProcess:
                 self.question_callback(best_candidate_tracklet)
 
             if id_ > -1:
-                print 'Human in the loop says: tracklet id: {} is animal ID: {}'.format(best_candidate_tracklet.id(), id_)
+                print('Human in the loop says: tracklet id: {} is animal ID: {}'.format(best_candidate_tracklet.id(), id_))
                 self.assign_identity(id_, best_candidate_tracklet)
                 return True
             else:
-                print "DEBUG_get_answer didn't returned an ID"
+                print("DEBUG_get_answer didn't returned an ID")
         except:
-            print "human in the loop failed"
+            print("human in the loop failed")
 
         return False
 
@@ -422,7 +424,7 @@ class LearningProcess:
         gt_id_ = self.__DEBUG_get_answer_from_GT(tracklet)
 
         if gt_id_ == -1:
-            print "DEBUG: GT info not available. Tracklet id: ", tracklet.id()
+            print("DEBUG: GT info not available. Tracklet id: ", tracklet.id())
             return True
 
         return gt_id_ == id_
@@ -530,10 +532,10 @@ class LearningProcess:
                 if r_id not in self.not_reliable_rids:
                     probs.append(self.cnn_results_map[r_id])
             else:
-                print "ch id: {}, rid: {} missing in cnn_results_map".format(t.id(), r_id)
+                print("ch id: {}, rid: {} missing in cnn_results_map".format(t.id(), r_id))
 
         if len(probs) == 0:
-            print "probs len == 0, setting probs to uniform"
+            print("probs len == 0, setting probs to uniform")
             probs.append([1/float(len(self.p.animals)) for i in range(len(self.p.animals))])
 
         probs = np.array(probs)
@@ -559,10 +561,10 @@ class LearningProcess:
             if min(y) >= self.rf_retrain_up_to_min and not init:
                 return False
 
-            print "TRAINING RFC", y
+            print("TRAINING RFC", y)
             t = time.time()
             self.classifier.fit(self.__tid2features(), self.y)
-            print "t: {:.2f}s".format(time.time() - t)
+            print("t: {:.2f}s".format(time.time() - t))
             self.__precompute_measurements()
 
             return y
@@ -571,7 +573,7 @@ class LearningProcess:
 
     def __precompute_measurements(self, only_unknown=False):
         from tqdm import tqdm
-        print "Computing ID probability distributions..."
+        print("Computing ID probability distributions...")
         for t_id in tqdm(self.undecided_tracklets):
             tracklet = self.p.chm[t_id]
             if only_unknown:
@@ -597,7 +599,7 @@ class LearningProcess:
                 x = np.random.rand(len(self.p.animals)) * 0
                 stds = np.random.rand(len(self.p.animals))
                 if self.verbose > 2:
-                    print "features missing for ", tracklet.id()
+                    print("features missing for ", tracklet.id())
 
             self.tracklet_measurements[tracklet.id()] = x
             self.tracklet_stds[tracklet.id()] = stds
@@ -615,7 +617,7 @@ class LearningProcess:
         features = {}
         i = 0
 
-        print "COMPUTING FEATURES..."
+        print("COMPUTING FEATURES...")
         ch_num = len(self.p.chm)
 
         for ch in self.p.chm.chunk_gen():
@@ -629,7 +631,7 @@ class LearningProcess:
 
             print_progress(i, ch_num)
         print_progress(ch_num, ch_num)
-        print "DONE"
+        print("DONE")
 
         return features
 
@@ -646,12 +648,12 @@ class LearningProcess:
         areas = np.array(areas)
         area_mean_thr = np.mean(areas) + 2*np.std(areas)
 
-        print "SINGLE / MERGED human_iloop_classification..."
-        print "MEAN: {} STD: {} ".format(np.mean(areas), np.std(areas))
-        print "THRESHOLD = ", area_mean_thr
+        print("SINGLE / MERGED human_iloop_classification...")
+        print("MEAN: {} STD: {} ".format(np.mean(areas), np.std(areas)))
+        print("THRESHOLD = ", area_mean_thr)
 
 
-        print "ALL CHUNKS:", len(self.p.chm)
+        print("ALL CHUNKS:", len(self.p.chm))
         # filtered = []
 
         i = 0
@@ -773,7 +775,7 @@ class LearningProcess:
         if len(self.X) - self.old_x_size > self.min_new_samples_to_retrain:
             t = time.time()
             if self.train():
-                print "RETRAIN t:", time.time() - t
+                print("RETRAIN t:", time.time() - t)
                 self.old_x_size = len(self.X)
                 self.next_step()
                 return True
@@ -783,7 +785,7 @@ class LearningProcess:
         try:
             best_tracklet_id = max(self.tracklet_certainty.iteritems(), key=operator.itemgetter(1))[0]
         except ValueError:
-            print len(self.tracklet_certainty), len(self.undecided_tracklets)
+            print(len(self.tracklet_certainty), len(self.undecided_tracklets))
 
         best_tracklet = self.p.chm[best_tracklet_id]
 
@@ -813,7 +815,7 @@ class LearningProcess:
             if len(self.X) - self.old_x_size > self.min_new_samples_to_retrain:
                 t = time.time()
                 self.train()
-                print "RETRAIN t:", time.time() - t
+                print("RETRAIN t:", time.time() - t)
                 self.old_x_size = len(self.X)
                 self.next_step()
                 return True
@@ -850,14 +852,14 @@ class LearningProcess:
                     if r_id in self.cnn_results_map:
                         probs.append(self.cnn_results_map[r_id])
                     else:
-                        print "ch id: {}, rid: {} missing in cnn_results_map".format(ch.id(), r_id)
+                        print("ch id: {}, rid: {} missing in cnn_results_map".format(ch.id(), r_id))
 
                 probs = np.array(probs)
             else:
                 probs = self.classifier.predict_proba(np.array(X))
             if debug:
-                print "Probs:"
-                print probs
+                print("Probs:")
+                print(probs)
 
                 wprobs = np.copy(probs)
                 for i in range(probs.shape[0]):
@@ -872,14 +874,14 @@ class LearningProcess:
                 plt.show()
                 plt.ion()
         except:
-            print X, ch.id()
+            print(X, ch.id())
 
         if debug:
-            print "anomaly probs:"
-            print anomaly_probs
+            print("anomaly probs:")
+            print(anomaly_probs)
 
         if len(probs) == 0:
-            print "empty", ch.id(), probs
+            print("empty", ch.id(), probs)
 
         probs = probs * anomaly_probs[:, np.newaxis]
         stds = np.std(probs, 0, ddof=1)
@@ -888,8 +890,8 @@ class LearningProcess:
         # probs /= float(len(X))
 
         if debug:
-            print "Probs: ", probs
-            print "STDS: ", stds
+            print("Probs: ", probs)
+            print("STDS: ", stds)
 
         # # normalise
         # if np.sum(probs) > 0:
@@ -1152,7 +1154,7 @@ class LearningProcess:
                     # TODO:
                     if p1_competitor > 0.5:
                         term1 *= 1 - p1_competitor
-                        print "term1: p1_competitor is too high in certainty computation for ", tracklet.id(), "in comparison with ", t.id(), p1_competitor
+                        print("term1: p1_competitor is too high in certainty computation for ", tracklet.id(), "in comparison with ", t.id(), p1_competitor)
                     # elif p1_competitor > 0.4:
                     #     print "term1: p1_competitor is too high in certainty computation for ", tracklet.id(), "in comparison with ", t.id(), p1_competitor
                     # elif p1_competitor > 0.6:
@@ -1164,7 +1166,7 @@ class LearningProcess:
                         break
 
                 except KeyError:
-                    print "KeyError", t.id()
+                    print("KeyError", t.id())
                     pass
 
             for i in range(len(self.p.animals)):
@@ -1239,7 +1241,7 @@ class LearningProcess:
                     term1 *= 1 - p1_competitor
 
                     if p1_competitor > 0.5 and print_p1_competitor:
-                        print "term1: p1_competitor is too high in certainty computation for ", tracklet.id() , "in comparison with ", t.id(), p1_competitor
+                        print("term1: p1_competitor is too high in certainty computation for ", tracklet.id() , "in comparison with ", t.id(), p1_competitor)
                 except KeyError:
                     pass
 
@@ -1328,7 +1330,7 @@ class LearningProcess:
 
         if len(P.intersection(N)) > 0:
             self.consistency_violated = True
-            print "WARNING: inconsistency in learning_process.", P, N
+            print("WARNING: inconsistency in learning_process.", P, N)
             # print "Intersection of DefinitelyPresent and DefinitelyNotPresent is NOT empty!!!"
 
             return False
@@ -1353,10 +1355,10 @@ class LearningProcess:
         if depth > 5:
             return
 
-        print "DEPTH ", depth
+        print("DEPTH ", depth)
 
         self.print_tracklet(tracklet)
-        print "CONFLICTS with", conflicts
+        print("CONFLICTS with", conflicts)
         for t in conflicts:
             self.print_tracklet(t)
 
@@ -1415,8 +1417,8 @@ class LearningProcess:
         self.last_id = tracklet.id()
         # consistency check
         if not self.__consistency_check_PN(P, N):
-            print "ID P, N CONFLICT: ", tracklet.id(), P, N
-            print "IN CONFLICT WITH: "
+            print("ID P, N CONFLICT: ", tracklet.id(), P, N)
+            print("IN CONFLICT WITH: ")
             # for tc in self.__find_conflict(tracklet, list(tracklet.P)[0]):
             #     print tc.id(), tc, tc.segmentation_class
             # TODO: CONFLICT
@@ -1425,7 +1427,7 @@ class LearningProcess:
 
         # propagate changes
         if tracklet.is_single() and len(N) == len(self.p.animals):
-            print "CONFLICT in update_N, tracklet-id: {}".format(tracklet.id())
+            print("CONFLICT in update_N, tracklet-id: {}".format(tracklet.id()))
 
         tracklet.N = N
 
@@ -1485,10 +1487,10 @@ class LearningProcess:
     def print_tracklet(self, tracklet):
         tracklet.print_info(self.p.gm)
         try:
-            print "\tGT id: ", self.__DEBUG_get_answer_from_GT(tracklet)
+            print("\tGT id: ", self.__DEBUG_get_answer_from_GT(tracklet))
         except:
             pass
-        print "\tP:", tracklet.P, " N: ", tracklet.N
+        print("\tP:", tracklet.P, " N: ", tracklet.N)
 
     def __if_possible_update_N(self, tracklet, present_tracklet, ids):
         """
@@ -1653,7 +1655,7 @@ class LearningProcess:
             lr.fit(X, y)
             self.LR_region_anomaly = lr
         except Exception as e:
-            print e
+            print(e)
 
         # for t in self.p.chm.chunk_gen():
         #     if not t.is_single():
@@ -1664,7 +1666,7 @@ class LearningProcess:
 
         ret = None
         # ret = self.train(init=True, use_xgboost=use_xgboost)
-        print "TRAINING FINISHED"
+        print("TRAINING FINISHED")
 
         return ret
 
@@ -1686,15 +1688,15 @@ class LearningProcess:
         """
 
         if tracklet.is_track():
-            print "Track"
+            print("Track")
 
         if not isinstance(id_, int):
-            print "FAIL in learning_process.py assign_identity, id is not a number"
+            print("FAIL in learning_process.py assign_identity, id is not a number")
 
         if user:
             if tracklet.id() in self.collision_chunks:
                 self.collision_chunks.discard(tracklet.id())
-                print "Fixing tracklet wrongly labeled as OVERSEGMENTED"
+                print("Fixing tracklet wrongly labeled as OVERSEGMENTED")
 
             self.user_decisions.append({'tracklet_id_set': tracklet.id(), 'type': 'P', 'ids': [id_]})
 
@@ -1707,9 +1709,9 @@ class LearningProcess:
                 pass
 
         if self.verbose > 2:
-            print "ASSIGNING ID: ", id_, " to tracklet: ", tracklet.id(), "length: ", tracklet.length(), "start: ", tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)
+            print("ASSIGNING ID: ", id_, " to tracklet: ", tracklet.id(), "length: ", tracklet.length(), "start: ", tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm))
             try:
-                print "\t\tcertainty: ", self.tracklet_certainty[tracklet.id()], " measurements: ", self.tracklet_measurements[tracklet.id()]
+                print("\t\tcertainty: ", self.tracklet_certainty[tracklet.id()], " measurements: ", self.tracklet_measurements[tracklet.id()])
             except:
                 pass
 
@@ -1731,7 +1733,7 @@ class LearningProcess:
 
         if tracklet.id() in self.collision_chunks:
             if self.verbose > 2:
-                print tracklet.id(), "in collision chunks"
+                print(tracklet.id(), "in collision chunks")
             return
 
         if learn:
@@ -1766,11 +1768,11 @@ class LearningProcess:
         old_P = set(tracklet.P)
         old_N = set(tracklet.N)
 
-        print "edit tracklet old P", old_P, "old N", old_N, "new P", new_P, "new N", new_N, method, tracklet
+        print("edit tracklet old P", old_P, "old N", old_N, "new P", new_P, "new N", new_N, method, tracklet)
 
         if method == 'fix_affected':
             for t in self._get_affected_undecided_tracklets(tracklet):
-                print t
+                print(t)
         elif method == 'fix_tracklet_only':
             # TODO: check conflict?
             tracklet.N = new_N
@@ -1931,7 +1933,7 @@ class LearningProcess:
         if len(cs1) == 1:
             matching = [[cs1[cs1.keys()[0]], cs2[cs2.keys()[0]]]]
 
-            print "\t 1on1", cs1.keys(), cs2.keys()
+            print("\t 1on1", cs1.keys(), cs2.keys())
 
             return matching, 0
 
@@ -2062,7 +2064,7 @@ class LearningProcess:
         self.reset_learning()
 
         # self.train()
-        from tracklet_complete_set import TrackletCompleteSet
+        from .tracklet_complete_set import TrackletCompleteSet
 
         groups = []
         unique_tracklets = set()
@@ -2073,8 +2075,8 @@ class LearningProcess:
         frame = 0
         i = 0
         old_frame = 0
-        print "analysing project, searching Complete Sets"
-        print
+        print("analysing project, searching Complete Sets")
+        print()
         with tqdm(total=total_frame_count) as pbar:
             while True:
                 group = self.p.chm.tracklets_in_frame(frame)
@@ -2103,7 +2105,7 @@ class LearningProcess:
         np.set_printoptions(precision=2)
 
         while(len(groups) != last_len):
-            print "############## ", ii, len(groups)
+            print("############## ", ii, len(groups))
 
             last_len = len(groups)
             groups = self._process_groups(groups)
@@ -2119,7 +2121,7 @@ class LearningProcess:
 
                         already_computed.add(t)
 
-        print "#not solved CS: {}, sum length of unassigned: {}".format(len(groups), unassigned_l)
+        print("#not solved CS: {}, sum length of unassigned: {}".format(len(groups), unassigned_l))
 
         return
 
@@ -2173,22 +2175,22 @@ class LearningProcess:
             tcs_right = TCS[tcs2_id]
 
             if tcs_left in invalid_TCS:
-                print "DROPING: ", tcs1_id
+                print("DROPING: ", tcs1_id)
                 continue
 
             if tcs_right in invalid_TCS:
-                print "DROPING: ", tcs2_id
+                print("DROPING: ", tcs2_id)
                 continue
 
             if np.isinf(price):
-                print "INFINITE price... Ending with {} CS left".format(len(TCS) - len(invalid_TCS))
+                print("INFINITE price... Ending with {} CS left".format(len(TCS) - len(invalid_TCS)))
                 break
 
             if price > 0.6:
-                print "Price is too big: {}, Ending with {} CS left".format(price, len(TCS) - len(invalid_TCS))
+                print("Price is too big: {}, Ending with {} CS left".format(price, len(TCS) - len(invalid_TCS)))
                 break
 
-            print price, tcs1_id, tcs2_id
+            print(price, tcs1_id, tcs2_id)
 
             # check...
             for t_pair in matching:
@@ -2198,7 +2200,7 @@ class LearningProcess:
                     id1 = self.GT.tracklet_id_set_without_checks(self.p.chm[t1_id], self.p)
 
                     if id0 != id1:
-                        print "GT doesn't agree", t0_id, t1_id
+                        print("GT doesn't agree", t0_id, t1_id)
 
             new_group = list(TCS[tcs1_id].tracklets)
 
@@ -2235,7 +2237,7 @@ class LearningProcess:
                     if new_price > price:
                         break
 
-                print "New price", new_price, i
+                print("New price", new_price, i)
                 sorted_results.insert(i, [new_price, new_matching, (tcs_A.id, tcs.id)])
 
             # invalidate outdated results...
@@ -2249,7 +2251,7 @@ class LearningProcess:
                     if new_price > price:
                         break
 
-                print "new price", new_price, i
+                print("new price", new_price, i)
                 sorted_results.insert(i, [new_price, new_matching, (tcs.id, tcs_B.id)])
 
 
@@ -2258,7 +2260,7 @@ class LearningProcess:
             links[key] = self._find_update_link(key, links)
 
         lk = links.values()
-        print "#links: {}, #UNIQUE keys: {}, keys: {}".format(len(lk), len(set(lk)), set(lk))
+        print("#links: {}, #UNIQUE keys: {}, keys: {}".format(len(lk), len(set(lk)), set(lk)))
 
         # TODO: add own support per root tracklets...
 
@@ -2305,8 +2307,8 @@ class LearningProcess:
             tid_set.add(self._find_update_link(t.id(), links))
 
 
-        print "#TCS: {}".format(len(TCS) - len(invalid_TCS))
-        print "final TID set: ", tid_set, best_support
+        print("#TCS: {}".format(len(TCS) - len(invalid_TCS)))
+        print("final TID set: ", tid_set, best_support)
         IDs_mapping = {}
         IDs = list(tid_set)
 
@@ -2351,7 +2353,7 @@ class LearningProcess:
                         break
 
                 if subset:
-                    print tcs.id, "is SUBSET"
+                    print(tcs.id, "is SUBSET")
 
             sum_length = 0
 
@@ -2369,7 +2371,7 @@ class LearningProcess:
 
             t_ids = [t.id() for t in tcs.tracklets]
 
-            print "id: {}, sum: {}, min frame: {} max frame: {}\n\t#{} {}\n\n".format(tcs.id, sum_length, min_frame, max_frame, len(t_ids), t_ids)
+            print("id: {}, sum: {}, min frame: {} max frame: {}\n\t#{} {}\n\n".format(tcs.id, sum_length, min_frame, max_frame, len(t_ids), t_ids))
 
         # Train RFC on biggest CS
         # self.train(init=True)
@@ -2377,9 +2379,9 @@ class LearningProcess:
         self.tcs = TCS
         self.links = links
 
-        print "num undecided before: ", len(self.undecided_tracklets)
+        print("num undecided before: ", len(self.undecided_tracklets))
         self.update_undecided_tracklets()
-        print "num undecided after: ", len(self.undecided_tracklets)
+        print("num undecided after: ", len(self.undecided_tracklets))
 
         for cs in TCS.itervalues():
             # g = sorted(g, key=lambda x: x.id())
@@ -2472,8 +2474,8 @@ class LearningProcess:
 
         if best_g_i < 0:
             # TODO: manual init, documentation...
-            print "No CSoSIT was found. This means, there is no frame satisfying that #single-ID tracklets = #animals and minimum of tracklet lengths > 'tracklet min len' parameter."
-            print "This usually happens when test video with short length is used... You can still initialise manually"
+            print("No CSoSIT was found. This means, there is no frame satisfying that #single-ID tracklets = #animals and minimum of tracklet lengths > 'tracklet min len' parameter.")
+            print("This usually happens when test video with short length is used... You can still initialise manually")
             return
 
         tracklet_ids = {}
@@ -2504,7 +2506,7 @@ class LearningProcess:
 
             self.GT.set_permutation_reversed(permutation_data)
 
-            print "GT permutation set in frame {}".format(max_best_frame)
+            print("GT permutation set in frame {}".format(max_best_frame))
         except IOError:
             pass
 
@@ -2533,7 +2535,7 @@ class LearningProcess:
                         if id_ != tracklet_ids[t.id()]:
                             warnings.warn("auto init ids doesn't match. T_ID: {} firstly assigned with: {} now: {}".format(t.id(), tracklet_ids[t.id()], id_))
                         else:
-                            print t.id(), "duplicate..."
+                            print(t.id(), "duplicate...")
 
                         continue
                     else:
@@ -2544,33 +2546,33 @@ class LearningProcess:
                     try:
                         ids = self.GT.tracklet_id_set_without_checks(t, self.p)
                         if ids[0] != id_:
-                            print "GT differs ", id_, ids[0], t.id()
+                            print("GT differs ", id_, ids[0], t.id())
                     except:
                         pass
 
                 ok_min_sum += min(len(t) for t in g2)
                 ok_total_sum += sum(len(t) for t in g2)
-                print "OK", min([len(t) for t in g1]), min([len(t) for t in g2])
+                print("OK", min([len(t) for t in g1]), min([len(t) for t in g2]))
             # else:
                 # print "fail", min([len(t) for t in g1]), min([len(t) for t in g2])
                 # for i, val in enumerate(perm1):
                 #     if i != perm2[val]:
                 #         print "\t", i, perm2[val]
 
-        print "OK min sum: {} total sum: {}".format(ok_min_sum, ok_total_sum)
+        print("OK min sum: {} total sum: {}".format(ok_min_sum, ok_total_sum))
 
         total_len = 0
         for t in unique_tracklets:
             total_len += t.length()
 
-        print "STATS:"
-        print "\tnum groups: {}\n\ttotal length: {}/expected: {:.2%}/singles: {:.2%}\n\toverlap sum: {}/{:.2%}".format(
+        print("STATS:")
+        print("\tnum groups: {}\n\ttotal length: {}/expected: {:.2%}/singles: {:.2%}\n\toverlap sum: {}/{:.2%}".format(
             len(groups),
             total_len, total_len/float(expected_t_len), total_len/float(total_single_t_len),
-            overlap_sum, overlap_sum/float(total_frame_count))
+            overlap_sum, overlap_sum/float(total_frame_count)))
 
     def auto_init(self, method='max_sum', use_xgboost=False):
-        print self._get_tracklet_proba(self.p.chm[54276])
+        print(self._get_tracklet_proba(self.p.chm[54276]))
         self.full_csosit_analysis(use_xgboost=use_xgboost)
         return
         from multiprocessing import cpu_count
@@ -2620,7 +2622,7 @@ class LearningProcess:
         group = filter(lambda x: x.is_single(), group)
 
         for id_, t in enumerate(group):
-            print "id: {}, len: {}".format(t.id(), t.length())
+            print("id: {}, len: {}".format(t.id(), t.length()))
             self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
 
         try:
@@ -2643,7 +2645,7 @@ class LearningProcess:
 
             self.GT.set_permutation_reversed(permutation_data)
 
-            print "GT permutation set"
+            print("GT permutation set")
         except IOError:
             pass
 
@@ -2695,7 +2697,7 @@ class LearningProcess:
             y[id_] += self.p.chm[t_id].length()
             id2tid[id_].append(t_id)
 
-        print y
+        print(y)
 
         id_least = -1
         if min(y) < min_samples:
@@ -2731,7 +2733,7 @@ class LearningProcess:
                     if t2.length() < len_:
                         continue
                 except:
-                    print "tid2: ", tid2
+                    print("tid2: ", tid2)
 
                 t = self.p.chm[tid2]
 
@@ -2752,7 +2754,7 @@ class LearningProcess:
                 if l_ > len_:
                     best_t_id_ = tid2
                     len_ = l_
-            print "NOT FOUND WITHIN 100 frames, choosing ", best_t_id_
+            print("NOT FOUND WITHIN 100 frames, choosing ", best_t_id_)
 
         self.user_decisions.append({'tracklet_id_set': best_t_id_, 'type': 'P', 'ids': [id_least]})
         # print "HIL INIT, adding t_id: {}, len: {}".format(best_t_id_, len_)
@@ -2775,7 +2777,7 @@ class LearningProcess:
                 # min_certs.append(min(cert)*max(0.75, (min_lengths[i] / max_min_length)))
                 min_certs.append(min(cert))
 
-        print min_certs
+        print(min_certs)
         min_certs = np.array(min_certs)
         ids_ = np.argsort(-min_certs)
         groups = np.array(groups)[ids_]
@@ -2810,7 +2812,7 @@ class LearningProcess:
 
 
 def compute_features_process(counter, lock, q_tasks, project_wd, num_frames, first_time=True):
-    print "starting..."
+    print("starting...")
     from core.project.project import Project
     from core.id_detection.feature_manager import FeatureManager
     project = Project()

@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 
 import numpy as np
@@ -81,7 +82,7 @@ def id_correlation():
         try:
             d = shape_description(r, 18)
         except:
-            print "ROI PROBLEM", i
+            print("ROI PROBLEM", i)
             continue
 
         d = gaussian_filter1d(d, 1)

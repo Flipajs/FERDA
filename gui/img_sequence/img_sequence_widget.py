@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 import sys
 from random import randint
@@ -85,7 +86,7 @@ class ImgSequenceWidget(QtGui.QWidget):
     def scroll_changed(self):
         s = self.scroll_area.verticalScrollBar()
         val = s.value() / float(s.maximum())
-        print "Scrolling", val
+        print("Scrolling", val)
 
         length = 30
         if val > 0.8:
@@ -310,7 +311,7 @@ class ImgSequenceWidget(QtGui.QWidget):
             for k in self.new_data[i-self.frame]:
                 p[k] = self.new_data[i-self.frame][k]
 
-        print self.selected_frame
+        print(self.selected_frame)
 
 def give_me_data(frame, ant_id):
     x = randint(0, 800)
@@ -322,7 +323,7 @@ def give_me_data(frame, ant_id):
 
 
 if __name__ == "__main__":
-    print "TEST"
+    print("TEST")
     app = QtGui.QApplication(sys.argv)
 
     vid = video_manager.VideoManager('/Volumes/Seagate Expansion Drive/IST - videos/share/c_bigLense_colormarks3_corrected.avi')

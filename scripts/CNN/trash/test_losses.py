@@ -1,3 +1,4 @@
+from __future__ import print_function
 import matplotlib.pylab as plt
 import numpy as np
 from keras import objectives
@@ -149,5 +150,5 @@ y_pred = K.variable(y_b)
 
 
 val = my_loss4(y_true, y_pred, backend)
-print K.eval(val[:, 2])
-print K.eval(val)
+print(K.eval(val[:, 2]))
+print(K.eval(val))

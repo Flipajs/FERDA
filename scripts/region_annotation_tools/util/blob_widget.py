@@ -85,7 +85,7 @@ class BlobWidget(QtGui.QWidget):
 
         self.last_id.setText("Last ID: {0}".format(self.r.id() if self.r is not None else '-'))
         try:
-            self.r = self.region_generator.next()
+            self.r = next(self.region_generator)
         except StopIteration:
             self.exit_callback()
             self.close()

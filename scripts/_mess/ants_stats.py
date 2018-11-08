@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 
 import pickle
@@ -76,7 +77,7 @@ for i in range(ant_num):
     med_area[i] = np.median(area[i])
 
 
-print avg_speed
-print med_speed
-print avg_area
-print med_area
+print(avg_speed)
+print(med_speed)
+print(avg_area)
+print(med_area)

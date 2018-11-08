@@ -1,3 +1,4 @@
+from __future__ import print_function
 from sklearn.ensemble import RandomForestClassifier
 from core.project.project import Project
 from core.graph.region_chunk import RegionChunk
@@ -142,7 +143,7 @@ if __name__ == '__main__':
 
     else:
         X, y, max_t = get_training_data(p, get_features1, first_n=500)
-        print max_t
+        print(max_t)
 
         rfc = RandomForestClassifier()
         rfc.fit(X, y)
@@ -151,9 +152,9 @@ if __name__ == '__main__':
 
         test_length = 500
 
-        print rfc.score(X, y)
+        print(rfc.score(X, y))
         X2, y2, max_t = get_training_data(p, get_features1, first_n=test_length, offset=max_t)
-        print max_t
+        print(max_t)
 
         with open(p.working_directory+'/temp/rfc.pkl', 'wb') as f:
             p_ = pickle.Pickler(f)
@@ -179,7 +180,7 @@ if __name__ == '__main__':
             best_ = r_[id_]
             best.append(best_)
 
-        print ("------- %d ------- med: %.3f") % (id_, np.median(np.array(best)))
+        print(("------- %d ------- med: %.3f") % (id_, np.median(np.array(best))))
 
         for second_id_ in ids:
             if second_id_ == id_:
@@ -196,10 +197,10 @@ if __name__ == '__main__':
                 second.append(second_)
 
             second = np.array(second)
-            print (" VS %d #TP: %d/%d (%.1f%%), vs med: %.3f") % (second_id_, num_better_,
+            print((" VS %d #TP: %d/%d (%.1f%%), vs med: %.3f") % (second_id_, num_better_,
                                                                   sample_size,
                                                                   100*(num_better_/float(sample_size)),
-                                                                  np.median(second))
+                                                                  np.median(second)))
 
     y_results = rfc.predict(X2)
 
@@ -208,19 +209,19 @@ if __name__ == '__main__':
     mismatches_proba = results[np.logical_not(idx)]
     matches_proba = results[idx]
 
-    print "\n\n\n"
-    print np.sum(idx), len(idx)
+    print("\n\n\n")
+    print(np.sum(idx), len(idx))
 
-    print "MISMATCHES"
-    print ("mean: %.3f medain: %.3f STD: %.3f, median of max: %.3f") % \
+    print("MISMATCHES")
+    print(("mean: %.3f medain: %.3f STD: %.3f, median of max: %.3f") % \
           (np.mean(mismatches_proba),
            np.median(mismatches_proba),
            np.std(mismatches_proba),
-           np.median(np.max(mismatches_proba, axis=1)))
+           np.median(np.max(mismatches_proba, axis=1))))
 
-    print "MATCHES"
-    print ("mean: %.3f medain: %.3f STD: %.3f, median of max: %.3f") % \
+    print("MATCHES")
+    print(("mean: %.3f medain: %.3f STD: %.3f, median of max: %.3f") % \
           (np.mean(matches_proba),
            np.median(matches_proba),
            np.std(matches_proba),
-           np.median(np.max(matches_proba, axis=1)))
+           np.median(np.max(matches_proba, axis=1))))

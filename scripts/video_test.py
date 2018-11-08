@@ -1,3 +1,4 @@
+from __future__ import print_function
 from utils import video_manager
 
 __author__ = 'filip@naiser.cz'
@@ -28,7 +29,7 @@ vid18_r = video_manager.VideoManager(vid_file18)
 
 # vid2.seek_frame2(511)
 frame = 0
-print "compression", "err_sum", "err_mean", "err_max", "err_med"
+print("compression", "err_sum", "err_mean", "err_max", "err_med")
 while True:
     # img = vid1.next_img()
     # if img is None:
@@ -37,7 +38,7 @@ while True:
     img10_r = vid18_r.next_frame()
 
     if frame % 13 == 0 or frame % 27 == 0:
-        print frame
+        print(frame)
 
         vid10 = video_manager.VideoManager(vid_file18)
         img10 = vid10.seek_frame(frame)
@@ -54,7 +55,7 @@ while True:
         # print "18: ", s10, s10 / float(img.shape[0]*img.shape[1]*3), m10, me10
 
         if res10_r > 0:
-            print "PROBLEM ", frame
+            print("PROBLEM ", frame)
 
 
         # cv2.imwrite('/home/flipajs/tempimgs3/'+str(frame)+'_o.png', img, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])

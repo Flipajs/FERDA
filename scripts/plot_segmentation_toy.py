@@ -1,3 +1,4 @@
+from __future__ import print_function
 import cv2
 
 print(__doc__)
@@ -13,7 +14,7 @@ from sklearn.feature_extraction import image
 from sklearn.cluster import spectral_clustering
 
 im = cv2.imread('/home/flipajs/Pictures/test/ant1.png')
-print im.shape
+print(im.shape)
 # vid = video_manager.get_auto_video_manager('/media/flipajs/Seagate Expansion Drive/IST - videos/bigLenses_colormarks2.avi')
 
 ###############################################################################
@@ -36,27 +37,27 @@ circle4 = (x - center4[0]) ** 2 + (y - center4[1]) ** 2 < radius4 ** 2
 # 4 circles
 # img = circle1 + circle2 + circle3 + circle4
 img = im[:,:,1]
-print "IMG loaded"
+print("IMG loaded")
 mask = img.astype(bool)
 img = img.astype(float)
-print "astype DONE"
+print("astype DONE")
 
 # img += 1 + 0.2 * np.random.randn(*img.shape)
 
 # Convert the image into a graph with the value of the gradient on the
 # edges.
 graph = image.img_to_graph(img, mask=mask)
-print "GRAPH done"
+print("GRAPH done")
 
 # Take a decreasing function of the gradient: we take it weakly
 # dependent from the gradient the segmentation is close to a voronoi
 graph.data = np.exp(-graph.data / graph.data.std())
-print "graph data"
+print("graph data")
 
 # Force the solver to be arpack, since amg is numerically
 # unstable on this example
 labels = spectral_clustering(graph, n_clusters=10)
-print "prepare_region_cardinality_samples"
+print("prepare_region_cardinality_samples")
 label_im = -np.ones(mask.shape)
 label_im[mask] = labels
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 
 import os
@@ -21,7 +22,7 @@ for key in certainty:
     for i in range(len(certainty[key])):
         ants_c[i][key] = certainty[key][i] / 2
 
-print ants_c[0]
+print(ants_c[0])
 
 for i in range(ant_num):
     plt.plot(ants_c[i] + i)

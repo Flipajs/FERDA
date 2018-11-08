@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 __author__ = 'fnaiser'
 
 import errno
@@ -9,7 +11,7 @@ import numpy as np
 import os
 from PyQt4 import QtCore
 
-from graph_assembly import graph_assembly
+from .graph_assembly import graph_assembly
 from core.config import config
 from utils.video_manager import get_auto_video_manager
 from core.graph.solver import Solver
@@ -125,15 +127,15 @@ class BackgroundComputer:
                         s = str((int(i) / float(self.frames_in_row_last) * 100))
                         # self.update_callback(' '+s[0:4]+'%')
                     except:
-                        print str_
+                        print(str_)
                 break
-            except IOError, e:
+            except IOError as e:
                 if e.errno != errno.EINTR:
                     raise
 
     def OnProcessErrorReady(self, p_id):
         codec = QtCore.QTextCodec.codecForName("UTF-8")
-        print p_id, codec.toUnicode(self.processes[p_id][0].readAllStandardError().data())
+        print(p_id, codec.toUnicode(self.processes[p_id][0].readAllStandardError().data()))
 
     def onFinished(self, p_id):
         while True:
@@ -147,9 +149,9 @@ class BackgroundComputer:
 
                 self.update_callback(num_finished / float(self.n_parts))
 
-                print "PART " + str(p_id + 1) + "/" + str(self.n_parts) + " FINISHED MSERS, takes ", round(
+                print("PART " + str(p_id + 1) + "/" + str(self.n_parts) + " FINISHED MSERS, takes ", round(
                     end - self.start[p_id], 2), " seconds which is ", round((end - self.start[p_id]) / (
-                    self.process_n * self.frames_in_row), 4), " seconds per frame"
+                    self.process_n * self.frames_in_row), 4), " seconds per frame")
 
                 self.processes[p_id][2] = self.FINISHED
 
@@ -161,6 +163,6 @@ class BackgroundComputer:
                     self.processes[new_id][2] = self.RUNNING
 
                 break
-            except IOError, e:
+            except IOError as e:
                 if e.errno != errno.EINTR:
                     raise

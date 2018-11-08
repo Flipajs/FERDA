@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 
 import pickle
@@ -88,11 +89,11 @@ if __name__ == '__main__':
     dm_im = np.asarray(dm_im*255, dtype=np.uint8)
     # print dm_region.x_min, dm_region.y_min, dm_region.x_max, dm_region.y_max
 
-    print [490, 205], dm_region.get_nearest_point([490, 205])
-    print [480, 200], dm_region.get_nearest_point([480, 200])
-    print [460, 200], dm_region.get_nearest_point([460, 200])
-    print [500, 230], dm_region.get_nearest_point([500, 230])
-    print [500, 260], dm_region.get_nearest_point([500, 260])
+    print([490, 205], dm_region.get_nearest_point([490, 205]))
+    print([480, 200], dm_region.get_nearest_point([480, 200]))
+    print([460, 200], dm_region.get_nearest_point([460, 200]))
+    print([500, 230], dm_region.get_nearest_point([500, 230]))
+    print([500, 260], dm_region.get_nearest_point([500, 260]))
 
     cv2.imshow('dmap', dm_im)
     cv2.waitKey(0)

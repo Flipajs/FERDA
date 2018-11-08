@@ -1,4 +1,6 @@
-import cv_compatibility
+from __future__ import print_function
+from __future__ import absolute_import
+from . import cv_compatibility
 
 __author__ = 'filip@naiser.cz'
 
@@ -108,13 +110,13 @@ class FerdaCompressedVideoManager(VideoManager):
 
         f, self.lossless_img_ = self.capture_lossless_.read()
         if not f or self.position_ >= self.total_frame_count():
-            print "No more frames, end of video file. (ferda_compressed_video_manager.py)"
+            print("No more frames, end of video file. (ferda_compressed_video_manager.py)")
             return None
             # raise Exception("No more frames (" + str(self.position_) + ") in file: " + self.lossless_file_)
 
         f, self.compressed_img_ = self.capture_compressed_.read()
         if not f:
-            print "No more frames, end of video file. (ferda_compressed_video_manager.py)"
+            print("No more frames, end of video file. (ferda_compressed_video_manager.py)")
             return None
             # raise Exception("No more frames (" + str(self.position_) + ") in file: " + self.lossless_file_)
 
@@ -204,7 +206,7 @@ if __name__ == "__main__":
                 vid2 = FerdaCompressedVideoManager(compressed, lossless)
                 img_seek = vid2.seek_frame(i)
                 if sum(sum(sum(img_seek - img))) > 0:
-                    print "problem"
+                    print("problem")
 
             img_compressed = vid.compressed_img()
             img_lossless = vid.lossless_img()

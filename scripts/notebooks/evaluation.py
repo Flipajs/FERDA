@@ -1,3 +1,4 @@
+from __future__ import print_function
 from core.project.project import Project
 
 
@@ -67,4 +68,4 @@ if __name__ == "__main__":
         b3 = test_equals(ch2_id_, ch3_id_)
 
         if not(b1 and b2 and b3):
-            print "MISTAKE ", ch1, ch2, ch3, ch1_id_, ch2_id_, ch3_id_
+            print("MISTAKE ", ch1, ch2, ch3, ch1_id_, ch2_id_, ch3_id_)

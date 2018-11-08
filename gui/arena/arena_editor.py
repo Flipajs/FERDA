@@ -1,3 +1,4 @@
+from __future__ import print_function
 from gui.arena.my_ellipse import MyEllipse
 from gui.arena.my_popup   import MyPopup
 from gui.arena.my_view    import MyView
@@ -96,7 +97,7 @@ class ArenaEditor(QtGui.QDialog):
     def switch_color(self):
         text = self.sender().text()
         if self.DEBUG:
-            print "Setting color to %s" % text
+            print("Setting color to %s" % text)
         # make sure no other button stays pushed
         for button in self.color_buttons:
             if button.text() != text:
@@ -331,13 +332,13 @@ class ArenaEditor(QtGui.QDialog):
                 # check if the clicked pos isn't too close to any other already chosen point
                 dist = self.get_distance(pt, pos)
                 if dist < precision:
-                    print "Too close"
+                    print("Too close")
                     ok = False
             for points in self.polygon_points:
                 for pt in points:
                     dist = self.get_distance(pt, pos)
                     if dist < precision:
-                        print "Too close2"
+                        print("Too close2")
                         ok = False
             if ok:
                 self.point_items.append(self.pick_point(pos))
@@ -472,7 +473,7 @@ class ArenaEditor(QtGui.QDialog):
         # check if polygon can be created
         if len(self.point_items) > 2:
             if self.DEBUG:
-                print "Polygon complete, drawing it"
+                print("Polygon complete, drawing it")
 
             # create the polygon
             polygon = QtGui.QPolygonF()
@@ -493,7 +494,7 @@ class ArenaEditor(QtGui.QDialog):
             return True
         else:
             if self.DEBUG:
-                print "Polygon is too small, pick at least 3 points"
+                print("Polygon is too small, pick at least 3 points")
             return False
 
     def paint_polygon_(self, polygon, color):

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import h5py
 import keras
 import sys
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     N = 100
 
     # and on cam1 sequence
-    print "Cam1"
+    print("Cam1")
     DATA_DIR = ROOT_DIR + '/data_cam1'
 
 
@@ -59,9 +60,9 @@ if __name__ == '__main__':
     X_test_b /= 255
 
     results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
-    print results
+    print(results)
 
-    print "cam3"
+    print("cam3")
     DATA_DIR = ROOT_DIR + '/data_cam3'
     with h5py.File(DATA_DIR + '/imgs_a_test.h5', 'r') as hf:
         X_test_a = hf['data'][:]
@@ -78,10 +79,10 @@ if __name__ == '__main__':
     X_test_b /= 255
 
     results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
-    print results
+    print(results)
 
 
-    print "zebrafish"
+    print("zebrafish")
     # and on zebrafish sequence
     DATA_DIR = ROOT_DIR + '/data_zebrafish'
     with h5py.File(DATA_DIR + '/imgs_a_test.h5', 'r') as hf:
@@ -99,4 +100,4 @@ if __name__ == '__main__':
     X_test_b /= 255
 
     results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
-    print results
+    print(results)

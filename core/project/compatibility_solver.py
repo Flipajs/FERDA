@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'flipajs'
 
 from utils.video_manager import get_auto_video_manager
@@ -19,7 +20,7 @@ class CompatibilitySolver:
             raise Exception("Project version is < 2.2.5, if necessary, there will be compability solver implemented in future...")
 
         if project.version_is_le('2.2.2'):
-            print "PROJECT version is <= 2.2.2, there was major speedup of saving and loading in recent versions... Hold on, the project will be repaired."
+            print("PROJECT version is <= 2.2.2, there was major speedup of saving and loading in recent versions... Hold on, the project will be repaired.")
             self.fix_chunks()
             self.project.version = "2.2.3"
             # as the files were opened and resaved, it is solved, so save the new version...
@@ -39,7 +40,7 @@ class CompatibilitySolver:
 
     def fix_chunks(self):
         "fix chunks and resave with new protocol"
-        print "compatibility fix in progress..."
+        print("compatibility fix in progress...")
         try:
             val = self.project.solver_parameters.frames_in_row
         except:
@@ -91,6 +92,6 @@ class CompatibilitySolver:
                     p.dump(start_nodes)
                     p.dump(end_nodes)
 
-                print i / float(part_num)
+                print(i / float(part_num))
             except:
                 pass

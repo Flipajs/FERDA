@@ -1,3 +1,4 @@
+from __future__ import print_function
 from utils.gt.gt import GT
 import cPickle as pickle
 
@@ -40,7 +41,7 @@ if __name__ == '__main__':
 
     for v in p.gm.active_v_gen():
         if int(v) == 11043:
-            print "stop"
+            print("stop")
         else:
             continue
 
@@ -66,7 +67,7 @@ if __name__ == '__main__':
             epsilons.append(eps)
             edges.append((int(e[0].source()), int(e[0].target())))
 
-    print min(epsilons), max(epsilons)
+    print(min(epsilons), max(epsilons))
 
     with open(p.working_directory+'/temp/epsilons', 'wb') as f:
         pickle.dump((epsilons, edges, variant), f)

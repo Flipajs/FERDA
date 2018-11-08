@@ -1,3 +1,4 @@
+from __future__ import print_function
 import cPickle as pickle
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
@@ -96,9 +97,9 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
         connect_graphs(project, vertices1, vertices2, project.gm, project.rm)
         # self.solver.simplify(vertices1, rules=[self.solver.adaptive_threshold])
 
-    print "merge t: {:.2f}".format(time.time() - merging_t)
-    print "#CHUNKS: ", len(project.chm)
-    print "simplifying "
+    print("merge t: {:.2f}".format(time.time() - merging_t))
+    print("#CHUNKS: ", len(project.chm))
+    print("simplifying ")
 
     p = project
     one2one_t = time.time()
@@ -107,7 +108,7 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
     # except:
     graph_solver.one2one()
 
-    print "\n\tfirst one2one t: {:.2f}s".format(time.time() - one2one_t)
+    print("\n\tfirst one2one t: {:.2f}s".format(time.time() - one2one_t))
 
     learn_assignment_t = time.time()
 
@@ -143,18 +144,18 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
         strongly_better_t = time.time()
         strongly_better_e = p.gm.strongly_better_eps2(eps=eps, score_type=score_type)
         if len(strongly_better_e) == 0:
-            print "\nBREAK"
+            print("\nBREAK")
             break
 
         strongly_better_e = sorted(strongly_better_e, key=lambda x: -x[0])
 
-        print "\nITERATION: {}, #decisions: {}, t: {:.2f}s".format(i, len(strongly_better_e), time.time()-strongly_better_t)
+        print("\nITERATION: {}, #decisions: {}, t: {:.2f}s".format(i, len(strongly_better_e), time.time()-strongly_better_t))
         confirm_t = time.time()
         for _, e in tqdm(strongly_better_e, leave=False):
             if p.gm.g.edge(e.source(), e.target()) is not None:
                 graph_solver.confirm_edges([(e.source(), e.target())])
 
-        print "\tconfirm_t: {:.2f}".format(time.time() - confirm_t)
+        print("\tconfirm_t: {:.2f}".format(time.time() - confirm_t))
 
         # tracklet_stats(p)
 
@@ -179,22 +180,22 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
             # test start
             v = ch.start_node()
             if not p.gm.g.vp['chunk_start_id'][v] or p.gm.g.vp['chunk_end_id'][v]:
-                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+                print(v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v])
                 sanity_check = False
 
             v = ch.end_node()
             if p.gm.g.vp['chunk_start_id'][v] or not p.gm.g.vp['chunk_end_id'][v]:
-                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+                print(v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v])
                 sanity_check = False
 
-    print
-    print "SANITY CHECK SUCCEEDED: {}".format(sanity_check)
+    print()
+    print("SANITY CHECK SUCCEEDED: {}".format(sanity_check))
 
-    print
-    print "ONE 2 ONE optimization"
+    print()
+    print("ONE 2 ONE optimization")
     project.solver.one2one(check_tclass=True)
-    print "DONE"
-    print
+    print("DONE")
+    print()
     tracklet_stats(project)
     # shutil.rmtree(parts_path)  # remove segmentation parts
 

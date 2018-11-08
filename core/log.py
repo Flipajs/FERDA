@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'flipajs'
 
 import time
@@ -81,7 +82,7 @@ class Log:
             return
 
         if config['general']['print_log']:
-            print(category, action_name, data)
+            print((category, action_name, data))
 
         self.data_.append(LogEntry(category, action_name, data))
 

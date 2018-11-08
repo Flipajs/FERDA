@@ -1,6 +1,8 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import numpy as np
 from libs import color_naming
-from utils import feature_descriptor
+from .utils import feature_descriptor
 
 
 def colornames_descriptor(im, block_division=(2, 2), pyramid_levels=3, histogram_density=False):
@@ -36,4 +38,4 @@ if __name__ == '__main__':
     im = imread('data/car.jpg')
 
     f = colornames_descriptor(im, histogram_density=True)
-    print f
+    print(f)

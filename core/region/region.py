@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 
 from utils.video_manager import get_auto_video_manager
@@ -123,7 +124,7 @@ class Region(object):
                     # pts[i, 1] = c
                     # i += 1
         except (IndexError, AttributeError) as e:
-            print e
+            print(e)
             pts = []
 
             for row in data:

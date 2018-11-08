@@ -1,4 +1,6 @@
-from fitting_thread import FittingThread, FittingThreadChunk
+from __future__ import print_function
+from __future__ import absolute_import
+from .fitting_thread import FittingThread, FittingThreadChunk
 from copy import deepcopy
 from PyQt4.QtCore import QProcess
 import sys, os
@@ -35,7 +37,7 @@ class FittingSessionChunk(FittingSession):
         return self.project.working_directory+'/temp/sess_data_'+str(self.id)+'.pkl'
 
     def on_process_error_ready(self, s_id):
-        print s_id, self.fp[-1].readAllStandardError().data()
+        print(s_id, self.fp[-1].readAllStandardError().data())
 
     def start(self):
         merged = self.ch_regions[0]
@@ -154,7 +156,7 @@ class FittingThreadingManager:
 
         fs.fp.start(ex_str)
 
-        print "STARTING ", s_id
+        print("STARTING ", s_id)
 
     def on_finished(self, s_id, project):
         file_path = self.get_file_name(project, s_id)
@@ -167,7 +169,7 @@ class FittingThreadingManager:
         self.fitting_sessions[s_id].callback(results, pivot, s_id, None)
 
     def on_process_error_ready(self, s_id):
-        print s_id, self.fitting_sessions[s_id].fp.readAllStandardError().data()
+        print(s_id, self.fitting_sessions[s_id].fp.readAllStandardError().data())
 
     def release_session(self, s_id):
         fs = self.fitting_sessions[s_id]
@@ -175,7 +177,7 @@ class FittingThreadingManager:
             if int(v) in self.locked_vertices:
                 self.locked_vertices.remove(int(v))
 
-        print "RELEASING: ", s_id
+        print("RELEASING: ", s_id)
         del self.fitting_sessions[s_id]
 
     def add_chunk_session(self, project, done_callback, chunk):
@@ -209,7 +211,7 @@ class FittingThreadingManager:
         self.fitting_sessions[s_id] = fs
         fs.start()
 
-        print "STARTING ", s_id
+        print("STARTING ", s_id)
 
     def add_lock(self, s_id, vertices):
         vertices = map(int, vertices)

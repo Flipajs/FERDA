@@ -21,6 +21,8 @@ pickle". HDF5 files will load fine, as long as both machines have
 h5py installed.
 
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 import os
 import numpy as np
@@ -558,7 +560,7 @@ def load(fileobj, path='/', safe=True):
             py_container = _load(py_container, h_root_group)
             return py_container[0][0]
         except AssertionError:
-            import hickle_legacy
+            from . import hickle_legacy
             return hickle_legacy.load(fileobj, safe)
     finally:
         if 'h5f' in locals():
@@ -623,7 +625,7 @@ def load_dataset(h_node):
     elif py_type == 'none':
         return None
     else:
-        print(h_node.name, py_type, h_node.attrs.keys())
+        print((h_node.name, py_type, h_node.attrs.keys()))
         return data
 
 

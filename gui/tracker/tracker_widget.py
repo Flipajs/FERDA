@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 
 import math
@@ -82,7 +83,7 @@ class TrackerWidget(QtGui.QWidget):
                 try:
                     solver.remove_edge(a.data['n1'], a.data['n2'])
                 except:
-                    print "NOT EXISTING EDGE"
+                    print("NOT EXISTING EDGE")
             elif a.action_name == ActionNames.REMOVE_EDGE:
                 solver.add_edge(a.data['n1'], a.data['n2'], **a.data['data'])
             elif a.action_name == ActionNames.CHUNK_ADD_TO_REDUCED:

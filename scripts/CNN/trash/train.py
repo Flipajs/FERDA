@@ -1,3 +1,4 @@
+from __future__ import print_function
 import h5py
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -50,8 +51,8 @@ if __name__ == '__main__':
         y_test = hf['data'][:]
 
 
-    print "train shape", X_train_a.shape
-    print "test shape", X_test_a.shape
+    print("train shape", X_train_a.shape)
+    print("test shape", X_test_a.shape)
 
     # IMPORTANT!!
     X_train_a = X_train_a.astype('float32')
@@ -112,7 +113,7 @@ if __name__ == '__main__':
 
     ########### load weights... ugly way how to do it now...
     if USE_PREVIOUS_AS_INIT:
-        print "Using last saved weights as initialisation"
+        print("Using last saved weights as initialisation")
         from keras.models import model_from_json
         json_file = open('model_'+WEIGHTS_NAME+'.json', 'r')
         loaded_model_json = json_file.read()
@@ -153,7 +154,7 @@ if __name__ == '__main__':
 
     # 10. Evaluate model on test data
     results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
-    print results
+    print(results)
 
     # and on cam1 sequence
     DATA_DIR = ROOT_DIR + '/data_cam1'
@@ -172,7 +173,7 @@ if __name__ == '__main__':
     X_test_b /= 255
 
     results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
-    print results
+    print(results)
 
     # and on zebrafish sequence
     DATA_DIR = ROOT_DIR + '/data_zebrafish'
@@ -191,4 +192,4 @@ if __name__ == '__main__':
     X_test_b /= 255
 
     results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)
-    print results
+    print(results)

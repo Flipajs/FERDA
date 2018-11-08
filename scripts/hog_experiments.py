@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'flipajs'
 
 import matplotlib.pyplot as plt
@@ -32,8 +33,8 @@ def get_mser(im, p):
     b = ((r*m.ellipse_major_axis_length()*(m.ellipse_minor_axis_length()**2))/m.ellipse_major_axis_length())**0.5
     a = ab/b
 
-    print "PREV: ", m.ellipse_major_axis_length(), m.ellipse_minor_axis_length()
-    print "NOW: ", a, b, np.rad2deg(m.theta_), m.theta_
+    print("PREV: ", m.ellipse_major_axis_length(), m.ellipse_minor_axis_length())
+    print("NOW: ", a, b, np.rad2deg(m.theta_), m.theta_)
 
     return msers[0]
 
@@ -56,7 +57,7 @@ def get_regions(project, solver, from_t, to_t):
             p = pickle.Pickler(f, -1)
             p.dump(reconstructed)
 
-        print "RECONSTRUCTION DONE"
+        print("RECONSTRUCTION DONE")
 
     return reconstructed
 
@@ -145,9 +146,9 @@ def hogs_test(p, chunks):
                     pass
 
         if right+wrong:
-            print compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", round(right / float(right+wrong), 2)
+            print(compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", round(right / float(right+wrong), 2))
         else:
-            print "none"
+            print("none")
 
 
 def hogs_test2(p, chunks):
@@ -192,9 +193,9 @@ def hogs_test2(p, chunks):
                     pass
 
         if right+wrong:
-            print compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", round(right / float(right+wrong), 2)
+            print(compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", round(right / float(right+wrong), 2))
         else:
-            print "none"
+            print("none")
 
 def head_test(im_):
     """
@@ -231,7 +232,7 @@ if __name__ == "__main__":
 
     for i in range(3, 10):
         for j in range(i+1, 10):
-            print i, "vs", j
+            print(i, "vs", j)
             hogs_test2(p, [i, j])
 
     # hogs_test(p, [4, 5])
@@ -246,7 +247,7 @@ if __name__ == "__main__":
         vid = get_auto_video_manager(p)
 
         for chunk_id in range(3, 10):
-            print chunk_id
+            print(chunk_id)
             hogs = {}
 
             import os

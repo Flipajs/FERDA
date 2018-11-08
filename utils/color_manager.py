@@ -1,3 +1,4 @@
+from __future__ import print_function
 from PyQt4 import QtGui, QtCore
 from matplotlib import colors
 from matplotlib import cm as cmx
@@ -215,7 +216,7 @@ class ColorManager():
     def find_color_cube(self):
         next_color = self.colors_list[self.cube_id]
         self.cube_id += 1
-        print next_color
+        print(next_color)
         return QtGui.QColor.fromRgbF(next_color[0], next_color[1], next_color[2])
 
     def generate_color_cube(self, x):
@@ -390,7 +391,7 @@ def colorize_project(project):
         if ch.length() > 0:
             limit += 1
 
-    print limit, "vs. ", len(project.chm.chunks_)
+    print(limit, "vs. ", len(project.chm.chunks_))
 
     limit = min(limit, 50)
 
@@ -419,6 +420,6 @@ if __name__ == "__main__":
         for track in track_dict:
             track_ids += str(track.id)
             track_ids += " "
-        print "%s: %s" % (key, track_ids)
+        print("%s: %s" % (key, track_ids))
     app.deleteLater()
     sys.exit()

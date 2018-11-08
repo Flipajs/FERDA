@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys, os, re, random
 from scipy import misc
 import tqdm
@@ -49,7 +50,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 4:
         ADD_DIST_MAP = bool(string.atoi(sys.argv[4]))
 
-    print "SWAP BGR?: ", BGR_FORMAT
+    print("SWAP BGR?: ", BGR_FORMAT)
 
     imgs = []
     names = []
@@ -72,10 +73,10 @@ if __name__ == '__main__':
             n = fname[:10]
             with h5py.File(DATA_DIR + '/test/' + fname, 'r') as hf:
                 imgs = hf['data'][:]
-                print imgs.shape
+                print(imgs.shape)
             with h5py.File(DATA_DIR + '/test/' + n + 'ids.h5', 'r') as hf:
                 ids = hf['data'][:]
-                print ids.shape
+                print(ids.shape)
 
             # we need to reverse image channels
             if BGR_FORMAT:

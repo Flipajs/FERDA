@@ -1,3 +1,4 @@
+from __future__ import print_function
 # author
 # based on this work... https://github.com/delestro/rand_cmap
 

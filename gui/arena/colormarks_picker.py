@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import random
 import gc
@@ -136,7 +137,7 @@ class ColormarksPicker(QtGui.QWidget):
         # get number of elements in backup
         length = len(self.backup)
         if self.DEBUG:
-            print "Length is %s" % length
+            print("Length is %s" % length)
         # proceed to undo if there is something to undo
         if length > 0:
             img, mask = self.backup.pop(length - 1)
@@ -210,7 +211,7 @@ class ColormarksPicker(QtGui.QWidget):
             return map_pos
         else:
             if self.DEBUG:
-                print "Out of bounds [%s, %s]" % (map_pos.x(), map_pos.y())
+                print("Out of bounds [%s, %s]" % (map_pos.x(), map_pos.y()))
             return False
 
     def is_in_scene(self, point):
@@ -365,7 +366,7 @@ class ColormarksPicker(QtGui.QWidget):
 
     def draw_frame(self):
         if self.DEBUG:
-            print "Going to frame %s" % self.frame
+            print("Going to frame %s" % self.frame)
 
         # adjust buttons
         if self.frame <= 0:
@@ -563,7 +564,7 @@ class ColorGridWidget(QtGui.QWidget):
 
     def delete_color(self, idd):
         if self.DEBUG:
-            print "Deleting id: %s" % idd
+            print("Deleting id: %s" % idd)
 
         if idd == self.last_index-1:
             self.colors[idd] = None
@@ -602,7 +603,7 @@ class ColorGridWidget(QtGui.QWidget):
 
         for id in sorted(self.buttons.keys()):
             if self.DEBUG:
-                print "Repainting %s" % id
+                print("Repainting %s" % id)
             self.grid.removeWidget(self.buttons[id])
             self.buttons[id].setText("%s" % id)
             self.grid.addWidget(self.buttons[id], self.posx, self.posy)

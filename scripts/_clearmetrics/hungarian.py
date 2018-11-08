@@ -7,6 +7,7 @@ References: http://www.ams.jhu.edu/~castello/362/Handouts/hungarian.pdf
         http://www.public.iastate.edu/~ddoty/HungarianAlgorithm.html
         http://www.clapper.org/software/python/munkres/
 """
+from __future__ import print_function
 
 # Module Information.
 __version__ = "1.1.1"
@@ -444,9 +445,9 @@ if __name__ == '__main__':
     hungarian = Hungarian(profit_matrix, is_profit_matrix=True)
     hungarian.calculate()
     print("Expected value:\t\t543")
-    print("Calculated value:\t", hungarian.get_total_potential())  # = 543
+    print(("Calculated value:\t", hungarian.get_total_potential()))  # = 543
     print("Expected results:\n\t[(0, 4), (2, 3), (5, 5), (4, 0), (1, 1), (3, 2)]")
-    print("Results:\n\t", hungarian.get_results())
+    print(("Results:\n\t", hungarian.get_results()))
     print("-" * 80)
 
     cost_matrix = [
@@ -457,9 +458,9 @@ if __name__ == '__main__':
     print('calculating...')
     hungarian.calculate()
     print("Expected value:\t\t12")
-    print("Calculated value:\t", hungarian.get_total_potential())  # = 12
+    print(("Calculated value:\t", hungarian.get_total_potential()))  # = 12
     print("Expected results:\n\t[(0, 1), (1, 0), (2, 2)]")
-    print("Results:\n\t", hungarian.get_results())
+    print(("Results:\n\t", hungarian.get_results()))
     print("-" * 80)
 
     profit_matrix = [
@@ -472,7 +473,7 @@ if __name__ == '__main__':
     hungarian = Hungarian()
     hungarian.calculate(profit_matrix, is_profit_matrix=True)
     print("Expected value:\t\t523")
-    print("Calculated value:\t", hungarian.get_total_potential())  # = 523
+    print(("Calculated value:\t", hungarian.get_total_potential()))  # = 523
     print("Expected results:\n\t[(0, 3), (2, 4), (3, 0), (5, 2), (1, 5), (4, 1)]")
-    print("Results:\n\t", hungarian.get_results())
+    print(("Results:\n\t", hungarian.get_results()))
     print("-" * 80)

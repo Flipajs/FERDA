@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 
 """
@@ -101,7 +102,7 @@ def get_color_around(im, pos, radius):
                 num_px += 1
                 c += im[pos[1] - radius + w, pos[0] - radius + h, :]
 
-    print num_px
+    print(num_px)
     c /= num_px
 
     return [c[0, 0], c[0, 1], c[0, 2]]
@@ -166,7 +167,7 @@ def on_mouse_scaled(event, x, y, flag, param):
         clicked_pos = (scale_offset[0] + (x / 2), scale_offset[1] + (y / 2));
         c2 = get_color_around(im, clicked_pos, radius)
         c2 = np.asarray(c2, dtype=np.uint8)
-        print c2
+        print(c2)
 
         ant_colors[ant_id, :] = c2
 
@@ -190,7 +191,7 @@ def on_mouse_scaled(event, x, y, flag, param):
 
         cv2.imshow('dmap', d_map)
         if not colormark:
-            print "No MSER found"
+            print("No MSER found")
             return
 
         init_regions[ant_id] = colormark
@@ -207,11 +208,11 @@ def on_mouse_scaled(event, x, y, flag, param):
         colormark.set_centroid(colormark.centroid() + np.array([y, x]))
         if init_positions[ant_id] is None:
             init_positions[ant_id] = colormark.centroid()
-            print 'Position set: ', init_positions[ant_id]
+            print('Position set: ', init_positions[ant_id])
 
         cv2.imshow('colormark', crop)
 
-        print clicked_pos
+        print(clicked_pos)
 
 
 def init(path):
@@ -246,7 +247,7 @@ def init(path):
         # this will take last 8 bits from integer so it is number between 0 - 255
         k = cv2.waitKey(0) & 255
         if k == 32:
-            print 'color for ant ' + str(ant_id) + ' was selected'
+            print('color for ant ' + str(ant_id) + ' was selected')
             ant_id += 1
 
         # r, R - random frame
@@ -258,7 +259,7 @@ def init(path):
         if k == 98 or k == 66:
             if ant_id > 0:
                 ant_id -= 1
-                print 'moving backward in assignment, Ant id: ' + str(ant_id)
+                print('moving backward in assignment, Ant id: ' + str(ant_id))
 
     cv2.destroyWindow('color')
     cv2.destroyWindow('crop_')
@@ -383,14 +384,14 @@ def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
 
     val = val_i * val_n * val_a
 
-    print areas
-    print mlab.normpdf(np.array(areas), r_mean, COLORMARK_S) / norm_area_
-    print val
+    print(areas)
+    print(mlab.normpdf(np.array(areas), r_mean, COLORMARK_S) / norm_area_)
+    print(val)
     # val = np.array(areas)
     order = np.argsort(-val)
 
 
-    print "REGIONS", len(regions)
+    print("REGIONS", len(regions))
     cols = collection_cols
     rows = len(regions) / cols + 1
     msers = np.zeros((collection_cell_size*rows, collection_cell_size*cols, 3), dtype=np.uint8)
@@ -424,7 +425,7 @@ def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
     ids = np.asarray(order[0:1], dtype=np.int32)
 
     selected_r = [regions[id] for id in ids]
-    print avg_intensity[ids[0]], darkest_neighbour[ids[0]]
+    print(avg_intensity[ids[0]], darkest_neighbour[ids[0]])
 
 
 
@@ -561,7 +562,7 @@ if __name__ == "__main__":
 
     previous_position = init_positions
     while frame_i < 3000:
-        print frame_i
+        print(frame_i)
         im = vid.next_frame()
 
         cv2.imwrite(output_folder + '/imgs/' + str(frame_i) + '.png', im)

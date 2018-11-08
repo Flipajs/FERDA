@@ -1,3 +1,4 @@
+from __future__ import print_function
 from pulp import *
 import itertools
 import re
@@ -116,7 +117,7 @@ def get_flows(regions_P, regions_Q):
     prob.solve()
 
     if LpStatus[prob.status] != 'Optimal':
-        print "WARNING: there was not optimal solution computed in EMD split/merge predicate"
+        print("WARNING: there was not optimal solution computed in EMD split/merge predicate")
 
     flows = np.zeros((len(regions_P), len(regions_Q)), dtype=np.int)
     for v in prob.variables():

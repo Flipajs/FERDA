@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -69,8 +71,8 @@ if __name__ == '__main__':
     X_test = np.array(imgs_a)
     y_test = np.array(labels)
 
-    print X_test.shape
-    print y_test.shape
+    print(X_test.shape)
+    print(y_test.shape)
 
     X_test = X_test.astype('float32')
     X_test /= 255
@@ -91,7 +93,7 @@ if __name__ == '__main__':
 
     y_pred_class = np.argmax(y_pred, axis=1)
     accuracy = accuracy_score(y_pred_class, y_test)
-    print "Accuracy: {:.2%}".format(accuracy)
+    print("Accuracy: {:.2%}".format(accuracy))
 
     np.set_printoptions(precision=2, suppress=True)
 
@@ -101,7 +103,7 @@ if __name__ == '__main__':
     try:
         shutil.rmtree(DATA_DIR+'/errors')
     except Exception as e:
-        print e
+        print(e)
 
     try:
         os.mkdir(DATA_DIR+'/errors')
@@ -133,8 +135,8 @@ if __name__ == '__main__':
 
     not_classified = np.array(not_classified)
     missclassified = np.array(missclassified)
-    print "NOT CLASSIFIED: ", not_classified
-    print "MISSCLASSIFIED: ", missclassified
+    print("NOT CLASSIFIED: ", not_classified)
+    print("MISSCLASSIFIED: ", missclassified)
 
     not_classified = not_classified.astype('float32')
     missclassified = missclassified.astype('float32')
@@ -142,14 +144,14 @@ if __name__ == '__main__':
         not_classified[i] /= float(num_examples[i])
         missclassified[i] /= float(num_examples[i])
 
-    print
-    print "NOT CLASSIFIED: ", not_classified
-    print "MISSCLASSIFIED: ", missclassified
+    print()
+    print("NOT CLASSIFIED: ", not_classified)
+    print("MISSCLASSIFIED: ", missclassified)
 
     # results = classification_model.evaluate(X_test, y_test, verbose=1)
     # print results
 
-    from errors_web import make_web
+    from .errors_web import make_web
     data = "{}, Accuracy: {:.2%}, FN: {}, FP: {}".format(DATA_DIR,
                                                                                  accuracy,
                                                                                  not_classified,

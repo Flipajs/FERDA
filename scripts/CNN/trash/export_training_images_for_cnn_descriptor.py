@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import cv2
 from core.project.project import Project
@@ -44,7 +45,7 @@ if __name__ == '__main__':
         pass
 
     major_axis = p.stats.major_axis_median
-    print major_axis
+    print(major_axis)
     # probably wrong in Cam1_... comment when using different dataset
     major_axis = 36
 
@@ -76,5 +77,5 @@ if __name__ == '__main__':
                     cv2.imwrite(OUT_DIR+'/'+str(id)+'/'+str(r.id())+'.jpg', crop, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
 
     for i, num in enumerate(examples):
-        print "ID: {} #{}".format(i, num)
+        print("ID: {} #{}".format(i, num))
 

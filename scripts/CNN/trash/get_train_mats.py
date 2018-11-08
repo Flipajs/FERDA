@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -93,26 +94,26 @@ if __name__ == '__main__':
 
     with h5py.File(OUT_DIR+'/imgs_a_train.h5', 'r') as hf:
         data = hf['data'][:]
-        print data.shape
+        print(data.shape)
 
     with h5py.File(OUT_DIR+'/imgs_a_test.h5', 'r') as hf:
         data = hf['data'][:]
-        print data.shape
+        print(data.shape)
 
     with h5py.File(OUT_DIR+'/imgs_b_train.h5', 'r') as hf:
         data = hf['data'][:]
-        print data.shape
+        print(data.shape)
 
     with h5py.File(OUT_DIR+'/imgs_b_test.h5', 'r') as hf:
         data = hf['data'][:]
-        print data.shape
+        print(data.shape)
 
     with h5py.File(OUT_DIR+'/labels_train.h5', 'r') as hf:
         data = hf['data'][:]
-        print data.shape
+        print(data.shape)
 
     with h5py.File(OUT_DIR+'/labels_test.h5', 'r') as hf:
         data = hf['data'][:]
-        print data.shape
+        print(data.shape)
 
 

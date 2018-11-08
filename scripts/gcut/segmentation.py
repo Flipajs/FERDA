@@ -1,8 +1,10 @@
+from __future__ import print_function
+from __future__ import absolute_import
 __author__ = 'flipajs'
 
-import cyMaxflow
+from . import cyMaxflow
 import operator
-from helpers import TWeights, Edges
+from .helpers import TWeights, Edges
 import numpy as np
 
 
@@ -273,7 +275,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     for i in range(1, 1000):
-        print i
+        print(i)
 
         img = cv2.imread('/Users/flipajs/Desktop/temp/rf/' + str(i) + '_i.png')
         proba_im = cv2.imread('/Users/flipajs/Desktop/temp/rf/' + str(i) + '.png')

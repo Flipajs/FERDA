@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 
 import pickle
@@ -108,10 +109,10 @@ def get_svm_model():
 
     clf = svm.SVC(kernel='linear', probability=True)
 
-    print clf.fit(X, classes)
-    print clf.support_vectors_
-    print clf.support_
-    print clf.n_support_
+    print(clf.fit(X, classes))
+    print(clf.support_vectors_)
+    print(clf.support_)
+    print(clf.n_support_)
 
     return clf
 
@@ -166,10 +167,10 @@ def get_svm_model2():
 
     clf = svm.SVC(kernel='linear', probability=True)
 
-    print clf.fit(X, classes)
-    print clf.support_vectors_
-    print clf.support_
-    print clf.n_support_
+    print(clf.fit(X, classes))
+    print(clf.support_vectors_)
+    print(clf.support_)
+    print(clf.n_support_)
 
     return clf
 
@@ -232,7 +233,7 @@ if __name__ == '__main__':
     AVG_AREA = np.median(areas)
     AVG_MAIN_A = np.median(major_axes)
     AVG_MARGIN = np.median(margins)
-    print "AVG: ", AVG_AREA, AVG_MAIN_A, AVG_MARGIN
+    print("AVG: ", AVG_AREA, AVG_MAIN_A, AVG_MARGIN)
 
 
     app = QtGui.QApplication(sys.argv)

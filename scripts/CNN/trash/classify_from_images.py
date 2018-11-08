@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -27,7 +28,7 @@ def classify_imgs(results_map):
     global DATA_DIR, MODEL_NAME
     X_test = np.array(imgs)
 
-    print X_test.shape
+    print(X_test.shape)
 
     X_test = X_test.astype('float32')
     X_test /= 255

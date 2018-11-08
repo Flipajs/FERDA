@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from matplotlib import pyplot as plt
 import cPickle as pickle
@@ -116,7 +117,7 @@ class clicker_class(object):
             p = pickle.Pickler(f, -1)
             p.dump(self.data)
 
-        print 'SAVED'
+        print('SAVED')
 
 
     def remove_pt(self, loc):

@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 import numpy as np
-from hungarian import Hungarian
+from .hungarian import Hungarian
 import sys
 
 
@@ -221,7 +222,7 @@ class ClearMetrics(object):
             for j in xrange(n_meas):
                 measured_pos = self.measurements[frame][j]
                 if gt_pos is None or measured_pos is None:
-                    distance_mat[i, j] = sys.maxint
+                    distance_mat[i, j] = sys.maxsize
                 else:
                     distance_mat[i, j] = np.sum((measured_pos - gt_pos) ** 2)
         return distance_mat
@@ -239,7 +240,7 @@ class ClearMetrics(object):
         @rtype: list, list, list
         """
         sq_distance = self._get_sq_distance_matrix(frame)
-        sq_distance[sq_distance > (self.thresh ** 2)] = sys.maxint
+        sq_distance[sq_distance > (self.thresh ** 2)] = sys.maxsize
 
         # set all ground truth matches to FN or not defined
         gt_matches = []
@@ -264,8 +265,8 @@ class ClearMetrics(object):
                 measurements_matches[prev_measurement] = prev_gt
                 gt_distances[prev_gt] = np.sqrt(sq_distance[prev_gt, prev_measurement])
                 # prev_gt and prev_measurement are excluded from further matching
-                sq_distance[prev_gt, :] = sys.maxint
-                sq_distance[:, prev_measurement] = sys.maxint
+                sq_distance[prev_gt, :] = sys.maxsize
+                sq_distance[:, prev_measurement] = sys.maxsize
 
         hungarian = Hungarian(sq_distance)
         hungarian.calculate()
@@ -273,7 +274,7 @@ class ClearMetrics(object):
 
         # fill in new TP
         for m in matches:
-            if sq_distance[m[0], m[1]] == sys.maxint:
+            if sq_distance[m[0], m[1]] == sys.maxsize:
                 continue
             gt_matches[m[0]] = m[1]
             measurements_matches[m[1]] = m[0]

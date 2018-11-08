@@ -1,4 +1,6 @@
-from gt import GT
+from __future__ import print_function
+from __future__ import absolute_import
+from .gt import GT
 from utils.clearmetrics.clearmetrics import ClearMetrics
 import numpy as np
 
@@ -13,7 +15,7 @@ class Evaluator:
         # print "evaluation in progress..."
         if match is None:
             match = self._gt.match_on_data(project, frames=frames, max_d=max_d, match_on='tracklets', permute=True)
-            print "match done..."
+            print("match done...")
 
         t_id_map = {}
 
@@ -29,7 +31,7 @@ class Evaluator:
         # for t_id, s in t_id_map.iteritems():
         #     t_id_map[t_id] = list(s)
 
-        print "t_id_map DONE..."
+        print("t_id_map DONE...")
 
         single_gt_len = 0
         single_len = 0
@@ -71,10 +73,10 @@ class Evaluator:
                     #
                     #         mistakes[t.id()] = gts
 
-        print "total correct coverage: {:.2%}".format(single_len / float(len(project.animals) * max_f))
-        print "single correct coverage: {:.2%}".format(single_len / float(single_gt_len))
-        print "total mistakes coverage: {:.2%}".format(mistakes_len / float(len(project.animals) * max_f))
-        print "single mistakes coverage: {:.2%}".format(mistakes_len / float(single_gt_len))
+        print("total correct coverage: {:.2%}".format(single_len / float(len(project.animals) * max_f)))
+        print("single correct coverage: {:.2%}".format(single_len / float(single_gt_len)))
+        print("total mistakes coverage: {:.2%}".format(mistakes_len / float(len(project.animals) * max_f)))
+        print("single mistakes coverage: {:.2%}".format(mistakes_len / float(single_gt_len)))
 
     # def eval_ids_from_match(self, project, match, perm, frames=None, max_d=5, verbose=0):
     #     # print "evaluation in progress..."
@@ -164,7 +166,7 @@ class Evaluator:
                     gt_val = gts[i]
                 except:
                     gt_val = None
-                    print gts
+                    print(gts)
 
                 single_gt_len += 1
 
@@ -180,14 +182,14 @@ class Evaluator:
                     not_m = True
 
             if not_m and verbose > 0:
-                print frame, perm, it
+                print(frame, perm, it)
 
             frame += 1
 
-        print "Mistakes: ", mistakes
-        print "Mistaken tracklets (#{}): ".format(len(mistaken_tracklets))
+        print("Mistakes: ", mistakes)
+        print("Mistaken tracklets (#{}): ".format(len(mistaken_tracklets)))
         for t in mistaken_tracklets:
-            print t
+            print(t)
 
         c_coverage = single_len / float(len(project.animals) * max_f)
         m_coverage = mistakes_len / float(len(project.animals) * max_f)
@@ -202,7 +204,7 @@ class Evaluator:
     def evaluate_FERDA(self, project, frame_limits_start=0, frame_limits_end=-1, permutation_frame=0, step=1):
         from core.project.export import ferda_trajectories_dict
         from core.graph.region_chunk import RegionChunk
-        print "PREPARING trajectories"
+        print("PREPARING trajectories")
         single_trajectories = ferda_trajectories_dict(project, frame_limits_start=frame_limits_start,
                                                       frame_limits_end=frame_limits_end, step=step)
 
@@ -233,9 +235,9 @@ class Evaluator:
 
         # TODO: load from config
         dist_threshold = 30
-        print "Preparing GT"
+        print("Preparing GT")
         gt = self._gt.for_clearmetrics(frame_limits_start=frame_limits_start, frame_limits_end=frame_limits_end)
-        print "evaluating"
+        print("evaluating")
         self.__clearmetrics = ClearMetrics(gt, data, dist_threshold)
         self.__clearmetrics.match_sequence()
         self.print_stats()
@@ -247,26 +249,26 @@ class Evaluator:
     def print_stats(self, float_precission=3):
         mismatches = self.__clearmetrics.get_mismatches_count()
 
-        print "_____________________________"
-        print "|--Clearmetrics statistics--|"
-        print ("| MOTA: \t\t{:." + str(float_precission) + "%}").format(self.__clearmetrics.get_mota())
-        print ("| MOTP: \t\t{:." + str(float_precission) + "}").format(self.__clearmetrics.get_motp())
-        print ("| #FN: \t\t\t{:}").format(self.__clearmetrics.get_fn_count())
-        print ("| #FP: \t\t\t{:}").format(self.__clearmetrics.get_fp_count())
-        print ("| #mismatches: \t{:}").format(mismatches)
-        print ("| #objects: \t{:}").format(self.__clearmetrics.get_object_count())
-        print ("| #matches: \t{:}").format(self.__clearmetrics.get_matches_count())
-        print "| "
-        print "| legend: "
-        print "| \tMOTA - Accuracy"
-        print "| \tMOTP - precission"
-        print "| \tFN: - lost"
-        print "| \tmismatches - num of id swaps"
-        print "| \t\t e.g."
-        print "| \t\t\t _____ ...."
-        print "| \t\t\t .....X____"
-        print "| \t\t\t generates 2 mismatches"
-        print "|___________________________|"
+        print("_____________________________")
+        print("|--Clearmetrics statistics--|")
+        print(("| MOTA: \t\t{:." + str(float_precission) + "%}").format(self.__clearmetrics.get_mota()))
+        print(("| MOTP: \t\t{:." + str(float_precission) + "}").format(self.__clearmetrics.get_motp()))
+        print(("| #FN: \t\t\t{:}").format(self.__clearmetrics.get_fn_count()))
+        print(("| #FP: \t\t\t{:}").format(self.__clearmetrics.get_fp_count()))
+        print(("| #mismatches: \t{:}").format(mismatches))
+        print(("| #objects: \t{:}").format(self.__clearmetrics.get_object_count()))
+        print(("| #matches: \t{:}").format(self.__clearmetrics.get_matches_count()))
+        print("| ")
+        print("| legend: ")
+        print("| \tMOTA - Accuracy")
+        print("| \tMOTP - precission")
+        print("| \tFN: - lost")
+        print("| \tmismatches - num of id swaps")
+        print("| \t\t e.g.")
+        print("| \t\t\t _____ ....")
+        print("| \t\t\t .....X____")
+        print("| \t\t\t generates 2 mismatches")
+        print("|___________________________|")
 
     def evaluate_idtracker(self, file, frame_limits_start=0, frame_limits_end=-1):
         import scipy.io as sio
@@ -306,7 +308,7 @@ class Evaluator:
                 id_ = self._gt.permute(id_)
                 if match_id_ is not None and id_ != match_id_:
                     m_i += 1
-                    print "MISMATCH: #{:}, frame: {:}, id: {:}, gt_id: {:}".format(m_i, frame, id_, match_id_)
+                    print("MISMATCH: #{:}, frame: {:}, id: {:}, gt_id: {:}".format(m_i, frame, id_, match_id_))
 
 
 def draw_id_t_img(p, matches, perms, name=None, col_w=1, gt_h=5, gt_border=1, row_border=2, row_h=30, bg=[0, 0, 0],
@@ -329,7 +331,7 @@ def draw_id_t_img(p, matches, perms, name=None, col_w=1, gt_h=5, gt_border=1, ro
                 val = matches[tr][frame][id_]
 
                 if val >= num_objects:
-                    print frame
+                    print(frame)
 
                 y = id_ * row_h * num_trackers + tr * row_h
                 if val is not None:
@@ -368,7 +370,7 @@ def draw_id_t_img(p, matches, perms, name=None, col_w=1, gt_h=5, gt_border=1, ro
     import matplotlib.pyplot as plt
     fig = plt.figure()
     im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-    print im.shape
+    print(im.shape)
     plt.imshow(im)
     ax = plt.gca()
 
@@ -424,9 +426,9 @@ def eval_centroids(p, gt, match=None):
 
 
 def print_coverage(c_coverage, m_coverage, singles_len='undef', mistakes_len='undef'):
-    print "correct pose: {:.2%} (#{} frames)".format(c_coverage, singles_len)
-    print "wrong pose: {:.2%} (#{} frames)".format(m_coverage, mistakes_len)
-    print "unknown pose: {:.2%}".format(1 - (c_coverage + m_coverage))
+    print("correct pose: {:.2%} (#{} frames)".format(c_coverage, singles_len))
+    print("wrong pose: {:.2%} (#{} frames)".format(m_coverage, mistakes_len))
+    print("unknown pose: {:.2%}".format(1 - (c_coverage + m_coverage)))
 
 
 def compare_trackers(p, idtracker_path=None, impath=None, name=None, skip_idtracker=False,
@@ -456,13 +458,13 @@ def compare_trackers(p, idtracker_path=None, impath=None, name=None, skip_idtrac
 
     idtracker_m_coverage, idtracker_c_coverage = -1, -1
     if not skip_idtracker:
-        print "IdTracker:"
+        print("IdTracker:")
         ev = Evaluator(None, gt)
         idtracker_c_coverage, idtracker_m_coverage, singles_len, mistakes_len = ev.eval_ids_from_match(p, match, perm)
 
         print_coverage(idtracker_c_coverage, idtracker_m_coverage)
 
-    print "FERDA:"
+    print("FERDA:")
     match2, perm2, f_c_coverage, f_m_coverage, singles_len, mistakes_len = eval_centroids(p, gt)
     print_coverage(f_c_coverage, f_m_coverage, singles_len=singles_len, mistakes_len=mistakes_len)
 

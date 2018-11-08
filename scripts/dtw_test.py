@@ -5,6 +5,7 @@ Program: TEST_DTW.PY
 Date: Wednesday, March  7 2012
 Description: Test DTW algorithms.
 """
+from __future__ import print_function
 
 import numpy as np
 from dtw import *
@@ -31,7 +32,7 @@ if __name__ == '__main__':
     im2a = cv2.cvtColor(im2a, cv2.COLOR_RGB2GRAY)
     im2a_data = np.argwhere(im2a > 0)
 
-    print im1a_data
+    print(im1a_data)
     plt.imshow(im1a)
     plt.show()
 
@@ -58,14 +59,14 @@ if __name__ == '__main__':
 
     pylab.plot(xa[:,0],xa[:,1])
     pylab.plot(ya[:,0],ya[:,1])
-    print "Slow Version"
-    print dtw_distance(xa,ya) #,[1.0,1.0,0.0])
-    print "Fast Version"
-    print dtw.fast.dtw_fast(xa,ya)
+    print("Slow Version")
+    print(dtw_distance(xa,ya)) #,[1.0,1.0,0.0])
+    print("Fast Version")
+    print(dtw.fast.dtw_fast(xa,ya))
     #print "MLPY"
     #print mlpy.dtw.dtw_std(xa,ya)
-    print "Fast Version 2D"
-    print dtw.fast.dtw_fast_2d(xa,ya)
+    print("Fast Version 2D")
+    print(dtw.fast.dtw_fast_2d(xa,ya))
 
     pylab.show()
 

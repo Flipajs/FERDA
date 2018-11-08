@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'flipajs'
 
 from core.project.project import Project
@@ -86,7 +87,7 @@ if __name__ == "__main__":
     # p.load('/Users/flipajs/Documents/wd/ms_colonyvid5m/colonyvid5m.fproj')
     p.load('/Users/flipajs/Documents/wd/ms_colonyvid5m_mcheck_c10/colonyvid5m.fproj')
 
-    print "# NODES: ", len(p.saved_progress['solver'].g), p.solver_parameters.certainty_threshold
+    print("# NODES: ", len(p.saved_progress['solver'].g), p.solver_parameters.certainty_threshold)
     solver = p.saved_progress['solver']
     # solver.simplify()
     # solver.simplify_to_chunks()
@@ -106,7 +107,7 @@ if __name__ == "__main__":
     # nodes = sorted(nodes, key=lambda x: x.frame_)
 
     for n in reversed(nodes):
-        print solver.simplify(n, first_run=True)
+        print(solver.simplify(n, first_run=True))
         solver.simplify_to_chunks()
         p.saved_progress['solver'] = solver
         experiment1(p)
@@ -122,9 +123,9 @@ if __name__ == "__main__":
                 if not n:
                     continue
 
-                print "AREA: %d, in_d: %d, out_d: %d, type: %s" % (
-                n.area(), solver.g.out_degree(n), solver.g.in_degree(n), l.action_name)
-                print "\tIN:"
+                print("AREA: %d, in_d: %d, out_d: %d, type: %s" % (
+                n.area(), solver.g.out_degree(n), solver.g.in_degree(n), l.action_name))
+                print("\tIN:")
                 for n_in, _, d in solver.g.in_edges(n, data=True):
                     c = 0.00
                     if 'certainty' in d:
@@ -134,9 +135,9 @@ if __name__ == "__main__":
                     a = round((n.area() - n_in.area()) / float(n_in.area()), 2)
                     a = str(copysign(1, a) + a) + 'x'
 
-                    print "\t%0.2f \t%0.2f\t %s" % (s, c, a)
+                    print("\t%0.2f \t%0.2f\t %s" % (s, c, a))
 
-                print "\tOUT:"
+                print("\tOUT:")
                 for _, n_out, d in solver.g.out_edges(n, data=True):
                     c = 0
                     if 'certainty' in d:
@@ -145,7 +146,7 @@ if __name__ == "__main__":
 
                     a = round((n_out.area() - n.area()) / float(n.area()), 2)
                     a = str(copysign(1, a) + a) + 'x'
-                    print "\t%0.2f \t%0.2f\t %s" % (s, c, a)
+                    print("\t%0.2f \t%0.2f\t %s" % (s, c, a))
 
                 if l.action_name == ActionNames.MARK_JOIN:
                     join_num += 1
@@ -154,7 +155,7 @@ if __name__ == "__main__":
                 elif l.action_name == ActionNames.MARK_JOIN_AND_SPLIT:
                     both_num += 1
 
-    print "#JOIN: %d, #SPLIT: %d, #BOTH: %d" % (join_num, split_num, both_num)
+    print("#JOIN: %d, #SPLIT: %d, #BOTH: %d" % (join_num, split_num, both_num))
 
     app.deleteLater()
     sys.exit()

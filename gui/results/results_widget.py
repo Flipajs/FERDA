@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 __author__ = 'fnaiser'
 
 import cPickle as pickle
@@ -607,7 +609,7 @@ class ResultsWidget(QtGui.QWidget):
 
 
         self.video_player.goto(frame)
-        print id_
+        print(id_)
 
         if t_id:
             self._set_active_tracklet_id(t_id)
@@ -618,7 +620,7 @@ class ResultsWidget(QtGui.QWidget):
             id_ = int(self.highlight_tracklet_input.text())
             tracklet = self.project.chm[id_]
         except Exception as e:
-            print e
+            print(e)
             return
 
         if tracklet is None:
@@ -626,7 +628,7 @@ class ResultsWidget(QtGui.QWidget):
 
         frame = tracklet.start_frame(self.project.gm)
         self.video_player.goto(frame)
-        print id_
+        print(id_)
         self._set_active_tracklet_id(id_)
 
     def play_and_highlight_tracklet(self, tracklet, frame=-1, margin=0):
@@ -687,12 +689,12 @@ class ResultsWidget(QtGui.QWidget):
         if self.update_N_sets_callback:
             self.update_N_sets_callback()
         else:
-            print "update N sets callback not present in results_widget"
+            print("update N sets callback not present in results_widget")
 
 
     def __save_gt(self):
         self._gt.save(self.project.GT_file)
-        print "GT saved..."
+        print("GT saved...")
 
         # if self._gt is None:
         #     print "No GT file opened"
@@ -719,9 +721,9 @@ class ResultsWidget(QtGui.QWidget):
             try:
                 if len(ch.P) == 1:
                     id_ = list(ch.P)[0]
-                    print id_, self._gt_markers[id_].centerPos().y()
+                    print(id_, self._gt_markers[id_].centerPos().y())
                     if self._gt[frame][id_][0] < 0:
-                        print id_
+                        print(id_)
                         self._gt[frame][id_] = (centroid[0], centroid[1])
             except:
                 pass
@@ -730,7 +732,7 @@ class ResultsWidget(QtGui.QWidget):
 
     def __add_gt_markers(self):
         if self._gt is None:
-            print "No GT file opened"
+            print("No GT file opened")
             return
 
         frame = self.video_player.current_frame()
@@ -929,7 +931,7 @@ class ResultsWidget(QtGui.QWidget):
         rch = RegionChunk(ch, self.project.gm, self.project.rm)
         f = self.video_player.current_frame()
 
-        print id_, rch.region_in_t(f)
+        print(id_, rch.region_in_t(f))
 
     def update_marker_position(self, marker, c):
         sf = self.project.other_parameters.img_subsample_factor
@@ -1173,7 +1175,7 @@ class ResultsWidget(QtGui.QWidget):
                 #     print r.id_
 
                 if r is None:
-                    print ch
+                    print(ch)
                     continue
 
                 centroid = r.centroid().copy()
@@ -1606,11 +1608,11 @@ class ResultsWidget(QtGui.QWidget):
                 if data is not None:
                     id_coverage[id_] += 1
 
-        print "--- GT info ---"
-        print "#frames: ", len(frames)
-        print "ID coverage: "
+        print("--- GT info ---")
+        print("#frames: ", len(frames))
+        print("ID coverage: ")
         for i in range(num_ids):
-            print " {}:{:.2%}".format(i, id_coverage[i] / float(len(frames)))
+            print(" {}:{:.2%}".format(i, id_coverage[i] / float(len(frames))))
 
     def __create_gt_from_results(self):
         from utils.gt.gt import GT
@@ -1670,7 +1672,7 @@ class ResultsWidget(QtGui.QWidget):
 
         # for frame, data in self._gt.iteritems():
         for frame, data in self._gt.get_clear_positions_dict().iteritems():
-            print frame
+            print(frame)
             matches = [list() for _ in range(len(self.project.animals))]
             for t in self.project.chm.tracklets_in_frame(frame):
                 rch = RegionChunk(t, self.project.gm, self.project.rm)
@@ -1699,8 +1701,8 @@ class ResultsWidget(QtGui.QWidget):
 
     def print_conflicts(self):
         from tqdm import tqdm
-        print "CONFLICTS: "
-        print " A) P N intersection (len(P.intersection(N)) > 0"
+        print("CONFLICTS: ")
+        print(" A) P N intersection (len(P.intersection(N)) > 0")
 
         problems = []
         for t in tqdm(self.project.chm.chunk_gen()):
@@ -1708,7 +1710,7 @@ class ResultsWidget(QtGui.QWidget):
                 problems.append(t)
 
         for t in problems:
-            print "\t", t, t.P, t.N
+            print("\t", t, t.P, t.N)
 
         problemsB = []
         problemsC = []
@@ -1738,22 +1740,22 @@ class ResultsWidget(QtGui.QWidget):
             if frame >= max_f:
                 break
 
-        print " B) ID missing (frames where it is not possible to distribute all IDs)"
+        print(" B) ID missing (frames where it is not possible to distribute all IDs)")
         for frame, x in problemsB:
-            print "frame: {}, missing IDs: {}".format(frame, x)
+            print("frame: {}, missing IDs: {}".format(frame, x))
 
-        print " C) ID duplicate (frames where one ID is assigned to multiple regions)"
+        print(" C) ID duplicate (frames where one ID is assigned to multiple regions)")
         for frame, x in problemsC:
-            print "frame: {}, tracklet id: {} id: {}".format(frame, x.id(), x.P)
+            print("frame: {}, tracklet id: {} id: {}".format(frame, x.id(), x.P))
 
 
 
 
     def print_undecided(self):
-        print "UNDECIDED: "
+        print("UNDECIDED: ")
         for t in self.project.chm.chunk_gen():
             if len(t.P.union(t.N)) != len(self.project.animals):
-                print t, t.P, t.N
+                print(t, t.P, t.N)
 
     def split_tracklet(self):
         import random
@@ -1865,7 +1867,7 @@ class ResultsWidget(QtGui.QWidget):
     def head_fix(self):
         if self.active_tracklet_id < 0:
             for t in self.project.chm.chunk_gen():
-                print t.id(), t.length()
+                print(t.id(), t.length())
                 self.__head_fix(t)
         else:
             self.__head_fix(self.project.chm[self.active_tracklet_id])
@@ -1921,7 +1923,7 @@ class ResultsWidget(QtGui.QWidget):
             pixmap.save(wd+name+'.png')
             del painter
 
-            self.video_player.next()
+            next(self.video_player)
             pass
 
         # TODO: wait
@@ -2019,7 +2021,7 @@ class ResultsWidget(QtGui.QWidget):
             qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
             if data.max() == 0:
-                print "MAX is 0"
+                print("MAX is 0")
                 return
 
             data /= data.max()
@@ -2053,7 +2055,7 @@ class ResultsWidget(QtGui.QWidget):
                 frame = self.video_player.current_frame()
             else:
                 frame = self.get_separated_frame_callback()
-                print "SEPARATED IN: ", frame
+                print("SEPARATED IN: ", frame)
 
         permutation_data = []
         for t in self.project.chm.tracklets_in_frame(frame):
@@ -2132,9 +2134,9 @@ class ResultsWidget(QtGui.QWidget):
     def results_view_show_info_selected(self, get_selected):
         # step = int(self.show_results_summary_steps_i.text())
         regions = get_selected()
-        print "SELECTED IDS:"
+        print("SELECTED IDS:")
         for r in regions:
-            print str(r)
+            print(str(r))
             # frame = ((id + 1) / len(self.p.animals)) * step
             # print "selected id: {} in frame: {}".format(id, frame)
 
@@ -2189,8 +2191,8 @@ class ResultsWidget(QtGui.QWidget):
 
                 pbar.update(frame - df)
 
-        print "analysis 1) DONE"
-        print "# CS: ", len(groups)
+        print("analysis 1) DONE")
+        print("# CS: ", len(groups))
 
         total_len = 0
         for t in unique_tracklets:
@@ -2202,11 +2204,11 @@ class ResultsWidget(QtGui.QWidget):
                 single_len += len(t)
 
 
-        print "Total tracklet length {}, coverage {:.2%}, single-ID coverage {:.2%}".format(
+        print("Total tracklet length {}, coverage {:.2%}, single-ID coverage {:.2%}".format(
             total_len,
             (total_len/float(len(self.p.animals)))/total_frame_count,
             (single_len / float(len(self.p.animals))) / total_frame_count,
-        )
+        ))
 
         min_lengths = []
         val_ = 0
@@ -2218,28 +2220,28 @@ class ResultsWidget(QtGui.QWidget):
 
         for i in range(1, 11):
             id_ = ids[i]
-            print "############### "
-            print -min_lengths[id_]
+            print("############### ")
+            print(-min_lengths[id_])
 
             for t in groups[id_]:
-                print t.id(), t.length()
+                print(t.id(), t.length())
 
-        print
-        print
-        print "WORST ONES:"
+        print()
+        print()
+        print("WORST ONES:")
         for i in range(10):
             id_ = ids[-i]
-            print "############### "
-            print -min_lengths[id_]
+            print("############### ")
+            print(-min_lengths[id_])
 
             for t in groups[id_]:
-                print t.id(), t.length()
+                print(t.id(), t.length())
 
         num_single = 0
 
         pivot = groups[ids[0]]
 
-        print pivot
+        print(pivot)
 
 
         g1 = groups[0]
@@ -2247,11 +2249,11 @@ class ResultsWidget(QtGui.QWidget):
             if len(set(g1).intersection(g2)) == len(self.project.animals) - 1:
                 num_single += 1
 
-                print "single ID:"
+                print("single ID:")
                 t1 = list(set(g1).difference(set(g1).intersection(g2)))[0]
                 t2 = list(set(g2).difference(set(g1).intersection(g2)))[0]
-                print t1.id(), t1.length()
-                print t2.id(), t2.length()
+                print(t1.id(), t1.length())
+                print(t2.id(), t2.length())
 
 
                 # was added to Track
@@ -2264,7 +2266,7 @@ class ResultsWidget(QtGui.QWidget):
 
                 # was added to Track, shouldn'd happen
                 if t2.id() not in self.project.chm.chunks_:
-                    print "T2 happened....."
+                    print("T2 happened.....")
                     for t in self.project.chm.tracklets_in_frame(t2.start_frame(self.project.gm)):
                         if t.is_track():
                             if t.is_inside(t1):
@@ -2274,14 +2276,14 @@ class ResultsWidget(QtGui.QWidget):
                 from core.graph.track import Track
                 tt = Track([t1, t2], self.project.gm)
                 self.project.chm.new_track(tt, self.project.gm)
-                print "T", tt.id()
+                print("T", tt.id())
 
             g1 = g2
 
-        print "# single", num_single
+        print("# single", num_single)
 
     def show_color_settings(self):
-        from set_colors_gui import SetColorsGui
+        from .set_colors_gui import SetColorsGui
 
         w = SetColorsGui(self.project)
         w.show()

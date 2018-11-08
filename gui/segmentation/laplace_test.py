@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 from PyQt4 import QtGui, QtCore
 import cv2, sys
 import numpy as np
-import painter
+from . import painter
 import matplotlib.pyplot as plt
 
 class LaplacianTest(QtGui.QWidget):

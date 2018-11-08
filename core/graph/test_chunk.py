@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 import unittest
-from chunk import Chunk
+from .chunk import Chunk
 from core.graph.graph_manager import GraphManager
 from core.project.project import dummy_project
 from core.region.region import Region

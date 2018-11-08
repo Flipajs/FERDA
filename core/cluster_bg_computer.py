@@ -1,6 +1,8 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import sys
 from core.project.project import Project
-from graph_assembly import graph_assembly
+from .graph_assembly import graph_assembly
 from core.fake_background_computer import FakeBGComp
 
 
@@ -17,10 +19,10 @@ if __name__ == '__main__':
 
     graph_assembly(bgcomp)
 
-    print
-    print "PROJECT WAS ASSEMBLED."
-    print
+    print()
+    print("PROJECT WAS ASSEMBLED.")
+    print()
 
-    print "SAVING..."
+    print("SAVING...")
     p.save()
-    print "SAVED"
+    print("SAVED")

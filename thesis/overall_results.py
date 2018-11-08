@@ -1,3 +1,4 @@
+from __future__ import print_function
 from thesis.thesis_utils import load_all_projects
 from utils.idtracker import load_idtracker_data
 from utils.gt.evaluator import compare_trackers
@@ -14,13 +15,13 @@ def run(semistate='id_classified', dir_name='', HIL=False):
             if name not in ps:
                 continue
 
-            print name
+            print(name)
 
             p = ps[name]
             path = idTracker_results_paths[name] + nogaps + '.mat'
             impath = DEV_WD + '/thesis/out/imgs/' + dir_name + '/' + name + nogaps + '.png'
 
-            print path, p.working_directory, impath
+            print(path, p.working_directory, impath)
             r = compare_trackers(p, path, impath=impath, name=project_real_names[name])
 
             results[name + nogaps] = r
@@ -160,7 +161,7 @@ if __name__ == '__main__':
                 'lp_HIL_INIT_SEG_IDCR2']
 
     for test in old_:
-        print "$$$$$$$$$$$", test, "$$$$$$$$"
+        print("$$$$$$$$$$$", test, "$$$$$$$$")
         for pname in project_real_names.iterkeys():
             try:
                 with open(wd+test+'_'+pname) as f:
@@ -190,11 +191,11 @@ if __name__ == '__main__':
                 except:
                     pass
 
-                print " {}\t\t{:.2%}({:+.2%})\t {:.2%}({:+.2%}) \t\t #HiLs: {}, #UD: {}".format(pname, cc, ccdif, mc, mcdif, r[1][0]['HIL'], udec)
+                print(" {}\t\t{:.2%}({:+.2%})\t {:.2%}({:+.2%}) \t\t #HiLs: {}, #UD: {}".format(pname, cc, ccdif, mc, mcdif, r[1][0]['HIL'], udec))
 
                 # print r[0]
             except:
-                print "\tNOT READY YET"
+                print("\tNOT READY YET")
 
     # run(semistate='lp_id_0', dir_name='overall_clean')
     # results2latex2('lp_id')

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import networkx as nt
 import graph_tool.all as gt
 import igraph as ig
@@ -176,47 +177,47 @@ def get_rnd(max, length):
 
 import time
 rnd_array = get_rnd(1000, 500)
-print "Random done"
+print("Random done")
 
 lim = 30*60*10
 
 t = time.time()
 graph_tool, graph_tool_vertices, graph_tool_edges = create_graph_tool(50, lim)
-print "graph_tool creation: %s" % (time.time()-t)
+print("graph_tool creation: %s" % (time.time()-t))
 t = time.time()
 search_graph_tool(graph_tool)
-print "graph_tool search: %s" % (time.time()-t)
+print("graph_tool search: %s" % (time.time()-t))
 t = time.time()
 delete_edges_graph_tool(graph_tool, graph_tool_edges, rnd_array)
-print "graph_tool edges deletion: %s" % (time.time()-t)
+print("graph_tool edges deletion: %s" % (time.time()-t))
 t = time.time()
 delete_nodes_graph_tool(graph_tool, graph_tool_vertices, rnd_array)
-print "graph_tool nodes deletion: %s" % (time.time()-t)
+print("graph_tool nodes deletion: %s" % (time.time()-t))
 
 import cPickle as pickle
 s = time.time()
 with open('/Users/flipajs/Documents/wd/graph_test_graph_tool.pkl', 'wb') as f:
     pickle.dump(graph_tool, f, -1)
-print "DUMP TIME: ", time.time() - s
+print("DUMP TIME: ", time.time() - s)
 
 t = time.time()
 networkx, networkx_vertices, networkx_edges = create_networkx(50, lim)
-print "networkx creation: %s" % (time.time()-t)
+print("networkx creation: %s" % (time.time()-t))
 t = time.time()
 search_networkx(networkx)
-print "networkx search: %s" % (time.time()-t)
+print("networkx search: %s" % (time.time()-t))
 t = time.time()
 delete_edges_networkx(networkx, networkx_edges, rnd_array)
-print "networkx edges deletion: %s" % (time.time()-t)
+print("networkx edges deletion: %s" % (time.time()-t))
 
 t = time.time()
 delete_nodes_networkx(networkx, networkx_vertices, rnd_array)
-print "networkx nodes deletion: %s" % (time.time()-t)
+print("networkx nodes deletion: %s" % (time.time()-t))
 
 s = time.time()
 with open('/Users/flipajs/Documents/wd/graph_test_networkx.pkl', 'wb') as f:
     pickle.dump(networkx, f, -1)
-print "DUMP TIME: ", time.time() - s
+print("DUMP TIME: ", time.time() - s)
 
 # t = time.time()
 # igraph, igraph_vertices, igraph_edges = create_igraph(10,lim)

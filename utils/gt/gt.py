@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import absolute_import
 import pickle
 import sys
 import warnings
@@ -795,7 +796,7 @@ if __name__ == '__main__':
     gt.load(p.GT_file)
 
     path = '/Users/flipajs/Documents/wd/idTracker/'+name+'/trajectories'+nogaps+'.mat'
-    from evaluator import compare_trackers
+    from .evaluator import compare_trackers
 
     results = compare_trackers(p, path, impath='/Users/flipajs/Documents/dev/ferda/thesis/results/overall_'+name+nogaps+'_rf.png')
 

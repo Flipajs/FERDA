@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 
 import numpy as np
@@ -58,7 +59,7 @@ if __name__ == '__main__':
 
     if v_size < 1.4142:
 
-        print "no deformation"
+        print("no deformation")
     else:
         w = v*(MAX_SPEED / v_size)
         a = M + w

@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 
 from numpy import *
@@ -29,7 +30,7 @@ class CropSaver():
         if self.crop_size%2 == 1:
             self.crop_size += 1
 
-        print self.crop_size
+        print(self.crop_size)
 
     def save(self, ants, img, frame_num):
         border = self.crop_size

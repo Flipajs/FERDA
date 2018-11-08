@@ -1,3 +1,4 @@
+from __future__ import print_function
 import _clearmetrics
 
 # 1d ground truth and measurements for 3 frames
@@ -26,21 +27,21 @@ measurements = {
 
 }
 
-print 'Groundtruth:'
-print groundtruth
-print '\nMeasurements:'
-print measurements
-print ''
+print('Groundtruth:')
+print(groundtruth)
+print('\nMeasurements:')
+print(measurements)
+print('')
 
 clear = _clearmetrics.ClearMetrics(groundtruth, measurements, 1.5)
 clear.match_sequence()
 for frame in groundtruth.keys():
-    print 'Frame ' + str(frame) + ' matches:'
+    print('Frame ' + str(frame) + ' matches:')
     for gt in clear.measurements_matches[frame]:
         if gt is not None and gt != -1:
-            print 'gt: %d, m: %d, distance %f' % \
-                (gt, clear.gt_matches[frame][gt], clear.gt_distances[frame][gt])
-    print ''
+            print('gt: %d, m: %d, distance %f' % \
+                (gt, clear.gt_matches[frame][gt], clear.gt_distances[frame][gt]))
+    print('')
 
 evaluation = [clear.get_mota(),
               clear.get_motp(),
@@ -49,5 +50,5 @@ evaluation = [clear.get_mota(),
               clear.get_mismatches_count(),
               clear.get_object_count(),
               clear.get_matches_count()]
-print 'MOTA, MOTP, FN, FP, mismatches, objects, matches'
-print evaluation
+print('MOTA, MOTP, FN, FP, mismatches, objects, matches')
+print(evaluation)

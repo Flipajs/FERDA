@@ -1,3 +1,4 @@
+from __future__ import print_function
 import math
 
 print(__doc__)
@@ -22,7 +23,7 @@ for i in range(h):
         X[i*w+j, :] = [im[i,j,0], im[i,j,1], im[i,j,2], math.sqrt(i*i + j*j)]
 
 
-print X.shape
+print(X.shape)
 ###############################################################################
 # Compute prepare_region_cardinality_samples with MeanShift
 
@@ -48,7 +49,7 @@ from itertools import cycle
 pl.figure(1)
 pl.clf()
 
-print labels.shape
+print(labels.shape)
 limg = np.reshape(labels, (h,w))
 pl.matshow(limg)
 

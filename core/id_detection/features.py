@@ -1,3 +1,4 @@
+from __future__ import print_function
 from skimage.measure import moments_central, moments_hu, moments_normalized, moments
 import cv2
 from utils.img import get_img_around_pts, replace_everything_but_pts
@@ -261,7 +262,7 @@ def evaluate_features_performance(
     single_region_ids, animal_ids = gt.get_single_region_ids(project)
     if verbose:
         np.set_printoptions(precision=4)
-        print len(single_region_ids), len(animal_ids)
+        print(len(single_region_ids), len(animal_ids))
 
     if not isinstance(fm_names, list):
         fm_names = [fm_names]
@@ -286,10 +287,10 @@ def evaluate_features_performance(
         results[test_size_ratio] = {'layer': 'features'}
 
         if verbose:
-            print
-            print
-            print "#########################################################"
-            print "Training/Learning ratio: {}, #train: {}, #test: {}".format(test_size_ratio, int(len(animal_ids)*(1 - test_size_ratio)), int(len(animal_ids)*test_size_ratio))
+            print()
+            print()
+            print("#########################################################")
+            print("Training/Learning ratio: {}, #train: {}, #test: {}".format(test_size_ratio, int(len(animal_ids)*(1 - test_size_ratio)), int(len(animal_ids)*test_size_ratio)))
 
         nc = len(fms)
         if not combinations:
@@ -308,8 +309,8 @@ def evaluate_features_performance(
                     fliplr = True
 
                 if verbose:
-                    print
-                    print "##### ", s , " #####"
+                    print()
+                    print("##### ", s , " #####")
 
                 results[test_size_ratio][s] = {}
 
@@ -324,7 +325,7 @@ def evaluate_features_performance(
                         _, f_ = fm[r_id]
 
                         if f_[0] is None:
-                            print r_id, "MISSING"
+                            print(r_id, "MISSING")
                             animal_ids.pop(len(X))
                             break
 
@@ -338,7 +339,7 @@ def evaluate_features_performance(
                 X = np.array(X)
                 y = np.array(animal_ids)
 
-                print X.shape, y.shape
+                print(X.shape, y.shape)
 
                 results[test_size_ratio][s]['X_shape'] = X.shape
                 results[test_size_ratio][s]['class_frequency'] = []
@@ -428,17 +429,17 @@ def evaluate_features_performance(
 
                 if verbose:
                     num_test = int(test_size_ratio*X.shape[0])
-                    print "Mean Correct: {}(std:{})/{} ({:.2%}, std: {})".format(
+                    print("Mean Correct: {}(std:{})/{} ({:.2%}, std: {})".format(
                         np.mean(results[test_size_ratio][s]['num_correct']),
                         np.std(results[test_size_ratio][s]['num_correct']),
                         num_test,
                         np.mean(results[test_size_ratio][s]['accuracy']),
                         np.std(results[test_size_ratio][s]['accuracy'])
-                    )
+                    ))
 
-                    print "class frequency", results[test_size_ratio][s]['class_frequency']
-                    print "train class frequency, mean: ", np.mean(results[test_size_ratio][s]['train_class_frequency'], axis=0), "std: ", np.std(results[test_size_ratio][s]['train_class_frequency'], axis=0)
-                    print "class accuracy mean", np.mean(results[test_size_ratio][s]['class_accuracy'], axis=0), "std: ", np.std(results[test_size_ratio][s]['class_accuracy'], axis=0)
+                    print("class frequency", results[test_size_ratio][s]['class_frequency'])
+                    print("train class frequency, mean: ", np.mean(results[test_size_ratio][s]['train_class_frequency'], axis=0), "std: ", np.std(results[test_size_ratio][s]['train_class_frequency'], axis=0))
+                    print("class accuracy mean", np.mean(results[test_size_ratio][s]['class_accuracy'], axis=0), "std: ", np.std(results[test_size_ratio][s]['class_accuracy'], axis=0))
 
     # reset...
     np.set_printoptions()
@@ -491,8 +492,8 @@ def evaluate_features_performance_opt(
             s = fm_name.split('.')[-2] + ' '
 
             if verbose:
-                print
-                print "##### ", s , " #####"
+                print()
+                print("##### ", s , " #####")
 
             results[test_size_ratio][s] = {}
 
@@ -501,7 +502,7 @@ def evaluate_features_performance_opt(
             X = X_data[fm_name]
             y = y_data
 
-            print X.shape, y.shape
+            print(X.shape, y.shape)
 
             results[test_size_ratio][s]['X_shape'] = X.shape
             results[test_size_ratio][s]['class_frequency'] = []
@@ -556,17 +557,17 @@ def evaluate_features_performance_opt(
 
             if verbose:
                 num_test = int(test_size_ratio*X.shape[0])
-                print "Mean Correct: {}(std:{})/{} ({:.2%}, std: {})".format(
+                print("Mean Correct: {}(std:{})/{} ({:.2%}, std: {})".format(
                     np.mean(results[test_size_ratio][s]['num_correct']),
                     np.std(results[test_size_ratio][s]['num_correct']),
                     num_test,
                     np.mean(results[test_size_ratio][s]['accuracy']),
                     np.std(results[test_size_ratio][s]['accuracy'])
-                )
+                ))
 
-                print "class frequency", results[test_size_ratio][s]['class_frequency']
-                print "train class frequency, mean: ", np.mean(results[test_size_ratio][s]['train_class_frequency'], axis=0), "std: ", np.std(results[test_size_ratio][s]['train_class_frequency'], axis=0)
-                print "class accuracy mean", np.mean(results[test_size_ratio][s]['class_accuracy'], axis=0), "std: ", np.std(results[test_size_ratio][s]['class_accuracy'], axis=0)
+                print("class frequency", results[test_size_ratio][s]['class_frequency'])
+                print("train class frequency, mean: ", np.mean(results[test_size_ratio][s]['train_class_frequency'], axis=0), "std: ", np.std(results[test_size_ratio][s]['train_class_frequency'], axis=0))
+                print("class accuracy mean", np.mean(results[test_size_ratio][s]['class_accuracy'], axis=0), "std: ", np.std(results[test_size_ratio][s]['class_accuracy'], axis=0))
 
     # reset...
     np.set_printoptions()
@@ -625,7 +626,7 @@ def evaluate_features_performance_all(
 
         y = y_data
 
-        print X.shape, y.shape
+        print(X.shape, y.shape)
 
         results[test_size_ratio][s]['X_shape'] = X.shape
         results[test_size_ratio][s]['class_frequency'] = []
@@ -680,17 +681,17 @@ def evaluate_features_performance_all(
 
         if verbose:
             num_test = int(test_size_ratio*X.shape[0])
-            print "Mean Correct: {}(std:{})/{} ({:.2%}, std: {})".format(
+            print("Mean Correct: {}(std:{})/{} ({:.2%}, std: {})".format(
                 np.mean(results[test_size_ratio][s]['num_correct']),
                 np.std(results[test_size_ratio][s]['num_correct']),
                 num_test,
                 np.mean(results[test_size_ratio][s]['accuracy']),
                 np.std(results[test_size_ratio][s]['accuracy'])
-            )
+            ))
 
-            print "class frequency", results[test_size_ratio][s]['class_frequency']
-            print "train class frequency, mean: ", np.mean(results[test_size_ratio][s]['train_class_frequency'], axis=0), "std: ", np.std(results[test_size_ratio][s]['train_class_frequency'], axis=0)
-            print "class accuracy mean", np.mean(results[test_size_ratio][s]['class_accuracy'], axis=0), "std: ", np.std(results[test_size_ratio][s]['class_accuracy'], axis=0)
+            print("class frequency", results[test_size_ratio][s]['class_frequency'])
+            print("train class frequency, mean: ", np.mean(results[test_size_ratio][s]['train_class_frequency'], axis=0), "std: ", np.std(results[test_size_ratio][s]['train_class_frequency'], axis=0))
+            print("class accuracy mean", np.mean(results[test_size_ratio][s]['class_accuracy'], axis=0), "std: ", np.std(results[test_size_ratio][s]['class_accuracy'], axis=0))
 
     # reset...
     np.set_printoptions()
@@ -871,7 +872,7 @@ def optimise_features(wd, fm_name):
     with open(wd+'/temp/'+fm_name+ '.pkl') as f:
         ids_, _, _, f_im = pickle.load(f)
 
-    print np.sum(f_im > 0.00001)
+    print(np.sum(f_im > 0.00001))
 
     ids, fs = fm.get_all()
 
@@ -928,7 +929,7 @@ if __name__ == '__main__':
 
     # test_regions = []
     single_region_ids, _ = gt.get_single_region_ids(p)
-    print len(single_region_ids)
+    print(len(single_region_ids))
     # print len(single_region_ids)
     # fm_idtracker_i = FeatureManager(p.working_directory, db_name='fm_idtracker_i_d50_test.sqlite3')
     # print "test"
@@ -981,14 +982,14 @@ if __name__ == '__main__':
                             fm[0].add(r.id(), f0)
                             fm[1].add(r.id(), f1)
                         except Exception as e:
-                            print e
+                            print(e)
                     else:
                         fm.add(r.id(), f)
 
                 print_progress(j, num_regions)
 
 
-            print "TIME: ", time.time() - t1
+            print("TIME: ", time.time() - t1)
 
             # j = 0
 
@@ -1030,4 +1031,4 @@ if __name__ == '__main__':
             with open(RESULT_WD+'/results_Cam1_rfmax50_80.pkl', 'wb') as f:
                 pickle.dump(results, f)
 
-            print results
+            print(results)

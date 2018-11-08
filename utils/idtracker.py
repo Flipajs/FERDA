@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 def load_idtracker_data(path, project, gt):
@@ -5,7 +6,7 @@ def load_idtracker_data(path, project, gt):
         import scipy.io as sio
         data = sio.loadmat(path)
         data = data['trajectories']
-        print len(data)
+        print(len(data))
 
         permutation_data = []
 
@@ -20,7 +21,7 @@ def load_idtracker_data(path, project, gt):
             if i == len(project.animals):
                 break
 
-        print "permutation search in frame", frame
+        print("permutation search in frame", frame)
 
         # frame = 0
         for id_, it in enumerate(data[frame]):
@@ -31,5 +32,5 @@ def load_idtracker_data(path, project, gt):
 
         return data, perm
     except IOError:
-        print "idtracker data was not loaded", path
+        print("idtracker data was not loaded", path)
         return None, None

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from core.id_detection.learning_process import LearningProcess
 from core.project.project import Project
 from utils.gt.gt import GT
@@ -54,9 +55,9 @@ def check_gt(p, tracklet_gt_map, step, already_reported):
         if (len(t.P) == 1 and t.P != gt) or t_n_fail:
             already_reported.add(t.id())
 
-            print "STEP: {}, t_id: {}, t_len: {}, t.P: {}, t.N: {}, gt: {}".format(step, t.id(), t.length(), t.P, t.N, gt)
+            print("STEP: {}, t_id: {}, t_len: {}, t.P: {}, t.N: {}, gt: {}".format(step, t.id(), t.length(), t.P, t.N, gt))
             try:
-                print "\t ###### decision cert: {}, tracklet measurements: {}".format(t.decision_cert, t.measurements)
+                print("\t ###### decision cert: {}, tracklet measurements: {}".format(t.decision_cert, t.measurements))
             except:
                 pass
 
@@ -114,7 +115,7 @@ def assign_ids(p, semistate='tracklets_s_classified',
             else:
                 tracklet_gt_map[t_id].add(perm[a_id])
 
-    print len(lp.user_decisions)
+    print(len(lp.user_decisions))
 
     # IMPORTANT!
     if HIL:
@@ -135,7 +136,7 @@ def assign_ids(p, semistate='tracklets_s_classified',
 
         init_training_set = None
         for run in range(100):
-            print "---------_ RUN #{} _---------".format(run)
+            print("---------_ RUN #{} _---------".format(run))
             tset = lp.reset_learning()
             if not init_training_set:
                 init_training_set = tset
@@ -169,17 +170,17 @@ def assign_ids(p, semistate='tracklets_s_classified',
 
                     finished = False
 
-                    print "/// "
-                    print lp.user_decisions
-                    print "////"
-                    print "User input. T id: {}, aid: {} class: {}".format(t_id, animal_id, t_class)
-                    print "BREAKING... {} tracklets left undecided (sum len: {}). User decisions: {}. Coverage: {:.2%}".format(
-                        len(lp.undecided_tracklets), get_len_undecided(p, lp), len(lp.user_decisions), get_coverage(p))
+                    print("/// ")
+                    print(lp.user_decisions)
+                    print("////")
+                    print("User input. T id: {}, aid: {} class: {}".format(t_id, animal_id, t_class))
+                    print("BREAKING... {} tracklets left undecided (sum len: {}). User decisions: {}. Coverage: {:.2%}".format(
+                        len(lp.undecided_tracklets), get_len_undecided(p, lp), len(lp.user_decisions), get_coverage(p)))
                     break
                 elif len(lp.tracklet_certainty) == 0 and run >= increase_init_set:
                     finished = True
 
-                    print "FINISHED"
+                    print("FINISHED")
                     break
 
             if finished:
@@ -189,7 +190,7 @@ def assign_ids(p, semistate='tracklets_s_classified',
 
         from utils.gt.evaluator import eval_centroids, print_coverage
 
-        print "RESULTS"
+        print("RESULTS")
         _, _, cc, mc = eval_centroids(p, gt)
         print_coverage(cc, mc)
 
@@ -272,7 +273,7 @@ def assign_ids_HIL_INIT(p,
     i_HIL = 0
     t_id = lp.question_near_assigned(tracklet_gt_map, min_samples=frames_per_class, max_frame_d=max_frame_d)
     while t_id is not None and i_HIL != max_HIL:
-        print t_id
+        print(t_id)
         t_id = lp.question_near_assigned(tracklet_gt_map, min_samples=frames_per_class, max_frame_d=max_frame_d)
         i_HIL += 1
 
@@ -295,10 +296,10 @@ def assign_ids_HIL_INIT(p,
 
         init_training_set = None
         for run in range(100):
-            print "---------_ RUN #{} _---------".format(run)
+            print("---------_ RUN #{} _---------".format(run))
             tset = lp.reset_learning()
 
-            print len(lp.user_decisions)
+            print(len(lp.user_decisions))
 
             if not init_training_set:
                 init_training_set = tset
@@ -332,17 +333,17 @@ def assign_ids_HIL_INIT(p,
 
                     finished = False
 
-                    print "/// "
-                    print lp.user_decisions
-                    print "////"
-                    print "User input. T id: {}, aid: {} class: {}".format(t_id, animal_id, t_class)
-                    print "BREAKING... {} tracklets left undecided (sum len: {}). User decisions: {}. Coverage: {:.2%}".format(
-                        len(lp.undecided_tracklets), get_len_undecided(p, lp), len(lp.user_decisions), get_coverage(p))
+                    print("/// ")
+                    print(lp.user_decisions)
+                    print("////")
+                    print("User input. T id: {}, aid: {} class: {}".format(t_id, animal_id, t_class))
+                    print("BREAKING... {} tracklets left undecided (sum len: {}). User decisions: {}. Coverage: {:.2%}".format(
+                        len(lp.undecided_tracklets), get_len_undecided(p, lp), len(lp.user_decisions), get_coverage(p)))
                     break
                 elif len(lp.tracklet_certainty) == 0 and run >= increase_init_set:
                     finished = True
 
-                    print "FINISHED"
+                    print("FINISHED")
                     break
 
             if finished:
@@ -350,7 +351,7 @@ def assign_ids_HIL_INIT(p,
 
         from utils.gt.evaluator import eval_centroids, print_coverage
 
-        print "RESULTS"
+        print("RESULTS")
         _, _, cc, mc = eval_centroids(p, gt)
         print_coverage(cc, mc)
 
@@ -366,11 +367,11 @@ def assign_ids_HIL_INIT(p,
 
 def run_assign_id(ps, c):
     for pname, p in ps.iteritems():
-        print
-        print
-        print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-        print pname
-        print
+        print()
+        print()
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+        print(pname)
+        print()
 
         dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -390,18 +391,18 @@ def run_assign_id(ps, c):
                             semistate=c['semistate'],
                             min_tracklet_len=c['min_tracklet_len'])
 
-        print result
+        print(result)
 
         with open(RESULT_WD + '/id_assignment/' + c['out_semistate'] + '_' + pname, 'wb') as f:
             pickle.dump((c, result), f)
 
 def run_assign_id_HIL_INIT(ps, c):
     for pname, p in ps.iteritems():
-        print
-        print
-        print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-        print pname
-        print
+        print()
+        print()
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+        print(pname)
+        print()
 
         result = assign_ids_HIL_INIT(p,
                              frames_per_class=c['frames_per_class'],
@@ -502,7 +503,7 @@ if __name__ == '__main__':
 
     ps = load_all_projects()
     for pname, p in ps.iteritems():
-        print pname, p.working_directory
+        print(pname, p.working_directory)
 
 
     ps2 = {}
@@ -524,7 +525,7 @@ if __name__ == '__main__':
     c['max_frame_d'] = 150
     c['semistate'] = 'tracklets_s_classified_gt'
 
-    print "^^^^^^^^^^^^^^^^^^ ... ^^^^^^^^^^^^^^^^^^^^^^^^^"
+    print("^^^^^^^^^^^^^^^^^^ ... ^^^^^^^^^^^^^^^^^^^^^^^^^")
     run_assign_id_HIL_INIT(ps, c)
 
 

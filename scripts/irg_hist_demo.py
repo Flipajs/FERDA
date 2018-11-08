@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'flipajs'
 
 from utils.video_manager import VideoManager
@@ -87,7 +88,7 @@ class ColorHist3d():
                     num_fg = self.hist_fg_[i, j, k]
                     if num_bg + num_fg > 0:
                         self.p_fg_[i, j, k] = num_fg / float(num_bg + num_fg)
-                        print i, j, k, self.p_fg_[i, j, k]
+                        print(i, j, k, self.p_fg_[i, j, k])
 
     def get_p_k_x(self, k, x):
         a = self.hist_[x[0], x[1], x[2], k]
@@ -128,7 +129,7 @@ class ColorHist3d():
                 if sum_ > self.epsilon:
                     break
 
-            print "C_ID DONE: ", c_id, sum_
+            print("C_ID DONE: ", c_id, sum_)
 
 
 def irgb_transformation(im):
@@ -292,7 +293,7 @@ def show_foreground(CH3d, data, im):
     #         im[i, j, :] = colors[l]
     #         labels[i, j] = l
 
-    print "labelling time ", time.time() - s
+    print("labelling time ", time.time() - s)
 
     return im, labels
 
@@ -394,7 +395,7 @@ def process_ccs(im, labels):
 
     s = time.time()
     ccs = get_ccs(labels, bg=-1, min_a=min_a, max_a=max_a)
-    print "get_ccs t: ", time.time() - s
+    print("get_ccs t: ", time.time() - s)
 
     for cc in ccs:
         if not (min_a < len(cc) < max_a):
@@ -475,4 +476,4 @@ if __name__ == "__main__":
                 foreground_ = process_ccs(foreground, labels)
                 plt.imsave(wd + '/' + str(frame_) + '_p.png', foreground_)
 
-                print frame_
+                print(frame_)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'flipajs'
 
 from core.project.project import Project
@@ -31,7 +32,7 @@ def assembly(project_path, part_names):
     nodes_to_process = []
     end_nodes_prev = []
     for part, i in zip(part_names, range(len(part_names))):
-        print "Processing ", part
+        print("Processing ", part)
         # this is slightly changed code from background_computer/assembly_after_parallelization
         with open(p.working_directory+'/'+part, 'rb') as f:
             up = pickle.Unpickler(f)
@@ -65,13 +66,13 @@ def assembly(project_path, part_names):
             solver.add_edges_(end_nodes_prev, start_nodes, fast=True)
             end_nodes_prev = end_nodes
 
-    print "updating t references..."
+    print("updating t references...")
     solver.update_nodes_in_t_refs()
-    print "simplifying..."
+    print("simplifying...")
     solver.simplify(nodes_to_process)
-    print "chunks updating..."
+    print("chunks updating...")
     solver.simplify_to_chunks(nodes_to_process)
-    print "saving..."
+    print("saving...")
 
     # if there is progress_save, rename it to progress_save (copy) so it won't be overwritten
     try:
@@ -82,7 +83,7 @@ def assembly(project_path, part_names):
     # clear it to save some space...
     p.log = Log()
     solver.save()
-    print "PART ASSEMBLY COMPLETED!"
+    print("PART ASSEMBLY COMPLETED!")
 
 
 if __name__ == "__main__":

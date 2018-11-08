@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 __author__ = 'fnaiser'
 import pickle
 
@@ -8,7 +9,7 @@ from core.region import cyMser
 from core.region.mser_operations import children_filter
 from core.region.region import Region
 from core.config import config
-from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_
+from .mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_
 from utils.video_manager import get_auto_video_manager
 
 

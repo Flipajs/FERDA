@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 
 __author__ = 'filip@naiser.cz'
@@ -114,7 +115,7 @@ class CollisionEditor(QtGui.QMainWindow):
         self.add_markers()
 
     def marker_changed(self, id):
-        print self.identity_markers[id][0].pos().x()
+        print(self.identity_markers[id][0].pos().x())
 
     def update_avg_ant(self):
         if self.pix_map_avg_ant is not None:

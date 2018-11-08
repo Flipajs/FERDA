@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -68,8 +69,8 @@ if __name__ == '__main__':
     X_test = np.array(imgs)
     y_test = np.array(labels)
 
-    print X_test.shape
-    print y_test.shape
+    print(X_test.shape)
+    print(y_test.shape)
 
     X_test = X_test.astype('float32')
     X_test /= 255
@@ -117,7 +118,7 @@ if __name__ == '__main__':
             else:
                 wrong += 1
 
-    print
-    print NUM_ANIMALS
-    print "Correct: {}({:.2%}) Wrong: {}({:.2%})".format(correct, correct/float(correct+wrong), wrong, wrong/float(correct+wrong))
+    print()
+    print(NUM_ANIMALS)
+    print("Correct: {}({:.2%}) Wrong: {}({:.2%})".format(correct, correct/float(correct+wrong), wrong, wrong/float(correct+wrong)))
 

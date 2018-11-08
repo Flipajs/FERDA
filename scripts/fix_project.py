@@ -1,3 +1,4 @@
+from __future__ import print_function
 l__author__ = 'flipajs'
 
 from core.project.project import Project
@@ -10,6 +11,6 @@ p.video_paths = ['/home/simon/FERDA/projects/Cam1_/Cam1_clip.avi']
 p.working_directory = '/home/simon/FERDA/projects/Cam1_/'
 
 for it in p.log.data_:
-    print it.action_name, it.data
+    print(it.action_name, it.data)
 
 p.save()

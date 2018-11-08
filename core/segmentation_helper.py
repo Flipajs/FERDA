@@ -1,3 +1,4 @@
+from __future__ import print_function
 import cv2
 import numpy as np
 from skimage.transform import pyramid_gaussian
@@ -74,12 +75,12 @@ class SegmentationHelper:
         self.pyramid = pyramid(self.image, scale=self.scale, num=self.num)  # source image in all scales
 
         if self.print_times:
-            print "set_image pyramid time: {:.4f}".format(time.time() - t)
+            print("set_image pyramid time: {:.4f}".format(time.time() - t))
 
         t = time.time()
         self.images = self.get_images()  # original images from pyramid, but expanded (result looks blurry)
         if self.print_times:
-            print "set_image rescale time: {:.4f}".format(time.time() - t)
+            print("set_image rescale time: {:.4f}".format(time.time() - t))
 
         t = time.time()
         # TODO: FASTER SHIFT USING COPY
@@ -89,7 +90,7 @@ class SegmentationHelper:
         self.shiftx = self.get_shift(shift_x=2, shift_y=0)  # diff from shifted images, rescaled
         self.shifty = self.get_shift(shift_x=0, shift_y=2)
         if self.print_times:
-            print "set_image shift time: {:.4f}".format(time.time() - t)
+            print("set_image shift time: {:.4f}".format(time.time() - t))
 
         if not self.use_reduced_feature_set:
             self.bg = self.get_cdiff(0, 1)  # channel difs, rescaled
@@ -105,10 +106,10 @@ class SegmentationHelper:
         t = time.time()
         self.diff = self.get_dif()
         if self.print_times:
-            print "set_image diff time: {:.4f}".format(time.time() - t)
+            print("set_image diff time: {:.4f}".format(time.time() - t))
 
         if self.print_times:
-            print "set_image time: {:.4f}".format(time.time() - tt)
+            print("set_image time: {:.4f}".format(time.time() - tt))
 
     def get_data(self, i, j, X, y, classification):
         """
@@ -182,7 +183,7 @@ class SegmentationHelper:
             self.get_data(i, j, self.Xtmp, self.ytmp, 1)  # 1 for foreground
 
         if self.print_times:
-            print "Retrieving data takes %f" % (time.time() - start)
+            print("Retrieving data takes %f" % (time.time() - start))
 
         # create the classifier
         self.rfc = RandomForestClassifier(n_estimators=self.rfc_n_estimators, n_jobs=self.rfc_n_jobs)
@@ -198,7 +199,7 @@ class SegmentationHelper:
         start = time.time()
         self.rfc.fit(X, y)
         if self.print_times:
-            print "RFC fitting takes     %f" % (time.time() - start)
+            print("RFC fitting takes     %f" % (time.time() - start))
 
         # find unused features and remove them
         # create new classifier with less features, it will be faster
@@ -206,8 +207,8 @@ class SegmentationHelper:
         self.unused = find_unused_features(self.rfc)
         self.rfc = get_filtered_rfc(self.unused, X, y, self.rfc_n_estimators, self.rfc_n_jobs)
         if self.print_times:
-            print "RFC filtering takes   %f. Using %d out of %d features." % \
-                  (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
+            print("RFC filtering takes   %f. Using %d out of %d features." % \
+                  (time.time() - start, len(self.rfc.feature_importances_), len(X[0])))
 
     def predict(self):
         if self.rfc is None:
@@ -219,15 +220,15 @@ class SegmentationHelper:
         try:
             layers = self.get_features()
         except ValueError:
-            print "error occured, logging..."
-            print "pyramid size: ", len(self.pyramid)
+            print("error occured, logging...")
+            print("pyramid size: ", len(self.pyramid))
             for i in range(len(self.pyramid)):
-                print "i, shape: ", self.pyramid[0].shape
+                print("i, shape: ", self.pyramid[0].shape)
 
-            print ""
-            print "images size: ", len(self.images)
+            print("")
+            print("images size: ", len(self.images))
             for i in range(len(self.images)):
-                print "i, shape: ", self.images[0].shape
+                print("i, shape: ", self.images[0].shape)
 
             cv2.imwrite(self.image, "img_dump.png")
 
@@ -248,14 +249,14 @@ class SegmentationHelper:
         # filtered = get_filtered_model(self.unused, data)
 
         if self.print_times:
-            print "data preparation time: ", time.time() - t
+            print("data preparation time: ", time.time() - t)
 
         # predict result on current image data
         start = time.time()
         mask1 = self.rfc.predict_proba(data)
         if self.print_times:
-            print "RFC predict takes     %f" % (time.time() - start)
-            print data.shape
+            print("RFC predict takes     %f" % (time.time() - start))
+            print(data.shape)
 
         # reshape mask to be a grid, not a list
         mask1 = mask1[:, 1]
@@ -275,7 +276,7 @@ class SegmentationHelper:
         start = time.time()
         self.rfc.fit(X, y)
         if self.print_times:
-            print "RFC fitting takes     %f" % (time.time() - start)
+            print("RFC fitting takes     %f" % (time.time() - start))
 
         # find unused features and remove them
         # create new classifier with less features, it will be faster
@@ -283,8 +284,8 @@ class SegmentationHelper:
         self.unused = find_unused_features(self.rfc)
         self.rfc = get_filtered_rfc(self.unused, X, y)
         if self.print_times:
-            print "RFC filtering takes   %f. Using %d out of %d features." % \
-                  (time.time() - start, len(self.rfc.feature_importances_), len(X[0]))
+            print("RFC filtering takes   %f. Using %d out of %d features." % \
+                  (time.time() - start, len(self.rfc.feature_importances_), len(X[0])))
 
     def get_features(self):
         """
@@ -624,14 +625,14 @@ if __name__ == "__main__":
     # image = cv2.imread("/home/dita/img_67.png")
     image = cv2.imread("/home/dita/lbp_test.png")
     np.set_printoptions(threshold=np.inf)
-    print image[:, :, 0] / 255
+    print(image[:, :, 0] / 255)
     methods = ["nri_uniform", "default", "ror", "uniform", "var"]
 
     lbp = get_lbp(image)
-    print lbp
+    print(lbp)
     cv2.imwrite("/home/dita/lbp_test_out.png", lbp*(255/lbp.max()))
 
-    print lbp.shape
+    print(lbp.shape)
 
     plt.imshow(lbp > 23)
     plt.show()

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn_theano.datasets import load_sample_image
@@ -73,7 +74,7 @@ def get_features(p, tracklets, cnn):
 
             i += 1
             features[t.id()] = X
-            print t.id()
+            print(t.id())
 
     return features
 
@@ -117,7 +118,7 @@ if __name__ == "__main__":
                 data[id_].extend(list(features[t_id_]))
 
             data[id_] = np.array(data[id_])
-            print data[id_].shape
+            print(data[id_].shape)
 
         for_learning = 300
 
@@ -126,7 +127,7 @@ if __name__ == "__main__":
         for a_id, X_ in enumerate(data):
             X_ = X_[-for_learning:, :]
 
-            print a_id, X_.shape
+            print(a_id, X_.shape)
             if len(y) == 0:
                 X = np.array(X_)
                 y = np.array([a_id] * len(X_))
@@ -139,22 +140,22 @@ if __name__ == "__main__":
         for a_id, X_ in enumerate(data):
             X_ = X_[:-for_learning, :]
 
-            print a_id, X_.shape
+            print(a_id, X_.shape)
             probs = rfc.predict_proba(X_)
 
             maxs = np.argmax(probs, 1)
-            print "maxs med: ", np.median(maxs)
+            print("maxs med: ", np.median(maxs))
             # print probs
-            print np.mean(probs, 0)
+            print(np.mean(probs, 0))
             probs_ = np.mean(probs, 0)
             i_ = np.argmax(probs_)
             m_ = probs_[i_]
             probs_[i_] = 0
             m2_ = np.max(probs_)
-            print i_, m_ / (m_ + m2_)
+            print(i_, m_ / (m_ + m2_))
 
-            print
-            print
+            print()
+            print()
 
 
         #

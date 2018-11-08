@@ -1,13 +1,14 @@
+from __future__ import absolute_import
 import sys
 import random
 import gc
 from functools import partial
 from PyQt4 import QtGui, QtCore
-import painter
+from . import painter
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import *
+from .utils import *
 
 from sklearn.ensemble import RandomForestClassifier
 

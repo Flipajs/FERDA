@@ -1,3 +1,4 @@
+from __future__ import print_function
 import itertools
 import os.path
 import tempfile
@@ -26,6 +27,7 @@ from utils.objectsarray import ObjectsArray
 from utils.gt.mot import load_mot, results_to_mot, eval_mot, mot_in_roi
 from core.region.ellipse import Ellipse
 from utils.roi import ROI
+from functools import reduce
 
 memory = Memory('out/cache', verbose=0)
 

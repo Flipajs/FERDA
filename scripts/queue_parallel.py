@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 from multiprocessing import Lock, Process, Queue, current_process
 
 def worker(work_queue, done_queue):
@@ -6,7 +7,7 @@ def worker(work_queue, done_queue):
         for url in iter(work_queue.get, 'STOP'):
             status_code = print_site_status(url)
             done_queue.put("%s - %s got %s." % (current_process().name, url, status_code))
-    except Exception, e:
+    except Exception as e:
         done_queue.put("%s failed on %s with: %s" % (current_process().name, url, e.message))
     return True
 
@@ -49,7 +50,7 @@ def main():
     done_queue.put('STOP')
 
     for status in iter(done_queue.get, 'STOP'):
-        print status
+        print(status)
 
 
 if __name__ == '__main__':

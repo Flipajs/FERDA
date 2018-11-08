@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -32,9 +33,9 @@ def repre(project):
             try:
                 s += len(project.chm[id_])
             except:
-                print id_
+                print(id_)
 
-        print key, s
+        print(key, s)
 
     return repre
 
@@ -82,7 +83,7 @@ if __name__ == '__main__':
 
     if True:
         for key, tracklets in tqdm.tqdm(repre.iteritems()):
-            print id, key
+            print(id, key)
             try:
                 os.mkdir(OUT_DIR+'/'+str(id))
             except:
@@ -105,10 +106,10 @@ if __name__ == '__main__':
 
             id += 1
 
-    print "Training examples exported..."
+    print("Training examples exported...")
 
     if False:
-        print "Exporting test examples: "
+        print("Exporting test examples: ")
 
         try:
             os.mkdir(OUT_DIR + '/test')

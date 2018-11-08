@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -41,7 +42,7 @@ if __name__ == '__main__':
         images_f[i] = sorted(images_f[i])
 
     split_idx = int((1-TRAIN_TEST_RATIO) * NUM_EXAMPLES)
-    print "SPLIT: ", split_idx
+    print("SPLIT: ", split_idx)
 
     for k in tqdm.tqdm(range(NUM_EXAMPLES)):
         for i in range(NUM_ANIMALS):
@@ -71,8 +72,8 @@ if __name__ == '__main__':
     labels_test = np.array(labels[split_idx:])
     labels_train = np.array(labels[:split_idx])
 
-    print "test: ", imgs_test.shape, labels_test.shape
-    print "train: ", imgs_train.shape, labels_train.shape
+    print("test: ", imgs_test.shape, labels_test.shape)
+    print("train: ", imgs_train.shape, labels_train.shape)
 
     with h5py.File(OUT_DIR+'/imgs_multi_train.h5', 'w') as hf:
         hf.create_dataset("data", data=imgs_train)

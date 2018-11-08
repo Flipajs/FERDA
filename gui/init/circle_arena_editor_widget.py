@@ -1,3 +1,4 @@
+from __future__ import print_function
 from core.arena.paint_mask import PaintMask
 from gui.arena.arena_editor import ArenaEditor
 from utils.video_manager import get_auto_video_manager
@@ -120,7 +121,7 @@ class CircleArenaEditorWidget(QtGui.QWizardPage):
         #
         # self.top_stripe_layout.addWidget(self.skip_bg_model)
         # self.top_stripe_layout.addWidget(self.confirm_bg_model)
-        self.wizard().next()
+        next(self.wizard())
 
     def add_circle_selection(self):
         self.arena_ellipse = ArenaCircle()
@@ -175,7 +176,7 @@ class CircleArenaEditorWidget(QtGui.QWizardPage):
             return self.first_frame.shape[1]/2, self.first_frame.shape[0]/2, min(self.first_frame.shape[0], self.first_frame.shape[1])*0.45
 
     def skip_bg_clicked(self):
-        print "SKIP"
+        print("SKIP")
         self.project.bg_model = None
         self.finish()
 

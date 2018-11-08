@@ -1,4 +1,6 @@
-from thesis_utils import load_all_projects
+from __future__ import print_function
+from __future__ import absolute_import
+from .thesis_utils import load_all_projects
 from core.id_detection.features import evaluate_features_performance_opt, evaluate_features_performance_all
 import datetime
 import cPickle as pickle
@@ -7,7 +9,7 @@ def _compute(X_data, y_data, fm_names, projects, c, out_name=None):
     results = {}
 
     for p_name, p in projects.iteritems():
-        print "----------------- ", p_name, "-------------------------"
+        print("----------------- ", p_name, "-------------------------")
         results[p_name] = evaluate_features_performance_opt(p, X_data[p_name], y_data[p_name], fm_names,
                         seed=c['seed'],
                         train_n_times=c['train_n_times'],
@@ -29,14 +31,14 @@ def _compute(X_data, y_data, fm_names, projects, c, out_name=None):
     with open(out_name, 'wb') as f:
         pickle.dump((results, c), f)
 
-    print results
+    print(results)
 
 
 def _compute_all_f(X_data, y_data, fm_names, projects, c, out_name=None):
     results = {}
 
     for p_name, p in projects.iteritems():
-        print "----------------- ", p_name, "-------------------------"
+        print("----------------- ", p_name, "-------------------------")
         results[p_name] = evaluate_features_performance_all(p, X_data[p_name], y_data[p_name], fm_names,
                         seed=c['seed'],
                         train_n_times=c['train_n_times'],
@@ -58,7 +60,7 @@ def _compute_all_f(X_data, y_data, fm_names, projects, c, out_name=None):
     with open(out_name, 'wb') as f:
         pickle.dump((results, c), f)
 
-    print results
+    print(results)
 
 
 #
@@ -128,7 +130,7 @@ def NN_test(X_data, y_data, fm_names, c, out_name=None):
                     num_correct_ids += 1
                     correct[j] = True
 
-            print "NN accuracy: {:.2%}".format(num_correct_ids/float(X_test.shape[0]))
+            print("NN accuracy: {:.2%}".format(num_correct_ids/float(X_test.shape[0])))
 
             results[fm_name].append((decisions.tolist(), num_correct_ids, X_test.shape[0], correct.tolist()))
 
@@ -475,10 +477,10 @@ if __name__ == '__main__':
     cdefault['rf_max_depth'] = 10
     cdefault['train_n_times'] = 3
     c['rf_n_estimators'] = 50
-    print
-    print "----------------------------------------"
-    print "N_ESTIMATORS_200"
-    print
+    print()
+    print("----------------------------------------")
+    print("N_ESTIMATORS_200")
+    print()
     _compute(X_data, y_data, fm_names, projects, c, wd+'_tuned')
 
 

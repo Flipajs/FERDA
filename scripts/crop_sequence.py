@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 import os
 import cv2
@@ -5,7 +6,7 @@ import math
 import numpy as np
 
 frames = range(700, 4201, 700)
-print frames
+print(frames)
 
 #dir = os.path.expanduser('~/dump/mesors/frame_results/')
 #dir_out = os.path.expanduser('~/dump/')
@@ -23,7 +24,7 @@ print frames
 #name='collection_mesors'
 #
 frames = range(800, 1601, 800)
-print frames
+print(frames)
 
 dir = os.path.expanduser('~/dump/zebrafish/frame_results/')
 dir_out = os.path.expanduser('~/dump/')

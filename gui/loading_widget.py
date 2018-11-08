@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 from PyQt4 import QtGui
 
@@ -22,4 +23,4 @@ class LoadingWidget(QtGui.QWidget):
         self.text_l.setText(text)
 
     def finished(self):
-        print "FINISHED"
+        print("FINISHED")

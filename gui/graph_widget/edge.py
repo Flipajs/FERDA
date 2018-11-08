@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
 import math
 
 from gui.graph_widget.graph_line import LineType
-from node import TextInfoItem
+from .node import TextInfoItem
 
 SELECTION_OFFSET_CHUNK = 1
 SELECTION_OFFSET_LINE = 2

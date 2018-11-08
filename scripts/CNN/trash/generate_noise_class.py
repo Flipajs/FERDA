@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -41,7 +42,7 @@ if __name__ == '__main__':
     try:
         os.mkdir(OUT_DIR + '/'+str(noise_id))
     except Exception as e:
-        print e
+        print(e)
 
 
     for i in tqdm.tqdm(range(200)):

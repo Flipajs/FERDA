@@ -1,3 +1,4 @@
+from __future__ import print_function
 import keras
 import numpy as np
 from keras import backend as K
@@ -15,7 +16,7 @@ W1 = K.variable(a)
 init = tf.global_variables_initializer()
 sess = tf.Session()
 sess.run(init)
-print K.dot(W1, W1)
+print(K.dot(W1, W1))
 array = W1.eval(sess)
 print (array)
 

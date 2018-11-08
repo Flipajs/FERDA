@@ -1,3 +1,4 @@
+from __future__ import print_function
 from core.region.region import Region, encode_RLE
 import sqlite3 as sql
 import cPickle as pickle

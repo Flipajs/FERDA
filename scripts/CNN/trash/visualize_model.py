@@ -1,3 +1,4 @@
+from __future__ import print_function
 from scipy.misc import imsave
 import numpy as np
 import time
@@ -96,7 +97,7 @@ for i, filters in enumerate([32, 32, 32, 32, 32, 16, 8]):
             loss_value, grads_value = iterate([input_img_data])
             input_img_data += grads_value * step
 
-            print('Current loss value:', loss_value)
+            print(('Current loss value:', loss_value))
             if loss_value <= 0.:
                 # some filters get stuck to 0, we can skip them
                 break

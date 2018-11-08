@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 
 import multiprocessing as mp
@@ -26,7 +27,7 @@ vid = get_auto_video_manager('/Users/fnaiser/Documents/eight.m4v')
 pool = mp.Pool()
 
 frames = [vid.next_frame().copy() for i in range(N_FRAMES)]
-print "INIT DONE"
+print("INIT DONE")
 
 start = time.time()
 results = [pool.apply_async(compute_msers, args=(i, frames[i])) for i in range(N_FRAMES)]
@@ -35,12 +36,12 @@ output = [p.get() for p in results]
 end = time.time()
 
 for r in output:
-    print r
+    print(r)
 
-print end - start
+print(end - start)
 
 
-print "SEQUENCE"
+print("SEQUENCE")
 start = time.time()
 results2 = [compute_msers(i, frames[i]) for i in range(N_FRAMES)]
 end = time.time()
@@ -48,4 +49,4 @@ end = time.time()
 # for r in results2:
 #     print len(r)
 
-print end - start
+print(end - start)

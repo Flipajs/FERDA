@@ -7,6 +7,7 @@ Multi object tracking results and ground truth
 
 For more help run this file as a script with --help parameter.
 """
+from __future__ import print_function
 import pandas as pd
 import errno
 import numpy as np

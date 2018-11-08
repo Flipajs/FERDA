@@ -1,3 +1,4 @@
+from __future__ import print_function
 import mahotas
 import numpy as np
 import argparse
@@ -34,7 +35,7 @@ def process_chunk():
         if not (last_desc is None):
             d = np.linalg.norm(moments-last_desc)
             if d > thresh:
-                print r.frame(), d
+                print(r.frame(), d)
                 im = draw_pts(get_cropped_pts(r))
                 plt.imshow(im)
                 plt.show()
@@ -45,7 +46,7 @@ def process_chunk():
         last_desc = moments
 
     dists = np.array(dists[1:-1])
-    print ('ch len: %d, min: %.3f max: %.3f med: %.3f') %(len(ch), np.min(dists), np.max(dists), np.median(dists))
+    print(('ch len: %d, min: %.3f max: %.3f med: %.3f') %(len(ch), np.min(dists), np.max(dists), np.median(dists)))
 
 
 if __name__ == '__main__':
@@ -74,12 +75,12 @@ if __name__ == '__main__':
 
             moments = desc.describe(r, normalize=False)
             if not prev_desc is None:
-                print "distance to previous: ", np.linalg.norm(prev_desc-moments)
+                print("distance to previous: ", np.linalg.norm(prev_desc-moments))
 
             descriptions.append(moments)
             images.append(normed_im)
             prev_desc = moments
-            print moments
+            print(moments)
 
             # plt.imshow(normed_im)
             # plt.show()

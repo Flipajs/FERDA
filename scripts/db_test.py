@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sqlite3 as sql
 import json
 import time
@@ -23,7 +24,7 @@ class DB_Test():
         self.select_json()
 
     def create_db(self):
-        print "Creating new db..."
+        print("Creating new db...")
         self.cur.execute("DROP TABLE IF EXISTS Regions")
         self.cur.execute("DROP TABLE IF EXISTS Points")
         self.cur.execute("CREATE TABLE Regions(Id INT, Area INT)")
@@ -34,10 +35,10 @@ class DB_Test():
         t = time.time()
         self.cur.executemany("INSERT INTO Regions VALUES((?), (?));", get_regions_data(reg_values))
         self.cur.executemany("INSERT INTO Points VALUES((?),(?),(?));", get_points_data(reg_values, self.pts_size))
-        print "Done (%ss)" % (time.time() - t)
+        print("Done (%ss)" % (time.time() - t))
 
     def create_db_json(self):
-        print "Creating new db with json data..."
+        print("Creating new db with json data...")
         self.cur_json.execute("DROP TABLE IF EXISTS Regions")
         self.cur_json.execute("CREATE TABLE Regions(id INT, area INT, data STRING, PRIMARY KEY (id))")
         self.cur_json.execute("CREATE INDEX RegionIndex ON Regions(id);")
@@ -46,7 +47,7 @@ class DB_Test():
 
         t = time.time()
         self.cur_json.executemany("INSERT INTO Regions VALUES((?), (?), (?));", get_regions_data_json(reg_values, pts_values))
-        print "Done (%ss)" % (time.time() - t)
+        print("Done (%ss)" % (time.time() - t))
 
     def select(self):
         t = time.time()
@@ -56,7 +57,7 @@ class DB_Test():
             for row in rows:
                 #print "Region id: %s, Region area: %s, Point region: %s, X: %s, Y: %s" % (row[0], row[1], row[2], row[3], row[4])
                 pass
-        print "Time taken to SELECT from db: %s" % ((time.time() - t))
+        print("Time taken to SELECT from db: %s" % ((time.time() - t)))
 
     def select_json(self):
         t = time.time()
@@ -68,7 +69,7 @@ class DB_Test():
             for row in rows:
                 #print "Id %s, area: %s, json: %s" % (row[0], row[1], row[2])
                 pass
-        print "Time taken to SELECT from db_json: %s)" % (time.time() - t)
+        print("Time taken to SELECT from db_json: %s)" % (time.time() - t))
 
 
 def get_regions_data_json(area_array, pts_array):
@@ -81,7 +82,7 @@ def get_regions_data_json(area_array, pts_array):
             str += "{x:%d, y:%d}" % (pts_array[j], pts_array[j+1])
         str += "]"
         if i%10000 == 0:
-            print i
+            print(i)
         yield(id, area, json.dumps(str))
 
 def get_regions_data(array):

@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'flipajs'
 
 
@@ -59,7 +60,7 @@ class RegionReconstruction(QtGui.QWidget):
         self.fbox.addRow('', self.export_results)
 
     def export(self):
-        print "reconstructin & exporting..."
+        print("reconstructin & exporting...")
         query = self.query.text()
         frames = self.process_input(query)
         # reconstructed = self.reconstruct(frames)
@@ -72,7 +73,7 @@ class RegionReconstruction(QtGui.QWidget):
             with open(self.project.working_directory+'/'+self.out_name.text()+'.pkl', 'wb') as f:
                 pickle.dump(get_trajectories(self.project, frames), f, -1)
 
-        print "done"
+        print("done")
 
     def reconstruct(self, frames):
         frames = sorted(frames)
@@ -228,11 +229,11 @@ if __name__ == "__main__":
     p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
 
     ex = RegionReconstruction(p, p.solver)
-    print ex.process_input('1 2 3 4')
-    print ex.process_input('1, 2, 3, 4')
-    print ex.process_input('1,2,3,4')
-    print ex.process_input('1:27')
-    print ex.process_input('1:3:30')
+    print(ex.process_input('1 2 3 4'))
+    print(ex.process_input('1, 2, 3, 4'))
+    print(ex.process_input('1,2,3,4'))
+    print(ex.process_input('1:27'))
+    print(ex.process_input('1:3:30'))
     # print ex.reconstruct([100, 3, 500])
     ex.show()
     ex.move(-500, -500)

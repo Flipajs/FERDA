@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'simon'
 
 from PyQt4 import QtGui, QtCore
@@ -104,9 +105,9 @@ class MyViewZoomable(QtGui.QGraphicsView):
         y1 = self.position_from.y()
         x2 = self.node_position_to.x()
         y2 = self.node_position_to.y()
-        print self.position_from
-        print self.node_position_to
-        print str(x1 + (z * (x2 - x1))), str(y1 + (z * (y2 - y1)))
+        print(self.position_from)
+        print(self.node_position_to)
+        print(str(x1 + (z * (x2 - x1))), str(y1 + (z * (y2 - y1))))
         point = QtCore.QPointF(x1 + (z * (x2 - x1)), y1 + (z * (y2 - y1)))
         self.centerOn(point)
 

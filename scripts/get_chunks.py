@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 
 import math
@@ -87,7 +88,7 @@ def plot_mean_std(chunks, key, steps=8, chunk_range=None, percentile_val=100):
         data_step = int(math.floor(len(chunk_range) / steps))
         ch_from = chunk_range[0]
 
-    print data_step, ch_from
+    print(data_step, ch_from)
 
     for i in range(steps):
         r1_ = range(ch_from + data_step*i, ch_from + data_step*(i+1))
@@ -190,7 +191,7 @@ if __name__ == '__main__':
         a_length = norm(p1-p2)
 
         for i in range(1000):
-            print i
+            print(i)
             im = vid.next_frame()
             msers = mser.get_all_msers(i, vid_path, working_dir)
 
@@ -250,7 +251,7 @@ if __name__ == '__main__':
 
 
     right = np.sum(np.array(decisions))
-    print right, len(decisions), right/float(len(decisions))
+    print(right, len(decisions), right/float(len(decisions)))
 
     r_1 = range(0, 50)
     r_2 = range(50, 100)

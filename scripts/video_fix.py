@@ -1,9 +1,11 @@
+from __future__ import print_function
+from __future__ import absolute_import
 __author__ = 'filip@naiser.cz'
 
 import cv2
 import subprocess as sp
 import numpy as np
-import ffmpeg_writer
+from . import ffmpeg_writer
 
 # path = '/home/flipajs/'
 path = '/media/flipajs/Seagate Expansion Drive/'
@@ -59,7 +61,7 @@ frames  = capture.get(cv2.CAP_PROP_FRAME_COUNT)
 
 while True:
     if not f:
-        print "END of video"
+        print("END of video")
         break
 
     # video_writer.run(img)
@@ -77,7 +79,7 @@ while True:
 
     if frame % 10 == 0:
         s = "%.2f" % ((frame/frames) * 100) + " %"
-        print 'Processing: {0}\r'.format(s),
+        print('Processing: {0}\r'.format(s), end=' ')
         # print frame, "%.2f" % ((frame/frames) * 100) + " % \r"
 
     frame += 1

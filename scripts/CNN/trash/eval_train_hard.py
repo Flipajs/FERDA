@@ -1,3 +1,4 @@
+from __future__ import print_function
 import h5py
 import os
 import argparse
@@ -39,9 +40,9 @@ if __name__ == '__main__':
 
     from scipy import stats
 
-    print stats.describe(pos_d)
-    print stats.describe(neg_d)
+    print(stats.describe(pos_d))
+    print(stats.describe(neg_d))
 
     corr = np.sum(np.array(pos_d) < np.array(neg_d))
-    print "{}, {:.2%}".format(corr, corr/float(len(pos_d)))
+    print("{}, {:.2%}".format(corr, corr/float(len(pos_d))))
 

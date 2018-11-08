@@ -1,11 +1,13 @@
+from __future__ import print_function
+from __future__ import absolute_import
 __author__ = 'fnaiser'
 
 from PyQt4 import QtGui
 import csv
 import scipy.io as sio
 import numpy as np
-from region_reconstruction import RegionReconstruction
-from fix_area import FixArea
+from .region_reconstruction import RegionReconstruction
+from .fix_area import FixArea
 import sys
 from core.graph.region_chunk import RegionChunk
 from pympler import asizeof
@@ -111,7 +113,7 @@ class StatisticsWidget(QtGui.QWidget):
         #     self.fix_area.vbox.addWidget(QtGui.QLabel('AREA WAS ALREADY UPDATED!'))
 
     def export(self):
-        print "exporting..."
+        print("exporting...")
 
 
         ex = Exporter(self.project.chm, self.project.gm, self.project.rm,
@@ -129,7 +131,7 @@ class StatisticsWidget(QtGui.QWidget):
         # elif ftype == '.mat':
         #     self.export_mat()
 
-        print "done"
+        print("done")
 
     def write_line_csv(self, f, r):
         a, b = self.centroid_in_right_order(r)
@@ -192,7 +194,7 @@ class StatisticsWidget(QtGui.QWidget):
         t = time.time()
 
         approx_reg_size = self.get_approx_region_size()
-        print "APPROX REG SIZE", approx_reg_size
+        print("APPROX REG SIZE", approx_reg_size)
 
         obj_arr = []
 
@@ -215,7 +217,7 @@ class StatisticsWidget(QtGui.QWidget):
 
                         self.obj_arr_append_(obj_arr, d)
 
-        print "single regions t:", time.time() - t1
+        print("single regions t:", time.time() - t1)
 
         t2 = time.time()
         file_num = 0
@@ -243,7 +245,7 @@ class StatisticsWidget(QtGui.QWidget):
             
             if (curr_size > limit):
                 with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
-                    print "saving ", str(file_num)
+                    print("saving ", str(file_num))
                     print(str(chunNum)+"\n")
                     sio.savemat(f, {'FERDA': obj_arr}, do_compression=True)
 
@@ -264,7 +266,7 @@ class StatisticsWidget(QtGui.QWidget):
         with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
             sio.savemat(f, {'FERDA': obj_arr}, do_compression=True)
 
-        print "chunks regions t:", time.time() - t2
+        print("chunks regions t:", time.time() - t2)
 
         t3 = time.time()
         with open(self.get_out_path()+'_arena.mat', 'wb') as f:
@@ -291,9 +293,9 @@ class StatisticsWidget(QtGui.QWidget):
 
             sio.savemat(f, {'arena': arena}, do_compression=True)
 
-        print "save t:", time.time()-t3
+        print("save t:", time.time()-t3)
 
-        print "WHOLE EXPORT t: ", time.time() - t
+        print("WHOLE EXPORT t: ", time.time() - t)
 
     def append_pts_(self, d, key, pts):
         px = []

@@ -1,6 +1,8 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import sys
-from my_view import MyView
-from my_scene import MyScene
+from .my_view import MyView
+from .my_scene import MyScene
 from PyQt4 import QtGui, QtCore
 import numpy as np
 import cv2
@@ -244,7 +246,7 @@ class Painter(QtGui.QWidget):
         # get number of elements in backup
         length = len(self.backup)
         if self.DEBUG:
-            print "Length is %s" % length
+            print("Length is %s" % length)
 
         # proceed to undo if there is something to undo
         if length > 0:
@@ -295,7 +297,7 @@ class Painter(QtGui.QWidget):
             return map_pos
         else:
             if self.DEBUG:
-                print "Out of bounds [%s, %s]" % (map_pos.x(), map_pos.y())
+                print("Out of bounds [%s, %s]" % (map_pos.x(), map_pos.y()))
             return False
 
     def is_in_scene(self, point):

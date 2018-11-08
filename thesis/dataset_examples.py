@@ -1,4 +1,5 @@
-from thesis_utils import load_all_projects, project_paths
+from __future__ import absolute_import
+from .thesis_utils import load_all_projects, project_paths
 import matplotlib.pyplot as plt
 import cv2
 from utils.video_manager import get_auto_video_manager

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import h5py
 import numpy as np
 
@@ -100,7 +101,7 @@ def test_output(wd, vm, p, k):
         plt.waitforbuttonpress()
         plt.clf()
 
-    print "test"
+    print("test")
 
 
 if __name__ == '__main__':
@@ -117,11 +118,11 @@ if __name__ == '__main__':
     import math
 
     k = -math.log(0.5)/(2*p.stats.major_axis_median/p.other_parameters.img_subsample_factor)
-    print "k: {:.3f}".format(k)
+    print("k: {:.3f}".format(k))
 
     MAX_D /= p.other_parameters.img_subsample_factor
     MAX_D2 = MAX_D * MAX_D
-    print MAX_D
+    print(MAX_D)
 
     test_output(wd, vm, p, k)
 
@@ -171,7 +172,7 @@ if __name__ == '__main__':
             cv2.imwrite(wd+'/imgs/'+s_frame+'.jpg', img)
 
             ys, xs = np.where(prob_map)
-            print "\nprocessing frame: {}, #pxs: {}".format(frame, len(ys))
+            print("\nprocessing frame: {}, #pxs: {}".format(frame, len(ys)))
             i = 0
 
             if prev_ys is not None:
@@ -211,17 +212,17 @@ if __name__ == '__main__':
 
             if prev_xs is not None:
                 prev_offset += len(prev_xs)
-                print prev_offset
+                print(prev_offset)
 
             prev_xs, prev_ys = xs, ys
 
         edges = edges[:ei, :]
         edge_probs = edge_probs[:ei]
 
-        print len(vertices)
-        print len(vertex_probs)
-        print len(edges)
-        print len(edge_probs)
+        print(len(vertices))
+        print(len(vertex_probs))
+        print(len(edges))
+        print(len(edge_probs))
 
         f = h5py.File(wd+"/out_vertices.hdf5", "w")
         f.create_dataset("vertices", data=np.array(vertices, dtype=np.uint), dtype=np.uint32, compression="gzip", compression_opts=9)

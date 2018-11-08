@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 __author__ = 'flipajs'
 
 from gui.results.noise_filter_computer import NoiseFilterComputer
@@ -10,8 +11,8 @@ import pickle
 from functools import partial
 from core.region.fitting import Fitting
 from copy import deepcopy
-from case_widget import CaseWidget
-from new_region_widget import NewRegionWidget
+from .case_widget import CaseWidget
+from .new_region_widget import NewRegionWidget
 from core.region.region import Region
 from core.log import LogCategories, ActionNames
 from gui.img_grid.img_grid_widget import ImgGridWidget

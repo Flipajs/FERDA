@@ -1,3 +1,4 @@
+from __future__ import print_function
 import cPickle as pickle
 import numpy as np
 
@@ -9,7 +10,7 @@ def detect_interactions(m):
         num = 0
         num_interactions = [0 for i in range(7)]
         id_swap = []
-        print "ID_ ", animal_id_
+        print("ID_ ", animal_id_)
         for frame, ids_ in enumerate(m):
             tid_ = ids_[animal_id_]
 
@@ -24,9 +25,9 @@ def detect_interactions(m):
 
             prev_id = tid_
 
-        print num_interactions[1:], "SUM:", num
-        print id_swap
-        print
+        print(num_interactions[1:], "SUM:", num)
+        print(id_swap)
+        print()
 
 if __name__ == '__main__':
     with open('/Users/flipajs/Desktop/temp/match.pkl') as f:

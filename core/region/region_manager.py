@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 from core.region.region import Region, encode_RLE
 
 __author__ = 'flipajs'
@@ -5,7 +7,7 @@ __author__ = 'flipajs'
 import sqlite3 as sql
 import cPickle as pickle
 from core.region.region import encode_RLE
-from libs.cachetools import LRUCache
+from cachetools import LRUCache
 import sys
 
 
@@ -51,7 +53,7 @@ class RegionManager:
             self.use_db = True
             self.db_path = db_wd+"/"+db_name
             if not supress_init_print:
-                print "Initializing db at %s " % self.db_path
+                print("Initializing db at %s " % self.db_path)
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
             # DEBUG, do not use! self.cur.execute("DROP TABLE IF EXISTS regions;")
@@ -241,11 +243,11 @@ class RegionManager:
             # TODO: result might be in different order then keys!!!
             for id in key:
                 if not isinstance(id, int):
-                    print "TypeError: int expected, %s given! Skipping key '%s'." % (type(id), id)
+                    print("TypeError: int expected, %s given! Skipping key '%s'." % (type(id), id))
                     continue
                 r = self.cache[id]
                 if r:
-                    print r
+                    print(r)
                 # if id in self.regions_cache_:
                 #     # print "%s was found in cache" % id
                 #     r = self.regions_cache_[id]
@@ -278,7 +280,7 @@ class RegionManager:
             if self.use_db:
                 result = self.db_search_(result, sql_ids)
         else:
-            raise TypeError, "Invalid argument type. Slice or int expected, %s given." % type(key)
+            raise TypeError("Invalid argument type. Slice or int expected, %s given." % type(key))
 
         if len(result) == 0:
             print("!!!!  "+str(key))
@@ -315,7 +317,7 @@ class RegionManager:
             except TypeError:
                 # region was erased
                 print("!!!!!!!!! REGION NOT FOUND ????   "+str(id))
-                print "TypeError in region_manager.py line 272"
+                print("TypeError in region_manager.py line 272")
 
         if l > 1:
             cmd = "SELECT id, data FROM regions WHERE id IN %s;" % self.pretty_list(sql_ids)
@@ -424,8 +426,8 @@ if __name__ == "__main__":
     rm = RegionManager(db_wd="/home/dita", cache_size_limit=1)
     rm.add(regions)
 
-    print rm[4]
-    print rm[2:6]
+    print(rm[4])
+    print(rm[2:6])
 
 
     # db size with 20 pts regions: 306 176 bytes

@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 
 import pickle
@@ -72,6 +73,6 @@ for file in os.listdir(path):
         frame_idx[str(frame_idx)] = i
         i += 1
 
-print frame_idx
+print(frame_idx)
 
 labels = update_e_labels(labels, frame_idx)

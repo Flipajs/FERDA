@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'flipajs'
 
 import graph_tool
@@ -59,7 +60,7 @@ class GraphManager:
 
     def remove_vertex(self, vertex_id, disassembly=True):
         if vertex_id < 0:
-            print "id < 0"
+            print("id < 0")
         vertex = self.g.vertex(vertex_id)
         region = self.project.rm[self.g.vp['region_id'][vertex]]
 
@@ -72,7 +73,7 @@ class GraphManager:
         affected = []
 
         if region is None:
-            print "remove node n is None"
+            print("remove node n is None")
             return
 
         if disassembly:
@@ -254,9 +255,9 @@ class GraphManager:
 
         if source_vertex is None or target_vertex is None:
             if source_vertex is None:
-                print "ERROR in (graph_manager.py) remove_edge source_vertex is None, target_vertex: ", target_vertex
+                print("ERROR in (graph_manager.py) remove_edge source_vertex is None, target_vertex: ", target_vertex)
             else:
-                print "ERROR in (graph_manager.py) remove_edge target_vertex is None, source_vertex: ", source_vertex
+                print("ERROR in (graph_manager.py) remove_edge target_vertex is None, source_vertex: ", source_vertex)
             return
 
         out_edges = [e for e in source_vertex.out_edges()]
@@ -280,9 +281,9 @@ class GraphManager:
         # target_vertex = self.match_if_reconstructed(target_vertex)
         if source_vertex is None or target_vertex is None:
             if source_vertex is None:
-                print "add_edge source_vertex is None, target_vertex: ", target_vertex
+                print("add_edge source_vertex is None, target_vertex: ", target_vertex)
             else:
-                print "add_edge target_vertex is None, source_vertex: ", source_vertex
+                print("add_edge target_vertex is None, source_vertex: ", source_vertex)
             return
 
         return self.add_edge_fast(source_vertex, target_vertex, score)

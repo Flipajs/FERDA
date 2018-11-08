@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -20,7 +21,7 @@ BATCH_SIZE = 30000
 
 def save_batch(batch_i, imgs, ids):
     global OUT_DIR
-    print "Saving batch: ", batch_i
+    print("Saving batch: ", batch_i)
 
     imgs = np.array(imgs)
     imgs = imgs.astype('float32')
@@ -61,7 +62,7 @@ if __name__ == '__main__':
 
     vm = get_auto_video_manager(p)
 
-    print "Exporting test examples: "
+    print("Exporting test examples: ")
 
     try:
         os.mkdir(OUT_DIR + '/test')
@@ -74,7 +75,7 @@ if __name__ == '__main__':
     imgs = []
     ids = []
 
-    print p.chm
+    print(p.chm)
 
     t_ = time.time()
     for frame in tqdm.tqdm(xrange(vm.total_frame_count())):
@@ -99,7 +100,7 @@ if __name__ == '__main__':
 
                     batch_i += 1
 
-                    print "TOTAL TIME: ", time.time() - t_
+                    print("TOTAL TIME: ", time.time() - t_)
 
     if len(imgs):
         save_batch(batch_i, imgs, ids)

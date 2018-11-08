@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 
 import math
@@ -35,4 +36,4 @@ elif 0 <= alpha2 <= 1:
 x[0] = alpha * c[0] + (1 - alpha) * p[0]
 x[1] = alpha * c[1] + (1 - alpha) * p[1]
 
-print x
+print(x)

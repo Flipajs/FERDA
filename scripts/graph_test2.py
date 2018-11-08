@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'flipajs'
 
 import graph_tool
@@ -64,11 +65,11 @@ if __name__ == "__main__":
     #
     # print "REMOVING NODE", nodes[4]
     my_node = vertices[-1]
-    print my_node, g2.vp['region'][my_node]
+    print(my_node, g2.vp['region'][my_node])
     g2.remove_vertex(vertices[1], fast=True)
     g2.remove_vertex(vertices[6], fast=True)
     g2.remove_vertex(vertices[4], fast=True)
-    print my_node, g2.vp['region'][my_node]
+    print(my_node, g2.vp['region'][my_node])
 
     # for e in edges_:
     #     try:

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 class ColorHist3d():
@@ -63,7 +64,7 @@ class ColorHist3d():
                     num_fg = self.hist_fg_[i, j, k]
                     if num_bg + num_fg > 0:
                         self.p_fg_[i, j, k] = num_fg / float(num_bg + num_fg)
-                        print i, j, k, self.p_fg_[i, j, k]
+                        print(i, j, k, self.p_fg_[i, j, k])
 
     def get_p_k_x(self, k, x):
         a = self.hist_[x[0], x[1], x[2], k]
@@ -105,4 +106,4 @@ class ColorHist3d():
                 if sum_ > self.epsilon:
                     break
 
-            print "C_ID DONE: ", c_id, sum_
+            print("C_ID DONE: ", c_id, sum_)

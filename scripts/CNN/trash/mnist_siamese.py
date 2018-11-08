@@ -394,8 +394,8 @@ class DataGenerator(object):
             if self.cur_train_index >= self.samples_per_train:
                 self.cur_train_index=0
 
-            p0, y = self.datagen_0.next()
-            p1, _ = self.datagen_1.next()
+            p0, y = next(self.datagen_0)
+            p1, _ = next(self.datagen_1)
 
             yield([p0, p1], y)
             # yield ([

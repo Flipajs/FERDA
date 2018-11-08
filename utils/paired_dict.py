@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 class PairedDict:
     """
@@ -53,6 +54,6 @@ if __name__ == '__main__':
     p[1] = 'FRANTA'
     p[2] = 'EMIL'
 
-    print p['FRANTA'], p[0]
-    print len(p)
-    print p
+    print(p['FRANTA'], p[0])
+    print(len(p))
+    print(p)

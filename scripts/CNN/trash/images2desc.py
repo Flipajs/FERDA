@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -13,7 +14,7 @@ from keras.models import model_from_json
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print "Need a path to folder with images as a parameter..."
+        print("Need a path to folder with images as a parameter...")
 
     WD = sys.argv[1]
 
@@ -40,7 +41,7 @@ if __name__ == '__main__':
                     i += 1
 
     imgs = np.array(imgs)
-    print imgs.shape
+    print(imgs.shape)
 
     # load json and create model
     json_file = open('vision_model.json', 'r')
@@ -54,7 +55,7 @@ if __name__ == '__main__':
     # evaluate loaded model on test data
     loaded_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     results = loaded_model.predict(imgs, verbose=1)
-    print results.shape
+    print(results.shape)
 
     with h5py.File(WD+'/results.h5', 'w') as hf:
         hf.create_dataset("data", data=results)

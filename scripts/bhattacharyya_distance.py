@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from math import log
 
@@ -6,10 +7,10 @@ def bhattacharyya(a, b):
     for i in range(len(a)):
         s += (a[i] * b[i]) ** 0.5
 
-    print a
-    print b
-    print s
-    print -log(s)
+    print(a)
+    print(b)
+    print(s)
+    print(-log(s))
 
 a = [0.3, 0, 0., 0.1, 0.1, 0.5]
 b = [0.3, 0, 0., 0.1, 0.1, 0.5]

@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'flipajs'
 
 import time
@@ -9,13 +10,13 @@ class SleepProgress(QtCore.QThread):
     partDone = QtCore.pyqtSignal(int)
 
     def run(self):
-        print 'proc started'
+        print('proc started')
         for a in range(1, 1 + 35):
             self.partDone.emit(float(a) / 35.0 * 100)
-            print 'sleep', a
+            print('sleep', a)
             time.sleep(0.04)
 
-        print 'proc ended'
+        print('proc ended')
         w = QtGui.QWidget()
         self.procDone.emit(w)
 
@@ -47,13 +48,13 @@ class AddProgresWin(QtGui.QWidget):
         self.thread.start()
 
     def updatePBar(self, val):
-        print val
+        print(val)
         self.progressbar.setValue(val)
         perct = "{0}%".format(val)
         self.nameLabel.setText(perct)
 
     def fin(self, val):
-        print "TEST"
+        print("TEST")
         sys.exit()
     ##self.hide()
 

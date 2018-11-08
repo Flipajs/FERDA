@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import numpy as np
-from processing import transform_img_
-from hist_3d import ColorHist3d
-from processing import get_colormarks, match_cms_region, filter_cms
+from .processing import transform_img_
+from .hist_3d import ColorHist3d
+from .processing import get_colormarks, match_cms_region, filter_cms
 import cv2
 from math import ceil
 from utils.img import get_safe_selection

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import operator
 
 import warnings
@@ -50,7 +52,7 @@ class VideoPlayer(QtGui.QWidget):
         self._video_controls()
         self._add_actions()
 
-        self.next()
+        next(self)
         self.updateGeometry()
 
     def set_frame_change_callback(self, frame_change_callback):
@@ -60,7 +62,7 @@ class VideoPlayer(QtGui.QWidget):
         self._image_processor_callback = image_processor_callback
 
     def _video_controls(self):
-        from video_slider import VideoSlider
+        from .video_slider import VideoSlider
 
         self.video_control_widget = QtGui.QWidget()
         self.video_control_layout = QtGui.QVBoxLayout()
@@ -364,4 +366,4 @@ class VideoPlayer(QtGui.QWidget):
 if __name__ == '__main__':
     vp = VideoPlayer(None)
     vp.play_reversed()
-    print "TEST"
+    print("TEST")

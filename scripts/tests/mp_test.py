@@ -1,3 +1,4 @@
+from __future__ import print_function
 import multiprocessing
 from utils.video_manager import get_auto_video_manager
 from core.project.project import Project
@@ -11,7 +12,7 @@ import numpy as np
 from libs import img_features
 
 def video_read(start=0, len=200):
-    print start, len
+    print(start, len)
     p = Project()
     p.video_paths = ['/Volumes/Transcend/Dropbox/FERDA/Cam1_clip.avi']
 
@@ -47,4 +48,4 @@ if __name__ == '__main__':
     t = time.time()
     video_read(0, cc*len_)
     t2 = time.time() - t
-    print "MP time: {:.2f}, SP time: {:.2f}, ratio: {:.2%}".format(t1, t2, t2/t1)
+    print("MP time: {:.2f}, SP time: {:.2f}, ratio: {:.2%}".format(t1, t2, t2/t1))

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import pickle
 import numpy as np
 from imageio import imread
@@ -63,6 +64,6 @@ for id, val in tqdm(d.iteritems()):
     y, x = r.centroid()
     crop = get_safe_selection(img, y - offset, x - offset, 2 * offset, 2 * offset)
 
-    print "saving ", id
+    print("saving ", id)
     cv2.imwrite('/Users/flipajs/Documents/dev/ferda/scripts/out4/' + str(id) + '_'+"{:.2f}".format(val[-1])+'.jpg', crop,
                 [int(cv2.IMWRITE_JPEG_QUALITY), 95])

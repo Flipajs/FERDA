@@ -1,3 +1,4 @@
+from __future__ import print_function
 # from __future__ import print_function
 import cPickle as pickle
 from itertools import izip
@@ -64,7 +65,7 @@ def display_pairs(p, pairs, file_name, cols=7, item_height=100, item_width=200, 
     data = []
     for r1, r2 in pairs:
         if r1.frame() + 1 != r2.frame():
-            print("FRAMES? ", r1.frame(), r2.frame())
+            print(("FRAMES? ", r1.frame(), r2.frame()))
 
         im1 = vm.get_frame(r1.frame()).copy()
         im2 = vm.get_frame(r2.frame()).copy()
@@ -114,7 +115,7 @@ def display_head_pairs(project):
     major_axes = [project.gm.region(x[0][0]).ellipse_major_axis_length() for x in pairs]
     major_axes_mean = np.mean(major_axes)
 
-    print ("major axes mean", major_axes_mean)
+    print(("major axes mean", major_axes_mean))
 
     # sort by d2
     pairs = sorted(pairs, key=lambda x: -x[2])
@@ -137,7 +138,7 @@ def display_head_pairs(project):
     #     if d1 > 20 and d2 > 200:
     #         new_pairs.append(((v1, v2), d1, d2))
 
-    print ("NEW LEN", len(pairs))
+    print(("NEW LEN", len(pairs)))
 
     i = 0
     part = 0
@@ -539,7 +540,7 @@ def get_max_dist(project):
     r2 = project.gm.region(max_v2)
 
     if r1.frame() + 1 != r2.frame():
-        print ("FRAMES? ", r1.frame(), r2.frame())
+        print(("FRAMES? ", r1.frame(), r2.frame()))
 
     vm = get_auto_video_manager(project)
 
@@ -591,7 +592,7 @@ def get_max_dist2(project):
     r2 = project.gm.region(max_v2)
 
     if r1.frame() + 1 != r2.frame():
-        print ("FRAMES? ", r1.frame(), r2.frame())
+        print(("FRAMES? ", r1.frame(), r2.frame()))
 
     vm = get_auto_video_manager(project)
 
@@ -924,7 +925,7 @@ def simple_tracklets(p):
 
             ch, _ = p.chm.new_chunk(new_t_vertices_, p.gm)
             if ch.length() == 1:
-                print "WTF"
+                print("WTF")
 
     print ("BEFORE:")
     print ("#vertices: {} #edges: {}".format(p.gm.g.num_vertices(), p.gm.g.num_edges()))
@@ -932,7 +933,7 @@ def simple_tracklets(p):
 
     for ch in p.chm.chunk_gen():
         if ch.length() == 1:
-            print ch
+            print(ch)
 
     with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_tracklets.pkl', 'wb') as f:
         pic = pickle.Pickler(f)
@@ -1035,7 +1036,7 @@ def singles_classifier(p):
     probs = clf.predict_proba(X2)
 
     labels = probs[:, 1] > 0.99
-    print (len(labels), np.sum(labels))
+    print((len(labels), np.sum(labels)))
 
     display_classification(p, region_ids, labels)
 
@@ -1187,7 +1188,7 @@ def load_p_checkpoint(p, name=''):
         try:
             p.gm.vertices_in_t = up.load()
         except:
-            print "vertices_in_t not loaded..."
+            print("vertices_in_t not loaded...")
 
 
 def save_p_checkpoint(p, name=''):
@@ -1264,7 +1265,7 @@ def learn_assignments(p, max_examples=np.inf, display=False):
 
         rch = RegionChunk(t, p.gm, p.rm)
         gen = rch.regions_gen()
-        r1 = gen.next()
+        r1 = next(gen)
 
         for r2 in gen:
             j += 1
@@ -1293,13 +1294,13 @@ def learn_assignments(p, max_examples=np.inf, display=False):
 
     if display:
         y = IF_appearance.predict(X_appearance)
-        print len(y), np.sum(y == -1)
+        print(len(y), np.sum(y == -1))
         pairs = np.array(pairs)
 
         display_pairs(p, pairs[y == -1], 'anomaly_parts_appearance', cols=3, item_height=250, item_width=500, border=70)
 
         y = IF_movement.predict(X_movement)
-        print len(y), np.sum(y == -1)
+        print(len(y), np.sum(y == -1))
         pairs = np.array(pairs)
 
         display_pairs(p, pairs[y == -1], 'anomaly_parts_movement', cols=3, item_height=250, item_width=500, border=70)
@@ -1311,7 +1312,7 @@ def add_score_to_edges(p):
         IF_appearance = d['appearance']
         IF_movement = d['movement']
 
-    print "#edges: {}".format(p.gm.g.num_edges())
+    print("#edges: {}".format(p.gm.g.num_edges()))
     i = 0
 
     use_for_learning = 0.1
@@ -1333,7 +1334,7 @@ def add_score_to_edges(p):
         
         edges.append(e)
 
-    print "computing isolation score..."
+    print("computing isolation score...")
     vals_appearance = IF_appearance.decision_function(features_appearance)
     vals_movement = IF_movement.decision_function(features_movement)
 
@@ -1359,14 +1360,14 @@ def add_score_to_edges(p):
         lr.fit(X, y)
         probs = lr.predict_proba(np.array(vals).reshape((len(vals), 1)))
 
-        print "assigning score to edges.."
+        print("assigning score to edges..")
         for val, e in izip(probs[:, 0], edges):
             if type == 'appearance':
                 p.gm.g.ep['score'][e] = val
             else:
                 p.gm.g.ep['movement_score'][e] = val
 
-        print "saving..."
+        print("saving...")
 
     save_p_checkpoint(p, 'isolation_score')
 
@@ -1419,14 +1420,14 @@ def process_project(p):
         eps = 0.3
 
         strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
-        print "strongly better: {}".format(len(strongly_better_e))
+        print("strongly better: {}".format(len(strongly_better_e)))
         for e in strongly_better_e:
             solver.confirm_edges([(e.source(), e.target())])
 
         tracklet_stats(p)
 
         strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
-        print "strongly better: {}".format(len(strongly_better_e))
+        print("strongly better: {}".format(len(strongly_better_e)))
         for e in strongly_better_e:
             solver.confirm_edges([(e.source(), e.target())])
 
@@ -1486,7 +1487,7 @@ if __name__ == '__main__':
 
         max_dist = 94.59
         # max_dist = get_max_dist(p)
-        print "MAX DIST: {}".format(max_dist)
+        print("MAX DIST: {}".format(max_dist))
 
         if False:
             if FILTER_EDGES:

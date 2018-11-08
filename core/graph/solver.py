@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 
 from core.graph.graph_utils import *
@@ -85,12 +86,12 @@ class Solver:
                     t2 = self.project.gm.get_chunk(self.project.gm.g.vertex(e.target()))
 
                     if t1.segmentation_class != t2.segmentation_class:
-                        print("1on1", t1.id(), t2.id())
+                        print(("1on1", t1.id(), t2.id()))
                         # continue
 
                 confirm_later.append((e.source(), e.target()))
 
-        print("one2one, ", len(confirm_later))
+        print(("one2one, ", len(confirm_later)))
         self.confirm_edges(confirm_later)  # TODO: this is probably not needed, there are no spurious edges between vertices; we only need to create tracklets
 
         if len(confirm_later):
@@ -663,7 +664,7 @@ class Solver:
             if not is_ch or ch.length() < self.project.solver_parameters.global_view_min_chunk_len:
                 to_remove.append(n)
 
-        print("NODES", len(self.g))
+        print(("NODES", len(self.g)))
         # S_.general.log_graph_edits = False
         for n in to_remove:
             if n not in self.g:
@@ -674,7 +675,7 @@ class Solver:
             except:
                 pass
 
-        print("NODES", len(self.g))
+        print(("NODES", len(self.g)))
         # S_.general.log_graph_edits = True
 
         with open(wd+name, 'wb') as f:
@@ -742,7 +743,7 @@ class Solver:
 
         for t in frames:
             if t == 2191:
-                print(2191)
+                print((2191))
             vs = [v for v in self.project.gm.vertices_in_t[t]]
 
             while vs:

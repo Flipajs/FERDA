@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 
 import pickle
@@ -500,20 +501,20 @@ def k_ellipse(data, ell1, ell2):
     visualize_init(data, ell1, ell2)
 
     while True:
-        print old_c1, old_c2, old_t1, old_t2
+        print(old_c1, old_c2, old_t1, old_t2)
 
         labels = label(data, ell1, ell2)
         l1 = np.where(labels == 1)
         l2 = np.where(labels == 2)
 
-        print "BEFORE reweighting"
+        print("BEFORE reweighting")
         visualize(data, l1, l2, ell1, ell2)
 
         update_theta_moments(data[l1], ell1)
         update_theta_moments(data[l2], ell2)
 
         if test_end(ell1, ell2, old_c1, old_c2, old_t1, old_t2):
-            print "FINISHED: "
+            print("FINISHED: ")
 
         visualize(data, l1, l2, ell1, ell2)
 
@@ -634,7 +635,7 @@ def main():
     k_ellipse(data, ell1, ell2)
     t = time.time() - start
 
-    print "TIME: ", t
+    print("TIME: ", t)
 
 
 

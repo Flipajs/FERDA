@@ -1,3 +1,4 @@
+from __future__ import print_function
 import cv2
 import time
 from utils.video_manager import get_auto_video_manager

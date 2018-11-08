@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 __author__ = 'flipajs'
 
-from chunk import Chunk
+from .chunk import Chunk
 from libs.intervaltree.intervaltree import IntervalTree
 from utils.misc import print_progress
 from tqdm import tqdm
@@ -198,7 +199,7 @@ class ChunkManager:
         return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(), affected)
 
     def complete_set_gen(self, project):
-        from sys import maxint
+        from sys import maxsize
 
         num_animals = len(project.animals)
         frame = 0

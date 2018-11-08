@@ -1,4 +1,5 @@
-from chunk import Chunk
+from __future__ import absolute_import
+from .chunk import Chunk
 
 class GhostTracklet(Chunk):
     def __init__(self, start, end):

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import h5py
 import sys
 from sklearn.ensemble import RandomForestClassifier
@@ -39,10 +40,10 @@ if __name__ == '__main__':
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.8)
 
     for i in range(6):
-        print np.sum(y_train==0)
+        print(np.sum(y_train==0))
 
-    print "train ", X_train.shape
-    print "test ", X_test.shape
+    print("train ", X_train.shape)
+    print("test ", X_test.shape)
 
     classifiers = {
         '3NeighborsClassifier': KNeighborsClassifier(3),
@@ -55,11 +56,11 @@ if __name__ == '__main__':
         'GaussianNB': GaussianNB(),
         'QuadraticDiscriminantAnalysis': QuadraticDiscriminantAnalysis()}
 
-    print "###############"
+    print("###############")
     import time
     for name, classifier in classifiers.iteritems():
         t = time.time()
-        print name
+        print(name)
         classifier.fit(X_train, y_train)
         training_t = time.time() - t
 
@@ -67,8 +68,8 @@ if __name__ == '__main__':
         y_pred = classifier.predict(X_test)
         predict_t = time.time() - t
 
-        print "#correct/total: {}/{}, accuracy: {:.3%}".format(np.sum(y_test == y_pred),
+        print("#correct/total: {}/{}, accuracy: {:.3%}".format(np.sum(y_test == y_pred),
                                                                X_test.shape[0],
-                                                               accuracy_score(y_test, y_pred))
-        print "training t: {:.2f}s predict t: {:.2f}s".format(training_t, predict_t)
-        print
+                                                               accuracy_score(y_test, y_pred)))
+        print("training t: {:.2f}s predict t: {:.2f}s".format(training_t, predict_t))
+        print()

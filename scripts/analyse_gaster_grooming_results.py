@@ -1,3 +1,4 @@
+from __future__ import print_function
 from core.project.project import Project
 import numpy as np
 import pickle
@@ -14,7 +15,7 @@ major_axis = 36
 offset = major_axis * MARGIN
 
 
-print "Loading..."
+print("Loading...")
 p = Project()
 p.load(WD_POST)
 
@@ -22,10 +23,10 @@ with open('/Users/flipajs/Documents/dev/ferda/scripts/gaster_grooming_out/HH1_po
     (predictions, rids) = pickle.load(f)
 
 rids = np.array(rids)
-print predictions.shape
-print rids.shape
+print(predictions.shape)
+print(rids.shape)
 
-print np.sum(predictions == 1)
+print(np.sum(predictions == 1))
 
 frames = []
 
@@ -82,15 +83,15 @@ plt.show()
 
 frames = set((frames))
 gt_frames = set((gt_frames))
-print "num frames {} num gt{}".format(frames.__len__(), gt_frames.__len__())
-print "intersection: {}".format((frames.intersection(gt_frames)).__len__())
-print "gt-frames: {}".format((gt_frames.difference(frames)).__len__())
-print "frames - gs: {}".format((frames.difference(gt_frames)).__len__())
+print("num frames {} num gt{}".format(frames.__len__(), gt_frames.__len__()))
+print("intersection: {}".format((frames.intersection(gt_frames)).__len__()))
+print("gt-frames: {}".format((gt_frames.difference(frames)).__len__()))
+print("frames - gs: {}".format((frames.difference(gt_frames)).__len__()))
 
 
 
 length = 0
 for f in frames:
     if f != last_f+1:
-        print "{} -> {}".format(f-length, f)
+        print("{} -> {}".format(f-length, f))
         last_f = f

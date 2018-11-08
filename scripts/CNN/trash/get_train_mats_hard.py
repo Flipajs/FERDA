@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -60,7 +61,7 @@ if __name__ == '__main__':
 
         for k in tqdm.tqdm(range(args.num_examples)):
             for i in range(num_animals):
-                limit = args.num_examples if args.consecutive else sys.maxint
+                limit = args.num_examples if args.consecutive else sys.maxsize
                 ai, aj = random.sample(xrange(0, min(limit, len(images_f[i]))), 2)
 
                 im1 = misc.imread(datadir+'/'+str(i)+'/'+images_f[i][ai])
@@ -108,8 +109,8 @@ if __name__ == '__main__':
     labels_test = np.array(labels[:split_idx])
     labels_train = np.array(labels[split_idx:])
 
-    print "imgs TEST: {}, TRAIN: {}".format(imgs_test.shape, imgs_train.shape)
-    print "labels TEST: {}, TRAIN: {}".format(labels_test.shape, labels_train.shape)
+    print("imgs TEST: {}, TRAIN: {}".format(imgs_test.shape, imgs_train.shape))
+    print("labels TEST: {}, TRAIN: {}".format(labels_test.shape, labels_train.shape))
 
     outdir = args.datadir[0]
     try:

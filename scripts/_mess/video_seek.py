@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 
 __author__ = 'flip'
@@ -15,7 +16,7 @@ class VideoManager():
         self.buffer = [None]*self.buffer_length
 
         if not self.capture.isOpened():
-            print "Cannot open video! video_manager.py"
+            print("Cannot open video! video_manager.py")
 
     def inc_pos(self, pos, volume=1):
         if pos + volume > self.buffer_length - 1:
@@ -34,16 +35,16 @@ class VideoManager():
         return pos
 
     def next_img(self):
-        print "NEXT"
-        print "V", self.view_pos
-        print "B", self.buffer_pos
+        print("NEXT")
+        print("V", self.view_pos)
+        print("B", self.buffer_pos)
         #continue reading new frames
-        print self.dec_pos(self.buffer_pos)
+        print(self.dec_pos(self.buffer_pos))
         if self.dec_pos(self.buffer_pos) == self.view_pos:
-            print " test"
+            print(" test")
             f, self.buffer[self.buffer_pos] = self.capture.read()
             if not f:
-                print "No more frames > video_manager.py"
+                print("No more frames > video_manager.py")
                 return None
 
             self.buffer_pos = self.inc_pos(self.buffer_pos)
@@ -53,15 +54,15 @@ class VideoManager():
         return self.buffer[self.view_pos]
 
     def prev_img(self):
-        print "PREV"
-        print "V", self.view_pos
-        print "B", self.buffer_pos
+        print("PREV")
+        print("V", self.view_pos)
+        print("B", self.buffer_pos)
         view_dec = self.dec_pos(self.view_pos)
         if view_dec == self.buffer_pos:
-            print "No more frames in buffer"
+            print("No more frames in buffer")
             return None
         elif self.buffer[view_dec] is None:
-            print "No more frames in buffer"
+            print("No more frames in buffer")
             return None
         else:
             self.view_pos = view_dec
@@ -84,6 +85,6 @@ while True:
     if img is not None:
         my_utils.imshow("test", img, 0.5)
     else:
-        print "ERROR"
+        print("ERROR")
 
     k = cv2.waitKey(0)

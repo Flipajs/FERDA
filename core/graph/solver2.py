@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 class Solver2:
@@ -14,13 +15,13 @@ class Solver2:
         # TODO: add global parameter:
         max_dist_increased = max_dist * 1.2
         g = self.p.gm.g
-        print "_______________________________________________________"
-        print "pruning edges based on distance threshold"
-        print "max_dist: {:.1f}, max_dist_increased: {:.1f}".format(max_dist, max_dist_increased)
-        print "BEFORE"
-        print "avg vertex out degree before {:.1f}".format(np.mean([v.out_degree() for v in g.vertices()]))
+        print("_______________________________________________________")
+        print("pruning edges based on distance threshold")
+        print("max_dist: {:.1f}, max_dist_increased: {:.1f}".format(max_dist, max_dist_increased))
+        print("BEFORE")
+        print("avg vertex out degree before {:.1f}".format(np.mean([v.out_degree() for v in g.vertices()])))
         num_edges = g.num_edges()
-        print "#edges: {}".format(num_edges)
+        print("#edges: {}".format(num_edges))
 
         for v in self.p.gm.active_v_gen():
             r1 = self.p.gm.region(v)
@@ -35,10 +36,10 @@ class Solver2:
                 self.p.gm.remove_edge_(e)
 
         degrees = [v.out_degree() for v in g.vertices()]
-        print "AFTER"
-        print "#edges: {} (removed: {})".format(g.num_edges(), num_edges - g.num_edges())
-        print "avg vertex out degree after {:.1f}".format(np.mean(degrees))
-        print "------------------------------------"
+        print("AFTER")
+        print("#edges: {} (removed: {})".format(g.num_edges(), num_edges - g.num_edges()))
+        print("avg vertex out degree after {:.1f}".format(np.mean(degrees)))
+        print("------------------------------------")
 
     # TODO:
     """

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from core.project.project import Project
 from utils.gt.gt import GT
 import tqdm

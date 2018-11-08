@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import logging, time
 from utils import get_logger, init_logging
-import module_one as one
-import module_two as two
+from . import module_one as one
+from . import module_two as two
 
 if __name__ == "__main__":
     init_logging()

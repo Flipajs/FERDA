@@ -1,4 +1,5 @@
 from __future__ import division
+from __future__ import print_function
 import math
 import cv2
 import matplotlib.cm as cmx
@@ -125,7 +126,7 @@ def avg_circle_area_color(im, y, x, radius):
                 num_px += 1
                 c += im[y - radius + h, x - radius + w, :]
 
-    print num_px
+    print(num_px)
     c /= num_px
 
     return [c[0, 0], c[0, 1], c[0, 2]]
@@ -153,7 +154,7 @@ def prepare_for_segmentation(img, project, grayscale_speedup=True):
             else:
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         except Exception as e:
-            print e
+            print(e)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     if project.arena_model is not None:

@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 import pickle
 import string
@@ -574,4 +575,4 @@ if __name__ == "__main__":
 
     a = Project()
     a.load('/home/flipajs/test/test.pkl')
-    print("Project name: ", a.name)
+    print(("Project name: ", a.name))

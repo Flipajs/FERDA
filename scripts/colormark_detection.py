@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'flipajs'
 
 from utils.video_manager import VideoManager
@@ -88,12 +89,12 @@ def colormarks_labelling(image, colors, original_colors=None):
 def onclick(event):
     global ix, iy
     ix, iy = event.xdata, event.ydata
-    print 'x = %d, y = %d' % (
-        ix, iy)
+    print('x = %d, y = %d' % (
+        ix, iy))
 
     # global coords
     # coords.append((ix, iy))
-    print ix, iy
+    print(ix, iy)
     # if len(coords) == 2:
     #     fig.canvas.mpl_disconnect(cid)
 
@@ -112,14 +113,14 @@ def compute_saturation_(im):
     import time
     s = time.time()
     lab = color.rgb2lab(im)
-    print time.time()-s
+    print(time.time()-s)
 
     out_im = np.sum(lab[:,:,1:2]**2, axis=2)
 
     m_ = np.max(out_im) / 4.
-    print m_
+    print(m_)
     out_im[out_im > m_] = m_
-    print np.max(out_im)
+    print(np.max(out_im))
 
     return out_im
 
@@ -180,7 +181,7 @@ def color_candidate_pixels(im):
     # ids[ids == 0] = are_gray
     # print "gray dist t: ", time.time()-s
     remove = ids.reshape((im.shape[0], im.shape[1]))
-    print np.sum(remove)/float((im.shape[0] * im.shape[1]))
+    print(np.sum(remove)/float((im.shape[0] * im.shape[1])))
     #
     im_copy[remove] = [255, 255, 255]
 
@@ -258,7 +259,7 @@ def process_ccs_(im, labels, integral_im):
             labels[ids] = rest_num
             rest_num += 1
 
-    print "#CC after min area thresh: ", rest_num
+    print("#CC after min area thresh: ", rest_num)
     plt.figure(3)
     plt.imshow(im)
     # plt.waitforbuttonpress()
@@ -275,7 +276,7 @@ def process_ccs_(im, labels, integral_im):
             labels[ids] = rest_num
             rest_num += 1
 
-    print "#CC after max area thresh: ", rest_num
+    print("#CC after max area thresh: ", rest_num)
     plt.figure(3)
     plt.imshow(im)
     # plt.waitforbuttonpress()
@@ -303,7 +304,7 @@ def process_ccs_(im, labels, integral_im):
         lambda1 += part2
 
         eccentricity = (1 - lambda2/lambda1) ** 0.5
-        print eccentricity, lambda1, lambda2
+        print(eccentricity, lambda1, lambda2)
 
         std_ = np.std(coords, axis=0)
         is_std_ok = True if np.sum(std_) < 9 else False
@@ -316,7 +317,7 @@ def process_ccs_(im, labels, integral_im):
             labels[ids] = rest_num
             rest_num += 1
 
-    print "#CC after std thresh: ", rest_num
+    print("#CC after std thresh: ", rest_num)
     plt.figure(3)
     plt.imshow(im)
     plt.waitforbuttonpress()
@@ -335,7 +336,7 @@ def process_ccs_(im, labels, integral_im):
             labels[ids] = rest_num
             rest_num += 1
 
-    print "#CC after dark neighbour thresh: ", rest_num
+    print("#CC after dark neighbour thresh: ", rest_num)
     plt.figure(3)
     plt.imshow(im)
     plt.waitforbuttonpress()
@@ -404,7 +405,7 @@ def process_ccs(im, integral_im):
             else:
                 labels[ids] = 0
 
-    print "rest num: ", rest_num
+    print("rest num: ", rest_num)
     # print "Number of components:", num
     plt.figure(3)
     plt.imshow(labels, cmap='jet')
@@ -447,7 +448,7 @@ if __name__ == "__main__":
     old_frame = -1
     while True:
         if old_frame != frame:
-            print "FRAME: ", frame
+            print("FRAME: ", frame)
             plt.figure(1)
             im = vid.seek_frame(frame)
             im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)

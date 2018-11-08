@@ -1,7 +1,9 @@
+from __future__ import print_function
+from __future__ import absolute_import
 __author__ = 'filip@naiser.cz'
 import matplotlib.pyplot as plt
 import numpy as np
-from trajectories_data import eight_idtracker, eight_ctrax, eight_ktrack, eight_gt, messor_gt, messor_idtracker, noplast_ctrax, noplast_gt, noplast_ktrack
+from .trajectories_data import eight_idtracker, eight_ctrax, eight_ktrack, eight_gt, messor_gt, messor_idtracker, noplast_ctrax, noplast_gt, noplast_ktrack
 import pickle
 from clearmetrics import clearmetrics
 
@@ -105,17 +107,17 @@ f.close()
 f_metrics = clearmetrics.ClearMetrics(noplast_gt.data, f_data, clear_precision)
 f_metrics.match_sequence()
 evaluation = [f_metrics.get_mota(), f_metrics.get_motp(), f_metrics.get_fn_count(), f_metrics.get_fp_count(), f_metrics.get_mismatches_count(), f_metrics.get_object_count(), f_metrics.get_matches_count()]
-print evaluation
+print(evaluation)
 
 k_metrics = clearmetrics.ClearMetrics(noplast_gt.data, noplast_ktrack.data, clear_precision)
 k_metrics.match_sequence()
 evaluation = [k_metrics.get_mota(), k_metrics.get_motp(), k_metrics.get_fn_count(), k_metrics.get_fp_count(), k_metrics.get_mismatches_count(), k_metrics.get_object_count(), k_metrics.get_matches_count()]
-print evaluation
+print(evaluation)
 
 c_metrics = clearmetrics.ClearMetrics(noplast_gt.data, noplast_ctrax.data, clear_precision)
 c_metrics.match_sequence()
 evaluation = [c_metrics.get_mota(), c_metrics.get_motp(), c_metrics.get_fn_count(), c_metrics.get_fp_count(), c_metrics.get_mismatches_count(), c_metrics.get_object_count(), c_metrics.get_matches_count()]
-print evaluation
+print(evaluation)
 
 
 plt.figure()
@@ -191,14 +193,14 @@ for i in range(len(messor_gt.data)):
 f_metrics = clearmetrics.ClearMetrics(messor_gt.data, ferda_data, clear_precision)
 f_metrics.match_sequence()
 evaluation = [f_metrics.get_mota(), f_metrics.get_motp(), f_metrics.get_fn_count(), f_metrics.get_fp_count(), f_metrics.get_mismatches_count(), f_metrics.get_object_count(), f_metrics.get_matches_count()]
-print evaluation
+print(evaluation)
 
 
 
 i_metrics = clearmetrics.ClearMetrics(messor_gt.data, messor_idtracker.data, clear_precision)
 i_metrics.match_sequence()
 evaluation = [i_metrics.get_mota(), i_metrics.get_motp(), i_metrics.get_fn_count(), i_metrics.get_fp_count(), i_metrics.get_mismatches_count(), i_metrics.get_object_count(), i_metrics.get_matches_count()]
-print evaluation
+print(evaluation)
 
 plt.figure()
 mc = get_frames(i_metrics.mismatches_in_frames)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from core.project.project import Project
 from gui.statistics.region_reconstruction import get_trajectories
 from utils.clearmetrics import _clearmetrics
@@ -15,7 +16,7 @@ def test_project(gt_measurements, test_measurements, frames, threshold):
               clear.get_matches_count()]
 
 
-    print evaluation
+    print(evaluation)
 
 if __name__ == "__main__":
     sn_id = 2

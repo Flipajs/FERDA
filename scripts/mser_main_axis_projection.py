@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'filip@naiser.cz'
 
 import pickle
@@ -17,7 +18,7 @@ ids = [2, 3, 5, 7,  8, 9, 10, 13, 14, 16, 17, 20, 21, 22, 24, 25, 26, 28, 29, 31
 for id in ids:
 #for id in range(10):
     ant1 = regions[id]
-    print 'ID: ', id
+    print('ID: ', id)
 
     num_px = ant1['area']
 
@@ -43,13 +44,13 @@ for id in ids:
     if abs(main_axis[0]) > abs(100*main_axis[1]):
     #if True:
         values = a2[0, :]
-        print "Y"
+        print("Y")
     elif abs(main_axis[0]*100) < abs(main_axis[1]):
         values = a2[1, :]
-        print "X"
+        print("X")
     else:
         values = a2
-        print "XY"
+        print("XY")
 
     min = float('inf')
     max = float('-inf')
@@ -116,14 +117,14 @@ for id in ids:
 
 
     r, lambda1, lambda2 = my_utils.mser_main_axis_ratio(ant1['sxy'], ant1['sxx'], ant1['syy'])
-    print 'Main axis (svd): ', main_axis, m_a_r
-    print 'Lambdas (moments): ', lambda1, lambda2, r
+    print('Main axis (svd): ', main_axis, m_a_r)
+    print('Lambdas (moments): ', lambda1, lambda2, r)
 
     length = max - min
-    print 'Length: ', length
+    print('Length: ', length)
 
     theta = my_utils.mser_theta(ant1['sxy'], ant1['sxx'], ant1['syy'])
-    print 'Theta1: ', theta * 180 / math.pi
+    print('Theta1: ', theta * 180 / math.pi)
 
     num_bins = int(math.floor(length))
     hist = [0]*num_bins
@@ -138,7 +139,7 @@ for id in ids:
 
     skip = int(math.floor(length/10))
     sum_len = int(math.floor(length/7))
-    print 'skip: ', skip
+    print('skip: ', skip)
 
     l = r = 0
     for i in range(skip, skip+sum_len+1):
@@ -147,13 +148,13 @@ for id in ids:
     for i in range(num_bins-1-skip-sum_len, num_bins-skip):
         r += hist[i]
 
-    print "in direction: ", l
-    print "opposite: ", r
+    print("in direction: ", l)
+    print("opposite: ", r)
 
     if l > r:
         theta += math.pi
 
-    print 'Theta2: ', theta * 180 / math.pi
+    print('Theta2: ', theta * 180 / math.pi)
 
     n, bins, patches = plt.hist(positions, num_bins, histtype='bar')
     plt.setp(patches, 'facecolor', 'g', 'alpha', 0.75)

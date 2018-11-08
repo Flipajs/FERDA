@@ -1,7 +1,9 @@
+from __future__ import print_function
+from __future__ import absolute_import
 # track is set of tracklets which has the same properties as tracklet (chunk in old nomenclature) but might be
 # discontinuous
-from chunk import Chunk
-from ghost_tracklet import GhostTracklet
+from .chunk import Chunk
+from .ghost_tracklet import GhostTracklet
 from warnings import warn
 
 
@@ -126,7 +128,7 @@ class Track(Chunk):
         s = "TRACKLET --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
         s += "\tstarts at: "+str(self.start_frame(gm))+" ends at: "+str(self.end_frame(gm))
 
-        print s
+        print(s)
 
     def append_left(self, vertex, gm, undo_action=False):
         warn("Not implemented for Track...")

@@ -1,4 +1,6 @@
-from features import get_curvature_kp
+from __future__ import print_function
+from __future__ import absolute_import
+from .features import get_curvature_kp
 from core.project.project import Project
 from utils.video_manager import get_auto_video_manager, VideoManager
 from matplotlib import pyplot as plt
@@ -205,8 +207,8 @@ if __name__ == '__main__':
         plt.cla()
         plt.scatter(ptsm[:, 0], ptsm[:, 1], c='k', s=30, alpha=.90)
 
-        print i
-        print best_supp[i+1]
+        print(i)
+        print(best_supp[i+1])
         pts_ = __transform_pts(pts1, best_r[i], best_t[i], best_rot_center[i])
 
         if pts_[0, 1] > 365 or pts_[0, 0] > 180:

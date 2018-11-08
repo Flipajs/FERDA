@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'fnaiser'
 
 from functools import partial
@@ -560,7 +561,7 @@ class CaseWidget(QtGui.QWidget):
         w = len(self.vertices_groups[0])
         for g in self.vertices_groups:
             if w != len(g):
-                print "UNBALANCED configuration, ignoring confirmation"
+                print("UNBALANCED configuration, ignoring confirmation")
                 return
             w = len(g)
 
@@ -719,7 +720,7 @@ class CaseWidget(QtGui.QWidget):
                         line_.setPen(self.edge_pen)
                         self.scene.addItem(line_)
                     except:
-                        print "potential problem in case_wdiget.py in draw_scene", n, n2
+                        print("potential problem in case_wdiget.py in draw_scene", n, n2)
                         pass
 
     def process_suggested_config(self, suggested_config):

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 from core.graph.region_chunk import RegionChunk
 import numpy as np
@@ -67,8 +68,8 @@ class Exporter:
             pts = r.contour_without_holes()
 
             if pts is None:
-                print "WARNING> PTS is None in export_part.py"
-                print r
+                print("WARNING> PTS is None in export_part.py")
+                print(r)
                 with open('r_debug.pkl', 'wb') as f:
                     pickle.dump(r, f)
 

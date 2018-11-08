@@ -1,3 +1,4 @@
+from __future__ import print_function
 import h5py
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -35,8 +36,8 @@ class NBatchLogger(Callback):
     def on_batch_end(self,batch,logs={}):
         self.seen += logs.get('size', 0)
         if self.seen % self.display == 0:
-            print '\n{0}/{1} - Batch Loss: {2}'.format(self.seen,self.params['samples'],
-                                                logs.get('loss'))
+            print('\n{0}/{1} - Batch Loss: {2}'.format(self.seen,self.params['samples'],
+                                                logs.get('loss')))
 
 def my_loss2(y_true, y_pred):
     # y_pred = K.l2_normalize(y_pred, axis=-1)
@@ -144,9 +145,9 @@ if __name__ == '__main__':
         y_test = hf['data'][:]
 
 
-    print "train shape {}, min: {} max: {}".format(X_train.shape, X_train.min(), X_train.max())
-    print "test shape {}, min: {} max: {}".format(X_test.shape, X_test.min(), X_test.max())
-    print "y_train shape {}, min: {} max: {}".format(y_train.shape, y_train.min(), y_train.max())
+    print("train shape {}, min: {} max: {}".format(X_train.shape, X_train.min(), X_train.max()))
+    print("test shape {}, min: {} max: {}".format(X_test.shape, X_test.min(), X_test.max()))
+    print("y_train shape {}, min: {} max: {}".format(y_train.shape, y_train.min(), y_train.max()))
 
 
     np.random.seed(123)  # for reproducibility
@@ -178,7 +179,7 @@ if __name__ == '__main__':
     # classification_model = Model(animal_input, out)
     # classification_model.load_weights('../data_cam1/cam1_softmax2.h5')
     # classification_model.load_weights('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/cam1_softmax2.h5')
-    print "weights loaded"
+    print("weights loaded")
 
     # x = Flatten()(x)
     # x = Dense(32, activation='sigmoid')(x)
@@ -213,7 +214,7 @@ if __name__ == '__main__':
         pred = model.predict(X_test)
 
         np.set_printoptions(precision=2)
-        print pred
+        print(pred)
 
         pos_d = []
         neg_d = []
@@ -231,7 +232,7 @@ if __name__ == '__main__':
         # print stats.describe(neg_d)
 
         corr = np.sum(np.array(pos_d) < np.array(neg_d))
-        print "{}, {:.2%}".format(corr, corr / float(len(pos_d)))
+        print("{}, {:.2%}".format(corr, corr / float(len(pos_d))))
 
 
     model.save('my_model.h5')

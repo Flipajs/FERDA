@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import random
 import matplotlib.pyplot as plt
 import numpy as np
@@ -1213,7 +1215,7 @@ class CompleteSetMatching:
             y = np.array([0])
 
         prototypes = []
-        from track_prototype import TrackPrototype
+        from .track_prototype import TrackPrototype
 
         # TODO: set this properly!
         std_eps = 1e-6
@@ -1519,10 +1521,10 @@ def test_descriptors_distance(descriptors, n=2000):
     plt.imshow(dist_m, interpolation='nearest')
 
     bins = 200
-    print len(pos_distances)
-    print len(neg_distances)
+    print(len(pos_distances))
+    print(len(neg_distances))
     plt.figure()
-    print np.histogram(pos_distances, bins=bins, density=True)
+    print(np.histogram(pos_distances, bins=bins, density=True))
     positive = plt.hist(pos_distances, bins=bins, alpha=0.6, color='g', density=True, label='positive')
     plt.hold(True)
     negative = plt.hist(neg_distances, bins=bins, alpha=0.6, color='r', density=True, label='negative')
