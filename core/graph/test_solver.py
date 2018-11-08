@@ -97,7 +97,7 @@ class TestSolver(unittest.TestCase):
         # this should remove 6 edges
         self.assertEqual(num_edges-6, gm.g.num_edges())
 
-    def test_get_ccs(self):
-        ccs = self.solver.get_ccs([0])
-
-        self.assertEqual(1, len(ccs))
+    # def test_get_ccs(self):
+    #     ccs = self.solver.get_ccs([0])
+    #
+    #     self.assertEqual(1, len(ccs))

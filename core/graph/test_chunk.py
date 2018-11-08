@@ -19,11 +19,12 @@ class TestChunk(unittest.TestCase):
 
         self.gm.add_vertices(self.regions_)
 
-    def test_not_list_init(self):
-        self.assertRaises(Exception, Chunk, (1, 2), 1, self.gm)
-
-    def test_not_enough_vertices(self):
-        self.assertRaises(Exception, Chunk, [1], 1, self.gm)
+    # exceptions disabled in core/graph/chunk.py:16
+    # def test_not_list_init(self):
+    #     self.assertRaises(Exception, Chunk, (1, 2), 1, self.gm)
+    #
+    # def test_not_enough_vertices(self):
+    #     self.assertRaises(Exception, Chunk, [1], 1, self.gm)
 
     def test_init(self):
         ch = Chunk([1, 2], 1, self.gm)
