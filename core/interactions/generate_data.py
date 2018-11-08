@@ -359,6 +359,7 @@ class DataGenerator(object):
                                                 single_region_tracklets, test_csv_filename,
                                                 None if not augmentation else idxs_augmentation[count:])
         h5_file.close()
+        self.show_ground_truth(train_csv_filename, join(out_dir, 'sample'), h5_filename + ':train/img1', n=20)
 
     def _get_single_region_tracklets_cached(self, project_working_directory):
         """
@@ -387,7 +388,7 @@ class DataGenerator(object):
                 single_region_tracklets.append(region_tracklet_fixed)
                 all_regions_idx.extend([(i, j) for j in range(len(region_tracklet_fixed) - 1)])
                 i += 1
-            # if i == 10:
+            # if i == 10:  # for debugging
             #     break
         return all_regions_idx, single_region_tracklets
 
@@ -509,7 +510,7 @@ class DataGenerator(object):
         return img_synthetic
 
     @staticmethod
-    def show_ground_truth(csv_file, out_dir, image_hdf5='images.h5:train/img1'):
+    def show_ground_truth(csv_file, out_dir, image_hdf5='images.h5:train/img1', n=None):
         """
         Save images with visualized ground truth.
 
@@ -519,9 +520,15 @@ class DataGenerator(object):
         """
         hf = h5py.File(image_hdf5.split(':')[0], 'r')
         images = hf[image_hdf5.split(':')[1]]
-        n, _, df = read_gt(csv_file)
-        for i, row in tqdm.tqdm(df.iterrows(), total=len(df)):
-            save_prediction_img(join(out_dir, '%05d.png' % i), n, images[i], pred=None, gt=row)
+        n_ids, _, df = read_gt(csv_file)
+        if n is not None:
+            df = df[:n]
+        try:
+            os.makedirs(out_dir)
+        except OSError:
+            pass
+        for i, row in tqdm.tqdm(df.iterrows(), total=len(df), desc='saving ground truth samples'):
+            save_prediction_img(join(out_dir, '%05d.png' % i), n_ids, images[i], pred=None, gt=row)
 
     def _get_moments(self, mask):
         # plt.figure()
