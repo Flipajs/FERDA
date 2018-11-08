@@ -322,6 +322,8 @@ class InteractionDetector:
         pred = self.ti.postprocess_predictions(pred)
 
         pred_dict = self.predictions.array_to_dict(pred)
+        if '0_angle_deg_cw' not in pred_dict:
+            pred_dict['0_angle_deg_cw'] = pred_dict['0_angle_deg']  # backwards compatibility
         pred_dict['0_x'] += delta_xy[0]
         pred_dict['0_y'] += delta_xy[1]
         pred_dict['0_major'] = prev_detection['0_major']
@@ -650,9 +652,8 @@ if __name__ == '__main__':
     # gt = None
     gt[['x', 'y']] -= [project.video_crop_model[key] for key in ['x1', 'y1']]
 
-    # '/home/matej/prace/ferda/experiments/180913_1533_single_concat_conv3_alpha0_01'
-    detector = InteractionDetector('/datagrid/ferda/models/181101_1537_tracker_cam1_1k_aug',
-                                   project)
+    detector = InteractionDetector('/home/matej/prace/ferda/experiments/180913_1533_single_concat_conv3_alpha0_01', project)
+#    detector = InteractionDetector('/datagrid/ferda/models/181101_1537_tracker_cam1_1k_aug', project)
     dense_subgraphs = detector.find_dense_subgraphs()
     dense_subgraphs = sorted(dense_subgraphs, key=lambda x: len(x['ids']), reverse=True)
 
@@ -673,7 +674,7 @@ if __name__ == '__main__':
             dense_sections_tracklets[i] = detector.track_dense(dense['graph'], dense['ids'])
             with file(out_filename, 'wb') as fw:
                 pickle.dump(dense_sections_tracklets, fw)
-        # detector.visualize_tracklets(dense['graph'], dense_sections_tracklets[i], 'out/dense_tracking/%03d' % i, gt)
+        detector.visualize_tracklets(dense['graph'], dense_sections_tracklets[i], 'out/dense_tracking/%03d' % i, gt)
 
     i = 10
     detector.eval_dense_section(dense_subgraphs[i]['graph'], dense_sections_tracklets[i])
